@@ -1,0 +1,37 @@
+{
+  "name": "@automatisch/root",
+  "license": "AGPL-3.0",
+  "private": true,
+  "scripts": {
+    "start": "lerna run --stream --parallel --scope=@*/{web,backend} dev",
+    "start:web": "lerna run --stream --scope=@*/web dev",
+    "start:backend": "lerna run --stream --scope=@*/backend dev",
+    "lint": "lerna run --no-bail --stream --parallel --scope=@*/{web,backend,cli} lint",
+    "build:watch": "lerna run --no-bail --stream --parallel --scope=@*/{web,backend,cli} build:watch",
+    "build:docs": "cd ./packages/docs && yarn install && yarn build"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "nohoist": [
+      "**/babel-loader",
+      "**/webpack",
+      "**/@automatisch/web",
+      "**/@automatisch/types",
+      "**/ajv"
+    ]
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.9.1",
+    "@typescript-eslint/parser": "^5.9.1",
+    "eslint": "^8.13.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "lerna": "^4.0.0",
+    "prettier": "^2.5.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
