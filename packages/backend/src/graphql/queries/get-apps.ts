@@ -9,7 +9,6 @@ type Params = {
 
 const getApps = async (_parent: unknown, params: Params) => {
   const apps = await App.findAll(params.name);
-  console.log(apps, params);
 
   if (params.onlyWithTriggers) {
     return apps.filter((app: IApp) => app.triggers?.length);

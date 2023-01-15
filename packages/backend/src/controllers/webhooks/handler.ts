@@ -6,7 +6,10 @@ import Flow from '../../models/flow';
 import { processTrigger } from '../../services/trigger';
 import actionQueue from '../../queues/action';
 import globalVariable from '../../helpers/global-variable';
-import { REMOVE_AFTER_30_DAYS_OR_150_JOBS, REMOVE_AFTER_7_DAYS_OR_50_JOBS } from '../../helpers/remove-job-configuration';
+import {
+  REMOVE_AFTER_30_DAYS_OR_150_JOBS,
+  REMOVE_AFTER_7_DAYS_OR_50_JOBS
+} from '../../helpers/remove-job-configuration';
 
 export default async (request: IRequest, response: Response) => {
   const flow = await Flow.query()
@@ -17,8 +20,9 @@ export default async (request: IRequest, response: Response) => {
   const triggerStep = await flow.getTriggerStep();
   const triggerCommand = await triggerStep.getTriggerCommand();
   const app = await triggerStep.getApp();
-  const isWebhookApp = app.key === 'webhook';
+  const isWebhookApp = app.key === 'webhook' || app.key === 'formsg';
 
+  // Allow all webhook test runs to work
   if (testRun && !isWebhookApp) {
     return response.sendStatus(404);
   }
@@ -33,7 +37,7 @@ export default async (request: IRequest, response: Response) => {
       connection: await triggerStep.$relatedQuery('connection'),
       app,
       step: triggerStep,
-      request,
+      request
     });
 
     const verified = await app.auth.verifyWebhook($);
@@ -52,8 +56,8 @@ export default async (request: IRequest, response: Response) => {
     payload = {
       headers: request.headers,
       body: request.body,
-      query: request.query,
-    }
+      query: request.query
+    };
 
     rawInternalId = JSON.stringify(payload);
   }
@@ -61,8 +65,8 @@ export default async (request: IRequest, response: Response) => {
   const triggerItem: ITriggerItem = {
     raw: payload,
     meta: {
-      internalId: await bcrypt.hash(rawInternalId, 1),
-    },
+      internalId: await bcrypt.hash(rawInternalId, 1)
+    }
   };
 
   const { flowId, executionId } = await processTrigger({
@@ -82,13 +86,13 @@ export default async (request: IRequest, response: Response) => {
   const jobPayload = {
     flowId,
     executionId,
-    stepId: nextStep.id,
+    stepId: nextStep.id
   };
 
   const jobOptions = {
     removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-    removeOnFail: REMOVE_AFTER_30_DAYS_OR_150_JOBS,
-  }
+    removeOnFail: REMOVE_AFTER_30_DAYS_OR_150_JOBS
+  };
 
   await actionQueue.add(jobName, jobPayload, jobOptions);
 
