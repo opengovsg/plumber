@@ -109,8 +109,6 @@ envVarGroups:
         value: production
       - key: PROTOCOL
         value: https
-      - key: PORT
-        value: 443
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: WEBHOOK_SECRET_KEY
