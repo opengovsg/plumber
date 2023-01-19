@@ -44,14 +44,9 @@ export default defineAction({
     const { subject, body, destinationEmail: recipient, senderName } = $.step.parameters;
     const from = `${senderName} via Postman<donotreply@mail.postman.gov.sg>`;
 
-    const headers = {
-      'Authorization': `Bearer ${$.auth.data.apiKey}`,
-    };
-
     const response = await $.http.post(
       requestPath,
       { subject, body, recipient, from },
-      { headers }
     );
 
     $.setActionItem({ raw: response.data });
