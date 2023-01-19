@@ -2,6 +2,7 @@ services:
   - type: web
     name: zap-backend
     env: node
+    plan: free
     region: singapore
     buildCommand: npm run build
     startCommand: npm start
@@ -46,6 +47,7 @@ services:
   - type: worker
     name: zap-worker
     env: node
+    plan: free
     region: singapore
     buildCommand: npm run build
     startCommand: npm run start:worker
@@ -89,11 +91,15 @@ services:
       - fromGroup: common-env-vars
   - type: redis
     name: zap-redis
+    region: singapore
+    plan: free
     ipAllowList: [] # allow only internal connections
     maxmemoryPolicy: noeviction
 databases:
   - name: zap-database
     databaseName: zap
+    plan: free
+    region: singapore
     postgresMajorVersion: 15
 
 envVarGroups:
