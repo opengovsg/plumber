@@ -4,8 +4,10 @@ type Config = {
 
 const config: Config = {
   baseUrl: process.env.REACT_APP_BASE_URL as string,
-  graphqlUrl: process.env.REACT_APP_GRAPHQL_URL as string,
-  notificationsUrl: process.env.REACT_APP_NOTIFICATIONS_URL as string,
+  graphqlUrl: process.env.REACT_APP_BACKEND_URL
+    ? `${process.env.REACT_APP_BACKEND_URL}/graphql`
+    : (process.env.REACT_APP_GRAPHQL_URL as string),
+  notificationsUrl: process.env.REACT_APP_NOTIFICATIONS_URL as string
 };
 
 export default config;

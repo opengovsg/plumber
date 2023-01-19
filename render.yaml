@@ -11,7 +11,7 @@ services:
         source: /*
         destination: /index.html
     envVars:
-      - key: REACT_APP_GRAPHQL_URL
+      - key: REACT_APP_BACKEND_URL
         fromService:
           name: zap-backend
           type: web
@@ -83,11 +83,16 @@ services:
     startCommand: npm run start:worker
     rootDir: packages/backend
     envVars:
-      - key: HOST
+      - key: WEB_APP_URL
+        fromService:
+          name: zap-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: WEBHOOK_URL
         fromService:
           name: zap-backend
           type: web
-          envVarKey: RENDER_EXTERNAL_HOSTNAME
+          envVarKey: RENDER_EXTERNAL_URL
       - key: POSTGRES_HOST
         fromDatabase:
           name: zap-database
@@ -137,8 +142,6 @@ envVarGroups:
     envVars:
       - key: APP_ENV
         value: production
-      - key: PROTOCOL
-        value: https
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: WEBHOOK_SECRET_KEY
@@ -147,3 +150,5 @@ envVarGroups:
         generateValue: true
       - key: NODE_VERSION
         value: 18.13.0
+      - key: SERVE_WEB_APP_SEPARATELY
+        value: true
