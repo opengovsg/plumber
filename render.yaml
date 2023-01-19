@@ -47,7 +47,7 @@ services:
   - type: worker
     name: zap-worker
     env: node
-    plan: free
+    plan: starter
     region: singapore
     buildCommand: npm run build
     startCommand: npm run start:worker
