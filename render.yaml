@@ -55,7 +55,7 @@ services:
     envVars:
       - key: HOST
         fromService:
-          name: zap-main
+          name: zap-backend
           type: web
           envVarKey: RENDER_EXTERNAL_HOSTNAME
       - key: POSTGRES_HOST
