@@ -11,7 +11,7 @@
     "@hookform/resolvers": "^2.8.8",
     "@mui/icons-material": "^5.0.1",
     "@mui/lab": "^5.0.0-alpha.60",
-    "@mui/material": "^5.0.2",
+    "@mui/material": "5.3.0",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
