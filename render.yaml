@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     region: singapore
-    buildCommand: npm run build
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     rootDir: packages/backend
     envVars:
@@ -49,7 +49,7 @@ services:
     env: node
     plan: starter
     region: singapore
-    buildCommand: npm run build
+    buildCommand: npm ci && npm run build
     startCommand: npm run start:worker
     rootDir: packages/backend
     envVars:
