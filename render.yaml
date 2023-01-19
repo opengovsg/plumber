@@ -43,6 +43,11 @@ services:
           name: zap-backend
           type: web
           envVarKey: RENDER_EXTERNAL_URL
+      - key: BASE_URL
+        fromService:
+          name: zap-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: POSTGRES_HOST
         fromDatabase:
           name: zap-database
@@ -89,6 +94,11 @@ services:
           type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: WEBHOOK_URL
+        fromService:
+          name: zap-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: BASE_URL
         fromService:
           name: zap-backend
           type: web
