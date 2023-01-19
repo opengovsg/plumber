@@ -1,5 +1,30 @@
 services:
   - type: web
+    env: static
+    name: zap-frontend
+    rootDir: packages/web
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    staticPublishPath: ./build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_GRAPHQL_URL
+        fromService:
+          name: zap-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: REACT_APP_BASE_URL
+        fromService:
+          name: zap-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: REACT_APP_NOTIFICATIONS_URL
+        fromService:
+        value: https://notifications.automatisch.io
+  - type: web
     name: zap-backend
     env: node
     plan: free
@@ -8,11 +33,16 @@ services:
     startCommand: npm start
     rootDir: packages/backend
     envVars:
-      - key: HOST
+      - key: WEB_APP_URL
+        fromService:
+          name: zap-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: WEBHOOK_URL
         fromService:
           name: zap-backend
           type: web
-          envVarKey: RENDER_EXTERNAL_HOSTNAME
+          envVarKey: RENDER_EXTERNAL_URL
       - key: POSTGRES_HOST
         fromDatabase:
           name: zap-database
