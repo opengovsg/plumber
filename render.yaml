@@ -3,8 +3,8 @@ services:
     env: static
     name: zap-frontend
     rootDir: packages/web
-    buildCommand: npm ci && npm run build
-    startCommand: npm run start
+    buildCommand: npm i && cd ../.. && npm i && cd packages/web && npm run build
+    startCommand: npm start
     staticPublishPath: ./build
     routes:
       - type: rewrite
