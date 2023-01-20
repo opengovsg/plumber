@@ -39,11 +39,11 @@ class Step extends Base {
       status: {
         type: 'string',
         enum: ['incomplete', 'completed'],
-        default: 'incomplete',
+        default: 'incomplete'
       },
       position: { type: 'integer' },
-      parameters: { type: 'object' },
-    },
+      parameters: { type: 'object' }
+    }
   };
 
   static get virtualAttributes() {
@@ -56,25 +56,25 @@ class Step extends Base {
       modelClass: Flow,
       join: {
         from: 'steps.flow_id',
-        to: 'flows.id',
-      },
+        to: 'flows.id'
+      }
     },
     connection: {
       relation: Base.HasOneRelation,
       modelClass: Connection,
       join: {
         from: 'steps.connection_id',
-        to: 'connections.id',
-      },
+        to: 'connections.id'
+      }
     },
     executionSteps: {
       relation: Base.HasManyRelation,
       modelClass: ExecutionStep,
       join: {
         from: 'steps.id',
-        to: 'execution_steps.step_id',
-      },
-    },
+        to: 'execution_steps.step_id'
+      }
+    }
   });
 
   get iconUrl() {
@@ -84,7 +84,7 @@ class Step extends Base {
   }
 
   get webhookUrl() {
-    if (this.appKey !== 'webhook') return null;
+    if (!['webhook', 'formsg'].includes(this.appKey)) return null;
 
     const url = new URL(`/webhooks/${this.flowId}`, appConfig.webhookUrl);
     return url.toString();

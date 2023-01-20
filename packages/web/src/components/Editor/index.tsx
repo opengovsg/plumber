@@ -72,13 +72,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
         mutationInput.appKey = step.appKey;
       }
 
-      // Refetch flow on appKey change
-      const originalStep = flow.steps.find((s) => s.id === step.id);
-      const shouldRefetchFlow = originalStep?.appKey !== step.appKey;
-
       updateStep({
         variables: { input: mutationInput },
-        refetchQueries: shouldRefetchFlow ? ['GetFlow'] : [],
       });
     },
     [updateStep, flow.id]
