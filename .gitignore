@@ -128,3 +128,6 @@ dist
 
 # redis
 dump.rdb
+
+# mac stuff
+.DS_Store

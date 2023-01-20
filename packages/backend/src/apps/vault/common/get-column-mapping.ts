@@ -4,11 +4,7 @@ const getColumnMapping = async (
   $: IGlobalVariable
 ): Promise<{ [key: string]: string }> => {
   // get column mappings
-  const columnMappingResponse = await $.http.get('/api/tables/column-mapping', {
-    headers: {
-      authorization: `Bearer ${$.auth.data.apiKey as string}`,
-    },
-  });
+  const columnMappingResponse = await $.http.get('/api/tables/column-mapping');
   const columnMapping = swap(columnMappingResponse.data); // alias: name
   return columnMapping;
 };

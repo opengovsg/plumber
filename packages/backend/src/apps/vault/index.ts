@@ -1,5 +1,5 @@
 import defineApp from '../../helpers/define-app';
-// import addAuthHeader from './common/add-auth-header';
+import addAuthHeader from './common/add-auth-header';
 import auth from './auth';
 import actions from './actions';
 import triggers from './triggers';
@@ -13,7 +13,8 @@ export default defineApp({
   authDocUrl: 'https://alpha.workspace.gov.sg',
   primaryColor: '000000',
   supportsConnections: true,
+  beforeRequest: [addAuthHeader],
   auth,
   actions,
-  triggers,
+  triggers
 });

@@ -12,15 +12,7 @@ const createTableRow = async (
   // create column if not exists
   for (const key of Object.keys(rowData)) {
     if (!columnAliases.includes(key)) {
-      await $.http.post(
-        '/api/tables/column',
-        { columnAlias: key },
-        {
-          headers: {
-            authorization: `Bearer ${$.auth.data.apiKey as string}`,
-          },
-        }
-      );
+      await $.http.post('/api/tables/column', { columnAlias: key });
     }
   }
 
@@ -34,15 +26,7 @@ const createTableRow = async (
   }
 
   // send data
-  await $.http.post(
-    '/api/tables/row',
-    { data: payload },
-    {
-      headers: {
-        authorization: `Bearer ${$.auth.data.apiKey as string}`,
-      },
-    }
-  );
+  await $.http.post('/api/tables/row', { data: payload });
 };
 
 export default createTableRow;
