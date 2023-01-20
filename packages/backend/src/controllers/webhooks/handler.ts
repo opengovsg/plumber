@@ -20,7 +20,7 @@ export default async (request: IRequest, response: Response) => {
   const triggerStep = await flow.getTriggerStep();
   const triggerCommand = await triggerStep.getTriggerCommand();
   const app = await triggerStep.getApp();
-  const isWebhookApp = app.key === 'webhook' || app.key === 'formsg';
+  const isWebhookApp = app.key === 'webhook' || app.key === 'formsg' || app.key === 'vault-workspace';
 
   // Allow all webhook test runs to work
   if (testRun && !isWebhookApp) {
