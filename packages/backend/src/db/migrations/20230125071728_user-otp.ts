@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     table.dropColumn('password');
     table.string('otp_hash');
     table.integer('otp_attempts').notNullable().defaultTo(0);
-    table.integer('otp_sent_at');
+    table.timestamp('otp_sent_at');
   });
 }
 

@@ -4,13 +4,14 @@ import Connection from './connection';
 import Flow from './flow';
 import Step from './step';
 import Execution from './execution';
+import crypto from 'crypto';
 
 class User extends Base {
   id!: string;
   email!: string;
   otpHash?: string;
   otpAttempts: number;
-  otpSentAt: number; // is a timestamp
+  otpSentAt?: Date;
   connections?: Connection[];
   flows?: Flow[];
   steps?: Step[];
@@ -71,11 +72,9 @@ class User extends Base {
     }
   });
 
-  login(password: string) {
-    // compare otp hash reset retries
+  hashOtp(otp: string) {
+    return crypto.scryptSync(otp, this.email, 64).toString('base64');
   }
-
-  async generateOtpAndHash() {}
 
   async $beforeInsert(queryContext: QueryContext) {
     await super.$beforeInsert(queryContext);
