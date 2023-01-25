@@ -48,7 +48,8 @@ type Mutation {
   updateStep(input: UpdateStepInput): Step
   deleteStep(input: DeleteStepInput): Step
   updateUser(input: UpdateUserInput): User
-  login(input: LoginInput): Auth
+  requestOtp(input: RequestOtpInput): Boolean
+  verifyOtp(input: VerifyOtpInput): Auth
 }
 
 """
@@ -304,9 +305,13 @@ input UpdateUserInput {
   password: String
 }
 
-input LoginInput {
+input RequestOtpInput {
   email: String!
-  password: String!
+}
+
+input VerifyOtpInput {
+  email: String!
+  otp: String!
 }
 
 """

@@ -12,8 +12,8 @@ import deleteFlow from './mutations/delete-flow';
 import createStep from './mutations/create-step';
 import updateStep from './mutations/update-step';
 import deleteStep from './mutations/delete-step';
-import updateUser from './mutations/update-user';
-import login from './mutations/login';
+import requestOtp from './mutations/request-otp';
+import verifyOtp from './mutations/verify-otp';
 
 const mutationResolvers = {
   createConnection,
@@ -30,8 +30,8 @@ const mutationResolvers = {
   createStep,
   updateStep,
   deleteStep,
-  updateUser,
-  login,
+  requestOtp,
+  verifyOtp
 };
 
 export default mutationResolvers;
