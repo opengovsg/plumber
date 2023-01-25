@@ -4,12 +4,13 @@ import Connection from './connection';
 import Flow from './flow';
 import Step from './step';
 import Execution from './execution';
-import bcrypt from 'bcrypt';
 
 class User extends Base {
   id!: string;
   email!: string;
-  password!: string;
+  otpHash?: string;
+  otpAttempts: number;
+  otpSentAt: number; // is a timestamp
   connections?: Connection[];
   flows?: Flow[];
   steps?: Step[];
@@ -19,13 +20,12 @@ class User extends Base {
 
   static jsonSchema = {
     type: 'object',
-    required: ['email', 'password'],
+    required: ['email'],
 
     properties: {
       id: { type: 'string', format: 'uuid' },
-      email: { type: 'string', format: 'email', minLength: 1, maxLength: 255 },
-      password: { type: 'string', minLength: 1, maxLength: 255 },
-    },
+      email: { type: 'string', format: 'email', minLength: 1, maxLength: 255 }
+    }
   };
 
   static relationMappings = () => ({
@@ -34,16 +34,16 @@ class User extends Base {
       modelClass: Connection,
       join: {
         from: 'users.id',
-        to: 'connections.user_id',
-      },
+        to: 'connections.user_id'
+      }
     },
     flows: {
       relation: Base.HasManyRelation,
       modelClass: Flow,
       join: {
         from: 'users.id',
-        to: 'flows.user_id',
-      },
+        to: 'flows.user_id'
+      }
     },
     steps: {
       relation: Base.ManyToManyRelation,
@@ -52,10 +52,10 @@ class User extends Base {
         from: 'users.id',
         through: {
           from: 'flows.user_id',
-          to: 'flows.id',
+          to: 'flows.id'
         },
-        to: 'steps.flow_id',
-      },
+        to: 'steps.flow_id'
+      }
     },
     executions: {
       relation: Base.ManyToManyRelation,
@@ -64,32 +64,25 @@ class User extends Base {
         from: 'users.id',
         through: {
           from: 'flows.user_id',
-          to: 'flows.id',
+          to: 'flows.id'
         },
-        to: 'executions.flow_id',
-      },
-    },
+        to: 'executions.flow_id'
+      }
+    }
   });
 
   login(password: string) {
-    return bcrypt.compare(password, this.password);
+    // compare otp hash reset retries
   }
 
-  async generateHash() {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
+  async generateOtpAndHash() {}
 
   async $beforeInsert(queryContext: QueryContext) {
     await super.$beforeInsert(queryContext);
-    await this.generateHash();
   }
 
   async $beforeUpdate(opt: ModelOptions, queryContext: QueryContext) {
     await super.$beforeUpdate(opt, queryContext);
-
-    if (this.password) {
-      await this.generateHash();
-    }
   }
 }
 
