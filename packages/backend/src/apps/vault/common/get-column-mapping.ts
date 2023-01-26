@@ -1,15 +1,20 @@
 import { IGlobalVariable } from '@automatisch/types';
 
+const getColumnMappingInAlias = async (
+  $: IGlobalVariable
+): Promise<{ [key: string]: string }> => {
+  const mapping = await getColumnMapping($);
+  return swap(mapping); // alias: name
+};
+
 const getColumnMapping = async (
   $: IGlobalVariable
 ): Promise<{ [key: string]: string }> => {
-  // get column mappings
-  const columnMappingResponse = await $.http.get('/api/tables/column-mapping');
-  const columnMapping = swap(columnMappingResponse.data); // alias: name
-  return columnMapping;
+  const response = await $.http.get('/api/tables/column-mapping');
+  return response.data;
 };
 
-function swap(json: { [key: string]: string }) {
+const swap = (json: { [key: string]: string }) => {
   const reversed: { [key: string]: string } = {};
   for (const key in json) {
     reversed[json[key]] = key;
@@ -17,4 +22,4 @@ function swap(json: { [key: string]: string }) {
   return reversed;
 }
 
-export default getColumnMapping;
+export { getColumnMappingInAlias, getColumnMapping };
