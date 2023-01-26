@@ -1,3 +1,3 @@
-import createRow from './create-row';
+import getTableData from './get-table-data';
 
-export default [createRow];
+export default [getTableData];
