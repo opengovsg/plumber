@@ -1,6 +1,11 @@
 import { IGlobalVariable } from '@automatisch/types';
 import { getColumnMappingInAlias } from '../../common/get-column-mapping';
 
+const PREDEFINED_VAULT_COLUMN = {
+  name: 'vault_id',
+  value: 'vault_id',
+}
+
 export default {
   name: 'List columns',
   key: 'listColumns',
@@ -12,10 +17,7 @@ export default {
     };
 
     // NOTE: vault workspace has pre-defined column called vault_id
-    response.data.push({
-      name: 'vault_id',
-      value: 'vault_id',
-    });
+    response.data.push(PREDEFINED_VAULT_COLUMN);
 
     for (const key in mapping) {
       response.data.push({
