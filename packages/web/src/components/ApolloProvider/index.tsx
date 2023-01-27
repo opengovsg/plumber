@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { ApolloProvider as BaseApolloProvider } from '@apollo/client';
-import { useSnackbar } from 'notistack';
+import { SnackbarMessage, useSnackbar } from 'notistack';
 
 import { mutateAndGetClient } from 'graphql/client';
 import useAuthentication from 'hooks/useAuthentication';
@@ -14,7 +14,7 @@ const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
   const authentication = useAuthentication();
 
   const onError = React.useCallback(
-    (message) => {
+    (message: SnackbarMessage) => {
       enqueueSnackbar(message, { variant: 'error' });
     },
     [enqueueSnackbar]

@@ -80,7 +80,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
   );
 
   const addStep = React.useCallback(
-    async (previousStepId) => {
+    async (previousStepId: string) => {
       const mutationInput = {
         previousStep: {
           id: previousStepId,

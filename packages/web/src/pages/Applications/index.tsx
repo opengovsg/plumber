@@ -23,7 +23,7 @@ import * as URLS from 'config/urls';
 export default function Applications(): React.ReactElement {
   const navigate = useNavigate();
   const formatMessage = useFormatMessage();
-  const [appName, setAppName] = React.useState(null);
+  const [appName, setAppName] = React.useState<string>();
   const { data, loading } = useQuery(GET_CONNECTED_APPS, {
     variables: { name: appName },
   });
@@ -31,9 +31,12 @@ export default function Applications(): React.ReactElement {
   const apps: IApp[] = data?.getConnectedApps;
   const hasApps = apps?.length;
 
-  const onSearchChange = React.useCallback((event) => {
-    setAppName(event.target.value);
-  }, []);
+  const onSearchChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setAppName(event.target.value);
+    },
+    []
+  );
 
   const goToApps = React.useCallback(() => {
     navigate(URLS.APPS);

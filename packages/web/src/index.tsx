@@ -1,5 +1,4 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import ThemeProvider from 'components/ThemeProvider';
 import IntlProvider from 'components/IntlProvider';
 import ApolloProvider from 'components/ApolloProvider';
@@ -9,7 +8,14 @@ import Router from 'components/Router';
 import routes from 'routes';
 import reportWebVitals from './reportWebVitals';
 
-ReactDOM.render(
+const container = document.getElementById('root');
+
+if (!container) {
+  throw new Error('Unable to find root element');
+}
+const root = createRoot(container);
+
+root.render(
   <SnackbarProvider>
     <AuthenticationProvider>
       <ApolloProvider>
@@ -20,8 +26,7 @@ ReactDOM.render(
         </IntlProvider>
       </ApolloProvider>
     </AuthenticationProvider>
-  </SnackbarProvider>,
-  document.getElementById('root')
+  </SnackbarProvider>
 );
 
 // If you want to start measuring performance in your app, pass a function

@@ -45,7 +45,6 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
   return (
     <BaseDrawer
       {...drawerProps}
-      disableBackdropTransition={!iOS}
       disableDiscovery={iOS}
       variant={matchSmallScreens ? 'temporary' : 'permanent'}
     >

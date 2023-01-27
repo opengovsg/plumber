@@ -1,10 +1,9 @@
-import * as React from 'react';
 import {
   SnackbarProvider as BaseSnackbarProvider,
   SnackbarProviderProps,
 } from 'notistack';
 
-const SnackbarProvider = (props: SnackbarProviderProps): React.ReactElement => {
+const SnackbarProvider = (props: SnackbarProviderProps): JSX.Element => {
   return (
     <BaseSnackbarProvider
       {...props}

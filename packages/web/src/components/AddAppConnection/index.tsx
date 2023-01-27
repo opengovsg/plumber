@@ -115,12 +115,14 @@ export default function AddAppConnection(
           severity="error"
           sx={{ mt: 1, fontWeight: 500, wordBreak: 'break-all' }}
         >
-          {error.message}
-          {error.details && (
-            <pre style={{ whiteSpace: 'pre-wrap' }}>
-              {JSON.stringify(error.details, null, 2)}
-            </pre>
-          )}
+          <>
+            {error.message}
+            {error.details && (
+              <pre style={{ whiteSpace: 'pre-wrap' }}>
+                {JSON.stringify(error.details, null, 2)}
+              </pre>
+            )}
+          </>
         </Alert>
       )}
 

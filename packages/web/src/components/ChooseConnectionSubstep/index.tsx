@@ -97,10 +97,10 @@ function ChooseConnectionSubstep(
   const { name } = substep;
 
   const handleAddConnectionClose = React.useCallback(
-    async (response) => {
+    async (response: Record<string, unknown>) => {
       setShowAddConnectionDialog(false);
 
-      const connectionId = response?.createConnection.id;
+      const connectionId = (response?.createConnection as any).id;
 
       if (connectionId) {
         await refetch();

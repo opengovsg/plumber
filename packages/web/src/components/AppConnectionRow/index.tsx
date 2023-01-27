@@ -57,7 +57,10 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
 
   const onContextMenuClick = () => setAnchorEl(contextButtonRef.current);
   const onContextMenuAction = React.useCallback(
-    async (event, action: { [key: string]: string }) => {
+    async (
+      _event: React.MouseEvent<Element, MouseEvent>,
+      action: { [key: string]: string }
+    ) => {
       if (action.type === 'delete') {
         await deleteConnection({
           variables: { input: { id } },
@@ -95,7 +98,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
           <CardContent>
             <Stack justifyContent="center" alignItems="flex-start" spacing={1}>
               <Typography variant="h6" sx={{ textAlign: 'left' }}>
-                {formattedData?.screenName}
+                {formattedData?.screenName.toString()}
               </Typography>
 
               <Typography variant="caption">
@@ -115,14 +118,17 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
                     </Typography>
                   </>
                 )}
-                {verificationVisible && testCalled && !testLoading && verified && (
-                  <>
-                    <CheckCircleIcon fontSize="small" color="success" />
-                    <Typography variant="caption">
-                      {formatMessage('connection.testSuccessful')}
-                    </Typography>
-                  </>
-                )}
+                {verificationVisible &&
+                  testCalled &&
+                  !testLoading &&
+                  verified && (
+                    <>
+                      <CheckCircleIcon fontSize="small" color="success" />
+                      <Typography variant="caption">
+                        {formatMessage('connection.testSuccessful')}
+                      </Typography>
+                    </>
+                  )}
                 {verificationVisible &&
                   testCalled &&
                   !testLoading &&
