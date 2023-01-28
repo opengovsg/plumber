@@ -10,12 +10,12 @@ import resolvers from '../graphql/resolvers';
 import HttpError from '../errors/http';
 
 const schema = loadSchemaSync(join(__dirname, '../graphql/schema.graphql'), {
-  loaders: [new GraphQLFileLoader()],
+  loaders: [new GraphQLFileLoader()]
 });
 
 const schemaWithResolvers = addResolversToSchema({
   schema,
-  resolvers,
+  resolvers
 });
 
 const graphQLInstance = graphqlHTTP({
@@ -28,8 +28,8 @@ const graphQLInstance = graphqlHTTP({
       delete (error.originalError as HttpError).response;
     }
 
-    return error.originalError;
-  },
+    return error;
+  }
 });
 
 export default graphQLInstance;

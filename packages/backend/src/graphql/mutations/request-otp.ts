@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import User from '../../models/user';
 import validator from 'email-validator';
 import { sendEmail } from '../../helpers/send-email';
+import BaseError from '../../errors/base';
+import HttpError from '../../errors/http';
 
 type Params = {
   input: {
@@ -21,7 +23,7 @@ const requestOtp = async (
   const email = params.input.email.toLowerCase().trim();
   // validate email
   if (!validator.validate(email) || !email.endsWith('.gov.sg')) {
-    throw new Error('Only .gov.sg emails are allowed.');
+    throw new BaseError('Only .gov.sg emails are allowed.');
   }
   // check if user exists
   let user = await User.query().findOne({ email });
@@ -32,7 +34,7 @@ const requestOtp = async (
     user.otpSentAt &&
     Date.now() - user.otpSentAt.getTime() < OTP_RESEND_TIMEOUT_IN_MS
   ) {
-    throw new Error(
+    throw new BaseError(
       `Please wait ${Math.floor(
         (OTP_RESEND_TIMEOUT_IN_MS - Date.now() + user.otpSentAt.getTime()) /
           1000

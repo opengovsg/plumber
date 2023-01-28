@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import User from '../../models/user';
 import jwt from 'jsonwebtoken';
 import appConfig from '../../config/app';
+import BaseError from '../../errors/base';
 
 type Params = {
   input: {
@@ -22,29 +23,29 @@ const verifyOtp = async (
   const { otp, email } = params.input;
   const user = await User.query().findOne({ email });
   if (!user) {
-    throw new Error('No such user');
+    throw new BaseError('No such user');
   }
   const { otpHash, otpSentAt } = user;
   if (!otpHash || !otpSentAt) {
-    throw new Error('No OTP sent');
+    throw new BaseError('No OTP sent');
   }
 
   console.log(Date.now() - otpSentAt.getTime());
   if (otpSentAt && Date.now() - otpSentAt.getTime() > OTP_VALIDITY_IN_MS) {
-    throw new Error('OTP expired');
+    throw new BaseError('OTP expired');
   }
   // atomically increment otp retries first to prevent concurrent bruce force attacks
   const { otpAttempts: newOtpAttempts } = await user
     .$query()
     .increment('otp_attempts', 1);
   if (newOtpAttempts > MAX_OTP_ATTEMPTS) {
-    throw new Error('OTP attempts exceeded');
+    throw new BaseError('OTP attempts exceeded');
   }
   const inputOtpHash = user.hashOtp(otp);
   if (
     !crypto.timingSafeEqual(Buffer.from(otpHash), Buffer.from(inputOtpHash))
   ) {
-    throw new Error('Invalid OTP');
+    throw new BaseError('Invalid OTP');
   }
   // reset otp columns
   const updatedUser = await user.$query().patchAndFetch({
