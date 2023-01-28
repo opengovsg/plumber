@@ -68,7 +68,8 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
         <Divider />
       </div>
 
-      <List sx={{ py: 0, mt: 3 }}>
+      {/* todo: hide notifications for now */}
+      <List sx={{ py: 0, mt: 3, display: 'none' }}>
         {bottomLinks.map(({ Icon, badgeContent, primary, to }, index) => (
           <ListItemLink
             key={`${to}-${index}`}

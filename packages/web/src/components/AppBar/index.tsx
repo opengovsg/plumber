@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import type { ContainerProps } from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -6,8 +6,8 @@ import MuiAppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import MenuIcon from '@mui/icons-material/Menu';
-import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import WaterIcon from '@mui/icons-material/Water';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import * as URLS from 'config/urls';
@@ -34,7 +34,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
   });
 
   const [accountMenuAnchorElement, setAccountMenuAnchorElement] =
-    React.useState<null | HTMLElement>(null);
+    useState<null | HTMLElement>(null);
 
   const isMenuOpen = Boolean(accountMenuAnchorElement);
 
@@ -58,7 +58,11 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             onClick={drawerOpen ? onDrawerClose : onDrawerOpen}
             sx={{ mr: 2 }}
           >
-            {drawerOpen && matchSmallScreens ? <MenuOpenIcon /> : <MenuIcon />}
+            {drawerOpen && matchSmallScreens ? (
+              <ArrowBackIcon />
+            ) : (
+              <WaterIcon />
+            )}
           </IconButton>
 
           <div style={{ flexGrow: 1 }}>

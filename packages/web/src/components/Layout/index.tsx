@@ -4,7 +4,7 @@ import Toolbar from '@mui/material/Toolbar';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import AppsIcon from '@mui/icons-material/Apps';
-import SwapCallsIcon from '@mui/icons-material/SwapCalls';
+import SchemaIcon from '@mui/icons-material/Schema';
 import HistoryIcon from '@mui/icons-material/History';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
@@ -19,7 +19,7 @@ type PublicLayoutProps = {
 
 const drawerLinks = [
   {
-    Icon: SwapCallsIcon,
+    Icon: SchemaIcon,
     primary: 'drawer.flows',
     to: URLS.FLOWS,
     dataTest: 'flows-page-drawer-link',
