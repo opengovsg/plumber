@@ -1,5 +1,5 @@
 import defineTrigger from '../../../../helpers/define-trigger';
-import getColumnMapping from '../../common/get-column-mapping';
+import { getColumnMappingInAlias } from '../../common/get-column-mapping';
 import registerWebhook from '../../common/register-webhook';
 import unregisterWebhook from '../../common/unregister-webhook';
 
@@ -19,7 +19,7 @@ export default defineTrigger({
   },
 
   async testRun($) {
-    const columnMapping = await getColumnMapping($);
+    const columnMapping = await getColumnMappingInAlias($);
     const exampleData: { [key: string]: string } = {};
     for (const key of Object.keys(columnMapping)) {
       exampleData[key] = '<Place Holder>';
