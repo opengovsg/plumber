@@ -201,7 +201,7 @@ function ChooseAppAndEventSubstep(
                     InputProps={{
                       ...params.InputProps,
                       endAdornment: (
-                        <React.Fragment>
+                        <>
                           {isWebhook && (
                             <Chip
                               label={formatMessage(
@@ -211,7 +211,7 @@ function ChooseAppAndEventSubstep(
                           )}
 
                           {params.InputProps.endAdornment}
-                        </React.Fragment>
+                        </>
                       ),
                     }}
                   />

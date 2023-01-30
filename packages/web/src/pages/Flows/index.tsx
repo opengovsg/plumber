@@ -84,9 +84,12 @@ export default function Flows(): React.ReactElement {
   const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node);
   const hasFlows = flows?.length;
 
-  const onSearchChange = React.useCallback((event) => {
-    setFlowName(event.target.value);
-  }, []);
+  const onSearchChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setFlowName(event.target.value);
+    },
+    []
+  );
 
   const CreateFlowLink = React.useMemo(
     () =>

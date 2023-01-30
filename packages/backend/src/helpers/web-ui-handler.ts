@@ -5,7 +5,7 @@ import appConfig from '../config/app';
 const webUIHandler = async (app: Application) => {
   if (appConfig.serveWebAppSeparately) return;
 
-  const webAppPath = require.resolve('@automatisch/web');
+  const webAppPath = require.resolve('web');
   const webBuildPath = join(dirname(webAppPath), 'build');
   const indexHtml = join(dirname(webAppPath), 'build', 'index.html');
 

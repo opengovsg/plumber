@@ -17,7 +17,7 @@ const createFlow = async (
   const appKey = params?.input?.triggerAppKey;
 
   const flow = await context.currentUser.$relatedQuery('flows').insert({
-    name: 'Name your flow',
+    name: 'Name your pipe'
   });
 
   if (connectionId) {
@@ -32,13 +32,13 @@ const createFlow = async (
     type: 'trigger',
     position: 1,
     appKey,
-    connectionId,
+    connectionId
   });
 
   await Step.query().insert({
     flowId: flow.id,
     type: 'action',
-    position: 2,
+    position: 2
   });
 
   return flow;

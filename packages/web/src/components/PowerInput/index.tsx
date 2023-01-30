@@ -5,7 +5,7 @@ import Popper from '@mui/material/Popper';
 import InputLabel from '@mui/material/InputLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import { Controller, useFormContext } from 'react-hook-form';
-import { Editor, Transforms, Range, createEditor } from 'slate';
+import { createEditor } from 'slate';
 import { Slate, Editable, useSelected, useFocused } from 'slate-react';
 
 import {
@@ -50,7 +50,7 @@ const PowerInput = (props: PowerInputProps) => {
   const priorStepsWithExecutions = React.useContext(StepExecutionsContext);
   const editorRef = React.useRef<HTMLDivElement | null>(null);
   const renderElement = React.useCallback(
-    (props) => <Element {...props} />,
+    (props: any) => <Element {...props} />,
     []
   );
   const [editor] = React.useState(() => customizeEditor(createEditor()));
@@ -62,7 +62,7 @@ const PowerInput = (props: PowerInputProps) => {
   }, [priorStepsWithExecutions]);
 
   const handleBlur = React.useCallback(
-    (value) => {
+    (value: any) => {
       onBlur?.(value);
     },
     [onBlur]

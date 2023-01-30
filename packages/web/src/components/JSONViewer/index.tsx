@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { JSONTree } from 'react-json-tree';
 import type { IJSONObject } from '@automatisch/types';
 
@@ -50,7 +49,7 @@ function JSONViewer(props: JSONViewerProps) {
     <JSONTree
       hideRoot
       data={data}
-      shouldExpandNode={() => true}
+      shouldExpandNodeInitially={() => true}
       invertTheme={false}
       theme={theme}
     />

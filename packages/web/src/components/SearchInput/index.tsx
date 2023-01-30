@@ -8,7 +8,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import useFormatMessage from 'hooks/useFormatMessage';
 
 type SearchInputProps = {
-  onChange?: (event: React.ChangeEvent) => void;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 export default function SearchInput({

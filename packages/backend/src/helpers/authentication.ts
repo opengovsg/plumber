@@ -24,15 +24,16 @@ const authentication = shield(
   {
     Query: {
       '*': isAuthenticated,
-      healthcheck: allow,
+      healthcheck: allow
     },
     Mutation: {
       '*': isAuthenticated,
-      login: allow,
-    },
+      requestOtp: allow,
+      verifyOtp: allow
+    }
   },
   {
-    allowExternalErrors: true,
+    allowExternalErrors: true
   }
 );
 

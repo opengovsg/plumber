@@ -13,7 +13,6 @@
     "nohoist": [
       "**/babel-loader",
       "**/webpack",
-      "**/@automatisch/web",
       "**/@automatisch/types",
       "**/ajv"
     ]

@@ -16,7 +16,7 @@ const createHttpLink = (
 ): ApolloLink => {
   const { uri, token } = options;
   const headers = {
-    authorization: token,
+    authorization: token || ''
   };
   return new HttpLink({ uri, headers });
 };

@@ -1,103 +1,96 @@
-import * as React from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@apollo/client';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import LoadingButton from '@mui/lab/LoadingButton';
-
+import { TextField, Stack } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { REQUEST_OTP } from 'graphql/mutations/request-otp';
+import { VERIFY_OTP } from 'graphql/mutations/verify-otp';
 import useAuthentication from 'hooks/useAuthentication';
 import * as URLS from 'config/urls';
-import { LOGIN } from 'graphql/mutations/login';
-import Form from 'components/Form';
-import TextField from 'components/TextField';
 
-function renderFields(props: { loading: boolean }) {
-  const { loading = false } = props;
-
-  return () => {
-    return (
-      <>
-        <TextField
-          label="Email"
-          name="email"
-          required
-          fullWidth
-          margin="dense"
-          autoComplete="username"
-          data-test="email-text-field"
-        />
-
-        <TextField
-          label="Password"
-          name="password"
-          type="password"
-          required
-          fullWidth
-          margin="dense"
-          autoComplete="current-password"
-          data-test="password-text-field"
-        />
-
-        <LoadingButton
-          type="submit"
-          variant="contained"
-          color="primary"
-          sx={{ boxShadow: 2, mt: 3 }}
-          loading={loading}
-          fullWidth
-          data-test="login-button"
-        >
-          Login
-        </LoadingButton>
-      </>
-    );
-  };
-}
-
-function LoginForm() {
+export const LoginForm = (): JSX.Element => {
   const navigate = useNavigate();
   const authentication = useAuthentication();
-  const [login, { loading }] = useMutation(LOGIN);
+  const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP);
+  const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP);
 
-  React.useEffect(() => {
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+
+  useEffect(() => {
     if (authentication.isAuthenticated) {
       navigate(URLS.DASHBOARD);
     }
   }, [authentication.isAuthenticated]);
 
-  const handleSubmit = async (values: any) => {
-    const { data } = await login({
-      variables: {
-        input: values,
-      },
-    });
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isOtpSent) {
+      await requestOtp({
+        variables: {
+          input: {
+            email,
+          },
+        },
+      });
+      setIsOtpSent(true);
+    } else {
+      const { data } = await verifyOtp({
+        variables: {
+          input: {
+            email,
+            otp,
+          },
+        },
+      });
 
-    const { token } = data.login;
+      const { token } = data.verifyOtp;
 
-    authentication.updateToken(token);
+      authentication.updateToken(token);
+    }
   };
 
-  const render = React.useMemo(() => renderFields({ loading }), [loading]);
-
   return (
-    <Paper sx={{ px: 2, py: 4 }}>
-      <Typography
-        variant="h3"
-        align="center"
-        sx={{
-          borderBottom: '1px solid',
-          borderColor: (theme) => theme.palette.text.disabled,
-          pb: 2,
-          mb: 2,
-        }}
-        gutterBottom
-      >
-        Login
-      </Typography>
-
-      <Form onSubmit={handleSubmit} render={render} />
-    </Paper>
+    <form noValidate onSubmit={handleSubmit}>
+      <Stack spacing={2}>
+        {isOtpSent ? (
+          <TextField
+            fullWidth
+            label="OTP"
+            required
+            autoFocus
+            value={otp}
+            onChange={(e) => {
+              setOtp(e.target.value);
+            }}
+            placeholder="123456"
+          />
+        ) : (
+          <TextField
+            fullWidth
+            type="email"
+            label="Email address"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            required
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
+            placeholder="user@agency.gov.sg"
+          />
+        )}
+        <LoadingButton
+          variant="contained"
+          loading={isVerifyingOtp || isRequestingOtp}
+          type="submit"
+        >
+          {isOtpSent ? 'Verify OTP' : 'Login'}
+        </LoadingButton>
+      </Stack>
+    </form>
   );
-}
+};
 
 export default LoginForm;
