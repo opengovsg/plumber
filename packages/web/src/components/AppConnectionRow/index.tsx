@@ -98,7 +98,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
           <CardContent>
             <Stack justifyContent="center" alignItems="flex-start" spacing={1}>
               <Typography variant="h6" sx={{ textAlign: 'left' }}>
-                {formattedData?.screenName.toString()}
+                {formattedData?.screenName?.toString() || 'Unnamed'}
               </Typography>
 
               <Typography variant="caption">
