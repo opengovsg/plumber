@@ -3,6 +3,7 @@ import addAuthHeader from './common/add-auth-header';
 import auth from './auth';
 import actions from './actions';
 import triggers from './triggers';
+import dynamicData from './dynamic-data';
 
 const WORKSPACE_BASEURL = 'https://v3isb33ru0.execute-api.ap-southeast-1.amazonaws.com'
 
@@ -18,5 +19,6 @@ export default defineApp({
   beforeRequest: [addAuthHeader],
   auth,
   actions,
-  triggers
+  triggers,
+  dynamicData,
 });
