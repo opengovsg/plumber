@@ -5,14 +5,15 @@ import actions from './actions';
 import triggers from './triggers';
 import dynamicData from './dynamic-data';
 
-const WORKSPACE_BASEURL = 'https://v3isb33ru0.execute-api.ap-southeast-1.amazonaws.com'
+const WORKSPACE_BASEURL =
+  'https://v3isb33ru0.execute-api.ap-southeast-1.amazonaws.com';
 
 export default defineApp({
   name: 'Vault Workspace',
   key: 'vault-workspace',
   baseUrl: WORKSPACE_BASEURL,
   apiBaseUrl: WORKSPACE_BASEURL,
-  iconUrl: '{BASE_URL}/apps/vault/assets/favicon.svg',
+  iconUrl: '{BASE_URL}/apps/vault-workspace/assets/favicon.svg',
   authDocUrl: 'https://alpha.workspace.gov.sg',
   primaryColor: '000000',
   supportsConnections: true,
@@ -20,5 +21,5 @@ export default defineApp({
   auth,
   actions,
   triggers,
-  dynamicData,
+  dynamicData
 });
