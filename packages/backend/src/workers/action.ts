@@ -21,14 +21,14 @@ const DEFAULT_DELAY_DURATION = 0;
 export const worker = new Worker(
   'action',
   async (job) => {
-    const { stepId, flowId, executionId } = await processAction(
+    const { stepId, flowId, executionId, proceedToNextAction } = await processAction(
       job.data as JobData
     );
 
     const step = await Step.query().findById(stepId).throwIfNotFound();
     const nextStep = await step.getNextStep();
 
-    if (!nextStep) return;
+    if (!nextStep || !proceedToNextAction) return;
 
     const jobName = `${executionId}-${nextStep.id}`;
 
