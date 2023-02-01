@@ -4,7 +4,7 @@ import actions from './actions'
 export default defineApp({
   name: 'Logic',
   key: 'logic',
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/107/107799.png',
+  iconUrl: '{BASE_URL}/apps/logic/assets/favicon.svg',
   authDocUrl: '',
   supportsConnections: false,
   baseUrl: '',
