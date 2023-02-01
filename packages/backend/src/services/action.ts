@@ -5,6 +5,7 @@ import ExecutionStep from '../models/execution-step';
 import computeParameters from '../helpers/compute-parameters';
 import globalVariable from '../helpers/global-variable';
 import HttpError from '../errors/http';
+import CancelFlowError from '../errors/cancel-flow'
 
 type ProcessActionOptions = {
   flowId: string;
@@ -41,11 +42,14 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   $.step.parameters = computedParameters;
 
+  let proceedToNextAction = true;
   try {
     await actionCommand.run($);
   } catch (error) {
     if (error instanceof HttpError) {
       $.actionOutput.error = error.details;
+    } else if (error instanceof CancelFlowError) {
+      proceedToNextAction = false;
     } else {
       try {
         $.actionOutput.error = JSON.parse(error.message);
@@ -65,5 +69,5 @@ export const processAction = async (options: ProcessActionOptions) => {
       errorDetails: $.actionOutput.error ? $.actionOutput.error : null,
     });
 
-  return { flowId, stepId, executionId, executionStep };
+  return { flowId, stepId, executionId, executionStep, proceedToNextAction };
 };
