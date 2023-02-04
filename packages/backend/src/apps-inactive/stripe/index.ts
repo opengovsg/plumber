@@ -1,4 +1,4 @@
-import defineApp from '../../../helpers/define-app';
+import defineApp from '../../helpers/define-app';
 import addAuthHeader from './common/add-auth-header';
 import auth from './auth';
 import triggers from './triggers';
