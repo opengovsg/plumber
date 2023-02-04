@@ -20,7 +20,10 @@ export default async (request: IRequest, response: Response) => {
   const triggerStep = await flow.getTriggerStep();
   const triggerCommand = await triggerStep.getTriggerCommand();
   const app = await triggerStep.getApp();
-  const isWebhookApp = app.key === 'webhook' || app.key === 'formsg' || app.key === 'vault-workspace';
+  const isWebhookApp =
+    app.key === 'webhook' ||
+    app.key === 'formsg' ||
+    app.key === 'vault-workspace';
 
   // Allow all webhook test runs to work
   if (testRun && !isWebhookApp) {
@@ -54,9 +57,7 @@ export default async (request: IRequest, response: Response) => {
   // in case it's our built-in generic webhook trigger
   if (isWebhookApp) {
     payload = {
-      headers: request.headers,
-      body: request.body,
-      query: request.query
+      ...request.body
     };
 
     rawInternalId = JSON.stringify(payload);
