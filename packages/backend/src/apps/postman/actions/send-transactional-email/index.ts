@@ -41,14 +41,16 @@ export default defineAction({
 
   async run($) {
     const requestPath = '/v1/transactional/email/send';
-    const { subject, body, destinationEmail: recipient, senderName } = $.step.parameters;
+    const { subject, body, destinationEmail, senderName } = $.step.parameters;
     const from = `${senderName} via Postman<donotreply@mail.postman.gov.sg>`;
 
     const response = await $.http.post(
       requestPath,
-      { subject, body, recipient, from },
+      { subject, body, recipient: destinationEmail, from },
     );
 
-    $.setActionItem({ raw: response.data });
+    const { status, recipient, params } = response.data;
+
+    $.setActionItem({ raw: { status, recipient, ...params } });
   },
 });
