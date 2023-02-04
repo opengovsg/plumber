@@ -32,8 +32,8 @@ class Connection extends Base {
       formattedData: { type: 'object' },
       userId: { type: 'string', format: 'uuid' },
       verified: { type: 'boolean', default: false },
-      draft: { type: 'boolean' },
-    },
+      draft: { type: 'boolean' }
+    }
   };
 
   static relationMappings = (): RelationMappings => ({
@@ -42,17 +42,17 @@ class Connection extends Base {
       modelClass: User,
       join: {
         from: 'connections.user_id',
-        to: 'users.id',
-      },
+        to: 'users.id'
+      }
     },
     steps: {
       relation: Base.HasManyRelation,
       modelClass: Step,
       join: {
         from: 'connections.id',
-        to: 'steps.connection_id',
-      },
-    },
+        to: 'steps.connection_id'
+      }
+    }
   });
 
   encryptData(): void {
@@ -69,9 +69,11 @@ class Connection extends Base {
   decryptData(): void {
     if (!this.eligibleForDecryption()) return;
 
-    this.formattedData = JSON.parse(
-      AES.decrypt(this.data, appConfig.encryptionKey).toString(enc.Utf8)
+    const decrypted = AES.decrypt(this.data, appConfig.encryptionKey).toString(
+      enc.Utf8
     );
+
+    this.formattedData = decrypted ? JSON.parse(decrypted) : {};
   }
 
   eligibleForEncryption(): boolean {
