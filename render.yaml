@@ -26,11 +26,12 @@ services:
   - type: web
     name: zap-backend
     env: node
-    plan: free
+    plan: standard
     region: singapore
     buildCommand: npm ci && npm run build
     startCommand: npm start
     rootDir: packages/backend
+    healthCheckPath: /graphql?query=query%20Healthcheck%7Bhealthcheck%7Bversion%7D%7D&operationName=Healthcheck
     envVars:
       - key: WEB_APP_URL
         fromService:
