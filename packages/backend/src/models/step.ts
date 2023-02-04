@@ -84,7 +84,8 @@ class Step extends Base {
   }
 
   get webhookUrl() {
-    if (!['webhook', 'formsg'].includes(this.appKey)) return null;
+    if (!['webhook', 'formsg'].includes(this.appKey) || this.type === 'action')
+      return null;
 
     const url = new URL(`/webhooks/${this.flowId}`, appConfig.webhookUrl);
     return url.toString();
