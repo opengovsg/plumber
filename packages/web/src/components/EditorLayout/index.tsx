@@ -78,9 +78,10 @@ export default function EditorLayout(): React.ReactElement {
           bgcolor="white"
           justifyContent="space-between"
           alignItems="center"
-          boxShadow={1}
           py={1}
           px={1}
+          borderBottom="1px solid"
+          borderColor="divider"
         >
           <Box display="flex" flex={1} alignItems="center">
             <Tooltip

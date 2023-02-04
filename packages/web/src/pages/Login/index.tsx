@@ -1,11 +1,12 @@
 import * as React from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Box, Stack, Typography, useMediaQuery } from '@mui/material';
+import { Box, Typography, useMediaQuery } from '@mui/material';
 import Container from 'components/Container';
 import LoginForm from 'components/LoginForm';
-import WaterIcon from '@mui/icons-material/Water';
 
-import mario from 'assets/plumber.png';
+import mainLogo from 'assets/logo.svg';
+import landingImg from 'assets/plumber-landing.svg';
+import { FormattedMessage } from 'react-intl';
 
 export default function Login(): React.ReactElement {
   const theme = useTheme();
@@ -26,24 +27,31 @@ export default function Login(): React.ReactElement {
     >
       <Box
         flex={1}
+        maxWidth="700px"
         display={matchSmallScreens ? 'none' : 'flex'}
         color="white"
-        sx={{ backgroundColor: 'primary.main' }}
+        sx={{ backgroundColor: 'primary.light' }}
         height="100%"
         alignItems="center"
         justifyContent="center"
+        flexDirection="column"
       >
-        <Stack width="500px" maxWidth="70%" spacing={5} alignItems="center">
-          <Typography variant="h1" component="h2">
-            Automate your pipelines
-          </Typography>
-          <Box
-            component="img"
-            src={mario}
-            width="100%"
-            maxWidth={matchSmallScreens ? '20vw' : '250px'}
-          />
-        </Stack>
+        <Typography
+          variant="h2"
+          component="h3"
+          color="primary.main"
+          marginX={10}
+          marginBottom={5}
+        >
+          Build and automate your work<i>flows</i>
+        </Typography>
+        <Box
+          component="img"
+          src={landingImg}
+          width="100%"
+          left="0"
+          paddingRight={10}
+        />
       </Box>
       <Box
         flex={matchSmallScreens ? 2 : 1}
@@ -51,15 +59,27 @@ export default function Login(): React.ReactElement {
         paddingTop={matchSmallScreens ? '5vh' : 0}
       >
         <Container maxWidth="sm">
-          <Typography
-            variant="h3"
-            component="h3"
-            color="primary"
-            mb={3}
-            sx={{ display: 'flex', alignItems: 'center' }}
+          <Box
+            display="flex"
+            flexDirection="column"
+            justifyContent="center"
+            alignItems={matchSmallScreens ? 'center' : 'start'}
           >
-            <WaterIcon sx={{ marginRight: '5px' }} /> Plumber
-          </Typography>
+            {matchSmallScreens && (
+              <Box component="img" src={landingImg} width="35vw" mb={3} />
+            )}
+            <Typography
+              variant={matchSmallScreens ? 'h2' : 'h2'}
+              fontSize={'1.5rem'}
+              noWrap
+              fontWeight="bold"
+              marginBottom={3}
+              sx={{ display: 'flex', alignItems: 'center' }}
+            >
+              <Box component="img" src={mainLogo} height="100%" mr={1} />
+              <FormattedMessage id="brandText" />
+            </Typography>
+          </Box>
           <LoginForm />
         </Container>
       </Box>
