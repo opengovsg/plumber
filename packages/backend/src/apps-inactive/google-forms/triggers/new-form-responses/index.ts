@@ -20,14 +20,14 @@ export default defineTrigger({
         arguments: [
           {
             name: 'key',
-            value: 'listForms',
-          },
-        ],
-      },
-    },
+            value: 'listForms'
+          }
+        ]
+      }
+    }
   ],
 
   async run($) {
     await newFormResponses($);
-  },
+  }
 });

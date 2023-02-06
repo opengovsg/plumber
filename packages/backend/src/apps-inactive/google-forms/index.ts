@@ -16,5 +16,5 @@ export default defineApp({
   beforeRequest: [addAuthHeader],
   auth,
   triggers,
-  dynamicData,
+  dynamicData
 });

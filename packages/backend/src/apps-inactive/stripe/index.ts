@@ -1,7 +1,7 @@
-import defineApp from "../../helpers/define-app";
-import addAuthHeader from "./common/add-auth-header";
-import auth from "./auth"
-import triggers from "./triggers"
+import defineApp from '../../helpers/define-app';
+import addAuthHeader from './common/add-auth-header';
+import auth from './auth';
+import triggers from './triggers';
 
 export default defineApp({
   name: 'Stripe',
@@ -15,5 +15,5 @@ export default defineApp({
   beforeRequest: [addAuthHeader],
   auth,
   triggers,
-  actions: [],
-})
+  actions: []
+});
