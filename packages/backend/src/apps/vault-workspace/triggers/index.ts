@@ -1,3 +1,4 @@
-import catchCreateRow from './on-row-created';
+import createRowEvent from './create-row-event';
+import updateRowEvent from './update-row-event';
 
-export default [catchCreateRow];
+export default [createRowEvent, updateRowEvent];
