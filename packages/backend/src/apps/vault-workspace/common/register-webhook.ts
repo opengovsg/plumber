@@ -1,10 +1,25 @@
 import { IGlobalVariable } from '@automatisch/types';
 
-const registerWebhook = async ($: IGlobalVariable): Promise<void> => {
+const registerWebhook = async (
+  $: IGlobalVariable,
+  event: string
+): Promise<void> => {
   if (!$.webhookUrl) {
     throw new Error('Webhook url is not set');
   }
-  await $.http.post('/api/tables/event/webhook', { url: $.webhookUrl });
+  await $.http.post('/api/tables/event/webhook', {
+    event,
+    url: $.webhookUrl,
+  });
 };
 
-export default registerWebhook;
+const unregisterWebhook = async (
+  $: IGlobalVariable,
+  event: string
+): Promise<void> => {
+  await $.http.delete('/api/tables/event/webhook', {
+    data: { event },
+  });
+};
+
+export { registerWebhook, unregisterWebhook };

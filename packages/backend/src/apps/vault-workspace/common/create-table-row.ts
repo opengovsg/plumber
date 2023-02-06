@@ -3,14 +3,14 @@ import { getColumnMappingInAlias } from './get-column-mapping';
 
 const createTableRow = async (
   $: IGlobalVariable,
-  rowData: { [key: string]: string }
+  row: { [key: string]: string }
 ): Promise<void> => {
   // get column mappings
   let columnMapping = await getColumnMappingInAlias($);
   const columnAliases = Object.keys(columnMapping);
 
   // create column if not exists
-  for (const key in rowData) {
+  for (const key in row) {
     if (!columnAliases.includes(key)) {
       await $.http.post('/api/tables/column', { columnAlias: key });
     }
@@ -21,8 +21,8 @@ const createTableRow = async (
 
   // replace alias with column name
   const payload: { [key: string]: string } = {};
-  for (const key in rowData) {
-    payload[columnMapping[key]] = rowData[key];
+  for (const key in row) {
+    payload[columnMapping[key]] = row[key];
   }
 
   // send data
