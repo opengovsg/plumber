@@ -1,5 +1,6 @@
 import defineApp from '../../helpers/define-app';
 import triggers from './triggers';
+import actions from './actions';
 
 export default defineApp({
   name: 'Webhook',
@@ -11,4 +12,5 @@ export default defineApp({
   apiBaseUrl: '',
   primaryColor: '0059F7',
   triggers,
+  actions
 });
