@@ -7,7 +7,7 @@ const extendedTheme = createTheme({
   palette: {
     primary: {
       main: '#CF1A68',
-      light: '#ED6EA5',
+      light: '#FEF8FB',
       dark: '#7F1040',
       contrastText: '#fff'
     },
@@ -53,7 +53,7 @@ const extendedTheme = createTheme({
     },
     background: {
       paper: '#fff',
-      default: '#FAFAFA'
+      default: '#fff'
     }
   },
   shape: {
@@ -161,12 +161,13 @@ const extendedTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: ({ theme }) => ({
-          background: theme.palette.primary.dark,
-          zIndex: theme.zIndex.drawer + 1
+          background: theme.palette.background.paper,
+          zIndex: theme.zIndex.drawer + 1,
+          borderBottom: `1px solid ${theme.palette.divider}`
         })
       },
       defaultProps: {
-        elevation: 2
+        elevation: 0
       }
     },
     MuiBackdrop: {
@@ -193,6 +194,13 @@ const extendedTheme = createTheme({
         sizeSmall: {
           padding: '6px 10px'
         }
+      }
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          boxShadow: `0px 0px 0px 1px ${alpha(theme.palette.divider, 0.5)}`
+        })
       }
     },
     MuiCardActionArea: {

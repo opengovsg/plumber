@@ -1,20 +1,18 @@
 import { useState } from 'react';
 import type { ContainerProps } from '@mui/material/Container';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import MuiAppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import WaterIcon from '@mui/icons-material/Water';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import * as URLS from 'config/urls';
+import mainLogo from 'assets/logo.svg';
 import AccountDropdownMenu from 'components/AccountDropdownMenu';
 import Container from 'components/Container';
 import { FormattedMessage } from 'react-intl';
 import { Link } from './style';
+import { Box } from '@mui/material';
 
 type AppBarProps = {
   drawerOpen: boolean;
@@ -27,11 +25,6 @@ const accountMenuId = 'account-menu';
 
 export default function AppBar(props: AppBarProps): React.ReactElement {
   const { drawerOpen, onDrawerOpen, onDrawerClose, maxWidth = false } = props;
-
-  const theme = useTheme();
-  const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
-    noSsr: true,
-  });
 
   const [accountMenuAnchorElement, setAccountMenuAnchorElement] =
     useState<null | HTMLElement>(null);
@@ -47,7 +40,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
   };
 
   return (
-    <MuiAppBar>
+    <MuiAppBar color="transparent">
       <Container maxWidth={maxWidth} disableGutters>
         <Toolbar>
           <IconButton
@@ -56,18 +49,17 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             color="inherit"
             aria-label="open drawer"
             onClick={drawerOpen ? onDrawerClose : onDrawerOpen}
-            sx={{ mr: 2 }}
+            disableRipple
+            sx={{
+              mr: 1,
+            }}
           >
-            {drawerOpen && matchSmallScreens ? (
-              <ArrowBackIcon />
-            ) : (
-              <WaterIcon />
-            )}
+            <Box component="img" src={mainLogo} height="100%" />
           </IconButton>
 
           <div style={{ flexGrow: 1 }}>
             <Link to={URLS.DASHBOARD}>
-              <Typography variant="h6" component="h1" noWrap>
+              <Typography variant="h6" component="h1" noWrap fontWeight="bold">
                 <FormattedMessage id="brandText" />
               </Typography>
             </Link>
