@@ -11,18 +11,13 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_BACKEND_URL
-        fromService:
-          name: zap-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://api-beta.plumber.gov.sg
       - key: REACT_APP_BASE_URL
-        fromService:
-          name: zap-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://beta.plumber.gov.sg
       - key: REACT_APP_NOTIFICATIONS_URL
-        fromService:
         value: https://notifications.automatisch.io
+      - key: REACT_APP_GRAPHQL_URL
+        value: https://api-beta.plumber.gov.sg/graphql
   - type: web
     name: zap-backend
     env: node
@@ -34,20 +29,11 @@ services:
     healthCheckPath: /graphql?query=query%20Healthcheck%7Bhealthcheck%7Bversion%7D%7D&operationName=Healthcheck
     envVars:
       - key: WEB_APP_URL
-        fromService:
-          name: zap-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://beta.plumber.gov.sg
       - key: WEBHOOK_URL
-        fromService:
-          name: zap-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://api-beta.plumber.gov.sg
       - key: BASE_URL
-        fromService:
-          name: zap-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://api-beta.plumber.gov.sg
       - key: POSTGRES_HOST
         fromDatabase:
           name: zap-database
@@ -89,20 +75,11 @@ services:
     rootDir: packages/backend
     envVars:
       - key: WEB_APP_URL
-        fromService:
-          name: zap-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://beta.plumber.gov.sg
       - key: WEBHOOK_URL
-        fromService:
-          name: zap-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://api-beta.plumber.gov.sg
       - key: BASE_URL
-        fromService:
-          name: zap-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://api-beta.plumber.gov.sg
       - key: POSTGRES_HOST
         fromDatabase:
           name: zap-database
