@@ -1,4 +1,7 @@
+import createRow from './create-row';
 import getTableData from './get-table-data';
 import updateTableData from './update-table-data';
 
-export default [getTableData, updateTableData];
+import debug from './debug';
+
+export default [createRow, getTableData, updateTableData];

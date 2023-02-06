@@ -12,22 +12,37 @@ export default defineAction({
       key: 'columns',
       type: 'string' as const,
       required: true,
+      variables: false,
+      description: 'Put a comma between each column.',
+    },
+    {
+      label: 'Values',
+      key: 'values',
+      type: 'string' as const,
+      required: true,
       variables: true,
+      description: 'Put a comma between each value.',
     },
   ],
 
   async run($) {
-    const rawRowData = $.step.parameters.columns as string;
-    const columns = rawRowData.split(',');
+    const rawColumnData = $.step.parameters.columns as string;
+    const columns = rawColumnData.split(',').map((each) => {
+      return each.trim();
+    });
 
-    // construct back json
-    const rowData: { [key: string]: string } = {};
-    for (const column of columns) {
-      const [key, value] = column.split('=');
-      rowData[key] = value;
+    const rawValueData = $.step.parameters.values as string;
+    const values = rawValueData.split(',');
+
+    if (columns.length !== values.length) {
+      throw new Error('The number of columns and values must be equal.');
     }
 
-    console.log(rowData);
-    // await createTableRow($, rowData);
+    const row: { [key: string]: string } = {};
+    for (let i = 0; i < columns.length; i++) {
+      row[columns[i]] = values[i];
+    }
+
+    await createTableRow($, row);
   },
 });
