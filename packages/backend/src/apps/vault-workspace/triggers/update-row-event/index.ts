@@ -7,7 +7,7 @@ import {
 import getExampleRow from '../../common/get-example-row';
 
 export default defineTrigger({
-  name: 'Update Row Event',
+  name: 'On Row Update',
   key: 'updateRowEvent',
   type: 'webhook',
   description: 'Triggers when the webhook receives a request.',
