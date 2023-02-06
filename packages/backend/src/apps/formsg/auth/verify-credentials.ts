@@ -21,7 +21,7 @@ const verifyFormExists = async ($: IGlobalVariable) => {
     throw new Error('Form does not exist');
   }
   await $.auth.set({
-    formTitle
+    screenName: `${$.auth.data.formId} - ${formTitle}`
   });
 };
 
