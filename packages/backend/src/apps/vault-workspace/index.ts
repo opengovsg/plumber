@@ -21,5 +21,5 @@ export default defineApp({
   auth,
   actions,
   triggers,
-  dynamicData
+  dynamicData,
 });
