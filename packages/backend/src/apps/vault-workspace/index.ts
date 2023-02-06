@@ -6,7 +6,7 @@ import triggers from './triggers';
 import dynamicData from './dynamic-data';
 
 const WORKSPACE_BASEURL =
-  'https://v3isb33ru0.execute-api.ap-southeast-1.amazonaws.com';
+  'https://jcxk888grj.execute-api.ap-southeast-1.amazonaws.com';
 
 export default defineApp({
   name: 'Vault Workspace',
