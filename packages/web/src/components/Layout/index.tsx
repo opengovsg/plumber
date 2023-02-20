@@ -12,6 +12,7 @@ import * as URLS from 'config/urls';
 import useVersion from 'hooks/useVersion';
 import AppBar from 'components/AppBar';
 import Drawer from 'components/Drawer';
+import SiteWideBanner from 'components/SiteWideBanner';
 
 type PublicLayoutProps = {
   children: React.ReactNode;
@@ -22,20 +23,20 @@ const drawerLinks = [
     Icon: SchemaIcon,
     primary: 'drawer.flows',
     to: URLS.FLOWS,
-    dataTest: 'flows-page-drawer-link',
+    dataTest: 'flows-page-drawer-link'
   },
   {
     Icon: AppsIcon,
     primary: 'drawer.apps',
     to: URLS.APPS,
-    dataTest: 'apps-page-drawer-link',
+    dataTest: 'apps-page-drawer-link'
   },
   {
     Icon: HistoryIcon,
     primary: 'drawer.executions',
     to: URLS.EXECUTIONS,
-    dataTest: 'executions-page-drawer-link',
-  },
+    dataTest: 'executions-page-drawer-link'
+  }
 ];
 
 const generateDrawerBottomLinks = ({ notificationBadgeContent = 0 }) => [
@@ -43,17 +44,17 @@ const generateDrawerBottomLinks = ({ notificationBadgeContent = 0 }) => [
     Icon: NotificationsIcon,
     primary: 'settingsDrawer.notifications',
     to: URLS.UPDATES,
-    badgeContent: notificationBadgeContent,
-  },
+    badgeContent: notificationBadgeContent
+  }
 ];
 
 export default function PublicLayout({
-  children,
+  children
 }: PublicLayoutProps): React.ReactElement {
   const version = useVersion();
   const theme = useTheme();
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('lg'), {
-    noSsr: true,
+    noSsr: true
   });
   const [isDrawerOpen, setDrawerOpen] = React.useState(!matchSmallScreens);
 
@@ -61,17 +62,17 @@ export default function PublicLayout({
   const closeDrawer = () => setDrawerOpen(false);
 
   const drawerBottomLinks = generateDrawerBottomLinks({
-    notificationBadgeContent: version.newVersionCount,
+    notificationBadgeContent: version.newVersionCount
   });
 
   return (
     <>
+      <SiteWideBanner />
       <AppBar
         drawerOpen={isDrawerOpen}
         onDrawerOpen={openDrawer}
         onDrawerClose={closeDrawer}
       />
-
       <Box sx={{ display: 'flex' }}>
         <Drawer
           links={drawerLinks}
@@ -81,11 +82,7 @@ export default function PublicLayout({
           onClose={closeDrawer}
         />
 
-        <Box sx={{ flex: 1 }}>
-          <Toolbar />
-
-          {children}
-        </Box>
+        <Box sx={{ flex: 1 }}>{children}</Box>
       </Box>
     </>
   );

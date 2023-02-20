@@ -284,6 +284,13 @@ const extendedTheme = createTheme({
           }
         })
       }
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: ({ theme }) => ({
+          position: 'absolute'
+        })
+      }
     }
   }
 });

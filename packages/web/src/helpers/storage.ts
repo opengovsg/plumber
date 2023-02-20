@@ -8,3 +8,11 @@ export const setItem = (key: string, value: string) => {
 export const getItem = (key: string) => {
   return localStorage.getItem(makeKey(key));
 };
+
+export const setItemForSession = (key: string, value: string) => {
+  return sessionStorage.setItem(makeKey(key), value);
+};
+
+export const getItemForSession = (key: string) => {
+  return sessionStorage.getItem(makeKey(key));
+};

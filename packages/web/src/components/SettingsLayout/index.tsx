@@ -18,24 +18,24 @@ const drawerLinks = [
   {
     Icon: AccountCircleIcon,
     primary: 'settingsDrawer.myProfile',
-    to: URLS.SETTINGS_PROFILE,
-  },
+    to: URLS.SETTINGS_PROFILE
+  }
 ];
 
 const drawerBottomLinks = [
   {
     Icon: ArrowBackIosNewIcon,
     primary: 'settingsDrawer.goBack',
-    to: '/',
-  },
+    to: '/'
+  }
 ];
 
 export default function SettingsLayout({
-  children,
+  children
 }: SettingsLayoutProps): React.ReactElement {
   const theme = useTheme();
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('lg'), {
-    noSsr: true,
+    noSsr: true
   });
   const [isDrawerOpen, setDrawerOpen] = React.useState(!matchSmallScreens);
 
@@ -59,11 +59,7 @@ export default function SettingsLayout({
           onClose={closeDrawer}
         />
 
-        <Box sx={{ flex: 1 }}>
-          <Toolbar />
-
-          {children}
-        </Box>
+        <Box sx={{ flex: 1 }}>{children}</Box>
       </Box>
     </>
   );

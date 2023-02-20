@@ -16,8 +16,6 @@ services:
         value: https://beta.plumber.gov.sg
       - key: REACT_APP_NOTIFICATIONS_URL
         value: https://notifications.automatisch.io
-      - key: REACT_APP_GRAPHQL_URL
-        value: https://api-beta.plumber.gov.sg/graphql
   - type: web
     name: zap-backend
     env: node

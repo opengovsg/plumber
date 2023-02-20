@@ -32,7 +32,7 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
   const { links = [], bottomLinks = [], ...drawerProps } = props;
   const theme = useTheme();
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
-    noSsr: true,
+    noSsr: true
   });
   const formatMessage = useFormatMessage();
 
@@ -45,12 +45,15 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
   return (
     <BaseDrawer
       {...drawerProps}
+      sx={{
+        position: matchSmallScreens ? 'fixed' : 'relative'
+      }}
       disableDiscovery={iOS}
       variant={matchSmallScreens ? 'temporary' : 'permanent'}
     >
       {/* keep the following encapsulating `div` to have `space-between` children  */}
       <div>
-        <Toolbar />
+        {matchSmallScreens && <Toolbar />}
 
         <List sx={{ py: 0, mt: 3 }}>
           {links.map(({ Icon, primary, to, dataTest }, index) => (

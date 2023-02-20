@@ -12,7 +12,8 @@ import AccountDropdownMenu from 'components/AccountDropdownMenu';
 import Container from 'components/Container';
 import { FormattedMessage } from 'react-intl';
 import { Link } from './style';
-import { Box } from '@mui/material';
+import { Box, useMediaQuery } from '@mui/material';
+import theme from 'styles/theme';
 
 type AppBarProps = {
   drawerOpen: boolean;
@@ -25,7 +26,9 @@ const accountMenuId = 'account-menu';
 
 export default function AppBar(props: AppBarProps): React.ReactElement {
   const { drawerOpen, onDrawerOpen, onDrawerClose, maxWidth = false } = props;
-
+  const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
+    noSsr: true
+  });
   const [accountMenuAnchorElement, setAccountMenuAnchorElement] =
     useState<null | HTMLElement>(null);
 
@@ -40,7 +43,10 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
   };
 
   return (
-    <MuiAppBar color="transparent">
+    <MuiAppBar
+      color="transparent"
+      position={drawerOpen && matchSmallScreens ? 'fixed' : 'relative'}
+    >
       <Container maxWidth={maxWidth} disableGutters>
         <Toolbar>
           <IconButton
@@ -51,7 +57,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             onClick={drawerOpen ? onDrawerClose : onDrawerOpen}
             disableRipple
             sx={{
-              mr: 1,
+              mr: 1
             }}
           >
             <Box component="img" src={mainLogo} height="100%" />

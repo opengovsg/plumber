@@ -1,5 +1,6 @@
 {
   "brandText": "plumber",
+  "bannerText": "Plumber is a proof-of-concept hackathon project for OGP's Hack For Public Good",
   "searchPlaceholder": "Search",
   "accountDropdownMenu.settings": "Settings",
   "accountDropdownMenu.logout": "Logout",
