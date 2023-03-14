@@ -1,10 +1,10 @@
-import defineTrigger from '../../../../helpers/define-trigger';
-import { getColumnMappingInAlias } from '../../common/get-column-mapping';
+import defineTrigger from '../../../../helpers/define-trigger'
+import { getColumnMappingInAlias } from '../../common/get-column-mapping'
+import getExampleRow from '../../common/get-example-row'
 import {
   registerWebhook,
   unregisterWebhook,
-} from '../../common/register-webhook';
-import getExampleRow from '../../common/get-example-row';
+} from '../../common/register-webhook'
 
 export default defineTrigger({
   name: 'On Row Update',
@@ -18,22 +18,22 @@ export default defineTrigger({
       meta: {
         internalId: $.lastExecutionStep.dataOut.id as string,
       },
-    });
+    })
   },
 
   async testRun($) {
-    let row: { [key: string]: string } = {};
+    let row: { [key: string]: string } = {}
 
     // try to fetch one actual row from vault workspace
     // if it doesn't exist, try getting column aliases
     // and show a fake row with column aliases
     try {
-      row = await getExampleRow($);
+      row = await getExampleRow($)
     } catch (e) {
-      console.error(e.message);
-      const columnMapping = await getColumnMappingInAlias($);
+      console.error(e.message)
+      const columnMapping = await getColumnMappingInAlias($)
       for (const key of Object.keys(columnMapping)) {
-        row[key] = '<Place Holder>';
+        row[key] = '<Place Holder>'
       }
     }
 
@@ -42,14 +42,14 @@ export default defineTrigger({
       meta: {
         internalId: 'test',
       },
-    });
+    })
   },
 
   async registerHook($) {
-    await registerWebhook($, 'update');
+    await registerWebhook($, 'update')
   },
 
   async unregisterHook($) {
-    await unregisterWebhook($, 'update');
+    await unregisterWebhook($, 'update')
   },
-});
+})

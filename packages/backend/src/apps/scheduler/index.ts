@@ -1,5 +1,6 @@
-import defineApp from '../../helpers/define-app';
-import triggers from './triggers';
+import defineApp from '../../helpers/define-app'
+
+import triggers from './triggers'
 
 export default defineApp({
   name: 'Scheduler',
@@ -12,4 +13,4 @@ export default defineApp({
   primaryColor: '0059F7',
   supportsConnections: false,
   triggers,
-});
+})

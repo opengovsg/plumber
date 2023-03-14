@@ -1,7 +1,7 @@
-import { InMemoryCache } from '@apollo/client';
+import { InMemoryCache } from '@apollo/client'
 
 interface IRef {
-  __ref: string;
+  __ref: string
 }
 
 const cache = new InMemoryCache({
@@ -14,11 +14,11 @@ const cache = new InMemoryCache({
       fields: {
         verifyConnection: {
           merge(existing, verifiedConnection, { readField, cache }) {
-            const appKey = readField('key', verifiedConnection);
+            const appKey = readField('key', verifiedConnection)
             const appCacheId = cache.identify({
               __typename: 'App',
               key: appKey,
-            });
+            })
 
             cache.modify({
               id: appCacheId,
@@ -26,27 +26,27 @@ const cache = new InMemoryCache({
                 connections: (existingConnections) => {
                   const existingConnectionIndex = existingConnections.findIndex(
                     (connection: IRef) => {
-                      return connection.__ref === verifiedConnection.__ref;
-                    }
-                  );
-                  const connectionExists = existingConnectionIndex !== -1;
+                      return connection.__ref === verifiedConnection.__ref
+                    },
+                  )
+                  const connectionExists = existingConnectionIndex !== -1
 
                   // newly created and verified connection
                   if (!connectionExists) {
-                    return [verifiedConnection, ...existingConnections];
+                    return [verifiedConnection, ...existingConnections]
                   }
 
-                  return existingConnections;
+                  return existingConnections
                 },
               },
-            });
+            })
 
-            return verifiedConnection;
+            return verifiedConnection
           },
         },
       },
     },
   },
-});
+})
 
-export default cache;
+export default cache

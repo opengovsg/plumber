@@ -1,19 +1,18 @@
-import * as React from 'react';
-import { useTheme } from '@mui/material/styles';
-import { Box, Typography, useMediaQuery } from '@mui/material';
-import Container from 'components/Container';
-import LoginForm from 'components/LoginForm';
-
-import mainLogo from 'assets/logo.svg';
-import landingImg from 'assets/plumber-landing.svg';
-import { FormattedMessage } from 'react-intl';
+import * as React from 'react'
+import { FormattedMessage } from 'react-intl'
+import { Box, Typography, useMediaQuery } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
+import mainLogo from 'assets/logo.svg'
+import landingImg from 'assets/plumber-landing.svg'
+import Container from 'components/Container'
+import LoginForm from 'components/LoginForm'
 
 export default function Login(): React.ReactElement {
-  const theme = useTheme();
+  const theme = useTheme()
 
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
     noSsr: true,
-  });
+  })
 
   return (
     <Box
@@ -84,5 +83,5 @@ export default function Login(): React.ReactElement {
         </Container>
       </Box>
     </Box>
-  );
+  )
 }

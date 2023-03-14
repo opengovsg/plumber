@@ -1,5 +1,6 @@
-import defineAction from '../../../../helpers/define-action';
-import findMessage from './find-message';
+import defineAction from '../../../../helpers/define-action'
+
+import findMessage from './find-message'
 
 export default defineAction({
   name: 'Find a message',
@@ -58,19 +59,19 @@ export default defineAction({
   ],
 
   async run($) {
-    const parameters = $.step.parameters;
-    const query = parameters.query as string;
-    const sortBy = parameters.sortBy as string;
-    const sortDirection = parameters.sortDirection as string;
-    const count = 1;
+    const parameters = $.step.parameters
+    const query = parameters.query as string
+    const sortBy = parameters.sortBy as string
+    const sortDirection = parameters.sortDirection as string
+    const count = 1
 
     const messages = await findMessage($, {
       query,
       sortBy,
       sortDirection,
       count,
-    });
+    })
 
-    return messages;
+    return messages
   },
-});
+})

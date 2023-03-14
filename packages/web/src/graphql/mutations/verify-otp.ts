@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const VERIFY_OTP = gql`
   mutation VerifyOtp($input: VerifyOtpInput) {
@@ -6,4 +6,4 @@ export const VERIFY_OTP = gql`
       token
     }
   }
-`;
+`

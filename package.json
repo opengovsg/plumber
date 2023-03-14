@@ -1,5 +1,5 @@
 {
-  "name": "@automatisch/root",
+  "name": "@plumber/root",
   "license": "AGPL-3.0",
   "private": true,
   "scripts": {
@@ -13,8 +13,7 @@
     "nohoist": [
       "**/babel-loader",
       "**/webpack",
-      "**/@automatisch/types",
-      "**/ajv"
+      "**/@plumber/types"
     ]
   },
   "devDependencies": {
@@ -23,10 +22,8 @@
     "eslint": "^8.13.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
     "prettier": "^2.5.1",
     "typescript": "^4.6.3"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

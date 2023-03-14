@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const UPDATE_FLOW_STATUS = gql`
   mutation UpdateFlowStatus($input: UpdateFlowStatusInput) {
@@ -7,4 +7,4 @@ export const UPDATE_FLOW_STATUS = gql`
       active
     }
   }
-`;
+`

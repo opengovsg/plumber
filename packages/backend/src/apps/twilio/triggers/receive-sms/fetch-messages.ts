@@ -1,13 +1,13 @@
-import { IGlobalVariable, IJSONObject } from '@automatisch/types';
+import { IGlobalVariable, IJSONObject } from '@plumber/types'
 
 const fetchMessages = async ($: IGlobalVariable) => {
-  const toNumber = $.step.parameters.toNumber as string;
+  const toNumber = $.step.parameters.toNumber as string
 
-  let response;
-  let requestPath = `/2010-04-01/Accounts/${$.auth.data.accountSid}/Messages.json?To=${toNumber}`;
+  let response
+  let requestPath = `/2010-04-01/Accounts/${$.auth.data.accountSid}/Messages.json?To=${toNumber}`
 
   do {
-    response = await $.http.get(requestPath);
+    response = await $.http.get(requestPath)
 
     response.data.messages.forEach((message: IJSONObject) => {
       const dataItem = {
@@ -15,13 +15,13 @@ const fetchMessages = async ($: IGlobalVariable) => {
         meta: {
           internalId: message.date_sent as string,
         },
-      };
+      }
 
-      $.pushTriggerItem(dataItem);
-    });
+      $.pushTriggerItem(dataItem)
+    })
 
-    requestPath = response.data.next_page_uri;
-  } while (requestPath);
-};
+    requestPath = response.data.next_page_uri
+  } while (requestPath)
+}
 
-export default fetchMessages;
+export default fetchMessages

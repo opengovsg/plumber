@@ -1,49 +1,49 @@
-import { AjvValidator, Model, snakeCaseMappers } from 'objection';
-import type { QueryContext, ModelOptions, ColumnNameMappers } from 'objection';
-import addFormats from 'ajv-formats';
+import addFormats from 'ajv-formats'
+import type { ColumnNameMappers, ModelOptions, QueryContext } from 'objection'
+import { AjvValidator, Model, snakeCaseMappers } from 'objection'
 
-import ExtendedQueryBuilder from './query-builder';
+import ExtendedQueryBuilder from './query-builder'
 
 class Base extends Model {
-  createdAt!: string;
-  updatedAt!: string;
-  deletedAt: string;
+  createdAt!: string
+  updatedAt!: string
+  deletedAt: string
 
-  QueryBuilderType!: ExtendedQueryBuilder<this>;
-  static QueryBuilder = ExtendedQueryBuilder;
+  QueryBuilderType!: ExtendedQueryBuilder<this>
+  static QueryBuilder = ExtendedQueryBuilder
 
   static get columnNameMappers(): ColumnNameMappers {
-    return snakeCaseMappers();
+    return snakeCaseMappers()
   }
 
   static createValidator() {
     return new AjvValidator({
       onCreateAjv: (ajv) => {
-        addFormats.default(ajv);
+        addFormats.default(ajv)
       },
       options: {
         allErrors: true,
         validateSchema: true,
         ownProperties: true,
       },
-    });
+    })
   }
 
   async $beforeInsert(queryContext: QueryContext): Promise<void> {
-    await super.$beforeInsert(queryContext);
+    await super.$beforeInsert(queryContext)
 
-    this.createdAt = new Date().toISOString();
-    this.updatedAt = new Date().toISOString();
+    this.createdAt = new Date().toISOString()
+    this.updatedAt = new Date().toISOString()
   }
 
   async $beforeUpdate(
     opts: ModelOptions,
-    queryContext: QueryContext
+    queryContext: QueryContext,
   ): Promise<void> {
-    this.updatedAt = new Date().toISOString();
+    this.updatedAt = new Date().toISOString()
 
-    await super.$beforeUpdate(opts, queryContext);
+    await super.$beforeUpdate(opts, queryContext)
   }
 }
 
-export default Base;
+export default Base

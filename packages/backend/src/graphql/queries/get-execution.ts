@@ -1,13 +1,13 @@
-import Context from '../../types/express/context';
+import Context from '../../types/express/context'
 
 type Params = {
-  executionId: string;
-};
+  executionId: string
+}
 
 const getExecution = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   const execution = await context.currentUser
     .$relatedQuery('executions')
@@ -17,9 +17,9 @@ const getExecution = async (
       },
     })
     .findById(params.executionId)
-    .throwIfNotFound();
+    .throwIfNotFound()
 
-  return execution;
-};
+  return execution
+}
 
-export default getExecution;
+export default getExecution

@@ -1,3 +1,3 @@
-import logicIf from './logic-if';
+import logicIf from './logic-if'
 
-export default [logicIf];
+export default [logicIf]

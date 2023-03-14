@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GET_FLOW = gql`
   query GetFlow($id: String!) {
@@ -24,4 +24,4 @@ export const GET_FLOW = gql`
       }
     }
   }
-`;
+`

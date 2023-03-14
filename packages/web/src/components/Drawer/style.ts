@@ -1,8 +1,8 @@
-import { styled, Theme, CSSObject } from '@mui/material/styles';
-import { drawerClasses } from '@mui/material/Drawer';
-import MuiSwipeableDrawer from '@mui/material/SwipeableDrawer';
+import { drawerClasses } from '@mui/material/Drawer'
+import { CSSObject, styled, Theme } from '@mui/material/styles'
+import MuiSwipeableDrawer from '@mui/material/SwipeableDrawer'
 
-const drawerWidth = 300;
+const drawerWidth = 300
 
 const openedMixin = (theme: Theme): CSSObject => ({
   transition: theme.transitions.create('width', {
@@ -14,7 +14,7 @@ const openedMixin = (theme: Theme): CSSObject => ({
   [theme.breakpoints.up('sm')]: {
     width: drawerWidth,
   },
-});
+})
 
 const closedMixin = (theme: Theme): CSSObject => ({
   transition: theme.transitions.create('width', {
@@ -26,7 +26,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
   [theme.breakpoints.up('sm')]: {
     width: `calc(${theme.spacing(9)} + 1px)`,
   },
-});
+})
 
 export const Drawer = styled(MuiSwipeableDrawer)(({ theme, open }) => ({
   width: drawerWidth,
@@ -49,4 +49,4 @@ export const Drawer = styled(MuiSwipeableDrawer)(({ theme, open }) => ({
       justifyContent: 'space-between',
     },
   }),
-}));
+}))

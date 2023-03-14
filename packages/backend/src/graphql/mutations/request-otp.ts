@@ -1,34 +1,34 @@
-import crypto from 'crypto';
-import User from '../../models/user';
-import validator from 'email-validator';
-import { sendEmail } from '../../helpers/send-email';
-import BaseError from '../../errors/base';
-import HttpError from '../../errors/http';
+import crypto from 'crypto'
+import validator from 'email-validator'
+
+import BaseError from '../../errors/base'
+import { sendEmail } from '../../helpers/send-email'
+import User from '../../models/user'
 
 type Params = {
   input: {
-    email: string;
-  };
-};
+    email: string
+  }
+}
 
 // 5 minutes in milliseconds
-const OTP_RESEND_TIMEOUT_IN_MS = 5 * 60 * 1000;
+const OTP_RESEND_TIMEOUT_IN_MS = 5 * 60 * 1000
 // 15 minutes in milliseconds
-const OTP_VALIDITY_IN_MS = 15 * 60 * 1000;
+const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
 const requestOtp = async (
   _parent: unknown,
-  params: Params
+  params: Params,
 ): Promise<boolean> => {
-  const email = params.input.email.toLowerCase().trim();
+  const email = params.input.email.toLowerCase().trim()
   // validate email
   if (!validator.validate(email) || !email.endsWith('.gov.sg')) {
-    throw new BaseError('Only .gov.sg emails are allowed.');
+    throw new BaseError('Only .gov.sg emails are allowed.')
   }
   // check if user exists
-  let user = await User.query().findOne({ email });
+  let user = await User.query().findOne({ email })
   if (!user) {
-    user = await User.query().insertAndFetch({ email });
+    user = await User.query().insertAndFetch({ email })
   }
   if (
     user.otpSentAt &&
@@ -37,16 +37,16 @@ const requestOtp = async (
     throw new BaseError(
       `Please wait ${Math.floor(
         (OTP_RESEND_TIMEOUT_IN_MS - Date.now() + user.otpSentAt.getTime()) /
-          1000
-      )} seconds before requesting a new OTP`
-    );
+          1000,
+      )} seconds before requesting a new OTP`,
+    )
   }
-  const otp = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+  const otp = crypto.randomInt(0, 1000000).toString().padStart(6, '0')
   await user.$query().patch({
     otpHash: user.hashOtp(otp),
     otpAttempts: 0,
-    otpSentAt: new Date()
-  });
+    otpSentAt: new Date(),
+  })
 
   // Send otp
   await sendEmail({
@@ -54,9 +54,9 @@ const requestOtp = async (
     body: `Your OTP is ${otp}. It's valid for ${
       OTP_VALIDITY_IN_MS / 1000 / 60
     } minutes.`,
-    recipient: email
-  });
-  return true;
-};
+    recipient: email,
+  })
+  return true
+}
 
-export default requestOtp;
+export default requestOtp

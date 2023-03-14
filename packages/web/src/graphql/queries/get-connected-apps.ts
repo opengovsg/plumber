@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GET_CONNECTED_APPS = gql`
   query GetConnectedApps($name: String) {
@@ -13,4 +13,4 @@ export const GET_CONNECTED_APPS = gql`
       supportsConnections
     }
   }
-`;
+`

@@ -16,10 +16,10 @@
     "target": "es2021",
     "typeRoots": [
       "node_modules/@types",
-      "node_modules/@automatisch/types",
+      "node_modules/@plumber/types",
       "./src/types",
       "./src/apps"
     ]
   },
-  "include": ["src/**/*", "bin/**/*"]
+  "include": ["src/**/*"]
 }

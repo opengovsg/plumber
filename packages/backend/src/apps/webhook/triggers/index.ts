@@ -1,3 +1,3 @@
-import catchRawWebhook from './catch-raw-webhook';
+import catchRawWebhook from './catch-raw-webhook'
 
-export default [catchRawWebhook];
+export default [catchRawWebhook]

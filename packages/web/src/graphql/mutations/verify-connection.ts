@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const VERIFY_CONNECTION = gql`
   mutation VerifyConnection($input: VerifyConnectionInput) {
@@ -15,4 +15,4 @@ export const VERIFY_CONNECTION = gql`
       }
     }
   }
-`;
+`

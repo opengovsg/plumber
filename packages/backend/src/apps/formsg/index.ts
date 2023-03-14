@@ -1,6 +1,7 @@
-import defineApp from '../../helpers/define-app';
-import triggers from './triggers';
-import auth from './auth';
+import defineApp from '../../helpers/define-app'
+
+import auth from './auth'
+import triggers from './triggers'
 
 export default defineApp({
   name: 'FormSG',
@@ -14,5 +15,5 @@ export default defineApp({
   beforeRequest: [],
   auth,
   triggers,
-  actions: []
-});
+  actions: [],
+})

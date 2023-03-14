@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GET_APP = gql`
   query GetApp($key: String!) {
@@ -76,4 +76,4 @@ export const GET_APP = gql`
       }
     }
   }
-`;
+`

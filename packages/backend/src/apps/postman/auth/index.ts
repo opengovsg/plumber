@@ -1,4 +1,4 @@
-import { IGlobalVariable } from '@automatisch/types';
+import { IGlobalVariable } from '@plumber/types'
 
 const verifyCredentials = async ($: IGlobalVariable) => {
   /**
@@ -7,13 +7,13 @@ const verifyCredentials = async ($: IGlobalVariable) => {
    */
   await $.auth.set({
     screenName: $.auth.data.screenName,
-  });
-};
+  })
+}
 
 const isStillVerified = async ($: IGlobalVariable) => {
-  await verifyCredentials($);
-  return true;
-};
+  await verifyCredentials($)
+  return true
+}
 
 export default {
   fields: [

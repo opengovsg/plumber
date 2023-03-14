@@ -1,4 +1,4 @@
-import createRowEvent from './create-row-event';
-import updateRowEvent from './update-row-event';
+import createRowEvent from './create-row-event'
+import updateRowEvent from './update-row-event'
 
-export default [createRowEvent, updateRowEvent];
+export default [createRowEvent, updateRowEvent]

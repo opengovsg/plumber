@@ -1,38 +1,36 @@
-import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
-import MenuItem from '@mui/material/MenuItem';
-import Menu, { MenuProps } from '@mui/material/Menu';
-import { Link } from 'react-router-dom';
-
-import apolloClient from 'graphql/client';
-import * as URLS from 'config/urls';
-import useAuthentication from 'hooks/useAuthentication';
-import useFormatMessage from 'hooks/useFormatMessage';
+import * as React from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import Menu, { MenuProps } from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import * as URLS from 'config/urls'
+import apolloClient from 'graphql/client'
+import useAuthentication from 'hooks/useAuthentication'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 type AccountDropdownMenuProps = {
-  open: boolean;
-  onClose: () => void;
-  anchorEl: MenuProps['anchorEl'];
-  id: string;
-};
+  open: boolean
+  onClose: () => void
+  anchorEl: MenuProps['anchorEl']
+  id: string
+}
 
 function AccountDropdownMenu(
-  props: AccountDropdownMenuProps
+  props: AccountDropdownMenuProps,
 ): React.ReactElement {
-  const formatMessage = useFormatMessage();
-  const authentication = useAuthentication();
-  const navigate = useNavigate();
+  const formatMessage = useFormatMessage()
+  const authentication = useAuthentication()
+  const navigate = useNavigate()
 
-  const { open, onClose, anchorEl, id } = props;
+  const { open, onClose, anchorEl, id } = props
 
   const logout = async () => {
-    authentication.updateToken('');
-    await apolloClient.clearStore();
+    authentication.updateToken('')
+    await apolloClient.clearStore()
 
-    onClose();
+    onClose()
 
-    navigate(URLS.LOGIN);
-  };
+    navigate(URLS.LOGIN)
+  }
 
   return (
     <Menu
@@ -58,7 +56,7 @@ function AccountDropdownMenu(
         {formatMessage('accountDropdownMenu.logout')}
       </MenuItem>
     </Menu>
-  );
+  )
 }
 
-export default AccountDropdownMenu;
+export default AccountDropdownMenu

@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const CREATE_FLOW = gql`
   mutation CreateFlow($input: CreateFlowInput) {
@@ -7,4 +7,4 @@ export const CREATE_FLOW = gql`
       name
     }
   }
-`;
+`

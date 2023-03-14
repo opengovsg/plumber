@@ -1,45 +1,45 @@
-import * as React from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import type { LinkProps } from 'react-router-dom';
-import { useLazyQuery } from '@apollo/client';
-import debounce from 'lodash/debounce';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import AddIcon from '@mui/icons-material/Add';
-import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
-import Pagination from '@mui/material/Pagination';
-import PaginationItem from '@mui/material/PaginationItem';
-import type { IFlow } from '@automatisch/types';
+import type { IFlow } from '@plumber/types'
 
-import FlowRow from 'components/FlowRow';
-import NoResultFound from 'components/NoResultFound';
-import ConditionalIconButton from 'components/ConditionalIconButton';
-import Container from 'components/Container';
-import PageTitle from 'components/PageTitle';
-import SearchInput from 'components/SearchInput';
-import useFormatMessage from 'hooks/useFormatMessage';
-import { GET_FLOWS } from 'graphql/queries/get-flows';
-import * as URLS from 'config/urls';
+import * as React from 'react'
+import type { LinkProps } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useLazyQuery } from '@apollo/client'
+import AddIcon from '@mui/icons-material/Add'
+import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
+import Divider from '@mui/material/Divider'
+import Grid from '@mui/material/Grid'
+import Pagination from '@mui/material/Pagination'
+import PaginationItem from '@mui/material/PaginationItem'
+import ConditionalIconButton from 'components/ConditionalIconButton'
+import Container from 'components/Container'
+import FlowRow from 'components/FlowRow'
+import NoResultFound from 'components/NoResultFound'
+import PageTitle from 'components/PageTitle'
+import SearchInput from 'components/SearchInput'
+import * as URLS from 'config/urls'
+import { GET_FLOWS } from 'graphql/queries/get-flows'
+import useFormatMessage from 'hooks/useFormatMessage'
+import debounce from 'lodash/debounce'
 
-const FLOW_PER_PAGE = 10;
+const FLOW_PER_PAGE = 10
 
 const getLimitAndOffset = (page: number) => ({
   limit: FLOW_PER_PAGE,
   offset: (page - 1) * FLOW_PER_PAGE,
-});
+})
 
 export default function Flows(): React.ReactElement {
-  const formatMessage = useFormatMessage();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const page = parseInt(searchParams.get('page') || '', 10) || 1;
-  const [flowName, setFlowName] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
+  const formatMessage = useFormatMessage()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parseInt(searchParams.get('page') || '', 10) || 1
+  const [flowName, setFlowName] = React.useState('')
+  const [loading, setLoading] = React.useState(false)
   const [getFlows, { data }] = useLazyQuery(GET_FLOWS, {
     onCompleted: () => {
-      setLoading(false);
+      setLoading(false)
     },
-  });
+  })
 
   const fetchData = React.useMemo(
     () =>
@@ -51,55 +51,55 @@ export default function Flows(): React.ReactElement {
               name,
             },
           }),
-        300
+        300,
       ),
-    [page, getFlows]
-  );
+    [page, getFlows],
+  )
 
   React.useEffect(
     function fetchFlowsOnSearch() {
-      setLoading(true);
+      setLoading(true)
 
-      fetchData(flowName);
+      fetchData(flowName)
     },
-    [fetchData, flowName]
-  );
+    [fetchData, flowName],
+  )
 
   React.useEffect(
     function resetPageOnSearch() {
       // reset search params which only consists of `page`
-      setSearchParams({});
+      setSearchParams({})
     },
-    [flowName]
-  );
+    [flowName],
+  )
 
   React.useEffect(function cancelDebounceOnUnmount() {
     return () => {
-      fetchData.cancel();
-    };
-  }, []);
+      fetchData.cancel()
+    }
+  }, [])
 
-  const { pageInfo, edges } = data?.getFlows || {};
+  const { pageInfo, edges } = data?.getFlows || {}
 
-  const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node);
-  const hasFlows = flows?.length;
+  const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
+  const hasFlows = flows?.length
 
   const onSearchChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFlowName(event.target.value);
+      setFlowName(event.target.value)
     },
-    []
-  );
+    [],
+  )
 
   const CreateFlowLink = React.useMemo(
     () =>
       React.forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(
         function InlineLink(linkProps, ref) {
-          return <Link ref={ref} to={URLS.CREATE_FLOW} {...linkProps} />;
-        }
+          return <Link ref={ref} to={URLS.CREATE_FLOW} {...linkProps} />
+        },
       ),
-    []
-  );
+    [],
+  )
 
   return (
     <Box sx={{ py: 3 }}>
@@ -171,5 +171,5 @@ export default function Flows(): React.ReactElement {
         )}
       </Container>
     </Box>
-  );
+  )
 }

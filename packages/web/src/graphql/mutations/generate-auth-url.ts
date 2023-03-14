@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GENERATE_AUTH_URL = gql`
   mutation generateAuthUrl($input: GenerateAuthUrlInput) {
@@ -6,4 +6,4 @@ export const GENERATE_AUTH_URL = gql`
       url
     }
   }
-`;
+`

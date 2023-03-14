@@ -1,63 +1,63 @@
-import Context from '../../types/express/context';
+import Context from '../../types/express/context'
 
 type Params = {
   input: {
-    key: string;
-    appKey: string;
+    key: string
+    appKey: string
     flow: {
-      id: string;
-    };
+      id: string
+    }
     connection: {
-      id: string;
-    };
+      id: string
+    }
     previousStep: {
-      id: string;
-    };
-  };
-};
+      id: string
+    }
+  }
+}
 
 const createStep = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
-  const { input } = params;
+  const { input } = params
 
   const flow = await context.currentUser
     .$relatedQuery('flows')
     .findOne({
       id: input.flow.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
   const previousStep = await flow
     .$relatedQuery('steps')
     .findOne({
       id: input.previousStep.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
   const step = await flow.$relatedQuery('steps').insertAndFetch({
     key: input.key,
     appKey: input.appKey,
     type: 'action',
     position: previousStep.position + 1,
-  });
+  })
 
   const nextSteps = await flow
     .$relatedQuery('steps')
     .where('position', '>=', step.position)
-    .whereNot('id', step.id);
+    .whereNot('id', step.id)
 
   const nextStepQueries = nextSteps.map(async (nextStep, index) => {
     await nextStep.$query().patchAndFetch({
       position: step.position + index + 1,
-    });
-  });
+    })
+  })
 
-  await Promise.all(nextStepQueries);
+  await Promise.all(nextStepQueries)
 
-  return step;
-};
+  return step
+}
 
-export default createStep;
+export default createStep

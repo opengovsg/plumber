@@ -1,4 +1,4 @@
-import delayFor from './delay-for';
-import delayUntil from './delay-until';
+import delayFor from './delay-for'
+import delayUntil from './delay-until'
 
-export default [delayFor, delayUntil];
+export default [delayFor, delayUntil]

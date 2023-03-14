@@ -1,7 +1,8 @@
-import * as React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import CreateFlowPage from './create';
-import EditorPage from './index';
+import * as React from 'react'
+import { Route, Routes } from 'react-router-dom'
+
+import CreateFlowPage from './create'
+import EditorPage from './index'
 
 export default function EditorRoutes(): React.ReactElement {
   return (
@@ -10,5 +11,5 @@ export default function EditorRoutes(): React.ReactElement {
 
       <Route path="/:flowId" element={<EditorPage />} />
     </Routes>
-  );
+  )
 }

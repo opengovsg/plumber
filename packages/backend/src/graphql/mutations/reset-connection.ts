@@ -1,32 +1,32 @@
-import Context from '../../types/express/context';
+import Context from '../../types/express/context'
 
 type Params = {
   input: {
-    id: string;
-  };
-};
+    id: string
+  }
+}
 
 const resetConnection = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({
       id: params.input.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
   if (!connection.formattedData) {
-    return null;
+    return null
   }
 
   connection = await connection.$query().patchAndFetch({
     formattedData: { screenName: connection.formattedData.screenName },
-  });
+  })
 
-  return connection;
-};
+  return connection
+}
 
-export default resetConnection;
+export default resetConnection

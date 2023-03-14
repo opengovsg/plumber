@@ -1,8 +1,8 @@
-import Context from '../../types/express/context';
+import Context from '../../types/express/context'
 
 type Params = {
-  id: string;
-};
+  id: string
+}
 
 const getFlow = async (_parent: unknown, params: Params, context: Context) => {
   const flow = await context.currentUser
@@ -10,9 +10,9 @@ const getFlow = async (_parent: unknown, params: Params, context: Context) => {
     .withGraphJoined('[steps.[connection]]')
     .orderBy('steps.position', 'asc')
     .findOne({ 'flows.id': params.id })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
-  return flow;
-};
+  return flow
+}
 
-export default getFlow;
+export default getFlow

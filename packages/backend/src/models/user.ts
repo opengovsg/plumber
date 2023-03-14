@@ -1,23 +1,24 @@
-import { QueryContext, ModelOptions } from 'objection';
-import Base from './base';
-import Connection from './connection';
-import Flow from './flow';
-import Step from './step';
-import Execution from './execution';
-import crypto from 'crypto';
+import crypto from 'crypto'
+import { ModelOptions, QueryContext } from 'objection'
+
+import Base from './base'
+import Connection from './connection'
+import Execution from './execution'
+import Flow from './flow'
+import Step from './step'
 
 class User extends Base {
-  id!: string;
-  email!: string;
-  otpHash?: string;
-  otpAttempts: number;
-  otpSentAt?: Date;
-  connections?: Connection[];
-  flows?: Flow[];
-  steps?: Step[];
-  executions?: Execution[];
+  id!: string
+  email!: string
+  otpHash?: string
+  otpAttempts: number
+  otpSentAt?: Date
+  connections?: Connection[]
+  flows?: Flow[]
+  steps?: Step[]
+  executions?: Execution[]
 
-  static tableName = 'users';
+  static tableName = 'users'
 
   static jsonSchema = {
     type: 'object',
@@ -25,9 +26,9 @@ class User extends Base {
 
     properties: {
       id: { type: 'string', format: 'uuid' },
-      email: { type: 'string', format: 'email', minLength: 1, maxLength: 255 }
-    }
-  };
+      email: { type: 'string', format: 'email', minLength: 1, maxLength: 255 },
+    },
+  }
 
   static relationMappings = () => ({
     connections: {
@@ -35,16 +36,16 @@ class User extends Base {
       modelClass: Connection,
       join: {
         from: 'users.id',
-        to: 'connections.user_id'
-      }
+        to: 'connections.user_id',
+      },
     },
     flows: {
       relation: Base.HasManyRelation,
       modelClass: Flow,
       join: {
         from: 'users.id',
-        to: 'flows.user_id'
-      }
+        to: 'flows.user_id',
+      },
     },
     steps: {
       relation: Base.ManyToManyRelation,
@@ -53,10 +54,10 @@ class User extends Base {
         from: 'users.id',
         through: {
           from: 'flows.user_id',
-          to: 'flows.id'
+          to: 'flows.id',
         },
-        to: 'steps.flow_id'
-      }
+        to: 'steps.flow_id',
+      },
     },
     executions: {
       relation: Base.ManyToManyRelation,
@@ -65,24 +66,24 @@ class User extends Base {
         from: 'users.id',
         through: {
           from: 'flows.user_id',
-          to: 'flows.id'
+          to: 'flows.id',
         },
-        to: 'executions.flow_id'
-      }
-    }
-  });
+        to: 'executions.flow_id',
+      },
+    },
+  })
 
   hashOtp(otp: string) {
-    return crypto.scryptSync(otp, this.email, 64).toString('base64');
+    return crypto.scryptSync(otp, this.email, 64).toString('base64')
   }
 
   async $beforeInsert(queryContext: QueryContext) {
-    await super.$beforeInsert(queryContext);
+    await super.$beforeInsert(queryContext)
   }
 
   async $beforeUpdate(opt: ModelOptions, queryContext: QueryContext) {
-    await super.$beforeUpdate(opt, queryContext);
+    await super.$beforeUpdate(opt, queryContext)
   }
 }
 
-export default User;
+export default User

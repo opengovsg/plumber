@@ -1,9 +1,10 @@
-import { JSONTree } from 'react-json-tree';
-import type { IJSONObject } from '@automatisch/types';
+import type { IJSONObject } from '@plumber/types'
+
+import { JSONTree } from 'react-json-tree'
 
 type JSONViewerProps = {
-  data: IJSONObject;
-};
+  data: IJSONObject
+}
 
 const theme = {
   scheme: 'inspector',
@@ -40,10 +41,10 @@ const theme = {
   base0E: '#EC31C0',
   // base0F - Deprecated, Opening/Closing Embedded Language Tags, e.g. <?php ?>
   base0F: '#a16946',
-};
+}
 
 function JSONViewer(props: JSONViewerProps) {
-  const { data } = props;
+  const { data } = props
 
   return (
     <JSONTree
@@ -53,7 +54,7 @@ function JSONViewer(props: JSONViewerProps) {
       invertTheme={false}
       theme={theme}
     />
-  );
+  )
 }
 
-export default JSONViewer;
+export default JSONViewer

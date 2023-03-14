@@ -1,5 +1,6 @@
-import isEmpty from 'lodash/isEmpty';
-import defineTrigger from '../../../../helpers/define-trigger';
+import isEmpty from 'lodash/isEmpty'
+
+import defineTrigger from '../../../../helpers/define-trigger'
 
 export default defineTrigger({
   name: 'Catch raw webhook',
@@ -13,8 +14,8 @@ export default defineTrigger({
         raw: $.lastExecutionStep.dataOut,
         meta: {
           internalId: '',
-        }
-      });
+        },
+      })
     }
   },
-});
+})

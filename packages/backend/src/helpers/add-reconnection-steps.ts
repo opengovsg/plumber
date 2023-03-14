@@ -2,32 +2,33 @@ import {
   IApp,
   IAuthenticationStep,
   IAuthenticationStepField,
-} from '@automatisch/types';
-import cloneDeep from 'lodash/cloneDeep';
+} from '@plumber/types'
+
+import cloneDeep from 'lodash/cloneDeep'
 
 const connectionIdArgument = {
   name: 'id',
   value: '{connection.id}',
-};
+}
 
 const resetConnectionStep = {
   type: 'mutation' as const,
   name: 'resetConnection',
   arguments: [connectionIdArgument],
-};
+}
 
 function replaceCreateConnection(string: string) {
-  return string.replace('{createConnection.id}', '{connection.id}');
+  return string.replace('{createConnection.id}', '{connection.id}')
 }
 
 function removeAppKeyArgument(args: IAuthenticationStepField[]) {
-  return args.filter((argument) => argument.name !== 'key');
+  return args.filter((argument) => argument.name !== 'key')
 }
 
 function addConnectionId(step: IAuthenticationStep) {
   step.arguments = step.arguments.map((argument) => {
     if (typeof argument.value === 'string') {
-      argument.value = replaceCreateConnection(argument.value);
+      argument.value = replaceCreateConnection(argument.value)
     }
 
     if (argument.properties) {
@@ -35,45 +36,47 @@ function addConnectionId(step: IAuthenticationStep) {
         return {
           name: property.name,
           value: replaceCreateConnection(property.value),
-        };
-      });
+        }
+      })
     }
 
-    return argument;
-  });
+    return argument
+  })
 
-  return step;
+  return step
 }
 
 function replaceCreateConnectionsWithUpdate(steps: IAuthenticationStep[]) {
-  const updatedSteps = cloneDeep(steps);
+  const updatedSteps = cloneDeep(steps)
   return updatedSteps.map((step) => {
-    const updatedStep = addConnectionId(step);
+    const updatedStep = addConnectionId(step)
 
     if (step.name === 'createConnection') {
-      updatedStep.name = 'updateConnection';
-      updatedStep.arguments = removeAppKeyArgument(updatedStep.arguments);
-      updatedStep.arguments.unshift(connectionIdArgument);
+      updatedStep.name = 'updateConnection'
+      updatedStep.arguments = removeAppKeyArgument(updatedStep.arguments)
+      updatedStep.arguments.unshift(connectionIdArgument)
 
-      return updatedStep;
+      return updatedStep
     }
 
-    return step;
-  });
+    return step
+  })
 }
 
 function addReconnectionSteps(app: IApp): IApp {
-  const hasReconnectionSteps = app.auth.reconnectionSteps;
+  const hasReconnectionSteps = app.auth.reconnectionSteps
 
-  if (hasReconnectionSteps) return app;
+  if (hasReconnectionSteps) {
+    return app
+  }
 
   const updatedSteps = replaceCreateConnectionsWithUpdate(
-    app.auth.authenticationSteps
-  );
+    app.auth.authenticationSteps,
+  )
 
-  app.auth.reconnectionSteps = [resetConnectionStep, ...updatedSteps];
+  app.auth.reconnectionSteps = [resetConnectionStep, ...updatedSteps]
 
-  return app;
+  return app
 }
 
-export default addReconnectionSteps;
+export default addReconnectionSteps

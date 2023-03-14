@@ -1,10 +1,12 @@
-import { Router } from 'express';
-import graphQLInstance from '../helpers/graphql-instance';
-import webhooksRouter from './webhooks';
+import { Router } from 'express'
 
-const router = Router();
+import graphQLInstance from '../helpers/graphql-instance'
 
-router.use('/graphql', graphQLInstance);
-router.use('/webhooks', webhooksRouter);
+import webhooksRouter from './webhooks'
 
-export default router;
+const router = Router()
+
+router.use('/graphql', graphQLInstance)
+router.use('/webhooks', webhooksRouter)
+
+export default router

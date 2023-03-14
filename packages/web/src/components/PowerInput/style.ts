@@ -1,11 +1,11 @@
-import { styled } from '@mui/material/styles';
+import { styled } from '@mui/material/styles'
 
 export const InputLabelWrapper = styled('div')`
   position: absolute;
   left: ${({ theme }) => theme.spacing(1.75)};
   inset: 0;
   left: -6px;
-`;
+`
 
 export const FakeInput = styled('div', {
   shouldForwardProp: (prop) => prop !== 'disabled',
@@ -34,4 +34,4 @@ export const FakeInput = styled('div', {
     border-color: ${({ theme }) => theme.palette.primary.main};
     border-width: 2px;
   }
-`;
+`

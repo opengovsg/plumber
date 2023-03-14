@@ -1,29 +1,32 @@
-import { URL } from 'node:url';
-import { QueryContext, ModelOptions } from 'objection';
-import type { IJSONObject, IStep } from '@automatisch/types';
-import Base from './base';
-import App from './app';
-import Flow from './flow';
-import Connection from './connection';
-import ExecutionStep from './execution-step';
-import Telemetry from '../helpers/telemetry';
-import appConfig from '../config/app';
+import type { IJSONObject, IStep } from '@plumber/types'
+
+import { URL } from 'node:url'
+import { ModelOptions, QueryContext } from 'objection'
+
+import appConfig from '../config/app'
+import Telemetry from '../helpers/telemetry'
+
+import App from './app'
+import Base from './base'
+import Connection from './connection'
+import ExecutionStep from './execution-step'
+import Flow from './flow'
 
 class Step extends Base {
-  id!: string;
-  flowId!: string;
-  key?: string;
-  appKey?: string;
-  type!: IStep['type'];
-  connectionId?: string;
-  status: 'incomplete' | 'completed';
-  position!: number;
-  parameters: IJSONObject;
-  connection?: Connection;
-  flow: Flow;
-  executionSteps: ExecutionStep[];
+  id!: string
+  flowId!: string
+  key?: string
+  appKey?: string
+  type!: IStep['type']
+  connectionId?: string
+  status: 'incomplete' | 'completed'
+  position!: number
+  parameters: IJSONObject
+  connection?: Connection
+  flow: Flow
+  executionSteps: ExecutionStep[]
 
-  static tableName = 'steps';
+  static tableName = 'steps'
 
   static jsonSchema = {
     type: 'object',
@@ -39,15 +42,15 @@ class Step extends Base {
       status: {
         type: 'string',
         enum: ['incomplete', 'completed'],
-        default: 'incomplete'
+        default: 'incomplete',
       },
       position: { type: 'integer' },
-      parameters: { type: 'object' }
-    }
-  };
+      parameters: { type: 'object' },
+    },
+  }
 
   static get virtualAttributes() {
-    return ['iconUrl', 'webhookUrl'];
+    return ['iconUrl', 'webhookUrl']
   }
 
   static relationMappings = () => ({
@@ -56,100 +59,112 @@ class Step extends Base {
       modelClass: Flow,
       join: {
         from: 'steps.flow_id',
-        to: 'flows.id'
-      }
+        to: 'flows.id',
+      },
     },
     connection: {
       relation: Base.HasOneRelation,
       modelClass: Connection,
       join: {
         from: 'steps.connection_id',
-        to: 'connections.id'
-      }
+        to: 'connections.id',
+      },
     },
     executionSteps: {
       relation: Base.HasManyRelation,
       modelClass: ExecutionStep,
       join: {
         from: 'steps.id',
-        to: 'execution_steps.step_id'
-      }
-    }
-  });
+        to: 'execution_steps.step_id',
+      },
+    },
+  })
 
   get iconUrl() {
-    if (!this.appKey) return null;
+    if (!this.appKey) {
+      return null
+    }
 
-    return `${appConfig.baseUrl}/apps/${this.appKey}/assets/favicon.svg`;
+    return `${appConfig.baseUrl}/apps/${this.appKey}/assets/favicon.svg`
   }
 
   get webhookUrl() {
-    if (!['webhook', 'formsg'].includes(this.appKey) || this.type === 'action')
-      return null;
+    if (
+      !['webhook', 'formsg'].includes(this.appKey) ||
+      this.type === 'action'
+    ) {
+      return null
+    }
 
-    const url = new URL(`/webhooks/${this.flowId}`, appConfig.webhookUrl);
-    return url.toString();
+    const url = new URL(`/webhooks/${this.flowId}`, appConfig.webhookUrl)
+    return url.toString()
   }
 
   async $afterInsert(queryContext: QueryContext) {
-    await super.$afterInsert(queryContext);
-    Telemetry.stepCreated(this);
+    await super.$afterInsert(queryContext)
+    Telemetry.stepCreated(this)
   }
 
   async $afterUpdate(opt: ModelOptions, queryContext: QueryContext) {
-    await super.$afterUpdate(opt, queryContext);
-    Telemetry.stepUpdated(this);
+    await super.$afterUpdate(opt, queryContext)
+    Telemetry.stepUpdated(this)
   }
 
   get isTrigger(): boolean {
-    return this.type === 'trigger';
+    return this.type === 'trigger'
   }
 
   get isAction(): boolean {
-    return this.type === 'action';
+    return this.type === 'action'
   }
 
   async getApp() {
-    if (!this.appKey) return null;
+    if (!this.appKey) {
+      return null
+    }
 
-    return await App.findOneByKey(this.appKey);
+    return await App.findOneByKey(this.appKey)
   }
 
   async getLastExecutionStep() {
     const lastExecutionStep = await this.$relatedQuery('executionSteps')
       .orderBy('created_at', 'desc')
-      .first();
+      .first()
 
-    return lastExecutionStep;
+    return lastExecutionStep
   }
 
   async getNextStep() {
-    const flow = await this.$relatedQuery('flow');
+    const flow = await this.$relatedQuery('flow')
 
     return await flow
       .$relatedQuery('steps')
-      .findOne({ position: this.position + 1 });
+      .findOne({ position: this.position + 1 })
   }
 
   async getTriggerCommand() {
-    const { appKey, key, isTrigger } = this;
-    if (!isTrigger || !appKey || !key) return null;
+    const { appKey, key, isTrigger } = this
+    if (!isTrigger || !appKey || !key) {
+      return null
+    }
 
-    const app = await App.findOneByKey(appKey);
-    const command = app.triggers.find((trigger) => trigger.key === key);
+    const app = await App.findOneByKey(appKey)
+    const command = app.triggers.find((trigger) => trigger.key === key)
 
-    return command;
+    return command
   }
 
   async getActionCommand() {
-    const { appKey, key, isAction } = this;
-    if (!isAction || !appKey || !key) return null;
+    const { appKey, key, isAction } = this
+    if (!isAction || !appKey || !key) {
+      return null
+    }
 
-    const app = await App.findOneByKey(appKey);
-    const command = app.actions.find((action) => action.key === key);
+    const app = await App.findOneByKey(appKey)
+    const command = app.actions.find((action) => action.key === key)
 
-    return command;
+    return command
   }
 }
 
-export default Step;
+export default Step

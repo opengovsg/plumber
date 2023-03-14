@@ -1,17 +1,18 @@
-import { Route, Routes, Navigate } from 'react-router-dom';
-import Layout from 'components/Layout';
-import PublicLayout from 'components/PublicLayout';
-import Applications from 'pages/Applications';
-import Application from 'pages/Application';
-import Executions from 'pages/Executions';
-import Execution from 'pages/Execution';
-import Flows from 'pages/Flows';
-import Flow from 'pages/Flow';
-import Login from 'pages/Login';
-import EditorRoutes from 'pages/Editor/routes';
-import * as URLS from 'config/urls';
-import settingsRoutes from './settingsRoutes';
-import Notifications from 'pages/Notifications';
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Layout from 'components/Layout'
+import PublicLayout from 'components/PublicLayout'
+import * as URLS from 'config/urls'
+import Application from 'pages/Application'
+import Applications from 'pages/Applications'
+import EditorRoutes from 'pages/Editor/routes'
+import Execution from 'pages/Execution'
+import Executions from 'pages/Executions'
+import Flow from 'pages/Flow'
+import Flows from 'pages/Flows'
+import Login from 'pages/Login'
+import Notifications from 'pages/Notifications'
+
+import settingsRoutes from './settingsRoutes'
 
 export default (
   <Routes>
@@ -101,4 +102,4 @@ export default (
       }
     />
   </Routes>
-);
+)

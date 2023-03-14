@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { ThemeProvider as BaseThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import theme from 'styles/theme';
+import * as React from 'react'
+import CssBaseline from '@mui/material/CssBaseline'
+import { ThemeProvider as BaseThemeProvider } from '@mui/material/styles'
+import theme from 'styles/theme'
 
 type ThemeProviderProps = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 const ThemeProvider = ({
   children,
@@ -17,7 +17,7 @@ const ThemeProvider = ({
 
       {children}
     </BaseThemeProvider>
-  );
-};
+  )
+}
 
-export default ThemeProvider;
+export default ThemeProvider

@@ -1,20 +1,19 @@
-import * as React from 'react';
-import InputLabel from '@mui/material/InputLabel';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import InputAdornment from '@mui/material/InputAdornment';
-import FormControl from '@mui/material/FormControl';
-import SearchIcon from '@mui/icons-material/Search';
-
-import useFormatMessage from 'hooks/useFormatMessage';
+import * as React from 'react'
+import SearchIcon from '@mui/icons-material/Search'
+import FormControl from '@mui/material/FormControl'
+import InputAdornment from '@mui/material/InputAdornment'
+import InputLabel from '@mui/material/InputLabel'
+import OutlinedInput from '@mui/material/OutlinedInput'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 type SearchInputProps = {
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-};
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
+}
 
 export default function SearchInput({
   onChange,
 }: SearchInputProps): React.ReactElement {
-  const formatMessage = useFormatMessage();
+  const formatMessage = useFormatMessage()
 
   return (
     <FormControl variant="outlined" fullWidth>
@@ -36,5 +35,5 @@ export default function SearchInput({
         label={formatMessage('searchPlaceholder')}
       />
     </FormControl>
-  );
+  )
 }

@@ -1,28 +1,29 @@
-import { IJSONObject } from '@automatisch/types';
-import Step from '../../models/step';
-import Context from '../../types/express/context';
+import { IJSONObject } from '@plumber/types'
+
+import Step from '../../models/step'
+import Context from '../../types/express/context'
 
 type Params = {
   input: {
-    id: string;
-    key: string;
-    appKey: string;
-    parameters: IJSONObject;
+    id: string
+    key: string
+    appKey: string
+    parameters: IJSONObject
     flow: {
-      id: string;
-    };
+      id: string
+    }
     connection: {
-      id: string;
-    };
-  };
-};
+      id: string
+    }
+  }
+}
 
 const updateStep = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
-  const { input } = params;
+  const { input } = params
 
   let step = await context.currentUser
     .$relatedQuery('steps')
@@ -30,7 +31,7 @@ const updateStep = async (
       'steps.id': input.id,
       flow_id: input.flow.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
   step = await Step.query()
     .patchAndFetchById(input.id, {
@@ -39,9 +40,9 @@ const updateStep = async (
       connectionId: input.connection.id,
       parameters: input.parameters,
     })
-    .withGraphFetched('connection');
+    .withGraphFetched('connection')
 
-  return step;
-};
+  return step
+}
 
-export default updateStep;
+export default updateStep

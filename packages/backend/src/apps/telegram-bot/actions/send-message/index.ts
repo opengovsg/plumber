@@ -1,5 +1,4 @@
-import qs from 'qs';
-import defineAction from '../../../../helpers/define-action';
+import defineAction from '../../../../helpers/define-action'
 
 export default defineAction({
   name: 'Send message',
@@ -11,7 +10,8 @@ export default defineAction({
       key: 'chatId',
       type: 'string' as const,
       required: true,
-      description: 'Unique identifier for the target chat or username of the target channel (in the format @channelusername).',
+      description:
+        'Unique identifier for the target chat or username of the target channel (in the format @channelusername).',
       variables: true,
     },
     {
@@ -28,7 +28,8 @@ export default defineAction({
       type: 'dropdown' as const,
       required: false,
       value: false,
-      description: 'Sends the message silently. Users will receive a notification with no sound.',
+      description:
+        'Sends the message silently. Users will receive a notification with no sound.',
       variables: false,
       options: [
         {
@@ -48,12 +49,12 @@ export default defineAction({
       chat_id: $.step.parameters.chatId,
       text: $.step.parameters.text,
       disable_notification: $.step.parameters.disableNotification,
-    };
+    }
 
-    const response = await $.http.post('/sendMessage', payload);
+    const response = await $.http.post('/sendMessage', payload)
 
     $.setActionItem({
       raw: response.data,
-    });
+    })
   },
-});
+})

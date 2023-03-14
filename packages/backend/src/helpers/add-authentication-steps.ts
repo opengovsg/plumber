@@ -1,13 +1,13 @@
-import { IApp } from '@automatisch/types';
+import { IApp } from '@plumber/types'
 
 function addAuthenticationSteps(app: IApp): IApp {
   if (app.auth.generateAuthUrl) {
-    app.auth.authenticationSteps = authenticationStepsWithAuthUrl;
+    app.auth.authenticationSteps = authenticationStepsWithAuthUrl
   } else {
-    app.auth.authenticationSteps = authenticationStepsWithoutAuthUrl;
+    app.auth.authenticationSteps = authenticationStepsWithoutAuthUrl
   }
 
-  return app;
+  return app
 }
 
 const authenticationStepsWithoutAuthUrl = [
@@ -35,7 +35,7 @@ const authenticationStepsWithoutAuthUrl = [
       },
     ],
   },
-];
+]
 
 const authenticationStepsWithAuthUrl = [
   {
@@ -96,6 +96,6 @@ const authenticationStepsWithAuthUrl = [
       },
     ],
   },
-];
+]
 
-export default addAuthenticationSteps;
+export default addAuthenticationSteps

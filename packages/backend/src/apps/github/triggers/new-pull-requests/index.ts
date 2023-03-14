@@ -1,5 +1,6 @@
-import defineTrigger from '../../../../helpers/define-trigger';
-import newPullRequests from './new-pull-requests';
+import defineTrigger from '../../../../helpers/define-trigger'
+
+import newPullRequests from './new-pull-requests'
 
 export default defineTrigger({
   name: 'New pull requests',
@@ -27,6 +28,6 @@ export default defineTrigger({
   ],
 
   async run($) {
-    await newPullRequests($);
+    await newPullRequests($)
   },
-});
+})

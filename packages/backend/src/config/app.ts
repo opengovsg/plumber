@@ -1,63 +1,65 @@
-import { URL } from 'node:url';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import * as dotenv from 'dotenv'
+import { URL } from 'node:url'
+
+dotenv.config()
 
 type AppConfig = {
-  host: string;
-  protocol: string;
-  port: string;
-  webAppUrl: string;
-  webhookUrl: string;
-  appEnv: string;
-  isDev: boolean;
-  postgresDatabase: string;
-  postgresPort: number;
-  postgresHost: string;
-  postgresUsername: string;
-  postgresPassword?: string;
-  version: string;
-  postgresEnableSsl: boolean;
-  baseUrl: string;
-  encryptionKey: string;
-  webhookSecretKey: string;
-  appSecretKey: string;
-  serveWebAppSeparately: boolean;
-  redisHost: string;
-  redisPort: number;
-  redisUsername: string;
-  redisPassword: string;
-  redisTls: boolean;
-  enableBullMQDashboard: boolean;
-  bullMQDashboardUsername: string;
-  bullMQDashboardPassword: string;
-  telemetryEnabled: boolean;
-};
+  host: string
+  protocol: string
+  port: string
+  webAppUrl: string
+  webhookUrl: string
+  appEnv: string
+  isDev: boolean
+  postgresDatabase: string
+  postgresPort: number
+  postgresHost: string
+  postgresUsername: string
+  postgresPassword?: string
+  version: string
+  postgresEnableSsl: boolean
+  baseUrl: string
+  encryptionKey: string
+  webhookSecretKey: string
+  appSecretKey: string
+  serveWebAppSeparately: boolean
+  redisHost: string
+  redisPort: number
+  redisUsername: string
+  redisPassword: string
+  redisTls: boolean
+  enableBullMQDashboard: boolean
+  bullMQDashboardUsername: string
+  bullMQDashboardPassword: string
+  telemetryEnabled: boolean
+  requestBodySizeLimit: string
+}
 
-const host = process.env.HOST || 'localhost';
-const protocol = process.env.PROTOCOL || 'http';
-const port = process.env.PORT || '3000';
+const host = process.env.HOST || 'localhost'
+const protocol = process.env.PROTOCOL || 'http'
+const port = process.env.PORT || '3000'
 const serveWebAppSeparately =
-  process.env.SERVE_WEB_APP_SEPARATELY === 'true' ? true : false;
+  process.env.SERVE_WEB_APP_SEPARATELY === 'true' ? true : false
 
-let apiUrl = new URL(`${protocol}://${host}:${port}`).toString();
-apiUrl = apiUrl.substring(0, apiUrl.length - 1);
+let apiUrl = new URL(`${protocol}://${host}:${port}`).toString()
+apiUrl = apiUrl.substring(0, apiUrl.length - 1)
 
 // use apiUrl by default, which has less priority over the following cases
-let webAppUrl = apiUrl;
+let webAppUrl = apiUrl
 
 if (process.env.WEB_APP_URL) {
   // use env. var. if provided
-  webAppUrl = new URL(process.env.WEB_APP_URL).toString();
-  webAppUrl = webAppUrl.substring(0, webAppUrl.length - 1);
+  webAppUrl = new URL(process.env.WEB_APP_URL).toString()
+  webAppUrl = webAppUrl.substring(0, webAppUrl.length - 1)
 } else if (serveWebAppSeparately) {
   // no env. var. and serving separately, sign of development
-  webAppUrl = 'http://localhost:3001';
+  webAppUrl = 'http://localhost:3001'
 }
 
-let webhookUrl = new URL(process.env.WEBHOOK_URL || apiUrl).toString();
-webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1);
+let webhookUrl = new URL(process.env.WEBHOOK_URL || apiUrl).toString()
+webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1)
 
-const appEnv = process.env.APP_ENV || 'development';
+const appEnv = process.env.APP_ENV || 'development'
 
 const appConfig: AppConfig = {
   host,
@@ -88,15 +90,16 @@ const appConfig: AppConfig = {
   baseUrl: process.env.BASE_URL || apiUrl, // when u dont wanna expose the port, especially in production
   webAppUrl,
   webhookUrl,
-  telemetryEnabled: process.env.TELEMETRY_ENABLED === 'false' ? false : true
-};
+  telemetryEnabled: process.env.TELEMETRY_ENABLED === 'false' ? false : true,
+  requestBodySizeLimit: '1mb',
+}
 
 if (!appConfig.encryptionKey) {
-  throw new Error('ENCRYPTION_KEY environment variable needs to be set!');
+  throw new Error('ENCRYPTION_KEY environment variable needs to be set!')
 }
 
 if (!appConfig.webhookSecretKey) {
-  throw new Error('WEBHOOK_SECRET_KEY environment variable needs to be set!');
+  throw new Error('WEBHOOK_SECRET_KEY environment variable needs to be set!')
 }
 
-export default appConfig;
+export default appConfig

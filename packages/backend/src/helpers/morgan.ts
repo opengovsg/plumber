@@ -1,25 +1,26 @@
-import morgan, { StreamOptions } from 'morgan';
-import { Request } from 'express';
-import logger from './logger';
+import { Request } from 'express'
+import morgan, { StreamOptions } from 'morgan'
+
+import logger from './logger'
 
 const stream: StreamOptions = {
   write: (message) =>
     logger.http(message.substring(0, message.lastIndexOf('\n'))),
-};
+}
 
 const registerGraphQLToken = () => {
   morgan.token('graphql-query', (req: Request) => {
     if (req.body.query) {
-      return `GraphQL ${req.body.query}`;
+      return `GraphQL ${req.body.query}`
     }
-  });
-};
+  })
+}
 
-registerGraphQLToken();
+registerGraphQLToken()
 
 const morganMiddleware = morgan(
   ':method :url :status :res[content-length] - :response-time ms\n:graphql-query',
-  { stream }
-);
+  { stream },
+)
 
-export default morganMiddleware;
+export default morganMiddleware

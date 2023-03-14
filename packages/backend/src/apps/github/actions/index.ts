@@ -1,3 +1,3 @@
-import createIssue from './create-issue';
+import createIssue from './create-issue'
 
-export default [createIssue];
+export default [createIssue]

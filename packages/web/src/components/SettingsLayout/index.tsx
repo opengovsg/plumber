@@ -1,46 +1,44 @@
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-
-import * as URLS from 'config/urls';
-import AppBar from 'components/AppBar';
-import Drawer from 'components/Drawer';
+import * as React from 'react'
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew'
+import Box from '@mui/material/Box'
+import { useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import AppBar from 'components/AppBar'
+import Drawer from 'components/Drawer'
+import * as URLS from 'config/urls'
 
 type SettingsLayoutProps = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 const drawerLinks = [
   {
     Icon: AccountCircleIcon,
     primary: 'settingsDrawer.myProfile',
-    to: URLS.SETTINGS_PROFILE
-  }
-];
+    to: URLS.SETTINGS_PROFILE,
+  },
+]
 
 const drawerBottomLinks = [
   {
     Icon: ArrowBackIosNewIcon,
     primary: 'settingsDrawer.goBack',
-    to: '/'
-  }
-];
+    to: '/',
+  },
+]
 
 export default function SettingsLayout({
-  children
+  children,
 }: SettingsLayoutProps): React.ReactElement {
-  const theme = useTheme();
+  const theme = useTheme()
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('lg'), {
-    noSsr: true
-  });
-  const [isDrawerOpen, setDrawerOpen] = React.useState(!matchSmallScreens);
+    noSsr: true,
+  })
+  const [isDrawerOpen, setDrawerOpen] = React.useState(!matchSmallScreens)
 
-  const openDrawer = () => setDrawerOpen(true);
-  const closeDrawer = () => setDrawerOpen(false);
+  const openDrawer = () => setDrawerOpen(true)
+  const closeDrawer = () => setDrawerOpen(false)
 
   return (
     <>
@@ -62,5 +60,5 @@ export default function SettingsLayout({
         <Box sx={{ flex: 1 }}>{children}</Box>
       </Box>
     </>
-  );
+  )
 }

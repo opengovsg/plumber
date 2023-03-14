@@ -1,23 +1,23 @@
-import { TBeforeRequest } from '@automatisch/types';
+import { TBeforeRequest } from '@plumber/types'
 
 const addAuthHeader: TBeforeRequest = ($, requestConfig) => {
-  const authData = $.auth.data;
+  const authData = $.auth.data
   if (
     requestConfig.headers &&
     authData?.userAccessToken &&
     authData?.botAccessToken
   ) {
     if (requestConfig.additionalProperties?.sendAsBot) {
-      requestConfig.headers.Authorization = `Bearer ${authData.botAccessToken}`;
+      requestConfig.headers.Authorization = `Bearer ${authData.botAccessToken}`
     } else {
-      requestConfig.headers.Authorization = `Bearer ${authData.userAccessToken}`;
+      requestConfig.headers.Authorization = `Bearer ${authData.userAccessToken}`
     }
   }
 
   requestConfig.headers['Content-Type'] =
-    requestConfig.headers['Content-Type'] || 'application/json; charset=utf-8';
+    requestConfig.headers['Content-Type'] || 'application/json; charset=utf-8'
 
-  return requestConfig;
-};
+  return requestConfig
+}
 
-export default addAuthHeader;
+export default addAuthHeader

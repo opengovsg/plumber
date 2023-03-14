@@ -1,7 +1,7 @@
-import Crypto from 'crypto';
+import Crypto from 'crypto'
 
 const instanceId = () => {
-  return Crypto.randomUUID();
-};
+  return Crypto.randomUUID()
+}
 
-export default instanceId;
+export default instanceId

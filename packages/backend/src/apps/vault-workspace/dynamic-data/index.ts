@@ -1,3 +1,3 @@
-import listColumns from './list-columns';
+import listColumns from './list-columns'
 
-export default [listColumns];
+export default [listColumns]

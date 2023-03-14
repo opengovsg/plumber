@@ -1,16 +1,15 @@
-import * as React from 'react';
-import { useParams } from 'react-router-dom';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-
-import Container from 'components/Container';
+import * as React from 'react'
+import { useParams } from 'react-router-dom'
+import Box from '@mui/material/Box'
+import Grid from '@mui/material/Grid'
+import Container from 'components/Container'
 
 type FlowParams = {
-  flowId: string;
-};
+  flowId: string
+}
 
 export default function Flow(): React.ReactElement {
-  const { flowId } = useParams() as FlowParams;
+  const { flowId } = useParams() as FlowParams
 
   return (
     <Box sx={{ py: 3 }}>
@@ -22,5 +21,5 @@ export default function Flow(): React.ReactElement {
         </Grid>
       </Container>
     </Box>
-  );
+  )
 }

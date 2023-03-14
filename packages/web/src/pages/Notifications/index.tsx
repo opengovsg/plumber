@@ -1,23 +1,22 @@
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-
-import useNotifications from 'hooks/useNotifications';
-import Container from 'components/Container';
-import NotificationCard from 'components/NotificationCard';
-import PageTitle from 'components/PageTitle';
-import useFormatMessage from 'hooks/useFormatMessage';
+import * as React from 'react'
+import Box from '@mui/material/Box'
+import Stack from '@mui/material/Stack'
+import Container from 'components/Container'
+import NotificationCard from 'components/NotificationCard'
+import PageTitle from 'components/PageTitle'
+import useFormatMessage from 'hooks/useFormatMessage'
+import useNotifications from 'hooks/useNotifications'
 
 interface INotification {
-  name: string;
-  createdAt: string;
-  documentationUrl: string;
-  description: string;
+  name: string
+  createdAt: string
+  documentationUrl: string
+  description: string
 }
 
 export default function Updates(): React.ReactElement {
-  const formatMessage = useFormatMessage();
-  const notifications = useNotifications();
+  const formatMessage = useFormatMessage()
+  const notifications = useNotifications()
 
   return (
     <Box sx={{ py: 3 }}>
@@ -39,5 +38,5 @@ export default function Updates(): React.ReactElement {
         </Stack>
       </Container>
     </Box>
-  );
+  )
 }

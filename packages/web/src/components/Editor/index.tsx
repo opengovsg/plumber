@@ -1,58 +1,58 @@
-import * as React from 'react';
-import { useMutation } from '@apollo/client';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import AddIcon from '@mui/icons-material/Add';
-import type { IFlow, IStep } from '@automatisch/types';
+import type { IFlow, IStep } from '@plumber/types'
 
-import { GET_FLOW } from 'graphql/queries/get-flow';
-import { CREATE_STEP } from 'graphql/mutations/create-step';
-import { UPDATE_STEP } from 'graphql/mutations/update-step';
-import FlowStep from 'components/FlowStep';
+import * as React from 'react'
+import { useMutation } from '@apollo/client'
+import AddIcon from '@mui/icons-material/Add'
+import Box from '@mui/material/Box'
+import IconButton from '@mui/material/IconButton'
+import FlowStep from 'components/FlowStep'
+import { CREATE_STEP } from 'graphql/mutations/create-step'
+import { UPDATE_STEP } from 'graphql/mutations/update-step'
+import { GET_FLOW } from 'graphql/queries/get-flow'
 
 type EditorProps = {
-  flow: IFlow;
-};
+  flow: IFlow
+}
 
 function updateHandlerFactory(flowId: string, previousStepId: string) {
   return function createStepUpdateHandler(cache: any, mutationResult: any) {
-    const { data } = mutationResult;
-    const { createStep: createdStep } = data;
+    const { data } = mutationResult
+    const { createStep: createdStep } = data
     const { getFlow: flow } = cache.readQuery({
       query: GET_FLOW,
       variables: { id: flowId },
-    });
+    })
     const steps = flow.steps.reduce((steps: any[], currentStep: any) => {
       if (currentStep.id === previousStepId) {
-        return [...steps, currentStep, createdStep];
+        return [...steps, currentStep, createdStep]
       }
 
-      return [...steps, currentStep];
-    }, []);
+      return [...steps, currentStep]
+    }, [])
 
     cache.writeQuery({
       query: GET_FLOW,
       variables: { id: flowId },
       data: { getFlow: { ...flow, steps } },
-    });
-  };
+    })
+  }
 }
 
 export default function Editor(props: EditorProps): React.ReactElement {
-  const [updateStep] = useMutation(UPDATE_STEP);
+  const [updateStep] = useMutation(UPDATE_STEP)
   const [createStep, { loading: creationInProgress }] = useMutation(
     CREATE_STEP,
     {
       refetchQueries: ['GetFlow'],
-    }
-  );
+    },
+  )
 
-  const { flow } = props;
-  const [triggerStep] = flow.steps;
+  const { flow } = props
+  const [triggerStep] = flow.steps
 
   const [currentStepId, setCurrentStepId] = React.useState<string | null>(
-    triggerStep.id
-  );
+    triggerStep.id,
+  )
 
   const onStepChange = React.useCallback(
     (step: any) => {
@@ -66,18 +66,18 @@ export default function Editor(props: EditorProps): React.ReactElement {
         flow: {
           id: flow.id,
         },
-      };
+      }
 
       if (step.appKey) {
-        mutationInput.appKey = step.appKey;
+        mutationInput.appKey = step.appKey
       }
 
       updateStep({
         variables: { input: mutationInput },
-      });
+      })
     },
-    [updateStep, flow.id]
-  );
+    [updateStep, flow.id],
+  )
 
   const addStep = React.useCallback(
     async (previousStepId: string) => {
@@ -88,24 +88,24 @@ export default function Editor(props: EditorProps): React.ReactElement {
         flow: {
           id: flow.id,
         },
-      };
+      }
 
       const createdStep = await createStep({
         variables: { input: mutationInput },
         update: updateHandlerFactory(flow.id, previousStepId),
-      });
-      const createdStepId = createdStep.data.createStep.id;
+      })
+      const createdStepId = createdStep.data.createStep.id
 
-      setCurrentStepId(createdStepId);
+      setCurrentStepId(createdStepId)
     },
-    [createStep, flow.id]
-  );
+    [createStep, flow.id],
+  )
 
   const openNextStep = React.useCallback((nextStep: IStep) => {
     return () => {
-      setCurrentStepId(nextStep?.id);
-    };
-  }, []);
+      setCurrentStepId(nextStep?.id)
+    }
+  }, [])
 
   return (
     <Box
@@ -140,5 +140,5 @@ export default function Editor(props: EditorProps): React.ReactElement {
         </React.Fragment>
       ))}
     </Box>
-  );
+  )
 }

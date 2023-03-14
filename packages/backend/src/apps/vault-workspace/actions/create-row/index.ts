@@ -1,5 +1,5 @@
-import defineAction from '../../../../helpers/define-action';
-import createTableRow from '../../common/create-table-row';
+import defineAction from '../../../../helpers/define-action'
+import createTableRow from '../../common/create-table-row'
 
 // NOTE: this is just demo code, we are not using action yet.
 export default defineAction({
@@ -26,23 +26,23 @@ export default defineAction({
   ],
 
   async run($) {
-    const rawColumnData = $.step.parameters.columns as string;
+    const rawColumnData = $.step.parameters.columns as string
     const columns = rawColumnData.split(',').map((each) => {
-      return each.trim();
-    });
+      return each.trim()
+    })
 
-    const rawValueData = $.step.parameters.values as string;
-    const values = rawValueData.split(',');
+    const rawValueData = $.step.parameters.values as string
+    const values = rawValueData.split(',')
 
     if (columns.length !== values.length) {
-      throw new Error('The number of columns and values must be equal.');
+      throw new Error('The number of columns and values must be equal.')
     }
 
-    const row: { [key: string]: string } = {};
+    const row: { [key: string]: string } = {}
     for (let i = 0; i < columns.length; i++) {
-      row[columns[i]] = values[i];
+      row[columns[i]] = values[i]
     }
 
-    await createTableRow($, row);
+    await createTableRow($, row)
   },
-});
+})

@@ -1,3 +1,3 @@
-import sendSms from './send-sms';
+import sendSms from './send-sms'
 
-export default [sendSms];
+export default [sendSms]

@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const RESET_CONNECTION = gql`
   mutation ResetConnection($input: ResetConnectionInput) {
@@ -6,4 +6,4 @@ export const RESET_CONNECTION = gql`
       id
     }
   }
-`;
+`

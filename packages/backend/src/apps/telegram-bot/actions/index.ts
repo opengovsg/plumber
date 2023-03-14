@@ -1,3 +1,3 @@
-import sendMessage from './send-message';
+import sendMessage from './send-message'
 
-export default [sendMessage];
+export default [sendMessage]

@@ -1,73 +1,70 @@
-import * as React from 'react';
-import { useQuery, useLazyQuery } from '@apollo/client';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
-import List from '@mui/material/List';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import IconButton from '@mui/material/IconButton';
-import ErrorIcon from '@mui/icons-material/Error';
-import CircularProgress from '@mui/material/CircularProgress';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import type { BaseSchema } from 'yup';
-import type {
-  IApp,
-  ITrigger,
-  IAction,
-  IStep,
-  ISubstep,
-} from '@automatisch/types';
+import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import { EditorContext } from 'contexts/Editor';
-import { StepExecutionsProvider } from 'contexts/StepExecutions';
-import TestSubstep from 'components/TestSubstep';
-import FlowSubstep from 'components/FlowSubstep';
-import ChooseAppAndEventSubstep from 'components/ChooseAppAndEventSubstep';
-import ChooseConnectionSubstep from 'components/ChooseConnectionSubstep';
-import Form from 'components/Form';
-import FlowStepContextMenu from 'components/FlowStepContextMenu';
-import AppIcon from 'components/AppIcon';
-import { GET_APPS } from 'graphql/queries/get-apps';
-import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions';
-import useFormatMessage from 'hooks/useFormatMessage';
+import * as React from 'react'
+import { useLazyQuery, useQuery } from '@apollo/client'
+import { yupResolver } from '@hookform/resolvers/yup'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import ErrorIcon from '@mui/icons-material/Error'
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import Collapse from '@mui/material/Collapse'
+import IconButton from '@mui/material/IconButton'
+import List from '@mui/material/List'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import AppIcon from 'components/AppIcon'
+import ChooseAppAndEventSubstep from 'components/ChooseAppAndEventSubstep'
+import ChooseConnectionSubstep from 'components/ChooseConnectionSubstep'
+import FlowStepContextMenu from 'components/FlowStepContextMenu'
+import FlowSubstep from 'components/FlowSubstep'
+import Form from 'components/Form'
+import TestSubstep from 'components/TestSubstep'
+import { EditorContext } from 'contexts/Editor'
+import { StepExecutionsProvider } from 'contexts/StepExecutions'
+import { GET_APPS } from 'graphql/queries/get-apps'
+import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
+import useFormatMessage from 'hooks/useFormatMessage'
+import type { BaseSchema } from 'yup'
+import * as yup from 'yup'
+
 import {
-  AppIconWrapper,
   AppIconStatusIconWrapper,
+  AppIconWrapper,
   Content,
   Header,
   Wrapper,
-} from './style';
+} from './style'
 
 type FlowStepProps = {
-  collapsed?: boolean;
-  step: IStep;
-  index?: number;
-  onOpen?: () => void;
-  onClose?: () => void;
-  onChange: (step: IStep) => void;
-  onContinue?: () => void;
-};
+  collapsed?: boolean
+  step: IStep
+  index?: number
+  onOpen?: () => void
+  onClose?: () => void
+  onChange: (step: IStep) => void
+  onContinue?: () => void
+}
 
-const validIcon = <CheckCircleIcon color="success" />;
-const errorIcon = <ErrorIcon color="error" />;
+const validIcon = <CheckCircleIcon color="success" />
+const errorIcon = <ErrorIcon color="error" />
 
 function generateValidationSchema(substeps: ISubstep[]) {
   const fieldValidations = substeps?.reduce(
     (allValidations, { arguments: args }) => {
-      if (!args || !Array.isArray(args)) return allValidations;
+      if (!args || !Array.isArray(args)) {
+        return allValidations
+      }
 
-      const substepArgumentValidations: Record<string, BaseSchema> = {};
+      const substepArgumentValidations: Record<string, BaseSchema> = {}
 
       for (const arg of args) {
-        const { key, required, dependsOn } = arg;
+        const { key, required, dependsOn } = arg
 
         // base validation for the field if not exists
         if (!substepArgumentValidations[key]) {
-          substepArgumentValidations[key] = yup.mixed();
+          substepArgumentValidations[key] = yup.mixed()
         }
 
         if (typeof substepArgumentValidations[key] === 'object') {
@@ -75,13 +72,13 @@ function generateValidationSchema(substeps: ISubstep[]) {
           if (required) {
             substepArgumentValidations[key] = substepArgumentValidations[
               key
-            ].required(`${key} is required.`);
+            ].required(`${key} is required.`)
           }
 
           // if the field depends on another field, add the dependsOn required validation
           if (Array.isArray(dependsOn) && dependsOn.length > 0) {
             for (const dependsOnKey of dependsOn) {
-              const missingDependencyValueMessage = `We're having trouble loading '${key}' data as required field '${dependsOnKey}' is missing.`;
+              const missingDependencyValueMessage = `We're having trouble loading '${key}' data as required field '${dependsOnKey}' is missing.`
 
               // TODO: make `dependsOnKey` agnostic to the field. However, nested validation schema is not supported.
               // So the fields under the `parameters` key are subject to their siblings only and thus, `parameters.` is removed.
@@ -93,7 +90,7 @@ function generateValidationSchema(substeps: ISubstep[]) {
                   schema
                     .notOneOf([''], missingDependencyValueMessage)
                     .required(missingDependencyValueMessage),
-              });
+              })
             }
           }
         }
@@ -102,41 +99,39 @@ function generateValidationSchema(substeps: ISubstep[]) {
       return {
         ...allValidations,
         ...substepArgumentValidations,
-      };
+      }
     },
-    {}
-  );
+    {},
+  )
 
   const validationSchema = yup.object({
     parameters: yup.object(fieldValidations),
-  });
+  })
 
-  return yupResolver(validationSchema);
+  return yupResolver(validationSchema)
 }
 
 export default function FlowStep(
-  props: FlowStepProps
+  props: FlowStepProps,
 ): React.ReactElement | null {
-  const { collapsed, onChange, onContinue } = props;
-  const editorContext = React.useContext(EditorContext);
-  const contextButtonRef = React.useRef<HTMLButtonElement | null>(null);
-  const step: IStep = props.step;
-  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
-    null
-  );
-  const isTrigger = step.type === 'trigger';
-  const isAction = step.type === 'action';
-  const formatMessage = useFormatMessage();
-  const [currentSubstep, setCurrentSubstep] = React.useState<number | null>(0);
+  const { collapsed, onChange, onContinue } = props
+  const editorContext = React.useContext(EditorContext)
+  const contextButtonRef = React.useRef<HTMLButtonElement | null>(null)
+  const step: IStep = props.step
+  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null)
+  const isTrigger = step.type === 'trigger'
+  const isAction = step.type === 'action'
+  const formatMessage = useFormatMessage()
+  const [currentSubstep, setCurrentSubstep] = React.useState<number | null>(0)
   const { data } = useQuery(GET_APPS, {
     variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  });
+  })
   const [
     getStepWithTestExecutions,
     { data: stepWithTestExecutionsData, called: stepWithTestExecutionsCalled },
   ] = useLazyQuery(GET_STEP_WITH_TEST_EXECUTIONS, {
     fetchPolicy: 'network-only',
-  });
+  })
 
   React.useEffect(() => {
     if (!stepWithTestExecutionsCalled && !collapsed && !isTrigger) {
@@ -144,7 +139,7 @@ export default function FlowStep(
         variables: {
           stepId: step.id,
         },
-      });
+      })
     }
   }, [
     collapsed,
@@ -152,59 +147,57 @@ export default function FlowStep(
     getStepWithTestExecutions,
     step.id,
     isTrigger,
-  ]);
+  ])
 
-  const apps: IApp[] = data?.getApps;
-  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey);
+  const apps: IApp[] = data?.getApps
+  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || [];
+    (isTrigger ? app?.triggers : app?.actions) || []
   const substeps = React.useMemo(
     () =>
       actionsOrTriggers?.find(({ key }: ITrigger | IAction) => key === step.key)
         ?.substeps || [],
-    [actionsOrTriggers, step?.key]
-  );
+    [actionsOrTriggers, step?.key],
+  )
 
   const handleChange = React.useCallback(({ step }: { step: IStep }) => {
-    onChange(step);
-  }, []);
+    onChange(step)
+  }, [])
 
   const expandNextStep = React.useCallback(() => {
-    setCurrentSubstep((currentSubstep) => (currentSubstep ?? 0) + 1);
-  }, []);
+    setCurrentSubstep((currentSubstep) => (currentSubstep ?? 0) + 1)
+  }, [])
 
   const handleSubmit = (val: any) => {
-    handleChange({ step: val as IStep });
-  };
+    handleChange({ step: val as IStep })
+  }
 
   const stepValidationSchema = React.useMemo(
     () => generateValidationSchema(substeps),
-    [substeps]
-  );
+    [substeps],
+  )
 
   if (!apps) {
-    return <CircularProgress sx={{ display: 'block', my: 2 }} />;
+    return <CircularProgress sx={{ display: 'block', my: 2 }} />
   }
 
   const onContextMenuClose = (event: React.SyntheticEvent) => {
-    event.stopPropagation();
-    setAnchorEl(null);
-  };
+    event.stopPropagation()
+    setAnchorEl(null)
+  }
   const onContextMenuClick = (event: React.SyntheticEvent) => {
-    event.stopPropagation();
-    setAnchorEl(contextButtonRef.current);
-  };
-  const onOpen = () => collapsed && props.onOpen?.();
-  const onClose = () => props.onClose?.();
+    event.stopPropagation()
+    setAnchorEl(contextButtonRef.current)
+  }
+  const onOpen = () => collapsed && props.onOpen?.()
+  const onClose = () => props.onClose?.()
 
   const toggleSubstep = (substepIndex: number) =>
-    setCurrentSubstep((value) =>
-      value !== substepIndex ? substepIndex : null
-    );
+    setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
   const validationStatusIcon =
-    step.status === 'completed' ? validIcon : errorIcon;
+    step.status === 'completed' ? validIcon : errorIcon
 
   return (
     <Wrapper
@@ -307,7 +300,7 @@ export default function FlowStep(
 
                       {substep.key &&
                         ['chooseConnection', 'testStep'].includes(
-                          substep.key
+                          substep.key,
                         ) === false && (
                           <FlowSubstep
                             expanded={currentSubstep === index + 1}
@@ -340,5 +333,5 @@ export default function FlowStep(
         />
       )}
     </Wrapper>
-  );
+  )
 }

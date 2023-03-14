@@ -1,24 +1,24 @@
-import * as React from 'react';
+import * as React from 'react'
+import type { UseFormProps } from 'react-hook-form'
 import {
-  FormProvider,
-  useForm,
-  useWatch,
   FieldValues,
+  FormProvider,
   SubmitHandler,
+  useForm,
   UseFormReturn,
-} from 'react-hook-form';
-import type { UseFormProps } from 'react-hook-form';
+  useWatch,
+} from 'react-hook-form'
 
 type FormProps = {
-  children?: React.ReactNode;
-  defaultValues?: UseFormProps['defaultValues'];
-  onSubmit?: SubmitHandler<FieldValues>;
-  render?: (props: UseFormReturn) => React.ReactNode;
-  resolver?: UseFormProps['resolver'];
-  mode?: UseFormProps['mode'];
-};
+  children?: React.ReactNode
+  defaultValues?: UseFormProps['defaultValues']
+  onSubmit?: SubmitHandler<FieldValues>
+  render?: (props: UseFormReturn) => React.ReactNode
+  resolver?: UseFormProps['resolver']
+  mode?: UseFormProps['mode']
+}
 
-const noop = () => null;
+const noop = () => null
 
 export default function Form(props: FormProps): React.ReactElement {
   const {
@@ -29,27 +29,27 @@ export default function Form(props: FormProps): React.ReactElement {
     render,
     mode = 'all',
     ...formProps
-  } = props;
+  } = props
 
   const methods: UseFormReturn = useForm({
     defaultValues,
     reValidateMode: 'onBlur',
     resolver,
     mode,
-  });
+  })
 
-  const form = useWatch({ control: methods.control });
+  const form = useWatch({ control: methods.control })
 
   /**
    * For fields having `dependsOn` fields, we need to re-validate the form.
    */
   React.useEffect(() => {
-    methods.trigger();
-  }, [methods.trigger, form]);
+    methods.trigger()
+  }, [methods.trigger, form])
 
   React.useEffect(() => {
-    methods.reset(defaultValues);
-  }, [defaultValues]);
+    methods.reset(defaultValues)
+  }, [defaultValues])
 
   return (
     <FormProvider {...methods}>
@@ -57,5 +57,5 @@ export default function Form(props: FormProps): React.ReactElement {
         {render ? render(methods) : children}
       </form>
     </FormProvider>
-  );
+  )
 }

@@ -1,77 +1,77 @@
-import * as React from 'react';
-import { useLazyQuery } from '@apollo/client';
-import { Link } from 'react-router-dom';
-import debounce from 'lodash/debounce';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import Dialog from '@mui/material/Dialog';
-import SearchIcon from '@mui/icons-material/Search';
-import InputAdornment from '@mui/material/InputAdornment';
-import CircularProgress from '@mui/material/CircularProgress';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import InputLabel from '@mui/material/InputLabel';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import FormControl from '@mui/material/FormControl';
-import Box from '@mui/material/Box';
-import type { IApp } from '@automatisch/types';
+import type { IApp } from '@plumber/types'
 
-import * as URLS from 'config/urls';
-import AppIcon from 'components/AppIcon';
-import { GET_APPS } from 'graphql/queries/get-apps';
-import useFormatMessage from 'hooks/useFormatMessage';
+import * as React from 'react'
+import { Link } from 'react-router-dom'
+import { useLazyQuery } from '@apollo/client'
+import SearchIcon from '@mui/icons-material/Search'
+import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
+import Dialog from '@mui/material/Dialog'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
+import FormControl from '@mui/material/FormControl'
+import InputAdornment from '@mui/material/InputAdornment'
+import InputLabel from '@mui/material/InputLabel'
+import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
+import OutlinedInput from '@mui/material/OutlinedInput'
+import { useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import AppIcon from 'components/AppIcon'
+import * as URLS from 'config/urls'
+import { GET_APPS } from 'graphql/queries/get-apps'
+import useFormatMessage from 'hooks/useFormatMessage'
+import debounce from 'lodash/debounce'
 
 function createConnectionOrFlow(appKey: string, supportsConnections = false) {
   if (!supportsConnections) {
-    return URLS.CREATE_FLOW_WITH_APP(appKey);
+    return URLS.CREATE_FLOW_WITH_APP(appKey)
   }
 
-  return URLS.APP_ADD_CONNECTION(appKey);
+  return URLS.APP_ADD_CONNECTION(appKey)
 }
 
 type AddNewAppConnectionProps = {
-  onClose: () => void;
-};
+  onClose: () => void
+}
 
 export default function AddNewAppConnection(
-  props: AddNewAppConnectionProps
+  props: AddNewAppConnectionProps,
 ): React.ReactElement {
-  const { onClose } = props;
-  const theme = useTheme();
-  const matchSmallScreens = useMediaQuery(theme.breakpoints.down('sm'));
-  const formatMessage = useFormatMessage();
-  const [appName, setAppName] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  const { onClose } = props
+  const theme = useTheme()
+  const matchSmallScreens = useMediaQuery(theme.breakpoints.down('sm'))
+  const formatMessage = useFormatMessage()
+  const [appName, setAppName] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState(false)
   const [getApps, { data }] = useLazyQuery(GET_APPS, {
     onCompleted: () => {
-      setLoading(false);
+      setLoading(false)
     },
-  });
+  })
 
   const fetchData = React.useMemo(
     () => debounce((name) => getApps({ variables: { name } }), 300),
-    [getApps]
-  );
+    [getApps],
+  )
 
   React.useEffect(
     function fetchAppsOnAppNameChange() {
-      setLoading(true);
+      setLoading(true)
 
-      fetchData(appName);
+      fetchData(appName)
     },
-    [fetchData, appName]
-  );
+    [fetchData, appName],
+  )
 
   React.useEffect(function cancelDebounceOnUnmount() {
     return () => {
-      fetchData.cancel();
-    };
-  }, []);
+      fetchData.cancel()
+    }
+  }, [])
 
   return (
     <Dialog open={true} onClose={onClose} maxWidth="sm" fullWidth>
@@ -139,5 +139,5 @@ export default function AddNewAppConnection(
         </List>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

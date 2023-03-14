@@ -1,25 +1,25 @@
-import type { BaseEditor, Text, Descendant } from 'slate';
-import type { ReactEditor } from 'slate-react';
+import type { BaseEditor, Descendant, Text } from 'slate'
+import type { ReactEditor } from 'slate-react'
 
 export type VariableElement = {
-  type: 'variable';
-  value?: unknown;
-  name?: string;
-  children: Text[];
-};
+  type: 'variable'
+  value?: unknown
+  name?: string
+  children: Text[]
+}
 
 export type ParagraphElement = {
-  type: 'paragraph';
-  children: Descendant[];
-};
+  type: 'paragraph'
+  children: Descendant[]
+}
 
-export type CustomEditor = BaseEditor & ReactEditor;
+export type CustomEditor = BaseEditor & ReactEditor
 
-export type CustomElement = VariableElement | ParagraphElement;
+export type CustomElement = VariableElement | ParagraphElement
 
 declare module 'slate' {
   interface CustomTypes {
-    Editor: CustomEditor;
-    Element: CustomElement;
+    Editor: CustomEditor
+    Element: CustomElement
   }
 }

@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GET_EXECUTION = gql`
   query GetExecution($executionId: String!) {
@@ -14,4 +14,4 @@ export const GET_EXECUTION = gql`
       }
     }
   }
-`;
+`

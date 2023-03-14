@@ -1,5 +1,5 @@
-import { styled } from '@mui/material/styles';
-import MuiCardContent from '@mui/material/CardContent';
+import MuiCardContent from '@mui/material/CardContent'
+import { styled } from '@mui/material/styles'
 
 export const CardContent = styled(MuiCardContent)`
   display: flex;
@@ -8,4 +8,4 @@ export const CardContent = styled(MuiCardContent)`
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing(2)};
   min-height: 200px;
-`;
+`

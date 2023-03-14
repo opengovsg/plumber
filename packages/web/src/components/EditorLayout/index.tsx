@@ -1,32 +1,32 @@
-import * as React from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@apollo/client';
-import Stack from '@mui/material/Stack';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-import Snackbar from '@mui/material/Snackbar';
+import type { IFlow } from '@plumber/types'
 
-import { EditorProvider } from 'contexts/Editor';
-import EditableTypography from 'components/EditableTypography';
-import Container from 'components/Container';
-import Editor from 'components/Editor';
-import useFormatMessage from 'hooks/useFormatMessage';
-import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status';
-import { UPDATE_FLOW } from 'graphql/mutations/update-flow';
-import { GET_FLOW } from 'graphql/queries/get-flow';
-import type { IFlow } from '@automatisch/types';
-import * as URLS from 'config/urls';
+import * as React from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { useMutation, useQuery } from '@apollo/client'
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import IconButton from '@mui/material/IconButton'
+import Snackbar from '@mui/material/Snackbar'
+import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
+import Container from 'components/Container'
+import EditableTypography from 'components/EditableTypography'
+import Editor from 'components/Editor'
+import * as URLS from 'config/urls'
+import { EditorProvider } from 'contexts/Editor'
+import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
+import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
+import { GET_FLOW } from 'graphql/queries/get-flow'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 export default function EditorLayout(): React.ReactElement {
-  const { flowId } = useParams();
-  const formatMessage = useFormatMessage();
-  const [updateFlow] = useMutation(UPDATE_FLOW);
-  const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS);
-  const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } });
-  const flow: IFlow = data?.getFlow;
+  const { flowId } = useParams()
+  const formatMessage = useFormatMessage()
+  const [updateFlow] = useMutation(UPDATE_FLOW)
+  const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
+  const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
+  const flow: IFlow = data?.getFlow
 
   const onFlowNameUpdate = React.useCallback(
     async (name: string) => {
@@ -44,10 +44,10 @@ export default function EditorLayout(): React.ReactElement {
             name,
           },
         },
-      });
+      })
     },
-    [flow?.id]
-  );
+    [flow?.id],
+  )
 
   const onFlowStatusUpdate = React.useCallback(
     async (active: boolean) => {
@@ -65,10 +65,10 @@ export default function EditorLayout(): React.ReactElement {
             active,
           },
         },
-      });
+      })
     },
-    [flow?.id]
-  );
+    [flow?.id],
+  )
 
   return (
     <>
@@ -154,5 +154,5 @@ export default function EditorLayout(): React.ReactElement {
         }
       />
     </>
-  );
+  )
 }

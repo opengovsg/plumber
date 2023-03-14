@@ -1,57 +1,60 @@
-import * as React from 'react';
-import { useQuery } from '@apollo/client';
-import Stack from '@mui/material/Stack';
-import ErrorIcon from '@mui/icons-material/Error';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import type { IApp, IExecutionStep, IStep } from '@automatisch/types';
+import type { IApp, IExecutionStep, IStep } from '@plumber/types'
 
-import TabPanel from 'components/TabPanel';
-import JSONViewer from 'components/JSONViewer';
-import AppIcon from 'components/AppIcon';
-import { GET_APPS } from 'graphql/queries/get-apps';
-import useFormatMessage from 'hooks/useFormatMessage';
+import * as React from 'react'
+import { useQuery } from '@apollo/client'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import ErrorIcon from '@mui/icons-material/Error'
+import Box from '@mui/material/Box'
+import Stack from '@mui/material/Stack'
+import Tab from '@mui/material/Tab'
+import Tabs from '@mui/material/Tabs'
+import Typography from '@mui/material/Typography'
+import AppIcon from 'components/AppIcon'
+import JSONViewer from 'components/JSONViewer'
+import TabPanel from 'components/TabPanel'
+import { GET_APPS } from 'graphql/queries/get-apps'
+import useFormatMessage from 'hooks/useFormatMessage'
+
 import {
-  AppIconWrapper,
   AppIconStatusIconWrapper,
+  AppIconWrapper,
   Content,
   Header,
   Wrapper,
-} from './style';
+} from './style'
 
 type ExecutionStepProps = {
-  collapsed?: boolean;
-  step: IStep;
-  index?: number;
-  executionStep: IExecutionStep;
-};
+  collapsed?: boolean
+  step: IStep
+  index?: number
+  executionStep: IExecutionStep
+}
 
-const validIcon = <CheckCircleIcon color="success" />;
-const errorIcon = <ErrorIcon color="error" />;
+const validIcon = <CheckCircleIcon color="success" />
+const errorIcon = <ErrorIcon color="error" />
 
 export default function ExecutionStep(
-  props: ExecutionStepProps
+  props: ExecutionStepProps,
 ): React.ReactElement | null {
-  const { executionStep } = props;
-  const [activeTabIndex, setActiveTabIndex] = React.useState(0);
-  const step: IStep = executionStep.step;
-  const isTrigger = step.type === 'trigger';
-  const isAction = step.type === 'action';
-  const formatMessage = useFormatMessage();
+  const { executionStep } = props
+  const [activeTabIndex, setActiveTabIndex] = React.useState(0)
+  const step: IStep = executionStep.step
+  const isTrigger = step.type === 'trigger'
+  const isAction = step.type === 'action'
+  const formatMessage = useFormatMessage()
   const { data } = useQuery(GET_APPS, {
     variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  });
-  const apps: IApp[] = data?.getApps;
-  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey);
+  })
+  const apps: IApp[] = data?.getApps
+  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  if (!apps) return null;
+  if (!apps) {
+    return null
+  }
 
   const validationStatusIcon =
-    executionStep.status === 'success' ? validIcon : errorIcon;
-  const hasError = !!executionStep.errorDetails;
+    executionStep.status === 'success' ? validIcon : errorIcon
+  const hasError = !!executionStep.errorDetails
 
   return (
     <Wrapper elevation={1} data-test="execution-step">
@@ -106,5 +109,5 @@ export default function ExecutionStep(
         )}
       </Content>
     </Wrapper>
-  );
+  )
 }

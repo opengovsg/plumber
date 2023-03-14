@@ -1,7 +1,7 @@
-import { IRawTrigger } from '@automatisch/types';
+import { IRawTrigger } from '@plumber/types'
 
 export default function defineTrigger(
-  triggerDefinition: IRawTrigger
+  triggerDefinition: IRawTrigger,
 ): IRawTrigger {
-  return triggerDefinition;
+  return triggerDefinition
 }

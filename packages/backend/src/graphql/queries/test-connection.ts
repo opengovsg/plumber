@@ -1,40 +1,40 @@
-import Context from '../../types/express/context';
-import App from '../../models/app';
-import globalVariable from '../../helpers/global-variable';
+import globalVariable from '../../helpers/global-variable'
+import App from '../../models/app'
+import Context from '../../types/express/context'
 
 type Params = {
-  id: string;
-  data: object;
-};
+  id: string
+  data: object
+}
 
 const testConnection = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({
       id: params.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
-  const app = await App.findOneByKey(connection.key, false);
-  const $ = await globalVariable({ connection, app });
+  const app = await App.findOneByKey(connection.key, false)
+  const $ = await globalVariable({ connection, app })
 
-  let isStillVerified;
+  let isStillVerified
   try {
-    isStillVerified = !!(await app.auth.isStillVerified($));
+    isStillVerified = !!(await app.auth.isStillVerified($))
   } catch {
-    isStillVerified = false;
+    isStillVerified = false
   }
 
   connection = await connection.$query().patchAndFetch({
     formattedData: connection.formattedData,
     verified: isStillVerified,
-  });
+  })
 
-  return connection;
-};
+  return connection
+}
 
-export default testConnection;
+export default testConnection

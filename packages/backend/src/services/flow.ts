@@ -1,18 +1,18 @@
-import Flow from '../models/flow';
-import globalVariable from '../helpers/global-variable';
-import EarlyExitError from '../errors/early-exit';
-import HttpError from '../errors/http';
+import EarlyExitError from '../errors/early-exit'
+import HttpError from '../errors/http'
+import globalVariable from '../helpers/global-variable'
+import Flow from '../models/flow'
 
 type ProcessFlowOptions = {
-  flowId: string;
-  testRun?: boolean;
-};
+  flowId: string
+  testRun?: boolean
+}
 
 export const processFlow = async (options: ProcessFlowOptions) => {
-  const flow = await Flow.query().findById(options.flowId).throwIfNotFound();
+  const flow = await Flow.query().findById(options.flowId).throwIfNotFound()
 
-  const triggerStep = await flow.getTriggerStep();
-  const triggerCommand = await triggerStep.getTriggerCommand();
+  const triggerStep = await flow.getTriggerStep()
+  const triggerCommand = await triggerStep.getTriggerCommand()
 
   const $ = await globalVariable({
     flow,
@@ -20,27 +20,28 @@ export const processFlow = async (options: ProcessFlowOptions) => {
     app: await triggerStep.getApp(),
     step: triggerStep,
     testRun: options.testRun,
-  });
+  })
 
   try {
+    // why not check if test run here?
     if (triggerCommand.type === 'webhook' && !flow.active) {
-      await triggerCommand.testRun($);
+      await triggerCommand.testRun($)
     } else {
-      await triggerCommand.run($);
+      await triggerCommand.run($)
     }
   } catch (error) {
     if (error instanceof EarlyExitError === false) {
       if (error instanceof HttpError) {
-        $.triggerOutput.error = error.details;
+        $.triggerOutput.error = error.details
       } else {
         try {
-          $.triggerOutput.error = JSON.parse(error.message);
+          $.triggerOutput.error = JSON.parse(error.message)
         } catch {
-          $.triggerOutput.error = { error: error.message };
+          $.triggerOutput.error = { error: error.message }
         }
       }
     }
   }
 
-  return $.triggerOutput;
-};
+  return $.triggerOutput
+}

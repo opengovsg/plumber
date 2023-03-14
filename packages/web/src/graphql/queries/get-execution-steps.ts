@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GET_EXECUTION_STEPS = gql`
   query GetExecutionSteps($executionId: String!, $limit: Int!, $offset: Int!) {
@@ -32,4 +32,4 @@ export const GET_EXECUTION_STEPS = gql`
       }
     }
   }
-`;
+`

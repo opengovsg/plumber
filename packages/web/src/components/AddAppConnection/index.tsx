@@ -1,59 +1,63 @@
-import * as React from 'react';
-import Alert from '@mui/material/Alert';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import Dialog from '@mui/material/Dialog';
-import LoadingButton from '@mui/lab/LoadingButton';
-import { FieldValues, SubmitHandler } from 'react-hook-form';
-import type { IApp, IJSONObject, IField } from '@automatisch/types';
+import type { IApp, IField, IJSONObject } from '@plumber/types'
 
-import useFormatMessage from 'hooks/useFormatMessage';
-import computeAuthStepVariables from 'helpers/computeAuthStepVariables';
-import { processStep } from 'helpers/authenticationSteps';
-import InputCreator from 'components/InputCreator';
-import { generateExternalLink } from '../../helpers/translation-values';
-import { Form } from './style';
+import * as React from 'react'
+import { FieldValues, SubmitHandler } from 'react-hook-form'
+import LoadingButton from '@mui/lab/LoadingButton'
+import Alert from '@mui/material/Alert'
+import Dialog from '@mui/material/Dialog'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogTitle from '@mui/material/DialogTitle'
+import InputCreator from 'components/InputCreator'
+import { processStep } from 'helpers/authenticationSteps'
+import computeAuthStepVariables from 'helpers/computeAuthStepVariables'
+import useFormatMessage from 'hooks/useFormatMessage'
+
+import { generateExternalLink } from '../../helpers/translation-values'
+
+import { Form } from './style'
 
 type AddAppConnectionProps = {
-  onClose: (response: Record<string, unknown>) => void;
-  application: IApp;
-  connectionId?: string;
-};
+  onClose: (response: Record<string, unknown>) => void
+  application: IApp
+  connectionId?: string
+}
 
 type Response = {
-  [key: string]: any;
-};
+  [key: string]: any
+}
 
 export default function AddAppConnection(
-  props: AddAppConnectionProps
+  props: AddAppConnectionProps,
 ): React.ReactElement {
-  const { application, connectionId, onClose } = props;
-  const { name, authDocUrl, key, auth } = application;
-  const formatMessage = useFormatMessage();
-  const [error, setError] = React.useState<IJSONObject | null>(null);
-  const [inProgress, setInProgress] = React.useState(false);
-  const hasConnection = Boolean(connectionId);
+  const { application, connectionId, onClose } = props
+  const { name, authDocUrl, key, auth } = application
+  const formatMessage = useFormatMessage()
+  const [error, setError] = React.useState<IJSONObject | null>(null)
+  const [inProgress, setInProgress] = React.useState(false)
+  const hasConnection = Boolean(connectionId)
   const steps = hasConnection
     ? auth?.reconnectionSteps
-    : auth?.authenticationSteps;
+    : auth?.authenticationSteps
 
   React.useEffect(() => {
     if (window.opener) {
       window.opener.postMessage({
         source: 'automatisch',
         payload: window.location.search,
-      });
-      window.close();
+      })
+      window.close()
     }
-  }, []);
+  }, [])
 
   const submitHandler: SubmitHandler<FieldValues> = React.useCallback(
     async (data) => {
-      if (!steps) return;
+      if (!steps) {
+        return
+      }
 
-      setInProgress(true);
-      setError(null);
+      setInProgress(true)
+      setError(null)
 
       const response: Response = {
         key,
@@ -61,37 +65,36 @@ export default function AddAppConnection(
           id: connectionId,
         },
         fields: data,
-      };
+      }
 
-      let stepIndex = 0;
+      let stepIndex = 0
       while (stepIndex < steps.length) {
-        const step = steps[stepIndex];
-        const variables = computeAuthStepVariables(step.arguments, response);
+        const step = steps[stepIndex]
+        const variables = computeAuthStepVariables(step.arguments, response)
 
         try {
-          const stepResponse = await processStep(step, variables);
+          const stepResponse = await processStep(step, variables)
 
-          response[step.name] = stepResponse;
+          response[step.name] = stepResponse
         } catch (err) {
-          const error = err as IJSONObject;
-          console.log(error);
-          setError((error.graphQLErrors as IJSONObject[])?.[0]);
-          setInProgress(false);
+          const error = err as IJSONObject
+          setError((error.graphQLErrors as IJSONObject[])?.[0])
+          setInProgress(false)
 
-          break;
+          break
         }
 
-        stepIndex++;
+        stepIndex++
 
         if (stepIndex === steps.length) {
-          onClose(response);
+          onClose(response)
         }
       }
 
-      setInProgress(false);
+      setInProgress(false)
     },
-    [connectionId, key, steps, onClose]
-  );
+    [connectionId, key, steps, onClose],
+  )
 
   return (
     <Dialog open={true} onClose={onClose} data-test="add-app-connection-dialog">
@@ -147,5 +150,5 @@ export default function AddAppConnection(
         </DialogContentText>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

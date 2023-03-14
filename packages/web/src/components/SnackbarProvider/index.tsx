@@ -1,7 +1,7 @@
 import {
   SnackbarProvider as BaseSnackbarProvider,
   SnackbarProviderProps,
-} from 'notistack';
+} from 'notistack'
 
 const SnackbarProvider = (props: SnackbarProviderProps): JSX.Element => {
   return (
@@ -13,7 +13,7 @@ const SnackbarProvider = (props: SnackbarProviderProps): JSX.Element => {
       }}
       dense
     />
-  );
-};
+  )
+}
 
-export default SnackbarProvider;
+export default SnackbarProvider

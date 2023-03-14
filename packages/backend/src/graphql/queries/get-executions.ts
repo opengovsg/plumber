@@ -1,16 +1,17 @@
-import { raw } from 'objection';
-import Context from '../../types/express/context';
-import paginate from '../../helpers/pagination';
+import { raw } from 'objection'
+
+import paginate from '../../helpers/pagination'
+import Context from '../../types/express/context'
 
 type Params = {
-  limit: number;
-  offset: number;
-};
+  limit: number
+  offset: number
+}
 
 const getExecutions = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   const selectStatusStatement = `
     case
@@ -19,7 +20,7 @@ const getExecutions = async (
       else 'success'
     end
     as status
-  `;
+  `
 
   const executions = context.currentUser
     .$relatedQuery('executions')
@@ -32,9 +33,9 @@ const getExecutions = async (
       },
     })
     .groupBy('executions.id')
-    .orderBy('created_at', 'desc');
+    .orderBy('created_at', 'desc')
 
-  return paginate(executions, params.limit, params.offset);
-};
+  return paginate(executions, params.limit, params.offset)
+}
 
-export default getExecutions;
+export default getExecutions

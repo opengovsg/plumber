@@ -1,25 +1,28 @@
-import { QueryContext, ModelOptions } from 'objection';
-import type { RelationMappings } from 'objection';
-import { AES, enc } from 'crypto-js';
-import Base from './base';
-import User from './user';
-import Step from './step';
-import appConfig from '../config/app';
-import { IJSONObject } from '@automatisch/types';
-import Telemetry from '../helpers/telemetry';
+import { IJSONObject } from '@plumber/types'
+
+import { AES, enc } from 'crypto-js'
+import type { RelationMappings } from 'objection'
+import { ModelOptions, QueryContext } from 'objection'
+
+import appConfig from '../config/app'
+import Telemetry from '../helpers/telemetry'
+
+import Base from './base'
+import Step from './step'
+import User from './user'
 
 class Connection extends Base {
-  id!: string;
-  key!: string;
-  data: string;
-  formattedData?: IJSONObject;
-  userId!: string;
-  verified: boolean;
-  draft: boolean;
-  count?: number;
-  flowCount?: number;
+  id!: string
+  key!: string
+  data: string
+  formattedData?: IJSONObject
+  userId!: string
+  verified: boolean
+  draft: boolean
+  count?: number
+  flowCount?: number
 
-  static tableName = 'connections';
+  static tableName = 'connections'
 
   static jsonSchema = {
     type: 'object',
@@ -32,9 +35,9 @@ class Connection extends Base {
       formattedData: { type: 'object' },
       userId: { type: 'string', format: 'uuid' },
       verified: { type: 'boolean', default: false },
-      draft: { type: 'boolean' }
-    }
-  };
+      draft: { type: 'boolean' },
+    },
+  }
 
   static relationMappings = (): RelationMappings => ({
     user: {
@@ -42,76 +45,80 @@ class Connection extends Base {
       modelClass: User,
       join: {
         from: 'connections.user_id',
-        to: 'users.id'
-      }
+        to: 'users.id',
+      },
     },
     steps: {
       relation: Base.HasManyRelation,
       modelClass: Step,
       join: {
         from: 'connections.id',
-        to: 'steps.connection_id'
-      }
-    }
-  });
+        to: 'steps.connection_id',
+      },
+    },
+  })
 
   encryptData(): void {
-    if (!this.eligibleForEncryption()) return;
+    if (!this.eligibleForEncryption()) {
+      return
+    }
 
     this.data = AES.encrypt(
       JSON.stringify(this.formattedData),
-      appConfig.encryptionKey
-    ).toString();
+      appConfig.encryptionKey,
+    ).toString()
 
-    delete this.formattedData;
+    delete this.formattedData
   }
 
   decryptData(): void {
-    if (!this.eligibleForDecryption()) return;
+    if (!this.eligibleForDecryption()) {
+      return
+    }
 
     const decrypted = AES.decrypt(this.data, appConfig.encryptionKey).toString(
-      enc.Utf8
-    );
+      enc.Utf8,
+    )
 
-    this.formattedData = decrypted ? JSON.parse(decrypted) : {};
+    this.formattedData = decrypted ? JSON.parse(decrypted) : {}
   }
 
   eligibleForEncryption(): boolean {
-    return this.formattedData ? true : false;
+    return this.formattedData ? true : false
   }
 
   eligibleForDecryption(): boolean {
-    return this.data ? true : false;
+    return this.data ? true : false
   }
 
   // TODO: Make another abstraction like beforeSave instead of using
   // beforeInsert and beforeUpdate separately for the same operation.
   async $beforeInsert(queryContext: QueryContext): Promise<void> {
-    await super.$beforeInsert(queryContext);
-    this.encryptData();
+    await super.$beforeInsert(queryContext)
+    this.encryptData()
   }
 
   async $beforeUpdate(
     opt: ModelOptions,
-    queryContext: QueryContext
+    queryContext: QueryContext,
   ): Promise<void> {
-    await super.$beforeUpdate(opt, queryContext);
-    this.encryptData();
+    await super.$beforeUpdate(opt, queryContext)
+    this.encryptData()
   }
 
   async $afterFind(): Promise<void> {
-    this.decryptData();
+    this.decryptData()
   }
 
   async $afterInsert(queryContext: QueryContext) {
-    await super.$afterInsert(queryContext);
-    Telemetry.connectionCreated(this);
+    await super.$afterInsert(queryContext)
+    Telemetry.connectionCreated(this)
   }
 
   async $afterUpdate(opt: ModelOptions, queryContext: QueryContext) {
-    await super.$afterUpdate(opt, queryContext);
-    Telemetry.connectionUpdated(this);
+    await super.$afterUpdate(opt, queryContext)
+    Telemetry.connectionUpdated(this)
   }
 }
 
-export default Connection;
+export default Connection

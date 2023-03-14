@@ -1,4 +1,4 @@
-import defineAction from '../../../../helpers/define-action';
+import defineAction from '../../../../helpers/define-action'
 
 export default defineAction({
   name: 'Delay For',
@@ -44,13 +44,13 @@ export default defineAction({
   ],
 
   async run($) {
-    const { delayForUnit, delayForValue } = $.step.parameters;
+    const { delayForUnit, delayForValue } = $.step.parameters
 
     const dataItem = {
       delayForUnit,
       delayForValue,
-    };
+    }
 
-    $.setActionItem({ raw: dataItem });
+    $.setActionItem({ raw: dataItem })
   },
-});
+})

@@ -1,21 +1,22 @@
-import * as React from 'react';
-import { FormattedMessage } from 'react-intl';
-import Typography from '@mui/material/Typography';
-import type { AlertProps } from '@mui/material/Alert';
+import * as React from 'react'
+import { FormattedMessage } from 'react-intl'
+import type { AlertProps } from '@mui/material/Alert'
+import Typography from '@mui/material/Typography'
+import useFormatMessage from 'hooks/useFormatMessage'
 
-import useFormatMessage from 'hooks/useFormatMessage';
-import { generateExternalLink } from '../../helpers/translation-values';
-import { WEBHOOK_DOCS } from '../../config/urls';
-import TextField from '../TextField';
-import { Alert } from './style';
+import { WEBHOOK_DOCS } from '../../config/urls'
+import { generateExternalLink } from '../../helpers/translation-values'
+import TextField from '../TextField'
+
+import { Alert } from './style'
 
 type WebhookUrlInfoProps = {
-  webhookUrl: string;
-} & AlertProps;
+  webhookUrl: string
+} & AlertProps
 
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
-  const { webhookUrl, ...alertProps } = props;
-  const formatMessage = useFormatMessage();
+  const { webhookUrl, ...alertProps } = props
+  const formatMessage = useFormatMessage()
 
   return (
     <Alert icon={false} color="info" {...alertProps}>
@@ -42,7 +43,7 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
         }
       />
     </Alert>
-  );
+  )
 }
 
-export default WebhookUrlInfo;
+export default WebhookUrlInfo

@@ -1,7 +1,7 @@
-import type { IStep } from '@automatisch/types';
+import type { IStep } from '@plumber/types'
 
 const joinBy = (delimiter = '.', ...args: string[]) =>
-  args.filter(Boolean).join(delimiter);
+  args.filter(Boolean).join(delimiter)
 
 const process = (data: any, parentKey?: any, index?: number): any[] => {
   if (typeof data !== 'object') {
@@ -10,25 +10,20 @@ const process = (data: any, parentKey?: any, index?: number): any[] => {
         name: `${parentKey}.${index}`,
         value: data,
       },
-    ];
+    ]
   }
 
-  const entries = Object.entries(data);
+  const entries = Object.entries(data)
 
   return entries.flatMap(([name, value]) => {
-    const fullName = joinBy(
-      '.',
-      parentKey,
-      (index as number)?.toString(),
-      name
-    );
+    const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
 
     if (Array.isArray(value)) {
-      return value.flatMap((item, index) => process(item, fullName, index));
+      return value.flatMap((item, index) => process(item, fullName, index))
     }
 
     if (typeof value === 'object' && value !== null) {
-      return process(value, fullName);
+      return process(value, fullName)
     }
 
     return [
@@ -36,18 +31,20 @@ const process = (data: any, parentKey?: any, index?: number): any[] => {
         name: fullName,
         value,
       },
-    ];
-  });
-};
+    ]
+  })
+}
 
 export const processStepWithExecutions = (steps: IStep[]): any[] => {
-  if (!steps) return [];
+  if (!steps) {
+    return []
+  }
 
   return steps
     .filter((step: IStep) => {
-      const hasExecutionSteps = !!step.executionSteps?.length;
+      const hasExecutionSteps = !!step.executionSteps?.length
 
-      return hasExecutionSteps;
+      return hasExecutionSteps
     })
     .map((step: IStep, index: number) => ({
       id: step.id,
@@ -57,7 +54,7 @@ export const processStepWithExecutions = (steps: IStep[]): any[] => {
       }`,
       output: process(
         step.executionSteps?.[0]?.dataOut || {},
-        `step.${step.id}`
+        `step.${step.id}`,
       ),
-    }));
-};
+    }))
+}

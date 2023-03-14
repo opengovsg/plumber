@@ -1,61 +1,55 @@
-import * as React from 'react';
-import { useQuery } from '@apollo/client';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
-import ListItem from '@mui/material/ListItem';
-import TextField from '@mui/material/TextField';
-import Autocomplete from '@mui/material/Autocomplete';
-import Chip from '@mui/material/Chip';
+import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import useFormatMessage from 'hooks/useFormatMessage';
-import { EditorContext } from 'contexts/Editor';
-import { GET_APPS } from 'graphql/queries/get-apps';
-import FlowSubstepTitle from 'components/FlowSubstepTitle';
-import type {
-  IApp,
-  IStep,
-  ISubstep,
-  ITrigger,
-  IAction,
-} from '@automatisch/types';
+import * as React from 'react'
+import { useQuery } from '@apollo/client'
+import Autocomplete from '@mui/material/Autocomplete'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
+import Collapse from '@mui/material/Collapse'
+import ListItem from '@mui/material/ListItem'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import FlowSubstepTitle from 'components/FlowSubstepTitle'
+import { EditorContext } from 'contexts/Editor'
+import { GET_APPS } from 'graphql/queries/get-apps'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseAppAndEventSubstepProps = {
-  substep: ISubstep;
-  expanded?: boolean;
-  onExpand: () => void;
-  onCollapse: () => void;
-  onChange: ({ step }: { step: IStep }) => void;
-  onSubmit: () => void;
-  step: IStep;
-};
+  substep: ISubstep
+  expanded?: boolean
+  onExpand: () => void
+  onCollapse: () => void
+  onChange: ({ step }: { step: IStep }) => void
+  onSubmit: () => void
+  step: IStep
+}
 
 const optionGenerator = (app: {
-  name: string;
-  key: string;
+  name: string
+  key: string
 }): { label: string; value: string } => ({
   label: app.name as string,
   value: app.key as string,
-});
+})
 
 const eventOptionGenerator = (app: {
-  name: string;
-  key: string;
-  type?: string;
+  name: string
+  key: string
+  type?: string
 }): { label: string; value: string; type: string } => ({
   label: app.name as string,
   value: app.key as string,
   type: app?.type as string,
-});
+})
 
 const getOption = <T extends { value: string }>(
   options: T[],
-  selectedOptionValue?: string
-) => options.find((option) => option.value === selectedOptionValue);
+  selectedOptionValue?: string,
+) => options.find((option) => option.value === selectedOptionValue)
 
 function ChooseAppAndEventSubstep(
-  props: ChooseAppAndEventSubstepProps
+  props: ChooseAppAndEventSubstepProps,
 ): React.ReactElement {
   const {
     substep,
@@ -65,49 +59,49 @@ function ChooseAppAndEventSubstep(
     step,
     onSubmit,
     onChange,
-  } = props;
+  } = props
 
-  const formatMessage = useFormatMessage();
-  const editorContext = React.useContext(EditorContext);
+  const formatMessage = useFormatMessage()
+  const editorContext = React.useContext(EditorContext)
 
-  const isTrigger = step.type === 'trigger';
-  const isAction = step.type === 'action';
+  const isTrigger = step.type === 'trigger'
+  const isAction = step.type === 'action'
 
   const { data } = useQuery(GET_APPS, {
     variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  });
-  const apps: IApp[] = data?.getApps;
-  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey);
+  })
+  const apps: IApp[] = data?.getApps
+  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const appOptions = React.useMemo(
     () => apps?.map((app) => optionGenerator(app)),
-    [apps]
-  );
+    [apps],
+  )
   const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || [];
+    (isTrigger ? app?.triggers : app?.actions) || []
   const actionOrTriggerOptions = React.useMemo(
     () => actionsOrTriggers.map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key]
-  );
+    [app?.key],
+  )
   const selectedActionOrTrigger = actionsOrTriggers.find(
-    (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key
-  );
+    (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
+  )
 
   const isWebhook =
-    isTrigger && (selectedActionOrTrigger as ITrigger)?.type === 'webhook';
+    isTrigger && (selectedActionOrTrigger as ITrigger)?.type === 'webhook'
 
-  const { name } = substep;
+  const { name } = substep
 
-  const valid: boolean = !!step.key && !!step.appKey;
+  const valid: boolean = !!step.key && !!step.appKey
 
   // placeholders
   const onEventChange = React.useCallback(
     (event: React.SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
-        const typedSelectedOption = selectedOption as { value: string };
-        const option: { value: string } = typedSelectedOption;
-        const eventKey = option?.value as string;
+        const typedSelectedOption = selectedOption as { value: string }
+        const option: { value: string } = typedSelectedOption
+        const eventKey = option?.value as string
 
         if (step.key !== eventKey) {
           onChange({
@@ -115,20 +109,20 @@ function ChooseAppAndEventSubstep(
               ...step,
               key: eventKey,
             },
-          });
+          })
         }
       }
     },
-    [step, onChange]
-  );
+    [step, onChange],
+  )
 
   const onAppChange = React.useCallback(
     (event: React.SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
-        const typedSelectedOption = selectedOption as { value: string };
-        const option: { value: string } = typedSelectedOption;
-        const appKey = option?.value as string;
+        const typedSelectedOption = selectedOption as { value: string }
+        const option: { value: string } = typedSelectedOption
+        const appKey = option?.value as string
 
         if (step.appKey !== appKey) {
           onChange({
@@ -138,14 +132,14 @@ function ChooseAppAndEventSubstep(
               appKey,
               parameters: {},
             },
-          });
+          })
         }
       }
     },
-    [step, onChange]
-  );
+    [step, onChange],
+  )
 
-  const onToggle = expanded ? onCollapse : onExpand;
+  const onToggle = expanded ? onCollapse : onExpand
 
   return (
     <React.Fragment>
@@ -205,7 +199,7 @@ function ChooseAppAndEventSubstep(
                           {isWebhook && (
                             <Chip
                               label={formatMessage(
-                                'flowEditor.instantTriggerType'
+                                'flowEditor.instantTriggerType',
                               )}
                             />
                           )}
@@ -267,7 +261,7 @@ function ChooseAppAndEventSubstep(
         </ListItem>
       </Collapse>
     </React.Fragment>
-  );
+  )
 }
 
-export default ChooseAppAndEventSubstep;
+export default ChooseAppAndEventSubstep

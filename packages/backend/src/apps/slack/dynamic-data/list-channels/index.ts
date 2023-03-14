@@ -1,4 +1,4 @@
-import { IGlobalVariable, IJSONObject } from '@automatisch/types';
+import { IGlobalVariable, IJSONObject } from '@plumber/types'
 
 export default {
   name: 'List channels',
@@ -6,26 +6,26 @@ export default {
 
   async run($: IGlobalVariable) {
     const channels: {
-      data: IJSONObject[];
-      error: IJSONObject | null;
+      data: IJSONObject[]
+      error: IJSONObject | null
     } = {
       data: [],
       error: null,
-    };
+    }
 
-    const response = await $.http.get('/conversations.list');
+    const response = await $.http.get('/conversations.list')
 
     if (response.data.ok === false) {
-      throw new Error(response.data);
+      throw new Error(response.data)
     }
 
     channels.data = response.data.channels.map((channel: IJSONObject) => {
       return {
         value: channel.id,
         name: channel.name,
-      };
-    });
+      }
+    })
 
-    return channels;
+    return channels
   },
-};
+}

@@ -1,11 +1,13 @@
-import Redis from 'ioredis';
-import logger from './logger';
-import redisConfig from '../config/redis';
+import Redis from 'ioredis'
 
-const redisClient = new Redis(redisConfig);
+import redisConfig from '../config/redis'
+
+import logger from './logger'
+
+const redisClient = new Redis(redisConfig)
 
 redisClient.on('ready', () => {
-  logger.info(`Workers are ready!`);
+  logger.info(`Workers are ready!`)
 
-  redisClient.disconnect();
-});
+  redisClient.disconnect()
+})

@@ -1,30 +1,30 @@
-import * as React from 'react';
-import { useMutation } from '@apollo/client';
-import Box from '@mui/material/Box';
-import Collapse from '@mui/material/Collapse';
-import ListItem from '@mui/material/ListItem';
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
-import LoadingButton from '@mui/lab/LoadingButton';
+import type { IStep, ISubstep } from '@plumber/types'
 
-import { EditorContext } from 'contexts/Editor';
-import useFormatMessage from 'hooks/useFormatMessage';
-import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow';
-import JSONViewer from 'components/JSONViewer';
-import WebhookUrlInfo from 'components/WebhookUrlInfo';
-import FlowSubstepTitle from 'components/FlowSubstepTitle';
-import type { IStep, ISubstep } from '@automatisch/types';
+import * as React from 'react'
+import { useMutation } from '@apollo/client'
+import LoadingButton from '@mui/lab/LoadingButton'
+import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
+import Box from '@mui/material/Box'
+import Collapse from '@mui/material/Collapse'
+import ListItem from '@mui/material/ListItem'
+import FlowSubstepTitle from 'components/FlowSubstepTitle'
+import JSONViewer from 'components/JSONViewer'
+import WebhookUrlInfo from 'components/WebhookUrlInfo'
+import { EditorContext } from 'contexts/Editor'
+import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 type TestSubstepProps = {
-  substep: ISubstep;
-  expanded?: boolean;
-  onExpand: () => void;
-  onCollapse: () => void;
-  onChange?: ({ step }: { step: IStep }) => void;
-  onSubmit?: () => void;
-  onContinue?: () => void;
-  step: IStep;
-};
+  substep: ISubstep
+  expanded?: boolean
+  onExpand: () => void
+  onCollapse: () => void
+  onChange?: ({ step }: { step: IStep }) => void
+  onSubmit?: () => void
+  onContinue?: () => void
+  step: IStep
+}
 
 function serializeErrors(graphQLErrors: any) {
   return graphQLErrors?.map((error: Record<string, unknown>) => {
@@ -36,11 +36,11 @@ function serializeErrors(graphQLErrors: any) {
             {JSON.stringify(JSON.parse(error.message as string), null, 2)}
           </pre>
         ),
-      };
+      }
     } catch {
-      return error;
+      return error
     }
-  });
+  })
 }
 
 function TestSubstep(props: TestSubstepProps): React.ReactElement {
@@ -52,35 +52,35 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
     onSubmit,
     onContinue,
     step,
-  } = props;
+  } = props
 
-  const formatMessage = useFormatMessage();
-  const editorContext = React.useContext(EditorContext);
+  const formatMessage = useFormatMessage()
+  const editorContext = React.useContext(EditorContext)
   const [executeFlow, { data, error, loading, called, reset }] = useMutation(
     EXECUTE_FLOW,
-    { context: { autoSnackbar: false } }
-  );
-  const response = data?.executeFlow?.data;
+    { context: { autoSnackbar: false } },
+  )
+  const response = data?.executeFlow?.data
 
-  const isCompleted = !error && called && !loading;
-  const hasNoOutput = !response && isCompleted;
+  const isCompleted = !error && called && !loading
+  const hasNoOutput = !response && isCompleted
 
-  const { name } = substep;
+  const { name } = substep
 
   React.useEffect(
     function resetTestDataOnSubstepToggle() {
       if (!expanded) {
-        reset();
+        reset()
       }
     },
-    [expanded, reset]
-  );
+    [expanded, reset],
+  )
 
   const handleSubmit = React.useCallback(() => {
     if (isCompleted) {
-      onContinue?.();
+      onContinue?.()
 
-      return;
+      return
     }
 
     executeFlow({
@@ -89,9 +89,9 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
           stepId: step.id,
         },
       },
-    });
-  }, [onSubmit, onContinue, isCompleted, step.id]);
-  const onToggle = expanded ? onCollapse : onExpand;
+    })
+  }, [onSubmit, onContinue, isCompleted, step.id])
+  const onToggle = expanded ? onCollapse : onExpand
 
   return (
     <React.Fragment>
@@ -157,7 +157,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
         </ListItem>
       </Collapse>
     </React.Fragment>
-  );
+  )
 }
 
-export default TestSubstep;
+export default TestSubstep

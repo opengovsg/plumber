@@ -1,14 +1,14 @@
-import { styled } from '@mui/material/styles';
-import MuiAlert, { alertClasses } from '@mui/material/Alert';
+import MuiAlert, { alertClasses } from '@mui/material/Alert'
+import { styled } from '@mui/material/styles'
 
-export const Alert = styled(MuiAlert)(({ theme }) => ({
+export const Alert = styled(MuiAlert)(() => ({
   [`&.${alertClasses.root}`]: {
     fontWeight: 300,
     width: '100%',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
   },
   [`& .${alertClasses.message}`]: {
-    width: '100%'
-  }
-}));
+    width: '100%',
+  },
+}))

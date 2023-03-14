@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const EXECUTE_FLOW = gql`
   mutation ExecuteFlow($input: ExecuteFlowInput) {
@@ -10,4 +10,4 @@ export const EXECUTE_FLOW = gql`
       data
     }
   }
-`;
+`

@@ -1,15 +1,15 @@
-import Context from '../../types/express/context';
+import Context from '../../types/express/context'
 
 type Params = {
   input: {
-    id: string;
-  };
-};
+    id: string
+  }
+}
 
 const deleteConnection = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   await context.currentUser
     .$relatedQuery('connections')
@@ -17,9 +17,9 @@ const deleteConnection = async (
     .findOne({
       id: params.input.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
-  return;
-};
+  return
+}
 
-export default deleteConnection;
+export default deleteConnection

@@ -1,60 +1,60 @@
-import * as React from 'react';
-import Typography from '@mui/material/Typography';
-import type { TypographyProps } from '@mui/material/Typography';
-import EditIcon from '@mui/icons-material/Edit';
+import * as React from 'react'
+import EditIcon from '@mui/icons-material/Edit'
+import type { TypographyProps } from '@mui/material/Typography'
+import Typography from '@mui/material/Typography'
 
-import { Box, TextField } from './style';
+import { Box, TextField } from './style'
 
 type EditableTypographyProps = TypographyProps & {
-  children: string;
-  onConfirm?: (value: string) => void;
-};
+  children: string
+  onConfirm?: (value: string) => void
+}
 
-const noop = () => null;
+const noop = () => null
 
 function EditableTypography(props: EditableTypographyProps) {
-  const { children, onConfirm = noop, sx, ...typographyProps } = props;
-  const [editing, setEditing] = React.useState(false);
+  const { children, onConfirm = noop, sx, ...typographyProps } = props
+  const [editing, setEditing] = React.useState(false)
 
   const handleClick = React.useCallback(() => {
-    setEditing((editing) => !editing);
-  }, []);
+    setEditing((editing) => !editing)
+  }, [])
 
   const handleTextFieldClick = React.useCallback(
     (event: React.SyntheticEvent) => {
-      event.stopPropagation();
+      event.stopPropagation()
     },
-    []
-  );
+    [],
+  )
 
   const handleTextFieldKeyDown = React.useCallback(
     async (event: React.KeyboardEvent<HTMLInputElement>) => {
-      const target = event.target as HTMLInputElement;
+      const target = event.target as HTMLInputElement
       if (event.key === 'Enter') {
         if (target.value !== children) {
-          await onConfirm(target.value);
+          await onConfirm(target.value)
         }
 
-        setEditing(false);
+        setEditing(false)
       }
     },
-    [children]
-  );
+    [children],
+  )
 
   const handleTextFieldBlur = React.useCallback(
     async (event: React.FocusEvent<HTMLInputElement>) => {
-      const value = event.target.value;
+      const value = event.target.value
 
       if (value !== children) {
-        await onConfirm(value);
+        await onConfirm(value)
       }
 
-      setEditing(false);
+      setEditing(false)
     },
-    [onConfirm, children]
-  );
+    [onConfirm, children],
+  )
 
-  let component = <Typography {...typographyProps}>{children}</Typography>;
+  let component = <Typography {...typographyProps}>{children}</Typography>
 
   if (editing) {
     component = (
@@ -66,7 +66,7 @@ function EditableTypography(props: EditableTypographyProps) {
         autoFocus
         defaultValue={children}
       />
-    );
+    )
   }
 
   return (
@@ -75,7 +75,7 @@ function EditableTypography(props: EditableTypographyProps) {
 
       {component}
     </Box>
-  );
+  )
 }
 
-export default EditableTypography;
+export default EditableTypography

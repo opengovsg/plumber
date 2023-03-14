@@ -1,6 +1,6 @@
-import appConfig from './src/config/app';
+import appConfig from './src/config/app'
 
-const fileExtension = appConfig.isDev ? 'ts' : 'js';
+const fileExtension = appConfig.isDev ? 'ts' : 'js'
 
 const knexConfig = {
   client: 'pg',
@@ -21,6 +21,6 @@ const knexConfig = {
   seeds: {
     directory: __dirname + '/src/db/seeds',
   },
-};
+}
 
-export default knexConfig;
+export default knexConfig

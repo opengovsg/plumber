@@ -1,28 +1,28 @@
-import * as React from 'react';
-import { useQuery } from '@apollo/client';
+import type { IConnection } from '@plumber/types'
 
-import type { IConnection } from '@automatisch/types';
-import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections';
-import AppConnectionRow from 'components/AppConnectionRow';
-import NoResultFound from 'components/NoResultFound';
-import useFormatMessage from 'hooks/useFormatMessage';
-import * as URLS from 'config/urls';
+import * as React from 'react'
+import { useQuery } from '@apollo/client'
+import AppConnectionRow from 'components/AppConnectionRow'
+import NoResultFound from 'components/NoResultFound'
+import * as URLS from 'config/urls'
+import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 type AppConnectionsProps = {
-  appKey: string;
-};
+  appKey: string
+}
 
 export default function AppConnections(
-  props: AppConnectionsProps
+  props: AppConnectionsProps,
 ): React.ReactElement {
-  const { appKey } = props;
-  const formatMessage = useFormatMessage();
+  const { appKey } = props
+  const formatMessage = useFormatMessage()
   const { data } = useQuery(GET_APP_CONNECTIONS, {
     variables: { key: appKey },
-  });
-  const appConnections: IConnection[] = data?.getApp?.connections || [];
+  })
+  const appConnections: IConnection[] = data?.getApp?.connections || []
 
-  const hasConnections = appConnections?.length;
+  const hasConnections = appConnections?.length
 
   if (!hasConnections) {
     return (
@@ -30,7 +30,7 @@ export default function AppConnections(
         to={URLS.APP_ADD_CONNECTION(appKey)}
         text={formatMessage('app.noConnections')}
       />
-    );
+    )
   }
 
   return (
@@ -39,5 +39,5 @@ export default function AppConnections(
         <AppConnectionRow key={appConnection.id} connection={appConnection} />
       ))}
     </>
-  );
+  )
 }

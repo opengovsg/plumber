@@ -1,24 +1,24 @@
-import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
-import type { AvatarProps } from '@mui/material/Avatar';
+import * as React from 'react'
+import type { AvatarProps } from '@mui/material/Avatar'
+import Avatar from '@mui/material/Avatar'
 
 type AppIconProps = {
-  name?: string;
-  url?: string;
-  color?: string;
-  variant?: AvatarProps['variant'];
-};
+  name?: string
+  url?: string
+  color?: string
+  variant?: AvatarProps['variant']
+}
 
 const inlineImgStyle: React.CSSProperties = {
   objectFit: 'contain',
-};
+}
 
 export default function AppIcon(
-  props: AppIconProps & AvatarProps
+  props: AppIconProps & AvatarProps,
 ): React.ReactElement {
-  const { name, url, color, sx = {}, variant = 'square', ...restProps } = props;
+  const { name, url, color, sx = {}, variant = 'square', ...restProps } = props
 
-  const initialLetter = name?.[0];
+  const initialLetter = name?.[0]
 
   return (
     <Avatar
@@ -31,5 +31,5 @@ export default function AppIcon(
       children={initialLetter}
       {...restProps}
     />
-  );
+  )
 }

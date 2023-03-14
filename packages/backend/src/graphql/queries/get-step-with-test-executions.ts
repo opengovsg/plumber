@@ -1,20 +1,21 @@
-import Context from '../../types/express/context';
-import ExecutionStep from '../../models/execution-step';
-import { ref } from 'objection';
+import { ref } from 'objection'
+
+import ExecutionStep from '../../models/execution-step'
+import Context from '../../types/express/context'
 
 type Params = {
-  stepId: string;
-};
+  stepId: string
+}
 
 const getStepWithTestExecutions = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   const step = await context.currentUser
     .$relatedQuery('steps')
     .findOne({ 'steps.id': params.stepId })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
   const previousStepsWithCurrentStep = await context.currentUser
     .$relatedQuery('steps')
@@ -27,11 +28,11 @@ const getStepWithTestExecutions = async (
       ExecutionStep.query()
         .max('created_at')
         .where('step_id', '=', ref('steps.id'))
-        .andWhere('status', 'success')
+        .andWhere('status', 'success'),
     )
-    .orderBy('steps.position', 'asc');
+    .orderBy('steps.position', 'asc')
 
-  return previousStepsWithCurrentStep;
-};
+  return previousStepsWithCurrentStep
+}
 
-export default getStepWithTestExecutions;
+export default getStepWithTestExecutions

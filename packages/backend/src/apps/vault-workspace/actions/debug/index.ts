@@ -1,4 +1,5 @@
-import defineAction from '../../../../helpers/define-action';
+/* eslint-disable no-console */
+import defineAction from '../../../../helpers/define-action'
 
 export default defineAction({
   name: 'Debug action',
@@ -34,11 +35,11 @@ export default defineAction({
   ],
 
   async run($) {
-    const lookupColumn = $.step.parameters.lookupColumn as string;
+    const lookupColumn = $.step.parameters.lookupColumn as string
     const previousStepsVariable = $.step.parameters
-      .previousStepsVariable as string;
+      .previousStepsVariable as string
 
-    console.log(lookupColumn);
-    console.log(previousStepsVariable);
+    console.log(lookupColumn)
+    console.log(previousStepsVariable)
   },
-});
+})

@@ -1,33 +1,34 @@
-import Context from '../../types/express/context';
-import { IJSONObject } from '@automatisch/types';
+import { IJSONObject } from '@plumber/types'
+
+import Context from '../../types/express/context'
 
 type Params = {
   input: {
-    id: string;
-    formattedData: IJSONObject;
-  };
-};
+    id: string
+    formattedData: IJSONObject
+  }
+}
 
 const updateConnection = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({
       id: params.input.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
   connection = await connection.$query().patchAndFetch({
     formattedData: {
       ...connection.formattedData,
       ...params.input.formattedData,
     },
-  });
+  })
 
-  return connection;
-};
+  return connection
+}
 
-export default updateConnection;
+export default updateConnection

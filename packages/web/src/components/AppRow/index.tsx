@@ -1,32 +1,32 @@
-import * as React from 'react';
-import { Link } from 'react-router-dom';
-import Card from '@mui/material/Card';
-import Box from '@mui/material/Box';
-import CardActionArea from '@mui/material/CardActionArea';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import type { IApp } from '@plumber/types'
 
-import useFormatMessage from 'hooks/useFormatMessage';
-import AppIcon from 'components/AppIcon';
-import * as URLS from 'config/urls';
-import type { IApp } from '@automatisch/types';
+import * as React from 'react'
+import { Link } from 'react-router-dom'
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos'
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import CardActionArea from '@mui/material/CardActionArea'
+import AppIcon from 'components/AppIcon'
+import * as URLS from 'config/urls'
+import useFormatMessage from 'hooks/useFormatMessage'
 
-import { CardContent, Typography } from './style';
+import { CardContent, Typography } from './style'
 
 type AppRowProps = {
-  application: IApp;
-};
+  application: IApp
+}
 
 const countTranslation = (value: React.ReactNode) => (
   <>
     <Typography variant="body1">{value}</Typography>
     <br />
   </>
-);
+)
 
 function AppRow(props: AppRowProps): React.ReactElement {
-  const formatMessage = useFormatMessage();
+  const formatMessage = useFormatMessage()
   const { name, key, primaryColor, iconUrl, connectionCount, flowCount } =
-    props.application;
+    props.application
 
   return (
     <Link to={URLS.APP(key)} data-test="app-row">
@@ -74,7 +74,7 @@ function AppRow(props: AppRowProps): React.ReactElement {
         </CardActionArea>
       </Card>
     </Link>
-  );
+  )
 }
 
-export default AppRow;
+export default AppRow

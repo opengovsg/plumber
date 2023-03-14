@@ -1,65 +1,66 @@
-import * as React from 'react';
-import { useLazyQuery, useMutation } from '@apollo/client';
-import Card from '@mui/material/Card';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import CircularProgress from '@mui/material/CircularProgress';
-import CardActionArea from '@mui/material/CardActionArea';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import { useSnackbar } from 'notistack';
-import { DateTime } from 'luxon';
+import type { IConnection } from '@plumber/types'
 
-import type { IConnection } from '@automatisch/types';
-import { DELETE_CONNECTION } from 'graphql/mutations/delete-connection';
-import { TEST_CONNECTION } from 'graphql/queries/test-connection';
-import ConnectionContextMenu from 'components/AppConnectionContextMenu';
-import useFormatMessage from 'hooks/useFormatMessage';
-import { CardContent, Typography } from './style';
+import * as React from 'react'
+import { useLazyQuery, useMutation } from '@apollo/client'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import ErrorIcon from '@mui/icons-material/Error'
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import CardActionArea from '@mui/material/CardActionArea'
+import CircularProgress from '@mui/material/CircularProgress'
+import Stack from '@mui/material/Stack'
+import ConnectionContextMenu from 'components/AppConnectionContextMenu'
+import { DELETE_CONNECTION } from 'graphql/mutations/delete-connection'
+import { TEST_CONNECTION } from 'graphql/queries/test-connection'
+import useFormatMessage from 'hooks/useFormatMessage'
+import { DateTime } from 'luxon'
+import { useSnackbar } from 'notistack'
+
+import { CardContent, Typography } from './style'
 
 type AppConnectionRowProps = {
-  connection: IConnection;
-};
+  connection: IConnection
+}
 
 const countTranslation = (value: React.ReactNode) => (
   <>
     <Typography variant="body1">{value}</Typography>
     <br />
   </>
-);
+)
 
 function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
-  const { enqueueSnackbar } = useSnackbar();
-  const [verificationVisible, setVerificationVisible] = React.useState(false);
+  const { enqueueSnackbar } = useSnackbar()
+  const [verificationVisible, setVerificationVisible] = React.useState(false)
   const [testConnection, { called: testCalled, loading: testLoading }] =
     useLazyQuery(TEST_CONNECTION, {
       fetchPolicy: 'network-only',
       onCompleted: () => {
-        setTimeout(() => setVerificationVisible(false), 3000);
+        setTimeout(() => setVerificationVisible(false), 3000)
       },
       onError: () => {
-        setTimeout(() => setVerificationVisible(false), 3000);
+        setTimeout(() => setVerificationVisible(false), 3000)
       },
-    });
-  const [deleteConnection] = useMutation(DELETE_CONNECTION);
+    })
+  const [deleteConnection] = useMutation(DELETE_CONNECTION)
 
-  const formatMessage = useFormatMessage();
+  const formatMessage = useFormatMessage()
   const { id, key, formattedData, verified, createdAt, flowCount } =
-    props.connection;
+    props.connection
 
-  const contextButtonRef = React.useRef<SVGSVGElement | null>(null);
-  const [anchorEl, setAnchorEl] = React.useState<SVGSVGElement | null>(null);
+  const contextButtonRef = React.useRef<SVGSVGElement | null>(null)
+  const [anchorEl, setAnchorEl] = React.useState<SVGSVGElement | null>(null)
 
   const handleClose = () => {
-    setAnchorEl(null);
-  };
+    setAnchorEl(null)
+  }
 
-  const onContextMenuClick = () => setAnchorEl(contextButtonRef.current);
+  const onContextMenuClick = () => setAnchorEl(contextButtonRef.current)
   const onContextMenuAction = React.useCallback(
     async (
       _event: React.MouseEvent<Element, MouseEvent>,
-      action: { [key: string]: string }
+      action: { [key: string]: string },
     ) => {
       if (action.type === 'delete') {
         await deleteConnection({
@@ -68,28 +69,28 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
             const connectionCacheId = cache.identify({
               __typename: 'Connection',
               id,
-            });
+            })
 
             cache.evict({
               id: connectionCacheId,
-            });
+            })
           },
-        });
+        })
 
         enqueueSnackbar(formatMessage('connection.deletedMessage'), {
           variant: 'success',
-        });
+        })
       } else if (action.type === 'test') {
-        setVerificationVisible(true);
-        testConnection({ variables: { id } });
+        setVerificationVisible(true)
+        testConnection({ variables: { id } })
       }
     },
-    [deleteConnection, id, testConnection, formatMessage, enqueueSnackbar]
-  );
+    [deleteConnection, id, testConnection, formatMessage, enqueueSnackbar],
+  )
 
   const relativeCreatedAt = DateTime.fromMillis(
-    parseInt(createdAt, 10)
-  ).toRelative();
+    parseInt(createdAt, 10),
+  ).toRelative()
 
   return (
     <>
@@ -172,7 +173,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         />
       )}
     </>
-  );
+  )
 }
 
-export default AppConnectionRow;
+export default AppConnectionRow

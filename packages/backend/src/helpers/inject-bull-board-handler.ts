@@ -1,21 +1,23 @@
-import { Application } from 'express';
-import { ExpressAdapter } from '@bull-board/express';
-import basicAuth from 'express-basic-auth';
-import appConfig from '../config/app';
+import { ExpressAdapter } from '@bull-board/express'
+import { Application } from 'express'
+import basicAuth from 'express-basic-auth'
+
+import appConfig from '../config/app'
 
 const injectBullBoardHandler = async (
   app: Application,
-  serverAdapter: ExpressAdapter
+  serverAdapter: ExpressAdapter,
 ) => {
   if (
     !appConfig.enableBullMQDashboard ||
     !appConfig.bullMQDashboardUsername ||
     !appConfig.bullMQDashboardPassword
-  )
-    return;
+  ) {
+    return
+  }
 
-  const queueDashboardBasePath = '/admin/queues';
-  serverAdapter.setBasePath(queueDashboardBasePath);
+  const queueDashboardBasePath = '/admin/queues'
+  serverAdapter.setBasePath(queueDashboardBasePath)
 
   app.use(
     queueDashboardBasePath,
@@ -25,8 +27,8 @@ const injectBullBoardHandler = async (
       },
       challenge: true,
     }),
-    serverAdapter.getRouter()
-  );
-};
+    serverAdapter.getRouter(),
+  )
+}
 
-export default injectBullBoardHandler;
+export default injectBullBoardHandler

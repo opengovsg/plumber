@@ -1,51 +1,52 @@
-import { Text, Descendant, Transforms } from 'slate';
-import { withHistory } from 'slate-history';
-import { withReact } from 'slate-react';
+import { Descendant, Text, Transforms } from 'slate'
+import { withHistory } from 'slate-history'
+import { withReact } from 'slate-react'
 
-import type { CustomEditor, CustomElement, VariableElement } from './types';
+import type { CustomEditor, CustomElement, VariableElement } from './types'
 
 function getStepPosition(
   id: string,
-  stepsWithVariables: Record<string, unknown>[]
+  stepsWithVariables: Record<string, unknown>[],
 ) {
   const stepIndex = stepsWithVariables.findIndex((stepWithVariables) => {
-    return stepWithVariables.id === id;
-  });
+    return stepWithVariables.id === id
+  })
 
-  return stepIndex + 1;
+  return stepIndex + 1
 }
 
 function humanizeVariableName(
   variableName: string,
-  stepsWithVariables: Record<string, unknown>[]
+  stepsWithVariables: Record<string, unknown>[],
 ) {
-  const nameWithoutCurlies = variableName.replace(/{{|}}/g, '');
-  const stepId = nameWithoutCurlies.match(stepIdRegExp)?.[1] || '';
-  const stepPosition = getStepPosition(stepId, stepsWithVariables);
+  const nameWithoutCurlies = variableName.replace(/{{|}}/g, '')
+  const stepId = nameWithoutCurlies.match(stepIdRegExp)?.[1] || ''
+  const stepPosition = getStepPosition(stepId, stepsWithVariables)
   const humanizedVariableName = nameWithoutCurlies.replace(
     `step.${stepId}.`,
-    `step${stepPosition}.`
-  );
+    `step${stepPosition}.`,
+  )
 
-  return humanizedVariableName;
+  return humanizedVariableName
 }
 
-const variableRegExp = /({{.*?}})/;
-const stepIdRegExp = /^step.([\da-zA-Z-]*)/;
+const variableRegExp = /({{.*?}})/
+const stepIdRegExp = /^step.([\da-zA-Z-]*)/
 export const deserialize = (
   value: string,
-  stepsWithVariables: any[]
+  stepsWithVariables: any[],
 ): Descendant[] => {
-  if (!value)
+  if (!value) {
     return [
       {
         type: 'paragraph',
         children: [{ text: '' }],
       },
-    ];
+    ]
+  }
 
   return value.split('\n').map((line) => {
-    const nodes = line.split(variableRegExp);
+    const nodes = line.split(variableRegExp)
 
     if (nodes.length > 1) {
       return {
@@ -57,69 +58,69 @@ export const deserialize = (
               name: humanizeVariableName(node, stepsWithVariables),
               value: node,
               children: [{ text: '' }],
-            };
+            }
           }
 
           return {
             text: node,
-          };
+          }
         }),
-      };
+      }
     }
 
     return {
       type: 'paragraph',
       children: [{ text: line }],
-    };
-  });
-};
+    }
+  })
+}
 
 export const serialize = (value: Descendant[]): string => {
-  return value.map((node) => serializeNode(node)).join('\n');
-};
+  return value.map((node) => serializeNode(node)).join('\n')
+}
 
 const serializeNode = (node: CustomElement | Descendant): string => {
   if (Text.isText(node)) {
-    return node.text;
+    return node.text
   }
 
   if (node.type === 'variable') {
-    return node.value as string;
+    return node.value as string
   }
 
-  return node.children.map((n) => serializeNode(n)).join('');
-};
+  return node.children.map((n) => serializeNode(n)).join('')
+}
 
 export const withVariables = (editor: CustomEditor) => {
-  const { isInline, isVoid } = editor;
+  const { isInline, isVoid } = editor
 
   editor.isInline = (element: CustomElement) => {
-    return element.type === 'variable' ? true : isInline(element);
-  };
+    return element.type === 'variable' ? true : isInline(element)
+  }
 
   editor.isVoid = (element: CustomElement) => {
-    return element.type === 'variable' ? true : isVoid(element);
-  };
+    return element.type === 'variable' ? true : isVoid(element)
+  }
 
-  return editor;
-};
+  return editor
+}
 
 export const insertVariable = (
   editor: CustomEditor,
   variableData: Pick<VariableElement, 'name' | 'value'>,
-  stepsWithVariables: Record<string, unknown>[]
+  stepsWithVariables: Record<string, unknown>[],
 ) => {
   const variable: VariableElement = {
     type: 'variable',
     name: humanizeVariableName(variableData.name as string, stepsWithVariables),
     value: `{{${variableData.name}}}`,
     children: [{ text: '' }],
-  };
+  }
 
-  Transforms.insertNodes(editor, variable);
-  Transforms.move(editor);
-};
+  Transforms.insertNodes(editor, variable)
+  Transforms.move(editor)
+}
 
 export const customizeEditor = (editor: CustomEditor): CustomEditor => {
-  return withVariables(withReact(withHistory(editor)));
-};
+  return withVariables(withReact(withHistory(editor)))
+}

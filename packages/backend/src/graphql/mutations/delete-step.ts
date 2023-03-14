@@ -1,15 +1,15 @@
-import Context from '../../types/express/context';
+import Context from '../../types/express/context'
 
 type Params = {
   input: {
-    id: string;
-  };
-};
+    id: string
+  }
+}
 
 const deleteStep = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   const step = await context.currentUser
     .$relatedQuery('steps')
@@ -17,29 +17,29 @@ const deleteStep = async (
     .findOne({
       'steps.id': params.input.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
-  await step.$relatedQuery('executionSteps').delete();
-  await step.$query().delete();
+  await step.$relatedQuery('executionSteps').delete()
+  await step.$query().delete()
 
   const nextSteps = await step.flow
     .$relatedQuery('steps')
-    .where('position', '>', step.position);
+    .where('position', '>', step.position)
 
   const nextStepQueries = nextSteps.map(async (nextStep) => {
     await nextStep.$query().patch({
       position: nextStep.position - 1,
-    });
-  });
+    })
+  })
 
-  await Promise.all(nextStepQueries);
+  await Promise.all(nextStepQueries)
 
   step.flow = await step.flow
     .$query()
     .withGraphJoined('steps')
-    .orderBy('steps.position', 'asc');
+    .orderBy('steps.position', 'asc')
 
-  return step;
-};
+  return step
+}
 
-export default deleteStep;
+export default deleteStep

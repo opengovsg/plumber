@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GET_APPS = gql`
   query GetApps(
@@ -127,4 +127,4 @@ export const GET_APPS = gql`
       }
     }
   }
-`;
+`

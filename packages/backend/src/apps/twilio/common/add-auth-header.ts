@@ -1,4 +1,4 @@
-import { TBeforeRequest } from '@automatisch/types';
+import { TBeforeRequest } from '@plumber/types'
 
 const addAuthHeader: TBeforeRequest = ($, requestConfig) => {
   if (
@@ -6,15 +6,15 @@ const addAuthHeader: TBeforeRequest = ($, requestConfig) => {
     $.auth.data?.accountSid &&
     $.auth.data?.authToken
   ) {
-    requestConfig.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    requestConfig.headers['Content-Type'] = 'application/x-www-form-urlencoded'
 
     requestConfig.auth = {
       username: $.auth.data.accountSid as string,
       password: $.auth.data.authToken as string,
-    };
+    }
   }
 
-  return requestConfig;
-};
+  return requestConfig
+}
 
-export default addAuthHeader;
+export default addAuthHeader

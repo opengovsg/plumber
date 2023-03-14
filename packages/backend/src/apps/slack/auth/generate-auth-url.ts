@@ -1,5 +1,6 @@
-import { IField, IGlobalVariable } from '@automatisch/types';
-import qs from 'qs';
+import { IField, IGlobalVariable } from '@plumber/types'
+
+import qs from 'qs'
 
 const scopes = [
   'channels:manage',
@@ -17,7 +18,7 @@ const scopes = [
   'workflow.steps:execute',
   'users:read.email',
   'commands',
-];
+]
 const userScopes = [
   'channels:history',
   'channels:read',
@@ -40,23 +41,23 @@ const userScopes = [
   'users.profile:write',
   'users:read',
   'users:read.email',
-];
+]
 
 export default async function generateAuthUrl($: IGlobalVariable) {
   const oauthRedirectUrlField = $.app.auth.fields.find(
-    (field: IField) => field.key == 'oAuthRedirectUrl'
-  );
-  const redirectUri = oauthRedirectUrlField.value as string;
+    (field: IField) => field.key == 'oAuthRedirectUrl',
+  )
+  const redirectUri = oauthRedirectUrlField.value as string
   const searchParams = qs.stringify({
     client_id: $.auth.data.consumerKey as string,
     redirect_uri: redirectUri,
     scope: scopes.join(','),
     user_scope: userScopes.join(','),
-  });
+  })
 
-  const url = `${$.app.baseUrl}/oauth/v2/authorize?${searchParams}`;
+  const url = `${$.app.baseUrl}/oauth/v2/authorize?${searchParams}`
 
   await $.auth.set({
     url,
-  });
+  })
 }

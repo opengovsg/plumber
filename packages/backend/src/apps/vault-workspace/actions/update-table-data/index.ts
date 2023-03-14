@@ -1,6 +1,6 @@
-import defineAction from '../../../../helpers/define-action';
-import filterTableRows from '../../common/filter-table-rows';
-import updateTableRow from '../../common/update-table-row';
+import defineAction from '../../../../helpers/define-action'
+import filterTableRows from '../../common/filter-table-rows'
+import updateTableRow from '../../common/update-table-row'
 
 export default defineAction({
   name: 'Update table data',
@@ -62,15 +62,15 @@ export default defineAction({
   ],
 
   async run($) {
-    const lookupColumn = $.step.parameters.lookupColumn as string;
-    const lookupValue = $.step.parameters.lookupValue as string;
-    const updateColumn = $.step.parameters.updateColumn as string;
-    const updateValue = $.step.parameters.updateValue as string;
+    const lookupColumn = $.step.parameters.lookupColumn as string
+    const lookupValue = $.step.parameters.lookupValue as string
+    const updateColumn = $.step.parameters.updateColumn as string
+    const updateValue = $.step.parameters.updateValue as string
 
-    const row = await filterTableRows($, lookupColumn, lookupValue);
+    const row = await filterTableRows($, lookupColumn, lookupValue)
 
     // update row
-    const payload: { [key: string]: string } = { [updateColumn]: updateValue };
-    await updateTableRow($, row['vault_id'], payload);
+    const payload: { [key: string]: string } = { [updateColumn]: updateValue }
+    await updateTableRow($, row['vault_id'], payload)
   },
-});
+})

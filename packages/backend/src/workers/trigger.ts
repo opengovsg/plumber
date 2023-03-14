@@ -1,58 +1,65 @@
-import { Worker } from 'bullmq';
-import redisConfig from '../config/redis';
-import logger from '../helpers/logger';
-import { IJSONObject, ITriggerItem } from '@automatisch/types';
-import actionQueue from '../queues/action';
-import Step from '../models/step';
-import { processTrigger } from '../services/trigger';
-import { REMOVE_AFTER_30_DAYS_OR_150_JOBS, REMOVE_AFTER_7_DAYS_OR_50_JOBS } from '../helpers/remove-job-configuration';
+import { IJSONObject, ITriggerItem } from '@plumber/types'
+
+import { Worker } from 'bullmq'
+
+import redisConfig from '../config/redis'
+import logger from '../helpers/logger'
+import {
+  REMOVE_AFTER_7_DAYS_OR_50_JOBS,
+  REMOVE_AFTER_30_DAYS_OR_150_JOBS,
+} from '../helpers/remove-job-configuration'
+import Step from '../models/step'
+import actionQueue from '../queues/action'
+import { processTrigger } from '../services/trigger'
 
 type JobData = {
-  flowId: string;
-  stepId: string;
-  triggerItem?: ITriggerItem;
-  error?: IJSONObject;
-};
+  flowId: string
+  stepId: string
+  triggerItem?: ITriggerItem
+  error?: IJSONObject
+}
 
 export const worker = new Worker(
   'trigger',
   async (job) => {
     const { flowId, executionId, stepId, executionStep } = await processTrigger(
-      job.data as JobData
-    );
+      job.data as JobData,
+    )
 
-    if (executionStep.isFailed) return;
+    if (executionStep.isFailed) {
+      return
+    }
 
-    const step = await Step.query().findById(stepId).throwIfNotFound();
-    const nextStep = await step.getNextStep();
-    const jobName = `${executionId}-${nextStep.id}`;
+    const step = await Step.query().findById(stepId).throwIfNotFound()
+    const nextStep = await step.getNextStep()
+    const jobName = `${executionId}-${nextStep.id}`
 
     const jobPayload = {
       flowId,
       executionId,
       stepId: nextStep.id,
-    };
+    }
 
     const jobOptions = {
       removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
       removeOnFail: REMOVE_AFTER_30_DAYS_OR_150_JOBS,
     }
 
-    await actionQueue.add(jobName, jobPayload, jobOptions);
+    await actionQueue.add(jobName, jobPayload, jobOptions)
   },
-  { connection: redisConfig }
-);
+  { connection: redisConfig },
+)
 
 worker.on('completed', (job) => {
-  logger.info(`JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has started!`);
-});
+  logger.info(`JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has started!`)
+})
 
 worker.on('failed', (job, err) => {
   logger.info(
-    `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`
-  );
-});
+    `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
+  )
+})
 
 process.on('SIGTERM', async () => {
-  await worker.close();
-});
+  await worker.close()
+})

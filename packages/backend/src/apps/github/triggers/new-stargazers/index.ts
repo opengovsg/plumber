@@ -1,5 +1,6 @@
-import defineTrigger from '../../../../helpers/define-trigger';
-import newStargazers from './new-stargazers';
+import defineTrigger from '../../../../helpers/define-trigger'
+
+import newStargazers from './new-stargazers'
 
 export default defineTrigger({
   name: 'New stargazers',
@@ -27,6 +28,6 @@ export default defineTrigger({
   ],
 
   async run($) {
-    await newStargazers($);
+    await newStargazers($)
   },
-});
+})

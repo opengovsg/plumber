@@ -1,9 +1,9 @@
-import { IntlProvider as BaseIntlProvider } from 'react-intl';
-import englishMessages from 'locales/en.json';
+import { IntlProvider as BaseIntlProvider } from 'react-intl'
+import englishMessages from 'locales/en.json'
 
 type IntlProviderProps = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 const IntlProvider = ({ children }: IntlProviderProps): React.ReactElement => {
   return (
@@ -14,7 +14,7 @@ const IntlProvider = ({ children }: IntlProviderProps): React.ReactElement => {
     >
       {children}
     </BaseIntlProvider>
-  );
-};
+  )
+}
 
-export default IntlProvider;
+export default IntlProvider

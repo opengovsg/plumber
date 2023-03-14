@@ -1,19 +1,19 @@
-import * as React from 'react';
-import type { IStep } from '@automatisch/types';
+import type { IStep } from '@plumber/types'
 
-import AppIcon from 'components/AppIcon';
-import IntermediateStepCount from 'components/IntermediateStepCount';
+import * as React from 'react'
+import AppIcon from 'components/AppIcon'
+import IntermediateStepCount from 'components/IntermediateStepCount'
 
 type FlowAppIconsProps = {
-  steps: Partial<IStep>[];
-};
+  steps: Partial<IStep>[]
+}
 
 export default function FlowAppIcons(props: FlowAppIconsProps) {
-  const { steps } = props;
-  const stepsCount = steps.length;
-  const firstStep = steps[0];
-  const lastStep = steps.length > 1 && steps[stepsCount - 1];
-  const intermeaditeStepCount = stepsCount - 2;
+  const { steps } = props
+  const stepsCount = steps.length
+  const firstStep = steps[0]
+  const lastStep = steps.length > 1 && steps[stepsCount - 1]
+  const intermeaditeStepCount = stepsCount - 2
 
   return (
     <>
@@ -37,5 +37,5 @@ export default function FlowAppIcons(props: FlowAppIconsProps) {
         />
       )}
     </>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const TEST_CONNECTION = gql`
   query TestConnection($id: String!) {
@@ -7,4 +7,4 @@ export const TEST_CONNECTION = gql`
       verified
     }
   }
-`;
+`

@@ -1,22 +1,25 @@
-import axios, { AxiosRequestConfig } from 'axios';
-export { AxiosInstance as IHttpClient } from 'axios';
-import { IHttpClientParams } from '@automatisch/types';
-import { URL } from 'url';
-import HttpError from '../../errors/http';
+import axios, { AxiosRequestConfig } from 'axios'
+
+export { AxiosInstance as IHttpClient } from 'axios'
+import { IHttpClientParams } from '@plumber/types'
+
+import { URL } from 'url'
+
+import HttpError from '../../errors/http'
 
 const removeBaseUrlForAbsoluteUrls = (
-  requestConfig: AxiosRequestConfig
+  requestConfig: AxiosRequestConfig,
 ): AxiosRequestConfig => {
   try {
-    const url = new URL(requestConfig.url);
-    requestConfig.baseURL = url.origin;
-    requestConfig.url = url.pathname + url.search;
+    const url = new URL(requestConfig.url)
+    requestConfig.baseURL = url.origin
+    requestConfig.url = url.pathname + url.search
 
-    return requestConfig;
+    return requestConfig
   } catch {
-    return requestConfig;
+    return requestConfig
   }
-};
+}
 
 export default function createHttpClient({
   $,
@@ -25,42 +28,42 @@ export default function createHttpClient({
 }: IHttpClientParams) {
   const instance = axios.create({
     baseURL,
-  });
+  })
 
   instance.interceptors.request.use(
     (requestConfig: AxiosRequestConfig): AxiosRequestConfig => {
-      const newRequestConfig = removeBaseUrlForAbsoluteUrls(requestConfig);
+      const newRequestConfig = removeBaseUrlForAbsoluteUrls(requestConfig)
 
       return beforeRequest.reduce((newConfig, beforeRequestFunc) => {
-        return beforeRequestFunc($, newConfig);
-      }, newRequestConfig);
-    }
-  );
+        return beforeRequestFunc($, newConfig)
+      }, newRequestConfig)
+    },
+  )
 
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
-      const { config } = error;
-      const { status } = error.response;
+      const { config } = error
+      const { status } = error.response
 
       if (
-        status === 401 &&
+        (status === 401 || status === 403) &&
         $.app.auth.refreshToken &&
         !$.app.auth.isRefreshTokenRequested
       ) {
-        $.app.auth.isRefreshTokenRequested = true;
-        await $.app.auth.refreshToken($);
+        $.app.auth.isRefreshTokenRequested = true
+        await $.app.auth.refreshToken($)
 
         // retry the previous request before the expired token error
-        const newResponse = await instance.request(config);
-        $.app.auth.isRefreshTokenRequested = false;
+        const newResponse = await instance.request(config)
+        $.app.auth.isRefreshTokenRequested = false
 
-        return newResponse;
+        return newResponse
       }
 
-      throw new HttpError(error);
-    }
-  );
+      throw new HttpError(error)
+    },
+  )
 
-  return instance;
+  return instance
 }

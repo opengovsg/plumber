@@ -1,5 +1,5 @@
-import defineAction from '../../../../helpers/define-action';
-import CancelFlowError from '../../../../errors/cancel-flow';
+import CancelFlowError from '../../../../errors/cancel-flow'
+import defineAction from '../../../../helpers/define-action'
 
 export default defineAction({
   name: 'Only continue if...',
@@ -24,7 +24,7 @@ export default defineAction({
       options: [
         { label: 'Is', value: 'is' },
         { label: 'Not', value: 'not' },
-      ]
+      ],
     },
     {
       label: 'Condition',
@@ -53,43 +53,43 @@ export default defineAction({
   ],
 
   async run($) {
-    const { field, is, condition, text } = $.step.parameters;
+    const { field, is, condition, text } = $.step.parameters
 
-    let result: boolean;
+    let result: boolean
     switch (condition) {
       case 'equals':
-        result = field === text;
+        result = field === text
         break
       case 'gte':
-        result = Number(field) >= Number(text);
+        result = Number(field) >= Number(text)
         break
       case 'gt':
-        result = Number(field) > Number(text);
+        result = Number(field) > Number(text)
         break
       case 'lte':
-        result = Number(field) <= Number(text);
+        result = Number(field) <= Number(text)
         break
       case 'lt':
-        result = Number(field) < Number(text);
+        result = Number(field) < Number(text)
         break
       case 'contains':
-        result = field.toString().includes(text.toString());
+        result = field.toString().includes(text.toString())
         break
       default:
-        throw new Error('Unknown predicate.');
+        throw new Error('Unknown predicate.')
     }
 
     if (is === 'not') {
-      result = !result;
+      result = !result
     }
 
     // Debug purposes.
     $.setActionItem({
       raw: { result },
-    });
+    })
 
     if (!result) {
-      throw new CancelFlowError();
+      throw new CancelFlowError()
     }
   },
-});
+})

@@ -1,5 +1,6 @@
-import defineTrigger from '../../../../helpers/define-trigger';
-import newIssues from './new-issues';
+import defineTrigger from '../../../../helpers/define-trigger'
+
+import newIssues from './new-issues'
 
 export default defineTrigger({
   name: 'New issues',
@@ -81,6 +82,6 @@ export default defineTrigger({
   ],
 
   async run($) {
-    await newIssues($);
+    await newIssues($)
   },
-});
+})

@@ -1,51 +1,53 @@
-import Analytics, { apiObject } from '@rudderstack/rudder-sdk-node';
-import organizationId from './organization-id';
-import instanceId from './instance-id';
-import appConfig from '../../config/app';
-import Step from '../../models/step';
-import Flow from '../../models/flow';
-import Execution from '../../models/execution';
-import ExecutionStep from '../../models/execution-step';
-import Connection from '../../models/connection';
-import os from 'os';
+import Analytics, { apiObject } from '@rudderstack/rudder-sdk-node'
+import os from 'os'
 
-const WRITE_KEY = '284Py4VgK2MsNYV7xlKzyrALx0v';
-const DATA_PLANE_URL = 'https://telemetry.automatisch.io/v1/batch';
-const CPUS = os.cpus();
-const SIX_HOURS_IN_MILLISECONDS = 21600000;
+import appConfig from '../../config/app'
+import Connection from '../../models/connection'
+import Execution from '../../models/execution'
+import ExecutionStep from '../../models/execution-step'
+import Flow from '../../models/flow'
+import Step from '../../models/step'
+
+import instanceId from './instance-id'
+import organizationId from './organization-id'
+
+const WRITE_KEY = '284Py4VgK2MsNYV7xlKzyrALx0v'
+const DATA_PLANE_URL = 'https://telemetry.automatisch.io/v1/batch'
+const CPUS = os.cpus()
+const SIX_HOURS_IN_MILLISECONDS = 21600000
 
 class Telemetry {
-  organizationId: string;
-  instanceId: string;
-  client: Analytics;
-  serviceType: string;
+  organizationId: string
+  instanceId: string
+  client: Analytics
+  serviceType: string
 
   constructor() {
-    this.client = new Analytics(WRITE_KEY, DATA_PLANE_URL);
-    this.organizationId = organizationId();
-    this.instanceId = instanceId();
+    this.client = new Analytics(WRITE_KEY, DATA_PLANE_URL)
+    this.organizationId = organizationId()
+    this.instanceId = instanceId()
   }
 
   setServiceType(type: string) {
-    this.serviceType = type;
+    this.serviceType = type
   }
 
   track(name: string, properties: apiObject) {
     if (!appConfig.telemetryEnabled) {
-      return;
+      return
     }
 
     properties = {
       ...properties,
       appEnv: appConfig.appEnv,
       instanceId: this.instanceId,
-    };
+    }
 
     this.client.track({
       userId: this.organizationId,
       event: name,
       properties,
-    });
+    })
   }
 
   stepCreated(step: Step) {
@@ -54,7 +56,7 @@ class Telemetry {
       flowId: step.flowId,
       createdAt: step.createdAt,
       updatedAt: step.updatedAt,
-    });
+    })
   }
 
   stepUpdated(step: Step) {
@@ -68,7 +70,7 @@ class Telemetry {
       status: step.status,
       createdAt: step.createdAt,
       updatedAt: step.updatedAt,
-    });
+    })
   }
 
   flowCreated(flow: Flow) {
@@ -78,7 +80,7 @@ class Telemetry {
       active: flow.active,
       createdAt: flow.createdAt,
       updatedAt: flow.updatedAt,
-    });
+    })
   }
 
   flowUpdated(flow: Flow) {
@@ -88,7 +90,7 @@ class Telemetry {
       active: flow.active,
       createdAt: flow.createdAt,
       updatedAt: flow.updatedAt,
-    });
+    })
   }
 
   executionCreated(execution: Execution) {
@@ -98,7 +100,7 @@ class Telemetry {
       testRun: execution.testRun,
       createdAt: execution.createdAt,
       updatedAt: execution.updatedAt,
-    });
+    })
   }
 
   executionStepCreated(executionStep: ExecutionStep) {
@@ -109,7 +111,7 @@ class Telemetry {
       status: executionStep.status,
       createdAt: executionStep.createdAt,
       updatedAt: executionStep.updatedAt,
-    });
+    })
   }
 
   connectionCreated(connection: Connection) {
@@ -119,7 +121,7 @@ class Telemetry {
       verified: connection.verified,
       createdAt: connection.createdAt,
       updatedAt: connection.updatedAt,
-    });
+    })
   }
 
   connectionUpdated(connection: Connection) {
@@ -129,7 +131,7 @@ class Telemetry {
       verified: connection.verified,
       createdAt: connection.createdAt,
       updatedAt: connection.updatedAt,
-    });
+    })
   }
 
   diagnosticInfo() {
@@ -147,13 +149,13 @@ class Telemetry {
         model: CPUS[0].model,
         speed: CPUS[0].speed,
       },
-    });
+    })
 
-    setTimeout(() => this.diagnosticInfo(), SIX_HOURS_IN_MILLISECONDS);
+    setTimeout(() => this.diagnosticInfo(), SIX_HOURS_IN_MILLISECONDS)
   }
 }
 
-const telemetry = new Telemetry();
-telemetry.diagnosticInfo();
+const telemetry = new Telemetry()
+telemetry.diagnosticInfo()
 
-export default telemetry;
+export default telemetry

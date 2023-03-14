@@ -1,9 +1,9 @@
-type JSONValue = string | number | boolean | JSONObject | JSONArray;
+type JSONValue = string | number | boolean | JSONObject | JSONArray
 
 interface JSONObject {
-  [x: string]: JSONValue;
+  [x: string]: JSONValue
 }
 
-type JSONArray = Array<JSONValue>;
+type JSONArray = Array<JSONValue>
 
-export default JSONObject;
+export default JSONObject

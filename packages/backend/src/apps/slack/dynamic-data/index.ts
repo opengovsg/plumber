@@ -1,3 +1,3 @@
-import listChannels from './list-channels';
+import listChannels from './list-channels'
 
-export default [listChannels];
+export default [listChannels]

@@ -1,18 +1,20 @@
-import { DateTime } from 'luxon';
-import { IGlobalVariable, IJSONObject } from '@automatisch/types';
-import getRepoOwnerAndRepo from '../../common/get-repo-owner-and-repo';
-import parseLinkHeader from '../../../../helpers/parse-header-link';
+import { IGlobalVariable, IJSONObject } from '@plumber/types'
+
+import { DateTime } from 'luxon'
+
+import parseLinkHeader from '../../../../helpers/parse-header-link'
+import getRepoOwnerAndRepo from '../../common/get-repo-owner-and-repo'
 
 type TResponseDataItem = {
-  starred_at: string;
-  user: IJSONObject;
-};
+  starred_at: string
+  user: IJSONObject
+}
 
 const newStargazers = async ($: IGlobalVariable) => {
   const { repoOwner, repo } = getRepoOwnerAndRepo(
-    $.step.parameters.repo as string
-  );
-  const firstPagePathname = `/repos/${repoOwner}/${repo}/stargazers`;
+    $.step.parameters.repo as string,
+  )
+  const firstPagePathname = `/repos/${repoOwner}/${repo}/stargazers`
   const requestConfig = {
     params: {
       per_page: 100,
@@ -21,44 +23,44 @@ const newStargazers = async ($: IGlobalVariable) => {
       // needed to get `starred_at` time
       Accept: 'application/vnd.github.star+json',
     },
-  };
+  }
 
   const firstPageResponse = await $.http.get<TResponseDataItem[]>(
     firstPagePathname,
-    requestConfig
-  );
-  const firstPageLinks = parseLinkHeader(firstPageResponse.headers.link);
+    requestConfig,
+  )
+  const firstPageLinks = parseLinkHeader(firstPageResponse.headers.link)
 
   // in case there is only single page to fetch
-  let pathname = firstPageLinks.last?.uri || firstPagePathname;
+  let pathname = firstPageLinks.last?.uri || firstPagePathname
 
   do {
     const response = await $.http.get<TResponseDataItem[]>(
       pathname,
-      requestConfig
-    );
-    const links = parseLinkHeader(response.headers.link);
-    pathname = links.prev?.uri;
+      requestConfig,
+    )
+    const links = parseLinkHeader(response.headers.link)
+    pathname = links.prev?.uri
 
-    if (response.data.length) {
+    if (response.data?.length) {
       // to iterate reverse-chronologically
-      response.data.reverse();
+      response.data.reverse()
 
       for (const starEntry of response.data) {
-        const { starred_at, user } = starEntry;
-        const timestamp = DateTime.fromISO(starred_at).toMillis();
+        const { starred_at: starredAt, user } = starEntry
+        const timestamp = DateTime.fromISO(starredAt).toMillis()
 
         const dataItem = {
           raw: user,
           meta: {
             internalId: timestamp.toString(),
           },
-        };
+        }
 
-        $.pushTriggerItem(dataItem);
+        $.pushTriggerItem(dataItem)
       }
     }
-  } while (pathname);
-};
+  } while (pathname)
+}
 
-export default newStargazers;
+export default newStargazers

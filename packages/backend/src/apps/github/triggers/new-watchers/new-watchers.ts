@@ -1,50 +1,53 @@
-import { IGlobalVariable } from '@automatisch/types';
-import getRepoOwnerAndRepo from '../../common/get-repo-owner-and-repo';
-import parseLinkHeader from '../../../../helpers/parse-header-link';
+import { IGlobalVariable } from '@plumber/types'
+
+import parseLinkHeader from '../../../../helpers/parse-header-link'
+import getRepoOwnerAndRepo from '../../common/get-repo-owner-and-repo'
 
 const newWatchers = async ($: IGlobalVariable) => {
-  const repoParameter = $.step.parameters.repo as string;
+  const repoParameter = $.step.parameters.repo as string
 
-  if (!repoParameter) throw new Error('A repo must be set!');
+  if (!repoParameter) {
+    throw new Error('A repo must be set!')
+  }
 
-  const { repoOwner, repo } = getRepoOwnerAndRepo(repoParameter);
+  const { repoOwner, repo } = getRepoOwnerAndRepo(repoParameter)
 
-  const firstPagePathname = `/repos/${repoOwner}/${repo}/subscribers`;
+  const firstPagePathname = `/repos/${repoOwner}/${repo}/subscribers`
   const requestConfig = {
     params: {
       per_page: 100,
     },
-  };
+  }
 
-  const firstPageResponse = await $.http.get(firstPagePathname, requestConfig);
-  const firstPageLinks = parseLinkHeader(firstPageResponse.headers.link);
+  const firstPageResponse = await $.http.get(firstPagePathname, requestConfig)
+  const firstPageLinks = parseLinkHeader(firstPageResponse.headers.link)
 
   // in case there is only single page to fetch
-  let pathname = firstPageLinks.last?.uri || firstPagePathname;
+  let pathname = firstPageLinks.last?.uri || firstPagePathname
 
   do {
-    const response = await $.http.get(pathname, requestConfig);
-    const links = parseLinkHeader(response.headers.link);
-    pathname = links.prev?.uri;
+    const response = await $.http.get(pathname, requestConfig)
+    const links = parseLinkHeader(response.headers.link)
+    pathname = links.prev?.uri
 
     if (response.data.length) {
       // to iterate reverse-chronologically
-      response.data.reverse();
+      response.data.reverse()
 
       for (const watcher of response.data) {
-        const watcherId = watcher.id.toString();
+        const watcherId = watcher.id.toString()
 
         const dataItem = {
           raw: watcher,
           meta: {
             internalId: watcherId,
           },
-        };
+        }
 
-        $.pushTriggerItem(dataItem);
+        $.pushTriggerItem(dataItem)
       }
     }
-  } while (pathname);
-};
+  } while (pathname)
+}
 
-export default newWatchers;
+export default newWatchers

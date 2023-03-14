@@ -1,40 +1,39 @@
-import * as React from 'react';
-import { Link } from 'react-router-dom';
-import Menu from '@mui/material/Menu';
-import type { PopoverProps } from '@mui/material/Popover';
-import MenuItem from '@mui/material/MenuItem';
-
-import * as URLS from 'config/urls';
-import useFormatMessage from 'hooks/useFormatMessage';
+import * as React from 'react'
+import { Link } from 'react-router-dom'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import type { PopoverProps } from '@mui/material/Popover'
+import * as URLS from 'config/urls'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 type Action = {
-  type: 'test' | 'reconnect' | 'delete' | 'viewFlows';
-};
+  type: 'test' | 'reconnect' | 'delete' | 'viewFlows'
+}
 
 type ContextMenuProps = {
-  appKey: string;
-  connectionId: string;
-  onClose: () => void;
-  onMenuItemClick: (event: React.MouseEvent, action: Action) => void;
-  anchorEl: PopoverProps['anchorEl'];
-};
+  appKey: string
+  connectionId: string
+  onClose: () => void
+  onMenuItemClick: (event: React.MouseEvent, action: Action) => void
+  anchorEl: PopoverProps['anchorEl']
+}
 
 export default function ContextMenu(
-  props: ContextMenuProps
+  props: ContextMenuProps,
 ): React.ReactElement {
-  const { appKey, connectionId, onClose, onMenuItemClick, anchorEl } = props;
-  const formatMessage = useFormatMessage();
+  const { appKey, connectionId, onClose, onMenuItemClick, anchorEl } = props
+  const formatMessage = useFormatMessage()
 
   const createActionHandler = React.useCallback(
     (action: Action) => {
       return function clickHandler(event: React.MouseEvent) {
-        onMenuItemClick(event, action);
+        onMenuItemClick(event, action)
 
-        onClose();
-      };
+        onClose()
+      }
     },
-    [onMenuItemClick, onClose]
-  );
+    [onMenuItemClick, onClose],
+  )
 
   return (
     <Menu
@@ -67,5 +66,5 @@ export default function ContextMenu(
         {formatMessage('connection.delete')}
       </MenuItem>
     </Menu>
-  );
+  )
 }

@@ -1,33 +1,36 @@
-import * as React from 'react';
-import { Link } from 'react-router-dom';
-import type { LinkProps } from 'react-router-dom';
-import Card from '@mui/material/Card';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import CardActionArea from '@mui/material/CardActionArea';
-import Typography from '@mui/material/Typography';
-import { CardContent } from './style';
+import * as React from 'react'
+import type { LinkProps } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import AddCircleIcon from '@mui/icons-material/AddCircle'
+import Card from '@mui/material/Card'
+import CardActionArea from '@mui/material/CardActionArea'
+import Typography from '@mui/material/Typography'
+
+import { CardContent } from './style'
 
 type NoResultFoundProps = {
-  text?: string;
-  to?: string;
-};
+  text?: string
+  to?: string
+}
 
 export default function NoResultFound(
-  props: NoResultFoundProps
+  props: NoResultFoundProps,
 ): React.ReactElement {
-  const { text, to } = props;
+  const { text, to } = props
 
   const ActionAreaLink = React.useMemo(
     () =>
       React.forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(
         function InlineLink(linkProps, ref) {
-          if (!to) return <div>{linkProps.children}</div>;
+          if (!to) {
+            return <div>{linkProps.children}</div>
+          }
 
-          return <Link ref={ref} to={to} {...linkProps} />;
-        }
+          return <Link ref={ref} to={to} {...linkProps} />
+        },
       ),
-    [to]
-  );
+    [to],
+  )
 
   return (
     <Card elevation={0}>
@@ -39,5 +42,5 @@ export default function NoResultFound(
         </CardContent>
       </CardActionArea>
     </Card>
-  );
+  )
 }

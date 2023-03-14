@@ -1,6 +1,8 @@
-import isEmpty from 'lodash/isEmpty';
-import { IGlobalVariable } from '@automatisch/types';
-import defineTrigger from '../../../../helpers/define-trigger';
+import { IGlobalVariable } from '@plumber/types'
+
+import isEmpty from 'lodash/isEmpty'
+
+import defineTrigger from '../../../../helpers/define-trigger'
 
 export default defineTrigger({
   name: 'New form submission',
@@ -13,9 +15,9 @@ export default defineTrigger({
       $.pushTriggerItem({
         raw: $.lastExecutionStep.dataOut,
         meta: {
-          internalId: ''
-        }
-      });
+          internalId: '',
+        },
+      })
     }
-  }
-});
+  },
+})

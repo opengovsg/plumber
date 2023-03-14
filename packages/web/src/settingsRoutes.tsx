@@ -1,7 +1,6 @@
-import { Route, Navigate } from 'react-router-dom';
-import SettingsLayout from 'components/SettingsLayout';
-
-import * as URLS from 'config/urls';
+import { Navigate, Route } from 'react-router-dom'
+import SettingsLayout from 'components/SettingsLayout'
+import * as URLS from 'config/urls'
 
 export default (
   <>
@@ -15,4 +14,4 @@ export default (
       element={<Navigate to={URLS.SETTINGS_PROFILE} replace />}
     />
   </>
-);
+)

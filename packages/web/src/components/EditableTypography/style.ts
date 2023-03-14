@@ -1,13 +1,13 @@
-import { styled } from '@mui/material/styles';
-import MuiBox from '@mui/material/Box';
-import MuiTextField from '@mui/material/TextField';
-import { inputClasses } from '@mui/material/Input';
+import MuiBox from '@mui/material/Box'
+import { inputClasses } from '@mui/material/Input'
+import { styled } from '@mui/material/styles'
+import MuiTextField from '@mui/material/TextField'
 
 type BoxProps = {
-  editing?: boolean;
-};
+  editing?: boolean
+}
 
-const boxShouldForwardProp = (prop: string) => !['editing'].includes(prop);
+const boxShouldForwardProp = (prop: string) => !['editing'].includes(prop)
 export const Box = styled(MuiBox, {
   shouldForwardProp: boxShouldForwardProp,
 })<BoxProps>`
@@ -17,7 +17,7 @@ export const Box = styled(MuiBox, {
   height: 33px;
   align-items: center;
   ${({ editing }) => editing && `border-bottom: 1px dashed #000;`}
-`;
+`
 
 export const TextField = styled(MuiTextField)({
   width: '100%',
@@ -25,4 +25,4 @@ export const TextField = styled(MuiTextField)({
     {
       borderBottom: '0 !important',
     },
-});
+})

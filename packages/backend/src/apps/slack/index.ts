@@ -1,8 +1,9 @@
-import defineApp from '../../helpers/define-app';
-import addAuthHeader from './common/add-auth-header';
-import actions from './actions';
-import auth from './auth';
-import dynamicData from './dynamic-data';
+import defineApp from '../../helpers/define-app'
+
+import addAuthHeader from './common/add-auth-header'
+import actions from './actions'
+import auth from './auth'
+import dynamicData from './dynamic-data'
 
 export default defineApp({
   name: 'Slack',
@@ -17,4 +18,4 @@ export default defineApp({
   auth,
   actions,
   dynamicData,
-});
+})

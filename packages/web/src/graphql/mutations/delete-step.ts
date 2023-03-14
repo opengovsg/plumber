@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const DELETE_STEP = gql`
   mutation DeleteStep($input: DeleteStepInput) {
@@ -12,4 +12,4 @@ export const DELETE_STEP = gql`
       }
     }
   }
-`;
+`

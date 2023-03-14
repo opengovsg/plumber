@@ -1,48 +1,46 @@
-import * as React from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation } from '@apollo/client';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
-
-import * as URLS from 'config/urls';
-import useFormatMessage from 'hooks/useFormatMessage';
-import { CREATE_FLOW } from 'graphql/mutations/create-flow';
-
-import Box from '@mui/material/Box';
+import * as React from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useMutation } from '@apollo/client'
+import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
+import Typography from '@mui/material/Typography'
+import * as URLS from 'config/urls'
+import { CREATE_FLOW } from 'graphql/mutations/create-flow'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 export default function CreateFlow(): React.ReactElement {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const formatMessage = useFormatMessage();
-  const [createFlow] = useMutation(CREATE_FLOW);
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const formatMessage = useFormatMessage()
+  const [createFlow] = useMutation(CREATE_FLOW)
 
-  const appKey = searchParams.get('appKey');
-  const connectionId = searchParams.get('connectionId');
+  const appKey = searchParams.get('appKey')
+  const connectionId = searchParams.get('connectionId')
 
   React.useEffect(() => {
     async function initiate() {
-      const variables: { [key: string]: string } = {};
+      const variables: { [key: string]: string } = {}
 
       if (appKey) {
-        variables.triggerAppKey = appKey;
+        variables.triggerAppKey = appKey
       }
 
       if (connectionId) {
-        variables.connectionId = connectionId;
+        variables.connectionId = connectionId
       }
 
       const response = await createFlow({
         variables: {
           input: variables,
         },
-      });
-      const flowId = response.data?.createFlow?.id;
+      })
+      const flowId = response.data?.createFlow?.id
 
-      navigate(URLS.FLOW_EDITOR(flowId), { replace: true });
+      navigate(URLS.FLOW_EDITOR(flowId), { replace: true })
     }
 
-    initiate();
-  }, [createFlow, navigate, appKey, connectionId]);
+    initiate()
+  }, [createFlow, navigate, appKey, connectionId])
 
   return (
     <Box
@@ -61,5 +59,5 @@ export default function CreateFlow(): React.ReactElement {
         {formatMessage('createFlow.creating')}
       </Typography>
     </Box>
-  );
+  )
 }

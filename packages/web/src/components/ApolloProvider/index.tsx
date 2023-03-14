@@ -1,33 +1,32 @@
-import * as React from 'react';
-import { ApolloProvider as BaseApolloProvider } from '@apollo/client';
-import { SnackbarMessage, useSnackbar } from 'notistack';
-
-import { mutateAndGetClient } from 'graphql/client';
-import useAuthentication from 'hooks/useAuthentication';
+import * as React from 'react'
+import { ApolloProvider as BaseApolloProvider } from '@apollo/client'
+import { mutateAndGetClient } from 'graphql/client'
+import useAuthentication from 'hooks/useAuthentication'
+import { SnackbarMessage, useSnackbar } from 'notistack'
 
 type ApolloProviderProps = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
-  const { enqueueSnackbar } = useSnackbar();
-  const authentication = useAuthentication();
+  const { enqueueSnackbar } = useSnackbar()
+  const authentication = useAuthentication()
 
   const onError = React.useCallback(
     (message: SnackbarMessage) => {
-      enqueueSnackbar(message, { variant: 'error' });
+      enqueueSnackbar(message, { variant: 'error' })
     },
-    [enqueueSnackbar]
-  );
+    [enqueueSnackbar],
+  )
 
   const client = React.useMemo(() => {
     return mutateAndGetClient({
       onError,
       token: authentication.token,
-    });
-  }, [onError, authentication]);
+    })
+  }, [onError, authentication])
 
-  return <BaseApolloProvider client={client} {...props} />;
-};
+  return <BaseApolloProvider client={client} {...props} />
+}
 
-export default ApolloProvider;
+export default ApolloProvider

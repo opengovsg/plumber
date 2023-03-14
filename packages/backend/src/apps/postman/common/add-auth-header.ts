@@ -1,14 +1,11 @@
-import { TBeforeRequest } from '@automatisch/types';
+import { TBeforeRequest } from '@plumber/types'
 
 const addAuthHeader: TBeforeRequest = ($, requestConfig) => {
-  if (
-    requestConfig.headers &&
-    $.auth.data?.apiKey
-  ) {
-    requestConfig.headers['Authorization'] = `Bearer ${$.auth.data.apiKey}`;
+  if (requestConfig.headers && $.auth.data?.apiKey) {
+    requestConfig.headers['Authorization'] = `Bearer ${$.auth.data.apiKey}`
   }
 
-  return requestConfig;
-};
+  return requestConfig
+}
 
-export default addAuthHeader;
+export default addAuthHeader

@@ -1,4 +1,5 @@
-import { Model } from 'objection';
-import { client } from './database';
+import { Model } from 'objection'
 
-Model.knex(client);
+import { client } from './database'
+
+Model.knex(client)

@@ -1,43 +1,47 @@
-import * as React from 'react';
-import { useFormContext } from 'react-hook-form';
-import Collapse from '@mui/material/Collapse';
-import ListItem from '@mui/material/ListItem';
-import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
+import type { IField, IStep, ISubstep } from '@plumber/types'
 
-import { EditorContext } from 'contexts/Editor';
-import FlowSubstepTitle from 'components/FlowSubstepTitle';
-import InputCreator from 'components/InputCreator';
-import type { IField, IStep, ISubstep } from '@automatisch/types';
+import * as React from 'react'
+import { useFormContext } from 'react-hook-form'
+import Button from '@mui/material/Button'
+import Collapse from '@mui/material/Collapse'
+import ListItem from '@mui/material/ListItem'
+import Stack from '@mui/material/Stack'
+import FlowSubstepTitle from 'components/FlowSubstepTitle'
+import InputCreator from 'components/InputCreator'
+import { EditorContext } from 'contexts/Editor'
 
 type FlowSubstepProps = {
-  substep: ISubstep;
-  expanded?: boolean;
-  onExpand: () => void;
-  onCollapse: () => void;
-  onChange: ({ step }: { step: IStep }) => void;
-  onSubmit: () => void;
-  step: IStep;
-};
+  substep: ISubstep
+  expanded?: boolean
+  onExpand: () => void
+  onCollapse: () => void
+  onChange: ({ step }: { step: IStep }) => void
+  onSubmit: () => void
+  step: IStep
+}
 
 const validateSubstep = (substep: ISubstep, step: IStep) => {
-  if (!substep) return true;
+  if (!substep) {
+    return true
+  }
 
-  const args: IField[] = substep.arguments || [];
+  const args: IField[] = substep.arguments || []
 
   return args.every((arg) => {
     if (arg.required === false) {
-      return true;
+      return true
     }
 
-    const argValue = step.parameters?.[arg.key];
+    const argValue = step.parameters?.[arg.key]
 
     // `false` is an exceptional valid value
-    if (argValue === false) return true;
+    if (argValue === false) {
+      return true
+    }
 
-    return Boolean(argValue);
-  });
-};
+    return Boolean(argValue)
+  })
+}
 
 function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
   const {
@@ -47,27 +51,27 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
     onCollapse,
     onSubmit,
     step,
-  } = props;
+  } = props
 
-  const { name, arguments: args } = substep;
+  const { name, arguments: args } = substep
 
-  const editorContext = React.useContext(EditorContext);
-  const formContext = useFormContext();
+  const editorContext = React.useContext(EditorContext)
+  const formContext = useFormContext()
   const [validationStatus, setValidationStatus] = React.useState<
     boolean | null
-  >(validateSubstep(substep, formContext.getValues() as IStep));
+  >(validateSubstep(substep, formContext.getValues() as IStep))
 
   React.useEffect(() => {
     function validate(step: unknown) {
-      const validationResult = validateSubstep(substep, step as IStep);
-      setValidationStatus(validationResult);
+      const validationResult = validateSubstep(substep, step as IStep)
+      setValidationStatus(validationResult)
     }
-    const subscription = formContext.watch(validate);
+    const subscription = formContext.watch(validate)
 
-    return () => subscription.unsubscribe();
-  }, [substep, formContext.watch]);
+    return () => subscription.unsubscribe()
+  }, [substep, formContext.watch])
 
-  const onToggle = expanded ? onCollapse : onExpand;
+  const onToggle = expanded ? onCollapse : onExpand
 
   return (
     <React.Fragment>
@@ -113,7 +117,7 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
         </ListItem>
       </Collapse>
     </React.Fragment>
-  );
+  )
 }
 
-export default FlowSubstep;
+export default FlowSubstep

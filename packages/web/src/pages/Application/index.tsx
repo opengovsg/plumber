@@ -1,44 +1,42 @@
-import * as React from 'react';
-import { useQuery } from '@apollo/client';
+import * as React from 'react'
+import type { LinkProps } from 'react-router-dom'
 import {
   Link,
-  Route,
   Navigate,
+  Route,
   Routes,
-  useParams,
-  useSearchParams,
   useMatch,
   useNavigate,
-} from 'react-router-dom';
-import type { LinkProps } from 'react-router-dom';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import AddIcon from '@mui/icons-material/Add';
-
-import useFormatMessage from 'hooks/useFormatMessage';
-import { GET_APP } from 'graphql/queries/get-app';
-import * as URLS from 'config/urls';
-
-import ConditionalIconButton from 'components/ConditionalIconButton';
-import AppConnections from 'components/AppConnections';
-import AppFlows from 'components/AppFlows';
-import AddAppConnection from 'components/AddAppConnection';
-import AppIcon from 'components/AppIcon';
-import Container from 'components/Container';
-import PageTitle from 'components/PageTitle';
+  useParams,
+  useSearchParams,
+} from 'react-router-dom'
+import { useQuery } from '@apollo/client'
+import AddIcon from '@mui/icons-material/Add'
+import Box from '@mui/material/Box'
+import Grid from '@mui/material/Grid'
+import { useTheme } from '@mui/material/styles'
+import Tab from '@mui/material/Tab'
+import Tabs from '@mui/material/Tabs'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import AddAppConnection from 'components/AddAppConnection'
+import AppConnections from 'components/AppConnections'
+import AppFlows from 'components/AppFlows'
+import AppIcon from 'components/AppIcon'
+import ConditionalIconButton from 'components/ConditionalIconButton'
+import Container from 'components/Container'
+import PageTitle from 'components/PageTitle'
+import * as URLS from 'config/urls'
+import { GET_APP } from 'graphql/queries/get-app'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 type ApplicationParams = {
-  appKey: string;
-  connectionId?: string;
-};
+  appKey: string
+  connectionId?: string
+}
 
 const ReconnectConnection = (props: any): React.ReactElement => {
-  const { application, onClose } = props;
-  const { connectionId } = useParams() as ApplicationParams;
+  const { application, onClose } = props
+  const { connectionId } = useParams() as ApplicationParams
 
   return (
     <AddAppConnection
@@ -46,28 +44,28 @@ const ReconnectConnection = (props: any): React.ReactElement => {
       application={application}
       connectionId={connectionId}
     />
-  );
-};
+  )
+}
 
 export default function Application(): React.ReactElement | null {
-  const theme = useTheme();
+  const theme = useTheme()
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
     noSsr: true,
-  });
-  const formatMessage = useFormatMessage();
+  })
+  const formatMessage = useFormatMessage()
   const connectionsPathMatch = useMatch({
     path: URLS.APP_CONNECTIONS_PATTERN,
     end: false,
-  });
-  const flowsPathMatch = useMatch({ path: URLS.APP_FLOWS_PATTERN, end: false });
-  const [searchParams] = useSearchParams();
-  const { appKey } = useParams() as ApplicationParams;
-  const navigate = useNavigate();
-  const { data, loading } = useQuery(GET_APP, { variables: { key: appKey } });
+  })
+  const flowsPathMatch = useMatch({ path: URLS.APP_FLOWS_PATTERN, end: false })
+  const [searchParams] = useSearchParams()
+  const { appKey } = useParams() as ApplicationParams
+  const navigate = useNavigate()
+  const { data, loading } = useQuery(GET_APP, { variables: { key: appKey } })
 
-  const connectionId = searchParams.get('connectionId') || undefined;
-  const goToApplicationPage = () => navigate('connections');
-  const app = data?.getApp || {};
+  const connectionId = searchParams.get('connectionId') || undefined
+  const goToApplicationPage = () => navigate('connections')
+  const app = data?.getApp || {}
 
   const NewConnectionLink = React.useMemo(
     () =>
@@ -79,11 +77,11 @@ export default function Application(): React.ReactElement | null {
               to={URLS.APP_ADD_CONNECTION(appKey)}
               {...linkProps}
             />
-          );
-        }
+          )
+        },
       ),
-    [appKey]
-  );
+    [appKey],
+  )
 
   const NewFlowLink = React.useMemo(
     () =>
@@ -94,17 +92,19 @@ export default function Application(): React.ReactElement | null {
               ref={ref}
               to={URLS.CREATE_FLOW_WITH_APP_AND_CONNECTION(
                 appKey,
-                connectionId
+                connectionId,
               )}
               {...linkProps}
             />
-          );
-        }
+          )
+        },
       ),
-    [appKey, connectionId]
-  );
+    [appKey, connectionId],
+  )
 
-  if (loading) return null;
+  if (loading) {
+    return null
+  }
 
   return (
     <>
@@ -239,5 +239,5 @@ export default function Application(): React.ReactElement | null {
         />
       </Routes>
     </>
-  );
+  )
 }

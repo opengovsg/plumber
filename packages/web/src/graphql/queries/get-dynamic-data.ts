@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GET_DYNAMIC_DATA = gql`
   query GetDynamicData(
@@ -8,4 +8,4 @@ export const GET_DYNAMIC_DATA = gql`
   ) {
     getDynamicData(stepId: $stepId, key: $key, parameters: $parameters)
   }
-`;
+`

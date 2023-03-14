@@ -1,5 +1,6 @@
-import defineApp from '../../helpers/define-app';
-import actions from './actions';
+import defineApp from '../../helpers/define-app'
+
+import actions from './actions'
 
 export default defineApp({
   name: 'Delay',
@@ -11,4 +12,4 @@ export default defineApp({
   apiBaseUrl: '',
   primaryColor: '001F52',
   actions,
-});
+})

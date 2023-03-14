@@ -1,16 +1,16 @@
-import * as React from 'react';
-import Typography from '@mui/material/Typography';
+import * as React from 'react'
+import Typography from '@mui/material/Typography'
 
-import { Container } from './style';
+import { Container } from './style'
 
 type IntermediateStepCountProps = {
-  count: number;
-};
+  count: number
+}
 
 export default function IntermediateStepCount(
-  props: IntermediateStepCountProps
+  props: IntermediateStepCountProps,
 ) {
-  const { count } = props;
+  const { count } = props
 
   return (
     <Container>
@@ -18,5 +18,5 @@ export default function IntermediateStepCount(
         +{count}
       </Typography>
     </Container>
-  );
+  )
 }

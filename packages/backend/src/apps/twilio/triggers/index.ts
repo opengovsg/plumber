@@ -1,3 +1,3 @@
-import receiveSms from './receive-sms';
+import receiveSms from './receive-sms'
 
-export default [receiveSms];
+export default [receiveSms]

@@ -1,5 +1,6 @@
-import defineAction from '../../../../helpers/define-action';
-import postMessage from './post-message';
+import defineAction from '../../../../helpers/define-action'
+
+import postMessage from './post-message'
 
 export default defineAction({
   name: 'Send a message to channel',
@@ -74,8 +75,8 @@ export default defineAction({
   ],
 
   async run($) {
-    const message = await postMessage($);
+    const message = await postMessage($)
 
-    return message;
+    return message
   },
-});
+})

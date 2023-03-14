@@ -1,8 +1,9 @@
-import { Request } from 'express';
-import User from '../../models/user';
+import { Request } from 'express'
+
+import User from '../../models/user'
 
 interface Context extends Request {
-  currentUser: User;
+  currentUser: User
 }
 
-export default Context;
+export default Context

@@ -1,3 +1,3 @@
-import newSubmission from './new-submission';
+import newSubmission from './new-submission'
 
-export default [newSubmission];
+export default [newSubmission]

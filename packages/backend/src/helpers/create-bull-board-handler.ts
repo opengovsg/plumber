@@ -1,20 +1,22 @@
-import { ExpressAdapter } from '@bull-board/express';
-import { createBullBoard } from '@bull-board/api';
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import flowQueue from '../queues/flow';
-import triggerQueue from '../queues/trigger';
-import actionQueue from '../queues/action';
-import appConfig from '../config/app';
+import { createBullBoard } from '@bull-board/api'
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
+import { ExpressAdapter } from '@bull-board/express'
 
-const serverAdapter = new ExpressAdapter();
+import appConfig from '../config/app'
+import actionQueue from '../queues/action'
+import flowQueue from '../queues/flow'
+import triggerQueue from '../queues/trigger'
+
+const serverAdapter = new ExpressAdapter()
 
 const createBullBoardHandler = async (serverAdapter: ExpressAdapter) => {
   if (
     !appConfig.enableBullMQDashboard ||
     !appConfig.bullMQDashboardUsername ||
     !appConfig.bullMQDashboardPassword
-  )
-    return;
+  ) {
+    return
+  }
 
   createBullBoard({
     queues: [
@@ -23,7 +25,7 @@ const createBullBoardHandler = async (serverAdapter: ExpressAdapter) => {
       new BullMQAdapter(actionQueue),
     ],
     serverAdapter: serverAdapter,
-  });
-};
+  })
+}
 
-export { createBullBoardHandler, serverAdapter };
+export { createBullBoardHandler, serverAdapter }

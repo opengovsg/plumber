@@ -1,5 +1,5 @@
-import defineAction from '../../../../helpers/define-action';
-import getRepoOwnerAndRepo from '../../common/get-repo-owner-and-repo';
+import defineAction from '../../../../helpers/define-action'
+import getRepoOwnerAndRepo from '../../common/get-repo-owner-and-repo'
 
 export default defineAction({
   name: 'Create issue',
@@ -40,19 +40,23 @@ export default defineAction({
   ],
 
   async run($) {
-    const repoParameter = $.step.parameters.repo as string;
-    const title = $.step.parameters.title as string;
-    const body = $.step.parameters.body as string;
+    const repoParameter = $.step.parameters.repo as string
+    const title = $.step.parameters.title as string
+    const body = $.step.parameters.body as string
 
-    if (!repoParameter) throw new Error('A repo must be set!');
-    if (!title) throw new Error('A title must be set!');
+    if (!repoParameter) {
+      throw new Error('A repo must be set!')
+    }
+    if (!title) {
+      throw new Error('A title must be set!')
+    }
 
-    const { repoOwner, repo } = getRepoOwnerAndRepo(repoParameter);
+    const { repoOwner, repo } = getRepoOwnerAndRepo(repoParameter)
     const response = await $.http.post(`/repos/${repoOwner}/${repo}/issues`, {
       title,
       body,
-    });
+    })
 
-    $.setActionItem({ raw: response.data });
+    $.setActionItem({ raw: response.data })
   },
-});
+})

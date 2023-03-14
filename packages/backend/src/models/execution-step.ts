@@ -1,21 +1,24 @@
-import type { QueryContext } from 'objection';
-import Base from './base';
-import Execution from './execution';
-import Step from './step';
-import Telemetry from '../helpers/telemetry';
-import { IJSONObject } from '@automatisch/types';
+import { IJSONObject } from '@plumber/types'
+
+import type { QueryContext } from 'objection'
+
+import Telemetry from '../helpers/telemetry'
+
+import Base from './base'
+import Execution from './execution'
+import Step from './step'
 
 class ExecutionStep extends Base {
-  id!: string;
-  executionId!: string;
-  stepId!: string;
-  dataIn!: IJSONObject;
-  dataOut!: IJSONObject;
-  errorDetails: IJSONObject;
-  status: 'success' | 'failure';
-  step: Step;
+  id!: string
+  executionId!: string
+  stepId!: string
+  dataIn!: IJSONObject
+  dataOut!: IJSONObject
+  errorDetails: IJSONObject
+  status: 'success' | 'failure'
+  step: Step
 
-  static tableName = 'execution_steps';
+  static tableName = 'execution_steps'
 
   static jsonSchema = {
     type: 'object',
@@ -29,7 +32,7 @@ class ExecutionStep extends Base {
       status: { type: 'string', enum: ['success', 'failure'] },
       errorDetails: { type: ['object', 'null'] },
     },
-  };
+  }
 
   static relationMappings = () => ({
     execution: {
@@ -48,16 +51,16 @@ class ExecutionStep extends Base {
         to: 'steps.id',
       },
     },
-  });
+  })
 
   get isFailed() {
-    return this.status === 'failure';
+    return this.status === 'failure'
   }
 
   async $afterInsert(queryContext: QueryContext) {
-    await super.$afterInsert(queryContext);
-    Telemetry.executionStepCreated(this);
+    await super.$afterInsert(queryContext)
+    Telemetry.executionStepCreated(this)
   }
 }
 
-export default ExecutionStep;
+export default ExecutionStep

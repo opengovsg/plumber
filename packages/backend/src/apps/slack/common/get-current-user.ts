@@ -1,13 +1,13 @@
-import { IGlobalVariable, IJSONObject } from '@automatisch/types';
+import { IGlobalVariable, IJSONObject } from '@plumber/types'
 
 const getCurrentUser = async ($: IGlobalVariable): Promise<IJSONObject> => {
   const params = {
     user: $.auth.data.userId as string,
-  };
-  const response = await $.http.get('/users.info', { params });
-  const currentUser = response.data.user;
+  }
+  const response = await $.http.get('/users.info', { params })
+  const currentUser = response.data.user
 
-  return currentUser;
-};
+  return currentUser
+}
 
-export default getCurrentUser;
+export default getCurrentUser

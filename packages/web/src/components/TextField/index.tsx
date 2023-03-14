@@ -1,23 +1,22 @@
-import * as React from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import * as React from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import IconButton from '@mui/material/IconButton'
+import InputAdornment from '@mui/material/InputAdornment'
 import MuiTextField, {
   TextFieldProps as MuiTextFieldProps,
-} from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-
-import copyInputValue from 'helpers/copyInputValue';
+} from '@mui/material/TextField'
+import copyInputValue from 'helpers/copyInputValue'
 
 type TextFieldProps = {
-  shouldUnregister?: boolean;
-  name: string;
-  clickToCopy?: boolean;
-  readOnly?: boolean;
-} & MuiTextFieldProps;
+  shouldUnregister?: boolean
+  name: string
+  clickToCopy?: boolean
+  readOnly?: boolean
+} & MuiTextFieldProps
 
 const createCopyAdornment = (
-  ref: React.RefObject<HTMLInputElement | null>
+  ref: React.RefObject<HTMLInputElement | null>,
 ): React.ReactElement => {
   return (
     <InputAdornment position="end">
@@ -28,12 +27,12 @@ const createCopyAdornment = (
         <ContentCopyIcon color="primary" />
       </IconButton>
     </InputAdornment>
-  );
-};
+  )
+}
 
 export default function TextField(props: TextFieldProps): React.ReactElement {
-  const { control } = useFormContext();
-  const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const { control } = useFormContext()
+  const inputRef = React.useRef<HTMLInputElement | null>(null)
   const {
     required,
     name,
@@ -44,7 +43,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
     onBlur,
     onChange,
     ...textFieldProps
-  } = props;
+  } = props
 
   return (
     <Controller
@@ -65,16 +64,16 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
           {...textFieldProps}
           {...field}
           onChange={(...args) => {
-            controllerOnChange(...args);
-            onChange?.(...args);
+            controllerOnChange(...args)
+            onChange?.(...args)
           }}
           onBlur={(...args) => {
-            controllerOnBlur();
-            onBlur?.(...args);
+            controllerOnBlur()
+            onBlur?.(...args)
           }}
           inputRef={(element) => {
-            inputRef.current = element;
-            ref(element);
+            inputRef.current = element
+            ref(element)
           }}
           InputProps={{
             readOnly,
@@ -83,7 +82,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
         />
       )}
     />
-  );
+  )
 }
 
 TextField.defaultProps = {
@@ -91,4 +90,4 @@ TextField.defaultProps = {
   disabled: false,
   clickToCopy: false,
   shouldUnregister: false,
-};
+}

@@ -1,21 +1,22 @@
-import * as React from 'react';
-import { DateTime } from 'luxon';
-import Stack from '@mui/material/Stack';
-import Box from '@mui/material/Box';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import type { IExecution } from '@automatisch/types';
+import type { IExecution } from '@plumber/types'
+
+import * as React from 'react'
+import Box from '@mui/material/Box'
+import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
+import { DateTime } from 'luxon'
 
 type ExecutionHeaderProps = {
-  execution: IExecution;
-};
+  execution: IExecution
+}
 
 function ExecutionName(props: Pick<IExecution['flow'], 'name'>) {
   return (
     <Typography variant="h3" gutterBottom>
       {props.name}
     </Typography>
-  );
+  )
 }
 
 function ExecutionId(props: Pick<IExecution, 'id'>) {
@@ -28,12 +29,12 @@ function ExecutionId(props: Pick<IExecution, 'id'>) {
         </Typography>
       </Typography>
     </Box>
-  );
+  )
 }
 
 function ExecutionDate(props: Pick<IExecution, 'createdAt'>) {
-  const createdAt = DateTime.fromMillis(parseInt(props.createdAt, 10));
-  const relativeCreatedAt = createdAt.toRelative();
+  const createdAt = DateTime.fromMillis(parseInt(props.createdAt, 10))
+  const relativeCreatedAt = createdAt.toRelative()
 
   return (
     <Tooltip title={createdAt.toLocaleString(DateTime.DATE_MED)}>
@@ -41,15 +42,17 @@ function ExecutionDate(props: Pick<IExecution, 'createdAt'>) {
         {relativeCreatedAt}
       </Typography>
     </Tooltip>
-  );
+  )
 }
 
 export default function ExecutionHeader(
-  props: ExecutionHeaderProps
+  props: ExecutionHeaderProps,
 ): React.ReactElement {
-  const { execution } = props;
+  const { execution } = props
 
-  if (!execution) return <React.Fragment />;
+  if (!execution) {
+    return <React.Fragment />
+  }
 
   return (
     <Stack direction="column">
@@ -65,5 +68,5 @@ export default function ExecutionHeader(
         <ExecutionName name={execution.flow.name} />
       </Stack>
     </Stack>
-  );
+  )
 }

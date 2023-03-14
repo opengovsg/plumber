@@ -1,4 +1,4 @@
-import defineAction from '../../../../helpers/define-action';
+import defineAction from '../../../../helpers/define-action'
 
 export default defineAction({
   name: 'Send an SMS',
@@ -34,17 +34,17 @@ export default defineAction({
   ],
 
   async run($) {
-    const requestPath = `/2010-04-01/Accounts/${$.auth.data.accountSid}/Messages.json`;
-    const messageBody = $.step.parameters.message;
+    const requestPath = `/2010-04-01/Accounts/${$.auth.data.accountSid}/Messages.json`
+    const messageBody = $.step.parameters.message
 
-    const fromNumber = '+' + ($.step.parameters.fromNumber as string).trim();
-    const toNumber = '+' + ($.step.parameters.toNumber as string).trim();
+    const fromNumber = '+' + ($.step.parameters.fromNumber as string).trim()
+    const toNumber = '+' + ($.step.parameters.toNumber as string).trim()
 
     const response = await $.http.post(
       requestPath,
-      `Body=${messageBody}&From=${fromNumber}&To=${toNumber}`
-    );
+      `Body=${messageBody}&From=${fromNumber}&To=${toNumber}`,
+    )
 
-    $.setActionItem({ raw: response.data });
+    $.setActionItem({ raw: response.data })
   },
-});
+})

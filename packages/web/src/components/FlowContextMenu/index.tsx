@@ -1,28 +1,27 @@
-import * as React from 'react';
-import { useMutation } from '@apollo/client';
-import { Link } from 'react-router-dom';
-import Menu from '@mui/material/Menu';
-import type { PopoverProps } from '@mui/material/Popover';
-import MenuItem from '@mui/material/MenuItem';
-import { useSnackbar } from 'notistack';
-
-import { DELETE_FLOW } from 'graphql/mutations/delete-flow';
-import * as URLS from 'config/urls';
-import useFormatMessage from 'hooks/useFormatMessage';
+import * as React from 'react'
+import { Link } from 'react-router-dom'
+import { useMutation } from '@apollo/client'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import type { PopoverProps } from '@mui/material/Popover'
+import * as URLS from 'config/urls'
+import { DELETE_FLOW } from 'graphql/mutations/delete-flow'
+import useFormatMessage from 'hooks/useFormatMessage'
+import { useSnackbar } from 'notistack'
 
 type ContextMenuProps = {
-  flowId: string;
-  onClose: () => void;
-  anchorEl: PopoverProps['anchorEl'];
-};
+  flowId: string
+  onClose: () => void
+  anchorEl: PopoverProps['anchorEl']
+}
 
 export default function ContextMenu(
-  props: ContextMenuProps
+  props: ContextMenuProps,
 ): React.ReactElement {
-  const { flowId, onClose, anchorEl } = props;
-  const { enqueueSnackbar } = useSnackbar();
-  const [deleteFlow] = useMutation(DELETE_FLOW);
-  const formatMessage = useFormatMessage();
+  const { flowId, onClose, anchorEl } = props
+  const { enqueueSnackbar } = useSnackbar()
+  const [deleteFlow] = useMutation(DELETE_FLOW)
+  const formatMessage = useFormatMessage()
 
   const onFlowDelete = React.useCallback(async () => {
     await deleteFlow({
@@ -31,18 +30,18 @@ export default function ContextMenu(
         const flowCacheId = cache.identify({
           __typename: 'Flow',
           id: flowId,
-        });
+        })
 
         cache.evict({
           id: flowCacheId,
-        });
+        })
       },
-    });
+    })
 
     enqueueSnackbar(formatMessage('flow.successfullyDeleted'), {
       variant: 'success',
-    });
-  }, [flowId, deleteFlow]);
+    })
+  }, [flowId, deleteFlow])
 
   return (
     <Menu
@@ -57,5 +56,5 @@ export default function ContextMenu(
 
       <MenuItem onClick={onFlowDelete}>{formatMessage('flow.delete')}</MenuItem>
     </Menu>
-  );
+  )
 }

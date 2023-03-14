@@ -1,9 +1,9 @@
-import { Box } from '@mui/material';
-import SiteWideBanner from 'components/SiteWideBanner';
+import { Box } from '@mui/material'
+import SiteWideBanner from 'components/SiteWideBanner'
 
 type LayoutProps = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 export default function Layout({ children }: LayoutProps): React.ReactElement {
   return (
@@ -13,5 +13,5 @@ export default function Layout({ children }: LayoutProps): React.ReactElement {
         {children}
       </Box>
     </>
-  );
+  )
 }

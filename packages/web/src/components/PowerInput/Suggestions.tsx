@@ -1,47 +1,47 @@
-import * as React from 'react';
+import type { IStep } from '@plumber/types'
 
-import { styled } from '@mui/material/styles';
-import Button from '@mui/material/Button';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import MuiListItemText from '@mui/material/ListItemText';
-import Paper from '@mui/material/Paper';
-import Collapse from '@mui/material/Collapse';
-import Typography from '@mui/material/Typography';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import type { IStep } from '@automatisch/types';
+import * as React from 'react'
+import ExpandLess from '@mui/icons-material/ExpandLess'
+import ExpandMore from '@mui/icons-material/ExpandMore'
+import Button from '@mui/material/Button'
+import Collapse from '@mui/material/Collapse'
+import List from '@mui/material/List'
+import ListItemButton from '@mui/material/ListItemButton'
+import MuiListItemText from '@mui/material/ListItemText'
+import Paper from '@mui/material/Paper'
+import { styled } from '@mui/material/styles'
+import Typography from '@mui/material/Typography'
 
-const ListItemText = styled(MuiListItemText)``;
+const ListItemText = styled(MuiListItemText)``
 
 type SuggestionsProps = {
-  data: any[];
-  onSuggestionClick: (variable: any) => void;
-};
+  data: any[]
+  onSuggestionClick: (variable: any) => void
+}
 
-const SHORT_LIST_LENGTH = 4;
-const LIST_HEIGHT = 256;
+const SHORT_LIST_LENGTH = 4
+const LIST_HEIGHT = 256
 
 const getPartialArray = (array: any[], length = array.length) => {
-  return array.slice(0, length);
-};
+  return array.slice(0, length)
+}
 
 const Suggestions = (props: SuggestionsProps) => {
-  const { data, onSuggestionClick = () => null } = props;
-  const [current, setCurrent] = React.useState<number | null>(0);
-  const [listLength, setListLength] = React.useState<number>(SHORT_LIST_LENGTH);
+  const { data, onSuggestionClick = () => null } = props
+  const [current, setCurrent] = React.useState<number | null>(0)
+  const [listLength, setListLength] = React.useState<number>(SHORT_LIST_LENGTH)
 
   const expandList = () => {
-    setListLength(Infinity);
-  };
+    setListLength(Infinity)
+  }
 
   const collapseList = () => {
-    setListLength(SHORT_LIST_LENGTH);
-  };
+    setListLength(SHORT_LIST_LENGTH)
+  }
 
   React.useEffect(() => {
-    setListLength(SHORT_LIST_LENGTH);
-  }, [current]);
+    setListLength(SHORT_LIST_LENGTH)
+  }, [current])
 
   return (
     <Paper elevation={5} sx={{ width: '100%' }}>
@@ -55,7 +55,7 @@ const Suggestions = (props: SuggestionsProps) => {
               divider
               onClick={() =>
                 setCurrent((currentIndex) =>
-                  currentIndex === index ? null : index
+                  currentIndex === index ? null : index,
                 )
               }
               sx={{ py: 0.5 }}
@@ -74,7 +74,7 @@ const Suggestions = (props: SuggestionsProps) => {
                 data-test="power-input-suggestion-group"
               >
                 {getPartialArray((option.output as any) || [], listLength).map(
-                  (suboption: any, index: number) => (
+                  (suboption: any) => (
                     <ListItemButton
                       sx={{ pl: 4 }}
                       divider
@@ -97,7 +97,7 @@ const Suggestions = (props: SuggestionsProps) => {
                         }}
                       />
                     </ListItemButton>
-                  )
+                  ),
                 )}
               </List>
 
@@ -117,7 +117,7 @@ const Suggestions = (props: SuggestionsProps) => {
         ))}
       </List>
     </Paper>
-  );
-};
+  )
+}
 
-export default Suggestions;
+export default Suggestions

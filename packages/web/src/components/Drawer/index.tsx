@@ -1,52 +1,52 @@
-import * as React from 'react';
-import { useTheme } from '@mui/material/styles';
-import { SwipeableDrawerProps } from '@mui/material/SwipeableDrawer';
-import Toolbar from '@mui/material/Toolbar';
-import List from '@mui/material/List';
-import Divider from '@mui/material/Divider';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import Badge from '@mui/material/Badge';
+import * as React from 'react'
+import Badge from '@mui/material/Badge'
+import Divider from '@mui/material/Divider'
+import List from '@mui/material/List'
+import { useTheme } from '@mui/material/styles'
+import { SwipeableDrawerProps } from '@mui/material/SwipeableDrawer'
+import Toolbar from '@mui/material/Toolbar'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import ListItemLink from 'components/ListItemLink'
+import useFormatMessage from 'hooks/useFormatMessage'
 
-import ListItemLink from 'components/ListItemLink';
-import useFormatMessage from 'hooks/useFormatMessage';
-import { Drawer as BaseDrawer } from './style';
+import { Drawer as BaseDrawer } from './style'
 
 const iOS =
   typeof navigator !== 'undefined' &&
-  /iPad|iPhone|iPod/.test(navigator.userAgent);
+  /iPad|iPhone|iPod/.test(navigator.userAgent)
 
 type DrawerLink = {
-  Icon: React.ElementType;
-  primary: string;
-  to: string;
-  badgeContent?: React.ReactNode;
-  dataTest?: string;
-};
+  Icon: React.ElementType
+  primary: string
+  to: string
+  badgeContent?: React.ReactNode
+  dataTest?: string
+}
 
 type DrawerProps = {
-  links: DrawerLink[];
-  bottomLinks?: DrawerLink[];
-} & SwipeableDrawerProps;
+  links: DrawerLink[]
+  bottomLinks?: DrawerLink[]
+} & SwipeableDrawerProps
 
 export default function Drawer(props: DrawerProps): React.ReactElement {
-  const { links = [], bottomLinks = [], ...drawerProps } = props;
-  const theme = useTheme();
+  const { links = [], bottomLinks = [], ...drawerProps } = props
+  const theme = useTheme()
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
-    noSsr: true
-  });
-  const formatMessage = useFormatMessage();
+    noSsr: true,
+  })
+  const formatMessage = useFormatMessage()
 
   const closeOnClick = (event: React.SyntheticEvent) => {
     if (matchSmallScreens) {
-      props.onClose(event);
+      props.onClose(event)
     }
-  };
+  }
 
   return (
     <BaseDrawer
       {...drawerProps}
       sx={{
-        position: matchSmallScreens ? 'fixed' : 'relative'
+        position: matchSmallScreens ? 'fixed' : 'relative',
       }}
       disableDiscovery={iOS}
       variant={matchSmallScreens ? 'temporary' : 'permanent'}
@@ -88,5 +88,5 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
         ))}
       </List>
     </BaseDrawer>
-  );
+  )
 }

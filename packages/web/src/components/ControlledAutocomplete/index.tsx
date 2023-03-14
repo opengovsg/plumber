@@ -1,27 +1,28 @@
-import * as React from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
-import FormHelperText from '@mui/material/FormHelperText';
-import Autocomplete, { AutocompleteProps } from '@mui/material/Autocomplete';
-import Typography from '@mui/material/Typography';
-import type { IFieldDropdownOption } from '@automatisch/types';
+import type { IFieldDropdownOption } from '@plumber/types'
+
+import * as React from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
+import Autocomplete, { AutocompleteProps } from '@mui/material/Autocomplete'
+import FormHelperText from '@mui/material/FormHelperText'
+import Typography from '@mui/material/Typography'
 
 interface ControlledAutocompleteProps
   extends AutocompleteProps<IFieldDropdownOption, boolean, boolean, boolean> {
-  shouldUnregister?: boolean;
-  name: string;
-  required?: boolean;
-  showOptionValue?: boolean;
-  description?: string;
-  dependsOn?: string[];
+  shouldUnregister?: boolean
+  name: string
+  required?: boolean
+  showOptionValue?: boolean
+  description?: string
+  dependsOn?: string[]
 }
 
 const getOption = (options: readonly IFieldDropdownOption[], value: string) =>
-  options.find((option) => option.value === value) || null;
+  options.find((option) => option.value === value) || null
 
 function ControlledAutocomplete(
-  props: ControlledAutocompleteProps
+  props: ControlledAutocompleteProps,
 ): React.ReactElement {
-  const { control, watch, setValue, resetField } = useFormContext();
+  const { control, watch, setValue, resetField } = useFormContext()
 
   const {
     required = false,
@@ -35,23 +36,23 @@ function ControlledAutocomplete(
     dependsOn = [],
     showOptionValue,
     ...autocompleteProps
-  } = props;
+  } = props
 
-  let dependsOnValues: unknown[] = [];
+  let dependsOnValues: unknown[] = []
   if (dependsOn?.length) {
-    dependsOnValues = watch(dependsOn);
+    dependsOnValues = watch(dependsOn)
   }
 
   React.useEffect(() => {
-    const hasDependencies = dependsOnValues.length;
-    const allDepsSatisfied = dependsOnValues.every(Boolean);
+    const hasDependencies = dependsOnValues.length
+    const allDepsSatisfied = dependsOnValues.every(Boolean)
 
     if (hasDependencies && !allDepsSatisfied) {
       // Reset the field if any dependency is not satisfied
-      setValue(name, null);
-      resetField(name);
+      setValue(name, null)
+      resetField(name)
     }
-  }, dependsOnValues);
+  }, dependsOnValues)
 
   return (
     <Controller
@@ -77,25 +78,24 @@ function ControlledAutocomplete(
             options={options}
             value={getOption(options, field.value)}
             onChange={(event, selectedOption, reason, details) => {
-              const typedSelectedOption =
-                selectedOption as IFieldDropdownOption;
+              const typedSelectedOption = selectedOption as IFieldDropdownOption
               if (
                 typedSelectedOption !== null &&
                 Object.prototype.hasOwnProperty.call(
                   typedSelectedOption,
-                  'value'
+                  'value',
                 )
               ) {
-                controllerOnChange(typedSelectedOption.value);
+                controllerOnChange(typedSelectedOption.value)
               } else {
-                controllerOnChange(typedSelectedOption);
+                controllerOnChange(typedSelectedOption)
               }
 
-              onChange?.(event, selectedOption, reason, details);
+              onChange?.(event, selectedOption, reason, details)
             }}
             onBlur={(...args) => {
-              controllerOnBlur();
-              onBlur?.(...args);
+              controllerOnBlur()
+              onBlur?.(...args)
             }}
             ref={ref}
             data-test={`${name}-autocomplete`}
@@ -125,7 +125,7 @@ function ControlledAutocomplete(
         </div>
       )}
     />
-  );
+  )
 }
 
-export default ControlledAutocomplete;
+export default ControlledAutocomplete

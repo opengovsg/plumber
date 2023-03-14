@@ -1,36 +1,36 @@
-import Context from '../../types/express/context';
-import Execution from '../../models/execution';
-import ExecutionStep from '../../models/execution-step';
+import Execution from '../../models/execution'
+import ExecutionStep from '../../models/execution-step'
+import Context from '../../types/express/context'
 
 type Params = {
   input: {
-    id: string;
-  };
-};
+    id: string
+  }
+}
 
 const deleteFlow = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
   const flow = await context.currentUser
     .$relatedQuery('flows')
     .findOne({
       id: params.input.id,
     })
-    .throwIfNotFound();
+    .throwIfNotFound()
 
   const executionIds = (
     await flow.$relatedQuery('executions').select('executions.id')
-  ).map((execution: Execution) => execution.id);
+  ).map((execution: Execution) => execution.id)
 
-  await ExecutionStep.query().delete().whereIn('execution_id', executionIds);
+  await ExecutionStep.query().delete().whereIn('execution_id', executionIds)
 
-  await flow.$relatedQuery('executions').delete();
-  await flow.$relatedQuery('steps').delete();
-  await flow.$query().delete();
+  await flow.$relatedQuery('executions').delete()
+  await flow.$relatedQuery('steps').delete()
+  await flow.$query().delete()
 
-  return;
-};
+  return
+}
 
-export default deleteFlow;
+export default deleteFlow

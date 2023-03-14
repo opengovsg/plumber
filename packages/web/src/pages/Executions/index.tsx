@@ -1,49 +1,49 @@
-import * as React from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
-import Pagination from '@mui/material/Pagination';
-import PaginationItem from '@mui/material/PaginationItem';
-import type { IExecution } from '@automatisch/types';
+import type { IExecution } from '@plumber/types'
 
-import NoResultFound from 'components/NoResultFound';
-import ExecutionRow from 'components/ExecutionRow';
-import Container from 'components/Container';
-import PageTitle from 'components/PageTitle';
-import useFormatMessage from 'hooks/useFormatMessage';
-import { GET_EXECUTIONS } from 'graphql/queries/get-executions';
+import * as React from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useQuery } from '@apollo/client'
+import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
+import Divider from '@mui/material/Divider'
+import Grid from '@mui/material/Grid'
+import Pagination from '@mui/material/Pagination'
+import PaginationItem from '@mui/material/PaginationItem'
+import Container from 'components/Container'
+import ExecutionRow from 'components/ExecutionRow'
+import NoResultFound from 'components/NoResultFound'
+import PageTitle from 'components/PageTitle'
+import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
+import useFormatMessage from 'hooks/useFormatMessage'
 
-const EXECUTION_PER_PAGE = 10;
+const EXECUTION_PER_PAGE = 10
 
 const getLimitAndOffset = (page: number) => ({
   limit: EXECUTION_PER_PAGE,
   offset: (page - 1) * EXECUTION_PER_PAGE,
-});
+})
 
 export default function Executions(): React.ReactElement {
-  const formatMessage = useFormatMessage();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const page = parseInt(searchParams.get('page') || '', 10) || 1;
+  const formatMessage = useFormatMessage()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parseInt(searchParams.get('page') || '', 10) || 1
 
   const { data, refetch, loading } = useQuery(GET_EXECUTIONS, {
     variables: getLimitAndOffset(page),
     fetchPolicy: 'cache-and-network',
     pollInterval: 5000,
-  });
-  const getExecutions = data?.getExecutions || {};
-  const { pageInfo, edges } = getExecutions;
+  })
+  const getExecutions = data?.getExecutions || {}
+  const { pageInfo, edges } = getExecutions
 
   React.useEffect(() => {
-    refetch(getLimitAndOffset(page));
-  }, [refetch, page]);
+    refetch(getLimitAndOffset(page))
+  }, [refetch, page])
 
   const executions: IExecution[] = edges?.map(
-    ({ node }: { node: IExecution }) => node
-  );
-  const hasExecutions = executions?.length;
+    ({ node }: { node: IExecution }) => node,
+  )
+  const hasExecutions = executions?.length
 
   return (
     <Box sx={{ py: 3 }}>
@@ -98,5 +98,5 @@ export default function Executions(): React.ReactElement {
         )}
       </Container>
     </Box>
-  );
+  )
 }

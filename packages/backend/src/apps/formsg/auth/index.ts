@@ -1,6 +1,6 @@
-import { decryptFormResponse } from './decrypt-form-response';
-import isStillVerified from './is-still-verified';
-import verifyCredentials from './verify-credentials';
+import { decryptFormResponse } from './decrypt-form-response'
+import isStillVerified from './is-still-verified'
+import verifyCredentials from './verify-credentials'
 
 export default {
   fields: [
@@ -13,7 +13,7 @@ export default {
       value: null,
       placeholder: null,
       description: 'Unique ID of your Form',
-      clickToCopy: false
+      clickToCopy: false,
     },
     {
       key: 'privateKey',
@@ -24,10 +24,10 @@ export default {
       value: null,
       placeholder: null,
       description: 'Secret key for your Form',
-      clickToCopy: false
-    }
+      clickToCopy: false,
+    },
   ],
   verifyCredentials,
   isStillVerified,
-  verifyWebhook: decryptFormResponse
-};
+  verifyWebhook: decryptFormResponse,
+}

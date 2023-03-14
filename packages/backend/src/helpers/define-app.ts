@@ -1,5 +1,5 @@
-import { IApp } from '@automatisch/types';
+import { IApp } from '@plumber/types'
 
 export default function defineApp(appDefinition: IApp): IApp {
-  return appDefinition;
+  return appDefinition
 }

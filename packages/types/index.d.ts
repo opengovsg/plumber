@@ -2,8 +2,6 @@ import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 export type IHttpClient = AxiosInstance;
 import type { Request } from 'express';
 
-// Type definitions for automatisch
-
 export type IJSONValue = string | number | boolean | IJSONObject | IJSONArray;
 export type IJSONArray = Array<IJSONValue>;
 export interface IJSONObject {
@@ -318,4 +316,3 @@ declare module 'axios' {
 export interface IRequest extends Request {
   rawBody?: Buffer;
 }
-

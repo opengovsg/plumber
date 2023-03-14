@@ -1,5 +1,5 @@
-import defineAction from '../../../../helpers/define-action';
-import filterTableRows from '../../common/filter-table-rows';
+import defineAction from '../../../../helpers/define-action'
+import filterTableRows from '../../common/filter-table-rows'
 
 export default defineAction({
   name: 'Get table data',
@@ -35,11 +35,11 @@ export default defineAction({
   ],
 
   async run($) {
-    const lookupColumn = $.step.parameters.lookupColumn as string;
-    const lookupValue = $.step.parameters.lookupValue as string;
-    const row = await filterTableRows($, lookupColumn, lookupValue);
+    const lookupColumn = $.step.parameters.lookupColumn as string
+    const lookupValue = $.step.parameters.lookupValue as string
+    const row = await filterTableRows($, lookupColumn, lookupValue)
     $.setActionItem({
       raw: row,
-    });
+    })
   },
-});
+})

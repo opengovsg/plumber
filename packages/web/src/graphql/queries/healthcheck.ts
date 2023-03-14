@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const HEALTHCHECK = gql`
   query Healthcheck {
@@ -6,4 +6,4 @@ export const HEALTHCHECK = gql`
       version
     }
   }
-`;
+`

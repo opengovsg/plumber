@@ -1,22 +1,24 @@
-import { ValidationError } from 'objection';
-import type { ModelOptions, QueryContext } from 'objection';
-import ExtendedQueryBuilder from './query-builder';
-import Base from './base';
-import Step from './step';
-import Execution from './execution';
-import Telemetry from '../helpers/telemetry';
+import type { ModelOptions, QueryContext } from 'objection'
+import { ValidationError } from 'objection'
+
+import Telemetry from '../helpers/telemetry'
+
+import Base from './base'
+import Execution from './execution'
+import ExtendedQueryBuilder from './query-builder'
+import Step from './step'
 
 class Flow extends Base {
-  id!: string;
-  name!: string;
-  userId!: string;
-  active: boolean;
-  steps: Step[];
-  published_at: string;
-  remoteWebhookId: string;
-  executions?: Execution[];
+  id!: string
+  name!: string
+  userId!: string
+  active: boolean
+  steps: Step[]
+  published_at: string
+  remoteWebhookId: string
+  executions?: Execution[]
 
-  static tableName = 'flows';
+  static tableName = 'flows'
 
   static jsonSchema = {
     type: 'object',
@@ -29,7 +31,7 @@ class Flow extends Base {
       remoteWebhookId: { type: 'string' },
       active: { type: 'boolean' },
     },
-  };
+  }
 
   static relationMappings = () => ({
     steps: {
@@ -40,7 +42,7 @@ class Flow extends Base {
         to: 'steps.flow_id',
       },
       filter(builder: ExtendedQueryBuilder<Step>) {
-        builder.orderBy('position', 'asc');
+        builder.orderBy('position', 'asc')
       },
     },
     executions: {
@@ -51,74 +53,76 @@ class Flow extends Base {
         to: 'executions.flow_id',
       },
     },
-  });
+  })
 
   async lastInternalId() {
     const lastExecution = await this.$relatedQuery('executions')
       .orderBy('created_at', 'desc')
-      .first();
+      .first()
 
-    return lastExecution ? (lastExecution as Execution).internalId : null;
+    return lastExecution ? (lastExecution as Execution).internalId : null
   }
 
   async lastInternalIds(itemCount = 50) {
     const lastExecutions = await this.$relatedQuery('executions')
       .select('internal_id')
       .orderBy('created_at', 'desc')
-      .limit(itemCount);
+      .limit(itemCount)
 
-    return lastExecutions.map((execution) => execution.internalId);
+    return lastExecutions.map((execution) => execution.internalId)
   }
 
   async $beforeUpdate(
     opt: ModelOptions,
-    queryContext: QueryContext
+    queryContext: QueryContext,
   ): Promise<void> {
-    await super.$beforeUpdate(opt, queryContext);
+    await super.$beforeUpdate(opt, queryContext)
 
-    if (!this.active) return;
+    if (!this.active) {
+      return
+    }
 
-    const oldFlow = opt.old as Flow;
+    const oldFlow = opt.old as Flow
 
     const incompleteStep = await oldFlow.$relatedQuery('steps').findOne({
       status: 'incomplete',
-    });
+    })
 
     if (incompleteStep) {
       throw new ValidationError({
         message: 'All steps should be completed before updating flow status!',
         type: 'incompleteStepsError',
-      });
+      })
     }
 
-    const allSteps = await oldFlow.$relatedQuery('steps');
+    const allSteps = await oldFlow.$relatedQuery('steps')
 
     if (allSteps.length < 2) {
       throw new ValidationError({
         message:
           'There should be at least one trigger and one action steps in the flow!',
         type: 'insufficientStepsError',
-      });
+      })
     }
 
-    return;
+    return
   }
 
   async $afterInsert(queryContext: QueryContext) {
-    await super.$afterInsert(queryContext);
-    Telemetry.flowCreated(this);
+    await super.$afterInsert(queryContext)
+    Telemetry.flowCreated(this)
   }
 
   async $afterUpdate(opt: ModelOptions, queryContext: QueryContext) {
-    await super.$afterUpdate(opt, queryContext);
-    Telemetry.flowUpdated(this);
+    await super.$afterUpdate(opt, queryContext)
+    Telemetry.flowUpdated(this)
   }
 
   async getTriggerStep(): Promise<Step> {
     return await this.$relatedQuery('steps').findOne({
       type: 'trigger',
-    });
+    })
   }
 }
 
-export default Flow;
+export default Flow

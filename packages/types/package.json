@@ -1,19 +1,10 @@
 {
-  "name": "@automatisch/types",
+  "name": "@plumber/types",
   "version": "0.3.0",
   "license": "AGPL-3.0",
-  "description": "Type definitions for automatisch",
-  "homepage": "https://github.com/automatisch/automatisch",
+  "description": "Shared types for plumber",
   "types": "./index.d.ts",
-  "scripts": {},
   "typeScriptVersion": "4.1",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/automatisch/automatisch.git"
-  },
-  "bugs": {
-    "url": "https://github.com/automatisch/automatisch/issues"
-  },
   "publishConfig": {
     "access": "public"
   }

@@ -1,30 +1,30 @@
-import Step from '../../models/step';
-import Context from '../../types/express/context';
+import Step from '../../models/step'
+import Context from '../../types/express/context'
 
 type Params = {
   input: {
-    triggerAppKey: string;
-    connectionId: string;
-  };
-};
+    triggerAppKey: string
+    connectionId: string
+  }
+}
 
 const createFlow = async (
   _parent: unknown,
   params: Params,
-  context: Context
+  context: Context,
 ) => {
-  const connectionId = params?.input?.connectionId;
-  const appKey = params?.input?.triggerAppKey;
+  const connectionId = params?.input?.connectionId
+  const appKey = params?.input?.triggerAppKey
 
   const flow = await context.currentUser.$relatedQuery('flows').insert({
-    name: 'Name your pipe'
-  });
+    name: 'Name your pipe',
+  })
 
   if (connectionId) {
     await context.currentUser
       .$relatedQuery('connections')
       .findById(connectionId)
-      .throwIfNotFound();
+      .throwIfNotFound()
   }
 
   await Step.query().insert({
@@ -32,16 +32,16 @@ const createFlow = async (
     type: 'trigger',
     position: 1,
     appKey,
-    connectionId
-  });
+    connectionId,
+  })
 
   await Step.query().insert({
     flowId: flow.id,
     type: 'action',
-    position: 2
-  });
+    position: 2,
+  })
 
-  return flow;
-};
+  return flow
+}
 
-export default createFlow;
+export default createFlow

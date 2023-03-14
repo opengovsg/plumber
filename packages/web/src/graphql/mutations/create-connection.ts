@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const CREATE_CONNECTION = gql`
   mutation CreateConnection($input: CreateConnectionInput) {
@@ -11,4 +11,4 @@ export const CREATE_CONNECTION = gql`
       }
     }
   }
-`;
+`

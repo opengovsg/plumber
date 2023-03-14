@@ -1,11 +1,11 @@
 {
-  "name": "web",
+  "name": "@plumber/web",
   "version": "0.3.0",
   "license": "AGPL-3.0",
   "description": "The open source Zapier alternative. Build workflow automation without spending time and money.",
   "dependencies": {
     "@apollo/client": "^3.6.9",
-    "@automatisch/types": "^0.3.0",
+    "@plumber/types": "file:../types",
     "@emotion/react": "11.10.5",
     "@emotion/styled": "11.10.5",
     "@hookform/resolvers": "^2.8.8",
@@ -62,19 +62,6 @@
   "files": [
     "/build"
   ],
-  "contributors": [
-    {
-      "name": "automatisch contributors",
-      "url": "https://github.com/automatisch/automatisch/graphs/contributors"
-    }
-  ],
-  "bugs": {
-    "url": "https://github.com/automatisch/automatisch/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/automatisch/automatisch.git"
-  },
   "browserslist": {
     "production": [
       ">0.2%",

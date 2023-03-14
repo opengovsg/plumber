@@ -1,32 +1,32 @@
-import * as React from 'react';
-import MuiTextField from '@mui/material/TextField';
-import type { IField, IFieldDropdownOption } from '@automatisch/types';
+import type { IField, IFieldDropdownOption } from '@plumber/types'
 
-import useDynamicData from 'hooks/useDynamicData';
-import PowerInput from 'components/PowerInput';
-import TextField from 'components/TextField';
-import ControlledAutocomplete from 'components/ControlledAutocomplete';
+import * as React from 'react'
+import MuiTextField from '@mui/material/TextField'
+import ControlledAutocomplete from 'components/ControlledAutocomplete'
+import PowerInput from 'components/PowerInput'
+import TextField from 'components/TextField'
+import useDynamicData from 'hooks/useDynamicData'
 
 type InputCreatorProps = {
-  onChange?: React.ChangeEventHandler;
-  onBlur?: React.FocusEventHandler;
-  schema: IField;
-  namePrefix?: string;
-  stepId?: string;
-  disabled?: boolean;
-  showOptionValue?: boolean;
-};
+  onChange?: React.ChangeEventHandler
+  onBlur?: React.FocusEventHandler
+  schema: IField
+  namePrefix?: string
+  stepId?: string
+  disabled?: boolean
+  showOptionValue?: boolean
+}
 
 type RawOption = {
-  name: string;
-  value: string;
-};
+  name: string
+  value: string
+}
 
 const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
-  options?.map(({ name, value }) => ({ label: name as string, value: value }));
+  options?.map(({ name, value }) => ({ label: name as string, value: value }))
 
 export default function InputCreator(
-  props: InputCreatorProps
+  props: InputCreatorProps,
 ): React.ReactElement {
   const {
     onChange,
@@ -36,7 +36,7 @@ export default function InputCreator(
     stepId,
     disabled,
     showOptionValue,
-  } = props;
+  } = props
 
   const {
     key: name,
@@ -49,13 +49,13 @@ export default function InputCreator(
     variables,
     type,
     dependsOn,
-  } = schema;
+  } = schema
 
-  const { data, loading } = useDynamicData(stepId, schema);
-  const computedName = namePrefix ? `${namePrefix}.${name}` : name;
+  const { data, loading } = useDynamicData(stepId, schema)
+  const computedName = namePrefix ? `${namePrefix}.${name}` : name
 
   if (type === 'dropdown') {
-    const preparedOptions = schema.options || optionGenerator(data);
+    const preparedOptions = schema.options || optionGenerator(data)
 
     return (
       <ControlledAutocomplete
@@ -67,13 +67,13 @@ export default function InputCreator(
         options={preparedOptions}
         renderInput={(params) => <MuiTextField {...params} label={label} />}
         defaultValue={value as string}
-        onChange={console.log}
+        onChange={() => null}
         description={description}
         loading={loading}
         disabled={disabled}
         showOptionValue={showOptionValue}
       />
-    );
+    )
   }
 
   if (type === 'string') {
@@ -86,7 +86,7 @@ export default function InputCreator(
           required={required}
           disabled={disabled}
         />
-      );
+      )
     }
 
     return (
@@ -104,8 +104,8 @@ export default function InputCreator(
         helperText={description}
         clickToCopy={clickToCopy}
       />
-    );
+    )
   }
 
-  return <React.Fragment />;
+  return <React.Fragment />
 }

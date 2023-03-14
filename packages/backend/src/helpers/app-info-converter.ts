@@ -1,11 +1,12 @@
-import type { IApp } from '@automatisch/types';
-import appConfig from '../config/app';
+import type { IApp } from '@plumber/types'
+
+import appConfig from '../config/app'
 
 const appInfoConverter = (rawAppData: IApp) => {
   rawAppData.iconUrl = rawAppData.iconUrl.replace(
     '{BASE_URL}',
-    appConfig.baseUrl
-  );
+    appConfig.baseUrl,
+  )
 
   if (rawAppData.auth?.fields) {
     rawAppData.auth.fields = rawAppData.auth.fields.map((field) => {
@@ -13,14 +14,14 @@ const appInfoConverter = (rawAppData: IApp) => {
         return {
           ...field,
           value: field.value.replace('{WEB_APP_URL}', appConfig.webAppUrl),
-        };
+        }
       }
 
-      return field;
-    });
+      return field
+    })
   }
 
-  return rawAppData;
-};
+  return rawAppData
+}
 
-export default appInfoConverter;
+export default appInfoConverter

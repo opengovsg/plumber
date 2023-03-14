@@ -1,4 +1,4 @@
-import listLabels from './list-labels';
-import listRepos from './list-repos';
+import listLabels from './list-labels'
+import listRepos from './list-repos'
 
-export default [listLabels, listRepos];
+export default [listLabels, listRepos]

@@ -1,56 +1,56 @@
-import * as React from 'react';
-import { Link, Routes, Route, useNavigate } from 'react-router-dom';
-import type { LinkProps } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import Divider from '@mui/material/Divider';
-import CircularProgress from '@mui/material/CircularProgress';
-import AddIcon from '@mui/icons-material/Add';
-import type { IApp } from '@automatisch/types';
+import type { IApp } from '@plumber/types'
 
-import NoResultFound from 'components/NoResultFound';
-import ConditionalIconButton from 'components/ConditionalIconButton';
-import Container from 'components/Container';
-import AddNewAppConnection from 'components/AddNewAppConnection';
-import PageTitle from 'components/PageTitle';
-import AppRow from 'components/AppRow';
-import SearchInput from 'components/SearchInput';
-import useFormatMessage from 'hooks/useFormatMessage';
-import { GET_CONNECTED_APPS } from 'graphql/queries/get-connected-apps';
-import * as URLS from 'config/urls';
+import * as React from 'react'
+import type { LinkProps } from 'react-router-dom'
+import { Link, Route, Routes, useNavigate } from 'react-router-dom'
+import { useQuery } from '@apollo/client'
+import AddIcon from '@mui/icons-material/Add'
+import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
+import Divider from '@mui/material/Divider'
+import Grid from '@mui/material/Grid'
+import AddNewAppConnection from 'components/AddNewAppConnection'
+import AppRow from 'components/AppRow'
+import ConditionalIconButton from 'components/ConditionalIconButton'
+import Container from 'components/Container'
+import NoResultFound from 'components/NoResultFound'
+import PageTitle from 'components/PageTitle'
+import SearchInput from 'components/SearchInput'
+import * as URLS from 'config/urls'
+import { GET_CONNECTED_APPS } from 'graphql/queries/get-connected-apps'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 export default function Applications(): React.ReactElement {
-  const navigate = useNavigate();
-  const formatMessage = useFormatMessage();
-  const [appName, setAppName] = React.useState<string>();
+  const navigate = useNavigate()
+  const formatMessage = useFormatMessage()
+  const [appName, setAppName] = React.useState<string>()
   const { data, loading } = useQuery(GET_CONNECTED_APPS, {
     variables: { name: appName },
-  });
+  })
 
-  const apps: IApp[] = data?.getConnectedApps;
-  const hasApps = apps?.length;
+  const apps: IApp[] = data?.getConnectedApps
+  const hasApps = apps?.length
 
   const onSearchChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setAppName(event.target.value);
+      setAppName(event.target.value)
     },
-    []
-  );
+    [],
+  )
 
   const goToApps = React.useCallback(() => {
-    navigate(URLS.APPS);
-  }, [navigate]);
+    navigate(URLS.APPS)
+  }, [navigate])
 
   const NewAppConnectionLink = React.useMemo(
     () =>
       React.forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(
         function InlineLink(linkProps, ref) {
-          return <Link ref={ref} to={URLS.NEW_APP_CONNECTION} {...linkProps} />;
-        }
+          return <Link ref={ref} to={URLS.NEW_APP_CONNECTION} {...linkProps} />
+        },
       ),
-    []
-  );
+    [],
+  )
 
   return (
     <Box sx={{ py: 3 }}>
@@ -114,5 +114,5 @@ export default function Applications(): React.ReactElement {
         </Routes>
       </Container>
     </Box>
-  );
+  )
 }

@@ -1,9 +1,11 @@
-import { DateTime } from 'luxon';
-import { IGlobalVariable } from '@automatisch/types';
-import defineTrigger from '../../../../helpers/define-trigger';
-import cronTimes from '../../common/cron-times';
-import getNextCronDateTime from '../../common/get-next-cron-date-time';
-import getDateTimeObjectRepresentation from '../../common/get-date-time-object';
+import { IGlobalVariable } from '@plumber/types'
+
+import { DateTime } from 'luxon'
+
+import defineTrigger from '../../../../helpers/define-trigger'
+import cronTimes from '../../common/cron-times'
+import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
+import getNextCronDateTime from '../../common/get-next-cron-date-time'
 
 export default defineTrigger({
   name: 'Every hour',
@@ -33,28 +35,28 @@ export default defineTrigger({
 
   getInterval(parameters: IGlobalVariable['step']['parameters']) {
     if (parameters.triggersOnWeekend) {
-      return cronTimes.everyHour;
+      return cronTimes.everyHour
     }
 
-    return cronTimes.everyHourExcludingWeekends;
+    return cronTimes.everyHourExcludingWeekends
   },
 
   async run($) {
     const nextCronDateTime = getNextCronDateTime(
-      this.getInterval($.step.parameters)
-    );
-    const dateTime = DateTime.now();
+      this.getInterval($.step.parameters),
+    )
+    const dateTime = DateTime.now()
     const dateTimeObjectRepresentation = getDateTimeObjectRepresentation(
-      $.execution.testRun ? nextCronDateTime : dateTime
-    );
+      $.execution.testRun ? nextCronDateTime : dateTime,
+    )
 
     const dataItem = {
       raw: dateTimeObjectRepresentation,
       meta: {
         internalId: dateTime.toMillis().toString(),
       },
-    };
+    }
 
-    $.pushTriggerItem(dataItem);
+    $.pushTriggerItem(dataItem)
   },
-});
+})

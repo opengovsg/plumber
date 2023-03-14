@@ -1,43 +1,42 @@
-import * as React from 'react';
-import ClickAwayListener from '@mui/base/ClickAwayListener';
-import Chip from '@mui/material/Chip';
-import Popper from '@mui/material/Popper';
-import InputLabel from '@mui/material/InputLabel';
-import FormHelperText from '@mui/material/FormHelperText';
-import { Controller, useFormContext } from 'react-hook-form';
-import { createEditor } from 'slate';
-import { Slate, Editable, useSelected, useFocused } from 'slate-react';
+import * as React from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
+import ClickAwayListener from '@mui/base/ClickAwayListener'
+import Chip from '@mui/material/Chip'
+import FormHelperText from '@mui/material/FormHelperText'
+import InputLabel from '@mui/material/InputLabel'
+import Popper from '@mui/material/Popper'
+import { StepExecutionsContext } from 'contexts/StepExecutions'
+import { createEditor } from 'slate'
+import { Editable, Slate, useFocused, useSelected } from 'slate-react'
 
+import { processStepWithExecutions } from './data'
+import { FakeInput, InputLabelWrapper } from './style'
+import Suggestions from './Suggestions'
+import { VariableElement } from './types'
 import {
-  serialize,
+  customizeEditor,
   deserialize,
   insertVariable,
-  customizeEditor,
-} from './utils';
-import Suggestions from './Suggestions';
-import { StepExecutionsContext } from 'contexts/StepExecutions';
-
-import { FakeInput, InputLabelWrapper } from './style';
-import { VariableElement } from './types';
-import { processStepWithExecutions } from './data';
+  serialize,
+} from './utils'
 
 type PowerInputProps = {
-  onChange?: (value: string) => void;
-  onBlur?: (value: string) => void;
-  defaultValue?: string;
-  name: string;
-  label?: string;
-  type?: string;
-  required?: boolean;
-  readOnly?: boolean;
-  description?: string;
-  docUrl?: string;
-  clickToCopy?: boolean;
-  disabled?: boolean;
-};
+  onChange?: (value: string) => void
+  onBlur?: (value: string) => void
+  defaultValue?: string
+  name: string
+  label?: string
+  type?: string
+  required?: boolean
+  readOnly?: boolean
+  description?: string
+  docUrl?: string
+  clickToCopy?: boolean
+  disabled?: boolean
+}
 
 const PowerInput = (props: PowerInputProps) => {
-  const { control } = useFormContext();
+  const { control } = useFormContext()
   const {
     defaultValue = '',
     onBlur,
@@ -46,34 +45,34 @@ const PowerInput = (props: PowerInputProps) => {
     required,
     description,
     disabled,
-  } = props;
-  const priorStepsWithExecutions = React.useContext(StepExecutionsContext);
-  const editorRef = React.useRef<HTMLDivElement | null>(null);
+  } = props
+  const priorStepsWithExecutions = React.useContext(StepExecutionsContext)
+  const editorRef = React.useRef<HTMLDivElement | null>(null)
   const renderElement = React.useCallback(
     (props: any) => <Element {...props} />,
-    []
-  );
-  const [editor] = React.useState(() => customizeEditor(createEditor()));
+    [],
+  )
+  const [editor] = React.useState(() => customizeEditor(createEditor()))
   const [showVariableSuggestions, setShowVariableSuggestions] =
-    React.useState(false);
+    React.useState(false)
 
   const stepsWithVariables = React.useMemo(() => {
-    return processStepWithExecutions(priorStepsWithExecutions);
-  }, [priorStepsWithExecutions]);
+    return processStepWithExecutions(priorStepsWithExecutions)
+  }, [priorStepsWithExecutions])
 
   const handleBlur = React.useCallback(
     (value: any) => {
-      onBlur?.(value);
+      onBlur?.(value)
     },
-    [onBlur]
-  );
+    [onBlur],
+  )
 
   const handleVariableSuggestionClick = React.useCallback(
     (variable: Pick<VariableElement, 'name' | 'value'>) => {
-      insertVariable(editor, variable, stepsWithVariables);
+      insertVariable(editor, variable, stepsWithVariables)
     },
-    [stepsWithVariables]
-  );
+    [stepsWithVariables],
+  )
 
   return (
     <Controller
@@ -93,13 +92,13 @@ const PowerInput = (props: PowerInputProps) => {
           editor={editor}
           value={deserialize(value, stepsWithVariables)}
           onChange={(value) => {
-            controllerOnChange(serialize(value));
+            controllerOnChange(serialize(value))
           }}
         >
           <ClickAwayListener
             mouseEvent="onMouseDown"
             onClickAway={() => {
-              setShowVariableSuggestions(false);
+              setShowVariableSuggestions(false)
             }}
           >
             {/* ref-able single child for ClickAwayListener */}
@@ -121,11 +120,11 @@ const PowerInput = (props: PowerInputProps) => {
                   style={{ width: '100%' }}
                   renderElement={renderElement}
                   onFocus={() => {
-                    setShowVariableSuggestions(true);
+                    setShowVariableSuggestions(true)
                   }}
                   onBlur={() => {
-                    controllerOnBlur();
-                    handleBlur(value);
+                    controllerOnBlur()
+                    handleBlur(value)
                   }}
                 />
               </FakeInput>
@@ -145,11 +144,11 @@ const PowerInput = (props: PowerInputProps) => {
         </Slate>
       )}
     />
-  );
-};
+  )
+}
 
 const SuggestionsPopper = (props: any) => {
-  const { open, anchorEl, data, onSuggestionClick } = props;
+  const { open, anchorEl, data, onSuggestionClick } = props
 
   return (
     <Popper
@@ -168,28 +167,28 @@ const SuggestionsPopper = (props: any) => {
     >
       <Suggestions data={data} onSuggestionClick={onSuggestionClick} />
     </Popper>
-  );
-};
+  )
+}
 
 const Element = (props: any) => {
-  const { attributes, children, element } = props;
+  const { attributes, children, element } = props
   switch (element.type) {
     case 'variable':
-      return <Variable {...props} />;
+      return <Variable {...props} />
     default:
-      return <p {...attributes}>{children}</p>;
+      return <p {...attributes}>{children}</p>
   }
-};
+}
 
 const Variable = ({ attributes, children, element }: any) => {
-  const selected = useSelected();
-  const focused = useFocused();
+  const selected = useSelected()
+  const focused = useFocused()
   const label = (
     <>
       {element.name}
       {children}
     </>
-  );
+  )
   return (
     <Chip
       {...attributes}
@@ -201,7 +200,7 @@ const Variable = ({ attributes, children, element }: any) => {
       size="small"
       label={label}
     />
-  );
-};
+  )
+}
 
-export default PowerInput;
+export default PowerInput

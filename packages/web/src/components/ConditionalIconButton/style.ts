@@ -1,5 +1,5 @@
-import { styled } from '@mui/material/styles';
-import MuiIconButton, { iconButtonClasses } from '@mui/material/IconButton';
+import MuiIconButton, { iconButtonClasses } from '@mui/material/IconButton'
+import { styled } from '@mui/material/styles'
 
 export const IconButton = styled(MuiIconButton)`
   &.${iconButtonClasses.colorPrimary} {
@@ -10,4 +10,4 @@ export const IconButton = styled(MuiIconButton)`
       background: ${({ theme }) => theme.palette.primary.dark};
     }
   }
-` as typeof MuiIconButton;
+` as typeof MuiIconButton

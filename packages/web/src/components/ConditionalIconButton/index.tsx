@@ -1,18 +1,18 @@
-import * as React from 'react';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import Button from '@mui/material/Button';
-import type { ButtonProps } from '@mui/material/Button';
+import * as React from 'react'
+import type { ButtonProps } from '@mui/material/Button'
+import Button from '@mui/material/Button'
+import { useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 
-import { IconButton } from './style';
+import { IconButton } from './style'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function ConditionalIconButton(props: any): React.ReactElement {
-  const { icon, ...buttonProps } = props;
-  const theme = useTheme();
+  const { icon, ...buttonProps } = props
+  const theme = useTheme()
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
     noSsr: true,
-  });
+  })
 
   if (matchSmallScreens) {
     return (
@@ -24,8 +24,8 @@ export default function ConditionalIconButton(props: any): React.ReactElement {
       >
         {icon}
       </IconButton>
-    );
+    )
   }
 
-  return <Button {...(buttonProps as ButtonProps)} />;
+  return <Button {...(buttonProps as ButtonProps)} />
 }

@@ -1,12 +1,13 @@
-import { ApolloClient } from '@apollo/client';
-import cache from './cache';
-import createLink from './link';
-import appConfig from 'config/app';
+import { ApolloClient } from '@apollo/client'
+import appConfig from 'config/app'
+
+import cache from './cache'
+import createLink from './link'
 
 type CreateClientOptions = {
-  onError?: (message: string) => void;
-  token?: string | null;
-};
+  onError?: (message: string) => void
+  token?: string | null
+}
 
 const client = new ApolloClient({
   cache,
@@ -16,17 +17,17 @@ const client = new ApolloClient({
       fetchPolicy: 'cache-and-network',
     },
   },
-});
+})
 
 export function mutateAndGetClient(
-  options: CreateClientOptions
+  options: CreateClientOptions,
 ): typeof client {
-  const { onError, token } = options;
-  const link = createLink({ uri: appConfig.graphqlUrl, token, onError });
+  const { onError, token } = options
+  const link = createLink({ uri: appConfig.graphqlUrl, token, onError })
 
-  client.setLink(link);
+  client.setLink(link)
 
-  return client;
+  return client
 }
 
-export default client;
+export default client

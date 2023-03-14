@@ -1,31 +1,33 @@
-import createHttpClient from './http-client';
-import Connection from '../models/connection';
-import Flow from '../models/flow';
-import Step from '../models/step';
-import Execution from '../models/execution';
-import appConfig from '../config/app';
 import {
-  IJSONObject,
+  IActionItem,
   IApp,
   IGlobalVariable,
-  ITriggerItem,
-  IActionItem,
+  IJSONObject,
   IRequest,
-} from '@automatisch/types';
-import EarlyExitError from '../errors/early-exit';
+  ITriggerItem,
+} from '@plumber/types'
+
+import appConfig from '../config/app'
+import EarlyExitError from '../errors/early-exit'
+import Connection from '../models/connection'
+import Execution from '../models/execution'
+import Flow from '../models/flow'
+import Step from '../models/step'
+
+import createHttpClient from './http-client'
 
 type GlobalVariableOptions = {
-  connection?: Connection;
-  app: IApp;
-  flow?: Flow;
-  step?: Step;
-  execution?: Execution;
-  testRun?: boolean;
-  request?: IRequest;
-};
+  connection?: Connection
+  app: IApp
+  flow?: Flow
+  step?: Step
+  execution?: Execution
+  testRun?: boolean
+  request?: IRequest
+}
 
 const globalVariable = async (
-  options: GlobalVariableOptions
+  options: GlobalVariableOptions,
 ): Promise<IGlobalVariable> => {
   const {
     connection,
@@ -35,11 +37,11 @@ const globalVariable = async (
     execution,
     request,
     testRun = false,
-  } = options;
+  } = options
 
-  const isTrigger = step?.isTrigger;
-  const lastInternalId = testRun ? undefined : await flow?.lastInternalId();
-  const nextStep = await step?.getNextStep();
+  const isTrigger = step?.isTrigger
+  const lastInternalId = testRun ? undefined : await flow?.lastInternalId()
+  const nextStep = await step?.getNextStep()
 
   const $: IGlobalVariable = {
     auth: {
@@ -50,12 +52,12 @@ const globalVariable = async (
               ...connection.formattedData,
               ...args,
             },
-          });
+          })
 
-          $.auth.data = connection.formattedData;
+          $.auth.data = connection.formattedData
         }
 
-        return null;
+        return null
       },
       data: connection?.formattedData,
     },
@@ -93,57 +95,57 @@ const globalVariable = async (
         !$.execution.testRun
       ) {
         // early exit as we do not want to process duplicate items in actual executions
-        throw new EarlyExitError();
+        throw new EarlyExitError()
       }
 
-      $.triggerOutput.data.push(triggerItem);
+      $.triggerOutput.data.push(triggerItem)
 
       if ($.execution.testRun) {
         // early exit after receiving one item as it is enough for test execution
-        throw new EarlyExitError();
+        throw new EarlyExitError()
       }
     },
     setActionItem: (actionItem: IActionItem) => {
-      $.actionOutput.data = actionItem;
+      $.actionOutput.data = actionItem
     },
-  };
+  }
 
   if (request) {
-    $.request = request;
+    $.request = request
   }
 
   $.http = createHttpClient({
     $,
     baseURL: app.apiBaseUrl,
     beforeRequest: app.beforeRequest,
-  });
+  })
 
   if (flow) {
-    const webhookUrl = appConfig.webhookUrl + '/webhooks/' + flow.id;
+    const webhookUrl = appConfig.webhookUrl + '/webhooks/' + flow.id
 
-    $.webhookUrl = webhookUrl;
+    $.webhookUrl = webhookUrl
   }
 
   if (isTrigger && (await step.getTriggerCommand()).type === 'webhook') {
     $.flow.setRemoteWebhookId = async (remoteWebhookId) => {
       await flow.$query().patchAndFetch({
         remoteWebhookId,
-      });
+      })
 
-      $.flow.remoteWebhookId = remoteWebhookId;
-    };
+      $.flow.remoteWebhookId = remoteWebhookId
+    }
 
-    $.flow.remoteWebhookId = flow.remoteWebhookId;
+    $.flow.remoteWebhookId = flow.remoteWebhookId
   }
 
   const lastInternalIds =
-    testRun || (flow && step.isAction) ? [] : await flow?.lastInternalIds(2000);
+    testRun || (flow && step.isAction) ? [] : await flow?.lastInternalIds(2000)
 
   const isAlreadyProcessed = (internalId: string) => {
-    return lastInternalIds?.includes(internalId);
-  };
+    return lastInternalIds?.includes(internalId)
+  }
 
-  return $;
-};
+  return $
+}
 
-export default globalVariable;
+export default globalVariable

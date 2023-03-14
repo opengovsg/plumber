@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
 export const GET_STEP_WITH_TEST_EXECUTIONS = gql`
   query GetStepWithTestExecutions($stepId: String!) {
@@ -14,4 +14,4 @@ export const GET_STEP_WITH_TEST_EXECUTIONS = gql`
       }
     }
   }
-`;
+`

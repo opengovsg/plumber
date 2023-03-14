@@ -1,4 +1,4 @@
-import GlobalStyles from '@mui/material/GlobalStyles';
+import GlobalStyles from '@mui/material/GlobalStyles'
 
 export const jsonViewerStyles = (
   <GlobalStyles
@@ -32,4 +32,4 @@ export const jsonViewerStyles = (
       },
     })}
   />
-);
+)

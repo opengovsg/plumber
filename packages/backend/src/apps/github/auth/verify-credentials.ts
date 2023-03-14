@@ -1,5 +1,6 @@
-import { IGlobalVariable } from '@automatisch/types';
-import getCurrentUser from '../common/get-current-user';
+import { IGlobalVariable } from '@plumber/types'
+
+import getCurrentUser from '../common/get-current-user'
 
 const verifyCredentials = async ($: IGlobalVariable) => {
   const response = await $.http.post(
@@ -13,14 +14,14 @@ const verifyCredentials = async ($: IGlobalVariable) => {
       headers: {
         Accept: 'application/json',
       },
-    }
-  );
+    },
+  )
 
-  const data = response.data;
+  const data = response.data
 
-  $.auth.data.accessToken = data.access_token;
+  $.auth.data.accessToken = data.access_token
 
-  const currentUser = await getCurrentUser($);
+  const currentUser = await getCurrentUser($)
 
   await $.auth.set({
     consumerKey: $.auth.data.consumerKey,
@@ -30,7 +31,7 @@ const verifyCredentials = async ($: IGlobalVariable) => {
     tokenType: data.token_type,
     userId: currentUser.id,
     screenName: currentUser.login,
-  });
-};
+  })
+}
 
-export default verifyCredentials;
+export default verifyCredentials

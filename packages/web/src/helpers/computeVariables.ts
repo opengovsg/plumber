@@ -1,41 +1,42 @@
-import template from 'lodash/template';
-import type { IAuthenticationStepField, IJSONObject } from '@automatisch/types';
+import type { IAuthenticationStepField, IJSONObject } from '@plumber/types'
 
-const interpolate = /{([\s\S]+?)}/g;
+import template from 'lodash/template'
+
+const interpolate = /{([\s\S]+?)}/g
 
 type Variables = {
-  [key: string]: any;
-};
+  [key: string]: any
+}
 
 type IVariable = Omit<IAuthenticationStepField, 'properties'> &
-  Partial<Pick<IAuthenticationStepField, 'properties'>>;
+  Partial<Pick<IAuthenticationStepField, 'properties'>>
 
 const computeAuthStepVariables = (
   variableSchema: IVariable[],
-  aggregatedData: IJSONObject
+  aggregatedData: IJSONObject,
 ): IJSONObject => {
-  const variables: Variables = {};
+  const variables: Variables = {}
 
   for (const variable of variableSchema) {
     if (variable.properties) {
       variables[variable.name] = computeAuthStepVariables(
         variable.properties,
-        aggregatedData
-      );
+        aggregatedData,
+      )
 
-      continue;
+      continue
     }
 
     if (variable.value) {
       const computedVariable = template(variable.value, { interpolate })(
-        aggregatedData
-      );
+        aggregatedData,
+      )
 
-      variables[variable.name] = computedVariable;
+      variables[variable.name] = computedVariable
     }
   }
 
-  return variables;
-};
+  return variables
+}
 
-export default computeAuthStepVariables;
+export default computeAuthStepVariables

@@ -1,31 +1,31 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@apollo/client';
-import { TextField, Stack } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
-import { REQUEST_OTP } from 'graphql/mutations/request-otp';
-import { VERIFY_OTP } from 'graphql/mutations/verify-otp';
-import useAuthentication from 'hooks/useAuthentication';
-import * as URLS from 'config/urls';
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useMutation } from '@apollo/client'
+import { LoadingButton } from '@mui/lab'
+import { Stack, TextField } from '@mui/material'
+import * as URLS from 'config/urls'
+import { REQUEST_OTP } from 'graphql/mutations/request-otp'
+import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
+import useAuthentication from 'hooks/useAuthentication'
 
 export const LoginForm = (): JSX.Element => {
-  const navigate = useNavigate();
-  const authentication = useAuthentication();
-  const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP);
-  const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP);
+  const navigate = useNavigate()
+  const authentication = useAuthentication()
+  const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP)
+  const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP)
 
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false)
+  const [email, setEmail] = useState('')
+  const [otp, setOtp] = useState('')
 
   useEffect(() => {
     if (authentication.isAuthenticated) {
-      navigate(URLS.DASHBOARD);
+      navigate(URLS.DASHBOARD)
     }
-  }, [authentication.isAuthenticated]);
+  }, [authentication.isAuthenticated])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!isOtpSent) {
       await requestOtp({
         variables: {
@@ -33,8 +33,8 @@ export const LoginForm = (): JSX.Element => {
             email,
           },
         },
-      });
-      setIsOtpSent(true);
+      })
+      setIsOtpSent(true)
     } else {
       const { data } = await verifyOtp({
         variables: {
@@ -43,13 +43,13 @@ export const LoginForm = (): JSX.Element => {
             otp,
           },
         },
-      });
+      })
 
-      const { token } = data.verifyOtp;
+      const { token } = data.verifyOtp
 
-      authentication.updateToken(token);
+      authentication.updateToken(token)
     }
-  };
+  }
 
   return (
     <form noValidate onSubmit={handleSubmit}>
@@ -62,7 +62,7 @@ export const LoginForm = (): JSX.Element => {
             autoFocus
             value={otp}
             onChange={(e) => {
-              setOtp(e.target.value);
+              setOtp(e.target.value)
             }}
             placeholder="123456"
           />
@@ -76,7 +76,7 @@ export const LoginForm = (): JSX.Element => {
             value={email}
             required
             onChange={(e) => {
-              setEmail(e.target.value);
+              setEmail(e.target.value)
             }}
             placeholder="user@agency.gov.sg"
           />
@@ -90,7 +90,7 @@ export const LoginForm = (): JSX.Element => {
         </LoadingButton>
       </Stack>
     </form>
-  );
-};
+  )
+}
 
-export default LoginForm;
+export default LoginForm

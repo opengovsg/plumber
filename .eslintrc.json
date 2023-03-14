@@ -1,0 +1,77 @@
+{
+  "root": true,
+  "plugins": ["import", "simple-import-sort", "prettier"],
+  "extends": [
+    "eslint:recommended", // Recommended ESLint rules
+    "plugin:prettier/recommended" // Recommended Prettier rules
+  ],
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2020
+  },
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "extends": [
+        "plugin:@typescript-eslint/eslint-recommended", // Disables rules from `eslint:recommended` that are already covered by the TypeScript typechecker
+        "plugin:@typescript-eslint/recommended" // Recommended TypeScript rules
+      ],
+      "parser": "@typescript-eslint/parser",
+      "rules": {
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "@typescript-eslint/naming-convention": [
+          "error",
+          {
+            "selector": ["variable", "function"],
+            "format": ["camelCase", "UPPER_CASE", "PascalCase"],
+            "leadingUnderscore": "allow"
+          }
+        ],
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+        ]
+      }
+    }
+  ],
+  "ignorePatterns": [".build", "build", "dist", "node_modules", "*.d.ts"],
+  "rules": {
+    "curly": "error",
+    "no-console": [
+      "warn",
+      {
+        "allow": ["warn", "error"]
+      }
+    ],
+    // Rules for auto sort of imports
+    "simple-import-sort/imports": [
+      "error",
+      {
+        "groups": [
+          // Side effect imports.
+          ["^\\u0000"],
+          ["^@plumber"],
+          // Packages.
+          // Packages. `react` related packages come first.
+          // Things that start with a letter (or digit or underscore), or
+          // `@` followed by a letter.
+          ["^react", "^@?\\w"],
+          // Root imports
+          ["^(~)(/.*|$)"],
+          // Parent imports. Put `..` last.
+          ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
+          // Other relative imports. Put same-folder imports and `.` last.
+          ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"]
+        ]
+      }
+    ],
+    "simple-import-sort/exports": "error",
+    "import/newline-after-import": "error",
+    "import/no-duplicates": "error"
+  }
+}

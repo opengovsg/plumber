@@ -1,8 +1,9 @@
-import defineApp from '../../helpers/define-app';
-import addAuthHeader from './common/add-auth-header';
-import auth from './auth';
-import triggers from './triggers';
-import actions from './actions';
+import defineApp from '../../helpers/define-app'
+
+import addAuthHeader from './common/add-auth-header'
+import actions from './actions'
+import auth from './auth'
+import triggers from './triggers'
 
 export default defineApp({
   name: 'Twilio',
@@ -17,4 +18,4 @@ export default defineApp({
   auth,
   triggers,
   actions,
-});
+})

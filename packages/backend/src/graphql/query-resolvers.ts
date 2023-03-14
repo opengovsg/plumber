@@ -1,16 +1,16 @@
-import getApps from './queries/get-apps';
-import getApp from './queries/get-app';
-import getConnectedApps from './queries/get-connected-apps';
-import testConnection from './queries/test-connection';
-import getFlow from './queries/get-flow';
-import getFlows from './queries/get-flows';
-import getStepWithTestExecutions from './queries/get-step-with-test-executions';
-import getExecution from './queries/get-execution';
-import getExecutions from './queries/get-executions';
-import getExecutionSteps from './queries/get-execution-steps';
-import getDynamicData from './queries/get-dynamic-data';
-import getCurrentUser from './queries/get-current-user';
-import healthcheck from './queries/healthcheck';
+import getApp from './queries/get-app'
+import getApps from './queries/get-apps'
+import getConnectedApps from './queries/get-connected-apps'
+import getCurrentUser from './queries/get-current-user'
+import getDynamicData from './queries/get-dynamic-data'
+import getExecution from './queries/get-execution'
+import getExecutionSteps from './queries/get-execution-steps'
+import getExecutions from './queries/get-executions'
+import getFlow from './queries/get-flow'
+import getFlows from './queries/get-flows'
+import getStepWithTestExecutions from './queries/get-step-with-test-executions'
+import healthcheck from './queries/healthcheck'
+import testConnection from './queries/test-connection'
 
 const queryResolvers = {
   getApps,
@@ -26,6 +26,6 @@ const queryResolvers = {
   getDynamicData,
   getCurrentUser,
   healthcheck,
-};
+}
 
-export default queryResolvers;
+export default queryResolvers

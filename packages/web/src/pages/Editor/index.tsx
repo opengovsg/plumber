@@ -1,5 +1,5 @@
-import EditorLayout from 'components/EditorLayout';
+import EditorLayout from 'components/EditorLayout'
 
 export default function FlowEditor(): React.ReactElement {
-  return <EditorLayout />;
+  return <EditorLayout />
 }

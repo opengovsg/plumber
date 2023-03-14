@@ -1,5 +1,6 @@
-import defineTrigger from '../../../../helpers/define-trigger';
-import fetchMessages from './fetch-messages';
+import defineTrigger from '../../../../helpers/define-trigger'
+
+import fetchMessages from './fetch-messages'
 
 export default defineTrigger({
   name: 'Receive SMS',
@@ -18,6 +19,6 @@ export default defineTrigger({
   ],
 
   async run($) {
-    await fetchMessages($);
+    await fetchMessages($)
   },
-});
+})

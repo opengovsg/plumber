@@ -1,6 +1,6 @@
-import generateAuthUrl from './generate-auth-url';
-import verifyCredentials from './verify-credentials';
-import isStillVerified from './is-still-verified';
+import generateAuthUrl from './generate-auth-url'
+import isStillVerified from './is-still-verified'
+import verifyCredentials from './verify-credentials'
 
 export default {
   fields: [
@@ -46,4 +46,4 @@ export default {
   generateAuthUrl,
   verifyCredentials,
   isStillVerified,
-};
+}

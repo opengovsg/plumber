@@ -1,12 +1,12 @@
-import App from '../../models/app';
-import Context from '../../types/express/context';
+import App from '../../models/app'
+import Context from '../../types/express/context'
 
 type Params = {
-  key: string;
-};
+  key: string
+}
 
 const getApp = async (_parent: unknown, params: Params, context: Context) => {
-  const app = await App.findOneByKey(params.key);
+  const app = await App.findOneByKey(params.key)
 
   if (context.currentUser) {
     const connections = await context.currentUser
@@ -19,15 +19,15 @@ const getApp = async (_parent: unknown, params: Params, context: Context) => {
       })
       .countDistinct('steps.flow_id as flowCount')
       .groupBy('connections.id')
-      .orderBy('created_at', 'desc');
+      .orderBy('created_at', 'desc')
 
     return {
       ...app,
       connections,
-    };
+    }
   }
 
-  return app;
-};
+  return app
+}
 
-export default getApp;
+export default getApp
