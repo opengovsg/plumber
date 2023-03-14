@@ -4,7 +4,6 @@ import { URL } from 'node:url'
 import { ModelOptions, QueryContext } from 'objection'
 
 import appConfig from '../config/app'
-import Telemetry from '../helpers/telemetry'
 
 import App from './app'
 import Base from './base'
@@ -98,16 +97,6 @@ class Step extends Base {
 
     const url = new URL(`/webhooks/${this.flowId}`, appConfig.webhookUrl)
     return url.toString()
-  }
-
-  async $afterInsert(queryContext: QueryContext) {
-    await super.$afterInsert(queryContext)
-    Telemetry.stepCreated(this)
-  }
-
-  async $afterUpdate(opt: ModelOptions, queryContext: QueryContext) {
-    await super.$afterUpdate(opt, queryContext)
-    Telemetry.stepUpdated(this)
   }
 
   get isTrigger(): boolean {

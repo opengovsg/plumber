@@ -31,7 +31,6 @@ type AppConfig = {
   enableBullMQDashboard: boolean
   bullMQDashboardUsername: string
   bullMQDashboardPassword: string
-  telemetryEnabled: boolean
   requestBodySizeLimit: string
 }
 
@@ -90,7 +89,6 @@ const appConfig: AppConfig = {
   baseUrl: process.env.BASE_URL || apiUrl, // when u dont wanna expose the port, especially in production
   webAppUrl,
   webhookUrl,
-  telemetryEnabled: process.env.TELEMETRY_ENABLED === 'false' ? false : true,
   requestBodySizeLimit: '1mb',
 }
 

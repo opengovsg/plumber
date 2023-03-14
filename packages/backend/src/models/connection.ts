@@ -5,7 +5,6 @@ import type { RelationMappings } from 'objection'
 import { ModelOptions, QueryContext } from 'objection'
 
 import appConfig from '../config/app'
-import Telemetry from '../helpers/telemetry'
 
 import Base from './base'
 import Step from './step'
@@ -108,16 +107,6 @@ class Connection extends Base {
 
   async $afterFind(): Promise<void> {
     this.decryptData()
-  }
-
-  async $afterInsert(queryContext: QueryContext) {
-    await super.$afterInsert(queryContext)
-    Telemetry.connectionCreated(this)
-  }
-
-  async $afterUpdate(opt: ModelOptions, queryContext: QueryContext) {
-    await super.$afterUpdate(opt, queryContext)
-    Telemetry.connectionUpdated(this)
   }
 }
 

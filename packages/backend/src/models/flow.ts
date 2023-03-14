@@ -1,8 +1,6 @@
 import type { ModelOptions, QueryContext } from 'objection'
 import { ValidationError } from 'objection'
 
-import Telemetry from '../helpers/telemetry'
-
 import Base from './base'
 import Execution from './execution'
 import ExtendedQueryBuilder from './query-builder'
@@ -106,16 +104,6 @@ class Flow extends Base {
     }
 
     return
-  }
-
-  async $afterInsert(queryContext: QueryContext) {
-    await super.$afterInsert(queryContext)
-    Telemetry.flowCreated(this)
-  }
-
-  async $afterUpdate(opt: ModelOptions, queryContext: QueryContext) {
-    await super.$afterUpdate(opt, queryContext)
-    Telemetry.flowUpdated(this)
   }
 
   async getTriggerStep(): Promise<Step> {

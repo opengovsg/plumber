@@ -1,9 +1,5 @@
 import { IJSONObject } from '@plumber/types'
 
-import type { QueryContext } from 'objection'
-
-import Telemetry from '../helpers/telemetry'
-
 import Base from './base'
 import Execution from './execution'
 import Step from './step'
@@ -55,11 +51,6 @@ class ExecutionStep extends Base {
 
   get isFailed() {
     return this.status === 'failure'
-  }
-
-  async $afterInsert(queryContext: QueryContext) {
-    await super.$afterInsert(queryContext)
-    Telemetry.executionStepCreated(this)
   }
 }
 

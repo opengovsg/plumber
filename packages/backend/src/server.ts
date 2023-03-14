@@ -2,10 +2,7 @@ import type { Server } from 'http'
 
 import appConfig from './config/app'
 import logger from './helpers/logger'
-import telemetry from './helpers/telemetry'
 import app from './app'
-
-telemetry.setServiceType('main')
 
 const port = appConfig.port
 
