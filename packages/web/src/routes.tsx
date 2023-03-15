@@ -10,9 +10,6 @@ import Executions from 'pages/Executions'
 import Flow from 'pages/Flow'
 import Flows from 'pages/Flows'
 import Login from 'pages/Login'
-import Notifications from 'pages/Notifications'
-
-import settingsRoutes from './settingsRoutes'
 
 export default (
   <Routes>
@@ -81,18 +78,7 @@ export default (
       }
     />
 
-    <Route
-      path={URLS.UPDATES}
-      element={
-        <Layout>
-          <Notifications />
-        </Layout>
-      }
-    />
-
     <Route path="/" element={<Navigate to={URLS.FLOWS} replace />} />
-
-    <Route path={`${URLS.SETTINGS}`}>{settingsRoutes}</Route>
 
     <Route
       element={

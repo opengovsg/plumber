@@ -1,7 +1,6 @@
 import type { IJSONObject, IStep } from '@plumber/types'
 
 import { URL } from 'node:url'
-import { ModelOptions, QueryContext } from 'objection'
 
 import appConfig from '../config/app'
 

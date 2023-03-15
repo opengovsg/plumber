@@ -1,10 +1,18 @@
 import * as React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import Menu, { MenuProps } from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
+import { useNavigate } from 'react-router-dom'
+import LogoutIcon from '@mui/icons-material/Logout'
+import PersonIcon from '@mui/icons-material/Person'
+import {
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  MenuProps,
+} from '@mui/material'
 import * as URLS from 'config/urls'
 import apolloClient from 'graphql/client'
 import useAuthentication from 'hooks/useAuthentication'
+import useCurrentUser from 'hooks/useCurrentUser'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 type AccountDropdownMenuProps = {
@@ -18,13 +26,14 @@ function AccountDropdownMenu(
   props: AccountDropdownMenuProps,
 ): React.ReactElement {
   const formatMessage = useFormatMessage()
-  const authentication = useAuthentication()
+  const { updateToken } = useAuthentication()
+  const user = useCurrentUser()
   const navigate = useNavigate()
 
   const { open, onClose, anchorEl, id } = props
 
   const logout = async () => {
-    authentication.updateToken('')
+    updateToken('')
     await apolloClient.clearStore()
 
     onClose()
@@ -48,12 +57,20 @@ function AccountDropdownMenu(
       open={open}
       onClose={onClose}
     >
-      <MenuItem component={Link} to={URLS.SETTINGS_DASHBOARD}>
-        {formatMessage('accountDropdownMenu.settings')}
+      <MenuItem divider>
+        <ListItemIcon>
+          <PersonIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>{user?.email}</ListItemText>
       </MenuItem>
 
       <MenuItem onClick={logout} data-test="logout-item">
-        {formatMessage('accountDropdownMenu.logout')}
+        <ListItemIcon>
+          <LogoutIcon fontSize="small" color="error" />
+        </ListItemIcon>
+        <ListItemText>
+          {formatMessage('accountDropdownMenu.logout')}
+        </ListItemText>
       </MenuItem>
     </Menu>
   )

@@ -72,6 +72,10 @@
     ],
     "simple-import-sort/exports": "error",
     "import/newline-after-import": "error",
-    "import/no-duplicates": "error"
+    "import/no-duplicates": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ]
   }
 }

@@ -1,5 +1,4 @@
 import * as React from 'react'
-import Badge from '@mui/material/Badge'
 import Divider from '@mui/material/Divider'
 import List from '@mui/material/List'
 import { useTheme } from '@mui/material/styles'
@@ -25,11 +24,10 @@ type DrawerLink = {
 
 type DrawerProps = {
   links: DrawerLink[]
-  bottomLinks?: DrawerLink[]
 } & SwipeableDrawerProps
 
 export default function Drawer(props: DrawerProps): React.ReactElement {
-  const { links = [], bottomLinks = [], ...drawerProps } = props
+  const { links = [], ...drawerProps } = props
   const theme = useTheme()
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
     noSsr: true,
@@ -70,23 +68,6 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
 
         <Divider />
       </div>
-
-      {/* todo: hide notifications for now */}
-      <List sx={{ py: 0, mt: 3, display: 'none' }}>
-        {bottomLinks.map(({ Icon, badgeContent, primary, to }, index) => (
-          <ListItemLink
-            key={`${to}-${index}`}
-            icon={
-              <Badge badgeContent={badgeContent} color="secondary" max={99}>
-                <Icon htmlColor={theme.palette.primary.main} />
-              </Badge>
-            }
-            primary={formatMessage(primary)}
-            to={to}
-            onClick={closeOnClick}
-          />
-        ))}
-      </List>
     </BaseDrawer>
   )
 }

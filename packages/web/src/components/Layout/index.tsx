@@ -1,7 +1,6 @@
 import * as React from 'react'
 import AppsIcon from '@mui/icons-material/Apps'
 import HistoryIcon from '@mui/icons-material/History'
-import NotificationsIcon from '@mui/icons-material/Notifications'
 import SchemaIcon from '@mui/icons-material/Schema'
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
@@ -10,7 +9,6 @@ import AppBar from 'components/AppBar'
 import Drawer from 'components/Drawer'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
-import useVersion from 'hooks/useVersion'
 
 type PublicLayoutProps = {
   children: React.ReactNode
@@ -37,19 +35,9 @@ const drawerLinks = [
   },
 ]
 
-const generateDrawerBottomLinks = ({ notificationBadgeContent = 0 }) => [
-  {
-    Icon: NotificationsIcon,
-    primary: 'settingsDrawer.notifications',
-    to: URLS.UPDATES,
-    badgeContent: notificationBadgeContent,
-  },
-]
-
 export default function PublicLayout({
   children,
 }: PublicLayoutProps): React.ReactElement {
-  const version = useVersion()
   const theme = useTheme()
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('lg'), {
     noSsr: true,
@@ -58,10 +46,6 @@ export default function PublicLayout({
 
   const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
-
-  const drawerBottomLinks = generateDrawerBottomLinks({
-    notificationBadgeContent: version.newVersionCount,
-  })
 
   return (
     <>
@@ -74,7 +58,6 @@ export default function PublicLayout({
       <Box sx={{ display: 'flex' }}>
         <Drawer
           links={drawerLinks}
-          bottomLinks={drawerBottomLinks}
           open={isDrawerOpen}
           onOpen={openDrawer}
           onClose={closeDrawer}
