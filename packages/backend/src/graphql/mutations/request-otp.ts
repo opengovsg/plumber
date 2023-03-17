@@ -1,7 +1,7 @@
 import crypto from 'crypto'
-import validator from 'email-validator'
 
 import BaseError from '../../errors/base'
+import { validateAndParseEmail } from '../../helpers/email-validator'
 import { sendEmail } from '../../helpers/send-email'
 import User from '../../models/user'
 
@@ -20,9 +20,9 @@ const requestOtp = async (
   _parent: unknown,
   params: Params,
 ): Promise<boolean> => {
-  const email = params.input.email.toLowerCase().trim()
+  const email = validateAndParseEmail(params.input.email)
   // validate email
-  if (!validator.validate(email) || !email.endsWith('.gov.sg')) {
+  if (!email) {
     throw new BaseError('Only .gov.sg emails are allowed.')
   }
   // check if user exists

@@ -5,7 +5,14 @@ const getCurrentUser = async (
   _params: unknown,
   context: Context,
 ) => {
-  return context.currentUser
+  // prevent fetching of other user data
+  const { id, email, createdAt, updatedAt } = context.currentUser
+  return {
+    id,
+    email,
+    createdAt,
+    updatedAt,
+  }
 }
 
 export default getCurrentUser

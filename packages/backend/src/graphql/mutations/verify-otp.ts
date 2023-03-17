@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 
 import appConfig from '../../config/app'
 import BaseError from '../../errors/base'
+import { validateAndParseEmail } from '../../helpers/email-validator'
 import User from '../../models/user'
 
 type Params = {
@@ -21,9 +22,14 @@ const verifyOtp = async (
   _parent: unknown,
   params: Params,
 ): Promise<{ token: string; user: User }> => {
-  const { otp, email } = params.input
-  if (!email || !otp) {
-    throw new BaseError('Invalid input')
+  const { otp, email: emailRaw } = params.input
+  // validate email
+  const email = validateAndParseEmail(emailRaw)
+  if (!email) {
+    throw new BaseError('Only .gov.sg emails are allowed.')
+  }
+  if (!otp) {
+    throw new BaseError('No OTP provided')
   }
   const user = await User.query().findOne({ email: email.trim().toLowerCase() })
   if (!user) {
