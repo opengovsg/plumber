@@ -26,7 +26,10 @@ const verifyFormExists = async ($: IGlobalVariable) => {
 }
 
 const verifySecretKeyFormat = ($: IGlobalVariable) => {
-  if (!BASE64_REGEX.test($.auth.data?.privateKey as string)) {
+  if (
+    !BASE64_REGEX.test($.auth.data?.privateKey as string) ||
+    Buffer.from($.auth.data?.privateKey as string, 'base64').length !== 32
+  ) {
     throw new Error('Invalid secret key format')
   }
 }
