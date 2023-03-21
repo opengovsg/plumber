@@ -1,7 +1,5 @@
 import appConfig from './src/config/app'
 
-const fileExtension = appConfig.isDev ? 'ts' : 'js'
-
 const knexConfig = {
   client: 'pg',
   connection: {
@@ -15,11 +13,6 @@ const knexConfig = {
   pool: { min: 0, max: 20 },
   migrations: {
     directory: __dirname + '/src/db/migrations',
-    extension: fileExtension,
-    loadExtensions: [`.${fileExtension}`],
-  },
-  seeds: {
-    directory: __dirname + '/src/db/seeds',
   },
 }
 

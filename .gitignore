@@ -71,8 +71,7 @@ web_modules/
 
 # dotenv environment variables file
 .env
-.env.test
-.env.production
+.env.*
 
 # cypress environment variables file
 cypress.env.json

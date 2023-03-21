@@ -1,7 +1,6 @@
-import * as dotenv from 'dotenv'
-import { URL } from 'node:url'
+import 'dotenv/config'
 
-dotenv.config()
+import { URL } from 'node:url'
 
 type AppConfig = {
   host: string
@@ -10,7 +9,6 @@ type AppConfig = {
   webAppUrl: string
   webhookUrl: string
   appEnv: string
-  isDev: boolean
   postgresDatabase: string
   postgresPort: number
   postgresHost: string
@@ -65,7 +63,6 @@ const appConfig: AppConfig = {
   protocol,
   port,
   appEnv: appEnv,
-  isDev: appEnv === 'development',
   version: process.env.npm_package_version,
   postgresDatabase: process.env.POSTGRES_DATABASE || 'automatisch_development',
   postgresPort: parseInt(process.env.POSTGRES_PORT || '5432'),
