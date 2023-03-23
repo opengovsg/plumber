@@ -3,6 +3,7 @@
   "license": "AGPL-3.0",
   "private": true,
   "scripts": {
+    "setup": "npm run -w @plumber/backend setup",
     "lint": "npm run --workspaces --if-present lint"
   },
   "workspaces": {
