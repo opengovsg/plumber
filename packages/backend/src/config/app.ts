@@ -18,8 +18,7 @@ type AppConfig = {
   postgresEnableSsl: boolean
   baseUrl: string
   encryptionKey: string
-  webhookSecretKey: string
-  appSecretKey: string
+  sessionSecretKey: string
   serveWebAppSeparately: boolean
   redisHost: string
   redisPort: number
@@ -72,8 +71,7 @@ const appConfig: AppConfig = {
   postgresPassword: process.env.POSTGRES_PASSWORD,
   postgresEnableSsl: process.env.POSTGRES_ENABLE_SSL === 'true',
   encryptionKey: process.env.ENCRYPTION_KEY || '',
-  webhookSecretKey: process.env.WEBHOOK_SECRET_KEY || '',
-  appSecretKey: process.env.APP_SECRET_KEY || '',
+  sessionSecretKey: process.env.SESSION_SECRET_KEY || '',
   serveWebAppSeparately,
   redisHost: process.env.REDIS_HOST || '127.0.0.1',
   redisPort: parseInt(process.env.REDIS_PORT || '6379'),
@@ -93,8 +91,8 @@ if (!appConfig.encryptionKey) {
   throw new Error('ENCRYPTION_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.webhookSecretKey) {
-  throw new Error('WEBHOOK_SECRET_KEY environment variable needs to be set!')
+if (!appConfig.sessionSecretKey) {
+  throw new Error('SESSION_SECRET_KEY environment variable needs to be set!')
 }
 
 export default appConfig

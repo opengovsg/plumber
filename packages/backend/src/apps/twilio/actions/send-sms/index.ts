@@ -1,3 +1,5 @@
+import qs from 'qs'
+
 import defineAction from '../../../../helpers/define-action'
 
 export default defineAction({
@@ -42,9 +44,13 @@ export default defineAction({
 
     const response = await $.http.post(
       requestPath,
-      `Body=${messageBody}&From=${fromNumber}&To=${toNumber}`,
+      qs.stringify({
+        Body: messageBody,
+        From: fromNumber,
+        To: toNumber,
+      }),
     )
-
-    $.setActionItem({ raw: response.data })
+    const { from, to, body, status, sid } = response.data
+    $.setActionItem({ raw: { from, to, body, status, sid, success: true } })
   },
 })

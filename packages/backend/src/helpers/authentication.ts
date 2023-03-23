@@ -12,7 +12,7 @@ const isAuthenticated = rule()(async (_parent, _args, req) => {
   }
 
   try {
-    const { userId } = jwt.verify(token, appConfig.appSecretKey) as {
+    const { userId } = jwt.verify(token, appConfig.sessionSecretKey) as {
       userId: string
     }
     req.currentUser = await User.query().findById(userId).throwIfNotFound()

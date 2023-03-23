@@ -64,7 +64,7 @@ const verifyOtp = async (
   })
 
   // create jwt
-  const token = jwt.sign({ userId: user.id }, appConfig.appSecretKey, {
+  const token = jwt.sign({ userId: user.id }, appConfig.sessionSecretKey, {
     expiresIn: TOKEN_EXPIRES_IN,
   })
   return { token, user: updatedUser }

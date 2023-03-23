@@ -3,8 +3,7 @@
   "license": "AGPL-3.0",
   "private": true,
   "scripts": {
-    "lint": "npm run --workspaces --if-present lint",
-    "build:docs": "cd ./packages/docs && yarn install && yarn build"
+    "lint": "npm run --workspaces --if-present lint"
   },
   "workspaces": {
     "packages": [
