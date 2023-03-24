@@ -23,9 +23,11 @@ const executeFlow = async (
     throw new Error(JSON.stringify(executionStep.errorDetails))
   }
 
-  await untilStep.$query().patch({
-    status: 'completed',
-  })
+  if (executionStep.dataOut) {
+    await untilStep.$query().patch({
+      status: 'completed',
+    })
+  }
 
   return { data: executionStep.dataOut, step: untilStep }
 }

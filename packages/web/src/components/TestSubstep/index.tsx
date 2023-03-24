@@ -56,33 +56,19 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
 
   const formatMessage = useFormatMessage()
   const editorContext = React.useContext(EditorContext)
-  const [executeFlow, { data, error, loading, called, reset }] = useMutation(
+  const [executeFlow, { data, error, loading, called }] = useMutation(
     EXECUTE_FLOW,
     { context: { autoSnackbar: false } },
   )
   const response = data?.executeFlow?.data
 
-  const isCompleted = !error && called && !loading
-  const hasNoOutput = !response && isCompleted
+  const isExecuted = !error && called && !loading
+  const hasNoOutput = !response && isExecuted
+  const isCompleted = isExecuted && response
 
   const { name } = substep
 
-  React.useEffect(
-    function resetTestDataOnSubstepToggle() {
-      if (!expanded) {
-        reset()
-      }
-    },
-    [expanded, reset],
-  )
-
-  const handleSubmit = React.useCallback(() => {
-    if (isCompleted) {
-      onContinue?.()
-
-      return
-    }
-
+  const executeTestFlow = React.useCallback(() => {
     executeFlow({
       variables: {
         input: {
@@ -90,7 +76,14 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
         },
       },
     })
-  }, [onSubmit, onContinue, isCompleted, step.id])
+  }, [onSubmit, onContinue, isExecuted, step.id])
+
+  const onContinueClick = React.useCallback(() => {
+    if (onContinue) {
+      onContinue()
+    }
+  }, [onContinue])
+
   const onToggle = expanded ? onCollapse : onExpand
 
   return (
@@ -143,17 +136,32 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
 
           <LoadingButton
             fullWidth
-            variant="contained"
-            onClick={handleSubmit}
+            variant={isCompleted ? 'text' : 'contained'}
+            onClick={executeTestFlow}
             sx={{ mt: 2 }}
             loading={loading}
             disabled={editorContext.readOnly}
             color="primary"
             data-test="flow-substep-continue-button"
           >
-            {isCompleted && formatMessage('flowEditor.continue')}
-            {!isCompleted && formatMessage('flowEditor.testAndContinue')}
+            {isCompleted
+              ? formatMessage('flowEditor.testAgain')
+              : formatMessage('flowEditor.testStep')}
           </LoadingButton>
+          {isCompleted && (
+            <LoadingButton
+              fullWidth
+              variant={'contained'}
+              onClick={onContinueClick}
+              sx={{ mt: 2 }}
+              loading={loading}
+              disabled={editorContext.readOnly}
+              color="primary"
+              data-test="flow-substep-continue-button"
+            >
+              {formatMessage('flowEditor.continue')}
+            </LoadingButton>
+          )}
         </ListItem>
       </Collapse>
     </React.Fragment>
