@@ -5,7 +5,7 @@
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "image": "mcr.microsoft.com/devcontainers/typescript-node:0-18",
 
-  "forwardPorts": [3000, 4001, 5432, 6379],
+  "forwardPorts": [3000, 3001, 5432, 6379],
   "customizations": {
     "vscode": {
       "extensions": [
