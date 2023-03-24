@@ -29,6 +29,7 @@ type AppConfig = {
   bullMQDashboardUsername: string
   bullMQDashboardPassword: string
   requestBodySizeLimit: string
+  postmanApiKey: string
 }
 
 const host = process.env.HOST || 'localhost'
@@ -56,6 +57,8 @@ let webhookUrl = new URL(process.env.WEBHOOK_URL || apiUrl).toString()
 webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1)
 
 const appEnv = process.env.APP_ENV || 'development'
+
+const postmanApiKey = process.env.POSTMAN_API_KEY
 
 const appConfig: AppConfig = {
   host,
@@ -85,6 +88,7 @@ const appConfig: AppConfig = {
   webAppUrl,
   webhookUrl,
   requestBodySizeLimit: '1mb',
+  postmanApiKey,
 }
 
 if (!appConfig.encryptionKey) {
@@ -93,6 +97,10 @@ if (!appConfig.encryptionKey) {
 
 if (!appConfig.sessionSecretKey) {
   throw new Error('SESSION_SECRET_KEY environment variable needs to be set!')
+}
+
+if (!appConfig.postmanApiKey) {
+  throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
 }
 
 export default appConfig

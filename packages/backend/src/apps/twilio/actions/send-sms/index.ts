@@ -13,7 +13,7 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       description:
-        'The number to send the SMS from. Include country code. Example: 15551234567',
+        'The number to send the SMS from or your Twilio Messaging Service ID. Include country code prefix if specifying number, e.g. +6581237123',
       variables: true,
     },
     {
@@ -22,7 +22,7 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       description:
-        'The number to send the SMS to. Include country code. Example: 15551234567',
+        'The number to send the SMS to. Include country code prefix, e.g. +6581237123',
       variables: true,
     },
     {
@@ -39,8 +39,8 @@ export default defineAction({
     const requestPath = `/2010-04-01/Accounts/${$.auth.data.accountSid}/Messages.json`
     const messageBody = $.step.parameters.message
 
-    const fromNumber = '+' + ($.step.parameters.fromNumber as string).trim()
-    const toNumber = '+' + ($.step.parameters.toNumber as string).trim()
+    const fromNumber = ($.step.parameters.fromNumber as string).trim()
+    const toNumber = ($.step.parameters.toNumber as string).trim()
 
     const response = await $.http.post(
       requestPath,
