@@ -1,11 +1,11 @@
 import { Worker } from 'bullmq'
 
 import redisConfig from '../config/redis'
-import logger from '../helpers/logger'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-  REMOVE_AFTER_30_DAYS_OR_150_JOBS,
-} from '../helpers/remove-job-configuration'
+  REMOVE_AFTER_30_DAYS,
+} from '../helpers/default-job-configuration'
+import logger from '../helpers/logger'
 import Flow from '../models/flow'
 import triggerQueue from '../queues/trigger'
 import { processFlow } from '../services/flow'
@@ -24,7 +24,7 @@ export const worker = new Worker(
 
     const jobOptions = {
       removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-      removeOnFail: REMOVE_AFTER_30_DAYS_OR_150_JOBS,
+      removeOnFail: REMOVE_AFTER_30_DAYS,
     }
 
     for (const triggerItem of reversedData) {

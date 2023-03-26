@@ -128,26 +128,20 @@ export default function FlowStep(
   })
   const [
     getStepWithTestExecutions,
-    { data: stepWithTestExecutionsData, called: stepWithTestExecutionsCalled },
+    { data: stepWithTestExecutionsData, called: _stepWithTestExecutionsCalled },
   ] = useLazyQuery(GET_STEP_WITH_TEST_EXECUTIONS, {
     fetchPolicy: 'network-only',
   })
 
   React.useEffect(() => {
-    if (!stepWithTestExecutionsCalled && !collapsed && !isTrigger) {
+    if (!collapsed && !isTrigger) {
       getStepWithTestExecutions({
         variables: {
           stepId: step.id,
         },
       })
     }
-  }, [
-    collapsed,
-    stepWithTestExecutionsCalled,
-    getStepWithTestExecutions,
-    step.id,
-    isTrigger,
-  ])
+  }, [collapsed, getStepWithTestExecutions, step.id, isTrigger])
 
   const apps: IApp[] = data?.getApps
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)

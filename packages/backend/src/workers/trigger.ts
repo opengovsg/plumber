@@ -3,11 +3,8 @@ import { IJSONObject, ITriggerItem } from '@plumber/types'
 import { Worker } from 'bullmq'
 
 import redisConfig from '../config/redis'
+import { DEFAULT_JOB_OPTIONS } from '../helpers/default-job-configuration'
 import logger from '../helpers/logger'
-import {
-  REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-  REMOVE_AFTER_30_DAYS_OR_150_JOBS,
-} from '../helpers/remove-job-configuration'
 import Step from '../models/step'
 import actionQueue from '../queues/action'
 import { processTrigger } from '../services/trigger'
@@ -40,12 +37,7 @@ export const worker = new Worker(
       stepId: nextStep.id,
     }
 
-    const jobOptions = {
-      removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-      removeOnFail: REMOVE_AFTER_30_DAYS_OR_150_JOBS,
-    }
-
-    await actionQueue.add(jobName, jobPayload, jobOptions)
+    await actionQueue.add(jobName, jobPayload, DEFAULT_JOB_OPTIONS)
   },
   { connection: redisConfig },
 )

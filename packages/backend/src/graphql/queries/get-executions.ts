@@ -1,6 +1,7 @@
-import { raw } from 'objection'
+import { ref } from 'objection'
 
 import paginate from '../../helpers/pagination'
+import ExecutionStep from '../../models/execution-step'
 import Context from '../../types/express/context'
 
 type Params = {
@@ -13,29 +14,28 @@ const getExecutions = async (
   params: Params,
   context: Context,
 ) => {
-  const selectStatusStatement = `
-    case
-      when count(*) filter (where execution_steps.status = 'failure') > 0
-        then 'failure'
-      else 'success'
-    end
-    as status
-  `
-
   const executions = context.currentUser
     .$relatedQuery('executions')
-    .joinRelated('executionSteps as execution_steps')
-    .select('executions.*', raw(selectStatusStatement))
+    .joinRelated('executionSteps', {
+      alias: 'es',
+    })
+    .select('executions.*', 'es.status')
+    // get status from the most recent execution step
+    .where(
+      'es.created_at',
+      '=',
+      ExecutionStep.query()
+        .max('created_at')
+        .where('execution_id', '=', ref('executions.id')),
+    )
     .withSoftDeleted()
     .withGraphFetched({
       flow: {
         steps: true,
       },
     })
-    .groupBy('executions.id')
     .orderBy('created_at', 'desc')
 
   return paginate(executions, params.limit, params.offset)
 }
-
 export default getExecutions

@@ -2,6 +2,7 @@ import CancelFlowError from '../errors/cancel-flow'
 import HttpError from '../errors/http'
 import computeParameters from '../helpers/compute-parameters'
 import globalVariable from '../helpers/global-variable'
+import logger from '../helpers/logger'
 import Execution from '../models/execution'
 import ExecutionStep from '../models/execution-step'
 import Flow from '../models/flow'
@@ -31,6 +32,8 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   const priorExecutionSteps = await ExecutionStep.query().where({
     execution_id: $.execution.id,
+    // only get successful execution steps
+    status: 'success',
   })
 
   const computedParameters = computeParameters(
@@ -46,8 +49,13 @@ export const processAction = async (options: ProcessActionOptions) => {
   try {
     await actionCommand.run($)
   } catch (error) {
+    logger.error(error)
     if (error instanceof HttpError) {
-      $.actionOutput.error = error.details
+      $.actionOutput.error = {
+        details: error.details,
+        status: error.response.status,
+        statusText: error.response.statusText,
+      }
     } else if (error instanceof CancelFlowError) {
       proceedToNextAction = false
     } else {

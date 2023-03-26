@@ -1,7 +1,7 @@
 import defineAction from '../../../../helpers/define-action'
 
 export default defineAction({
-  name: 'Send transactional email',
+  name: 'Send email',
   key: 'sendTransactionalEmail',
   description: "Sends an email using Postman's transactional API.",
   arguments: [

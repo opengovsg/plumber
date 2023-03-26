@@ -3,11 +3,8 @@ import { IRequest, ITriggerItem } from '@plumber/types'
 import bcrypt from 'bcrypt'
 import { Response } from 'express'
 
+import { DEFAULT_JOB_OPTIONS } from '../../helpers/default-job-configuration'
 import globalVariable from '../../helpers/global-variable'
-import {
-  REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-  REMOVE_AFTER_30_DAYS_OR_150_JOBS,
-} from '../../helpers/remove-job-configuration'
 import Flow from '../../models/flow'
 import actionQueue from '../../queues/action'
 import { processTrigger } from '../../services/trigger'
@@ -91,12 +88,7 @@ export default async (request: IRequest, response: Response) => {
     stepId: nextStep.id,
   }
 
-  const jobOptions = {
-    removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-    removeOnFail: REMOVE_AFTER_30_DAYS_OR_150_JOBS,
-  }
-
-  await actionQueue.add(jobName, jobPayload, jobOptions)
+  await actionQueue.add(jobName, jobPayload, DEFAULT_JOB_OPTIONS)
 
   return response.sendStatus(200)
 }

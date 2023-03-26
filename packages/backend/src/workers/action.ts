@@ -1,12 +1,9 @@
 import { Worker } from 'bullmq'
 
 import redisConfig from '../config/redis'
+import { DEFAULT_JOB_OPTIONS } from '../helpers/default-job-configuration'
 import delayAsMilliseconds from '../helpers/delay-as-milliseconds'
 import logger from '../helpers/logger'
-import {
-  REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-  REMOVE_AFTER_30_DAYS_OR_150_JOBS,
-} from '../helpers/remove-job-configuration'
 import Step from '../models/step'
 import actionQueue from '../queues/action'
 import { processAction } from '../services/action'
@@ -17,13 +14,15 @@ type JobData = {
   stepId: string
 }
 
-const DEFAULT_DELAY_DURATION = 0
-
 export const worker = new Worker(
   'action',
   async (job) => {
-    const { stepId, flowId, executionId, proceedToNextAction } =
+    const { stepId, flowId, executionId, proceedToNextAction, executionStep } =
       await processAction(job.data as JobData)
+
+    if (executionStep.isFailed) {
+      throw new Error(JSON.stringify(executionStep.errorDetails))
+    }
 
     const step = await Step.query().findById(stepId).throwIfNotFound()
     const nextStep = await step.getNextStep()
@@ -40,14 +39,10 @@ export const worker = new Worker(
       stepId: nextStep.id,
     }
 
-    const jobOptions = {
-      removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-      removeOnFail: REMOVE_AFTER_30_DAYS_OR_150_JOBS,
-      delay: DEFAULT_DELAY_DURATION,
-    }
+    let jobOptions = DEFAULT_JOB_OPTIONS
 
     if (step.appKey === 'delay') {
-      jobOptions.delay = delayAsMilliseconds(step)
+      jobOptions = { ...DEFAULT_JOB_OPTIONS, delay: delayAsMilliseconds(step) }
     }
 
     await actionQueue.add(jobName, jobPayload, jobOptions)
