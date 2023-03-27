@@ -18,7 +18,7 @@ export default {
     },
     {
       key: 'apiKeySid',
-      label: 'API Key SID',
+      label: 'API Key SID (Optional)',
       type: 'string' as const,
       required: false,
       readOnly: false,
