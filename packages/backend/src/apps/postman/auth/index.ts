@@ -1,14 +1,6 @@
 import { IGlobalVariable } from '@plumber/types'
 
-const verifyCredentials = async ($: IGlobalVariable) => {
-  /**
-   * A mutation-free endpoint to verify an API key does not exist.
-   * Verification therefore always succeeds.
-   */
-  await $.auth.set({
-    screenName: $.auth.data.screenName,
-  })
-}
+import verifyCredentials from './verify-credentials'
 
 const isStillVerified = async ($: IGlobalVariable) => {
   await verifyCredentials($)

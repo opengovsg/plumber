@@ -2,6 +2,8 @@ import { IGlobalVariable } from '@plumber/types'
 
 import formsgSdk from '@opengovsg/formsg-sdk'
 
+import logger from '../../../helpers/logger'
+
 const formsg = formsgSdk({
   mode: 'production',
 })
@@ -10,7 +12,8 @@ export async function decryptFormResponse(
   $: IGlobalVariable,
 ): Promise<boolean> {
   if (!$.request) {
-    throw new Error('No trigger item provided')
+    logger.error('No trigger item provided')
+    return false
   }
 
   const {
@@ -24,7 +27,8 @@ export async function decryptFormResponse(
       $.webhookUrl,
     )
   } catch (e) {
-    throw new Error('Unable to verify formsg signature')
+    logger.error('Unable to verify formsg signature')
+    return false
   }
 
   const formSecretKey = $.auth.data.privateKey as string
@@ -50,6 +54,7 @@ export async function decryptFormResponse(
     return true
   } else {
     // Could not decrypt the submission
-    throw new Error('Unable to decrypt formsg response')
+    logger.error('Unable to decrypt formsg response')
+    return false
   }
 }
