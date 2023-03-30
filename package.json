@@ -1,18 +1,18 @@
 {
-  "name": "@plumber/root",
+  "name": "plumber",
   "license": "AGPL-3.0",
   "private": true,
   "scripts": {
     "all": "concurrently -c green,blue,bgBlue",
-    "setup": "npm run -w @plumber/backend setup",
-    "dev:frontend": "npm run -w @plumber/web dev",
-    "dev:backend": "npm run -w @plumber/backend dev",
-    "dev:worker": "npm run -w @plumber/backend worker",
+    "setup": "npm run -w backend setup",
+    "dev:frontend": "npm run -w frontend dev",
+    "dev:backend": "npm run -w backend dev",
+    "dev:worker": "npm run -w backend worker",
     "dev": "npm run all --kill-others npm:dev:*",
-    "build:frontend": "npm run -w @plumber/web build",
-    "build:backend": "npm run -w @plumber/backend build",
+    "build:frontend": "npm run -w frontend build",
+    "build:backend": "npm run -w backend build",
     "build": "npm run all npm:build:*",
-    "start": "npm run -w @plumber/backend start",
+    "start": "npm run -w backend start",
     "lint": "npm run --workspaces --if-present lint"
   },
   "workspaces": {

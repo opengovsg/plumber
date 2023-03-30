@@ -15,8 +15,8 @@ const webUIHandler = async (app: Application) => {
     dirname(require.main.filename),
     '..',
     '..',
-    'web',
-    'build',
+    'frontend',
+    'dist',
   )
   const indexHtml = join(webBuildPath, 'index.html')
 

@@ -1,11 +1,5 @@
 {
   "name": "@plumber/types",
-  "version": "0.3.0",
-  "license": "AGPL-3.0",
   "description": "Shared types for plumber",
-  "types": "./index.d.ts",
-  "typeScriptVersion": "4.1",
-  "publishConfig": {
-    "access": "public"
-  }
+  "types": "./index.d.ts"
 }

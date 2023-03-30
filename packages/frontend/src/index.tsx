@@ -7,8 +7,6 @@ import ThemeProvider from 'components/ThemeProvider'
 import { AuthenticationProvider } from 'contexts/Authentication'
 import routes from 'routes'
 
-import reportWebVitals from './reportWebVitals'
-
 const container = document.getElementById('root')
 
 if (!container) {
@@ -29,8 +27,3 @@ root.render(
     </AuthenticationProvider>
   </SnackbarProvider>,
 )
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals()

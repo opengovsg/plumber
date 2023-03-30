@@ -1,8 +1,5 @@
 {
-  "name": "@plumber/backend",
-  "version": "0.3.0",
-  "license": "AGPL-3.0",
-  "description": "The open source Zapier alternative. Build workflow automation without spending time and money.",
+  "name": "backend",
   "scripts": {
     "setup": "docker-compose -f docker-compose.dev.yml up -d",
     "teardown": "docker-compose -f docker-compose.dev.yml down",
