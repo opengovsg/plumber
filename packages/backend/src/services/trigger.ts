@@ -41,6 +41,7 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
       dataIn: $.step.parameters,
       dataOut: !error ? triggerItem?.raw : null,
       errorDetails: error,
+      appKey: $.app.key,
     })
 
   return { flowId, stepId, executionId: execution.id, executionStep }

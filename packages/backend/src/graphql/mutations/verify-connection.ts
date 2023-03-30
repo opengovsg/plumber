@@ -22,6 +22,7 @@ const verifyConnection = async (
 
   const app = await App.findOneByKey(connection.key)
   const $ = await globalVariable({ connection, app })
+
   await app.auth.verifyCredentials($)
 
   connection = await connection.$query().patchAndFetch({

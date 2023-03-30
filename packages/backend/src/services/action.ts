@@ -12,10 +12,11 @@ type ProcessActionOptions = {
   flowId: string
   executionId: string
   stepId: string
+  jobId?: string
 }
 
 export const processAction = async (options: ProcessActionOptions) => {
-  const { flowId, stepId, executionId } = options
+  const { flowId, stepId, executionId, jobId } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
   const execution = await Execution.query()
@@ -75,6 +76,8 @@ export const processAction = async (options: ProcessActionOptions) => {
       dataIn: computedParameters,
       dataOut: $.actionOutput.error ? null : $.actionOutput.data?.raw,
       errorDetails: $.actionOutput.error ? $.actionOutput.error : null,
+      appKey: $.app.key,
+      jobId,
     })
 
   return {

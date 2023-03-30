@@ -31,6 +31,8 @@ export interface IExecutionStep {
   dataOut: IJSONObject
   errorDetails: IJSONObject
   status: string
+  appKey: string
+  jobId?: string
   createdAt: string
   updatedAt: string
 }
@@ -65,6 +67,8 @@ export interface IStep {
   // FIXME: remove this property once execution steps are properly exposed via queries
   output?: IJSONObject
   appData?: IApp
+  retryable?: boolean
+  jobId?: string
 }
 
 export interface IFlow {

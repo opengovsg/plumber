@@ -21,13 +21,8 @@ export const GET_EXECUTION_STEPS = gql`
           errorDetails
           createdAt
           updatedAt
-          step {
-            id
-            appKey
-            type
-            status
-            position
-          }
+          jobId
+          appKey
         }
       }
     }

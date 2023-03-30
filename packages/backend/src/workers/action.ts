@@ -18,7 +18,7 @@ export const worker = new Worker(
   'action',
   async (job) => {
     const { stepId, flowId, executionId, proceedToNextAction, executionStep } =
-      await processAction(job.data as JobData)
+      await processAction({ ...(job.data as JobData), jobId: job.id })
 
     if (executionStep.isFailed) {
       throw new Error(JSON.stringify(executionStep.errorDetails))

@@ -5,7 +5,10 @@
   "scripts": {
     "all": "concurrently -c green,blue,bgBlue",
     "setup": "npm run -w @plumber/backend setup",
-    "dev": "npm run all -- --kill-others 'npm run -w @plumber/web dev' 'npm run -w @plumber/backend dev' 'npm run -w @plumber/backend worker'",
+    "dev:frontend": "npm run -w @plumber/web dev",
+    "dev:backend": "npm run -w @plumber/backend dev",
+    "dev:worker": "npm run -w @plumber/backend worker",
+    "dev": "npm run all -- --kill-others npm:dev:frontend npm:dev:backend npm:dev:worker",
     "lint": "npm run --workspaces --if-present lint"
   },
   "workspaces": {

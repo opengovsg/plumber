@@ -57,11 +57,11 @@ export default function Execution(): React.ReactElement {
           </Alert>
         )}
 
-        {executionSteps?.map((executionStep) => (
+        {executionSteps?.map((executionStep, i) => (
           <ExecutionStep
             key={executionStep.id}
             executionStep={executionStep}
-            step={executionStep.step}
+            index={i}
           />
         ))}
       </Grid>

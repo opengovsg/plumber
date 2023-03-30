@@ -27,15 +27,25 @@ type ChooseConnectionSubstepProps = {
 
 const ADD_CONNECTION_VALUE = 'ADD_CONNECTION'
 
+type ConnectionDropdownOption = {
+  label: string
+  value: string
+}
+
 const optionGenerator = (
   connection: IConnection,
-): { label: string; value: string } => ({
+): ConnectionDropdownOption => ({
   label: (connection?.formattedData?.screenName as string) ?? 'Unnamed',
   value: connection?.id as string,
 })
 
-const getOption = (options: Record<string, unknown>[], connectionId?: string) =>
-  options.find((connection) => connection.value === connectionId) || undefined
+const getOption = (
+  options: Record<string, unknown>[],
+  connectionId?: string,
+): ConnectionDropdownOption | undefined =>
+  (options.find(
+    (connection) => connection.value === connectionId,
+  ) as ConnectionDropdownOption) || undefined
 
 function ChooseConnectionSubstep(
   props: ChooseConnectionSubstepProps,
@@ -100,7 +110,7 @@ function ChooseConnectionSubstep(
     async (response: Record<string, unknown>) => {
       setShowAddConnectionDialog(false)
 
-      const connectionId = (response?.createConnection as any).id
+      const connectionId = (response?.createConnection as any)?.id
 
       if (connectionId) {
         await refetch()
@@ -191,6 +201,10 @@ function ChooseConnectionSubstep(
             onChange={handleChange}
             loading={loading}
             data-test="choose-connection-autocomplete"
+            isOptionEqualToValue={(
+              option: ConnectionDropdownOption,
+              value: ConnectionDropdownOption,
+            ) => option.value === value.value}
           />
 
           <Button

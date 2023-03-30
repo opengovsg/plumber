@@ -1,6 +1,7 @@
-import type { IApp, IExecutionStep, IStep } from '@plumber/types'
+import type { IApp, IExecutionStep } from '@plumber/types'
 
 import * as React from 'react'
+import { FormattedMessage } from 'react-intl'
 import { useQuery } from '@apollo/client'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
@@ -12,9 +13,9 @@ import Typography from '@mui/material/Typography'
 import AppIcon from 'components/AppIcon'
 import JSONViewer from 'components/JSONViewer'
 import TabPanel from 'components/TabPanel'
-import { GET_APPS } from 'graphql/queries/get-apps'
-import useFormatMessage from 'hooks/useFormatMessage'
+import { GET_APP } from 'graphql/queries/get-app'
 
+import RetryButton from './RetryButton'
 import {
   AppIconStatusIconWrapper,
   AppIconWrapper,
@@ -24,61 +25,67 @@ import {
 } from './style'
 
 type ExecutionStepProps = {
-  collapsed?: boolean
-  step: IStep
-  index?: number
+  index: number
   executionStep: IExecutionStep
 }
 
 const validIcon = <CheckCircleIcon color="success" />
 const errorIcon = <ErrorIcon color="error" />
 
-export default function ExecutionStep(
-  props: ExecutionStepProps,
-): React.ReactElement | null {
-  const { executionStep } = props
+export default function ExecutionStep({
+  index,
+  executionStep,
+}: ExecutionStepProps): React.ReactElement | null {
   const [activeTabIndex, setActiveTabIndex] = React.useState(0)
-  const step: IStep = executionStep.step
-  const isTrigger = step.type === 'trigger'
-  const isAction = step.type === 'action'
-  const formatMessage = useFormatMessage()
-  const { data } = useQuery(GET_APPS, {
-    variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  })
-  const apps: IApp[] = data?.getApps
-  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  if (!apps) {
+  const { data } = useQuery(GET_APP, {
+    variables: { key: executionStep.appKey },
+  })
+
+  const app: IApp = data?.getApp
+
+  if (!app) {
     return null
   }
 
-  const validationStatusIcon =
-    executionStep.status === 'success' ? validIcon : errorIcon
+  const isStepSuccessful = executionStep.status === 'success'
+
   const hasError = !!executionStep.errorDetails
+
+  const canRetry = !isStepSuccessful && !!executionStep.jobId
 
   return (
     <Wrapper elevation={1} data-test="execution-step">
       <Header>
-        <Stack direction="row" alignItems="center" gap={2}>
-          <AppIconWrapper>
-            <AppIcon url={app?.iconUrl} name={app?.name} />
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <Stack direction="row" gap={2}>
+            <AppIconWrapper>
+              <AppIcon url={app?.iconUrl} name={app?.name} />
 
-            <AppIconStatusIconWrapper>
-              {validationStatusIcon}
-            </AppIconStatusIconWrapper>
-          </AppIconWrapper>
+              <AppIconStatusIconWrapper>
+                {isStepSuccessful ? validIcon : errorIcon}
+              </AppIconStatusIconWrapper>
+            </AppIconWrapper>
 
-          <div>
-            <Typography variant="caption">
-              {isTrigger
-                ? formatMessage('flowStep.triggerType')
-                : formatMessage('flowStep.actionType')}
-            </Typography>
+            <div>
+              <Typography variant="caption">
+                <FormattedMessage
+                  id={
+                    index === 0 ? 'flowStep.triggerType' : 'flowStep.actionType'
+                  }
+                />
+              </Typography>
 
-            <Typography variant="body2">
-              {step.position}. {app?.name}
-            </Typography>
-          </div>
+              <Typography variant="body2">
+                {index + 1}. {app?.name}
+              </Typography>
+            </div>
+          </Stack>
+          <RetryButton canRetry={canRetry} executionStepId={executionStep.id} />
         </Stack>
       </Header>
 

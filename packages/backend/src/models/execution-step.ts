@@ -12,6 +12,8 @@ class ExecutionStep extends Base {
   dataOut!: IJSONObject
   errorDetails: IJSONObject
   status: 'success' | 'failure'
+  appKey: string
+  jobId: string
   step: Step
 
   static tableName = 'execution_steps'
@@ -27,6 +29,8 @@ class ExecutionStep extends Base {
       dataOut: { type: ['object', 'null'] },
       status: { type: 'string', enum: ['success', 'failure'] },
       errorDetails: { type: ['object', 'null'] },
+      appKey: { type: ['string', 'null'] },
+      jobId: { type: ['string', 'null'] },
     },
   }
 

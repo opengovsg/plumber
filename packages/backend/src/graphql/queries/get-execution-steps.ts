@@ -36,7 +36,6 @@ const getExecutionSteps = async (
         .andOn('execution_steps.created_at', '=', 'latest_steps.max_created_at')
     })
     .withSoftDeleted()
-    .withGraphFetched('step')
     .orderBy('created_at', 'asc')
 
   return paginate(executionSteps, params.limit, params.offset)

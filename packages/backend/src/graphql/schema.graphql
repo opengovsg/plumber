@@ -49,6 +49,7 @@ type Mutation {
   deleteStep(input: DeleteStepInput): Step
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Auth
+  retryExecutionStep(input: RetryExecutionStepInput): Boolean
 }
 
 """
@@ -175,6 +176,8 @@ type ExecutionStep {
   executionId: String
   stepId: String
   step: Step
+  appKey: String
+  jobId: String
   status: String
   dataIn: JSONObject
   dataOut: JSONObject
@@ -306,6 +309,10 @@ input RequestOtpInput {
 input VerifyOtpInput {
   email: String!
   otp: String!
+}
+
+input RetryExecutionStepInput {
+  executionStepId: String!
 }
 
 """
