@@ -7,10 +7,24 @@ pg.types.setTypeParser(20, 'text', parseInt)
 import type { Knex } from 'knex'
 import knex from 'knex'
 
-import knexConfig from '../../knexfile'
 import logger from '../helpers/logger'
 
-export const client: Knex = knex(knexConfig)
+import appConfig from './app'
+
+export const config = {
+  client: 'pg',
+  connection: {
+    host: appConfig.postgresHost,
+    port: appConfig.postgresPort,
+    user: appConfig.postgresUsername,
+    password: appConfig.postgresPassword,
+    database: appConfig.postgresDatabase,
+    ssl: appConfig.postgresEnableSsl,
+  },
+  pool: { min: 0, max: 20 },
+}
+
+export const client: Knex = knex(config)
 
 const CONNECTION_REFUSED = 'ECONNREFUSED'
 

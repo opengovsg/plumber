@@ -8,16 +8,17 @@
     "teardown": "docker-compose -f docker-compose.dev.yml down",
     "dev": "ts-node-dev --exit-child src/server.ts",
     "worker": "ts-node-dev --exit-child src/worker.ts",
+    "prebuild": "rm -rf ./dist",
     "build": "tsc && npm run copy-statics",
-    "start": "node dist/src/server.js",
-    "start:worker": "node dist/src/worker.js",
+    "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
     "lint": "eslint . --ignore-path ../../.eslintignore",
-    "db:migration:create": "knex migrate:make",
-    "db:list": "DOTENV_CONFIG_PATH=.env knex migrate:list",
-    "db:rollback": "DOTENV_CONFIG_PATH=.env knex migrate:rollback",
-    "db:migrate": "DOTENV_CONFIG_PATH=.env knex migrate:latest",
-    "copy-statics": "copyfiles src/**/*.{graphql,json,svg} dist",
-    "prebuild": "rm -rf ./dist"
+    "db": "DOTENV_CONFIG_PATH=.env knex",
+    "db:migration:create": "npm run db -- migrate:make",
+    "db:list": "npm run db -- migrate:list",
+    "db:rollback": "Dnpm run db -- migrate:rollback",
+    "db:migrate": "npm run db -- migrate:latest",
+    "copy-statics": "copyfiles -u 1 src/**/*.{graphql,json,svg} dist"
   },
   "dependencies": {
     "@bull-board/express": "^3.10.1",
@@ -54,22 +55,6 @@
     "typescript": "^4.6.3",
     "winston": "^3.7.1"
   },
-  "main": "dist/src/app",
-  "files": [
-    "dist",
-    "bin",
-    "src",
-    "server.js",
-    "server.d.ts",
-    "worker.js",
-    "worker.d.ts",
-    "logger.js",
-    "logger.d.ts",
-    "database.js",
-    "database.d.ts",
-    "database-utils.js",
-    "database-utils.d.ts"
-  ],
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
     "@types/bull": "^3.15.8",
@@ -81,7 +66,6 @@
     "@types/lodash.get": "^4.4.6",
     "@types/morgan": "^1.9.3",
     "@types/multer": "1.4.7",
-    "@types/node": "^16.10.2",
     "@types/pg": "^8.6.1",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0"

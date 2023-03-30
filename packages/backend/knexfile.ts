@@ -1,19 +1,8 @@
-import appConfig from './src/config/app'
+import { config } from './src/config/database'
 
-const knexConfig = {
-  client: 'pg',
-  connection: {
-    host: appConfig.postgresHost,
-    port: appConfig.postgresPort,
-    user: appConfig.postgresUsername,
-    password: appConfig.postgresPassword,
-    database: appConfig.postgresDatabase,
-    ssl: appConfig.postgresEnableSsl,
-  },
-  pool: { min: 0, max: 20 },
+export default {
+  ...config,
   migrations: {
     directory: __dirname + '/src/db/migrations',
   },
 }
-
-export default knexConfig

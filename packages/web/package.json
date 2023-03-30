@@ -5,13 +5,13 @@
   "description": "The open source Zapier alternative. Build workflow automation without spending time and money.",
   "dependencies": {
     "@apollo/client": "^3.6.9",
-    "@plumber/types": "file:../types",
     "@emotion/react": "11.10.5",
     "@emotion/styled": "11.10.5",
     "@hookform/resolvers": "^2.8.8",
     "@mui/icons-material": "5.11.0",
     "@mui/lab": "^5.0.0-alpha.60",
     "@mui/material": "5.11.6",
+    "@plumber/types": "file:../types",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -39,7 +39,6 @@
     "yup": "^0.32.11"
   },
   "devDependencies": {
-    "@types/node": "^18.11.18",
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",
     "@typescript-eslint/eslint-plugin": "^5.9.1",
@@ -53,11 +52,10 @@
   "scripts": {
     "dev": "react-scripts start",
     "build": "react-scripts build",
-    "build:watch": "yarn nodemon --exec react-scripts build --watch 'src/**/*.ts' --watch 'public/**/*' --ext ts,html",
+    "prebuild": "rimraf ./build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint . --ignore-path ../../.eslintignore",
-    "prepack": "REACT_APP_GRAPHQL_URL=/graphql yarn build"
+    "lint": "eslint . --ignore-path ../../.eslintignore"
   },
   "files": [
     "/build"

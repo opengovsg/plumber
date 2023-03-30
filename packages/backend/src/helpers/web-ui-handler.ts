@@ -8,9 +8,17 @@ const webUIHandler = async (app: Application) => {
     return
   }
 
-  const webAppPath = require.resolve('web')
-  const webBuildPath = join(dirname(webAppPath), 'build')
-  const indexHtml = join(dirname(webAppPath), 'build', 'index.html')
+  // points to src/server.(js/ts)
+  console.log(require.main.filename)
+
+  const webBuildPath = join(
+    dirname(require.main.filename),
+    '..',
+    '..',
+    'web',
+    'build',
+  )
+  const indexHtml = join(webBuildPath, 'index.html')
 
   app.use(express.static(webBuildPath))
   app.get('*', (_req, res) => res.sendFile(indexHtml))

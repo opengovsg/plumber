@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "declaration": true,
     "esModuleInterop": true,
     "lib": ["es2021"],
