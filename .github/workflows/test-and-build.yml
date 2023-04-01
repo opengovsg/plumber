@@ -1,4 +1,4 @@
-name: Automatisch CI
+name: Test and build
 on: [push]
 jobs:
   linter:

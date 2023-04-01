@@ -5,7 +5,6 @@ type TRedisConfig = {
   port: number
   username?: string
   password?: string
-  tls?: Record<string, unknown>
   enableReadyCheck?: boolean
   enableOfflineQueue: boolean
 }
@@ -17,10 +16,6 @@ const redisConfig: TRedisConfig = {
   password: appConfig.redisPassword,
   enableOfflineQueue: false,
   enableReadyCheck: true,
-}
-
-if (appConfig.redisTls) {
-  redisConfig.tls = {}
 }
 
 export default redisConfig

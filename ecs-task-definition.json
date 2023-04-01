@@ -1,0 +1,119 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "app-server",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "TZ",
+          "value": "Asia/Singapore"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "DD_SOURCE",
+          "value": "nodejs"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "APP_ENV",
+          "value": "<ENVIRONMENT>"
+        },
+        {
+          "name": "PORT",
+          "valueFrom": "plumber-<ENVIRONMENT>-port"
+        },
+        {
+          "name": "BASE_URL",
+          "valueFrom": "plumber-<ENVIRONMENT>-base-url"
+        },
+        {
+          "name": "WEB_APP_URL",
+          "valueFrom": "plumber-<ENVIRONMENT>-base-url"
+        },
+        {
+          "name": "WEBOOK_URL",
+          "valueFrom": "plumber-<ENVIRONMENT>-base-url"
+        },
+        {
+          "name": "POSTGRES_HOST",
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-host"
+        },
+        {
+          "name": "POSTGRES_DATABASE",
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-database"
+        },
+        {
+          "name": "POSTGRES_USERNAME",
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-username"
+        },
+        {
+          "name": "POSTGRES_PASSWORD",
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-password"
+        },
+        {
+          "name": "POSTGRES_ENABLE_SSL",
+          "value": "true"
+        },
+        {
+          "name": "SESSION_SECRET_KEY",
+          "valueFrom": "plumber-<ENVIRONMENT>-session-secret-key"
+        },
+        {
+          "name": "ENCRYPTION_KEY",
+          "valueFrom": "plumber-<ENVIRONMENT>-encryption-key"
+        },
+        {
+          "name": "REDIS_PORT",
+          "valueFrom": "plumber-<ENVIRONMENT>-redis-port"
+        },
+        {
+          "name": "REDIS_HOST",
+          "valueFrom": "plumber-<ENVIRONMENT>-redis-host"
+        },
+        {
+          "name": "REDIS_USERNAME",
+          "valueFrom": "plumber-<ENVIRONMENT>-redis-username"
+        },
+        {
+          "name": "REDIS_PASSWORD",
+          "valueFrom": "plumber-<ENVIRONMENT>-redis-password"
+        },
+        {
+          "name": "SERVE_WEB_APP_SEPARATELY",
+          "value": "false"
+        },
+        {
+          "name": "POSTMAN_API_KEY",
+          "valueFrom": "plumber-<ENVIRONMENT>-postman-api-key"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/application-server",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "family": "plumber-<ENVIRONMENT>-ecs-server",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-ecs-task-exec-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-ecs-task-role",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048"
+}

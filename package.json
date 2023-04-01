@@ -11,8 +11,9 @@
     "dev": "npm run all --kill-others npm:dev:*",
     "build:frontend": "npm run -w frontend build",
     "build:backend": "npm run -w backend build",
-    "build": "npm run all npm:build:*",
+    "build": "npm run --workspaces --if-present build",
     "start": "npm run -w backend start",
+    "start:worker": "npm run -w backend worker",
     "lint": "npm run --workspaces --if-present lint"
   },
   "workspaces": {
@@ -27,6 +28,7 @@
     "concurrently": "^7.6.0",
     "eslint": "^8.13.0",
     "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "prettier": "^2.5.1",

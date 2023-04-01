@@ -8,9 +8,6 @@ const webUIHandler = async (app: Application) => {
     return
   }
 
-  // points to src/server.(js/ts)
-  console.log(require.main.filename)
-
   const webBuildPath = join(
     dirname(require.main.filename),
     '..',

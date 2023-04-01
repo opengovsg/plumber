@@ -130,3 +130,6 @@ dump.rdb
 
 # mac stuff
 .DS_Store
+
+# vs code config
+.vscode
