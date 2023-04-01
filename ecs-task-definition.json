@@ -23,13 +23,21 @@
         {
           "name": "DD_SOURCE",
           "value": "nodejs"
-        }
-      ],
-      "secrets": [
+        },
         {
           "name": "APP_ENV",
           "value": "<ENVIRONMENT>"
         },
+        {
+          "name": "POSTGRES_ENABLE_SSL",
+          "value": "true"
+        },
+        {
+          "name": "SERVE_WEB_APP_SEPARATELY",
+          "value": "false"
+        }
+      ],
+      "secrets": [
         {
           "name": "PORT",
           "valueFrom": "plumber-<ENVIRONMENT>-port"
@@ -63,10 +71,6 @@
           "valueFrom": "plumber-<ENVIRONMENT>-rds-password"
         },
         {
-          "name": "POSTGRES_ENABLE_SSL",
-          "value": "true"
-        },
-        {
           "name": "SESSION_SECRET_KEY",
           "valueFrom": "plumber-<ENVIRONMENT>-session-secret-key"
         },
@@ -89,10 +93,6 @@
         {
           "name": "REDIS_PASSWORD",
           "valueFrom": "plumber-<ENVIRONMENT>-redis-password"
-        },
-        {
-          "name": "SERVE_WEB_APP_SEPARATELY",
-          "value": "false"
         },
         {
           "name": "POSTMAN_API_KEY",
