@@ -117,14 +117,14 @@ jobs:
         id: worker-task-def
         uses: jossef/action-set-json-field@v2.1
         with:
-          file: ecs-task-definition.json
+          file: ${{ steps.server-task-def.outputs.task-definition }}
           field: containerDefinitions[0].command
           value: '["npm", "run", "start:worker"]'
 
       - name: Deploy Amazon ECS task definition to web server
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ecs-task-definition.json
+          task-definition: ${{ steps.server-task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
           service: ${{ inputs.ecs-worker-service-name }}
           wait-for-service-stability: true
