@@ -24,4 +24,4 @@ jobs:
       ecs-container-name: 'app'
       codedeploy-application: 'plumber-staging-ecs-app'
       codedeploy-deployment-group: 'plumber-staging-ecs-dg'
-      release-version: staging-${{ github.sha }}
+      release-version: ${{ github.sha }}

@@ -70,19 +70,21 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build and push image to ECR
-        id: build-image
+      - name: Construct ECR Image URI
+        id: ecr-image-uri
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-          APP_URL: ${{ inputs.app-url }}
-          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build and push image to ECR
+        id: build-image
+        env:
           DOCKER_BUILDKIT: 1
         run: |
-          docker build . -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          docker build . -t ${{ steps.ecr-image-uri.outputs.image }}
+          docker push ${{ steps.ecr-image-uri.outputs.image }}
 
       - name: Replace AWS_ACCOUNT_ID in task definition file
         id: replace-aws-account-id
@@ -98,7 +100,7 @@ jobs:
         with:
           task-definition: ecs-task-definition.json
           container-name: ${{ inputs.ecs-container-name }}
-          image: ${{ steps.build-image.outputs.image }}
+          image: ${{ steps.ecr-image-uri.outputs.image }}
 
       - name: Deploy Amazon ECS task definition to web server
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
