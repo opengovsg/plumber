@@ -80,7 +80,7 @@ jobs:
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
           DOCKER_BUILDKIT: 1
         run: |
-          docker build --build-arg -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build . -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
