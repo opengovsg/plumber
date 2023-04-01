@@ -51,7 +51,7 @@
           "valueFrom": "plumber-<ENVIRONMENT>-base-url"
         },
         {
-          "name": "WEBOOK_URL",
+          "name": "WEBHOOK_URL",
           "valueFrom": "plumber-<ENVIRONMENT>-base-url"
         },
         {
