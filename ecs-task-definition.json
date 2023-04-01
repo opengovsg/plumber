@@ -1,7 +1,7 @@
 {
   "containerDefinitions": [
     {
-      "name": "app-server",
+      "name": "app",
       "cpu": 0,
       "portMappings": [
         {
