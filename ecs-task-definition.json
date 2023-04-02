@@ -110,7 +110,7 @@
       }
     }
   ],
-  "family": "plumber-<ENVIRONMENT>-ecs-server",
+  "family": "plumber-<ENVIRONMENT>-ecs-<SERVICE>",
   "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-ecs-task-exec-role",
   "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-ecs-task-role",
   "networkMode": "awsvpc",
