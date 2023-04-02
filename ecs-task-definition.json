@@ -3,6 +3,7 @@
     {
       "name": "app",
       "cpu": 0,
+      "command": ["npm", "run", "<START_COMMAND>"],
       "portMappings": [
         {
           "containerPort": 8080,

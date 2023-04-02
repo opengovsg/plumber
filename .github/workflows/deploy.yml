@@ -52,9 +52,13 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Deploy to AWS
+  build-ecr:
+    name: Build and push image to ECR
     runs-on: ubuntu-latest
+    outputs:
+      image:
+        description: ECR Image
+        value: ${{ steps.ecr-image-uri.outputs.image }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
@@ -86,13 +90,44 @@ jobs:
           docker build . -t ${{ steps.ecr-image-uri.outputs.image }}
           docker push ${{ steps.ecr-image-uri.outputs.image }}
 
-      - name: Replace AWS_ACCOUNT_ID in task definition file
-        id: replace-aws-account-id
+  deploy:
+    strategy:
+      matrix:
+        service:
+          - server
+          - worker
+    runs-on: ubuntu-latest
+    needs: build-ecr
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.cicd-role }}
+          role-session-name: github-action-application-deploy
+          aws-region: ap-southeast-1
+
+      - name: Echo ECR Image
+        run: echo ${{ needs.build-ecr.outputs.image }}
+
+      - name: Replace variables in task definition file
         run: |
           sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' ecs-task-definition.json
           sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' ecs-task-definition.json
           sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' appspec.json
           sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' appspec.json
+
+      - name: Replace start command in task definition file (server)
+        if: matrix.service == 'server'
+        run: |
+          sed -i 's/<START_COMMAND>/start/g' ecs-task-definition.json
+
+      - name: Replace start command in task definition file (worker)
+        if: matrix.service == 'worker'
+        run: |
+          sed -i 's/<START_COMMAND>/start:worker/g' ecs-task-definition.json
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: server-task-def
@@ -100,10 +135,11 @@ jobs:
         with:
           task-definition: ecs-task-definition.json
           container-name: ${{ inputs.ecs-container-name }}
-          image: ${{ steps.ecr-image-uri.outputs.image }}
+          image: ${{ needs.build-ecr.outputs.image }}
 
-      - name: Deploy Amazon ECS task definition to web server
+      - name: Deploy Amazon ECS task definition to server
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        if: matrix.service == 'server'
         with:
           task-definition: ${{ steps.server-task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
@@ -113,16 +149,9 @@ jobs:
           codedeploy-application: ${{ inputs.codedeploy-application }}
           codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}
 
-      - name: Configure start command for worker on ecs task definition
-        id: worker-task-def
-        uses: jossef/action-set-json-field@v2.1
-        with:
-          file: ${{ steps.server-task-def.outputs.task-definition }}
-          field: containerDefinitions[0].command
-          value: '["npm", "run", "start:worker"]'
-
-      - name: Deploy Amazon ECS task definition to web server
+      - name: Deploy Amazon ECS task definition to worker
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        if: matrix.service == 'worker'
         with:
           task-definition: ${{ steps.server-task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
