@@ -34,6 +34,10 @@
           "value": "true"
         },
         {
+          "name": "REDIS_TLS",
+          "value": "true"
+        },
+        {
           "name": "SERVE_WEB_APP_SEPARATELY",
           "value": "false"
         }
@@ -103,7 +107,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/application-server",
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/application-<SERVICE>",
           "awslogs-region": "ap-southeast-1",
           "awslogs-stream-prefix": "ecs"
         }

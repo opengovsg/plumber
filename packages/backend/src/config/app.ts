@@ -22,6 +22,7 @@ type AppConfig = {
   redisPort: number
   redisUsername: string
   redisPassword: string
+  redisTls: boolean
   enableBullMQDashboard: boolean
   bullMQDashboardUsername: string
   bullMQDashboardPassword: string
@@ -58,6 +59,7 @@ const appConfig: AppConfig = {
   redisPort: parseInt(process.env.REDIS_PORT || '6379'),
   redisUsername: process.env.REDIS_USERNAME,
   redisPassword: process.env.REDIS_PASSWORD,
+  redisTls: process.env.REDIS_TLS === 'true',
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
   bullMQDashboardUsername: process.env.BULLMQ_DASHBOARD_USERNAME,
   bullMQDashboardPassword: process.env.BULLMQ_DASHBOARD_PASSWORD,
