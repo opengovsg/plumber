@@ -39,7 +39,10 @@ export const worker = new Worker(
 
     await actionQueue.add(jobName, jobPayload, DEFAULT_JOB_OPTIONS)
   },
-  { connection: redisConfig },
+  {
+    prefix: '{bullmq}',
+    connection: redisConfig,
+  },
 )
 
 worker.on('completed', (job) => {

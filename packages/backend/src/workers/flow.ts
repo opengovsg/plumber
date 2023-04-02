@@ -51,7 +51,10 @@ export const worker = new Worker(
       await triggerQueue.add(jobName, jobPayload, jobOptions)
     }
   },
-  { connection: redisConfig },
+  {
+    prefix: '{bullmq}',
+    connection: redisConfig,
+  },
 )
 
 worker.on('completed', (job) => {
