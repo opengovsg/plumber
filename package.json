@@ -13,7 +13,7 @@
     "build:backend": "npm run -w backend build",
     "build": "npm run --workspaces --if-present build",
     "start": "npm run -w backend start",
-    "start:worker": "npm run -w backend worker",
+    "start:worker": "npm run -w backend start:worker",
     "lint": "npm run --workspaces --if-present lint"
   },
   "workspaces": {
