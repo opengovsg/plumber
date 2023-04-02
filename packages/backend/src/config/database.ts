@@ -19,8 +19,12 @@ export const config = {
     user: appConfig.postgresUsername,
     password: appConfig.postgresPassword,
     database: appConfig.postgresDatabase,
-    ssl: appConfig.postgresEnableSsl,
-  },
+    ssl: appConfig.postgresEnableSsl
+      ? {
+          rejectUnauthorized: false,
+        }
+      : false,
+  } as pg.ClientConfig,
   pool: { min: 0, max: 20 },
 }
 
