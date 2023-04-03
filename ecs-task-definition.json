@@ -38,6 +38,10 @@
           "value": "true"
         },
         {
+          "name": "REDIS_CLUSTER_MODE",
+          "value": "true"
+        },
+        {
           "name": "SERVE_WEB_APP_SEPARATELY",
           "value": "false"
         }

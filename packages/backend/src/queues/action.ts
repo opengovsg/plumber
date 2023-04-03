@@ -7,7 +7,7 @@ import logger from '../helpers/logger'
 const CONNECTION_REFUSED = 'ECONNREFUSED'
 
 const redisConnection = {
-  prefix: '{bullmq}',
+  prefix: '{actionQ}',
   connection: redisConfig,
 }
 

@@ -1,10 +1,8 @@
-import Redis from 'ioredis'
-
 import redisConfig from '../config/redis'
 
 import logger from './logger'
 
-const redisClient = new Redis(redisConfig)
+const redisClient = redisConfig
 
 redisClient.on('ready', () => {
   logger.info(`Workers are ready!`)

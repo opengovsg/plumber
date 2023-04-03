@@ -23,6 +23,7 @@ type AppConfig = {
   redisUsername: string
   redisPassword: string
   redisTls: boolean
+  redisClusterMode: boolean
   enableBullMQDashboard: boolean
   bullMQDashboardUsername: string
   bullMQDashboardPassword: string
@@ -60,6 +61,7 @@ const appConfig: AppConfig = {
   redisUsername: process.env.REDIS_USERNAME,
   redisPassword: process.env.REDIS_PASSWORD,
   redisTls: process.env.REDIS_TLS === 'true',
+  redisClusterMode: process.env.REDIS_CLUSTER_MODE === 'true',
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
   bullMQDashboardUsername: process.env.BULLMQ_DASHBOARD_USERNAME,
   bullMQDashboardPassword: process.env.BULLMQ_DASHBOARD_PASSWORD,

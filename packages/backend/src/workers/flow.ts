@@ -52,7 +52,7 @@ export const worker = new Worker(
     }
   },
   {
-    prefix: '{bullmq}',
+    prefix: '{flowQ}',
     connection: redisConfig,
   },
 )

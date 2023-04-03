@@ -40,7 +40,7 @@ export const worker = new Worker(
     await actionQueue.add(jobName, jobPayload, DEFAULT_JOB_OPTIONS)
   },
   {
-    prefix: '{bullmq}',
+    prefix: '{triggerQ}',
     connection: redisConfig,
   },
 )
