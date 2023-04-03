@@ -6,6 +6,4 @@ const redisClient = redisConfig
 
 redisClient.on('ready', () => {
   logger.info(`Workers are ready!`)
-
-  redisClient.disconnect()
 })
