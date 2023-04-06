@@ -1,14 +1,14 @@
 import { Queue } from 'bullmq'
 import process from 'process'
 
-import redisConfig from '../config/redis'
+import { createRedisClient } from '../config/redis'
 import logger from '../helpers/logger'
 
 const CONNECTION_REFUSED = 'ECONNREFUSED'
 
 const redisConnection = {
   prefix: '{actionQ}',
-  connection: redisConfig,
+  connection: createRedisClient(),
 }
 
 const actionQueue = new Queue('action', redisConnection)

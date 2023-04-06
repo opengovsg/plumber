@@ -1,6 +1,6 @@
 import { Worker } from 'bullmq'
 
-import redisConfig from '../config/redis'
+import { createRedisClient } from '../config/redis'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
@@ -53,7 +53,7 @@ export const worker = new Worker(
   },
   {
     prefix: '{flowQ}',
-    connection: redisConfig,
+    connection: createRedisClient(),
   },
 )
 

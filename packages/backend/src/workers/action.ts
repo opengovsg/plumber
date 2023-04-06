@@ -1,6 +1,6 @@
 import { Worker } from 'bullmq'
 
-import redisConfig from '../config/redis'
+import { createRedisClient } from '../config/redis'
 import { DEFAULT_JOB_OPTIONS } from '../helpers/default-job-configuration'
 import delayAsMilliseconds from '../helpers/delay-as-milliseconds'
 import logger from '../helpers/logger'
@@ -49,7 +49,7 @@ export const worker = new Worker(
   },
   {
     prefix: '{actionQ}',
-    connection: redisConfig,
+    connection: createRedisClient(),
   },
 )
 

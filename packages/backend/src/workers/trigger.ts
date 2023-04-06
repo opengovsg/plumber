@@ -2,7 +2,7 @@ import { IJSONObject, ITriggerItem } from '@plumber/types'
 
 import { Worker } from 'bullmq'
 
-import redisConfig from '../config/redis'
+import { createRedisClient } from '../config/redis'
 import { DEFAULT_JOB_OPTIONS } from '../helpers/default-job-configuration'
 import logger from '../helpers/logger'
 import Step from '../models/step'
@@ -41,7 +41,7 @@ export const worker = new Worker(
   },
   {
     prefix: '{triggerQ}',
-    connection: redisConfig,
+    connection: createRedisClient(),
   },
 )
 
