@@ -137,7 +137,24 @@ export interface IFieldText {
   dependsOn?: string[]
 }
 
-export type IField = IFieldDropdown | IFieldText
+export interface IFieldMultiline {
+  key: string
+  label: string
+  type: 'multiline'
+  required?: boolean
+  readOnly?: boolean
+  value?: string
+  placeholder?: string | null
+  description?: string
+  docUrl?: string
+  clickToCopy?: boolean
+  variables?: boolean
+  dependsOn?: string[]
+}
+
+
+
+export type IField = IFieldDropdown | IFieldText | IFieldMultiline
 
 export interface IAuthenticationStepField {
   name: string

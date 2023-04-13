@@ -1,3 +1,3 @@
-import makeGetRequest from './get-request'
+import makeRequest from './make-request'
 
-export default [makeGetRequest]
+export default [makeRequest]

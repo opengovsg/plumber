@@ -76,7 +76,7 @@ export default function InputCreator(
     )
   }
 
-  if (type === 'string') {
+  if (type === 'string' || type === 'multiline') {
     if (variables) {
       return (
         <PowerInput
@@ -101,6 +101,7 @@ export default function InputCreator(
         size="small"
         label={label}
         fullWidth
+        multiline={type === 'multiline'}
         helperText={description}
         clickToCopy={clickToCopy}
       />

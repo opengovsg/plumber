@@ -11,7 +11,7 @@ const levels = {
 }
 
 const level = () => {
-  return appConfig.appEnv === 'development' ? 'debug' : 'info'
+  return appConfig.appEnv === 'development' ? 'debug' : 'http'
 }
 
 const colors = {

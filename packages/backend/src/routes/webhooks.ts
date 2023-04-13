@@ -1,14 +1,22 @@
 import { IRequest } from '@plumber/types'
 
-import express, { Router } from 'express'
+import express, {
+  NextFunction,
+  RequestHandler,
+  Response,
+  Router,
+} from 'express'
 import multer from 'multer'
 
 import appConfig from '../config/app'
 import webhookHandler from '../controllers/webhooks/handler'
+import logger from '../helpers/logger'
+import morgan from '../helpers/morgan'
 
 const router = Router()
 const upload = multer()
 
+router.use(morgan)
 router.use(upload.none())
 
 router.use(
@@ -21,9 +29,25 @@ router.use(
   }),
 )
 
-router.get('/:flowId', webhookHandler)
-router.put('/:flowId', webhookHandler)
-router.patch('/:flowId', webhookHandler)
-router.post('/:flowId', webhookHandler)
+const exposeError =
+  (handler: RequestHandler) =>
+  async (req: IRequest, res: Response, next: NextFunction) => {
+    try {
+      logger.http({
+        webhookUrl: req.url,
+        body: req.body,
+        headers: req.headers,
+      })
+      await handler(req, res, next)
+    } catch (err) {
+      logger.error(err)
+      next(err)
+    }
+  }
+
+router.get('/:flowId', exposeError(webhookHandler))
+router.put('/:flowId', exposeError(webhookHandler))
+router.patch('/:flowId', exposeError(webhookHandler))
+router.post('/:flowId', exposeError(webhookHandler))
 
 export default router
