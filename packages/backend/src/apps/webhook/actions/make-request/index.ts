@@ -3,8 +3,8 @@ import defineAction from '../../../../helpers/define-action'
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
 export default defineAction({
-  name: 'Custom Request',
-  key: 'customRequest',
+  name: 'HTTP Request',
+  key: 'httpRequest',
   description: 'Makes a custom HTTP request by providing raw details.',
   arguments: [
     {

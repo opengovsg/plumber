@@ -7,6 +7,7 @@ type AppConfig = {
   webAppUrl: string
   webhookUrl: string
   appEnv: string
+  isDev: boolean
   postgresDatabase: string
   postgresPort: number
   postgresHost: string
@@ -46,6 +47,7 @@ const appEnv = process.env.APP_ENV || 'development'
 const appConfig: AppConfig = {
   port,
   appEnv: appEnv,
+  isDev: appEnv === 'development',
   version: process.env.npm_package_version,
   postgresDatabase: process.env.POSTGRES_DATABASE || 'plumber_dev',
   postgresPort: parseInt(process.env.POSTGRES_PORT || '5432'),

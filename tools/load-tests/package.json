@@ -1,0 +1,14 @@
+{
+  "name": "@plumber/load-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "k6 run index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/k6": "^0.43.2"
+  }
+}

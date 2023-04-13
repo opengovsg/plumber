@@ -4,8 +4,13 @@ import morgan, { StreamOptions } from 'morgan'
 import logger from './logger'
 
 const stream: StreamOptions = {
-  write: (message) =>
-    logger.http(message.substring(0, message.lastIndexOf('\n'))),
+  write: (message) => {
+    try {
+      logger.http(JSON.parse(message))
+    } catch {
+      logger.http(message)
+    }
+  },
 }
 
 const registerGraphQLToken = () => {
@@ -18,32 +23,31 @@ const registerGraphQLToken = () => {
   morgan.token('graphql-query', (req: Request) => {
     if (req.body.query) {
       return req.body.query
+        .replace(/\s+/g, ' ')
+        .replace(/\n/g, '')
+        .replace(/"/g, "'")
     }
   })
   morgan.token('graphql-variables', (req: Request) => {
     if (req.body.variables) {
-      return JSON.stringify(req.body.variables)
+      return JSON.stringify(req.body.variables).replace(/"/g, "'")
     }
   })
 }
 
 registerGraphQLToken()
 
-const morganJsonFormat = JSON.stringify(
-  {
-    method: ':method',
-    url: ':url',
-    status: ':status',
-    'content-length': ':res[content-length]',
-    'response-time': ':response-time',
-    'ip-address': ':remote-addr',
-    'cf-connecting-ip': ':cf-connecting-ip',
-    'graphql-query': ':graphql-query',
-    'graphql-variables': ':graphql-variables',
-  },
-  null,
-  2,
-)
+const morganJsonFormat = JSON.stringify({
+  method: ':method',
+  url: ':url',
+  status: ':status',
+  'content-length': ':res[content-length]',
+  'response-time': ':response-time',
+  'ip-address': ':remote-addr',
+  'cf-connecting-ip': ':cf-connecting-ip',
+  'graphql-query': ':graphql-query',
+  'graphql-variables': ':graphql-variables',
+})
 
 const morganMiddleware = morgan(morganJsonFormat, { stream })
 
