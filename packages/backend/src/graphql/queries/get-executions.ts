@@ -33,8 +33,8 @@ const getExecutions = async (
         )
         .withSoftDeleted()
         .orderBy('created_at', 'desc')
-        .limit(1)
-        .offset(0)
+        .limit(params.limit)
+        .offset(params.offset)
     })
     .with('user_execution_steps', (builder) => {
       builder
