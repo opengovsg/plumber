@@ -8,6 +8,7 @@ import createError from 'http-errors'
 
 import appConfig from './config/app'
 import corsOptions from './config/cors-options'
+import addCspHeaders from './helpers/add-csp-headers'
 import appAssetsHandler from './helpers/app-assets-handler'
 import {
   createBullBoardHandler,
@@ -23,10 +24,13 @@ createBullBoardHandler(serverAdapter)
 
 const app = express()
 
+addCspHeaders(app)
+
 injectBullBoardHandler(app, serverAdapter)
 
 appAssetsHandler(app)
 
+app.disable('x-powered-by')
 app.use(morgan)
 app.use(
   express.json({
