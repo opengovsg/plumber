@@ -50,6 +50,7 @@ export const worker = new Worker(
   {
     prefix: '{actionQ}',
     connection: createRedisClient(),
+    concurrency: 3,
   },
 )
 
