@@ -30,6 +30,7 @@ type AppConfig = {
   bullMQDashboardPassword: string
   requestBodySizeLimit: string
   postmanApiKey: string
+  isWorker: boolean
 }
 
 const port = process.env.PORT || '3000'
@@ -72,6 +73,7 @@ const appConfig: AppConfig = {
   webhookUrl,
   requestBodySizeLimit: '1mb',
   postmanApiKey: process.env.POSTMAN_API_KEY,
+  isWorker: /worker\.(ts|js)$/.test(require.main.filename),
 }
 
 if (!appConfig.encryptionKey) {
