@@ -1,3 +1,4 @@
+import './helpers/tracer'
 import './config/orm'
 import './helpers/check-worker-readiness'
 import './workers/flow'

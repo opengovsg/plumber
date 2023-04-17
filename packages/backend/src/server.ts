@@ -1,3 +1,5 @@
+import './helpers/tracer'
+
 import type { Server } from 'http'
 
 import appConfig from './config/app'

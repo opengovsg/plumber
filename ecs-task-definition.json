@@ -116,6 +116,64 @@
           "awslogs-stream-prefix": "ecs"
         }
       }
+    },
+    {
+      "name": "dd-agent",
+      "image": "public.ecr.aws/datadog/agent:latest",
+      "portMappings": [
+        {
+          "containerPort": 8126,
+          "hostPort": 8126,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "TZ",
+          "value": "Asia/Singapore"
+        },
+        {
+          "name": "DD_APM_NON_LOCAL_TRAFFIC",
+          "value": "true"
+        },
+        {
+          "name": "ECS_FARGATE",
+          "value": "true"
+        },
+        {
+          "name": "DD_APM_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "DD_SITE",
+          "value": "datadoghq.com"
+        },
+        {
+          "name": "DD_SERVICE",
+          "value": "plumber-<ENVIRONMENT>-ecs-<SERVICE>"
+        },
+        {
+          "name": "DD_TAGS",
+          "value": "env:<ENVIRONMENT> service:plumber team:plumber"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "secrets": [
+        {
+          "name": "DD_API_KEY",
+          "valueFrom": "plumber-dd-api-key"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/dd-agent-<SERVICE>",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
     }
   ],
   "family": "plumber-<ENVIRONMENT>-ecs-<SERVICE>",
