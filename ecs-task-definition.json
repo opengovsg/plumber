@@ -169,7 +169,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/dd-agent-<SERVICE>",
+          "awslogs-group": "plumber-<ENVIRONMENT>/dd-agent/<SERVICE>",
           "awslogs-region": "ap-southeast-1",
           "awslogs-stream-prefix": "ecs"
         }
