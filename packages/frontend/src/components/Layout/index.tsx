@@ -7,6 +7,7 @@ import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import AppBar from 'components/AppBar'
 import Drawer from 'components/Drawer'
+import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 
 type PublicLayoutProps = {
@@ -48,6 +49,7 @@ export default function PublicLayout({
 
   return (
     <>
+      <SiteWideBanner />
       <AppBar
         drawerOpen={isDrawerOpen}
         onDrawerOpen={openDrawer}
