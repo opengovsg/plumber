@@ -65,7 +65,7 @@ const processOpenWithPopup = (
     }, 1000)
 
     const messageHandler = async (event: MessageEvent) => {
-      if (event.data.source !== 'automatisch') {
+      if (event.data.source !== 'plumber') {
         return
       }
 

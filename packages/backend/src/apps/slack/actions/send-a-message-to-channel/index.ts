@@ -58,9 +58,9 @@ export default defineAction({
       key: 'botName',
       type: 'string' as const,
       required: true,
-      value: 'Automatisch',
+      value: 'Plumber',
       description:
-        'Specify the bot name which appears as a bold username above the message inside Slack. Defaults to Automatisch.',
+        'Specify the bot name which appears as a bold username above the message inside Slack. Defaults to Plumber.',
       variables: true,
     },
     {

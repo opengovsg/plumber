@@ -43,7 +43,7 @@ export default function AddAppConnection(
   React.useEffect(() => {
     if (window.opener) {
       window.opener.postMessage({
-        source: 'automatisch',
+        source: 'plumber',
         payload: window.location.search,
       })
       window.close()
