@@ -7,6 +7,7 @@ import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import AppBar from 'components/AppBar'
 import Drawer from 'components/Drawer'
+import { Masthead } from 'components/Masthead'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 
@@ -50,12 +51,13 @@ export default function PublicLayout({
   return (
     <>
       <SiteWideBanner />
+      <Masthead />
       <AppBar
         drawerOpen={isDrawerOpen}
         onDrawerOpen={openDrawer}
         onDrawerClose={closeDrawer}
       />
-      <Box sx={{ display: 'flex' }}>
+      <Box sx={{ display: 'flex', flex: 1 }}>
         <Drawer
           links={drawerLinks}
           open={isDrawerOpen}

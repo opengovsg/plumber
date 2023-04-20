@@ -21,7 +21,6 @@ export default function Login(): React.ReactElement {
         flex: 1,
         alignItems: 'center',
         flexDirection: matchSmallScreens ? 'column' : 'row',
-        minHeight: '100vh',
       }}
     >
       <Box

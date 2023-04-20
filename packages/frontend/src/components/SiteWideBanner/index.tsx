@@ -4,9 +4,10 @@ import { Box, IconButton } from '@mui/material'
 import { getItemForSession, setItemForSession } from 'helpers/storage'
 import useFormatMessage from 'hooks/useFormatMessage'
 
-const SiteWideBanner = (): JSX.Element => {
+const SiteWideBanner = (): JSX.Element | null => {
   const formatMessage = useFormatMessage()
-  const message = formatMessage('bannerText')
+  // seems like this cant return empty string, so using _ as hacky empty string alternative
+  const message = formatMessage({ id: 'bannerText', defaultMessage: '_' })
   const [showBanner, setShowBanner] = useState(false)
   useEffect(() => {
     const bannerTextStored = getItemForSession('hide-banner')
@@ -18,6 +19,9 @@ const SiteWideBanner = (): JSX.Element => {
     setItemForSession('hide-banner', message)
   }, [])
 
+  if (message === '_') {
+    return null
+  }
   return (
     <Box
       sx={{

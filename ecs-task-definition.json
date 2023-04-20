@@ -56,6 +56,10 @@
           "valueFrom": "plumber-<ENVIRONMENT>-base-url"
         },
         {
+          "name": "BANNER_TEXT",
+          "valueFrom": "plumber-<ENVIRONMENT>-banner-text"
+        },
+        {
           "name": "WEB_APP_URL",
           "valueFrom": "plumber-<ENVIRONMENT>-base-url"
         },
