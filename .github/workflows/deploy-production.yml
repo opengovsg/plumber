@@ -1,0 +1,27 @@
+name: Deploy to prod
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    name: Deploy
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: 'prod'
+      aws-account-id: '964715690079'
+      cicd-role: 'arn:aws:iam::964715690079:role/plumber-prod-github-oidc-role'
+      ecr-repository: 'plumber-prod'
+      ecs-cluster-name: 'plumber-prod-ecs'
+      ecs-service-name: 'plumber-prod-ecs-service'
+      ecs-worker-service-name: 'plumber-prod-ecs-worker-service'
+      ecs-container-name: 'app'
+      codedeploy-application: 'plumber-prod-ecs-app'
+      codedeploy-deployment-group: 'plumber-prod-ecs-dg'
+      release-version: ${{ github.sha }}
