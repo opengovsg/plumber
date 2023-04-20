@@ -20,7 +20,7 @@ export async function sendEmail({
       subject,
       body,
       recipient,
-      from: 'Zap via Postman<donotreply@mail.postman.gov.sg>',
+      from: 'Plumber via Postman<donotreply@mail.postman.gov.sg>',
     },
     {
       headers: {
