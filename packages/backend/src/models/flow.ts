@@ -56,6 +56,7 @@ class Flow extends Base {
   async lastInternalId() {
     const lastExecution = await this.$relatedQuery('executions')
       .orderBy('created_at', 'desc')
+      .limit(1)
       .first()
 
     return lastExecution ? (lastExecution as Execution).internalId : null

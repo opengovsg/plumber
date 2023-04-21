@@ -11,12 +11,10 @@ import multer from 'multer'
 import appConfig from '../config/app'
 import webhookHandler from '../controllers/webhooks/handler'
 import logger from '../helpers/logger'
-import morgan from '../helpers/morgan'
 
 const router = Router()
 const upload = multer()
 
-router.use(morgan)
 router.use(upload.none())
 
 router.use(
