@@ -1,4 +1,4 @@
-import { IGlobalVariable, IJSONObject } from '@plumber/types'
+import { IGlobalVariable } from '@plumber/types'
 
 const fetchMessages = async ($: IGlobalVariable) => {
   const toNumber = $.step.parameters.toNumber as string
@@ -9,16 +9,15 @@ const fetchMessages = async ($: IGlobalVariable) => {
   do {
     response = await $.http.get(requestPath)
 
-    response.data.messages.forEach((message: IJSONObject) => {
+    for (const message of response.data.messages) {
       const dataItem = {
         raw: message,
         meta: {
           internalId: message.date_sent as string,
         },
       }
-
-      $.pushTriggerItem(dataItem)
-    })
+      await $.pushTriggerItem(dataItem)
+    }
 
     requestPath = response.data.next_page_uri
   } while (requestPath)

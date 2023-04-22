@@ -50,7 +50,7 @@ const requestOtp = async (
 
   // Send otp
   await sendEmail({
-    subject: 'Your OTP for Zap',
+    subject: 'Your OTP for Plumber',
     body: `Your OTP is ${otp}. It's valid for ${
       OTP_VALIDITY_IN_MS / 1000 / 60
     } minutes.`,

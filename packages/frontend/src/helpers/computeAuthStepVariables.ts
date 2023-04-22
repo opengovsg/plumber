@@ -1,8 +1,6 @@
 import type { IAuthenticationStepField, IJSONObject } from '@plumber/types'
 
-import template from 'lodash/template'
-
-const interpolate = /{([\s\S]+?)}/g
+import get from 'lodash/get'
 
 type Variables = {
   [key: string]: any
@@ -16,7 +14,6 @@ const computeAuthStepVariables = (
   aggregatedData: IJSONObject,
 ): IJSONObject => {
   const variables: Variables = {}
-
   for (const variable of variableSchema) {
     if (variable.properties) {
       variables[variable.name] = computeAuthStepVariables(
@@ -35,9 +32,8 @@ const computeAuthStepVariables = (
         continue
       }
 
-      const computedVariable = template(variable.value, { interpolate })(
-        aggregatedData,
-      )
+      const keyPath = variable.value.replace('{', '').replace('}', '').trim()
+      const computedVariable = get(aggregatedData, keyPath)
 
       variables[variable.name] = computedVariable
     }

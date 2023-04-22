@@ -232,6 +232,9 @@ const extendedTheme = createTheme({
         },
         '#root': {
           height: '100vh',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
         },
       },
     },

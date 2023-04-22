@@ -89,11 +89,8 @@ const globalVariable = async (
         raw: null,
       },
     },
-    pushTriggerItem: (triggerItem: ITriggerItem) => {
-      if (
-        isAlreadyProcessed(triggerItem.meta.internalId) &&
-        !$.execution.testRun
-      ) {
+    pushTriggerItem: async (triggerItem: ITriggerItem) => {
+      if (await isAlreadyProcessed(triggerItem.meta.internalId)) {
         // early exit as we do not want to process duplicate items in actual executions
         throw new EarlyExitError()
       }
@@ -138,10 +135,16 @@ const globalVariable = async (
     $.flow.remoteWebhookId = flow.remoteWebhookId
   }
 
-  const lastInternalIds =
-    testRun || (flow && step.isAction) ? [] : await flow?.lastInternalIds(2000)
+  // Fetch and cache last internal ids for isAlreadyProcessed
+  let lastInternalIds: string[] | undefined
 
-  const isAlreadyProcessed = (internalId: string) => {
+  const isAlreadyProcessed = async (internalId: string): Promise<boolean> => {
+    if (testRun || (flow && step.isAction)) {
+      return false
+    }
+    if (!lastInternalIds) {
+      lastInternalIds = await flow?.lastInternalIds(500)
+    }
     return lastInternalIds?.includes(internalId)
   }
 

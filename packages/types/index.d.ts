@@ -320,7 +320,7 @@ export type IGlobalVariable = {
   webhookUrl?: string
   triggerOutput?: ITriggerOutput
   actionOutput?: IActionOutput
-  pushTriggerItem?: (triggerItem: ITriggerItem) => void
+  pushTriggerItem?: (triggerItem: ITriggerItem) => Promise<void>
   setActionItem?: (actionItem: IActionItem) => void
 }
 

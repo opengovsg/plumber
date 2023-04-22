@@ -57,6 +57,6 @@ export default defineTrigger({
       },
     }
 
-    $.pushTriggerItem(dataItem)
+    await $.pushTriggerItem(dataItem)
   },
 })

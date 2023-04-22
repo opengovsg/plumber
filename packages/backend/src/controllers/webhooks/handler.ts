@@ -1,8 +1,8 @@
 import { IRequest, ITriggerItem } from '@plumber/types'
 
-import bcrypt from 'bcrypt'
 import { Response } from 'express'
 
+import { sha256Hash } from '../../helpers/crypto'
 import { DEFAULT_JOB_OPTIONS } from '../../helpers/default-job-configuration'
 import globalVariable from '../../helpers/global-variable'
 import Flow from '../../models/flow'
@@ -64,7 +64,7 @@ export default async (request: IRequest, response: Response) => {
   const triggerItem: ITriggerItem = {
     raw: payload,
     meta: {
-      internalId: await bcrypt.hash(rawInternalId, 1),
+      internalId: sha256Hash(rawInternalId),
     },
   }
 

@@ -12,15 +12,6 @@ export default defineTrigger({
   type: 'webhook',
   description: 'Triggers when the webhook receives a request.',
 
-  async run($) {
-    $.pushTriggerItem({
-      raw: $.lastExecutionStep.dataOut,
-      meta: {
-        internalId: $.lastExecutionStep.dataOut.id as string,
-      },
-    })
-  },
-
   async testRun($) {
     let row: { [key: string]: string } = {}
 
@@ -37,7 +28,7 @@ export default defineTrigger({
       }
     }
 
-    $.pushTriggerItem({
+    await $.pushTriggerItem({
       raw: row,
       meta: {
         internalId: 'test',

@@ -1,4 +1,4 @@
-const NAMESPACE = 'automatisch'
+const NAMESPACE = 'plumber'
 const makeKey = (key: string) => `${NAMESPACE}.${key}`
 
 export const setItem = (key: string, value: string) => {

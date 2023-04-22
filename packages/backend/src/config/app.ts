@@ -38,10 +38,10 @@ const port = process.env.PORT || '3000'
 // use apiUrl by default, which has less priority over the following cases
 
 let webAppUrl = new URL(process.env.WEB_APP_URL).toString()
-webAppUrl = webAppUrl.substring(0, webAppUrl.length - 1)
+webAppUrl = webAppUrl.substring(0, webAppUrl.length - 1) // remove trailing slash
 
 let webhookUrl = new URL(process.env.WEBHOOK_URL).toString()
-webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1)
+webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1) // remove trailing slash
 
 const appEnv = process.env.APP_ENV || 'development'
 
