@@ -12,7 +12,7 @@ export default defineTrigger({
 
   async testRun($: IGlobalVariable) {
     if (!isEmpty($.lastExecutionStep?.dataOut)) {
-      $.pushTriggerItem({
+      await $.pushTriggerItem({
         raw: $.lastExecutionStep.dataOut,
         meta: {
           internalId: '',
