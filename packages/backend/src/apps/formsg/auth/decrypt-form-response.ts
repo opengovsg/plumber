@@ -45,6 +45,7 @@ export async function decryptFormResponse(
     for (const formField of submission.responses) {
       const { _id, ...rest } = formField
       if (rest.fieldType === 'nric' && !!rest.answer) {
+        rest.answer = rest.answer.toUpperCase()
         if (nricFilter === NricFilter.Remove) {
           continue
         }
