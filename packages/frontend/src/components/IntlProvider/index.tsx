@@ -11,6 +11,7 @@ const IntlProvider = ({ children }: IntlProviderProps): React.ReactElement => {
       locale={navigator.language}
       defaultLocale="en"
       messages={englishMessages}
+      onError={() => null}
     >
       {children}
     </BaseIntlProvider>

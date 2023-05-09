@@ -2,7 +2,9 @@ import { IGlobalVariable } from '@plumber/types'
 
 import formsgSdk from '@opengovsg/formsg-sdk'
 
+import { sha256Hash } from '../../../helpers/crypto'
 import logger from '../../../helpers/logger'
+import { NricFilter } from '../triggers/new-submission/index'
 
 const formsg = formsgSdk({
   mode: 'production',
@@ -39,8 +41,21 @@ export async function decryptFormResponse(
   // If the decryption failed, submission will be `null`.
   if (submission) {
     const parsedData: Record<string, any> = {}
+    const nricFilter = $.step.parameters.nricFilter as string | undefined
     for (const formField of submission.responses) {
       const { _id, ...rest } = formField
+      if (rest.fieldType === 'nric' && !!rest.answer) {
+        rest.answer = rest.answer.toUpperCase()
+        if (nricFilter === NricFilter.Remove) {
+          continue
+        }
+        if (nricFilter === NricFilter.Hash) {
+          rest.answer = sha256Hash(rest.answer + $.flow.id)
+        }
+        if (nricFilter === NricFilter.Mask) {
+          rest.answer = 'xxxxx' + rest.answer.substring(5)
+        }
+      }
       parsedData[_id] = rest
     }
 
