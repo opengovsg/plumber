@@ -4,7 +4,6 @@ import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
 import dynamicData from './dynamic-data'
-import triggers from './triggers'
 
 const WORKSPACE_BASEURL =
   'https://jcxk888grj.execute-api.ap-southeast-1.amazonaws.com'
@@ -21,6 +20,6 @@ export default defineApp({
   beforeRequest: [addAuthHeader],
   auth,
   actions,
-  triggers,
+  // disabling triggers from vault workspace
   dynamicData,
 })
