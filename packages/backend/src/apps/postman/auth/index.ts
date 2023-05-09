@@ -11,14 +11,13 @@ export default {
   fields: [
     {
       key: 'screenName',
-      label: 'Screen Name',
+      label: 'Label',
       type: 'string' as const,
       required: true,
       readOnly: false,
       value: null,
       placeholder: null,
-      description:
-        'Screen name of your connection to be used on Automatisch UI.',
+      description: 'Label for your Postman API Key.',
       clickToCopy: false,
     },
     {
