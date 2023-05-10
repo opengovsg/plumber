@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
+import ForumIcon from '@mui/icons-material/Forum'
 import LogoutIcon from '@mui/icons-material/Logout'
 import PersonIcon from '@mui/icons-material/Person'
 import {
@@ -21,6 +22,8 @@ type AccountDropdownMenuProps = {
   anchorEl: MenuProps['anchorEl']
   id: string
 }
+
+const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'
 
 function AccountDropdownMenu(
   props: AccountDropdownMenuProps,
@@ -57,11 +60,24 @@ function AccountDropdownMenu(
       open={open}
       onClose={onClose}
     >
-      <MenuItem divider>
+      <MenuItem
+        sx={{
+          pointerEvents: 'none',
+        }}
+      >
         <ListItemIcon>
           <PersonIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText>{user?.email}</ListItemText>
+      </MenuItem>
+
+      <MenuItem divider>
+        <ListItemIcon>
+          <ForumIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText onClick={() => window.open(FEEDBACK_FORM_LINK, '_blank')}>
+          Give feedback
+        </ListItemText>
       </MenuItem>
 
       <MenuItem onClick={logout} data-test="logout-item">
