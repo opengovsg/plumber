@@ -1,5 +1,6 @@
 {
   "brandText": "plumber",
+  "bannerText": "Plumber is a pilot project from OGP's HFPG 2023 hackathon",
   "searchPlaceholder": "Search",
   "accountDropdownMenu.logout": "Logout",
   "drawer.dashboard": "Dashboard",
