@@ -11,7 +11,8 @@ import actionQueue from '../../queues/action'
 import { processTrigger } from '../../services/trigger'
 
 export default async (request: IRequest, response: Response) => {
-  const span = tracer.startSpan('webhooks.handler')
+  const span = tracer.scope().active()
+  span?.setOperationName('webhooks.handler')
 
   const flow = await Flow.query()
     .findById(request.params.flowId)
@@ -78,6 +79,14 @@ export default async (request: IRequest, response: Response) => {
     testRun,
   })
 
+  span?.addTags({
+    flowId,
+    executionId,
+    stepId: triggerStep.id,
+    appKey: app.key,
+    testRun,
+  })
+
   if (testRun) {
     return response.sendStatus(200)
   }
@@ -91,16 +100,7 @@ export default async (request: IRequest, response: Response) => {
     stepId: nextStep.id,
   }
 
-  span.addTags({
-    flowId,
-    executionId,
-    stepId: triggerStep.id,
-    appKey: app.key,
-  })
-
   await actionQueue.add(jobName, jobPayload, DEFAULT_JOB_OPTIONS)
-
-  span.finish()
 
   return response.sendStatus(200)
 }

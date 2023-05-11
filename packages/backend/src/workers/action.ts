@@ -17,10 +17,7 @@ type JobData = {
 
 export const worker = new Worker(
   'action',
-  async (job) => {
-    // dd-trace custom span start
-    const span = tracer.startSpan('worker.action')
-
+  tracer.wrap('workers.action', async (job) => {
     const { stepId, flowId, executionId, proceedToNextAction, executionStep } =
       await processAction({ ...(job.data as JobData), jobId: job.id })
 
@@ -32,7 +29,8 @@ export const worker = new Worker(
     const nextStep = await step.getNextStep()
 
     // dd-trace span tagging
-    span.addTags({
+    const span = tracer.scope().active()
+    span?.addTags({
       flowId,
       executionId,
       stepId,
@@ -40,8 +38,6 @@ export const worker = new Worker(
     })
 
     if (!nextStep || !proceedToNextAction) {
-      // If no more further steps, end span here
-      span.finish()
       return
     }
 
@@ -60,10 +56,7 @@ export const worker = new Worker(
     }
 
     await actionQueue.add(jobName, jobPayload, jobOptions)
-
-    // end span
-    span.finish()
-  },
+  }),
   {
     prefix: '{actionQ}',
     connection: createRedisClient(),
@@ -72,16 +65,27 @@ export const worker = new Worker(
 )
 
 worker.on('active', (job) => {
-  logger.info(`JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has started!`)
+  logger.info(`JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has started!`, {
+    job: job.data,
+  })
 })
 
 worker.on('completed', (job) => {
-  logger.info(`JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has completed!`)
+  logger.info(
+    `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has completed!`,
+    {
+      job: job.data,
+    },
+  )
 })
 
 worker.on('failed', (job, err) => {
-  logger.info(
+  logger.error(
     `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
+    {
+      err,
+      job: job.data,
+    },
   )
 })
 
