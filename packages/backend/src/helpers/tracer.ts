@@ -8,4 +8,8 @@ tracer.init({
   logger,
 })
 
+const span = tracer.startSpan('test', {})
+span.finish()
+
+tracer.scope().active()
 export default tracer

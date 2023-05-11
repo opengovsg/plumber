@@ -5,11 +5,14 @@ import { Response } from 'express'
 import { sha256Hash } from '../../helpers/crypto'
 import { DEFAULT_JOB_OPTIONS } from '../../helpers/default-job-configuration'
 import globalVariable from '../../helpers/global-variable'
+import tracer from '../../helpers/tracer'
 import Flow from '../../models/flow'
 import actionQueue from '../../queues/action'
 import { processTrigger } from '../../services/trigger'
 
 export default async (request: IRequest, response: Response) => {
+  const span = tracer.startSpan('webhooks.handler')
+
   const flow = await Flow.query()
     .findById(request.params.flowId)
     .throwIfNotFound()
@@ -88,7 +91,16 @@ export default async (request: IRequest, response: Response) => {
     stepId: nextStep.id,
   }
 
+  span.addTags({
+    flowId,
+    executionId,
+    stepId: triggerStep.id,
+    appKey: app.key,
+  })
+
   await actionQueue.add(jobName, jobPayload, DEFAULT_JOB_OPTIONS)
+
+  span.finish()
 
   return response.sendStatus(200)
 }
