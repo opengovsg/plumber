@@ -4,6 +4,7 @@ import { createRedisClient } from '../config/redis'
 import { DEFAULT_JOB_OPTIONS } from '../helpers/default-job-configuration'
 import delayAsMilliseconds from '../helpers/delay-as-milliseconds'
 import logger from '../helpers/logger'
+import tracer from '../helpers/tracer'
 import Step from '../models/step'
 import actionQueue from '../queues/action'
 import { processAction } from '../services/action'
@@ -16,7 +17,7 @@ type JobData = {
 
 export const worker = new Worker(
   'action',
-  async (job) => {
+  tracer.wrap('workers.action', async (job) => {
     const { stepId, flowId, executionId, proceedToNextAction, executionStep } =
       await processAction({ ...(job.data as JobData), jobId: job.id })
 
@@ -26,6 +27,15 @@ export const worker = new Worker(
 
     const step = await Step.query().findById(stepId).throwIfNotFound()
     const nextStep = await step.getNextStep()
+
+    // dd-trace span tagging
+    const span = tracer.scope().active()
+    span?.addTags({
+      flowId,
+      executionId,
+      stepId,
+      appKey: step.appKey,
+    })
 
     if (!nextStep || !proceedToNextAction) {
       return
@@ -46,7 +56,7 @@ export const worker = new Worker(
     }
 
     await actionQueue.add(jobName, jobPayload, jobOptions)
-  },
+  }),
   {
     prefix: '{actionQ}',
     connection: createRedisClient(),
@@ -54,13 +64,28 @@ export const worker = new Worker(
   },
 )
 
+worker.on('active', (job) => {
+  logger.info(`JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has started!`, {
+    job: job.data,
+  })
+})
+
 worker.on('completed', (job) => {
-  logger.info(`JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has started!`)
+  logger.info(
+    `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has completed!`,
+    {
+      job: job.data,
+    },
+  )
 })
 
 worker.on('failed', (job, err) => {
-  logger.info(
+  logger.error(
     `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
+    {
+      err,
+      job: job.data,
+    },
   )
 })
 
