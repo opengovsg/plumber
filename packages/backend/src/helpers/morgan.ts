@@ -1,15 +1,20 @@
-import { Request } from 'express'
-import morgan, { StreamOptions } from 'morgan'
+import { Request, Response } from 'express'
+import morgan from 'morgan'
 
 import logger from './logger'
 
-const stream: StreamOptions = {
-  write: (message) => {
-    try {
-      logger.http(JSON.parse(message))
-    } catch {
-      logger.http(message)
-    }
+const morganOptions: morgan.Options<Request, Response> = {
+  skip: (req, _res) => {
+    return req.url === '/'
+  },
+  stream: {
+    write: (message) => {
+      try {
+        logger.http(JSON.parse(message))
+      } catch {
+        logger.http(message)
+      }
+    },
   },
 }
 
@@ -49,6 +54,6 @@ const morganJsonFormat = JSON.stringify({
   'graphql-variables': ':graphql-variables',
 })
 
-const morganMiddleware = morgan(morganJsonFormat, { stream })
+const morganMiddleware = morgan(morganJsonFormat, morganOptions)
 
 export default morganMiddleware
