@@ -48,9 +48,10 @@ export default defineTrigger({
   ],
 
   async testRun($: IGlobalVariable) {
-    if (!isEmpty($.lastExecutionStep?.dataOut)) {
+    const lastExecutionStep = await $.getLastExecutionStep()
+    if (!isEmpty(lastExecutionStep?.dataOut)) {
       await $.pushTriggerItem({
-        raw: $.lastExecutionStep.dataOut,
+        raw: lastExecutionStep?.dataOut,
         meta: {
           internalId: '',
         },

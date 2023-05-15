@@ -9,9 +9,10 @@ export default defineTrigger({
   description: 'Triggers when the webhook receives a request.',
 
   async testRun($) {
-    if (!isEmpty($.lastExecutionStep?.dataOut)) {
+    const lastExecutionStep = await $.getLastExecutionStep()
+    if (!isEmpty(lastExecutionStep?.dataOut)) {
       await $.pushTriggerItem({
-        raw: $.lastExecutionStep.dataOut,
+        raw: lastExecutionStep?.dataOut,
         meta: {
           internalId: '',
         },

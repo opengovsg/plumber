@@ -3,7 +3,6 @@ import defineApp from '../../helpers/define-app'
 import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
-import triggers from './triggers'
 
 export default defineApp({
   name: 'Twilio',
@@ -16,6 +15,6 @@ export default defineApp({
   primaryColor: 'e1000f',
   beforeRequest: [addAuthHeader],
   auth,
-  triggers,
+  // removing receive sms trigger
   actions,
 })
