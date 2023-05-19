@@ -1,5 +1,3 @@
-import isEmpty from 'lodash/isEmpty'
-
 import defineTrigger from '../../../../helpers/define-trigger'
 
 export default defineTrigger({
@@ -10,13 +8,12 @@ export default defineTrigger({
 
   async testRun($) {
     const lastExecutionStep = await $.getLastExecutionStep()
-    if (!isEmpty(lastExecutionStep?.dataOut)) {
-      await $.pushTriggerItem({
-        raw: lastExecutionStep?.dataOut,
-        meta: {
-          internalId: '',
-        },
-      })
-    }
+    // Allow for empty webhook body
+    await $.pushTriggerItem({
+      raw: lastExecutionStep?.dataOut ?? {},
+      meta: {
+        internalId: '',
+      },
+    })
   },
 })
