@@ -9,6 +9,7 @@ import Execution from 'pages/Execution'
 import Executions from 'pages/Executions'
 import Flow from 'pages/Flow'
 import Flows from 'pages/Flows'
+import Landing from 'pages/Landing'
 import Login from 'pages/Login'
 
 export default (
@@ -78,7 +79,14 @@ export default (
       }
     />
 
-    <Route path="/" element={<Navigate to={URLS.FLOWS} replace />} />
+    <Route
+      path="/"
+      element={
+        <PublicLayout>
+          <Landing />
+        </PublicLayout>
+      }
+    />
 
     <Route
       element={
