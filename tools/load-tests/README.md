@@ -6,6 +6,10 @@
 then
 `k6 run formsg.js`
 
+### To run with dashboard
+
+`/k6 run --out dashboard=open webhook.js`
+
 ### Testing incoming FormSG Webhook
 
 - Make a formsg submissions, and copy the ecrypted data and formsg signature from the logs
