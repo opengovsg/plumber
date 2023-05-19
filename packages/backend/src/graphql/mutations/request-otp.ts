@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 
+import appConfig from '../../config/app'
 import BaseError from '../../errors/base'
 import { validateAndParseEmail } from '../../helpers/email-validator'
 import { sendEmail } from '../../helpers/send-email'
@@ -48,14 +49,18 @@ const requestOtp = async (
     otpSentAt: new Date(),
   })
 
-  // Send otp
-  await sendEmail({
-    subject: 'Your OTP for Plumber',
-    body: `Your OTP is ${otp}. It's valid for ${
-      OTP_VALIDITY_IN_MS / 1000 / 60
-    } minutes.`,
-    recipient: email,
-  })
+  if (appConfig.isDev) {
+    console.log(`OTP for ${email}: ${otp}`)
+  } else {
+    // Send otp
+    await sendEmail({
+      subject: 'Your OTP for Plumber',
+      body: `Your OTP is ${otp}. It's valid for ${
+        OTP_VALIDITY_IN_MS / 1000 / 60
+      } minutes.`,
+      recipient: email,
+    })
+  }
   return true
 }
 
