@@ -8,14 +8,87 @@ then
 
 ### To run with dashboard
 
-`/k6 run --out dashboard=open webhook.js`
+`./k6 run --out dashboard=open webhook.js`
 
 ### Testing incoming FormSG Webhook
 
 - Make a formsg submissions, and copy the ecrypted data and formsg signature from the logs
 - Paste it in formsg.js and run the test
 
-**Results**
+## Results
+
+### After query optimization
+
+Running on workflow (raw webhook -> mock api request)
+
+Constant rate: 80/s
+
+Dequeuing with 4 workers
+
+RDS: db.r6g.large
+
+`./k6 run --out dashboard=open webhook.js`
+
+```
+
+          /\      |‾‾| /‾‾/   /‾‾/
+     /\  /  \     |  |/  /   /  /
+    /  \/    \    |     (   /   ‾‾\
+   /          \   |  |\  \ |  (‾)  |
+  / __________ \  |__| \__\ \_____/ .io
+
+  execution: local
+     script: webhook.js
+     output: dashboard (:5665) http://127.0.0.1:5665
+
+  scenarios: (100.00%) 1 scenario, 50 max VUs, 30m30s max duration (incl. graceful stop):
+           * contacts: 80.00 iterations/s for 30m0s (maxVUs: 2-50, gracefulStop: 30s)
+
+WARN[0001] Insufficient VUs, reached 50 active VUs and cannot initialize more  executor=constant-arrival-rate scenario=contacts
+
+     ✓ 0
+     ✓ 1
+     ✓ 2
+     ✓ 3
+     ✓ 4
+     ✓ 5
+     ✓ 6
+     ✓ 7
+     ✓ 8
+     ✓ 9
+     ✓ 10
+
+     checks.........................: 100.00% ✓ 1566257   ✗ 0
+     data_received..................: 74 MB   41 kB/s
+     data_sent......................: 14 MB   7.6 kB/s
+     dropped_iterations.............: 1614    0.896638/s
+     http_req_blocked...............: avg=29.65µs  min=0s      med=1µs     max=203.06ms p(90)=2µs      p(95)=3µs
+     http_req_connecting............: avg=13.44µs  min=0s      med=0s      max=168.47ms p(90)=0s       p(95)=0s
+     http_req_duration..............: avg=87.1ms   min=19.21ms med=40.55ms max=1.31s    p(90)=194.51ms p(95)=266.54ms
+       { expected_response:true }...: avg=87.1ms   min=26.97ms med=40.55ms max=1.31s    p(90)=194.51ms p(95)=266.54ms
+     http_req_failed................: 0.00%   ✓ 7         ✗ 142380
+     http_req_receiving.............: avg=326.08µs min=9µs     med=120µs   max=159.17ms p(90)=393µs    p(95)=988µs
+     http_req_sending...............: avg=469.54µs min=22µs    med=324µs   max=71.91ms  p(90)=711µs    p(95)=1.11ms
+     http_req_tls_handshaking.......: avg=13.14µs  min=0s      med=0s      max=181.64ms p(90)=0s       p(95)=0s
+     http_req_waiting...............: avg=86.31ms  min=9.61ms  med=39.82ms max=1.31s    p(90)=193.62ms p(95)=265.3ms
+     http_reqs......................: 142387  79.101323/s
+     iteration_duration.............: avg=88.02ms  min=19.65ms med=41.54ms max=1.31s    p(90)=195.64ms p(95)=267.71ms
+     iterations.....................: 142387  79.101323/s
+     vus............................: 4       min=2       max=50
+     vus_max........................: 50      min=37      max=50
+
+
+running (30m00.1s), 00/50 VUs, 142387 complete and 0 interrupted iterations
+contacts ✓ [======================================] 00/50 VUs  30m0s  80.00 iters
+```
+
+RDS CPU usage:
+hovers at around 46% consistently
+
+![rds](./rds.png)
+
+<details>
+<summary><h2 style="display: inline">Old Results</h2></span></summary>
 
 - On average, with 30 vus running for 30s
 - 5 running ecs task (1vCPU) can handle about 50+ req/s with CPU under 50%, and RDS CPU maxing out
@@ -109,3 +182,5 @@ then
 
 running (0m30.2s), 00/50 VUs, 6977 complete and 0 interrupted iterations
 ```
+
+</details>
