@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import {
   Center,
   Container,
@@ -10,8 +11,10 @@ import { Button } from '@opengovsg/design-system-react'
 import leftLandingImg from 'assets/landing/left-landing.svg'
 import rightLandingImg from 'assets/landing/right-landing.svg'
 import mainLogo from 'assets/logo.svg'
+import * as URLS from 'config/urls'
 
 const HeaderBar = () => {
+  const navigate = useNavigate()
   return (
     <Container>
       <HStack justify="space-between">
@@ -27,7 +30,7 @@ const HeaderBar = () => {
           <Button variant="link" colorScheme="secondary">
             Guide
           </Button>
-          <Button>Login</Button>
+          <Button onClick={() => navigate(URLS.LOGIN)}>Login</Button>
         </HStack>
       </HStack>
     </Container>

@@ -39,7 +39,7 @@ function AccountDropdownMenu(
 
     onClose()
 
-    navigate(URLS.LOGIN)
+    navigate(URLS.ROOT)
   }
 
   return (
