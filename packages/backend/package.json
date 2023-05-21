@@ -13,7 +13,7 @@
     "db": "DOTENV_CONFIG_PATH=.env knex",
     "db:migration:create": "npm run db -- migrate:make",
     "db:list": "npm run db -- migrate:list",
-    "db:rollback": "Dnpm run db -- migrate:rollback",
+    "db:rollback": "npm run db -- migrate:rollback",
     "db:migrate": "npm run db -- migrate:latest",
     "copy-statics": "copyfiles -u 1 src/**/*.{graphql,json,svg} dist"
   },

@@ -297,8 +297,6 @@ export type IGlobalVariable = {
   request?: IRequest
   flow?: {
     id: string
-    lastInternalId: string
-    isAlreadyProcessed?: (internalId: string) => boolean
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
   }
@@ -312,11 +310,11 @@ export type IGlobalVariable = {
     appKey: string
     parameters: IJSONObject
   }
+  getLastExecutionStep?: () => Promise<IExecutionStep | undefined>
   execution?: {
     id: string
     testRun: boolean
   }
-  lastExecutionStep?: IExecutionStep
   webhookUrl?: string
   triggerOutput?: ITriggerOutput
   actionOutput?: IActionOutput

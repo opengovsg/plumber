@@ -1,7 +1,6 @@
 {
   "name": "plumber",
   "license": "AGPL-3.0",
-  "private": true,
   "scripts": {
     "all": "concurrently -c green,blue,bgBlue",
     "setup": "npm run -w backend setup",
