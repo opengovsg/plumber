@@ -1,4 +1,5 @@
-import { Route, Routes } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { createRoutesFromElements, Route } from 'react-router-dom'
 import Layout from 'components/Layout'
 import PublicLayout from 'components/PublicLayout'
 import * as URLS from 'config/urls'
@@ -9,11 +10,12 @@ import Execution from 'pages/Execution'
 import Executions from 'pages/Executions'
 import Flow from 'pages/Flow'
 import Flows from 'pages/Flows'
-import Landing from 'pages/Landing'
 import Login from 'pages/Login'
 
-export default (
-  <Routes>
+const Landing = lazy(() => import('pages/Landing'))
+
+export default createRoutesFromElements(
+  <Route path="/">
     <Route
       path={URLS.EXECUTIONS}
       element={
@@ -80,10 +82,12 @@ export default (
     />
 
     <Route
-      path="/"
+      index
       element={
         <PublicLayout>
-          <Landing />
+          <Suspense fallback={<></>}>
+            <Landing />
+          </Suspense>
         </PublicLayout>
       }
     />
@@ -95,5 +99,5 @@ export default (
         </Layout>
       }
     />
-  </Routes>
+  </Route>,
 )

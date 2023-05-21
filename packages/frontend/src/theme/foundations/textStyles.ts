@@ -1,5 +1,3 @@
-import '@fontsource/space-grotesk'
-
 export const textStyles = {
   logo: {
     fontFamily: `'Space Grotesk', sans-serif`,

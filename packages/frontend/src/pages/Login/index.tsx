@@ -70,10 +70,11 @@ export default function Login(): React.ReactElement {
               <Box component="img" src={landingImg} width="35vw" mb={3} />
             )}
             <Typography
-              variant={matchSmallScreens ? 'h2' : 'h2'}
+              variant={'h2'}
               fontSize={'1.5rem'}
               noWrap
               fontWeight="bold"
+              fontFamily={'Space Grotesk'}
               marginBottom={3}
               sx={{
                 display: 'flex',

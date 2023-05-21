@@ -1,11 +1,13 @@
+import '@fontsource/space-grotesk'
+
 import { createRoot } from 'react-dom/client'
+import { RouterProvider } from 'react-router-dom'
 import ApolloProvider from 'components/ApolloProvider'
 import IntlProvider from 'components/IntlProvider'
-import Router from 'components/Router'
+import router from 'components/Router'
 import SnackbarProvider from 'components/SnackbarProvider'
 import ThemeProvider from 'components/ThemeProvider'
 import { AuthenticationProvider } from 'contexts/Authentication'
-import routes from 'routes'
 
 const container = document.getElementById('root')
 
@@ -20,7 +22,7 @@ root.render(
       <ApolloProvider>
         <IntlProvider>
           <ThemeProvider>
-            <Router>{routes}</Router>
+            <RouterProvider router={router} />
           </ThemeProvider>
         </IntlProvider>
       </ApolloProvider>

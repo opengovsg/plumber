@@ -18,14 +18,16 @@ const HeaderBar = () => {
   return (
     <Container>
       <HStack justify="space-between">
-        <a href="/">
-          <HStack userSelect="none" cursor="pointer">
-            <Image src={mainLogo} alt="plumber-logo" />
-            <Text textStyle="logo" display={{ base: 'none', md: 'block' }}>
-              plumber
-            </Text>
-          </HStack>
-        </a>
+        <HStack
+          userSelect="none"
+          cursor="pointer"
+          onClick={() => navigate(URLS.ROOT)}
+        >
+          <Image src={mainLogo} alt="plumber-logo" />
+          <Text textStyle="logo" display={{ base: 'none', md: 'block' }}>
+            plumber
+          </Text>
+        </HStack>
         <HStack spacing={8}>
           <Button variant="link" colorScheme="secondary">
             Guide
@@ -38,6 +40,7 @@ const HeaderBar = () => {
 }
 
 export const MainLanding = () => {
+  const navigate = useNavigate()
   return (
     <>
       <HeaderBar />
@@ -60,10 +63,16 @@ export const MainLanding = () => {
               Let Plumber handle your manual and repetitive tasks so you can
               deliver value in other areas.
             </Text>
-            <Button w={{ base: 'full', md: 'xs' }}>Get started</Button>
+            <Button
+              onClick={() => navigate(URLS.LOGIN)}
+              w={{ base: 'full', md: 'xs' }}
+            >
+              Get started
+            </Button>
           </VStack>
         </Center>
         <HStack
+          zIndex={-1}
           position={{ base: 'relative', lg: 'absolute' }}
           h={{ base: 'fit-content', lg: '100%' }}
           w="100%"
