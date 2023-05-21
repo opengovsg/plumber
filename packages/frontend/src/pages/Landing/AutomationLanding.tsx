@@ -4,6 +4,7 @@ import {
   Container,
   HStack,
   Image,
+  Stack,
   StackProps,
   Text,
   VStack,
@@ -119,21 +120,27 @@ const AutomationGroupIcon = ({
   active?: boolean
 }) => {
   return (
-    <VStack
+    <Stack
+      flexDir={{ base: 'row', md: 'column' }}
       bg={active ? 'white' : 'transparent'}
       borderRadius="xl"
-      py={4}
-      px={4}
+      py={{ base: 2, md: 4 }}
+      px={{ base: 2, md: 2 }}
       border="1px"
       cursor="pointer"
       borderColor={active ? 'gray.300' : 'gray.200'}
-      flex={1}
+      flex={{ base: 0, md: 1 }}
+      align="center"
+      justify="center"
       textAlign="center"
+      minW="fit-content"
       {...props}
     >
-      <Image src={icon} w={20} h={20} />
-      <Text fontSize="sm">{title}</Text>
-    </VStack>
+      <Image src={icon} w={{ base: 5, md: 20 }} h={{ base: 5, md: 20 }} />
+      <Text fontSize="sm" whiteSpace="nowrap" mt="0 !important">
+        {title}
+      </Text>
+    </Stack>
   )
 }
 
@@ -181,11 +188,18 @@ export const AutomationLanding = () => {
   const [activeIndex, setActiveIndex] = useState(0)
 
   return (
-    <Box bg="primary.50" py={8}>
+    <Box bg="primary.50" py={8} maxW="100%" overflow="hidden">
       <Container>
-        <VStack spacing={8} align="left">
+        <VStack spacing={{ base: 2, md: 8 }} align="left">
           <Text textStyle="subheading">Automation for everyone</Text>
-          <HStack justify="space-between" spacing={4} align="stretch" w="100%">
+          <HStack
+            wrap={{ base: 'wrap', md: 'nowrap' }}
+            justify={{ base: 'flex-start', md: 'space-between' }}
+            gap={{ base: 2, md: 4, lg: 8 }}
+            spacing={0}
+            align={{ base: 'start', md: 'stretch' }}
+            w="100%"
+          >
             {AUTOMATIONS.map(({ title, icon }, index) => (
               <AutomationGroupIcon
                 title={title}
@@ -196,17 +210,19 @@ export const AutomationLanding = () => {
               />
             ))}
           </HStack>
-          <HStack
+          <Stack
+            flexDir={{ base: 'column', md: 'row' }}
             justify="space-between"
-            spacing={8}
-            py={12}
+            spacing={0}
+            gap={{ base: 4, md: 8 }}
+            py={{ base: 4, md: 12 }}
             align="stretch"
             w="100%"
           >
             {AUTOMATIONS[activeIndex].items?.map(({ title, steps }, index) => (
               <AutomationItem title={title} key={`i${index}`} steps={steps} />
             ))}
-          </HStack>
+          </Stack>
         </VStack>
       </Container>
     </Box>

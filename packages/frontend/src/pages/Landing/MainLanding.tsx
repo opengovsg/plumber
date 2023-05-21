@@ -1,8 +1,10 @@
 import {
+  Box,
   Center,
   Container,
   HStack,
   Image,
+  Spacer,
   Text,
   VStack,
 } from '@chakra-ui/react'
@@ -15,10 +17,14 @@ const HeaderBar = () => {
   return (
     <Container>
       <HStack justify="space-between">
-        <HStack>
-          <Image src={mainLogo} alt="plumber-logo" />
-          <Text textStyle="logo">plumber</Text>
-        </HStack>
+        <a href="/">
+          <HStack userSelect="none" cursor="pointer">
+            <Image src={mainLogo} alt="plumber-logo" />
+            <Text textStyle="logo" display={{ base: 'none', md: 'block' }}>
+              plumber
+            </Text>
+          </HStack>
+        </a>
         <HStack spacing={8}>
           <Button variant="link" colorScheme="secondary">
             Guide
@@ -34,20 +40,14 @@ export const MainLanding = () => {
   return (
     <>
       <HeaderBar />
-      <Container maxW="1600px" px={0}>
-        <Center position="relative">
-          <Image
-            position="absolute"
-            left={0}
-            src={leftLandingImg}
-            alt="left-landing"
-          />
+      <Container maxW="1600px" position="relative">
+        <Center>
           <VStack
-            textAlign="center"
-            py="10vh"
-            w="45rem"
-            maxW="100%"
-            px="5vw"
+            textAlign={{ base: 'left', md: 'center' }}
+            align={{ base: 'start', md: 'center' }}
+            py={{ base: '0vh', md: '10vh' }}
+            w="100%"
+            maxW={{ base: 'unset', lg: '35rem' }}
             spacing={8}
           >
             <Text textStyle="heading">
@@ -59,15 +59,31 @@ export const MainLanding = () => {
               Let Plumber handle your manual and repetitive tasks so you can
               deliver value in other areas.
             </Text>
-            <Button w="xs">Get started</Button>
+            <Button w={{ base: 'full', md: 'xs' }}>Get started</Button>
           </VStack>
+        </Center>
+        <HStack
+          position={{ base: 'relative', lg: 'absolute' }}
+          h={{ base: 'fit-content', lg: '100%' }}
+          w="100%"
+          margin="auto"
+          pt={{ base: 16, md: 0 }}
+          pr={2}
+          top={0}
+          left={0}
+          justify="space-between"
+        >
           <Image
-            position="absolute"
-            right={30}
+            src={leftLandingImg}
+            alt="left-landing"
+            w={{ base: '45vw', md: 'auto' }}
+          />
+          <Image
             src={rightLandingImg}
             alt="right-landing"
+            w={{ base: '35vw', md: 'auto' }}
           />
-        </Center>
+        </HStack>
       </Container>
     </>
   )
