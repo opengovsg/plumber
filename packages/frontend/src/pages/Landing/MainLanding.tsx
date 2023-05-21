@@ -1,10 +1,8 @@
 import {
-  Box,
   Center,
   Container,
   HStack,
   Image,
-  Spacer,
   Text,
   VStack,
 } from '@chakra-ui/react'
