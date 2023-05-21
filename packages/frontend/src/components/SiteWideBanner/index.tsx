@@ -35,7 +35,7 @@ const SiteWideBanner = (): JSX.Element | null => {
         color: 'white',
         display: showBanner ? 'flex' : 'none',
         justifyContent: 'center',
-        aligntItems: 'center',
+        alignItems: 'center',
         position: 'relative',
         a: {
           color: 'white',

@@ -4,8 +4,6 @@ import type { AlertProps } from '@mui/material/Alert'
 import Typography from '@mui/material/Typography'
 import useFormatMessage from 'hooks/useFormatMessage'
 
-import { WEBHOOK_DOCS } from '../../config/urls'
-import { generateExternalLink } from '../../helpers/translation-values'
 import TextField from '../TextField'
 
 import { Alert } from './style'
@@ -34,13 +32,7 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
         name="webhookUrl"
         fullWidth
         defaultValue={webhookUrl}
-        helperText={
-          <>
-            {formatMessage('webhookUrlInfo.helperText', {
-              link: generateExternalLink(WEBHOOK_DOCS),
-            })}
-          </>
-        }
+        helperText={<>{formatMessage('webhookUrlInfo.helperText')}</>}
       />
     </Alert>
   )

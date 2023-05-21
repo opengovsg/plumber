@@ -60,6 +60,9 @@ export const FLOW_PATTERN = '/flows/:flowId'
 
 export const DASHBOARD = FLOWS
 
-// External links
-export const WEBHOOK_DOCS =
-  'https://automatisch.io/docs/apps/webhooks/connection'
+export const APP_ICON_URL = (appKey: string): string =>
+  `/apps/${appKey}/assets/favicon.svg`
+
+// external links
+export const OGP_HOMEPAGE = 'https://open.gov.sg'
+export const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'

@@ -23,8 +23,6 @@ type AccountDropdownMenuProps = {
   id: string
 }
 
-const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'
-
 function AccountDropdownMenu(
   props: AccountDropdownMenuProps,
 ): React.ReactElement {
@@ -75,7 +73,9 @@ function AccountDropdownMenu(
         <ListItemIcon>
           <ForumIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText onClick={() => window.open(FEEDBACK_FORM_LINK, '_blank')}>
+        <ListItemText
+          onClick={() => window.open(URLS.FEEDBACK_FORM_LINK, '_blank')}
+        >
           Give feedback
         </ListItemText>
       </MenuItem>
