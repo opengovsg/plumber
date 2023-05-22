@@ -5,7 +5,7 @@ import logger from './logger'
 
 const morganOptions: morgan.Options<Request, Response> = {
   skip: (req, _res) => {
-    return req.url === '/'
+    return req.originalUrl === '/'
   },
   stream: {
     write: (message) => {
@@ -18,29 +18,24 @@ const morganOptions: morgan.Options<Request, Response> = {
   },
 }
 
-const registerGraphQLToken = () => {
-  morgan.token('cf-connecting-ip', (req: Request) => {
-    if (req.headers['cf-connecting-ip']) {
-      return req.headers['cf-connecting-ip'] as string
-    }
-  })
-
-  morgan.token('graphql-query', (req: Request) => {
-    if (req.body.query) {
-      return req.body.query
-        .replace(/\s+/g, ' ')
-        .replace(/\n/g, '')
-        .replace(/"/g, "'")
-    }
-  })
-  morgan.token('graphql-variables', (req: Request) => {
-    if (req.body.variables) {
-      return JSON.stringify(req.body.variables).replace(/"/g, "'")
-    }
-  })
-}
-
-registerGraphQLToken()
+morgan.token('cf-connecting-ip', (req: Request) => {
+  if (req.headers['cf-connecting-ip']) {
+    return req.headers['cf-connecting-ip'] as string
+  }
+})
+morgan.token('graphql-query', (req: Request) => {
+  if (req.body.query) {
+    return req.body.query
+      .replace(/\s+/g, ' ')
+      .replace(/\n/g, '')
+      .replace(/"/g, "'")
+  }
+})
+morgan.token('graphql-variables', (req: Request) => {
+  if (req.body.variables) {
+    return JSON.stringify(req.body.variables).replace(/"/g, "'")
+  }
+})
 
 const morganJsonFormat = JSON.stringify({
   method: ':method',
