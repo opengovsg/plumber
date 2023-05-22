@@ -1,5 +1,5 @@
 import { RestrictedFooter } from '@opengovsg/design-system-react'
-import { FEEDBACK_FORM_LINK } from 'config/urls'
+import { FEEDBACK_FORM_LINK, GUIDE_LINK } from 'config/urls'
 
 export const Footer = () => (
   <RestrictedFooter
@@ -12,7 +12,7 @@ export const Footer = () => (
       },
       {
         label: 'Guide',
-        href: '',
+        href: GUIDE_LINK,
       },
       {
         label: 'Privacy',

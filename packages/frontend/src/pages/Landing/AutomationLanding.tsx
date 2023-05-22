@@ -22,16 +22,19 @@ const AUTOMATIONS = [
     title: 'Human Resource',
     items: [
       {
-        steps: ['formsg', 'vault-workspace', 'postman'],
+        steps: ['formsg', 'vault-workspace'],
         title: 'Track onboarding forms',
+        description: 'Track completion rate of onboarding forms',
       },
       {
         steps: ['formsg', 'logic', 'postman'],
         title: 'Route applications to department',
+        description: 'Send job applications to the relevant recipients',
       },
       {
         steps: ['formsg', 'vault-workspace', 'postman'],
         title: 'Store resumes in centralised location',
+        description: 'Store resumes in an excel format and send reply email',
       },
     ],
   },
@@ -42,14 +45,19 @@ const AUTOMATIONS = [
       {
         steps: ['scheduler', 'webhook', 'telegram-bot'],
         title: 'Regularly monitor API responses',
+        description: 'Send alerts to Telegram if API response is not 200',
       },
       {
         steps: ['formsg', 'webhook', 'postman'],
         title: 'Supplement form data with API calls',
+        description:
+          'Fetch data from external APIs using values from responses and send data via Postman',
       },
       {
-        steps: ['webhook', 'logic', 'webhook'],
-        title: 'Proxy webhooks to internal services',
+        steps: ['formsg', 'webhook'],
+        title: 'Post decrypted form data',
+        description:
+          'Decrypts form responses and post data to another endpoint',
       },
     ],
   },
@@ -58,16 +66,20 @@ const AUTOMATIONS = [
     title: 'Marketing',
     items: [
       {
-        steps: ['postman', 'vault-workspace'],
-        title: 'Track campaign stats',
+        steps: ['scheduler', 'postman'],
+        title: 'Schedule regular marketing emails',
+        description: 'Send emails to your mailing list on a regular basis',
       },
       {
         steps: ['formsg', 'delay', 'postman'],
         title: 'Send post-event survey feedback',
+        description:
+          'Ask for feedback by automatically sending a survey via Postman to attendees after your event',
       },
       {
-        steps: ['formsg', 'logic', 'webhook'],
-        title: 'Create targeted lists',
+        steps: ['formsg', 'logic', 'vault-workspace'],
+        title: 'Create mailing lists',
+        description: 'Store form submitter emails in an excel format',
       },
     ],
   },
@@ -78,14 +90,19 @@ const AUTOMATIONS = [
       {
         steps: ['formsg', 'twilio'],
         title: 'Send customised SMS on form submission',
+        description:
+          'Automatically send a personalised acknowledgement SMS to a respondent after they submit a form',
       },
       {
         steps: ['formsg', 'postman'],
         title: 'Notify yourself of new form submissions',
+        description:
+          'Receive a notification from Postman for every new storage-mode form submission is made',
       },
       {
-        steps: ['formsg', 'logic', 'slack'],
+        steps: ['formsg', 'logic', 'twilio'],
         title: 'Flag out high priority tickets',
+        description: 'Alert relevant parties via SMS for urgent tickets',
       },
     ],
   },
@@ -94,16 +111,21 @@ const AUTOMATIONS = [
     title: 'Customer Support',
     items: [
       {
-        steps: ['scheduler', 'postman'],
+        steps: ['formsg', 'postman'],
         title: 'Send customised acknowledgement messages',
+        description:
+          'Automatically send a personalised acknowledgement via Postman to a respondent after they submit their form',
       },
       {
         steps: ['formsg', 'vault-workspace'],
         title: 'Track ticket stats',
+        description: 'Track status of incoming tickets in Vault Workspace',
       },
       {
         steps: ['formsg', 'logic', 'postman'],
         title: 'Route tickets to different teams',
+        description:
+          'Redirect formsg responses to relevant teams based on certain conditions',
       },
     ],
   },
@@ -146,9 +168,11 @@ const AutomationGroupIcon = ({
 
 const AutomationItem = ({
   title,
+  description,
   steps,
 }: {
   title: string
+  description: string
   steps: string[]
 }) => (
   <VStack
@@ -179,7 +203,9 @@ const AutomationItem = ({
       <Text fontSize="md" fontWeight="medium">
         {title}
       </Text>
-      <Text fontSize="sm">Some copy here maybe</Text>
+      <Text mt={2} fontSize="sm">
+        {description}
+      </Text>
     </Box>
   </VStack>
 )
@@ -219,9 +245,16 @@ export const AutomationLanding = () => {
             align="stretch"
             w="100%"
           >
-            {AUTOMATIONS[activeIndex].items?.map(({ title, steps }, index) => (
-              <AutomationItem title={title} key={`i${index}`} steps={steps} />
-            ))}
+            {AUTOMATIONS[activeIndex].items?.map(
+              ({ title, description, steps }, index) => (
+                <AutomationItem
+                  title={title}
+                  description={description}
+                  key={`i${index}`}
+                  steps={steps}
+                />
+              ),
+            )}
           </Stack>
         </VStack>
       </Container>

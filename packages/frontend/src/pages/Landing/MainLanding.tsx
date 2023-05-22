@@ -7,7 +7,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import { Button, Link } from '@opengovsg/design-system-react'
 import leftLandingImg from 'assets/landing/left-landing.svg'
 import rightLandingImg from 'assets/landing/right-landing.svg'
 import mainLogo from 'assets/logo.svg'
@@ -29,9 +29,14 @@ const HeaderBar = () => {
           </Text>
         </HStack>
         <HStack spacing={8}>
-          <Button variant="link" colorScheme="secondary">
+          <Link
+            href={URLS.GUIDE_LINK}
+            colorScheme="secondary"
+            target="_blank"
+            variant="link"
+          >
             Guide
-          </Button>
+          </Link>
           <Button onClick={() => navigate(URLS.LOGIN)}>Login</Button>
         </HStack>
       </HStack>
