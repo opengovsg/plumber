@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { createRoutesFromElements, Route } from 'react-router-dom'
 import Layout from 'components/Layout'
 import PublicLayout from 'components/PublicLayout'
 import * as URLS from 'config/urls'
@@ -11,8 +12,10 @@ import Flow from 'pages/Flow'
 import Flows from 'pages/Flows'
 import Login from 'pages/Login'
 
-export default (
-  <Routes>
+const Landing = lazy(() => import('pages/Landing'))
+
+export default createRoutesFromElements(
+  <Route path="/">
     <Route
       path={URLS.EXECUTIONS}
       element={
@@ -78,7 +81,16 @@ export default (
       }
     />
 
-    <Route path="/" element={<Navigate to={URLS.FLOWS} replace />} />
+    <Route
+      index
+      element={
+        <PublicLayout>
+          <Suspense fallback={<></>}>
+            <Landing />
+          </Suspense>
+        </PublicLayout>
+      }
+    />
 
     <Route
       element={
@@ -87,5 +99,5 @@ export default (
         </Layout>
       }
     />
-  </Routes>
+  </Route>,
 )

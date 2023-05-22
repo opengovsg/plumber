@@ -1,15 +1,12 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { LoadingButton } from '@mui/lab'
 import { Stack, TextField } from '@mui/material'
-import * as URLS from 'config/urls'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
 import useAuthentication from 'hooks/useAuthentication'
 
 export const LoginForm = (): JSX.Element => {
-  const navigate = useNavigate()
   const authentication = useAuthentication()
   const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP)
   const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP)
@@ -17,12 +14,6 @@ export const LoginForm = (): JSX.Element => {
   const [isOtpSent, setIsOtpSent] = useState(false)
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
-
-  useEffect(() => {
-    if (authentication.isAuthenticated) {
-      navigate(URLS.DASHBOARD)
-    }
-  }, [authentication.isAuthenticated])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

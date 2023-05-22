@@ -15,6 +15,12 @@ export default defineConfig({
         secure: false,
         timeout: 10000,
       },
+      '/apps': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        timeout: 10000,
+      },
     },
   },
 })
