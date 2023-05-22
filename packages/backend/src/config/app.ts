@@ -31,6 +31,7 @@ type AppConfig = {
   requestBodySizeLimit: string
   postmanApiKey: string
   isWorker: boolean
+  workerActionConcurrency: number
 }
 
 const port = process.env.PORT || '3000'
@@ -74,6 +75,9 @@ const appConfig: AppConfig = {
   requestBodySizeLimit: '1mb',
   postmanApiKey: process.env.POSTMAN_API_KEY,
   isWorker: /worker\.(ts|js)$/.test(require.main.filename),
+  workerActionConcurrency: parseInt(
+    process.env.WORKER_ACTION_CONCURRENCY || '10',
+  ),
 }
 
 if (!appConfig.encryptionKey) {

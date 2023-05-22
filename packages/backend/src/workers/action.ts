@@ -1,5 +1,6 @@
 import { Worker } from 'bullmq'
 
+import appConfig from '../config/app'
 import { createRedisClient } from '../config/redis'
 import { DEFAULT_JOB_OPTIONS } from '../helpers/default-job-configuration'
 import delayAsMilliseconds from '../helpers/delay-as-milliseconds'
@@ -60,7 +61,7 @@ export const worker = new Worker(
   {
     prefix: '{actionQ}',
     connection: createRedisClient(),
-    concurrency: 3,
+    concurrency: appConfig.workerActionConcurrency,
   },
 )
 
