@@ -56,16 +56,19 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             aria-label="open drawer"
             onClick={drawerOpen ? onDrawerClose : onDrawerOpen}
             disableRipple
-            sx={{
-              mr: 1,
-            }}
           >
-            <Box component="img" src={mainLogo} height="100%" />
+            <Box component="img" src={mainLogo} height="80%" width="80%" />
           </IconButton>
 
           <div style={{ flexGrow: 1 }}>
             <Link to={URLS.DASHBOARD}>
-              <Typography variant="h6" component="h1" noWrap fontWeight="bold">
+              <Typography
+                variant="h5"
+                component="h2"
+                fontFamily={'Space Grotesk'}
+                noWrap
+                fontWeight="bold"
+              >
                 <FormattedMessage id="brandText" />
               </Typography>
             </Link>

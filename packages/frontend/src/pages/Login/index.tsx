@@ -1,14 +1,17 @@
 import * as React from 'react'
 import { FormattedMessage } from 'react-intl'
+import { useNavigate } from 'react-router-dom'
 import { Box, Typography, useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import mainLogo from 'assets/logo.svg'
 import landingImg from 'assets/plumber-landing.svg'
 import Container from 'components/Container'
 import LoginForm from 'components/LoginForm'
+import * as URLS from 'config/urls'
 
 export default function Login(): React.ReactElement {
   const theme = useTheme()
+  const navigate = useNavigate()
 
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
     noSsr: true,
@@ -67,12 +70,19 @@ export default function Login(): React.ReactElement {
               <Box component="img" src={landingImg} width="35vw" mb={3} />
             )}
             <Typography
-              variant={matchSmallScreens ? 'h2' : 'h2'}
+              variant={'h2'}
               fontSize={'1.5rem'}
               noWrap
               fontWeight="bold"
+              fontFamily={'Space Grotesk'}
               marginBottom={3}
-              sx={{ display: 'flex', alignItems: 'center' }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+              onClick={() => navigate(URLS.ROOT)}
             >
               <Box component="img" src={mainLogo} height="100%" mr={1} />
               <FormattedMessage id="brandText" />
