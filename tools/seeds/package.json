@@ -1,0 +1,13 @@
+{
+  "name": "seeds",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "knex": "^2.4.2",
+    "uuid": "^9.0.0"
+  }
+}

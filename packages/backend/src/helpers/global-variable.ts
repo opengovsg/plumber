@@ -40,7 +40,6 @@ const globalVariable = async (
   } = options
 
   const isTrigger = step?.isTrigger
-  const lastInternalId = testRun ? undefined : await flow?.lastInternalId()
   const nextStep = await step?.getNextStep()
 
   const $: IGlobalVariable = {
@@ -64,7 +63,6 @@ const globalVariable = async (
     app: app,
     flow: {
       id: flow?.id,
-      lastInternalId,
     },
     step: {
       id: step?.id,
@@ -80,7 +78,8 @@ const globalVariable = async (
       id: execution?.id,
       testRun,
     },
-    lastExecutionStep: (await step?.getLastExecutionStep())?.toJSON(),
+    getLastExecutionStep: async () =>
+      (await step?.getLastExecutionStep())?.toJSON(),
     triggerOutput: {
       data: [],
     },
