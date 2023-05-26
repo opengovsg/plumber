@@ -43,6 +43,9 @@ const addCspHeaders = async (app: Application) => {
           upgradeInsecureRequests: [],
         },
       },
+      crossOriginOpenerPolicy: {
+        policy: 'same-origin-allow-popups',
+      },
       crossOriginResourcePolicy: {
         policy: appConfig.isDev ? 'cross-origin' : 'same-site',
       },
