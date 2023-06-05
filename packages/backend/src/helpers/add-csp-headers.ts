@@ -43,6 +43,10 @@ const addCspHeaders = async (app: Application) => {
           upgradeInsecureRequests: [],
         },
       },
+      crossOriginOpenerPolicy: {
+        // required for using window.opener
+        policy: 'unsafe-none',
+      },
       crossOriginResourcePolicy: {
         policy: appConfig.isDev ? 'cross-origin' : 'same-site',
       },
