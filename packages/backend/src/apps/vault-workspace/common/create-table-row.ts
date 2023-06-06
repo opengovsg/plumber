@@ -27,7 +27,13 @@ const createTableRow = async (
   }
 
   // send data
-  await $.http.post('/api/tables/row', { data: payload })
+  const res = await $.http.post('/api/tables/row', { data: payload })
+  $.setActionItem({
+    raw: {
+      success: true,
+      ...res.data,
+    },
+  })
 }
 
 export default createTableRow
