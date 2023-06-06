@@ -3,10 +3,10 @@ import { IGlobalVariable } from '@plumber/types'
 import { getColumns } from '../helpers/get-columns'
 
 export default {
-  name: 'List columns',
-  key: 'listColumns',
+  name: 'List updatable columns',
+  key: 'listUpdatableColumns',
 
   async run($: IGlobalVariable) {
-    return await getColumns($)
+    return await getColumns($, true)
   },
 }
