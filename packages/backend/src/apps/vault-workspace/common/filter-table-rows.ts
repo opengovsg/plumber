@@ -1,14 +1,13 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import { VAULT_ID } from './constants'
 import { getColumnMapping } from './get-column-mapping'
-
-const VAULT_ID = 'vault_id'
 
 const filterTableRows = async (
   $: IGlobalVariable,
   columnName: string,
   value: string,
-): Promise<{ [key: string]: string }> => {
+): Promise<{ [key: string]: any }> => {
   const response = await $.http.get('/api/tables', {
     data: {
       filter: [
@@ -22,7 +21,12 @@ const filterTableRows = async (
   })
 
   if (response.data.rows.length < 1) {
-    throw new Error('Row not found')
+    return {
+      _metadata: {
+        success: false,
+        rowsFound: 0,
+      },
+    }
   }
   // NOTE: if more than 1 row, just first row
   const rawData: { [key: string]: string } = response.data.rows[0]
@@ -38,7 +42,13 @@ const filterTableRows = async (
     }
   }
 
-  return row
+  return {
+    ...row,
+    _metadata: {
+      success: true,
+      rowsFound: response.data.rows.length,
+    },
+  }
 }
 
 export default filterTableRows

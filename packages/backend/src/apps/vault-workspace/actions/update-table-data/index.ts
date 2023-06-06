@@ -1,4 +1,5 @@
 import defineAction from '../../../../helpers/define-action'
+import { VAULT_ID } from '../../common/constants'
 import filterTableRows from '../../common/filter-table-rows'
 import updateTableRow from '../../common/update-table-row'
 
@@ -47,7 +48,7 @@ export default defineAction({
         arguments: [
           {
             name: 'key',
-            value: 'listColumns',
+            value: 'listUpdatableColumns',
           },
         ],
       },
@@ -66,6 +67,10 @@ export default defineAction({
     const lookupValue = $.step.parameters.lookupValue as string
     const updateColumn = $.step.parameters.updateColumn as string
     const updateValue = $.step.parameters.updateValue as string
+
+    if (updateColumn === VAULT_ID) {
+      throw new Error('Cannot update the row id.')
+    }
 
     const row = await filterTableRows($, lookupColumn, lookupValue)
 
