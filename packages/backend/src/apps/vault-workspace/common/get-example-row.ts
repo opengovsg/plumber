@@ -1,8 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import { VAULT_ID } from './constants'
 import { getColumnMapping } from './get-column-mapping'
-
-const VAULT_ID = 'vault_id'
 
 const getExampleRow = async (
   $: IGlobalVariable,
