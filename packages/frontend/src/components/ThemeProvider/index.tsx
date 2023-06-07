@@ -1,7 +1,12 @@
 import * as React from 'react'
-import CssBaseline from '@mui/material/CssBaseline'
-import { ThemeProvider as BaseThemeProvider } from '@mui/material/styles'
-import theme from 'styles/theme'
+import {
+  THEME_ID,
+  ThemeProvider as MaterialThemeProvider,
+} from '@mui/material/styles'
+import { ThemeProvider as ChakraThemeProvider } from '@opengovsg/design-system-react'
+import materialTheme from 'styles/theme'
+
+import { theme as chakraTheme } from '../../theme'
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -9,14 +14,13 @@ type ThemeProviderProps = {
 
 const ThemeProvider = ({
   children,
-  ...props
 }: ThemeProviderProps): React.ReactElement => {
   return (
-    <BaseThemeProvider theme={theme} {...props}>
-      <CssBaseline />
-
-      {children}
-    </BaseThemeProvider>
+    <ChakraThemeProvider theme={chakraTheme}>
+      <MaterialThemeProvider theme={{ [THEME_ID]: materialTheme }}>
+        {children}
+      </MaterialThemeProvider>
+    </ChakraThemeProvider>
   )
 }
 
