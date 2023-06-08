@@ -74,11 +74,8 @@ export default function Applications(): React.ReactElement {
           >
             <ConditionalIconButton
               type="submit"
-              variant="contained"
-              color="primary"
-              size="large"
+              size="lg"
               component={NewAppConnectionLink}
-              fullWidth
               icon={<AddIcon />}
               data-test="add-connection-button"
             >

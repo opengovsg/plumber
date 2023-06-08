@@ -123,11 +123,8 @@ export default function Flows(): React.ReactElement {
           >
             <ConditionalIconButton
               type="submit"
-              variant="contained"
-              color="primary"
-              size="large"
+              size="lg"
               component={CreateFlowLink}
-              fullWidth
               icon={<AddIcon />}
               data-test="create-flow-button"
             >

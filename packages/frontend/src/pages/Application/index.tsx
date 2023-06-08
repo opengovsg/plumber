@@ -130,11 +130,8 @@ export default function Application(): React.ReactElement | null {
                   element={
                     <ConditionalIconButton
                       type="submit"
-                      variant="contained"
-                      color="primary"
-                      size="large"
+                      size="lg"
                       component={NewFlowLink}
-                      fullWidth
                       icon={<AddIcon />}
                     >
                       {formatMessage('app.createFlow')}
@@ -147,11 +144,8 @@ export default function Application(): React.ReactElement | null {
                   element={
                     <ConditionalIconButton
                       type="submit"
-                      variant="contained"
-                      color="primary"
-                      size="large"
+                      size="lg"
                       component={NewConnectionLink}
-                      fullWidth
                       icon={<AddIcon />}
                       data-test="add-connection-button"
                     >
