@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom'
+import { Flex } from '@chakra-ui/react'
 import { Box } from '@mui/material'
 import { Masthead } from 'components/Masthead'
 import SiteWideBanner from 'components/SiteWideBanner'
@@ -16,12 +17,19 @@ export default function Layout({ children }: LayoutProps): React.ReactElement {
   }
 
   return (
-    <>
+    <Flex minH="100vh" flexDir="column">
       <SiteWideBanner />
       <Masthead />
-      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          alignItems: 'stretch',
+        }}
+      >
         {children}
       </Box>
-    </>
+    </Flex>
   )
 }
