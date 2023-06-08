@@ -128,7 +128,7 @@ export default function EditorLayout(): React.ReactElement {
           </Box>
         </Stack>
 
-        <Container maxWidth="md">
+        <Container maxW="container.md">
           <EditorProvider value={{ readOnly: !!flow?.active }}>
             {!flow && !loading && 'not found'}
 
