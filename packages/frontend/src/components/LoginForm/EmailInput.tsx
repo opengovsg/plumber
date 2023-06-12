@@ -29,7 +29,7 @@ const EmailInput = ({
           }}
         />
       </FormControl>
-      <Button type="submit" isLoading={isLoading}>
+      <Button type="submit" width="full" isLoading={isLoading}>
         Get OTP
       </Button>
     </>

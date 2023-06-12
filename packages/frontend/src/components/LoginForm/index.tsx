@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { Stack } from '@mui/material'
+import { VStack } from '@chakra-ui/react'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
 import useAuthentication from 'hooks/useAuthentication'
@@ -47,7 +47,7 @@ export const LoginForm = (): JSX.Element => {
   // FIXME (ogp-weeloong): Fully migrate to starter kit style login page.
   return (
     <form noValidate onSubmit={handleSubmit}>
-      <Stack spacing={2}>
+      <VStack>
         {isOtpSent ? (
           <OtpInput
             isLoading={isVerifyingOtp}
@@ -62,7 +62,7 @@ export const LoginForm = (): JSX.Element => {
             setEmail={setEmail}
           />
         )}
-      </Stack>
+      </VStack>
     </form>
   )
 }

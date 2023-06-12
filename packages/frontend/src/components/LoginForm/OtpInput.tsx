@@ -26,7 +26,7 @@ const OtpInput = ({ isLoading, email, otp, setOtp }: Props): JSX.Element => {
           }}
         />
       </FormControl>
-      <Button type="submit" isLoading={isLoading}>
+      <Button type="submit" width="full" isLoading={isLoading}>
         Verify OTP
       </Button>
     </>
