@@ -110,6 +110,10 @@
         {
           "name": "WORKER_ACTION_CONCURRENCY",
           "valueFrom": "plumber-<ENVIRONMENT>-worker-action-concurrency"
+        },
+        {
+          "name": "WHITELISTED_EMAILS",
+          "valueFrom": "plumber-<ENVIRONMENT>-whitelisted-emails"
         }
       ],
       "logConfiguration": {
