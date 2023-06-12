@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { LoadingButton } from '@mui/lab'
-import { Stack, TextField } from '@mui/material'
+import { Stack } from '@mui/material'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
 import useAuthentication from 'hooks/useAuthentication'
 
 import EmailInput from './EmailInput'
+import OtpInput from './OtpInput'
 
 export const LoginForm = (): JSX.Element => {
   const authentication = useAuthentication()
@@ -49,26 +49,12 @@ export const LoginForm = (): JSX.Element => {
     <form noValidate onSubmit={handleSubmit}>
       <Stack spacing={2}>
         {isOtpSent ? (
-          <>
-            <TextField
-              fullWidth
-              label="OTP"
-              required
-              autoFocus
-              value={otp}
-              onChange={(e) => {
-                setOtp(e.target.value)
-              }}
-              placeholder="123456"
-            />
-            <LoadingButton
-              variant="contained"
-              loading={isVerifyingOtp || isRequestingOtp}
-              type="submit"
-            >
-              {isOtpSent ? 'Verify OTP' : 'Login'}
-            </LoadingButton>
-          </>
+          <OtpInput
+            isLoading={isVerifyingOtp}
+            email={email}
+            otp={otp}
+            setOtp={setOtp}
+          />
         ) : (
           <EmailInput
             isLoading={isRequestingOtp || isOtpSent}
