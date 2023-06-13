@@ -8,8 +8,7 @@ export default defineApp({
   name: 'Postman',
   key: 'postman',
   iconUrl: '{BASE_URL}/apps/postman/assets/favicon.svg',
-  authDocUrl:
-    'https://github.com/opengovsg/postmangovsg/blob/master/docs/api-usage.md',
+  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/postman',
   supportsConnections: true,
   baseUrl: 'https://postman.gov.sg',
   apiBaseUrl: 'https://api.postman.gov.sg',

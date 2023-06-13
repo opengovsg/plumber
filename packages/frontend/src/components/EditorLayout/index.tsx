@@ -5,11 +5,12 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew'
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
+import MuiButton from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
+import { Button } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
 import Editor from 'components/Editor'
@@ -111,8 +112,17 @@ export default function EditorLayout(): React.ReactElement {
             )}
           </Box>
 
+          <Button
+            variant="link"
+            onClick={() => window.open(URLS.GUIDE_LINK, '_blank')}
+            textDecoration="none"
+            colorScheme="secondary"
+            mr={6}
+          >
+            Guide
+          </Button>
           <Box pr={1}>
-            <Button
+            <MuiButton
               variant="contained"
               size="small"
               onClick={() => onFlowStatusUpdate(!flow.active)}
@@ -123,7 +133,7 @@ export default function EditorLayout(): React.ReactElement {
               {flow?.active
                 ? formatMessage('flowEditor.unpublish')
                 : formatMessage('flowEditor.publish')}
-            </Button>
+            </MuiButton>
           </Box>
         </Stack>
 
@@ -143,14 +153,14 @@ export default function EditorLayout(): React.ReactElement {
         anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}
         ContentProps={{ sx: { fontWeight: 300 } }}
         action={
-          <Button
+          <MuiButton
             variant="contained"
             size="small"
             onClick={() => onFlowStatusUpdate(!flow.active)}
             data-test="unpublish-flow-from-snackbar"
           >
             {formatMessage('flowEditor.unpublish')}
-          </Button>
+          </MuiButton>
         }
       />
     </>

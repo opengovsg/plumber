@@ -7,7 +7,7 @@ export default defineApp({
   name: 'FormSG',
   key: 'formsg',
   iconUrl: '{BASE_URL}/apps/formsg/assets/favicon.svg',
-  authDocUrl: 'https://guide.form.gov.sg/user-guides/advanced-guide/webhooks',
+  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/triggers/formsg',
   supportsConnections: true,
   baseUrl: 'https://form.gov.sg',
   apiBaseUrl: 'https://form.gov.sg/api',

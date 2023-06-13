@@ -14,7 +14,8 @@ export default defineApp({
   baseUrl: WORKSPACE_BASEURL,
   apiBaseUrl: WORKSPACE_BASEURL,
   iconUrl: '{BASE_URL}/apps/vault-workspace/assets/favicon.svg',
-  authDocUrl: 'https://alpha.workspace.gov.sg',
+  authDocUrl:
+    'https://guide.plumber.gov.sg/user-guides/actions/vault-workspace',
   primaryColor: '000000',
   supportsConnections: true,
   beforeRequest: [addAuthHeader],

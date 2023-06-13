@@ -14,4 +14,9 @@ export const colors = {
     800: '#AE0B51',
     900: '#9C0646',
   },
+  utility: {
+    focus: {
+      default: '#FD65A0',
+    },
+  },
 }
