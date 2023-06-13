@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { Flex } from '@chakra-ui/react'
 import { Box } from '@mui/material'
-import { Masthead } from 'components/Masthead'
+import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 import useAuthentication from 'hooks/useAuthentication'
@@ -19,7 +19,7 @@ export default function Layout({ children }: LayoutProps): React.ReactElement {
   return (
     <Flex minH="100vh" flexDir="column">
       <SiteWideBanner />
-      <Masthead />
+      <RestrictedGovtMasthead />
       <Box
         sx={{
           display: 'flex',
