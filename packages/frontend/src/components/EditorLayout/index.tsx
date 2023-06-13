@@ -1,7 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
 import * as React from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link as RouterLink, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew'
 import Box from '@mui/material/Box'
@@ -10,7 +10,7 @@ import IconButton from '@mui/material/IconButton'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
-import { Button } from '@opengovsg/design-system-react'
+import { Button, Link } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
 import Editor from 'components/Editor'
@@ -92,7 +92,7 @@ export default function EditorLayout(): React.ReactElement {
             >
               <IconButton
                 size="small"
-                component={Link}
+                component={RouterLink}
                 to={URLS.FLOWS}
                 data-test="editor-go-back-button"
               >
@@ -113,10 +113,10 @@ export default function EditorLayout(): React.ReactElement {
           </Box>
 
           <Button
+            as={Link}
             variant="link"
-            onClick={() => window.open(URLS.GUIDE_LINK, '_blank')}
-            textDecoration="none"
-            colorScheme="secondary"
+            href={URLS.GUIDE_LINK}
+            target="_blank"
             mr={6}
           >
             Guide
