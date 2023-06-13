@@ -24,7 +24,7 @@ const requestOtp = async (
   const email = validateAndParseEmail(params.input.email)
   // validate email
   if (!email) {
-    throw new BaseError('Only .gov.sg emails are allowed.')
+    throw new BaseError('Email is invalid or not whitelisted.')
   }
   // check if user exists
   let user = await User.query().findOne({ email })

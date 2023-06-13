@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { LoadingButton } from '@mui/lab'
-import { Stack, TextField } from '@mui/material'
+import { VStack } from '@chakra-ui/react'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
 import useAuthentication from 'hooks/useAuthentication'
+
+import EmailInput from './EmailInput'
+import OtpInput from './OtpInput'
 
 export const LoginForm = (): JSX.Element => {
   const authentication = useAuthentication()
@@ -42,44 +44,25 @@ export const LoginForm = (): JSX.Element => {
     }
   }
 
+  // FIXME (ogp-weeloong): Fully migrate to starter kit style login page.
   return (
-    <form noValidate onSubmit={handleSubmit}>
-      <Stack spacing={2}>
+    <form onSubmit={handleSubmit}>
+      <VStack>
         {isOtpSent ? (
-          <TextField
-            fullWidth
-            label="OTP"
-            required
-            autoFocus
-            value={otp}
-            onChange={(e) => {
-              setOtp(e.target.value)
-            }}
-            placeholder="123456"
+          <OtpInput
+            isLoading={isVerifyingOtp}
+            email={email}
+            otp={otp}
+            setOtp={setOtp}
           />
         ) : (
-          <TextField
-            fullWidth
-            type="email"
-            label="Email address"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            required
-            onChange={(e) => {
-              setEmail(e.target.value)
-            }}
-            placeholder="user@agency.gov.sg"
+          <EmailInput
+            isLoading={isRequestingOtp || isOtpSent}
+            email={email}
+            setEmail={setEmail}
           />
         )}
-        <LoadingButton
-          variant="contained"
-          loading={isVerifyingOtp || isRequestingOtp}
-          type="submit"
-        >
-          {isOtpSent ? 'Verify OTP' : 'Login'}
-        </LoadingButton>
-      </Stack>
+      </VStack>
     </form>
   )
 }
