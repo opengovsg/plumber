@@ -14,9 +14,11 @@ export default async (request: IRequest, response: Response) => {
   const span = tracer.scope().active()
   span?.setOperationName('webhooks.handler')
 
-  const flow = await Flow.query()
-    .findById(request.params.flowId)
-    .throwIfNotFound()
+  const flow = await Flow.query().findById(request.params.flowId)
+
+  if (!flow) {
+    return response.sendStatus(404)
+  }
 
   const testRun = !flow.active
   const triggerStep = await flow.getTriggerStep()
