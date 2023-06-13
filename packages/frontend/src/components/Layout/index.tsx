@@ -9,6 +9,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import Drawer from 'components/Drawer'
+import { GuideFab } from 'components/GuideFab'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 import useAuthentication from 'hooks/useAuthentication'
@@ -74,6 +75,7 @@ export default function PublicLayout({
         />
 
         <Box sx={{ flex: 1 }}>{children}</Box>
+        <GuideFab />
       </Box>
     </>
   )

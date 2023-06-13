@@ -7,7 +7,6 @@ import type { ContainerProps } from '@mui/material/Container'
 import IconButton from '@mui/material/IconButton'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
-import { Button, Link } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
 import AccountDropdownMenu from 'components/AccountDropdownMenu'
 import Container from 'components/Container'
@@ -74,16 +73,6 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
               </Typography>
             </RouterLink>
           </div>
-
-          <Button
-            as={Link}
-            variant="link"
-            href={URLS.GUIDE_LINK}
-            target="_blank"
-            mr={6}
-          >
-            Guide
-          </Button>
 
           <IconButton
             size="large"
