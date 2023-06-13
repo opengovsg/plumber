@@ -46,7 +46,7 @@ export const LoginForm = (): JSX.Element => {
 
   // FIXME (ogp-weeloong): Fully migrate to starter kit style login page.
   return (
-    <form noValidate onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit}>
       <VStack>
         {isOtpSent ? (
           <OtpInput
