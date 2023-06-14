@@ -6,9 +6,10 @@ import SchemaIcon from '@mui/icons-material/Schema'
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
+import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import Drawer from 'components/Drawer'
-import { Masthead } from 'components/Masthead'
+import { GuideFab } from 'components/GuideFab'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 import useAuthentication from 'hooks/useAuthentication'
@@ -59,7 +60,7 @@ export default function PublicLayout({
   return (
     <>
       <SiteWideBanner />
-      <Masthead />
+      <RestrictedGovtMasthead />
       <AppBar
         drawerOpen={isDrawerOpen}
         onDrawerOpen={openDrawer}
@@ -74,6 +75,7 @@ export default function PublicLayout({
         />
 
         <Box sx={{ flex: 1 }}>{children}</Box>
+        <GuideFab />
       </Box>
     </>
   )

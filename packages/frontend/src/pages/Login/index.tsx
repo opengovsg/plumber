@@ -22,7 +22,7 @@ export default function Login(): React.ReactElement {
       sx={{
         display: 'flex',
         flex: 1,
-        alignItems: 'center',
+        alignItems: 'stretch',
         flexDirection: matchSmallScreens ? 'column' : 'row',
       }}
     >
@@ -32,7 +32,6 @@ export default function Login(): React.ReactElement {
         display={matchSmallScreens ? 'none' : 'flex'}
         color="white"
         sx={{ backgroundColor: 'primary.light' }}
-        height="100%"
         alignItems="center"
         justifyContent="center"
         flexDirection="column"
@@ -58,6 +57,10 @@ export default function Login(): React.ReactElement {
         flex={matchSmallScreens ? 2 : 1}
         width="100%"
         paddingTop={matchSmallScreens ? '5vh' : 0}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+        }}
       >
         <Container maxWidth="sm">
           <Box

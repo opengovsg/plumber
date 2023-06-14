@@ -9,7 +9,7 @@ export default defineApp({
   name: 'Slack',
   key: 'slack',
   iconUrl: '{BASE_URL}/apps/slack/assets/favicon.svg',
-  authDocUrl: 'https://automatisch.io/docs/apps/slack/connection',
+  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/slack',
   supportsConnections: true,
   baseUrl: 'https://slack.com',
   apiBaseUrl: 'https://slack.com/api',

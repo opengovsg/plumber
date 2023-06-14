@@ -176,7 +176,15 @@ const Element = (props: any) => {
     case 'variable':
       return <Variable {...props} />
     default:
-      return <p {...attributes}>{children}</p>
+      return (
+        <p
+          // FIXME (ogp-weeloong): remove after chakra migration
+          style={{ margin: 'revert' }}
+          {...attributes}
+        >
+          {children}
+        </p>
+      )
   }
 }
 

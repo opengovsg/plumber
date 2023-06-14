@@ -13,7 +13,7 @@ type Params = {
 }
 
 // 5 minutes in milliseconds
-const OTP_RESEND_TIMEOUT_IN_MS = 5 * 60 * 1000
+const OTP_RESEND_TIMEOUT_IN_MS = 1 * 30 * 1000
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
@@ -24,7 +24,7 @@ const requestOtp = async (
   const email = validateAndParseEmail(params.input.email)
   // validate email
   if (!email) {
-    throw new BaseError('Only .gov.sg emails are allowed.')
+    throw new BaseError('Email is invalid or not whitelisted.')
   }
   // check if user exists
   let user = await User.query().findOne({ email })

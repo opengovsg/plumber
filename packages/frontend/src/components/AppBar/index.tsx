@@ -13,7 +13,7 @@ import Container from 'components/Container'
 import * as URLS from 'config/urls'
 import theme from 'styles/theme'
 
-import { Link } from './style'
+import { Link as RouterLink } from './style'
 
 type AppBarProps = {
   drawerOpen: boolean
@@ -61,7 +61,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
           </IconButton>
 
           <div style={{ flexGrow: 1 }}>
-            <Link to={URLS.DASHBOARD}>
+            <RouterLink to={URLS.DASHBOARD}>
               <Typography
                 variant="h5"
                 component="h2"
@@ -71,7 +71,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
               >
                 <FormattedMessage id="brandText" />
               </Typography>
-            </Link>
+            </RouterLink>
           </div>
 
           <IconButton
