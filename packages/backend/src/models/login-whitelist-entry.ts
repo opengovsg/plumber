@@ -60,6 +60,43 @@ class LoginWhitelistEntry extends Model {
       },
     })
   }
+
+  /**
+   * Checks if an email address / domain is whitelisted.
+   *
+   * @param email A *valid* (RFC 5322 compliant) email address.
+   * @returns Whether the email address is whitelisted.
+   */
+  static async isWhitelisted(email: string): Promise<boolean> {
+    // Assumes that email is valid, so safe to extract domain by splitting.
+    const domain = email.split('@')[1]
+
+    return (
+      (await this.query()
+        .findOne((builder) =>
+          builder
+            .where((builder) =>
+              builder.where('type', 'email').andWhere('value', email),
+            )
+            .orWhere((builder) =>
+              builder.where('type', 'exact_domain').andWhere('value', domain),
+            )
+            .orWhere((builder) =>
+              builder
+                .where('type', 'domain_and_subdomain')
+                .andWhere((nested_builder) =>
+                  nested_builder
+                    // Match exact domain
+                    .where('value', domain)
+                    // Match subdomains (the dot prevents matching on the
+                    // suffix of a different domain)
+                    .orWhereRaw('? like concat(\'%.\', "value")', [domain]),
+                ),
+            ),
+        )
+        .resultSize()) === 1
+    )
+  }
 }
 
 export default LoginWhitelistEntry
