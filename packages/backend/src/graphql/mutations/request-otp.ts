@@ -21,7 +21,7 @@ const requestOtp = async (
   _parent: unknown,
   params: Params,
 ): Promise<boolean> => {
-  const email = validateAndParseEmail(params.input.email)
+  const email = await validateAndParseEmail(params.input.email)
   // validate email
   if (!email) {
     throw new BaseError('Email is invalid or not whitelisted.')

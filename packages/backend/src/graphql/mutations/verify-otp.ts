@@ -24,7 +24,7 @@ const verifyOtp = async (
 ): Promise<{ token: string; user: User }> => {
   const { otp, email: emailRaw } = params.input
   // validate email
-  const email = validateAndParseEmail(emailRaw)
+  const email = await validateAndParseEmail(emailRaw)
   if (!email) {
     throw new BaseError('Only .gov.sg emails are allowed.')
   }
