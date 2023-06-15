@@ -9,7 +9,7 @@
     "noImplicitAny": true,
     "outDir": "dist",
     "paths": {
-      "*": ["../../node_modules/*", "node_modules/*", "src/types/*"]
+      "@/*": ["*"]
     },
     "skipLibCheck": true,
     "sourceMap": true,
@@ -21,5 +21,8 @@
       "./src/apps"
     ]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
 }
