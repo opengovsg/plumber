@@ -3,10 +3,11 @@
   "scripts": {
     "setup": "docker-compose -f docker-compose.dev.yml up -d",
     "teardown": "docker-compose -f docker-compose.dev.yml down",
-    "dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --exec \"ts-node src/server.ts\"",
-    "worker": "nodemon --watch \"src/**\" --ext \"ts,json\" --exec \"ts-node src/worker.ts\"",
+    "dev": "npm run build:watch -- --exec \"ts-node src/server.ts\"",
+    "worker": "npm run build:watch -- --exec \"ts-node src/worker.ts\"",
     "prebuild": "rm -rf ./dist",
     "build": "tsc && npm run copy-statics && tsc-alias",
+    "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",
     "lint": "eslint . --ignore-path ../../.eslintignore",
