@@ -1,4 +1,4 @@
-import './config/orm'
+import '@/config/orm'
 
 import { IRequest } from '@plumber/types'
 
@@ -6,19 +6,19 @@ import cors from 'cors'
 import express from 'express'
 import createError from 'http-errors'
 
-import appConfig from './config/app'
-import corsOptions from './config/cors-options'
-import addCspHeaders from './helpers/add-csp-headers'
-import appAssetsHandler from './helpers/app-assets-handler'
+import appConfig from '@/config/app'
+import corsOptions from '@/config/cors-options'
+import addCspHeaders from '@/helpers/add-csp-headers'
+import appAssetsHandler from '@/helpers/app-assets-handler'
 import {
   createBullBoardHandler,
   serverAdapter,
-} from './helpers/create-bull-board-handler'
-import errorHandler from './helpers/error-handler'
-import injectBullBoardHandler from './helpers/inject-bull-board-handler'
-import morgan from './helpers/morgan'
-import webUIHandler from './helpers/web-ui-handler'
-import router from './routes'
+} from '@/helpers/create-bull-board-handler'
+import errorHandler from '@/helpers/error-handler'
+import injectBullBoardHandler from '@/helpers/inject-bull-board-handler'
+import morgan from '@/helpers/morgan'
+import webUIHandler from '@/helpers/web-ui-handler'
+import router from '@/routes'
 
 createBullBoardHandler(serverAdapter)
 

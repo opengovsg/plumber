@@ -1,10 +1,10 @@
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
-import appConfig from '../../config/app'
-import BaseError from '../../errors/base'
-import { validateAndParseEmail } from '../../helpers/email-validator'
-import User from '../../models/user'
+import appConfig from '@/config/app'
+import BaseError from '@/errors/base'
+import { validateAndParseEmail } from '@/helpers/email-validator'
+import User from '@/models/user'
 
 type Params = {
   input: {

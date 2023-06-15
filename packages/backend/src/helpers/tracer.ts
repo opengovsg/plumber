@@ -1,6 +1,6 @@
 import tracer from 'dd-trace'
 
-import appConfig from '../config/app'
+import appConfig from '@/config/app'
 
 import logger from './logger'
 

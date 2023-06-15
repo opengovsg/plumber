@@ -1,6 +1,6 @@
 import type { IApp } from '@plumber/types'
 
-import appConfig from '../config/app'
+import appConfig from '@/config/app'
 
 const appInfoConverter = (rawAppData: IApp) => {
   rawAppData.iconUrl = rawAppData.iconUrl.replace(

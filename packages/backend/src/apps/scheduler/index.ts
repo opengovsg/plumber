@@ -1,4 +1,4 @@
-import defineApp from '../../helpers/define-app'
+import defineApp from '@/helpers/define-app'
 
 import triggers from './triggers'
 

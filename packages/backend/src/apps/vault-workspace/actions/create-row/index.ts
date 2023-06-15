@@ -1,4 +1,5 @@
-import defineAction from '../../../../helpers/define-action'
+import defineAction from '@/helpers/define-action'
+
 import createTableRow from '../../common/create-table-row'
 
 // NOTE: this is just demo code, we are not using action yet.

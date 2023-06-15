@@ -2,7 +2,7 @@ import { IGlobalVariable } from '@plumber/types'
 
 import isEmpty from 'lodash/isEmpty'
 
-import defineTrigger from '../../../../helpers/define-trigger'
+import defineTrigger from '@/helpers/define-trigger'
 
 export const NricFilter = {
   None: 'none',

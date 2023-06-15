@@ -1,12 +1,12 @@
-import CancelFlowError from '../errors/cancel-flow'
-import HttpError from '../errors/http'
-import computeParameters from '../helpers/compute-parameters'
-import globalVariable from '../helpers/global-variable'
-import logger from '../helpers/logger'
-import Execution from '../models/execution'
-import ExecutionStep from '../models/execution-step'
-import Flow from '../models/flow'
-import Step from '../models/step'
+import CancelFlowError from '@/errors/cancel-flow'
+import HttpError from '@/errors/http'
+import computeParameters from '@/helpers/compute-parameters'
+import globalVariable from '@/helpers/global-variable'
+import logger from '@/helpers/logger'
+import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
+import Flow from '@/models/flow'
+import Step from '@/models/step'
 
 type ProcessActionOptions = {
   flowId: string

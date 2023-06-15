@@ -1,4 +1,4 @@
-import { createRedisClient } from '../config/redis'
+import { createRedisClient } from '@/config/redis'
 
 import logger from './logger'
 

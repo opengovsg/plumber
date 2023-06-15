@@ -1,7 +1,8 @@
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import defineAction from '../../../../helpers/define-action'
+import defineAction from '@/helpers/define-action'
+
 import { emailSchema } from '../../common/types'
 
 export default defineAction({

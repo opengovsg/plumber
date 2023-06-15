@@ -1,5 +1,5 @@
-import CancelFlowError from '../../../../errors/cancel-flow'
-import defineAction from '../../../../helpers/define-action'
+import CancelFlowError from '@/errors/cancel-flow'
+import defineAction from '@/helpers/define-action'
 
 export default defineAction({
   name: 'Only continue if...',

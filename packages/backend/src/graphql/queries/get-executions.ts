@@ -1,7 +1,7 @@
 import { raw } from 'objection'
 
-import Execution from '../../models/execution'
-import Context from '../../types/express/context'
+import Execution from '@/models/execution'
+import Context from '@/types/express/context'
 
 type Params = {
   limit: number

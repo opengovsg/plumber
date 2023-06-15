@@ -3,8 +3,8 @@ import { IApp } from '@plumber/types'
 import fs from 'fs'
 import { join } from 'path'
 
-import appInfoConverter from '../helpers/app-info-converter'
-import getApp from '../helpers/get-app'
+import appInfoConverter from '@/helpers/app-info-converter'
+import getApp from '@/helpers/get-app'
 
 class App {
   static folderPath = join(__dirname, '../apps')

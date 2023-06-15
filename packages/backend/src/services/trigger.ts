@@ -1,7 +1,7 @@
 import { IJSONObject, ITriggerItem } from '@plumber/types'
 
-import Execution from '../models/execution'
-import Step from '../models/step'
+import Execution from '@/models/execution'
+import Step from '@/models/step'
 
 type ProcessTriggerOptions = {
   flowId: string

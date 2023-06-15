@@ -1,6 +1,7 @@
 import get from 'lodash.get'
 
-import ExecutionStep from '../models/execution-step'
+import ExecutionStep from '@/models/execution-step'
+
 import Step from '../models/step'
 
 const variableRegExp = /({{step\.[\da-zA-Z-]+(?:\.[\da-zA-Z-_]+)+}})/g

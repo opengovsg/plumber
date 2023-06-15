@@ -1,7 +1,7 @@
 import { Application } from 'express'
 import helmet from 'helmet'
 
-import appConfig from '../config/app'
+import appConfig from '@/config/app'
 
 const addCspHeaders = async (app: Application) => {
   app.use(

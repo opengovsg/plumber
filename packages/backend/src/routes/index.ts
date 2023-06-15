@@ -1,6 +1,6 @@
 import { Router } from 'express'
 
-import graphQLInstance from '../helpers/graphql-instance'
+import graphQLInstance from '@/helpers/graphql-instance'
 
 import webhooksRouter from './webhooks'
 

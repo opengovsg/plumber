@@ -1,4 +1,4 @@
-import defineAction from '../../../../helpers/define-action'
+import defineAction from '@/helpers/define-action'
 
 import postMessage from './post-message'
 

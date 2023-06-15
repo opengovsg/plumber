@@ -5,7 +5,7 @@ import { IHttpClientParams } from '@plumber/types'
 
 import { URL } from 'url'
 
-import HttpError from '../../errors/http'
+import HttpError from '@/errors/http'
 
 const removeBaseUrlForAbsoluteUrls = (
   requestConfig: AxiosRequestConfig,

@@ -1,14 +1,14 @@
 import { Worker } from 'bullmq'
 
-import { createRedisClient } from '../config/redis'
+import { createRedisClient } from '@/config/redis'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
-} from '../helpers/default-job-configuration'
-import logger from '../helpers/logger'
-import Flow from '../models/flow'
-import triggerQueue from '../queues/trigger'
-import { processFlow } from '../services/flow'
+} from '@/helpers/default-job-configuration'
+import logger from '@/helpers/logger'
+import Flow from '@/models/flow'
+import triggerQueue from '@/queues/trigger'
+import { processFlow } from '@/services/flow'
 
 export const worker = new Worker(
   'flow',
