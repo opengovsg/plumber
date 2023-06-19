@@ -7,14 +7,28 @@ import get from 'lodash.get'
 const BASE64_REGEX =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/
 
+const FORM_ID_LENGTH = 24
+
 const verifyFormCreds = async ($: IGlobalVariable) => {
-  if (!$.auth.data?.formId) {
+  if (!$.auth.data?.formId || typeof $.auth.data.formId !== 'string') {
     throw new Error('No form id provided')
   }
+
+  let formId = $.auth.data.formId
+  // Extract form id (24 characters) from form url or form admin url
+  // Example: https://form.gov.sg/<FORMID>
+  // Example: https://form.gov.sg/admin/form/<FORMID>
+  if (formId.length > FORM_ID_LENGTH) {
+    // remove trailing slash if any
+    formId = formId.replace(/\/$/, '')
+    // extract last 24 characters
+    formId = formId.slice(-FORM_ID_LENGTH)
+  }
+
   let formTitle = ''
   let publicKey = ''
   try {
-    const { data } = await $.http.get(`/v3/forms/${$.auth.data.formId}`)
+    const { data } = await $.http.get(`/v3/forms/${formId}`)
     formTitle = get(data, 'form.title')
     publicKey = get(data, 'form.publicKey')
   } catch (error) {
@@ -40,7 +54,7 @@ const verifyFormCreds = async ($: IGlobalVariable) => {
   }
 
   await $.auth.set({
-    screenName: `${$.auth.data.formId} - ${formTitle}`,
+    screenName: `${formId} - ${formTitle}`,
   })
 }
 
