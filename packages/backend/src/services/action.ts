@@ -44,7 +44,8 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   const actionCommand = await step.getActionCommand()
 
-  $.step.parameters = computedParameters
+  $.step.parameters = computedParameters.computedValue
+  $.step.parameterDetails.variables = computedParameters.variables
 
   let proceedToNextAction = true
   try {
