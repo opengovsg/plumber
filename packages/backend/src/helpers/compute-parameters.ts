@@ -5,7 +5,8 @@ import get from 'lodash.get'
 import ExecutionStep from '../models/execution-step'
 import Step from '../models/step'
 
-const variableRegExp = /({{step\.[\da-zA-Z-]+(?:\.[\da-zA-Z-_]+)+}})/g
+// FIXME (ogp-weeloong): Disable export once we get IFieldList. DON'T USE THIS!
+export const variableRegExp = /({{step\.[\da-zA-Z-]+(?:\.[\da-zA-Z-_]+)+}})/g
 
 export type ComputeParametersResult = {
   computedValue: Step['parameters']
