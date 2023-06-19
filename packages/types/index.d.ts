@@ -152,8 +152,6 @@ export interface IFieldMultiline {
   dependsOn?: string[]
 }
 
-
-
 export type IField = IFieldDropdown | IFieldText | IFieldMultiline
 
 export interface IAuthenticationStepField {
@@ -304,6 +302,10 @@ export type IGlobalVariable = {
     id: string
     appKey: string
     parameters: IJSONObject
+    parameterDetails: {
+      valueBeforeCompute: IJSONObject
+      variables: Record<string, IJSONValue>
+    }
   }
   nextStep?: {
     id: string
