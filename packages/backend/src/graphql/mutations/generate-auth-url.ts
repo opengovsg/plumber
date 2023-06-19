@@ -27,7 +27,10 @@ const generateAuthUrl = async (
     return null
   }
 
-  const authInstance = (await import(`@/apps/${connection.key}/auth`)).default
+  // Path aliases dont work for dynamic imports, so we need to use relative paths here
+  // ref: https://github.com/justkey007/tsc-alias/issues/156
+  const authInstance = (await import(`../../apps/${connection.key}/auth`))
+    .default
   const app = await App.findOneByKey(connection.key)
 
   const $ = await globalVariable({ connection, app })
