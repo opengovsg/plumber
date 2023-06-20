@@ -1,7 +1,7 @@
 import { IJSONObject } from '@plumber/types'
 
-import App from '../../models/app'
-import Context from '../../types/express/context'
+import App from '@/models/app'
+import Context from '@/types/express/context'
 
 type Params = {
   input: {

@@ -1,5 +1,5 @@
-import testRun from '../../services/test-run'
-import Context from '../../types/express/context'
+import testRun from '@/services/test-run'
+import Context from '@/types/express/context'
 
 type Params = {
   input: {

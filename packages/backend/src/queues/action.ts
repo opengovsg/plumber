@@ -1,8 +1,8 @@
 import { Queue } from 'bullmq'
 import process from 'process'
 
-import { createRedisClient } from '../config/redis'
-import logger from '../helpers/logger'
+import { createRedisClient } from '@/config/redis'
+import logger from '@/helpers/logger'
 
 const CONNECTION_REFUSED = 'ECONNREFUSED'
 

@@ -1,7 +1,7 @@
-import Step from '../models/step'
-import { processAction } from '../services/action'
-import { processFlow } from '../services/flow'
-import { processTrigger } from '../services/trigger'
+import Step from '@/models/step'
+import { processAction } from '@/services/action'
+import { processFlow } from '@/services/flow'
+import { processTrigger } from '@/services/trigger'
 
 type TestRunOptions = {
   stepId: string

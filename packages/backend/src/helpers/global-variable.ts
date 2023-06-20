@@ -7,12 +7,12 @@ import {
   ITriggerItem,
 } from '@plumber/types'
 
-import appConfig from '../config/app'
-import EarlyExitError from '../errors/early-exit'
-import Connection from '../models/connection'
-import Execution from '../models/execution'
-import Flow from '../models/flow'
-import Step from '../models/step'
+import appConfig from '@/config/app'
+import EarlyExitError from '@/errors/early-exit'
+import Connection from '@/models/connection'
+import Execution from '@/models/execution'
+import Flow from '@/models/flow'
+import Step from '@/models/step'
 
 import createHttpClient from './http-client'
 

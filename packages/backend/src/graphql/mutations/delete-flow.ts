@@ -1,6 +1,6 @@
-import Execution from '../../models/execution'
-import ExecutionStep from '../../models/execution-step'
-import Context from '../../types/express/context'
+import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
+import Context from '@/types/express/context'
 
 type Params = {
   input: {

@@ -2,12 +2,12 @@ import { IJSONObject, ITriggerItem } from '@plumber/types'
 
 import { Worker } from 'bullmq'
 
-import { createRedisClient } from '../config/redis'
-import { DEFAULT_JOB_OPTIONS } from '../helpers/default-job-configuration'
-import logger from '../helpers/logger'
-import Step from '../models/step'
-import actionQueue from '../queues/action'
-import { processTrigger } from '../services/trigger'
+import { createRedisClient } from '@/config/redis'
+import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import logger from '@/helpers/logger'
+import Step from '@/models/step'
+import actionQueue from '@/queues/action'
+import { processTrigger } from '@/services/trigger'
 
 type JobData = {
   flowId: string

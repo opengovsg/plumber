@@ -1,4 +1,4 @@
-import Step from '../models/step'
+import Step from '@/models/step'
 
 import delayForAsMilliseconds, {
   TDelayForUnit,

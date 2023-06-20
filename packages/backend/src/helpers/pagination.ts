@@ -1,6 +1,6 @@
 import { Model } from 'objection'
 
-import ExtendedQueryBuilder from '../models/query-builder'
+import ExtendedQueryBuilder from '@/models/query-builder'
 
 const paginate = async (
   query: ExtendedQueryBuilder<Model, Model[]>,

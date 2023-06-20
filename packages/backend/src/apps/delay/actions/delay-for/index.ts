@@ -1,4 +1,4 @@
-import defineAction from '../../../../helpers/define-action'
+import defineAction from '@/helpers/define-action'
 
 export default defineAction({
   name: 'Delay For',

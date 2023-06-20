@@ -1,8 +1,8 @@
 import { allow, rule, shield } from 'graphql-shield'
 import jwt from 'jsonwebtoken'
 
-import appConfig from '../config/app'
-import User from '../models/user'
+import appConfig from '@/config/app'
+import User from '@/models/user'
 
 const isAuthenticated = rule()(async (_parent, _args, req) => {
   const token = req.headers['authorization']

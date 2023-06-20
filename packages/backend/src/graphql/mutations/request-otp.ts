@@ -1,10 +1,10 @@
 import crypto from 'crypto'
 
-import appConfig from '../../config/app'
-import BaseError from '../../errors/base'
-import { validateAndParseEmail } from '../../helpers/email-validator'
-import { sendEmail } from '../../helpers/send-email'
-import User from '../../models/user'
+import appConfig from '@/config/app'
+import BaseError from '@/errors/base'
+import { validateAndParseEmail } from '@/helpers/email-validator'
+import { sendEmail } from '@/helpers/send-email'
+import User from '@/models/user'
 
 type Params = {
   input: {

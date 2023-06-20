@@ -1,4 +1,5 @@
-import defineAction from '../../../../helpers/define-action'
+import defineAction from '@/helpers/define-action'
+
 import { VAULT_ID } from '../../common/constants'
 import filterTableRows from '../../common/filter-table-rows'
 import updateTableRow from '../../common/update-table-row'

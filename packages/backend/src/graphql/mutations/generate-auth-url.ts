@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-import GenerateAuthUrlError from '../../errors/generate-auth-url'
-import globalVariable from '../../helpers/global-variable'
-import App from '../../models/app'
-import Context from '../../types/express/context'
+import GenerateAuthUrlError from '@/errors/generate-auth-url'
+import globalVariable from '@/helpers/global-variable'
+import App from '@/models/app'
+import Context from '@/types/express/context'
 
 type Params = {
   input: {
@@ -27,6 +27,8 @@ const generateAuthUrl = async (
     return null
   }
 
+  // Path aliases dont work for dynamic imports, so we need to use relative paths here
+  // ref: https://github.com/justkey007/tsc-alias/issues/156
   const authInstance = (await import(`../../apps/${connection.key}/auth`))
     .default
   const app = await App.findOneByKey(connection.key)
