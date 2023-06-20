@@ -15,7 +15,8 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       variables: false,
-      description: 'Put a comma between each column.',
+      description:
+        'Put a comma between each column. Enclose columns with double-quotes (") if it contains commas. Columns CANNOT contain double quotes.',
     },
     {
       label: 'Values',
@@ -23,7 +24,8 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       variables: true,
-      description: 'Put a comma between each value.',
+      description:
+        'Put a comma between each value. Enclose values with double-quotes (") if you think it may contain commas (e.g. form answers). Values CANNOT contain double quotes.',
     },
   ],
 
