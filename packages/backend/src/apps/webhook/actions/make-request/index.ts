@@ -1,3 +1,5 @@
+import { URL } from 'url'
+
 import defineAction from '@/helpers/define-action'
 
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
@@ -44,6 +46,11 @@ export default defineAction({
     const method = $.step.parameters.method as TMethod
     const data = $.step.parameters.data as string
     const url = $.step.parameters.url as string
+
+    // Prohibit calling ourselves to prevent self-DoS.
+    if (new URL(url).hostname.toLowerCase().endsWith('plumber.gov.sg')) {
+      throw new Error('Recursively invoking Plumber webhooks is prohibited.')
+    }
 
     const response = await $.http.request({
       url,
