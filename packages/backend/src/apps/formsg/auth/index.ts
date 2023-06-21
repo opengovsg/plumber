@@ -6,13 +6,13 @@ export default {
   fields: [
     {
       key: 'formId',
-      label: 'Form ID',
+      label: 'Form ID / Form URL',
       type: 'string' as const,
       required: true,
       readOnly: false,
       value: null,
       placeholder: null,
-      description: 'Unique ID of your Form',
+      description: 'Enter your Form ID or Form URL',
       clickToCopy: false,
     },
     {
