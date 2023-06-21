@@ -169,7 +169,7 @@ describe('decrypt form response', () => {
         ],
       })
     })
-    it('it should handle nric filter - do nothing', async () => {
+    it('should handle nric filter - do nothing', async () => {
       await expect(decryptFormResponse($)).resolves.toEqual(true)
       expect($.request.body).toEqual({
         fields: {

@@ -11,6 +11,7 @@ import {
 
 const mocks = vi.hoisted(() => {
   return {
+    // note: do not mock implementation here as it does not reset for each test
     cryptoValid: vi.fn(),
   }
 })
@@ -28,6 +29,7 @@ vi.mock('@opengovsg/formsg-sdk', () => {
 describe('verify credentials', () => {
   let $: IGlobalVariable
 
+  // Reset global variable
   beforeEach(() => {
     $ = {
       auth: {
@@ -51,6 +53,7 @@ describe('verify credentials', () => {
     }
   })
 
+  // Reset each mock after tests
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -76,6 +79,8 @@ describe('verify credentials', () => {
     it('should accept a valid form url', () => {
       const formId = $.auth.data.formId
       $.auth.data.formId = 'https://form.gov.sg/' + formId
+      expect(verifyFormIdFormat($)).toBe(formId)
+      $.auth.data.formId = 'https://www.form.gov.sg/' + formId
       expect(verifyFormIdFormat($)).toBe(formId)
     })
 

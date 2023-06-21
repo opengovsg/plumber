@@ -71,7 +71,10 @@ export const verifyFormIdFormat = ($: IGlobalVariable): string => {
   // Example: https://form.gov.sg/<FORMID>
   // Example: https://form.gov.sg/admin/form/<FORMID>
   if (formId.length > FORM_ID_LENGTH) {
-    if (!formId.startsWith('https://form.gov.sg')) {
+    if (
+      !formId.startsWith('https://form.gov.sg/') &&
+      !formId.startsWith('https://www.form.gov.sg/')
+    ) {
       throw new Error('Invalid form url')
     }
     // remove trailing slash if any
