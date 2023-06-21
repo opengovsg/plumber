@@ -12,7 +12,7 @@ type Params = {
   }
 }
 
-// 5 minutes in milliseconds
+// 30 seconds in milliseconds
 const OTP_RESEND_TIMEOUT_IN_MS = 1 * 30 * 1000
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
