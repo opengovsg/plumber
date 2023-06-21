@@ -30,7 +30,7 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       description:
-        'Any URL with a querystring will be re-encoded properly. Plumber URLs (e.g. https://plumber.gov.sg/webhooks/...) are prohibited.',
+        'Any URL with a querystring will be re-encoded properly. Only absolute URLs (https://... or http://...) are supported. Plumber URLs (e.g. https://plumber.gov.sg/webhooks/...) are prohibited.',
       variables: true,
     },
     {
@@ -48,8 +48,21 @@ export default defineAction({
     const data = $.step.parameters.data as string
     const url = $.step.parameters.url as string
 
+    // Only for checking protocol and for plumber domain - URLs are case
+    // sensitive in general.
+    const lowercaseUrl = url.toLowerCase()
+
+    if (
+      !(
+        lowercaseUrl.startsWith('https://') ||
+        lowercaseUrl.startsWith('http://')
+      )
+    ) {
+      throw new Error('Webhook URLs need to begin with http:// or https://')
+    }
+
     // Prohibit calling ourselves to prevent self-DoS.
-    if (new URL(url).hostname.toLowerCase().endsWith('plumber.gov.sg')) {
+    if (new URL(lowercaseUrl).hostname.endsWith('plumber.gov.sg')) {
       throw new Error('Recursively invoking Plumber webhooks is prohibited.')
     }
 

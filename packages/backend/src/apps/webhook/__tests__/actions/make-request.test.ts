@@ -64,4 +64,17 @@ describe('create row', () => {
       'Recursively invoking Plumber webhooks is prohibited.',
     )
   })
+
+  it.each([
+    'test-domain.com/webhooks/abc-def-123',
+    'webhooks/abc-def-123',
+    '/webhooks/abc-def-123',
+  ])('rejects webhooks with relative URLs', async (url: string) => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.data = 'meep meep'
+    $.step.parameters.url = url
+    expect(makeRequestAction.run($)).rejects.toThrowError(
+      'Webhook URLs need to begin with http:// or https://',
+    )
+  })
 })
