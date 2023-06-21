@@ -47,6 +47,7 @@ const verifyOtp = async (
   const { otpAttempts: newOtpAttempts } = await user
     .$query()
     .increment('otp_attempts', 1)
+    .returning('otp_attempts')
   if (newOtpAttempts > MAX_OTP_ATTEMPTS) {
     throw new BaseError('OTP attempts exceeded')
   }
