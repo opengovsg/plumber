@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import { customAlphabet } from 'nanoid/async'
 
 import appConfig from '@/config/app'
 import BaseError from '@/errors/base'
@@ -11,6 +11,10 @@ type Params = {
     email: string
   }
 }
+
+const OTP_LENGTH = 6
+const OTP_ALLOWED_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+const generateOtpAsync = customAlphabet(OTP_ALLOWED_CHARS, OTP_LENGTH)
 
 // 30 seconds in milliseconds
 const OTP_RESEND_TIMEOUT_IN_MS = 1 * 30 * 1000
@@ -42,7 +46,7 @@ const requestOtp = async (
       )} seconds before requesting a new OTP`,
     )
   }
-  const otp = crypto.randomInt(0, 1000000).toString().padStart(6, '0')
+  const otp = await generateOtpAsync()
   await user.$query().patch({
     otpHash: user.hashOtp(otp),
     otpAttempts: 0,
