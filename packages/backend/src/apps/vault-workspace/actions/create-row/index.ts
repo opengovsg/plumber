@@ -1,8 +1,9 @@
+import { parse as parseAsCsv } from 'csv-parse/sync'
+
 import defineAction from '@/helpers/define-action'
 
 import createTableRow from '../../common/create-table-row'
 
-// NOTE: this is just demo code, we are not using action yet.
 export default defineAction({
   name: 'Create row',
   key: 'createRow',
@@ -14,7 +15,8 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       variables: false,
-      description: 'Put a comma between each column.',
+      description:
+        'Put a comma between each column. Enclose columns with double-quotes (") if it contains commas. Columns CANNOT contain double quotes.',
     },
     {
       label: 'Values',
@@ -22,18 +24,21 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       variables: true,
-      description: 'Put a comma between each value.',
+      description:
+        'Put a comma between each value. Enclose values with double-quotes (") if you think it may contain commas (e.g. form answers). Values CANNOT contain double quotes.',
     },
   ],
 
   async run($) {
-    const rawColumnData = $.step.parameters.columns as string
-    const columns = rawColumnData.split(',').map((each) => {
-      return each.trim()
-    })
+    const columns = parseAsCsv($.step.parameters.columns as string, {
+      columns: false,
+      trim: true,
+    })[0] as string[]
 
-    const rawValueData = $.step.parameters.values as string
-    const values = rawValueData.split(',')
+    const values = parseAsCsv($.step.parameters.values as string as string, {
+      columns: false,
+      trim: true,
+    })[0] as string[]
 
     if (columns.length !== values.length) {
       throw new Error('The number of columns and values must be equal.')
