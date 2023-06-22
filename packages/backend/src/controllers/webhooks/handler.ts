@@ -1,10 +1,12 @@
 import { IRequest, ITriggerItem } from '@plumber/types'
 
 import { Response } from 'express'
+import { z } from 'zod'
 
 import { sha256Hash } from '@/helpers/crypto'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
+import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Flow from '@/models/flow'
 import actionQueue from '@/queues/action'
@@ -14,9 +16,19 @@ export default async (request: IRequest, response: Response) => {
   const span = tracer.scope().active()
   span?.setOperationName('webhooks.handler')
 
+  const flowId = request.params.flowId
+
+  try {
+    z.string().uuid().parse(flowId)
+  } catch (err) {
+    logger.info(`Invalid webhook flow id ${flowId}, not uuid`)
+    return response.sendStatus(404)
+  }
+
   const flow = await Flow.query().findById(request.params.flowId)
 
   if (!flow) {
+    logger.info(`Flow not found for webhook id ${flowId}}`)
     return response.sendStatus(404)
   }
 
@@ -74,8 +86,8 @@ export default async (request: IRequest, response: Response) => {
     },
   }
 
-  const { flowId, executionId } = await processTrigger({
-    flowId: flow.id,
+  const { executionId } = await processTrigger({
+    flowId,
     stepId: triggerStep.id,
     triggerItem,
     testRun,
