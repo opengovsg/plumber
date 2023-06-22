@@ -6,7 +6,7 @@ const verifyCredentials = async ($: IGlobalVariable) => {
   const tableName = await verifyAPIKey($)
   await $.auth.set({
     consumerSecret: $.auth.data.consumerSecret,
-    screenName: tableName,
+    screenName: `${$.auth.data.screenName} (${tableName})`,
   })
 }
 
