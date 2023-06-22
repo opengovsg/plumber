@@ -29,7 +29,8 @@ export default defineAction({
       key: 'url',
       type: 'string' as const,
       required: true,
-      description: 'Any URL with a querystring will be re-encoded properly.',
+      description:
+        'Any URL with a querystring will be re-encoded properly. Plumber URLs (e.g. https://plumber.gov.sg/webhooks/...) are prohibited.',
       variables: true,
     },
     {
