@@ -16,6 +16,9 @@ class Flow extends Base {
   remoteWebhookId: string
   executions?: Execution[]
 
+  // Null means to use default QPS limits.
+  maxQps: number
+
   static tableName = 'flows'
 
   static jsonSchema = {
@@ -28,6 +31,7 @@ class Flow extends Base {
       userId: { type: 'string', format: 'uuid' },
       remoteWebhookId: { type: 'string' },
       active: { type: 'boolean' },
+      maxQps: { type: 'integer' },
     },
   }
 
