@@ -1,8 +1,11 @@
 import { IRequest, ITriggerItem } from '@plumber/types'
 
 import { Response } from 'express'
+import { memoize } from 'lodash'
+import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible'
 import { z } from 'zod'
 
+import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { sha256Hash } from '@/helpers/crypto'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
@@ -11,6 +14,23 @@ import tracer from '@/helpers/tracer'
 import Flow from '@/models/flow'
 import actionQueue from '@/queues/action'
 import { processTrigger } from '@/services/trigger'
+
+const redisRateLimitClient = createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)
+
+// Memoize to prevent high QPS flows with different limits from creating a hot
+// path.
+const DEFAULT_MAX_QPS = 10
+const getRateLimiter = memoize((maxQps: number): RateLimiterRedis => {
+  const allowedQps = maxQps ?? DEFAULT_MAX_QPS
+
+  return new RateLimiterRedis({
+    points: allowedQps,
+    duration: 1,
+
+    keyPrefix: 'flow-exec',
+    storeClient: redisRateLimitClient,
+  })
+})
 
 export default async (request: IRequest, response: Response) => {
   const span = tracer.scope().active()
@@ -30,6 +50,26 @@ export default async (request: IRequest, response: Response) => {
   if (!flow) {
     logger.info(`Flow not found for webhook id ${flowId}}`)
     return response.sendStatus(404)
+  }
+
+  const rateLimiter = getRateLimiter(flow.maxQps)
+  try {
+    await rateLimiter.consume(flowId)
+  } catch (error) {
+    if (error instanceof RateLimiterRes) {
+      logger.warn(`Rate limited flow ${flowId}`, {
+        event: 'flow-rate-limited',
+        flowId,
+      })
+      return response.sendStatus(429)
+    } else {
+      logger.error(`Got error "${error}" while rate limiting ${flowId}`, {
+        event: 'flow-rate-limit-error',
+        flowId,
+        error,
+      })
+      return response.sendStatus(500)
+    }
   }
 
   const testRun = !flow.active
