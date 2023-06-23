@@ -152,8 +152,6 @@ export interface IFieldMultiline {
   dependsOn?: string[]
 }
 
-
-
 export type IField = IFieldDropdown | IFieldText | IFieldMultiline
 
 export interface IAuthenticationStepField {
@@ -171,6 +169,12 @@ export interface IAuthenticationStep {
   arguments: IAuthenticationStepField[]
 }
 
+export interface IDynamicData {
+  name: string
+  key: string
+  run($: IGlobalVariable): Promise<DynamicData>
+}
+
 export interface IApp {
   name: string
   key: string
@@ -185,7 +189,7 @@ export interface IApp {
   connectionCount?: number
   flowCount?: number
   beforeRequest?: TBeforeRequest[]
-  dynamicData?: IDynamicData
+  dynamicData?: IDynamicData[]
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
@@ -195,8 +199,12 @@ export type TBeforeRequest = {
   ($: IGlobalVariable, requestConfig: AxiosRequestConfig): AxiosRequestConfig
 }
 
-export interface IDynamicData {
-  [index: string]: any
+export interface DynamicData {
+  data: {
+    name: string
+    value: string
+  }[]
+  error?: IJSONObject
 }
 
 export interface IAuth {
