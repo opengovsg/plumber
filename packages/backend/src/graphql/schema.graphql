@@ -182,6 +182,7 @@ type ExecutionStep {
   status: String
   dataIn: JSONObject
   dataOut: JSONObject
+  dataOutMetadata: JSONObject
   errorDetails: JSONObject
   createdAt: String
   updatedAt: String

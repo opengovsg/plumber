@@ -74,6 +74,7 @@ export interface IExecutionStep {
   step: IStep
   dataIn: IJSONObject
   dataOut: IJSONObject
+  dataOutMetadata?: TDataOutMetadata
   errorDetails: IJSONObject
   status: string
   appKey: string
