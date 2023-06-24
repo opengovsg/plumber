@@ -22,6 +22,51 @@ export interface IConnection {
   createdAt: string
 }
 
+export type TDataOutMetadatumType = 'text' | 'file_url'
+
+/**
+ * This should only be defined on _leaf_ nodes (i.e. **array elements** or
+ * **object properties**) of your app's `dataOut` object.
+ */
+export type TDataOutMetadatum = {
+  /**
+   * Generally defaults to 'text' in the front end if unspecified.
+   */
+  type?: TDataOutMetadatumType
+
+  /**
+   * Generally defaults to `true` in the front end if unspecified.
+   */
+  isVisible?: boolean
+
+  /**
+   * If label is unspecified, the front end will generate one - typically an
+   * ugly lodash get string (e.g. "step.abc-def.herp-derp.answer.1").
+   */
+  label?: string
+}
+
+/**
+ * Metadata type to use if `dataOut` is an array.
+ */
+export type TDataOutArrayMetadata = Array<TDataOutMetadatum>
+
+/**
+ * Metadata type to use if `dataOut` is an object.
+ */
+export type TDataOutObjectMetadata = {
+  [property: string]:
+    | TDataOutMetadatum
+    | TDataOutArrayMetadata
+    | TDataOutObjectMetadata
+}
+
+/**
+ * Metadata can be arbitrarily nested objects / arrays as long as
+ * leaves / elements are `TDataOutMetadatum`.
+ */
+export type TDataOutMetadata = TDataOutObjectMetadata | TDataOutArrayMetadata
+
 export interface IExecutionStep {
   id: string
   executionId: string
@@ -194,6 +239,18 @@ export interface IApp {
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
+
+  /**
+   * Gets metadata for the data output (i.e. `dataOut`) by an app's execution
+   * step.
+   *
+   * @param stepKey - The key associated with the step.
+   * @param executionStep - The execution step to get metadata for.
+   */
+  getDataOutMetadata?(
+    stepKey: IStep['key'],
+    executionStep: IExecutionStep,
+  ): Promise<TDataOutMetadata>
 }
 
 export type TBeforeRequest = {
