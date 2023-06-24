@@ -44,6 +44,16 @@ export interface IDataOutMetadatum {
    * ugly lodash get string (e.g. "step.abc-def.herp-derp.answer.1").
    */
   label?: string
+
+  /**
+   * If the front end component renders variables in an ordered list, this
+   * specifies the position of the associated variable in that list.
+   *
+   * See the implementation of {@link extractVariables} for info on how
+   * variables with the same `renderPosition` or undefined `renderPosition` are
+   * sorted.
+   */
+  renderPosition?: number
 }
 
 export interface IDataOutMetadata {

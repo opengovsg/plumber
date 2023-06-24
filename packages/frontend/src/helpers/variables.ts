@@ -9,6 +9,7 @@ export interface StepWithVariables {
 }
 export interface Variable extends RawVariable {
   label: string | null
+  renderPosition: number | null
 }
 
 interface RawVariable {
@@ -30,11 +31,11 @@ function postProcess(
 
   for (const variable of variables) {
     const { name, ...rest } = variable
-    const { isVisible = true, label = null } = get(
-      metadata,
-      name,
-      {},
-    ) as IDataOutMetadatum
+    const {
+      isVisible = true,
+      label = null,
+      renderPosition = null,
+    } = get(metadata, name, {}) as IDataOutMetadatum
 
     if (!isVisible) {
       continue
@@ -42,11 +43,26 @@ function postProcess(
 
     result.push({
       label,
+      renderPosition,
       name: `step.${stepId}.${name}`,
       ...rest,
     })
   }
 
+  result.sort((a, b) => {
+    // Put vars with null renderPosition last, but preserve order (via `sort`'s
+    // stability) if both are null.
+    if (!a.renderPosition && !b.renderPosition) {
+      return 0
+    }
+    if (!a.renderPosition) {
+      return 1
+    }
+    if (!b.renderPosition) {
+      return -1
+    }
+    return a.renderPosition - b.renderPosition
+  })
   return result
 }
 
