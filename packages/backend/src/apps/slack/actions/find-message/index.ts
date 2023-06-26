@@ -1,4 +1,4 @@
-import defineAction from '../../../../helpers/define-action'
+import defineAction from '@/helpers/define-action'
 
 import findMessage from './find-message'
 

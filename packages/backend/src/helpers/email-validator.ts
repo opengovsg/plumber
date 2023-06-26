@@ -1,6 +1,6 @@
 import validator from 'email-validator'
 
-import LoginWhitelistEntry from '../models/login-whitelist-entry'
+import LoginWhitelistEntry from '@/models/login-whitelist-entry'
 
 export async function validateAndParseEmail(
   input: unknown,

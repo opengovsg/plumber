@@ -1,6 +1,6 @@
 import { IApp } from '@plumber/types'
 
-import App from '../../models/app'
+import App from '@/models/app'
 
 type Params = {
   name: string

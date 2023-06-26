@@ -1,6 +1,6 @@
-import globalVariable from '../../helpers/global-variable'
-import App from '../../models/app'
-import Context from '../../types/express/context'
+import globalVariable from '@/helpers/global-variable'
+import App from '@/models/app'
+import Context from '@/types/express/context'
 
 type Params = {
   id: string

@@ -5,10 +5,10 @@ import { graphqlHTTP } from 'express-graphql'
 import { applyMiddleware } from 'graphql-middleware'
 import { join } from 'path'
 
-import HttpError from '../errors/http'
-import resolvers from '../graphql/resolvers'
-import authentication from '../helpers/authentication'
-import logger from '../helpers/logger'
+import HttpError from '@/errors/http'
+import resolvers from '@/graphql/resolvers'
+import authentication from '@/helpers/authentication'
+import logger from '@/helpers/logger'
 
 const schema = loadSchemaSync(join(__dirname, '../graphql/schema.graphql'), {
   loaders: [new GraphQLFileLoader()],

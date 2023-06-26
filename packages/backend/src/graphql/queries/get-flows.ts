@@ -1,5 +1,5 @@
-import paginate from '../../helpers/pagination'
-import Context from '../../types/express/context'
+import paginate from '@/helpers/pagination'
+import Context from '@/types/express/context'
 
 type Params = {
   appKey?: string

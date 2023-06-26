@@ -8,9 +8,9 @@ import express, {
 } from 'express'
 import multer from 'multer'
 
-import appConfig from '../config/app'
-import webhookHandler from '../controllers/webhooks/handler'
-import logger from '../helpers/logger'
+import appConfig from '@/config/app'
+import webhookHandler from '@/controllers/webhooks/handler'
+import logger from '@/helpers/logger'
 
 const router = Router()
 const upload = multer()

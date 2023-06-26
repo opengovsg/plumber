@@ -1,7 +1,7 @@
-import EarlyExitError from '../errors/early-exit'
-import HttpError from '../errors/http'
-import globalVariable from '../helpers/global-variable'
-import Flow from '../models/flow'
+import EarlyExitError from '@/errors/early-exit'
+import HttpError from '@/errors/http'
+import globalVariable from '@/helpers/global-variable'
+import Flow from '@/models/flow'
 
 type ProcessFlowOptions = {
   flowId: string

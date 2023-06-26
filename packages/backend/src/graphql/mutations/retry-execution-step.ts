@@ -1,8 +1,8 @@
 import { ref } from 'objection'
 
-import ExecutionStep from '../../models/execution-step'
-import actionQueue from '../../queues/action'
-import Context from '../../types/express/context'
+import ExecutionStep from '@/models/execution-step'
+import actionQueue from '@/queues/action'
+import Context from '@/types/express/context'
 
 type Params = {
   input: {

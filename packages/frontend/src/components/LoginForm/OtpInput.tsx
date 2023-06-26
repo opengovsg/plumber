@@ -18,11 +18,14 @@ const OtpInput = ({ isLoading, email, otp, setOtp }: Props): JSX.Element => {
         </FormLabel>
         <Input
           autoFocus
-          type="tel"
-          placeholder="123456"
+          type="text"
+          autoCapitalize="true"
+          autoCorrect="false"
+          autoComplete="one-time-code"
+          placeholder="ABC123"
           value={otp}
           onChange={(e) => {
-            setOtp(e.target.value)
+            setOtp(e.target.value?.toUpperCase())
           }}
         />
       </FormControl>

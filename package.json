@@ -2,7 +2,7 @@
   "name": "plumber",
   "license": "AGPL-3.0",
   "scripts": {
-    "all": "concurrently -c green,blue,bgBlue",
+    "all": "concurrently -c auto",
     "setup": "npm run -w backend setup",
     "dev:frontend": "npm run -w frontend dev",
     "dev:backend": "npm run -w backend dev",
@@ -13,7 +13,8 @@
     "build": "npm run --workspaces --if-present build",
     "start": "npm run -w backend start",
     "start:worker": "npm run -w backend start:worker",
-    "lint": "npm run --workspaces --if-present lint"
+    "lint": "npm run --workspaces --if-present lint",
+    "test": "npm run --workspaces --if-present test"
   },
   "workspaces": {
     "packages": [

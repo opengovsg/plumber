@@ -1,14 +1,14 @@
 import { Worker } from 'bullmq'
 
-import appConfig from '../config/app'
-import { createRedisClient } from '../config/redis'
-import { DEFAULT_JOB_OPTIONS } from '../helpers/default-job-configuration'
-import delayAsMilliseconds from '../helpers/delay-as-milliseconds'
-import logger from '../helpers/logger'
-import tracer from '../helpers/tracer'
-import Step from '../models/step'
-import actionQueue from '../queues/action'
-import { processAction } from '../services/action'
+import appConfig from '@/config/app'
+import { createRedisClient } from '@/config/redis'
+import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
+import logger from '@/helpers/logger'
+import tracer from '@/helpers/tracer'
+import Step from '@/models/step'
+import actionQueue from '@/queues/action'
+import { processAction } from '@/services/action'
 
 type JobData = {
   flowId: string

@@ -1,4 +1,5 @@
-import defineTrigger from '../../../../helpers/define-trigger'
+import defineTrigger from '@/helpers/define-trigger'
+
 import { getColumnMappingInAlias } from '../../common/get-column-mapping'
 import getExampleRow from '../../common/get-example-row'
 import {

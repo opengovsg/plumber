@@ -1,4 +1,4 @@
-import defineTrigger from '../../../../helpers/define-trigger'
+import defineTrigger from '@/helpers/define-trigger'
 
 export default defineTrigger({
   name: 'Catch raw webhook',

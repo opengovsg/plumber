@@ -4,7 +4,7 @@ import { AES, enc } from 'crypto-js'
 import type { RelationMappings } from 'objection'
 import { ModelOptions, QueryContext } from 'objection'
 
-import appConfig from '../config/app'
+import appConfig from '@/config/app'
 
 import Base from './base'
 import Step from './step'

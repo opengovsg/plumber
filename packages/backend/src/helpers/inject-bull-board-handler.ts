@@ -2,7 +2,7 @@ import { ExpressAdapter } from '@bull-board/express'
 import { Application } from 'express'
 import basicAuth from 'express-basic-auth'
 
-import appConfig from '../config/app'
+import appConfig from '@/config/app'
 
 const injectBullBoardHandler = async (
   app: Application,

@@ -2,7 +2,12 @@ import iosRedis from 'ioredis'
 
 import appConfig from './app'
 
-export const createRedisClient = () =>
+export const REDIS_DB_INDEX = {
+  JOBS: 0,
+  RATE_LIMIT: 1,
+}
+
+export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
   appConfig.redisClusterMode
     ? new iosRedis.Cluster(
         [
@@ -17,6 +22,7 @@ export const createRedisClient = () =>
             tls: appConfig.redisTls ? {} : undefined,
             username: appConfig.redisUsername,
             password: appConfig.redisPassword,
+            db,
           },
         },
       )
@@ -28,6 +34,7 @@ export const createRedisClient = () =>
         password: appConfig.redisPassword,
         enableReadyCheck: false,
         maxRetriesPerRequest: null, // commands wait forever until the connection is alive again.
+        db,
         reconnectOnError(err) {
           const targetError = 'READONLY'
           if (err.message.includes(targetError)) {

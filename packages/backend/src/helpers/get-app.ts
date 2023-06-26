@@ -6,9 +6,9 @@ import {
   ITrigger,
 } from '@plumber/types'
 
+import fs from 'fs'
 import { cloneDeep, omit } from 'lodash'
-import fs from 'node:fs'
-import path from 'node:path'
+import path from 'path'
 
 import addAuthenticationSteps from './add-authentication-steps'
 import addReconnectionSteps from './add-reconnection-steps'

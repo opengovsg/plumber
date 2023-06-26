@@ -4,6 +4,7 @@ import {
   Model,
   Page,
   PartialModelObject,
+  QueryBuilder,
 } from 'objection'
 
 const DELETED_COLUMN_NAME = 'deleted_at'
@@ -23,7 +24,7 @@ const buildQueryBuidlerForClass = (): ForClassMethod => {
   }
 }
 
-class ExtendedQueryBuilder<M extends Model, R = M[]> extends Model.QueryBuilder<
+class ExtendedQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<
   M,
   R
 > {

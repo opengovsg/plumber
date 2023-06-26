@@ -1,4 +1,4 @@
-import Context from '../../types/express/context'
+import Context from '@/types/express/context'
 
 type Params = {
   executionId: string

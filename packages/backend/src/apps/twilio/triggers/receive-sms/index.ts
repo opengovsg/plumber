@@ -1,4 +1,4 @@
-import defineTrigger from '../../../../helpers/define-trigger'
+import defineTrigger from '@/helpers/define-trigger'
 
 import fetchMessages from './fetch-messages'
 

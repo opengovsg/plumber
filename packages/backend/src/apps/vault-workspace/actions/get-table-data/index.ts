@@ -1,4 +1,5 @@
-import defineAction from '../../../../helpers/define-action'
+import defineAction from '@/helpers/define-action'
+
 import filterTableRows from '../../common/filter-table-rows'
 
 export default defineAction({

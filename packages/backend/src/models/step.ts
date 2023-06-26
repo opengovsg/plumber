@@ -1,8 +1,8 @@
 import type { IJSONObject, IStep } from '@plumber/types'
 
-import { URL } from 'node:url'
+import { URL } from 'url'
 
-import appConfig from '../config/app'
+import appConfig from '@/config/app'
 
 import App from './app'
 import Base from './base'

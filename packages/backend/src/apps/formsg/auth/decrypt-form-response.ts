@@ -2,8 +2,9 @@ import { IGlobalVariable } from '@plumber/types'
 
 import formsgSdk from '@opengovsg/formsg-sdk'
 
-import { sha256Hash } from '../../../helpers/crypto'
-import logger from '../../../helpers/logger'
+import { sha256Hash } from '@/helpers/crypto'
+import logger from '@/helpers/logger'
+
 import { NricFilter } from '../triggers/new-submission/index'
 
 const formsg = formsgSdk({

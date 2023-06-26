@@ -1,10 +1,10 @@
-import './helpers/tracer'
+import '@/helpers/tracer'
 
 import type { Server } from 'http'
 
-import appConfig from './config/app'
-import logger from './helpers/logger'
-import app from './app'
+import app from '@/app'
+import appConfig from '@/config/app'
+import logger from '@/helpers/logger'
 
 const port = appConfig.port
 

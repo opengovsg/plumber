@@ -1,10 +1,10 @@
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
-} from '../../helpers/default-job-configuration'
-import globalVariable from '../../helpers/global-variable'
-import flowQueue from '../../queues/flow'
-import Context from '../../types/express/context'
+} from '@/helpers/default-job-configuration'
+import globalVariable from '@/helpers/global-variable'
+import flowQueue from '@/queues/flow'
+import Context from '@/types/express/context'
 
 type Params = {
   input: {
