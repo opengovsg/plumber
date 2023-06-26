@@ -50,7 +50,7 @@ const Suggestions = (props: SuggestionsProps) => {
       </Typography>
       <List disablePadding>
         {data.map((option: IStep, index: number) => (
-          <>
+          <div key={`primary-suggestion-${option.name}`}>
             <ListItemButton
               divider
               onClick={() =>
@@ -61,7 +61,6 @@ const Suggestions = (props: SuggestionsProps) => {
               sx={{ py: 0.5 }}
             >
               <ListItemText primary={option.name} />
-
               {!!option.output?.length &&
                 (current === index ? <ExpandLess /> : <ExpandMore />)}
             </ListItemButton>
@@ -113,7 +112,7 @@ const Suggestions = (props: SuggestionsProps) => {
                 </Button>
               )}
             </Collapse>
-          </>
+          </div>
         ))}
       </List>
     </Paper>

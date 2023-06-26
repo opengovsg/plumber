@@ -82,6 +82,7 @@ type ActionSubstepArgument {
   description: String
   required: Boolean
   variables: Boolean
+  allowArbitrary: Boolean
   options: [ArgumentOption]
   source: ActionSubstepArgumentSource
   dependsOn: [String]
@@ -195,6 +196,7 @@ type Field {
   value: String
   placeholder: String
   description: String
+  allowArbitrary: Boolean
   docUrl: String
   clickToCopy: Boolean
   options: [ArgumentOption]
@@ -404,6 +406,7 @@ type TriggerSubstepArgument {
   description: String
   required: Boolean
   variables: Boolean
+  allowArbitrary: Boolean
   source: TriggerSubstepArgumentSource
   dependsOn: [String]
   options: [ArgumentOption]

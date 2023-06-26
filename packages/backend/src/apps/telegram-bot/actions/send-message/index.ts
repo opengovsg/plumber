@@ -8,18 +8,29 @@ export default defineAction({
     {
       label: 'Chat ID',
       key: 'chatId',
-      type: 'string' as const,
+      type: 'dropdown' as const,
       required: true,
-      description:
-        'Unique identifier for the target chat or username of the target channel (in the format @channelusername).',
-      variables: true,
+      allowArbitrary: true,
+      description: 'Chat, group or channel ID. ',
+      variables: false,
+      source: {
+        type: 'query',
+        name: 'getDynamicData',
+        arguments: [
+          {
+            name: 'key',
+            value: 'getTelegramChatIds',
+          },
+        ],
+      },
     },
     {
       label: 'Message text',
       key: 'text',
       type: 'string' as const,
       required: true,
-      description: 'Text of the message to be sent, 1-4096 characters.',
+      description:
+        'Text of the message to be sent, 1-4096 characters. Markdown supported.',
       variables: true,
     },
     {
@@ -49,6 +60,7 @@ export default defineAction({
       chat_id: $.step.parameters.chatId,
       text: $.step.parameters.text,
       disable_notification: $.step.parameters.disableNotification,
+      parse_mode: 'markdown',
     }
 
     const response = await $.http.post('/sendMessage', payload)
