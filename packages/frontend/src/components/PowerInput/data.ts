@@ -46,15 +46,36 @@ export const processStepWithExecutions = (steps: IStep[]): any[] => {
 
       return hasExecutionSteps
     })
-    .map((step: IStep, index: number) => ({
-      id: step.id,
+    .map((step: IStep, index: number) => {
+      const stepId = step.id
       // TODO: replace with step.name once introduced
-      name: `${index + 1}. ${
+      const stepName = `${index + 1}. ${
         (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
-      }`,
-      output: process(
-        step.executionSteps?.[0]?.dataOut || {},
-        `step.${step.id}`,
-      ),
-    }))
+      }`
+      if (step.frontEndVariables) {
+        return {
+          id: stepId,
+          name: stepName,
+          output: step.frontEndVariables
+            // We only care about textual variables
+            .filter((variable) => variable.type === 'text')
+            .map((variable) => ({
+              // PowerInput is coded weirdly - it has traditionally used name as
+              // the substitution key.
+              name: variable.substitutionKey,
+              value: variable.value,
+              displayedName: variable.name,
+            })),
+        }
+      } else {
+        return {
+          id: stepId,
+          name: stepName,
+          output: process(
+            step.executionSteps?.[0]?.dataOut || {},
+            `step.${step.id}`,
+          ),
+        }
+      }
+    })
 }

@@ -5,6 +5,7 @@ export type VariableElement = {
   type: 'variable'
   value?: unknown
   name?: string
+  displayedName?: string
   children: Text[]
 }
 
