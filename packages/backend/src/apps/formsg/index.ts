@@ -1,5 +1,6 @@
 import defineApp from '@/helpers/define-app'
 
+import getFrontEndVariables from './front-end-variables/get-front-end-variables'
 import auth from './auth'
 import triggers from './triggers'
 
@@ -16,4 +17,5 @@ export default defineApp({
   auth,
   triggers,
   actions: [],
+  getFrontEndVariables,
 })
