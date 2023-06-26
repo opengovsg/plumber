@@ -1,4 +1,4 @@
-import type { IJSONObject, IStep } from '@plumber/types'
+import type { IJSONObject, IStep, TFrontEndVariable } from '@plumber/types'
 
 import { URL } from 'url'
 
@@ -24,6 +24,11 @@ class Step extends Base {
   flow: Flow
   executionSteps: ExecutionStep[]
 
+  // A virtual property similar to formattedData on the Connection model.
+  // We can't use vanilla virtual attributes here due to a need to interop
+  // between frontend, backend, and IGlobalVariable.
+  frontEndVariables?: Array<TFrontEndVariable>
+
   static tableName = 'steps'
 
   static jsonSchema = {
@@ -44,6 +49,7 @@ class Step extends Base {
       },
       position: { type: 'integer' },
       parameters: { type: 'object' },
+      frontEndVariables: { type: 'array' },
     },
   }
 
@@ -153,6 +159,29 @@ class Step extends Base {
     const command = app.actions.find((action) => action.key === key)
 
     return command
+  }
+
+  async populateFrontEndVariables(): Promise<void> {
+    const { appKey, key: stepKey } = this
+    if (!appKey || !stepKey) {
+      return
+    }
+    const executionSteps = await this.$relatedQuery('executionSteps').orderBy(
+      'created_at',
+      'desc',
+    )
+    if (!executionSteps || executionSteps.length == 0) {
+      return
+    }
+    const app = await App.findOneByKey(appKey)
+    this.frontEndVariables = await app.getFrontEndVariables?.(
+      stepKey,
+      executionSteps,
+    )
+  }
+
+  async $afterFind(): Promise<void> {
+    await this.populateFrontEndVariables()
   }
 }
 

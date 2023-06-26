@@ -344,6 +344,13 @@ type ReconnectionStepProperty {
   value: String
 }
 
+type FrontEndVariable {
+  name: String
+  type: String
+  value: String
+  substitutionKey: String
+}
+
 type Step {
   id: String
   previousStepId: String
@@ -358,6 +365,7 @@ type Step {
   position: Int
   status: String
   executionSteps: [ExecutionStep]
+  frontEndVariables: [FrontEndVariable]
 }
 
 input StepConnectionInput {

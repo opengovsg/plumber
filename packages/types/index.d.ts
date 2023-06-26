@@ -82,6 +82,7 @@ export interface IStep {
   appData?: IApp
   retryable?: boolean
   jobId?: string
+  frontEndVariables?: Array<TFrontEndVariable>
 }
 
 export interface IFlow {
