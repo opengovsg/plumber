@@ -173,7 +173,7 @@ export interface IAuthenticationStep {
 export interface IDynamicData {
   name: string
   key: string
-  run($: IGlobalVariable): Promise<DynamicData>
+  run($: IGlobalVariable): Promise<DynamicDataOutput>
 }
 
 export interface IApp {
@@ -200,7 +200,7 @@ export type TBeforeRequest = {
   ($: IGlobalVariable, requestConfig: AxiosRequestConfig): AxiosRequestConfig
 }
 
-export interface DynamicData {
+export interface DynamicDataOutput {
   data: {
     name: string
     value: string

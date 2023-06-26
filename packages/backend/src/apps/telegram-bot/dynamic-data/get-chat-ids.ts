@@ -1,4 +1,4 @@
-import { DynamicData, IGlobalVariable } from '@plumber/types'
+import { DynamicDataOutput, IGlobalVariable } from '@plumber/types'
 
 import defineDynamicData from '@/helpers/define-dynamic-data'
 
@@ -33,7 +33,7 @@ function extractChatFromUpdate(update: any) {
 export default defineDynamicData({
   key: 'getTelegramChatIds',
   name: 'Get Telegram Chat IDs',
-  async run($: IGlobalVariable): Promise<DynamicData> {
+  async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     const chatIdsMap: { name: string; value: string }[] = []
     const chatIdsSet = new Set<string>()
     try {

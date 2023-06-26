@@ -1,4 +1,4 @@
-import { DynamicData, IGlobalVariable, IJSONObject } from '@plumber/types'
+import { DynamicDataOutput, IGlobalVariable, IJSONObject } from '@plumber/types'
 
 import defineDynamicData from '@/helpers/define-dynamic-data'
 
@@ -6,8 +6,8 @@ export default defineDynamicData({
   name: 'List channels',
   key: 'listChannels',
 
-  async run($: IGlobalVariable): Promise<DynamicData> {
-    const channels: DynamicData = {
+  async run($: IGlobalVariable): Promise<DynamicDataOutput> {
+    const channels: DynamicDataOutput = {
       data: [],
       error: null,
     }
