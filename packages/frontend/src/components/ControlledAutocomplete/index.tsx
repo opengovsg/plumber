@@ -16,8 +16,21 @@ interface ControlledAutocompleteProps
   dependsOn?: string[]
 }
 
-const getOption = (options: readonly IFieldDropdownOption[], value: string) =>
-  options.find((option) => option.value === value) || null
+const getOption = (
+  options: readonly IFieldDropdownOption[],
+  value: string,
+  freeSolo?: boolean,
+) => {
+  const foundOption = options.find((option) => option.value === value)
+  if (foundOption) {
+    return foundOption
+  }
+  // If allowArbitrary is true, return the value as the option
+  if (freeSolo) {
+    return value
+  }
+  return null
+}
 
 function ControlledAutocomplete(
   props: ControlledAutocompleteProps,
@@ -35,6 +48,7 @@ function ControlledAutocomplete(
     options = [],
     dependsOn = [],
     showOptionValue,
+    freeSolo,
     ...autocompleteProps
   } = props
 
@@ -75,8 +89,12 @@ function ControlledAutocomplete(
           <Autocomplete
             {...autocompleteProps}
             {...field}
+            freeSolo={freeSolo}
             options={options}
-            value={getOption(options, field.value)}
+            value={getOption(options, field.value, freeSolo)}
+            onInputChange={(_event, value) => {
+              controllerOnChange(value)
+            }}
             onChange={(event, selectedOption, reason, details) => {
               const typedSelectedOption = selectedOption as IFieldDropdownOption
               if (
@@ -90,7 +108,7 @@ function ControlledAutocomplete(
               } else {
                 controllerOnChange(typedSelectedOption)
               }
-
+              // onChange does nothing since it's not passed in
               onChange?.(event, selectedOption, reason, details)
             }}
             onBlur={(...args) => {

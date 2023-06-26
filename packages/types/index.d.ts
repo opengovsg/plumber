@@ -96,6 +96,7 @@ export interface IFieldDropdown {
   label: string
   type: 'dropdown'
   required: boolean
+  allowArbitrary?: boolean
   readOnly?: boolean
   value?: string | boolean
   placeholder?: string | null

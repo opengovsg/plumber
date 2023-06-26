@@ -20,6 +20,7 @@ export const GET_APP = gql`
           value
           description
           docUrl
+          allowArbitrary
           clickToCopy
           options {
             label

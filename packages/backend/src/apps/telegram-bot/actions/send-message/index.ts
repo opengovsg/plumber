@@ -10,6 +10,7 @@ export default defineAction({
       key: 'chatId',
       type: 'dropdown' as const,
       required: true,
+      allowArbitrary: true,
       description: 'Chat, group or channel ID. ',
       variables: false,
       source: {

@@ -64,6 +64,7 @@ export default function InputCreator(
         fullWidth
         disablePortal
         disableClearable={required}
+        freeSolo={schema.allowArbitrary}
         options={preparedOptions}
         renderInput={(params) => <MuiTextField {...params} label={label} />}
         defaultValue={value as string}
