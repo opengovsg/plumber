@@ -1,13 +1,13 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import verifyCredentials from '../../auth/verify-credentials'
 
 const mocks = vi.hoisted(() => {
   return {
-    verifyAPIKey: vi.fn().mockResolvedValue('vault-workspace-table-id'),
+    verifyAPIKey: vi.fn(() => Promise.resolve('vault-workspace-table-id')),
   }
 })
 
@@ -29,6 +29,10 @@ describe('verifyCredentials', () => {
       },
       app,
     }
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('calls verifyAPIKey to obtain the Vault Workspace Table ID', async () => {
