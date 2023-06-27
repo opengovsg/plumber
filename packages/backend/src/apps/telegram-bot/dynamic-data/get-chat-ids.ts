@@ -54,7 +54,7 @@ export default defineDynamicData({
         chatIdsSet.add(chat.id)
         chatIdsMap.push({
           name: chat.title,
-          value: chat.id,
+          value: chat.id.toString(),
         })
       })
       return { data: chatIdsMap }

@@ -46,7 +46,7 @@ function computeArguments(
  */
 function useDynamicData(stepId: string | undefined, schema: IField) {
   const lastComputedVariables = React.useRef({})
-  const [getDynamicData, { called, data, loading }] =
+  const [getDynamicData, { called, data, loading, refetch }] =
     useLazyQuery(GET_DYNAMIC_DATA)
   const { getValues } = useFormContext()
   const formValues = getValues()
@@ -102,6 +102,7 @@ function useDynamicData(stepId: string | undefined, schema: IField) {
     called,
     data: data?.getDynamicData,
     loading,
+    refetch,
   }
 }
 
