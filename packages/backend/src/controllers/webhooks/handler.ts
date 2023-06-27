@@ -15,19 +15,18 @@ import Flow from '@/models/flow'
 import actionQueue from '@/queues/action'
 import { processTrigger } from '@/services/trigger'
 
+const DEFAULT_MAX_QPS = 10
+
 const redisRateLimitClient = createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)
 
 // Memoize to prevent high QPS flows with different limits from creating a hot
 // path.
-const DEFAULT_MAX_QPS = 10
 const getRateLimiter = memoize((maxQps: number): RateLimiterRedis => {
-  const allowedQps = maxQps ?? DEFAULT_MAX_QPS
-
   return new RateLimiterRedis({
-    points: allowedQps,
+    points: maxQps,
     duration: 1,
 
-    keyPrefix: 'flow-exec',
+    keyPrefix: 'webhook-rate',
     storeClient: redisRateLimitClient,
   })
 })
@@ -45,30 +44,29 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
-  const flow = await Flow.query().findById(request.params.flowId)
+  const flow = await Flow.query().findById(flowId)
 
   if (!flow) {
     logger.info(`Flow not found for webhook id ${flowId}}`)
     return response.sendStatus(404)
   }
 
-  const rateLimiter = getRateLimiter(flow.maxQps)
+  const { maxQps = DEFAULT_MAX_QPS, rejectIfOverMaxQps = true } =
+    flow.rateLimitConfig ?? {}
+
+  const rateLimiter = getRateLimiter(maxQps)
   try {
     await rateLimiter.consume(flowId)
   } catch (error) {
     if (error instanceof RateLimiterRes) {
       logger.warn(`Rate limited flow ${flowId}`, {
-        event: 'flow-rate-limited',
+        event: 'webhook-rate-limited',
         flowId,
       })
-      return response.sendStatus(429)
-    } else {
-      logger.error(`Got error "${error}" while rate limiting ${flowId}`, {
-        event: 'flow-rate-limit-error',
-        flowId,
-        error,
-      })
-      return response.sendStatus(500)
+
+      if (rejectIfOverMaxQps) {
+        return response.sendStatus(429)
+      }
     }
   }
 

@@ -71,6 +71,11 @@ export interface IStep {
   jobId?: string
 }
 
+export type TRateLimitConfig = {
+  maxQps: number
+  rejectIfOverMaxQps: boolean
+}
+
 export interface IFlow {
   id: string
   name: string
