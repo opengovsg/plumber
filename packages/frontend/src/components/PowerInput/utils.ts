@@ -107,12 +107,14 @@ export const withVariables = (editor: CustomEditor) => {
 
 export const insertVariable = (
   editor: CustomEditor,
-  variableData: Pick<VariableElement, 'name' | 'value'>,
+  variableData: Pick<VariableElement, 'name' | 'value' | 'label'>,
   stepsWithVariables: Record<string, unknown>[],
 ) => {
   const variable: VariableElement = {
     type: 'variable',
-    name: humanizeVariableName(variableData.name as string, stepsWithVariables),
+    name:
+      variableData.label ??
+      humanizeVariableName(variableData.name as string, stepsWithVariables),
     value: `{{${variableData.name}}}`,
     children: [{ text: '' }],
   }

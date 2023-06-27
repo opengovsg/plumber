@@ -82,7 +82,7 @@ const Suggestions = (props: SuggestionsProps) => {
                       key={`suggestion-${suboption.name}`}
                     >
                       <ListItemText
-                        primary={suboption.name}
+                        primary={suboption.label ?? suboption.name}
                         primaryTypographyProps={{
                           variant: 'subtitle1',
                           title: 'Property name',
