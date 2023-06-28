@@ -28,7 +28,7 @@ export type TDataOutMetadatumType = 'text' | 'file_url'
  * This should only be defined on _leaf_ nodes (i.e. **array elements** or
  * **object properties**) of your app's `dataOut` object.
  */
-export type TDataOutMetadatum = {
+export interface IDataOutMetadatum {
   /**
    * Generally defaults to 'text' in the front end if unspecified.
    */
@@ -49,23 +49,25 @@ export type TDataOutMetadatum = {
 /**
  * Metadata type to use if `dataOut` is an array.
  */
-export type TDataOutArrayMetadata = Array<TDataOutMetadatum>
+export interface IDataOutArrayMetadata extends Array<IDataOutMetadatum> {}
 
 /**
  * Metadata type to use if `dataOut` is an object.
  */
-export type TDataOutObjectMetadata = {
+export interface IDataOutObjectMetadata {
   [property: string]:
-    | TDataOutMetadatum
-    | TDataOutArrayMetadata
-    | TDataOutObjectMetadata
+    | IDataOutMetadatum
+    | IDataOutArrayMetadata
+    | IDataOutObjectMetadata
 }
 
 /**
  * Metadata can be arbitrarily nested objects / arrays as long as
  * leaves / elements are `TDataOutMetadatum`.
  */
-export type TDataOutMetadata = TDataOutObjectMetadata | TDataOutArrayMetadata
+export interface IDataOutMetadata
+  extends IDataOutObjectMetadata,
+    IDataOutArrayMetadata {}
 
 export interface IExecutionStep {
   id: string
@@ -82,7 +84,7 @@ export interface IExecutionStep {
   updatedAt: string
 
   // Only resolved on the front end via GraphQL.
-  dataOutMetadata?: TDataOutMetadata
+  dataOutMetadata?: IDataOutMetadata
 }
 
 export interface IExecution {
@@ -253,7 +255,7 @@ export interface IApp {
   getDataOutMetadata?(
     stepKey: IStep['key'],
     executionStep: IExecutionStep,
-  ): Promise<TDataOutMetadata>
+  ): Promise<IDataOutMetadata>
 }
 
 export type TBeforeRequest = {

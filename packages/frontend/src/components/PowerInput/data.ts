@@ -4,7 +4,7 @@ const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
 
 const process = (
-  metadata: any, // Actually is TDataOutMetadata, but TS is unsound for this.
+  metadata: any, // Actually is IDataOutMetadata, but TS is unsound for this.
   data: any,
   parentKey?: any,
   index?: number,

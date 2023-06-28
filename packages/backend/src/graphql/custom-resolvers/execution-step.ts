@@ -1,11 +1,11 @@
-import { TDataOutMetadata } from '@plumber/types'
+import { IDataOutMetadata } from '@plumber/types'
 
 import App from '@/models/app'
 import ExecutionStep from '@/models/execution-step'
 
 async function dataOutMetadata(
   parent: ExecutionStep,
-): Promise<TDataOutMetadata> {
+): Promise<IDataOutMetadata> {
   const { appKey, key: stepKey } = await parent.$relatedQuery('step')
   if (!appKey || !stepKey) {
     return
