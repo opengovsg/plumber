@@ -70,28 +70,27 @@ export const processStepWithExecutions = (steps: IStep[]): any[] => {
     return []
   }
 
-  return (
-    steps
-      .filter((step: IStep) => {
-        const hasExecutionSteps = !!step.executionSteps?.length
+  return steps
+    .filter((step: IStep) => {
+      const hasExecutionSteps = !!step.executionSteps?.length
 
-        return hasExecutionSteps
-      })
-      .map((step: IStep, index: number) => {
-        return {
-          id: step.id,
-          // TODO: replace with step.name once introduced
-          name: `${index + 1}. ${
-            (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
-          }`,
-          output: postProcess(
-            step.id,
-            process(step.executionSteps?.[0]?.dataOut || {}, ''),
-            step.executionSteps?.[0]?.dataOutMetadata ?? {},
-          ),
-        }
-      })
-      // Hide steps with 0 visible variables after post-processing.
-      .filter((processedStep) => processedStep.output.length > 0)
-  )
+      return hasExecutionSteps
+    })
+    .map((step: IStep, index: number) => ({
+      id: step.id,
+      // TODO: replace with step.name once introduced
+      name: `${index + 1}. ${
+        (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
+      }`,
+      output: postProcess(
+        step.id,
+        process(step.executionSteps?.[0]?.dataOut || {}, ''),
+        step.executionSteps?.[0]?.dataOutMetadata ?? {},
+      ),
+    }))
+    .filter(
+      (processedStep) =>
+        // Hide steps with 0 visible variables after post-processing.
+        processedStep.output.length > 0,
+    )
 }
