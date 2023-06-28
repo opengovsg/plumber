@@ -1,4 +1,4 @@
-import { TRateLimitConfig } from '@plumber/types'
+import { IFlowConfig } from '@plumber/types'
 
 import type { ModelOptions, QueryContext } from 'objection'
 import { ValidationError } from 'objection'
@@ -19,9 +19,9 @@ class Flow extends Base {
   executions?: Execution[]
 
   /**
-   * Null means to use default config (see `controllers/webhooks/handler.ts`).
+   * Null means to use default config.
    */
-  rateLimitConfig: TRateLimitConfig
+  config: IFlowConfig
 
   static tableName = 'flows'
 
@@ -35,7 +35,7 @@ class Flow extends Base {
       userId: { type: 'string', format: 'uuid' },
       remoteWebhookId: { type: 'string' },
       active: { type: 'boolean' },
-      rateLimitConfig: {
+      config: {
         type: 'object',
         properties: {
           maxQps: {

@@ -52,7 +52,7 @@ export default async (request: IRequest, response: Response) => {
   }
 
   const { maxQps = DEFAULT_MAX_QPS, rejectIfOverMaxQps = true } =
-    flow.rateLimitConfig ?? {}
+    flow.config ?? {}
 
   const rateLimiter = getRateLimiter(maxQps)
   try {

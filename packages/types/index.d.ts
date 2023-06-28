@@ -71,7 +71,7 @@ export interface IStep {
   jobId?: string
 }
 
-export type TRateLimitConfig = {
+export interface IFlowConfig {
   maxQps: number
   rejectIfOverMaxQps: boolean
 }
@@ -156,8 +156,6 @@ export interface IFieldMultiline {
   variables?: boolean
   dependsOn?: string[]
 }
-
-
 
 export type IField = IFieldDropdown | IFieldText | IFieldMultiline
 
