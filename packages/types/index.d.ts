@@ -72,8 +72,8 @@ export interface IStep {
 }
 
 export interface IFlowConfig {
-  maxQps: number
-  rejectIfOverMaxQps: boolean
+  maxQps?: number
+  rejectIfOverMaxQps?: boolean
 }
 
 export interface IFlow {

@@ -21,7 +21,7 @@ class Flow extends Base {
   /**
    * Null means to use default config.
    */
-  config: IFlowConfig
+  config: IFlowConfig | null
 
   static tableName = 'flows'
 
