@@ -1,3 +1,5 @@
+import { IFlowConfig } from '@plumber/types'
+
 import type { ModelOptions, QueryContext } from 'objection'
 import { ValidationError } from 'objection'
 
@@ -16,6 +18,11 @@ class Flow extends Base {
   remoteWebhookId: string
   executions?: Execution[]
 
+  /**
+   * Null means to use default config.
+   */
+  config: IFlowConfig | null
+
   static tableName = 'flows'
 
   static jsonSchema = {
@@ -28,6 +35,17 @@ class Flow extends Base {
       userId: { type: 'string', format: 'uuid' },
       remoteWebhookId: { type: 'string' },
       active: { type: 'boolean' },
+      config: {
+        type: 'object',
+        properties: {
+          maxQps: {
+            type: 'integer',
+          },
+          rejectIfOverMaxQps: {
+            type: 'boolean',
+          },
+        },
+      },
     },
   }
 
