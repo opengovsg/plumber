@@ -22,6 +22,34 @@ export interface IConnection {
   createdAt: string
 }
 
+export type TDataOutMetadatumType = 'text' | 'file_url'
+
+/**
+ * This should only be defined on _leaf_ nodes (i.e. **primitive array
+ * elements** or **object properties**) of your app's `dataOut` object.
+ */
+export interface IDataOutMetadatum {
+  /**
+   * Generally defaults to 'text' in the front end if unspecified.
+   */
+  type?: TDataOutMetadatumType
+
+  /**
+   * Generally defaults to `true` in the front end if unspecified.
+   */
+  isVisible?: boolean
+
+  /**
+   * If label is unspecified, the front end will generate one - typically an
+   * ugly lodash get string (e.g. "step.abc-def.herp-derp.answer.1").
+   */
+  label?: string
+}
+
+export interface IDataOutMetadata {
+  [property: string | number]: IDataOutMetadatum | IDataOutObjectMetadata
+}
+
 export interface IExecutionStep {
   id: string
   executionId: string
@@ -35,6 +63,9 @@ export interface IExecutionStep {
   jobId?: string
   createdAt: string
   updatedAt: string
+
+  // Only resolved on the front end via GraphQL.
+  dataOutMetadata?: IDataOutMetadata
 }
 
 export interface IExecution {
@@ -199,6 +230,18 @@ export interface IApp {
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
+
+  /**
+   * Gets metadata for the data output (i.e. `dataOut`) by an app's execution
+   * step.
+   *
+   * @param stepKey - The key associated with the step.
+   * @param executionStep - The execution step to get metadata for.
+   */
+  getDataOutMetadata?(
+    stepKey: IStep['key'],
+    executionStep: IExecutionStep,
+  ): Promise<IDataOutMetadata>
 }
 
 export type TBeforeRequest = {

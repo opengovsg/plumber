@@ -1,4 +1,35 @@
-import type { IStep } from '@plumber/types'
+import type { IDataOutMetadata, IDataOutMetadatum, IStep } from '@plumber/types'
+
+import get from 'lodash.get'
+
+function postProcess(
+  stepId: string,
+  variables: any[],
+  metadata: IDataOutMetadata,
+): any[] {
+  const result: any[] = []
+
+  for (const variable of variables) {
+    const { name, ...rest } = variable
+    const { isVisible = true, label = null } = get(
+      metadata,
+      name,
+      {},
+    ) as IDataOutMetadatum
+
+    if (!isVisible) {
+      continue
+    }
+
+    result.push({
+      label,
+      name: `step.${stepId}.${name}`,
+      ...rest,
+    })
+  }
+
+  return result
+}
 
 const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
@@ -52,9 +83,15 @@ export const processStepWithExecutions = (steps: IStep[]): any[] => {
       name: `${index + 1}. ${
         (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
       }`,
-      output: process(
-        step.executionSteps?.[0]?.dataOut || {},
-        `step.${step.id}`,
+      output: postProcess(
+        step.id,
+        process(step.executionSteps?.[0]?.dataOut || {}, ''),
+        step.executionSteps?.[0]?.dataOutMetadata ?? {},
       ),
     }))
+    .filter(
+      (processedStep) =>
+        // Hide steps with 0 visible variables after post-processing.
+        processedStep.output.length > 0,
+    )
 }

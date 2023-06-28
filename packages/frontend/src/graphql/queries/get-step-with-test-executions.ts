@@ -11,6 +11,7 @@ export const GET_STEP_WITH_TEST_EXECUTIONS = gql`
         stepId
         status
         dataOut
+        dataOutMetadata
       }
     }
   }
