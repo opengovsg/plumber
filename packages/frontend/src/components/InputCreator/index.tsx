@@ -51,12 +51,11 @@ export default function InputCreator(
     dependsOn,
   } = schema
 
-  const { data, loading } = useDynamicData(stepId, schema)
+  const { data, loading, refetch } = useDynamicData(stepId, schema)
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
 
   if (type === 'dropdown') {
     const preparedOptions = schema.options || optionGenerator(data)
-
     return (
       <ControlledAutocomplete
         name={computedName}
@@ -68,9 +67,10 @@ export default function InputCreator(
         options={preparedOptions}
         renderInput={(params) => <MuiTextField {...params} label={label} />}
         defaultValue={value as string}
-        onChange={() => null}
         description={description}
         loading={loading}
+        // if schema source is defined, dynamic data is supported
+        onRefresh={schema.source ? () => refetch() : undefined}
         disabled={disabled}
         showOptionValue={showOptionValue}
       />

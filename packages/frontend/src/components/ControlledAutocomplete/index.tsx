@@ -2,9 +2,15 @@ import type { IFieldDropdownOption } from '@plumber/types'
 
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import Autocomplete, { AutocompleteProps } from '@mui/material/Autocomplete'
+import { Flex } from '@chakra-ui/react'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import Autocomplete, {
+  AutocompleteProps,
+  createFilterOptions,
+} from '@mui/material/Autocomplete'
 import FormHelperText from '@mui/material/FormHelperText'
 import Typography from '@mui/material/Typography'
+import { IconButton } from '@opengovsg/design-system-react'
 
 interface ControlledAutocompleteProps
   extends AutocompleteProps<IFieldDropdownOption, boolean, boolean, boolean> {
@@ -14,7 +20,10 @@ interface ControlledAutocompleteProps
   showOptionValue?: boolean
   description?: string
   dependsOn?: string[]
+  onRefresh?: () => void
 }
+
+const filter = createFilterOptions<IFieldDropdownOption>()
 
 const getOption = (
   options: readonly IFieldDropdownOption[],
@@ -42,13 +51,13 @@ function ControlledAutocomplete(
     name,
     defaultValue,
     shouldUnregister,
-    onBlur,
-    onChange,
     description,
     options = [],
     dependsOn = [],
     showOptionValue,
     freeSolo,
+    onRefresh,
+    loading,
     ...autocompleteProps
   } = props
 
@@ -75,63 +84,83 @@ function ControlledAutocomplete(
       defaultValue={defaultValue || ''}
       control={control}
       shouldUnregister={shouldUnregister}
-      render={({
-        field: {
-          ref,
-          onChange: controllerOnChange,
-          onBlur: controllerOnBlur,
-          ...field
-        },
-        fieldState,
-      }) => (
+      render={({ field: { ref, onChange, onBlur, ...field }, fieldState }) => (
         <div>
           {/* encapsulated with an element such as div to vertical spacing delegated from parent */}
-          <Autocomplete
-            {...autocompleteProps}
-            {...field}
-            freeSolo={freeSolo}
-            options={options}
-            value={getOption(options, field.value, freeSolo)}
-            onInputChange={(_event, value) => {
-              controllerOnChange(value)
-            }}
-            onChange={(event, selectedOption, reason, details) => {
-              const typedSelectedOption = selectedOption as IFieldDropdownOption
-              if (
-                typedSelectedOption !== null &&
-                Object.prototype.hasOwnProperty.call(
-                  typedSelectedOption,
-                  'value',
-                )
-              ) {
-                controllerOnChange(typedSelectedOption.value)
-              } else {
-                controllerOnChange(typedSelectedOption)
-              }
-              // onChange does nothing since it's not passed in
-              onChange?.(event, selectedOption, reason, details)
-            }}
-            onBlur={(...args) => {
-              controllerOnBlur()
-              onBlur?.(...args)
-            }}
-            ref={ref}
-            data-test={`${name}-autocomplete`}
-            renderOption={(optionProps, option) => (
-              <li
-                {...optionProps}
-                key={option.value.toString()}
-                style={{ flexDirection: 'column', alignItems: 'start' }}
-              >
-                <Typography>{option.label}</Typography>
+          <Flex alignItems="center" gap={2}>
+            <Autocomplete
+              {...autocompleteProps}
+              {...field}
+              freeSolo={freeSolo}
+              options={options}
+              value={getOption(options, field.value, freeSolo)}
+              onChange={(_event, selectedOption) => {
+                const typedSelectedOption =
+                  selectedOption as IFieldDropdownOption
+                if (
+                  typedSelectedOption !== null &&
+                  Object.prototype.hasOwnProperty.call(
+                    typedSelectedOption,
+                    'value',
+                  )
+                ) {
+                  onChange(typedSelectedOption.value)
+                  return
+                }
+                // manual input
+                onChange(typedSelectedOption)
+              }}
+              onBlur={onBlur}
+              clearOnBlur
+              filterOptions={(options, params) => {
+                const filtered = filter(options, params)
 
-                {showOptionValue && (
-                  <Typography variant="caption">{option.value}</Typography>
-                )}
-              </li>
+                if (params.inputValue !== '') {
+                  filtered.push({
+                    value: params.inputValue,
+                    label: `Use: ${params.inputValue}`,
+                  })
+                }
+
+                return filtered
+              }}
+              ref={ref}
+              data-test={`${name}-autocomplete`}
+              getOptionLabel={(option) => {
+                // manual input
+                if (typeof option === 'string') {
+                  return option
+                }
+                if (option.label) {
+                  return option.label
+                }
+                return option.value?.toString() || ''
+              }}
+              renderOption={(optionProps, option) => (
+                <li
+                  {...optionProps}
+                  key={option.value.toString()}
+                  style={{ flexDirection: 'column', alignItems: 'start' }}
+                >
+                  <Typography>{option.label}</Typography>
+
+                  {showOptionValue && (
+                    <Typography variant="caption">{option.value}</Typography>
+                  )}
+                </li>
+              )}
+            />
+            {onRefresh && (
+              <IconButton
+                aria-label="refresh"
+                variant="clear"
+                isLoading={loading}
+                icon={<RefreshIcon />}
+                onClick={onRefresh}
+                rounded="50%"
+              />
             )}
-          />
-
+          </Flex>
           <FormHelperText
             variant="outlined"
             error={Boolean(fieldState.isTouched && fieldState.error)}
