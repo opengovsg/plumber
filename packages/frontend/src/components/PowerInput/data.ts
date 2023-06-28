@@ -14,6 +14,7 @@ function postProcess(
     const { isVisible = true, label = null } = get(
       metadata,
       name,
+      {},
     ) as IDataOutMetadatum
 
     if (!isVisible) {
