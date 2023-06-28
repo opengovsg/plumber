@@ -1,6 +1,5 @@
-import { IJSONObject, TDataOutMetadata } from '@plumber/types'
+import { IJSONObject } from '@plumber/types'
 
-import App from './app'
 import Base from './base'
 import Execution from './execution'
 import Step from './step'
@@ -16,11 +15,6 @@ class ExecutionStep extends Base {
   appKey: string
   jobId: string
   step: Step
-
-  // A virtual property similar to formattedData on the Connection model.
-  // We can't use vanilla virtual attributes here due to a need to interop
-  // between frontend, backend, and IGlobalVariable.
-  dataOutMetadata?: TDataOutMetadata
 
   static tableName = 'execution_steps'
 
@@ -62,19 +56,6 @@ class ExecutionStep extends Base {
 
   get isFailed() {
     return this.status === 'failure'
-  }
-
-  async populateDataOutMetadata(): Promise<void> {
-    const { appKey, key: stepKey } = await this.$relatedQuery('step')
-    if (!appKey || !stepKey) {
-      return
-    }
-    const app = await App.findOneByKey(appKey)
-    this.dataOutMetadata = await app.getDataOutMetadata?.(stepKey, this)
-  }
-
-  async $afterFind(): Promise<void> {
-    await this.populateDataOutMetadata()
   }
 }
 

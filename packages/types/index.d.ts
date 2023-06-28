@@ -74,13 +74,15 @@ export interface IExecutionStep {
   step: IStep
   dataIn: IJSONObject
   dataOut: IJSONObject
-  dataOutMetadata?: TDataOutMetadata
   errorDetails: IJSONObject
   status: string
   appKey: string
   jobId?: string
   createdAt: string
   updatedAt: string
+
+  // Only resolved on the front end via GraphQL.
+  dataOutMetadata?: TDataOutMetadata
 }
 
 export interface IExecution {
