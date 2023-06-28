@@ -27,7 +27,6 @@ class ExecutionStep extends Base {
       stepId: { type: 'string' },
       dataIn: { type: ['object', 'null'] },
       dataOut: { type: ['object', 'null'] },
-      dataOutMetadata: { type: 'object' },
       status: { type: 'string', enum: ['success', 'failure'] },
       errorDetails: { type: ['object', 'null'] },
       appKey: { type: ['string', 'null'] },
