@@ -25,8 +25,8 @@ export interface IConnection {
 export type TDataOutMetadatumType = 'text' | 'file_url'
 
 /**
- * This should only be defined on _leaf_ nodes (i.e. **array elements** or
- * **object properties**) of your app's `dataOut` object.
+ * This should only be defined on _leaf_ nodes (i.e. **primitive array
+ * elements** or **object properties**) of your app's `dataOut` object.
  */
 export interface IDataOutMetadatum {
   /**
@@ -46,28 +46,9 @@ export interface IDataOutMetadatum {
   label?: string
 }
 
-/**
- * Metadata type to use if `dataOut` is an array.
- */
-export interface IDataOutArrayMetadata extends Array<IDataOutMetadatum> {}
-
-/**
- * Metadata type to use if `dataOut` is an object.
- */
-export interface IDataOutObjectMetadata {
-  [property: string]:
-    | IDataOutMetadatum
-    | IDataOutArrayMetadata
-    | IDataOutObjectMetadata
+export interface IDataOutMetadata {
+  [property: string | number]: IDataOutMetadatum | IDataOutObjectMetadata
 }
-
-/**
- * Metadata can be arbitrarily nested objects / arrays as long as
- * leaves / elements are `TDataOutMetadatum`.
- */
-export interface IDataOutMetadata
-  extends IDataOutObjectMetadata,
-    IDataOutArrayMetadata {}
 
 export interface IExecutionStep {
   id: string

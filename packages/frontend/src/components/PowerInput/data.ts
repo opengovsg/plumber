@@ -1,10 +1,10 @@
-import type { IStep } from '@plumber/types'
+import type { IDataOutMetadata, IStep } from '@plumber/types'
 
 const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
 
 const process = (
-  metadata: any, // Actually is IDataOutMetadata, but TS is unsound for this.
+  metadata: IDataOutMetadata,
   data: any,
   parentKey?: any,
   index?: number,
@@ -70,7 +70,7 @@ export const processStepWithExecutions = (steps: IStep[]): any[] => {
           (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
         }`,
         output: process(
-          step.executionSteps?.[0]?.dataOutMetadata,
+          step.executionSteps?.[0]?.dataOutMetadata ?? {},
           step.executionSteps?.[0]?.dataOut || {},
           `step.${step.id}`,
         ),
