@@ -1,8 +1,11 @@
 import { IRequest, ITriggerItem } from '@plumber/types'
 
 import { Response } from 'express'
+import { memoize } from 'lodash'
+import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible'
 import { z } from 'zod'
 
+import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { sha256Hash } from '@/helpers/crypto'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
@@ -11,6 +14,22 @@ import tracer from '@/helpers/tracer'
 import Flow from '@/models/flow'
 import actionQueue from '@/queues/action'
 import { processTrigger } from '@/services/trigger'
+
+const DEFAULT_MAX_QPS = 10
+
+const redisRateLimitClient = createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)
+
+// Memoize to prevent high QPS flows with different limits from creating a hot
+// path.
+const getRateLimiter = memoize((maxQps: number): RateLimiterRedis => {
+  return new RateLimiterRedis({
+    points: maxQps,
+    duration: 1,
+
+    keyPrefix: 'webhook-rate',
+    storeClient: redisRateLimitClient,
+  })
+})
 
 export default async (request: IRequest, response: Response) => {
   const span = tracer.scope().active()
@@ -25,11 +44,30 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
-  const flow = await Flow.query().findById(request.params.flowId)
+  const flow = await Flow.query().findById(flowId)
 
   if (!flow) {
     logger.info(`Flow not found for webhook id ${flowId}}`)
     return response.sendStatus(404)
+  }
+
+  const { maxQps = DEFAULT_MAX_QPS, rejectIfOverMaxQps = true } =
+    flow.config ?? {}
+
+  const rateLimiter = getRateLimiter(maxQps)
+  try {
+    await rateLimiter.consume(flowId)
+  } catch (error) {
+    if (error instanceof RateLimiterRes) {
+      logger.warn(`Rate limited flow ${flowId}`, {
+        event: 'webhook-rate-limited',
+        flowId,
+      })
+
+      if (rejectIfOverMaxQps) {
+        return response.sendStatus(429)
+      }
+    }
   }
 
   const testRun = !flow.active

@@ -79,6 +79,7 @@ export const GET_APPS = gql`
             required
             description
             variables
+            allowArbitrary
             dependsOn
             options {
               label
@@ -109,6 +110,7 @@ export const GET_APPS = gql`
             required
             description
             variables
+            allowArbitrary
             dependsOn
             options {
               label

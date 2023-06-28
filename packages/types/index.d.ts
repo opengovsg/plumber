@@ -71,6 +71,11 @@ export interface IStep {
   jobId?: string
 }
 
+export interface IFlowConfig {
+  maxQps?: number
+  rejectIfOverMaxQps?: boolean
+}
+
 export interface IFlow {
   id: string
   name: string
@@ -96,6 +101,7 @@ export interface IFieldDropdown {
   label: string
   type: 'dropdown'
   required: boolean
+  allowArbitrary?: boolean
   readOnly?: boolean
   value?: string | boolean
   placeholder?: string | null
@@ -152,8 +158,6 @@ export interface IFieldMultiline {
   dependsOn?: string[]
 }
 
-
-
 export type IField = IFieldDropdown | IFieldText | IFieldMultiline
 
 export interface IAuthenticationStepField {
@@ -171,6 +175,12 @@ export interface IAuthenticationStep {
   arguments: IAuthenticationStepField[]
 }
 
+export interface IDynamicData {
+  name: string
+  key: string
+  run($: IGlobalVariable): Promise<DynamicDataOutput>
+}
+
 export interface IApp {
   name: string
   key: string
@@ -185,7 +195,7 @@ export interface IApp {
   connectionCount?: number
   flowCount?: number
   beforeRequest?: TBeforeRequest[]
-  dynamicData?: IDynamicData
+  dynamicData?: IDynamicData[]
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
@@ -195,8 +205,12 @@ export type TBeforeRequest = {
   ($: IGlobalVariable, requestConfig: AxiosRequestConfig): AxiosRequestConfig
 }
 
-export interface IDynamicData {
-  [index: string]: any
+export interface DynamicDataOutput {
+  data: {
+    name: string
+    value: string
+  }[]
+  error?: IJSONObject
 }
 
 export interface IAuth {

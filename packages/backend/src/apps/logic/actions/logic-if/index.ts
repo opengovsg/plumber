@@ -76,7 +76,7 @@ export default defineAction({
         result = field.toString().includes(text.toString())
         break
       default:
-        throw new Error('Unknown predicate.')
+        throw new Error('Your logic-if block contains an unknown operator.')
     }
 
     if (is === 'not') {

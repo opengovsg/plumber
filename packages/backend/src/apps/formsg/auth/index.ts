@@ -6,13 +6,14 @@ export default {
   fields: [
     {
       key: 'formId',
-      label: 'Form ID / Form URL',
+      label: 'Form URL',
       type: 'string' as const,
       required: true,
       readOnly: false,
       value: null,
       placeholder: null,
-      description: 'Enter your Form ID or Form URL',
+      description:
+        'Enter your Form URL e.g. https://form.gov.sg/654ab1234abc1a012345f1e0b',
       clickToCopy: false,
     },
     {

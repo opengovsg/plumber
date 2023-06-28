@@ -1,4 +1,4 @@
-import { IGlobalVariable } from '@plumber/types'
+import { DynamicDataOutput, IGlobalVariable } from '@plumber/types'
 
 import { VAULT_ID } from '../../common/constants'
 import { getColumnMappingInAlias } from '../../common/get-column-mapping'
@@ -8,9 +8,12 @@ const PREDEFINED_VAULT_COLUMN = {
   value: VAULT_ID,
 }
 
-export async function getColumns($: IGlobalVariable, updatableOnly = false) {
+export async function getColumns(
+  $: IGlobalVariable,
+  updatableOnly = false,
+): Promise<DynamicDataOutput> {
   const mapping = await getColumnMappingInAlias($)
-  const response: { [key: string]: { name: string; value: string }[] } = {
+  const response: DynamicDataOutput = {
     data: [],
   }
 
