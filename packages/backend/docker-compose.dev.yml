@@ -28,6 +28,17 @@ services:
     command: tunnel run
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN}
+  minio:
+    image: 'bitnami/minio:latest'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ROOT_USER=minio-username
+      - MINIO_ROOT_PASSWORD=minio-password
+    volumes:
+      - plumber-minio:/data
 volumes:
   plumber-postgres:
   plumber-redis:
+  plumber-minio:
