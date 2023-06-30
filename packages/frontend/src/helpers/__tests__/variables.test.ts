@@ -230,5 +230,30 @@ describe('variables', () => {
         )
       })
     })
+
+    describe('processes type metadata', () => {
+      it('adds type metadata if present', () => {
+        steps[0].executionSteps[0].dataOutMetadata = {
+          stringProp: {
+            type: 'text',
+          },
+        }
+        const result = extractVariables(steps)
+        expect(result[0].output[0]).toEqual(
+          expect.objectContaining({
+            type: 'text',
+          }),
+        )
+      })
+
+      it('sets type prop to null if absent', () => {
+        const result = extractVariables(steps)
+        expect(result[0].output[0]).toEqual(
+          expect.objectContaining({
+            type: null,
+          }),
+        )
+      })
+    })
   })
 })

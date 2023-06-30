@@ -1,4 +1,9 @@
-import type { IDataOutMetadata, IDataOutMetadatum, IStep } from '@plumber/types'
+import type {
+  IDataOutMetadata,
+  IDataOutMetadatum,
+  IStep,
+  TDataOutMetadatumType,
+} from '@plumber/types'
 
 import get from 'lodash.get'
 
@@ -9,6 +14,7 @@ export interface StepWithVariables {
 }
 export interface Variable extends RawVariable {
   label: string | null
+  type: TDataOutMetadatumType | null
 }
 
 interface RawVariable {
@@ -30,11 +36,11 @@ function postProcess(
 
   for (const variable of variables) {
     const { name, ...rest } = variable
-    const { isVisible = true, label = null } = get(
-      metadata,
-      name,
-      {},
-    ) as IDataOutMetadatum
+    const {
+      isVisible = true,
+      label = null,
+      type = null,
+    } = get(metadata, name, {}) as IDataOutMetadatum
 
     if (!isVisible) {
       continue
@@ -42,6 +48,7 @@ function postProcess(
 
     result.push({
       label,
+      type,
       name: `step.${stepId}.${name}`,
       ...rest,
     })
