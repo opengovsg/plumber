@@ -1,13 +1,11 @@
+import type { StepWithVariables } from 'helpers/variables'
 import { Descendant, Text, Transforms } from 'slate'
 import { withHistory } from 'slate-history'
 import { withReact } from 'slate-react'
 
 import type { CustomEditor, CustomElement, VariableElement } from './types'
 
-function getStepPosition(
-  id: string,
-  stepsWithVariables: Record<string, unknown>[],
-) {
+function getStepPosition(id: string, stepsWithVariables: StepWithVariables[]) {
   const stepIndex = stepsWithVariables.findIndex((stepWithVariables) => {
     return stepWithVariables.id === id
   })
@@ -17,7 +15,7 @@ function getStepPosition(
 
 function humanizeVariableName(
   variableName: string,
-  stepsWithVariables: Record<string, unknown>[],
+  stepsWithVariables: StepWithVariables[],
 ) {
   const nameWithoutCurlies = variableName.replace(/{{|}}/g, '')
   const stepId = nameWithoutCurlies.match(stepIdRegExp)?.[1] || ''
@@ -108,7 +106,7 @@ export const withVariables = (editor: CustomEditor) => {
 export const insertVariable = (
   editor: CustomEditor,
   variableData: Pick<VariableElement, 'name' | 'value' | 'label'>,
-  stepsWithVariables: Record<string, unknown>[],
+  stepsWithVariables: StepWithVariables[],
 ) => {
   const variable: VariableElement = {
     type: 'variable',

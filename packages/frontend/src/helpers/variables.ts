@@ -2,12 +2,31 @@ import type { IDataOutMetadata, IDataOutMetadatum, IStep } from '@plumber/types'
 
 import get from 'lodash.get'
 
+export interface StepWithVariables {
+  id: string
+  name: string
+  output: Variable[]
+}
+export interface Variable extends RawVariable {
+  label: string | null
+}
+
+interface RawVariable {
+  /**
+   * CAVEAT: not _just_ a name; it contains the lodash.get path for dataOut. Do
+   * not clobber unles you know what you're doing!
+   */
+  name: string
+
+  value: unknown
+}
+
 function postProcess(
   stepId: string,
-  variables: any[],
+  variables: RawVariable[],
   metadata: IDataOutMetadata,
-): any[] {
-  const result: any[] = []
+): Variable[] {
+  const result: Variable[] = []
 
   for (const variable of variables) {
     const { name, ...rest } = variable
@@ -34,7 +53,7 @@ function postProcess(
 const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
 
-const process = (data: any, parentKey?: any, index?: number): any[] => {
+const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
   if (typeof data !== 'object') {
     return [
       {
@@ -66,7 +85,7 @@ const process = (data: any, parentKey?: any, index?: number): any[] => {
   })
 }
 
-export const processStepWithExecutions = (steps: IStep[]): any[] => {
+export function extractVariables(steps: IStep[]): StepWithVariables[] {
   if (!steps) {
     return []
   }
