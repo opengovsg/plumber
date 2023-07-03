@@ -4,6 +4,7 @@ import * as React from 'react'
 import MuiTextField from '@mui/material/TextField'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import PowerInput from 'components/PowerInput'
+import PowerSelect from 'components/PowerSelect'
 import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
 
@@ -106,6 +107,16 @@ export default function InputCreator(
         helperText={description}
         clickToCopy={clickToCopy}
         autoComplete={schema.autoComplete}
+      />
+    )
+  }
+
+  if (type === 'multiselect') {
+    return (
+      <PowerSelect
+        name={computedName}
+        label={label}
+        variableTypes={schema.variableTypes}
       />
     )
   }

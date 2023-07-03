@@ -182,7 +182,28 @@ export interface IFieldMultiline extends IBaseField {
   autoComplete?: AutoCompleteValue
 }
 
-export type IField = IFieldDropdown | IFieldText | IFieldMultiline
+export interface IFieldMultiSelect {
+  key: string
+  label: string
+  type: 'multiselect'
+  required?: boolean
+  description?: string
+  variableTypes?: TDataOutMetadatumType[]
+
+  // these are not implemented yet; only to satisfy type checks
+  // FIXME (ogp-weeloong): refactor InputCreator in separate PR
+  readOnly?: boolean
+  value?: string
+  clickToCopy?: boolean
+  variables?: boolean
+  dependsOn?: string[]
+}
+
+export type IField =
+  | IFieldDropdown
+  | IFieldText
+  | IFieldMultiline
+  | IFieldMultiSelect
 
 export interface IAuthenticationStepField {
   name: string
