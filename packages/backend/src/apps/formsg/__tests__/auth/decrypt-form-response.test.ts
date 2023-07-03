@@ -23,7 +23,7 @@ vi.mock('@opengovsg/formsg-sdk', () => {
         authenticate: mocks.webhooksAuthenticate,
       },
       crypto: {
-        decrypt: mocks.cryptoDecrypt,
+        decryptWithAttachments: mocks.cryptoDecrypt,
       },
     }),
   }
@@ -109,20 +109,23 @@ describe('decrypt form response', () => {
 
   it('should parse form fields into dictionaries', async () => {
     mocks.cryptoDecrypt.mockReturnValueOnce({
-      responses: [
-        {
-          _id: 'question1',
-          fieldType: 'textarea',
-          question: 'What do you eat for breakfast?',
-          answer: 'i eat lorem dimsum for breakfast',
-        },
-        {
-          _id: 'question2',
-          fieldType: 'mobile',
-          question: 'What is your mobile number?',
-          answer: '+6591234567',
-        },
-      ],
+      attachments: {},
+      content: {
+        responses: [
+          {
+            _id: 'question1',
+            fieldType: 'textarea',
+            question: 'What do you eat for breakfast?',
+            answer: 'i eat lorem dimsum for breakfast',
+          },
+          {
+            _id: 'question2',
+            fieldType: 'mobile',
+            question: 'What is your mobile number?',
+            answer: '+6591234567',
+          },
+        ],
+      },
     })
     await expect(decryptFormResponse($)).resolves.toEqual(true)
     expect($.request.body).toEqual({
@@ -147,26 +150,29 @@ describe('decrypt form response', () => {
   describe('nric filter', () => {
     beforeEach(() => {
       mocks.cryptoDecrypt.mockReturnValue({
-        responses: [
-          {
-            _id: 'question1',
-            fieldType: 'nric',
-            question: 'what is your mom nric?',
-            answer: 'T2927502A',
-          },
-          {
-            _id: 'question2',
-            fieldType: 'mobile',
-            question: 'What is your mobile number?',
-            answer: '+6591234567',
-          },
-          {
-            _id: 'question3',
-            fieldType: 'nric',
-            question: 'what is your nric?',
-            answer: 'S9943670J',
-          },
-        ],
+        attachments: {},
+        content: {
+          responses: [
+            {
+              _id: 'question1',
+              fieldType: 'nric',
+              question: 'what is your mom nric?',
+              answer: 'T2927502A',
+            },
+            {
+              _id: 'question2',
+              fieldType: 'mobile',
+              question: 'What is your mobile number?',
+              answer: '+6591234567',
+            },
+            {
+              _id: 'question3',
+              fieldType: 'nric',
+              question: 'what is your nric?',
+              answer: 'S9943670J',
+            },
+          ],
+        },
       })
     })
     it('should handle nric filter - do nothing', async () => {
