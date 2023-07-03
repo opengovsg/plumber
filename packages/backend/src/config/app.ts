@@ -32,6 +32,7 @@ type AppConfig = {
   postmanApiKey: string
   isWorker: boolean
   workerActionConcurrency: number
+  s3Region: string
 }
 
 const port = process.env.PORT || '3000'
@@ -78,6 +79,7 @@ const appConfig: AppConfig = {
   workerActionConcurrency: parseInt(
     process.env.WORKER_ACTION_CONCURRENCY || '10',
   ),
+  s3Region: process.env.S3_REGION,
 }
 
 if (!appConfig.encryptionKey) {
@@ -90,6 +92,10 @@ if (!appConfig.sessionSecretKey) {
 
 if (!appConfig.postmanApiKey) {
   throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
+}
+
+if (!appConfig.s3Region) {
+  throw new Error('S3_REGION environment variable needs to be set!')
 }
 
 export default appConfig
