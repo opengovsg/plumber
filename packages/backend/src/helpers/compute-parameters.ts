@@ -7,9 +7,13 @@ import Step from '../models/step'
 const variableRegExp = /({{step\.[\da-zA-Z-]+(?:\.[\da-zA-Z-_]+)+}})/g
 
 function findAndSubstituteVariables(
-  rawValue: string,
+  rawValue: unknown,
   executionSteps: ExecutionStep[],
-): string {
+): unknown {
+  if (typeof rawValue !== 'string') {
+    return rawValue
+  }
+
   const parts = rawValue.split(variableRegExp)
 
   return parts
@@ -38,29 +42,15 @@ export default function computeParameters(
 ): Step['parameters'] {
   const entries = Object.entries(parameters)
   return entries.reduce((result, [key, value]: [string, unknown]) => {
-    if (typeof value === 'string') {
-      const computedValue = findAndSubstituteVariables(value, executionSteps)
-
-      return {
-        ...result,
-        [key]: computedValue,
-      }
-    } else if (Array.isArray(value)) {
-      const computedValues = value.map((element) =>
-        typeof element === 'string'
-          ? findAndSubstituteVariables(element, executionSteps)
-          : element,
-      )
-
-      return {
-        ...result,
-        [key]: computedValues,
-      }
-    }
+    const computedValue = Array.isArray(value)
+      ? value.map((element) =>
+          findAndSubstituteVariables(element, executionSteps),
+        )
+      : findAndSubstituteVariables(value, executionSteps)
 
     return {
       ...result,
-      [key]: value,
+      [key]: computedValue,
     }
   }, {})
 }
