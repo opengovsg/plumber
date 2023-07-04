@@ -10,8 +10,6 @@
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
     "lint": "eslint . --ignore-path ../../.eslintignore",
     "db": "DOTENV_CONFIG_PATH=.env knex",
     "db:migration:create": "npm run db -- migrate:make",
