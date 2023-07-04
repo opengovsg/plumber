@@ -1,5 +1,9 @@
 import type { PutObjectCommandInput } from '@aws-sdk/client-s3'
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3'
 
 import appConfig from '@/config/app'
 
@@ -72,4 +76,37 @@ export async function putObject(
     }),
   )
   return `plumber-s3:${bucket}:${objectKey}`
+}
+
+export interface PlumberS3Object {
+  name: string
+  data: Uint8Array
+}
+
+/**
+ * Obtains the object described by a Plumber S3 ID.
+ *
+ * If the ID has an invalid format, or we don't receive an object body, this
+ * throws an `Error`.
+ */
+export async function getObjectFromS3Id(id: string): Promise<PlumberS3Object> {
+  const idData = parsePlumberS3Id(id)
+  if (!idData) {
+    throw new Error(`Invalid Plumber S3 ID: ${id}`)
+  }
+
+  const objectData = (
+    await s3Client.send(
+      new GetObjectCommand({ Bucket: idData.bucket, Key: idData.objectKey }),
+    )
+  ).Body
+
+  if (!objectData) {
+    throw new Error(`No object body for ${id}`)
+  }
+
+  return {
+    name: idData.objectName,
+    data: await objectData.transformToByteArray(),
+  }
 }
