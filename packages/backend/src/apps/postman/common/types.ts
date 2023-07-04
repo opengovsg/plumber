@@ -1,14 +1,20 @@
 import validator from 'email-validator'
 import { z } from 'zod'
 
+const recipientStringToArray = (value: string) =>
+  value
+    .split(',')
+    .map((e) => e.trim())
+    .filter((e) => e?.length > 0)
+
 export const emailSchema = z.object({
   destinationEmail: z
     .custom(
       (value) => {
-        if (!value || typeof value !== 'string' || !value.length) {
+        if (typeof value !== 'string') {
           return false
         }
-        const recipients = value.split(',').map((e) => e.trim())
+        const recipients = recipientStringToArray(value)
         if (recipients.some((recipient) => !validator.validate(recipient))) {
           return false
         }
@@ -16,7 +22,7 @@ export const emailSchema = z.object({
       },
       { message: 'Invalid recipient email' },
     )
-    .transform((value: string) => value.split(',').map((e) => e.trim())),
+    .transform(recipientStringToArray),
   subject: z.string().min(1).trim(),
   body: z
     .string()
