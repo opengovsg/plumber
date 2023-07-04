@@ -1,6 +1,8 @@
 import validator from 'email-validator'
 import { z } from 'zod'
 
+import { parsePlumberS3Id } from '@/helpers/plumber-s3'
+
 const recipientStringToArray = (value: string) =>
   value
     .split(',')
@@ -31,4 +33,13 @@ export const emailSchema = z.object({
     return value.trim() === '' ? undefined : value.trim()
   }, z.string().email().optional()),
   senderName: z.string().min(1).trim(),
+  attachments: z.array(
+    z.string().refine(
+      // For now, all attachments assumed to be stored in our S3.
+      (value) => !!parsePlumberS3Id(value),
+      (value) => ({
+        message: `${value} is not a Plumber S3 ID.`,
+      }),
+    ),
+  ),
 })
