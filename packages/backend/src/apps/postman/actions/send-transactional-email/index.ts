@@ -50,6 +50,14 @@ export default defineAction({
       description: "Sender name (will appear as '<Name> via Postman').",
       variables: true,
     },
+    {
+      label: 'Attachments',
+      key: 'attachments',
+      type: 'multiselect' as const,
+      required: false,
+      variables: true,
+      variableTypes: ['file'],
+    },
   ],
 
   async run($) {
