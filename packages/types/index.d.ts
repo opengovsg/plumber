@@ -44,6 +44,13 @@ export interface IDataOutMetadatum {
    * ugly lodash get string (e.g. "step.abc-def.herp-derp.answer.1").
    */
   label?: string
+
+  /**
+   * The value to show to the user, instead of the actual underlying value.
+   * Typically used to prettify values (e.g. show the filename of an S3 object
+   * instead of the full object key).
+   */
+  displayedValue?: string
 }
 
 export interface IDataOutMetadata {

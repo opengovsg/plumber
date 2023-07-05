@@ -231,29 +231,34 @@ describe('variables', () => {
       })
     })
 
-    describe('processes type metadata', () => {
-      it('adds type metadata if present', () => {
-        steps[0].executionSteps[0].dataOutMetadata = {
-          stringProp: {
-            type: 'text',
-          },
-        }
-        const result = extractVariables(steps)
-        expect(result[0].output[0]).toEqual(
-          expect.objectContaining({
-            type: 'text',
-          }),
-        )
-      })
+    describe.each([
+      { metadataPropName: 'type', sampleMetadata: { type: 'text' } },
+      {
+        metadataPropName: 'displayedValue',
+        sampleMetadata: { displayedValue: 'pretty value' },
+      },
+    ])(
+      'processes metadata into props',
+      ({ metadataPropName, sampleMetadata }) => {
+        it('adds corresponding prop if present', () => {
+          steps[0].executionSteps[0].dataOutMetadata = {
+            stringProp: sampleMetadata,
+          }
+          const result = extractVariables(steps)
+          expect(result[0].output[0]).toEqual(
+            expect.objectContaining(sampleMetadata),
+          )
+        })
 
-      it('sets type prop to null if absent', () => {
-        const result = extractVariables(steps)
-        expect(result[0].output[0]).toEqual(
-          expect.objectContaining({
-            type: null,
-          }),
-        )
-      })
-    })
+        it('sets corresponding prop to null if absent', () => {
+          const result = extractVariables(steps)
+          expect(result[0].output[0]).toEqual(
+            expect.objectContaining({
+              [metadataPropName]: null,
+            }),
+          )
+        })
+      },
+    )
   })
 })

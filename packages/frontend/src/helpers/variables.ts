@@ -15,6 +15,7 @@ export interface StepWithVariables {
 export interface Variable extends RawVariable {
   label: string | null
   type: TDataOutMetadatumType | null
+  displayedValue: string | null
 }
 
 interface RawVariable {
@@ -40,6 +41,7 @@ function postProcess(
       isVisible = true,
       label = null,
       type = null,
+      displayedValue = null,
     } = get(metadata, name, {}) as IDataOutMetadatum
 
     if (!isVisible) {
@@ -49,6 +51,7 @@ function postProcess(
     result.push({
       label,
       type,
+      displayedValue,
       name: `step.${stepId}.${name}`,
       ...rest,
     })
