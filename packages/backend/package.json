@@ -46,6 +46,7 @@
     "graphql-type-json": "^0.3.2",
     "helmet": "6.1.5",
     "http-errors": "~1.6.3",
+    "ipaddr.js": "2.1.0",
     "jsonwebtoken": "^9.0.0",
     "knex": "2.4.2",
     "lodash.get": "^4.4.2",

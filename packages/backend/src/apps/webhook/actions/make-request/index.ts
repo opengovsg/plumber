@@ -2,6 +2,8 @@ import { URL } from 'url'
 
 import defineAction from '@/helpers/define-action'
 
+import { isUrlAllowed } from '../../common/ip-resolver'
+
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
 export default defineAction({
@@ -51,6 +53,10 @@ export default defineAction({
     // Prohibit calling ourselves to prevent self-DoS.
     if (new URL(url).hostname.toLowerCase().endsWith('plumber.gov.sg')) {
       throw new Error('Recursively invoking Plumber webhooks is prohibited.')
+    }
+
+    if (!(await isUrlAllowed(url))) {
+      throw new Error('The URL you are trying to call is not allowed.')
     }
 
     const response = await $.http.request({

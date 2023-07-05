@@ -4,7 +4,8 @@
     "dev": "vite --host",
     "build": "tsc && vite build",
     "prebuild": "rimraf ./build",
-    "lint": "eslint . --ignore-path ../../.eslintignore"
+    "lint": "eslint . --ignore-path ../../.eslintignore",
+    "test": "vitest"
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",

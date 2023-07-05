@@ -7,9 +7,14 @@ import makeRequestAction from '../../actions/make-request'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
+  isUrlAllowed: vi.fn(() => true),
 }))
 
-describe('create row', () => {
+vi.mock('../../common/ip-resolver', () => ({
+  isUrlAllowed: mocks.isUrlAllowed,
+}))
+
+describe('make http request', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
@@ -41,7 +46,8 @@ describe('create row', () => {
     $.step.parameters.url = 'http://test.local/endpoint?1234'
     mocks.httpRequest.mockReturnValue('mock response')
 
-    makeRequestAction.run($)
+    await makeRequestAction.run($)
+    expect(mocks.isUrlAllowed).toHaveBeenCalledOnce()
     expect(mocks.httpRequest).toHaveBeenCalledWith({
       url: $.step.parameters.url,
       method: $.step.parameters.method,
@@ -49,6 +55,18 @@ describe('create row', () => {
     })
   })
 
+  it('should throw an error if url is not malformed', async () => {
+    $.step.parameters.url = 'malformed-urll'
+    await expect(makeRequestAction.run($)).rejects.toThrowError('Invalid URL')
+  })
+
+  it('should throw an error if url is not allowed', async () => {
+    mocks.isUrlAllowed.mockResolvedValueOnce(false)
+    $.step.parameters.url = 'https://internalip.com'
+    await expect(makeRequestAction.run($)).rejects.toThrowError(
+      'The URL you are trying to call is not allowed.',
+    )
+  })
   it.each([
     'http://staging.plumber.gov.sg/webhooks/abc-def-123',
     'https://www.plumber.gov.sg/webhooks/abc-def-123',
@@ -60,7 +78,7 @@ describe('create row', () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.data = 'meep meep'
     $.step.parameters.url = url
-    expect(makeRequestAction.run($)).rejects.toThrowError(
+    await expect(makeRequestAction.run($)).rejects.toThrowError(
       'Recursively invoking Plumber webhooks is prohibited.',
     )
   })
