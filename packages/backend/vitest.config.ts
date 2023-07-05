@@ -4,13 +4,11 @@
 
 import { config } from 'dotenv'
 import path from 'path'
-import { fileURLToPath } from 'url'
 import { defineConfig } from 'vite'
 
 config({
-  // .env-example should be in the same directory as our config. Note that
-  // fileURLToPath has a trailing slash.
-  path: `${fileURLToPath(new URL('.', import.meta.url))}.env-example`,
+  // .env-example should be in the same directory as our config.
+  path: path.resolve(__dirname, './.env-example'),
 })
 
 export default defineConfig({
