@@ -33,6 +33,24 @@ export const emailSchema = z.object({
     return value.trim() === '' ? undefined : value.trim()
   }, z.string().email().optional()),
   senderName: z.string().min(1).trim(),
+  senderEmail: z.nullable(
+    z
+      .string()
+      .trim()
+      .transform((email, context) => {
+        if (!email) {
+          return null
+        }
+        if (!validator.validate(email)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Invalid sender email',
+          })
+          return z.NEVER
+        }
+        return email
+      }),
+  ),
   attachments: z.array(
     z.string().refine(
       // For now, all attachments assumed to be stored in our S3.

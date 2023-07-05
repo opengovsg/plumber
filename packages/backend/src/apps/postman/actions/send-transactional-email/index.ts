@@ -49,14 +49,26 @@ export default defineAction({
       key: 'senderName',
       type: 'string' as const,
       required: true,
-      description: "Sender name (will appear as '<Name> via Postman').",
+      description:
+        "If sender email (below) is not provided, this will appear as '<Name> via Postman').",
       variables: true,
+    },
+    {
+      label: 'Sender Email',
+      key: 'senderEmail',
+      type: 'string' as const,
+      required: false,
+      description:
+        "'From' email address displayed in the recipient's email client. If you specify this, your Postman API key MUST match this email.",
+      variables: false,
     },
     {
       label: 'Attachments',
       key: 'attachments',
       type: 'multiselect' as const,
       required: false,
+      description:
+        'To use attachments, you need to specify a sender email whose domain is whitelisted for postman attachments.',
       variables: true,
       variableTypes: ['file'],
     },
@@ -72,11 +84,13 @@ export default defineAction({
       replyTo,
       // Older pipes will not have these new fields.
       attachments = [],
+      senderEmail = null,
     } = $.step.parameters
 
     const result = emailSchema.safeParse({
       destinationEmail,
       senderName,
+      senderEmail,
       subject,
       body,
       replyTo,
@@ -86,6 +100,10 @@ export default defineAction({
     if (!result.success) {
       throw fromZodError((result as SafeParseError<unknown>).error)
     }
+
+    const fromEmail = result.data.senderEmail
+      ? `${result.data.senderName}<${result.data.senderEmail}>`
+      : `${result.data.senderName} via Postman<donotreply@mail.postman.gov.sg>`
 
     const attachmentFiles = await Promise.all(
       result.data.attachments?.map(getObjectFromS3Id),
@@ -100,10 +118,7 @@ export default defineAction({
         if (result.data.replyTo) {
           requestData.append('reply_to', result.data.replyTo)
         }
-        requestData.append(
-          'from',
-          `${result.data.senderName} via Postman<donotreply@mail.postman.gov.sg>`,
-        )
+        requestData.append('from', fromEmail)
         for (const file of attachmentFiles) {
           requestData.append('attachments', Buffer.from(file.data), file.name)
         }
