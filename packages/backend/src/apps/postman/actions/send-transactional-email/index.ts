@@ -50,7 +50,7 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       description:
-        "If sender email (below) is not provided, this will appear as '<Name> via Postman').",
+        "Your recipient will see 'From: [Sender Name] via Postman <donotreply@postman.gov.sg>' in their email, unless sender email (below) is also provided",
       variables: true,
     },
     {
@@ -59,7 +59,7 @@ export default defineAction({
       type: 'string' as const,
       required: false,
       description:
-        "'From' email address displayed in the recipient's email client. If you specify this, your Postman API key MUST match this email.",
+        "This MUST be a Custom From Address configured by the Postman team (see our guide for more info). If you specify this, your recipient will see 'From: [Sender Name] <[Sender Email]>' in their email",
       variables: false,
     },
     {
@@ -67,8 +67,7 @@ export default defineAction({
       key: 'attachments',
       type: 'multiselect' as const,
       required: false,
-      description:
-        'To use attachments, you need to specify a sender email whose domain is whitelisted for postman attachments.',
+      description: 'To use attachments, you MUST configure a sender email.',
       variables: true,
       variableTypes: ['file'],
     },
