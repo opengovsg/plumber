@@ -7,7 +7,8 @@ import path from 'path'
 import { defineConfig } from 'vite'
 
 config({
-  path: './.env-example',
+  // .env-example should be in the same directory as our config.
+  path: path.resolve(__dirname, './.env-example'),
 })
 
 export default defineConfig({

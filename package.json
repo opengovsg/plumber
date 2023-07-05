@@ -14,7 +14,7 @@
     "start": "npm run -w backend start",
     "start:worker": "npm run -w backend start:worker",
     "lint": "npm run --workspaces --if-present lint",
-    "test": "npm run --workspaces --if-present test"
+    "test": "vitest"
   },
   "workspaces": {
     "packages": [
