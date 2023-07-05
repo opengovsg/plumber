@@ -13,11 +13,12 @@ const executeFlow = async (
   context: Context,
 ) => {
   const { stepId } = params.input
-  const { executionStep } = await testRun({ stepId })
 
   const untilStep = await context.currentUser
     .$relatedQuery('steps')
     .findById(stepId)
+
+  const { executionStep } = await testRun({ stepId })
 
   if (executionStep.isFailed) {
     throw new Error(JSON.stringify(executionStep.errorDetails))
