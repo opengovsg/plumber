@@ -63,6 +63,9 @@ export default defineAction({
       url,
       method,
       data,
+      // Redirects open up way too many vulns (e.g. someone changes the
+      // redirect target to a malicious endpoint), so disable it.
+      maxRedirects: 0,
     })
 
     let responseData = response.data
