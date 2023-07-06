@@ -32,7 +32,7 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       description:
-        'Any URL with a querystring will be re-encoded properly. Plumber URLs (e.g. https://plumber.gov.sg/webhooks/...) and redirects are prohibited.',
+        'Any URL with a querystring will be re-encoded properly. Plumber URLs (e.g. https://plumber.gov.sg/webhooks/...) and URLs with redirects (HTTP 301 etc.) are prohibited.',
       variables: true,
     },
     {
