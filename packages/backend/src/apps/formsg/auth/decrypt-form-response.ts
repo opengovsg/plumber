@@ -63,6 +63,8 @@ export async function decryptFormResponse(
     $.request.body = {
       fields: parsedData,
       submissionId: data.submissionId,
+      // It turns out Forms already gives this to us in ISO 8601 format.
+      submissionTimeIso8601: data.created,
     }
     delete $.request.headers
     delete $.request.query
