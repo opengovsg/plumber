@@ -13,6 +13,13 @@ export default class HttpError extends BaseError {
 
     super(computedError)
 
-    this.response = error.response
+    // remove unnecessary info and circular reference when logging
+    this.response = {
+      data: error.response?.data,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      headers: error.response?.headers,
+      config: error.config,
+    }
   }
 }
