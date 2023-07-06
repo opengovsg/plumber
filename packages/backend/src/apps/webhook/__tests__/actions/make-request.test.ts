@@ -52,6 +52,7 @@ describe('make http request', () => {
       url: $.step.parameters.url,
       method: $.step.parameters.method,
       data: $.step.parameters.data,
+      maxRedirects: 0,
     })
   })
 
