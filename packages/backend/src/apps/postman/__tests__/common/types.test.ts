@@ -49,15 +49,33 @@ describe('postman email schema zod validation', () => {
     expect(result2.data.destinationEmail).toEqual([])
   })
 
+  it('should allow for empty values', () => {
+    validPayload.destinationEmail =
+      'recipient@example.com,,recipient3@example.com'
+    const result = emailSchema.safeParse(validPayload)
+    assert(result.success === true) // using assert here for type assertion
+    expect(result.data.destinationEmail).toEqual([
+      'recipient@example.com',
+      'recipient3@example.com',
+    ])
+
+    validPayload.destinationEmail = 'recipient@example.com,,'
+    const result2 = emailSchema.safeParse(validPayload)
+    assert(result2.success === true) // using assert here for type assertion
+    expect(result2.data.destinationEmail).toEqual(['recipient@example.com'])
+  })
+
   it('should fail if any of the email string is invalid', () => {
     validPayload.destinationEmail = 'recipient,,recipient3@example.com'
     const result = emailSchema.safeParse(validPayload)
-    expect(result.success).toEqual(false)
+    assert(result.success === false)
+    expect(result.error?.errors[0].message).toEqual('Invalid recipient emails')
   })
 
   it('should fail if email string is not defined', () => {
     validPayload.destinationEmail = undefined
     const result = emailSchema.safeParse(validPayload)
-    expect(result.success).toEqual(false)
+    assert(result.success === false)
+    expect(result.error?.errors[0].message).toEqual('Required')
   })
 })
