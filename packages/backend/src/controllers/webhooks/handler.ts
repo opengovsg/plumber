@@ -1,12 +1,12 @@
 import { IRequest, ITriggerItem } from '@plumber/types'
 
+import { randomUUID } from 'crypto'
 import { Response } from 'express'
 import { memoize } from 'lodash'
 import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible'
 import { z } from 'zod'
 
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
-import { sha256Hash } from '@/helpers/crypto'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
@@ -106,21 +106,18 @@ export default async (request: IRequest, response: Response) => {
 
   // in case trigger type is 'webhook'
   let payload = request.body
-  let rawInternalId: string | Buffer = request.rawBody
 
   // in case it's our built-in generic webhook trigger
   if (isWebhookApp) {
     payload = {
       ...request.body,
     }
-
-    rawInternalId = JSON.stringify(payload)
   }
 
   const triggerItem: ITriggerItem = {
     raw: payload,
     meta: {
-      internalId: sha256Hash(rawInternalId),
+      internalId: randomUUID(),
     },
   }
 
