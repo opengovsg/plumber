@@ -44,7 +44,8 @@ export async function decryptFormResponse(
   if (submission) {
     const parsedData: Record<string, any> = {}
     const nricFilter = $.step.parameters.nricFilter as string | undefined
-    for (const formField of submission.responses) {
+
+    for (const [index, formField] of submission.responses.entries()) {
       const { _id, ...rest } = formField
       if (rest.fieldType === 'nric' && !!rest.answer) {
         rest.answer = rest.answer.toUpperCase()
@@ -58,7 +59,13 @@ export async function decryptFormResponse(
           rest.answer = 'xxxxx' + rest.answer.substring(5)
         }
       }
-      parsedData[_id] = rest
+
+      // Note: the questionNumber may not be in running order across
+      // `parsedData`: fields (e.g. NRIC) can be removed from the output.
+      parsedData[_id] = {
+        questionNumber: index + 1,
+        ...rest,
+      }
     }
 
     $.request.body = {
