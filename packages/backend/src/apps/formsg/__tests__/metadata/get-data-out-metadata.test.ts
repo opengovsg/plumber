@@ -1,4 +1,4 @@
-import { IDataOutMetadatum, IExecutionStep } from '@plumber/types'
+import { IDataOutMetadatum, IExecutionStep, IJSONObject } from '@plumber/types'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -73,5 +73,25 @@ describe('formsg dataOut metadata', () => {
     expect(metadata.fields.textFieldId.question.renderPosition).toBeLessThan(
       metadata.fields.textFieldId.answer.renderPosition,
     )
+  })
+
+  it('sets label and renderPosition to null if question number is undefined', async () => {
+    // Not inline because prettier barfs on this.
+    const fields = executionStep.dataOut.fields as IJSONObject
+    fields.textFieldId = {
+      question: 'What is your name?',
+      answer: 'herp derp',
+      fieldType: 'textField',
+    }
+
+    const metadata = await getDataOutMetadata(
+      newSubmissionTrigger.key,
+      executionStep,
+    )
+
+    expect(metadata.fields.textFieldId.question.renderPosition).toBeNull()
+    expect(metadata.fields.textFieldId.answer.renderPosition).toBeNull()
+    expect(metadata.fields.textFieldId.question.label).toBeNull()
+    expect(metadata.fields.textFieldId.answer.label).toBeNull()
   })
 })
