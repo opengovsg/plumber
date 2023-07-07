@@ -260,11 +260,13 @@ describe('variables', () => {
           stringProp: 'a',
           stringProp2: 'b',
           stringProp3: 'c',
+          stringProp4: 'd',
         }
         steps[0].executionSteps[0].dataOutMetadata = {
           stringProp: { renderPosition: 10 },
           stringProp2: { renderPosition: 10.2 },
-          // Intentionally undefined renderPosition for stringProp3
+          // Intentionally undefined renderPosition for stringProp3 and
+          // stringProp4
         }
         const result = extractVariables(steps)
         expect(result[0].output).toEqual([
@@ -276,8 +278,12 @@ describe('variables', () => {
             value: 'b',
             renderPosition: 10.2,
           }),
+          // Check sort stability
           expect.objectContaining({
             value: 'c',
+          }),
+          expect.objectContaining({
+            value: 'd',
           }),
         ])
       })
