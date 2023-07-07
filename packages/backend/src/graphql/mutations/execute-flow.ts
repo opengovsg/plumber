@@ -17,6 +17,7 @@ const executeFlow = async (
   const untilStep = await context.currentUser
     .$relatedQuery('steps')
     .findById(stepId)
+    .throwIfNotFound()
 
   const { executionStep } = await testRun({ stepId })
 
