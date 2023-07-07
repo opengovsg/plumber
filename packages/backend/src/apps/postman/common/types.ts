@@ -51,13 +51,26 @@ export const emailSchema = z.object({
         return email
       }),
   ),
-  attachments: z.array(
-    z.string().refine(
-      // For now, all attachments assumed to be stored in our S3.
-      (value) => !!parsePlumberS3Id(value),
-      (value) => ({
-        message: `${value} is not a Plumber S3 ID.`,
-      }),
-    ),
-  ),
+  attachments: z.array(z.string()).transform((array, context) => {
+    const result: string[] = []
+
+    for (const value of array) {
+      // Account for optional attachment fields with no response.
+      if (!value) {
+        continue
+      }
+
+      if (!parsePlumberS3Id(value)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${value} is not a Plumber S3 ID.`,
+        })
+        return z.NEVER
+      }
+
+      result.push(value)
+    }
+
+    return result
+  }),
 })
