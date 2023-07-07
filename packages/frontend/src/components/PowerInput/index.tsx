@@ -17,6 +17,7 @@ import { VariableElement } from './types'
 import {
   customizeEditor,
   deserialize,
+  genVariableLabelMap,
   insertVariable,
   serialize,
 } from './utils'
@@ -61,6 +62,9 @@ const PowerInput = (props: PowerInputProps) => {
     return extractVariables(priorStepsWithExecutions)
   }, [priorStepsWithExecutions])
 
+  // Flatten stepsWithVariables for faster serialization / deserialization to labels.
+  const variableLabelMap = genVariableLabelMap(stepsWithVariables)
+
   const handleBlur = React.useCallback(
     (value: any) => {
       onBlur?.(value)
@@ -70,9 +74,9 @@ const PowerInput = (props: PowerInputProps) => {
 
   const handleVariableSuggestionClick = React.useCallback(
     (variable: Pick<VariableElement, 'name' | 'value'>) => {
-      insertVariable(editor, variable, stepsWithVariables)
+      insertVariable(editor, variable, variableLabelMap)
     },
-    [stepsWithVariables],
+    [variableLabelMap],
   )
 
   return (
@@ -91,7 +95,7 @@ const PowerInput = (props: PowerInputProps) => {
       }) => (
         <Slate
           editor={editor}
-          value={deserialize(value, stepsWithVariables)}
+          value={deserialize(value, variableLabelMap)}
           onChange={(value) => {
             controllerOnChange(serialize(value))
           }}
