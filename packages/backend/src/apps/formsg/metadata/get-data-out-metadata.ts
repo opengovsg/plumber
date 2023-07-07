@@ -22,14 +22,22 @@ async function getDataOutMetadata(
       question: {
         type: 'text',
         isVisible: true,
-        label: `Question ${fieldData.questionNumber}`,
-        renderPosition: fieldData.questionNumber,
+        label: fieldData.questionNumber
+          ? `Question ${fieldData.questionNumber}`
+          : null,
+        renderPosition: fieldData.questionNumber
+          ? fieldData.questionNumber
+          : null,
       },
       answer: {
         type: 'text',
         isVisible: true,
-        label: `Response ${fieldData.questionNumber}`,
-        renderPosition: fieldData.questionNumber + 0.1,
+        label: fieldData.questionNumber
+          ? `Response ${fieldData.questionNumber}`
+          : null,
+        renderPosition: fieldData.questionNumber
+          ? fieldData.questionNumber + 0.1
+          : null,
       },
       fieldType: { isVisible: false },
       questionNumber: { isVisible: false },
