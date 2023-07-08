@@ -32,7 +32,6 @@ const rateLimitRule = createRateLimitRule({
     const userIp =
       (ctx.req.headers['cf-connecting-ip'] as string) ||
       ctx.req.socket.remoteAddress.split(',')[0].trim()
-    console.log(userIp)
     return userIp
   },
   // recommended flag: https://github.com/teamplanes/graphql-rate-limit#enablebatchrequestcache
