@@ -7,8 +7,8 @@ import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-const isAuthenticated = rule()(async (_parent, _args, req) => {
-  const token = req.headers['authorization']
+const isAuthenticated = rule()(async (_parent, _args, ctx: Context) => {
+  const token = ctx.req.headers['authorization']
 
   if (token == null) {
     return false
@@ -18,7 +18,7 @@ const isAuthenticated = rule()(async (_parent, _args, req) => {
     const { userId } = jwt.verify(token, appConfig.sessionSecretKey) as {
       userId: string
     }
-    req.currentUser = await User.query().findById(userId).throwIfNotFound()
+    ctx.currentUser = await User.query().findById(userId).throwIfNotFound()
 
     return true
   } catch (error) {
@@ -30,8 +30,9 @@ const rateLimitRule = createRateLimitRule({
   identifyContext: (ctx: Context) => {
     // get ip address of request in this order: cf-connecting-ip -> remoteAddress
     const userIp =
-      (ctx.headers['cf-connecting-ip'] as string) ||
-      ctx.socket.remoteAddress.split(',')[0].trim()
+      (ctx.req.headers['cf-connecting-ip'] as string) ||
+      ctx.req.socket.remoteAddress.split(',')[0].trim()
+    console.log(userIp)
     return userIp
   },
   // recommended flag: https://github.com/teamplanes/graphql-rate-limit#enablebatchrequestcache
