@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { ApolloProvider as BaseApolloProvider } from '@apollo/client'
-import { mutateAndGetClient } from 'graphql/client'
-import useAuthentication from 'hooks/useAuthentication'
+import { createClient } from 'graphql/client'
 import { SnackbarMessage, useSnackbar } from 'notistack'
 
 type ApolloProviderProps = {
@@ -10,7 +9,6 @@ type ApolloProviderProps = {
 
 const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
   const { enqueueSnackbar } = useSnackbar()
-  const authentication = useAuthentication()
 
   const onError = React.useCallback(
     (message: SnackbarMessage) => {
@@ -20,11 +18,10 @@ const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
   )
 
   const client = React.useMemo(() => {
-    return mutateAndGetClient({
+    return createClient({
       onError,
-      token: authentication.token,
     })
-  }, [onError, authentication])
+  }, [onError])
 
   return <BaseApolloProvider client={client} {...props} />
 }

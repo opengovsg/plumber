@@ -18,14 +18,14 @@ const root = createRoot(container)
 
 root.render(
   <SnackbarProvider>
-    <AuthenticationProvider>
+    <ThemeProvider>
       <ApolloProvider>
-        <IntlProvider>
-          <ThemeProvider>
+        <AuthenticationProvider>
+          <IntlProvider>
             <RouterProvider router={router} />
-          </ThemeProvider>
-        </IntlProvider>
+          </IntlProvider>
+        </AuthenticationProvider>
       </ApolloProvider>
-    </AuthenticationProvider>
+    </ThemeProvider>
   </SnackbarProvider>,
 )

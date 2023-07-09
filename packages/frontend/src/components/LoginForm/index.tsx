@@ -11,7 +11,10 @@ import OtpInput from './OtpInput'
 export const LoginForm = (): JSX.Element => {
   const authentication = useAuthentication()
   const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP)
-  const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP)
+  const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP, {
+    refetchQueries: ['GetCurrentUser'],
+    awaitRefetchQueries: true,
+  })
 
   const [isOtpSent, setIsOtpSent] = useState(false)
   const [email, setEmail] = useState('')
@@ -29,7 +32,7 @@ export const LoginForm = (): JSX.Element => {
       })
       setIsOtpSent(true)
     } else {
-      const { data } = await verifyOtp({
+      await verifyOtp({
         variables: {
           input: {
             email,
@@ -37,10 +40,6 @@ export const LoginForm = (): JSX.Element => {
           },
         },
       })
-
-      const { token } = data.verifyOtp
-
-      authentication.updateToken(token)
     }
   }
 

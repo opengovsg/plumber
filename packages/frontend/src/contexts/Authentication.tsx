@@ -1,39 +1,59 @@
-import * as React from 'react'
-import { getItem, setItem } from 'helpers/storage'
+import { IUser } from '@plumber/types'
+
+import { createContext, useState } from 'react'
+import { FetchResult, useMutation, useQuery } from '@apollo/client'
+import { Center, Spinner } from '@chakra-ui/react'
+import { LOGOUT } from 'graphql/mutations/logout'
+import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
+
+type CurrentUser = Pick<IUser, 'id' | 'email'> | null
 
 export type AuthenticationContextParams = {
-  token: string | null
-  updateToken: (token: string) => void
+  currentUser: CurrentUser
+  logout: () => Promise<FetchResult<void>>
 }
 
-export const AuthenticationContext =
-  React.createContext<AuthenticationContextParams>({
-    token: null,
-    updateToken: () => void 0,
-  })
+export const AuthenticationContext = createContext(
+  {} as AuthenticationContextParams,
+)
 
 type AuthenticationProviderProps = {
   children: React.ReactNode
 }
 
-export const AuthenticationProvider = (
-  props: AuthenticationProviderProps,
-): React.ReactElement => {
-  const { children } = props
-  const [token, setToken] = React.useState(() => getItem('token'))
+export const AuthenticationProvider = ({
+  children,
+}: AuthenticationProviderProps) => {
+  const [currentUser, setCurrentUser] = useState<CurrentUser>(null)
 
-  const value = React.useMemo(() => {
-    return {
-      token,
-      updateToken: (newToken: string) => {
-        setToken(newToken)
-        setItem('token', newToken)
-      },
-    }
-  }, [token])
+  const { loading: fetchingCurrentUser } = useQuery<{
+    getCurrentUser: CurrentUser
+  }>(GET_CURRENT_USER, {
+    fetchPolicy: 'no-cache',
+    onCompleted: (data) => {
+      setCurrentUser(data.getCurrentUser ?? null)
+    },
+  })
+  const [logout] = useMutation(LOGOUT, {
+    refetchQueries: ['GetCurrentUser'],
+    awaitRefetchQueries: true,
+  })
+
+  if (fetchingCurrentUser) {
+    return (
+      <Center height="100vh">
+        <Spinner size="xl" thickness="4px" color="primary.500" margin="auto" />
+      </Center>
+    )
+  }
 
   return (
-    <AuthenticationContext.Provider value={value}>
+    <AuthenticationContext.Provider
+      value={{
+        currentUser,
+        logout,
+      }}
+    >
       {children}
     </AuthenticationContext.Provider>
   )
