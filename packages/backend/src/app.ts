@@ -2,6 +2,7 @@ import '@/config/orm'
 
 import { IRequest } from '@plumber/types'
 
+import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
 import createError from 'http-errors'
@@ -27,6 +28,7 @@ const app = express()
 app.disable('x-powered-by')
 app.use(csp)
 app.use(morgan)
+app.use(cookieParser())
 app.use(
   express.json({
     verify(req, _res, buf) {

@@ -6,6 +6,7 @@ import deleteFlow from './mutations/delete-flow'
 import deleteStep from './mutations/delete-step'
 import executeFlow from './mutations/execute-flow'
 import generateAuthUrl from './mutations/generate-auth-url'
+import logout from './mutations/logout'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
 import retryExecutionStep from './mutations/retry-execution-step'
@@ -34,6 +35,7 @@ const mutationResolvers = {
   requestOtp,
   verifyOtp,
   retryExecutionStep,
+  logout,
 }
 
 export default mutationResolvers
