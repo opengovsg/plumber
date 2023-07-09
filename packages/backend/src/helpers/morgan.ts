@@ -5,7 +5,9 @@ import logger from './logger'
 
 const morganOptions: morgan.Options<Request, Response> = {
   skip: (req, _res) => {
-    return req.originalUrl === '/'
+    return [/^\/$/, /^\/apps\/.+\/assets\/favicon\.svg$/].some((regex) =>
+      regex.test(req.originalUrl),
+    )
   },
   stream: {
     write: (message) => {
