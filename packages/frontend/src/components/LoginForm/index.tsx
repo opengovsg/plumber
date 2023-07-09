@@ -3,13 +3,11 @@ import { useMutation } from '@apollo/client'
 import { VStack } from '@chakra-ui/react'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
-import useAuthentication from 'hooks/useAuthentication'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'
 
 export const LoginForm = (): JSX.Element => {
-  const authentication = useAuthentication()
   const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP)
   const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP, {
     refetchQueries: ['GetCurrentUser'],
