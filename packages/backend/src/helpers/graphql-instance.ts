@@ -34,8 +34,21 @@ const server = new ApolloServer<UnauthenticatedContext>({
       : ApolloServerPluginLandingPageDisabled(),
   ],
   formatError: (error) => {
-    logger.error(error.path + ' : ' + error.message)
-    return error
+    logger.error(error)
+    let errorMessage = error.message
+    if (error.message.includes('Did you mean')) {
+      errorMessage = 'Invalid request'
+    }
+    if (
+      error.message.includes("Please either specify a 'content-type' header")
+    ) {
+      errorMessage = 'Blocked request'
+    }
+    const newError = {
+      message: errorMessage,
+      code: error.extensions?.code,
+    }
+    return newError
   },
 })
 
