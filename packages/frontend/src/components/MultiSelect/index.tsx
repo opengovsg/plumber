@@ -1,18 +1,18 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
-import * as React from 'react'
+import { useContext, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { FormControl } from '@chakra-ui/react'
 import {
   FormErrorMessage,
   FormLabel,
-  MultiSelect,
+  MultiSelect as DSMultiSelect,
 } from '@opengovsg/design-system-react'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
 
 import extractVariablesAsItems from './helpers/extract-variables-as-items'
 
-interface PowerSelectProps {
+interface MultiSelectProps {
   name: string
   label: string
   required?: boolean
@@ -23,12 +23,12 @@ interface PowerSelectProps {
  * Currently only supports multiple select from variables.
  * FUTURE: single select, hard coded options, freeSolo
  */
-function PowerSelect(props: PowerSelectProps): React.ReactElement {
+function MultiSelect(props: MultiSelectProps): React.ReactElement {
   const { name, label, required = false, variableTypes = null } = props
   const { control } = useFormContext()
-  const priorSteps = React.useContext(StepExecutionsContext)
+  const priorSteps = useContext(StepExecutionsContext)
 
-  const items = React.useMemo(
+  const items = useMemo(
     () => extractVariablesAsItems(priorSteps, variableTypes),
     [priorSteps, variableTypes],
   )
@@ -45,7 +45,7 @@ function PowerSelect(props: PowerSelectProps): React.ReactElement {
       }) => (
         <FormControl isInvalid={!!error}>
           <FormLabel isRequired>{label}</FormLabel>
-          <MultiSelect
+          <DSMultiSelect
             items={items}
             values={values}
             name={name}
@@ -58,4 +58,4 @@ function PowerSelect(props: PowerSelectProps): React.ReactElement {
   )
 }
 
-export default PowerSelect
+export default MultiSelect

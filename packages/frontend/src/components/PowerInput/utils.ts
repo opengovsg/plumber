@@ -42,7 +42,9 @@ export const deserialize = (
     ]
   }
 
-  return value.split('\n').map((line) => {
+  const stringValue = typeof value === 'string' ? value : JSON.stringify(value)
+
+  return stringValue.split('\n').map((line) => {
     const nodes = line.split(variableRegExp)
 
     if (nodes.length > 1) {
