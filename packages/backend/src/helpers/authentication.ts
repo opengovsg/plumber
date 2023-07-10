@@ -15,7 +15,7 @@ export const setCurrentUserContext = async ({
 }: {
   req: Request
   res: Response
-}) => {
+}): Promise<UnauthenticatedContext> => {
   const context: UnauthenticatedContext = { req, res, currentUser: null }
   const token = getAuthCookie(req)
   if (token == null) {

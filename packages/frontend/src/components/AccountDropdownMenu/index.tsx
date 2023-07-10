@@ -13,7 +13,6 @@ import {
 import * as URLS from 'config/urls'
 import apolloClient from 'graphql/client'
 import useAuthentication from 'hooks/useAuthentication'
-import useCurrentUser from 'hooks/useCurrentUser'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 type AccountDropdownMenuProps = {
@@ -27,18 +26,15 @@ function AccountDropdownMenu(
   props: AccountDropdownMenuProps,
 ): React.ReactElement {
   const formatMessage = useFormatMessage()
-  const { updateToken } = useAuthentication()
-  const user = useCurrentUser()
+  const { logout, currentUser } = useAuthentication()
   const navigate = useNavigate()
 
   const { open, onClose, anchorEl, id } = props
 
-  const logout = async () => {
-    updateToken('')
+  const onLogoutClick = async () => {
+    await logout()
     await apolloClient.clearStore()
-
     onClose()
-
     navigate(URLS.ROOT)
   }
 
@@ -66,7 +62,7 @@ function AccountDropdownMenu(
         <ListItemIcon>
           <PersonIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>{user?.email}</ListItemText>
+        <ListItemText>{currentUser?.email}</ListItemText>
       </MenuItem>
 
       <MenuItem divider>
@@ -80,7 +76,7 @@ function AccountDropdownMenu(
         </ListItemText>
       </MenuItem>
 
-      <MenuItem onClick={logout} data-test="logout-item">
+      <MenuItem onClick={onLogoutClick} data-test="logout-item">
         <ListItemIcon>
           <LogoutIcon fontSize="small" color="error" />
         </ListItemIcon>
