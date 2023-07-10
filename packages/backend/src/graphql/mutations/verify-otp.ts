@@ -1,10 +1,10 @@
 import crypto from 'crypto'
-import jwt from 'jsonwebtoken'
 
-import appConfig from '@/config/app'
 import BaseError from '@/errors/base'
+import { setAuthCookie } from '@/helpers/cookie'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import User from '@/models/user'
+import Context from '@/types/express/context'
 
 type Params = {
   input: {
@@ -13,7 +13,6 @@ type Params = {
   }
 }
 
-const TOKEN_EXPIRES_IN = '14d'
 const MAX_OTP_ATTEMPTS = 5
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
@@ -21,7 +20,8 @@ const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 const verifyOtp = async (
   _parent: unknown,
   params: Params,
-): Promise<{ token: string; user: User }> => {
+  context: Context,
+): Promise<boolean> => {
   const { otp, email: emailRaw } = params.input
   // validate email
   const email = await validateAndParseEmail(emailRaw)
@@ -58,17 +58,16 @@ const verifyOtp = async (
     throw new BaseError('Invalid OTP')
   }
   // reset otp columns
-  const updatedUser = await user.$query().patchAndFetch({
+  await user.$query().patch({
     otpHash: null,
     otpAttempts: 0,
     otpSentAt: null,
   })
 
-  // create jwt
-  const token = jwt.sign({ userId: user.id }, appConfig.sessionSecretKey, {
-    expiresIn: TOKEN_EXPIRES_IN,
-  })
-  return { token, user: updatedUser }
+  // set auth jwt as cookie
+  setAuthCookie(context.res, { userId: user.id })
+
+  return true
 }
 
 export default verifyOtp
