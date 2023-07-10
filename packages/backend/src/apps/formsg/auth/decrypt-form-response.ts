@@ -64,10 +64,9 @@ export async function decryptFormResponse(
     $.request.body = {
       fields: parsedData,
       submissionId: data.submissionId,
-      // Forms formats submission time as ISO 8601 UTC time, but our stuff
-      // (e.g. scheduler) uses Luxon formatted ISO 8601 server (GMT+8) time, so
-      // convert to keep consistent.
-      submissionTime: DateTime.fromISO(data.created).toISO(),
+      // Forms gives us submission time as ISO 8601 UTC time, but our users
+      // should expect SGT time by default.
+      submissionTime: DateTime.fromISO(data.created).setLocale('en-SG').toISO(),
     }
     delete $.request.headers
     delete $.request.query
