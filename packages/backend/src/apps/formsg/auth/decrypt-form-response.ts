@@ -1,6 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
 import formsgSdk from '@opengovsg/formsg-sdk'
+import { DateTime } from 'luxon'
 
 import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
@@ -63,8 +64,10 @@ export async function decryptFormResponse(
     $.request.body = {
       fields: parsedData,
       submissionId: data.submissionId,
-      // It turns out Forms already gives this to us in ISO 8601 format.
-      submissionTimeIso8601: data.created,
+      // Forms formats submission time as ISO 8601 UTC time, but our stuff
+      // (e.g. scheduler) uses Luxon formatted ISO 8601 server (GMT+8) time, so
+      // convert to keep consistent.
+      submissionTime: DateTime.fromISO(data.created).toISO(),
     }
     delete $.request.headers
     delete $.request.query

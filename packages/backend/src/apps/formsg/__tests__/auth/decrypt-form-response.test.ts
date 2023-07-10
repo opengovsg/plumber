@@ -120,14 +120,14 @@ describe('decrypt form response', () => {
     )
   })
 
-  it('should extract submission time', async () => {
+  it('should extract submission time as a ISO 8601 server time formatted string', async () => {
     mocks.cryptoDecrypt.mockReturnValueOnce({
       responses: [],
     })
     await expect(decryptFormResponse($)).resolves.toEqual(true)
     expect($.request.body).toEqual(
       expect.objectContaining({
-        submissionTimeIso8601: '2023-07-06T10:26:27.505Z',
+        submissionTime: '2023-07-06T18:26:27.505+08:00',
       }),
     )
   })
