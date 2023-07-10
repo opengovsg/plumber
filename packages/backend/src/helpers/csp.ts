@@ -35,10 +35,10 @@ const helmetOptions: HelmetOptions = {
       scriptSrcAttr: ["'none'"],
       scriptSrc: [
         "'self'",
-        "'unsafe-inline'",
         'https://www.google-analytics.com',
         'https://www.googletagmanager.com',
         appConfig.isDev && 'https://*.apollographql.com',
+        appConfig.isDev && "'unsafe-inline'",
       ].filter(Boolean),
       manifestSrc: [
         "'self'",
