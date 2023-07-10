@@ -2,7 +2,6 @@ import type { ApolloLink } from '@apollo/client'
 import { from, HttpLink } from '@apollo/client'
 import { onError } from '@apollo/client/link/error'
 import * as URLS from 'config/urls'
-import { setItem } from 'helpers/storage'
 
 type CreateLinkOptions = {
   uri: string
@@ -38,7 +37,7 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
         )
 
         if (message === NOT_AUTHORISED) {
-          setItem('token', '')
+          // this form of navigation will refetch current user as well
           window.location.href = URLS.LOGIN
         }
       })
