@@ -120,7 +120,7 @@ describe('decrypt form response', () => {
     )
   })
 
-  it('should extract submission time as a ISO 8601 server time formatted string', async () => {
+  it('should extract submission time as a ISO 8601 SGT formatted string', async () => {
     mocks.cryptoDecrypt.mockReturnValueOnce({
       responses: [],
     })
