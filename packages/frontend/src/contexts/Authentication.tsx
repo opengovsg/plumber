@@ -35,7 +35,7 @@ export const AuthenticationProvider = ({
     },
   })
   const [logout] = useMutation(LOGOUT, {
-    refetchQueries: ['GetCurrentUser'],
+    refetchQueries: [GET_CURRENT_USER],
     awaitRefetchQueries: true,
   })
 
