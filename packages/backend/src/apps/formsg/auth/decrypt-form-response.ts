@@ -64,11 +64,11 @@ export async function decryptFormResponse(
     $.request.body = {
       fields: parsedData,
       submissionId: data.submissionId,
-      // Forms gives us submission time as ISO 8601 UTC time, but our users
-      // should expect SGT time by default, so convert it to ISO 8601 SGT time.
-      submissionTime: DateTime.fromISO(data.created)
-        .setZone('Asia/Singapore')
-        .toISO(),
+      // Forms gives us submission time as ISO 8601 UTC TZ, but our users
+      // expect SGT time, so convert it to ISO 8601 SGT TZ (our Luxon is
+      // configured for SGT - so although fromISO -> toISO looks like a no-op,
+      // it internally does a TZ conversion).
+      submissionTime: DateTime.fromISO(data.created).toISO(),
     }
     delete $.request.headers
     delete $.request.query
