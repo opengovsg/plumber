@@ -3,13 +3,8 @@
 // Configure Vitest (https://vitest.dev/config/)
 
 import { config } from 'dotenv'
-import { Settings as LuxonSettings } from 'luxon'
 import path from 'path'
 import { defineConfig } from 'vite'
-
-// Force SGT date-time formatting no matter what
-LuxonSettings.defaultZone = 'Asia/Singapore'
-LuxonSettings.defaultLocale = 'en-SG'
 
 config({
   // .env-example should be in the same directory as our config.

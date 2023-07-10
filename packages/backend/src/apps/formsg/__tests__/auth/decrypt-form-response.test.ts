@@ -1,10 +1,16 @@
 import { IGlobalVariable, IRequest } from '@plumber/types'
 
+import { Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
 import { NricFilter } from '../../triggers/new-submission'
+
+// TZ formatting replicated here (see appConfig) as tests don't load the app
+// config module.
+LuxonSettings.defaultZone = 'Asia/Singapore'
+LuxonSettings.defaultLocale = 'en-SG'
 
 // mocks hoisted here so that they can be used in import mocks
 const mocks = vi.hoisted(() => {
