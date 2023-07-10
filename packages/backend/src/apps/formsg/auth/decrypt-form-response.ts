@@ -66,7 +66,9 @@ export async function decryptFormResponse(
       submissionId: data.submissionId,
       // Forms gives us submission time as ISO 8601 UTC time, but our users
       // should expect SGT time by default, so convert it to ISO 8601 SGT time.
-      submissionTime: DateTime.fromISO(data.created, { locale: 'sg' }).toISO(),
+      submissionTime: DateTime.fromISO(data.created)
+        .setZone('Asia/Singapore')
+        .toISO(),
     }
     delete $.request.headers
     delete $.request.query
