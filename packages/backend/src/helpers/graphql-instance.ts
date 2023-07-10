@@ -1,5 +1,7 @@
 import { ApolloServer } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
+import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled'
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default'
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import { RequestHandler } from 'express'
 import { readFileSync } from 'fs'
@@ -26,6 +28,11 @@ const schemaWithMiddleware = applyMiddleware(
 const server = new ApolloServer<UnauthenticatedContext>({
   schema: schemaWithMiddleware,
   introspection: appConfig.isDev,
+  plugins: [
+    appConfig.isDev
+      ? ApolloServerPluginLandingPageLocalDefault()
+      : ApolloServerPluginLandingPageDisabled(),
+  ],
   formatError: (error) => {
     logger.error(error.path + ' : ' + error.message)
     return error
