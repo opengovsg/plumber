@@ -70,6 +70,9 @@ export async function decryptFormResponse(
     $.request.body = {
       fields: parsedData,
       submissionId: data.submissionId,
+      ...(submission.verified && {
+        verifiedSubmitterInfo: submission.verified,
+      }),
     }
     delete $.request.headers
     delete $.request.query

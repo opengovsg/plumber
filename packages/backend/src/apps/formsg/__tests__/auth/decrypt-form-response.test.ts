@@ -269,4 +269,36 @@ describe('decrypt form response', () => {
       })
     })
   })
+
+  it('should parse verified fields', async () => {
+    mocks.cryptoDecrypt.mockReturnValueOnce({
+      responses: [
+        {
+          _id: 'question1',
+          fieldType: 'textarea',
+          question: 'What do you eat for breakfast?',
+          answer: 'i eat lorem dimsum for breakfast',
+        },
+      ],
+      verified: {
+        sgidUinFin: 'S1234567A',
+        cpUid: 'U987654323PLUMBER',
+      },
+    })
+    await expect(decryptFormResponse($)).resolves.toEqual(true)
+    expect($.request.body).toEqual({
+      fields: {
+        question1: {
+          fieldType: 'textarea',
+          question: 'What do you eat for breakfast?',
+          answer: 'i eat lorem dimsum for breakfast',
+        },
+      },
+      submissionId: 'submissionId',
+      verifiedSubmitterInfo: {
+        sgidUinFin: 'S1234567A',
+        cpUid: 'U987654323PLUMBER',
+      },
+    })
+  })
 })
