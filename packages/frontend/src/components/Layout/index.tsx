@@ -43,7 +43,7 @@ export default function PublicLayout({
   children,
 }: PublicLayoutProps): React.ReactElement {
   const theme = useTheme()
-  const auth = useAuthentication()
+  const { currentUser } = useAuthentication()
 
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('lg'), {
     noSsr: true,
@@ -53,7 +53,7 @@ export default function PublicLayout({
   const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
 
-  if (!auth.isAuthenticated) {
+  if (!currentUser) {
     return <Navigate to={URLS.LOGIN} />
   }
 

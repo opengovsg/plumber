@@ -96,7 +96,7 @@ export default defineAction({
       raw: {
         status: statusArray,
         recipient: recipientArray,
-        ...results[0].params,
+        ...results[0]?.params,
       },
     })
   },

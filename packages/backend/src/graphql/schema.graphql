@@ -48,8 +48,9 @@ type Mutation {
   updateStep(input: UpdateStepInput): Step
   deleteStep(input: DeleteStepInput): Step
   requestOtp(input: RequestOtpInput): Boolean
-  verifyOtp(input: VerifyOtpInput): Auth
+  verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
+  logout: Boolean
 }
 
 """
@@ -126,11 +127,6 @@ enum ArgumentEnumType {
   string
 }
 
-type Auth {
-  user: User
-  token: String
-}
-
 type AuthenticationStep {
   type: String
   name: String
@@ -182,6 +178,7 @@ type ExecutionStep {
   status: String
   dataIn: JSONObject
   dataOut: JSONObject
+  dataOutMetadata: JSONObject
   errorDetails: JSONObject
   createdAt: String
   updatedAt: String

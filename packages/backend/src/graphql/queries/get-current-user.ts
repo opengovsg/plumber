@@ -1,18 +1,12 @@
-import Context from '@/types/express/context'
+import User from '@/models/user'
+import { UnauthenticatedContext } from '@/types/express/context'
 
 const getCurrentUser = async (
   _parent: unknown,
   _params: unknown,
-  context: Context,
-) => {
-  // prevent fetching of other user data
-  const { id, email, createdAt, updatedAt } = context.currentUser
-  return {
-    id,
-    email,
-    createdAt,
-    updatedAt,
-  }
+  context: UnauthenticatedContext,
+): Promise<User | null> => {
+  return context.currentUser
 }
 
 export default getCurrentUser

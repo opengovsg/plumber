@@ -3,15 +3,17 @@ import { useMutation } from '@apollo/client'
 import { VStack } from '@chakra-ui/react'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
-import useAuthentication from 'hooks/useAuthentication'
+import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'
 
 export const LoginForm = (): JSX.Element => {
-  const authentication = useAuthentication()
   const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP)
-  const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP)
+  const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP, {
+    refetchQueries: [GET_CURRENT_USER],
+    awaitRefetchQueries: true,
+  })
 
   const [isOtpSent, setIsOtpSent] = useState(false)
   const [email, setEmail] = useState('')
@@ -29,7 +31,7 @@ export const LoginForm = (): JSX.Element => {
       })
       setIsOtpSent(true)
     } else {
-      const { data } = await verifyOtp({
+      await verifyOtp({
         variables: {
           input: {
             email,
@@ -37,10 +39,6 @@ export const LoginForm = (): JSX.Element => {
           },
         },
       })
-
-      const { token } = data.verifyOtp
-
-      authentication.updateToken(token)
     }
   }
 

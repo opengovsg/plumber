@@ -11,8 +11,8 @@ type LayoutProps = {
 }
 
 export default function Layout({ children }: LayoutProps): React.ReactElement {
-  const auth = useAuthentication()
-  if (auth.isAuthenticated) {
+  const { currentUser } = useAuthentication()
+  if (currentUser) {
     return <Navigate to={URLS.DASHBOARD} />
   }
 

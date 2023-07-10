@@ -1,8 +1,14 @@
-import { Request } from 'express'
+import { Request, Response } from 'express'
 
 import User from '@/models/user'
 
-interface Context extends Request {
+export interface UnauthenticatedContext {
+  req: Request
+  res: Response
+  currentUser: User | null
+}
+
+interface Context extends UnauthenticatedContext {
   currentUser: User
 }
 

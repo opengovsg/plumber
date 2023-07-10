@@ -2,6 +2,8 @@ import { URL } from 'url'
 
 import defineAction from '@/helpers/define-action'
 
+import { isUrlAllowed } from '../../common/ip-resolver'
+
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
 export default defineAction({
@@ -30,7 +32,7 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       description:
-        'Any URL with a querystring will be re-encoded properly. Plumber URLs (e.g. https://plumber.gov.sg/webhooks/...) are prohibited.',
+        'Any URL with a querystring will be re-encoded properly. Plumber URLs (e.g. https://plumber.gov.sg/webhooks/...) and URLs with redirects (HTTP 301 etc.) are prohibited.',
       variables: true,
     },
     {
@@ -53,10 +55,17 @@ export default defineAction({
       throw new Error('Recursively invoking Plumber webhooks is prohibited.')
     }
 
+    if (!(await isUrlAllowed(url))) {
+      throw new Error('The URL you are trying to call is not allowed.')
+    }
+
     const response = await $.http.request({
       url,
       method,
       data,
+      // Redirects open up way too many vulns (e.g. someone changes the
+      // redirect target to a malicious endpoint), so disable it.
+      maxRedirects: 0,
     })
 
     let responseData = response.data

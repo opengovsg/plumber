@@ -54,7 +54,8 @@ const requestOtp = async (
   })
 
   if (appConfig.isDev) {
-    console.log(`OTP for ${email}: ${otp}`)
+    // eslint-disable-next-line no-console
+    console.log(`OTP for ${email}: \x1b[45m${otp}\x1b[0m`)
   } else {
     // Send otp
     await sendEmail({

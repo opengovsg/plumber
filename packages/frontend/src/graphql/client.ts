@@ -19,9 +19,7 @@ const client = new ApolloClient({
   },
 })
 
-export function mutateAndGetClient(
-  options: CreateClientOptions,
-): typeof client {
+export function createClient(options: CreateClientOptions): typeof client {
   const { onError, token } = options
   const link = createLink({ uri: appConfig.graphqlUrl, token, onError })
 
