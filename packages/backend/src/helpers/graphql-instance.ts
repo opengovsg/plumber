@@ -1,36 +1,47 @@
-import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader'
-import { loadSchemaSync } from '@graphql-tools/load'
-import { addResolversToSchema } from '@graphql-tools/schema'
-import { graphqlHTTP } from 'express-graphql'
+import { ApolloServer } from '@apollo/server'
+import { expressMiddleware } from '@apollo/server/express4'
+import { makeExecutableSchema } from '@graphql-tools/schema'
+import { RequestHandler } from 'express'
+import { readFileSync } from 'fs'
 import { applyMiddleware } from 'graphql-middleware'
 import { join } from 'path'
 
-import HttpError from '@/errors/http'
+import appConfig from '@/config/app'
 import resolvers from '@/graphql/resolvers'
 import authentication from '@/helpers/authentication'
 import logger from '@/helpers/logger'
+import Context from '@/types/express/context'
 
-const schema = loadSchemaSync(join(__dirname, '../graphql/schema.graphql'), {
-  loaders: [new GraphQLFileLoader()],
+const typeDefs = readFileSync(join(__dirname, '../graphql/schema.graphql'), {
+  encoding: 'utf-8',
 })
 
-const schemaWithResolvers = addResolversToSchema({
+const schema = makeExecutableSchema({ typeDefs, resolvers })
+
+const schemaWithMiddleware = applyMiddleware(
   schema,
-  resolvers,
-})
+  authentication.generate(schema),
+)
 
-const graphQLInstance = graphqlHTTP({
-  schema: applyMiddleware(schemaWithResolvers, authentication),
-  graphiql: true,
-  customFormatErrorFn: (error) => {
-    logger.error(error.path + ' : ' + error.message + '\n' + error.stack)
-
-    if (error.originalError instanceof HttpError) {
-      delete (error.originalError as HttpError).response
-    }
-
+const server = new ApolloServer<Context>({
+  schema: schemaWithMiddleware,
+  introspection: appConfig.isDev,
+  formatError: (error) => {
+    logger.error(error.path + ' : ' + error.message)
     return error
   },
 })
 
-export default graphQLInstance
+let graphqlInstance: RequestHandler | undefined
+
+const graphqlRouteHandler: RequestHandler = async (...args) => {
+  if (!graphqlInstance) {
+    await server.start()
+    graphqlInstance = expressMiddleware<Context>(server, {
+      context: async ({ req, res }) => ({ req, res, currentUser: null }),
+    })
+  }
+  return graphqlInstance(...args)
+}
+
+export default graphqlRouteHandler
