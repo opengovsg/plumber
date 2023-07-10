@@ -1,33 +1,45 @@
+import { Request, Response } from 'express'
 import { createRateLimitRule, RedisStore } from 'graphql-rate-limit'
 import { allow, rule, shield } from 'graphql-shield'
 import jwt from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
+import { getAuthCookie } from '@/helpers/cookie'
 import User from '@/models/user'
-import Context from '@/types/express/context'
+import { UnauthenticatedContext } from '@/types/express/context'
 
-const isAuthenticated = rule()(async (_parent, _args, ctx: Context) => {
-  const token = ctx.req.headers['authorization']
-
+export const setCurrentUserContext = async ({
+  req,
+  res,
+}: {
+  req: Request
+  res: Response
+}) => {
+  const context: UnauthenticatedContext = { req, res, currentUser: null }
+  const token = getAuthCookie(req)
   if (token == null) {
-    return false
+    return context
   }
-
   try {
     const { userId } = jwt.verify(token, appConfig.sessionSecretKey) as {
       userId: string
     }
-    ctx.currentUser = await User.query().findById(userId).throwIfNotFound()
-
-    return true
-  } catch (error) {
-    return false
+    context.currentUser = await User.query().findById(userId)
+  } catch (_) {
+    context.currentUser = null
   }
-})
+  return context
+}
+
+const isAuthenticated = rule()(
+  async (_parent, _args, ctx: UnauthenticatedContext) => {
+    return ctx.currentUser != null
+  },
+)
 
 const rateLimitRule = createRateLimitRule({
-  identifyContext: (ctx: Context) => {
+  identifyContext: (ctx: UnauthenticatedContext) => {
     // get ip address of request in this order: cf-connecting-ip -> remoteAddress
     const userIp =
       (ctx.req.headers['cf-connecting-ip'] as string) ||
@@ -44,6 +56,7 @@ const authentication = shield(
     Query: {
       '*': isAuthenticated,
       healthcheck: allow,
+      getCurrentUser: allow,
     },
     Mutation: {
       '*': isAuthenticated,
