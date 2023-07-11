@@ -47,13 +47,12 @@ export interface IDataOutMetadatum {
 
   /**
    * If the front end component renders variables in an ordered list, this
-   * specifies the position of the associated variable in that list.
+   * specifies the order of the associated variable in that list.
    *
    * See the implementation of {@link extractVariables} for info on how
-   * variables with the same `renderPosition` or undefined `renderPosition` are
-   * sorted.
+   * variables with the same `order` or undefined `order` are sorted.
    */
-  renderPosition?: number
+  order?: number
 }
 
 export interface IDataOutMetadata {

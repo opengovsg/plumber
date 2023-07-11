@@ -16,7 +16,7 @@ describe('formsg dataOut metadata', () => {
             question: 'What is your name?',
             answer: 'herp derp',
             fieldType: 'textField',
-            questionNumber: 1,
+            order: 1,
           },
         },
       },
