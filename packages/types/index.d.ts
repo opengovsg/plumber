@@ -127,20 +127,24 @@ export interface IUser {
   steps: IStep[]
 }
 
-export interface IFieldDropdown {
+export interface IBaseField {
   key: string
   label: string
-  type: 'dropdown'
-  required: boolean
-  allowArbitrary?: boolean
+  type: string
+  required?: boolean
   readOnly?: boolean
-  value?: string | boolean
   placeholder?: string | null
   description?: string
   docUrl?: string
   clickToCopy?: boolean
   variables?: boolean
   dependsOn?: string[]
+}
+
+export interface IFieldDropdown extends IBaseField {
+  type: 'dropdown'
+  allowArbitrary?: boolean
+  value?: string | boolean
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
 }
@@ -159,34 +163,14 @@ export interface IFieldDropdownOption {
   value: boolean | string | number
 }
 
-export interface IFieldText {
-  key: string
-  label: string
+export interface IFieldText extends IBaseField {
   type: 'string'
-  required?: boolean
-  readOnly?: boolean
   value?: string
-  placeholder?: string | null
-  description?: string
-  docUrl?: string
-  clickToCopy?: boolean
-  variables?: boolean
-  dependsOn?: string[]
 }
 
-export interface IFieldMultiline {
-  key: string
-  label: string
+export interface IFieldMultiline extends IBaseField {
   type: 'multiline'
-  required?: boolean
-  readOnly?: boolean
   value?: string
-  placeholder?: string | null
-  description?: string
-  docUrl?: string
-  clickToCopy?: boolean
-  variables?: boolean
-  dependsOn?: string[]
 }
 
 export type IField = IFieldDropdown | IFieldText | IFieldMultiline
