@@ -13,7 +13,7 @@ export default function Flow(): React.ReactElement {
 
   return (
     <Box sx={{ py: 3 }}>
-      <Container>
+      <Container variant="page">
         <Grid container>
           <Grid item xs>
             {flowId}
