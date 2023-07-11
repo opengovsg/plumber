@@ -63,7 +63,10 @@ const PowerInput = (props: PowerInputProps) => {
   }, [priorStepsWithExecutions])
 
   // Flatten stepsWithVariables for faster serialization / deserialization to labels.
-  const variableLabelMap = genVariableLabelMap(stepsWithVariables)
+  const variableLabelMap = React.useMemo(
+    () => genVariableLabelMap(stepsWithVariables),
+    [stepsWithVariables],
+  )
 
   const handleBlur = React.useCallback(
     (value: any) => {
