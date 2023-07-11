@@ -26,6 +26,7 @@ export default {
       placeholder: null,
       description: 'Secret key for your Form',
       clickToCopy: false,
+      browserAutoComplete: 'off' as const,
     },
   ],
   verifyCredentials,

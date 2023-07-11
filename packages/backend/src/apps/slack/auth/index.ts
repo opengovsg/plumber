@@ -26,6 +26,7 @@ export default {
       placeholder: null,
       description: null,
       clickToCopy: false,
+      browserAutoComplete: 'off' as const,
     },
     {
       key: 'consumerSecret',
@@ -37,6 +38,7 @@ export default {
       placeholder: null,
       description: null,
       clickToCopy: false,
+      browserAutoComplete: 'off' as const,
     },
   ],
 

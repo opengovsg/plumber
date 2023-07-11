@@ -13,6 +13,7 @@ export default {
       placeholder: null,
       description: 'Bot token which should be retrieved from @botfather.',
       clickToCopy: false,
+      browserAutoComplete: 'off' as const,
     },
   ],
 
