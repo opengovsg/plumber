@@ -231,31 +231,31 @@ describe('variables', () => {
       })
     })
 
-    describe('processes renderPosition metadata', () => {
-      it('adds renderPosition metadata if present', () => {
+    describe('processes order metadata', () => {
+      it('adds order metadata if present', () => {
         steps[0].executionSteps[0].dataOutMetadata = {
           stringProp: {
-            renderPosition: 10.4,
+            order: 10.4,
           },
         }
         const result = extractVariables(steps)
         expect(result[0].output[0]).toEqual(
           expect.objectContaining({
-            renderPosition: 10.4,
+            order: 10.4,
           }),
         )
       })
 
-      it('sets renderPosition prop to null if absent', () => {
+      it('sets order prop to null if absent', () => {
         const result = extractVariables(steps)
         expect(result[0].output[0]).toEqual(
           expect.objectContaining({
-            renderPosition: null,
+            order: null,
           }),
         )
       })
 
-      it('outputs variables in renderPosition order', () => {
+      it('outputs variables as dictated by order', () => {
         steps[0].executionSteps[0].dataOut = {
           stringProp: 'a',
           stringProp2: 'b',
@@ -263,20 +263,20 @@ describe('variables', () => {
           stringProp4: 'd',
         }
         steps[0].executionSteps[0].dataOutMetadata = {
-          stringProp: { renderPosition: 10 },
-          stringProp2: { renderPosition: 10.2 },
-          // Intentionally undefined renderPosition for stringProp3 and
+          stringProp: { order: 10 },
+          stringProp2: { order: 10.2 },
+          // Intentionally undefined order for stringProp3 and
           // stringProp4
         }
         const result = extractVariables(steps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
             value: 'a',
-            renderPosition: 10,
+            order: 10,
           }),
           expect.objectContaining({
             value: 'b',
-            renderPosition: 10.2,
+            order: 10.2,
           }),
           // Check sort stability
           expect.objectContaining({

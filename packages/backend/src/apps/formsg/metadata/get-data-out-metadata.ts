@@ -22,25 +22,17 @@ async function getDataOutMetadata(
       question: {
         type: 'text',
         isVisible: true,
-        label: fieldData.questionNumber
-          ? `Question ${fieldData.questionNumber}`
-          : null,
-        renderPosition: fieldData.questionNumber
-          ? fieldData.questionNumber
-          : null,
+        label: fieldData.order ? `Question ${fieldData.order}` : null,
+        order: fieldData.order ? fieldData.order : null,
       },
       answer: {
         type: 'text',
         isVisible: true,
-        label: fieldData.questionNumber
-          ? `Response ${fieldData.questionNumber}`
-          : null,
-        renderPosition: fieldData.questionNumber
-          ? fieldData.questionNumber + 0.1
-          : null,
+        label: fieldData.order ? `Response ${fieldData.order}` : null,
+        order: fieldData.order ? fieldData.order + 0.1 : null,
       },
       fieldType: { isVisible: false },
-      questionNumber: { isVisible: false },
+      order: { isVisible: false },
     }
   }
 
@@ -60,13 +52,13 @@ export default getDataOutMetadata
 //       "answer": "zzz",
 //       "question": "What is the air speed velocity of an unladen swallow?",
 //       "fieldType": "textfield"
-//       "questionNumber": 2
+//       "order": 2
 //     },
 //     "648fe18a9175ce001196b3d5": {
 //       "answer": "aaaa",
 //       "question": "What is your name?",
 //       "fieldType": "textfield"
-//       "questionNumber": 1
+//       "order": 1
 //     }
 //   },
 //   "submissionId": "649306c1ac8851001149af0a"

@@ -60,10 +60,10 @@ export async function decryptFormResponse(
         }
       }
 
-      // Note: the questionNumber may not be in running order across
-      // `parsedData`: fields (e.g. NRIC) can be removed from the output.
+      // Note: the order may not be sequential; fields (e.g. NRIC) can be
+      // omitted from the output.
       parsedData[_id] = {
-        questionNumber: index + 1,
+        order: index + 1,
         ...rest,
       }
     }
