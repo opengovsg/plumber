@@ -9,7 +9,7 @@ const baseStyle = {
 // Variants
 const variants = {
   page: {
-    w: 1152,
+    maxW: 1152,
     py: 0,
   },
 }
