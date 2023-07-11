@@ -232,18 +232,6 @@ export interface IApp {
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
-
-  /**
-   * Gets metadata for the data output (i.e. `dataOut`) by an app's execution
-   * step.
-   *
-   * @param stepKey - The key associated with the step.
-   * @param executionStep - The execution step to get metadata for.
-   */
-  getDataOutMetadata?(
-    stepKey: IStep['key'],
-    executionStep: IExecutionStep,
-  ): Promise<IDataOutMetadata>
 }
 
 export type TBeforeRequest = {
@@ -294,6 +282,16 @@ export interface IBaseTrigger {
   registerHook?($: IGlobalVariable): Promise<void>
   unregisterHook?($: IGlobalVariable): Promise<void>
   sort?(item: ITriggerItem, nextItem: ITriggerItem): number
+
+  /**
+   * Gets metadata for the `dataOut` of this trigger's execution step.
+   *
+   * We pass in `executionStep` instead of `executionStep.dataOut` in case other
+   * info (e.g. initial params via `executionStep.step.parameters`) is needed.
+   *
+   * @param executionStep The execution step to get metadata for.
+   */
+  getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -318,6 +316,16 @@ export interface IBaseAction {
   key: string
   description: string
   run?($: IGlobalVariable): Promise<void>
+
+  /**
+   * Gets metadata for the `dataOut` of this action's execution step.
+   *
+   * We pass in `executionStep` instead of `executionStep.dataOut` in case other
+   * info (e.g. initial params via `executionStep.step.parameters`) is needed.
+   *
+   * @param executionStep The execution step to get metadata for.
+   */
+  getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
 }
 
 export interface IRawAction extends IBaseAction {

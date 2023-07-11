@@ -11,7 +11,14 @@ async function dataOutMetadata(
     return
   }
   const app = await App.findOneByKey(appKey)
-  return await app.getDataOutMetadata?.(stepKey, parent)
+
+  const action = app.actions?.find((action) => action.key === stepKey)
+  if (action) {
+    return action.getDataOutMetadata?.(parent)
+  }
+
+  const trigger = app.triggers?.find((trigger) => trigger.key === stepKey)
+  return await trigger?.getDataOutMetadata?.(parent)
 }
 
 export default {
