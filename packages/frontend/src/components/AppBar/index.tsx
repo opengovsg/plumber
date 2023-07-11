@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FormattedMessage } from 'react-intl'
+import { Box as ChakraBox, BoxProps as ChakraBoxProps } from '@chakra-ui/react'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import { Box, useMediaQuery } from '@mui/material'
 import MuiAppBar from '@mui/material/AppBar'
@@ -8,7 +9,6 @@ import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import mainLogo from 'assets/logo.svg'
 import AccountDropdownMenu from 'components/AccountDropdownMenu'
-import Container, { ContainerProps } from 'components/Container'
 import * as URLS from 'config/urls'
 import theme from 'styles/theme'
 
@@ -18,7 +18,7 @@ type AppBarProps = {
   drawerOpen: boolean
   onDrawerOpen: () => void
   onDrawerClose: () => void
-  maxWidth?: ContainerProps['maxW']
+  maxWidth?: ChakraBoxProps['maxW']
 }
 
 const accountMenuId = 'account-menu'
@@ -46,7 +46,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
       color="transparent"
       position={drawerOpen && matchSmallScreens ? 'fixed' : 'relative'}
     >
-      <Container maxW={maxWidth}>
+      <ChakraBox maxW={maxWidth}>
         <Toolbar>
           <IconButton
             size="large"
@@ -85,7 +85,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             <AccountCircleIcon />
           </IconButton>
         </Toolbar>
-      </Container>
+      </ChakraBox>
 
       <AccountDropdownMenu
         anchorEl={accountMenuAnchorElement}
