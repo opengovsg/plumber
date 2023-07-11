@@ -15,6 +15,7 @@ export default {
       description:
         'When asked to input an OAuth callback or redirect URL in Slack OAuth, enter the URL above.',
       clickToCopy: true,
+      browserAutoComplete: 'url' as const,
     },
     {
       key: 'consumerKey',
