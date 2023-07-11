@@ -127,6 +127,9 @@ export interface IUser {
   steps: IStep[]
 }
 
+// Subset of HTML autocomplete values.
+type BrowserAutoComplete = 'off' | 'url' | 'email'
+
 export interface IBaseField {
   key: string
   label: string
@@ -166,11 +169,17 @@ export interface IFieldDropdownOption {
 export interface IFieldText extends IBaseField {
   type: 'string'
   value?: string
+
+  // Not applicable if field has variables.
+  browserAutoComplete?: BrowserAutoComplete
 }
 
 export interface IFieldMultiline extends IBaseField {
   type: 'multiline'
   value?: string
+
+  // Not applicable if field has variables.
+  browserAutoComplete?: BrowserAutoComplete
 }
 
 export type IField = IFieldDropdown | IFieldText | IFieldMultiline

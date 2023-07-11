@@ -196,6 +196,7 @@ type Field {
   allowArbitrary: Boolean
   docUrl: String
   clickToCopy: Boolean
+  browserAutoComplete: String
   options: [ArgumentOption]
 }
 

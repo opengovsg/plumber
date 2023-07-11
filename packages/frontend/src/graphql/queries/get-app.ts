@@ -22,6 +22,7 @@ export const GET_APP = gql`
           docUrl
           allowArbitrary
           clickToCopy
+          browserAutoComplete
           options {
             label
             value
