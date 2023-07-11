@@ -70,12 +70,12 @@ describe('formsg dataOut metadata', () => {
       executionStep,
     )
 
-    expect(metadata.fields.textFieldId.question.renderPosition).toBeLessThan(
-      metadata.fields.textFieldId.answer.renderPosition,
+    expect(metadata.fields.textFieldId.question.order).toBeLessThan(
+      metadata.fields.textFieldId.answer.order,
     )
   })
 
-  it('sets label and renderPosition to null if question number is undefined', async () => {
+  it('sets label and order to null if question number is undefined', async () => {
     // Not inline because prettier barfs on this.
     const fields = executionStep.dataOut.fields as IJSONObject
     fields.textFieldId = {
@@ -89,8 +89,8 @@ describe('formsg dataOut metadata', () => {
       executionStep,
     )
 
-    expect(metadata.fields.textFieldId.question.renderPosition).toBeNull()
-    expect(metadata.fields.textFieldId.answer.renderPosition).toBeNull()
+    expect(metadata.fields.textFieldId.question.order).toBeNull()
+    expect(metadata.fields.textFieldId.answer.order).toBeNull()
     expect(metadata.fields.textFieldId.question.label).toBeNull()
     expect(metadata.fields.textFieldId.answer.label).toBeNull()
   })
