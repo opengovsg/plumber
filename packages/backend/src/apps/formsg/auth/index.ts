@@ -15,7 +15,7 @@ export default {
       description:
         'Enter your Form URL e.g. https://form.gov.sg/654ab1234abc1a012345f1e0b',
       clickToCopy: false,
-      browserAutoComplete: 'url' as const,
+      autoComplete: 'url' as const,
     },
     {
       key: 'privateKey',
@@ -27,7 +27,7 @@ export default {
       placeholder: null,
       description: 'Secret key for your Form',
       clickToCopy: false,
-      browserAutoComplete: 'off' as const,
+      autoComplete: 'off' as const,
     },
   ],
   verifyCredentials,

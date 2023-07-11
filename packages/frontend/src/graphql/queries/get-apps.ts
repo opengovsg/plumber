@@ -31,7 +31,7 @@ export const GET_APPS = gql`
           description
           docUrl
           clickToCopy
-          browserAutoComplete
+          autoComplete
           options {
             label
             value
