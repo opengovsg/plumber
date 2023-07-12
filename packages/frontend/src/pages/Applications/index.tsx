@@ -72,10 +72,7 @@ export default function Applications(): React.ReactElement {
             alignItems="center"
             order={{ xs: 1, sm: 2 }}
           >
-            {/* 7px Y padding so that it doesn't look _too_ weird next to MUI
-             search box. Will remove when that gets migrated. */}
             <ConditionalIconButton
-              py={7}
               type="submit"
               size="lg"
               component={NewAppConnectionLink}
