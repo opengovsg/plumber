@@ -106,6 +106,8 @@ const PowerInput = (props: PowerInputProps) => {
               controllerOnChange(serialize(value))
             }}
           >
+            {label && <FormLabel isRequired={required}>{label}</FormLabel>}
+            {description && <FormHelperText>{description}</FormHelperText>}
             <ClickAwayListener
               mouseEvent="onMouseDown"
               onClickAway={() => {
