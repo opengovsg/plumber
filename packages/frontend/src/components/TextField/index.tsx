@@ -1,11 +1,13 @@
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import { FormControl } from '@chakra-ui/react'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import IconButton from '@mui/material/IconButton'
 import InputAdornment from '@mui/material/InputAdornment'
 import MuiTextField, {
   TextFieldProps as MuiTextFieldProps,
 } from '@mui/material/TextField'
+import { FormLabel } from '@opengovsg/design-system-react'
 import copyInputValue from 'helpers/copyInputValue'
 
 type TextFieldProps = {
@@ -36,6 +38,8 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
   const {
     required,
     name,
+    label,
+    helperText,
     defaultValue,
     shouldUnregister,
     clickToCopy,
@@ -60,26 +64,36 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
           ...field
         },
       }) => (
-        <MuiTextField
-          {...textFieldProps}
-          {...field}
-          onChange={(...args) => {
-            controllerOnChange(...args)
-            onChange?.(...args)
-          }}
-          onBlur={(...args) => {
-            controllerOnBlur()
-            onBlur?.(...args)
-          }}
-          inputRef={(element) => {
-            inputRef.current = element
-            ref(element)
-          }}
-          InputProps={{
-            readOnly,
-            endAdornment: clickToCopy ? createCopyAdornment(inputRef) : null,
-          }}
-        />
+        <FormControl>
+          {label && (
+            <FormLabel
+              isRequired={required}
+              {...(helperText && { description: String(helperText) })}
+            >
+              {label}
+            </FormLabel>
+          )}
+          <MuiTextField
+            {...textFieldProps}
+            {...field}
+            onChange={(...args) => {
+              controllerOnChange(...args)
+              onChange?.(...args)
+            }}
+            onBlur={(...args) => {
+              controllerOnBlur()
+              onBlur?.(...args)
+            }}
+            inputRef={(element) => {
+              inputRef.current = element
+              ref(element)
+            }}
+            InputProps={{
+              readOnly,
+              endAdornment: clickToCopy ? createCopyAdornment(inputRef) : null,
+            }}
+          />
+        </FormControl>
       )}
     />
   )
