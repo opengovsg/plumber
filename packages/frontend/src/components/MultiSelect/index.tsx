@@ -49,7 +49,24 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
             items={items}
             values={values}
             name={name}
-            onChange={onChange}
+            onChange={(newValues) =>
+              // Sort to prevent footgun where undefined array ordering messes
+              // up later actions. Example:
+              //   1. Multiselect has ["apple", "oranges"] selected.
+              //   2. User puts the 1st element of the multiselect as another
+              //      action's variable.
+              //      - e.g. {{step.multi-select-field.0}}
+              //   3. User changes selection to ["oranges", "watermelon"].
+              //   4. User regrets choosing watermelon, decides to revert back
+              //      to apples and oranges.
+              //      - But this time, he ticks the boxes in reverse order from
+              //        how he ticked in step 1.
+              //      - Multiselect now has ["oranges", "apple"] selected.
+              //   5. User's pipe now starts outputting "oranges" instead of
+              //      "apple", although to the user, it seems like nothing has
+              //      changed.
+              onChange(newValues.sort())
+            }
           />
           {error && <FormErrorMessage>{error.message}</FormErrorMessage>}
         </FormControl>
