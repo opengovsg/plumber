@@ -32,7 +32,7 @@ async function storeAttachmentInS3(
 ): Promise<string> {
   const attachment = attachments[formField._id]
   if (!attachment) {
-    return
+    return ''
   }
 
   return await putObject(
