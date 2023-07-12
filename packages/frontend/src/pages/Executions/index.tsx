@@ -47,7 +47,7 @@ export default function Executions(): React.ReactElement {
 
   return (
     <Box sx={{ py: 3 }}>
-      <Container>
+      <Container variant="page">
         <Grid container sx={{ mb: [0, 3] }} columnSpacing={1.5} rowSpacing={3}>
           <Grid
             container

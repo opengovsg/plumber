@@ -62,7 +62,7 @@ export default function Login(): React.ReactElement {
           alignItems: 'center',
         }}
       >
-        <Container maxWidth="sm">
+        <Container maxW="container.sm">
           <Box
             display="flex"
             flexDirection="column"

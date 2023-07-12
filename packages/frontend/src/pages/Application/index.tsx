@@ -109,7 +109,7 @@ export default function Application(): React.ReactElement | null {
   return (
     <>
       <Box sx={{ py: 3 }}>
-        <Container>
+        <Container variant="page">
           <Grid container sx={{ mb: 3 }} alignItems="center">
             <Grid item xs="auto" sx={{ mr: 3 }}>
               <AppIcon
