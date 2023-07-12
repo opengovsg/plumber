@@ -1,17 +1,17 @@
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import { FormControl } from '@chakra-ui/react'
 import ClickAwayListener from '@mui/base/ClickAwayListener'
 import Chip from '@mui/material/Chip'
-import FormHelperText from '@mui/material/FormHelperText'
-import InputLabel from '@mui/material/InputLabel'
 import Popper from '@mui/material/Popper'
+import { FormLabel } from '@opengovsg/design-system-react'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
 import { createEditor } from 'slate'
 import { Editable, Slate, useFocused, useSelected } from 'slate-react'
 
 import { extractVariables, filterVariables } from '../../helpers/variables'
 
-import { FakeInput, InputLabelWrapper } from './style'
+import { FakeInput } from './style'
 import Suggestions from './Suggestions'
 import { VariableElement } from './types'
 import {
@@ -101,66 +101,57 @@ const PowerInput = (props: PowerInputProps) => {
           onBlur: controllerOnBlur,
         },
       }) => (
-        <Slate
-          editor={editor}
-          value={deserialize(value)}
-          onChange={(value) => {
-            controllerOnChange(serialize(value))
-          }}
-        >
-          <ClickAwayListener
-            mouseEvent="onMouseDown"
-            onClickAway={() => {
-              setShowVariableSuggestions(false)
+        <FormControl>
+          <Slate
+            editor={editor}
+            value={deserialize(value)}
+            onChange={(value) => {
+              controllerOnChange(serialize(value))
             }}
           >
-            {/* ref-able single child for ClickAwayListener */}
-            <div style={{ width: '100%' }} data-test="power-input">
-              <FakeInput disabled={disabled}>
-                <InputLabelWrapper>
-                  <InputLabel
-                    shrink={true}
-                    disabled={disabled}
-                    variant="outlined"
-                    sx={{
-                      bgcolor: 'white',
-                      display: 'inline-block',
-                      px: 0.75,
-                    }}
-                  >
-                    {label}
-                  </InputLabel>
-                </InputLabelWrapper>
+            {label && (
+              <FormLabel isRequired={required} description={description}>
+                {label}
+              </FormLabel>
+            )}
+            <ClickAwayListener
+              mouseEvent="onMouseDown"
+              onClickAway={() => {
+                setShowVariableSuggestions(false)
+              }}
+            >
+              {/* ref-able single child for ClickAwayListener */}
+              <div style={{ width: '100%' }} data-test="power-input">
+                <FakeInput disabled={disabled}>
+                  <VariableLabelMapContext.Provider value={variableLabelMap}>
+                    <Editable
+                      readOnly={disabled}
+                      style={{ width: '100%' }}
+                      renderElement={renderElement}
+                      onFocus={() => {
+                        setShowVariableSuggestions(true)
+                      }}
+                      onBlur={() => {
+                        controllerOnBlur()
+                        handleBlur(value)
+                      }}
+                    />
+                  </VariableLabelMapContext.Provider>
+                </FakeInput>
 
-                <VariableLabelMapContext.Provider value={variableLabelMap}>
-                  <Editable
-                    readOnly={disabled}
-                    style={{ width: '100%' }}
-                    renderElement={renderElement}
-                    onFocus={() => {
-                      setShowVariableSuggestions(true)
-                    }}
-                    onBlur={() => {
-                      controllerOnBlur()
-                      handleBlur(value)
-                    }}
-                  />
-                </VariableLabelMapContext.Provider>
-              </FakeInput>
-              {/* ghost placer for the variables popover */}
-              <div ref={editorRef} style={{ width: '100%' }} />
+                {/* ghost placer for the variables popover */}
+                <div ref={editorRef} style={{ width: '100%' }} />
 
-              <FormHelperText variant="outlined">{description}</FormHelperText>
-
-              <SuggestionsPopper
-                open={showVariableSuggestions}
-                anchorEl={editorRef.current}
-                data={stepsWithVariables}
-                onSuggestionClick={handleVariableSuggestionClick}
-              />
-            </div>
-          </ClickAwayListener>
-        </Slate>
+                <SuggestionsPopper
+                  open={showVariableSuggestions}
+                  anchorEl={editorRef.current}
+                  data={stepsWithVariables}
+                  onSuggestionClick={handleVariableSuggestionClick}
+                />
+              </div>
+            </ClickAwayListener>
+          </Slate>
+        </FormControl>
       )}
     />
   )
