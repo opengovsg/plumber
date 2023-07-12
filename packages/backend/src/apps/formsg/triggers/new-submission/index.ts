@@ -95,6 +95,9 @@ export default defineTrigger({
     if (data.verifiedSubmitterInfo) {
       for (const key of Object.keys(data.verifiedSubmitterInfo)) {
         switch (key) {
+          case 'uinFin':
+            verifiedMetadata.uinFin = { label: 'NRIC/FIN (Verified)' }
+            break
           case 'sgidUinFin':
             verifiedMetadata.sgidUinFin = { label: 'NRIC/FIN (Verified)' }
             break
@@ -135,6 +138,7 @@ export default defineTrigger({
     //   },
     //   # verifiedSubmitterInfo may not exist!
     //   verifiedSubmitterInfo: {
+    //       uinFin: 'S1234567B',
     //       sgidUinFin: 'S1234567A',
     //       cpUid: 'U987654323PLUMBER',
     //       cpUen: 'S7654321Z',

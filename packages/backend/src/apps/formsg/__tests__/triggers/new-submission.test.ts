@@ -19,6 +19,7 @@ describe('new submission trigger', () => {
           },
         },
         verifiedSubmitterInfo: {
+          uinFin: 'S1234567B',
           sgidUinFin: 'S1234567A',
           cpUid: 'U987654323PLUMBER',
           cpUen: 'S7654321Z',
@@ -76,10 +77,24 @@ describe('new submission trigger', () => {
       expect(metadata.fields.textFieldId.answer.label).toBeNull()
     })
 
-    it('sets a label for verified NRIC/FIN', async () => {
+    it('sets a label for SingPass verified NRIC/FIN', async () => {
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata.verifiedSubmitterInfo.uinFin.label).toEqual(
+        'NRIC/FIN (Verified)',
+      )
+    })
+
+    it('sets a label for sgID verified NRIC/FIN', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
       expect(metadata.verifiedSubmitterInfo.sgidUinFin.label).toEqual(
         'NRIC/FIN (Verified)',
+      )
+    })
+
+    it('sets a label for verified CorpPass UEN', async () => {
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata.verifiedSubmitterInfo.cpUen.label).toEqual(
+        'CorpPass UEN (Verified)',
       )
     })
 
