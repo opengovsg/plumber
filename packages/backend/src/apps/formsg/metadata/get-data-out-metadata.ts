@@ -28,13 +28,13 @@ async function getDataOutMetadata(
           type: 'file',
           isVisible: true,
           label: `File for "${fieldData.question}"`,
-          displayedValue: fieldData.answer
-            ? // If answer is given, we _know_ that the value has to be a
-              // Plumber S3 ID.
-              parsePlumberS3Id(fieldData.answer)?.objectName ?? fieldData.answer
-            : // But people may forget to upload a file in their test response,
-              // so default to something...
-              'Example File.txt',
+          displayedValue:
+            // If answer is given, we _know_ that the value has to be a Plumber
+            // S3 ID.
+            parsePlumberS3Id(fieldData.answer)?.objectName ??
+            // But if there was any problem parsing (should not happen), or the
+            // user had an optional file field, display something sensible.
+            'Example File.txt',
         },
       }
     }
