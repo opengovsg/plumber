@@ -11,7 +11,7 @@ import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { FormHelperText, FormLabel } from '@opengovsg/design-system-react'
+import { FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { GET_APPS } from 'graphql/queries/get-apps'
@@ -192,11 +192,6 @@ function ChooseAppAndEventSubstep(
                     <FormLabel isRequired>
                       {formatMessage('flowEditor.chooseEvent')}
                     </FormLabel>
-                    <FormHelperText>
-                      {isTrigger
-                        ? formatMessage('flowEditor.triggerEvent')
-                        : formatMessage('flowEditor.actionEvent')}
-                    </FormHelperText>
                     <TextField
                       {...params}
                       InputProps={{
