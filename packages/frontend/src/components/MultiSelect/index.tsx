@@ -53,6 +53,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
       }) => (
         <FormControl isInvalid={!!error}>
           <FormLabel isRequired>{label}</FormLabel>
+          {description && <FormHelperText>{description}</FormHelperText>}
           <DSMultiSelect
             items={items}
             values={values}
@@ -76,7 +77,6 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
               onChange(newValues.sort())
             }
           />
-          {description && <FormHelperText>{description}</FormHelperText>}
           {error && <FormErrorMessage>{error.message}</FormErrorMessage>}
         </FormControl>
       )}
