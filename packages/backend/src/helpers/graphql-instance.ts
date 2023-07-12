@@ -1,36 +1,67 @@
-import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader'
-import { loadSchemaSync } from '@graphql-tools/load'
-import { addResolversToSchema } from '@graphql-tools/schema'
-import { graphqlHTTP } from 'express-graphql'
+import { ApolloServer } from '@apollo/server'
+import { expressMiddleware } from '@apollo/server/express4'
+import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled'
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default'
+import { makeExecutableSchema } from '@graphql-tools/schema'
+import { RequestHandler } from 'express'
+import { readFileSync } from 'fs'
 import { applyMiddleware } from 'graphql-middleware'
 import { join } from 'path'
 
-import HttpError from '@/errors/http'
+import appConfig from '@/config/app'
 import resolvers from '@/graphql/resolvers'
-import authentication from '@/helpers/authentication'
+import authentication, { setCurrentUserContext } from '@/helpers/authentication'
 import logger from '@/helpers/logger'
+import { UnauthenticatedContext } from '@/types/express/context'
 
-const schema = loadSchemaSync(join(__dirname, '../graphql/schema.graphql'), {
-  loaders: [new GraphQLFileLoader()],
+const typeDefs = readFileSync(join(__dirname, '../graphql/schema.graphql'), {
+  encoding: 'utf-8',
 })
 
-const schemaWithResolvers = addResolversToSchema({
+const schema = makeExecutableSchema({ typeDefs, resolvers })
+
+const schemaWithMiddleware = applyMiddleware(
   schema,
-  resolvers,
-})
+  authentication.generate(schema),
+)
 
-const graphQLInstance = graphqlHTTP({
-  schema: applyMiddleware(schemaWithResolvers, authentication),
-  graphiql: true,
-  customFormatErrorFn: (error) => {
-    logger.error(error.path + ' : ' + error.message + '\n' + error.stack)
-
-    if (error.originalError instanceof HttpError) {
-      delete (error.originalError as HttpError).response
+const server = new ApolloServer<UnauthenticatedContext>({
+  schema: schemaWithMiddleware,
+  introspection: appConfig.isDev,
+  plugins: [
+    appConfig.isDev
+      ? ApolloServerPluginLandingPageLocalDefault()
+      : ApolloServerPluginLandingPageDisabled(),
+  ],
+  formatError: (error) => {
+    logger.error(error)
+    let errorMessage = error.message
+    if (error.message.includes('Did you mean')) {
+      errorMessage = 'Invalid request'
     }
-
-    return error
+    if (
+      error.message.includes("Please either specify a 'content-type' header")
+    ) {
+      errorMessage = 'Blocked request'
+    }
+    const newError = {
+      message: errorMessage,
+      code: error.extensions?.code,
+    }
+    return newError
   },
 })
 
-export default graphQLInstance
+let graphqlInstance: RequestHandler | undefined
+
+const graphqlRouteHandler: RequestHandler = async (...args) => {
+  if (!graphqlInstance) {
+    await server.start()
+    graphqlInstance = expressMiddleware<UnauthenticatedContext>(server, {
+      context: setCurrentUserContext,
+    })
+  }
+  return graphqlInstance(...args)
+}
+
+export default graphqlRouteHandler

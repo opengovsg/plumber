@@ -2,18 +2,19 @@ import '@/config/orm'
 
 import { IRequest } from '@plumber/types'
 
+import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
 import createError from 'http-errors'
 
 import appConfig from '@/config/app'
 import corsOptions from '@/config/cors-options'
-import addCspHeaders from '@/helpers/add-csp-headers'
 import appAssetsHandler from '@/helpers/app-assets-handler'
 import {
   createBullBoardHandler,
   serverAdapter,
 } from '@/helpers/create-bull-board-handler'
+import csp from '@/helpers/csp'
 import errorHandler from '@/helpers/error-handler'
 import injectBullBoardHandler from '@/helpers/inject-bull-board-handler'
 import morgan from '@/helpers/morgan'
@@ -24,33 +25,35 @@ createBullBoardHandler(serverAdapter)
 
 const app = express()
 
-addCspHeaders(app)
-
-injectBullBoardHandler(app, serverAdapter)
-
-appAssetsHandler(app)
-
 app.disable('x-powered-by')
+app.use(csp)
 app.use(morgan)
+app.use(cookieParser())
 app.use(
   express.json({
-    verify(req, res, buf) {
+    verify(req, _res, buf) {
       // eslint-disable-next-line prettier/prettier
       (req as IRequest).rawBody = buf
     },
+    limit: appConfig.requestBodySizeLimit,
   }),
 )
 app.use(
   express.urlencoded({
     extended: false,
     limit: appConfig.requestBodySizeLimit,
-    verify(req, res, buf) {
+    verify(req, _res, buf) {
       // eslint-disable-next-line prettier/prettier
       (req as IRequest).rawBody = buf
     },
   }),
 )
 app.use(cors(corsOptions))
+
+injectBullBoardHandler(app, serverAdapter)
+
+appAssetsHandler(app)
+
 app.use('/', router)
 
 webUIHandler(app)

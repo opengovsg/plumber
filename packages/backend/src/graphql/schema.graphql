@@ -48,8 +48,9 @@ type Mutation {
   updateStep(input: UpdateStepInput): Step
   deleteStep(input: DeleteStepInput): Step
   requestOtp(input: RequestOtpInput): Boolean
-  verifyOtp(input: VerifyOtpInput): Auth
+  verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
+  logout: Boolean
 }
 
 """
@@ -124,11 +125,6 @@ type AppAuth {
 enum ArgumentEnumType {
   integer
   string
-}
-
-type Auth {
-  user: User
-  token: String
 }
 
 type AuthenticationStep {
