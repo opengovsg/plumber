@@ -292,6 +292,7 @@ describe('decrypt form response', () => {
           fieldType: 'textarea',
           question: 'What do you eat for breakfast?',
           answer: 'i eat lorem dimsum for breakfast',
+          order: 1,
         },
       },
       submissionId: 'submissionId',
