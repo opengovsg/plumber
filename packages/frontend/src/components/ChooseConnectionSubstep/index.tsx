@@ -2,11 +2,13 @@ import type { IApp, IConnection, IStep, ISubstep } from '@plumber/types'
 
 import * as React from 'react'
 import { useLazyQuery, useQuery } from '@apollo/client'
+import { FormControl } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
 import Button from '@mui/material/Button'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
+import { FormLabel } from '@opengovsg/design-system-react'
 import AddAppConnection from 'components/AddAppConnection'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
@@ -190,12 +192,12 @@ function ChooseConnectionSubstep(
             disabled={editorContext.readOnly}
             options={connectionOptions}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label={formatMessage(
-                  'chooseConnectionSubstep.chooseConnection',
-                )}
-              />
+              <FormControl>
+                <FormLabel isRequired>
+                  {formatMessage('chooseConnectionSubstep.chooseConnection')}
+                </FormLabel>
+                <TextField {...params} />
+              </FormControl>
             )}
             value={getOption(connectionOptions, connection?.id)}
             onChange={handleChange}
