@@ -105,6 +105,7 @@ export default function InputCreator(
         multiline={type === 'multiline'}
         helperText={description}
         clickToCopy={clickToCopy}
+        autoComplete={schema.autoComplete}
       />
     )
   }

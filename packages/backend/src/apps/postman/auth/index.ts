@@ -30,6 +30,7 @@ export default {
       placeholder: null,
       description: 'Postman API key.',
       clickToCopy: false,
+      autoComplete: 'off' as const,
     },
   ],
   verifyCredentials,
