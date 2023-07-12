@@ -2,7 +2,6 @@ import * as React from 'react'
 import { FormattedMessage } from 'react-intl'
 import type { AlertProps } from '@mui/material/Alert'
 import Typography from '@mui/material/Typography'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 import TextField from '../TextField'
 
@@ -14,7 +13,6 @@ type WebhookUrlInfoProps = {
 
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
   const { webhookUrl, ...alertProps } = props
-  const formatMessage = useFormatMessage()
 
   return (
     <Alert icon={false} color="info" {...alertProps}>
@@ -32,7 +30,6 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
         name="webhookUrl"
         fullWidth
         defaultValue={webhookUrl}
-        helperText={<>{formatMessage('webhookUrlInfo.helperText')}</>}
       />
     </Alert>
   )
