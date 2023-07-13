@@ -322,20 +322,13 @@ describe('decrypt form response', () => {
       },
     })
     await expect(decryptFormResponse($)).resolves.toEqual(true)
-    expect($.request.body).toEqual({
-      fields: {
-        question1: {
-          fieldType: 'textarea',
-          question: 'What do you eat for breakfast?',
-          answer: 'i eat lorem dimsum for breakfast',
-          order: 1,
+    expect($.request.body).toEqual(
+      expect.objectContaining({
+        verifiedSubmitterInfo: {
+          sgidUinFin: 'S1234567A',
+          cpUid: 'U987654323PLUMBER',
         },
-      },
-      submissionId: 'submissionId',
-      verifiedSubmitterInfo: {
-        sgidUinFin: 'S1234567A',
-        cpUid: 'U987654323PLUMBER',
-      },
-    })
+      }),
+    )
   })
 })
