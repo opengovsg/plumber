@@ -35,9 +35,11 @@ describe('new submission trigger', () => {
       for (const [propName, data] of Object.entries(
         metadata.fields.textFieldId,
       )) {
-        expect((data as IDataOutMetadatum).isVisible).toEqual(
-          ['question', 'answer'].includes(propName),
-        )
+        if (['question', 'answer'].includes(propName)) {
+          expect((data as IDataOutMetadatum).isHidden).toBeUndefined()
+        } else {
+          expect((data as IDataOutMetadatum).isHidden).toEqual(true)
+        }
       }
     })
 

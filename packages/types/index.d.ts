@@ -35,9 +35,9 @@ export interface IDataOutMetadatum {
   type?: TDataOutMetadatumType
 
   /**
-   * Generally defaults to `true` in the front end if unspecified.
+   * Generally defaults to `false` in the front end if unspecified.
    */
-  isVisible?: boolean
+  isHidden?: boolean
 
   /**
    * If label is unspecified, the front end will generate one - typically an
@@ -48,6 +48,9 @@ export interface IDataOutMetadatum {
   /**
    * If the front end component renders variables in an ordered list, this
    * specifies the order of the associated variable in that list.
+   *
+   * **NOTE**: To prevent nullish comparison confusion since this is an
+   * optional prop, `order` should be 1-indexed (i.e. its values >= 1).
    *
    * See the implementation of {@link extractVariables} for info on how
    * variables with the same `order` or undefined `order` are sorted.
