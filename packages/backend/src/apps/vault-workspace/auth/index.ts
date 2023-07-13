@@ -24,6 +24,7 @@ export default {
       placeholder: null,
       description: 'API key which should be retrieved from Vault Workspace.',
       clickToCopy: false,
+      autoComplete: 'off' as const,
     },
   ],
   verifyCredentials,

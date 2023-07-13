@@ -56,6 +56,10 @@ async function getDataOutMetadata(
       type: 'text',
       label: 'Submission ID',
     },
+    submissionTime: {
+      type: 'text',
+      label: 'Submission Time',
+    },
   }
 }
 
@@ -86,4 +90,5 @@ export default getDataOutMetadata
 //       cpUen: 'S7654321Z',
 //     },
 //   submissionId: '649306c1ac8851001149af0a'
+//   submissionTime: '2023-07-06T18:26:27.505+08:00'
 // }

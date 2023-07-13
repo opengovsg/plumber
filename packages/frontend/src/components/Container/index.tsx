@@ -1,10 +1,17 @@
 import * as React from 'react'
-import MuiContainer, { ContainerProps } from '@mui/material/Container'
+import {
+  Container as ChakraContainer,
+  ContainerProps as ChakraContainerProps,
+} from '@chakra-ui/react'
 
-export default function Container(props: ContainerProps): React.ReactElement {
-  return <MuiContainer {...props} />
+export type { ChakraContainerProps as ContainerProps }
+
+export default function Container(
+  props: ChakraContainerProps,
+): React.ReactElement {
+  return <ChakraContainer {...props} />
 }
 
 Container.defaultProps = {
-  maxWidth: 'lg',
+  maxW: 'container.xl',
 }
