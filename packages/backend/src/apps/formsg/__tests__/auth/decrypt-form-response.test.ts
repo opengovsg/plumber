@@ -1,10 +1,16 @@
 import { IGlobalVariable, IRequest } from '@plumber/types'
 
+import { Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
 import { NricFilter } from '../../triggers/new-submission'
+
+// TZ formatting replicated here (see appConfig) as tests don't load the app
+// config module.
+LuxonSettings.defaultZone = 'Asia/Singapore'
+LuxonSettings.defaultLocale = 'en-SG'
 
 // mocks hoisted here so that they can be used in import mocks
 const mocks = vi.hoisted(() => {
@@ -52,6 +58,7 @@ describe('decrypt form response', () => {
         body: {
           data: {
             submissionId: 'submissionId',
+            created: '2023-07-06T10:26:27.505Z',
           },
         },
       } as IRequest,
@@ -107,6 +114,30 @@ describe('decrypt form response', () => {
     )
   })
 
+  it('should extract submission ID', async () => {
+    mocks.cryptoDecrypt.mockReturnValueOnce({
+      responses: [],
+    })
+    await expect(decryptFormResponse($)).resolves.toEqual(true)
+    expect($.request.body).toEqual(
+      expect.objectContaining({
+        submissionId: 'submissionId',
+      }),
+    )
+  })
+
+  it('should extract submission time as a ISO 8601 SGT formatted string', async () => {
+    mocks.cryptoDecrypt.mockReturnValueOnce({
+      responses: [],
+    })
+    await expect(decryptFormResponse($)).resolves.toEqual(true)
+    expect($.request.body).toEqual(
+      expect.objectContaining({
+        submissionTime: '2023-07-06T18:26:27.505+08:00',
+      }),
+    )
+  })
+
   it('should parse form fields into dictionaries', async () => {
     mocks.cryptoDecrypt.mockReturnValueOnce({
       responses: [
@@ -125,21 +156,22 @@ describe('decrypt form response', () => {
       ],
     })
     await expect(decryptFormResponse($)).resolves.toEqual(true)
-    expect($.request.body).toEqual({
-      fields: {
-        question1: {
-          fieldType: 'textarea',
-          question: 'What do you eat for breakfast?',
-          answer: 'i eat lorem dimsum for breakfast',
+    expect($.request.body).toEqual(
+      expect.objectContaining({
+        fields: {
+          question1: {
+            fieldType: 'textarea',
+            question: 'What do you eat for breakfast?',
+            answer: 'i eat lorem dimsum for breakfast',
+          },
+          question2: {
+            fieldType: 'mobile',
+            question: 'What is your mobile number?',
+            answer: '+6591234567',
+          },
         },
-        question2: {
-          fieldType: 'mobile',
-          question: 'What is your mobile number?',
-          answer: '+6591234567',
-        },
-      },
-      submissionId: 'submissionId',
-    })
+      }),
+    )
     expect($.request.headers).toBeUndefined()
     expect($.request.query).toBeUndefined()
   })
@@ -171,90 +203,94 @@ describe('decrypt form response', () => {
     })
     it('should handle nric filter - do nothing', async () => {
       await expect(decryptFormResponse($)).resolves.toEqual(true)
-      expect($.request.body).toEqual({
-        fields: {
-          question1: {
-            fieldType: 'nric',
-            question: 'what is your mom nric?',
-            answer: 'T2927502A',
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            question1: {
+              fieldType: 'nric',
+              question: 'what is your mom nric?',
+              answer: 'T2927502A',
+            },
+            question2: {
+              fieldType: 'mobile',
+              question: 'What is your mobile number?',
+              answer: '+6591234567',
+            },
+            question3: {
+              fieldType: 'nric',
+              question: 'what is your nric?',
+              answer: 'S9943670J',
+            },
           },
-          question2: {
-            fieldType: 'mobile',
-            question: 'What is your mobile number?',
-            answer: '+6591234567',
-          },
-          question3: {
-            fieldType: 'nric',
-            question: 'what is your nric?',
-            answer: 'S9943670J',
-          },
-        },
-        submissionId: 'submissionId',
-      })
+        }),
+      )
     })
     it('it should handle nric filter - remove', async () => {
       $.step.parameters.nricFilter = NricFilter.Remove
       await expect(decryptFormResponse($)).resolves.toEqual(true)
-      expect($.request.body).toEqual({
-        fields: {
-          question2: {
-            fieldType: 'mobile',
-            question: 'What is your mobile number?',
-            answer: '+6591234567',
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            question2: {
+              fieldType: 'mobile',
+              question: 'What is your mobile number?',
+              answer: '+6591234567',
+            },
           },
-        },
-        submissionId: 'submissionId',
-      })
+        }),
+      )
     })
 
     it('it should handle nric filter - hash', async () => {
       $.step.parameters.nricFilter = NricFilter.Hash
       await expect(decryptFormResponse($)).resolves.toEqual(true)
-      expect($.request.body).toEqual({
-        fields: {
-          question1: {
-            fieldType: 'nric',
-            question: 'what is your mom nric?',
-            answer: '+tkgnmGuaq7shFQoAIDQr8IqjWzrKE2bqyBDtJWhsYQ=',
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            question1: {
+              fieldType: 'nric',
+              question: 'what is your mom nric?',
+              answer: '+tkgnmGuaq7shFQoAIDQr8IqjWzrKE2bqyBDtJWhsYQ=',
+            },
+            question2: {
+              fieldType: 'mobile',
+              question: 'What is your mobile number?',
+              answer: '+6591234567',
+            },
+            question3: {
+              fieldType: 'nric',
+              question: 'what is your nric?',
+              answer: 'dDl7XRvFci/Zd0KXj961RP9mMHAC0LlopcMAcZlja1Q=',
+            },
           },
-          question2: {
-            fieldType: 'mobile',
-            question: 'What is your mobile number?',
-            answer: '+6591234567',
-          },
-          question3: {
-            fieldType: 'nric',
-            question: 'what is your nric?',
-            answer: 'dDl7XRvFci/Zd0KXj961RP9mMHAC0LlopcMAcZlja1Q=',
-          },
-        },
-        submissionId: 'submissionId',
-      })
+        }),
+      )
     })
 
     it('it should handle nric filter - mask', async () => {
       $.step.parameters.nricFilter = NricFilter.Mask
       await expect(decryptFormResponse($)).resolves.toEqual(true)
-      expect($.request.body).toEqual({
-        fields: {
-          question1: {
-            fieldType: 'nric',
-            question: 'what is your mom nric?',
-            answer: 'xxxxx502A',
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            question1: {
+              fieldType: 'nric',
+              question: 'what is your mom nric?',
+              answer: 'xxxxx502A',
+            },
+            question2: {
+              fieldType: 'mobile',
+              question: 'What is your mobile number?',
+              answer: '+6591234567',
+            },
+            question3: {
+              fieldType: 'nric',
+              question: 'what is your nric?',
+              answer: 'xxxxx670J',
+            },
           },
-          question2: {
-            fieldType: 'mobile',
-            question: 'What is your mobile number?',
-            answer: '+6591234567',
-          },
-          question3: {
-            fieldType: 'nric',
-            question: 'what is your nric?',
-            answer: 'xxxxx670J',
-          },
-        },
-        submissionId: 'submissionId',
-      })
+        }),
+      )
     })
   })
 })
