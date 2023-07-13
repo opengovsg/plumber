@@ -35,9 +35,9 @@ export interface IDataOutMetadatum {
   type?: TDataOutMetadatumType
 
   /**
-   * Generally defaults to `true` in the front end if unspecified.
+   * Generally defaults to `false` in the front end if unspecified.
    */
-  isVisible?: boolean
+  isHidden?: boolean
 
   /**
    * If label is unspecified, the front end will generate one - typically an

@@ -32,12 +32,12 @@ function postProcess(
   for (const variable of variables) {
     const { name, ...rest } = variable
     const {
-      isVisible = true,
+      isHidden = false,
       label = null,
       order = null,
     } = get(metadata, name, {}) as IDataOutMetadatum
 
-    if (!isVisible) {
+    if (isHidden) {
       continue
     }
 
