@@ -70,6 +70,9 @@ export async function decryptFormResponse(
 
     $.request.body = {
       fields: parsedData,
+      ...(submission.verified && {
+        verifiedSubmitterInfo: submission.verified,
+      }),
       submissionId: data.submissionId,
       // Forms gives us submission time as ISO 8601 UTC TZ, but our users
       // expect SGT time, so convert it to ISO 8601 SGT TZ (our Luxon is
