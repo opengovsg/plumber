@@ -29,10 +29,7 @@ export function genVariableLabelMap(
 }
 
 const variableRegExp = /({{.*?}})/
-export const deserialize = (
-  value: string,
-  variableLabels: VariableLabelMap,
-): Descendant[] => {
+export function deserialize(value: string): Descendant[] {
   if (!value) {
     return [
       {
@@ -52,7 +49,6 @@ export const deserialize = (
           if (node.match(variableRegExp)) {
             return {
               type: 'variable',
-              name: variableLabels.get(node),
               value: node,
               children: [{ text: '' }],
             }
