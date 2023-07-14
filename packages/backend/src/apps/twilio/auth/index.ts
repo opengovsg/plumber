@@ -40,6 +40,7 @@ export default {
       description:
         "If an API Key SID was provided, please provide your API Key Secret. If not, please provide your account's auth token.",
       clickToCopy: false,
+      autoComplete: 'off' as const,
     },
   ],
 

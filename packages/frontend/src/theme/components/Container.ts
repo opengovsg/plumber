@@ -6,5 +6,13 @@ const baseStyle = {
   padding: '2rem 1rem',
 }
 
+// Variants
+const variants = {
+  page: {
+    maxW: 1152,
+    py: 0,
+  },
+}
+
 // export the component theme
-export const Container = defineStyleConfig({ baseStyle })
+export const Container = defineStyleConfig({ baseStyle, variants })

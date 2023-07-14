@@ -35,15 +35,27 @@ export interface IDataOutMetadatum {
   type?: TDataOutMetadatumType
 
   /**
-   * Generally defaults to `true` in the front end if unspecified.
+   * Generally defaults to `false` in the front end if unspecified.
    */
-  isVisible?: boolean
+  isHidden?: boolean
 
   /**
    * If label is unspecified, the front end will generate one - typically an
    * ugly lodash get string (e.g. "step.abc-def.herp-derp.answer.1").
    */
   label?: string
+
+  /**
+   * If the front end component renders variables in an ordered list, this
+   * specifies the order of the associated variable in that list.
+   *
+   * **NOTE**: To prevent nullish comparison confusion since this is an
+   * optional prop, `order` should be 1-indexed (i.e. its values >= 1).
+   *
+   * See the implementation of {@link extractVariables} for info on how
+   * variables with the same `order` or undefined `order` are sorted.
+   */
+  order?: number
 }
 
 export interface IDataOutMetadata {
@@ -127,20 +139,27 @@ export interface IUser {
   steps: IStep[]
 }
 
-export interface IFieldDropdown {
+// Subset of HTML autocomplete values.
+type AutoCompleteValue = 'off' | 'url' | 'email'
+
+export interface IBaseField {
   key: string
   label: string
-  type: 'dropdown'
-  required: boolean
-  allowArbitrary?: boolean
+  type: string
+  required?: boolean
   readOnly?: boolean
-  value?: string | boolean
   placeholder?: string | null
   description?: string
   docUrl?: string
   clickToCopy?: boolean
   variables?: boolean
   dependsOn?: string[]
+}
+
+export interface IFieldDropdown extends IBaseField {
+  type: 'dropdown'
+  allowArbitrary?: boolean
+  value?: string | boolean
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
 }
@@ -159,34 +178,20 @@ export interface IFieldDropdownOption {
   value: boolean | string | number
 }
 
-export interface IFieldText {
-  key: string
-  label: string
+export interface IFieldText extends IBaseField {
   type: 'string'
-  required?: boolean
-  readOnly?: boolean
   value?: string
-  placeholder?: string | null
-  description?: string
-  docUrl?: string
-  clickToCopy?: boolean
-  variables?: boolean
-  dependsOn?: string[]
+
+  // Not applicable if field has variables.
+  autoComplete?: AutoCompleteValue
 }
 
-export interface IFieldMultiline {
-  key: string
-  label: string
+export interface IFieldMultiline extends IBaseField {
   type: 'multiline'
-  required?: boolean
-  readOnly?: boolean
   value?: string
-  placeholder?: string | null
-  description?: string
-  docUrl?: string
-  clickToCopy?: boolean
-  variables?: boolean
-  dependsOn?: string[]
+
+  // Not applicable if field has variables.
+  autoComplete?: AutoCompleteValue
 }
 
 export type IField = IFieldDropdown | IFieldText | IFieldMultiline
@@ -230,18 +235,6 @@ export interface IApp {
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
-
-  /**
-   * Gets metadata for the data output (i.e. `dataOut`) by an app's execution
-   * step.
-   *
-   * @param stepKey - The key associated with the step.
-   * @param executionStep - The execution step to get metadata for.
-   */
-  getDataOutMetadata?(
-    stepKey: IStep['key'],
-    executionStep: IExecutionStep,
-  ): Promise<IDataOutMetadata>
 }
 
 export type TBeforeRequest = {
@@ -292,6 +285,16 @@ export interface IBaseTrigger {
   registerHook?($: IGlobalVariable): Promise<void>
   unregisterHook?($: IGlobalVariable): Promise<void>
   sort?(item: ITriggerItem, nextItem: ITriggerItem): number
+
+  /**
+   * Gets metadata for the `dataOut` of this trigger's execution step.
+   *
+   * We pass in `executionStep` instead of `executionStep.dataOut` in case other
+   * info (e.g. initial params via `executionStep.step.parameters`) is needed.
+   *
+   * @param executionStep The execution step to get metadata for.
+   */
+  getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -316,6 +319,16 @@ export interface IBaseAction {
   key: string
   description: string
   run?($: IGlobalVariable): Promise<void>
+
+  /**
+   * Gets metadata for the `dataOut` of this action's execution step.
+   *
+   * We pass in `executionStep` instead of `executionStep.dataOut` in case other
+   * info (e.g. initial params via `executionStep.step.parameters`) is needed.
+   *
+   * @param executionStep The execution step to get metadata for.
+   */
+  getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
 }
 
 export interface IRawAction extends IBaseAction {

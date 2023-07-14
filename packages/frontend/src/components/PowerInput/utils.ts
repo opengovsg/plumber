@@ -5,35 +5,31 @@ import { withReact } from 'slate-react'
 
 import type { CustomEditor, CustomElement, VariableElement } from './types'
 
-function getStepPosition(id: string, stepsWithVariables: StepWithVariables[]) {
-  const stepIndex = stepsWithVariables.findIndex((stepWithVariables) => {
-    return stepWithVariables.id === id
-  })
+// Map of variable name with curlies (e.g. '{{step.abc-def.field.1.xyz}}') to
+// its label (its actual label, if defined, otherwise something like
+// 'step2.field.1.xyz').
+export type VariableLabelMap = Map<string, string>
 
-  return stepIndex + 1
-}
-
-function humanizeVariableName(
-  variableName: string,
+export function genVariableLabelMap(
   stepsWithVariables: StepWithVariables[],
-) {
-  const nameWithoutCurlies = variableName.replace(/{{|}}/g, '')
-  const stepId = nameWithoutCurlies.match(stepIdRegExp)?.[1] || ''
-  const stepPosition = getStepPosition(stepId, stepsWithVariables)
-  const humanizedVariableName = nameWithoutCurlies.replace(
-    `step.${stepId}.`,
-    `step${stepPosition}.`,
-  )
+): VariableLabelMap {
+  const result: VariableLabelMap = new Map()
 
-  return humanizedVariableName
+  for (const [stepPosition, step] of stepsWithVariables.entries()) {
+    for (const variable of step.output) {
+      result.set(
+        `{{${variable.name}}}`,
+        variable.label ??
+          variable.name.replace(`step.${step.id}.`, `step${stepPosition + 1}.`),
+      )
+    }
+  }
+
+  return result
 }
 
 const variableRegExp = /({{.*?}})/
-const stepIdRegExp = /^step.([\da-zA-Z-]*)/
-export const deserialize = (
-  value: string,
-  stepsWithVariables: any[],
-): Descendant[] => {
+export function deserialize(value: string): Descendant[] {
   if (!value) {
     return [
       {
@@ -53,7 +49,6 @@ export const deserialize = (
           if (node.match(variableRegExp)) {
             return {
               type: 'variable',
-              name: humanizeVariableName(node, stepsWithVariables),
               value: node,
               children: [{ text: '' }],
             }
@@ -103,17 +98,17 @@ export const withVariables = (editor: CustomEditor) => {
   return editor
 }
 
-export const insertVariable = (
+export function insertVariable(
   editor: CustomEditor,
-  variableData: Pick<VariableElement, 'name' | 'value' | 'label'>,
-  stepsWithVariables: StepWithVariables[],
-) => {
+  variableData: Pick<VariableElement, 'name' | 'value'>,
+  variableLabels: VariableLabelMap,
+) {
+  const value = `{{${variableData.name}}}`
+
   const variable: VariableElement = {
     type: 'variable',
-    name:
-      variableData.label ??
-      humanizeVariableName(variableData.name as string, stepsWithVariables),
-    value: `{{${variableData.name}}}`,
+    name: variableLabels.get(value),
+    value,
     children: [{ text: '' }],
   }
 
