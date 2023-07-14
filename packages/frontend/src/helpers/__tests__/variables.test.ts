@@ -255,5 +255,63 @@ describe('variables', () => {
         )
       })
     })
+
+    describe('processes order metadata', () => {
+      it('adds order metadata if present', () => {
+        steps[0].executionSteps[0].dataOutMetadata = {
+          stringProp: {
+            order: 10.4,
+          },
+        }
+        const result = extractVariables(steps)
+        expect(result[0].output[0]).toEqual(
+          expect.objectContaining({
+            order: 10.4,
+          }),
+        )
+      })
+
+      it('sets order prop to null if absent', () => {
+        const result = extractVariables(steps)
+        expect(result[0].output[0]).toEqual(
+          expect.objectContaining({
+            order: null,
+          }),
+        )
+      })
+
+      it('outputs variables as dictated by order', () => {
+        steps[0].executionSteps[0].dataOut = {
+          stringProp: 'a',
+          stringProp2: 'b',
+          stringProp3: 'c',
+          stringProp4: 'd',
+        }
+        steps[0].executionSteps[0].dataOutMetadata = {
+          stringProp: { order: 10 },
+          stringProp2: { order: 10.2 },
+          // Intentionally undefined order for stringProp3 and
+          // stringProp4
+        }
+        const result = extractVariables(steps)
+        expect(result[0].output).toEqual([
+          expect.objectContaining({
+            value: 'a',
+            order: 10,
+          }),
+          expect.objectContaining({
+            value: 'b',
+            order: 10.2,
+          }),
+          // Check sort stability
+          expect.objectContaining({
+            value: 'c',
+          }),
+          expect.objectContaining({
+            value: 'd',
+          }),
+        ])
+      })
+    })
   })
 })
