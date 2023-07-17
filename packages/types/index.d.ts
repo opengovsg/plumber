@@ -46,6 +46,13 @@ export interface IDataOutMetadatum {
   label?: string
 
   /**
+   * The value to show to the user, instead of the actual underlying value.
+   * Typically used to prettify values (e.g. show the filename of an S3 object
+   * instead of the full object key).
+   */
+  displayedValue?: string
+
+  /**
    * If the front end component renders variables in an ordered list, this
    * specifies the order of the associated variable in that list.
    *
@@ -194,21 +201,11 @@ export interface IFieldMultiline extends IBaseField {
   autoComplete?: AutoCompleteValue
 }
 
-export interface IFieldMultiSelect {
-  key: string
-  label: string
+export interface IFieldMultiSelect extends IBaseField {
   type: 'multiselect'
-  required?: boolean
-  description?: string
-  variableTypes?: TDataOutMetadatumType[]
-
-  // these are not implemented yet; only to satisfy type checks
-  // FIXME (ogp-weeloong): refactor InputCreator in separate PR
-  readOnly?: boolean
   value?: string
-  clickToCopy?: boolean
-  variables?: boolean
-  dependsOn?: string[]
+
+  variableTypes?: TDataOutMetadatumType[]
 }
 
 export type IField =

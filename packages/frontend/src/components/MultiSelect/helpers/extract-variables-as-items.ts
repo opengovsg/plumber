@@ -23,7 +23,7 @@ function extractVariablesAsItems(
 
       result.push({
         label: `[${step.name}] ${variable.label ?? variable.name}`,
-        description: String(variable.value),
+        description: variable.displayedValue ?? String(variable.value),
         value: `{{${variable.name}}}`,
       })
     }
