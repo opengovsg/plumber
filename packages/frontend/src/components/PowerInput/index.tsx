@@ -4,7 +4,7 @@ import { FormControl } from '@chakra-ui/react'
 import ClickAwayListener from '@mui/base/ClickAwayListener'
 import Chip from '@mui/material/Chip'
 import Popper from '@mui/material/Popper'
-import { FormHelperText, FormLabel } from '@opengovsg/design-system-react'
+import { FormLabel } from '@opengovsg/design-system-react'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
 import { createEditor } from 'slate'
 import { Editable, Slate, useFocused, useSelected } from 'slate-react'
@@ -106,8 +106,11 @@ const PowerInput = (props: PowerInputProps) => {
               controllerOnChange(serialize(value))
             }}
           >
-            {label && <FormLabel isRequired={required}>{label}</FormLabel>}
-            {description && <FormHelperText>{description}</FormHelperText>}
+            {label && (
+              <FormLabel isRequired={required} description={description}>
+                {label}
+              </FormLabel>
+            )}
             <ClickAwayListener
               mouseEvent="onMouseDown"
               onClickAway={() => {
@@ -117,12 +120,6 @@ const PowerInput = (props: PowerInputProps) => {
               {/* ref-able single child for ClickAwayListener */}
               <div style={{ width: '100%' }} data-test="power-input">
                 <FakeInput disabled={disabled}>
-                  {label && (
-                    <FormLabel isRequired={required}>{label}</FormLabel>
-                  )}
-                  {description && (
-                    <FormHelperText>{description}</FormHelperText>
-                  )}
                   <VariableLabelMapContext.Provider value={variableLabelMap}>
                     <Editable
                       readOnly={disabled}

@@ -7,7 +7,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import MuiTextField, {
   TextFieldProps as MuiTextFieldProps,
 } from '@mui/material/TextField'
-import { FormHelperText, FormLabel } from '@opengovsg/design-system-react'
+import { FormLabel } from '@opengovsg/design-system-react'
 import copyInputValue from 'helpers/copyInputValue'
 
 type TextFieldProps = {
@@ -65,8 +65,14 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
         },
       }) => (
         <FormControl>
-          {label && <FormLabel isRequired={required}>{label}</FormLabel>}
-          {helperText && <FormHelperText>{helperText}</FormHelperText>}
+          {label && (
+            <FormLabel
+              isRequired={required}
+              {...(helperText && { description: String(helperText) })}
+            >
+              {label}
+            </FormLabel>
+          )}
           <MuiTextField
             {...textFieldProps}
             {...field}
