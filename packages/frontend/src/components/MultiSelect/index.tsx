@@ -51,7 +51,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
         fieldState: { error },
       }) => (
         <FormControl isInvalid={!!error}>
-          <FormLabel isRequired description={description}>
+          <FormLabel isRequired={required} description={description}>
             {label}
           </FormLabel>
           <DSMultiSelect
