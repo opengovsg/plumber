@@ -58,6 +58,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
             items={items}
             values={values}
             name={name}
+            fixedItemHeight={68}
             onChange={(newValues) =>
               // Sort to prevent footgun where undefined array ordering messes
               // up later actions. Example:
