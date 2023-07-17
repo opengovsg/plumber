@@ -201,21 +201,11 @@ export interface IFieldMultiline extends IBaseField {
   autoComplete?: AutoCompleteValue
 }
 
-export interface IFieldMultiSelect {
-  key: string
-  label: string
+export interface IFieldMultiSelect extends IBaseField {
   type: 'multiselect'
-  required?: boolean
-  description?: string
-  variableTypes?: TDataOutMetadatumType[]
-
-  // these are not implemented yet; only to satisfy type checks
-  // FIXME (ogp-weeloong): refactor InputCreator in separate PR
-  readOnly?: boolean
   value?: string
-  clickToCopy?: boolean
-  variables?: boolean
-  dependsOn?: string[]
+
+  variableTypes?: TDataOutMetadatumType[]
 }
 
 export type IField =
