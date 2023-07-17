@@ -1,11 +1,11 @@
 import { Button } from './Button'
 import { Container } from './Container'
-import { Form } from './Form'
+import { FormLabel } from './FormLabel'
 import { Link } from './Link'
 
 export const components = {
   Container,
   Button,
-  Form,
+  FormLabel,
   Link,
 }
