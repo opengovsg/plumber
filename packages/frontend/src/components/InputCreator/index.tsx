@@ -116,6 +116,7 @@ export default function InputCreator(
       <MultiSelect
         name={computedName}
         label={label}
+        description={description}
         variableTypes={schema.variableTypes}
       />
     )

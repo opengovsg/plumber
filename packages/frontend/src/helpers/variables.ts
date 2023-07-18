@@ -15,6 +15,7 @@ export interface StepWithVariables {
 export interface Variable extends RawVariable {
   label: string | null
   type: TDataOutMetadatumType | null
+  order: number | null
   displayedValue: string | null
 }
 
@@ -38,25 +39,41 @@ function postProcess(
   for (const variable of variables) {
     const { name, ...rest } = variable
     const {
-      isVisible = true,
-      label = null,
+      isHidden = false,
       type = null,
+      label = null,
+      order = null,
       displayedValue = null,
     } = get(metadata, name, {}) as IDataOutMetadatum
 
-    if (!isVisible) {
+    if (isHidden) {
       continue
     }
 
     result.push({
       label,
       type,
+      order,
       displayedValue,
       name: `step.${stepId}.${name}`,
       ...rest,
     })
   }
 
+  result.sort((a, b) => {
+    // Put vars with null order last, but preserve ordering (via `sort`'s
+    // stability) if both are null.
+    if (!a.order && !b.order) {
+      return 0
+    }
+    if (!a.order) {
+      return 1
+    }
+    if (!b.order) {
+      return -1
+    }
+    return a.order - b.order
+  })
   return result
 }
 

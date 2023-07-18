@@ -1,5 +1,6 @@
 import 'dotenv/config'
 
+import { Settings as LuxonSettings } from 'luxon'
 import { URL } from 'node:url'
 
 type AppConfig = {
@@ -97,5 +98,9 @@ if (!appConfig.postmanApiKey) {
 if (!appConfig.s3Region) {
   throw new Error('S3_REGION environment variable needs to be set!')
 }
+
+// Force SGT date-time formatting no matter what
+LuxonSettings.defaultZone = 'Asia/Singapore'
+LuxonSettings.defaultLocale = 'en-SG'
 
 export default appConfig

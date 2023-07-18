@@ -5,6 +5,7 @@ import { Controller, useFormContext } from 'react-hook-form'
 import { FormControl } from '@chakra-ui/react'
 import {
   FormErrorMessage,
+  FormHelperText,
   FormLabel,
   MultiSelect as DSMultiSelect,
 } from '@opengovsg/design-system-react'
@@ -15,6 +16,7 @@ import extractVariablesAsItems from './helpers/extract-variables-as-items'
 interface MultiSelectProps {
   name: string
   label: string
+  description?: string
   required?: boolean
   variableTypes?: TDataOutMetadatumType[]
 }
@@ -24,7 +26,13 @@ interface MultiSelectProps {
  * FUTURE: single select, hard coded options, freeSolo
  */
 function MultiSelect(props: MultiSelectProps): React.ReactElement {
-  const { name, label, required = false, variableTypes = null } = props
+  const {
+    name,
+    label,
+    description = null,
+    required = false,
+    variableTypes = null,
+  } = props
   const { control } = useFormContext()
   const priorSteps = useContext(StepExecutionsContext)
 
@@ -45,10 +53,12 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
       }) => (
         <FormControl isInvalid={!!error}>
           <FormLabel isRequired>{label}</FormLabel>
+          {description && <FormHelperText>{description}</FormHelperText>}
           <DSMultiSelect
             items={items}
             values={values}
             name={name}
+            fixedItemHeight={68}
             onChange={(newValues) =>
               // Sort to prevent footgun where undefined array ordering messes
               // up later actions. Example:

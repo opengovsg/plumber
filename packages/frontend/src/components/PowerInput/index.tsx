@@ -20,7 +20,13 @@ import {
   genVariableLabelMap,
   insertVariable,
   serialize,
+  VariableLabelMap,
 } from './utils'
+
+// FIXME (ogp-weeloong): Refactor this to something cleaner later...
+const VariableLabelMapContext = React.createContext<VariableLabelMap>(
+  new Map<string, string>(),
+)
 
 type PowerInputProps = {
   onChange?: (value: string) => void
@@ -54,19 +60,15 @@ const PowerInput = (props: PowerInputProps) => {
     (props: any) => <Element {...props} />,
     [],
   )
-  const [editor] = React.useState(() => customizeEditor(createEditor()))
+  const editor = React.useMemo(() => customizeEditor(createEditor()), [])
   const [showVariableSuggestions, setShowVariableSuggestions] =
     React.useState(false)
 
-  const stepsWithVariables = React.useMemo(() => {
-    return extractVariables(priorStepsWithExecutions)
+  const [stepsWithVariables, variableLabelMap] = React.useMemo(() => {
+    const vars = extractVariables(priorStepsWithExecutions)
+    const labels = genVariableLabelMap(vars)
+    return [vars, labels]
   }, [priorStepsWithExecutions])
-
-  // Flatten stepsWithVariables for faster serialization / deserialization to labels.
-  const variableLabelMap = React.useMemo(
-    () => genVariableLabelMap(stepsWithVariables),
-    [stepsWithVariables],
-  )
 
   const handleBlur = React.useCallback(
     (value: any) => {
@@ -98,7 +100,7 @@ const PowerInput = (props: PowerInputProps) => {
       }) => (
         <Slate
           editor={editor}
-          value={deserialize(value, variableLabelMap)}
+          value={deserialize(value)}
           onChange={(value) => {
             controllerOnChange(serialize(value))
           }}
@@ -117,24 +119,30 @@ const PowerInput = (props: PowerInputProps) => {
                     shrink={true}
                     disabled={disabled}
                     variant="outlined"
-                    sx={{ bgcolor: 'white', display: 'inline-block', px: 0.75 }}
+                    sx={{
+                      bgcolor: 'white',
+                      display: 'inline-block',
+                      px: 0.75,
+                    }}
                   >
                     {label}
                   </InputLabel>
                 </InputLabelWrapper>
 
-                <Editable
-                  readOnly={disabled}
-                  style={{ width: '100%' }}
-                  renderElement={renderElement}
-                  onFocus={() => {
-                    setShowVariableSuggestions(true)
-                  }}
-                  onBlur={() => {
-                    controllerOnBlur()
-                    handleBlur(value)
-                  }}
-                />
+                <VariableLabelMapContext.Provider value={variableLabelMap}>
+                  <Editable
+                    readOnly={disabled}
+                    style={{ width: '100%' }}
+                    renderElement={renderElement}
+                    onFocus={() => {
+                      setShowVariableSuggestions(true)
+                    }}
+                    onBlur={() => {
+                      controllerOnBlur()
+                      handleBlur(value)
+                    }}
+                  />
+                </VariableLabelMapContext.Provider>
               </FakeInput>
               {/* ghost placer for the variables popover */}
               <div ref={editorRef} style={{ width: '100%' }} />
@@ -199,9 +207,10 @@ const Element = (props: any) => {
 const Variable = ({ attributes, children, element }: any) => {
   const selected = useSelected()
   const focused = useFocused()
+  const variableLabelMap = React.useContext(VariableLabelMapContext)
   const label = (
     <>
-      {element.name}
+      {variableLabelMap.get(element.value) ?? element.value}
       {children}
     </>
   )
