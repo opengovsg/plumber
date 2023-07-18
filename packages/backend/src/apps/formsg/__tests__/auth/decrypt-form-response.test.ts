@@ -116,7 +116,7 @@ describe('decrypt form response', () => {
 
   it('should extract submission ID', async () => {
     mocks.cryptoDecrypt.mockReturnValueOnce({
-      responses: [],
+      content: { responses: [] },
     })
     await expect(decryptFormResponse($)).resolves.toEqual(true)
     expect($.request.body).toEqual(
@@ -128,7 +128,7 @@ describe('decrypt form response', () => {
 
   it('should extract submission time as a ISO 8601 SGT formatted string', async () => {
     mocks.cryptoDecrypt.mockReturnValueOnce({
-      responses: [],
+      content: { responses: [] },
     })
     await expect(decryptFormResponse($)).resolves.toEqual(true)
     expect($.request.body).toEqual(
@@ -314,17 +314,19 @@ describe('decrypt form response', () => {
 
   it('should parse verified fields', async () => {
     mocks.cryptoDecrypt.mockReturnValueOnce({
-      responses: [
-        {
-          _id: 'question1',
-          fieldType: 'textarea',
-          question: 'What do you eat for breakfast?',
-          answer: 'i eat lorem dimsum for breakfast',
+      content: {
+        responses: [
+          {
+            _id: 'question1',
+            fieldType: 'textarea',
+            question: 'What do you eat for breakfast?',
+            answer: 'i eat lorem dimsum for breakfast',
+          },
+        ],
+        verified: {
+          sgidUinFin: 'S1234567A',
+          cpUid: 'U987654323PLUMBER',
         },
-      ],
-      verified: {
-        sgidUinFin: 'S1234567A',
-        cpUid: 'U987654323PLUMBER',
       },
     })
     await expect(decryptFormResponse($)).resolves.toEqual(true)

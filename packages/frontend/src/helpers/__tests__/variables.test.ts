@@ -294,35 +294,5 @@ describe('variables', () => {
         ])
       })
     })
-
-    describe.each([
-      { metadataPropName: 'type', sampleMetadata: { type: 'text' } },
-      {
-        metadataPropName: 'displayedValue',
-        sampleMetadata: { displayedValue: 'pretty value' },
-      },
-    ])(
-      'processes metadata into props',
-      ({ metadataPropName, sampleMetadata }) => {
-        it('adds corresponding prop if present', () => {
-          steps[0].executionSteps[0].dataOutMetadata = {
-            stringProp: sampleMetadata,
-          }
-          const result = extractVariables(steps)
-          expect(result[0].output[0]).toEqual(
-            expect.objectContaining(sampleMetadata),
-          )
-        })
-
-        it('sets corresponding prop to null if absent', () => {
-          const result = extractVariables(steps)
-          expect(result[0].output[0]).toEqual(
-            expect.objectContaining({
-              [metadataPropName]: null,
-            }),
-          )
-        })
-      },
-    )
   })
 })

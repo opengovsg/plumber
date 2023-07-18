@@ -1,4 +1,33 @@
-import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
+import {
+  IDataOutMetadata,
+  IDataOutMetadatum,
+  IExecutionStep,
+  IJSONObject,
+} from '@plumber/types'
+
+import { parsePlumberS3Id } from '@/helpers/plumber-s3'
+
+function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
+  const answer: IDataOutMetadatum = {
+    label: fieldData.order ? `Response ${fieldData.order}` : null,
+    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
+  }
+
+  switch (fieldData.fieldType) {
+    case 'attachment':
+      answer['type'] = 'file'
+      // For attachments, answer _has_ to be a Plumber S3 ID or an empty string
+      // (e.g. in optional fields).
+      answer['displayedValue'] =
+        parsePlumberS3Id(fieldData.answer as string)?.objectName ??
+        (fieldData.answer as string)
+      break
+    default:
+      answer['type'] = 'text'
+  }
+
+  return answer
+}
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
@@ -9,7 +38,6 @@ async function getDataOutMetadata(
   }
 
   const fieldMetadata: IDataOutMetadata = Object.create(null)
-
   for (const [fieldId, fieldData] of Object.entries(data.fields)) {
     fieldMetadata[fieldId] = {
       question: {
@@ -17,11 +45,7 @@ async function getDataOutMetadata(
         label: fieldData.order ? `Question ${fieldData.order}` : null,
         order: fieldData.order ? fieldData.order : null,
       },
-      answer: {
-        type: 'text',
-        label: fieldData.order ? `Response ${fieldData.order}` : null,
-        order: fieldData.order ? fieldData.order + 0.1 : null,
-      },
+      answer: buildAnswerMetadatum(fieldData),
       fieldType: { isHidden: true },
       order: { isHidden: true },
     }
@@ -72,15 +96,21 @@ export default getDataOutMetadata
 //     647edbd2026dc800116b21f9: {
 //       answer: 'zzz',
 //       question: 'What is the air speed velocity of an unladen swallow?',
-//       fieldType: 'textfield'
+//       fieldType: 'textfield',
 //       order: 2
 //     },
 //     648fe18a9175ce001196b3d5: {
 //       answer: 'aaaa',
 //       question: 'What is your name?',
-//       fieldType: 'textfield'
+//       fieldType: 'textfield',
 //       order: 1
 //     }
+//     649d3183c4c52f00124ceb16: {
+//       question: 'Attach your sparrow velocity readings.',
+//       answer: 'plumber-s3:common-bucket:649306c1ac8851001149af0a/649d3183c4c52f00124ceb16/my readings.txt',
+//       fieldType: 'attachment',
+//       order: 3
+//     },
 //   },
 //   # verifiedSubmitterInfo may not exist!
 //   verifiedSubmitterInfo: {
@@ -89,6 +119,6 @@ export default getDataOutMetadata
 //       cpUid: 'U987654323PLUMBER',
 //       cpUen: 'S7654321Z',
 //     },
-//   submissionId: '649306c1ac8851001149af0a'
+//   submissionId: '649306c1ac8851001149af0a',
 //   submissionTime: '2023-07-06T18:26:27.505+08:00'
 // }

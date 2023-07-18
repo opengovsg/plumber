@@ -113,5 +113,33 @@ describe('new submission trigger', () => {
         'CorpPass UEN (Verified)',
       )
     })
+
+    it('sets type to file for attachments', async () => {
+      executionStep.dataOut.fields = {
+        fileFieldId: {
+          question: 'Attach a file.',
+          answer: 'plumber-s3:bucket_name:abcd/efg/my file.txt',
+          fieldType: 'attachment',
+        },
+      }
+
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata.fields.fileFieldId.answer.type).toEqual('file')
+    })
+
+    it('sets displayed value for attachments', async () => {
+      executionStep.dataOut.fields = {
+        fileFieldId: {
+          question: 'Attach a file.',
+          answer: 'plumber-s3:bucket_name:abcd/efg/my file.txt',
+          fieldType: 'attachment',
+        },
+      }
+
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata.fields.fileFieldId.answer.displayedValue).toEqual(
+        'my file.txt',
+      )
+    })
   })
 })
