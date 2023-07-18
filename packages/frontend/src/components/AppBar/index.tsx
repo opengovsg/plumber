@@ -7,6 +7,7 @@ import MuiAppBar from '@mui/material/AppBar'
 import IconButton from '@mui/material/IconButton'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
+import { Link } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
 import AccountDropdownMenu from 'components/AccountDropdownMenu'
 import * as URLS from 'config/urls'
@@ -73,6 +74,15 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             </RouterLink>
           </div>
 
+          <Link
+            href={URLS.GUIDE_LINK}
+            textDecoration="none"
+            target="_blank"
+            marginEnd="24px"
+          >
+            Help
+          </Link>
+
           <IconButton
             size="large"
             edge="start"
@@ -86,7 +96,6 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
           </IconButton>
         </Toolbar>
       </ChakraBox>
-
       <AccountDropdownMenu
         anchorEl={accountMenuAnchorElement}
         id={accountMenuId}
