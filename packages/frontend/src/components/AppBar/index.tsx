@@ -76,11 +76,12 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
 
           <Link
             href={URLS.GUIDE_LINK}
-            textDecoration="none"
+            colorScheme="secondary"
             target="_blank"
+            variant="link"
             marginEnd="24px"
           >
-            Help
+            Guide
           </Link>
 
           <IconButton

@@ -10,7 +10,7 @@ import IconButton from '@mui/material/IconButton'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
-import { Button, Link } from '@opengovsg/design-system-react'
+import { Link } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
 import Editor from 'components/Editor'
@@ -112,6 +112,16 @@ export default function EditorLayout(): React.ReactElement {
             )}
           </Box>
 
+          <Link
+            href={URLS.GUIDE_LINK}
+            colorScheme="secondary"
+            target="_blank"
+            variant="link"
+            marginEnd="24px"
+          >
+            Guide
+          </Link>
+
           <Box pr={1}>
             <MuiButton
               variant="contained"
@@ -154,20 +164,6 @@ export default function EditorLayout(): React.ReactElement {
           </MuiButton>
         }
       />
-      <Button
-        position="fixed"
-        boxShadow="base"
-        bottom={6}
-        right={6}
-        variant="outline"
-        as={Link}
-        href={URLS.GUIDE_LINK}
-        textDecoration="none"
-        _hover={{ textDecoration: 'none' }}
-        target="_blank"
-      >
-        Help me!
-      </Button>
     </>
   )
 }
