@@ -5,7 +5,7 @@ import {
   IJSONObject,
 } from '@plumber/types'
 
-import { parsePlumberS3Id } from '@/helpers/plumber-s3'
+import { parseS3Id } from '@/helpers/s3'
 
 function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const answer: IDataOutMetadatum = {
@@ -16,10 +16,10 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   switch (fieldData.fieldType) {
     case 'attachment':
       answer['type'] = 'file'
-      // For attachments, answer _has_ to be a Plumber S3 ID or an empty string
-      // (e.g. in optional fields).
+      // For attachments, answer _has_ to be a S3 ID or an empty string (e.g.
+      // in optional fields).
       answer['displayedValue'] =
-        parsePlumberS3Id(fieldData.answer as string)?.objectName ??
+        parseS3Id(fieldData.answer as string)?.objectName ??
         (fieldData.answer as string)
       break
     default:
@@ -107,7 +107,7 @@ export default getDataOutMetadata
 //     }
 //     649d3183c4c52f00124ceb16: {
 //       question: 'Attach your sparrow velocity readings.',
-//       answer: 'plumber-s3:common-bucket:649306c1ac8851001149af0a/649d3183c4c52f00124ceb16/my readings.txt',
+//       answer: 's3:common-bucket:649306c1ac8851001149af0a/649d3183c4c52f00124ceb16/my readings.txt',
 //       fieldType: 'attachment',
 //       order: 3
 //     },

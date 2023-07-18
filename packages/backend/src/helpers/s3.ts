@@ -3,8 +3,10 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 
 import appConfig from '@/config/app'
 
+export const COMMON_S3_BUCKET = `plumber-${appConfig.appEnv}-common-bucket`
+
 const s3Client = new S3Client({
-  region: appConfig.s3Region,
+  region: 'ap-southeast-1',
   ...(appConfig.isDev && {
     credentials: {
       accessKeyId: process.env.S3_ACCESS_KEY,
@@ -22,13 +24,13 @@ export interface PlumberS3IdData {
 }
 
 /**
- * Extracts object info from a Plumber S3 ID.
+ * Extracts object info from a S3 ID.
  *
  * @returns Details about the S3 object if the input satisfies the Plumber S3
  * ID format; null otherwise.
  */
-export function parsePlumberS3Id(id: string): PlumberS3IdData | null {
-  if (!id.startsWith('plumber-s3:')) {
+export function parseS3Id(id: string): PlumberS3IdData | null {
+  if (!id.startsWith('s3:')) {
     return null
   }
 
@@ -47,12 +49,12 @@ export function parsePlumberS3Id(id: string): PlumberS3IdData | null {
 }
 
 /**
- * Puts a object into our S3 store and returns a *Plumber S3 ID* representing
+ * Puts a object into our S3 store and returns a *S3 ID* representing
  * the stored object.
  *
- * *Note 1:* A Plumber S3 ID has the form `plumber-s3:bucketName:objectKey`,
- * where `objectKey` is a `/`-delimited string whose last segment is the object
- * name - see {@link parsePlumberS3Id}.
+ * *Note 1:* A S3 ID has the form `s3:bucketName:objectKey`, where `objectKey`
+ * is a `/`-delimited string whose last segment is the object name (see
+ * the parseId function).
  *
  * *Note 2:* This doesn't validate `objectKey`; the caller is expected to make
  * sure it's formatted correctly.
@@ -71,5 +73,5 @@ export async function putObject(
       Metadata: metadata,
     }),
   )
-  return `plumber-s3:${bucket}:${objectKey}`
+  return `s3:${bucket}:${objectKey}`
 }

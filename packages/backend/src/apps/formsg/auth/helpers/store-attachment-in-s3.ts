@@ -5,10 +5,7 @@ import {
   FormField,
 } from '@opengovsg/formsg-sdk/dist/types'
 
-import appConfig from '@/config/app'
-import { putObject } from '@/helpers/plumber-s3'
-
-const s3Bucket = `plumber-${appConfig.appEnv}-attachment-bucket`
+import { COMMON_S3_BUCKET, putObject } from '@/helpers/s3'
 
 /**
  * If a field has an associated attachment, stores that attachment on our S3.
@@ -36,7 +33,7 @@ async function storeAttachmentInS3(
   }
 
   return await putObject(
-    s3Bucket,
+    COMMON_S3_BUCKET,
     `${submissionId}/${formField._id}/${attachment.filename}`,
     attachment.content,
     {

@@ -118,7 +118,7 @@ describe('new submission trigger', () => {
       executionStep.dataOut.fields = {
         fileFieldId: {
           question: 'Attach a file.',
-          answer: 'plumber-s3:bucket_name:abcd/efg/my file.txt',
+          answer: 's3:bucket_name:abcd/efg/my file.txt',
           fieldType: 'attachment',
         },
       }
@@ -131,7 +131,7 @@ describe('new submission trigger', () => {
       executionStep.dataOut.fields = {
         fileFieldId: {
           question: 'Attach a file.',
-          answer: 'plumber-s3:bucket_name:abcd/efg/my file.txt',
+          answer: 's3:bucket_name:abcd/efg/my file.txt',
           fieldType: 'attachment',
         },
       }
