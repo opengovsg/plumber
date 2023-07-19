@@ -1,14 +1,16 @@
+import FormData from 'form-data'
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import defineAction from '@/helpers/define-action'
+import { getObjectFromS3Id } from '@/helpers/s3'
 
-import { emailSchema } from '../../common/types'
+import { parametersSchema } from './parameters'
 
 export default defineAction({
-  name: 'Send email',
-  key: 'sendTransactionalEmail',
-  description: "Sends an email using Postman's transactional API.",
+  name: 'Send email with a custom From address',
+  key: 'sendEmailCustomFromAddress',
+  description: "Sends an email with a custom from address (via Postman's API).",
   arguments: [
     {
       label: 'Subject',
@@ -47,36 +49,75 @@ export default defineAction({
       key: 'senderName',
       type: 'string' as const,
       required: true,
-      description: "Sender name (will appear as '<Name> via Postman').",
       variables: true,
+    },
+    {
+      label: 'From Address',
+      key: 'fromAddress',
+      type: 'string' as const,
+      required: true,
+      description:
+        'This MUST be a custom From Address configured with the Postman team.',
+      variables: false,
+    },
+    {
+      label: 'Attachments',
+      key: 'attachments',
+      type: 'multiselect' as const,
+      required: false,
+      variables: true,
+      variableTypes: ['file'],
     },
   ],
 
   async run($) {
     const requestPath = '/v1/transactional/email/send'
-    const { subject, body, destinationEmail, senderName, replyTo } =
-      $.step.parameters
+    const {
+      subject,
+      body,
+      destinationEmail,
+      replyTo,
+      senderName,
+      fromAddress,
+      attachments,
+    } = $.step.parameters
 
-    const result = emailSchema.safeParse({
+    const result = parametersSchema.safeParse({
       destinationEmail,
       senderName,
+      fromAddress,
       subject,
       body,
       replyTo,
+      attachments,
     })
 
     if (!result.success) {
       throw fromZodError((result as SafeParseError<unknown>).error)
     }
 
+    const attachmentFiles = await Promise.all(
+      result.data.attachments?.map(getObjectFromS3Id),
+    )
+
     const promises = result.data.destinationEmail.map(
       async (recipientEmail) => {
-        const response = await $.http.post(requestPath, {
-          subject: result.data.subject,
-          body: result.data.body,
-          recipient: recipientEmail,
-          reply_to: result.data.replyTo,
-          from: `${result.data.senderName} via Postman<donotreply@mail.postman.gov.sg>`,
+        const requestData = new FormData()
+        requestData.append('subject', result.data.subject)
+        requestData.append('body', result.data.body)
+        requestData.append('recipient', recipientEmail)
+        if (result.data.replyTo) {
+          requestData.append('reply_to', result.data.replyTo)
+        }
+        requestData.append('from', fromAddress)
+        for (const file of attachmentFiles) {
+          requestData.append('attachments', Buffer.from(file.data), file.name)
+        }
+
+        const response = await $.http.post(requestPath, requestData, {
+          headers: {
+            ...requestData.getHeaders(),
+          },
         })
         const { status, recipient, params } = response.data
         return { status, recipient, params }
