@@ -9,16 +9,13 @@ import { parseS3Id } from '@/helpers/s3'
 
 function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const question: IDataOutMetadatum = {
+    type: 'text',
     label: fieldData.order ? `Question ${fieldData.order}` : null,
     order: fieldData.order ? (fieldData.order as number) : null,
   }
 
-  switch (fieldData.fieldType) {
-    case 'attachment':
-      question['type'] = 'file'
-      break
-    default:
-      question['type'] = 'text'
+  if (fieldData.fieldType === 'attachment') {
+    question['isHidden'] = true
   }
 
   return question
@@ -33,6 +30,9 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   switch (fieldData.fieldType) {
     case 'attachment':
       answer['type'] = 'file'
+      // We encode the question as the label because we hide the actual question
+      // as a variable.
+      answer['label'] = fieldData.question as string
       // For attachments, answer _has_ to be a S3 ID or an empty string (e.g.
       // in optional fields).
       answer['displayedValue'] =
@@ -41,6 +41,7 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
       break
     default:
       answer['type'] = 'text'
+      answer['label'] = fieldData.order ? `Response ${fieldData.order}` : null
   }
 
   return answer
