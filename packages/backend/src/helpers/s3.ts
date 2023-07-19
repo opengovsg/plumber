@@ -26,8 +26,8 @@ export interface PlumberS3IdData {
 /**
  * Extracts object info from a S3 ID.
  *
- * @returns Details about the S3 object if the input satisfies the Plumber S3
- * ID format; null otherwise.
+ * @returns Details about the S3 object if the input satisfies the S3 ID
+ * format; null otherwise.
  */
 export function parseS3Id(id: string): PlumberS3IdData | null {
   if (!id.startsWith('s3:')) {

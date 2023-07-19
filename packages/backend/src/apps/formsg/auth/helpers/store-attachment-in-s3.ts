@@ -19,7 +19,7 @@ import { COMMON_S3_BUCKET, putObject } from '@/helpers/s3'
  * 1. Use AWS lambdas to upload.
  * 2. Shift validation & trigger processing into our worker tier instead.
  *
- * @returns Plumber S3 URN representing the attachment.
+ * @returns S3 ID representing the attachment.
  */
 async function storeAttachmentInS3(
   $: Readonly<IGlobalVariable>,
