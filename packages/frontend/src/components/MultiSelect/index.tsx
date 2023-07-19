@@ -5,7 +5,6 @@ import { Controller, useFormContext } from 'react-hook-form'
 import { FormControl } from '@chakra-ui/react'
 import {
   FormErrorMessage,
-  FormHelperText,
   FormLabel,
   MultiSelect as DSMultiSelect,
 } from '@opengovsg/design-system-react'
