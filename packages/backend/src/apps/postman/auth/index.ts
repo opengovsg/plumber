@@ -17,7 +17,7 @@ export default {
       readOnly: false,
       value: null,
       placeholder: null,
-      description: 'Label for your Postman API Key.',
+      description: 'This is the name of your connection.',
       clickToCopy: false,
     },
     {
