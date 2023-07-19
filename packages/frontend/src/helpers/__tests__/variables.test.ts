@@ -1,6 +1,10 @@
 import { IStep } from '@plumber/types'
 
-import { extractVariables } from 'helpers/variables'
+import {
+  extractVariables,
+  filterVariables,
+  StepWithVariables,
+} from 'helpers/variables'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 describe('variables', () => {
@@ -293,6 +297,102 @@ describe('variables', () => {
           }),
         ])
       })
+    })
+  })
+
+  describe('filterVariables', () => {
+    let stepsWithVariables: StepWithVariables[]
+
+    beforeEach(() => {
+      stepsWithVariables = [
+        {
+          id: 'step1-id',
+          name: '1. Step 1',
+          output: [
+            {
+              label: 'Text variable',
+              type: 'text',
+              order: 1,
+              displayedValue: null,
+              name: 'step1-id.abc-def.textVar',
+              value: 'abcd',
+            },
+            {
+              label: 'File variable',
+              type: 'file',
+              order: 2,
+              displayedValue: null,
+              name: 'step1-id.abc-def.fileVar',
+              value: '01010010010',
+            },
+          ],
+        },
+        {
+          id: 'step2-id',
+          name: '2. Step 2',
+          output: [
+            {
+              label: 'Another text variable',
+              type: 'text',
+              order: 1,
+              displayedValue: null,
+              name: 'step2-id.wx-yz.anotherTextVar',
+              value: 'wxyz',
+            },
+          ],
+        },
+      ] as unknown as StepWithVariables[]
+    })
+
+    it('filters according to filter callback results', () => {
+      const result = filterVariables(
+        stepsWithVariables,
+        (v) => v.type === 'text',
+      )
+      expect(result).toEqual([
+        {
+          id: 'step1-id',
+          name: '1. Step 1',
+          output: [
+            {
+              label: 'Text variable',
+              type: 'text',
+              order: 1,
+              displayedValue: null,
+              name: 'step1-id.abc-def.textVar',
+              value: 'abcd',
+            },
+          ],
+        },
+        {
+          id: 'step2-id',
+          name: '2. Step 2',
+          output: [
+            {
+              label: 'Another text variable',
+              type: 'text',
+              order: 1,
+              displayedValue: null,
+              name: 'step2-id.wx-yz.anotherTextVar',
+              value: 'wxyz',
+            },
+          ],
+        },
+      ])
+    })
+
+    it('removes steps with no variables after filtering', () => {
+      const result = filterVariables(
+        stepsWithVariables,
+        (v) => v.type === 'file',
+      )
+      expect(result).toEqual([
+        {
+          id: 'step1-id',
+          name: '1. Step 1',
+          output: [expect.objectContaining({ label: 'File variable' })],
+        },
+      ])
     })
   })
 })
