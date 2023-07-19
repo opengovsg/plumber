@@ -17,7 +17,7 @@ const s3Client = new S3Client({
   }),
 })
 
-export interface PlumberS3IdData {
+export interface S3IdData {
   bucket: string
   objectKey: string
   objectName: string
@@ -29,7 +29,7 @@ export interface PlumberS3IdData {
  * @returns Details about the S3 object if the input satisfies the S3 ID
  * format; null otherwise.
  */
-export function parseS3Id(id: string): PlumberS3IdData | null {
+export function parseS3Id(id: string): S3IdData | null {
   if (!id.startsWith('s3:')) {
     return null
   }
