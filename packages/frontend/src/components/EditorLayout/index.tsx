@@ -10,10 +10,10 @@ import IconButton from '@mui/material/IconButton'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
+import { Link } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
 import Editor from 'components/Editor'
-import { GuideFab } from 'components/GuideFab'
 import * as URLS from 'config/urls'
 import { EditorProvider } from 'contexts/Editor'
 import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
@@ -112,6 +112,16 @@ export default function EditorLayout(): React.ReactElement {
             )}
           </Box>
 
+          <Link
+            href={URLS.GUIDE_LINK}
+            colorScheme="secondary"
+            target="_blank"
+            variant="link"
+            mr={6}
+          >
+            Guide
+          </Link>
+
           <Box pr={1}>
             <MuiButton
               variant="contained"
@@ -154,7 +164,6 @@ export default function EditorLayout(): React.ReactElement {
           </MuiButton>
         }
       />
-      <GuideFab />
     </>
   )
 }
