@@ -4,6 +4,8 @@ import isEmpty from 'lodash/isEmpty'
 
 import defineTrigger from '@/helpers/define-trigger'
 
+import getDataOutMetadata from './get-data-out-metadata'
+
 export const NricFilter = {
   None: 'none',
   Remove: 'remove',
@@ -46,6 +48,8 @@ export default defineTrigger({
       ],
     },
   ],
+
+  getDataOutMetadata,
 
   async testRun($: IGlobalVariable) {
     const lastExecutionStep = await $.getLastExecutionStep()

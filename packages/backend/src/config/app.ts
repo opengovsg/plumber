@@ -1,5 +1,6 @@
 import 'dotenv/config'
 
+import { Settings as LuxonSettings } from 'luxon'
 import { URL } from 'node:url'
 
 type AppConfig = {
@@ -32,7 +33,6 @@ type AppConfig = {
   postmanApiKey: string
   isWorker: boolean
   workerActionConcurrency: number
-  s3Region: string
 }
 
 const port = process.env.PORT || '3000'
@@ -79,7 +79,6 @@ const appConfig: AppConfig = {
   workerActionConcurrency: parseInt(
     process.env.WORKER_ACTION_CONCURRENCY || '10',
   ),
-  s3Region: process.env.S3_REGION,
 }
 
 if (!appConfig.encryptionKey) {
@@ -94,8 +93,8 @@ if (!appConfig.postmanApiKey) {
   throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.s3Region) {
-  throw new Error('S3_REGION environment variable needs to be set!')
-}
+// Force SGT date-time formatting no matter what
+LuxonSettings.defaultZone = 'Asia/Singapore'
+LuxonSettings.defaultLocale = 'en-SG'
 
 export default appConfig

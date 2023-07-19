@@ -29,7 +29,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
   const {
     name,
     label,
-    description = null,
+    description,
     required = false,
     variableTypes = null,
   } = props
@@ -52,11 +52,14 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
         fieldState: { error },
       }) => (
         <FormControl isInvalid={!!error}>
-          <FormLabel isRequired>{label}</FormLabel>
+          <FormLabel isRequired={required} description={description}>
+            {label}
+          </FormLabel>
           <DSMultiSelect
             items={items}
             values={values}
             name={name}
+            fixedItemHeight={68}
             onChange={(newValues) =>
               // Sort to prevent footgun where undefined array ordering messes
               // up later actions. Example:
