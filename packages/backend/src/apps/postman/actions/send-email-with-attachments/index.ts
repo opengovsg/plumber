@@ -57,7 +57,7 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       description:
-        'This MUST be a custom From Address configured with the Postman team.',
+        'This MUST be a custom From Address configured with the Postman team. Currently, custom From Address is needed to use attachments.',
       variables: false,
     },
     {
