@@ -114,7 +114,7 @@ describe('new submission trigger', () => {
       )
     })
 
-    it('sets type to file for attachments', async () => {
+    it('sets type to file for attachment answers', async () => {
       executionStep.dataOut.fields = {
         fileFieldId: {
           question: 'Attach a file.',
@@ -124,11 +124,10 @@ describe('new submission trigger', () => {
       }
 
       const metadata = await trigger.getDataOutMetadata(executionStep)
-      expect(metadata.fields.fileFieldId.question.type).toEqual('file')
       expect(metadata.fields.fileFieldId.answer.type).toEqual('file')
     })
 
-    it('sets displayed value for attachments', async () => {
+    it('sets displayed value for attachment answers', async () => {
       executionStep.dataOut.fields = {
         fileFieldId: {
           question: 'Attach a file.',
@@ -141,6 +140,32 @@ describe('new submission trigger', () => {
       expect(metadata.fields.fileFieldId.answer.displayedValue).toEqual(
         'my file.txt',
       )
+    })
+
+    it('sets label to the associated question for attachment answers', async () => {
+      executionStep.dataOut.fields = {
+        fileFieldId: {
+          question: 'Attach a file.',
+          answer: 's3:bucket_name:abcd/efg/my file.txt',
+          fieldType: 'attachment',
+        },
+      }
+
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata.fields.fileFieldId.answer.label).toEqual('Attach a file.')
+    })
+
+    it('hides attachment questions', async () => {
+      executionStep.dataOut.fields = {
+        fileFieldId: {
+          question: 'Attach a file.',
+          answer: 's3:bucket_name:abcd/efg/my file.txt',
+          fieldType: 'attachment',
+        },
+      }
+
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata.fields.fileFieldId.question.isHidden).toEqual(true)
     })
   })
 })
