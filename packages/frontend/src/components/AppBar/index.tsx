@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FormattedMessage } from 'react-intl'
 import { Box as ChakraBox, BoxProps as ChakraBoxProps } from '@chakra-ui/react'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
@@ -8,6 +8,7 @@ import IconButton from '@mui/material/IconButton'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import { Link } from '@opengovsg/design-system-react'
+import ant from 'assets/ant.svg'
 import mainLogo from 'assets/logo.svg'
 import AccountDropdownMenu from 'components/AccountDropdownMenu'
 import * as URLS from 'config/urls'
@@ -42,6 +43,15 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
     setAccountMenuAnchorElement(null)
   }
 
+  const [antsMode, setAntsMode] = useState<boolean>(false)
+  useEffect(() => {
+    if (antsMode) {
+      document.body.style.cursor = `url(${ant}), auto`
+    } else {
+      document.body.style.cursor = 'auto'
+    }
+  }, [antsMode])
+
   return (
     <MuiAppBar
       color="transparent"
@@ -55,6 +65,11 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             color="inherit"
             aria-label="open drawer"
             onClick={drawerOpen ? onDrawerClose : onDrawerOpen}
+            onMouseDown={(event) => {
+              if (event.button === 1) {
+                setAntsMode(!antsMode)
+              }
+            }}
             disableRipple
           >
             <Box component="img" src={mainLogo} height="80%" width="80%" />
