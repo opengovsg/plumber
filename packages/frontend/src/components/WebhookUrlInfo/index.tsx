@@ -32,7 +32,7 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
         name="webhookUrl"
         fullWidth
         defaultValue={webhookUrl}
-        helperText={<>{formatMessage('webhookUrlInfo.helperText')}</>}
+        description={formatMessage('webhookUrlInfo.helperText')}
       />
     </Alert>
   )

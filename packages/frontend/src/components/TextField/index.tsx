@@ -15,6 +15,7 @@ type TextFieldProps = {
   name: string
   clickToCopy?: boolean
   readOnly?: boolean
+  description?: string
 } & MuiTextFieldProps
 
 const createCopyAdornment = (
@@ -39,7 +40,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
     required,
     name,
     label,
-    helperText,
+    description,
     defaultValue,
     shouldUnregister,
     clickToCopy,
@@ -66,10 +67,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
       }) => (
         <FormControl>
           {label && (
-            <FormLabel
-              isRequired={required}
-              {...(helperText && { description: String(helperText) })}
-            >
+            <FormLabel isRequired={required} description={description}>
               {label}
             </FormLabel>
           )}

@@ -104,7 +104,7 @@ export default function InputCreator(
         label={label}
         fullWidth
         multiline={type === 'multiline'}
-        helperText={description}
+        description={description}
         clickToCopy={clickToCopy}
         autoComplete={schema.autoComplete}
       />
