@@ -43,7 +43,7 @@ export const parametersSchema = z.object({
         if (!validator.validate(email)) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
-            message: 'Invalid sender email',
+            message: 'Invalid from address',
           })
           return z.NEVER
         }
