@@ -49,6 +49,7 @@ export default function InputCreator(
     clickToCopy,
     variables,
     type,
+    placeholder,
     dependsOn,
   } = schema
 
@@ -66,7 +67,9 @@ export default function InputCreator(
         disableClearable={required}
         freeSolo={schema.allowArbitrary}
         options={preparedOptions}
-        renderInput={(params) => <MuiTextField {...params} />}
+        renderInput={(params) => (
+          <MuiTextField placeholder={placeholder} {...params} />
+        )}
         defaultValue={value as string}
         description={description}
         loading={loading}
@@ -88,6 +91,7 @@ export default function InputCreator(
           name={computedName}
           required={required}
           disabled={disabled}
+          placeholder={placeholder}
         />
       )
     }
@@ -96,7 +100,7 @@ export default function InputCreator(
       <TextField
         defaultValue={value}
         required={required}
-        placeholder=""
+        placeholder={placeholder}
         readOnly={readOnly || disabled}
         onChange={onChange}
         onBlur={onBlur}
@@ -119,6 +123,7 @@ export default function InputCreator(
         label={label}
         description={description}
         variableTypes={schema.variableTypes}
+        placeholder={placeholder}
       />
     )
   }

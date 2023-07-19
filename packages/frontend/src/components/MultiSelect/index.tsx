@@ -17,6 +17,7 @@ interface MultiSelectProps {
   label: string
   description?: string
   required?: boolean
+  placeholder?: string
   variableTypes?: TDataOutMetadatumType[]
 }
 
@@ -31,6 +32,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
     description,
     required = false,
     variableTypes = null,
+    placeholder = null,
   } = props
   const { control } = useFormContext()
   const priorSteps = useContext(StepExecutionsContext)
@@ -55,6 +57,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
             {label}
           </FormLabel>
           <DSMultiSelect
+            placeholder={placeholder}
             items={items}
             values={values}
             name={name}

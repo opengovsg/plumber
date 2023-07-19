@@ -155,7 +155,7 @@ export interface IBaseField {
   type: string
   required?: boolean
   readOnly?: boolean
-  placeholder?: string | null
+  placeholder?: string
   description?: string
   docUrl?: string
   clickToCopy?: boolean
