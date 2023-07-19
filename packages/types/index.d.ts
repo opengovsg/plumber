@@ -151,7 +151,7 @@ type AutoCompleteValue = 'off' | 'url' | 'email'
 
 export interface IBaseField {
   key: string
-  label: string
+  label?: string
   type: string
   required?: boolean
   readOnly?: boolean
