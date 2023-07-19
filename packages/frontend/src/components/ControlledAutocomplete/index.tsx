@@ -11,7 +11,6 @@ import Autocomplete, {
 import Typography from '@mui/material/Typography'
 import {
   FormErrorMessage,
-  FormHelperText,
   FormLabel,
   IconButton,
 } from '@opengovsg/design-system-react'
@@ -95,8 +94,11 @@ function ControlledAutocomplete(
 
         return (
           <FormControl isInvalid={isError}>
-            {label && <FormLabel isRequired={required}>{label}</FormLabel>}
-            {description && <FormHelperText>{description}</FormHelperText>}
+            {label && (
+              <FormLabel isRequired={required} description={description}>
+                {label}
+              </FormLabel>
+            )}
             {/* encapsulated with an element such as div to vertical spacing delegated from parent */}
             <Flex alignItems="center" gap={2}>
               <Autocomplete
