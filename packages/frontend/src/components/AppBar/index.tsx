@@ -79,7 +79,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            marginEnd="24px"
+            mr={6}
           >
             Guide
           </Link>

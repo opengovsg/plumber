@@ -117,7 +117,7 @@ export default function EditorLayout(): React.ReactElement {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            marginEnd="24px"
+            mr={6}
           >
             Guide
           </Link>
