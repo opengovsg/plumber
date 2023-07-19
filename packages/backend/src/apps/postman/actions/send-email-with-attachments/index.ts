@@ -109,7 +109,10 @@ export default defineAction({
         if (result.data.replyTo) {
           requestData.append('reply_to', result.data.replyTo)
         }
-        requestData.append('from', fromAddress)
+        requestData.append(
+          'from',
+          `${result.data.senderName} <${result.data.fromAddress}>`,
+        )
         for (const file of attachmentFiles) {
           requestData.append('attachments', Buffer.from(file.data), file.name)
         }

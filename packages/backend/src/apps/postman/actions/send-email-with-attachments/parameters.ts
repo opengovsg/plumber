@@ -32,6 +32,7 @@ export const parametersSchema = z.object({
     }
     return value.trim() === '' ? undefined : value.trim()
   }, z.string().email().optional()),
+  senderName: z.string().min(1).trim(),
   fromAddress: z.nullable(
     z
       .string()
