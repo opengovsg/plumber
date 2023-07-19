@@ -9,7 +9,7 @@ import { StepExecutionsContext } from 'contexts/StepExecutions'
 import { createEditor } from 'slate'
 import { Editable, Slate, useFocused, useSelected } from 'slate-react'
 
-import { extractVariables } from '../../helpers/variables'
+import { extractVariables, filterVariables } from '../../helpers/variables'
 
 import { FakeInput, InputLabelWrapper } from './style'
 import Suggestions from './Suggestions'
@@ -65,9 +65,12 @@ const PowerInput = (props: PowerInputProps) => {
     React.useState(false)
 
   const [stepsWithVariables, variableLabelMap] = React.useMemo(() => {
-    const vars = extractVariables(priorStepsWithExecutions)
-    const labels = genVariableLabelMap(vars)
-    return [vars, labels]
+    const stepsWithVars = filterVariables(
+      extractVariables(priorStepsWithExecutions),
+      (variable) => (variable.type ?? 'text') === 'text',
+    )
+    const labels = genVariableLabelMap(stepsWithVars)
+    return [stepsWithVars, labels]
   }, [priorStepsWithExecutions])
 
   const handleBlur = React.useCallback(

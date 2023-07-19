@@ -7,6 +7,20 @@ import {
 
 import { parseS3Id } from '@/helpers/s3'
 
+function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
+  const question: IDataOutMetadatum = {
+    type: 'text',
+    label: fieldData.order ? `Question ${fieldData.order}` : null,
+    order: fieldData.order ? (fieldData.order as number) : null,
+  }
+
+  if (fieldData.fieldType === 'attachment') {
+    question['isHidden'] = true
+  }
+
+  return question
+}
+
 function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const answer: IDataOutMetadatum = {
     label: fieldData.order ? `Response ${fieldData.order}` : null,
@@ -16,6 +30,9 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   switch (fieldData.fieldType) {
     case 'attachment':
       answer['type'] = 'file'
+      // We encode the question as the label because we hide the actual question
+      // as a variable.
+      answer['label'] = fieldData.question as string
       // For attachments, answer _has_ to be a S3 ID or an empty string (e.g.
       // in optional fields).
       answer['displayedValue'] =
@@ -24,6 +41,7 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
       break
     default:
       answer['type'] = 'text'
+      answer['label'] = fieldData.order ? `Response ${fieldData.order}` : null
   }
 
   return answer
@@ -40,11 +58,7 @@ async function getDataOutMetadata(
   const fieldMetadata: IDataOutMetadata = Object.create(null)
   for (const [fieldId, fieldData] of Object.entries(data.fields)) {
     fieldMetadata[fieldId] = {
-      question: {
-        type: 'text',
-        label: fieldData.order ? `Question ${fieldData.order}` : null,
-        order: fieldData.order ? fieldData.order : null,
-      },
+      question: buildQuestionMetadatum(fieldData),
       answer: buildAnswerMetadatum(fieldData),
       fieldType: { isHidden: true },
       order: { isHidden: true },

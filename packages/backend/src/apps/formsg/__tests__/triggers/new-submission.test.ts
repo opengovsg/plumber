@@ -124,6 +124,7 @@ describe('new submission trigger', () => {
       }
 
       const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata.fields.fileFieldId.question.type).toEqual('file')
       expect(metadata.fields.fileFieldId.answer.type).toEqual('file')
     })
 
