@@ -3,7 +3,7 @@ import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import defineAction from '@/helpers/define-action'
-import { getObjectFromS3Id } from '@/helpers/plumber-s3'
+import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { emailSchema } from '../../common/types'
 

@@ -1,7 +1,7 @@
 import validator from 'email-validator'
 import { z } from 'zod'
 
-import { parsePlumberS3Id } from '@/helpers/plumber-s3'
+import { parseS3Id } from '@/helpers/s3'
 
 const recipientStringToArray = (value: string) =>
   value
@@ -60,10 +60,10 @@ export const emailSchema = z.object({
         continue
       }
 
-      if (!parsePlumberS3Id(value)) {
+      if (!parseS3Id(value)) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `${value} is not a Plumber S3 ID.`,
+          message: `${value} is not a S3 ID.`,
         })
         return z.NEVER
       }

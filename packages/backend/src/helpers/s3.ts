@@ -80,7 +80,7 @@ export async function putObject(
   return `s3:${bucket}:${objectKey}`
 }
 
-export interface PlumberS3Object {
+export interface S3Object {
   name: string
   data: Uint8Array
 }
@@ -91,10 +91,10 @@ export interface PlumberS3Object {
  * If the ID has an invalid format, or we don't receive an object body, this
  * throws an `Error`.
  */
-export async function getObjectFromS3Id(id: string): Promise<PlumberS3Object> {
-  const idData = parsePlumberS3Id(id)
+export async function getObjectFromS3Id(id: string): Promise<S3Object> {
+  const idData = parseS3Id(id)
   if (!idData) {
-    throw new Error(`Invalid Plumber S3 ID: ${id}`)
+    throw new Error(`Invalid S3 ID: ${id}`)
   }
 
   const objectData = (
