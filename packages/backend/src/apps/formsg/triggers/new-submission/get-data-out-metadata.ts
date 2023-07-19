@@ -7,6 +7,23 @@ import {
 
 import { parseS3Id } from '@/helpers/s3'
 
+function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
+  const question: IDataOutMetadatum = {
+    label: fieldData.order ? `Question ${fieldData.order}` : null,
+    order: fieldData.order ? (fieldData.order as number) : null,
+  }
+
+  switch (fieldData.fieldType) {
+    case 'attachment':
+      question['type'] = 'file'
+      break
+    default:
+      question['type'] = 'text'
+  }
+
+  return question
+}
+
 function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const answer: IDataOutMetadatum = {
     label: fieldData.order ? `Response ${fieldData.order}` : null,
@@ -40,11 +57,7 @@ async function getDataOutMetadata(
   const fieldMetadata: IDataOutMetadata = Object.create(null)
   for (const [fieldId, fieldData] of Object.entries(data.fields)) {
     fieldMetadata[fieldId] = {
-      question: {
-        type: 'text',
-        label: fieldData.order ? `Question ${fieldData.order}` : null,
-        order: fieldData.order ? fieldData.order : null,
-      },
+      question: buildQuestionMetadatum(fieldData),
       answer: buildAnswerMetadatum(fieldData),
       fieldType: { isHidden: true },
       order: { isHidden: true },
