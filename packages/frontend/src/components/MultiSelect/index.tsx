@@ -78,7 +78,6 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
               onChange(newValues.sort())
             }
           />
-          {description && <FormHelperText>{description}</FormHelperText>}
           {error && <FormErrorMessage>{error.message}</FormErrorMessage>}
         </FormControl>
       )}
