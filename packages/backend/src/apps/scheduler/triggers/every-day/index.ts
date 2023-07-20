@@ -36,6 +36,7 @@ export default defineTrigger({
       label: 'Time of day',
       key: 'hour',
       type: 'dropdown' as const,
+      description: 'What time of day should this flow trigger at?',
       required: true,
       value: null,
       variables: false,
