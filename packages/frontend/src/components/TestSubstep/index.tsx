@@ -108,9 +108,12 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
               ))}
             </Alert>
           )}
-
           {step.webhookUrl && (
-            <WebhookUrlInfo webhookUrl={step.webhookUrl} sx={{ mb: 2 }} />
+            <WebhookUrlInfo
+              webhookUrl={step.webhookUrl}
+              triggerType={step.appKey}
+              sx={{ mb: 2 }}
+            />
           )}
 
           {hasNoOutput && (
