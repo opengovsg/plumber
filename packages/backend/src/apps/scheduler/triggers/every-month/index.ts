@@ -9,7 +9,7 @@ import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
 
 export default defineTrigger({
-  name: 'Every month',
+  name: 'Monthly - triggers every month, choose what day of the month',
   key: 'everyMonth',
   description: 'Triggers every month.',
   arguments: [
