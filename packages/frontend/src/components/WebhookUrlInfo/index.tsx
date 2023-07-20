@@ -1,13 +1,11 @@
 import * as React from 'react'
-import { FormattedMessage } from 'react-intl'
 import { List, ListItem } from '@mui/material'
 import type { AlertProps } from '@mui/material/Alert'
-import Typography from '@mui/material/Typography'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 import TextField from '../TextField'
 
 import { Alert } from './style'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 type WebhookUrlInfoProps = {
   webhookUrl: string
@@ -17,19 +15,15 @@ type WebhookUrlInfoProps = {
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
   const { webhookUrl, triggerType, ...alertProps } = props
   const formatMessage = useFormatMessage()
-  const descriptionStep1 =
-    triggerType === 'formsg'
-      ? formatMessage('webhookUrlInfo.formsgDescription')
-      : formatMessage('webhookUrlInfo.rawWebhookDescription')
+  const isFormsg = triggerType === 'formsg'
+  const descriptionStep1 = isFormsg
+    ? formatMessage('webhookUrlInfo.formsgDescriptionStep1')
+    : formatMessage('webhookUrlInfo.rawWebhookDescriptionStep1')
+  const descriptionStep2 = isFormsg
+    ? formatMessage('webhookUrlInfo.formsgDescriptionStep2')
+    : formatMessage('webhookUrlInfo.rawWebhookDescriptionStep2')
   return (
     <Alert icon={false} color="info" {...alertProps}>
-      {/* <Typography variant="body2" textAlign="center">
-        <FormattedMessage id="webhookUrlInfo.title" />
-      </Typography> */}
-
-      {/* <Typography variant="body1" textAlign="center">
-        <FormattedMessage id="webhookUrlInfo.description" />
-      </Typography> */}
       <List sx={{ listStyle: 'decimal', pl: 4 }}>
         <ListItem sx={{ display: 'list-item' }}>
           {descriptionStep1}
@@ -41,9 +35,7 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
             defaultValue={webhookUrl}
           />
         </ListItem>
-        <ListItem sx={{ display: 'list-item' }}>
-          {formatMessage('webhookUrlInfo.descriptionStep2')}
-        </ListItem>
+        <ListItem sx={{ display: 'list-item' }}>{descriptionStep2}</ListItem>
         <ListItem sx={{ display: 'list-item' }}>
           {formatMessage('webhookUrlInfo.descriptionStep3')}
         </ListItem>

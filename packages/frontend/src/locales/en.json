@@ -82,10 +82,10 @@
   "executionStep.retryFailed": "Retry failed",
   "webhookUrlInfo.title": "Your webhook URL",
   "webhookUrlInfo.description": "You'll need to configure your application with this webhook URL.",
-  "webhookUrlInfo.helperText": "We've generated a custom webhook URL for you to send requests to.",
   "webhookUrlInfo.copy": "Copy",
-  "webhookUrlInfo.formsgDescription": "You'll need to paste this webhook URL in this form's settings page.",
-  "webhookUrlInfo.rawWebhookDescription": "You'll need to configure your application with this webhook URL.",
-  "webhookUrlInfo.descriptionStep2": "Make a new submission to the form you connected.",
+  "webhookUrlInfo.formsgDescriptionStep1": "You'll need to paste this webhook URL in this form's settings page.",
+  "webhookUrlInfo.rawWebhookDescriptionStep1": "You'll need to configure your application with this webhook URL.",
+  "webhookUrlInfo.formsgDescriptionStep2": "Make a new submission to the form you connected.",
+  "webhookUrlInfo.rawWebhookDescriptionStep2": "Send some data to the webhook URL after configuration.",
   "webhookUrlInfo.descriptionStep3": "Then, click test step."
 }
