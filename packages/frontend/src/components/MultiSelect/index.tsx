@@ -5,7 +5,6 @@ import { Controller, useFormContext } from 'react-hook-form'
 import { FormControl } from '@chakra-ui/react'
 import {
   FormErrorMessage,
-  FormHelperText,
   FormLabel,
   MultiSelect as DSMultiSelect,
 } from '@opengovsg/design-system-react'
@@ -29,7 +28,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
   const {
     name,
     label,
-    description = null,
+    description,
     required = false,
     variableTypes = null,
   } = props
@@ -52,8 +51,9 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
         fieldState: { error },
       }) => (
         <FormControl isInvalid={!!error}>
-          <FormLabel isRequired>{label}</FormLabel>
-          {description && <FormHelperText>{description}</FormHelperText>}
+          <FormLabel isRequired={required} description={description}>
+            {label}
+          </FormLabel>
           <DSMultiSelect
             items={items}
             values={values}

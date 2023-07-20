@@ -2,6 +2,7 @@ import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import * as React from 'react'
 import { useQuery } from '@apollo/client'
+import { FormControl } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -10,6 +11,7 @@ import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import { FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { GET_APPS } from 'graphql/queries/get-apps'
@@ -165,10 +167,12 @@ function ChooseAppAndEventSubstep(
             disabled={editorContext.readOnly}
             options={appOptions}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label={formatMessage('flowEditor.chooseApp')}
-              />
+              <FormControl>
+                <FormLabel isRequired>
+                  {formatMessage('flowEditor.chooseApp')}
+                </FormLabel>
+                <TextField {...params} />
+              </FormControl>
             )}
             value={getOption(appOptions, step.appKey)}
             onChange={onAppChange}
@@ -177,11 +181,6 @@ function ChooseAppAndEventSubstep(
 
           {step.appKey && (
             <Box display="flex" width="100%" pt={2} flexDirection="column">
-              <Typography variant="subtitle2" pb={2} gutterBottom>
-                {isTrigger && formatMessage('flowEditor.triggerEvent')}
-                {!isTrigger && formatMessage('flowEditor.actionEvent')}
-              </Typography>
-
               <Autocomplete
                 fullWidth
                 disablePortal
@@ -189,26 +188,30 @@ function ChooseAppAndEventSubstep(
                 disabled={editorContext.readOnly}
                 options={actionOrTriggerOptions}
                 renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={formatMessage('flowEditor.chooseEvent')}
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {isWebhook && (
-                            <Chip
-                              label={formatMessage(
-                                'flowEditor.instantTriggerType',
-                              )}
-                            />
-                          )}
+                  <FormControl>
+                    <FormLabel isRequired>
+                      {formatMessage('flowEditor.chooseEvent')}
+                    </FormLabel>
+                    <TextField
+                      {...params}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {isWebhook && (
+                              <Chip
+                                label={formatMessage(
+                                  'flowEditor.instantTriggerType',
+                                )}
+                              />
+                            )}
 
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  </FormControl>
                 )}
                 renderOption={(optionProps, option) => (
                   <li

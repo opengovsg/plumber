@@ -22,7 +22,7 @@ export interface IConnection {
   createdAt: string
 }
 
-export type TDataOutMetadatumType = 'text' | 'file_url'
+export type TDataOutMetadatumType = 'text' | 'file'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array

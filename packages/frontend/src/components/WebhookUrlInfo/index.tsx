@@ -3,11 +3,11 @@ import { FormattedMessage } from 'react-intl'
 import { List, ListItem } from '@mui/material'
 import type { AlertProps } from '@mui/material/Alert'
 import Typography from '@mui/material/Typography'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 import TextField from '../TextField'
 
 import { Alert } from './style'
+import useFormatMessage from 'hooks/useFormatMessage'
 
 type WebhookUrlInfoProps = {
   webhookUrl: string
@@ -39,7 +39,6 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
             name="webhookUrl"
             fullWidth
             defaultValue={webhookUrl}
-            helperText={<>{formatMessage('webhookUrlInfo.helperText')}</>}
           />
         </ListItem>
         <ListItem sx={{ display: 'list-item' }}>

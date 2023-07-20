@@ -8,6 +8,8 @@ import logger from '@/helpers/logger'
 
 import { NricFilter } from '../triggers/new-submission/index'
 
+import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
+
 const formsg = formsgSdk({
   mode: 'production',
 })
@@ -37,8 +39,8 @@ export async function decryptFormResponse(
 
   const formSecretKey = $.auth.data.privateKey as string
 
-  // TODO: deal with attachments
-  const submission = formsg.crypto.decrypt(formSecretKey, data)
+  const { content: submission = null, attachments = null } =
+    (await formsg.crypto.decryptWithAttachments(formSecretKey, data)) ?? {}
 
   // If the decryption failed, submission will be `null`.
   if (submission) {
@@ -47,6 +49,7 @@ export async function decryptFormResponse(
 
     for (const [index, formField] of submission.responses.entries()) {
       const { _id, ...rest } = formField
+
       if (rest.fieldType === 'nric' && !!rest.answer) {
         rest.answer = rest.answer.toUpperCase()
         if (nricFilter === NricFilter.Remove) {
@@ -58,6 +61,15 @@ export async function decryptFormResponse(
         if (nricFilter === NricFilter.Mask) {
           rest.answer = 'xxxxx' + rest.answer.substring(5)
         }
+      }
+
+      if (rest.fieldType === 'attachment') {
+        rest.answer = await storeAttachmentInS3(
+          $,
+          data.submissionId,
+          formField,
+          attachments,
+        )
       }
 
       // Note: the order may not be sequential; fields (e.g. NRIC) can be

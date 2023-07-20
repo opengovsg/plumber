@@ -141,3 +141,30 @@ export function extractVariables(steps: IStep[]): StepWithVariables[] {
         processedStep.output.length > 0,
     )
 }
+
+/**
+ * StepWithVariables is deeply nested, which makes it hard for callers to filter
+ * variables. So here's a helper function to... help.
+ */
+export function filterVariables(
+  stepsWithVariables: StepWithVariables[],
+  filter: (v: Variable) => boolean,
+): StepWithVariables[] {
+  const result: StepWithVariables[] = []
+
+  for (const step of stepsWithVariables) {
+    const { output, ...rest } = step
+    const filteredVars = output.filter(filter)
+
+    if (filteredVars.length === 0) {
+      continue
+    }
+
+    result.push({
+      output: filteredVars,
+      ...rest,
+    })
+  }
+
+  return result
+}

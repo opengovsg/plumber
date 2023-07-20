@@ -66,7 +66,7 @@ export default function InputCreator(
         disableClearable={required}
         freeSolo={schema.allowArbitrary}
         options={preparedOptions}
-        renderInput={(params) => <MuiTextField {...params} label={label} />}
+        renderInput={(params) => <MuiTextField {...params} />}
         defaultValue={value as string}
         description={description}
         loading={loading}
@@ -74,6 +74,7 @@ export default function InputCreator(
         onRefresh={schema.source ? () => refetch() : undefined}
         disabled={disabled}
         showOptionValue={showOptionValue}
+        label={label}
       />
     )
   }
@@ -104,7 +105,7 @@ export default function InputCreator(
         label={label}
         fullWidth
         multiline={type === 'multiline'}
-        helperText={description}
+        description={description}
         clickToCopy={clickToCopy}
         autoComplete={schema.autoComplete}
       />

@@ -80,6 +80,7 @@ export const GET_APPS = gql`
             required
             description
             variables
+            variableTypes
             allowArbitrary
             dependsOn
             options {
@@ -111,6 +112,7 @@ export const GET_APPS = gql`
             required
             description
             variables
+            variableTypes
             allowArbitrary
             dependsOn
             options {

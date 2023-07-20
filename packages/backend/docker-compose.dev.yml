@@ -36,8 +36,19 @@ services:
     environment:
       - MINIO_ROOT_USER=minio-username
       - MINIO_ROOT_PASSWORD=minio-password
+      - MINIO_SITE_REGION=ap-southeast-1
     volumes:
       - plumber-minio:/data
+  create-minio-buckets:
+    image: bitnami/minio-client:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/bash -c "
+      /usr/bin/env mc config host add plumber-minio http://minio:9000 minio-username minio-password &&
+      /usr/bin/env mc mb --ignore-existing plumber-minio/plumber-development-common-bucket 
+      "
+
 volumes:
   plumber-postgres:
   plumber-redis:
