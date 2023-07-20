@@ -208,11 +208,19 @@ export interface IFieldMultiSelect extends IBaseField {
   variableTypes?: TDataOutMetadatumType[]
 }
 
+export interface IFieldMultiRow extends IBaseField {
+  type: 'multirow'
+  value?: string
+
+  fields: IField[]
+}
+
 export type IField =
   | IFieldDropdown
   | IFieldText
   | IFieldMultiline
   | IFieldMultiSelect
+  | IFieldMultiRow
 
 export interface IAuthenticationStepField {
   name: string
