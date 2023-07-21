@@ -1,4 +1,10 @@
-import type { IField, IStep, ISubstep } from '@plumber/types'
+import type {
+  IField,
+  IJSONObject,
+  IJSONValue,
+  IStep,
+  ISubstep,
+} from '@plumber/types'
 
 import * as React from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -20,7 +26,16 @@ type FlowSubstepProps = {
   step: IStep
 }
 
-const validateSubstep = (substep: ISubstep, step: IStep) => {
+function isValidArgValue(value: IJSONValue): boolean {
+  // `false` is an exceptional valid value
+  if (value === false) {
+    return true
+  }
+
+  return Boolean(value)
+}
+
+function validateSubstep(substep: ISubstep, step: IStep): boolean {
   if (!substep) {
     return true
   }
@@ -32,14 +47,19 @@ const validateSubstep = (substep: ISubstep, step: IStep) => {
       return true
     }
 
-    const argValue = step.parameters?.[arg.key]
+    // Edge case: multirow doesn't have a value; it has nested fields instead.
+    if (arg.type === 'multirow') {
+      const rows = (step.parameters[arg.key] ?? []) as IJSONObject[]
+      if (rows.length === 0) {
+        return false
+      }
 
-    // `false` is an exceptional valid value
-    if (argValue === false) {
-      return true
+      return arg.fields.every((field) =>
+        rows.every((row) => isValidArgValue(row[field.key])),
+      )
     }
 
-    return Boolean(argValue)
+    return isValidArgValue(step.parameters[arg.key])
   })
 }
 
