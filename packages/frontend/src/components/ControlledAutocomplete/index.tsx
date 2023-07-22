@@ -20,7 +20,6 @@ interface ControlledAutocompleteProps
   shouldUnregister?: boolean
   name: string
   label?: string
-  required?: boolean
   showOptionValue?: boolean
   description?: string
   dependsOn?: string[]
@@ -51,7 +50,6 @@ function ControlledAutocomplete(
   const { control, watch, setValue, resetField } = useFormContext()
 
   const {
-    required = false,
     name,
     label,
     defaultValue,
@@ -63,6 +61,7 @@ function ControlledAutocomplete(
     freeSolo,
     onRefresh,
     loading,
+    disableClearable,
     ...autocompleteProps
   } = props
 
@@ -84,7 +83,7 @@ function ControlledAutocomplete(
 
   return (
     <Controller
-      rules={{ required }}
+      rules={{ required: disableClearable }}
       name={name}
       defaultValue={defaultValue || ''}
       control={control}
@@ -95,7 +94,10 @@ function ControlledAutocomplete(
         return (
           <FormControl isInvalid={isError}>
             {label && (
-              <FormLabel isRequired={required} description={description}>
+              <FormLabel
+                isRequired={disableClearable}
+                description={description}
+              >
                 {label}
               </FormLabel>
             )}
@@ -104,6 +106,7 @@ function ControlledAutocomplete(
               <Autocomplete
                 {...autocompleteProps}
                 {...field}
+                disableClearable={disableClearable}
                 freeSolo={freeSolo}
                 options={options}
                 value={getOption(options, field.value, freeSolo)}
