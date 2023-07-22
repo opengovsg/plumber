@@ -10,6 +10,25 @@ function findAndSubstituteVariables(
   rawValue: unknown,
   executionSteps: ExecutionStep[],
 ): unknown {
+  if (Array.isArray(rawValue)) {
+    return rawValue.map((element) =>
+      findAndSubstituteVariables(element, executionSteps),
+    )
+  }
+
+  // Intentionally put _after_ array check as arrays are also objects. Also, if
+  //  you squint, this looks very much like computeParameters - it's duplicated
+  // because doing mutual recursion is likely a bit foot-gunny.
+  if (typeof rawValue === 'object' && rawValue !== null) {
+    return Object.entries(rawValue).reduce(
+      (acc, [k, v]) => ({
+        ...acc,
+        [k]: findAndSubstituteVariables(v, executionSteps),
+      }),
+      {},
+    )
+  }
+
   if (typeof rawValue !== 'string') {
     return rawValue
   }
@@ -40,17 +59,11 @@ export default function computeParameters(
   parameters: Step['parameters'],
   executionSteps: ExecutionStep[],
 ): Step['parameters'] {
-  const entries = Object.entries(parameters)
-  return entries.reduce((result, [key, value]: [string, unknown]) => {
-    const computedValue = Array.isArray(value)
-      ? value.map((element) =>
-          findAndSubstituteVariables(element, executionSteps),
-        )
-      : findAndSubstituteVariables(value, executionSteps)
-
-    return {
+  return Object.entries(parameters).reduce(
+    (result, [key, value]: [string, unknown]) => ({
       ...result,
-      [key]: computedValue,
-    }
-  }, {})
+      [key]: findAndSubstituteVariables(value, executionSteps),
+    }),
+    {},
+  )
 }
