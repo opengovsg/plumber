@@ -2,8 +2,8 @@ import type { IFieldDropdownOption } from '@plumber/types'
 
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import { BiRefresh } from 'react-icons/bi'
 import { Flex, FormControl } from '@chakra-ui/react'
-import RefreshIcon from '@mui/icons-material/Refresh'
 import { Paper, PaperProps } from '@mui/material'
 import Autocomplete, {
   AutocompleteProps,
@@ -28,7 +28,7 @@ function PaperWithRefresh(props: PaperWithRefreshProps): JSX.Element {
       {children}
       {onRefresh && (
         <Button
-          leftIcon={<RefreshIcon />}
+          leftIcon={<BiRefresh />}
           w="100%"
           variant="clear"
           onMouseDown={(e) => {
