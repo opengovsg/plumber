@@ -73,6 +73,9 @@ web_modules/
 .env
 .env.*
 
+# .. except for shipped vite envs
+!/packages/frontend/.env
+
 # cypress environment variables file
 cypress.env.json
 
