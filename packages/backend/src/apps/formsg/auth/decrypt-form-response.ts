@@ -1,6 +1,10 @@
 import { IGlobalVariable } from '@plumber/types'
 
 import formsgSdk from '@opengovsg/formsg-sdk'
+import {
+  DecryptedAttachments,
+  DecryptedContent,
+} from '@opengovsg/formsg-sdk/dist/types'
 import { DateTime } from 'luxon'
 
 import { sha256Hash } from '@/helpers/crypto'
@@ -67,8 +71,20 @@ export async function decryptFormResponse(
 
   const formSecretKey = $.auth.data.privateKey as string
 
-  const { content: submission = null, attachments = null } =
-    (await formsg.crypto.decryptWithAttachments(formSecretKey, data)) ?? {}
+  const shouldStoreAttachments = $.flow.hasFileProcessingActions ?? false
+  let submission: DecryptedContent | null = null
+  let attachments: DecryptedAttachments | null = null
+
+  if (shouldStoreAttachments) {
+    const decryptedResponse = await formsg.crypto.decryptWithAttachments(
+      formSecretKey,
+      data,
+    )
+    submission = decryptedResponse?.content
+    attachments = decryptedResponse?.attachments
+  } else {
+    submission = await formsg.crypto.decrypt(formSecretKey, data)
+  }
 
   // If the decryption failed, submission will be `null`.
   if (submission) {
@@ -85,7 +101,7 @@ export async function decryptFormResponse(
         rest.answer = filteredAnswer
       }
 
-      if (rest.fieldType === 'attachment') {
+      if (rest.fieldType === 'attachment' && shouldStoreAttachments) {
         rest.answer = await storeAttachmentInS3(
           $,
           data.submissionId,

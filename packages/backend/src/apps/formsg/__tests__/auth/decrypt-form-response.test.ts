@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => {
   return {
     webhooksAuthenticate: vi.fn(),
     cryptoDecrypt: vi.fn(),
+    cryptoDecryptWithAttachments: vi.fn(),
     consoleError: vi.fn(),
   }
 })
@@ -29,7 +30,8 @@ vi.mock('@opengovsg/formsg-sdk', () => {
         authenticate: mocks.webhooksAuthenticate,
       },
       crypto: {
-        decryptWithAttachments: mocks.cryptoDecrypt,
+        decrypt: mocks.cryptoDecrypt,
+        decryptWithAttachments: mocks.cryptoDecryptWithAttachments,
       },
     }),
   }
@@ -78,8 +80,7 @@ describe('decrypt form response', () => {
       },
       flow: {
         id: 'flowid',
-        // Fixing in next PR; split up for better reviewability.
-        hasFileProcessingActions: true,
+        hasFileProcessingActions: false,
       },
       app,
     }
@@ -90,60 +91,75 @@ describe('decrypt form response', () => {
     vi.restoreAllMocks()
   })
 
-  it('should fail if no request in global variable', async () => {
-    delete $.request
-    await expect(decryptFormResponse($)).resolves.toEqual(false)
-    expect(mocks.consoleError).toHaveBeenCalledWith('No trigger item provided')
-  })
+  describe.each([
+    { hasFileProcessingActions: true },
+    { hasFileProcessingActions: false },
+  ])('common functions', ({ hasFileProcessingActions }) => {
+    const decryptMock = hasFileProcessingActions
+      ? mocks.cryptoDecryptWithAttachments
+      : mocks.cryptoDecrypt
+    const mockDecryptedSubmission = (submission: any) =>
+      hasFileProcessingActions
+        ? decryptMock.mockResolvedValueOnce({
+            attachments: {},
+            content: submission,
+          })
+        : decryptMock.mockResolvedValueOnce(submission)
 
-  it('should fail if unable to verify form signature', async () => {
-    mocks.webhooksAuthenticate.mockImplementationOnce(() => {
-      throw new Error('error')
+    beforeEach(() => {
+      $.flow.hasFileProcessingActions = hasFileProcessingActions
     })
-    await expect(decryptFormResponse($)).resolves.toEqual(false)
-    expect(mocks.webhooksAuthenticate).toHaveBeenCalledTimes(1)
-    expect(mocks.consoleError).toHaveBeenCalledWith(
-      'Unable to verify formsg signature',
-    )
-  })
 
-  it('should fail if unable to decrypt form response', async () => {
-    mocks.cryptoDecrypt.mockReturnValueOnce(null)
-    await expect(decryptFormResponse($)).resolves.toEqual(false)
-    expect(mocks.cryptoDecrypt).toHaveBeenCalledTimes(1)
-    expect(mocks.consoleError).toHaveBeenCalledWith(
-      'Unable to decrypt formsg response',
-    )
-  })
-
-  it('should extract submission ID', async () => {
-    mocks.cryptoDecrypt.mockReturnValueOnce({
-      content: { responses: [] },
+    it('should fail if no request in global variable', async () => {
+      delete $.request
+      await expect(decryptFormResponse($)).resolves.toEqual(false)
+      expect(mocks.consoleError).toHaveBeenCalledWith(
+        'No trigger item provided',
+      )
     })
-    await expect(decryptFormResponse($)).resolves.toEqual(true)
-    expect($.request.body).toEqual(
-      expect.objectContaining({
-        submissionId: 'submissionId',
-      }),
-    )
-  })
 
-  it('should extract submission time as a ISO 8601 SGT formatted string', async () => {
-    mocks.cryptoDecrypt.mockReturnValueOnce({
-      content: { responses: [] },
+    it('should fail if unable to verify form signature', async () => {
+      mocks.webhooksAuthenticate.mockImplementationOnce(() => {
+        throw new Error('error')
+      })
+      await expect(decryptFormResponse($)).resolves.toEqual(false)
+      expect(mocks.webhooksAuthenticate).toHaveBeenCalledTimes(1)
+      expect(mocks.consoleError).toHaveBeenCalledWith(
+        'Unable to verify formsg signature',
+      )
     })
-    await expect(decryptFormResponse($)).resolves.toEqual(true)
-    expect($.request.body).toEqual(
-      expect.objectContaining({
-        submissionTime: '2023-07-06T18:26:27.505+08:00',
-      }),
-    )
-  })
 
-  it('should parse form fields into dictionaries', async () => {
-    mocks.cryptoDecrypt.mockReturnValueOnce({
-      attachments: {},
-      content: {
+    it('should fail if unable to decrypt form response', async () => {
+      mockDecryptedSubmission(null)
+      await expect(decryptFormResponse($)).resolves.toEqual(false)
+      expect(decryptMock).toHaveBeenCalledTimes(1)
+      expect(mocks.consoleError).toHaveBeenCalledWith(
+        'Unable to decrypt formsg response',
+      )
+    })
+
+    it('should extract submission ID', async () => {
+      mockDecryptedSubmission({ responses: [] })
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          submissionId: 'submissionId',
+        }),
+      )
+    })
+
+    it('should extract submission time as a ISO 8601 SGT formatted string', async () => {
+      mockDecryptedSubmission({ responses: [] })
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          submissionTime: '2023-07-06T18:26:27.505+08:00',
+        }),
+      )
+    })
+
+    it('should parse form fields into dictionaries', async () => {
+      mockDecryptedSubmission({
         responses: [
           {
             _id: 'question1',
@@ -158,36 +174,33 @@ describe('decrypt form response', () => {
             answer: '+6591234567',
           },
         ],
-      },
+      })
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            question1: {
+              fieldType: 'textarea',
+              question: 'What do you eat for breakfast?',
+              answer: 'i eat lorem dimsum for breakfast',
+              order: 1,
+            },
+            question2: {
+              fieldType: 'mobile',
+              question: 'What is your mobile number?',
+              answer: '+6591234567',
+              order: 2,
+            },
+          },
+        }),
+      )
+      expect($.request.headers).toBeUndefined()
+      expect($.request.query).toBeUndefined()
     })
-    await expect(decryptFormResponse($)).resolves.toEqual(true)
-    expect($.request.body).toEqual(
-      expect.objectContaining({
-        fields: {
-          question1: {
-            fieldType: 'textarea',
-            question: 'What do you eat for breakfast?',
-            answer: 'i eat lorem dimsum for breakfast',
-            order: 1,
-          },
-          question2: {
-            fieldType: 'mobile',
-            question: 'What is your mobile number?',
-            answer: '+6591234567',
-            order: 2,
-          },
-        },
-      }),
-    )
-    expect($.request.headers).toBeUndefined()
-    expect($.request.query).toBeUndefined()
-  })
 
-  describe('nric filter', () => {
-    beforeEach(() => {
-      mocks.cryptoDecrypt.mockReturnValue({
-        attachments: {},
-        content: {
+    describe('nric filter', () => {
+      beforeEach(() => {
+        mockDecryptedSubmission({
           responses: [
             {
               _id: 'question1',
@@ -213,133 +226,133 @@ describe('decrypt form response', () => {
             sgidUinFin: 'S2345678B',
             cpUid: 'U987654323PLUMBER',
           },
-        },
+        })
+      })
+
+      it('should handle nric filter - do nothing', async () => {
+        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        expect($.request.body).toEqual(
+          expect.objectContaining({
+            fields: {
+              question1: {
+                fieldType: 'nric',
+                question: 'what is your mom nric?',
+                answer: 'T2927502A',
+                order: 1,
+              },
+              question2: {
+                fieldType: 'mobile',
+                question: 'What is your mobile number?',
+                answer: '+6591234567',
+                order: 2,
+              },
+              question3: {
+                fieldType: 'nric',
+                question: 'what is your nric?',
+                answer: 'S9943670J',
+                order: 3,
+              },
+            },
+            verifiedSubmitterInfo: {
+              uinFin: 'S1234567A',
+              sgidUinFin: 'S2345678B',
+              cpUid: 'U987654323PLUMBER',
+            },
+          }),
+        )
+      })
+
+      it('it should handle nric filter - remove', async () => {
+        $.step.parameters.nricFilter = NricFilter.Remove
+        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        expect($.request.body).toEqual(
+          expect.objectContaining({
+            fields: {
+              question2: {
+                fieldType: 'mobile',
+                question: 'What is your mobile number?',
+                answer: '+6591234567',
+                order: 2,
+              },
+            },
+            verifiedSubmitterInfo: {
+              cpUid: 'U987654323PLUMBER',
+            },
+          }),
+        )
+      })
+
+      it('it should handle nric filter - hash', async () => {
+        $.step.parameters.nricFilter = NricFilter.Hash
+        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        expect($.request.body).toEqual(
+          expect.objectContaining({
+            fields: {
+              question1: {
+                fieldType: 'nric',
+                question: 'what is your mom nric?',
+                answer: '+tkgnmGuaq7shFQoAIDQr8IqjWzrKE2bqyBDtJWhsYQ=',
+                order: 1,
+              },
+              question2: {
+                fieldType: 'mobile',
+                question: 'What is your mobile number?',
+                answer: '+6591234567',
+                order: 2,
+              },
+              question3: {
+                fieldType: 'nric',
+                question: 'what is your nric?',
+                answer: 'dDl7XRvFci/Zd0KXj961RP9mMHAC0LlopcMAcZlja1Q=',
+                order: 3,
+              },
+            },
+            verifiedSubmitterInfo: {
+              uinFin: 'Z1cImQNbDXdmOaeS2roacWNxH7MbJC75OiEeYOjSbRo=',
+              sgidUinFin: 'UAM3XbFrbNVVuD9Phz3KV/roZj4aG/Ql3Ap5Y5dTtJ4=',
+              cpUid: 'U987654323PLUMBER',
+            },
+          }),
+        )
+      })
+
+      it('it should handle nric filter - mask', async () => {
+        $.step.parameters.nricFilter = NricFilter.Mask
+        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        expect($.request.body).toEqual(
+          expect.objectContaining({
+            fields: {
+              question1: {
+                fieldType: 'nric',
+                question: 'what is your mom nric?',
+                answer: 'xxxxx502A',
+                order: 1,
+              },
+              question2: {
+                fieldType: 'mobile',
+                question: 'What is your mobile number?',
+                answer: '+6591234567',
+                order: 2,
+              },
+              question3: {
+                fieldType: 'nric',
+                question: 'what is your nric?',
+                answer: 'xxxxx670J',
+                order: 3,
+              },
+            },
+            verifiedSubmitterInfo: {
+              uinFin: 'xxxxx567A',
+              sgidUinFin: 'xxxxx678B',
+              cpUid: 'U987654323PLUMBER',
+            },
+          }),
+        )
       })
     })
-    it('should handle nric filter - do nothing', async () => {
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
-      expect($.request.body).toEqual(
-        expect.objectContaining({
-          fields: {
-            question1: {
-              fieldType: 'nric',
-              question: 'what is your mom nric?',
-              answer: 'T2927502A',
-              order: 1,
-            },
-            question2: {
-              fieldType: 'mobile',
-              question: 'What is your mobile number?',
-              answer: '+6591234567',
-              order: 2,
-            },
-            question3: {
-              fieldType: 'nric',
-              question: 'what is your nric?',
-              answer: 'S9943670J',
-              order: 3,
-            },
-          },
-          verifiedSubmitterInfo: {
-            uinFin: 'S1234567A',
-            sgidUinFin: 'S2345678B',
-            cpUid: 'U987654323PLUMBER',
-          },
-        }),
-      )
-    })
-    it('it should handle nric filter - remove', async () => {
-      $.step.parameters.nricFilter = NricFilter.Remove
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
-      expect($.request.body).toEqual(
-        expect.objectContaining({
-          fields: {
-            question2: {
-              fieldType: 'mobile',
-              question: 'What is your mobile number?',
-              answer: '+6591234567',
-              order: 2,
-            },
-          },
-          verifiedSubmitterInfo: {
-            cpUid: 'U987654323PLUMBER',
-          },
-        }),
-      )
-    })
 
-    it('it should handle nric filter - hash', async () => {
-      $.step.parameters.nricFilter = NricFilter.Hash
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
-      expect($.request.body).toEqual(
-        expect.objectContaining({
-          fields: {
-            question1: {
-              fieldType: 'nric',
-              question: 'what is your mom nric?',
-              answer: '+tkgnmGuaq7shFQoAIDQr8IqjWzrKE2bqyBDtJWhsYQ=',
-              order: 1,
-            },
-            question2: {
-              fieldType: 'mobile',
-              question: 'What is your mobile number?',
-              answer: '+6591234567',
-              order: 2,
-            },
-            question3: {
-              fieldType: 'nric',
-              question: 'what is your nric?',
-              answer: 'dDl7XRvFci/Zd0KXj961RP9mMHAC0LlopcMAcZlja1Q=',
-              order: 3,
-            },
-          },
-          verifiedSubmitterInfo: {
-            uinFin: 'Z1cImQNbDXdmOaeS2roacWNxH7MbJC75OiEeYOjSbRo=',
-            sgidUinFin: 'UAM3XbFrbNVVuD9Phz3KV/roZj4aG/Ql3Ap5Y5dTtJ4=',
-            cpUid: 'U987654323PLUMBER',
-          },
-        }),
-      )
-    })
-
-    it('it should handle nric filter - mask', async () => {
-      $.step.parameters.nricFilter = NricFilter.Mask
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
-      expect($.request.body).toEqual(
-        expect.objectContaining({
-          fields: {
-            question1: {
-              fieldType: 'nric',
-              question: 'what is your mom nric?',
-              answer: 'xxxxx502A',
-              order: 1,
-            },
-            question2: {
-              fieldType: 'mobile',
-              question: 'What is your mobile number?',
-              answer: '+6591234567',
-              order: 2,
-            },
-            question3: {
-              fieldType: 'nric',
-              question: 'what is your nric?',
-              answer: 'xxxxx670J',
-              order: 3,
-            },
-          },
-          verifiedSubmitterInfo: {
-            uinFin: 'xxxxx567A',
-            sgidUinFin: 'xxxxx678B',
-            cpUid: 'U987654323PLUMBER',
-          },
-        }),
-      )
-    })
-  })
-
-  it('should parse verified fields', async () => {
-    mocks.cryptoDecrypt.mockReturnValueOnce({
-      content: {
+    it('should parse verified fields', async () => {
+      mockDecryptedSubmission({
         responses: [
           {
             _id: 'question1',
@@ -354,18 +367,37 @@ describe('decrypt form response', () => {
           cpUid: 'U987654323PLUMBER',
           cpUen: '987654321Z',
         },
-      },
+      })
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          verifiedSubmitterInfo: {
+            sgidUinFin: 'S1234567A',
+            uinFin: '12345678B',
+            cpUid: 'U987654323PLUMBER',
+            cpUen: '987654321Z',
+          },
+        }),
+      )
     })
-    await expect(decryptFormResponse($)).resolves.toEqual(true)
-    expect($.request.body).toEqual(
-      expect.objectContaining({
-        verifiedSubmitterInfo: {
-          sgidUinFin: 'S1234567A',
-          uinFin: '12345678B',
-          cpUid: 'U987654323PLUMBER',
-          cpUen: '987654321Z',
-        },
-      }),
-    )
+  })
+
+  describe('attachments', () => {
+    it('attachment decryption function not called if pipe does not process files', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockResolvedValueOnce({ responses: [] })
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect(mocks.cryptoDecryptWithAttachments).not.toBeCalled()
+    })
+
+    it('attachment decryption function called if pipe processes files', async () => {
+      $.flow.hasFileProcessingActions = true
+      mocks.cryptoDecryptWithAttachments.mockResolvedValueOnce({
+        attachments: {},
+        content: { responses: [] },
+      })
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect(mocks.cryptoDecrypt).not.toBeCalled()
+    })
   })
 })
