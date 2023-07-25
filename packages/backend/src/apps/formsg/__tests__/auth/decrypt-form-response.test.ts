@@ -100,11 +100,11 @@ describe('decrypt form response', () => {
       : mocks.cryptoDecrypt
     const mockDecryptedSubmission = (submission: any) =>
       hasFileProcessingActions
-        ? decryptMock.mockResolvedValueOnce({
+        ? mocks.cryptoDecryptWithAttachments.mockResolvedValueOnce({
             attachments: {},
             content: submission,
           })
-        : decryptMock.mockResolvedValueOnce(submission)
+        : mocks.cryptoDecrypt.mockReturnValueOnce(submission)
 
     beforeEach(() => {
       $.flow.hasFileProcessingActions = hasFileProcessingActions
@@ -385,7 +385,7 @@ describe('decrypt form response', () => {
   describe('attachments', () => {
     it('attachment decryption function not called if pipe does not process files', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockResolvedValueOnce({ responses: [] })
+      mocks.cryptoDecrypt.mockReturnValueOnce({ responses: [] })
       await expect(decryptFormResponse($)).resolves.toEqual(true)
       expect(mocks.cryptoDecryptWithAttachments).not.toBeCalled()
     })

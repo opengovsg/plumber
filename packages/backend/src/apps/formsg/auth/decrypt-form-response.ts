@@ -83,7 +83,7 @@ export async function decryptFormResponse(
     submission = decryptedResponse?.content
     attachments = decryptedResponse?.attachments
   } else {
-    submission = await formsg.crypto.decrypt(formSecretKey, data)
+    submission = formsg.crypto.decrypt(formSecretKey, data)
   }
 
   // If the decryption failed, submission will be `null`.
