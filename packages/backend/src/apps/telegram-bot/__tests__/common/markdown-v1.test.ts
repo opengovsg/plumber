@@ -11,6 +11,9 @@ describe('telegram markdown handler', () => {
       )
       expect(escapeMarkdown('_*_')).toEqual('\\_\\*\\_')
       expect(escapeMarkdown('_hello`[sir_')).toEqual('\\_hello\\`\\[sir\\_')
+      expect(escapeMarkdown('_wee*loong\\_loong@open.gov.sg')).toEqual(
+        '\\_wee\\*loong\\\\_loong@open.gov.sg',
+      )
     })
   })
 
@@ -20,6 +23,15 @@ describe('telegram markdown handler', () => {
       expect(sanitizeMarkdown('_hello_')).toEqual('_hello_')
       expect(sanitizeMarkdown('`hello` *hello* _hello_')).toEqual(
         '`hello` *hello* _hello_',
+      )
+    })
+
+    it('should not treat escape special characters as modifiers', () => {
+      expect(sanitizeMarkdown('hello\\_you@gmail.com')).toEqual(
+        'hello\\_you@gmail.com',
+      )
+      expect(sanitizeMarkdown('_wee*loong\\_loong@open.gov.sg')).toEqual(
+        '\\_wee\\*loong\\_loong@open.gov.sg',
       )
     })
 
