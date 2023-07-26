@@ -1,7 +1,14 @@
-import type { IStep, ISubstep } from '@plumber/types'
+import type {
+  IAction,
+  IApp,
+  IBaseTrigger,
+  IStep,
+  ISubstep,
+  ITrigger,
+} from '@plumber/types'
 
 import * as React from 'react'
-import { useMutation } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import LoadingButton from '@mui/lab/LoadingButton'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
@@ -13,6 +20,7 @@ import JSONViewer from 'components/JSONViewer'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
+import { GET_APPS } from 'graphql/queries/get-apps'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 type TestSubstepProps = {
@@ -56,6 +64,24 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
 
   const formatMessage = useFormatMessage()
   const editorContext = React.useContext(EditorContext)
+
+  // obtain the correct app from the array of apps
+  const isTrigger = step.type === 'trigger'
+  const isAction = step.type === 'action'
+
+  const { data: appsData } = useQuery(GET_APPS, {
+    variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
+  })
+  const apps: IApp[] = appsData?.getApps
+  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
+
+  // obtain the correct trigger/action from the array of triggers/actions
+  const actionsOrTriggers: Array<ITrigger | IAction> =
+    (isTrigger ? app?.triggers : app?.actions) || []
+  const selectedActionOrTrigger = actionsOrTriggers.find(
+    (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
+  )
+
   const [executeFlow, { data, error, loading, called }] = useMutation(
     EXECUTE_FLOW,
     { context: { autoSnackbar: false } },
@@ -111,7 +137,10 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
           {step.webhookUrl && (
             <WebhookUrlInfo
               webhookUrl={step.webhookUrl}
-              triggerType={step.appKey}
+              webhookTriggerText={
+                (selectedActionOrTrigger as IBaseTrigger).webhookTriggerText ||
+                ''
+              }
               sx={{ mb: 2 }}
             />
           )}
