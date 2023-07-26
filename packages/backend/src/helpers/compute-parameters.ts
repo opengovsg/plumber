@@ -51,13 +51,13 @@ export default function computeParameters(
           findAndSubstituteVariables(
             element,
             executionSteps,
-            preprocessVariable.bind(null, key),
+            preprocessVariable?.bind(null, key),
           ),
         )
       : findAndSubstituteVariables(
           value,
           executionSteps,
-          preprocessVariable.bind(null, key),
+          preprocessVariable?.bind(null, key),
         )
 
     return {
