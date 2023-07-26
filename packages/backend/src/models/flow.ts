@@ -133,7 +133,7 @@ class Flow extends Base {
     })
   }
 
-  async hasFileProcessingActions(): Promise<boolean> {
+  async containsFileProcessingActions(): Promise<boolean> {
     // Users are testing unpublished flows; better to assume there might be a
     // file processing action added sometime before publishing.
     if (!this.active) {
