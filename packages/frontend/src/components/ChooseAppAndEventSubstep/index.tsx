@@ -14,6 +14,7 @@ import Typography from '@mui/material/Typography'
 import { FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
+import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
 import useFormatMessage from 'hooks/useFormatMessage'
 
@@ -63,6 +64,8 @@ function ChooseAppAndEventSubstep(
     onChange,
   } = props
 
+  const launchDarkly = React.useContext(LaunchDarklyContext)
+
   const formatMessage = useFormatMessage()
   const editorContext = React.useContext(EditorContext)
 
@@ -82,8 +85,23 @@ function ChooseAppAndEventSubstep(
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
   const actionOrTriggerOptions = React.useMemo(
-    () => actionsOrTriggers.map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key],
+    () =>
+      actionsOrTriggers
+        // Filter away stuff hidden behind feature flags
+        .filter((actionOrTrigger) => {
+          if (!launchDarkly.flags || !app?.key) {
+            return true
+          }
+          const launchDarklyKey = [
+            'app',
+            app.key,
+            isTrigger ? 'trigger' : 'action',
+            actionOrTrigger.key,
+          ].join('_')
+          return launchDarkly.flags[launchDarklyKey] ?? true
+        })
+        .map((trigger) => eventOptionGenerator(trigger)),
+    [app?.key, launchDarkly],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
@@ -186,7 +204,8 @@ function ChooseAppAndEventSubstep(
                 disablePortal
                 disableClearable
                 disabled={editorContext.readOnly}
-                options={actionOrTriggerOptions}
+                options={launchDarkly.isLoading ? [] : actionOrTriggerOptions}
+                loading={launchDarkly.isLoading}
                 renderInput={(params) => (
                   <FormControl>
                     <FormLabel isRequired>
