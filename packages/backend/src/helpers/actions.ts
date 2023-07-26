@@ -2,8 +2,8 @@ import { memoize } from 'lodash'
 
 import App from '@/models/app'
 
-function getCompositeKey(appKey: string, actionOrTriggerKey: string): string {
-  return `${appKey.length}-${appKey}-${actionOrTriggerKey}`
+function getCompositeKey(appKey: string, actionKey: string): string {
+  return `${appKey}_action_${actionKey}`
 }
 
 // Memoize as we can't use top-level awaits yet.
