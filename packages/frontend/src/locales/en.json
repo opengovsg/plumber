@@ -44,7 +44,7 @@
   "flowEditor.unpublish": "UNPUBLISH",
   "flowEditor.publishedFlowCannotBeUpdated": "To edit this pipe, you must first unpublish it.",
   "flowEditor.noTestDataTitle": "We couldn't find matching data",
-  "flowEditor.noTestDataMessage": "Create a sample in the associated service and test the step again.",
+  "flowEditor.noTestDataMessage": "Make a new submission to the form you connected and test the step again.",
   "flowEditor.testStep": "Test step",
   "flowEditor.testAgain": "Test again",
   "flowEditor.continue": "Continue",
