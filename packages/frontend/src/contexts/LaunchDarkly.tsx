@@ -31,8 +31,11 @@ const ANON_LD_CONTEXT: LDContext = {
   key: 'anon-plumber',
 }
 
+const PROD_ENV_CLIENT_ID = '64bf4b539077f112ef24e4ae'
+const TEST_ENV_CLIENT_ID = '64bf4b539077f112ef24e4ad'
+
 const INITIAL_SETTINGS: LDProviderConfig = {
-  clientSideID: import.meta.env.VITE_LAUNCH_DARKLY_CLIENT_ID,
+  clientSideID: import.meta.env.PROD ? PROD_ENV_CLIENT_ID : TEST_ENV_CLIENT_ID,
   options: {
     logger: LDLogger({ level: 'none' }),
 
