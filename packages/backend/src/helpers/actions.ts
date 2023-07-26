@@ -2,20 +2,20 @@ import { memoize } from 'lodash'
 
 import App from '@/models/app'
 
-function getCompositeKey(appKey: string, actionKey: string): string {
-  return `${appKey}_action_${actionKey}`
-}
-
 // Memoize as we can't use top-level awaits yet.
 const getFileProcessingActions = memoize(
-  async (): Promise<ReadonlySet<string>> => {
-    const result = new Set<string>()
+  async (): Promise<ReadonlyMap<string, ReadonlySet<string>>> => {
+    const result = new Map<string, Set<string>>()
     const apps = await App.findAll()
 
     for (const app of apps) {
       for (const action of app.actions ?? []) {
         if (action.doesFileProcessing ?? false) {
-          result.add(getCompositeKey(app.key, action.key))
+          if (!result.has(app.key)) {
+            result.set(app.key, new Set([action.key]))
+          } else {
+            result.get(app.key).add(action.key)
+          }
         }
       }
     }
@@ -32,7 +32,6 @@ export async function doesActionProcessFiles(
     return false
   }
 
-  return (await getFileProcessingActions()).has(
-    getCompositeKey(appKey, actionKey),
-  )
+  const fileProcessingActions = await getFileProcessingActions()
+  return fileProcessingActions.get(appKey)?.has(actionKey) ?? false
 }
