@@ -347,6 +347,13 @@ export interface IBaseAction {
    * @param executionStep The execution step to get metadata for.
    */
   getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+
+  /**
+   * Preprocess variables before substituting them into the action's parameters.
+   *
+   * Useful for cases where variables needs to be escaped in some way before substitution.
+   */
+  preprocessVariable?(parameterKey: string, variableValue: unknown): unknown
 }
 
 export interface IRawAction extends IBaseAction {
