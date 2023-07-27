@@ -34,10 +34,10 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
       // as a variable.
       answer['label'] = fieldData.question as string
       // For attachments, answer is one of:
-      // 1. An S3 ID (if trigger test step stored the attachment into S3;
-      //    happens only when modifying existing pipes).
-      // 2. A filename (most common for new pipes).
-      // 3. An empty string (e.g. in optional fields).
+      // 1. An S3 ID (if we stored the attachment into S3).
+      // 2. An empty string (if attachment field is optional).
+      // 3. A filename (uncommon - only for legacy forms with attachment fields
+      //    in existing pipes).
       answer['displayedValue'] =
         parseS3Id(fieldData.answer as string)?.objectName ??
         (fieldData.answer as string)
