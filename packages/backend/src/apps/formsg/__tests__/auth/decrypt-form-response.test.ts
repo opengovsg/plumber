@@ -78,6 +78,8 @@ describe('decrypt form response', () => {
       },
       flow: {
         id: 'flowid',
+        // Fixing in next PR; split up for better reviewability.
+        hasFileProcessingActions: true,
       },
       app,
     }
