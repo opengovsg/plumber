@@ -8,17 +8,16 @@ import { Alert, MessageWrapper } from './style'
 
 type WebhookUrlInfoProps = {
   webhookUrl: string
-  webhookTriggerText: string
+  webhookTriggerTexts: string[]
 } & AlertProps
 
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
-  const { webhookUrl, webhookTriggerText, ...alertProps } = props
-  const descriptionMessagesArray = webhookTriggerText.split('|') // this should have 2 different message to show
+  const { webhookUrl, webhookTriggerTexts, ...alertProps } = props
 
   return (
     <Alert icon={false} color="info" {...alertProps}>
       <MessageWrapper>
-        <ReactMarkdown>{descriptionMessagesArray[0]}</ReactMarkdown>
+        <ReactMarkdown>{webhookTriggerTexts[0]}</ReactMarkdown>
       </MessageWrapper>
       <TextField
         readOnly
@@ -28,7 +27,7 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
         defaultValue={webhookUrl}
       />
       <MessageWrapper>
-        <ReactMarkdown>{descriptionMessagesArray[1]}</ReactMarkdown>
+        <ReactMarkdown>{webhookTriggerTexts[1]}</ReactMarkdown>
       </MessageWrapper>
     </Alert>
   )

@@ -159,10 +159,6 @@ export default function FlowStep(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
   )
 
-  console.log('flow step')
-  console.log(actionsOrTriggers)
-  console.log(step)
-
   const handleChange = React.useCallback(({ step }: { step: IStep }) => {
     onChange(step)
   }, [])

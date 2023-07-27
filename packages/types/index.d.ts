@@ -297,7 +297,7 @@ export interface IBaseTrigger {
   type?: 'webhook' | 'polling'
   pollInterval?: number
   description: string
-  webhookTriggerText?: string
+  webhookTriggerTexts?: string[]
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
