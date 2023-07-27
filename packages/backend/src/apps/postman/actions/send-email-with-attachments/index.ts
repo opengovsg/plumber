@@ -11,6 +11,7 @@ export default defineAction({
   name: 'Send email with attachments',
   key: 'sendEmailWithAttachments',
   description: "Sends an email with attachments (via Postman's API).",
+  doesFileProcessing: true,
   arguments: [
     {
       label: 'Subject',
