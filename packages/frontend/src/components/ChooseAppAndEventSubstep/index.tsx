@@ -101,7 +101,7 @@ function ChooseAppAndEventSubstep(
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly],
+    [app?.key, launchDarkly.flags],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
