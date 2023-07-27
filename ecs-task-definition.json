@@ -110,6 +110,10 @@
         {
           "name": "WORKER_ACTION_CONCURRENCY",
           "valueFrom": "plumber-<ENVIRONMENT>-worker-action-concurrency"
+        },
+        {
+          "name": "S3_COMMON_BUCKET",
+          "valueFrom": "plumber-<ENVIRONMENT>-s3-common-bucket"
         }
       ],
       "logConfiguration": {
