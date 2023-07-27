@@ -12,6 +12,8 @@ const helmetOptions: HelmetOptions = {
         "'self'",
         // For Datadog RUM
         'https://*.browser-intake-datadoghq.com',
+        // Launch Darkly feature flags
+        'https://*.launchdarkly.com',
         appConfig.baseUrl,
       ],
       // for google fonts
