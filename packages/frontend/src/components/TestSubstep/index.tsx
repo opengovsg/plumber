@@ -32,6 +32,7 @@ type TestSubstepProps = {
   onSubmit?: () => void
   onContinue?: () => void
   step: IStep
+  selectedActionOrTrigger: ITrigger | IAction | undefined
 }
 
 function serializeErrors(graphQLErrors: any) {
@@ -60,27 +61,28 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
     onSubmit,
     onContinue,
     step,
+    selectedActionOrTrigger,
   } = props
 
   const formatMessage = useFormatMessage()
   const editorContext = React.useContext(EditorContext)
 
   // obtain the correct app from the array of apps
-  const isTrigger = step.type === 'trigger'
-  const isAction = step.type === 'action'
+  // const isTrigger = step.type === 'trigger'
+  // const isAction = step.type === 'action'
 
-  const { data: appsData } = useQuery(GET_APPS, {
-    variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  })
-  const apps: IApp[] = appsData?.getApps
-  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
+  // const { data: appsData } = useQuery(GET_APPS, {
+  //   variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
+  // })
+  // const apps: IApp[] = appsData?.getApps
+  // const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  // obtain the correct trigger/action from the array of triggers/actions
-  const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || []
-  const selectedActionOrTrigger = actionsOrTriggers.find(
-    (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
-  )
+  // // obtain the correct trigger/action from the array of triggers/actions
+  // const actionsOrTriggers: Array<ITrigger | IAction> =
+  //   (isTrigger ? app?.triggers : app?.actions) || []
+  // const selectedActionOrTrigger = actionsOrTriggers.find(
+  //   (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
+  // )
 
   const [executeFlow, { data, error, loading, called }] = useMutation(
     EXECUTE_FLOW,
@@ -93,6 +95,9 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
   const isCompleted = isExecuted && response
 
   const { name } = substep
+  console.log('test substep')
+  console.log(step)
+  console.log(selectedActionOrTrigger)
 
   const executeTestFlow = React.useCallback(() => {
     executeFlow({

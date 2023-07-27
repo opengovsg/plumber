@@ -155,6 +155,14 @@ export default function FlowStep(
     [actionsOrTriggers, step?.key],
   )
 
+  const selectedActionOrTrigger = actionsOrTriggers.find(
+    (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
+  )
+
+  console.log('flow step')
+  console.log(actionsOrTriggers)
+  console.log(step)
+
   const handleChange = React.useCallback(({ step }: { step: IStep }) => {
     onChange(step)
   }, [])
@@ -289,6 +297,7 @@ export default function FlowStep(
                           onChange={handleChange}
                           onContinue={onContinue}
                           step={step}
+                          selectedActionOrTrigger={selectedActionOrTrigger}
                         />
                       )}
 
