@@ -5,9 +5,9 @@ import actions from './actions'
 import auth from './auth'
 
 export default defineApp({
-  name: 'HTTP Request',
-  key: 'http-request',
-  iconUrl: '{BASE_URL}/apps/http-request/assets/favicon.svg',
+  name: 'Custom API',
+  key: 'custom-api',
+  iconUrl: '{BASE_URL}/apps/custom-api/assets/favicon.svg',
   authDocUrl: '',
   supportsConnections: true,
   beforeRequest: [addHeaders],
