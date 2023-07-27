@@ -71,7 +71,7 @@ export async function decryptFormResponse(
 
   const formSecretKey = $.auth.data.privateKey as string
 
-  const shouldStoreAttachments = $.flow.hasFileProcessingActions ?? false
+  const shouldStoreAttachments = $.flow.hasFileProcessingActions
   let submission: DecryptedContent | null = null
   let attachments: DecryptedAttachments | null = null
 
