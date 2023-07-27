@@ -29,7 +29,7 @@ export default defineTrigger({
       value: NricFilter.None,
       options: [
         {
-          label: 'No nothing',
+          label: 'Do nothing',
           value: NricFilter.None,
         },
         {

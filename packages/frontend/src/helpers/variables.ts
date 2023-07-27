@@ -1,4 +1,9 @@
-import type { IDataOutMetadata, IDataOutMetadatum, IStep } from '@plumber/types'
+import type {
+  IDataOutMetadata,
+  IDataOutMetadatum,
+  IStep,
+  TDataOutMetadatumType,
+} from '@plumber/types'
 
 import get from 'lodash.get'
 
@@ -9,7 +14,9 @@ export interface StepWithVariables {
 }
 export interface Variable extends RawVariable {
   label: string | null
+  type: TDataOutMetadatumType | null
   order: number | null
+  displayedValue: string | null
 }
 
 interface RawVariable {
@@ -33,8 +40,10 @@ function postProcess(
     const { name, ...rest } = variable
     const {
       isHidden = false,
+      type = null,
       label = null,
       order = null,
+      displayedValue = null,
     } = get(metadata, name, {}) as IDataOutMetadatum
 
     if (isHidden) {
@@ -43,7 +52,9 @@ function postProcess(
 
     result.push({
       label,
+      type,
       order,
+      displayedValue,
       name: `step.${stepId}.${name}`,
       ...rest,
     })
@@ -129,4 +140,31 @@ export function extractVariables(steps: IStep[]): StepWithVariables[] {
         // Hide steps with 0 visible variables after post-processing.
         processedStep.output.length > 0,
     )
+}
+
+/**
+ * StepWithVariables is deeply nested, which makes it hard for callers to filter
+ * variables. So here's a helper function to... help.
+ */
+export function filterVariables(
+  stepsWithVariables: StepWithVariables[],
+  filter: (v: Variable) => boolean,
+): StepWithVariables[] {
+  const result: StepWithVariables[] = []
+
+  for (const step of stepsWithVariables) {
+    const { output, ...rest } = step
+    const filteredVars = output.filter(filter)
+
+    if (filteredVars.length === 0) {
+      continue
+    }
+
+    result.push({
+      output: filteredVars,
+      ...rest,
+    })
+  }
+
+  return result
 }

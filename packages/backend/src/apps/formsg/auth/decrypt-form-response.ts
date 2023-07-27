@@ -1,6 +1,10 @@
 import { IGlobalVariable } from '@plumber/types'
 
 import formsgSdk from '@opengovsg/formsg-sdk'
+import {
+  DecryptedAttachments,
+  DecryptedContent,
+} from '@opengovsg/formsg-sdk/dist/types'
 import { DateTime } from 'luxon'
 
 import { sha256Hash } from '@/helpers/crypto'
@@ -8,9 +12,39 @@ import logger from '@/helpers/logger'
 
 import { NricFilter } from '../triggers/new-submission/index'
 
+import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
+
 const formsg = formsgSdk({
   mode: 'production',
 })
+
+const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
+
+/**
+ * Filters NRIC if an NRIC filter was configured for the pipe.
+ *
+ * @returns
+ *   * Null if the field should be removed from the output.
+ *   * Appropriately transformed NRIC if an NRIC filter was configured.
+ *   * Uppercased NRIC otherwise.
+ */
+function filterNric($: IGlobalVariable, value: string): string | null {
+  const filterSetting = $.step.parameters.nricFilter
+
+  value = value.toUpperCase()
+
+  if (filterSetting === NricFilter.Remove) {
+    return null
+  }
+  if (filterSetting === NricFilter.Hash) {
+    return sha256Hash(value + $.flow.id)
+  }
+  if (filterSetting === NricFilter.Mask) {
+    return 'xxxxx' + value.substring(5)
+  }
+
+  return value
+}
 
 export async function decryptFormResponse(
   $: IGlobalVariable,
@@ -37,27 +71,43 @@ export async function decryptFormResponse(
 
   const formSecretKey = $.auth.data.privateKey as string
 
-  // TODO: deal with attachments
-  const submission = formsg.crypto.decrypt(formSecretKey, data)
+  const shouldStoreAttachments = $.flow.hasFileProcessingActions
+  let submission: DecryptedContent | null = null
+  let attachments: DecryptedAttachments | null = null
+
+  if (shouldStoreAttachments) {
+    const decryptedResponse = await formsg.crypto.decryptWithAttachments(
+      formSecretKey,
+      data,
+    )
+    submission = decryptedResponse?.content
+    attachments = decryptedResponse?.attachments
+  } else {
+    submission = formsg.crypto.decrypt(formSecretKey, data)
+  }
 
   // If the decryption failed, submission will be `null`.
   if (submission) {
     const parsedData: Record<string, any> = {}
-    const nricFilter = $.step.parameters.nricFilter as string | undefined
 
     for (const [index, formField] of submission.responses.entries()) {
       const { _id, ...rest } = formField
+
       if (rest.fieldType === 'nric' && !!rest.answer) {
-        rest.answer = rest.answer.toUpperCase()
-        if (nricFilter === NricFilter.Remove) {
+        const filteredAnswer = filterNric($, rest.answer)
+        if (!filteredAnswer) {
           continue
         }
-        if (nricFilter === NricFilter.Hash) {
-          rest.answer = sha256Hash(rest.answer + $.flow.id)
-        }
-        if (nricFilter === NricFilter.Mask) {
-          rest.answer = 'xxxxx' + rest.answer.substring(5)
-        }
+        rest.answer = filteredAnswer
+      }
+
+      if (rest.fieldType === 'attachment' && shouldStoreAttachments) {
+        rest.answer = await storeAttachmentInS3(
+          $,
+          data.submissionId,
+          formField,
+          attachments,
+        )
       }
 
       // Note: the order may not be sequential; fields (e.g. NRIC) can be
@@ -68,10 +118,27 @@ export async function decryptFormResponse(
       }
     }
 
+    // Transform NRIC verified fields according to NRIC filter as well.
+    const verifiedSubmitterInfo: Record<string, string> = {}
+    if (submission.verified) {
+      for (const key of Object.keys(submission.verified)) {
+        let value = submission.verified[key]
+
+        if (NRIC_VERIFIED_FIELDS.has(key)) {
+          value = filterNric($, value)
+          if (!value) {
+            continue
+          }
+        }
+
+        verifiedSubmitterInfo[key] = value
+      }
+    }
+
     $.request.body = {
       fields: parsedData,
-      ...(submission.verified && {
-        verifiedSubmitterInfo: submission.verified,
+      ...(Object.keys(verifiedSubmitterInfo).length > 0 && {
+        verifiedSubmitterInfo,
       }),
       submissionId: data.submissionId,
       // Forms gives us submission time as ISO 8601 UTC TZ, but our users

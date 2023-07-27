@@ -39,10 +39,10 @@
   "flow.inactive": "OFF",
   "flow.published": "Published",
   "flow.draft": "Draft",
-  "flow.successfullyDeleted": "The flow and associated executions have been deleted.",
+  "flow.successfullyDeleted": "The pipe and associated executions have been deleted.",
   "flowEditor.publish": "PUBLISH",
   "flowEditor.unpublish": "UNPUBLISH",
-  "flowEditor.publishedFlowCannotBeUpdated": "To edit this flow, you must first unpublish it.",
+  "flowEditor.publishedFlowCannotBeUpdated": "To edit this pipe, you must first unpublish it.",
   "flowEditor.noTestDataTitle": "We couldn't find matching data",
   "flowEditor.noTestDataMessage": "Create a sample in the associated service and test the step again.",
   "flowEditor.testStep": "Test step",
@@ -82,6 +82,5 @@
   "executionStep.retryFailed": "Retry failed",
   "webhookUrlInfo.title": "Your webhook URL",
   "webhookUrlInfo.description": "You'll need to configure your application with this webhook URL.",
-  "webhookUrlInfo.helperText": "We've generated a custom webhook URL for you to send requests to.",
   "webhookUrlInfo.copy": "Copy"
 }

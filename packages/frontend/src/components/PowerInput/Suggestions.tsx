@@ -88,7 +88,13 @@ const Suggestions = (props: SuggestionsProps) => {
                           title: 'Property name',
                           sx: { fontWeight: 700 },
                         }}
-                        secondary={suboption.value || ''}
+                        secondary={
+                          <>
+                            {suboption.displayedValue ??
+                              suboption.value?.toString() ??
+                              ''}
+                          </>
+                        }
                         secondaryTypographyProps={{
                           variant: 'subtitle2',
                           title: 'Sample value',

@@ -3,6 +3,7 @@ import type { IField, IFieldDropdownOption } from '@plumber/types'
 import * as React from 'react'
 import MuiTextField from '@mui/material/TextField'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
+import MultiSelect from 'components/MultiSelect'
 import PowerInput from 'components/PowerInput'
 import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
@@ -65,7 +66,7 @@ export default function InputCreator(
         disableClearable={required}
         freeSolo={schema.allowArbitrary}
         options={preparedOptions}
-        renderInput={(params) => <MuiTextField {...params} label={label} />}
+        renderInput={(params) => <MuiTextField {...params} />}
         defaultValue={value as string}
         description={description}
         loading={loading}
@@ -73,6 +74,7 @@ export default function InputCreator(
         onRefresh={schema.source ? () => refetch() : undefined}
         disabled={disabled}
         showOptionValue={showOptionValue}
+        label={label}
       />
     )
   }
@@ -103,9 +105,20 @@ export default function InputCreator(
         label={label}
         fullWidth
         multiline={type === 'multiline'}
-        helperText={description}
+        description={description}
         clickToCopy={clickToCopy}
         autoComplete={schema.autoComplete}
+      />
+    )
+  }
+
+  if (type === 'multiselect') {
+    return (
+      <MultiSelect
+        name={computedName}
+        label={label}
+        description={description}
+        variableTypes={schema.variableTypes}
       />
     )
   }

@@ -22,7 +22,7 @@ export interface IConnection {
   createdAt: string
 }
 
-export type TDataOutMetadatumType = 'text' | 'file_url'
+export type TDataOutMetadatumType = 'text' | 'file'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array
@@ -44,6 +44,13 @@ export interface IDataOutMetadatum {
    * ugly lodash get string (e.g. "step.abc-def.herp-derp.answer.1").
    */
   label?: string
+
+  /**
+   * The value to show to the user, instead of the actual underlying value.
+   * Typically used to prettify values (e.g. show the filename of an S3 object
+   * instead of the full object key).
+   */
+  displayedValue?: string
 
   /**
    * If the front end component renders variables in an ordered list, this
@@ -194,7 +201,18 @@ export interface IFieldMultiline extends IBaseField {
   autoComplete?: AutoCompleteValue
 }
 
-export type IField = IFieldDropdown | IFieldText | IFieldMultiline
+export interface IFieldMultiSelect extends IBaseField {
+  type: 'multiselect'
+  value?: string
+
+  variableTypes?: TDataOutMetadatumType[]
+}
+
+export type IField =
+  | IFieldDropdown
+  | IFieldText
+  | IFieldMultiline
+  | IFieldMultiSelect
 
 export interface IAuthenticationStepField {
   name: string
@@ -329,6 +347,19 @@ export interface IBaseAction {
    * @param executionStep The execution step to get metadata for.
    */
   getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+
+  /**
+   * Preprocess variables before substituting them into the action's parameters.
+   *
+   * Useful for cases where variables needs to be escaped in some way before substitution.
+   */
+  preprocessVariable?(parameterKey: string, variableValue: unknown): unknown
+
+  /**
+   * For optimizing our S3 storage; we won't store files into our S3 unless
+   * the pipe has at least 1 action which processes files.
+   */
+  doesFileProcessing?: boolean
 }
 
 export interface IRawAction extends IBaseAction {
@@ -367,6 +398,7 @@ export type IGlobalVariable = {
   request?: IRequest
   flow?: {
     id: string
+    hasFileProcessingActions: boolean
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
   }
