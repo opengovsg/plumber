@@ -37,12 +37,13 @@ export const processAction = async (options: ProcessActionOptions) => {
     status: 'success',
   })
 
+  const actionCommand = await step.getActionCommand()
+
   const computedParameters = computeParameters(
     $.step.parameters,
     priorExecutionSteps,
+    actionCommand.preprocessVariable,
   )
-
-  const actionCommand = await step.getActionCommand()
 
   $.step.parameters = computedParameters
 
