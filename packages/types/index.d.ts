@@ -347,6 +347,19 @@ export interface IBaseAction {
    * @param executionStep The execution step to get metadata for.
    */
   getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+
+  /**
+   * Preprocess variables before substituting them into the action's parameters.
+   *
+   * Useful for cases where variables needs to be escaped in some way before substitution.
+   */
+  preprocessVariable?(parameterKey: string, variableValue: unknown): unknown
+
+  /**
+   * For optimizing our S3 storage; we won't store files into our S3 unless
+   * the pipe has at least 1 action which processes files.
+   */
+  doesFileProcessing?: boolean
 }
 
 export interface IRawAction extends IBaseAction {
@@ -385,6 +398,7 @@ export type IGlobalVariable = {
   request?: IRequest
   flow?: {
     id: string
+    hasFileProcessingActions: boolean
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
   }

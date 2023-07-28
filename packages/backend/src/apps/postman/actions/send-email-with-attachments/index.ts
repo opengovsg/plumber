@@ -13,6 +13,7 @@ export default defineAction({
   key: 'sendEmailWithAttachments',
   description: "Sends an email with attachments (via Postman's API).",
   arguments: fields,
+  doesFileProcessing: true,
 
   async run($) {
     const {
