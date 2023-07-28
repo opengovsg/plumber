@@ -1,3 +1,3 @@
-import makeRequest from './make-request'
+import httpRequest from './http-request'
 
-export default [makeRequest]
+export default [httpRequest]
