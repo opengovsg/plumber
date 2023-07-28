@@ -20,7 +20,7 @@ vi.mock('@/helpers/s3', async () => {
   }
 })
 
-vi.mock('../../common/send-transactional-emails', () => ({
+vi.mock('../../common/email-helper', () => ({
   sendTransactionalEmails: mocks.sendTransactionalEmails,
 }))
 
