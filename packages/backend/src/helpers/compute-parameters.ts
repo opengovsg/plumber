@@ -9,24 +9,35 @@ import Step from '../models/step'
 const variableRegExp = /({{step\.[\da-zA-Z-]+(?:\.[\da-zA-Z-_]+)+}})/g
 
 function findAndSubstituteVariables(
+  // i.e. the `key` corresponding to this variable's form field in defineAction
+  // or defineTrigger.
+  parameterKey: string,
   rawValue: unknown,
   executionSteps: ExecutionStep[],
-  preprocessVariable?: (variable: unknown) => unknown,
+  preprocessVariable?: IAction['preprocessVariable'],
 ): unknown {
   if (Array.isArray(rawValue)) {
     return rawValue.map((element) =>
-      findAndSubstituteVariables(element, executionSteps),
+      findAndSubstituteVariables(
+        parameterKey,
+        element,
+        executionSteps,
+        preprocessVariable,
+      ),
     )
   }
 
-  // Intentionally put _after_ array check as arrays are also objects. Also, if
-  //  you squint, this looks very much like computeParameters - it's duplicated
-  // because doing mutual recursion is likely a bit foot-gunny.
+  // Intentionally put _after_ array check as arrays are also objects.
   if (typeof rawValue === 'object' && rawValue !== null) {
     return Object.entries(rawValue).reduce(
       (acc, [k, v]) => ({
         ...acc,
-        [k]: findAndSubstituteVariables(v, executionSteps),
+        [k]: findAndSubstituteVariables(
+          k,
+          v,
+          executionSteps,
+          preprocessVariable,
+        ),
       }),
       {},
     )
@@ -50,7 +61,9 @@ function findAndSubstituteVariables(
         })
         const data = executionStep?.dataOut
         const dataValue = get(data, keyPath)
-        return preprocessVariable ? preprocessVariable(dataValue) : dataValue
+        return preprocessVariable
+          ? preprocessVariable(parameterKey, dataValue)
+          : dataValue
       }
 
       return part
@@ -63,15 +76,10 @@ export default function computeParameters(
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
 ): Step['parameters'] {
-  return Object.entries(parameters).reduce(
-    (result, [key, value]: [string, unknown]) => ({
-      ...result,
-      [key]: findAndSubstituteVariables(
-        value,
-        executionSteps,
-        preprocessVariable?.bind(null, key),
-      ),
-    }),
-    {},
-  )
+  return findAndSubstituteVariables(
+    '', // Dummy initial value; will never be used.
+    parameters,
+    executionSteps,
+    preprocessVariable,
+  ) as Step['parameters']
 }
