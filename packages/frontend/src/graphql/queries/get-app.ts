@@ -64,7 +64,6 @@ export const GET_APP = gql`
         type
         pollInterval
         description
-        webhookTriggerTexts
         substeps {
           name
         }
