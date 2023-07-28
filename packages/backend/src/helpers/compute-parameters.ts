@@ -1,3 +1,5 @@
+import { IAction } from '@plumber/types'
+
 import get from 'lodash.get'
 
 import ExecutionStep from '@/models/execution-step'
@@ -9,6 +11,7 @@ const variableRegExp = /({{step\.[\da-zA-Z-]+(?:\.[\da-zA-Z-_]+)+}})/g
 function findAndSubstituteVariables(
   rawValue: unknown,
   executionSteps: ExecutionStep[],
+  preprocessVariable?: (variable: unknown) => unknown,
 ): unknown {
   if (Array.isArray(rawValue)) {
     return rawValue.map((element) =>
@@ -47,7 +50,7 @@ function findAndSubstituteVariables(
         })
         const data = executionStep?.dataOut
         const dataValue = get(data, keyPath)
-        return dataValue
+        return preprocessVariable ? preprocessVariable(dataValue) : dataValue
       }
 
       return part
@@ -58,11 +61,16 @@ function findAndSubstituteVariables(
 export default function computeParameters(
   parameters: Step['parameters'],
   executionSteps: ExecutionStep[],
+  preprocessVariable?: IAction['preprocessVariable'],
 ): Step['parameters'] {
   return Object.entries(parameters).reduce(
     (result, [key, value]: [string, unknown]) => ({
       ...result,
-      [key]: findAndSubstituteVariables(value, executionSteps),
+      [key]: findAndSubstituteVariables(
+        value,
+        executionSteps,
+        preprocessVariable?.bind(null, key),
+      ),
     }),
     {},
   )

@@ -8,12 +8,14 @@ import router from 'components/Router'
 import SnackbarProvider from 'components/SnackbarProvider'
 import ThemeProvider from 'components/ThemeProvider'
 import { AuthenticationProvider } from 'contexts/Authentication'
+import { LaunchDarklyProvider } from 'contexts/LaunchDarkly'
 
 const container = document.getElementById('root')
 
 if (!container) {
   throw new Error('Unable to find root element')
 }
+
 const root = createRoot(container)
 
 root.render(
@@ -22,7 +24,9 @@ root.render(
       <ApolloProvider>
         <AuthenticationProvider>
           <IntlProvider>
-            <RouterProvider router={router} />
+            <LaunchDarklyProvider>
+              <RouterProvider router={router} />
+            </LaunchDarklyProvider>
           </IntlProvider>
         </AuthenticationProvider>
       </ApolloProvider>
