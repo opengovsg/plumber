@@ -3,11 +3,11 @@ import { fromZodError } from 'zod-validation-error'
 
 import defineAction from '@/helpers/define-action'
 
+import { sendTransactionalEmails } from '../../common/email-helper'
 import {
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
-import { sendTransactionalEmails } from '../../common/email-helper'
 
 export default defineAction({
   name: 'Send email',
