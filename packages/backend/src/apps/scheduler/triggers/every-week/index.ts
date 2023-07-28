@@ -9,7 +9,7 @@ import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
 
 export default defineTrigger({
-  name: 'Every week',
+  name: 'Weekly - triggers every week, choose what day of the week',
   key: 'everyWeek',
   description: 'Triggers every week.',
   arguments: [
@@ -17,6 +17,7 @@ export default defineTrigger({
       label: 'Day of the week',
       key: 'weekday',
       type: 'dropdown' as const,
+      description: 'What day of the week should this flow trigger at?',
       required: true,
       value: null,
       variables: false,
@@ -55,6 +56,7 @@ export default defineTrigger({
       label: 'Time of day',
       key: 'hour',
       type: 'dropdown' as const,
+      description: 'What time of day should this flow trigger at?',
       required: true,
       value: null,
       variables: false,

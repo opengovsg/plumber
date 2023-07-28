@@ -9,7 +9,7 @@ import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
 
 export default defineTrigger({
-  name: 'Every day',
+  name: 'Daily - triggers every day, choose at what hour of time',
   key: 'everyDay',
   description: 'Triggers every day.',
   arguments: [
@@ -36,6 +36,7 @@ export default defineTrigger({
       label: 'Time of day',
       key: 'hour',
       type: 'dropdown' as const,
+      description: 'What time of day should this flow trigger at?',
       required: true,
       value: null,
       variables: false,
