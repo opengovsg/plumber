@@ -4,7 +4,7 @@ import { fromZodError } from 'zod-validation-error'
 import defineAction from '@/helpers/define-action'
 import { getObjectFromS3Id } from '@/helpers/s3'
 
-import { sendTransactionalEmails } from '../../common/send-transactional-emails'
+import { sendTransactionalEmails } from '../../common/email-helper'
 
 import { fields, schema } from './parameters'
 

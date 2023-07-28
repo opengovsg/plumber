@@ -7,7 +7,7 @@ import {
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
-import { sendTransactionalEmails } from '../../common/send-transactional-emails'
+import { sendTransactionalEmails } from '../../common/email-helper'
 
 export default defineAction({
   name: 'Send email',
