@@ -79,6 +79,7 @@ export const GET_APPS = gql`
             type
             required
             description
+            placeholder
             variables
             variableTypes
             allowArbitrary
@@ -111,6 +112,7 @@ export const GET_APPS = gql`
             type
             required
             description
+            placeholder
             variables
             variableTypes
             allowArbitrary

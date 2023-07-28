@@ -10,7 +10,6 @@ export default {
       required: true,
       readOnly: false,
       value: null,
-      placeholder: null,
       // how to get twilio account sid
       description:
         'Your Twilio Account SID can be found under Account Info section at https://console.twilio.com/',
@@ -23,7 +22,6 @@ export default {
       required: false,
       readOnly: false,
       value: null,
-      placeholder: null,
       // how to get twilio api key sid
       description:
         'Your Twilio API Key SID can be found at https://www.twilio.com/console/project/api-keys',
@@ -36,7 +34,6 @@ export default {
       required: true,
       readOnly: false,
       value: null,
-      placeholder: null,
       description:
         "If an API Key SID was provided, please provide your API Key Secret. If not, please provide your account's auth token.",
       clickToCopy: false,

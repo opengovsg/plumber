@@ -9,7 +9,6 @@ export default {
       required: true,
       readOnly: false,
       value: null,
-      placeholder: null,
       clickToCopy: false,
     },
     {
@@ -19,7 +18,6 @@ export default {
       required: false,
       readOnly: false,
       value: null,
-      placeholder: null,
       description:
         'Enter your headers in this format: KEY=VALUE (one per line)',
       clickToCopy: false,

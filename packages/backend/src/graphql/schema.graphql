@@ -85,6 +85,7 @@ type ActionSubstepArgument {
   variables: Boolean
   variableTypes: [String]
   allowArbitrary: Boolean
+  placeholder: String
   options: [ArgumentOption]
   source: ActionSubstepArgumentSource
   dependsOn: [String]
@@ -407,6 +408,7 @@ type TriggerSubstepArgument {
   variables: Boolean
   variableTypes: [String]
   allowArbitrary: Boolean
+  placeholder: String
   source: TriggerSubstepArgumentSource
   dependsOn: [String]
   options: [ArgumentOption]
