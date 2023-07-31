@@ -1,7 +1,7 @@
 import type { IStep, ISubstep } from '@plumber/types'
 
 import * as React from 'react'
-import { useMutation } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import LoadingButton from '@mui/lab/LoadingButton'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
@@ -14,6 +14,13 @@ import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import useFormatMessage from 'hooks/useFormatMessage'
+import { StepExecutionsContext } from 'contexts/StepExecutions'
+import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
+import { extractVariables, filterVariables } from 'helpers/variables'
+import { customizeEditor, genVariableLabelMap, insertVariable } from 'components/PowerInput/utils'
+import Suggestions from 'components/PowerInput/Suggestions'
+import { VariableElement } from 'components/PowerInput/types'
+import { createEditor } from 'slate'
 
 type TestSubstepProps = {
   substep: ISubstep
@@ -61,12 +68,53 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
     { context: { autoSnackbar: false } },
   )
   const response = data?.executeFlow?.data
+  const executionSteps = data && [data?.executeFlow?.step]
+
+  const [stepsWithVariables, variableLabelMap] = React.useMemo(() => {
+    const stepsWithVars = filterVariables(
+      extractVariables(executionSteps),
+      (variable) => (variable.type ?? 'text') === 'text',
+    )
+    console.log('steps with vars in test substep')
+    console.log(stepsWithVars)
+    console.log(executionSteps)
+    const labels = genVariableLabelMap(stepsWithVars)
+    return [stepsWithVars, labels]
+  }, [executionSteps])
+
+  const editor = React.useMemo(() => customizeEditor(createEditor()), [])
+  const handleVariableSuggestionClick = React.useCallback(
+    (variable: Pick<VariableElement, 'name' | 'value'>) => {
+      insertVariable(editor, variable, variableLabelMap)
+      console.log('handle variable suggestion click')
+      console.log(editor)
+      console.log(variable)
+      console.log(variableLabelMap)
+    },
+    [variableLabelMap],
+  )
+
+  // only beautify data with fields (only formsg for now)
+  const shouldBeautify = response && 'fields' in response
 
   const isExecuted = !error && called && !loading
   const hasNoOutput = !response && isExecuted
   const isCompleted = isExecuted && response
 
   const { name } = substep
+
+  const { data: stepWithTestExecutionsData } = useQuery(
+    GET_STEP_WITH_TEST_EXECUTIONS,
+    {
+      variables: { stepId: step.id },
+    },
+  )
+  console.log('test substep')
+  console.log(stepWithTestExecutionsData)
+  console.log(data)
+  const steps = [step]
+  console.log(steps)
+  console.log(extractVariables(steps))
 
   const executeTestFlow = React.useCallback(() => {
     executeFlow({
@@ -130,7 +178,11 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
               sx={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
               data-test="flow-test-substep-output"
             >
-              <JSONViewer data={response} />
+              <Suggestions
+                data={stepsWithVariables}
+                onSuggestionClick={() => console.log('test')}
+              />
+              <JSONViewer data={response} shouldBeautify={shouldBeautify} />
             </Box>
           )}
 

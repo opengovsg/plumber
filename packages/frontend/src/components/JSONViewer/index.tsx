@@ -1,9 +1,11 @@
 import type { IJSONObject } from '@plumber/types'
 
 import { JSONTree } from 'react-json-tree'
+import { beautifyTriggerJSONData } from 'helpers/variables'
 
 type JSONViewerProps = {
   data: IJSONObject
+  shouldBeautify: boolean
 }
 
 const theme = {
@@ -44,12 +46,15 @@ const theme = {
 }
 
 function JSONViewer(props: JSONViewerProps) {
-  const { data } = props
+  const { data, shouldBeautify } = props
+  console.log('json viewer')
+  console.log(data)
+  console.log(beautifyTriggerJSONData(data))
 
   return (
     <JSONTree
       hideRoot
-      data={data}
+      data={shouldBeautify ? beautifyTriggerJSONData(data) : data}
       shouldExpandNodeInitially={() => true}
       invertTheme={false}
       theme={theme}

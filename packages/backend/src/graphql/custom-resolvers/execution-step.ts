@@ -20,11 +20,15 @@ async function dataOutMetadata(
 
   if (isAction) {
     const action = app?.actions?.find((action) => action.key === stepKey)
+    console.log('action execution step')
+    console.log(action)
     return (await action?.getDataOutMetadata?.(parent)) ?? null
   }
 
   if (isTrigger) {
     const trigger = app?.triggers?.find((trigger) => trigger.key === stepKey)
+    console.log('trigger execution step')
+    console.log(trigger)
     return (await trigger?.getDataOutMetadata?.(parent)) ?? null
   }
 

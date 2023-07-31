@@ -6,6 +6,15 @@ export const EXECUTE_FLOW = gql`
       step {
         id
         status
+        appKey
+        executionSteps {
+          id
+          executionId
+          stepId
+          status
+          dataOut
+          dataOutMetadata
+        }
       }
       data
     }

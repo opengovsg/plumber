@@ -21,6 +21,11 @@ const executeFlow = async (
 
   const { executionStep } = await testRun({ stepId })
 
+  console.log('execute flow')
+  console.log(executionStep)
+  console.log(untilStep)
+  untilStep.executionSteps = [executionStep]
+
   if (executionStep.isFailed) {
     throw new Error(JSON.stringify(executionStep.errorDetails))
   }
