@@ -55,8 +55,6 @@ const PowerInput = (props: PowerInputProps) => {
     disabled,
   } = props
   const priorStepsWithExecutions = React.useContext(StepExecutionsContext)
-  console.log('power input')
-  console.log(priorStepsWithExecutions)
   const editorRef = React.useRef<HTMLDivElement | null>(null)
   const renderElement = React.useCallback(
     (props: any) => <Element {...props} />,
@@ -71,9 +69,6 @@ const PowerInput = (props: PowerInputProps) => {
       extractVariables(priorStepsWithExecutions),
       (variable) => (variable.type ?? 'text') === 'text',
     )
-    console.log('steps with vars in power input')
-    console.log(stepsWithVars)
-    console.log(priorStepsWithExecutions)
     const labels = genVariableLabelMap(stepsWithVars)
     return [stepsWithVars, labels]
   }, [priorStepsWithExecutions])
@@ -164,8 +159,6 @@ const PowerInput = (props: PowerInputProps) => {
 
 const SuggestionsPopper = (props: any) => {
   const { open, anchorEl, data, onSuggestionClick } = props
-  console.log('suggestions popper')
-  console.log(props)
 
   return (
     <Popper
@@ -209,7 +202,6 @@ const Variable = ({ attributes, children, element }: any) => {
   const selected = useSelected()
   const focused = useFocused()
   const variableLabelMap = React.useContext(VariableLabelMapContext)
-  // console.log(variableLabelMap)
   const label = (
     <>
       {variableLabelMap.get(element.value) ?? element.value}

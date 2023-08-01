@@ -8,7 +8,6 @@ type TestRunOptions = {
 }
 
 const testRun = async (options: TestRunOptions) => {
-  console.log('test run')
   const untilStep = await Step.query()
     .findById(options.stepId)
     .throwIfNotFound()
@@ -47,7 +46,6 @@ const testRun = async (options: TestRunOptions) => {
     })
 
   if (triggerStep.id === untilStep.id) {
-    console.log(triggerExecutionStep)
     return { executionStep: triggerExecutionStep }
   }
 

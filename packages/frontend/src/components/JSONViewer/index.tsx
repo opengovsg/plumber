@@ -45,8 +45,6 @@ const theme = {
 
 function JSONViewer(props: JSONViewerProps) {
   const { data } = props
-  console.log('json viewer')
-  console.log(data)
 
   return (
     <JSONTree

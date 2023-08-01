@@ -9,7 +9,6 @@ import Box from '@mui/material/Box'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
-import JSONViewer from 'components/JSONViewer'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
@@ -64,16 +63,13 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
     { context: { autoSnackbar: false } },
   )
   const response = data?.executeFlow?.data
-  const executionSteps = data && [data?.executeFlow?.step]
+  const executionSteps = response && [data?.executeFlow?.step] // must contain only the current execution step
 
   const [stepsWithVariables] = React.useMemo(() => {
     const stepsWithVars = filterVariables(
       extractVariables(executionSteps),
       (variable) => (variable.type ?? 'text') === 'text',
     )
-    console.log('steps with vars in test substep')
-    console.log(stepsWithVars)
-    console.log(executionSteps)
     return [stepsWithVars]
   }, [executionSteps])
 
@@ -140,13 +136,12 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
             </Alert>
           )}
 
-          {response && (
+          {stepsWithVariables.length === 1 && (
             <Box
               sx={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
               data-test="flow-test-substep-output"
             >
-              <DataFormatter data={stepsWithVariables} />
-              <JSONViewer data={response} />
+              <DataFormatter data={stepsWithVariables[0]} />
             </Box>
           )}
 

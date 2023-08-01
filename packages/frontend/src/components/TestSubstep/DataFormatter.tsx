@@ -1,16 +1,15 @@
-import type { IStep } from '@plumber/types'
-
 import { ListItem } from '@mui/material'
 import List from '@mui/material/List'
 import MuiListItemText from '@mui/material/ListItemText'
 import Paper from '@mui/material/Paper'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
+import { StepWithVariables } from 'helpers/variables'
 
 const ListItemText = styled(MuiListItemText)``
 
 type DataFormatterProps = {
-  data: any[]
+  data: StepWithVariables
 }
 
 const LIST_HEIGHT = 512
@@ -21,8 +20,6 @@ const getPartialArray = (array: any[], length = array.length) => {
 
 const DataFormatter = (props: DataFormatterProps) => {
   const { data } = props
-  const trueData: IStep = data[0] // should only have one
-
   return (
     <Paper elevation={1} sx={{ width: '100%' }}>
       <Typography
@@ -32,15 +29,14 @@ const DataFormatter = (props: DataFormatterProps) => {
         Here is your test data:
       </Typography>
       <List
-        component="div" // TODO: remove cus of error
         disablePadding
         sx={{ maxHeight: LIST_HEIGHT, overflowY: 'auto' }}
         data-test="power-input-suggestion-group"
       >
-        {getPartialArray((trueData.output as any) || [], Infinity).map(
+        {getPartialArray((data.output as any) || [], Infinity).map(
           (suboption: any) => (
             <ListItem
-              sx={{ pl: 4 }}
+              sx={{ pl: 2 }}
               divider
               data-test="power-input-suggestion-item"
               key={`suggestion-${suboption.name}`}

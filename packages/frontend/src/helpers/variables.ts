@@ -96,7 +96,6 @@ const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
 
   return entries.flatMap(([name, value]) => {
     const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
-
     if (Array.isArray(value)) {
       return value.flatMap((item, index) => process(item, fullName, index))
     }
