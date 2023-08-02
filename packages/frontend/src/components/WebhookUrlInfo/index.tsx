@@ -1,4 +1,4 @@
-import { ITriggerAlert } from '@plumber/types'
+import { ITriggerInstructions } from '@plumber/types'
 
 import * as React from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -10,16 +10,16 @@ import { Alert, MessageWrapper } from './style'
 
 type WebhookUrlInfoProps = {
   webhookUrl: string
-  webhookTriggerAlert: ITriggerAlert
+  webhookTriggerInstructions: ITriggerInstructions
 } & AlertProps
 
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
-  const { webhookUrl, webhookTriggerAlert, ...alertProps } = props
+  const { webhookUrl, webhookTriggerInstructions, ...alertProps } = props
 
   return (
     <Alert icon={false} color="info" {...alertProps}>
       <MessageWrapper>
-        <ReactMarkdown>{webhookTriggerAlert.beforeUrlMsg}</ReactMarkdown>
+        <ReactMarkdown>{webhookTriggerInstructions.beforeUrlMsg}</ReactMarkdown>
       </MessageWrapper>
       <TextField
         readOnly
@@ -29,7 +29,7 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
         defaultValue={webhookUrl}
       />
       <MessageWrapper>
-        <ReactMarkdown>{webhookTriggerAlert.afterUrlMsg}</ReactMarkdown>
+        <ReactMarkdown>{webhookTriggerInstructions.afterUrlMsg}</ReactMarkdown>
       </MessageWrapper>
     </Alert>
   )

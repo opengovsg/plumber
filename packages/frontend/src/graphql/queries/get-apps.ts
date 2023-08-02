@@ -70,7 +70,7 @@ export const GET_APPS = gql`
         type
         pollInterval
         description
-        webhookTriggerAlert {
+        webhookTriggerInstructions {
           beforeUrlMsg
           afterUrlMsg
           errorMsg

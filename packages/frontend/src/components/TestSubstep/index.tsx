@@ -4,7 +4,7 @@ import type {
   IStep,
   ISubstep,
   ITrigger,
-  ITriggerAlert,
+  ITriggerInstructions,
 } from '@plumber/types'
 
 import * as React from 'react'
@@ -23,7 +23,7 @@ import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 // the default alert follows the raw webhook alert
-const defaultTriggerAlert: ITriggerAlert = {
+const defaultTriggerInstructions: ITriggerInstructions = {
   beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
   afterUrlMsg: `# 2. Send some data to the webhook URL after configuration. Then, click test step.`,
 }
@@ -37,7 +37,7 @@ type TestSubstepProps = {
   onSubmit?: () => void
   onContinue?: () => void
   step: IStep
-  selectedActionOrTrigger: ITrigger | IAction | undefined
+  selectedActionOrTrigger?: ITrigger | IAction
 }
 
 function serializeErrors(graphQLErrors: any) {
@@ -127,9 +127,9 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
           {step.webhookUrl && (
             <WebhookUrlInfo
               webhookUrl={step.webhookUrl}
-              webhookTriggerAlert={
-                (selectedActionOrTrigger as IBaseTrigger).webhookTriggerAlert ||
-                defaultTriggerAlert
+              webhookTriggerInstructions={
+                (selectedActionOrTrigger as IBaseTrigger)
+                  .webhookTriggerInstructions || defaultTriggerInstructions
               }
               sx={{ mb: 2 }}
             />
