@@ -35,28 +35,35 @@ function postProcess(
   metadata: IDataOutMetadata,
 ): Variable[] {
   const result: Variable[] = []
-
   for (const variable of variables) {
     const { name, ...rest } = variable
+
     // lodash get does its work by specifying the 'name' path
     const {
       isHidden = false,
       type = null,
-      label = null,
       order = null,
       displayedValue = null,
     } = get(metadata, name, {}) as IDataOutMetadatum
 
-    // the fields with .order will be hidden and have no output content (filtered later)
+    // only label may change if metadata exists
+    let { label = null } = get(metadata, name, {}) as IDataOutMetadatum
+
+    // the fields with .order and .fieldType will be hidden and have no output content (filtered later)
     if (isHidden) {
       continue
+    }
+
+    // only formsg has metadata, the rest should all have the name as the label
+    if (Object.keys(metadata).length === 0) {
+      label = name
     }
     result.push({
       label,
       type,
       order,
       displayedValue,
-      name: `step.${stepId}.${name}`, // TODO: check if updating this causes issues with multi select
+      name: `step.${stepId}.${name}`, // Don't mess with this because of lodash get!!!
       ...rest,
     })
   }

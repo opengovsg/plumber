@@ -58,7 +58,6 @@ const DataFormatter = (props: DataFormatterProps) => {
                 secondaryTypographyProps={{
                   variant: 'subtitle2',
                   title: 'Sample value',
-                  noWrap: true,
                 }}
               />
             </ListItem>

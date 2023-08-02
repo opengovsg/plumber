@@ -2,6 +2,7 @@ import {
   IDataOutMetadata,
   IDataOutMetadatum,
   IExecutionStep,
+  IJSONArray,
   IJSONObject,
 } from '@plumber/types'
 
@@ -47,6 +48,42 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   return answer
 }
 
+function buildAnswerArrayMetadatum(
+  fieldData: IJSONObject,
+): IDataOutMetadatum[] {
+  // there should only be checkbox and table fieldtypes that contain answer array
+  const answerArray = [] as IDataOutMetadata[]
+  const array = fieldData.answerArray as IJSONArray
+  for (let i = 0; i < array.length; i++) {
+    // check for table fieldType to do more processing
+    const option = array[i]
+    if (fieldData.fieldType === 'table') {
+      const nestedAnswerArray = [] as IDataOutMetadatum[]
+      const optionArray = option as IJSONArray
+      for (let j = 0; j < optionArray.length; j++) {
+        nestedAnswerArray.push({
+          type: 'text',
+          label: fieldData.order
+            ? `Response ${fieldData.order}, Row ${i + 1} Column ${j + 1}`
+            : null,
+          order: fieldData.order ? (fieldData.order as number) : null,
+        })
+      }
+      answerArray.push(nestedAnswerArray)
+    } else {
+      // checkbox fieldtype processing
+      answerArray.push({
+        type: 'text',
+        label: fieldData.order
+          ? `Response ${fieldData.order}, Selected Option ${i + 1}`
+          : null,
+        order: fieldData.order ? (fieldData.order as number) : null,
+      })
+    }
+  }
+  return answerArray
+}
+
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
@@ -62,6 +99,8 @@ async function getDataOutMetadata(
       answer: buildAnswerMetadatum(fieldData),
       fieldType: { isHidden: true },
       order: { isHidden: true },
+      answerArray:
+        fieldData.answerArray && buildAnswerArrayMetadatum(fieldData),
     }
   }
 
