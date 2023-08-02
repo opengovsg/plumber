@@ -291,12 +291,19 @@ export interface ITriggerItem {
   }
 }
 
+export interface ITriggerInstructions {
+  beforeUrlMsg: string
+  afterUrlMsg: string
+  errorMsg?: string
+}
+
 export interface IBaseTrigger {
   name: string
   key: string
   type?: 'webhook' | 'polling'
   pollInterval?: number
   description: string
+  webhookTriggerInstructions?: ITriggerInstructions
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>

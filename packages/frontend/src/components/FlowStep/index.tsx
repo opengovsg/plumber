@@ -148,11 +148,18 @@ export default function FlowStep(
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
-  const substeps = React.useMemo(
+
+  const selectedActionOrTrigger = React.useMemo(
     () =>
-      actionsOrTriggers?.find(({ key }: ITrigger | IAction) => key === step.key)
-        ?.substeps || [],
+      actionsOrTriggers.find(
+        (actionOrTrigger: IAction | ITrigger) =>
+          actionOrTrigger.key === step?.key,
+      ),
     [actionsOrTriggers, step?.key],
+  )
+  const substeps = React.useMemo(
+    () => selectedActionOrTrigger?.substeps || [],
+    [selectedActionOrTrigger],
   )
 
   const handleChange = React.useCallback(({ step }: { step: IStep }) => {
@@ -289,6 +296,7 @@ export default function FlowStep(
                           onChange={handleChange}
                           onContinue={onContinue}
                           step={step}
+                          selectedActionOrTrigger={selectedActionOrTrigger}
                         />
                       )}
 
