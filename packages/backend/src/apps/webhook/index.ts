@@ -9,7 +9,7 @@ export default defineApp({
   name: 'Webhook',
   key: 'webhook',
   iconUrl: '{BASE_URL}/apps/webhook/assets/favicon.svg',
-  authDocUrl: 'https://automatisch.io/docs/apps/webhooks/connection',
+  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/triggers/webhooks',
   supportsConnections: true,
   beforeRequest: [addHeaders],
   auth,
