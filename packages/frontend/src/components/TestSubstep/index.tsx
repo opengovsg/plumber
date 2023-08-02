@@ -37,7 +37,7 @@ type TestSubstepProps = {
   onSubmit?: () => void
   onContinue?: () => void
   step: IStep
-  selectedActionOrTrigger: ITrigger | IAction | undefined
+  selectedActionOrTrigger: ITrigger | IAction
 }
 
 function serializeErrors(graphQLErrors: any) {
