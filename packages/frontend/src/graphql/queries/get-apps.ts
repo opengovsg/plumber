@@ -70,6 +70,11 @@ export const GET_APPS = gql`
         type
         pollInterval
         description
+        webhookTriggerInstructions {
+          beforeUrlMsg
+          afterUrlMsg
+          errorMsg
+        }
         substeps {
           key
           name
@@ -79,6 +84,7 @@ export const GET_APPS = gql`
             type
             required
             description
+            placeholder
             variables
             variableTypes
             allowArbitrary
@@ -111,6 +117,7 @@ export const GET_APPS = gql`
             type
             required
             description
+            placeholder
             variables
             variableTypes
             allowArbitrary

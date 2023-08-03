@@ -1,0 +1,93 @@
+import { IHttpClient } from '@plumber/types'
+
+import FormData from 'form-data'
+
+const ENDPOINT = '/v1/transactional/email/send'
+
+export interface SendTransactionalEmailResponse {
+  id: string
+  from: string
+  recipient: string
+  params: {
+    body: string
+    from: string
+    subject: string
+    reply_to: string
+  }
+  attachments_metadata:
+    | {
+        fileName: string
+        fileSize: number
+        hash: string
+      }[]
+    | null
+  status:
+    | 'UNSENT'
+    | 'ACCEPTED'
+    | 'SENT'
+    | 'BOUNCED'
+    | 'DELIVERED'
+    | 'OPENED'
+    | 'COMPLAINT'
+  error_code: string | null
+  error_sub_type: string | null
+  created_at: string
+  updated_at: string | null
+  accepted_at: string | null
+  sent_at: string | null
+  delivered_at: string | null
+  opened_at: string | null
+}
+
+export interface Email {
+  subject: string
+  body: string
+  senderName: string
+  attachments?: { fileName: string; data: Uint8Array }[]
+  replyTo?: string
+  fromAddress?: string
+}
+
+export async function sendTransactionalEmails(
+  http: IHttpClient,
+  recipients: string[],
+  email: Email,
+): Promise<SendTransactionalEmailResponse[]> {
+  const promises = recipients.map(async (recipientEmail) => {
+    const requestData = new FormData()
+    requestData.append('subject', email.subject)
+    requestData.append('body', email.body)
+    requestData.append('recipient', recipientEmail)
+    requestData.append(
+      'from',
+      email.fromAddress
+        ? `${email.senderName} <${email.fromAddress}>`
+        : `${email.senderName} via Postman <donotreply@mail.postman.gov.sg>`,
+    )
+
+    if (email.replyTo) {
+      requestData.append('reply_to', email.replyTo)
+    }
+
+    for (const attachment of email.attachments ?? []) {
+      requestData.append(
+        'attachments',
+        Buffer.from(attachment.data),
+        attachment.fileName,
+      )
+    }
+
+    const response = await http.post<SendTransactionalEmailResponse>(
+      ENDPOINT,
+      requestData,
+      {
+        headers: {
+          ...requestData.getHeaders(),
+        },
+      },
+    )
+    return response.data
+  })
+
+  return await Promise.all(promises)
+}

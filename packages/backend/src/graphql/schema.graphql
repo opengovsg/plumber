@@ -85,6 +85,7 @@ type ActionSubstepArgument {
   variables: Boolean
   variableTypes: [String]
   allowArbitrary: Boolean
+  placeholder: String
   options: [ArgumentOption]
   source: ActionSubstepArgumentSource
   dependsOn: [String]
@@ -389,7 +390,14 @@ type Trigger {
   description: String
   pollInterval: Int
   type: String
+  webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
+}
+
+type TriggerInstructions {
+  beforeUrlMsg: String
+  afterUrlMsg: String
+  errorMsg: String
 }
 
 type TriggerSubstep {
@@ -407,6 +415,7 @@ type TriggerSubstepArgument {
   variables: Boolean
   variableTypes: [String]
   allowArbitrary: Boolean
+  placeholder: String
   source: TriggerSubstepArgumentSource
   dependsOn: [String]
   options: [ArgumentOption]

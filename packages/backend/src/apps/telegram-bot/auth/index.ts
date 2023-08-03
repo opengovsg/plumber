@@ -10,7 +10,6 @@ export default {
       required: true,
       readOnly: false,
       value: null,
-      placeholder: null,
       description: 'Bot token which should be retrieved from @botfather.',
       clickToCopy: false,
       autoComplete: 'off' as const,

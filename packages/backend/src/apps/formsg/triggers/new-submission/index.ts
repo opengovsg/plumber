@@ -18,6 +18,10 @@ export default defineTrigger({
   key: 'newSubmission',
   type: 'webhook',
   description: 'Triggers when the webhook receives a request.',
+  webhookTriggerInstructions: {
+    beforeUrlMsg: ` # 1. You'll need to paste this webhook URL in **this form's** settings page.`,
+    afterUrlMsg: ` # 2. Make a new submission to the form you connected. Then, click test step.`,
+  },
   arguments: [
     {
       label: 'NRIC Filter',
