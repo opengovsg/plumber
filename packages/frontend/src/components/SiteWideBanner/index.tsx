@@ -1,10 +1,8 @@
 import { useCallback, useContext, useEffect, useState } from 'react'
 import CloseIcon from '@mui/icons-material/Close'
 import { Box, IconButton } from '@mui/material'
-import { getItem, getItemForSession, setItemForSession } from 'helpers/storage'
-import useFormatMessage from 'hooks/useFormatMessage'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
-import { set } from 'lodash'
+import { getItemForSession, setItemForSession } from 'helpers/storage'
 
 const LAUNCH_DARKLY_BANNER_KEY = 'app_banner_display'
 const EMPTY_BANNER_MESSAGE = ''
