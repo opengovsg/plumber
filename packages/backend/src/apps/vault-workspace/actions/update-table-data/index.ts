@@ -74,9 +74,22 @@ export default defineAction({
     }
 
     const row = await filterTableRows($, lookupColumn, lookupValue)
-
+    if (row._metadata && row._metadata?.rowsFound === 0) {
+      $.setActionItem({
+        raw: {
+          _metadata: {
+            success: false,
+            rowsUpdated: 0,
+          },
+        },
+      })
+      return
+    }
     // update row
     const payload: { [key: string]: string } = { [updateColumn]: updateValue }
-    await updateTableRow($, row['vault_id'], payload)
+    const response = await updateTableRow($, row['vault_id'], payload)
+    $.setActionItem({
+      raw: response,
+    })
   },
 })
