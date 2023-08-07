@@ -1,5 +1,3 @@
-import type { IStep } from '@plumber/types'
-
 import * as React from 'react'
 import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
@@ -11,22 +9,19 @@ import MuiListItemText from '@mui/material/ListItemText'
 import Paper from '@mui/material/Paper'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
+import { StepWithVariables, Variable } from 'helpers/variables'
 
 const ListItemText = styled(MuiListItemText)``
 
-type SuggestionsProps = {
-  data: any[]
+interface SuggestionsProps {
+  data: StepWithVariables[]
   onSuggestionClick: (variable: any) => void
 }
 
 const SHORT_LIST_LENGTH = 4
 const LIST_HEIGHT = 256
 
-const getPartialArray = (array: any[], length = array.length) => {
-  return array.slice(0, length)
-}
-
-const Suggestions = (props: SuggestionsProps) => {
+export default function Suggestions(props: SuggestionsProps) {
   const { data, onSuggestionClick = () => null } = props
   const [current, setCurrent] = React.useState<number | null>(0)
   const [listLength, setListLength] = React.useState<number>(SHORT_LIST_LENGTH)
@@ -49,7 +44,7 @@ const Suggestions = (props: SuggestionsProps) => {
         Variables
       </Typography>
       <List disablePadding>
-        {data.map((option: IStep, index: number) => (
+        {data.map((option: StepWithVariables, index: number) => (
           <div key={`primary-suggestion-${option.name}`}>
             <ListItemButton
               divider
@@ -72,8 +67,9 @@ const Suggestions = (props: SuggestionsProps) => {
                 sx={{ maxHeight: LIST_HEIGHT, overflowY: 'auto' }}
                 data-test="power-input-suggestion-group"
               >
-                {getPartialArray((option.output as any) || [], listLength).map(
-                  (suboption: any) => (
+                {(option.output || [])
+                  .slice(0, listLength)
+                  .map((suboption: Variable) => (
                     <ListItemButton
                       sx={{ pl: 4 }}
                       divider
@@ -102,8 +98,7 @@ const Suggestions = (props: SuggestionsProps) => {
                         }}
                       />
                     </ListItemButton>
-                  ),
-                )}
+                  ))}
               </List>
 
               {(option.output?.length || 0) > listLength && (
@@ -124,5 +119,3 @@ const Suggestions = (props: SuggestionsProps) => {
     </Paper>
   )
 }
-
-export default Suggestions
