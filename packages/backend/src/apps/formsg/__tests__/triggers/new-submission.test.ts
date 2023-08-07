@@ -16,6 +16,7 @@ describe('new submission trigger', () => {
             answer: 'herp derp',
             fieldType: 'textField',
             order: 1,
+            answerArray: ['answer 1', 'answer 2'],
           },
         },
         verifiedSubmitterInfo: {
@@ -29,13 +30,13 @@ describe('new submission trigger', () => {
   })
 
   describe('dataOut metadata', () => {
-    it('ensures that only question and answer props are visible', async () => {
+    it('ensures that only question, answer and answerArray props are visible', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
 
       for (const [propName, data] of Object.entries(
         metadata.fields.textFieldId,
       )) {
-        if (['question', 'answer'].includes(propName)) {
+        if (['question', 'answer', 'answerArray'].includes(propName)) {
           expect((data as IDataOutMetadatum).isHidden).toBeUndefined()
         } else {
           expect((data as IDataOutMetadatum).isHidden).toEqual(true)
