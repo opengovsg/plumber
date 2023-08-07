@@ -39,6 +39,11 @@ const validateSubstep = (substep: ISubstep, step: IStep) => {
       return true
     }
 
+    // '0' is a valid value for scheduling hour
+    if (argValue === 0) {
+      return true
+    }
+
     return Boolean(argValue)
   })
 }
