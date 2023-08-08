@@ -9,7 +9,8 @@ import MuiListItemText from '@mui/material/ListItemText'
 import Paper from '@mui/material/Paper'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
-import { StepWithVariables, Variable } from 'helpers/variables'
+import VariablesList from 'components/VariablesList'
+import { StepWithVariables } from 'helpers/variables'
 
 const ListItemText = styled(MuiListItemText)``
 
@@ -19,7 +20,6 @@ interface SuggestionsProps {
 }
 
 const SHORT_LIST_LENGTH = 4
-const LIST_HEIGHT = 256
 
 export default function Suggestions(props: SuggestionsProps) {
   const { data, onSuggestionClick = () => null } = props
@@ -61,45 +61,10 @@ export default function Suggestions(props: SuggestionsProps) {
             </ListItemButton>
 
             <Collapse in={current === index} timeout="auto" unmountOnExit>
-              <List
-                component="div"
-                disablePadding
-                sx={{ maxHeight: LIST_HEIGHT, overflowY: 'auto' }}
-                data-test="power-input-suggestion-group"
-              >
-                {(option.output || [])
-                  .slice(0, listLength)
-                  .map((suboption: Variable) => (
-                    <ListItemButton
-                      sx={{ pl: 4 }}
-                      divider
-                      onClick={() => onSuggestionClick(suboption)}
-                      data-test="power-input-suggestion-item"
-                      key={`suggestion-${suboption.name}`}
-                    >
-                      <ListItemText
-                        primary={suboption.label ?? suboption.name}
-                        primaryTypographyProps={{
-                          variant: 'subtitle1',
-                          title: 'Property name',
-                          sx: { fontWeight: 700 },
-                        }}
-                        secondary={
-                          <>
-                            {suboption.displayedValue ??
-                              suboption.value?.toString() ??
-                              ''}
-                          </>
-                        }
-                        secondaryTypographyProps={{
-                          variant: 'subtitle2',
-                          title: 'Sample value',
-                          noWrap: true,
-                        }}
-                      />
-                    </ListItemButton>
-                  ))}
-              </List>
+              <VariablesList
+                variables={(option.output ?? []).slice(0, listLength)}
+                onClick={onSuggestionClick}
+              />
 
               {(option.output?.length || 0) > listLength && (
                 <Button fullWidth onClick={expandList}>

@@ -9,13 +9,12 @@ import Box from '@mui/material/Box'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
+import VariablesList from 'components/VariablesList'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import { extractVariables, filterVariables } from 'helpers/variables'
 import useFormatMessage from 'hooks/useFormatMessage'
-
-import DataFormatter from './DataFormatter'
 
 type TestSubstepProps = {
   substep: ISubstep
@@ -141,7 +140,8 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
               sx={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
               data-test="flow-test-substep-output"
             >
-              <DataFormatter data={stepsWithVariables[0]} />
+              <Alert severity="info">We found these variables:</Alert>
+              <VariablesList variables={stepsWithVariables[0].output} />
             </Box>
           )}
 
