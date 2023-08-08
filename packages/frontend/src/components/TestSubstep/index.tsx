@@ -1,4 +1,11 @@
-import type { IStep, ISubstep } from '@plumber/types'
+import type {
+  IAction,
+  IBaseTrigger,
+  IStep,
+  ISubstep,
+  ITrigger,
+  ITriggerInstructions,
+} from '@plumber/types'
 
 import * as React from 'react'
 import { useMutation } from '@apollo/client'
@@ -16,6 +23,12 @@ import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import { extractVariables, filterVariables } from 'helpers/variables'
 import useFormatMessage from 'hooks/useFormatMessage'
 
+// the default alert follows the raw webhook alert
+const defaultTriggerInstructions: ITriggerInstructions = {
+  beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
+  afterUrlMsg: `# 2. Send some data to the webhook URL after configuration. Then, click test step.`,
+}
+
 type TestSubstepProps = {
   substep: ISubstep
   expanded?: boolean
@@ -25,6 +38,7 @@ type TestSubstepProps = {
   onSubmit?: () => void
   onContinue?: () => void
   step: IStep
+  selectedActionOrTrigger?: ITrigger | IAction
 }
 
 function serializeErrors(graphQLErrors: any) {
@@ -53,10 +67,12 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
     onSubmit,
     onContinue,
     step,
+    selectedActionOrTrigger,
   } = props
 
   const formatMessage = useFormatMessage()
   const editorContext = React.useContext(EditorContext)
+
   const [executeFlow, { data, error, loading, called }] = useMutation(
     EXECUTE_FLOW,
     { context: { autoSnackbar: false } },
@@ -118,9 +134,15 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
               ))}
             </Alert>
           )}
-
           {step.webhookUrl && (
-            <WebhookUrlInfo webhookUrl={step.webhookUrl} sx={{ mb: 2 }} />
+            <WebhookUrlInfo
+              webhookUrl={step.webhookUrl}
+              webhookTriggerInstructions={
+                (selectedActionOrTrigger as IBaseTrigger)
+                  .webhookTriggerInstructions || defaultTriggerInstructions
+              }
+              sx={{ mb: 2 }}
+            />
           )}
 
           {hasNoOutput && (

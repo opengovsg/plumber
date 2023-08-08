@@ -1,5 +1,7 @@
 import defineAction from '@/helpers/define-action'
 
+import { escapeMarkdown, sanitizeMarkdown } from '../../common/markdown-v1'
+
 export default defineAction({
   name: 'Send message',
   key: 'sendMessage',
@@ -55,12 +57,20 @@ export default defineAction({
     },
   ],
 
+  preprocessVariable(key: string, value: unknown) {
+    if (key === 'text' && typeof value === 'string') {
+      return escapeMarkdown(value)
+    }
+    return value
+  },
+
   async run($) {
+    const sanitizedMarkdown = sanitizeMarkdown($.step.parameters.text as string)
     const payload = {
       chat_id: $.step.parameters.chatId,
-      text: $.step.parameters.text,
+      text: sanitizedMarkdown,
       disable_notification: $.step.parameters.disableNotification,
-      parse_mode: 'markdown',
+      parse_mode: 'markdown', // legacy markdown to allow only a small set of modifiers
     }
 
     const response = await $.http.post('/sendMessage', payload)

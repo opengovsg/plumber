@@ -7,7 +7,7 @@ import {
 
 import appConfig from '@/config/app'
 
-export const COMMON_S3_BUCKET = `plumber-${appConfig.appEnv}-common-bucket`
+export const COMMON_S3_BUCKET = process.env.S3_COMMON_BUCKET
 
 const s3Client = new S3Client({
   region: 'ap-southeast-1',

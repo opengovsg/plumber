@@ -3,6 +3,8 @@ import { IFlowConfig } from '@plumber/types'
 import type { ModelOptions, QueryContext } from 'objection'
 import { ValidationError } from 'objection'
 
+import { doesActionProcessFiles } from '@/helpers/actions'
+
 import Base from './base'
 import Execution from './execution'
 import ExtendedQueryBuilder from './query-builder'
@@ -129,6 +131,27 @@ class Flow extends Base {
     return await this.$relatedQuery('steps').findOne({
       type: 'trigger',
     })
+  }
+
+  async containsFileProcessingActions(): Promise<boolean> {
+    // Users are testing unpublished flows; better to assume there might be a
+    // file processing action added sometime before publishing.
+    if (!this.active) {
+      return true
+    }
+
+    const actionSteps = await this.$relatedQuery('steps').where(
+      'type',
+      'action',
+    )
+
+    const actionFileFlags = await Promise.all(
+      actionSteps.map(
+        async (step) => await doesActionProcessFiles(step.appKey, step.key),
+      ),
+    )
+
+    return actionFileFlags.some(Boolean)
   }
 }
 
