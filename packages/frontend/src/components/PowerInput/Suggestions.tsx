@@ -20,6 +20,7 @@ interface SuggestionsProps {
 }
 
 const SHORT_LIST_LENGTH = 4
+const LIST_HEIGHT = 256
 
 export default function Suggestions(props: SuggestionsProps) {
   const { data, onSuggestionClick = () => null } = props
@@ -64,6 +65,7 @@ export default function Suggestions(props: SuggestionsProps) {
               <VariablesList
                 variables={(option.output ?? []).slice(0, listLength)}
                 onClick={onSuggestionClick}
+                listHeight={LIST_HEIGHT}
               />
 
               {(option.output?.length || 0) > listLength && (
