@@ -26,7 +26,6 @@ import useFormatMessage from 'hooks/useFormatMessage'
 const defaultTriggerInstructions: ITriggerInstructions = {
   beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
   afterUrlMsg: `# 2. Send some data to the webhook URL after configuration. Then, click test step.`,
-  errorMsg: `No data has been sent, please try again!`,
 }
 
 type TestSubstepProps = {
@@ -143,9 +142,11 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
               </AlertTitle>
 
               <Box sx={{ fontWeight: 400 }}>
-                {(selectedActionOrTrigger as IBaseTrigger)
-                  .webhookTriggerInstructions?.errorMsg ||
-                  defaultTriggerInstructions.errorMsg}
+                {selectedActionOrTrigger &&
+                'webhookTriggerInstructions' in selectedActionOrTrigger &&
+                selectedActionOrTrigger.webhookTriggerInstructions?.errorMsg
+                  ? selectedActionOrTrigger.webhookTriggerInstructions.errorMsg
+                  : formatMessage('flowEditor.noTestDataMessage')}
               </Box>
             </Alert>
           )}
