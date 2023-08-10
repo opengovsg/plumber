@@ -8,27 +8,25 @@ const LAUNCH_DARKLY_BANNER_KEY = 'banner_display'
 const EMPTY_BANNER_MESSAGE = ''
 
 const SiteWideBanner = (): JSX.Element | null => {
-  const [bannerMessage, setBannerMessage] = useState('')
-  const [showBanner, setShowBanner] = useState(false)
-
+  const [bannerMessage, setBannerMessage] = useState(EMPTY_BANNER_MESSAGE)
   const launchDarkly = useContext(LaunchDarklyContext)
 
-  useEffect(() => {
-    const bannerMessageStored = getItemForSession('hide-banner')
-    setShowBanner(bannerMessageStored !== EMPTY_BANNER_MESSAGE)
-  }, [])
-
   const closeBanner = useCallback(() => {
-    setShowBanner(false)
-    setItemForSession('hide-banner', EMPTY_BANNER_MESSAGE)
-  }, [])
+    setBannerMessage(EMPTY_BANNER_MESSAGE)
+    setItemForSession('hide-banner', bannerMessage)
+  }, [bannerMessage])
 
   // check for feature flag (takes time to load) to display banner
   useEffect(() => {
     if (launchDarkly.flags) {
       // message needs to be fetched everytime the page is re-rendered
       const message = launchDarkly.flags[LAUNCH_DARKLY_BANNER_KEY]
-      setBannerMessage(message)
+      const bannerMessageStored = getItemForSession('hide-banner')
+      if (message !== bannerMessageStored) {
+        setBannerMessage(message)
+      } else {
+        setBannerMessage(EMPTY_BANNER_MESSAGE)
+      }
     }
   }, [launchDarkly])
 
@@ -43,7 +41,7 @@ const SiteWideBanner = (): JSX.Element | null => {
         textAlign: 'center',
         backgroundColor: 'primary.dark',
         color: 'white',
-        display: showBanner ? 'flex' : 'none',
+        display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
