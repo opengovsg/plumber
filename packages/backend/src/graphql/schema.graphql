@@ -393,7 +393,14 @@ type Trigger {
   description: String
   pollInterval: Int
   type: String
+  webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
+}
+
+type TriggerInstructions {
+  beforeUrlMsg: String
+  afterUrlMsg: String
+  errorMsg: String
 }
 
 type TriggerSubstep {

@@ -33,8 +33,11 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
       // We encode the question as the label because we hide the actual question
       // as a variable.
       answer['label'] = fieldData.question as string
-      // For attachments, answer _has_ to be a S3 ID or an empty string (e.g.
-      // in optional fields).
+      // For attachments, answer is one of:
+      // 1. An S3 ID (if we stored the attachment into S3).
+      // 2. An empty string (if attachment field is optional).
+      // 3. A filename (uncommon - only for legacy forms with attachment fields
+      //    in existing pipes).
       answer['displayedValue'] =
         parseS3Id(fieldData.answer as string)?.objectName ??
         (fieldData.answer as string)
