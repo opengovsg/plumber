@@ -61,7 +61,7 @@ function ControlledAutocomplete(
     freeSolo,
     onRefresh,
     loading,
-    disableClearable,
+    disableClearable: required,
     ...autocompleteProps
   } = props
 
@@ -83,7 +83,7 @@ function ControlledAutocomplete(
 
   return (
     <Controller
-      rules={{ required: disableClearable }}
+      rules={{ required }}
       name={name}
       defaultValue={defaultValue || ''}
       control={control}
@@ -94,10 +94,7 @@ function ControlledAutocomplete(
         return (
           <FormControl isInvalid={isError}>
             {label && (
-              <FormLabel
-                isRequired={disableClearable}
-                description={description}
-              >
+              <FormLabel isRequired={required} description={description}>
                 {label}
               </FormLabel>
             )}
@@ -106,7 +103,7 @@ function ControlledAutocomplete(
               <Autocomplete
                 {...autocompleteProps}
                 {...field}
-                disableClearable={disableClearable}
+                disableClearable={required}
                 freeSolo={freeSolo}
                 options={options}
                 value={getOption(options, field.value, freeSolo)}
