@@ -101,7 +101,8 @@ export const GET_APPS = gql`
                 value
               }
             }
-            fields {
+            # Only for multi-row
+            subFields {
               label
               key
               type
@@ -158,7 +159,8 @@ export const GET_APPS = gql`
                 value
               }
             }
-            fields {
+            # Only for multi-row
+            subFields {
               label
               key
               type

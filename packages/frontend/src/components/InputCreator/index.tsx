@@ -135,7 +135,7 @@ export default function InputCreator(
         name={computedName}
         label={label}
         description={description}
-        fields={schema.fields}
+        subFields={schema.subFields}
         required={required}
         // These are InputCreatorProps which MultiRow will forward.
         onChange={onChange}

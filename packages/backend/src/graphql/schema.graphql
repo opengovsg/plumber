@@ -91,7 +91,7 @@ type ActionSubstepArgument {
   dependsOn: [String]
 
   # Only for multirow
-  fields: [ActionSubstepArgument]
+  subFields: [ActionSubstepArgument]
 }
 
 type ActionSubstepArgumentSource {
@@ -424,7 +424,7 @@ type TriggerSubstepArgument {
   options: [ArgumentOption]
 
   # Only for multirow
-  fields: [TriggerSubstepArgument]
+  subFields: [TriggerSubstepArgument]
 }
 
 type TriggerSubstepArgumentSource {

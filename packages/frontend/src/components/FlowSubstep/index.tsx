@@ -54,8 +54,8 @@ function validateSubstep(substep: ISubstep, step: IStep): boolean {
         return false
       }
 
-      return arg.fields.every((field) =>
-        rows.every((row) => isValidArgValue(row[field.key])),
+      return arg.subFields.every((subField) =>
+        rows.every((row) => isValidArgValue(row[subField.key])),
       )
     }
 

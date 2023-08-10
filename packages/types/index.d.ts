@@ -212,7 +212,7 @@ export interface IFieldMultiRow extends IBaseField {
   type: 'multirow'
   value?: string
 
-  fields: IField[]
+  subFields: IField[]
 }
 
 export type IField =
