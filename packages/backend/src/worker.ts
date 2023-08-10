@@ -1,5 +1,6 @@
 import '@/helpers/tracer'
 import '@/config/orm'
+import '@/config/dynamodb'
 import '@/helpers/check-worker-readiness'
 import '@/workers/flow'
 import '@/workers/trigger'

@@ -1,4 +1,5 @@
 import '@/config/orm'
+import '@/config/dynamodb'
 
 import { IRequest } from '@plumber/types'
 
