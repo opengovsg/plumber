@@ -9,11 +9,9 @@ import { Variable } from 'helpers/variables'
 
 function makeListItemComponent(
   onClick?: (variable: any) => void,
-): ComponentType<ListItemButtonProps & ListItemProps> {
+): ComponentType<ListItemButtonProps> | ComponentType<ListItemProps> {
   if (onClick) {
-    return (props: ListItemButtonProps) => (
-      <ListItemButton onClick={onClick} {...props} />
-    )
+    return (props: ListItemButtonProps) => <ListItemButton {...props} />
   }
 
   return (props: ListItemProps) => <ListItem {...props} />
@@ -45,6 +43,7 @@ export default function VariablesList(props: VariablesListProps) {
           divider
           data-test="power-input-suggestion-item"
           key={`suggestion-${variable.name}`}
+          onClick={onClick && (() => onClick(variable))}
         >
           <ListItemText
             primary={variable.label ?? variable.name}

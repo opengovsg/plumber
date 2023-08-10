@@ -40,26 +40,19 @@ function postProcess(
 
     // lodash get does its work by specifying the 'name' path
     const {
+      label = null,
       isHidden = false,
       type = null,
       order = null,
       displayedValue = null,
     } = get(metadata, name, {}) as IDataOutMetadatum
 
-    // only label may change if metadata exists
-    let { label = null } = get(metadata, name, {}) as IDataOutMetadatum
-
-    // the fields with .order and .fieldType will be hidden and have no output content (filtered later)
     if (isHidden) {
       continue
     }
 
-    // only formsg has metadata, the rest should all have the name as the label
-    if (Object.keys(metadata).length === 0) {
-      label = name
-    }
     result.push({
-      label,
+      label: label ?? name, // defaults to showing lodash path if a label doesn't exist (no metadata)
       type,
       order,
       displayedValue,
