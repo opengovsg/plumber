@@ -11,7 +11,6 @@ export default {
       required: true,
       readOnly: true,
       value: '{WEB_APP_URL}/app/slack/connections/add',
-      placeholder: null,
       description:
         'When asked to input an OAuth callback or redirect URL in Slack OAuth, enter the URL above.',
       clickToCopy: true,
@@ -24,7 +23,6 @@ export default {
       required: true,
       readOnly: false,
       value: null,
-      placeholder: null,
       description: null,
       clickToCopy: false,
       autoComplete: 'off' as const,
@@ -36,7 +34,6 @@ export default {
       required: true,
       readOnly: false,
       value: null,
-      placeholder: null,
       description: null,
       clickToCopy: false,
       autoComplete: 'off' as const,

@@ -41,6 +41,7 @@ type PowerInputProps = {
   docUrl?: string
   clickToCopy?: boolean
   disabled?: boolean
+  placeholder?: string
 }
 
 const PowerInput = (props: PowerInputProps) => {
@@ -53,6 +54,7 @@ const PowerInput = (props: PowerInputProps) => {
     required,
     description,
     disabled,
+    placeholder,
   } = props
   const priorStepsWithExecutions = React.useContext(StepExecutionsContext)
   const editorRef = React.useRef<HTMLDivElement | null>(null)
@@ -125,6 +127,7 @@ const PowerInput = (props: PowerInputProps) => {
                 <FakeInput disabled={disabled}>
                   <VariableLabelMapContext.Provider value={variableLabelMap}>
                     <Editable
+                      placeholder={placeholder}
                       readOnly={disabled}
                       style={{ width: '100%' }}
                       renderElement={renderElement}

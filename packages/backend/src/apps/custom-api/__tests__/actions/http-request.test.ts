@@ -3,7 +3,7 @@ import { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
-import makeRequestAction from '../../actions/make-request'
+import makeRequestAction from '../../actions/http-request'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),

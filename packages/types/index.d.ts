@@ -151,11 +151,11 @@ type AutoCompleteValue = 'off' | 'url' | 'email'
 
 export interface IBaseField {
   key: string
-  label: string
+  label?: string
   type: string
   required?: boolean
   readOnly?: boolean
-  placeholder?: string | null
+  placeholder?: string
   description?: string
   docUrl?: string
   clickToCopy?: boolean
@@ -291,12 +291,19 @@ export interface ITriggerItem {
   }
 }
 
+export interface ITriggerInstructions {
+  beforeUrlMsg: string
+  afterUrlMsg: string
+  errorMsg?: string
+}
+
 export interface IBaseTrigger {
   name: string
   key: string
   type?: 'webhook' | 'polling'
   pollInterval?: number
   description: string
+  webhookTriggerInstructions?: ITriggerInstructions
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
@@ -347,6 +354,19 @@ export interface IBaseAction {
    * @param executionStep The execution step to get metadata for.
    */
   getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+
+  /**
+   * Preprocess variables before substituting them into the action's parameters.
+   *
+   * Useful for cases where variables needs to be escaped in some way before substitution.
+   */
+  preprocessVariable?(parameterKey: string, variableValue: unknown): unknown
+
+  /**
+   * For optimizing our S3 storage; we won't store files into our S3 unless
+   * the pipe has at least 1 action which processes files.
+   */
+  doesFileProcessing?: boolean
 }
 
 export interface IRawAction extends IBaseAction {
@@ -385,6 +405,7 @@ export type IGlobalVariable = {
   request?: IRequest
   flow?: {
     id: string
+    hasFileProcessingActions: boolean
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
   }

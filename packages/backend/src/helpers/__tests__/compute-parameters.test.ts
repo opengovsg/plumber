@@ -15,87 +15,191 @@ const executionSteps = [
 ]
 
 describe('compute parameters', () => {
-  it('performs variable substitution on strings and string array elements', () => {
-    const result = computeParameters(
-      {
+  it.each([
+    {
+      testDescription: 'strings',
+      params: {
         paramWithStringVar: 'herp! {{step.some-step-id.stringProp}}',
         paramWithNumberVar: 'derp! {{step.some-step-id.numberProp}}',
+      },
+      expected: {
+        paramWithStringVar: 'herp! string value',
+        paramWithNumberVar: 'derp! 123',
+      },
+    },
+    {
+      testDescription: 'string arrays',
+      params: {
         arrayParam: [
           '{{step.some-step-id.stringProp}}',
           '{{step.some-step-id.numberProp}}',
         ],
       },
-      executionSteps,
-    )
-    expect(result).toEqual({
-      paramWithStringVar: 'herp! string value',
-      paramWithNumberVar: 'derp! 123',
-      arrayParam: [
-        'string value',
-        // this is expected to be string; we preserve the original type
-        '123',
-      ],
-    })
-  })
+      expected: {
+        arrayParam: [
+          'string value',
+          // this is expected to be string; we preserve the original type
+          '123',
+        ],
+      },
+    },
+    {
+      testDescription: 'non-nested objects',
+      params: {
+        objectParam: {
+          key1: 'prefix {{step.some-step-id.stringProp}}',
+          key2: '{{step.some-step-id.numberProp}}',
+        },
+      },
+      expected: {
+        objectParam: {
+          key1: 'prefix string value',
+          key2: '123',
+        },
+      },
+    },
+    {
+      testDescription: 'arrays of non-nested objects',
+      params: {
+        arrayParam: [
+          {
+            key1: 'object 1 - {{step.some-step-id.stringProp}}',
+          },
+          {
+            key1: 'object 2 - {{step.some-step-id.stringProp}}',
+          },
+        ],
+      },
+      expected: {
+        arrayParam: [
+          { key1: 'object 1 - string value' },
+          { key1: 'object 2 - string value' },
+        ],
+      },
+    },
+    {
+      testDescription: 'nested objects',
+      params: {
+        objectParam: {
+          subObject: {
+            key1: '{{step.some-step-id.numberProp}}',
+          },
+        },
+      },
+      expected: {
+        objectParam: {
+          subObject: {
+            key1: '123',
+          },
+        },
+      },
+    },
+    {
+      testDescription: 'objects with arrays',
+      params: {
+        objectParam: {
+          key1: [
+            '{{step.some-step-id.numberProp}}',
+            '{{step.some-step-id.stringProp}}',
+          ],
+        },
+      },
+      expected: {
+        objectParam: {
+          key1: ['123', 'string value'],
+        },
+      },
+    },
+  ])(
+    'performs variable substitution on $testDescription',
+    ({ params, expected }) => {
+      const result = computeParameters(params, executionSteps)
+      expect(result).toEqual(expected)
+    },
+  )
 
-  it('is a no-op on strings or string arrays without variables', () => {
-    const result = computeParameters(
-      {
+  it.each([
+    {
+      testDescription: 'strings',
+      params: {
         param: 'herp!',
+      },
+    },
+    {
+      testDescription: 'string arrays',
+      params: {
         arrayParam: ['derp', 'meh'],
       },
-      executionSteps,
-    )
-    expect(result).toEqual({
-      param: 'herp!',
-      arrayParam: ['derp', 'meh'],
-    })
-  })
-
-  it('is a no-op on non-strings', () => {
-    const result = computeParameters(
-      {
-        numberParam: 123,
-        numArrayParam: [1, 2, 3],
-        objectParam: { a: '1', b: '2' },
-        objArrayParam: [
-          { a: '1', b: '2' },
-          { c: '3', d: '4' },
-        ],
-        objectWithNestedVariable: {
-          tricky: '{{step.some-step-id.stringProp}}',
+    },
+    {
+      testDescription: 'non-nested objects',
+      params: {
+        objectParam: {
+          key1: 'derp',
+          key2: 'meh',
         },
-        mixedArrayParam: ['abcd', 1234, { e: '5', f: '6' }],
       },
-      executionSteps,
-    )
-
-    expect(result).toEqual({
-      numberParam: 123,
-      numArrayParam: [1, 2, 3],
-      objectParam: { a: '1', b: '2' },
-      objArrayParam: [
-        { a: '1', b: '2' },
-        { c: '3', d: '4' },
-      ],
-      objectWithNestedVariable: {
-        tricky: '{{step.some-step-id.stringProp}}',
+    },
+    {
+      testDescription: 'arrays of non-nested objects',
+      params: {
+        arrayParam: [
+          {
+            key1: 'object 1',
+          },
+          {
+            key1: 'object 2',
+          },
+        ],
       },
-      mixedArrayParam: ['abcd', 1234, { e: '5', f: '6' }],
-    })
+    },
+    {
+      testDescription: 'nested objects',
+      params: {
+        objectParam: {
+          subObject: {
+            key1: 'herp derp',
+          },
+        },
+      },
+    },
+    {
+      testDescription: 'objects with arrays',
+      params: {
+        objectParam: {
+          key1: ['zzzz', 'topkek'],
+        },
+      },
+    },
+  ])('is a no-op on $testDescription without variables', ({ params }) => {
+    const result = computeParameters(params, executionSteps)
+    expect(result).toEqual(params)
   })
 
-  it('supports case where only some params have variables', () => {
+  it('correctly processes parameters that have a mix of prop types', () => {
     const result = computeParameters(
       {
         stringParam: 'hi thar',
         numArrayParam: [1, 2, 3],
-        objectParam: { a: '1', b: '2' },
+        objectParam: {
+          a: '1',
+          b: '2',
+          nestedMixedArray: [
+            { deepNest: '{{step.some-step-id.stringProp}} suffix' },
+            8000,
+            '{{step.some-step-id.stringProp}}',
+          ],
+        },
         mixedArrayParam: [
           'herp! {{step.some-step-id.stringProp}}',
           9000,
           {
-            tricky: '{{step.some-step-id.stringProp}}',
+            key1: '{{step.some-step-id.stringProp}} suffix',
+            nestedArray: ['zzz', '', '{{step.some-step-id.stringProp}}', 8888],
+            anotherObject: {
+              xyz: '{{step.some-step-id.numberProp}}',
+              abc: 'kek',
+            },
           },
           '{{step.some-step-id.numberProp}}',
         ],
@@ -105,12 +209,25 @@ describe('compute parameters', () => {
     expect(result).toEqual({
       stringParam: 'hi thar',
       numArrayParam: [1, 2, 3],
-      objectParam: { a: '1', b: '2' },
+      objectParam: {
+        a: '1',
+        b: '2',
+        nestedMixedArray: [
+          { deepNest: 'string value suffix' },
+          8000,
+          'string value',
+        ],
+      },
       mixedArrayParam: [
         'herp! string value',
         9000,
         {
-          tricky: '{{step.some-step-id.stringProp}}',
+          key1: 'string value suffix',
+          nestedArray: ['zzz', '', 'string value', 8888],
+          anotherObject: {
+            xyz: '123',
+            abc: 'kek',
+          },
         },
         '123',
       ],

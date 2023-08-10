@@ -1,29 +1,26 @@
+import { ITriggerInstructions } from '@plumber/types'
+
 import * as React from 'react'
-import { FormattedMessage } from 'react-intl'
+import ReactMarkdown from 'react-markdown'
 import type { AlertProps } from '@mui/material/Alert'
-import Typography from '@mui/material/Typography'
 
 import TextField from '../TextField'
 
-import { Alert } from './style'
+import { Alert, MessageWrapper } from './style'
 
 type WebhookUrlInfoProps = {
   webhookUrl: string
+  webhookTriggerInstructions: ITriggerInstructions
 } & AlertProps
 
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
-  const { webhookUrl, ...alertProps } = props
+  const { webhookUrl, webhookTriggerInstructions, ...alertProps } = props
 
   return (
     <Alert icon={false} color="info" {...alertProps}>
-      <Typography variant="body2" textAlign="center">
-        <FormattedMessage id="webhookUrlInfo.title" />
-      </Typography>
-
-      <Typography variant="body1" textAlign="center">
-        <FormattedMessage id="webhookUrlInfo.description" />
-      </Typography>
-
+      <MessageWrapper>
+        <ReactMarkdown>{webhookTriggerInstructions.beforeUrlMsg}</ReactMarkdown>
+      </MessageWrapper>
       <TextField
         readOnly
         clickToCopy={true}
@@ -31,6 +28,9 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
         fullWidth
         defaultValue={webhookUrl}
       />
+      <MessageWrapper>
+        <ReactMarkdown>{webhookTriggerInstructions.afterUrlMsg}</ReactMarkdown>
+      </MessageWrapper>
     </Alert>
   )
 }
