@@ -1,5 +1,3 @@
-import type { IStep } from '@plumber/types'
-
 import * as React from 'react'
 import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
@@ -11,18 +9,19 @@ import MuiListItemText from '@mui/material/ListItemText'
 import Paper from '@mui/material/Paper'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
+import type { StepWithVariables, Variable } from 'helpers/variables'
 
 const ListItemText = styled(MuiListItemText)``
 
 type SuggestionsProps = {
-  data: any[]
-  onSuggestionClick: (variable: any) => void
+  data: StepWithVariables[]
+  onSuggestionClick: (variable: Variable) => void
 }
 
 const SHORT_LIST_LENGTH = 4
 const LIST_HEIGHT = 256
 
-const getPartialArray = (array: any[], length = array.length) => {
+function getPartialArray<T>(array: T[], length = array.length) {
   return array.slice(0, length)
 }
 
@@ -49,7 +48,7 @@ const Suggestions = (props: SuggestionsProps) => {
         Variables
       </Typography>
       <List disablePadding>
-        {data.map((option: IStep, index: number) => (
+        {data.map((option, index) => (
           <div key={`primary-suggestion-${option.name}`}>
             <ListItemButton
               divider
@@ -72,8 +71,8 @@ const Suggestions = (props: SuggestionsProps) => {
                 sx={{ maxHeight: LIST_HEIGHT, overflowY: 'auto' }}
                 data-test="power-input-suggestion-group"
               >
-                {getPartialArray((option.output as any) || [], listLength).map(
-                  (suboption: any) => (
+                {getPartialArray(option.output ?? [], listLength).map(
+                  (suboption) => (
                     <ListItemButton
                       sx={{ pl: 4 }}
                       divider
@@ -106,7 +105,7 @@ const Suggestions = (props: SuggestionsProps) => {
                 )}
               </List>
 
-              {(option.output?.length || 0) > listLength && (
+              {option.output?.length > listLength && (
                 <Button fullWidth onClick={expandList}>
                   Show all
                 </Button>

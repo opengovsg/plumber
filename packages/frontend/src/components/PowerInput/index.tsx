@@ -7,13 +7,24 @@ import Popper from '@mui/material/Popper'
 import { FormLabel } from '@opengovsg/design-system-react'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
 import { createEditor } from 'slate'
-import { Editable, Slate, useFocused, useSelected } from 'slate-react'
+import {
+  Editable,
+  RenderElementProps,
+  Slate,
+  useFocused,
+  useSelected,
+} from 'slate-react'
 
-import { extractVariables, filterVariables } from '../../helpers/variables'
+import {
+  extractVariables,
+  filterVariables,
+  StepWithVariables,
+  Variable,
+} from '../../helpers/variables'
 
 import { FakeInput } from './style'
 import Suggestions from './Suggestions'
-import { VariableElement } from './types'
+import { CustomSlateElement, VariableSlateElement } from './types'
 import {
   customizeEditor,
   deserialize,
@@ -58,10 +69,9 @@ const PowerInput = (props: PowerInputProps) => {
   } = props
   const priorStepsWithExecutions = React.useContext(StepExecutionsContext)
   const editorRef = React.useRef<HTMLDivElement | null>(null)
-  const renderElement = React.useCallback(
-    (props: any) => <Element {...props} />,
-    [],
-  )
+  const renderElement = React.useCallback<
+    (props: RenderElementProps) => JSX.Element
+  >((props) => <Element {...props} />, [])
   const editor = React.useMemo(() => customizeEditor(createEditor()), [])
   const [showVariableSuggestions, setShowVariableSuggestions] =
     React.useState(false)
@@ -76,14 +86,14 @@ const PowerInput = (props: PowerInputProps) => {
   }, [priorStepsWithExecutions])
 
   const handleBlur = React.useCallback(
-    (value: any) => {
+    (value: string) => {
       onBlur?.(value)
     },
     [onBlur],
   )
 
   const handleVariableSuggestionClick = React.useCallback(
-    (variable: Pick<VariableElement, 'name' | 'value'>) => {
+    (variable: Variable) => {
       insertVariable(editor, variable, variableLabelMap)
     },
     [variableLabelMap],
@@ -98,7 +108,7 @@ const PowerInput = (props: PowerInputProps) => {
       shouldUnregister={false}
       render={({
         field: {
-          value,
+          value: fieldValue,
           onChange: controllerOnChange,
           onBlur: controllerOnBlur,
         },
@@ -106,7 +116,7 @@ const PowerInput = (props: PowerInputProps) => {
         <FormControl>
           <Slate
             editor={editor}
-            value={deserialize(value)}
+            value={deserialize(fieldValue)}
             onChange={(value) => {
               controllerOnChange(serialize(value))
             }}
@@ -136,7 +146,7 @@ const PowerInput = (props: PowerInputProps) => {
                       }}
                       onBlur={() => {
                         controllerOnBlur()
-                        handleBlur(value)
+                        handleBlur(fieldValue)
                       }}
                     />
                   </VariableLabelMapContext.Provider>
@@ -160,7 +170,14 @@ const PowerInput = (props: PowerInputProps) => {
   )
 }
 
-const SuggestionsPopper = (props: any) => {
+interface SuggestionsPopperProps {
+  open: boolean
+  anchorEl: HTMLDivElement | null
+  data: StepWithVariables[]
+  onSuggestionClick: (variable: Variable) => void
+}
+
+const SuggestionsPopper = (props: SuggestionsPopperProps) => {
   const { open, anchorEl, data, onSuggestionClick } = props
 
   return (
@@ -183,11 +200,21 @@ const SuggestionsPopper = (props: any) => {
   )
 }
 
-const Element = (props: any) => {
+interface ElementProps extends RenderElementProps {
+  children: React.ReactNode
+  element: CustomSlateElement
+}
+
+const Element = (props: ElementProps) => {
   const { attributes, children, element } = props
+
   switch (element.type) {
     case 'variable':
-      return <Variable {...props} />
+      return (
+        <VariablePill attributes={attributes} element={element}>
+          {children}
+        </VariablePill>
+      )
     default:
       return (
         <p
@@ -201,13 +228,17 @@ const Element = (props: any) => {
   }
 }
 
-const Variable = ({ attributes, children, element }: any) => {
+interface VariablePillProps extends ElementProps {
+  element: VariableSlateElement
+}
+
+const VariablePill = ({ attributes, children, element }: VariablePillProps) => {
   const selected = useSelected()
   const focused = useFocused()
   const variableLabelMap = React.useContext(VariableLabelMapContext)
   const label = (
     <>
-      {variableLabelMap.get(element.value) ?? element.value}
+      {(element.value && variableLabelMap.get(element.value)) ?? element.value}
       {children}
     </>
   )

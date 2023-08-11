@@ -1,9 +1,9 @@
-import type { BaseEditor, Descendant, Text } from 'slate'
+import type { BaseEditor, BaseElement } from 'slate'
 import type { ReactEditor } from 'slate-react'
 
-export type VariableElement = {
+export interface VariableSlateElement extends BaseElement {
   type: 'variable'
-  value?: unknown
+  value?: string
 
   /**
    * CAVEAT: not _just_ a name; it contains the lodash.get path for dataOut. Do
@@ -11,22 +11,20 @@ export type VariableElement = {
    */
   name?: string
 
-  children: Text[]
   label?: string
 }
 
-export type ParagraphElement = {
+export interface ParagraphSlateElement extends BaseElement {
   type: 'paragraph'
-  children: Descendant[]
 }
 
-export type CustomEditor = BaseEditor & ReactEditor
+export type CustomSlateEditor = BaseEditor & ReactEditor
 
-export type CustomElement = VariableElement | ParagraphElement
+export type CustomSlateElement = VariableSlateElement | ParagraphSlateElement
 
 declare module 'slate' {
   interface CustomTypes {
-    Editor: CustomEditor
-    Element: CustomElement
+    Editor: CustomSlateEditor
+    Element: CustomSlateElement
   }
 }

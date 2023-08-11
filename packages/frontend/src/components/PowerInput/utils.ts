@@ -1,9 +1,14 @@
 import type { StepWithVariables } from 'helpers/variables'
+import { Variable } from 'helpers/variables'
 import { Descendant, Text, Transforms } from 'slate'
 import { withHistory } from 'slate-history'
 import { withReact } from 'slate-react'
 
-import type { CustomEditor, CustomElement, VariableElement } from './types'
+import type {
+  CustomSlateEditor,
+  CustomSlateElement,
+  VariableSlateElement,
+} from './types'
 
 // Map of variable name with curlies (e.g. '{{step.abc-def.field.1.xyz}}') to
 // its label (its actual label, if defined, otherwise something like
@@ -74,7 +79,7 @@ export const serialize = (value: Descendant[]): string => {
   return value.map((node) => serializeNode(node)).join('\n')
 }
 
-const serializeNode = (node: CustomElement | Descendant): string => {
+const serializeNode = (node: CustomSlateElement | Descendant): string => {
   if (Text.isText(node)) {
     return node.text
   }
@@ -86,14 +91,14 @@ const serializeNode = (node: CustomElement | Descendant): string => {
   return node.children.map((n) => serializeNode(n)).join('')
 }
 
-export const withVariables = (editor: CustomEditor) => {
+export const withVariables = (editor: CustomSlateEditor) => {
   const { isInline, isVoid } = editor
 
-  editor.isInline = (element: CustomElement) => {
+  editor.isInline = (element: CustomSlateElement) => {
     return element.type === 'variable' ? true : isInline(element)
   }
 
-  editor.isVoid = (element: CustomElement) => {
+  editor.isVoid = (element: CustomSlateElement) => {
     return element.type === 'variable' ? true : isVoid(element)
   }
 
@@ -101,13 +106,13 @@ export const withVariables = (editor: CustomEditor) => {
 }
 
 export function insertVariable(
-  editor: CustomEditor,
-  variableData: Pick<VariableElement, 'name' | 'value'>,
+  editor: CustomSlateEditor,
+  variableData: Variable,
   variableLabels: VariableLabelMap,
 ) {
   const value = `{{${variableData.name}}}`
 
-  const variable: VariableElement = {
+  const variable: VariableSlateElement = {
     type: 'variable',
     name: variableLabels.get(value),
     value,
@@ -118,6 +123,8 @@ export function insertVariable(
   Transforms.move(editor)
 }
 
-export const customizeEditor = (editor: CustomEditor): CustomEditor => {
+export const customizeEditor = (
+  editor: CustomSlateEditor,
+): CustomSlateEditor => {
   return withVariables(withReact(withHistory(editor)))
 }
