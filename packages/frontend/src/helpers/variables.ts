@@ -12,20 +12,27 @@ export interface StepWithVariables {
   name: string
   output: Variable[]
 }
-export interface Variable extends RawVariable {
+
+export interface Variable {
   label: string | null
   type: TDataOutMetadatumType | null
   order: number | null
   displayedValue: string | null
+  value: unknown
+
+  /**
+   * A specially-formatted string which demarcates this variable to the backend.
+   *
+   * The backend searches for this string and replaces it with its actual value
+   * during execution. This is always formatted as
+   * `{{step.<step uuid>.<dataOut lodash get path>}}`
+   * (e.g. `{{step.abc-def.field.0.answer}}`).
+   */
+  placeholderString: string
 }
 
 interface RawVariable {
-  /**
-   * CAVEAT: not _just_ a name; it contains the lodash.get path for dataOut. Do
-   * not clobber unles you know what you're doing!
-   */
-  name: string
-
+  lodashPath: string
   value: unknown
 }
 
@@ -37,14 +44,14 @@ function postProcess(
   const result: Variable[] = []
 
   for (const variable of variables) {
-    const { name, ...rest } = variable
+    const { lodashPath, value } = variable
     const {
       isHidden = false,
       type = null,
       label = null,
       order = null,
       displayedValue = null,
-    } = get(metadata, name, {}) as IDataOutMetadatum
+    } = get(metadata, lodashPath, {}) as IDataOutMetadatum
 
     if (isHidden) {
       continue
@@ -55,8 +62,8 @@ function postProcess(
       type,
       order,
       displayedValue,
-      name: `step.${stepId}.${name}`,
-      ...rest,
+      value,
+      placeholderString: `{{step.${stepId}.${lodashPath}}}`,
     })
   }
 
@@ -80,11 +87,15 @@ function postProcess(
 const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
 
-const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
+const process = (
+  data: any,
+  parentKey: string,
+  index?: number,
+): RawVariable[] => {
   if (typeof data !== 'object') {
     return [
       {
-        name: `${parentKey}.${index}`,
+        lodashPath: `${parentKey}.${index}`,
         value: data,
       },
     ]
@@ -93,19 +104,24 @@ const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
   const entries = Object.entries(data)
 
   return entries.flatMap(([name, value]) => {
-    const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
+    const lodashPath = joinBy(
+      '.',
+      parentKey,
+      (index as number)?.toString(),
+      name,
+    )
 
     if (Array.isArray(value)) {
-      return value.flatMap((item, index) => process(item, fullName, index))
+      return value.flatMap((item, index) => process(item, lodashPath, index))
     }
 
     if (typeof value === 'object' && value !== null) {
-      return process(value, fullName)
+      return process(value, lodashPath)
     }
 
     return [
       {
-        name: fullName,
+        lodashPath,
         value,
       },
     ]

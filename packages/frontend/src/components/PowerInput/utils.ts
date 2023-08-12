@@ -10,9 +10,8 @@ import type {
   VariableSlateElement,
 } from './types'
 
-// Map of variable name with curlies (e.g. '{{step.abc-def.field.1.xyz}}') to
-// its label (its actual label, if defined, otherwise something like
-// 'step2.field.1.xyz').
+// Map of variable placeholder strings to its label (its actual label, if
+// defined, otherwise something like 'step2.field.1.xyz').
 export type VariableLabelMap = Map<string, string>
 
 export function genVariableLabelMap(
@@ -23,9 +22,11 @@ export function genVariableLabelMap(
   for (const [stepPosition, step] of stepsWithVariables.entries()) {
     for (const variable of step.output) {
       result.set(
-        `{{${variable.name}}}`,
+        variable.placeholderString,
         variable.label ??
-          variable.name.replace(`step.${step.id}.`, `step${stepPosition + 1}.`),
+          variable.placeholderString
+            .slice(2, -2) // Remove curly braces
+            .replace(`step.${step.id}.`, `step${stepPosition + 1}.`),
       )
     }
   }
@@ -110,12 +111,10 @@ export function insertVariable(
   variableData: Variable,
   variableLabels: VariableLabelMap,
 ) {
-  const value = `{{${variableData.name}}}`
-
   const variable: VariableSlateElement = {
     type: 'variable',
-    name: variableLabels.get(value),
-    value,
+    name: variableLabels.get(variableData.placeholderString),
+    value: variableData.placeholderString,
     children: [{ text: '' }],
   }
 

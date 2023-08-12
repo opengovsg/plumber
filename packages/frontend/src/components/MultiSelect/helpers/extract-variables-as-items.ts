@@ -22,9 +22,14 @@ function extractVariablesAsItems(
       }
 
       result.push({
-        label: `[${step.name}] ${variable.label ?? variable.name}`,
+        label: `[${step.name}] ${
+          variable.label ??
+          variable.placeholderString
+            // Remove curly braces from placeholder
+            .slice(2, -2)
+        }`,
         description: variable.displayedValue ?? String(variable.value),
-        value: `{{${variable.name}}}`,
+        value: variable.placeholderString,
       })
     }
   }

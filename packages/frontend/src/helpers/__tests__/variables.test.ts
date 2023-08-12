@@ -48,7 +48,7 @@ describe('variables', () => {
           output: [
             // Use objectContaining to avoid enumerating all metadata props
             expect.objectContaining({
-              name: 'step.step1-id.stringProp',
+              placeholderString: '{{step.step1-id.stringProp}}',
               value: 'string value',
             }),
           ],
@@ -58,7 +58,7 @@ describe('variables', () => {
           name: '2. App2',
           output: [
             expect.objectContaining({
-              name: 'step.step2-id.numberProp',
+              placeholderString: '{{step.step2-id.numberProp}}',
               value: 456,
             }),
           ],
@@ -76,15 +76,15 @@ describe('variables', () => {
         const result = extractVariables(steps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
-            name: 'step.step1-id.stringProp',
+            placeholderString: '{{step.step1-id.stringProp}}',
             value: 'string value',
           }),
           expect.objectContaining({
-            name: 'step.step1-id.objectProp.a',
+            placeholderString: '{{step.step1-id.objectProp.a}}',
             value: 1,
           }),
           expect.objectContaining({
-            name: 'step.step1-id.objectProp.b',
+            placeholderString: '{{step.step1-id.objectProp.b}}',
             value: 'str-2',
           }),
         ])
@@ -100,26 +100,26 @@ describe('variables', () => {
         const result = extractVariables(steps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
-            name: 'step.step1-id.stringProp',
+            placeholderString: '{{step.step1-id.stringProp}}',
             value: 'string value',
           }),
           expect.objectContaining({
-            name: 'step.step1-id.arrayProp.0',
+            placeholderString: '{{step.step1-id.arrayProp.0}}',
             label: null,
             value: 9000,
           }),
           expect.objectContaining({
-            name: 'step.step1-id.arrayProp.1',
+            placeholderString: '{{step.step1-id.arrayProp.1}}',
             label: null,
             value: 'HI THAR',
           }),
           expect.objectContaining({
-            name: 'step.step1-id.arrayProp.2.c',
+            placeholderString: '{{step.step1-id.arrayProp.2.c}}',
             label: null,
             value: '1',
           }),
           expect.objectContaining({
-            name: 'step.step1-id.arrayProp.2.d',
+            placeholderString: '{{step.step1-id.arrayProp.2.d}}',
             label: null,
             value: 2,
           }),
@@ -138,7 +138,7 @@ describe('variables', () => {
         const result = extractVariables(steps)
         expect(result[0].output[0]).toEqual(
           expect.objectContaining({
-            name: 'step.step1-id.stringProp',
+            placeholderString: '{{step.step1-id.stringProp}}',
             label: 'test label',
             value: 'string value',
           }),
@@ -161,12 +161,12 @@ describe('variables', () => {
         const result = extractVariables(steps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
-            name: 'step.step1-id.objectProp.a',
+            placeholderString: '{{step.step1-id.objectProp.a}}',
             label: 'label a',
             value: 1,
           }),
           expect.objectContaining({
-            name: 'step.step1-id.objectProp.b',
+            placeholderString: '{{step.step1-id.objectProp.b}}',
             label: 'label b',
             value: 'stringy 2',
           }),
@@ -187,22 +187,22 @@ describe('variables', () => {
         const result = extractVariables(steps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
-            name: 'step.step1-id.arrayProp.0',
+            placeholderString: '{{step.step1-id.arrayProp.0}}',
             label: 'label 9000',
             value: 9000,
           }),
           expect.objectContaining({
-            name: 'step.step1-id.arrayProp.1',
+            placeholderString: '{{step.step1-id.arrayProp.1}}',
             label: 'label HI THAR',
             value: 'HI THAR',
           }),
           expect.objectContaining({
-            name: 'step.step1-id.arrayProp.2.c',
+            placeholderString: '{{step.step1-id.arrayProp.2.c}}',
             label: 'label c prop',
             value: '1',
           }),
           expect.objectContaining({
-            name: 'step.step1-id.arrayProp.2.d',
+            placeholderString: '{{step.step1-id.arrayProp.2.d}}',
             label: 'label d prop',
             value: 2,
           }),
@@ -314,7 +314,7 @@ describe('variables', () => {
               type: 'text',
               order: 1,
               displayedValue: null,
-              name: 'step1-id.abc-def.textVar',
+              placeholderString: '{{step1-id.abc-def.textVar}}',
               value: 'abcd',
             },
             {
@@ -322,7 +322,7 @@ describe('variables', () => {
               type: 'file',
               order: 2,
               displayedValue: null,
-              name: 'step1-id.abc-def.fileVar',
+              placeholderString: '{{step1-id.abc-def.fileVar}}',
               value: '01010010010',
             },
           ],
@@ -336,7 +336,7 @@ describe('variables', () => {
               type: 'text',
               order: 1,
               displayedValue: null,
-              name: 'step2-id.wx-yz.anotherTextVar',
+              placeholderString: '{{step2-id.wx-yz.anotherTextVar}}',
               value: 'wxyz',
             },
           ],
@@ -359,7 +359,7 @@ describe('variables', () => {
               type: 'text',
               order: 1,
               displayedValue: null,
-              name: 'step1-id.abc-def.textVar',
+              placeholderString: '{{step1-id.abc-def.textVar}}',
               value: 'abcd',
             },
           ],
@@ -373,7 +373,7 @@ describe('variables', () => {
               type: 'text',
               order: 1,
               displayedValue: null,
-              name: 'step2-id.wx-yz.anotherTextVar',
+              placeholderString: '{{step2-id.wx-yz.anotherTextVar}}',
               value: 'wxyz',
             },
           ],

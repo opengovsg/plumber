@@ -78,10 +78,13 @@ const Suggestions = (props: SuggestionsProps) => {
                       divider
                       onClick={() => onSuggestionClick(suboption)}
                       data-test="power-input-suggestion-item"
-                      key={`suggestion-${suboption.name}`}
+                      key={`suggestion-${suboption.placeholderString}`}
                     >
                       <ListItemText
-                        primary={suboption.label ?? suboption.name}
+                        primary={
+                          suboption.label ??
+                          suboption.placeholderString.slice(2, -2)
+                        }
                         primaryTypographyProps={{
                           variant: 'subtitle1',
                           title: 'Property name',
