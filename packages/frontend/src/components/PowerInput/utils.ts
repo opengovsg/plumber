@@ -57,7 +57,7 @@ export function deserialize(value: string): Descendant[] {
           if (node.match(variableRegExp)) {
             return {
               type: 'variable',
-              value: node,
+              placeholderString: node,
               children: [{ text: '' }],
             }
           }
@@ -86,7 +86,7 @@ const serializeNode = (node: CustomSlateElement | Descendant): string => {
   }
 
   if (node.type === 'variable') {
-    return node.value as string
+    return node.placeholderString
   }
 
   return node.children.map((n) => serializeNode(n)).join('')
@@ -106,19 +106,14 @@ export const withVariables = (editor: CustomSlateEditor) => {
   return editor
 }
 
-export function insertVariable(
-  editor: CustomSlateEditor,
-  variableData: Variable,
-  variableLabels: VariableLabelMap,
-) {
-  const variable: VariableSlateElement = {
+export function insertVariable(editor: CustomSlateEditor, variable: Variable) {
+  const slateElement: VariableSlateElement = {
     type: 'variable',
-    name: variableLabels.get(variableData.placeholderString),
-    value: variableData.placeholderString,
+    placeholderString: variable.placeholderString,
     children: [{ text: '' }],
   }
 
-  Transforms.insertNodes(editor, variable)
+  Transforms.insertNodes(editor, slateElement)
   Transforms.move(editor)
 }
 

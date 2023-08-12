@@ -3,15 +3,7 @@ import type { ReactEditor } from 'slate-react'
 
 export interface VariableSlateElement extends BaseElement {
   type: 'variable'
-  value?: string
-
-  /**
-   * CAVEAT: not _just_ a name; it contains the lodash.get path for dataOut. Do
-   * not clobber unles you know what you're doing!
-   */
-  name?: string
-
-  label?: string
+  placeholderString: string
 }
 
 export interface ParagraphSlateElement extends BaseElement {

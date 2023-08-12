@@ -94,9 +94,9 @@ const PowerInput = (props: PowerInputProps) => {
 
   const handleVariableSuggestionClick = React.useCallback(
     (variable: Variable) => {
-      insertVariable(editor, variable, variableLabelMap)
+      insertVariable(editor, variable)
     },
-    [variableLabelMap],
+    [editor],
   )
 
   return (
@@ -238,7 +238,8 @@ const VariablePill = ({ attributes, children, element }: VariablePillProps) => {
   const variableLabelMap = React.useContext(VariableLabelMapContext)
   const label = (
     <>
-      {(element.value && variableLabelMap.get(element.value)) ?? element.value}
+      {variableLabelMap.get(element.placeholderString) ??
+        element.placeholderString.slice(2, -2)}
       {children}
     </>
   )
