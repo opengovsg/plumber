@@ -10,24 +10,38 @@ import type {
   VariableSlateElement,
 } from './types'
 
-// Map of variable placeholder strings to its label (its actual label, if
-// defined, otherwise something like 'step2.field.1.xyz').
-export type VariableLabelMap = Map<string, string>
+/**
+ * Map of variable placeholders strings to their associated info:
+ * 1. Label obtained from dataOutMetadata (if defined). Otherwise,
+ *    'step2.field.1.xyz'.
+ * 2. Value obtained from the test run.
+ */
+export type VariableInfoMap = Map<
+  string,
+  {
+    label: string
+    value: string
+  }
+>
 
-export function genVariableLabelMap(
+export function genVariableInfoMap(
   stepsWithVariables: StepWithVariables[],
-): VariableLabelMap {
-  const result: VariableLabelMap = new Map()
+): VariableInfoMap {
+  const result: VariableInfoMap = new Map()
 
   for (const [stepPosition, step] of stepsWithVariables.entries()) {
     for (const variable of step.output) {
-      result.set(
-        variable.placeholderString,
+      const label =
         variable.label ??
-          variable.placeholderString
-            .slice(2, -2) // Remove curly braces
-            .replace(`step.${step.id}.`, `step${stepPosition + 1}.`),
-      )
+        variable.placeholderString
+          .slice(2, -2) // Remove curly braces
+          .replace(`step.${step.id}.`, `step${stepPosition + 1}.`)
+      const value = variable.displayedValue ?? String(variable.value)
+
+      result.set(variable.placeholderString, {
+        label,
+        value,
+      })
     }
   }
 

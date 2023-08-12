@@ -1,19 +1,12 @@
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import { FormControl } from '@chakra-ui/react'
+import { FormControl, Text } from '@chakra-ui/react'
 import ClickAwayListener from '@mui/base/ClickAwayListener'
-import Chip from '@mui/material/Chip'
 import Popper from '@mui/material/Popper'
-import { FormLabel } from '@opengovsg/design-system-react'
+import { Badge, FormLabel } from '@opengovsg/design-system-react'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
 import { createEditor } from 'slate'
-import {
-  Editable,
-  RenderElementProps,
-  Slate,
-  useFocused,
-  useSelected,
-} from 'slate-react'
+import { Editable, RenderElementProps, Slate } from 'slate-react'
 
 import {
   extractVariables,
@@ -28,16 +21,14 @@ import { CustomSlateElement, VariableSlateElement } from './types'
 import {
   customizeEditor,
   deserialize,
-  genVariableLabelMap,
+  genVariableInfoMap,
   insertVariable,
   serialize,
-  VariableLabelMap,
+  VariableInfoMap,
 } from './utils'
 
 // FIXME (ogp-weeloong): Refactor this to something cleaner later...
-const VariableLabelMapContext = React.createContext<VariableLabelMap>(
-  new Map<string, string>(),
-)
+const VariableInfoMapContext = React.createContext<VariableInfoMap>(new Map())
 
 type PowerInputProps = {
   onChange?: (value: string) => void
@@ -76,13 +67,13 @@ const PowerInput = (props: PowerInputProps) => {
   const [showVariableSuggestions, setShowVariableSuggestions] =
     React.useState(false)
 
-  const [stepsWithVariables, variableLabelMap] = React.useMemo(() => {
+  const [stepsWithVariables, variableInfoMap] = React.useMemo(() => {
     const stepsWithVars = filterVariables(
       extractVariables(priorStepsWithExecutions),
       (variable) => (variable.type ?? 'text') === 'text',
     )
-    const labels = genVariableLabelMap(stepsWithVars)
-    return [stepsWithVars, labels]
+    const info = genVariableInfoMap(stepsWithVars)
+    return [stepsWithVars, info]
   }, [priorStepsWithExecutions])
 
   const handleBlur = React.useCallback(
@@ -135,7 +126,7 @@ const PowerInput = (props: PowerInputProps) => {
               {/* ref-able single child for ClickAwayListener */}
               <div style={{ width: '100%' }} data-test="power-input">
                 <FakeInput disabled={disabled}>
-                  <VariableLabelMapContext.Provider value={variableLabelMap}>
+                  <VariableInfoMapContext.Provider value={variableInfoMap}>
                     <Editable
                       placeholder={placeholder}
                       readOnly={disabled}
@@ -149,7 +140,7 @@ const PowerInput = (props: PowerInputProps) => {
                         handleBlur(fieldValue)
                       }}
                     />
-                  </VariableLabelMapContext.Provider>
+                  </VariableInfoMapContext.Provider>
                 </FakeInput>
 
                 {/* ghost placer for the variables popover */}
@@ -210,10 +201,12 @@ const Element = (props: ElementProps) => {
 
   switch (element.type) {
     case 'variable':
+      // Not spreading props - TS can't figure out that type has already been
+      // narrowed.
       return (
-        <VariablePill attributes={attributes} element={element}>
+        <VariableBadge attributes={attributes} element={element}>
           {children}
-        </VariablePill>
+        </VariableBadge>
       )
     default:
       return (
@@ -228,32 +221,32 @@ const Element = (props: ElementProps) => {
   }
 }
 
-interface VariablePillProps extends ElementProps {
+interface VariableBadgeProps extends RenderElementProps {
   element: VariableSlateElement
 }
 
-const VariablePill = ({ attributes, children, element }: VariablePillProps) => {
-  const selected = useSelected()
-  const focused = useFocused()
-  const variableLabelMap = React.useContext(VariableLabelMapContext)
-  const label = (
-    <>
-      {variableLabelMap.get(element.placeholderString) ??
-        element.placeholderString.slice(2, -2)}
-      {children}
-    </>
+const VariableBadge = ({
+  element,
+
+  // We need to forward attributes and children for slate to work.
+  attributes,
+  children,
+}: VariableBadgeProps) => {
+  const variableInfo = React.useContext(VariableInfoMapContext).get(
+    element.placeholderString,
   )
+
+  const label = variableInfo?.label ?? element.placeholderString.slice(2, -2)
+  const value = variableInfo?.value
+
   return (
-    <Chip
-      {...attributes}
-      component="span"
-      contentEditable={false}
-      style={{
-        boxShadow: selected && focused ? '0 0 0 2px #B4D5FF' : 'none',
-      }}
-      size="small"
-      label={label}
-    />
+    <Badge variant="solid" bg="primary.100" borderRadius={50} {...attributes}>
+      <Text color="#2C2E34" mr={1}>
+        {label}
+      </Text>
+      {value && <Text color="#666C7A">{value}</Text>}
+      {children}
+    </Badge>
   )
 }
 
