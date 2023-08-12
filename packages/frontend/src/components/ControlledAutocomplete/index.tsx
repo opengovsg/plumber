@@ -24,6 +24,7 @@ interface ControlledAutocompleteProps
   description?: string
   dependsOn?: string[]
   onRefresh?: () => void
+  required?: boolean
 }
 
 const filter = createFilterOptions<IFieldDropdownOption>()
@@ -61,7 +62,7 @@ function ControlledAutocomplete(
     freeSolo,
     onRefresh,
     loading,
-    disableClearable: required,
+    required,
     ...autocompleteProps
   } = props
 
