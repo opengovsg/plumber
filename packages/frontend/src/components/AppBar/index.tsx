@@ -14,6 +14,7 @@ import * as URLS from 'config/urls'
 import theme from 'styles/theme'
 
 import { Link as RouterLink } from './style'
+import NewsDrawer from 'components/NewsDrawer'
 
 type AppBarProps = {
   drawerOpen: boolean
@@ -46,6 +47,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
     <MuiAppBar
       color="transparent"
       position={drawerOpen && matchSmallScreens ? 'fixed' : 'relative'}
+      sx={{ zIndex: 1 }}
     >
       <ChakraBox maxW={maxWidth}>
         <Toolbar>
@@ -83,6 +85,8 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
           >
             Guide
           </Link>
+
+          <NewsDrawer></NewsDrawer>
 
           <IconButton
             size="large"
