@@ -45,12 +45,7 @@ export default function NewsDrawer() {
               spacing="1rem"
             >
               {TEST_ITEM_LIST.map((item, index) => (
-                <NewsItem
-                  key={index}
-                  date={item.date}
-                  title={item.title}
-                  details={item.details}
-                ></NewsItem>
+                <NewsItem key={index} {...item} />
               ))}
             </Stack>
           </DrawerBody>

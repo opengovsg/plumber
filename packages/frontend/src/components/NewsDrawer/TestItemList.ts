@@ -1,17 +1,21 @@
 // This file is for test data
 import dedent from 'dedent'
 
-import { NewsItemContent } from './NewsItemList'
+import { NewsItemProps } from './NewsItem'
 
 // to dump into another file if there are too many links
 const TEST_EXTERNAL_LINK = 'https://plumber.gov.sg/'
 const TEST_INTERNAL_LINK = 'http://localhost:3001/executions'
 
-export const TEST_ITEM_LIST: NewsItemContent[] = [
+export const TEST_ITEM_LIST: NewsItemProps[] = [
   {
     date: new Date('12 Aug 2023 GMT+8'),
     title: 'Test external link - opens a new tab',
     details: `Welcome to Plumber. [Learn more](${TEST_EXTERNAL_LINK})`,
+    image: {
+      url: 'https://picsum.photos/500/500',
+      alt: 'Random image from lorem picsum',
+    },
   },
   {
     date: new Date('12 Aug 2023 GMT+8'),

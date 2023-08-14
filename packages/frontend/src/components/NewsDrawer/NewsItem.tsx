@@ -1,13 +1,18 @@
-import { Box, Text } from '@chakra-ui/react'
+import { useMemo } from 'react'
+import { Box, Image, Text } from '@chakra-ui/react'
 import MarkdownRenderer from 'components/MarkdownRenderer'
 import { NEWS_DRAWER_COMPONENT } from 'components/MarkdownRenderer/Components/NewsDrawerComponent'
 import { format } from 'date-fns'
 
-interface NewsItemProps {
+export type NewsItemImage = {
+  url: string
+  alt: string
+}
+export interface NewsItemProps {
   date: Date
   title: string
   details: string
-  image?: string
+  image?: NewsItemImage
 }
 
 const DATE_FORMAT = 'dd MMM yyyy'
@@ -15,6 +20,16 @@ const DATE_FORMAT = 'dd MMM yyyy'
 export default function NewsItem(props: NewsItemProps) {
   const { date, title, details, image } = props
   const formattedDate = format(date, DATE_FORMAT)
+
+  const displayedImage = useMemo(() => {
+    if (!image) {
+      return
+    }
+    return (
+      <Image fit="fill" src={image.url} title={image.alt} alt={image.alt} />
+    )
+  }, [image])
+
   return (
     <Box>
       <Text textStyle="caption-1" color="secondary.400">
@@ -27,6 +42,9 @@ export default function NewsItem(props: NewsItemProps) {
         source={details}
         components={NEWS_DRAWER_COMPONENT}
       ></MarkdownRenderer>
+      <Box mb="1rem" mt="2rem" role="presentation">
+        {displayedImage}
+      </Box>
     </Box>
   )
 }
