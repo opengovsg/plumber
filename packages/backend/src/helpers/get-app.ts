@@ -76,11 +76,21 @@ function isTrigger(
   return stepType === 'trigger'
 }
 
-const addStaticSubsteps = (
+function addStaticSubsteps(
+  stepType: 'trigger',
+  appData: IApp,
+  step: IRawTrigger,
+): ITrigger
+function addStaticSubsteps(
+  stepType: 'action',
+  appData: IApp,
+  step: IRawAction,
+): IAction
+function addStaticSubsteps(
   stepType: 'trigger' | 'action',
   appData: IApp,
   step: IRawTrigger | IRawAction,
-): ITrigger | IAction => {
+) {
   const computedStep: ITrigger | IAction = omit(step, ['arguments'])
 
   computedStep.substeps = []

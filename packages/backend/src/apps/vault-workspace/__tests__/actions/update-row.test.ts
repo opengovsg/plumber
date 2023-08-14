@@ -89,7 +89,9 @@ describe('update row', () => {
     $.step.parameters.lookupValue = 'valid_lookup_value'
     $.step.parameters.updateColumn = 'update_column'
     $.step.parameters.updateValue = 'update_value'
-    await expect(updateTableDataAction.run($)).resolves.toEqual(undefined)
+    await expect(updateTableDataAction.run($, vi.fn())).resolves.toEqual(
+      undefined,
+    )
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         _metadata: {
@@ -110,7 +112,9 @@ describe('update row', () => {
     $.step.parameters.lookupValue = 'wrong_lookup_value'
     $.step.parameters.updateColumn = 'update_column'
     $.step.parameters.updateValue = 'update_value'
-    await expect(updateTableDataAction.run($)).resolves.toEqual(undefined)
+    await expect(updateTableDataAction.run($, vi.fn())).resolves.toEqual(
+      undefined,
+    )
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         _metadata: {

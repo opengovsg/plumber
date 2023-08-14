@@ -1,3 +1,5 @@
+import { IStep } from '@plumber/types'
+
 import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
@@ -19,12 +21,13 @@ export const processAction = async (options: ProcessActionOptions) => {
   const { flowId, stepId, executionId, jobId } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
+  const flow = await Flow.query().findById(flowId).throwIfNotFound()
   const execution = await Execution.query()
     .findById(executionId)
     .throwIfNotFound()
 
   const $ = await globalVariable({
-    flow: await Flow.query().findById(flowId).throwIfNotFound(),
+    flow,
     app: await step.getApp(),
     step: step,
     connection: await step.$relatedQuery('connection'),
@@ -47,9 +50,35 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   $.step.parameters = computedParameters
 
-  let proceedToNextAction = true
+  // This is a tri-state variable with the following possible values:
+  // * undefined = Go to default next step (i.e. step position + 1)
+  // * null = Stop flow execution
+  // * concrete value = Go to step with ID equal to this value.
+  let nextStepId: IStep['id'] | null | undefined = undefined
   try {
-    await actionCommand.run($)
+    await actionCommand.run($, (stepIdToRedirectTo: IStep['id'] | null) => {
+      nextStepId = stepIdToRedirectTo ?? null // Force undefined to null... just in case.
+
+      if (stepIdToRedirectTo) {
+        logger.info(
+          `Step ${stepId} redirected flow execution to step ID ${stepIdToRedirectTo}.`,
+          {
+            event: 'step-redirected-flow-execution',
+            executionId,
+            stepId,
+            flowId,
+            stepIdToRedirectTo,
+          },
+        )
+      } else {
+        logger.info(`Step ${stepId} stopped flow execution.`, {
+          event: 'step-stopped-flow-execution',
+          executionId,
+          stepId,
+          flowId,
+        })
+      }
+    })
   } catch (error) {
     logger.error(error)
     if (error instanceof HttpError) {
@@ -59,7 +88,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         statusText: error.response.statusText,
       }
     } else if (error instanceof CancelFlowError) {
-      proceedToNextAction = false
+      nextStepId = null
     } else {
       try {
         $.actionOutput.error = JSON.parse(error.message)
@@ -81,12 +110,22 @@ export const processAction = async (options: ProcessActionOptions) => {
       jobId,
     })
 
+  let nextStep = null
+  if (nextStepId === undefined) {
+    nextStep = await step.getNextStep()
+  } else if (nextStepId !== null) {
+    nextStep = await flow
+      .$relatedQuery('steps')
+      .findById(nextStepId)
+      .throwIfNotFound()
+  }
+
   return {
     flowId,
     stepId,
     executionId,
     executionStep,
-    proceedToNextAction,
     computedParameters,
+    nextStep,
   }
 }
