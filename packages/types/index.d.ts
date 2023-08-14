@@ -351,7 +351,16 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  run?($: IGlobalVariable): Promise<void>
+  run?(
+    $: IGlobalVariable,
+
+    /**
+     * Sets the next step that should be run _after_ this action successfully
+     * completes. If the next step ID is set to null, the flow will be stopped
+     * instead.
+     */
+    setNextStep: (stepId: IStep['id'] | null) => void,
+  ): Promise<void>
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.

@@ -40,14 +40,14 @@ describe('create row', () => {
   it('creates a row if columns and values have equal length ', async () => {
     $.step.parameters.columns = 'column_1, column_2'
     $.step.parameters.values = 'value_1, column_2'
-    await createRowAction.run($)
+    await createRowAction.run($, vi.fn())
     expect(mocks.createTableRow).toHaveBeenCalledOnce()
   })
 
   it('errors if columns and values have different lengths', async () => {
     $.step.parameters.columns = 'column_1, column_2'
     $.step.parameters.values = 'value_1'
-    await expect(createRowAction.run($)).rejects.toThrowError(
+    await expect(createRowAction.run($, vi.fn())).rejects.toThrowError(
       'The number of columns and values must be equal.',
     )
   })
@@ -67,7 +67,7 @@ describe('create row', () => {
     async ({ columns, values }) => {
       $.step.parameters.columns = columns
       $.step.parameters.values = values
-      await createRowAction.run($)
+      await createRowAction.run($, vi.fn())
       expect(mocks.createTableRow).toHaveBeenCalledOnce()
     },
   )
@@ -90,7 +90,7 @@ describe('create row', () => {
     async ({ columns, values }) => {
       $.step.parameters.columns = columns
       $.step.parameters.values = values
-      await expect(createRowAction.run($)).rejects.toThrowError()
+      await expect(createRowAction.run($, vi.fn())).rejects.toThrowError()
     },
   )
 })
