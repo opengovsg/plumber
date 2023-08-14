@@ -151,19 +151,23 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
                 {formatMessage('flowEditor.noTestDataTitle')}
               </AlertTitle>
 
-              <Box sx={{ fontWeight: 400 }}>
+              <Box sx={{ fontWeight: 400, width: '100%' }}>
                 {formatMessage('flowEditor.noTestDataMessage')}
               </Box>
             </Alert>
           )}
 
           {stepsWithVariables.length === 1 && (
-            <Box
-              sx={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
-              data-test="flow-test-substep-output"
-            >
-              <Alert severity="info">We found these variables:</Alert>
-              <VariablesList variables={stepsWithVariables[0].output} />
+            <Box sx={{ width: '100%' }}>
+              <Alert severity="info" sx={{ width: '100%' }}>
+                We found these variables:
+              </Alert>
+              <Box
+                sx={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
+                data-test="flow-test-substep-output"
+              >
+                <VariablesList variables={stepsWithVariables[0].output} />
+              </Box>
             </Box>
           )}
 

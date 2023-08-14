@@ -16,7 +16,7 @@ describe('new submission trigger', () => {
             answer: 'herp derp',
             fieldType: 'textField',
             order: 1,
-            answerArray: ['answer 1', 'answer 2'],
+            // answerArray: ['answer 1', 'answer 2'],
           },
         },
         verifiedSubmitterInfo: {
