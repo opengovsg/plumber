@@ -241,10 +241,12 @@ const VariableBadge = ({
 
   return (
     <Badge variant="solid" bg="primary.100" borderRadius={50} {...attributes}>
-      <Text color="#2C2E34" mr={1}>
-        {label}
-      </Text>
-      {value && <Text color="#666C7A">{value}</Text>}
+      <Text color="#2C2E34">{label}</Text>
+      {value && (
+        <Text color="#666C7A" ml={1}>
+          {value}
+        </Text>
+      )}
       {children}
     </Badge>
   )
