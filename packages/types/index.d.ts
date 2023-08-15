@@ -151,11 +151,11 @@ type AutoCompleteValue = 'off' | 'url' | 'email'
 
 export interface IBaseField {
   key: string
-  label: string
+  label?: string
   type: string
   required?: boolean
   readOnly?: boolean
-  placeholder?: string | null
+  placeholder?: string
   description?: string
   docUrl?: string
   clickToCopy?: boolean
@@ -208,11 +208,19 @@ export interface IFieldMultiSelect extends IBaseField {
   variableTypes?: TDataOutMetadatumType[]
 }
 
+export interface IFieldMultiRow extends IBaseField {
+  type: 'multirow'
+  value?: string
+
+  subFields: IField[]
+}
+
 export type IField =
   | IFieldDropdown
   | IFieldText
   | IFieldMultiline
   | IFieldMultiSelect
+  | IFieldMultiRow
 
 export interface IAuthenticationStepField {
   name: string
@@ -291,12 +299,19 @@ export interface ITriggerItem {
   }
 }
 
+export interface ITriggerInstructions {
+  beforeUrlMsg: string
+  afterUrlMsg: string
+  errorMsg?: string
+}
+
 export interface IBaseTrigger {
   name: string
   key: string
   type?: 'webhook' | 'polling'
   pollInterval?: number
   description: string
+  webhookTriggerInstructions?: ITriggerInstructions
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>

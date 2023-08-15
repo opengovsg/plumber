@@ -1,28 +1,36 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import CloseIcon from '@mui/icons-material/Close'
 import { Box, IconButton } from '@mui/material'
+import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { getItemForSession, setItemForSession } from 'helpers/storage'
-import useFormatMessage from 'hooks/useFormatMessage'
 
-const BANNER_TEXT_ID = 'bannerText'
+const LAUNCH_DARKLY_BANNER_KEY = 'banner_display'
+const EMPTY_BANNER_MESSAGE = ''
 
 const SiteWideBanner = (): JSX.Element | null => {
-  const formatMessage = useFormatMessage()
-  // seems like this cant return empty string, so using _ as hacky empty string alternative
-  const message = formatMessage(BANNER_TEXT_ID)
-  const [showBanner, setShowBanner] = useState(false)
-  useEffect(() => {
-    const bannerTextStored = getItemForSession('hide-banner')
-    setShowBanner(message !== bannerTextStored)
-  }, [])
+  const [bannerMessage, setBannerMessage] = useState(EMPTY_BANNER_MESSAGE)
+  const launchDarkly = useContext(LaunchDarklyContext)
 
   const closeBanner = useCallback(() => {
-    setShowBanner(false)
-    setItemForSession('hide-banner', message)
-  }, [])
+    setBannerMessage(EMPTY_BANNER_MESSAGE)
+    setItemForSession('hide-banner', bannerMessage)
+  }, [bannerMessage])
 
-  // this means the banner text is empty, so dont show the banner
-  if (message === BANNER_TEXT_ID) {
+  // check for feature flag (takes time to load) to display banner
+  useEffect(() => {
+    if (launchDarkly.flags) {
+      // message needs to be fetched everytime the page is re-rendered
+      const message = launchDarkly.flags[LAUNCH_DARKLY_BANNER_KEY]
+      const bannerMessageStored = getItemForSession('hide-banner')
+      if (message !== bannerMessageStored) {
+        setBannerMessage(message)
+      } else {
+        setBannerMessage(EMPTY_BANNER_MESSAGE)
+      }
+    }
+  }, [launchDarkly])
+
+  if (bannerMessage === EMPTY_BANNER_MESSAGE) {
     return null
   }
   return (
@@ -33,7 +41,7 @@ const SiteWideBanner = (): JSX.Element | null => {
         textAlign: 'center',
         backgroundColor: 'primary.dark',
         color: 'white',
-        display: showBanner ? 'flex' : 'none',
+        display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
@@ -44,7 +52,7 @@ const SiteWideBanner = (): JSX.Element | null => {
         },
       }}
     >
-      {message}
+      {bannerMessage}
       <IconButton
         size="small"
         onClick={closeBanner}

@@ -11,7 +11,6 @@ export default {
       required: true,
       readOnly: false,
       value: null,
-      placeholder: null,
       description:
         'Enter your Form URL e.g. https://form.gov.sg/654ab1234abc1a012345f1e0b',
       clickToCopy: false,
@@ -24,7 +23,6 @@ export default {
       required: true,
       readOnly: false,
       value: null,
-      placeholder: null,
       description: 'Secret key for your Form',
       clickToCopy: false,
       autoComplete: 'off' as const,

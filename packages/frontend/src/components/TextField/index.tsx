@@ -13,6 +13,7 @@ import copyInputValue from 'helpers/copyInputValue'
 type TextFieldProps = {
   shouldUnregister?: boolean
   name: string
+  label?: string
   clickToCopy?: boolean
   readOnly?: boolean
   description?: string

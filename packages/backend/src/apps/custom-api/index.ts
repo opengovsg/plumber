@@ -3,19 +3,17 @@ import defineApp from '@/helpers/define-app'
 import addHeaders from './common/add-headers'
 import actions from './actions'
 import auth from './auth'
-import triggers from './triggers'
 
 export default defineApp({
-  name: 'Webhook',
-  key: 'webhook',
-  iconUrl: '{BASE_URL}/apps/webhook/assets/favicon.svg',
-  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/triggers/webhooks',
+  name: 'Custom API',
+  key: 'custom-api',
+  iconUrl: '{BASE_URL}/apps/custom-api/assets/favicon.svg',
+  authDocUrl: '',
   supportsConnections: true,
   beforeRequest: [addHeaders],
   auth,
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '0059F7',
-  triggers,
   actions,
 })

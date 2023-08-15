@@ -1,14 +1,14 @@
 type Field = {
-  key: string;
-  label: string;
-  type: string;
-  required: boolean;
-  readOnly: boolean;
-  value: string;
-  placeholder: string | null;
-  description: string;
-  docUrl: string;
-  clickToCopy: boolean;
-};
+  key: string
+  label: string
+  type: string
+  required: boolean
+  readOnly: boolean
+  value: string
+  description: string
+  docUrl: string
+  clickToCopy: boolean
+  placeholder?: string
+}
 
-export default Field;
+export default Field

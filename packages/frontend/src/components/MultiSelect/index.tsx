@@ -14,9 +14,10 @@ import extractVariablesAsItems from './helpers/extract-variables-as-items'
 
 interface MultiSelectProps {
   name: string
-  label: string
+  label?: string
   description?: string
   required?: boolean
+  placeholder?: string
   variableTypes?: TDataOutMetadatumType[]
 }
 
@@ -31,6 +32,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
     description,
     required = false,
     variableTypes = null,
+    placeholder = null,
   } = props
   const { control } = useFormContext()
   const priorSteps = useContext(StepExecutionsContext)
@@ -51,10 +53,13 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
         fieldState: { error },
       }) => (
         <FormControl isInvalid={!!error}>
-          <FormLabel isRequired={required} description={description}>
-            {label}
-          </FormLabel>
+          {label && (
+            <FormLabel isRequired={required} description={description}>
+              {label}
+            </FormLabel>
+          )}
           <DSMultiSelect
+            placeholder={placeholder}
             items={items}
             values={values}
             name={name}

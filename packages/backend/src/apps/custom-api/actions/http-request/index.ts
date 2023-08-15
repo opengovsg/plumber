@@ -7,7 +7,7 @@ import { isUrlAllowed } from '../../common/ip-resolver'
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
 export default defineAction({
-  name: 'HTTP Request (Deprecated: please use the one under Custom API app)',
+  name: 'Make a HTTP Request',
   key: 'httpRequest',
   description: 'Makes a custom HTTP request by providing raw details.',
   arguments: [
