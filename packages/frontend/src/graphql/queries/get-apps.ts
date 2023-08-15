@@ -101,6 +101,31 @@ export const GET_APPS = gql`
                 value
               }
             }
+            # Only for multi-row
+            subFields {
+              label
+              key
+              type
+              required
+              description
+              placeholder
+              variables
+              variableTypes
+              allowArbitrary
+              dependsOn
+              options {
+                label
+                value
+              }
+              source {
+                type
+                name
+                arguments {
+                  name
+                  value
+                }
+              }
+            }
           }
         }
       }
@@ -132,6 +157,31 @@ export const GET_APPS = gql`
               arguments {
                 name
                 value
+              }
+            }
+            # Only for multi-row
+            subFields {
+              label
+              key
+              type
+              required
+              description
+              placeholder
+              variables
+              variableTypes
+              allowArbitrary
+              dependsOn
+              options {
+                label
+                value
+              }
+              source {
+                type
+                name
+                arguments {
+                  name
+                  value
+                }
               }
             }
           }

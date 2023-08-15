@@ -151,8 +151,12 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
                 {formatMessage('flowEditor.noTestDataTitle')}
               </AlertTitle>
 
-              <Box sx={{ fontWeight: 400, width: '100%' }}>
-                {formatMessage('flowEditor.noTestDataMessage')}
+              <Box sx={{ fontWeight: 400 }}>
+                {selectedActionOrTrigger &&
+                'webhookTriggerInstructions' in selectedActionOrTrigger &&
+                selectedActionOrTrigger.webhookTriggerInstructions?.errorMsg
+                  ? selectedActionOrTrigger.webhookTriggerInstructions.errorMsg
+                  : formatMessage('flowEditor.noTestDataMessage')}
               </Box>
             </Alert>
           )}
