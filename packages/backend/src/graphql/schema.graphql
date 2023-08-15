@@ -56,6 +56,10 @@ type Mutation {
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
+  # Tiles
+  createTable(input: CreateTableInput): Table
+  updateTable(input: UpdateTableInput): Table
+  deleteTable(input: DeleteTableInput): Boolean
 }
 
 """
@@ -490,6 +494,36 @@ type ExecutionStepConnection {
   edges: [ExecutionStepEdge]
   pageInfo: PageInfo
 }
+
+# Tiles types
+input CreateTableInput {
+  name: String!
+}
+
+input UpdateTableInput {
+  id: String!
+  name: String
+  modifiedColumns: [TableColumnMetadata]
+  addedColumns: [String]
+  deletedColumns: [String]
+}
+
+input DeleteTableInput {
+  id: String!
+}
+
+type TableColumnMetadata {
+  id: String
+  name: String
+}
+
+type TableMetadata {
+  id: String
+  name: String
+  columns: [TableColumnMetadata]
+}
+
+# End Tiles types
 
 type AppHealth {
   version: String
