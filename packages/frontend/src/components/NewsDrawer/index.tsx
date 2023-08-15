@@ -16,8 +16,14 @@ import NewsItem from './NewsItem'
 import { NEWS_ITEM_LIST } from './NewsItemList'
 import { TEST_ITEM_LIST } from './TestItemList'
 
-export default function NewsDrawer() {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+interface NewsDrawerProps {
+  handleClose: () => void
+}
+
+export default function NewsDrawer(props: NewsDrawerProps) {
+  const { handleClose } = props
+
+  const { isOpen, onOpen, onClose } = useDisclosure({ onClose: handleClose })
   const btnRef = useRef()
 
   return (

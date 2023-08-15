@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { FormattedMessage } from 'react-intl'
-import { Box as ChakraBox, BoxProps as ChakraBoxProps } from '@chakra-ui/react'
+import {
+  Box as ChakraBox,
+  BoxProps as ChakraBoxProps,
+  Icon,
+} from '@chakra-ui/react'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import { Box, useMediaQuery } from '@mui/material'
 import MuiAppBar from '@mui/material/AppBar'
@@ -10,11 +14,12 @@ import Typography from '@mui/material/Typography'
 import { Link } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
 import AccountDropdownMenu from 'components/AccountDropdownMenu'
+import NewsDrawer from 'components/NewsDrawer'
+import { TEST_ITEM_LIST } from 'components/NewsDrawer/TestItemList'
 import * as URLS from 'config/urls'
 import theme from 'styles/theme'
 
 import { Link as RouterLink } from './style'
-import NewsDrawer from 'components/NewsDrawer'
 
 type AppBarProps = {
   drawerOpen: boolean
@@ -24,6 +29,10 @@ type AppBarProps = {
 }
 
 const accountMenuId = 'account-menu'
+
+// this fetches the latest time from the news
+const latestNewsTimestamp =
+  TEST_ITEM_LIST.length > 0 ? TEST_ITEM_LIST[0].date.getTime().toString() : ''
 
 export default function AppBar(props: AppBarProps): React.ReactElement {
   const { drawerOpen, onDrawerOpen, onDrawerClose, maxWidth = 'full' } = props
@@ -42,6 +51,17 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
   const handleAccountMenuClose = () => {
     setAccountMenuAnchorElement(null)
   }
+
+  // check whether user has read and closed the news drawer
+  const [localLatestTimestamp, setLocalLatestTimestamp] = useState(
+    localStorage.getItem('news-tab-latest-timestamp'),
+  )
+
+  const handleClose = useCallback(() => {
+    // only way to update this is to change the news or clear the local storage
+    localStorage.setItem('news-tab-latest-timestamp', latestNewsTimestamp)
+    setLocalLatestTimestamp(latestNewsTimestamp)
+  }, [latestNewsTimestamp])
 
   return (
     <MuiAppBar
@@ -81,12 +101,28 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            mr={6}
+            mr={4}
           >
             Guide
           </Link>
 
-          <NewsDrawer></NewsDrawer>
+          <NewsDrawer handleClose={handleClose}></NewsDrawer>
+
+          {localLatestTimestamp !== latestNewsTimestamp && (
+            <Icon
+              boxSize={2}
+              ml="-1.2rem"
+              mb="0.8rem"
+              mr="0.5rem"
+              viewBox="0 0 200 200"
+              color="red.500"
+            >
+              <path
+                fill="currentColor"
+                d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
+              />
+            </Icon>
+          )}
 
           <IconButton
             size="large"
