@@ -167,5 +167,19 @@ describe('new submission trigger', () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
       expect(metadata.fields.fileFieldId.question.isHidden).toEqual(true)
     })
+
+    it('should handle null dataOut', async () => {
+      executionStep.dataOut = null
+
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata).toEqual(null)
+    })
+
+    it('should handle undefined fields roperty', async () => {
+      executionStep.dataOut = {}
+
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata).toEqual(null)
+    })
   })
 })

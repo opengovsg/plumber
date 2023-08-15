@@ -54,7 +54,7 @@ async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
   const data = executionStep.dataOut
-  if (!data) {
+  if (!data || !data.fields) {
     return null
   }
 
