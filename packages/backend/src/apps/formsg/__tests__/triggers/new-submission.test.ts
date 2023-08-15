@@ -175,7 +175,7 @@ describe('new submission trigger', () => {
       expect(metadata).toEqual(null)
     })
 
-    it('should handle undefined fields roperty', async () => {
+    it('should handle undefined `dataOut.fields` property', async () => {
       executionStep.dataOut = {}
 
       const metadata = await trigger.getDataOutMetadata(executionStep)
