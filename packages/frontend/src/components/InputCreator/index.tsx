@@ -3,12 +3,13 @@ import type { IField, IFieldDropdownOption } from '@plumber/types'
 import * as React from 'react'
 import MuiTextField from '@mui/material/TextField'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
+import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
 import PowerInput from 'components/PowerInput'
 import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
 
-type InputCreatorProps = {
+export type InputCreatorProps = {
   onChange?: React.ChangeEventHandler
   onBlur?: React.FocusEventHandler
   schema: IField
@@ -124,6 +125,24 @@ export default function InputCreator(
         description={description}
         variableTypes={schema.variableTypes}
         placeholder={placeholder}
+      />
+    )
+  }
+
+  if (type === 'multirow') {
+    return (
+      <MultiRow
+        name={computedName}
+        label={label}
+        description={description}
+        subFields={schema.subFields}
+        required={required}
+        // These are InputCreatorProps which MultiRow will forward.
+        onChange={onChange}
+        onBlur={onBlur}
+        stepId={stepId}
+        disabled={disabled}
+        showOptionValue={showOptionValue}
       />
     )
   }

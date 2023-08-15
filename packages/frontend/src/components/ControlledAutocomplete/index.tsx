@@ -2,18 +2,47 @@ import type { IFieldDropdownOption } from '@plumber/types'
 
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import { BiRefresh } from 'react-icons/bi'
 import { Flex, FormControl } from '@chakra-ui/react'
-import RefreshIcon from '@mui/icons-material/Refresh'
+import { Paper, PaperProps } from '@mui/material'
 import Autocomplete, {
   AutocompleteProps,
   createFilterOptions,
 } from '@mui/material/Autocomplete'
 import Typography from '@mui/material/Typography'
 import {
+  Button,
   FormErrorMessage,
   FormLabel,
-  IconButton,
 } from '@opengovsg/design-system-react'
+
+interface PaperWithRefreshProps extends PaperProps {
+  onRefresh?: () => void
+  loading?: boolean
+}
+
+function PaperWithRefresh(props: PaperWithRefreshProps): JSX.Element {
+  const { onRefresh, loading, children, ...paperProps } = props
+  return (
+    <Paper {...paperProps}>
+      {children}
+      {onRefresh && (
+        <Button
+          leftIcon={<BiRefresh />}
+          w="100%"
+          variant="clear"
+          onMouseDown={(e) => {
+            e.preventDefault()
+          }}
+          onClick={onRefresh}
+          isLoading={loading}
+        >
+          Refresh items
+        </Button>
+      )}
+    </Paper>
+  )
+}
 
 interface ControlledAutocompleteProps
   extends AutocompleteProps<IFieldDropdownOption, boolean, boolean, boolean> {
@@ -162,17 +191,14 @@ function ControlledAutocomplete(
                     )}
                   </li>
                 )}
+                PaperComponent={(props) => (
+                  <PaperWithRefresh
+                    {...props}
+                    onRefresh={onRefresh}
+                    loading={loading}
+                  />
+                )}
               />
-              {onRefresh && (
-                <IconButton
-                  aria-label="refresh"
-                  variant="clear"
-                  isLoading={loading}
-                  icon={<RefreshIcon />}
-                  onClick={onRefresh}
-                  rounded="50%"
-                />
-              )}
             </Flex>
             {isError && (
               <FormErrorMessage>{fieldState.error?.message}</FormErrorMessage>
