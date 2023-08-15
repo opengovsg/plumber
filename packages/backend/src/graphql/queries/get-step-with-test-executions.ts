@@ -30,6 +30,7 @@ const getStepWithTestExecutions = async (
         .where('step_id', '=', ref('steps.id'))
         .andWhere('status', 'success'),
     )
+    .andWhere('executionSteps.app_key', '=', ref('steps.app_key'))
     .orderBy('steps.position', 'asc')
 
   return previousStepsWithCurrentStep
