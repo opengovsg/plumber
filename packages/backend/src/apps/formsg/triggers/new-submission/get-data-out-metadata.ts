@@ -6,6 +6,7 @@ import {
   IJSONObject,
 } from '@plumber/types'
 
+import logger from '@/helpers/logger'
 import { parseS3Id } from '@/helpers/s3'
 
 function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
@@ -109,9 +110,9 @@ function buildAnswerArrayMetadatum(
     case 'table':
       return buildAnswerArrayForTable(fieldData)
     default:
-      console.log(
-        'This should not happen because check is done in isAnswerArrayValid function',
-      )
+      logger.warn('Unknown fieldtype in answer array', {
+        fieldData,
+      })
       return []
   }
 }
@@ -131,8 +132,9 @@ async function getDataOutMetadata(
       answer: buildAnswerMetadatum(fieldData),
       fieldType: { isHidden: true },
       order: { isHidden: true },
-      answerArray:
-        isAnswerArrayValid(fieldData) && buildAnswerArrayMetadatum(fieldData),
+    }
+    if (isAnswerArrayValid(fieldData)) {
+      fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(fieldData)
     }
   }
 
