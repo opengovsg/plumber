@@ -6,6 +6,7 @@ import Connection from './connection'
 import Execution from './execution'
 import Flow from './flow'
 import Step from './step'
+import TableMetadata from './table-metadata'
 
 class User extends Base {
   id!: string
@@ -17,6 +18,7 @@ class User extends Base {
   flows?: Flow[]
   steps?: Step[]
   executions?: Execution[]
+  tables?: TableMetadata[]
 
   static tableName = 'users'
 
@@ -69,6 +71,14 @@ class User extends Base {
           to: 'flows.id',
         },
         to: 'executions.flow_id',
+      },
+    },
+    tables: {
+      relation: Base.HasManyRelation,
+      modelClass: TableMetadata,
+      join: {
+        from: `${this.tableName}.id`,
+        to: `${TableMetadata.tableName}.user_id`,
       },
     },
   })
