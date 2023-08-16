@@ -107,13 +107,15 @@ function buildAnswerArrayMetadatum(
   submissionId: IJSONValue,
 ): IDataOutMetadatum[] | IDataOutMetadatum[][] {
   // there should only be checkbox and table fieldtypes that contain answer array
-  switch (fieldData.fieldType) {
+  const fieldType = fieldData.fieldType
+  switch (fieldType) {
     case 'checkbox':
       return buildAnswerArrayForCheckbox(fieldData)
     case 'table':
       return buildAnswerArrayForTable(fieldData)
     default:
-      logger.warn(`Answer array unknown fieldtype: ${fieldData.fieldType}`, {
+      logger.warn(`Answer array unknown fieldtype: ${fieldType}`, {
+        fieldType,
         stepId,
         submissionId,
       })
