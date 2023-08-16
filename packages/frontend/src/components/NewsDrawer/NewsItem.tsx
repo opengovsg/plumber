@@ -3,32 +3,53 @@ import { Box, Image, Text } from '@chakra-ui/react'
 import MarkdownRenderer from 'components/MarkdownRenderer'
 import { NEWS_DRAWER_COMPONENT } from 'components/MarkdownRenderer/Components/NewsDrawerComponent'
 import { format } from 'date-fns'
+import { AnimationConfigWithData } from 'lottie-web'
+import { RequireExactlyOne } from 'type-fest'
 
-export type NewsItemImage = {
-  url: string
-  alt: string
-}
+import LottieWebAnimation from './LottieWebAnimation'
+
+export type NewsItemMultimedia = RequireExactlyOne<
+  {
+    url: string
+    alt: string
+    animationData: AnimationConfigWithData['animationData']
+  },
+  'url' | 'animationData'
+>
 export interface NewsItemProps {
   date: Date
   title: string
   details: string
-  image?: NewsItemImage
+  multimedia?: NewsItemMultimedia
 }
 
 const DATE_FORMAT = 'dd MMM yyyy'
 
 export default function NewsItem(props: NewsItemProps) {
-  const { date, title, details, image } = props
+  const { date, title, details, multimedia } = props
   const formattedDate = format(date, DATE_FORMAT)
 
-  const displayedImage = useMemo(() => {
-    if (!image) {
+  const displayedMultimedia = useMemo(() => {
+    if (!multimedia) {
       return
     }
+    if (multimedia.animationData) {
+      return (
+        <LottieWebAnimation
+          title={multimedia.alt}
+          animationData={multimedia.animationData}
+        ></LottieWebAnimation>
+      )
+    }
     return (
-      <Image fit="fill" src={image.url} title={image.alt} alt={image.alt} />
+      <Image
+        fit="fill"
+        src={multimedia.url}
+        title={multimedia.alt}
+        alt={multimedia.alt}
+      />
     )
-  }, [image])
+  }, [multimedia])
 
   return (
     <Box>
@@ -43,7 +64,7 @@ export default function NewsItem(props: NewsItemProps) {
         components={NEWS_DRAWER_COMPONENT}
       ></MarkdownRenderer>
       <Box mb="1rem" mt="2rem" role="presentation">
-        {displayedImage}
+        {displayedMultimedia}
       </Box>
     </Box>
   )

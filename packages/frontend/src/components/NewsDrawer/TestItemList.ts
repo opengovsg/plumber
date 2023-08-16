@@ -3,24 +3,35 @@ import dedent from 'dedent'
 
 import { NewsItemProps } from './NewsItem'
 
+import TestLottieAnimation from './assets/Lottie-Lego.json'
+
 // to dump into another file if there are too many links
 const TEST_EXTERNAL_LINK = 'https://plumber.gov.sg/'
 const TEST_INTERNAL_LINK = 'http://localhost:3001/executions'
 
 export const TEST_ITEM_LIST: NewsItemProps[] = [
   {
-    date: new Date('12 Aug 2023 12:00:30 GMT+8'),
-    title: 'Test external link - opens a new tab',
-    details: `Welcome to Plumber. [Learn more](${TEST_EXTERNAL_LINK})`,
-    image: {
-      url: 'https://picsum.photos/500/500',
-      alt: 'Random image from lorem picsum',
+    date: new Date('16 Aug 2023 11:00:30 GMT+8'),
+    title: 'Test animation',
+    details: `This is a lottie test animation`,
+    multimedia: {
+      animationData: TestLottieAnimation,
+      alt: 'Animation...',
     },
   },
   {
+    date: new Date('14 Aug 2023 12:00:30 GMT+8'),
+    title: 'Test external link - opens a new tab',
+    details: `Welcome to Plumber. [Learn more](${TEST_EXTERNAL_LINK})`,
+  },
+  {
     date: new Date('12 Aug 2023 GMT+8'),
-    title: 'Test internal link',
+    title: 'Test internal link and random image',
     details: `Welcome to Plumber. [Learn more about executions](${TEST_INTERNAL_LINK})`,
+    multimedia: {
+      url: 'https://picsum.photos/500/500',
+      alt: 'Random image from lorem picsum',
+    },
   },
   {
     date: new Date('11 Aug 2023 GMT+8'),

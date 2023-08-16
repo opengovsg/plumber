@@ -52,6 +52,7 @@
     "jsonwebtoken": "^9.0.0",
     "knex": "2.4.2",
     "lodash.get": "^4.4.2",
+    "lottie-web": "5.12.2",
     "luxon": "2.5.2",
     "morgan": "^1.10.0",
     "multer": "1.4.5-lts.1",

@@ -36,7 +36,7 @@ export default function NewsDrawer(props: NewsDrawerProps) {
         placement="right"
         onClose={onClose}
         finalFocusRef={btnRef}
-        size="md"
+        size="lg"
       >
         <DrawerOverlay />
         <DrawerContent>
