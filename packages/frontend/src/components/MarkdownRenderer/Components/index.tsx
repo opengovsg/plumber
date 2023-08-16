@@ -1,3 +1,4 @@
+import { Components } from 'react-markdown'
 import {
   Link,
   ListItem,
@@ -38,7 +39,7 @@ export default function MarkdownComponent(props: MarkdownComponentProps) {
     },
   }
 
-  return {
+  const mdComponents: Components = {
     p: ({ ...props }) => <Text {...props} {...textStyles} />,
     ol: ({ ordered, ...props }) => <OrderedList {...props} {...listStyles} />,
     ul: ({ ordered, ...props }) => <UnorderedList {...props} {...listStyles} />,
@@ -50,4 +51,5 @@ export default function MarkdownComponent(props: MarkdownComponentProps) {
       return <Link {...props} {...linkStyles} isExternal={isExternal} />
     },
   }
+  return mdComponents
 }

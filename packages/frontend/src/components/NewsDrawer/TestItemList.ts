@@ -1,9 +1,8 @@
 // This file is for test data
 import dedent from 'dedent'
 
-import { NewsItemProps } from './NewsItem'
-
 import TestLottieAnimation from './assets/Lottie-Lego.json'
+import { NewsItemProps } from './NewsItem'
 
 // to dump into another file if there are too many links
 const TEST_EXTERNAL_LINK = 'https://plumber.gov.sg/'
@@ -11,7 +10,7 @@ const TEST_INTERNAL_LINK = 'http://localhost:3001/executions'
 
 export const TEST_ITEM_LIST: NewsItemProps[] = [
   {
-    date: new Date('16 Aug 2023 11:00:30 GMT+8'),
+    date: new Date('16 Aug 2023 11:00 GMT+8'),
     title: 'Test animation',
     details: `This is a lottie test animation`,
     multimedia: {

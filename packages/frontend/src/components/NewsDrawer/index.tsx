@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import {
   Button,
   Drawer,
@@ -24,20 +23,13 @@ export default function NewsDrawer(props: NewsDrawerProps) {
   const { handleClose } = props
 
   const { isOpen, onOpen, onClose } = useDisclosure({ onClose: handleClose })
-  const btnRef = useRef()
 
   return (
     <>
-      <Button ref={btnRef} size="xs" variant="link" mr={4} onClick={onOpen}>
+      <Button size="xs" variant="link" mr={4} onClick={onOpen}>
         What's new
       </Button>
-      <Drawer
-        isOpen={isOpen}
-        placement="right"
-        onClose={onClose}
-        finalFocusRef={btnRef}
-        size="lg"
-      >
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="lg">
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />
