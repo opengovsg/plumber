@@ -98,6 +98,7 @@ describe('variables', () => {
         ]
 
         const result = extractVariables(steps)
+        // label exists because no metadata is provided
         expect(result[0].output).toEqual([
           expect.objectContaining({
             name: 'step.step1-id.stringProp',
@@ -105,22 +106,22 @@ describe('variables', () => {
           }),
           expect.objectContaining({
             name: 'step.step1-id.arrayProp.0',
-            label: null,
+            label: 'arrayProp.0',
             value: 9000,
           }),
           expect.objectContaining({
             name: 'step.step1-id.arrayProp.1',
-            label: null,
+            label: 'arrayProp.1',
             value: 'HI THAR',
           }),
           expect.objectContaining({
             name: 'step.step1-id.arrayProp.2.c',
-            label: null,
+            label: 'arrayProp.2.c',
             value: '1',
           }),
           expect.objectContaining({
             name: 'step.step1-id.arrayProp.2.d',
-            label: null,
+            label: 'arrayProp.2.d',
             value: 2,
           }),
         ])
@@ -230,11 +231,12 @@ describe('variables', () => {
           )
         })
 
-        it('sets corresponding prop to null if absent', () => {
+        it('sets corresponding prop to null if absent, label exists because no metadata is provided', () => {
           const result = extractVariables(steps)
           expect(result[0].output[0]).toEqual(
             expect.objectContaining({
               [metadataPropName]: null,
+              label: 'stringProp',
             }),
           )
         })

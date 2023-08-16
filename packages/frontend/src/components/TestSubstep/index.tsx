@@ -16,10 +16,11 @@ import Box from '@mui/material/Box'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
-import JSONViewer from 'components/JSONViewer'
+import VariablesList from 'components/VariablesList'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
+import { extractVariables, filterVariables } from 'helpers/variables'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 // the default alert follows the raw webhook alert
@@ -77,6 +78,15 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
     { context: { autoSnackbar: false } },
   )
   const response = data?.executeFlow?.data
+  const executionSteps = response && [data?.executeFlow?.step] // must contain only the current execution step
+
+  const [stepsWithVariables] = React.useMemo(() => {
+    const stepsWithVars = filterVariables(
+      extractVariables(executionSteps),
+      (variable) => (variable.type ?? 'text') === 'text',
+    )
+    return [stepsWithVars]
+  }, [executionSteps])
 
   const isExecuted = !error && called && !loading
   const hasNoOutput = !response && isExecuted
@@ -151,12 +161,17 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
             </Alert>
           )}
 
-          {response && (
-            <Box
-              sx={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
-              data-test="flow-test-substep-output"
-            >
-              <JSONViewer data={response} />
+          {stepsWithVariables.length === 1 && (
+            <Box sx={{ width: '100%' }}>
+              <Alert severity="info" sx={{ width: '100%' }}>
+                We found these variables:
+              </Alert>
+              <Box
+                sx={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
+                data-test="flow-test-substep-output"
+              >
+                <VariablesList variables={stepsWithVariables[0].output} />
+              </Box>
             </Box>
           )}
 

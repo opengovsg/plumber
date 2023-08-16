@@ -35,13 +35,14 @@ function postProcess(
   metadata: IDataOutMetadata,
 ): Variable[] {
   const result: Variable[] = []
-
   for (const variable of variables) {
     const { name, ...rest } = variable
+
+    // lodash get does its work by specifying the 'name' path
     const {
+      label = null,
       isHidden = false,
       type = null,
-      label = null,
       order = null,
       displayedValue = null,
     } = get(metadata, name, {}) as IDataOutMetadatum
@@ -51,11 +52,11 @@ function postProcess(
     }
 
     result.push({
-      label,
+      label: label ?? name, // defaults to showing lodash path if a label doesn't exist (no metadata)
       type,
       order,
       displayedValue,
-      name: `step.${stepId}.${name}`,
+      name: `step.${stepId}.${name}`, // Don't mess with this because of lodash get!!!
       ...rest,
     })
   }
@@ -80,6 +81,7 @@ function postProcess(
 const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
 
+// converts dataOut from an execution step to an array of raw variables
 const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
   if (typeof data !== 'object') {
     return [
@@ -94,7 +96,6 @@ const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
 
   return entries.flatMap(([name, value]) => {
     const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
-
     if (Array.isArray(value)) {
       return value.flatMap((item, index) => process(item, fullName, index))
     }
@@ -116,7 +117,6 @@ export function extractVariables(steps: IStep[]): StepWithVariables[] {
   if (!steps) {
     return []
   }
-
   return steps
     .filter((step: IStep) => {
       const hasExecutionSteps = !!step.executionSteps?.length
