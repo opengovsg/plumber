@@ -27,12 +27,8 @@ type FlowSubstepProps = {
 }
 
 function isValidArgValue(value: IJSONValue): boolean {
-  // `false` is an exceptional valid value
-  if (value === false) {
-    return true
-  }
-
-  return Boolean(value)
+  // `false` and 0 are valid values, only null, undefined and empty string are invalid
+  return value != null && value !== ''
 }
 
 function validateSubstep(substep: ISubstep, step: IStep): boolean {
