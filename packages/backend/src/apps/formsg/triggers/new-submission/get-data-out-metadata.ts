@@ -4,6 +4,7 @@ import {
   IExecutionStep,
   IJSONArray,
   IJSONObject,
+  IJSONValue,
 } from '@plumber/types'
 
 import logger from '@/helpers/logger'
@@ -102,6 +103,8 @@ function buildAnswerArrayForTable(
 
 function buildAnswerArrayMetadatum(
   fieldData: IJSONObject,
+  stepId: string,
+  submissionId: IJSONValue,
 ): IDataOutMetadatum[] | IDataOutMetadatum[][] {
   // there should only be checkbox and table fieldtypes that contain answer array
   switch (fieldData.fieldType) {
@@ -110,8 +113,9 @@ function buildAnswerArrayMetadatum(
     case 'table':
       return buildAnswerArrayForTable(fieldData)
     default:
-      logger.warn('Unknown fieldtype in answer array', {
-        fieldData,
+      logger.warn(`Answer array unknown fieldtype: ${fieldData.fieldType}`, {
+        stepId,
+        submissionId,
       })
       return []
   }
@@ -134,7 +138,11 @@ async function getDataOutMetadata(
       order: { isHidden: true },
     }
     if (isAnswerArrayValid(fieldData)) {
-      fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(fieldData)
+      fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(
+        fieldData,
+        executionStep.stepId,
+        data.submissionId,
+      )
     }
   }
 
