@@ -89,6 +89,11 @@ const PowerInput = (props: PowerInputProps) => {
     [variableLabelMap],
   )
 
+  const handleFocus = React.useCallback(
+    () => setShowVariableSuggestions(true),
+    [setShowVariableSuggestions],
+  )
+
   return (
     <Controller
       rules={{ required }}
@@ -131,9 +136,9 @@ const PowerInput = (props: PowerInputProps) => {
                       readOnly={disabled}
                       style={{ width: '100%' }}
                       renderElement={renderElement}
-                      onFocus={() => {
-                        setShowVariableSuggestions(true)
-                      }}
+                      // FIXME (ogp-weeloong): Hackfix for GSIB. Will migrate to chakra for long-term fix.
+                      onMouseDown={handleFocus}
+                      onFocus={handleFocus}
                       onBlur={() => {
                         controllerOnBlur()
                         handleBlur(value)
