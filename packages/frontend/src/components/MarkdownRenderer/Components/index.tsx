@@ -51,7 +51,7 @@ export default function MarkdownComponent(props: MarkdownComponentProps) {
   const CustomLink = forwardRef<LinkProps, 'a'>(
     ({ children: content, isExternal, ...props }, ref) => {
       return (
-        <Link ref={ref} {...props}>
+        <Link ref={ref} {...props} isExternal={isExternal}>
           {content}
           {isExternal && <ExternalIcon />}
         </Link>
