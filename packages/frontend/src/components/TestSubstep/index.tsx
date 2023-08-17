@@ -8,6 +8,7 @@ import type {
 } from '@plumber/types'
 
 import * as React from 'react'
+import { BiCheck } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import LoadingButton from '@mui/lab/LoadingButton'
 import Alert from '@mui/material/Alert'
@@ -15,6 +16,7 @@ import AlertTitle from '@mui/material/AlertTitle'
 import Box from '@mui/material/Box'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
+import { Infobox } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import VariablesList from 'components/VariablesList'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
@@ -163,11 +165,22 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
 
           {stepsWithVariables.length === 1 && (
             <Box sx={{ width: '100%' }}>
-              <Alert severity="info" sx={{ width: '100%' }}>
-                We found these variables:
-              </Alert>
+              <Infobox
+                icon={<BiCheck color="#0F796F" />}
+                style={{
+                  color: '#2C2E34',
+                  background: '#E2EEED',
+                }}
+              >
+                Here is the test data we found. You can use these as variables
+                in your action steps below.
+              </Infobox>
               <Box
-                sx={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
+                sx={{
+                  maxHeight: '25rem',
+                  overflowY: 'scroll',
+                  width: '100%',
+                }}
                 data-test="flow-test-substep-output"
               >
                 <VariablesList variables={stepsWithVariables[0].output} />
