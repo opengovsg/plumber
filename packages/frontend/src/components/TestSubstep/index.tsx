@@ -166,7 +166,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
           {stepsWithVariables.length === 1 && (
             <Box sx={{ width: '100%' }}>
               <Infobox
-                icon={<BiCheck style={{ color: '#0F796F' }} />}
+                icon={<BiCheck color="#0F796F" />}
                 style={{
                   color: '#2C2E34',
                   background: '#E2EEED',
@@ -177,7 +177,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
               </Infobox>
               <Box
                 sx={{
-                  maxHeight: 400,
+                  maxHeight: '25rem',
                   overflowY: 'scroll',
                   width: '100%',
                 }}
