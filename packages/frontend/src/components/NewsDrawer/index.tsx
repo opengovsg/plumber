@@ -32,7 +32,7 @@ export default function NewsDrawer(props: NewsDrawerProps) {
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />
-          <DrawerHeader textStyle="h2" color="secondary.700">
+          <DrawerHeader textStyle="h2" fontSize="2xl" color="secondary.700">
             What's New
           </DrawerHeader>
 

@@ -1,6 +1,10 @@
+import { BiLinkExternal } from 'react-icons/bi'
 import { Components } from 'react-markdown'
 import {
+  forwardRef,
+  Icon,
   Link,
+  LinkProps,
   ListItem,
   OrderedList,
   SystemStyleObject,
@@ -39,6 +43,22 @@ export default function MarkdownComponent(props: MarkdownComponentProps) {
     },
   }
 
+  const ExternalIcon = (): JSX.Element => {
+    return <Icon as={BiLinkExternal} verticalAlign="middle" ml="0.25rem" />
+  }
+
+  // differentiates between an internal and external link when displaying
+  const CustomLink = forwardRef<LinkProps, 'a'>(
+    ({ children: content, isExternal, ...props }, ref) => {
+      return (
+        <Link ref={ref} {...props}>
+          {content}
+          {isExternal && <ExternalIcon />}
+        </Link>
+      )
+    },
+  )
+
   const mdComponents: Components = {
     p: ({ ...props }) => <Text {...props} {...textStyles} />,
     ol: ({ ordered, ...props }) => {
@@ -57,7 +77,13 @@ export default function MarkdownComponent(props: MarkdownComponentProps) {
       const { href } = props
       const isExternal =
         (href && !href.startsWith(window.location.origin)) || false
-      return <Link {...props} {...linkStyles} isExternal={isExternal} />
+      return (
+        <CustomLink
+          isExternal={isExternal}
+          {...props}
+          {...linkStyles}
+        ></CustomLink>
+      )
     },
   }
   return mdComponents

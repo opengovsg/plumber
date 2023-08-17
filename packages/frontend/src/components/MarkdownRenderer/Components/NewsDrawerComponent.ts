@@ -5,6 +5,7 @@ export const NEWS_DRAWER_COMPONENT = MarkdownComponent({
     text: {
       color: 'secondary.500',
       textStyle: 'body-1',
+      fontSize: '1rem',
     },
     list: {
       color: 'secondary.500',
