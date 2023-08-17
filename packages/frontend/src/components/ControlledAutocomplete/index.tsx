@@ -49,11 +49,11 @@ interface ControlledAutocompleteProps
   shouldUnregister?: boolean
   name: string
   label?: string
-  required?: boolean
   showOptionValue?: boolean
   description?: string
   dependsOn?: string[]
   onRefresh?: () => void
+  required?: boolean
 }
 
 const filter = createFilterOptions<IFieldDropdownOption>()
@@ -80,7 +80,6 @@ function ControlledAutocomplete(
   const { control, watch, setValue, resetField } = useFormContext()
 
   const {
-    required = false,
     name,
     label,
     defaultValue,
@@ -92,6 +91,7 @@ function ControlledAutocomplete(
     freeSolo,
     onRefresh,
     loading,
+    required,
     ...autocompleteProps
   } = props
 
@@ -133,6 +133,7 @@ function ControlledAutocomplete(
               <Autocomplete
                 {...autocompleteProps}
                 {...field}
+                disableClearable={required}
                 freeSolo={freeSolo}
                 options={options}
                 value={getOption(options, field.value, freeSolo)}
