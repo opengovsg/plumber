@@ -65,7 +65,7 @@ export default function InputCreator(
         dependsOn={dependsOn}
         fullWidth
         disablePortal
-        disableClearable={required}
+        required={required}
         freeSolo={schema.allowArbitrary}
         options={preparedOptions}
         renderInput={(params) => (

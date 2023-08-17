@@ -2,9 +2,12 @@ import {
   IDataOutMetadata,
   IDataOutMetadatum,
   IExecutionStep,
+  IJSONArray,
   IJSONObject,
+  IJSONValue,
 } from '@plumber/types'
 
+import logger from '@/helpers/logger'
 import { parseS3Id } from '@/helpers/s3'
 
 function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
@@ -50,11 +53,81 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   return answer
 }
 
+function isAnswerArrayValid(fieldData: IJSONObject): boolean {
+  if (!fieldData.answerArray) {
+    return false
+  }
+  // strict check for only table and checkbox variables
+  return fieldData.fieldType === 'table' || fieldData.fieldType === 'checkbox'
+}
+
+function buildAnswerArrayForCheckbox(
+  fieldData: IJSONObject,
+): IDataOutMetadatum[] {
+  const answerArray = [] as IDataOutMetadatum[]
+  const array = fieldData.answerArray as IJSONArray
+  for (let i = 0; i < array.length; i++) {
+    answerArray.push({
+      type: 'text',
+      label: fieldData.order
+        ? `Response ${fieldData.order}, Selected Option ${i + 1}`
+        : null,
+      order: fieldData.order ? (fieldData.order as number) : null,
+    })
+  }
+  return answerArray
+}
+
+function buildAnswerArrayForTable(
+  fieldData: IJSONObject,
+): IDataOutMetadatum[][] {
+  const answerArray = [] as IDataOutMetadatum[][]
+  const array = fieldData.answerArray as IJSONArray
+  for (let i = 0; i < array.length; i++) {
+    const option = array[i]
+    const nestedAnswerArray = [] as IDataOutMetadatum[]
+    const optionArray = option as IJSONArray
+    for (let j = 0; j < optionArray.length; j++) {
+      nestedAnswerArray.push({
+        type: 'text',
+        label: fieldData.order
+          ? `Response ${fieldData.order}, Row ${i + 1} Column ${j + 1}`
+          : null,
+        order: fieldData.order ? (fieldData.order as number) : null,
+      })
+    }
+    answerArray.push(nestedAnswerArray)
+  }
+  return answerArray
+}
+
+function buildAnswerArrayMetadatum(
+  fieldData: IJSONObject,
+  stepId: string,
+  submissionId: IJSONValue,
+): IDataOutMetadatum[] | IDataOutMetadatum[][] {
+  // there should only be checkbox and table fieldtypes that contain answer array
+  const fieldType = fieldData.fieldType
+  switch (fieldType) {
+    case 'checkbox':
+      return buildAnswerArrayForCheckbox(fieldData)
+    case 'table':
+      return buildAnswerArrayForTable(fieldData)
+    default:
+      logger.warn(`Answer array unknown fieldtype: ${fieldType}`, {
+        fieldType,
+        stepId,
+        submissionId,
+      })
+      return []
+  }
+}
+
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
   const data = executionStep.dataOut
-  if (!data) {
+  if (!data || !data.fields) {
     return null
   }
 
@@ -65,6 +138,13 @@ async function getDataOutMetadata(
       answer: buildAnswerMetadatum(fieldData),
       fieldType: { isHidden: true },
       order: { isHidden: true },
+    }
+    if (isAnswerArrayValid(fieldData)) {
+      fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(
+        fieldData,
+        executionStep.stepId,
+        data.submissionId,
+      )
     }
   }
 

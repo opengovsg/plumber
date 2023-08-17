@@ -119,8 +119,10 @@ class Step extends Base {
       .orderBy('created_at', 'desc')
       .limit(1)
       .first()
-
-    return await lastExecutionStep
+    if (lastExecutionStep.appKey !== this.appKey) {
+      return undefined
+    }
+    return lastExecutionStep
   }
 
   async getNextStep() {
