@@ -41,9 +41,18 @@ export default function MarkdownComponent(props: MarkdownComponentProps) {
 
   const mdComponents: Components = {
     p: ({ ...props }) => <Text {...props} {...textStyles} />,
-    ol: ({ ordered, ...props }) => <OrderedList {...props} {...listStyles} />,
-    ul: ({ ordered, ...props }) => <UnorderedList {...props} {...listStyles} />,
-    li: ({ ordered, ...props }) => <ListItem {...props} {...textStyles} />,
+    ol: ({ ordered, ...props }) => {
+      const newProps = { ordered: ordered.toString(), ...props }
+      return <OrderedList {...newProps} {...listStyles} />
+    },
+    ul: ({ ordered, ...props }) => {
+      const newProps = { ordered: ordered.toString(), ...props }
+      return <UnorderedList {...newProps} {...listStyles} />
+    },
+    li: ({ ordered, ...props }) => {
+      const newProps = { ordered: ordered.toString(), ...props }
+      return <ListItem {...newProps} {...textStyles} />
+    },
     a: ({ ...props }) => {
       const { href } = props
       const isExternal =

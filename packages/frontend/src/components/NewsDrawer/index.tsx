@@ -12,7 +12,6 @@ import {
 } from '@chakra-ui/react'
 
 import NewsItem from './NewsItem'
-import { NEWS_ITEM_LIST } from './NewsItemList'
 import { TEST_ITEM_LIST } from './TestItemList'
 
 interface NewsDrawerProps {
