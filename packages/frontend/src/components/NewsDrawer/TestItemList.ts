@@ -11,6 +11,7 @@ const TEST_INTERNAL_LINK = 'http://localhost:3001/executions'
 export const TEST_ITEM_LIST: NewsItemProps[] = [
   {
     date: new Date('16 Aug 2023 11:00 GMT+8'),
+    isNewFeature: true,
     title: 'Test animation',
     details: `This is a lottie test animation`,
     multimedia: {

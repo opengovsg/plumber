@@ -1,5 +1,7 @@
-import { useMemo } from 'react'
+import React, { useMemo } from 'react'
+import { BiSolidRocket } from 'react-icons/bi'
 import { Box, Image, Text } from '@chakra-ui/react'
+import { Badge, BadgeLeftIcon } from '@opengovsg/design-system-react'
 import MarkdownRenderer from 'components/MarkdownRenderer'
 import { NEWS_DRAWER_COMPONENT } from 'components/MarkdownRenderer/Components/NewsDrawerComponent'
 import { format } from 'date-fns'
@@ -18,6 +20,7 @@ export type NewsItemMultimedia = RequireExactlyOne<
 >
 export interface NewsItemProps {
   date: Date
+  isNewFeature?: boolean
   title: string
   details: string
   multimedia?: NewsItemMultimedia
@@ -26,7 +29,7 @@ export interface NewsItemProps {
 const DATE_FORMAT = 'dd MMM yyyy'
 
 export default function NewsItem(props: NewsItemProps) {
-  const { date, title, details, multimedia } = props
+  const { date, isNewFeature = false, title, details, multimedia } = props
   const formattedDate = format(date, DATE_FORMAT)
 
   const displayedMultimedia = useMemo(() => {
@@ -56,7 +59,25 @@ export default function NewsItem(props: NewsItemProps) {
       <Text textStyle="caption-1" color="secondary.400">
         {formattedDate}
       </Text>
-      <Text textStyle="h5" mb="0.5rem" mt="1rem" color="secondary.700">
+      {isNewFeature && (
+        <Badge
+          style={{
+            borderRadius: '0.25rem',
+            background: '#F9DDE9',
+            color: '#CF1A68',
+            marginTop: '1rem',
+          }}
+        >
+          <React.Fragment key=".0">
+            <BadgeLeftIcon
+              as={BiSolidRocket}
+              style={{ marginRight: '0.25rem' }}
+            />
+            New feature
+          </React.Fragment>
+        </Badge>
+      )}
+      <Text textStyle="h5" mb="0.5rem" mt="0.5rem" color="secondary.700">
         {title}
       </Text>
       <MarkdownRenderer
