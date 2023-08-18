@@ -45,7 +45,7 @@ const updateFlowStatus = async (
   if (trigger.type !== 'webhook') {
     if (flow.active) {
       flow = await flow.$query().patchAndFetch({
-        published_at: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
       })
 
       const jobName = `${JOB_NAME}-${flow.id}`
