@@ -2,40 +2,20 @@ import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import * as React from 'react'
 import { useLazyQuery, useQuery } from '@apollo/client'
+import { CircularProgress } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import ErrorIcon from '@mui/icons-material/Error'
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import CircularProgress from '@mui/material/CircularProgress'
-import Collapse from '@mui/material/Collapse'
-import IconButton from '@mui/material/IconButton'
-import List from '@mui/material/List'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import AppIcon from 'components/AppIcon'
 import ChooseAppAndEventSubstep from 'components/ChooseAppAndEventSubstep'
 import ChooseConnectionSubstep from 'components/ChooseConnectionSubstep'
-import FlowStepContextMenu from 'components/FlowStepContextMenu'
 import FlowSubstep from 'components/FlowSubstep'
 import Form from 'components/Form'
 import TestSubstep from 'components/TestSubstep'
-import { EditorContext } from 'contexts/Editor'
 import { StepExecutionsProvider } from 'contexts/StepExecutions'
 import { GET_APPS } from 'graphql/queries/get-apps'
 import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
-import useFormatMessage from 'hooks/useFormatMessage'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
 
-import {
-  AppIconStatusIconWrapper,
-  AppIconWrapper,
-  Content,
-  Header,
-  Wrapper,
-} from './style'
+import StepHeader from './StepHeader'
 
 type FlowStepProps = {
   collapsed?: boolean
@@ -46,9 +26,6 @@ type FlowStepProps = {
   onChange: (step: IStep) => void
   onContinue?: () => void
 }
-
-const validIcon = <CheckCircleIcon color="success" />
-const errorIcon = <ErrorIcon color="error" />
 
 function generateValidationSchema(substeps: ISubstep[]) {
   const fieldValidations = substeps?.reduce(
@@ -114,15 +91,15 @@ function generateValidationSchema(substeps: ISubstep[]) {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { collapsed, onChange, onContinue } = props
-  const editorContext = React.useContext(EditorContext)
-  const contextButtonRef = React.useRef<HTMLButtonElement | null>(null)
+  const { collapsed, onOpen, onClose, onChange, onContinue } = props
   const step: IStep = props.step
-  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null)
   const isTrigger = step.type === 'trigger'
   const isAction = step.type === 'action'
-  const formatMessage = useFormatMessage()
+
   const [currentSubstep, setCurrentSubstep] = React.useState<number | null>(0)
+
+  // FIXME (ogp-weeloong): we shouldn't be querying for apps each time a step is
+  // loaded. Let's fix this in another PR.
   const { data } = useQuery(GET_APPS, {
     variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
   })
@@ -132,9 +109,10 @@ export default function FlowStep(
   ] = useLazyQuery(GET_STEP_WITH_TEST_EXECUTIONS, {
     fetchPolicy: 'network-only',
   })
-
   React.useEffect(() => {
     if (!collapsed && !isTrigger) {
+      // FIXME (ogp-weeloong): We shouldn't be making network requests each time
+      // the user toggles a step. Let's fix this in a separate PR.
       getStepWithTestExecutions({
         variables: {
           stepId: step.id,
@@ -179,161 +157,97 @@ export default function FlowStep(
     [substeps],
   )
 
+  const onStepHeaderClick = React.useCallback(() => {
+    if (collapsed) {
+      // We're currently collapsed, and user just expanded us.
+      onOpen?.()
+    } else {
+      onClose?.()
+    }
+  }, [collapsed, onOpen, onClose])
+
   if (!apps) {
-    return <CircularProgress sx={{ display: 'block', my: 2 }} />
+    return <CircularProgress isIndeterminate my={2} />
   }
-
-  const onContextMenuClose = (event: React.SyntheticEvent) => {
-    event.stopPropagation()
-    setAnchorEl(null)
-  }
-  const onContextMenuClick = (event: React.SyntheticEvent) => {
-    event.stopPropagation()
-    setAnchorEl(contextButtonRef.current)
-  }
-  const onOpen = () => collapsed && props.onOpen?.()
-  const onClose = () => props.onClose?.()
-
   const toggleSubstep = (substepIndex: number) =>
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
-  const validationStatusIcon =
-    step.status === 'completed' ? validIcon : errorIcon
-
   return (
-    <Wrapper
-      elevation={collapsed ? 1 : 4}
-      onClick={onOpen}
-      data-test="flow-step"
+    <StepHeader
+      step={step}
+      app={app}
+      onClick={onStepHeaderClick}
+      isCollapsed={collapsed ?? false}
     >
-      <Header collapsed={collapsed}>
-        <Stack direction="row" alignItems="center" gap={2}>
-          <AppIconWrapper>
-            <AppIcon url={app?.iconUrl} name={app?.name} />
+      <StepExecutionsProvider
+        value={stepWithTestExecutionsData?.getStepWithTestExecutions as IStep[]}
+      >
+        <Form
+          defaultValues={step}
+          onSubmit={handleSubmit}
+          resolver={stepValidationSchema}
+        >
+          <ChooseAppAndEventSubstep
+            expanded={currentSubstep === 0}
+            substep={{
+              key: 'chooAppAndEvent',
+              name: 'Choose app & event',
+              arguments: [],
+            }}
+            onExpand={() => toggleSubstep(0)}
+            onCollapse={() => toggleSubstep(0)}
+            onSubmit={expandNextStep}
+            onChange={handleChange}
+            step={step}
+          />
 
-            <AppIconStatusIconWrapper>
-              {validationStatusIcon}
-            </AppIconStatusIconWrapper>
-          </AppIconWrapper>
+          {substeps?.length > 0 &&
+            substeps.map((substep: ISubstep, index: number) => (
+              <React.Fragment key={`${substep?.name}-${index}`}>
+                {substep.key === 'chooseConnection' && app && (
+                  <ChooseConnectionSubstep
+                    expanded={currentSubstep === index + 1}
+                    substep={substep}
+                    onExpand={() => toggleSubstep(index + 1)}
+                    onCollapse={() => toggleSubstep(index + 1)}
+                    onSubmit={expandNextStep}
+                    onChange={handleChange}
+                    application={app}
+                    step={step}
+                  />
+                )}
 
-          <div>
-            <Typography variant="caption">
-              {isTrigger
-                ? formatMessage('flowStep.triggerType')
-                : formatMessage('flowStep.actionType')}
-            </Typography>
+                {substep.key === 'testStep' && (
+                  <TestSubstep
+                    expanded={currentSubstep === index + 1}
+                    substep={substep}
+                    onExpand={() => toggleSubstep(index + 1)}
+                    onCollapse={() => toggleSubstep(index + 1)}
+                    onSubmit={expandNextStep}
+                    onChange={handleChange}
+                    onContinue={onContinue}
+                    step={step}
+                    selectedActionOrTrigger={selectedActionOrTrigger}
+                  />
+                )}
 
-            <Typography variant="body2">
-              {step.position}. {app?.name}
-            </Typography>
-          </div>
-
-          <Box display="flex" flex={1} justifyContent="end">
-            {/* as there are no other actions besides "delete step", we hide the context menu. */}
-            {!isTrigger && !editorContext.readOnly && (
-              <IconButton
-                color="primary"
-                onClick={onContextMenuClick}
-                ref={contextButtonRef}
-              >
-                <MoreHorizIcon />
-              </IconButton>
-            )}
-          </Box>
-        </Stack>
-      </Header>
-
-      <Collapse in={!collapsed} unmountOnExit>
-        <Content>
-          <List>
-            <StepExecutionsProvider
-              value={
-                stepWithTestExecutionsData?.getStepWithTestExecutions as IStep[]
-              }
-            >
-              <Form
-                defaultValues={step}
-                onSubmit={handleSubmit}
-                resolver={stepValidationSchema}
-              >
-                <ChooseAppAndEventSubstep
-                  expanded={currentSubstep === 0}
-                  substep={{
-                    key: 'chooAppAndEvent',
-                    name: 'Choose app & event',
-                    arguments: [],
-                  }}
-                  onExpand={() => toggleSubstep(0)}
-                  onCollapse={() => toggleSubstep(0)}
-                  onSubmit={expandNextStep}
-                  onChange={handleChange}
-                  step={step}
-                />
-
-                {substeps?.length > 0 &&
-                  substeps.map((substep: ISubstep, index: number) => (
-                    <React.Fragment key={`${substep?.name}-${index}`}>
-                      {substep.key === 'chooseConnection' && app && (
-                        <ChooseConnectionSubstep
-                          expanded={currentSubstep === index + 1}
-                          substep={substep}
-                          onExpand={() => toggleSubstep(index + 1)}
-                          onCollapse={() => toggleSubstep(index + 1)}
-                          onSubmit={expandNextStep}
-                          onChange={handleChange}
-                          application={app}
-                          step={step}
-                        />
-                      )}
-
-                      {substep.key === 'testStep' && (
-                        <TestSubstep
-                          expanded={currentSubstep === index + 1}
-                          substep={substep}
-                          onExpand={() => toggleSubstep(index + 1)}
-                          onCollapse={() => toggleSubstep(index + 1)}
-                          onSubmit={expandNextStep}
-                          onChange={handleChange}
-                          onContinue={onContinue}
-                          step={step}
-                          selectedActionOrTrigger={selectedActionOrTrigger}
-                        />
-                      )}
-
-                      {substep.key &&
-                        ['chooseConnection', 'testStep'].includes(
-                          substep.key,
-                        ) === false && (
-                          <FlowSubstep
-                            expanded={currentSubstep === index + 1}
-                            substep={substep}
-                            onExpand={() => toggleSubstep(index + 1)}
-                            onCollapse={() => toggleSubstep(index + 1)}
-                            onSubmit={expandNextStep}
-                            onChange={handleChange}
-                            step={step}
-                          />
-                        )}
-                    </React.Fragment>
-                  ))}
-              </Form>
-            </StepExecutionsProvider>
-          </List>
-        </Content>
-
-        <Button fullWidth onClick={onClose}>
-          Close
-        </Button>
-      </Collapse>
-
-      {anchorEl && (
-        <FlowStepContextMenu
-          stepId={step.id}
-          deletable={!isTrigger}
-          onClose={onContextMenuClose}
-          anchorEl={anchorEl}
-        />
-      )}
-    </Wrapper>
+                {substep.key &&
+                  ['chooseConnection', 'testStep'].includes(substep.key) ===
+                    false && (
+                    <FlowSubstep
+                      expanded={currentSubstep === index + 1}
+                      substep={substep}
+                      onExpand={() => toggleSubstep(index + 1)}
+                      onCollapse={() => toggleSubstep(index + 1)}
+                      onSubmit={expandNextStep}
+                      onChange={handleChange}
+                      step={step}
+                    />
+                  )}
+              </React.Fragment>
+            ))}
+        </Form>
+      </StepExecutionsProvider>
+    </StepHeader>
   )
 }

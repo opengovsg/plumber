@@ -26,6 +26,14 @@ const colors = {
     '800': '#333c56',
     '900': '#272d41',
   },
+  line: {
+    light: '#ededed',
+    dark: '#bfc2c8',
+  },
+  badge: {
+    green: '#0f796f',
+    yellow: '#ffda68',
+  },
 }
 
 colors.utility = {
