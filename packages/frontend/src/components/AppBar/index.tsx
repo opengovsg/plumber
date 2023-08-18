@@ -57,7 +57,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
     localStorage.getItem('news-tab-latest-timestamp'),
   )
 
-  const handleClose = useCallback(() => {
+  const handleOpen = useCallback(() => {
     // only way to update this is to change the news or clear the local storage
     localStorage.setItem('news-tab-latest-timestamp', latestNewsTimestamp)
     setLocalLatestTimestamp(latestNewsTimestamp)
@@ -106,7 +106,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             Guide
           </Link>
 
-          <NewsDrawer handleClose={handleClose}></NewsDrawer>
+          <NewsDrawer handleOpen={handleOpen}></NewsDrawer>
 
           {localLatestTimestamp !== latestNewsTimestamp && (
             <Icon

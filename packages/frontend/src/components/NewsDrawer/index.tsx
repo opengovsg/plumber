@@ -15,13 +15,13 @@ import NewsItem from './NewsItem'
 import { TEST_ITEM_LIST } from './TestItemList'
 
 interface NewsDrawerProps {
-  handleClose: () => void
+  handleOpen: () => void
 }
 
 export default function NewsDrawer(props: NewsDrawerProps) {
-  const { handleClose } = props
+  const { handleOpen } = props
 
-  const { isOpen, onOpen, onClose } = useDisclosure({ onClose: handleClose })
+  const { isOpen, onOpen, onClose } = useDisclosure({ onOpen: handleOpen })
 
   return (
     <>
