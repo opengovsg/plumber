@@ -135,25 +135,12 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
          * Captions
          */}
         <Flex direction="column" align="start">
-          <Text
-            fontSize="sm"
-            fontWeight="normal"
-            lineHeight="shorter"
-            p={0}
-            mb={1.5}
-            color="#686868"
-          >
+          <Text textStyle="body-2" color="base.content.medium" p={0} mb={1.5}>
             {isTrigger
               ? formatMessage('flowStep.triggerType')
               : formatMessage('flowStep.actionType')}
           </Text>
-          <Text
-            fontSize="md"
-            fontWeight="medium"
-            color="secondary.900"
-            lineHeight="base"
-            as="strong"
-          >
+          <Text textStyle="subhead-1" color="base.content.default">
             {caption}
           </Text>
         </Flex>

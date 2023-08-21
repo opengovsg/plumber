@@ -1,4 +1,7 @@
+import bbBearTheme from './BbBear'
+
 export const textStyles = {
+  ...bbBearTheme.textStyles,
   logo: {
     fontFamily: `'Space Grotesk', sans-serif`,
     fontWeight: 700,
