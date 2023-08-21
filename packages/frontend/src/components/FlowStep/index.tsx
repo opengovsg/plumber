@@ -177,7 +177,7 @@ export default function FlowStep(
       step={step}
       app={app}
       onClick={onStepHeaderClick}
-      isCollapsed={collapsed ?? false}
+      collapsed={collapsed ?? false}
     >
       <StepExecutionsProvider
         value={stepWithTestExecutionsData?.getStepWithTestExecutions as IStep[]}
