@@ -36,12 +36,12 @@ interface StepHeaderProps {
   step: IStep
   app?: IApp | null
   onClick: () => void
-  isCollapsed: boolean
+  collapsed: boolean
   children: ReactNode
 }
 
 export default function StepHeader(props: StepHeaderProps): JSX.Element {
-  const { step, app, onClick, isCollapsed, children } = props
+  const { step, app, onClick, collapsed, children } = props
 
   const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
@@ -173,9 +173,9 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
        * Step contents
        */}
       <Collapse
-        in={!isCollapsed}
+        in={!collapsed}
         unmountOnExit
-        overflow={isCollapsed ? 'hidden' : 'initial !important'}
+        overflow={collapsed ? 'hidden' : 'initial !important'}
       >
         <Box borderTopWidth={1} p={0}>
           {children}
