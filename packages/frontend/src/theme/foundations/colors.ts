@@ -1,6 +1,6 @@
 import bbBearTheme from './BbBear'
 
-const colors: Record<string, any> = {
+const colors = {
   ...bbBearTheme.colors,
   primary: {
     '50': '#FEF8FB',
