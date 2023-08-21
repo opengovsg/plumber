@@ -7,7 +7,7 @@ import {
   useContext,
 } from 'react'
 import {
-  BiQuestionMark,
+  BiArrowFromRight,
   BiSolidCheckCircle,
   BiSolidErrorCircle,
   BiTrashAlt,
@@ -77,31 +77,39 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
       <Flex
         p={4}
         alignItems="center"
-        _hover={{ bg: 'secondary.50', cursor: 'pointer' }}
+        _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
+        _active={{ bg: 'interaction.muted.neutral.active', cursor: 'pointer' }}
         w="full"
         onClick={onClick}
       >
-        <Box position="relative" h={16} w={16} mr={4}>
+        <Flex
+          position="relative"
+          boxSize={16}
+          mr={4}
+          borderWidth={1}
+          borderColor="base.divider.strong"
+          borderRadius="base"
+          justifyContent="center"
+          alignItems="center"
+        >
           {/*
            * App icon
            */}
           <Image
             src={appIcon}
-            boxSize="full"
-            borderRadius="base"
+            boxSize={8}
+            borderStyle="solid"
             fit="contain"
             fallback={
               <Icon
-                boxSize="full"
-                color="white"
-                bg="primary.500"
-                as={BiQuestionMark}
-                borderRadius="base"
+                boxSize={6}
+                as={BiArrowFromRight}
+                color="base.content.default"
               />
             }
           />
           {/*
-           * Step ompletion status badge
+           * Step completion status badge
            */}
           <Flex
             position="absolute"
@@ -115,18 +123,14 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
             {isCompletedStep ? (
               <Icon
                 boxSize="full"
-                color="badge.green"
+                color="interaction.success.default"
                 as={BiSolidCheckCircle}
               />
             ) : (
-              <Icon
-                boxSize="full"
-                color="badge.yellow"
-                as={BiSolidErrorCircle}
-              />
+              <Icon boxSize="full" color="yellow.200" as={BiSolidErrorCircle} />
             )}
           </Flex>
-        </Box>
+        </Flex>
         {/*
          * Captions
          */}
