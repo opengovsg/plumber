@@ -1,17 +1,49 @@
 import type { IFlow, IStep } from '@plumber/types'
 
-import * as React from 'react'
+import { Fragment, useCallback, useState } from 'react'
+import { BiPlus } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import AddIcon from '@mui/icons-material/Add'
-import Box from '@mui/material/Box'
-import IconButton from '@mui/material/IconButton'
+import { AbsoluteCenter, Box, Divider, Flex } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 import FlowStep from 'components/FlowStep'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 
-type EditorProps = {
-  flow: IFlow
+interface AddStepButtonProps {
+  onClick: () => void
+  disabled: boolean
+  isLastStep: boolean
+}
+
+function AddStepButton(props: AddStepButtonProps): JSX.Element {
+  const { onClick, disabled, isLastStep } = props
+
+  return (
+    <Box pos="relative" h={24}>
+      {/* Top vertical line */}
+      <Box h="1.875rem">
+        <Divider orientation="vertical" borderColor="line.dark" />
+      </Box>
+      {/* Bottom vertical line */}
+      {!isLastStep && (
+        <Box mt={9} h="1.875rem">
+          <Divider orientation="vertical" borderColor="line.dark" />
+        </Box>
+      )}
+      <AbsoluteCenter>
+        <IconButton
+          onClick={onClick}
+          disabled={disabled}
+          aria-label="Add Step"
+          icon={<BiPlus />}
+          borderColor="line.dark"
+          variant="outline"
+          size="xs"
+        />
+      </AbsoluteCenter>
+    </Box>
+  )
 }
 
 function updateHandlerFactory(flowId: string, previousStepId: string) {
@@ -38,6 +70,10 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
   }
 }
 
+type EditorProps = {
+  flow: IFlow
+}
+
 export default function Editor(props: EditorProps): React.ReactElement {
   const [updateStep] = useMutation(UPDATE_STEP)
   const [createStep, { loading: creationInProgress }] = useMutation(
@@ -50,12 +86,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const { flow } = props
   const [triggerStep] = flow.steps
 
-  const [currentStepId, setCurrentStepId] = React.useState<string | null>(
+  const [currentStepId, setCurrentStepId] = useState<string | null>(
     triggerStep.id,
   )
 
-  const onStepChange = React.useCallback(
-    (step: any) => {
+  const onStepChange = useCallback(
+    (step: IStep) => {
       const mutationInput: Record<string, unknown> = {
         id: step.id,
         key: step.key,
@@ -79,7 +115,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [updateStep, flow.id],
   )
 
-  const addStep = React.useCallback(
+  const addStep = useCallback(
     async (previousStepId: string) => {
       const mutationInput = {
         previousStep: {
@@ -101,24 +137,10 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [createStep, flow.id],
   )
 
-  const openNextStep = React.useCallback((nextStep: IStep) => {
-    return () => {
-      setCurrentStepId(nextStep?.id)
-    }
-  }, [])
-
   return (
-    <Box
-      display="flex"
-      flex={1}
-      flexDirection="column"
-      alignItems="center"
-      alignSelf="center"
-      py={3}
-      gap={1}
-    >
+    <Flex flexDir="column" alignItems="center" py={3}>
       {flow?.steps?.map((step, index, steps) => (
-        <React.Fragment key={`${step.id}-${index}`}>
+        <Fragment key={`${step.id}-${index}`}>
           <FlowStep
             key={step.id}
             step={step}
@@ -127,18 +149,18 @@ export default function Editor(props: EditorProps): React.ReactElement {
             onOpen={() => setCurrentStepId(step.id)}
             onClose={() => setCurrentStepId(null)}
             onChange={onStepChange}
-            onContinue={openNextStep(steps[index + 1])}
+            onContinue={() => {
+              setCurrentStepId(steps[index + 1]?.id)
+            }}
           />
 
-          <IconButton
+          <AddStepButton
             onClick={() => addStep(step.id)}
-            color="primary"
             disabled={creationInProgress || flow.active}
-          >
-            <AddIcon />
-          </IconButton>
-        </React.Fragment>
+            isLastStep={index === steps.length - 1}
+          />
+        </Fragment>
       ))}
-    </Box>
+    </Flex>
   )
 }
