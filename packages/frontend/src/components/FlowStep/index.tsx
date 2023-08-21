@@ -1,6 +1,6 @@
 import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import * as React from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLazyQuery, useQuery } from '@apollo/client'
 import { CircularProgress } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -96,7 +96,7 @@ export default function FlowStep(
   const isTrigger = step.type === 'trigger'
   const isAction = step.type === 'action'
 
-  const [currentSubstep, setCurrentSubstep] = React.useState<number | null>(0)
+  const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
 
   // FIXME (ogp-weeloong): we shouldn't be querying for apps each time a step is
   // loaded. Let's fix this in another PR.
@@ -109,7 +109,7 @@ export default function FlowStep(
   ] = useLazyQuery(GET_STEP_WITH_TEST_EXECUTIONS, {
     fetchPolicy: 'network-only',
   })
-  React.useEffect(() => {
+  useEffect(() => {
     if (!collapsed && !isTrigger) {
       // FIXME (ogp-weeloong): We shouldn't be making network requests each time
       // the user toggles a step. Let's fix this in a separate PR.
@@ -127,7 +127,7 @@ export default function FlowStep(
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
 
-  const selectedActionOrTrigger = React.useMemo(
+  const selectedActionOrTrigger = useMemo(
     () =>
       actionsOrTriggers.find(
         (actionOrTrigger: IAction | ITrigger) =>
@@ -135,16 +135,16 @@ export default function FlowStep(
       ),
     [actionsOrTriggers, step?.key],
   )
-  const substeps = React.useMemo(
+  const substeps = useMemo(
     () => selectedActionOrTrigger?.substeps || [],
     [selectedActionOrTrigger],
   )
 
-  const handleChange = React.useCallback(({ step }: { step: IStep }) => {
+  const handleChange = useCallback(({ step }: { step: IStep }) => {
     onChange(step)
   }, [])
 
-  const expandNextStep = React.useCallback(() => {
+  const expandNextStep = useCallback(() => {
     setCurrentSubstep((currentSubstep) => (currentSubstep ?? 0) + 1)
   }, [])
 
@@ -152,12 +152,12 @@ export default function FlowStep(
     handleChange({ step: val as IStep })
   }
 
-  const stepValidationSchema = React.useMemo(
+  const stepValidationSchema = useMemo(
     () => generateValidationSchema(substeps),
     [substeps],
   )
 
-  const onStepHeaderClick = React.useCallback(() => {
+  const onStepHeaderClick = useCallback(() => {
     if (collapsed) {
       // We're currently collapsed, and user just expanded us.
       onOpen?.()
@@ -203,7 +203,7 @@ export default function FlowStep(
 
           {substeps?.length > 0 &&
             substeps.map((substep: ISubstep, index: number) => (
-              <React.Fragment key={`${substep?.name}-${index}`}>
+              <Fragment key={`${substep?.name}-${index}`}>
                 {substep.key === 'chooseConnection' && app && (
                   <ChooseConnectionSubstep
                     expanded={currentSubstep === index + 1}
@@ -244,7 +244,7 @@ export default function FlowStep(
                       step={step}
                     />
                   )}
-              </React.Fragment>
+              </Fragment>
             ))}
         </Form>
       </StepExecutionsProvider>
