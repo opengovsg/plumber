@@ -67,7 +67,7 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
     <Box
       w="full"
       borderWidth="1px"
-      borderColor="line.light"
+      borderColor="base.divider.medium"
       borderRadius="lg"
       p={0}
     >
@@ -78,7 +78,7 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
         p={4}
         alignItems="center"
         _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
-        _active={{ bg: 'interaction.muted.neutral.active', cursor: 'pointer' }}
+        _active={{ bg: 'interaction.muted.neutral.active' }}
         w="full"
         onClick={onClick}
       >
@@ -135,25 +135,12 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
          * Captions
          */}
         <Flex direction="column" align="start">
-          <Text
-            fontSize="sm"
-            fontWeight="normal"
-            lineHeight="shorter"
-            p={0}
-            mb={1.5}
-            color="#686868"
-          >
+          <Text textStyle="body-2" color="base.content.medium" p={0} mb={1.5}>
             {isTrigger
               ? formatMessage('flowStep.triggerType')
               : formatMessage('flowStep.actionType')}
           </Text>
-          <Text
-            fontSize="md"
-            fontWeight="medium"
-            color="secondary.900"
-            lineHeight="base"
-            as="strong"
-          >
+          <Text textStyle="subhead-1" color="base.content.default">
             {caption}
           </Text>
         </Flex>
