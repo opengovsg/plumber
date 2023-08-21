@@ -7,6 +7,7 @@ import defineTrigger from '@/helpers/define-trigger'
 import cronTimes from '../../common/cron-times'
 import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
+import getDataOutMetadata from '../get-data-out-metadata'
 
 export default defineTrigger({
   name: 'Hourly - triggers every hour',
@@ -33,6 +34,7 @@ export default defineTrigger({
       ],
     },
   ],
+  getDataOutMetadata,
 
   getInterval(parameters: IGlobalVariable['step']['parameters']) {
     if (parameters.triggersOnWeekend) {
