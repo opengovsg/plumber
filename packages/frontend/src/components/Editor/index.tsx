@@ -37,7 +37,6 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
           disabled={disabled}
           aria-label="Add Step"
           icon={<BiPlus />}
-          borderColor="line.dark"
           variant="outline"
           size="xs"
         />
