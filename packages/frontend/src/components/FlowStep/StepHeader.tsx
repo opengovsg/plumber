@@ -67,7 +67,7 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
     <Box
       w="full"
       borderWidth="1px"
-      borderColor="line.light"
+      borderColor="base.divider.medium"
       borderRadius="lg"
       p={0}
     >
@@ -78,7 +78,7 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
         p={4}
         alignItems="center"
         _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
-        _active={{ bg: 'interaction.muted.neutral.active', cursor: 'pointer' }}
+        _active={{ bg: 'interaction.muted.neutral.active' }}
         w="full"
         onClick={onClick}
       >
