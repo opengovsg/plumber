@@ -23,12 +23,12 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
     <Box pos="relative" h={24}>
       {/* Top vertical line */}
       <Box h="1.875rem">
-        <Divider orientation="vertical" borderColor="line.dark" />
+        <Divider orientation="vertical" borderColor="base.divider.strong" />
       </Box>
       {/* Bottom vertical line */}
       {!isLastStep && (
         <Box mt={9} h="1.875rem">
-          <Divider orientation="vertical" borderColor="line.dark" />
+          <Divider orientation="vertical" borderColor="base.divider.strong" />
         </Box>
       )}
       <AbsoluteCenter>
