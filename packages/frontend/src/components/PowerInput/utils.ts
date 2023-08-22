@@ -1,27 +1,43 @@
-import type { StepWithVariables } from 'helpers/variables'
+import { type StepWithVariables, type Variable } from 'helpers/variables'
 import { Descendant, Text, Transforms } from 'slate'
 import { withHistory } from 'slate-history'
 import { withReact } from 'slate-react'
 
 import type { CustomEditor, CustomElement, VariableElement } from './types'
 
-// Map of variable name with curlies (e.g. '{{step.abc-def.field.1.xyz}}') to
-// its label (its actual label, if defined, otherwise something like
-// 'step2.field.1.xyz').
-export type VariableLabelMap = Map<string, string>
+/**
+ * Map of variable placeholder strings (e.g. `{{step.abc-def.0.answer}}`) to
+ * their associated info:
+ *
+ * 1. Label obtained from dataOutMetadata (if defined). Otherwise,
+ *    'step2.field.1.xyz'.
+ * 2. Value obtained from the test run.
+ */
+export type VariableInfoMap = Map<
+  string,
+  {
+    label: string
+    testRunValue: string
+  }
+>
 
-export function genVariableLabelMap(
+export function genVariableInfoMap(
   stepsWithVariables: StepWithVariables[],
-): VariableLabelMap {
-  const result: VariableLabelMap = new Map()
+): VariableInfoMap {
+  const result: VariableInfoMap = new Map()
 
   for (const [stepPosition, step] of stepsWithVariables.entries()) {
     for (const variable of step.output) {
-      result.set(
-        `{{${variable.name}}}`,
+      const placeholderString = `{{${variable.name}}}`
+      const label =
         variable.label ??
-          variable.name.replace(`step.${step.id}.`, `step${stepPosition + 1}.`),
-      )
+        variable.name.replace(`step.${step.id}.`, `step${stepPosition + 1}.`)
+      const testRunValue = variable.displayedValue ?? String(variable.value)
+
+      result.set(placeholderString, {
+        label,
+        testRunValue,
+      })
     }
   }
 
@@ -100,17 +116,10 @@ export const withVariables = (editor: CustomEditor) => {
   return editor
 }
 
-export function insertVariable(
-  editor: CustomEditor,
-  variableData: Pick<VariableElement, 'name' | 'value'>,
-  variableLabels: VariableLabelMap,
-) {
-  const value = `{{${variableData.name}}}`
-
+export function insertVariable(editor: CustomEditor, variableData: Variable) {
   const variable: VariableElement = {
     type: 'variable',
-    name: variableLabels.get(value),
-    value,
+    value: `{{${variableData.name}}}`,
     children: [{ text: '' }],
   }
 

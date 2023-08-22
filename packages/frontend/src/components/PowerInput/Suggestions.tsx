@@ -10,13 +10,13 @@ import Paper from '@mui/material/Paper'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import VariablesList from 'components/VariablesList'
-import { StepWithVariables } from 'helpers/variables'
+import { type StepWithVariables, type Variable } from 'helpers/variables'
 
 const ListItemText = styled(MuiListItemText)``
 
 interface SuggestionsProps {
   data: StepWithVariables[]
-  onSuggestionClick: (variable: any) => void
+  onSuggestionClick: (variable: Variable) => void
 }
 
 const SHORT_LIST_LENGTH = 4
@@ -45,7 +45,7 @@ export default function Suggestions(props: SuggestionsProps) {
         Variables
       </Typography>
       <List disablePadding>
-        {data.map((option: StepWithVariables, index: number) => (
+        {data.map((option, index) => (
           <div key={`primary-suggestion-${option.name}`}>
             <ListItemButton
               divider

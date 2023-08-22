@@ -1,32 +1,34 @@
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import { FormControl } from '@chakra-ui/react'
+import { Badge, FormControl, Text } from '@chakra-ui/react'
 import ClickAwayListener from '@mui/base/ClickAwayListener'
-import Chip from '@mui/material/Chip'
 import Popper from '@mui/material/Popper'
 import { FormLabel } from '@opengovsg/design-system-react'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
 import { createEditor } from 'slate'
-import { Editable, Slate, useFocused, useSelected } from 'slate-react'
+import { Editable, RenderElementProps, Slate } from 'slate-react'
 
-import { extractVariables, filterVariables } from '../../helpers/variables'
+import {
+  extractVariables,
+  filterVariables,
+  StepWithVariables,
+  Variable,
+} from '../../helpers/variables'
 
 import { FakeInput } from './style'
 import Suggestions from './Suggestions'
-import { VariableElement } from './types'
+import { CustomElement, VariableElement } from './types'
 import {
   customizeEditor,
   deserialize,
-  genVariableLabelMap,
+  genVariableInfoMap,
   insertVariable,
   serialize,
-  VariableLabelMap,
+  VariableInfoMap,
 } from './utils'
 
 // FIXME (ogp-weeloong): Refactor this to something cleaner later...
-const VariableLabelMapContext = React.createContext<VariableLabelMap>(
-  new Map<string, string>(),
-)
+const VariableInfoMapContext = React.createContext<VariableInfoMap>(new Map())
 
 type PowerInputProps = {
   onChange?: (value: string) => void
@@ -59,20 +61,20 @@ const PowerInput = (props: PowerInputProps) => {
   const priorStepsWithExecutions = React.useContext(StepExecutionsContext)
   const editorRef = React.useRef<HTMLDivElement | null>(null)
   const renderElement = React.useCallback(
-    (props: any) => <Element {...props} />,
+    (props: RenderElementProps) => <Element {...props} />,
     [],
   )
   const editor = React.useMemo(() => customizeEditor(createEditor()), [])
   const [showVariableSuggestions, setShowVariableSuggestions] =
     React.useState(false)
 
-  const [stepsWithVariables, variableLabelMap] = React.useMemo(() => {
+  const [stepsWithVariables, variableInfoMap] = React.useMemo(() => {
     const stepsWithVars = filterVariables(
       extractVariables(priorStepsWithExecutions),
       (variable) => (variable.type ?? 'text') === 'text',
     )
-    const labels = genVariableLabelMap(stepsWithVars)
-    return [stepsWithVars, labels]
+    const info = genVariableInfoMap(stepsWithVars)
+    return [stepsWithVars, info]
   }, [priorStepsWithExecutions])
 
   const handleBlur = React.useCallback(
@@ -83,10 +85,10 @@ const PowerInput = (props: PowerInputProps) => {
   )
 
   const handleVariableSuggestionClick = React.useCallback(
-    (variable: Pick<VariableElement, 'name' | 'value'>) => {
-      insertVariable(editor, variable, variableLabelMap)
+    (variable: Variable) => {
+      insertVariable(editor, variable)
     },
-    [variableLabelMap],
+    [editor],
   )
 
   const handleFocus = React.useCallback(
@@ -130,7 +132,7 @@ const PowerInput = (props: PowerInputProps) => {
               {/* ref-able single child for ClickAwayListener */}
               <div style={{ width: '100%' }} data-test="power-input">
                 <FakeInput disabled={disabled}>
-                  <VariableLabelMapContext.Provider value={variableLabelMap}>
+                  <VariableInfoMapContext.Provider value={variableInfoMap}>
                     <Editable
                       placeholder={placeholder}
                       readOnly={disabled}
@@ -144,7 +146,7 @@ const PowerInput = (props: PowerInputProps) => {
                         handleBlur(value)
                       }}
                     />
-                  </VariableLabelMapContext.Provider>
+                  </VariableInfoMapContext.Provider>
                 </FakeInput>
 
                 {/* ghost placer for the variables popover */}
@@ -165,7 +167,14 @@ const PowerInput = (props: PowerInputProps) => {
   )
 }
 
-const SuggestionsPopper = (props: any) => {
+interface SuggestionsPopperProps {
+  open: boolean
+  anchorEl: HTMLDivElement | null
+  data: StepWithVariables[]
+  onSuggestionClick: (variable: Variable) => void
+}
+
+const SuggestionsPopper = (props: SuggestionsPopperProps) => {
   const { open, anchorEl, data, onSuggestionClick } = props
 
   return (
@@ -188,11 +197,23 @@ const SuggestionsPopper = (props: any) => {
   )
 }
 
-const Element = (props: any) => {
+interface ElementProps extends RenderElementProps {
+  children: React.ReactNode
+  element: CustomElement
+}
+
+const Element = (props: ElementProps) => {
   const { attributes, children, element } = props
+
   switch (element.type) {
     case 'variable':
-      return <Variable {...props} />
+      // Not spreading props - TS can't figure out that type has already been
+      // narrowed.
+      return (
+        <VariableBadge attributes={attributes} element={element}>
+          {children}
+        </VariableBadge>
+      )
     default:
       return (
         <p
@@ -206,27 +227,34 @@ const Element = (props: any) => {
   }
 }
 
-const Variable = ({ attributes, children, element }: any) => {
-  const selected = useSelected()
-  const focused = useFocused()
-  const variableLabelMap = React.useContext(VariableLabelMapContext)
-  const label = (
-    <>
-      {variableLabelMap.get(element.value) ?? element.value}
-      {children}
-    </>
+interface VariableBadgeProps extends RenderElementProps {
+  element: VariableElement
+}
+
+const VariableBadge = ({
+  element,
+
+  // We need to forward attributes and children for slate to work.
+  attributes,
+  children,
+}: VariableBadgeProps) => {
+  const variableInfo = React.useContext(VariableInfoMapContext).get(
+    element.value,
   )
+
+  const label = variableInfo?.label ?? element.value
+  const testRunValue = variableInfo?.testRunValue
+
   return (
-    <Chip
-      {...attributes}
-      component="span"
-      contentEditable={false}
-      style={{
-        boxShadow: selected && focused ? '0 0 0 2px #B4D5FF' : 'none',
-      }}
-      size="small"
-      label={label}
-    />
+    <Badge variant="solid" bg="primary.100" borderRadius="50px" {...attributes}>
+      <Text color="base.content.strong">{label}</Text>
+      {testRunValue && (
+        <Text color="base.content.medium" ml={1}>
+          {testRunValue}
+        </Text>
+      )}
+      {children}
+    </Badge>
   )
 }
 
