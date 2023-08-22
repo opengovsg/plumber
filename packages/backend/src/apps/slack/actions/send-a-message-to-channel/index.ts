@@ -75,8 +75,8 @@ export default defineAction({
   ],
 
   async run($) {
-    const message = await postMessage($)
+    await postMessage($)
 
-    return message
+    return {}
   },
 })

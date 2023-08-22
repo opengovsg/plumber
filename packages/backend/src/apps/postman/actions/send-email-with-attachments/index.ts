@@ -67,5 +67,7 @@ export default defineAction({
         ...results[0]?.params,
       },
     })
+
+    return {}
   },
 })

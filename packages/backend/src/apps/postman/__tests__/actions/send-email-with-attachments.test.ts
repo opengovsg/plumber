@@ -62,7 +62,7 @@ describe('send email with attachments', () => {
         name: 'file-2.png',
         data: '1111',
       })
-    await sendEmailWithAttachments.run($, vi.fn())
+    await sendEmailWithAttachments.run($)
     expect(mocks.sendTransactionalEmails).toHaveBeenLastCalledWith(
       $.http,
       ['recipient@example.com'],
