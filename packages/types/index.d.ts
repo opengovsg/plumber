@@ -338,6 +338,17 @@ export interface ITrigger extends IBaseTrigger {
   substeps?: ISubstep[]
 }
 
+export interface IActionRunResult {
+  /**
+   * This specifies the ID of the next step to run. This is for actions that
+   * need to redirect pipe execution (e.g. if-then).
+   *
+   * If this is not set, or is set to null, pipe execution continues as per
+   * normal (i.e. next step is step with position + 1).
+   */
+  nextStepId?: IStep['id'] | null
+}
+
 export interface IActionOutput {
   data: IActionItem
   error?: IJSONObject
@@ -351,16 +362,7 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  run?(
-    $: IGlobalVariable,
-
-    /**
-     * Sets the next step that should be run _after_ this action successfully
-     * completes. If the next step ID is set to null, the flow will be stopped
-     * instead.
-     */
-    setNextStep: (stepId: IStep['id'] | null) => void,
-  ): Promise<void>
+  run?($: IGlobalVariable): Promise<IActionRunResult>
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.

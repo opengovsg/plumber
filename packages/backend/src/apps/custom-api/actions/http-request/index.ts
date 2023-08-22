@@ -75,5 +75,7 @@ export default defineAction({
     }
 
     $.setActionItem({ raw: { data: responseData } })
+
+    return {}
   },
 })

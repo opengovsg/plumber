@@ -1,4 +1,4 @@
-import { IStep } from '@plumber/types'
+import { type IActionRunResult } from '@plumber/types'
 
 import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
@@ -50,35 +50,9 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   $.step.parameters = computedParameters
 
-  // This is a tri-state variable with the following possible values:
-  // * undefined = Go to default next step (i.e. step position + 1)
-  // * null = Stop flow execution
-  // * concrete value = Go to step with ID equal to this value.
-  let nextStepId: IStep['id'] | null | undefined = undefined
+  let runResult: IActionRunResult = {}
   try {
-    await actionCommand.run($, (stepIdToRedirectTo: IStep['id'] | null) => {
-      nextStepId = stepIdToRedirectTo ?? null // Force undefined to null... just in case.
-
-      if (stepIdToRedirectTo) {
-        logger.info(
-          `Step ${stepId} redirected flow execution to step ID ${stepIdToRedirectTo}.`,
-          {
-            event: 'step-redirected-flow-execution',
-            executionId,
-            stepId,
-            flowId,
-            stepIdToRedirectTo,
-          },
-        )
-      } else {
-        logger.info(`Step ${stepId} stopped flow execution.`, {
-          event: 'step-stopped-flow-execution',
-          executionId,
-          stepId,
-          flowId,
-        })
-      }
-    })
+    runResult = await actionCommand.run($)
   } catch (error) {
     logger.error(error)
     if (error instanceof HttpError) {
@@ -88,7 +62,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         statusText: error.response.statusText,
       }
     } else if (error instanceof CancelFlowError) {
-      nextStepId = null
+      runResult.nextStepId = null
     } else {
       try {
         $.actionOutput.error = JSON.parse(error.message)
@@ -110,15 +84,12 @@ export const processAction = async (options: ProcessActionOptions) => {
       jobId,
     })
 
-  let nextStep = null
-  if (nextStepId === undefined) {
-    nextStep = await step.getNextStep()
-  } else if (nextStepId !== null) {
-    nextStep = await flow
-      .$relatedQuery('steps')
-      .findById(nextStepId)
-      .throwIfNotFound()
-  }
+  const nextStep = runResult.nextStepId
+    ? await flow
+        .$relatedQuery('steps')
+        .findById(runResult.nextStepId)
+        .throwIfNotFound()
+    : await step.getNextStep()
 
   return {
     flowId,
