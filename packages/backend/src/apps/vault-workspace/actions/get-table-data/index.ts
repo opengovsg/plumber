@@ -43,6 +43,6 @@ export default defineAction({
       raw: row,
     })
 
-    return null
+    return {}
   },
 })

@@ -53,6 +53,6 @@ export default defineAction({
 
     $.setActionItem({ raw: dataItem })
 
-    return null
+    return {}
   },
 })

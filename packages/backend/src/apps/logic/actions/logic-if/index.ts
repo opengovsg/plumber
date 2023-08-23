@@ -92,6 +92,6 @@ export default defineAction({
       throw new CancelFlowError()
     }
 
-    return null
+    return {}
   },
 })
