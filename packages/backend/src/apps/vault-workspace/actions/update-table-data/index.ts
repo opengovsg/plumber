@@ -92,6 +92,6 @@ export default defineAction({
       raw: response,
     })
 
-    return {}
+    return null
   },
 })

@@ -50,7 +50,7 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   $.step.parameters = computedParameters
 
-  let runResult: IActionRunResult = {}
+  let runResult: IActionRunResult | null = null
   try {
     runResult = await actionCommand.run($)
   } catch (error) {
@@ -62,7 +62,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         statusText: error.response.statusText,
       }
     } else if (error instanceof CancelFlowError) {
-      runResult.nextStepId = null
+      runResult = { nextStepId: null }
     } else {
       try {
         $.actionOutput.error = JSON.parse(error.message)
@@ -84,7 +84,7 @@ export const processAction = async (options: ProcessActionOptions) => {
       jobId,
     })
 
-  const nextStep = runResult.nextStepId
+  const nextStep = runResult?.nextStepId
     ? await flow
         .$relatedQuery('steps')
         .findById(runResult.nextStepId)
