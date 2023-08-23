@@ -15,10 +15,11 @@ type ProcessActionOptions = {
   executionId: string
   stepId: string
   jobId?: string
+  testRun?: boolean
 }
 
 export const processAction = async (options: ProcessActionOptions) => {
-  const { flowId, stepId, executionId, jobId } = options
+  const { flowId, stepId, executionId, jobId, testRun = false } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
   const flow = await Flow.query().findById(flowId).throwIfNotFound()
@@ -32,6 +33,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
+    testRun,
   })
 
   const priorExecutionSteps = await ExecutionStep.query().where({
@@ -52,7 +54,10 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   let runResult: IActionRunResult = {}
   try {
-    runResult = await actionCommand.run($)
+    runResult =
+      testRun && actionCommand.testRun
+        ? await actionCommand.testRun($)
+        : await actionCommand.run($)
   } catch (error) {
     logger.error(error)
     if (error instanceof HttpError) {
