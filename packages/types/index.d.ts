@@ -340,13 +340,15 @@ export interface ITrigger extends IBaseTrigger {
 
 export interface IActionRunResult {
   /**
-   * This specifies the ID of the next step to run. This is for actions that
-   * need to redirect pipe execution (e.g. if-then).
+   * This enables actions to control pipe execution flow. This is for actions
+   * that need to redirect pipe execution (e.g. if-then).
    *
-   * If this is not set, or is set to null, pipe execution continues as per
-   * normal (i.e. next step is step with position + 1).
+   * If this is not set, or is falsey, pipe execution continues as per normal
+   * (i.e. next step is step with position + 1).
    */
-  nextStepId?: IStep['id'] | null
+  nextStep?:
+    | { command: 'jump-to-step'; stepId: IStep['id'] }
+    | { command: 'stop-execution' }
 }
 
 export interface IActionOutput {

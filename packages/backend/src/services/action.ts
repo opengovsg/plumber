@@ -62,7 +62,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         statusText: error.response.statusText,
       }
     } else if (error instanceof CancelFlowError) {
-      runResult.nextStepId = null
+      runResult.nextStep = { command: 'stop-execution' }
     } else {
       try {
         $.actionOutput.error = JSON.parse(error.message)
@@ -84,12 +84,20 @@ export const processAction = async (options: ProcessActionOptions) => {
       jobId,
     })
 
-  const nextStep = runResult.nextStepId
-    ? await flow
+  let nextStep = null
+  switch (runResult.nextStep?.command) {
+    case 'jump-to-step':
+      nextStep = await flow
         .$relatedQuery('steps')
-        .findById(runResult.nextStepId)
+        .findById(runResult.nextStep.stepId)
         .throwIfNotFound()
-    : await step.getNextStep()
+      break
+    case 'stop-execution':
+      // Nothing to do, nextStep is already null.
+      break
+    default:
+      nextStep = await step.getNextStep()
+  }
 
   return {
     flowId,
