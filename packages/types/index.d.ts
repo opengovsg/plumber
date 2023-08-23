@@ -362,7 +362,7 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  run?($: IGlobalVariable): Promise<IActionRunResult | null>
+  run?($: IGlobalVariable): Promise<IActionRunResult>
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.

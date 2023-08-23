@@ -51,6 +51,6 @@ export default defineAction({
 
     await createTableRow($, row)
 
-    return null
+    return {}
   },
 })

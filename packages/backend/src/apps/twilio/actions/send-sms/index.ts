@@ -53,6 +53,6 @@ export default defineAction({
     const { from, to, body, status, sid } = response.data
     $.setActionItem({ raw: { from, to, body, status, sid, success: true } })
 
-    return null
+    return {}
   },
 })

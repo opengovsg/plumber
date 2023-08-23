@@ -72,6 +72,6 @@ export default defineAction({
       count,
     })
 
-    return null
+    return {}
   },
 })
