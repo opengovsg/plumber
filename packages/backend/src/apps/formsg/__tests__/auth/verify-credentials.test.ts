@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import {
+  parseFormIdFormat,
+  parseSecretKeyFormat,
   verifyFormCreds,
-  verifyFormIdFormat,
-  verifySecretKeyFormat,
 } from '../../auth/verify-credentials'
 
 const mocks = vi.hoisted(() => {
@@ -61,33 +61,33 @@ describe('verify credentials', () => {
   describe('verify secret key format', () => {
     it('should throw error if secret key is of invalid format', () => {
       $.auth.data.privateKey = 'invalid string'
-      expect(() => verifySecretKeyFormat($)).toThrowError(
+      expect(() => parseSecretKeyFormat($)).toThrowError(
         'Invalid secret key format',
       )
     })
 
     it('should not throw error if secret key is of valid format', () => {
-      expect(verifySecretKeyFormat($)).toBe($.auth.data.privateKey)
+      expect(parseSecretKeyFormat($)).toBe($.auth.data.privateKey)
     })
   })
 
   describe('verify form id format', () => {
     it('should accept a valid form id', () => {
-      expect(verifyFormIdFormat($)).toBe($.auth.data.formId)
+      expect(parseFormIdFormat($)).toBe($.auth.data.formId)
     })
 
     it('should accept a valid form url', () => {
       const formId = $.auth.data.formId
       $.auth.data.formId = 'https://form.gov.sg/' + formId
-      expect(verifyFormIdFormat($)).toBe(formId)
+      expect(parseFormIdFormat($)).toBe(formId)
       $.auth.data.formId = 'https://www.form.gov.sg/' + formId
-      expect(verifyFormIdFormat($)).toBe(formId)
+      expect(parseFormIdFormat($)).toBe(formId)
     })
 
     it('should throw an error if invalid form url', () => {
       const formId = $.auth.data.formId
       $.auth.data.formId = 'https://firm.gov.sg/' + formId
-      expect(() => verifyFormIdFormat($)).toThrowError('Invalid form url')
+      expect(() => parseFormIdFormat($)).toThrowError('Invalid form url')
     })
   })
 

@@ -4,6 +4,11 @@ import isEmpty from 'lodash/isEmpty'
 
 import defineTrigger from '@/helpers/define-trigger'
 
+import {
+  registerWebhookUrl,
+  verifyWebhookUrl,
+} from '../../common/webhook-settings'
+
 import getDataOutMetadata from './get-data-out-metadata'
 
 export const NricFilter = {
@@ -56,6 +61,8 @@ export default defineTrigger({
   ],
 
   getDataOutMetadata,
+  registerHook: registerWebhookUrl,
+  verifyHook: verifyWebhookUrl,
 
   async testRun($: IGlobalVariable) {
     const lastExecutionStep = await $.getLastExecutionStep()

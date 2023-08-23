@@ -316,6 +316,9 @@ export interface IBaseTrigger {
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
   registerHook?($: IGlobalVariable): Promise<void>
+  verifyHook?(
+    $: IGlobalVariable,
+  ): Promise<{ success: boolean; message?: string }>
   unregisterHook?($: IGlobalVariable): Promise<void>
   sort?(item: ITriggerItem, nextItem: ITriggerItem): number
 
@@ -336,6 +339,7 @@ export interface IRawTrigger extends IBaseTrigger {
 
 export interface ITrigger extends IBaseTrigger {
   substeps?: ISubstep[]
+  supportsWebhookRegistration?: boolean
 }
 
 export interface IActionOutput {
@@ -437,6 +441,7 @@ export type IGlobalVariable = {
   actionOutput?: IActionOutput
   pushTriggerItem?: (triggerItem: ITriggerItem) => Promise<void>
   setActionItem?: (actionItem: IActionItem) => void
+  userEmail?: string
 }
 
 declare module 'axios' {
@@ -451,4 +456,10 @@ declare module 'axios' {
 
 export interface IRequest extends Request {
   rawBody?: Buffer
+}
+
+export interface ITestConnectionResult {
+  connectionVerified: boolean
+  webhookVerified?: boolean
+  message?: string
 }
