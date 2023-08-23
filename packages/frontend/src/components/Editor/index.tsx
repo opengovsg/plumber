@@ -1,11 +1,12 @@
 import type { IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useState } from 'react'
+import { Fragment, useCallback, useMemo, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import FlowStep from 'components/FlowStep'
+import { StepExecutionsToIncludeProvider } from 'contexts/StepExecutionsToInclude'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
@@ -134,30 +135,40 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [createStep, flow.id],
   )
 
+  // TODO in later PRs: update to account for nested Editors instantiated by
+  // branches. For now this looks hella weird because this just includes _all_
+  // steps, but trust me it'll look better later.
+  const stepExecutionsToInclude = useMemo(
+    () => new Set(steps.map((step) => step.id)),
+    [steps],
+  )
+
   return (
     <Flex flexDir="column" alignItems="center" py={3}>
-      {steps.map((step, index, steps) => (
-        <Fragment key={`${step.id}-${index}`}>
-          <FlowStep
-            key={step.id}
-            step={step}
-            index={index + 1}
-            collapsed={currentStepId !== step.id}
-            onOpen={() => setCurrentStepId(step.id)}
-            onClose={() => setCurrentStepId(null)}
-            onChange={onStepChange}
-            onContinue={() => {
-              setCurrentStepId(steps[index + 1]?.id)
-            }}
-          />
+      <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
+        {steps.map((step, index, steps) => (
+          <Fragment key={`${step.id}-${index}`}>
+            <FlowStep
+              key={step.id}
+              step={step}
+              index={index + 1}
+              collapsed={currentStepId !== step.id}
+              onOpen={() => setCurrentStepId(step.id)}
+              onClose={() => setCurrentStepId(null)}
+              onChange={onStepChange}
+              onContinue={() => {
+                setCurrentStepId(steps[index + 1]?.id)
+              }}
+            />
 
-          <AddStepButton
-            onClick={() => addStep(step.id)}
-            disabled={creationInProgress || flow.active}
-            isLastStep={index === steps.length - 1}
-          />
-        </Fragment>
-      ))}
+            <AddStepButton
+              onClick={() => addStep(step.id)}
+              disabled={creationInProgress || flow.active}
+              isLastStep={index === steps.length - 1}
+            />
+          </Fragment>
+        ))}
+      </StepExecutionsToIncludeProvider>
     </Flex>
   )
 }
