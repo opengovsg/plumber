@@ -1,6 +1,13 @@
 import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useLazyQuery, useQuery } from '@apollo/client'
 import { CircularProgress } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -10,6 +17,7 @@ import FlowSubstep from 'components/FlowSubstep'
 import Form from 'components/Form'
 import TestSubstep from 'components/TestSubstep'
 import { StepExecutionsProvider } from 'contexts/StepExecutions'
+import { StepExecutionsToIncludeContext } from 'contexts/StepExecutionsToInclude'
 import { GET_APPS } from 'graphql/queries/get-apps'
 import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
 import type { BaseSchema } from 'yup'
@@ -121,6 +129,16 @@ export default function FlowStep(
     }
   }, [collapsed, getStepWithTestExecutions, step.id, isTrigger])
 
+  const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
+  const stepExecutions = useMemo(
+    () =>
+      (stepWithTestExecutionsData?.getStepWithTestExecutions ?? []).filter(
+        (stepExecution: IStep) =>
+          stepExecutionsToInclude?.has(stepExecution.id) ?? true,
+      ),
+    [stepExecutionsToInclude, stepWithTestExecutionsData],
+  )
+
   const apps: IApp[] = data?.getApps
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
@@ -179,9 +197,7 @@ export default function FlowStep(
       onClick={onStepHeaderClick}
       collapsed={collapsed ?? false}
     >
-      <StepExecutionsProvider
-        value={stepWithTestExecutionsData?.getStepWithTestExecutions as IStep[]}
-      >
+      <StepExecutionsProvider value={stepExecutions}>
         <Form
           defaultValues={step}
           onSubmit={handleSubmit}
