@@ -67,6 +67,7 @@ type Action {
   name: String
   key: String
   description: String
+  groupsLaterSteps: Boolean
   substeps: [ActionSubstep]
 }
 

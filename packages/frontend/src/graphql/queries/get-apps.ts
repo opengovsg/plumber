@@ -133,6 +133,7 @@ export const GET_APPS = gql`
         name
         key
         description
+        groupsLaterSteps
         substeps {
           key
           name

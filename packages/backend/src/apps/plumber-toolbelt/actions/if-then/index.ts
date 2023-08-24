@@ -55,6 +55,7 @@ export default defineAction({
   name: 'If... Then',
   key: 'ifThen',
   description: '',
+  groupsLaterSteps: true,
   arguments: [
     {
       label: 'Branch Name',
