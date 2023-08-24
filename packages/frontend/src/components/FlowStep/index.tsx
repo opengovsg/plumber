@@ -2,35 +2,38 @@ import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import {
   Fragment,
+  type MouseEventHandler,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
 } from 'react'
-import { useLazyQuery, useQuery } from '@apollo/client'
+import { useLazyQuery, useMutation, useQuery } from '@apollo/client'
 import { CircularProgress } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import ChooseAppAndEventSubstep from 'components/ChooseAppAndEventSubstep'
 import ChooseConnectionSubstep from 'components/ChooseConnectionSubstep'
+import FlowStepHeader from 'components/FlowStepHeader'
 import FlowSubstep from 'components/FlowSubstep'
 import Form from 'components/Form'
 import TestSubstep from 'components/TestSubstep'
+import { EditorContext } from 'contexts/Editor'
 import { StepExecutionsProvider } from 'contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from 'contexts/StepExecutionsToInclude'
+import { DELETE_STEP } from 'graphql/mutations/delete-step'
 import { GET_APPS } from 'graphql/queries/get-apps'
 import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
+import useFormatMessage from 'hooks/useFormatMessage'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
-
-import StepHeader from './StepHeader'
 
 type FlowStepProps = {
   collapsed?: boolean
   step: IStep
   index?: number
-  onOpen?: () => void
-  onClose?: () => void
+  onOpen: () => void
+  onClose: () => void
   onChange: (step: IStep) => void
   onContinue?: () => void
 }
@@ -105,6 +108,8 @@ export default function FlowStep(
   const isAction = step.type === 'action'
 
   const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
+  const formatMessage = useFormatMessage()
+  const editorContext = useContext(EditorContext)
 
   // FIXME (ogp-weeloong): we shouldn't be querying for apps each time a step is
   // loaded. Let's fix this in another PR.
@@ -175,14 +180,17 @@ export default function FlowStep(
     [substeps],
   )
 
-  const onStepHeaderClick = useCallback(() => {
-    if (collapsed) {
-      // We're currently collapsed, and user just expanded us.
-      onOpen?.()
-    } else {
-      onClose?.()
-    }
-  }, [collapsed, onOpen, onClose])
+  const isDeletable = !isTrigger && !editorContext.readOnly
+  const [deleteStep] = useMutation(DELETE_STEP, {
+    refetchQueries: ['GetFlow'],
+  })
+  const onDelete = useCallback<MouseEventHandler>(
+    async (e) => {
+      e.stopPropagation()
+      await deleteStep({ variables: { input: { id: step.id } } })
+    },
+    [step.id],
+  )
 
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
@@ -191,10 +199,18 @@ export default function FlowStep(
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
   return (
-    <StepHeader
-      step={step}
-      app={app}
-      onClick={onStepHeaderClick}
+    <FlowStepHeader
+      iconUrl={app?.iconUrl}
+      caption={app?.name ? `${step.position}. ${app?.name}` : 'Choose an app'}
+      hintAboveCaption={
+        isTrigger
+          ? formatMessage('flowStep.triggerType')
+          : formatMessage('flowStep.actionType')
+      }
+      isCompleted={step.status === 'completed'}
+      onDelete={isDeletable ? onDelete : undefined}
+      onOpen={onOpen}
+      onClose={onClose}
       collapsed={collapsed ?? false}
     >
       <StepExecutionsProvider value={stepExecutions}>
@@ -264,6 +280,6 @@ export default function FlowStep(
             ))}
         </Form>
       </StepExecutionsProvider>
-    </StepHeader>
+    </FlowStepHeader>
   )
 }
