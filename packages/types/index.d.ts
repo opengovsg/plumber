@@ -392,6 +392,15 @@ export interface IBaseAction {
    * the pipe has at least 1 action which processes files.
    */
   doesFileProcessing?: boolean
+
+  /**
+   * Specifies if this action "groups" steps after it, and only allows adding
+   * later steps in nested modal (e.g. if-then).
+   *
+   * If true, the front end will not render the "add step" button after this
+   * action.
+   */
+  groupsLaterSteps?: boolean
 }
 
 export interface IRawAction extends IBaseAction {
