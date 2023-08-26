@@ -4,8 +4,10 @@ import { type FunctionComponent, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 import FlowStepHeader from 'components/FlowStepHeader'
 import { GET_APP } from 'graphql/queries/get-app'
+import { isIfThenStep } from 'helpers/toolbelt'
 
 import Error from './Content/Error'
+import IfThen from './Content/IfThen'
 import { type ContentProps } from './Content/types'
 
 function getStepContent(mainStep: IStep): {
@@ -16,11 +18,13 @@ function getStepContent(mainStep: IStep): {
   iconUrl?: string
 } {
   // FIXME (ogp-weeloong): Maybe figure out a better way to do dispatch...?
-
-  // Example approach below - to be implemented in later PR.
-  // if (isIfThenStep(mainStep)) {
-  //   return { StepContent: IfThen, caption: 'If... Then' }
-  // }
+  if (isIfThenStep(mainStep)) {
+    return {
+      StepContent: IfThen,
+      hintAboveCaption: 'Action',
+      caption: 'If... Then',
+    }
+  }
 
   return {
     StepContent: Error,
