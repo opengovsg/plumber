@@ -2,9 +2,11 @@ import { type IFlow, type IStep } from '@plumber/types'
 
 import { type FunctionComponent, useMemo } from 'react'
 import FlowStepHeader from 'components/FlowStepHeader'
+import { isIfThenStep } from 'helpers/plumberToolbelt'
 import useApps from 'hooks/useApps'
 
 import Error from './Content/Error'
+import IfThen from './Content/IfThen'
 import { type ContentProps } from './Content/types'
 
 function getStepContent(mainStep: IStep): {
@@ -15,11 +17,13 @@ function getStepContent(mainStep: IStep): {
   iconUrl?: string
 } {
   // FIXME (ogp-weeloong): Maybe figure out a better way to do dispatch...?
-
-  // Example approach below - to be implemented in later PR.
-  // if (isIfThenStep(mainStep)) {
-  //   return { StepContent: IfThen, caption: 'If... Then' }
-  // }
+  if (isIfThenStep(mainStep)) {
+    return {
+      StepContent: IfThen,
+      hintAboveCaption: 'Action',
+      caption: 'If... Then',
+    }
+  }
 
   return {
     StepContent: Error,
