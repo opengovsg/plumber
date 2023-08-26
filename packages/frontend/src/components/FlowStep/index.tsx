@@ -1,4 +1,4 @@
-import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
+import type { IStep, ISubstep } from '@plumber/types'
 
 import {
   Fragment,
@@ -9,7 +9,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { useLazyQuery, useMutation, useQuery } from '@apollo/client'
+import { useLazyQuery, useMutation } from '@apollo/client'
 import { CircularProgress } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import ChooseAppAndEventSubstep from 'components/ChooseAppAndEventSubstep'
@@ -22,8 +22,8 @@ import { EditorContext } from 'contexts/Editor'
 import { StepExecutionsProvider } from 'contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from 'contexts/StepExecutionsToInclude'
 import { DELETE_STEP } from 'graphql/mutations/delete-step'
-import { GET_APPS } from 'graphql/queries/get-apps'
 import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
+import useApps from 'hooks/useApps'
 import useFormatMessage from 'hooks/useFormatMessage'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
@@ -105,17 +105,11 @@ export default function FlowStep(
   const { collapsed, onOpen, onClose, onChange, onContinue } = props
   const step: IStep = props.step
   const isTrigger = step.type === 'trigger'
-  const isAction = step.type === 'action'
 
   const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
   const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
 
-  // FIXME (ogp-weeloong): we shouldn't be querying for apps each time a step is
-  // loaded. Let's fix this in another PR.
-  const { data } = useQuery(GET_APPS, {
-    variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  })
   const [
     getStepWithTestExecutions,
     { data: stepWithTestExecutionsData, called: _stepWithTestExecutionsCalled },
@@ -144,20 +138,22 @@ export default function FlowStep(
     [stepExecutionsToInclude, stepWithTestExecutionsData],
   )
 
-  const apps: IApp[] = data?.getApps
-  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
+  const apps = useApps()
+  const app = step.appKey ? apps?.get(step.appKey) : null
 
-  const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || []
+  const selectedActionOrTrigger = useMemo(() => {
+    const actionOrTriggerKey = step?.key
+    if (!actionOrTriggerKey) {
+      return undefined
+    }
+    return isTrigger
+      ? app?.triggers.get(actionOrTriggerKey)
+      : app?.actions.get(actionOrTriggerKey)
+  }, [
+    app, // memoed by useQuery, so referential quality OK
+    step?.key,
+  ])
 
-  const selectedActionOrTrigger = useMemo(
-    () =>
-      actionsOrTriggers.find(
-        (actionOrTrigger: IAction | ITrigger) =>
-          actionOrTrigger.key === step?.key,
-      ),
-    [actionsOrTriggers, step?.key],
-  )
   const substeps = useMemo(
     () => selectedActionOrTrigger?.substeps || [],
     [selectedActionOrTrigger],
@@ -200,8 +196,12 @@ export default function FlowStep(
 
   return (
     <FlowStepHeader
-      iconUrl={app?.iconUrl}
-      caption={app?.name ? `${step.position}. ${app?.name}` : 'Choose an app'}
+      iconUrl={app?.rawApp?.iconUrl}
+      caption={
+        app?.rawApp?.name
+          ? `${step.position}. ${app.rawApp.name}`
+          : 'Choose an app'
+      }
       hintAboveCaption={
         isTrigger
           ? formatMessage('flowStep.triggerType')
@@ -244,7 +244,7 @@ export default function FlowStep(
                     onCollapse={() => toggleSubstep(index + 1)}
                     onSubmit={expandNextStep}
                     onChange={handleChange}
-                    application={app}
+                    application={app?.rawApp}
                     step={step}
                   />
                 )}

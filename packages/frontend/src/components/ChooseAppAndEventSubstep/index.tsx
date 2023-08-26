@@ -72,6 +72,7 @@ function ChooseAppAndEventSubstep(
   const isTrigger = step.type === 'trigger'
   const isAction = step.type === 'action'
 
+  // FIXME (ogp-weeloong): migrate to useApps in a separate PR
   const { data } = useQuery(GET_APPS, {
     variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
   })
@@ -79,7 +80,7 @@ function ChooseAppAndEventSubstep(
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const appOptions = React.useMemo(
-    () => apps?.map((app) => optionGenerator(app)),
+    () => apps?.map((app) => optionGenerator(app)) ?? [],
     [apps],
   )
   const actionsOrTriggers: Array<ITrigger | IAction> =

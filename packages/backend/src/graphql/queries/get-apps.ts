@@ -2,10 +2,11 @@ import { IApp } from '@plumber/types'
 
 import App from '@/models/app'
 
+// FIXME (ogp-weeloong): Deprecate this when we implement client-side app search
 type Params = {
-  name: string
-  onlyWithTriggers: boolean
-  onlyWithActions: boolean
+  name?: string
+  onlyWithTriggers?: boolean
+  onlyWithActions?: boolean
 }
 
 const getApps = async (_parent: unknown, params: Params) => {
