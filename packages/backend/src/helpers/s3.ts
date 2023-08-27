@@ -7,6 +7,7 @@ import {
 
 import appConfig from '@/config/app'
 
+// TODO: move to appConfig
 export const COMMON_S3_BUCKET = process.env.S3_COMMON_BUCKET
 
 const s3Client = new S3Client({
