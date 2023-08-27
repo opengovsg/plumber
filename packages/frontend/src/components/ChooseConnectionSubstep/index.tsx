@@ -9,7 +9,7 @@ import type {
 } from '@plumber/types'
 
 import { useCallback, useContext, useMemo, useState } from 'react'
-import { useQuery } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import { FormControl } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
 import Collapse from '@mui/material/Collapse'
@@ -20,6 +20,7 @@ import AddAppConnection from 'components/AddAppConnection'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import SetConnectionButton from 'components/SetConnectionButton'
 import { EditorContext } from 'contexts/Editor'
+import { REGISTER_WEBHOOK } from 'graphql/mutations/register-webhook'
 import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
 import { TEST_CONNECTION } from 'graphql/queries/test-connection'
 import useFormatMessage from 'hooks/useFormatMessage'
@@ -82,7 +83,11 @@ function ChooseConnectionSubstep(
   const supportsWebhookRegistration =
     (selectedActionOrTrigger as ITrigger)?.supportsWebhookRegistration || false
 
-  const { loading: testResultLoading, data: testConnectionData } = useQuery<{
+  const {
+    loading: testResultLoading,
+    refetch: retestConnection,
+    data: testConnectionData,
+  } = useQuery<{
     testConnection: ITestConnectionOutput
   }>(TEST_CONNECTION, {
     variables: {
@@ -91,6 +96,9 @@ function ChooseConnectionSubstep(
     },
     skip: !connection?.id,
   })
+
+  const [registerWebhook, { loading: registerWebhookLoading }] =
+    useMutation(REGISTER_WEBHOOK)
 
   const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
@@ -159,6 +167,20 @@ function ChooseConnectionSubstep(
     [step, onChange],
   )
 
+  const onRegisterWebhook = useCallback(async () => {
+    if (step.connection?.id && supportsWebhookRegistration) {
+      await registerWebhook({
+        variables: {
+          input: {
+            connectionId: step.connection.id,
+            stepId: step.id,
+          },
+        },
+      })
+      await retestConnection()
+    }
+  }, [step, registerWebhook, supportsWebhookRegistration])
+
   const onToggle = expanded ? onCollapse : onExpand
 
   const isTestStepValid = useMemo(() => {
@@ -217,10 +239,12 @@ function ChooseConnectionSubstep(
           />
           <SetConnectionButton
             onNextStep={onSubmit}
+            onRegisterWebhook={onRegisterWebhook}
             readOnly={editorContext.readOnly}
             supportsWebhookRegistration={supportsWebhookRegistration}
             testResult={testConnectionData?.testConnection}
             testResultLoading={testResultLoading}
+            registerWebhookLoading={registerWebhookLoading}
           />
         </ListItem>
       </Collapse>

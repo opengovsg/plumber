@@ -6,18 +6,22 @@ import { Button } from '@opengovsg/design-system-react'
 
 interface SetConnectionButtonProps {
   onNextStep: () => void
+  onRegisterWebhook: () => void
   readOnly: boolean
   supportsWebhookRegistration: boolean
   testResult: ITestConnectionOutput | undefined
   testResultLoading: boolean
+  registerWebhookLoading: boolean
 }
 
 const SetConnectionButton = ({
   onNextStep,
   readOnly,
+  onRegisterWebhook,
   supportsWebhookRegistration,
   testResult,
   testResultLoading,
+  registerWebhookLoading,
 }: SetConnectionButtonProps) => {
   const onSubmit = useCallback(() => {
     if (
@@ -25,15 +29,23 @@ const SetConnectionButton = ({
       testResult &&
       !testResult.webhookVerified
     ) {
-      // do sth
+      onRegisterWebhook()
     } else {
       onNextStep()
     }
-  }, [])
+  }, [supportsWebhookRegistration, testResult])
 
   const buttonText = useMemo(() => {
-    if (testResultLoading || !testResult) {
+    if (testResultLoading) {
       return 'Testing connection...'
+    }
+
+    if (!testResult) {
+      return 'Continue'
+    }
+
+    if (registerWebhookLoading) {
+      return 'Registering webhook...'
     }
 
     if (!testResult.connectionVerified) {
@@ -49,7 +61,13 @@ const SetConnectionButton = ({
     }
 
     return 'Continue'
-  }, [readOnly, testResultLoading, testResult, supportsWebhookRegistration])
+  }, [
+    readOnly,
+    testResultLoading,
+    testResult,
+    supportsWebhookRegistration,
+    registerWebhookLoading,
+  ])
 
   return (
     <>
@@ -66,7 +84,10 @@ const SetConnectionButton = ({
         isFullWidth
         onClick={onSubmit}
         isDisabled={
-          testResultLoading || !testResult?.connectionVerified || readOnly
+          testResultLoading ||
+          registerWebhookLoading ||
+          !testResult?.connectionVerified ||
+          readOnly
         }
       >
         {buttonText}
