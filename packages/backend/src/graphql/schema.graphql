@@ -39,6 +39,7 @@ type Mutation {
   resetConnection(input: ResetConnectionInput): Connection
   verifyConnection(input: VerifyConnectionInput): Connection
   deleteConnection(input: DeleteConnectionInput): Boolean
+  registerWebhook(input: RegisterWebhookInput): Boolean
   createFlow(input: CreateFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
@@ -256,6 +257,11 @@ input VerifyConnectionInput {
 
 input DeleteConnectionInput {
   id: String!
+}
+
+input RegisterWebhookInput {
+  connectionId: String!
+  stepId: String!
 }
 
 input CreateFlowInput {

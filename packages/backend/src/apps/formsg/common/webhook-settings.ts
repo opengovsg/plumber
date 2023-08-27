@@ -61,7 +61,7 @@ export async function registerWebhookUrl(
       },
       {
         headers: {
-          Authorization: 'Bearer w' + appConfig.formsgApiKey,
+          Authorization: 'Bearer ' + appConfig.formsgApiKey,
         },
       },
     )

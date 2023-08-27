@@ -1,3 +1,7 @@
+/**
+ * TODO: remove this file and reuse test connection endpoint
+ */
+
 import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
 import Context from '@/types/express/context'
