@@ -1,6 +1,11 @@
-import { IBaseTrigger, IGlobalVariable } from '@plumber/types'
+import {
+  IBaseTrigger,
+  IGlobalVariable,
+  IVerifyHookOutput,
+} from '@plumber/types'
 
 import appConfig from '@/config/app'
+import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
 import { parseFormIdFormat } from '../auth/verify-credentials'
@@ -61,14 +66,19 @@ export async function registerWebhookUrl(
       },
     )
   } catch (e) {
-    logger.error('Unable to register webhook url', e)
+    logger.error('Unable to register webhook url', {
+      userEmail,
+      webhookUrl,
+      formId,
+      error: (e as HttpError).response,
+    })
     throw new Error('Unable to register webhook url')
   }
 }
 
 export async function verifyWebhookUrl(
   $: IGlobalVariable,
-): ReturnType<IBaseTrigger['verifyHook']> {
+): Promise<IVerifyHookOutput> {
   const { userEmail, webhookUrl, formId } = getFormDetailsFromGlobalVariable($)
 
   try {
@@ -100,13 +110,18 @@ export async function verifyWebhookUrl(
       }
     }
     return {
-      success: isWebhookAlreadySet,
+      webhookVerified: isWebhookAlreadySet,
       message,
     }
   } catch (e) {
-    logger.error('Unable to verify webhook settings', e)
+    logger.error('Unable to verify webhook settings', {
+      userEmail,
+      webhookUrl,
+      formId,
+      error: (e as HttpError).response,
+    })
     return {
-      success: false,
+      webhookVerified: false,
       message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ERROR,
     }
   }

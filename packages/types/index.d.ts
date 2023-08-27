@@ -316,9 +316,7 @@ export interface IBaseTrigger {
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
   registerHook?($: IGlobalVariable): Promise<void>
-  verifyHook?(
-    $: IGlobalVariable,
-  ): Promise<{ success: boolean; message?: string }>
+  verifyHook?($: IGlobalVariable): Promise<IVerifyHookOutput>
   unregisterHook?($: IGlobalVariable): Promise<void>
   sort?(item: ITriggerItem, nextItem: ITriggerItem): number
 
@@ -458,8 +456,11 @@ export interface IRequest extends Request {
   rawBody?: Buffer
 }
 
-export interface ITestConnectionResult {
+export interface IVerifyHookOutput {
+  webhookVerified: boolean
+  message: string
+}
+
+export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
   connectionVerified: boolean
-  webhookVerified?: boolean
-  message?: string
 }

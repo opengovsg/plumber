@@ -47,7 +47,7 @@ describe('formsg webhook registration', () => {
         },
       })
       expect(verifyWebhookUrl($)).resolves.toEqual({
-        success: true,
+        webhookVerified: true,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.VERIFIED,
       })
     })
@@ -61,7 +61,7 @@ describe('formsg webhook registration', () => {
         },
       })
       expect(verifyWebhookUrl($)).resolves.toEqual({
-        success: false,
+        webhookVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.EMPTY,
       })
     })
@@ -75,7 +75,7 @@ describe('formsg webhook registration', () => {
         },
       })
       expect(verifyWebhookUrl($)).resolves.toEqual({
-        success: false,
+        webhookVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_PIPE,
       })
     })
@@ -89,7 +89,7 @@ describe('formsg webhook registration', () => {
         },
       })
       expect(verifyWebhookUrl($)).resolves.toEqual({
-        success: false,
+        webhookVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_ENDPOINT,
       })
     })
@@ -101,7 +101,7 @@ describe('formsg webhook registration', () => {
         },
       })
       expect(verifyWebhookUrl($)).resolves.toEqual({
-        success: false,
+        webhookVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ERROR,
       })
     })
