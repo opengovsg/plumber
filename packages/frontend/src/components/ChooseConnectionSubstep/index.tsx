@@ -1,16 +1,24 @@
-import type { IApp, IConnection, IStep, ISubstep } from '@plumber/types'
+import type {
+  IAction,
+  IApp,
+  IConnection,
+  IStep,
+  ISubstep,
+  ITestConnectionResult,
+  ITrigger,
+} from '@plumber/types'
 
-import * as React from 'react'
-import { useLazyQuery, useQuery } from '@apollo/client'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@apollo/client'
 import { FormControl } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
-import Button from '@mui/material/Button'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
 import { FormLabel } from '@opengovsg/design-system-react'
 import AddAppConnection from 'components/AddAppConnection'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
+import SetConnectionButton from 'components/SetConnectionButton'
 import { EditorContext } from 'contexts/Editor'
 import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
 import { TEST_CONNECTION } from 'graphql/queries/test-connection'
@@ -25,6 +33,7 @@ type ChooseConnectionSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
+  selectedActionOrTrigger?: ITrigger | IAction
 }
 
 const ADD_CONNECTION_VALUE = 'ADD_CONNECTION'
@@ -61,37 +70,37 @@ function ChooseConnectionSubstep(
     onSubmit,
     onChange,
     application,
+    selectedActionOrTrigger,
   } = props
   const { connection, appKey } = step
   const formatMessage = useFormatMessage()
-  const editorContext = React.useContext(EditorContext)
-  const [showAddConnectionDialog, setShowAddConnectionDialog] =
-    React.useState(false)
+  const editorContext = useContext(EditorContext)
+  const [showAddConnectionDialog, setShowAddConnectionDialog] = useState(false)
   const { data, loading, refetch } = useQuery(GET_APP_CONNECTIONS, {
     variables: { key: appKey },
   })
-  // TODO: show detailed error when connection test/verification fails
-  const [
-    testConnection,
-    { loading: testResultLoading, refetch: retestConnection },
-  ] = useLazyQuery(TEST_CONNECTION, {
+  const supportsWebhookRegistration =
+    (selectedActionOrTrigger as ITrigger)?.supportsWebhookRegistration || false
+
+  const {
+    loading: testResultLoading,
+    refetch: retestConnection,
+    data: testConnectionData,
+  } = useQuery<{ testConnection: ITestConnectionResult }>(TEST_CONNECTION, {
     variables: {
-      id: connection?.id,
+      connectionId: connection?.id,
+      stepId: supportsWebhookRegistration ? step.id : undefined,
     },
+    skip: !connection?.id,
   })
 
-  React.useEffect(() => {
-    if (connection?.id) {
-      testConnection({
-        variables: {
-          id: connection.id,
-        },
-      })
+  useEffect(() => {
+    if (step.connection?.id) {
+      retestConnection()
     }
-    // intentionally no dependencies for initial test
-  }, [])
+  }, [step.connection?.id, retestConnection])
 
-  const connectionOptions = React.useMemo(() => {
+  const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
     const options =
       appWithConnections?.connections?.map((connection) =>
@@ -108,7 +117,7 @@ function ChooseConnectionSubstep(
 
   const { name } = substep
 
-  const handleAddConnectionClose = React.useCallback(
+  const handleAddConnectionClose = useCallback(
     async (response: Record<string, unknown>) => {
       setShowAddConnectionDialog(false)
 
@@ -130,7 +139,7 @@ function ChooseConnectionSubstep(
     [onChange, refetch, step],
   )
 
-  const handleChange = React.useCallback(
+  const handleChange = useCallback(
     (event: React.SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
@@ -158,23 +167,28 @@ function ChooseConnectionSubstep(
     [step, onChange],
   )
 
-  React.useEffect(() => {
-    if (step.connection?.id) {
-      retestConnection({
-        id: step.connection.id,
-      })
-    }
-  }, [step.connection?.id, retestConnection])
-
   const onToggle = expanded ? onCollapse : onExpand
 
+  const isTestStepValid = useMemo(() => {
+    if (testResultLoading || !testConnectionData?.testConnection) {
+      return null
+    }
+    if (
+      testConnectionData?.testConnection?.connectionVerified === false ||
+      testConnectionData.testConnection.webhookVerified === false
+    ) {
+      return false
+    }
+    return true
+  }, [testResultLoading || testConnectionData])
+
   return (
-    <React.Fragment>
+    <>
       <FlowSubstepTitle
         expanded={expanded}
         onClick={onToggle}
         title={name}
-        valid={testResultLoading ? null : connection?.verified}
+        valid={isTestStepValid}
       />
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <ListItem
@@ -183,6 +197,7 @@ function ChooseConnectionSubstep(
             pb: 3,
             flexDirection: 'column',
             alignItems: 'flex-start',
+            gap: 2,
           }}
         >
           <Autocomplete
@@ -208,21 +223,13 @@ function ChooseConnectionSubstep(
               value: ConnectionDropdownOption,
             ) => option.value === value.value}
           />
-
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={onSubmit}
-            sx={{ mt: 2 }}
-            disabled={
-              testResultLoading ||
-              !connection?.verified ||
-              editorContext.readOnly
-            }
-            data-test="flow-substep-continue-button"
-          >
-            {formatMessage('chooseConnectionSubstep.continue')}
-          </Button>
+          <SetConnectionButton
+            onNextStep={onSubmit}
+            readOnly={editorContext.readOnly}
+            supportsWebhookRegistration={supportsWebhookRegistration}
+            testResult={testConnectionData?.testConnection}
+            testResultLoading={testResultLoading}
+          />
         </ListItem>
       </Collapse>
 
@@ -232,7 +239,7 @@ function ChooseConnectionSubstep(
           application={application}
         />
       )}
-    </React.Fragment>
+    </>
   )
 }
 

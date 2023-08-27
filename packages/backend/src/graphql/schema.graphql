@@ -6,7 +6,7 @@ type Query {
   ): [App]
   getApp(key: String!): App
   getConnectedApps(name: String): [App]
-  testConnection(id: String!): Connection
+  testConnection(connectionId: String!, stepId: String): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(
     limit: Int!
@@ -441,6 +441,12 @@ type ArgumentOption {
 type TriggerSubstepArgumentSourceArgument {
   name: String
   value: String
+}
+
+type TestConnectionResult {
+  connectionVerified: Boolean!
+  webhookVerified: Boolean
+  message: String
 }
 
 type User {
