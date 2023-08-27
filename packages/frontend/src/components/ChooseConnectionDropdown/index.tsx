@@ -46,7 +46,7 @@ function ChooseConnectionDropdown({
   )
 
   const handleAddConnectionClose = useCallback(
-    (response: any) => {
+    (response: Record<string, any>) => {
       setShowAddConnectionDialog(false)
       const newConnectionId = response?.createConnection?.id as
         | string
