@@ -8,15 +8,11 @@ import type {
   ITrigger,
 } from '@plumber/types'
 
-import { useCallback, useContext, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
-import { FormControl } from '@chakra-ui/react'
-import Autocomplete from '@mui/material/Autocomplete'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
-import TextField from '@mui/material/TextField'
-import { FormLabel } from '@opengovsg/design-system-react'
-import AddAppConnection from 'components/AddAppConnection'
+import ChooseConnectionDropdown from 'components/ChooseConnectionDropdown'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import SetConnectionButton from 'components/SetConnectionButton'
 import { EditorContext } from 'contexts/Editor'
@@ -37,8 +33,6 @@ type ChooseConnectionSubstepProps = {
   selectedActionOrTrigger?: ITrigger | IAction
 }
 
-const ADD_CONNECTION_VALUE = 'ADD_CONNECTION'
-
 type ConnectionDropdownOption = {
   label: string
   value: string
@@ -50,14 +44,6 @@ const optionGenerator = (
   label: (connection?.formattedData?.screenName as string) ?? 'Unnamed',
   value: connection?.id as string,
 })
-
-const getOption = (
-  options: Record<string, unknown>[],
-  connectionId?: string,
-): ConnectionDropdownOption | undefined =>
-  (options.find(
-    (connection) => connection.value === connectionId,
-  ) as ConnectionDropdownOption) || undefined
 
 function ChooseConnectionSubstep(
   props: ChooseConnectionSubstepProps,
@@ -76,7 +62,6 @@ function ChooseConnectionSubstep(
   const { connection, appKey } = step
   const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
-  const [showAddConnectionDialog, setShowAddConnectionDialog] = useState(false)
   const { data, loading, refetch } = useQuery(GET_APP_CONNECTIONS, {
     variables: { key: appKey },
   })
@@ -107,64 +92,29 @@ function ChooseConnectionSubstep(
         optionGenerator(connection),
       ) || []
 
-    options.push({
-      label: formatMessage('chooseConnectionSubstep.addNewConnection'),
-      value: ADD_CONNECTION_VALUE,
-    })
-
     return options
   }, [data, formatMessage])
 
   const { name } = substep
 
-  const handleAddConnectionClose = useCallback(
-    async (response: Record<string, unknown>) => {
-      setShowAddConnectionDialog(false)
-
-      const connectionId = (response?.createConnection as any)?.id
-
-      if (connectionId) {
-        await refetch()
-
-        onChange({
-          step: {
-            ...step,
-            connection: {
-              id: connectionId,
-            },
-          },
-        })
-      }
-    },
-    [onChange, refetch, step],
-  )
-
   const handleChange = useCallback(
-    (event: React.SyntheticEvent, selectedOption: unknown) => {
-      if (typeof selectedOption === 'object') {
-        // TODO: try to simplify type casting below.
-        const typedSelectedOption = selectedOption as { value: string }
-        const option: { value: string } = typedSelectedOption
-        const connectionId = option?.value as string
-
-        if (connectionId === ADD_CONNECTION_VALUE) {
-          setShowAddConnectionDialog(true)
-          return
-        }
-
-        if (connectionId !== step.connection?.id) {
-          onChange({
-            step: {
-              ...step,
-              connection: {
-                id: connectionId,
-              },
-            },
-          })
-        }
+    async (connectionId: string, shouldRefetch: boolean) => {
+      if (connectionId === step.connection?.id) {
+        return
       }
+      if (shouldRefetch) {
+        await refetch()
+      }
+      onChange({
+        step: {
+          ...step,
+          connection: {
+            id: connectionId,
+          },
+        },
+      })
     },
-    [step, onChange],
+    [step, onChange, refetch],
   )
 
   const onRegisterWebhook = useCallback(async () => {
@@ -214,28 +164,12 @@ function ChooseConnectionSubstep(
             gap: 2,
           }}
         >
-          <Autocomplete
-            fullWidth
-            disablePortal
-            disableClearable
-            disabled={editorContext.readOnly}
-            options={connectionOptions}
-            renderInput={(params) => (
-              <FormControl>
-                <FormLabel isRequired>
-                  {formatMessage('chooseConnectionSubstep.chooseConnection')}
-                </FormLabel>
-                <TextField {...params} />
-              </FormControl>
-            )}
-            value={getOption(connectionOptions, connection?.id)}
+          <ChooseConnectionDropdown
+            isDisabled={editorContext.readOnly || loading}
+            connectionOptions={connectionOptions}
             onChange={handleChange}
-            loading={loading}
-            data-test="choose-connection-autocomplete"
-            isOptionEqualToValue={(
-              option: ConnectionDropdownOption,
-              value: ConnectionDropdownOption,
-            ) => option.value === value.value}
+            value={connection?.id}
+            application={application}
           />
           <SetConnectionButton
             onNextStep={onSubmit}
@@ -248,13 +182,6 @@ function ChooseConnectionSubstep(
           />
         </ListItem>
       </Collapse>
-
-      {application && showAddConnectionDialog && (
-        <AddAppConnection
-          onClose={handleAddConnectionClose}
-          application={application}
-        />
-      )}
     </>
   )
 }
