@@ -4,11 +4,11 @@ import type {
   IConnection,
   IStep,
   ISubstep,
-  ITestConnectionResult,
+  ITestConnectionOutput,
   ITrigger,
 } from '@plumber/types'
 
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { FormControl } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
@@ -82,23 +82,15 @@ function ChooseConnectionSubstep(
   const supportsWebhookRegistration =
     (selectedActionOrTrigger as ITrigger)?.supportsWebhookRegistration || false
 
-  const {
-    loading: testResultLoading,
-    refetch: retestConnection,
-    data: testConnectionData,
-  } = useQuery<{ testConnection: ITestConnectionResult }>(TEST_CONNECTION, {
+  const { loading: testResultLoading, data: testConnectionData } = useQuery<{
+    testConnection: ITestConnectionOutput
+  }>(TEST_CONNECTION, {
     variables: {
       connectionId: connection?.id,
       stepId: supportsWebhookRegistration ? step.id : undefined,
     },
     skip: !connection?.id,
   })
-
-  useEffect(() => {
-    if (step.connection?.id) {
-      retestConnection()
-    }
-  }, [step.connection?.id, retestConnection])
 
   const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp

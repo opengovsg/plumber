@@ -1,4 +1,4 @@
-import { ITestConnectionResult } from '@plumber/types'
+import { ITestConnectionOutput } from '@plumber/types'
 
 import { useCallback, useMemo } from 'react'
 import { Alert, AlertIcon } from '@chakra-ui/react'
@@ -8,7 +8,7 @@ interface SetConnectionButtonProps {
   onNextStep: () => void
   readOnly: boolean
   supportsWebhookRegistration: boolean
-  testResult: ITestConnectionResult | undefined
+  testResult: ITestConnectionOutput | undefined
   testResultLoading: boolean
 }
 

@@ -1,3 +1,5 @@
+import { ITestConnectionOutput } from '@plumber/types'
+
 import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
 import Context from '@/types/express/context'
@@ -8,17 +10,11 @@ type Params = {
   stepId?: string
 }
 
-type TestConnectionOutput = {
-  connectionVerified: boolean
-  webhookVerified?: boolean
-  message?: string
-}
-
 const testConnection = async (
   _parent: unknown,
   params: Params,
   context: Context,
-): Promise<TestConnectionOutput> => {
+): Promise<ITestConnectionOutput> => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({
@@ -73,7 +69,7 @@ const testConnection = async (
   if (!trigger.verifyHook) {
     throw new Error('Verify webhook not implemented')
   }
-  const { success: webhookVerified, message } = await trigger.verifyHook($)
+  const { webhookVerified, message } = await trigger.verifyHook($)
 
   return {
     connectionVerified: isStillVerified,
