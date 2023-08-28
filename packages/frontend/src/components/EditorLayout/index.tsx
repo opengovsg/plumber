@@ -11,7 +11,6 @@ import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import { Link } from '@opengovsg/design-system-react'
-import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
 import Editor from 'components/Editor'
 import * as URLS from 'config/urls'
@@ -138,13 +137,11 @@ export default function EditorLayout(): React.ReactElement {
           </Box>
         </Stack>
 
-        <Container maxW={852} p={0}>
-          <EditorProvider value={{ readOnly: !!flow?.active }}>
-            {!flow && !loading && 'not found'}
+        <EditorProvider value={{ readOnly: !!flow?.active }}>
+          {!flow && !loading && 'not found'}
 
-            {flow && <Editor flow={flow} steps={flow.steps} />}
-          </EditorProvider>
-        </Container>
+          {flow && <Editor flow={flow} steps={flow.steps} />}
+        </EditorProvider>
       </Stack>
 
       <Snackbar
