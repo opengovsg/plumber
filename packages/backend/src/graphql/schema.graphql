@@ -407,6 +407,7 @@ type Trigger {
 type TriggerInstructions {
   beforeUrlMsg: String
   afterUrlMsg: String
+  hideWebhookUrl: Boolean
   errorMsg: String
 }
 

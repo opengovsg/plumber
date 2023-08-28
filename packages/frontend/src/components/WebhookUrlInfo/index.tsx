@@ -16,21 +16,30 @@ type WebhookUrlInfoProps = {
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
   const { webhookUrl, webhookTriggerInstructions, ...alertProps } = props
 
+  const { beforeUrlMsg, afterUrlMsg, hideWebhookUrl } =
+    webhookTriggerInstructions
+
   return (
     <Alert icon={false} color="info" {...alertProps}>
-      <MessageWrapper>
-        <ReactMarkdown>{webhookTriggerInstructions.beforeUrlMsg}</ReactMarkdown>
-      </MessageWrapper>
-      <TextField
-        readOnly
-        clickToCopy={true}
-        name="webhookUrl"
-        fullWidth
-        defaultValue={webhookUrl}
-      />
-      <MessageWrapper>
-        <ReactMarkdown>{webhookTriggerInstructions.afterUrlMsg}</ReactMarkdown>
-      </MessageWrapper>
+      {beforeUrlMsg && (
+        <MessageWrapper>
+          <ReactMarkdown>{beforeUrlMsg}</ReactMarkdown>
+        </MessageWrapper>
+      )}
+      {!hideWebhookUrl && (
+        <TextField
+          readOnly
+          clickToCopy={true}
+          name="webhookUrl"
+          fullWidth
+          defaultValue={webhookUrl}
+        />
+      )}
+      {afterUrlMsg && (
+        <MessageWrapper>
+          <ReactMarkdown>{afterUrlMsg}</ReactMarkdown>
+        </MessageWrapper>
+      )}
     </Alert>
   )
 }

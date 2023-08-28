@@ -62,7 +62,7 @@ describe('formsg webhook registration', () => {
       })
       expect(verifyWebhookUrl($)).resolves.toEqual({
         webhookVerified: false,
-        message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.EMPTY,
+        message: undefined,
       })
     })
 

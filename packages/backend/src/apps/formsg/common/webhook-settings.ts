@@ -12,7 +12,6 @@ import { parseFormIdFormat } from '../auth/verify-credentials'
 
 export const FORMSG_WEBHOOK_VERIFICATION_MESSAGE = {
   VERIFIED: 'Your form is connected successfully.',
-  EMPTY: 'Click "Connect" to connect your form to this pipe.',
   ANOTHER_PIPE:
     'The form you are trying to connect is currently being used in another pipe. Continuing with this connection will cause the other pipe to break.',
   ANOTHER_ENDPOINT:
@@ -96,7 +95,7 @@ export async function verifyWebhookUrl(
     const currentWebhookUrl = settings.data.webhook.url
 
     const isWebhookAlreadySet = currentWebhookUrl === webhookUrl
-    let message = FORMSG_WEBHOOK_VERIFICATION_MESSAGE.EMPTY
+    let message
     if (isWebhookAlreadySet) {
       message = FORMSG_WEBHOOK_VERIFICATION_MESSAGE.VERIFIED
     } else if (currentWebhookUrl) {

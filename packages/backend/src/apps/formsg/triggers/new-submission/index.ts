@@ -24,8 +24,8 @@ export default defineTrigger({
   type: 'webhook',
   description: 'Triggers when the webhook receives a request.',
   webhookTriggerInstructions: {
-    beforeUrlMsg: ` # 1. You'll need to paste this webhook URL in **this form's** settings page.`,
-    afterUrlMsg: ` # 2. Make a new submission to the form you connected. Then, click test step.`,
+    beforeUrlMsg: `# Make a new submission to the form you connected. Then, click test step.`,
+    hideWebhookUrl: true,
     errorMsg:
       'Make a new submission to the form you connected and test the step again.',
   },

@@ -74,6 +74,7 @@ export const GET_APPS = gql`
           beforeUrlMsg
           afterUrlMsg
           errorMsg
+          hideWebhookUrl
         }
         supportsWebhookRegistration
         substeps {

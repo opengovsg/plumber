@@ -299,11 +299,12 @@ export interface ITriggerItem {
   }
 }
 
-export interface ITriggerInstructions {
+export type ITriggerInstructions = Partial<{
   beforeUrlMsg: string
   afterUrlMsg: string
-  errorMsg?: string
-}
+  hideWebhookUrl: boolean
+  errorMsg: string
+}>
 
 export interface IBaseTrigger {
   name: string
