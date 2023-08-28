@@ -23,6 +23,15 @@ const NEWS_MARKDOWN_COMPONENT = MarkdownComponent({
     },
   },
 })
+const TIME_GAP_FOR_NEW_FEATURE = 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
+
+function isNewFeatureCheck(date: Date): boolean {
+  const currDate = new Date()
+  if (date > currDate) {
+    return false
+  }
+  return currDate.getTime() - date.getTime() < TIME_GAP_FOR_NEW_FEATURE
+}
 
 export type NewsItemMultimedia = RequireExactlyOne<
   {
@@ -34,7 +43,6 @@ export type NewsItemMultimedia = RequireExactlyOne<
 >
 export interface NewsItemProps {
   date: Date
-  isNewFeature?: boolean
   title: string
   details: string
   multimedia?: NewsItemMultimedia
@@ -43,7 +51,7 @@ export interface NewsItemProps {
 const DATE_FORMAT = 'dd MMM yyyy'
 
 export default function NewsItem(props: NewsItemProps) {
-  const { date, isNewFeature = false, title, details, multimedia } = props
+  const { date, title, details, multimedia } = props
   const formattedDate = format(date, DATE_FORMAT)
 
   const displayedMultimedia = useMemo(() => {
@@ -73,7 +81,7 @@ export default function NewsItem(props: NewsItemProps) {
       <Text textStyle="caption-1" color="secondary.400">
         {formattedDate}
       </Text>
-      {isNewFeature && (
+      {isNewFeatureCheck(date) && (
         <Badge
           style={{
             borderRadius: '0.25rem',

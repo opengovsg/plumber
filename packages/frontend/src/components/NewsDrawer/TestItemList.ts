@@ -6,12 +6,11 @@ import { NewsItemProps } from './NewsItem'
 
 // to dump into another file if there are too many links
 const TEST_EXTERNAL_LINK = 'https://guide.plumber.gov.sg/'
-const TEST_INTERNAL_LINK = 'http://localhost:3001/executions'
+const TEST_INTERNAL_LINK = '/executions'
 
 export const TEST_ITEM_LIST: NewsItemProps[] = [
   {
     date: new Date('16 Aug 2023 11:00 GMT+8'),
-    isNewFeature: true,
     title: 'Test animation',
     details: `This is a lottie test animation`,
     multimedia: {
@@ -46,7 +45,7 @@ export const TEST_ITEM_LIST: NewsItemProps[] = [
     `,
   },
   {
-    date: new Date('8 Aug 2023 GMT+8'),
+    date: new Date('29 Jul 2023 GMT+8'),
     title: 'Test code block',
     details: dedent`
       ~~~
@@ -56,7 +55,7 @@ export const TEST_ITEM_LIST: NewsItemProps[] = [
     `,
   },
   {
-    date: new Date('3 Aug 2023 GMT+8'),
+    date: new Date('3 Jul 2023 GMT+8'),
     title: 'Test line breaks',
     details: dedent`
       What is Plumber? Plumber is a no-code workflow tool that helps you to connect multiple applications to automate your repetitive tasks.

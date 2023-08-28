@@ -75,8 +75,12 @@ export default function MarkdownComponent(props: MarkdownComponentProps) {
     },
     a: ({ ...props }) => {
       const { href } = props
+      // used for relative URL by setting the dynamic base URL
+      const base = new URL(
+        `${window.location.protocol}//${window.location.host}`,
+      )
       const isExternal =
-        (href && !href.startsWith(window.location.origin)) || false
+        (href && new URL(href, base).hostname !== base.hostname) || false
       return (
         <CustomLink
           isExternal={isExternal}
