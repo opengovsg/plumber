@@ -3,6 +3,9 @@
 // Imported from BbBear generated on Fri, 23 Jun 2023 09:14:33 GMT
 const bbBearColors = {
   base: {
+    canvas: {
+      'brand-subtle': '#fef8fb',
+    },
     divider: {
       medium: '#EDEDED',
       strong: '#BFC2C8',

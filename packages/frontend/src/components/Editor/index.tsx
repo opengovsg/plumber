@@ -97,7 +97,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
   const { flow, steps } = props
 
-  const [currentStepId, setCurrentStepId] = useState<string | null>(steps[0].id)
+  const [currentStepId, setCurrentStepId] = useState<string | null>(
+    steps[0]?.id,
+  )
 
   const onStepChange = useCallback(
     (step: IStep) => {
@@ -164,8 +166,15 @@ export default function Editor(props: EditorProps): React.ReactElement {
           ?.map((action) => `${app.key}-${action.key}`),
       ) ?? [],
     )
-    const groupStepIdx = steps.findIndex((step) => {
-      if (step.type === 'trigger' || !step.appKey || !step.key) {
+    const groupStepIdx = steps.findIndex((step, index) => {
+      if (
+        // We ignore the 1st step because it's either a trigger, or a
+        // step-grouping action that is using a nested Editor to edit steps in
+        // its group.
+        index === 0 ||
+        !step.appKey ||
+        !step.key
+      ) {
         return false
       }
       return groupingActions.has(`${step.appKey}-${step.key}`)
@@ -210,42 +219,44 @@ export default function Editor(props: EditorProps): React.ReactElement {
   }
 
   return (
-    <Flex flexDir="column" alignItems="center" py={3}>
-      <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-        {stepsBeforeGroup.map((step, index, steps) => (
-          <Fragment key={`${step.id}-${index}`}>
-            <FlowStep
-              key={step.id}
-              step={step}
-              index={index + 1}
-              collapsed={currentStepId !== step.id}
-              onOpen={() => setCurrentStepId(step.id)}
-              onClose={() => setCurrentStepId(null)}
-              onChange={onStepChange}
-              onContinue={() => {
-                setCurrentStepId(steps[index + 1]?.id)
-              }}
-            />
+    <Flex w="full" justifyContent="center">
+      <Flex flexDir="column" alignItems="center" py={3} w="53.25rem">
+        <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
+          {stepsBeforeGroup.map((step, index, steps) => (
+            <Fragment key={`${step.id}-${index}`}>
+              <FlowStep
+                key={step.id}
+                step={step}
+                index={index + 1}
+                collapsed={currentStepId !== step.id}
+                onOpen={() => setCurrentStepId(step.id)}
+                onClose={() => setCurrentStepId(null)}
+                onChange={onStepChange}
+                onContinue={() => {
+                  setCurrentStepId(steps[index + 1]?.id)
+                }}
+              />
 
-            <AddStepButton
-              onClick={() => addStep(step.id)}
-              disabled={creationInProgress || flow.active}
-              isLastStep={
-                groupedSteps.length === 0 && index === steps.length - 1
-              }
+              <AddStepButton
+                onClick={() => addStep(step.id)}
+                disabled={creationInProgress || flow.active}
+                isLastStep={
+                  groupedSteps.length === 0 && index === steps.length - 1
+                }
+              />
+            </Fragment>
+          ))}
+          {groupedSteps.length > 0 && (
+            <FlowStepGroup
+              flow={flow}
+              steps={groupedSteps}
+              collapsed={currentStepId !== groupedSteps[0].id}
+              onOpen={() => setCurrentStepId(groupedSteps[0].id)}
+              onClose={() => setCurrentStepId(null)}
             />
-          </Fragment>
-        ))}
-        {groupedSteps.length > 0 && (
-          <FlowStepGroup
-            flow={flow}
-            steps={groupedSteps}
-            collapsed={currentStepId !== groupedSteps[0].id}
-            onOpen={() => setCurrentStepId(groupedSteps[0].id)}
-            onClose={() => setCurrentStepId(null)}
-          />
-        )}
-      </StepExecutionsToIncludeProvider>
+          )}
+        </StepExecutionsToIncludeProvider>
+      </Flex>
     </Flex>
   )
 }

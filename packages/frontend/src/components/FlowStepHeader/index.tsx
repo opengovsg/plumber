@@ -64,6 +64,8 @@ export default function FlowStepHeader(
       borderColor="base.divider.medium"
       borderRadius="lg"
       p={0}
+      bg="white"
+      boxShadow={collapsed ? undefined : 'base'}
     >
       {/*
        * Top header

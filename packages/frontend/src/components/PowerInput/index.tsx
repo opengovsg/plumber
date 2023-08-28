@@ -172,7 +172,14 @@ const SuggestionsPopper = (props: any) => {
     <Popper
       open={open}
       anchorEl={anchorEl}
-      style={{ width: anchorEl?.clientWidth, zIndex: 1 }}
+      style={{
+        width: anchorEl?.clientWidth,
+        // FIXME (ogp-weeloong): HACKY, temporary workaround until another PR
+        // migrates this to proper portals or drop down inputs. Needed to render
+        // sugestions within nested editors, since Chakra renders modals at 40
+        // z-index.
+        zIndex: 40,
+      }}
       modifiers={[
         {
           name: 'flip',
