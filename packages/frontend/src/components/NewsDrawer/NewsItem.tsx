@@ -63,7 +63,7 @@ export default function NewsItem(props: NewsItemProps) {
         <LottieWebAnimation
           title={multimedia.alt}
           animationData={multimedia.animationData}
-        ></LottieWebAnimation>
+        />
       )
     }
     return (

@@ -28,5 +28,5 @@ export default function LottieWebAnimation(
     return () => instance.destroy()
   }, [animationData])
 
-  return <Box {...boxProps} ref={lottieContainer}></Box>
+  return <Box {...boxProps} ref={lottieContainer} />
 }
