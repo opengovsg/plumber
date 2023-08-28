@@ -13,15 +13,6 @@ import {
 export const fields: IField[] = [
   ...transactionalEmailFields,
   {
-    label: 'From Address',
-    key: 'fromAddress',
-    type: 'string' as const,
-    required: true,
-    description:
-      'This MUST be a custom From Address configured with the Postman team. Currently, custom From Address is needed to use attachments.',
-    variables: false,
-  },
-  {
     label: 'Attachments',
     key: 'attachments',
     type: 'multiselect' as const,

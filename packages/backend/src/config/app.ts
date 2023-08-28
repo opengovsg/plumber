@@ -30,8 +30,11 @@ type AppConfig = {
   bullMQDashboardUsername: string
   bullMQDashboardPassword: string
   requestBodySizeLimit: string
-  postmanApiKey: string
   formsgApiKey: string
+  postman: {
+    apiKey: string
+    fromAddress: string
+  }
   isWorker: boolean
   workerActionConcurrency: number
   sgid: {
@@ -80,7 +83,6 @@ const appConfig: AppConfig = {
   webAppUrl,
   webhookUrl,
   requestBodySizeLimit: '1mb',
-  postmanApiKey: process.env.POSTMAN_API_KEY,
   formsgApiKey: process.env.FORMSG_API_KEY,
   isWorker: /worker\.(ts|js)$/.test(require.main?.filename),
   workerActionConcurrency: parseInt(
@@ -90,6 +92,11 @@ const appConfig: AppConfig = {
     clientId: process.env.SGID_CLIENT_ID,
     clientSecret: process.env.SGID_CLIENT_SECRET,
     privateKey: process.env.SGID_PRIVATE_KEY,
+  },
+  postman: {
+    apiKey: process.env.POSTMAN_API_KEY,
+    fromAddress:
+      process.env.POSTMAN_FROM_ADDRESS || 'donotreply@plumber.gov.sg',
   },
 }
 
@@ -101,7 +108,7 @@ if (!appConfig.sessionSecretKey) {
   throw new Error('SESSION_SECRET_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.postmanApiKey) {
+if (!appConfig.postman.apiKey) {
   throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
 }
 

@@ -22,14 +22,12 @@ export default defineAction({
       destinationEmail,
       replyTo,
       senderName,
-      fromAddress,
       attachments,
     } = $.step.parameters
 
     const result = schema.safeParse({
       destinationEmail,
       senderName,
-      fromAddress,
       subject,
       body,
       replyTo,
@@ -55,7 +53,6 @@ export default defineAction({
         body: result.data.body,
         replyTo: result.data.replyTo,
         senderName: result.data.senderName,
-        fromAddress: result.data.fromAddress,
         attachments: attachmentFiles,
       },
     )
