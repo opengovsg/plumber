@@ -3,12 +3,26 @@ import { BiSolidRocket } from 'react-icons/bi'
 import { Box, Image, Text } from '@chakra-ui/react'
 import { Badge, BadgeLeftIcon } from '@opengovsg/design-system-react'
 import MarkdownRenderer from 'components/MarkdownRenderer'
-import { NEWS_DRAWER_COMPONENT } from 'components/MarkdownRenderer/Components/NewsDrawerComponent'
+import MarkdownComponent from 'components/MarkdownRenderer/Components'
 import { format } from 'date-fns'
 import { AnimationConfigWithData } from 'lottie-web'
 import { RequireExactlyOne } from 'type-fest'
 
 import LottieWebAnimation from './LottieWebAnimation'
+
+const NEWS_MARKDOWN_COMPONENT = MarkdownComponent({
+  styles: {
+    text: {
+      color: 'secondary.500',
+      textStyle: 'body-1',
+      fontSize: '1rem',
+    },
+    list: {
+      color: 'secondary.500',
+      marginInlineStart: '1.25em',
+    },
+  },
+})
 
 export type NewsItemMultimedia = RequireExactlyOne<
   {
@@ -68,7 +82,7 @@ export default function NewsItem(props: NewsItemProps) {
             marginTop: '1rem',
           }}
         >
-          <React.Fragment key=".0">
+          <React.Fragment>
             <BadgeLeftIcon
               as={BiSolidRocket}
               style={{ marginRight: '0.25rem' }}
@@ -82,9 +96,9 @@ export default function NewsItem(props: NewsItemProps) {
       </Text>
       <MarkdownRenderer
         source={details}
-        components={NEWS_DRAWER_COMPONENT}
+        components={NEWS_MARKDOWN_COMPONENT}
       ></MarkdownRenderer>
-      <Box mb="1rem" mt="2rem" role="presentation">
+      <Box mb="1rem" mt="2rem">
         {displayedMultimedia}
       </Box>
     </Box>
