@@ -119,7 +119,7 @@ class Step extends Base {
       .orderBy('created_at', 'desc')
       .limit(1)
       .first()
-    if (lastExecutionStep.appKey !== this.appKey) {
+    if (lastExecutionStep?.appKey !== this.appKey) {
       return undefined
     }
     return lastExecutionStep

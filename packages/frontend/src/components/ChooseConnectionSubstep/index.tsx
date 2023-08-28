@@ -1,17 +1,22 @@
-import type { IApp, IConnection, IStep, ISubstep } from '@plumber/types'
+import type {
+  IAction,
+  IApp,
+  IConnection,
+  IStep,
+  ISubstep,
+  ITestConnectionOutput,
+  ITrigger,
+} from '@plumber/types'
 
-import * as React from 'react'
-import { useLazyQuery, useQuery } from '@apollo/client'
-import { FormControl } from '@chakra-ui/react'
-import Autocomplete from '@mui/material/Autocomplete'
-import Button from '@mui/material/Button'
+import { useCallback, useContext, useMemo } from 'react'
+import { useMutation, useQuery } from '@apollo/client'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
-import TextField from '@mui/material/TextField'
-import { FormLabel } from '@opengovsg/design-system-react'
-import AddAppConnection from 'components/AddAppConnection'
+import ChooseConnectionDropdown from 'components/ChooseConnectionDropdown'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
+import SetConnectionButton from 'components/SetConnectionButton'
 import { EditorContext } from 'contexts/Editor'
+import { REGISTER_WEBHOOK } from 'graphql/mutations/register-webhook'
 import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
 import { TEST_CONNECTION } from 'graphql/queries/test-connection'
 import useFormatMessage from 'hooks/useFormatMessage'
@@ -25,9 +30,8 @@ type ChooseConnectionSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
+  selectedActionOrTrigger?: ITrigger | IAction
 }
-
-const ADD_CONNECTION_VALUE = 'ADD_CONNECTION'
 
 type ConnectionDropdownOption = {
   label: string
@@ -41,14 +45,6 @@ const optionGenerator = (
   value: connection?.id as string,
 })
 
-const getOption = (
-  options: Record<string, unknown>[],
-  connectionId?: string,
-): ConnectionDropdownOption | undefined =>
-  (options.find(
-    (connection) => connection.value === connectionId,
-  ) as ConnectionDropdownOption) || undefined
-
 function ChooseConnectionSubstep(
   props: ChooseConnectionSubstepProps,
 ): React.ReactElement {
@@ -61,120 +57,102 @@ function ChooseConnectionSubstep(
     onSubmit,
     onChange,
     application,
+    selectedActionOrTrigger,
   } = props
   const { connection, appKey } = step
   const formatMessage = useFormatMessage()
-  const editorContext = React.useContext(EditorContext)
-  const [showAddConnectionDialog, setShowAddConnectionDialog] =
-    React.useState(false)
+  const editorContext = useContext(EditorContext)
   const { data, loading, refetch } = useQuery(GET_APP_CONNECTIONS, {
     variables: { key: appKey },
   })
-  // TODO: show detailed error when connection test/verification fails
-  const [
-    testConnection,
-    { loading: testResultLoading, refetch: retestConnection },
-  ] = useLazyQuery(TEST_CONNECTION, {
+  const supportsWebhookRegistration =
+    (selectedActionOrTrigger as ITrigger)?.supportsWebhookRegistration || false
+
+  const {
+    loading: testResultLoading,
+    refetch: retestConnection,
+    data: testConnectionData,
+  } = useQuery<{
+    testConnection: ITestConnectionOutput
+  }>(TEST_CONNECTION, {
     variables: {
-      id: connection?.id,
+      connectionId: connection?.id,
+      stepId: supportsWebhookRegistration ? step.id : undefined,
     },
+    skip: !connection?.id,
   })
 
-  React.useEffect(() => {
-    if (connection?.id) {
-      testConnection({
-        variables: {
-          id: connection.id,
-        },
-      })
-    }
-    // intentionally no dependencies for initial test
-  }, [])
+  const [registerWebhook, { loading: registerWebhookLoading }] =
+    useMutation(REGISTER_WEBHOOK)
 
-  const connectionOptions = React.useMemo(() => {
+  const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
     const options =
       appWithConnections?.connections?.map((connection) =>
         optionGenerator(connection),
       ) || []
 
-    options.push({
-      label: formatMessage('chooseConnectionSubstep.addNewConnection'),
-      value: ADD_CONNECTION_VALUE,
-    })
-
     return options
   }, [data, formatMessage])
 
   const { name } = substep
 
-  const handleAddConnectionClose = React.useCallback(
-    async (response: Record<string, unknown>) => {
-      setShowAddConnectionDialog(false)
-
-      const connectionId = (response?.createConnection as any)?.id
-
-      if (connectionId) {
+  const handleChange = useCallback(
+    async (connectionId: string, shouldRefetch: boolean) => {
+      if (connectionId === step.connection?.id) {
+        return
+      }
+      if (shouldRefetch) {
         await refetch()
-
-        onChange({
-          step: {
-            ...step,
-            connection: {
-              id: connectionId,
-            },
+      }
+      onChange({
+        step: {
+          ...step,
+          connection: {
+            id: connectionId,
           },
-        })
-      }
-    },
-    [onChange, refetch, step],
-  )
-
-  const handleChange = React.useCallback(
-    (event: React.SyntheticEvent, selectedOption: unknown) => {
-      if (typeof selectedOption === 'object') {
-        // TODO: try to simplify type casting below.
-        const typedSelectedOption = selectedOption as { value: string }
-        const option: { value: string } = typedSelectedOption
-        const connectionId = option?.value as string
-
-        if (connectionId === ADD_CONNECTION_VALUE) {
-          setShowAddConnectionDialog(true)
-          return
-        }
-
-        if (connectionId !== step.connection?.id) {
-          onChange({
-            step: {
-              ...step,
-              connection: {
-                id: connectionId,
-              },
-            },
-          })
-        }
-      }
-    },
-    [step, onChange],
-  )
-
-  React.useEffect(() => {
-    if (step.connection?.id) {
-      retestConnection({
-        id: step.connection.id,
+        },
       })
+    },
+    [step, onChange, refetch],
+  )
+
+  const onRegisterWebhook = useCallback(async () => {
+    if (step.connection?.id && supportsWebhookRegistration) {
+      await registerWebhook({
+        variables: {
+          input: {
+            connectionId: step.connection.id,
+            stepId: step.id,
+          },
+        },
+      })
+      await retestConnection()
     }
-  }, [step.connection?.id, retestConnection])
+  }, [step, registerWebhook, supportsWebhookRegistration])
 
   const onToggle = expanded ? onCollapse : onExpand
 
+  const isTestStepValid = useMemo(() => {
+    if (testResultLoading || !testConnectionData?.testConnection) {
+      return null
+    }
+    if (
+      testConnectionData?.testConnection?.connectionVerified === false ||
+      testConnectionData.testConnection.webhookVerified === false
+    ) {
+      return false
+    }
+    return true
+  }, [testResultLoading || testConnectionData])
+
   return (
-    <React.Fragment>
+    <>
       <FlowSubstepTitle
         expanded={expanded}
         onClick={onToggle}
         title={name}
-        valid={testResultLoading ? null : connection?.verified}
+        valid={isTestStepValid}
       />
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <ListItem
@@ -183,56 +161,28 @@ function ChooseConnectionSubstep(
             pb: 3,
             flexDirection: 'column',
             alignItems: 'flex-start',
+            gap: 2,
           }}
         >
-          <Autocomplete
-            fullWidth
-            disablePortal
-            disableClearable
-            disabled={editorContext.readOnly}
-            options={connectionOptions}
-            renderInput={(params) => (
-              <FormControl>
-                <FormLabel isRequired>
-                  {formatMessage('chooseConnectionSubstep.chooseConnection')}
-                </FormLabel>
-                <TextField {...params} />
-              </FormControl>
-            )}
-            value={getOption(connectionOptions, connection?.id)}
+          <ChooseConnectionDropdown
+            isDisabled={editorContext.readOnly || loading}
+            connectionOptions={connectionOptions}
             onChange={handleChange}
-            loading={loading}
-            data-test="choose-connection-autocomplete"
-            isOptionEqualToValue={(
-              option: ConnectionDropdownOption,
-              value: ConnectionDropdownOption,
-            ) => option.value === value.value}
+            value={connection?.id}
+            application={application}
           />
-
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={onSubmit}
-            sx={{ mt: 2 }}
-            disabled={
-              testResultLoading ||
-              !connection?.verified ||
-              editorContext.readOnly
-            }
-            data-test="flow-substep-continue-button"
-          >
-            {formatMessage('chooseConnectionSubstep.continue')}
-          </Button>
+          <SetConnectionButton
+            onNextStep={onSubmit}
+            onRegisterWebhook={onRegisterWebhook}
+            readOnly={editorContext.readOnly}
+            supportsWebhookRegistration={supportsWebhookRegistration}
+            testResult={testConnectionData?.testConnection}
+            testResultLoading={testResultLoading}
+            registerWebhookLoading={registerWebhookLoading}
+          />
         </ListItem>
       </Collapse>
-
-      {application && showAddConnectionDialog && (
-        <AddAppConnection
-          onClose={handleAddConnectionClose}
-          application={application}
-        />
-      )}
-    </React.Fragment>
+    </>
   )
 }
 

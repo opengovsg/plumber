@@ -43,11 +43,11 @@ const getApp = async (appKey: string, stripFuncs = true) => {
   }
 
   appData.triggers = appData?.triggers?.map((trigger: IRawTrigger) => {
-    return addStaticSubsteps('trigger', appData, trigger)
+    return addStaticSubsteps('trigger', appData, trigger) as ITrigger
   })
 
   appData.actions = appData?.actions?.map((action: IRawAction) => {
-    return addStaticSubsteps('action', appData, action)
+    return addStaticSubsteps('action', appData, action) as IAction
   })
 
   if (stripFuncs) {
@@ -69,17 +69,29 @@ const testStep = (stepType: 'trigger' | 'action') => {
   }
 }
 
+function isTrigger(
+  stepType: 'trigger' | 'action',
+  computedStep: any,
+): computedStep is ITrigger {
+  return stepType === 'trigger'
+}
+
 const addStaticSubsteps = (
   stepType: 'trigger' | 'action',
   appData: IApp,
   step: IRawTrigger | IRawAction,
-) => {
+): ITrigger | IAction => {
   const computedStep: ITrigger | IAction = omit(step, ['arguments'])
 
   computedStep.substeps = []
 
   if (appData.supportsConnections) {
     computedStep.substeps.push(chooseConnectionStep)
+  }
+
+  if (isTrigger(stepType, computedStep)) {
+    computedStep.supportsWebhookRegistration =
+      !!computedStep.verifyHook && !!computedStep.registerHook
   }
 
   if (step.arguments) {

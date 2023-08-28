@@ -47,7 +47,7 @@ export const verifyFormCreds = async (
   })
 }
 
-export const verifySecretKeyFormat = ($: IGlobalVariable): string => {
+export const parseSecretKeyFormat = ($: IGlobalVariable): string => {
   if (
     !BASE64_REGEX.test($.auth.data?.privateKey as string) ||
     Buffer.from($.auth.data?.privateKey as string, 'base64').length !== 32
@@ -57,7 +57,7 @@ export const verifySecretKeyFormat = ($: IGlobalVariable): string => {
   return $.auth.data.privateKey as string
 }
 
-export const verifyFormIdFormat = ($: IGlobalVariable): string => {
+export const parseFormIdFormat = ($: IGlobalVariable): string => {
   if (!$.auth.data?.formId || typeof $.auth.data.formId !== 'string') {
     throw new Error('No form id provided')
   }
@@ -87,8 +87,8 @@ export const verifyFormIdFormat = ($: IGlobalVariable): string => {
 }
 
 const verifyCredentials = async ($: IGlobalVariable) => {
-  const secretKey = verifySecretKeyFormat($)
-  const formId = verifyFormIdFormat($)
+  const secretKey = parseSecretKeyFormat($)
+  const formId = parseFormIdFormat($)
   await verifyFormCreds($, formId, secretKey)
 }
 

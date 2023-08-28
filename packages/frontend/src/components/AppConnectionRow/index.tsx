@@ -82,7 +82,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         })
       } else if (action.type === 'test') {
         setVerificationVisible(true)
-        testConnection({ variables: { id } })
+        testConnection({ variables: { connectionId: id } })
       }
     },
     [deleteConnection, id, testConnection, formatMessage, enqueueSnackbar],
