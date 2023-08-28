@@ -1,10 +1,16 @@
 import { type IStep } from '@plumber/types'
 
-import { Fragment, useContext, useMemo } from 'react'
+import { Fragment, useCallback, useContext, useMemo } from 'react'
 import { BiPlus } from 'react-icons/bi'
+import { useMutation } from '@apollo/client'
 import { Divider, Flex } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import { isIfThenStep } from 'helpers/toolbelt'
+import { CREATE_STEP } from 'graphql/mutations/create-step'
+import {
+  ACTIONS as TOOLBELT_ACTIONS,
+  APP_KEY as TOOLBELT_APP_KEY,
+  isIfThenStep,
+} from 'helpers/toolbelt'
 
 import { ContentProps } from '../types'
 
@@ -95,6 +101,29 @@ export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
     [steps, branchDepth],
   )
 
+  const [createStep, { loading: isAddingBranch }] = useMutation(CREATE_STEP, {
+    refetchQueries: ['GetFlow'],
+  })
+  const onAddBranch = useCallback(async () => {
+    await createStep({
+      variables: {
+        input: {
+          key: TOOLBELT_ACTIONS.IfThen,
+          appKey: TOOLBELT_APP_KEY,
+          previousStep: {
+            id: steps[steps.length - 1].id,
+          },
+          flow: {
+            id: flow.id,
+          },
+          parameters: {
+            depth: branchDepth,
+          },
+        },
+      },
+    })
+  }, [branchDepth, steps])
+
   return (
     // Nested If-Thens should have depth = depth + 1
     <BranchDepthContext.Provider value={branchDepth + 1}>
@@ -112,11 +141,12 @@ export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
           </Fragment>
         ))}
         <Button
+          onClick={onAddBranch}
+          isLoading={isAddingBranch}
           leftIcon={<BiPlus />}
           m={4}
           variant="outline"
           w="fit-content"
-          // TODO in later PR: create branch implementation
         >
           Add branch
         </Button>
