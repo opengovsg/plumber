@@ -23,7 +23,14 @@ function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
   const validationStatusIcon = valid ? validIcon : errorIcon
 
   return (
-    <ListItemButton onClick={onClick} selected={expanded} divider>
+    <ListItemButton
+      onClick={onClick}
+      selected={expanded}
+      divider
+      sx={{
+        py: '0.75rem',
+      }}
+    >
       <Typography variant="body2">
         {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         {title}
