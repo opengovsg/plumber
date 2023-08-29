@@ -25,13 +25,9 @@ export default function ConditionalIconButton(
     },
   )
 
-  // FIXME (ogp-weeloong): We have some Y padding so that it doesn't look _too_
-  // weird next to MUI components. Will remove when we move off MUI.
-
   if (matchSmallScreens) {
     return (
       <IconButton
-        py={6}
         icon={icon}
         color={buttonProps.color}
         type={buttonProps.type}
@@ -43,7 +39,7 @@ export default function ConditionalIconButton(
   }
 
   return (
-    <Button py={7} as={component} {...(buttonProps as ButtonProps)}>
+    <Button as={component} {...(buttonProps as ButtonProps)}>
       {children}
     </Button>
   )
