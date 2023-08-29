@@ -1,6 +1,5 @@
 import { IField } from '@plumber/types'
 
-import validator from 'email-validator'
 import { z } from 'zod'
 
 import { parseS3Id } from '@/helpers/s3'
@@ -24,24 +23,6 @@ export const fields: IField[] = [
 
 export const schema = transactionalEmailSchema.merge(
   z.object({
-    fromAddress: z.nullable(
-      z
-        .string()
-        .trim()
-        .transform((email, context) => {
-          if (!email) {
-            return null
-          }
-          if (!validator.validate(email)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'Invalid from address',
-            })
-            return z.NEVER
-          }
-          return email
-        }),
-    ),
     attachments: z.array(z.string()).transform((array, context) => {
       const result: string[] = []
       for (const value of array) {

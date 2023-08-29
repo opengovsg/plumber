@@ -10,12 +10,14 @@ import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
+import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
+import actionQueue from '@/queues/action'
 
 type ProcessActionOptions = {
   flowId: string
@@ -29,7 +31,7 @@ type ProcessActionOptions = {
 const redisRateLimitClient = createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)
 const emailRateCounter = new RateLimiterRedis({
   points: appConfig.postman.rateLimit,
-  duration: 5,
+  duration: 1,
   keyPrefix: 'action-email',
   storeClient: redisRateLimitClient,
 })
@@ -100,8 +102,22 @@ export const processAction = async (options: ProcessActionOptions) => {
       $.step.parameters,
     )
     if (isRateLimited) {
-      await worker.rateLimit(duration)
-      throw Worker.RateLimitError()
+      await actionQueue.add(
+        `${executionId}-${stepId}`,
+        {
+          flowId,
+          executionId,
+          stepId,
+        },
+        { ...DEFAULT_JOB_OPTIONS, delay: duration * 1000 },
+      )
+      return {
+        stepId,
+        flowId,
+        executionId,
+        proceedToNextAction: false,
+        executionStep: new ExecutionStep(),
+      }
     }
   }
 
