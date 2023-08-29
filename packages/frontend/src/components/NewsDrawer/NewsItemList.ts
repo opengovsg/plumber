@@ -4,7 +4,7 @@ import { NewsItemProps } from './NewsItem'
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
-    date: new Date('11 Aug 2023 GMT+8'),
+    date: '2023-08-29',
     title: 'Welcome to Plumber',
     details: dedent`
       * Users can now ...

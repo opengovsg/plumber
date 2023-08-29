@@ -16,7 +16,7 @@ interface MarkdownRendererProps {
 }
 
 export default function MarkdownRenderer(props: MarkdownRendererProps) {
-  const { allowMultilineBreaks = false, source, components } = props
+  const { allowMultilineBreaks = true, source, components } = props
   const processedSource = useMemo(() => {
     if (allowMultilineBreaks) {
       return source.replace(/\n/gi, '&nbsp; \n')

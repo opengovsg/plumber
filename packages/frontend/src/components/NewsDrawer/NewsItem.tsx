@@ -4,8 +4,8 @@ import { Box, Image, Text } from '@chakra-ui/react'
 import { Badge, BadgeLeftIcon } from '@opengovsg/design-system-react'
 import MarkdownRenderer from 'components/MarkdownRenderer'
 import MarkdownComponent from 'components/MarkdownRenderer/Components'
-import { format } from 'date-fns'
 import { AnimationConfigWithData } from 'lottie-web'
+import { DateTime } from 'luxon'
 import { RequireExactlyOne } from 'type-fest'
 
 import LottieWebAnimation from './LottieWebAnimation'
@@ -36,13 +36,12 @@ function isNewFeatureCheck(date: Date): boolean {
 export type NewsItemMultimedia = RequireExactlyOne<
   {
     url: string
-    alt: string
     animationData: AnimationConfigWithData['animationData']
   },
   'url' | 'animationData'
 >
 export interface NewsItemProps {
-  date: Date
+  date: string
   title: string
   details: string
   multimedia?: NewsItemMultimedia
@@ -52,8 +51,7 @@ const DATE_FORMAT = 'dd MMM yyyy'
 
 export default function NewsItem(props: NewsItemProps) {
   const { date, title, details, multimedia } = props
-  const formattedDate = format(date, DATE_FORMAT)
-
+  const formattedDate = DateTime.fromISO(date).toFormat(DATE_FORMAT)
   const displayedMultimedia = useMemo(() => {
     if (!multimedia) {
       return
@@ -61,19 +59,12 @@ export default function NewsItem(props: NewsItemProps) {
     if (multimedia.animationData) {
       return (
         <LottieWebAnimation
-          title={multimedia.alt}
+          title={title}
           animationData={multimedia.animationData}
         />
       )
     }
-    return (
-      <Image
-        fit="fill"
-        src={multimedia.url}
-        title={multimedia.alt}
-        alt={multimedia.alt}
-      />
-    )
+    return <Image fit="fill" src={multimedia.url} title={title} alt={title} />
   }, [multimedia])
 
   return (
@@ -81,7 +72,7 @@ export default function NewsItem(props: NewsItemProps) {
       <Text textStyle="caption-1" color="secondary.400">
         {formattedDate}
       </Text>
-      {isNewFeatureCheck(date) && (
+      {isNewFeatureCheck(new Date(date)) && (
         <Badge
           style={{
             borderRadius: '0.25rem',

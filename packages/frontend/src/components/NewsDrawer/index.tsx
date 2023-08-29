@@ -18,7 +18,9 @@ import { TEST_ITEM_LIST } from './TestItemList'
 
 // this fetches the latest time from the news
 const latestNewsTimestamp =
-  TEST_ITEM_LIST.length > 0 ? TEST_ITEM_LIST[0].date.getTime().toString() : ''
+  TEST_ITEM_LIST.length > 0
+    ? new Date(TEST_ITEM_LIST[0].date).getTime().toString()
+    : ''
 
 export default function NewsDrawer() {
   // check whether user has read and closed the news drawer
