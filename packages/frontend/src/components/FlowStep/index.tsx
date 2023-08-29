@@ -195,7 +195,7 @@ export default function FlowStep(
   const onDelete = useCallback<MouseEventHandler>(
     async (e) => {
       e.stopPropagation()
-      await deleteStep({ variables: { input: { id: step.id } } })
+      await deleteStep({ variables: { input: { ids: [step.id] } } })
     },
     [step.id],
   )
