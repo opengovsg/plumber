@@ -3,26 +3,12 @@ import { BiSolidRocket } from 'react-icons/bi'
 import { Box, Image, Text } from '@chakra-ui/react'
 import { Badge, BadgeLeftIcon } from '@opengovsg/design-system-react'
 import MarkdownRenderer from 'components/MarkdownRenderer'
-import MarkdownComponent from 'components/MarkdownRenderer/Components'
 import { AnimationConfigWithData } from 'lottie-web'
 import { DateTime } from 'luxon'
 import { RequireExactlyOne } from 'type-fest'
 
 import LottieWebAnimation from './LottieWebAnimation'
 
-const NEWS_MARKDOWN_COMPONENT = MarkdownComponent({
-  styles: {
-    text: {
-      color: 'secondary.500',
-      textStyle: 'body-1',
-      fontSize: '1rem',
-    },
-    list: {
-      color: 'secondary.500',
-      marginInlineStart: '1.25em',
-    },
-  },
-})
 const TIME_GAP_FOR_NEW_FEATURE = 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
 
 function isNewFeatureCheck(date: Date): boolean {
@@ -93,10 +79,7 @@ export default function NewsItem(props: NewsItemProps) {
       <Text textStyle="h5" mb="0.5rem" mt="0.5rem" color="secondary.700">
         {title}
       </Text>
-      <MarkdownRenderer
-        source={details}
-        components={NEWS_MARKDOWN_COMPONENT}
-      ></MarkdownRenderer>
+      <MarkdownRenderer source={details}></MarkdownRenderer>
       <Box mb="1rem" mt="2rem">
         {displayedMultimedia}
       </Box>

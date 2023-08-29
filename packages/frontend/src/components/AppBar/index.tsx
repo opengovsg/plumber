@@ -11,7 +11,6 @@ import { Link } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
 import AccountDropdownMenu from 'components/AccountDropdownMenu'
 import NewsDrawer from 'components/NewsDrawer'
-import { TEST_ITEM_LIST } from 'components/NewsDrawer/TestItemList'
 import * as URLS from 'config/urls'
 import theme from 'styles/theme'
 
@@ -25,7 +24,6 @@ type AppBarProps = {
 }
 
 const accountMenuId = 'account-menu'
-const hasNewsContent = TEST_ITEM_LIST.length > 0
 
 export default function AppBar(props: AppBarProps): React.ReactElement {
   const { drawerOpen, onDrawerOpen, onDrawerClose, maxWidth = 'full' } = props
@@ -88,7 +86,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             Guide
           </Link>
 
-          {hasNewsContent && <NewsDrawer />}
+          <NewsDrawer />
 
           <IconButton
             size="large"

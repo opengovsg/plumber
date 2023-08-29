@@ -16,6 +16,8 @@ import {
 import NewsItem from './NewsItem'
 import { TEST_ITEM_LIST } from './TestItemList'
 
+const LOCAL_STORAGE_LAST_READ_KEY = 'news-drawer-last-read'
+
 // this fetches the latest time from the news
 const latestNewsTimestamp =
   TEST_ITEM_LIST.length > 0
@@ -25,16 +27,20 @@ const latestNewsTimestamp =
 export default function NewsDrawer() {
   // check whether user has read and closed the news drawer
   const [localLatestTimestamp, setLocalLatestTimestamp] = useState(
-    localStorage.getItem('news-tab-latest-timestamp'),
+    localStorage.getItem(LOCAL_STORAGE_LAST_READ_KEY),
   )
 
   const handleOpen = useCallback(() => {
     // only way to update this is to change the news or clear the local storage
-    localStorage.setItem('news-tab-latest-timestamp', latestNewsTimestamp)
+    localStorage.setItem(LOCAL_STORAGE_LAST_READ_KEY, latestNewsTimestamp)
     setLocalLatestTimestamp(latestNewsTimestamp)
   }, [latestNewsTimestamp])
 
   const { isOpen, onOpen, onClose } = useDisclosure({ onOpen: handleOpen })
+
+  if (TEST_ITEM_LIST.length === 0) {
+    return null
+  }
 
   return (
     <>
