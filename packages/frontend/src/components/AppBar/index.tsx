@@ -82,6 +82,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             target="_blank"
             variant="link"
             mr={4}
+            _hover={{ color: 'primary.600', textDecoration: 'underline' }}
           >
             Guide
           </Link>

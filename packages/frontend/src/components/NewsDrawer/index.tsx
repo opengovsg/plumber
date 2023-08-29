@@ -10,6 +10,7 @@ import {
   DrawerOverlay,
   Stack,
   StackDivider,
+  Text,
   useDisclosure,
 } from '@chakra-ui/react'
 
@@ -44,8 +45,14 @@ export default function NewsDrawer() {
 
   return (
     <>
-      <Button size="xs" variant="link" mr={4} onClick={onOpen}>
-        What's new
+      <Button
+        color="secondary.500"
+        size="xs"
+        variant="link"
+        mr={4}
+        onClick={onOpen}
+      >
+        <Text fontWeight="normal">What's new</Text>
       </Button>
       {localLatestTimestamp !== latestNewsTimestamp && (
         <Box
