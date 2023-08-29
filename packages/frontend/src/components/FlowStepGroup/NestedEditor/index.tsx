@@ -17,8 +17,7 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
     <Modal isOpen={isOpen} onClose={onClose} size="full">
       <ModalContent bg="base.canvas.brand-subtle" pt={24}>
         <ModalCloseButton />
-        {/* TODO: Allow custom 1st step component in a later PR. For now, we skip rendering 1st step. */}
-        <Editor flow={flow} steps={steps.slice(1)} />
+        <Editor flow={flow} steps={steps} />
       </ModalContent>
     </Modal>
   )
