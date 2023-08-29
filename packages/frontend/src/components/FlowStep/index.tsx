@@ -19,6 +19,7 @@ import FlowSubstep from 'components/FlowSubstep'
 import Form from 'components/Form'
 import TestSubstep from 'components/TestSubstep'
 import { EditorContext } from 'contexts/Editor'
+import { StepDisplayOverridesContext } from 'contexts/StepDisplayOverrides'
 import { StepExecutionsProvider } from 'contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from 'contexts/StepExecutionsToInclude'
 import { DELETE_STEP } from 'graphql/mutations/delete-step'
@@ -106,9 +107,16 @@ export default function FlowStep(
   const step: IStep = props.step
   const isTrigger = step.type === 'trigger'
 
-  const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
   const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
+  const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
+
+  const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
+  const [currentSubstep, setCurrentSubstep] = useState<number | null>(
+    // OK to set to 1, even if a step has _no_ substeps, everything will just be
+    // collapsed due to matching logic below.
+    cannotChooseApp ? 1 : 0,
+  )
 
   const [
     getStepWithTestExecutions,
@@ -176,7 +184,8 @@ export default function FlowStep(
     [substeps],
   )
 
-  const isDeletable = !isTrigger && !editorContext.readOnly
+  const isDeletable =
+    displayOverrides?.disableDelete || (!isTrigger && !editorContext.readOnly)
   const [deleteStep] = useMutation(DELETE_STEP, {
     refetchQueries: ['GetFlow'],
   })
@@ -198,14 +207,16 @@ export default function FlowStep(
     <FlowStepHeader
       iconUrl={app?.rawApp?.iconUrl}
       caption={
-        app?.rawApp?.name
+        displayOverrides?.caption ??
+        (app?.rawApp?.name
           ? `${step.position}. ${app.rawApp.name}`
-          : 'Choose an app'
+          : 'Choose an app')
       }
       hintAboveCaption={
-        isTrigger
+        displayOverrides?.hintAboveCaption ??
+        (isTrigger
           ? formatMessage('flowStep.triggerType')
-          : formatMessage('flowStep.actionType')
+          : formatMessage('flowStep.actionType'))
       }
       isCompleted={step.status === 'completed'}
       onDelete={isDeletable ? onDelete : undefined}
@@ -219,19 +230,21 @@ export default function FlowStep(
           onSubmit={handleSubmit}
           resolver={stepValidationSchema}
         >
-          <ChooseAppAndEventSubstep
-            expanded={currentSubstep === 0}
-            substep={{
-              key: 'chooAppAndEvent',
-              name: 'Choose app & event',
-              arguments: [],
-            }}
-            onExpand={() => toggleSubstep(0)}
-            onCollapse={() => toggleSubstep(0)}
-            onSubmit={expandNextStep}
-            onChange={handleChange}
-            step={step}
-          />
+          {!cannotChooseApp && (
+            <ChooseAppAndEventSubstep
+              expanded={currentSubstep === 0}
+              substep={{
+                key: 'chooseAppAndEvent',
+                name: 'Choose app & event',
+                arguments: [],
+              }}
+              onExpand={() => toggleSubstep(0)}
+              onCollapse={() => toggleSubstep(0)}
+              onSubmit={expandNextStep}
+              onChange={handleChange}
+              step={step}
+            />
+          )}
 
           {substeps?.length > 0 &&
             substeps.map((substep: ISubstep, index: number) => (

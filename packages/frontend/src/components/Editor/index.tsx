@@ -150,8 +150,15 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
   const apps = useApps()
   const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
-    const groupStepIdx = steps.findIndex((step) => {
-      if (step.type === 'trigger' || !step.appKey || !step.key) {
+    const groupStepIdx = steps.findIndex((step, index) => {
+      if (
+        // We ignore the 1st step because it's either a trigger, or a
+        // step-grouping action that is using a nested Editor to edit steps in
+        // its group.
+        index === 0 ||
+        !step.appKey ||
+        !step.key
+      ) {
         return false
       }
       return (
