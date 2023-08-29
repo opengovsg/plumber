@@ -108,6 +108,10 @@
           "valueFrom": "plumber-<ENVIRONMENT>-postman-api-key"
         },
         {
+          "name": "FORMSG_API_KEY",
+          "valueFrom": "plumber-<ENVIRONMENT>-formsg-api-key"
+        },
+        {
           "name": "WORKER_ACTION_CONCURRENCY",
           "valueFrom": "plumber-<ENVIRONMENT>-worker-action-concurrency"
         },

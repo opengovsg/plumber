@@ -13,6 +13,7 @@ import Connection from '@/models/connection'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
+import User from '@/models/user'
 
 import createHttpClient from './http-client'
 
@@ -24,6 +25,7 @@ type GlobalVariableOptions = {
   execution?: Execution
   testRun?: boolean
   request?: IRequest
+  user?: User // only required for verifyHook and registerHook now
 }
 
 const globalVariable = async (
@@ -37,6 +39,7 @@ const globalVariable = async (
     execution,
     request,
     testRun = false,
+    user,
   } = options
 
   const isTrigger = step?.isTrigger
@@ -147,6 +150,10 @@ const globalVariable = async (
       lastInternalIds = await flow?.lastInternalIds(500)
     }
     return lastInternalIds?.includes(internalId)
+  }
+
+  if (user) {
+    $.userEmail = user.email
   }
 
   return $

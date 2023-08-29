@@ -4,6 +4,11 @@ import isEmpty from 'lodash/isEmpty'
 
 import defineTrigger from '@/helpers/define-trigger'
 
+import {
+  registerWebhookUrl,
+  verifyWebhookUrl,
+} from '../../common/webhook-settings'
+
 import getDataOutMetadata from './get-data-out-metadata'
 
 export const NricFilter = {
@@ -19,8 +24,8 @@ export default defineTrigger({
   type: 'webhook',
   description: 'Triggers when the webhook receives a request.',
   webhookTriggerInstructions: {
-    beforeUrlMsg: ` # 1. You'll need to paste this webhook URL in **this form's** settings page.`,
-    afterUrlMsg: ` # 2. Make a new submission to the form you connected. Then, click test step.`,
+    beforeUrlMsg: `# Make a new submission to the form you connected. Then, click test step.`,
+    hideWebhookUrl: true,
     errorMsg:
       'Make a new submission to the form you connected and test the step again.',
   },
@@ -56,6 +61,8 @@ export default defineTrigger({
   ],
 
   getDataOutMetadata,
+  registerHook: registerWebhookUrl,
+  verifyHook: verifyWebhookUrl,
 
   async testRun($: IGlobalVariable) {
     const lastExecutionStep = await $.getLastExecutionStep()

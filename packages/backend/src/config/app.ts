@@ -31,6 +31,7 @@ type AppConfig = {
   bullMQDashboardPassword: string
   requestBodySizeLimit: string
   postmanApiKey: string
+  formsgApiKey: string
   isWorker: boolean
   workerActionConcurrency: number
 }
@@ -75,6 +76,7 @@ const appConfig: AppConfig = {
   webhookUrl,
   requestBodySizeLimit: '1mb',
   postmanApiKey: process.env.POSTMAN_API_KEY,
+  formsgApiKey: process.env.FORMSG_API_KEY,
   isWorker: /worker\.(ts|js)$/.test(require.main?.filename),
   workerActionConcurrency: parseInt(
     process.env.WORKER_ACTION_CONCURRENCY || '10',
