@@ -27,7 +27,7 @@ export const worker = new Worker(
   'action',
   tracer.wrap('workers.action', async (job) => {
     const { stepId, flowId, executionId, nextStep, executionStep } =
-      await processAction({ ...(job.data as JobData), jobId: job.id })
+      await processAction({ ...(job.data as JobData), jobId: job.id, worker })
 
     if (executionStep.isFailed) {
       await Execution.query().patch({ status: 'failure' }).findById(executionId)

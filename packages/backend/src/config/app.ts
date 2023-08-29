@@ -34,6 +34,7 @@ type AppConfig = {
   postman: {
     apiKey: string
     fromAddress: string
+    rateLimit: number
   }
   isWorker: boolean
   workerActionConcurrency: number
@@ -97,6 +98,7 @@ const appConfig: AppConfig = {
     apiKey: process.env.POSTMAN_API_KEY,
     fromAddress:
       process.env.POSTMAN_FROM_ADDRESS || 'donotreply@plumber.gov.sg',
+    rateLimit: parseInt(process.env.POSTMAN_RATE_LIMIT) || 169,
   },
 }
 
