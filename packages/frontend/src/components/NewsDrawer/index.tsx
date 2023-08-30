@@ -15,14 +15,14 @@ import {
 } from '@chakra-ui/react'
 
 import NewsItem from './NewsItem'
-import { TEST_ITEM_LIST } from './TestItemList'
+import { NEWS_ITEM_LIST } from './NewsItemList'
 
 const LOCAL_STORAGE_LAST_READ_KEY = 'news-drawer-last-read'
 
 // this fetches the latest time from the news
 const latestNewsTimestamp =
-  TEST_ITEM_LIST.length > 0
-    ? new Date(TEST_ITEM_LIST[0].date).getTime().toString()
+  NEWS_ITEM_LIST.length > 0
+    ? new Date(NEWS_ITEM_LIST[0].date).getTime().toString()
     : ''
 
 export default function NewsDrawer() {
@@ -39,7 +39,7 @@ export default function NewsDrawer() {
 
   const { isOpen, onOpen, onClose } = useDisclosure({ onOpen: handleOpen })
 
-  if (TEST_ITEM_LIST.length === 0) {
+  if (NEWS_ITEM_LIST.length === 0) {
     return null
   }
 
@@ -73,7 +73,7 @@ export default function NewsDrawer() {
               divider={<StackDivider borderColor="gray.300"></StackDivider>}
               spacing="1rem"
             >
-              {TEST_ITEM_LIST.map((item, index) => (
+              {NEWS_ITEM_LIST.map((item, index) => (
                 <NewsItem key={index} {...item} />
               ))}
             </Stack>

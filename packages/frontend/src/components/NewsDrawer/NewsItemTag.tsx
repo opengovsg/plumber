@@ -3,7 +3,7 @@ import { BiSolidRocket, BiSolidSmile } from 'react-icons/bi'
 import { Badge, BadgeLeftIcon } from '@opengovsg/design-system-react'
 
 export const NEW_FEATURE_TAG = 'feature'
-export const NEW_FIX_TAG = 'fix'
+export const NEW_ENHANCEMENT_TAG = 'enhancement'
 
 interface NewsItemTagProps {
   tag: string
@@ -25,7 +25,7 @@ const newFeatureTag = (
   </Badge>
 )
 
-const newFixTag = (
+const newEnhancementTag = (
   <Badge
     style={{
       borderRadius: '0.25rem',
@@ -39,7 +39,7 @@ const newFixTag = (
         as={BiSolidSmile}
         style={{ marginRight: '0.25rem', color: '#5D6785' }}
       />
-      Improvements/fixes
+      Enhancements
     </React.Fragment>
   </Badge>
 )
@@ -48,8 +48,8 @@ function displayNewsTag(tag: string): JSX.Element {
   switch (tag) {
     case NEW_FEATURE_TAG:
       return newFeatureTag
-    case NEW_FIX_TAG:
-      return newFixTag
+    case NEW_ENHANCEMENT_TAG:
+      return newEnhancementTag
     default:
       return <></>
   }

@@ -3,7 +3,7 @@ import dedent from 'dedent'
 
 import TestLottieAnimation from './assets/Lottie-Lego.json'
 import { NewsItemProps } from './NewsItem'
-import { NEW_FEATURE_TAG, NEW_FIX_TAG } from './NewsItemTag'
+import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
 
 // to dump into another file if there are too many links
 const TEST_EXTERNAL_LINK = 'https://guide.plumber.gov.sg/'
@@ -12,7 +12,7 @@ const TEST_INTERNAL_LINK = '/executions'
 export const TEST_ITEM_LIST: NewsItemProps[] = [
   {
     date: '2023-08-17',
-    tag: NEW_FIX_TAG,
+    tag: NEW_ENHANCEMENT_TAG,
     title: 'Test animation',
     details: `This is a lottie test animation`,
     multimedia: {
