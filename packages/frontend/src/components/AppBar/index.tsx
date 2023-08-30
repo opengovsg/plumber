@@ -7,9 +7,10 @@ import MuiAppBar from '@mui/material/AppBar'
 import IconButton from '@mui/material/IconButton'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
-import { Link } from '@opengovsg/design-system-react'
+import { Button, Link } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
 import AccountDropdownMenu from 'components/AccountDropdownMenu'
+import NewsDrawer from 'components/NewsDrawer'
 import * as URLS from 'config/urls'
 import theme from 'styles/theme'
 
@@ -46,6 +47,7 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
     <MuiAppBar
       color="transparent"
       position={drawerOpen && matchSmallScreens ? 'fixed' : 'relative'}
+      sx={{ zIndex: 11 }}
     >
       <ChakraBox maxW={maxWidth}>
         <Toolbar>
@@ -74,15 +76,19 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             </RouterLink>
           </div>
 
-          <Link
+          <Button
+            as={Link}
             href={URLS.GUIDE_LINK}
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            mr={6}
+            mr={4}
+            _hover={{ textDecoration: 'underline' }}
           >
             Guide
-          </Link>
+          </Button>
+
+          <NewsDrawer />
 
           <IconButton
             size="large"
