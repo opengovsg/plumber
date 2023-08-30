@@ -70,16 +70,15 @@ function ChooseAppAndEventSubstep(
   const editorContext = React.useContext(EditorContext)
 
   const isTrigger = step.type === 'trigger'
-  const isAction = step.type === 'action'
 
-  const { data } = useQuery(GET_APPS, {
-    variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  })
-  const apps: IApp[] = data?.getApps
+  const { data } = useQuery(GET_APPS)
+  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
+    isTrigger ? !!app.triggers?.length : !!app.actions?.length,
+  )
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const appOptions = React.useMemo(
-    () => apps?.map((app) => optionGenerator(app)),
+    () => apps?.map((app) => optionGenerator(app)) ?? [],
     [apps],
   )
   const actionsOrTriggers: Array<ITrigger | IAction> =
@@ -169,6 +168,7 @@ function ChooseAppAndEventSubstep(
         title={name}
         valid={valid}
       />
+
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <ListItem
           sx={{
@@ -192,7 +192,9 @@ function ChooseAppAndEventSubstep(
                 <TextField {...params} />
               </FormControl>
             )}
-            value={getOption(appOptions, step.appKey)}
+            value={
+              getOption(appOptions, step.appKey) ?? { label: '', value: '' }
+            }
             onChange={onAppChange}
             data-test="choose-app-autocomplete"
           />
@@ -251,7 +253,13 @@ function ChooseAppAndEventSubstep(
                     )}
                   </li>
                 )}
-                value={getOption(actionOrTriggerOptions, step.key)}
+                value={
+                  getOption(actionOrTriggerOptions, step.key) ?? {
+                    label: '',
+                    value: '',
+                    type: '',
+                  }
+                }
                 onChange={onEventChange}
                 data-test="choose-event-autocomplete"
               />

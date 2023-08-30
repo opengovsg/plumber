@@ -147,14 +147,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
   )
 
   // FIXME (ogp-weeloong): optimize this a bit further by omitting query.
-  const apps: IApp[] = useQuery(GET_APPS, {
-    variables: { onlyWithActions: true },
-  })?.data?.getApps
+  const { data, loading: loadingApps } = useQuery(GET_APPS)
+  const apps: IApp[] = data?.getApps?.filter(
+    (app: IApp) => !!app.actions?.length,
+  )
 
   const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
-    // FIXME (ogp-weeloong) optimize this later.
-    if (!apps) {
-      return [steps, []]
+    if (loadingApps) {
+      return [[], []]
     }
 
     const groupingActions = new Set(
@@ -205,7 +205,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [stepsBeforeGroup],
   )
 
-  if (!apps) {
+  if (loadingApps) {
     return <CircularProgress isIndeterminate my={2} />
   }
 
