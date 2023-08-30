@@ -10,10 +10,8 @@ import type {
 import * as React from 'react'
 import { BiCheck } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
+import { Box, Text } from '@chakra-ui/react'
 import LoadingButton from '@mui/lab/LoadingButton'
-import Alert from '@mui/material/Alert'
-import AlertTitle from '@mui/material/AlertTitle'
-import Box from '@mui/material/Box'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import { Infobox } from '@opengovsg/design-system-react'
@@ -127,14 +125,14 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
           }}
         >
           {!!error?.graphQLErrors?.length && (
-            <Alert
-              severity="error"
+            <Infobox
+              variant="error"
               sx={{ mb: 2, fontWeight: 500, width: '100%' }}
             >
               {serializeErrors(error.graphQLErrors).map((error: any) => (
                 <div>{error.message}</div>
               ))}
-            </Alert>
+            </Infobox>
           )}
           {step.webhookUrl && (
             <WebhookUrlInfo
@@ -148,23 +146,23 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
           )}
 
           {hasNoOutput && (
-            <Alert severity="warning" sx={{ mb: 1, width: '100%' }}>
-              <AlertTitle sx={{ fontWeight: 700 }}>
-                {formatMessage('flowEditor.noTestDataTitle')}
-              </AlertTitle>
-
-              <Box sx={{ fontWeight: 400 }}>
-                {selectedActionOrTrigger &&
-                'webhookTriggerInstructions' in selectedActionOrTrigger &&
-                selectedActionOrTrigger.webhookTriggerInstructions?.errorMsg
-                  ? selectedActionOrTrigger.webhookTriggerInstructions.errorMsg
-                  : formatMessage('flowEditor.noTestDataMessage')}
+            <Infobox variant="warning" width="100%">
+              <Box>
+                <Text fontWeight="600">We couldn't find any test data</Text>
+                <Text mt={0.5}>
+                  {selectedActionOrTrigger &&
+                  'webhookTriggerInstructions' in selectedActionOrTrigger &&
+                  selectedActionOrTrigger.webhookTriggerInstructions?.errorMsg
+                    ? selectedActionOrTrigger.webhookTriggerInstructions
+                        .errorMsg
+                    : ''}
+                </Text>
               </Box>
-            </Alert>
+            </Infobox>
           )}
 
           {stepsWithVariables.length === 1 && (
-            <Box sx={{ width: '100%' }}>
+            <Box w="100%">
               <Infobox
                 icon={<BiCheck color="#0F796F" />}
                 style={{
@@ -175,14 +173,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
                 Here is the test data we found. You can use these as variables
                 in your action steps below.
               </Infobox>
-              <Box
-                sx={{
-                  maxHeight: '25rem',
-                  overflowY: 'scroll',
-                  width: '100%',
-                }}
-                data-test="flow-test-substep-output"
-              >
+              <Box maxH="25rem" overflowY="scroll" w="100%">
                 <VariablesList variables={stepsWithVariables[0].output} />
               </Box>
             </Box>

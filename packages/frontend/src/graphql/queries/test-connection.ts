@@ -1,10 +1,11 @@
 import { gql } from '@apollo/client'
 
 export const TEST_CONNECTION = gql`
-  query TestConnection($id: String!) {
-    testConnection(id: $id) {
-      id
-      verified
+  query TestConnection($connectionId: String!, $stepId: String) {
+    testConnection(connectionId: $connectionId, stepId: $stepId) {
+      connectionVerified
+      webhookVerified
+      message
     }
   }
 `

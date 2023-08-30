@@ -6,7 +6,7 @@ type Query {
   ): [App]
   getApp(key: String!): App
   getConnectedApps(name: String): [App]
-  testConnection(id: String!): Connection
+  testConnection(connectionId: String!, stepId: String): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(
     limit: Int!
@@ -39,6 +39,7 @@ type Mutation {
   resetConnection(input: ResetConnectionInput): Connection
   verifyConnection(input: VerifyConnectionInput): Connection
   deleteConnection(input: DeleteConnectionInput): Boolean
+  registerWebhook(input: RegisterWebhookInput): Boolean
   createFlow(input: CreateFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
@@ -258,6 +259,11 @@ input DeleteConnectionInput {
   id: String!
 }
 
+input RegisterWebhookInput {
+  connectionId: String!
+  stepId: String!
+}
+
 input CreateFlowInput {
   triggerAppKey: String
   connectionId: String
@@ -393,6 +399,7 @@ type Trigger {
   description: String
   pollInterval: Int
   type: String
+  supportsWebhookRegistration: Boolean
   webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
 }
@@ -400,6 +407,7 @@ type Trigger {
 type TriggerInstructions {
   beforeUrlMsg: String
   afterUrlMsg: String
+  hideWebhookUrl: Boolean
   errorMsg: String
 }
 
@@ -441,6 +449,12 @@ type ArgumentOption {
 type TriggerSubstepArgumentSourceArgument {
   name: String
   value: String
+}
+
+type TestConnectionResult {
+  connectionVerified: Boolean!
+  webhookVerified: Boolean
+  message: String
 }
 
 type User {

@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const POSTMAN_API_KEY = process.env.POSTMAN_API_KEY
+import app from '@/config/app'
 
 export async function sendEmail({
   subject,
@@ -11,7 +11,7 @@ export async function sendEmail({
   body: string
   recipient: string
 }): Promise<void> {
-  if (!POSTMAN_API_KEY) {
+  if (!app.postmanApiKey) {
     throw new Error('Missing POSTMAN_API_KEY')
   }
   await axios.post(
@@ -25,7 +25,7 @@ export async function sendEmail({
     {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${POSTMAN_API_KEY}`,
+        Authorization: `Bearer ${app.postmanApiKey}`,
       },
     },
   )

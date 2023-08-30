@@ -1,16 +1,41 @@
-import { theme } from '@opengovsg/design-system-react'
+// Plumber is based on BbBear; importing only colors we use to reduce distro
+// size.
+// Imported from BbBear generated on Fri, 23 Jun 2023 09:14:33 GMT
+const bbBearColors = {
+  base: {
+    divider: {
+      medium: '#EDEDED',
+      strong: '#BFC2C8',
+    },
+    content: {
+      default: '#454953',
+      medium: '#666C7A',
+    },
+  },
+  interaction: {
+    muted: {
+      neutral: {
+        hover: '#F8F9F9',
+        active: '#EDEDED',
+      },
+    },
+    success: {
+      default: '#0F796F',
+    },
+  },
+}
 
 const colors = {
-  ...theme.colors,
+  ...bbBearColors,
   primary: {
     '50': '#FEF8FB',
-    '100': '#F9DDE9',
-    '200': '#F0B0CA',
-    '300': '#E886AE',
-    '400': '#DF588F',
-    '500': '#CF1A68',
-    '600': '#AA004B',
-    '700': '#95003B',
+    '100': '#FFF0F7',
+    '200': '#F9DDE9',
+    '300': '#F0B0CA',
+    '400': '#E886AE',
+    '500': '#DF588F',
+    '600': '#CF1A68',
+    '700': '#AA004B',
     '800': '#80002C',
     '900': '#630019',
   },
@@ -25,6 +50,9 @@ const colors = {
     '700': '#3c4764',
     '800': '#333c56',
     '900': '#272d41',
+  },
+  utility: {
+    // Filled in below...
   },
 }
 
