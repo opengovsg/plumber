@@ -1,6 +1,7 @@
 import { IGlobalVariable, IJSONArray, IJSONObject } from '@plumber/types'
 
 import defineAction from '@/helpers/define-action'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
 
 const MAX_BRANCHES = 50
@@ -384,5 +385,9 @@ export default defineAction({
       : {
           nextStep: { command: 'stop-execution' },
         }
+  },
+
+  async onPipePublish(_flow: Flow) {
+    // Stub for now; implement next PR to make review easier.
   },
 })
