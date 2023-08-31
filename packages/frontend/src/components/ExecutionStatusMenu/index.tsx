@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { BiFilter } from 'react-icons/bi'
 import {
   Button,
@@ -12,8 +11,13 @@ import {
   Text,
 } from '@chakra-ui/react'
 
-export default function ExecutionStatusMenu() {
-  const [filterValue, setFilterValue] = useState<string>('Status')
+interface ExecutionStatusMenuProps {
+  filterStatus: string
+  onFilterChange: (status: string) => void
+}
+
+export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
+  const { filterStatus, onFilterChange } = props
 
   return (
     <Menu closeOnSelect={false}>
@@ -25,17 +29,17 @@ export default function ExecutionStatusMenu() {
         <Flex alignItems="center">
           <Icon boxSize={5} as={BiFilter} color="primary.600" mr={2} />
           <Text textStyle="subhead-2" color="primary.600">
-            {filterValue}
+            {filterStatus || 'Status'}
           </Text>
         </Flex>
       </MenuButton>
       <MenuList minW="180px">
         <MenuOptionGroup
-          defaultValue="Status"
+          defaultValue=""
           type="radio"
-          onChange={(val) => setFilterValue(val as string)}
+          onChange={(val) => onFilterChange(val as string)}
         >
-          <MenuItemOption value="Status">
+          <MenuItemOption value="">
             <Text textStyle="body-1">All Executions</Text>
           </MenuItemOption>
           <MenuItemOption value="Success">

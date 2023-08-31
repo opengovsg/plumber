@@ -6,6 +6,7 @@ import Context from '@/types/express/context'
 type Params = {
   limit: number
   offset: number
+  status?: string
 }
 
 const getExecutions = async (
@@ -34,8 +35,7 @@ const getExecutions = async (
         .withSoftDeleted()
         .orderBy('created_at', 'desc')
         .where('deleted_at', null)
-        .limit(params.limit)
-        .offset(params.offset)
+        .where('test_run', 'FALSE')
     })
     .with('user_execution_steps', (builder) => {
       builder
@@ -86,9 +86,18 @@ const getExecutions = async (
     })
     .orderBy('created_at', 'desc')
 
-  const resultSize = context.currentUser
+  let resultSize = context.currentUser
     .$relatedQuery('executions')
+    .where('test_run', 'FALSE')
     .resultSize()
+
+  // perform extra filtering
+  if (params.status) {
+    results.where('status', params.status)
+    resultSize = results.resultSize()
+  }
+
+  results.limit(params.limit).offset(params.offset)
 
   const [records, count] = await Promise.all([results, resultSize])
 

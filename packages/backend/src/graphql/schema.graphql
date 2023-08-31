@@ -17,7 +17,7 @@ type Query {
   ): FlowConnection
   getStepWithTestExecutions(stepId: String!): [Step]
   getExecution(executionId: String!): Execution
-  getExecutions(limit: Int!, offset: Int!): ExecutionConnection
+  getExecutions(limit: Int!, offset: Int!, status: String): ExecutionConnection
   getExecutionSteps(
     executionId: String!
     limit: Int!

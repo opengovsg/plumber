@@ -19,9 +19,10 @@ import useFormatMessage from 'hooks/useFormatMessage'
 
 const EXECUTION_PER_PAGE = 10
 
-const getLimitAndOffset = (page: number) => ({
+const getLimitAndOffset = (page: number, filterStatus: string) => ({
   limit: EXECUTION_PER_PAGE,
   offset: (page - 1) * EXECUTION_PER_PAGE,
+  status: filterStatus,
 })
 
 export default function Executions(): React.ReactElement {
@@ -29,8 +30,14 @@ export default function Executions(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
 
+  const [filterStatus, setFilterStatus] = React.useState<string>('')
+  const onFilterChange = (status: string) => {
+    setFilterStatus(status)
+    setSearchParams()
+  }
+
   const { data, refetch, loading } = useQuery(GET_EXECUTIONS, {
-    variables: getLimitAndOffset(page),
+    variables: getLimitAndOffset(page, filterStatus),
     fetchPolicy: 'cache-and-network',
     pollInterval: 5000,
   })
@@ -38,8 +45,8 @@ export default function Executions(): React.ReactElement {
   const { pageInfo, edges } = getExecutions
 
   React.useEffect(() => {
-    refetch(getLimitAndOffset(page))
-  }, [refetch, page])
+    refetch(getLimitAndOffset(page, filterStatus.toLowerCase()))
+  }, [refetch, page, filterStatus])
 
   const executions: IExecution[] = edges?.map(
     ({ node }: { node: IExecution }) => node,
@@ -61,7 +68,10 @@ export default function Executions(): React.ReactElement {
             <PageTitle>{formatMessage('executions.title')}</PageTitle>
           </Grid>
           <Grid item>
-            <ExecutionStatusMenu></ExecutionStatusMenu>
+            <ExecutionStatusMenu
+              filterStatus={filterStatus}
+              onFilterChange={onFilterChange}
+            ></ExecutionStatusMenu>
           </Grid>
         </Grid>
 

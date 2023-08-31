@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client'
 
 export const GET_EXECUTIONS = gql`
-  query GetExecutions($limit: Int!, $offset: Int!) {
-    getExecutions(limit: $limit, offset: $offset) {
+  query GetExecutions($limit: Int!, $offset: Int!, $status: String) {
+    getExecutions(limit: $limit, offset: $offset, status: $status) {
       pageInfo {
         currentPage
         totalPages
