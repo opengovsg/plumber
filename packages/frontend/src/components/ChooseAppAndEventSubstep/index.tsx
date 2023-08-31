@@ -1,16 +1,14 @@
 import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import * as React from 'react'
+import { type SyntheticEvent, useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
-import { FormControl } from '@chakra-ui/react'
+import { Flex, FormControl, Text } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
-import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
 import { FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
@@ -26,6 +24,11 @@ type ChooseAppAndEventSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
+  isBannedAction: (
+    step: IStep,
+    appKey: string,
+    actionKey: string,
+  ) => [boolean, string | null]
 }
 
 const optionGenerator = (app: {
@@ -62,12 +65,13 @@ function ChooseAppAndEventSubstep(
     step,
     onSubmit,
     onChange,
+    isBannedAction,
   } = props
 
-  const launchDarkly = React.useContext(LaunchDarklyContext)
+  const launchDarkly = useContext(LaunchDarklyContext)
 
   const formatMessage = useFormatMessage()
-  const editorContext = React.useContext(EditorContext)
+  const editorContext = useContext(EditorContext)
 
   const isTrigger = step.type === 'trigger'
 
@@ -77,13 +81,13 @@ function ChooseAppAndEventSubstep(
   )
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  const appOptions = React.useMemo(
+  const appOptions = useMemo(
     () => apps?.map((app) => optionGenerator(app)) ?? [],
     [apps],
   )
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
-  const actionOrTriggerOptions = React.useMemo(
+  const actionOrTriggerOptions = useMemo(
     () =>
       actionsOrTriggers
         // Filter away stuff hidden behind feature flags
@@ -99,11 +103,23 @@ function ChooseAppAndEventSubstep(
           ].join('_')
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
+        //
         .map((trigger) => eventOptionGenerator(trigger)),
     [app?.key, launchDarkly.flags],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
+  )
+
+  const getActionOrTriggerOptionDisabled = useCallback(
+    ({ value: actionKey }: ReturnType<typeof eventOptionGenerator>) =>
+      app?.key ? isBannedAction(step, app.key, actionKey)[0] : false,
+    [step, app?.key, isBannedAction],
+  )
+  const getActionOrTriggerOptionDisabledReason = useCallback(
+    ({ value: actionKey }: ReturnType<typeof eventOptionGenerator>) =>
+      app?.key ? isBannedAction(step, app.key, actionKey)[1] : null,
+    [step, app?.key, isBannedAction],
   )
 
   const isWebhook =
@@ -114,7 +130,7 @@ function ChooseAppAndEventSubstep(
   const valid: boolean = !!step.key && !!step.appKey
 
   // placeholders
-  const onEventChange = React.useCallback(
+  const onEventChange = useCallback(
     (event: React.SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
@@ -135,8 +151,8 @@ function ChooseAppAndEventSubstep(
     [step, onChange],
   )
 
-  const onAppChange = React.useCallback(
-    (event: React.SyntheticEvent, selectedOption: unknown) => {
+  const onAppChange = useCallback(
+    (event: SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
         const typedSelectedOption = selectedOption as { value: string }
@@ -161,7 +177,7 @@ function ChooseAppAndEventSubstep(
   const onToggle = expanded ? onCollapse : onExpand
 
   return (
-    <React.Fragment>
+    <>
       <FlowSubstepTitle
         expanded={expanded}
         onClick={onToggle}
@@ -200,12 +216,13 @@ function ChooseAppAndEventSubstep(
           />
 
           {step.appKey && (
-            <Box display="flex" width="100%" pt={2} flexDirection="column">
+            <Flex width="full" pt={4} flexDir="column">
               <Autocomplete
                 fullWidth
                 disablePortal
                 disableClearable
                 disabled={editorContext.readOnly}
+                getOptionDisabled={getActionOrTriggerOptionDisabled}
                 options={launchDarkly.isLoading ? [] : actionOrTriggerOptions}
                 loading={launchDarkly.isLoading}
                 renderInput={(params) => (
@@ -243,7 +260,14 @@ function ChooseAppAndEventSubstep(
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Typography>{option.label}</Typography>
+                    <Flex flexDir="column">
+                      <Text>{option.label}</Text>
+                      {getActionOrTriggerOptionDisabled(option) && (
+                        <Text fontSize="xs" color="red.500">
+                          {getActionOrTriggerOptionDisabledReason(option)}
+                        </Text>
+                      )}
+                    </Flex>
 
                     {option.type === 'webhook' && (
                       <Chip
@@ -263,7 +287,7 @@ function ChooseAppAndEventSubstep(
                 onChange={onEventChange}
                 data-test="choose-event-autocomplete"
               />
-            </Box>
+            </Flex>
           )}
 
           {isTrigger && (selectedActionOrTrigger as ITrigger)?.pollInterval && (
@@ -290,7 +314,7 @@ function ChooseAppAndEventSubstep(
           </Button>
         </ListItem>
       </Collapse>
-    </React.Fragment>
+    </>
   )
 }
 

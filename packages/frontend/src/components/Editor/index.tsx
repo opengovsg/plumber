@@ -154,18 +154,25 @@ export default function Editor(props: EditorProps): React.ReactElement {
     (app: IApp) => !!app.actions?.length,
   )
 
-  const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
+  const groupingActions = useMemo(() => {
     if (loadingApps) {
-      return [[], []]
+      return null
     }
 
-    const groupingActions = new Set(
+    return new Set(
       apps?.flatMap((app) =>
         app.actions
           ?.filter((action) => action.groupsLaterSteps)
           ?.map((action) => `${app.key}-${action.key}`),
       ) ?? [],
     )
+  }, [loadingApps, apps])
+
+  const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
+    if (!groupingActions) {
+      return [[], []]
+    }
+
     const groupStepIdx = steps.findIndex((step, index) => {
       if (
         // We ignore the 1st step because it's either a trigger, or a
@@ -183,7 +190,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
       ? [steps, []]
       : [steps.slice(0, groupStepIdx), steps.slice(groupStepIdx)]
   }, [
-    apps,
+    groupingActions,
     // updateHandlerFactory creates a new array, so referential equality is OK.
     // FIXME (ogp-weeloong): Maybe we can optimize our caching strategy to avoid
     // creating new arrays.
@@ -214,6 +221,33 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [stepsBeforeGroup],
   )
 
+  //
+  // Build callback which ChooseAppAndEventSubstep uses to check which actions
+  // are banned. This returns a 2-tuple, (true/false, banned reason if true).
+  //
+  // NOTE: This can also be extended to triggers if needed.
+  //
+  const isBannedAction = useCallback(
+    (
+      step: IStep,
+      appKey: string,
+      actionKey: string,
+    ): [boolean, string | null] => {
+      // Only handle grouping actions for now :x
+      if (
+        groupingActions?.has(`${appKey}-${actionKey}`) &&
+        (groupedSteps.length > 0 ||
+          step.position !==
+            stepsBeforeGroup[stepsBeforeGroup.length - 1]?.position)
+      ) {
+        return [true, 'This must be the last step.']
+      }
+
+      return [false, null]
+    },
+    [groupingActions, groupedSteps],
+  )
+
   if (loadingApps) {
     return <CircularProgress isIndeterminate my={2} />
   }
@@ -225,7 +259,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
           {stepsBeforeGroup.map((step, index, steps) => (
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
-                key={step.id}
                 step={step}
                 index={index + 1}
                 collapsed={currentStepId !== step.id}
@@ -235,6 +268,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 onContinue={() => {
                   setCurrentStepId(steps[index + 1]?.id)
                 }}
+                isBannedAction={isBannedAction}
               />
 
               <AddStepButton
