@@ -33,6 +33,7 @@ const getExecutions = async (
         )
         .withSoftDeleted()
         .orderBy('created_at', 'desc')
+        .where('deleted_at', null)
         .limit(params.limit)
         .offset(params.offset)
     })

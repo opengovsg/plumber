@@ -11,6 +11,7 @@ import Pagination from '@mui/material/Pagination'
 import PaginationItem from '@mui/material/PaginationItem'
 import Container from 'components/Container'
 import ExecutionRow from 'components/ExecutionRow'
+import ExecutionStatusMenu from 'components/ExecutionStatusMenu'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
 import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
@@ -55,9 +56,12 @@ export default function Executions(): React.ReactElement {
             xs
             sm
             alignItems="center"
-            order={{ xs: 0, height: 80 }}
+            // order={{ xs: 0, height: 80 }}
           >
             <PageTitle>{formatMessage('executions.title')}</PageTitle>
+          </Grid>
+          <Grid item>
+            <ExecutionStatusMenu></ExecutionStatusMenu>
           </Grid>
         </Grid>
 

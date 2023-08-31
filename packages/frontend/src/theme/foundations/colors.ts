@@ -9,6 +9,7 @@ const bbBearColors = {
     },
     content: {
       default: '#454953',
+      strong: '#2C2E34',
       medium: '#666C7A',
     },
   },
@@ -21,6 +22,12 @@ const bbBearColors = {
     },
     success: {
       default: '#0F796F',
+    },
+    tinted: {
+      main: {
+        hover: 'rgba(207, 26, 104, 0.04)',
+        active: 'rgba(207, 26, 104, 0.12)',
+      },
     },
   },
 }
