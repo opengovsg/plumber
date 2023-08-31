@@ -20,7 +20,7 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
   const { filterStatus, onFilterChange } = props
 
   return (
-    <Menu closeOnSelect={false}>
+    <Menu>
       <MenuButton
         bg="interaction.tinted.main.active"
         as={Button}
@@ -33,20 +33,26 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
           </Text>
         </Flex>
       </MenuButton>
-      <MenuList minW="180px">
+      <MenuList mt={0} minW="10.625rem" borderRadius={1}>
         <MenuOptionGroup
           defaultValue=""
           type="radio"
           onChange={(val) => onFilterChange(val as string)}
         >
           <MenuItemOption value="">
-            <Text textStyle="body-1">All Executions</Text>
+            <Text textStyle="body-1" color="base.content.strong">
+              All Executions
+            </Text>
           </MenuItemOption>
           <MenuItemOption value="Success">
-            <Text textStyle="body-1">Success</Text>
+            <Text textStyle="body-1" color="base.content.strong">
+              Success
+            </Text>
           </MenuItemOption>
           <MenuItemOption value="Failure">
-            <Text textStyle="body-1">Failure</Text>
+            <Text textStyle="body-1" color="base.content.strong">
+              Failure
+            </Text>
           </MenuItemOption>
         </MenuOptionGroup>
       </MenuList>
