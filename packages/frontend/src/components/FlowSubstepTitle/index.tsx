@@ -1,10 +1,13 @@
 import * as React from 'react'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import ErrorIcon from '@mui/icons-material/Error'
-import ExpandLessIcon from '@mui/icons-material/ExpandLess'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import {
+  BiChevronDown,
+  BiChevronUp,
+  BiSolidCheckCircle,
+  BiSolidErrorCircle,
+} from 'react-icons/bi'
+import { Flex, Icon, Text } from '@chakra-ui/react'
 
-import { ListItemButton, Typography } from './style'
+import { ListItemButton } from './style'
 
 type FlowSubstepTitleProps = {
   expanded?: boolean
@@ -13,8 +16,20 @@ type FlowSubstepTitleProps = {
   valid?: boolean | null
 }
 
-const validIcon = <CheckCircleIcon color="success" />
-const errorIcon = <ErrorIcon color="error" />
+const validIcon = (
+  <Icon
+    boxSize={6}
+    as={BiSolidCheckCircle}
+    color="interaction.success.default"
+  ></Icon>
+)
+const errorIcon = (
+  <Icon
+    boxSize={6}
+    as={BiSolidErrorCircle}
+    color="interaction.warning.default"
+  ></Icon>
+)
 
 function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
   const { expanded = false, onClick = () => null, valid = null, title } = props
@@ -31,10 +46,14 @@ function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
         py: '0.75rem',
       }}
     >
-      <Typography variant="body2">
-        {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        {title}
-      </Typography>
+      <Flex>
+        {expanded ? (
+          <Icon mr={2} mt={1} as={BiChevronUp}></Icon>
+        ) : (
+          <Icon mr={2} mt={1} as={BiChevronDown}></Icon>
+        )}
+        <Text textStyle="subhead-1">{title}</Text>
+      </Flex>
 
       {hasValidation && validationStatusIcon}
     </ListItemButton>

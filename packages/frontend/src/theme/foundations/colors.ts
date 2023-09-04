@@ -22,6 +22,17 @@ const bbBearColors = {
     success: {
       default: '#0F796F',
     },
+    warning: {
+      default: '#FFDA68',
+      hover: '#E2B73E',
+      active: '#C4992A',
+    },
+    tinted: {
+      main: {
+        hover: 'rgba(207, 26, 104, 0.04)',
+        active: 'rgba(207, 26, 104, 0.12)',
+      },
+    },
   },
 }
 
