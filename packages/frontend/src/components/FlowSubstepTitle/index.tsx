@@ -5,9 +5,7 @@ import {
   BiSolidCheckCircle,
   BiSolidErrorCircle,
 } from 'react-icons/bi'
-import { Flex, Icon, Text } from '@chakra-ui/react'
-
-import { ListItemButton } from './style'
+import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 
 type FlowSubstepTitleProps = {
   expanded?: boolean
@@ -21,6 +19,7 @@ const validIcon = (
     boxSize={6}
     as={BiSolidCheckCircle}
     color="interaction.success.default"
+    mr={4}
   ></Icon>
 )
 const errorIcon = (
@@ -28,6 +27,7 @@ const errorIcon = (
     boxSize={6}
     as={BiSolidErrorCircle}
     color="interaction.warning.default"
+    mr={4}
   ></Icon>
 )
 
@@ -38,25 +38,26 @@ function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
   const validationStatusIcon = valid ? validIcon : errorIcon
 
   return (
-    <ListItemButton
-      onClick={onClick}
-      selected={expanded}
-      divider
-      sx={{
-        py: '0.75rem',
-      }}
-    >
-      <Flex>
-        {expanded ? (
-          <Icon mr={2} mt={1} as={BiChevronUp}></Icon>
-        ) : (
-          <Icon mr={2} mt={1} as={BiChevronDown}></Icon>
-        )}
-        <Text textStyle="subhead-1">{title}</Text>
-      </Flex>
+    <Box>
+      <Flex
+        onClick={onClick}
+        bg={expanded ? 'interaction.muted.main.active' : 'white'}
+        _hover={{ bg: 'interaction.muted.main.hover', cursor: 'pointer' }}
+        justifyContent="space-between"
+        pt={5}
+        pb={5}
+      >
+        <Flex alignItems="center">
+          <Box ml={4} mr={2}>
+            {expanded ? <BiChevronUp /> : <BiChevronDown />}
+          </Box>
+          <Text textStyle="subhead-1">{title}</Text>
+        </Flex>
 
-      {hasValidation && validationStatusIcon}
-    </ListItemButton>
+        {hasValidation && validationStatusIcon}
+      </Flex>
+      <Divider borderColor="base.divider.medium"></Divider>
+    </Box>
   )
 }
 
