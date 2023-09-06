@@ -19,8 +19,14 @@ type JobData = {
 export const worker = new Worker(
   'action',
   tracer.wrap('workers.action', async (job) => {
-    const { stepId, flowId, executionId, proceedToNextAction, executionStep } =
-      await processAction({ ...(job.data as JobData), jobId: job.id })
+    const {
+      stepId,
+      flowId,
+      executionId,
+      proceedToNextAction,
+      executionStep,
+      computedParameters,
+    } = await processAction({ ...(job.data as JobData), jobId: job.id })
 
     if (executionStep.isFailed) {
       throw new Error(JSON.stringify(executionStep.errorDetails))
@@ -53,7 +59,10 @@ export const worker = new Worker(
     let jobOptions = DEFAULT_JOB_OPTIONS
 
     if (step.appKey === 'delay') {
-      jobOptions = { ...DEFAULT_JOB_OPTIONS, delay: delayAsMilliseconds(step) }
+      jobOptions = {
+        ...DEFAULT_JOB_OPTIONS,
+        delay: delayAsMilliseconds(step.key, computedParameters),
+      }
     }
 
     await actionQueue.add(jobName, jobPayload, jobOptions)
