@@ -20,7 +20,7 @@ const validIcon = (
     as={BiSolidCheckCircle}
     color="interaction.success.default"
     mr={4}
-  ></Icon>
+  />
 )
 const errorIcon = (
   <Icon
@@ -28,7 +28,7 @@ const errorIcon = (
     as={BiSolidErrorCircle}
     color="interaction.warning.default"
     mr={4}
-  ></Icon>
+  />
 )
 
 function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {

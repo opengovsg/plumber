@@ -15,7 +15,7 @@ const bbBearColors = {
   interaction: {
     muted: {
       main: {
-        hover: '#fef8fb',
+        hover: '#FEF8FB',
         active: '#F9DDE9',
       },
       neutral: {
