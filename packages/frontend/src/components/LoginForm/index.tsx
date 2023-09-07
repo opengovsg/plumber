@@ -1,9 +1,18 @@
-import { useState } from 'react'
+import { type FormEvent, useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { VStack } from '@chakra-ui/react'
+import {
+  AbsoluteCenter,
+  Box,
+  Divider,
+  Flex,
+  Link,
+  Text,
+} from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
 import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
+import { buildSgidAuthCodeUrl } from 'helpers/sgid'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'
@@ -19,33 +28,43 @@ export const LoginForm = (): JSX.Element => {
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!isOtpSent) {
-      await requestOtp({
-        variables: {
-          input: {
-            email,
+  const handleSubmit = useCallback(
+    async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
+      if (!isOtpSent) {
+        await requestOtp({
+          variables: {
+            input: {
+              email,
+            },
           },
-        },
-      })
-      setIsOtpSent(true)
-    } else {
-      await verifyOtp({
-        variables: {
-          input: {
-            email,
-            otp,
+        })
+        setIsOtpSent(true)
+      } else {
+        await verifyOtp({
+          variables: {
+            input: {
+              email,
+              otp,
+            },
           },
-        },
-      })
-    }
-  }
+        })
+      }
+    },
+    [isOtpSent, requestOtp, setIsOtpSent, verifyOtp],
+  )
+
+  const handleSgidLogin = useCallback(async () => {
+    const { url, verifier, nonce } = await buildSgidAuthCodeUrl()
+    sessionStorage.setItem('sgid-verifier', verifier)
+    sessionStorage.setItem('sgid-nonce', nonce)
+    location.assign(url)
+  }, [])
 
   // FIXME (ogp-weeloong): Fully migrate to starter kit style login page.
   return (
     <form onSubmit={handleSubmit}>
-      <VStack>
+      <Flex flexDir="column" gap={2}>
         {isOtpSent ? (
           <OtpInput
             isLoading={isVerifyingOtp}
@@ -60,7 +79,32 @@ export const LoginForm = (): JSX.Element => {
             setEmail={setEmail}
           />
         )}
-      </VStack>
+
+        <Box position="relative" my="2.5rem">
+          <Divider />
+          <AbsoluteCenter>
+            <Box bg="white" p={3}>
+              <Text textStyle="subhead-1">or</Text>
+            </Box>
+          </AbsoluteCenter>
+        </Box>
+
+        <Flex flexDir="column" alignItems="center">
+          {/* isFullWidth a bit ugly */}
+          <Button width="full" mb={2} onClick={handleSgidLogin}>
+            Log in with SingPass
+          </Button>
+          <Text>
+            Can my agency use this? Check{' '}
+            <Link
+              target="_blank"
+              href="https://docs.id.gov.sg/faq-users#as-a-government-officer-why-am-i-not-able-to-login-to-my-work-tool-using-sgid"
+            >
+              here.
+            </Link>
+          </Text>
+        </Flex>
+      </Flex>
     </form>
   )
 }
