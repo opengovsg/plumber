@@ -11,6 +11,7 @@ import Executions from 'pages/Executions'
 import Flow from 'pages/Flow'
 import Flows from 'pages/Flows'
 import Login from 'pages/Login'
+import SgidFailure from 'pages/SgidFailure'
 import SgidRedirect from 'pages/SgidRedirect'
 
 const Landing = lazy(() => import('pages/Landing'))
@@ -22,6 +23,15 @@ export default createRoutesFromElements(
       element={
         <PublicLayout>
           <SgidRedirect />
+        </PublicLayout>
+      }
+    />
+
+    <Route
+      path={URLS.LOGIN_SGID_FAILURE}
+      element={
+        <PublicLayout>
+          <SgidFailure />
         </PublicLayout>
       }
     />

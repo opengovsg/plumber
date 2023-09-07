@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { Flex } from '@chakra-ui/react'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
@@ -19,6 +20,9 @@ export const LoginForm = (): JSX.Element => {
   const [isOtpSent, setIsOtpSent] = useState(false)
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
+
+  const [searchParams] = useSearchParams()
+  const enableSgid = !searchParams.get('disable_singpass')
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -63,7 +67,7 @@ export const LoginForm = (): JSX.Element => {
           />
         )}
 
-        <SgidLoginSection />
+        {enableSgid && <SgidLoginSection />}
       </Flex>
     </form>
   )
