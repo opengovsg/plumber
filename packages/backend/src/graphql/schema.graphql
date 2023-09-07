@@ -52,6 +52,7 @@ type Mutation {
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
   logout: Boolean
+  loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
 }
 
 """
@@ -489,6 +490,16 @@ type ExecutionStepConnection {
 
 type AppHealth {
   version: String
+}
+
+input LoginWithSgidInput {
+  authCode: String!
+  nonce: String!
+  verifier: String!
+}
+
+type LoginWithSgidResult {
+  nextUrl: String!
 }
 
 schema {

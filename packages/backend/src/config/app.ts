@@ -34,6 +34,11 @@ type AppConfig = {
   formsgApiKey: string
   isWorker: boolean
   workerActionConcurrency: number
+  sgid: {
+    clientId: string
+    clientSecret: string
+    privateKey: string
+  }
 }
 
 const port = process.env.PORT || '3000'
@@ -81,6 +86,11 @@ const appConfig: AppConfig = {
   workerActionConcurrency: parseInt(
     process.env.WORKER_ACTION_CONCURRENCY || '10',
   ),
+  sgid: {
+    clientId: process.env.SGID_CLIENT_ID,
+    clientSecret: process.env.SGID_CLIENT_SECRET,
+    privateKey: process.env.SGID_PRIVATE_KEY,
+  },
 }
 
 if (!appConfig.encryptionKey) {
@@ -93,6 +103,15 @@ if (!appConfig.sessionSecretKey) {
 
 if (!appConfig.postmanApiKey) {
   throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
+}
+
+if (
+  !appConfig.sgid ||
+  !appConfig.sgid.clientId ||
+  !appConfig.sgid.clientSecret ||
+  !appConfig.sgid.privateKey
+) {
+  throw new Error('Sgid environment variables need to be set!')
 }
 
 // Force SGT date-time formatting no matter what

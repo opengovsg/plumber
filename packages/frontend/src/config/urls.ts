@@ -4,7 +4,11 @@ export const EXECUTION_PATTERN = '/executions/:executionId'
 export const EXECUTION = (executionId: string): string =>
   `/executions/${executionId}`
 export const ROOT = '/'
+
 export const LOGIN = '/login'
+// Placeholders for now - implementing in next PR.
+export const LOGIN_SGID_REDIRECT = '/login/sgid/redirect'
+export const LOGIN_SGID_FAILED = '/login/sgid/failed'
 
 export const APPS = '/apps'
 export const NEW_APP_CONNECTION = '/apps/new'
