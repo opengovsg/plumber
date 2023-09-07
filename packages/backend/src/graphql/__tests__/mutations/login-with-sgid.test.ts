@@ -5,11 +5,14 @@ import loginWithSgid from '@/graphql/mutations/login-with-sgid'
 import type User from '@/models/user'
 import type Context from '@/types/express/context'
 
-const STUB_PARAMS = {
+const STUB_INITIAL_STEP_PARAMS = {
   input: {
-    authCode: 'abcde',
-    nonce: '12345',
-    verifier: 'wxyz',
+    type: 'INITIAL_STEP' as const,
+    initialStep: {
+      authCode: 'abcde',
+      nonce: '12345',
+      verifier: 'wxyz',
+    },
   },
 }
 
@@ -67,7 +70,11 @@ describe('Login with SGID', () => {
     })
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSgid(
+      null,
+      STUB_INITIAL_STEP_PARAMS,
+      STUB_CONTEXT,
+    )
 
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
       'loong_loong@coffee.gov.sg',
@@ -88,7 +95,11 @@ describe('Login with SGID', () => {
     async (data) => {
       mocks.sgidUserInfo.mockResolvedValueOnce({ data })
 
-      const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+      const result = await loginWithSgid(
+        null,
+        STUB_INITIAL_STEP_PARAMS,
+        STUB_CONTEXT,
+      )
 
       expect(mocks.getOrCreateUser).not.toBeCalled()
       expect(mocks.setAuthCookie).not.toBeCalled()
@@ -113,7 +124,11 @@ describe('Login with SGID', () => {
       },
     })
 
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSgid(
+      null,
+      STUB_INITIAL_STEP_PARAMS,
+      STUB_CONTEXT,
+    )
 
     expect(mocks.getOrCreateUser).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
@@ -152,7 +167,11 @@ describe('Login with SGID', () => {
     })
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSgid(
+      null,
+      STUB_INITIAL_STEP_PARAMS,
+      STUB_CONTEXT,
+    )
 
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith('loong@tea.gov.sg')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
@@ -179,7 +198,11 @@ describe('Login with SGID', () => {
         },
       })
       mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
-      const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+      const result = await loginWithSgid(
+        null,
+        STUB_INITIAL_STEP_PARAMS,
+        STUB_CONTEXT,
+      )
 
       if (isWhitelisted) {
         expect(mocks.getOrCreateUser).toHaveBeenCalledWith(

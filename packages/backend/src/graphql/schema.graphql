@@ -492,14 +492,38 @@ type AppHealth {
   version: String
 }
 
-input LoginWithSgidInput {
+enum LoginWithSgidInputType {
+  INITIAL_STEP
+  SPECIFIC_EMPLOYMENT
+}
+
+input LoginWithSgidInitialStep {
   authCode: String!
   nonce: String!
   verifier: String!
 }
 
+input LoginWithSgidSpecificEmployment {
+  workEmail: String!
+}
+
+input LoginWithSgidInput {
+  type: LoginWithSgidInputType!
+  initialStep: LoginWithSgidInitialStep
+  specificEmployment: LoginWithSgidSpecificEmployment
+}
+
+type SgidPublicOfficerEmployment {
+  workEmail: String
+  agencyName: String
+  departmentName: String
+  employmentType: String
+  employmentTitle: String
+}
+
 type LoginWithSgidResult {
-  nextUrl: String!
+  nextUrl: String
+  publicOfficerEmployments: [SgidPublicOfficerEmployment!]
 }
 
 schema {

@@ -1,32 +1,19 @@
-import { SgidClient } from '@opengovsg/sgid-client'
+import { type Response } from 'express'
+import { sign as signJwt } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import { getOrCreateUser, setAuthCookie } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import type Context from '@/types/express/context'
 
-const sgidClient = new SgidClient({
-  clientId: appConfig.sgid.clientId,
-  clientSecret: appConfig.sgid.clientSecret,
-  privateKey: appConfig.sgid.privateKey,
-  redirectUri: `${appConfig.webAppUrl}/login/sgid/redirect`,
-})
-
-interface PublicOfficerEmployment {
-  workEmail: string | null
-  agencyName: string | null
-  departmentName: string | null
-  employmentType: string | null
-  employmentTitle: string | null
-}
-
-interface LoginWithSgidParams {
-  input: { authCode: string; nonce: string; verifier: string }
-}
-
-interface LoginWithSgidResult {
-  nextUrl: string
-}
+import {
+  type InitialStep,
+  type LoginWithSgidResult,
+  type PublicOfficerEmployment,
+  SGID_COOKIE_NAME,
+  SGID_COOKIE_TTL_SECONDS,
+  sgidClient,
+} from './common'
 
 async function parsePocdexEmployments(
   rawData: string,
@@ -53,12 +40,21 @@ async function parsePocdexEmployments(
   return allEmployments.filter((_, index) => validEmployments[index])
 }
 
-export default async function loginWithSgid(
-  _parent: unknown,
-  params: LoginWithSgidParams,
+function setSignedCookie<T extends object>(res: Response, data: T): void {
+  const token = signJwt(data, appConfig.sgid.jwtKey)
+  res.cookie(SGID_COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: !appConfig.isDev,
+    maxAge: SGID_COOKIE_TTL_SECONDS * 1000,
+  })
+}
+
+export async function processInitialStep(
+  params: InitialStep,
   context: Context,
 ): Promise<LoginWithSgidResult> {
-  const { authCode, nonce, verifier } = params.input
+  const { authCode, nonce, verifier } = params
 
   const { accessToken, sub } = await sgidClient.callback({
     code: authCode,
@@ -99,10 +95,9 @@ export default async function loginWithSgid(
     }
   }
 
-  // Handle multi-hat users.
-  // TODO next PR: Let user choose identity if they have more than 1 hat. For
-  // now, just throw them back to OTP page.
+  // Remaining are all multi-hat users...
+  setSignedCookie(context.res, { publicOfficerEmployments })
   return {
-    nextUrl: `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
+    publicOfficerEmployments,
   }
 }

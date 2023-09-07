@@ -28,9 +28,12 @@ export default function SgidRedirect(): JSX.Element {
       const result = await loginWithSgid({
         variables: {
           input: {
-            authCode,
-            verifier,
-            nonce,
+            type: 'INITIAL_STEP',
+            initialStep: {
+              authCode,
+              verifier,
+              nonce,
+            },
           },
         },
       })
