@@ -6,10 +6,14 @@ import { Infobox } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
 
+import EmploymentList, { type Employment } from './EmploymentList'
+
 export default function SgidRedirect(): JSX.Element {
   const [loginWithSgid, { error: loginErrored }] = useMutation(LOGIN_WITH_SGID)
   const [searchParams] = useSearchParams()
+
   const [hasFailed, setFailed] = useState<boolean>(false)
+  const [employments, setEmployments] = useState<Employment[] | null>(null)
 
   useEffect(() => {
     const authCode = searchParams.get('code')
@@ -37,11 +41,20 @@ export default function SgidRedirect(): JSX.Element {
           },
         },
       })
+
       const nextUrl = result.data?.loginWithSgid?.nextUrl
-      if (loginErrored || !nextUrl) {
+      const publicOfficerEmployments = result.data?.loginWithSgid
+        ?.publicOfficerEmployments as Employment[]
+
+      if (loginErrored || (!nextUrl && !publicOfficerEmployments)) {
         setFailed(true)
-      } else {
+        return
+      }
+
+      if (nextUrl) {
         location.assign(nextUrl)
+      } else {
+        setEmployments(publicOfficerEmployments)
       }
     }
 
@@ -57,6 +70,13 @@ export default function SgidRedirect(): JSX.Element {
             <Link href={URLS.LOGIN}>here.</Link>
           </Text>
         </Infobox>
+      ) : employments ? (
+        <EmploymentList
+          employments={employments}
+          loginWithSgid={loginWithSgid}
+          loginErrored={loginErrored}
+          setFailed={setFailed}
+        />
       ) : (
         <CircularProgress isIndeterminate />
       )}
