@@ -1,4 +1,3 @@
-import BaseError from '@/errors/base'
 import defineAction from '@/helpers/define-action'
 
 export default defineAction({
@@ -26,29 +25,23 @@ export default defineAction({
   ],
 
   async run($) {
+    const defaultTime = '00:00'
     const { delayUntil, delayUntilTime } = $.step.parameters
-    const dateString = delayUntilTime
-      ? `${delayUntil} ${delayUntilTime} GMT+8`
-      : `${delayUntil} 00:00 GMT+8`
+    // if no delayUntilTime is given, dateString will be 06 Sep 2023  GMT+8 for e.g.
+    const dateString = `${delayUntil} ${delayUntilTime} GMT+8`
     if (!delayUntilTime) {
-      $.step.parameters.delayUntilTime = '00:00'
+      $.step.parameters.delayUntilTime = defaultTime // allow users to use it as a variable even though it is optional
     }
     const timestamp = Date.parse(dateString)
     if (isNaN(timestamp)) {
-      throw new BaseError({
-        title: 'Invalid timestamp',
-        description: 'You keyed in a wrong timestamp',
-        remedy: 'Please check what timestamp did you key in...',
-      })
+      throw new Error(
+        'Invalid timestamp entered, please check that you keyed in the date and time in the correct format',
+      )
     }
 
     const dataItem = {
       ...$.step.parameters,
     }
-
-    // if (delayUntilTime) {
-    //   dataItem['delayUntilTime'] = delayUntilTime
-    // }
 
     $.setActionItem({ raw: dataItem })
   },

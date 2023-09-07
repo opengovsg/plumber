@@ -7,7 +7,9 @@ const delayUntilAsMilliseconds = (
   const now = new Date()
   const timestamp = Date.parse(dateString)
   if (isNaN(timestamp)) {
-    throw new Error('Worker: Invalid timestamp!')
+    throw new Error(
+      '[Action worker] Delay set for next action: Invalid timestamp!',
+    )
   }
 
   return delayUntilDate.getTime() - now.getTime()

@@ -18,7 +18,7 @@ const delayAsMilliseconds = (
       Number(delayForValue),
     )
   } else if (stepKey === 'delayUntil') {
-    const { delayUntil, delayUntilTime = '00:00' } = computedParameters
+    const { delayUntil, delayUntilTime } = computedParameters
     delayDuration = delayUntilAsMilliseconds(
       delayUntil as string,
       delayUntilTime as string,
