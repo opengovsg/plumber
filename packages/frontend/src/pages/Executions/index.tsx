@@ -30,7 +30,9 @@ export default function Executions(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
 
-  const [filterStatus, setFilterStatus] = React.useState<string>('')
+  const [filterStatus, setFilterStatus] = React.useState<string>(
+    searchParams.get('status') || '',
+  )
   const onFilterChange = (status: string) => {
     setFilterStatus(status)
     setSearchParams()
@@ -57,14 +59,7 @@ export default function Executions(): React.ReactElement {
     <Box sx={{ py: 3 }}>
       <Container variant="page">
         <Grid container sx={{ mb: [0, 3] }} columnSpacing={1.5} rowSpacing={3}>
-          <Grid
-            container
-            item
-            xs
-            sm
-            alignItems="center"
-            // order={{ xs: 0, height: 80 }}
-          >
+          <Grid container item xs sm alignItems="center">
             <PageTitle>{formatMessage('executions.title')}</PageTitle>
           </Grid>
           <Grid item>
@@ -99,12 +94,16 @@ export default function Executions(): React.ReactElement {
             page={pageInfo?.currentPage}
             count={pageInfo?.totalPages}
             onChange={(event, page) =>
-              setSearchParams({ page: page.toString() })
+              setSearchParams({ page: page.toString(), status: filterStatus })
             }
             renderItem={(item) => (
               <PaginationItem
                 component={Link}
-                to={`${item.page === 1 ? '' : `?page=${item.page}`}`}
+                to={`${
+                  item.page === 1
+                    ? ''
+                    : `?page=${item.page}&status=${filterStatus}`
+                }`}
                 {...item}
               />
             )}
