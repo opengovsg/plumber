@@ -12,7 +12,7 @@ import { Button } from '@opengovsg/design-system-react'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
 import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
-import { buildSgidAuthCodeUrl } from 'helpers/sgid'
+import { buildSgidAuthCodeUrl, SGID_CHECK_ELIGIBILITY_URL } from 'helpers/sgid'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'
@@ -96,10 +96,7 @@ export const LoginForm = (): JSX.Element => {
           </Button>
           <Text>
             Can my agency use this? Check{' '}
-            <Link
-              target="_blank"
-              href="https://docs.id.gov.sg/faq-users#as-a-government-officer-why-am-i-not-able-to-login-to-my-work-tool-using-sgid"
-            >
+            <Link target="_blank" href={SGID_CHECK_ELIGIBILITY_URL}>
               here.
             </Link>
           </Text>

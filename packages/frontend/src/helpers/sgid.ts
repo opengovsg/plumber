@@ -1,32 +1,20 @@
 import * as URLS from 'config/urls'
 
+export const SGID_CHECK_ELIGIBILITY_URL =
+  'https://docs.id.gov.sg/faq-users#as-a-government-officer-why-am-i-not-able-to-login-to-my-work-tool-using-sgid'
+
 // FIXME (ogp-weeloong): Add prod client ID later.
 const CLIENT_ID = 'PLUMBERSTAGINGDEV-f49a9cb6'
-const SCOPE = 'openid myinfo.name pocdex.public_officer_employments'
+const SCOPE = 'openid pocdex.public_officer_employments'
 const REDIRECT_URL = `${window.location.origin}${URLS.LOGIN_SGID_REDIRECT}`
-const PKCE_ALPHABET =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
-
-function randomInt(limit: number): number {
-  // Avoid mod bias with rejection sampling. Is a bit slow but should be OK for
-  // PKCE length.
-  for (;;) {
-    const val = crypto.getRandomValues(new Uint8Array(1))[0]
-    if (val < limit) {
-      return val
-    }
-  }
-}
 
 async function generatePkceStuff(): Promise<{
   challenge: string
   verifier: string
   nonce: string
 }> {
-  // Max length just to feel good.
-  const verifier = [...new Array(128)]
-    .map((_) => PKCE_ALPHABET[randomInt(PKCE_ALPHABET.length)])
-    .join('')
+  // Good-enough entropy.
+  const verifier = `${crypto.randomUUID()}~${crypto.randomUUID()}~${crypto.randomUUID()}`
 
   const verifierDigest = new Uint8Array(
     await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)),
