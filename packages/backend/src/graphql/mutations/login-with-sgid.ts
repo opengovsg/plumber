@@ -65,12 +65,6 @@ export default async function loginWithSgid(
     userInfo.data?.['pocdex.public_officer_employments'] ?? '[]',
   )
 
-  // filter(
-  //   async (employment) =>
-  //     employment.workEmail !== 'NA' &&
-  //     (await validateAndParseEmail(employment.workEmail)),
-  // )
-
   //
   // Start trying to log user in...
   //
