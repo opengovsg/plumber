@@ -4,6 +4,7 @@
 const bbBearColors = {
   base: {
     divider: {
+      subtle: '#F8F9F9',
       medium: '#EDEDED',
       strong: '#BFC2C8',
     },
@@ -18,6 +19,9 @@ const bbBearColors = {
         hover: '#F8F9F9',
         active: '#EDEDED',
       },
+    },
+    sub: {
+      default: '#5D6785',
     },
     success: {
       default: '#0F796F',

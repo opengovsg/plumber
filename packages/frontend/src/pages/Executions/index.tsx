@@ -57,7 +57,7 @@ export default function Executions(): React.ReactElement {
             alignItems="center"
             order={{ xs: 0, height: 80 }}
           >
-            <PageTitle>{formatMessage('executions.title')}</PageTitle>
+            <PageTitle title={formatMessage('executions.title')} />
           </Grid>
         </Grid>
 

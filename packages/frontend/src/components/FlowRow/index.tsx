@@ -1,12 +1,11 @@
 import type { IFlow } from '@plumber/types'
 
 import * as React from 'react'
+import { BiChevronRight } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
-import Card from '@mui/material/Card'
+import { Card } from '@chakra-ui/react'
 import CardActionArea from '@mui/material/CardActionArea'
-import Chip from '@mui/material/Chip'
-import IconButton from '@mui/material/IconButton'
+import { Badge, IconButton } from '@opengovsg/design-system-react'
 import FlowAppIcons from 'components/FlowAppIcons'
 import FlowContextMenu from 'components/FlowContextMenu'
 import * as URLS from 'config/urls'
@@ -43,7 +42,15 @@ export default function FlowRow(props: FlowRowProps): React.ReactElement {
 
   return (
     <>
-      <Card sx={{ mb: 1 }}>
+      <Card
+        // sx={{ mb: 1 }}
+        mb={5}
+        boxShadow="none"
+        _hover={{ bg: '#FEF8FB' }}
+        borderRadius="0"
+        borderBottom="1px solid"
+        borderBottomColor="base.divider.subtle"
+      >
         <CardActionArea component={Link} to={URLS.FLOW(flow.id)}>
           <CardContent>
             <Apps direction="row" gap={1} sx={{ gridArea: 'apps' }}>
@@ -73,25 +80,26 @@ export default function FlowRow(props: FlowRowProps): React.ReactElement {
             </Title>
 
             <ContextMenu>
-              <Chip
-                size="small"
-                color={flow?.active ? 'success' : 'info'}
-                variant={flow?.active ? 'filled' : 'outlined'}
-                label={formatMessage(
-                  flow?.active ? 'flow.published' : 'flow.draft',
-                )}
-              />
+              <Badge
+                style={{
+                  borderRadius: '3.125rem',
+                  padding: '0.25rem 0.5rem',
+                }}
+                colorScheme={flow?.active ? 'success' : 'grey'}
+                variant="subtle"
+              >
+                {formatMessage(flow?.active ? 'flow.published' : 'flow.draft')}
+              </Badge>
 
               <IconButton
-                size="large"
-                edge="start"
-                color="inherit"
                 aria-label="open context menu"
+                icon={<BiChevronRight />}
+                size="md"
+                variant="clear"
+                color="interaction.sub.default"
                 ref={contextButtonRef}
                 onClick={onContextMenuClick}
-              >
-                <MoreHorizIcon />
-              </IconButton>
+              />
             </ContextMenu>
           </CardContent>
         </CardActionArea>
