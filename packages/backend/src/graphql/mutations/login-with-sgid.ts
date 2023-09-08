@@ -1,8 +1,8 @@
 import { SgidClient } from '@opengovsg/sgid-client'
 
 import appConfig from '@/config/app'
-import { setAuthCookie } from '@/helpers/cookie'
-import User from '@/models/user'
+import { getOrCreateUser, setAuthCookie } from '@/helpers/auth'
+import { validateAndParseEmail } from '@/helpers/email-validator'
 import type Context from '@/types/express/context'
 
 const sgidClient = new SgidClient({
@@ -13,11 +13,11 @@ const sgidClient = new SgidClient({
 })
 
 interface PublicOfficerEmployment {
-  workEmail: string
-  agencyName: string
-  departmentName: string
-  employmentType: string
-  employmentTitle: string
+  workEmail: 'NA' | string
+  agencyName: 'NA' | string
+  departmentName: 'NA' | string
+  employmentType: 'NA' | string
+  employmentTitle: 'NA' | string
 }
 
 interface LoginWithSgidParams {
@@ -26,6 +26,21 @@ interface LoginWithSgidParams {
 
 interface LoginWithSgidResult {
   nextUrl: string
+}
+
+async function parsePocDexEmployments(
+  rawData: string,
+): Promise<PublicOfficerEmployment[]> {
+  const allEmployments = JSON.parse(rawData) as PublicOfficerEmployment[]
+  const validEmployments = await Promise.all(
+    allEmployments.map(
+      async (employment) =>
+        employment.workEmail !== 'NA' &&
+        (await validateAndParseEmail(employment.workEmail)),
+    ),
+  )
+
+  return allEmployments.filter((_, index) => validEmployments[index])
 }
 
 export default async function loginWithSgid(
@@ -46,9 +61,15 @@ export default async function loginWithSgid(
     throw new Error('Unable to obtain user info')
   }
 
-  const publicOfficerEmployments = JSON.parse(
+  const publicOfficerEmployments = await parsePocDexEmployments(
     userInfo.data?.['pocdex.public_officer_employments'] ?? '[]',
-  ) as PublicOfficerEmployment[]
+  )
+
+  // filter(
+  //   async (employment) =>
+  //     employment.workEmail !== 'NA' &&
+  //     (await validateAndParseEmail(employment.workEmail)),
+  // )
 
   //
   // Start trying to log user in...
@@ -66,14 +87,9 @@ export default async function loginWithSgid(
 
   // Log user in directly if there is only 1 employment.
   if (publicOfficerEmployments.length === 1) {
-    const email = publicOfficerEmployments[0].workEmail.trim().toLowerCase()
-
-    let user = await User.query().findOne({ email })
-    if (!user) {
-      user = await User.query().insertAndFetch({ email })
-    }
-
+    const user = await getOrCreateUser(publicOfficerEmployments[0].workEmail)
     setAuthCookie(context.res, { userId: user.id })
+
     return {
       nextUrl: `${appConfig.webAppUrl}/flows`,
     }
