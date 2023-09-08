@@ -68,12 +68,9 @@ describe('Login with SGID', () => {
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
-    expect(mocks.setAuthCookie).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        userId: 'abc-def',
-      }),
-    )
+    expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
+      userId: 'abc-def',
+    })
     expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
   })
 
@@ -144,12 +141,9 @@ describe('Login with SGID', () => {
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
-    expect(mocks.setAuthCookie).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        userId: 'abc-def',
-      }),
-    )
+    expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
+      userId: 'abc-def',
+    })
     expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
   })
 
@@ -174,12 +168,9 @@ describe('Login with SGID', () => {
       const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
       if (isWhitelisted) {
-        expect(mocks.setAuthCookie).toHaveBeenCalledWith(
-          expect.anything(),
-          expect.objectContaining({
-            userId: 'abc-def',
-          }),
-        )
+        expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
+          userId: 'abc-def',
+        })
         expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
       } else {
         expect(mocks.setAuthCookie).not.toBeCalled()
