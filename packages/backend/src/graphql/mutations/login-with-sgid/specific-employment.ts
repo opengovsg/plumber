@@ -9,7 +9,7 @@ import {
   type LoginWithSgidResult,
   type PublicOfficerEmployment,
   SGID_COOKIE_NAME,
-  type SpecificEmployment,
+  type SpecificEmploymentParams,
 } from './common'
 
 function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
@@ -22,7 +22,7 @@ function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
 }
 
 export async function processSpecificEmployment(
-  params: SpecificEmployment,
+  params: SpecificEmploymentParams,
   context: Context,
 ): Promise<LoginWithSgidResult> {
   const employments = readEmploymentsFromCookie(context.req)

@@ -497,20 +497,20 @@ enum LoginWithSgidInputType {
   SPECIFIC_EMPLOYMENT
 }
 
-input LoginWithSgidInitialStep {
+input LoginWithSgidInitialStepInput {
   authCode: String!
   nonce: String!
   verifier: String!
 }
 
-input LoginWithSgidSpecificEmployment {
+input LoginWithSgidSpecificEmploymentInput {
   employmentIndex: Int!
 }
 
 input LoginWithSgidInput {
   type: LoginWithSgidInputType!
-  initialStep: LoginWithSgidInitialStep
-  specificEmployment: LoginWithSgidSpecificEmployment
+  initialStep: LoginWithSgidInitialStepInput
+  specificEmployment: LoginWithSgidSpecificEmploymentInput
 }
 
 type SgidPublicOfficerEmployment {
@@ -521,6 +521,17 @@ type SgidPublicOfficerEmployment {
   employmentTitle: String
 }
 
+# This is actually supposed to be:
+#
+#   union LoginWithSgidResult =
+#     # Redirect user
+#     { nextUrl: String! } |
+#     # Get user to choose employment
+#     { publicOfficerEmployments: [SgidPublicOfficerEmployment!]! }
+#
+# But union types are a bit irritating to code without codegen. For now, we
+# mimic union types with nullable fields, but we should consider moving to union
+# types if this get more complex.
 type LoginWithSgidResult {
   nextUrl: String
   publicOfficerEmployments: [SgidPublicOfficerEmployment!]

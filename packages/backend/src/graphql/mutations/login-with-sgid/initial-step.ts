@@ -7,7 +7,7 @@ import { validateAndParseEmail } from '@/helpers/email-validator'
 import type Context from '@/types/express/context'
 
 import {
-  type InitialStep,
+  type InitialStepParams,
   type LoginWithSgidResult,
   type PublicOfficerEmployment,
   SGID_COOKIE_NAME,
@@ -51,7 +51,7 @@ function setSignedCookie<T extends object>(res: Response, data: T): void {
 }
 
 export async function processInitialStep(
-  params: InitialStep,
+  params: InitialStepParams,
   context: Context,
 ): Promise<LoginWithSgidResult> {
   const { authCode, nonce, verifier } = params

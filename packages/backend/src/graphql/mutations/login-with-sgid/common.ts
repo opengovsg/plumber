@@ -22,24 +22,26 @@ export interface PublicOfficerEmployment {
   employmentTitle: string | null
 }
 
-export interface InitialStep {
+export interface InitialStepParams {
   authCode: string
   nonce: string
   verifier: string
 }
 
-export interface SpecificEmployment {
+export interface SpecificEmploymentParams {
   employmentIndex: number
 }
 
 export interface LoginWithSgidParams {
   input: {
     type: 'INITIAL_STEP' | 'SPECIFIC_EMPLOYMENT'
-    initialStep?: InitialStep
-    specificEmployment?: SpecificEmployment
+    initialStep?: InitialStepParams
+    specificEmployment?: SpecificEmploymentParams
   }
 }
 
+// Consider moving to union types if this gets more complex. See related comment
+// in graphql schema.
 export interface LoginWithSgidResult {
   nextUrl?: string
   publicOfficerEmployments?: PublicOfficerEmployment[]
