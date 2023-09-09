@@ -307,6 +307,53 @@ describe('Login with SGID', () => {
     expect(result.nextUrl).toBeUndefined()
   })
 
+  it.only("should convert non-email 'NA' values to null before returning employments", async () => {
+    mocks.sgidUserInfo.mockResolvedValueOnce({
+      data: {
+        'pocdex.public_officer_employments': JSON.stringify([
+          {
+            workEmail: 'loong_loong@potato.gov.sg',
+            agencyName: 'NA',
+            departmentName: 'NA',
+            employmentType: 'NA',
+            employmentTitle: 'NA',
+          },
+          {
+            workEmail: 'loong@tea.gov.sg',
+            agencyName: 'Ministry of Tea',
+            departmentName: 'NA',
+            employmentType: 'NA',
+            employmentTitle: 'Tea Chugger Extraordinaire',
+          },
+        ]),
+      },
+    })
+    mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
+
+    const result = await loginWithSgid(
+      null,
+      STUB_INITIAL_STEP_PARAMS,
+      STUB_CONTEXT,
+    )
+
+    expect(result.publicOfficerEmployments).toEqual([
+      {
+        workEmail: 'loong_loong@potato.gov.sg',
+        agencyName: null,
+        departmentName: null,
+        employmentType: null,
+        employmentTitle: null,
+      },
+      {
+        workEmail: 'loong@tea.gov.sg',
+        agencyName: 'Ministry of Tea',
+        departmentName: null,
+        employmentType: null,
+        employmentTitle: 'Tea Chugger Extraordinaire',
+      },
+    ])
+  })
+
   it('should log user in if multi-hat user selected a valid employment', async () => {
     mocks.verifyJwt.mockReturnValueOnce({
       publicOfficerEmployments: [
@@ -349,7 +396,7 @@ describe('Login with SGID', () => {
   })
 
   it.each([{ index: -1 }, { index: 10 }, { index: 1.5 }])(
-    'should redirect to failure page if multi-hat user selected an invalid employment (index: $index)',
+    'should throw error if multi-hat user selected an invalid employment (index: $index)',
     async ({ index }) => {
       mocks.verifyJwt.mockReturnValueOnce({
         publicOfficerEmployments: [
