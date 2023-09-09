@@ -85,6 +85,8 @@ describe('Login with SGID', () => {
       mocks.sgidUserInfo.mockResolvedValueOnce({ data })
 
       const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+
+      expect(mocks.getOrCreateUser).not.toBeCalled()
       expect(mocks.setAuthCookie).not.toBeCalled()
       expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/login/sgid/failed`)
     },
@@ -106,6 +108,8 @@ describe('Login with SGID', () => {
     })
 
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+
+    expect(mocks.getOrCreateUser).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
     expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/login/sgid/failed`)
   })
@@ -173,6 +177,7 @@ describe('Login with SGID', () => {
         })
         expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
       } else {
+        expect(mocks.getOrCreateUser).not.toBeCalled()
         expect(mocks.setAuthCookie).not.toBeCalled()
         expect(result.nextUrl).toEqual(
           `${appConfig.webAppUrl}/login/sgid/failed`,
