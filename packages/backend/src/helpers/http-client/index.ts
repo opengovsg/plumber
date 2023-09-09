@@ -43,6 +43,8 @@ export default function createHttpClient({
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
+      // This handles system errors like ECONNREFUSED, which don't have a
+      // response body.
       if (!error.response) {
         throw new HttpError(error)
       }
