@@ -28,32 +28,29 @@ export const LoginForm = (): JSX.Element => {
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
 
-  const handleSubmit = useCallback(
-    async (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault()
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
 
-      if (!isOtpSent) {
-        await requestOtp({
-          variables: {
-            input: {
-              email,
-            },
+    if (!isOtpSent) {
+      await requestOtp({
+        variables: {
+          input: {
+            email,
           },
-        })
-        setIsOtpSent(true)
-      } else {
-        await verifyOtp({
-          variables: {
-            input: {
-              email,
-              otp,
-            },
+        },
+      })
+      setIsOtpSent(true)
+    } else {
+      await verifyOtp({
+        variables: {
+          input: {
+            email,
+            otp,
           },
-        })
-      }
-    },
-    [isOtpSent, email, otp, requestOtp, setIsOtpSent, verifyOtp],
-  )
+        },
+      })
+    }
+  }
 
   const handleSgidLogin = useCallback(async () => {
     const { url, verifier, nonce } = await buildSgidAuthCodeUrl()
