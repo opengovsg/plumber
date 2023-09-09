@@ -68,6 +68,10 @@ describe('Login with SGID', () => {
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+
+    expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
+      'loong_loong@coffee.gov.sg',
+    )
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
@@ -145,6 +149,8 @@ describe('Login with SGID', () => {
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+
+    expect(mocks.getOrCreateUser).toHaveBeenCalledWith('loong@tea.gov.sg')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
@@ -172,6 +178,9 @@ describe('Login with SGID', () => {
       const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
       if (isWhitelisted) {
+        expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
+          'loong_loong@gahmen-coffee.com.sg',
+        )
         expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
           userId: 'abc-def',
         })
