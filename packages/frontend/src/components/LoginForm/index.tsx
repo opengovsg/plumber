@@ -31,6 +31,7 @@ export const LoginForm = (): JSX.Element => {
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault()
+
       if (!isOtpSent) {
         await requestOtp({
           variables: {
@@ -51,7 +52,7 @@ export const LoginForm = (): JSX.Element => {
         })
       }
     },
-    [isOtpSent, requestOtp, setIsOtpSent, verifyOtp],
+    [isOtpSent, email, otp, requestOtp, setIsOtpSent, verifyOtp],
   )
 
   const handleSgidLogin = useCallback(async () => {
