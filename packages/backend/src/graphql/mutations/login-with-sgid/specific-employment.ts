@@ -1,5 +1,5 @@
 import { type Request } from 'express'
-import jwt from 'jsonwebtoken'
+import { verify as verifyJwt } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import { getOrCreateUser, setAuthCookie } from '@/helpers/auth'
@@ -14,7 +14,7 @@ import {
 
 function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
   const token = req.cookies[SGID_COOKIE_NAME]
-  const data = jwt.verify(token, appConfig.sgid.jwtKey) as {
+  const data = verifyJwt(token, appConfig.sgid.jwtKey) as {
     publicOfficerEmployments: PublicOfficerEmployment[]
   }
 
@@ -26,21 +26,21 @@ export async function processSpecificEmployment(
   context: Context,
 ): Promise<LoginWithSgidResult> {
   const employments = readEmploymentsFromCookie(context.req)
-
-  // Cookie data is no longer needed after reading.
   context.res.clearCookie(SGID_COOKIE_NAME)
 
-  const isValidEmployment = employments.some(
-    (employment) => employment.workEmail === params.workEmail,
-  )
+  const { employmentIndex } = params
 
-  if (!isValidEmployment) {
-    return {
-      nextUrl: `${appConfig.webAppUrl}/login/sgid/failed`,
-    }
+  if (
+    employmentIndex < 0 ||
+    !Number.isInteger(employmentIndex) ||
+    employmentIndex >= employments.length
+  ) {
+    throw new Error('Invalid index')
   }
 
-  const user = await getOrCreateUser(params.workEmail)
+  // employments[employmentIndex].workEmail guaranteed nonnull, see
+  // onInitialStep.
+  const user = await getOrCreateUser(employments[employmentIndex].workEmail)
   setAuthCookie(context.res, { userId: user.id })
   return {
     nextUrl: `${appConfig.webAppUrl}/flows`,

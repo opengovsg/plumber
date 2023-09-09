@@ -5,6 +5,18 @@ import loginWithSgid from '@/graphql/mutations/login-with-sgid'
 import type User from '@/models/user'
 import type Context from '@/types/express/context'
 
+const mocks = vi.hoisted(() => ({
+  sgidCallback: vi.fn(() => ({ accessToken: '123', sub: 'abc' })),
+  sgidUserInfo: vi.fn(),
+  setAuthCookie: vi.fn(),
+  getOrCreateUser: vi.fn(),
+  isWhitelistedEmail: vi.fn(),
+  setCookie: vi.fn(),
+  clearCookie: vi.fn(),
+  signJwt: vi.fn(() => 'stub'),
+  verifyJwt: vi.fn(),
+}))
+
 const STUB_INITIAL_STEP_PARAMS = {
   input: {
     type: 'INITIAL_STEP' as const,
@@ -17,17 +29,14 @@ const STUB_INITIAL_STEP_PARAMS = {
 }
 
 const STUB_CONTEXT = {
-  res: {},
-  req: {},
-} as Context
-
-const mocks = vi.hoisted(() => ({
-  sgidCallback: vi.fn(() => ({ accessToken: '123', sub: 'abc' })),
-  sgidUserInfo: vi.fn(),
-  setAuthCookie: vi.fn(),
-  getOrCreateUser: vi.fn(),
-  isWhitelistedEmail: vi.fn(),
-}))
+  res: {
+    cookie: mocks.setCookie,
+    clearCookie: mocks.clearCookie,
+  },
+  req: {
+    cookies: {},
+  },
+} as unknown as Context
 
 vi.mock('@opengovsg/sgid-client', () => ({
   SgidClient: function () {
@@ -47,6 +56,11 @@ vi.mock('@/models/login-whitelist-entry', () => ({
   default: {
     isWhitelisted: mocks.isWhitelistedEmail,
   },
+}))
+
+vi.mock('jsonwebtoken', () => ({
+  sign: mocks.signJwt,
+  verify: mocks.verifyJwt,
 }))
 
 describe('Login with SGID', () => {
@@ -219,6 +233,157 @@ describe('Login with SGID', () => {
           `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
         )
       }
+    },
+  )
+
+  it('should return appropriate employments and set cookie if user has many employments', async () => {
+    mocks.sgidUserInfo.mockResolvedValueOnce({
+      data: {
+        'pocdex.public_officer_employments': JSON.stringify([
+          {
+            workEmail: 'loong_loong@potato.gov.sg',
+            agencyName: 'Ministry of Potato Chips',
+            departmentName: 'Flavouring',
+            employmentType: 'Permanent',
+            employmentTitle: 'Sea Salt Scientist',
+          },
+          {
+            workEmail: 'NA',
+            agencyName: 'Ministry of Macarons',
+            departmentName: 'Tasting',
+            employmentType: 'Permanent',
+            employmentTitle: 'Chief Taste Tester',
+          },
+          {
+            workEmail: 'wee@non-whitelisted-glc.com.sg',
+            agencyName: 'Non-whitelisted GLC',
+            departmentName: 'Herp',
+            employmentType: 'Permanent',
+            employmentTitle: 'Derp',
+          },
+          {
+            workEmail: 'loong@tea.gov.sg',
+            agencyName: 'Ministry of Tea',
+            departmentName: 'Drinkers',
+            employmentType: 'Permanent',
+            employmentTitle: 'Tea Chugger Extraordinaire',
+          },
+        ]),
+      },
+    })
+    const expectedEmployments = [
+      {
+        workEmail: 'loong_loong@potato.gov.sg',
+        agencyName: 'Ministry of Potato Chips',
+        departmentName: 'Flavouring',
+        employmentType: 'Permanent',
+        employmentTitle: 'Sea Salt Scientist',
+      },
+      {
+        workEmail: 'loong@tea.gov.sg',
+        agencyName: 'Ministry of Tea',
+        departmentName: 'Drinkers',
+        employmentType: 'Permanent',
+        employmentTitle: 'Tea Chugger Extraordinaire',
+      },
+    ]
+
+    const result = await loginWithSgid(
+      null,
+      STUB_INITIAL_STEP_PARAMS,
+      STUB_CONTEXT,
+    )
+
+    expect(result.publicOfficerEmployments).toEqual(expectedEmployments)
+    expect(mocks.signJwt).toBeCalledWith(
+      {
+        publicOfficerEmployments: expectedEmployments,
+      },
+      expect.anything(),
+    )
+    expect(mocks.setCookie).toBeCalled()
+
+    expect(mocks.setAuthCookie).not.toBeCalled()
+    expect(result.nextUrl).toBeUndefined()
+  })
+
+  it('should log user in if multi-hat user selected a valid employment', async () => {
+    mocks.verifyJwt.mockReturnValueOnce({
+      publicOfficerEmployments: [
+        {
+          workEmail: 'loong_loong@coffee.gov.sg',
+          agencyName: 'Ministry of Coffee',
+          departmentName: 'Baristas',
+          employmentType: 'Permanent',
+          employmentTitle: 'Chief Barista',
+        },
+        {
+          workEmail: 'weeeeeeeee@potato.gov.sg',
+          agencyName: 'Ministry of Potato Chips',
+          departmentName: 'Flavouring',
+          employmentType: 'Permanent',
+          employmentTitle: 'Sea Salt Scientist',
+        },
+      ],
+    })
+    mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
+
+    const result = await loginWithSgid(
+      null,
+      {
+        input: {
+          type: 'SPECIFIC_EMPLOYMENT' as const,
+          specificEmployment: {
+            employmentIndex: 0,
+          },
+        },
+      },
+      STUB_CONTEXT,
+    )
+
+    expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
+      userId: 'abc-def',
+    })
+    expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
+    expect(result.publicOfficerEmployments).toBeUndefined()
+  })
+
+  it.each([{ index: -1 }, { index: 10 }, { index: 1.5 }])(
+    'should redirect to failure page if multi-hat user selected an invalid employment (index: $index)',
+    async ({ index }) => {
+      mocks.verifyJwt.mockReturnValueOnce({
+        publicOfficerEmployments: [
+          {
+            workEmail: 'loong_loong@coffee.gov.sg',
+            agencyName: 'Ministry of Coffee',
+            departmentName: 'Baristas',
+            employmentType: 'Permanent',
+            employmentTitle: 'Chief Barista',
+          },
+          {
+            workEmail: 'weeeeeeeee@potato.gov.sg',
+            agencyName: 'Ministry of Potato Chips',
+            departmentName: 'Flavouring',
+            employmentType: 'Permanent',
+            employmentTitle: 'Sea Salt Scientist',
+          },
+        ],
+      })
+
+      await expect(
+        loginWithSgid(
+          null,
+          {
+            input: {
+              type: 'SPECIFIC_EMPLOYMENT' as const,
+              specificEmployment: {
+                employmentIndex: index,
+              },
+            },
+          },
+          STUB_CONTEXT,
+        ),
+      ).rejects.toThrowError('Invalid index')
     },
   )
 })

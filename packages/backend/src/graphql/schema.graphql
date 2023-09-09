@@ -504,7 +504,7 @@ input LoginWithSgidInitialStep {
 }
 
 input LoginWithSgidSpecificEmployment {
-  workEmail: String!
+  employmentIndex: Int!
 }
 
 input LoginWithSgidInput {

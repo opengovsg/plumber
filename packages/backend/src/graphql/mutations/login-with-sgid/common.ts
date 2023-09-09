@@ -29,7 +29,7 @@ export interface InitialStep {
 }
 
 export interface SpecificEmployment {
-  workEmail: string
+  employmentIndex: number
 }
 
 export interface LoginWithSgidParams {
