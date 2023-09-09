@@ -13,11 +13,11 @@ const sgidClient = new SgidClient({
 })
 
 interface PublicOfficerEmployment {
-  workEmail: 'NA' | string
-  agencyName: 'NA' | string
-  departmentName: 'NA' | string
-  employmentType: 'NA' | string
-  employmentTitle: 'NA' | string
+  workEmail: string | null
+  agencyName: string | null
+  departmentName: string | null
+  employmentType: string | null
+  employmentTitle: string | null
 }
 
 interface LoginWithSgidParams {
@@ -28,14 +28,24 @@ interface LoginWithSgidResult {
   nextUrl: string
 }
 
-async function parsePocDexEmployments(
+async function parsePocdexEmployments(
   rawData: string,
 ): Promise<PublicOfficerEmployment[]> {
-  const allEmployments = JSON.parse(rawData) as PublicOfficerEmployment[]
+  const allEmployments = (JSON.parse(rawData) as PublicOfficerEmployment[])
+    // POCDEX returns 'NA' instead of null, let's fix that.
+    .map((employment) => {
+      for (const [k, v] of Object.entries(employment)) {
+        if (v === 'NA') {
+          employment[k as keyof PublicOfficerEmployment] = null
+        }
+      }
+      return employment
+    })
+
   const validEmployments = await Promise.all(
     allEmployments.map(
       async (employment) =>
-        employment.workEmail !== 'NA' &&
+        employment.workEmail &&
         (await validateAndParseEmail(employment.workEmail)),
     ),
   )
@@ -61,7 +71,7 @@ export default async function loginWithSgid(
     throw new Error('Unable to obtain user info')
   }
 
-  const publicOfficerEmployments = await parsePocDexEmployments(
+  const publicOfficerEmployments = await parsePocdexEmployments(
     userInfo.data?.['pocdex.public_officer_employments'] ?? '[]',
   )
 
