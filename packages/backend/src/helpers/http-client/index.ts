@@ -43,24 +43,26 @@ export default function createHttpClient({
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
-      if (error.response) {
-        const { config } = error
-        const { status } = error.response
+      if (!error.response) {
+        throw new HttpError(error)
+      }
 
-        if (
-          (status === 401 || status === 403) &&
-          $.app.auth.refreshToken &&
-          !$.app.auth.isRefreshTokenRequested
-        ) {
-          $.app.auth.isRefreshTokenRequested = true
-          await $.app.auth.refreshToken($)
+      const { config } = error
+      const { status } = error.response
 
-          // retry the previous request before the expired token error
-          const newResponse = await instance.request(config)
-          $.app.auth.isRefreshTokenRequested = false
+      if (
+        (status === 401 || status === 403) &&
+        $.app.auth.refreshToken &&
+        !$.app.auth.isRefreshTokenRequested
+      ) {
+        $.app.auth.isRefreshTokenRequested = true
+        await $.app.auth.refreshToken($)
 
-          return newResponse
-        }
+        // retry the previous request before the expired token error
+        const newResponse = await instance.request(config)
+        $.app.auth.isRefreshTokenRequested = false
+
+        return newResponse
       }
 
       throw new HttpError(error)
