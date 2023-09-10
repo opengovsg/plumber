@@ -52,7 +52,11 @@ export const LoginForm = (): JSX.Element => {
     }
   }
 
+  const [isRedirectingToSgid, setIsRedirectingToSgid] = useState(false)
+
   const handleSgidLogin = useCallback(async () => {
+    setIsRedirectingToSgid(true)
+
     const { url, verifier, nonce } = await buildSgidAuthCodeUrl()
     sessionStorage.setItem('sgid-verifier', verifier)
     sessionStorage.setItem('sgid-nonce', nonce)
@@ -88,8 +92,13 @@ export const LoginForm = (): JSX.Element => {
         </Box>
 
         <Flex flexDir="column" alignItems="center">
-          {/* isFullWidth a bit ugly */}
-          <Button width="full" mb={2} onClick={handleSgidLogin}>
+          <Button
+            // isFullWidth a bit ugly
+            width="full"
+            mb={2}
+            onClick={handleSgidLogin}
+            isLoading={isRedirectingToSgid}
+          >
             Log in with SingPass
           </Button>
           <Text>
