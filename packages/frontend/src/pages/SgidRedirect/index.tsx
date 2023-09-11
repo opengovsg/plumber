@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { Center, CircularProgress, Link, Text } from '@chakra-ui/react'
@@ -7,11 +7,20 @@ import * as URLS from 'config/urls'
 import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
 
 export default function SgidRedirect(): JSX.Element {
-  const [loginWithSgid, { error: loginErrored }] = useMutation(LOGIN_WITH_SGID)
+  const [loginWithSgid] = useMutation(LOGIN_WITH_SGID)
   const [searchParams] = useSearchParams()
   const [hasFailed, setFailed] = useState<boolean>(false)
 
+  // Account for React strict mode.
+  const alreadyProcessed = useRef(false)
+
   useEffect(() => {
+    if (alreadyProcessed.current) {
+      return
+    }
+
+    alreadyProcessed.current = true
+
     const authCode = searchParams.get('code')
     const verifier = sessionStorage.getItem('sgid-verifier')
     const nonce = sessionStorage.getItem('sgid-nonce')
@@ -33,6 +42,7 @@ export default function SgidRedirect(): JSX.Element {
             nonce,
           },
         },
+        onError: () => setFailed(true),
       })
 
       // Temporarily unknown array; next PRs will type this more strongly when
@@ -40,7 +50,7 @@ export default function SgidRedirect(): JSX.Element {
       const publicOfficerEmployments = result.data?.loginWithSgid
         ?.publicOfficerEmployments as unknown[]
 
-      if (loginErrored || !publicOfficerEmployments) {
+      if (!publicOfficerEmployments) {
         setFailed(true)
         return
       }
