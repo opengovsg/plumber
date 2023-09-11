@@ -52,7 +52,7 @@ type Mutation {
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
   logout: Boolean
-  loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
+  loginWithSgid(input: LoginWithSgidInput!): SgidLoginResult!
 }
 
 """
@@ -492,14 +492,24 @@ type AppHealth {
   version: String
 }
 
+type SgidPublicOfficerEmployment {
+  workEmail: String
+  agencyName: String
+  departmentName: String
+  employmentType: String
+  employmentTitle: String
+}
+
 input LoginWithSgidInput {
   authCode: String!
   nonce: String!
   verifier: String!
 }
 
-type LoginWithSgidResult {
-  nextUrl: String!
+# Named slightly differently (instead of LoginWithSgidResult) as there are
+# multiple mutations which use this.
+type SgidLoginResult {
+  publicOfficerEmployments: [SgidPublicOfficerEmployment!]!
 }
 
 schema {
