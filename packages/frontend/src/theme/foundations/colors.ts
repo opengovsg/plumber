@@ -15,6 +15,10 @@ const bbBearColors = {
   },
   interaction: {
     muted: {
+      main: {
+        hover: '#FEF8FB',
+        active: '#F9DDE9',
+      },
       neutral: {
         hover: '#F8F9F9',
         active: '#EDEDED',
@@ -25,6 +29,17 @@ const bbBearColors = {
     },
     success: {
       default: '#0F796F',
+    },
+    warning: {
+      default: '#FFDA68',
+      hover: '#E2B73E',
+      active: '#C4992A',
+    },
+    tinted: {
+      main: {
+        hover: 'rgba(207, 26, 104, 0.04)',
+        active: 'rgba(207, 26, 104, 0.12)',
+      },
     },
   },
 }
