@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { Center, CircularProgress, Link, Text } from '@chakra-ui/react'
@@ -7,11 +7,20 @@ import * as URLS from 'config/urls'
 import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
 
 export default function SgidRedirect(): JSX.Element {
-  const [loginWithSgid, { error: loginErrored }] = useMutation(LOGIN_WITH_SGID)
+  const [loginWithSgid] = useMutation(LOGIN_WITH_SGID)
   const [searchParams] = useSearchParams()
   const [hasFailed, setFailed] = useState<boolean>(false)
 
+  // Account for React strict mode.
+  const alreadyProcessed = useRef(false)
+
   useEffect(() => {
+    if (alreadyProcessed.current) {
+      return
+    }
+
+    alreadyProcessed.current = true
+
     const authCode = searchParams.get('code')
     const verifier = sessionStorage.getItem('sgid-verifier')
     const nonce = sessionStorage.getItem('sgid-nonce')
@@ -36,12 +45,27 @@ export default function SgidRedirect(): JSX.Element {
             },
           },
         },
+        onError: () => setFailed(true),
       })
-      const nextUrl = result.data?.loginWithSgid?.nextUrl
-      if (loginErrored || !nextUrl) {
+
+      // Temporarily unknown array; next PRs will type this more strongly when
+      // we support multiple-hatted users.
+      const publicOfficerEmployments = result.data?.loginWithSgid
+        ?.publicOfficerEmployments as unknown[]
+
+      if (!publicOfficerEmployments) {
         setFailed(true)
+        return
+      }
+
+      // See comments in loginWithSgid mutation for details on these values.
+      if (publicOfficerEmployments.length === 0) {
+        location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
+      } else if (publicOfficerEmployments.length === 1) {
+        location.assign(URLS.FLOWS)
       } else {
-        location.assign(nextUrl)
+        // Multi-hat case. Fail for now.
+        location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
       }
     }
 

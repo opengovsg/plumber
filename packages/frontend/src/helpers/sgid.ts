@@ -5,7 +5,7 @@ const CLIENT_ID = 'PLUMBERSTAGINGDEV-f49a9cb6'
 const SCOPE = 'openid pocdex.public_officer_employments'
 const REDIRECT_URL = `${window.location.origin}${URLS.LOGIN_SGID_REDIRECT}`
 
-async function generatePkceStuff(): Promise<{
+async function generatePkceAndNonce(): Promise<{
   challenge: string
   verifier: string
   nonce: string
@@ -29,12 +29,12 @@ async function generatePkceStuff(): Promise<{
   }
 }
 
-export async function buildSgidAuthCodeUrl(): Promise<{
+export async function generateSgidAuthUrl(): Promise<{
   url: string
   verifier: string
   nonce: string
 }> {
-  const { challenge, verifier, nonce } = await generatePkceStuff()
+  const { challenge, verifier, nonce } = await generatePkceAndNonce()
   const sgidUrl =
     'https://api.id.gov.sg/v2/oauth/authorize?' +
     'response_type=code' +

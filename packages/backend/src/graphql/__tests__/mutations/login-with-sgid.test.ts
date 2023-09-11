@@ -1,9 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import appConfig from '@/config/app'
 import loginWithSgid from '@/graphql/mutations/login-with-sgid'
 import type User from '@/models/user'
 import type Context from '@/types/express/context'
+
+const STUB_PARAMS = {
+  input: {
+    authCode: 'abcde',
+    nonce: '12345',
+    verifier: 'wxyz',
+  },
+}
+
+const STUB_CONTEXT = {
+  res: {},
+  req: {},
+} as Context
 
 const mocks = vi.hoisted(() => ({
   sgidCallback: vi.fn(() => ({ accessToken: '123', sub: 'abc' })),
@@ -11,32 +23,8 @@ const mocks = vi.hoisted(() => ({
   setAuthCookie: vi.fn(),
   getOrCreateUser: vi.fn(),
   isWhitelistedEmail: vi.fn(),
-  setCookie: vi.fn(),
-  clearCookie: vi.fn(),
-  signJwt: vi.fn(() => 'stub'),
-  verifyJwt: vi.fn(),
+  logError: vi.fn(),
 }))
-
-const STUB_INITIAL_STEP_PARAMS = {
-  input: {
-    type: 'INITIAL_STEP' as const,
-    initialStep: {
-      authCode: 'abcde',
-      nonce: '12345',
-      verifier: 'wxyz',
-    },
-  },
-}
-
-const STUB_CONTEXT = {
-  res: {
-    cookie: mocks.setCookie,
-    clearCookie: mocks.clearCookie,
-  },
-  req: {
-    cookies: {},
-  },
-} as unknown as Context
 
 vi.mock('@opengovsg/sgid-client', () => ({
   SgidClient: function () {
@@ -58,9 +46,10 @@ vi.mock('@/models/login-whitelist-entry', () => ({
   },
 }))
 
-vi.mock('jsonwebtoken', () => ({
-  sign: mocks.signJwt,
-  verify: mocks.verifyJwt,
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
 }))
 
 describe('Login with SGID', () => {
@@ -69,26 +58,23 @@ describe('Login with SGID', () => {
   })
 
   it('should log users in directly if they only have 1 pocdex entry', async () => {
+    const pocdexData = [
+      {
+        workEmail: 'loong_loong@coffee.gov.sg',
+        agencyName: 'Ministry of Coffee',
+        departmentName: 'Baristas',
+        employmentType: 'Permanent',
+        employmentTitle: 'Chief Barista',
+      },
+    ]
     mocks.sgidUserInfo.mockResolvedValueOnce({
       data: {
-        'pocdex.public_officer_employments': JSON.stringify([
-          {
-            workEmail: 'loong_loong@coffee.gov.sg',
-            agencyName: 'Ministry of Coffee',
-            departmentName: 'Baristas',
-            employmentType: 'Permanent',
-            employmentTitle: 'Chief Barista',
-          },
-        ]),
+        'pocdex.public_officer_employments': JSON.stringify(pocdexData),
       },
     })
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
-    const result = await loginWithSgid(
-      null,
-      STUB_INITIAL_STEP_PARAMS,
-      STUB_CONTEXT,
-    )
+    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
       'loong_loong@coffee.gov.sg',
@@ -96,7 +82,7 @@ describe('Login with SGID', () => {
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
-    expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
+    expect(result.publicOfficerEmployments).toEqual(pocdexData)
   })
 
   it.each([
@@ -105,21 +91,15 @@ describe('Login with SGID', () => {
     // Empty array from pocdex
     { 'pocdex.public_officer_employments': '[]' },
   ])(
-    'should redirect to failure url if there is nothing from pocdex',
+    'should return an empty array if there is nothing from pocdex',
     async (data) => {
       mocks.sgidUserInfo.mockResolvedValueOnce({ data })
 
-      const result = await loginWithSgid(
-        null,
-        STUB_INITIAL_STEP_PARAMS,
-        STUB_CONTEXT,
-      )
+      const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
       expect(mocks.getOrCreateUser).not.toBeCalled()
       expect(mocks.setAuthCookie).not.toBeCalled()
-      expect(result.nextUrl).toEqual(
-        `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
-      )
+      expect(result.publicOfficerEmployments).toEqual([])
     },
   )
 
@@ -138,17 +118,11 @@ describe('Login with SGID', () => {
       },
     })
 
-    const result = await loginWithSgid(
-      null,
-      STUB_INITIAL_STEP_PARAMS,
-      STUB_CONTEXT,
-    )
+    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
-    expect(result.nextUrl).toEqual(
-      `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
-    )
+    expect(result.publicOfficerEmployments).toEqual([])
   })
 
   it('should exclude pocdex entries with missing / NA work emails (direct login due to one other email scenario)', async () => {
@@ -181,42 +155,43 @@ describe('Login with SGID', () => {
     })
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
-    const result = await loginWithSgid(
-      null,
-      STUB_INITIAL_STEP_PARAMS,
-      STUB_CONTEXT,
-    )
+    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith('loong@tea.gov.sg')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
-    expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
+    expect(result.publicOfficerEmployments).toEqual([
+      {
+        workEmail: 'loong@tea.gov.sg',
+        agencyName: 'Ministry of Tea',
+        departmentName: 'Drinkers',
+        employmentType: 'Permanent',
+        employmentTitle: 'Tea Chugger Extraordinaire',
+      },
+    ])
   })
 
   it.each([{ isWhitelisted: true }, { isWhitelisted: false }])(
     'should account for whitelisting of non-gov emails (isWhitelisted: $isWhitelisted)',
     async ({ isWhitelisted }) => {
+      const pocdexData = [
+        {
+          workEmail: 'loong_loong@gahmen-coffee.com.sg',
+          agencyName: 'Coffee Research Institute',
+          departmentName: 'Beanology',
+          employmentType: 'Permanent',
+          employmentTitle: 'Bean Scientist',
+        },
+      ]
       mocks.isWhitelistedEmail.mockResolvedValueOnce(isWhitelisted)
       mocks.sgidUserInfo.mockResolvedValueOnce({
         data: {
-          'pocdex.public_officer_employments': JSON.stringify([
-            {
-              workEmail: 'loong_loong@gahmen-coffee.com.sg',
-              agencyName: 'Coffee Research Institute',
-              departmentName: 'Beanology',
-              employmentType: 'Permanent',
-              employmentTitle: 'Bean Scientist',
-            },
-          ]),
+          'pocdex.public_officer_employments': JSON.stringify(pocdexData),
         },
       })
       mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
-      const result = await loginWithSgid(
-        null,
-        STUB_INITIAL_STEP_PARAMS,
-        STUB_CONTEXT,
-      )
+      const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
       if (isWhitelisted) {
         expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
@@ -225,212 +200,47 @@ describe('Login with SGID', () => {
         expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
           userId: 'abc-def',
         })
-        expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
+        expect(result.publicOfficerEmployments).toEqual(pocdexData)
       } else {
         expect(mocks.getOrCreateUser).not.toBeCalled()
         expect(mocks.setAuthCookie).not.toBeCalled()
-        expect(result.nextUrl).toEqual(
-          `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
-        )
+        expect(result.publicOfficerEmployments).toEqual([])
       }
     },
   )
 
-  it('should return appropriate employments and set cookie if user has many employments', async () => {
+  it('should log error when POCDEX parsing fails', async () => {
     mocks.sgidUserInfo.mockResolvedValueOnce({
       data: {
-        'pocdex.public_officer_employments': JSON.stringify([
-          {
-            workEmail: 'loong_loong@potato.gov.sg',
-            agencyName: 'Ministry of Potato Chips',
-            departmentName: 'Flavouring',
-            employmentType: 'Permanent',
-            employmentTitle: 'Sea Salt Scientist',
-          },
-          {
-            workEmail: 'NA',
-            agencyName: 'Ministry of Macarons',
-            departmentName: 'Tasting',
-            employmentType: 'Permanent',
-            employmentTitle: 'Chief Taste Tester',
-          },
-          {
-            workEmail: 'wee@non-whitelisted-glc.com.sg',
-            agencyName: 'Non-whitelisted GLC',
-            departmentName: 'Herp',
-            employmentType: 'Permanent',
-            employmentTitle: 'Derp',
-          },
-          {
-            workEmail: 'loong@tea.gov.sg',
-            agencyName: 'Ministry of Tea',
-            departmentName: 'Drinkers',
-            employmentType: 'Permanent',
-            employmentTitle: 'Tea Chugger Extraordinaire',
-          },
-        ]),
+        'pocdex.public_officer_employments': '[Invalid JSON string',
       },
     })
-    const expectedEmployments = [
-      {
-        workEmail: 'loong_loong@potato.gov.sg',
-        agencyName: 'Ministry of Potato Chips',
-        departmentName: 'Flavouring',
-        employmentType: 'Permanent',
-        employmentTitle: 'Sea Salt Scientist',
-      },
-      {
-        workEmail: 'loong@tea.gov.sg',
-        agencyName: 'Ministry of Tea',
-        departmentName: 'Drinkers',
-        employmentType: 'Permanent',
-        employmentTitle: 'Tea Chugger Extraordinaire',
-      },
-    ]
 
-    const result = await loginWithSgid(
-      null,
-      STUB_INITIAL_STEP_PARAMS,
-      STUB_CONTEXT,
+    await expect(
+      loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT),
+    ).rejects.toThrowError('Received malformed data from POCDEX')
+
+    expect(mocks.logError).toBeCalledWith(
+      'Received malformed data from POCDEX',
+      { event: 'sgid-login-malformed-pocdex', rawData: '[Invalid JSON string' },
     )
-
-    expect(result.publicOfficerEmployments).toEqual(expectedEmployments)
-    expect(mocks.signJwt).toBeCalledWith(
-      {
-        publicOfficerEmployments: expectedEmployments,
-      },
-      expect.anything(),
-    )
-    expect(mocks.setCookie).toBeCalled()
-
+    expect(mocks.getOrCreateUser).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
-    expect(result.nextUrl).toBeUndefined()
   })
 
-  it.only("should convert non-email 'NA' values to null before returning employments", async () => {
-    mocks.sgidUserInfo.mockResolvedValueOnce({
-      data: {
-        'pocdex.public_officer_employments': JSON.stringify([
-          {
-            workEmail: 'loong_loong@potato.gov.sg',
-            agencyName: 'NA',
-            departmentName: 'NA',
-            employmentType: 'NA',
-            employmentTitle: 'NA',
-          },
-          {
-            workEmail: 'loong@tea.gov.sg',
-            agencyName: 'Ministry of Tea',
-            departmentName: 'NA',
-            employmentType: 'NA',
-            employmentTitle: 'Tea Chugger Extraordinaire',
-          },
-        ]),
-      },
+  it('should log error when user info querying process fails', async () => {
+    mocks.sgidCallback.mockImplementationOnce(() => {
+      throw new Error('derp')
     })
-    mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
-    const result = await loginWithSgid(
-      null,
-      STUB_INITIAL_STEP_PARAMS,
-      STUB_CONTEXT,
-    )
+    await expect(
+      loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT),
+    ).rejects.toThrowError('derp')
 
-    expect(result.publicOfficerEmployments).toEqual([
-      {
-        workEmail: 'loong_loong@potato.gov.sg',
-        agencyName: null,
-        departmentName: null,
-        employmentType: null,
-        employmentTitle: null,
-      },
-      {
-        workEmail: 'loong@tea.gov.sg',
-        agencyName: 'Ministry of Tea',
-        departmentName: null,
-        employmentType: null,
-        employmentTitle: 'Tea Chugger Extraordinaire',
-      },
-    ])
+    expect(mocks.logError).toBeCalledWith('Unable to query user info', {
+      event: 'sgid-login-failed-user-info',
+    })
+    expect(mocks.getOrCreateUser).not.toBeCalled()
+    expect(mocks.setAuthCookie).not.toBeCalled()
   })
-
-  it('should log user in if multi-hat user selected a valid employment', async () => {
-    mocks.verifyJwt.mockReturnValueOnce({
-      publicOfficerEmployments: [
-        {
-          workEmail: 'loong_loong@coffee.gov.sg',
-          agencyName: 'Ministry of Coffee',
-          departmentName: 'Baristas',
-          employmentType: 'Permanent',
-          employmentTitle: 'Chief Barista',
-        },
-        {
-          workEmail: 'weeeeeeeee@potato.gov.sg',
-          agencyName: 'Ministry of Potato Chips',
-          departmentName: 'Flavouring',
-          employmentType: 'Permanent',
-          employmentTitle: 'Sea Salt Scientist',
-        },
-      ],
-    })
-    mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
-
-    const result = await loginWithSgid(
-      null,
-      {
-        input: {
-          type: 'SPECIFIC_EMPLOYMENT' as const,
-          specificEmployment: {
-            employmentIndex: 0,
-          },
-        },
-      },
-      STUB_CONTEXT,
-    )
-
-    expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
-      userId: 'abc-def',
-    })
-    expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/flows`)
-    expect(result.publicOfficerEmployments).toBeUndefined()
-  })
-
-  it.each([{ index: -1 }, { index: 10 }, { index: 1.5 }])(
-    'should throw error if multi-hat user selected an invalid employment (index: $index)',
-    async ({ index }) => {
-      mocks.verifyJwt.mockReturnValueOnce({
-        publicOfficerEmployments: [
-          {
-            workEmail: 'loong_loong@coffee.gov.sg',
-            agencyName: 'Ministry of Coffee',
-            departmentName: 'Baristas',
-            employmentType: 'Permanent',
-            employmentTitle: 'Chief Barista',
-          },
-          {
-            workEmail: 'weeeeeeeee@potato.gov.sg',
-            agencyName: 'Ministry of Potato Chips',
-            departmentName: 'Flavouring',
-            employmentType: 'Permanent',
-            employmentTitle: 'Sea Salt Scientist',
-          },
-        ],
-      })
-
-      await expect(
-        loginWithSgid(
-          null,
-          {
-            input: {
-              type: 'SPECIFIC_EMPLOYMENT' as const,
-              specificEmployment: {
-                employmentIndex: index,
-              },
-            },
-          },
-          STUB_CONTEXT,
-        ),
-      ).rejects.toThrowError('Invalid index')
-    },
-  )
 })
