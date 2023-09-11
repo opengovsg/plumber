@@ -1,6 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import * as React from 'react'
+import { Fragment, MouseEvent, ReactElement, useRef, useState } from 'react'
 import { BiChevronRight, BiSolidCircle } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
@@ -28,16 +28,16 @@ type FlowRowProps = {
   flow: IFlow
 }
 
-export default function FlowRow(props: FlowRowProps): React.ReactElement {
+export default function FlowRow(props: FlowRowProps): ReactElement {
   const formatMessage = useFormatMessage()
-  const contextButtonRef = React.useRef<HTMLButtonElement | null>(null)
-  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null)
+  const contextButtonRef = useRef<HTMLButtonElement | null>(null)
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
   const { flow } = props
 
   const handleClose = () => {
     setAnchorEl(null)
   }
-  const onContextMenuClick = (event: React.MouseEvent) => {
+  const onContextMenuClick = (event: MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
     event.nativeEvent.stopImmediatePropagation()
@@ -133,14 +133,14 @@ export default function FlowRow(props: FlowRowProps): React.ReactElement {
                   colorScheme={flow?.active ? 'success' : 'grey'}
                   variant="subtle"
                 >
-                  <React.Fragment>
+                  <Fragment>
                     <BadgeLeftIcon boxSize={2} mr={2} as={BiSolidCircle} />
                     <Text textStyle="body-2">
                       {formatMessage(
                         flow?.active ? 'flow.published' : 'flow.draft',
                       )}
                     </Text>
-                  </React.Fragment>
+                  </Fragment>
                 </Badge>
 
                 <IconButton
