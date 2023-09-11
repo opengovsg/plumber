@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Center, CircularProgress, Link, Text } from '@chakra-ui/react'
+import { Center, CircularProgress, Flex, Link, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
@@ -9,13 +9,22 @@ import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
 import EmploymentList, { type Employment } from './EmploymentList'
 
 export default function SgidRedirect(): JSX.Element {
-  const [loginWithSgid, { error: loginErrored }] = useMutation(LOGIN_WITH_SGID)
+  const [loginWithSgid] = useMutation(LOGIN_WITH_SGID)
   const [searchParams] = useSearchParams()
 
   const [hasFailed, setFailed] = useState<boolean>(false)
   const [employments, setEmployments] = useState<Employment[] | null>(null)
 
+  // Account for React strict mode.
+  const alreadyProcessed = useRef(false)
+
   useEffect(() => {
+    if (alreadyProcessed.current) {
+      return
+    }
+
+    alreadyProcessed.current = true
+
     const authCode = searchParams.get('code')
     const verifier = sessionStorage.getItem('sgid-verifier')
     const nonce = sessionStorage.getItem('sgid-nonce')
@@ -32,29 +41,32 @@ export default function SgidRedirect(): JSX.Element {
       const result = await loginWithSgid({
         variables: {
           input: {
-            type: 'INITIAL_STEP',
-            initialStep: {
-              authCode,
-              verifier,
-              nonce,
-            },
+            authCode,
+            verifier,
+            nonce,
           },
         },
+        onError: () => setFailed(true),
       })
 
-      const nextUrl = result.data?.loginWithSgid?.nextUrl
+      // Temporarily unknown array; next PR will type this more strongly when
+      // we support multiple-hatted users.
       const publicOfficerEmployments = result.data?.loginWithSgid
-        ?.publicOfficerEmployments as Employment[]
+        ?.publicOfficerEmployments as unknown[]
 
-      if (loginErrored || (!nextUrl && !publicOfficerEmployments)) {
+      if (!publicOfficerEmployments) {
         setFailed(true)
         return
       }
 
-      if (nextUrl) {
-        location.assign(nextUrl)
+      // See comments in loginWithSgid mutation for details on these values.
+      if (publicOfficerEmployments.length === 0) {
+        location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
+      } else if (publicOfficerEmployments.length === 1) {
+        location.assign(URLS.FLOWS)
       } else {
-        setEmployments(publicOfficerEmployments)
+        // Multi-hat case. Fail for now.; next PR implements UI.
+        location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
       }
     }
 
@@ -67,7 +79,7 @@ export default function SgidRedirect(): JSX.Element {
         <Infobox variant="error">
           <Text>
             There was an error logging you in. Please try again{' '}
-            <Link href={URLS.LOGIN}>here.</Link>
+            <Link href={URLS.LOGIN}>here</Link>.
           </Text>
         </Infobox>
       ) : employments ? (
@@ -78,7 +90,10 @@ export default function SgidRedirect(): JSX.Element {
           setFailed={setFailed}
         />
       ) : (
-        <CircularProgress isIndeterminate />
+        <Flex alignItems="center">
+          <CircularProgress isIndeterminate size={10} mr={3} />
+          <Text>Logging you in...</Text>
+        </Flex>
       )}
     </Center>
   )

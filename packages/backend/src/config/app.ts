@@ -38,7 +38,6 @@ type AppConfig = {
     clientId: string
     clientSecret: string
     privateKey: string
-    jwtKey: string
   }
 }
 
@@ -91,7 +90,6 @@ const appConfig: AppConfig = {
     clientId: process.env.SGID_CLIENT_ID,
     clientSecret: process.env.SGID_CLIENT_SECRET,
     privateKey: process.env.SGID_PRIVATE_KEY,
-    jwtKey: process.env.SGID_JWT_KEY,
   },
 }
 
@@ -111,8 +109,7 @@ if (
   !appConfig.sgid ||
   !appConfig.sgid.clientId ||
   !appConfig.sgid.clientSecret ||
-  !appConfig.sgid.privateKey ||
-  !appConfig.sgid.jwtKey
+  !appConfig.sgid.privateKey
 ) {
   throw new Error('Sgid environment variables need to be set!')
 }

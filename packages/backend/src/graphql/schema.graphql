@@ -53,6 +53,9 @@ type Mutation {
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
   logout: Boolean
   loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
+  loginWithSelectedSgid(
+    input: LoginWithSelectedSgidInput!
+  ): LoginWithSelectedSgidResult!
 }
 
 """
@@ -492,27 +495,6 @@ type AppHealth {
   version: String
 }
 
-enum LoginWithSgidInputType {
-  INITIAL_STEP
-  SPECIFIC_EMPLOYMENT
-}
-
-input LoginWithSgidInitialStepInput {
-  authCode: String!
-  nonce: String!
-  verifier: String!
-}
-
-input LoginWithSgidSpecificEmploymentInput {
-  employmentIndex: Int!
-}
-
-input LoginWithSgidInput {
-  type: LoginWithSgidInputType!
-  initialStep: LoginWithSgidInitialStepInput
-  specificEmployment: LoginWithSgidSpecificEmploymentInput
-}
-
 type SgidPublicOfficerEmployment {
   workEmail: String
   agencyName: String
@@ -521,20 +503,22 @@ type SgidPublicOfficerEmployment {
   employmentTitle: String
 }
 
-# This is actually supposed to be:
-#
-#   union LoginWithSgidResult =
-#     # Redirect user
-#     { nextUrl: String! } |
-#     # Get user to choose employment
-#     { publicOfficerEmployments: [SgidPublicOfficerEmployment!]! }
-#
-# But union types are a bit irritating to code without codegen. For now, we
-# mimic union types with nullable fields, but we should consider moving to union
-# types if this get more complex.
+input LoginWithSgidInput {
+  authCode: String!
+  nonce: String!
+  verifier: String!
+}
+
 type LoginWithSgidResult {
-  nextUrl: String
-  publicOfficerEmployments: [SgidPublicOfficerEmployment!]
+  publicOfficerEmployments: [SgidPublicOfficerEmployment!]!
+}
+
+input LoginWithSelectedSgidInput {
+  workEmail: String!
+}
+
+type LoginWithSelectedSgidResult {
+  success: Boolean!
 }
 
 schema {
