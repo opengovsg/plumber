@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 import { SGID_CHECK_ELIGIBILITY_URL } from 'config/urls'
-import { buildSgidAuthCodeUrl } from 'helpers/sgid'
+import { generateSgidAuthUrl } from 'helpers/sgid'
 
 import SgidFailureModal from './SgidFailureModal'
 
@@ -21,21 +21,25 @@ export default function SgidLoginSection(): JSX.Element {
   const [searchParams] = useSearchParams()
   const canUseSgid = !searchParams.get('not_sgid_eligible')
 
-  const handleSgidLogin = useCallback(async () => {
-    setIsRedirectingToSgid(true)
+  const handleSgidLogin = useCallback(
+    async () => {
+      setIsRedirectingToSgid(true)
 
-    // Surround in try-catch to explicitly warn users on funky browsers about
-    // failures to generate PKCE params, instead of letting error bubble up in
-    // console.
-    try {
-      const { url, verifier, nonce } = await buildSgidAuthCodeUrl()
-      sessionStorage.setItem('sgid-verifier', verifier)
-      sessionStorage.setItem('sgid-nonce', nonce)
-      location.assign(url)
-    } catch {
-      setHasError(true)
-    }
-  }, [])
+      // Surround in try-catch to explicitly warn users on funky browsers about
+      // failures to generate PKCE params, instead of letting error bubble up in
+      // console.
+      try {
+        const { url, verifier, nonce } = await generateSgidAuthUrl()
+        sessionStorage.setItem('sgid-verifier', verifier)
+        sessionStorage.setItem('sgid-nonce', nonce)
+        location.assign(url)
+      } catch {
+        setHasError(true)
+      }
+    },
+    // Empty dep list as this is expected to be one-shot.
+    [],
+  )
 
   return canUseSgid ? (
     <>

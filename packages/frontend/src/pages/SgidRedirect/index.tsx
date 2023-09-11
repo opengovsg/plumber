@@ -34,11 +34,25 @@ export default function SgidRedirect(): JSX.Element {
           },
         },
       })
-      const nextUrl = result.data?.loginWithSgid?.nextUrl
-      if (loginErrored || !nextUrl) {
+
+      // Temporarily unknown array; next PRs will type this more strongly when
+      // we support multiple-hatted users.
+      const publicOfficerEmployments = result.data?.loginWithSgid
+        ?.publicOfficerEmployments as unknown[]
+
+      if (loginErrored || !publicOfficerEmployments) {
         setFailed(true)
+        return
+      }
+
+      // See comments in loginWithSgid mutation for details on these values.
+      if (publicOfficerEmployments.length === 0) {
+        location.assign(URLS.LOGIN_SGID_FAILED)
+      } else if (publicOfficerEmployments.length === 1) {
+        location.assign(URLS.FLOWS)
       } else {
-        location.assign(nextUrl)
+        // Multi-hat case. Fail for now.
+        location.assign(URLS.LOGIN_SGID_FAILED)
       }
     }
 
