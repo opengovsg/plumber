@@ -41,8 +41,8 @@ function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
     <Box>
       <Flex
         onClick={onClick}
-        bg={expanded ? 'interaction.muted.main.active' : 'white'}
-        _hover={{ bg: 'interaction.muted.main.hover', cursor: 'pointer' }}
+        bg={expanded ? 'interaction.muted.neutral.active' : 'white'}
+        _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
         justifyContent="space-between"
         pt={5}
         pb={5}
