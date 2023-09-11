@@ -14,7 +14,6 @@ const mocks = vi.hoisted(() => ({
   setCookie: vi.fn(),
   clearCookie: vi.fn(),
   signJwt: vi.fn(() => 'stub'),
-  verifyJwt: vi.fn(),
 }))
 
 const STUB_PARAMS = {
@@ -30,9 +29,7 @@ const STUB_CONTEXT = {
     cookie: mocks.setCookie,
     clearCookie: mocks.clearCookie,
   },
-  req: {
-    cookies: {},
-  },
+  req: {},
 } as unknown as Context
 
 vi.mock('@opengovsg/sgid-client', () => ({
@@ -63,7 +60,6 @@ vi.mock('@/helpers/logger', () => ({
 
 vi.mock('jsonwebtoken', () => ({
   sign: mocks.signJwt,
-  verify: mocks.verifyJwt,
 }))
 
 describe('Login with SGID', () => {

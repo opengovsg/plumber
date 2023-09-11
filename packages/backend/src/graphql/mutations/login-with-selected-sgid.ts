@@ -6,38 +6,41 @@ import { getOrCreateUser, setAuthCookie } from '@/helpers/auth'
 import logger from '@/helpers/logger'
 import {
   type PublicOfficerEmployment,
-  SGID_COOKIE_NAME,
-  type SgidLoginResult,
+  SGID_MULTI_HAT_COOKIE_NAME,
 } from '@/helpers/sgid'
 import type Context from '@/types/express/context'
 
-interface LoginWithSelectedSgidParams {
-  input: { workEmail: string }
-}
-
 function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
-  const token = req.cookies[SGID_COOKIE_NAME]
+  const token = req.cookies[SGID_MULTI_HAT_COOKIE_NAME]
 
   try {
-    const data = verifyJwt(token, appConfig.sgid.jwtKey) as {
+    const data = verifyJwt(token, appConfig.sessionSecretKey) as {
       publicOfficerEmployments: PublicOfficerEmployment[]
     }
     return data.publicOfficerEmployments
   } catch (error) {
     logger.error('Could not validate sgid multi-hat cookie', {
       event: 'sgid-login-failed-cookie-validation',
-      rawToken: token,
+      cookieData: token,
     })
     throw error
   }
 }
 
-export default async function LoginWithSelectedSgid(
+interface LoginWithSelectedSgidParams {
+  input: { workEmail: string }
+}
+
+interface LoginWithSelectedSgidResult {
+  success: boolean
+}
+
+export default async function loginWithSelectedSgid(
   params: LoginWithSelectedSgidParams,
   context: Context,
-): Promise<SgidLoginResult> {
+): Promise<LoginWithSelectedSgidResult> {
   const employments = readEmploymentsFromCookie(context.req)
-  context.res.clearCookie(SGID_COOKIE_NAME)
+  context.res.clearCookie(SGID_MULTI_HAT_COOKIE_NAME)
 
   const workEmail = params.input.workEmail
 
@@ -53,6 +56,6 @@ export default async function LoginWithSelectedSgid(
   setAuthCookie(context.res, { userId: user.id })
 
   return {
-    publicOfficerEmployments: [employment],
+    success: true,
   }
 }

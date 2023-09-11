@@ -130,10 +130,6 @@
         {
           "name": "SGID_PRIVATE_KEY",
           "valueFrom": "plumber-<ENVIRONMENT>-sgid-private-key"
-        },
-        {
-          "name": "SGID_JWT_KEY",
-          "valueFrom": "plumber-<ENVIRONMENT>-sgid-jwt-key"
         }
       ],
       "logConfiguration": {

@@ -37,18 +37,15 @@ export default function SgidRedirect(): JSX.Element {
       const result = await loginWithSgid({
         variables: {
           input: {
-            type: 'INITIAL_STEP',
-            initialStep: {
-              authCode,
-              verifier,
-              nonce,
-            },
+            authCode,
+            verifier,
+            nonce,
           },
         },
         onError: () => setFailed(true),
       })
 
-      // Temporarily unknown array; next PRs will type this more strongly when
+      // Temporarily unknown array; next PR will type this more strongly when
       // we support multiple-hatted users.
       const publicOfficerEmployments = result.data?.loginWithSgid
         ?.publicOfficerEmployments as unknown[]
@@ -64,7 +61,7 @@ export default function SgidRedirect(): JSX.Element {
       } else if (publicOfficerEmployments.length === 1) {
         location.assign(URLS.FLOWS)
       } else {
-        // Multi-hat case. Fail for now.
+        // Multi-hat case. Fail for now.; next PR implements UI.
         location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
       }
     }

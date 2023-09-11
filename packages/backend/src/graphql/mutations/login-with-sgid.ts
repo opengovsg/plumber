@@ -8,19 +8,19 @@ import { validateAndParseEmail } from '@/helpers/email-validator'
 import logger from '@/helpers/logger'
 import {
   type PublicOfficerEmployment,
-  SGID_COOKIE_NAME,
-  SGID_COOKIE_TTL_SECONDS,
+  SGID_MULTI_HAT_COOKIE_NAME,
+  SGID_MULTI_HAT_COOKIE_TTL_SECONDS,
   sgidClient,
 } from '@/helpers/sgid'
 import type Context from '@/types/express/context'
 
 function setSignedCookie<T extends object>(res: Response, data: T): void {
-  const token = signJwt(data, appConfig.sgid.jwtKey)
-  res.cookie(SGID_COOKIE_NAME, token, {
+  const token = signJwt(data, appConfig.sessionSecretKey)
+  res.cookie(SGID_MULTI_HAT_COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'strict',
     secure: !appConfig.isDev,
-    maxAge: SGID_COOKIE_TTL_SECONDS * 1000,
+    maxAge: SGID_MULTI_HAT_COOKIE_TTL_SECONDS * 1000,
   })
 }
 

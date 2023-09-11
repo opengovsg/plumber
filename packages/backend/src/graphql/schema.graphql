@@ -513,6 +513,10 @@ type LoginWithSgidResult {
   publicOfficerEmployments: [SgidPublicOfficerEmployment!]!
 }
 
+input LoginWithSelectedSgidInput {
+  workEmail: String!
+}
+
 type LoginWithSelectedSgidResult {
   success: Boolean!
 }
