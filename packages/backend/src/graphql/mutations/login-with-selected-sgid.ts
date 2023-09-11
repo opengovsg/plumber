@@ -36,6 +36,7 @@ interface LoginWithSelectedSgidResult {
 }
 
 export default async function loginWithSelectedSgid(
+  _parent: unknown,
   params: LoginWithSelectedSgidParams,
   context: Context,
 ): Promise<LoginWithSelectedSgidResult> {
