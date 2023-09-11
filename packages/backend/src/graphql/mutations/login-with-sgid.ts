@@ -1,42 +1,27 @@
-import {
-  SgidClient,
-  type UserInfoReturn as SgidUserInfoReturn,
-} from '@opengovsg/sgid-client'
+import { type UserInfoReturn as SgidUserInfoReturn } from '@opengovsg/sgid-client'
+import { type Response } from 'express'
+import { sign as signJwt } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import { getOrCreateUser, setAuthCookie } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import logger from '@/helpers/logger'
+import {
+  type PublicOfficerEmployment,
+  SGID_COOKIE_NAME,
+  SGID_COOKIE_TTL_SECONDS,
+  sgidClient,
+} from '@/helpers/sgid'
 import type Context from '@/types/express/context'
 
-const sgidClient = new SgidClient({
-  clientId: appConfig.sgid.clientId,
-  clientSecret: appConfig.sgid.clientSecret,
-  privateKey: appConfig.sgid.privateKey,
-  redirectUri: `${appConfig.webAppUrl}/login/sgid/redirect`,
-})
-
-interface PublicOfficerEmployment {
-  workEmail: string | null
-  agencyName: string | null
-  departmentName: string | null
-  employmentType: string | null
-  employmentTitle: string | null
-}
-
-interface LoginWithSgidParams {
-  input: { authCode: string; nonce: string; verifier: string }
-}
-
-interface SgidLoginResult {
-  /**
-   * Success or failure can be determined by the length of this array.
-   * - Length = 0: Login failed, we could not find any valid POCDEX data.
-   * - Length = 1: Login success, we will return the POCDEX entry used to login.
-   * - Length > 1: Multi-hat user; we need the user to select which work email
-   *               to login.
-   */
-  publicOfficerEmployments: PublicOfficerEmployment[]
+function setSignedCookie<T extends object>(res: Response, data: T): void {
+  const token = signJwt(data, appConfig.sgid.jwtKey)
+  res.cookie(SGID_COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: !appConfig.isDev,
+    maxAge: SGID_COOKIE_TTL_SECONDS * 1000,
+  })
 }
 
 async function parsePocdexEmployments(
@@ -73,6 +58,21 @@ async function parsePocdexEmployments(
   )
 
   return allEmployments.filter((_, index) => validEmployments[index])
+}
+
+export interface SgidLoginResult {
+  /**
+   * Success or failure can be determined by the length of this array.
+   * - Length = 0: Login failed, we could not find any valid POCDEX data.
+   * - Length = 1: Login success, we will return the POCDEX entry used to login.
+   * - Length > 1: Multi-hat user; we need the user to select which work email
+   *               to login.
+   */
+  publicOfficerEmployments: PublicOfficerEmployment[]
+}
+
+interface LoginWithSgidParams {
+  input: { authCode: string; nonce: string; verifier: string }
 }
 
 export default async function loginWithSgid(
@@ -128,9 +128,8 @@ export default async function loginWithSgid(
     }
   }
 
-  // Handle multi-hat users.
-  // TODO next PR: Let user choose identity if they have more than 1 hat. For
-  // now, just throw them back to OTP page.
+  // Remaining are all multi-hat users.
+  setSignedCookie(context.res, { publicOfficerEmployments })
   return {
     publicOfficerEmployments,
   }

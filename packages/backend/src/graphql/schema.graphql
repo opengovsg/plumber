@@ -53,6 +53,9 @@ type Mutation {
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
   logout: Boolean
   loginWithSgid(input: LoginWithSgidInput!): SgidLoginResult!
+  loginWithSelectedSgid(
+    input: LoginWithSelectedSgidInput!
+  ): LoginWithSelectedSgidResult!
 }
 
 """
@@ -510,6 +513,10 @@ input LoginWithSgidInput {
 # multiple mutations which use this.
 type SgidLoginResult {
   publicOfficerEmployments: [SgidPublicOfficerEmployment!]!
+}
+
+type LoginWithSelectedSgidResult {
+  success: Boolean!
 }
 
 schema {

@@ -1,21 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import loginWithSgid from '@/graphql/mutations/login-with-sgid'
+import loginWithSelectedSgid from '@/graphql/mutations/login-with-selected-sgid'
 import type User from '@/models/user'
 import type Context from '@/types/express/context'
-
-const mocks = vi.hoisted(() => ({
-  sgidCallback: vi.fn(() => ({ accessToken: '123', sub: 'abc' })),
-  sgidUserInfo: vi.fn(),
-  setAuthCookie: vi.fn(),
-  getOrCreateUser: vi.fn(),
-  isWhitelistedEmail: vi.fn(),
-  logError: vi.fn(),
-  setCookie: vi.fn(),
-  clearCookie: vi.fn(),
-  signJwt: vi.fn(() => 'stub'),
-  verifyJwt: vi.fn(),
-}))
 
 const STUB_PARAMS = {
   input: {
@@ -26,14 +13,18 @@ const STUB_PARAMS = {
 }
 
 const STUB_CONTEXT = {
-  res: {
-    cookie: mocks.setCookie,
-    clearCookie: mocks.clearCookie,
-  },
-  req: {
-    cookies: {},
-  },
-} as unknown as Context
+  res: {},
+  req: {},
+} as Context
+
+const mocks = vi.hoisted(() => ({
+  sgidCallback: vi.fn(() => ({ accessToken: '123', sub: 'abc' })),
+  sgidUserInfo: vi.fn(),
+  setAuthCookie: vi.fn(),
+  getOrCreateUser: vi.fn(),
+  isWhitelistedEmail: vi.fn(),
+  logError: vi.fn(),
+}))
 
 vi.mock('@opengovsg/sgid-client', () => ({
   SgidClient: function () {
@@ -59,11 +50,6 @@ vi.mock('@/helpers/logger', () => ({
   default: {
     error: mocks.logError,
   },
-}))
-
-vi.mock('jsonwebtoken', () => ({
-  sign: mocks.signJwt,
-  verify: mocks.verifyJwt,
 }))
 
 describe('Login with SGID', () => {
@@ -256,117 +242,5 @@ describe('Login with SGID', () => {
     })
     expect(mocks.getOrCreateUser).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
-  })
-
-  it('should only cookie-fy and return filtered entries if user has multiple POCDEX entries', async () => {
-    const pocdexData = [
-      // Should be included.
-      {
-        workEmail: 'loong_loong@potato.gov.sg',
-        agencyName: 'Ministry of Potato Chips',
-        departmentName: 'Flavouring',
-        employmentType: 'Permanent',
-        employmentTitle: 'Sea Salt Scientist',
-      },
-      {
-        workEmail: 'loong@tea.gov.sg',
-        agencyName: 'Ministry of Tea',
-        departmentName: 'Drinkers',
-        employmentType: 'Permanent',
-        employmentTitle: 'Tea Chugger Extraordinaire',
-      },
-
-      // Should be filtered out
-      {
-        workEmail: 'NA',
-        agencyName: 'Ministry of Macarons',
-        departmentName: 'Tasting',
-        employmentType: 'Permanent',
-        employmentTitle: 'Chief Taste Tester',
-      },
-      {
-        workEmail: 'wee@non-whitelisted-glc.com.sg',
-        agencyName: 'Non-whitelisted GLC',
-        departmentName: 'Herp',
-        employmentType: 'Permanent',
-        employmentTitle: 'Derp',
-      },
-    ]
-    mocks.sgidUserInfo.mockResolvedValueOnce({
-      data: {
-        'pocdex.public_officer_employments': JSON.stringify(pocdexData),
-      },
-    })
-    const expectedEntries = [
-      {
-        workEmail: 'loong_loong@potato.gov.sg',
-        agencyName: 'Ministry of Potato Chips',
-        departmentName: 'Flavouring',
-        employmentType: 'Permanent',
-        employmentTitle: 'Sea Salt Scientist',
-      },
-      {
-        workEmail: 'loong@tea.gov.sg',
-        agencyName: 'Ministry of Tea',
-        departmentName: 'Drinkers',
-        employmentType: 'Permanent',
-        employmentTitle: 'Tea Chugger Extraordinaire',
-      },
-    ]
-
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
-
-    expect(result.publicOfficerEmployments).toEqual(expectedEntries)
-    expect(mocks.signJwt).toBeCalledWith(
-      {
-        publicOfficerEmployments: expectedEntries,
-      },
-      expect.anything(),
-    )
-    expect(mocks.setCookie).toBeCalled()
-
-    expect(mocks.setAuthCookie).not.toBeCalled()
-  })
-
-  it("should convert non-email 'NA' values to null before returning POCDEX entries", async () => {
-    mocks.sgidUserInfo.mockResolvedValueOnce({
-      data: {
-        'pocdex.public_officer_employments': JSON.stringify([
-          {
-            workEmail: 'loong_loong@potato.gov.sg',
-            agencyName: 'NA',
-            departmentName: 'NA',
-            employmentType: 'NA',
-            employmentTitle: 'NA',
-          },
-          {
-            workEmail: 'loong@tea.gov.sg',
-            agencyName: 'Ministry of Tea',
-            departmentName: 'NA',
-            employmentType: 'NA',
-            employmentTitle: 'Tea Chugger Extraordinaire',
-          },
-        ]),
-      },
-    })
-
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
-
-    expect(result.publicOfficerEmployments).toEqual([
-      {
-        workEmail: 'loong_loong@potato.gov.sg',
-        agencyName: null,
-        departmentName: null,
-        employmentType: null,
-        employmentTitle: null,
-      },
-      {
-        workEmail: 'loong@tea.gov.sg',
-        agencyName: 'Ministry of Tea',
-        departmentName: null,
-        employmentType: null,
-        employmentTitle: 'Tea Chugger Extraordinaire',
-      },
-    ])
   })
 })
