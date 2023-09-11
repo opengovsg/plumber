@@ -1,11 +1,12 @@
 import { useCallback } from 'react'
 import { BiChevronRight } from 'react-icons/bi'
-import { type ApolloError, type MutationFunction } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import { Flex, Heading, Icon, Link, Text } from '@chakra-ui/react'
 import * as URLS from 'config/urls'
+import { LOGIN_WITH_SELECTED_SGID } from 'graphql/mutations/login-with-selected-sgid'
 
 export interface Employment {
-  workEmail: string | null
+  workEmail: string
   agencyName: string | null
   departmentName: string | null
   employmentTitle: string | null
@@ -13,38 +14,36 @@ export interface Employment {
 
 interface EmploymentListProps {
   employments: Employment[]
-  loginWithSgid: MutationFunction
-  loginErrored: ApolloError | undefined
   setFailed: (failed: boolean) => void
 }
 
 export default function EmploymentList(
   props: EmploymentListProps,
 ): JSX.Element {
-  const { employments, loginWithSgid, loginErrored, setFailed } = props
+  const { employments, setFailed } = props
+
+  const [loginWithSelectedSgid] = useMutation(LOGIN_WITH_SELECTED_SGID)
 
   const onSelectEmployment = useCallback(
-    async (index: number) => {
-      const result = await loginWithSgid({
+    async (workEmail: string) => {
+      const result = await loginWithSelectedSgid({
         variables: {
           input: {
-            type: 'SPECIFIC_EMPLOYMENT',
-            specificEmployment: {
-              employmentIndex: index,
-            },
+            workEmail,
           },
         },
+        onError: () => setFailed(true),
       })
 
-      const nextUrl = result.data?.loginWithSgid?.nextUrl
+      const success = result.data?.loginWithSelectedSgid?.success
 
-      if (loginErrored || !nextUrl) {
+      if (!success) {
         setFailed(true)
       } else {
-        location.assign(nextUrl)
+        location.assign(URLS.FLOWS)
       }
     },
-    [loginWithSgid, loginErrored, setFailed],
+    [setFailed],
   )
 
   return (
@@ -58,7 +57,7 @@ export default function EmploymentList(
           px={6}
           py={7}
           alignItems="center"
-          onClick={() => onSelectEmployment(index)}
+          onClick={() => onSelectEmployment(employment.workEmail)}
           _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
           _active={{ bg: 'interaction.muted.neutral.active' }}
         >

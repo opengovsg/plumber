@@ -11,7 +11,6 @@ import EmploymentList, { type Employment } from './EmploymentList'
 export default function SgidRedirect(): JSX.Element {
   const [loginWithSgid] = useMutation(LOGIN_WITH_SGID)
   const [searchParams] = useSearchParams()
-
   const [hasFailed, setFailed] = useState<boolean>(false)
   const [employments, setEmployments] = useState<Employment[] | null>(null)
 
@@ -49,10 +48,8 @@ export default function SgidRedirect(): JSX.Element {
         onError: () => setFailed(true),
       })
 
-      // Temporarily unknown array; next PR will type this more strongly when
-      // we support multiple-hatted users.
       const publicOfficerEmployments = result.data?.loginWithSgid
-        ?.publicOfficerEmployments as unknown[]
+        ?.publicOfficerEmployments as Employment[]
 
       if (!publicOfficerEmployments) {
         setFailed(true)
@@ -65,8 +62,7 @@ export default function SgidRedirect(): JSX.Element {
       } else if (publicOfficerEmployments.length === 1) {
         location.assign(URLS.FLOWS)
       } else {
-        // Multi-hat case. Fail for now.; next PR implements UI.
-        location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
+        setEmployments(publicOfficerEmployments)
       }
     }
 
@@ -83,12 +79,7 @@ export default function SgidRedirect(): JSX.Element {
           </Text>
         </Infobox>
       ) : employments ? (
-        <EmploymentList
-          employments={employments}
-          loginWithSgid={loginWithSgid}
-          loginErrored={loginErrored}
-          setFailed={setFailed}
-        />
+        <EmploymentList employments={employments} setFailed={setFailed} />
       ) : (
         <Flex alignItems="center">
           <CircularProgress isIndeterminate size={10} mr={3} />
