@@ -24,21 +24,6 @@ interface PublicOfficerEmployment {
   employmentTitle: string | null
 }
 
-interface LoginWithSgidParams {
-  input: { authCode: string; nonce: string; verifier: string }
-}
-
-interface SgidLoginResult {
-  /**
-   * Success or failure can be determined by the length of this array.
-   * - Length = 0: Login failed, we could not find any valid POCDEX data.
-   * - Length = 1: Login success, we will return the POCDEX entry used to login.
-   * - Length > 1: Multi-hat user; we need the user to select which work email
-   *               to login.
-   */
-  publicOfficerEmployments: PublicOfficerEmployment[]
-}
-
 async function parsePocdexEmployments(
   rawData: string,
 ): Promise<PublicOfficerEmployment[]> {
@@ -75,11 +60,26 @@ async function parsePocdexEmployments(
   return allEmployments.filter((_, index) => validEmployments[index])
 }
 
+interface LoginWithSgidParams {
+  input: { authCode: string; nonce: string; verifier: string }
+}
+
+interface LoginWithSgidResult {
+  /**
+   * Success or failure can be determined by the length of this array.
+   * - Length = 0: Login failed, we could not find any valid POCDEX data.
+   * - Length = 1: Login success, we will return the POCDEX entry used to login.
+   * - Length > 1: Multi-hat user; we need the user to select which work email
+   *               to login.
+   */
+  publicOfficerEmployments: PublicOfficerEmployment[]
+}
+
 export default async function loginWithSgid(
   _parent: unknown,
   params: LoginWithSgidParams,
   context: Context,
-): Promise<SgidLoginResult> {
+): Promise<LoginWithSgidResult> {
   const { authCode, nonce, verifier } = params.input
 
   let userInfo: SgidUserInfoReturn | null = null

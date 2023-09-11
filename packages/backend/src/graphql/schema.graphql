@@ -52,7 +52,7 @@ type Mutation {
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
   logout: Boolean
-  loginWithSgid(input: LoginWithSgidInput!): SgidLoginResult!
+  loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
 }
 
 """
@@ -506,9 +506,7 @@ input LoginWithSgidInput {
   verifier: String!
 }
 
-# Named slightly differently (instead of LoginWithSgidResult) as there are
-# multiple mutations which use this.
-type SgidLoginResult {
+type LoginWithSgidResult {
   publicOfficerEmployments: [SgidPublicOfficerEmployment!]!
 }
 
