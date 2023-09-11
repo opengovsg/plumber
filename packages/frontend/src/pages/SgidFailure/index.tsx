@@ -2,7 +2,6 @@ import { BiSad } from 'react-icons/bi'
 import { Box, Center, Flex, Heading, Icon, Link, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
-import { SGID_CHECK_ELIGIBILITY_URL } from 'helpers/sgid'
 
 export default function SgidFailure(): JSX.Element {
   return (
@@ -15,7 +14,7 @@ export default function SgidFailure(): JSX.Element {
           </Heading>
           <Text textStyle="body-1" textAlign="center">
             Please check{' '}
-            <Link target="_blank" href={SGID_CHECK_ELIGIBILITY_URL}>
+            <Link target="_blank" href={URLS.SGID_CHECK_ELIGIBILITY_URL}>
               here
             </Link>{' '}
             if your government agency is supported. Meanwhile, login via your
