@@ -55,9 +55,6 @@ export const worker = new Worker(
     if (step.appKey === 'delay') {
       jobOptions = { ...DEFAULT_JOB_OPTIONS, delay: delayAsMilliseconds(step) }
     }
-    const redis = createRedisClient()
-    console.log('this is testing redis key')
-    console.log(await redis.get('testKey'))
 
     await actionQueue.add(jobName, jobPayload, jobOptions)
   }),

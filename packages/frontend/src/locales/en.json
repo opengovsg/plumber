@@ -6,8 +6,6 @@
   "drawer.apps": "My Apps",
   "drawer.executions": "Executions",
   "drawer.explore": "Explore",
-  "app.connectionCount": "{count} connections",
-  "app.flowCount": "{count} pipes",
   "app.addConnection": "Add connection",
   "app.reconnectConnection": "Reconnect connection",
   "app.createFlow": "Create pipe",

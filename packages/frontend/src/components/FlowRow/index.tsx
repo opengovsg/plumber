@@ -1,7 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
 import { MouseEvent, ReactElement, useRef, useState } from 'react'
-import { BiChevronRight } from 'react-icons/bi'
+import { BiDotsHorizontalRounded } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -138,13 +138,14 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
 
                 <IconButton
                   aria-label="open context menu"
-                  icon={<BiChevronRight />}
+                  icon={<BiDotsHorizontalRounded />}
                   size="md"
                   variant="clear"
                   color="interaction.sub.default"
                   ref={contextButtonRef}
                   onClick={onContextMenuClick}
                   border={0}
+                  colorScheme="neutral"
                 />
               </Flex>
             </GridItem>
