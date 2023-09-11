@@ -1,21 +1,13 @@
-import { type FormEvent, useCallback, useState } from 'react'
+import { type FormEvent, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import {
-  AbsoluteCenter,
-  Box,
-  Divider,
-  Flex,
-  Link,
-  Text,
-} from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import { Flex } from '@chakra-ui/react'
 import { REQUEST_OTP } from 'graphql/mutations/request-otp'
 import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
 import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
-import { buildSgidAuthCodeUrl, SGID_CHECK_ELIGIBILITY_URL } from 'helpers/sgid'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'
+import SgidLoginSection from './SgidLoginSection'
 
 export const LoginForm = (): JSX.Element => {
   const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP)
@@ -52,17 +44,6 @@ export const LoginForm = (): JSX.Element => {
     }
   }
 
-  const [isRedirectingToSgid, setIsRedirectingToSgid] = useState(false)
-
-  const handleSgidLogin = useCallback(async () => {
-    setIsRedirectingToSgid(true)
-
-    const { url, verifier, nonce } = await buildSgidAuthCodeUrl()
-    sessionStorage.setItem('sgid-verifier', verifier)
-    sessionStorage.setItem('sgid-nonce', nonce)
-    location.assign(url)
-  }, [])
-
   // FIXME (ogp-weeloong): Fully migrate to starter kit style login page.
   return (
     <form onSubmit={handleSubmit}>
@@ -82,32 +63,7 @@ export const LoginForm = (): JSX.Element => {
           />
         )}
 
-        <Box position="relative" my="2.5rem">
-          <Divider />
-          <AbsoluteCenter>
-            <Box bg="white" p={3}>
-              <Text textStyle="subhead-1">or</Text>
-            </Box>
-          </AbsoluteCenter>
-        </Box>
-
-        <Flex flexDir="column" alignItems="center">
-          <Button
-            // isFullWidth a bit ugly
-            width="full"
-            mb={2}
-            onClick={handleSgidLogin}
-            isLoading={isRedirectingToSgid}
-          >
-            Log in with SingPass
-          </Button>
-          <Text>
-            Can my agency use this? Check{' '}
-            <Link target="_blank" href={SGID_CHECK_ELIGIBILITY_URL}>
-              here.
-            </Link>
-          </Text>
-        </Flex>
+        <SgidLoginSection />
       </Flex>
     </form>
   )

@@ -71,3 +71,5 @@ export const APP_ICON_URL = (appKey: string): string =>
 export const OGP_HOMEPAGE = 'https://open.gov.sg'
 export const GUIDE_LINK = 'https://guide.plumber.gov.sg'
 export const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'
+export const SGID_CHECK_ELIGIBILITY_URL =
+  'https://docs.id.gov.sg/faq-users#as-a-government-officer-why-am-i-not-able-to-login-to-my-work-tool-using-sgid'

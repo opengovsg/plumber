@@ -1,8 +1,5 @@
 import * as URLS from 'config/urls'
 
-export const SGID_CHECK_ELIGIBILITY_URL =
-  'https://docs.id.gov.sg/faq-users#as-a-government-officer-why-am-i-not-able-to-login-to-my-work-tool-using-sgid'
-
 // FIXME (ogp-weeloong): Add prod client ID later.
 const CLIENT_ID = 'PLUMBERSTAGINGDEV-f49a9cb6'
 const SCOPE = 'openid pocdex.public_officer_employments'
@@ -13,7 +10,6 @@ async function generatePkceStuff(): Promise<{
   verifier: string
   nonce: string
 }> {
-  // Good-enough entropy.
   const verifier = `${crypto.randomUUID()}~${crypto.randomUUID()}~${crypto.randomUUID()}`
 
   const verifierDigest = new Uint8Array(
