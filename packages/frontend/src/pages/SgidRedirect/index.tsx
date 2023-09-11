@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Center, CircularProgress, Link, Text } from '@chakra-ui/react'
+import { Center, CircularProgress, Flex, Link, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
@@ -78,11 +78,14 @@ export default function SgidRedirect(): JSX.Element {
         <Infobox variant="error">
           <Text>
             There was an error logging you in. Please try again{' '}
-            <Link href={URLS.LOGIN}>here.</Link>
+            <Link href={URLS.LOGIN}>here</Link>.
           </Text>
         </Infobox>
       ) : (
-        <CircularProgress isIndeterminate />
+        <Flex alignItems="center">
+          <CircularProgress isIndeterminate size={10} mr={3} />
+          <Text>Logging you in...</Text>
+        </Flex>
       )}
     </Center>
   )

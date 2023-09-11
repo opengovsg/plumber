@@ -60,7 +60,11 @@ async function parsePocdexEmployments(
   return allEmployments.filter((_, index) => validEmployments[index])
 }
 
-export interface SgidLoginResult {
+interface LoginWithSgidParams {
+  input: { authCode: string; nonce: string; verifier: string }
+}
+
+interface LoginWithSgidResult {
   /**
    * Success or failure can be determined by the length of this array.
    * - Length = 0: Login failed, we could not find any valid POCDEX data.
@@ -71,15 +75,11 @@ export interface SgidLoginResult {
   publicOfficerEmployments: PublicOfficerEmployment[]
 }
 
-interface LoginWithSgidParams {
-  input: { authCode: string; nonce: string; verifier: string }
-}
-
 export default async function loginWithSgid(
   _parent: unknown,
   params: LoginWithSgidParams,
   context: Context,
-): Promise<SgidLoginResult> {
+): Promise<LoginWithSgidResult> {
   const { authCode, nonce, verifier } = params.input
 
   let userInfo: SgidUserInfoReturn | null = null
