@@ -1,7 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
-import { Fragment, MouseEvent, ReactElement, useRef, useState } from 'react'
-import { BiChevronRight, BiSolidCircle } from 'react-icons/bi'
+import { MouseEvent, ReactElement, useRef, useState } from 'react'
+import { BiChevronRight } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -13,11 +13,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import {
-  Badge,
-  BadgeLeftIcon,
-  IconButton,
-} from '@opengovsg/design-system-react'
+import { Badge, IconButton } from '@opengovsg/design-system-react'
 import FlowAppIcons from 'components/FlowAppIcons'
 import FlowContextMenu from 'components/FlowContextMenu'
 import * as URLS from 'config/urls'
@@ -54,7 +50,8 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
     <>
       <Card
         boxShadow="none"
-        _hover={{ bg: '#FEF8FB' }}
+        _hover={{ bg: 'interaction.muted.neutral.hover' }}
+        _active={{ bg: 'interaction.muted.neutral.active' }}
         borderRadius="0"
         borderBottom="1px solid"
         borderBottomColor="base.divider.medium"
@@ -127,20 +124,16 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
               <Flex alignItems="center" gap={1.5}>
                 <Badge
                   style={{
-                    borderRadius: '3.125rem',
                     padding: '0.25rem 0.5rem',
                   }}
                   colorScheme={flow?.active ? 'success' : 'grey'}
                   variant="subtle"
                 >
-                  <Fragment>
-                    <BadgeLeftIcon boxSize={2} mr={2} as={BiSolidCircle} />
-                    <Text textStyle="body-2">
-                      {formatMessage(
-                        flow?.active ? 'flow.published' : 'flow.draft',
-                      )}
-                    </Text>
-                  </Fragment>
+                  <Text>
+                    {formatMessage(
+                      flow?.active ? 'flow.published' : 'flow.draft',
+                    )}
+                  </Text>
                 </Badge>
 
                 <IconButton
