@@ -47,12 +47,12 @@ export default function SgidRedirect(): JSX.Element {
 
       // See comments in loginWithSgid mutation for details on these values.
       if (publicOfficerEmployments.length === 0) {
-        location.assign(URLS.LOGIN_SGID_FAILED)
+        location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
       } else if (publicOfficerEmployments.length === 1) {
         location.assign(URLS.FLOWS)
       } else {
         // Multi-hat case. Fail for now.
-        location.assign(URLS.LOGIN_SGID_FAILED)
+        location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
       }
     }
 
