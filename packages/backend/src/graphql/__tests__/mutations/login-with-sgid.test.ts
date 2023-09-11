@@ -92,7 +92,9 @@ describe('Login with SGID', () => {
 
       expect(mocks.getOrCreateUser).not.toBeCalled()
       expect(mocks.setAuthCookie).not.toBeCalled()
-      expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/login/sgid/failed`)
+      expect(result.nextUrl).toEqual(
+        `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
+      )
     },
   )
 
@@ -115,7 +117,9 @@ describe('Login with SGID', () => {
 
     expect(mocks.getOrCreateUser).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
-    expect(result.nextUrl).toEqual(`${appConfig.webAppUrl}/login/sgid/failed`)
+    expect(result.nextUrl).toEqual(
+      `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
+    )
   })
 
   it('should exclude pocdex entries with missing / NA work emails (direct login due to one other email scenario)', async () => {
@@ -189,7 +193,7 @@ describe('Login with SGID', () => {
         expect(mocks.getOrCreateUser).not.toBeCalled()
         expect(mocks.setAuthCookie).not.toBeCalled()
         expect(result.nextUrl).toEqual(
-          `${appConfig.webAppUrl}/login/sgid/failed`,
+          `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
         )
       }
     },

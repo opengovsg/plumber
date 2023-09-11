@@ -85,7 +85,7 @@ export default async function loginWithSgid(
   // Back to OTP if we couldn't find anything on POCDEX...
   if (publicOfficerEmployments.length === 0) {
     return {
-      nextUrl: `${appConfig.webAppUrl}/login/sgid/failed`,
+      nextUrl: `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
     }
   }
 
@@ -103,6 +103,6 @@ export default async function loginWithSgid(
   // TODO next PR: Let user choose identity if they have more than 1 hat. For
   // now, just throw them back to OTP page.
   return {
-    nextUrl: `${appConfig.webAppUrl}/login/sgid/failed`,
+    nextUrl: `${appConfig.webAppUrl}/login/?not_sgid_eligible=1`,
   }
 }
