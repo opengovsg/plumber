@@ -4,6 +4,8 @@ import defineAction from '@/helpers/define-action'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 
+export const KEY = 'ifThen'
+
 function evalCondition(parameters: IJSONObject): boolean {
   const { field, is, condition, value } = parameters
 
@@ -49,7 +51,7 @@ function shouldTakeBranch($: IGlobalVariable): boolean {
 
 export default defineAction({
   name: 'If... Then',
-  key: 'ifThen',
+  key: KEY,
   description: '',
   groupsLaterSteps: true,
   arguments: [
