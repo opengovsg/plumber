@@ -1,6 +1,6 @@
 import type { IExecution } from '@plumber/types'
 
-import * as React from 'react'
+import { ReactElement } from 'react'
 import { BiChevronRight } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
@@ -23,9 +23,7 @@ type ExecutionRowProps = {
   execution: IExecution
 }
 
-export default function ExecutionRow(
-  props: ExecutionRowProps,
-): React.ReactElement {
+export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
   const { execution } = props
   const { flow } = execution
 
