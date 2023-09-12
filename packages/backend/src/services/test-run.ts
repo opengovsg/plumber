@@ -97,35 +97,17 @@ const testRun = async (options: TestRunOptions) => {
     return { executionStep: triggerExecutionStep }
   }
 
-  // Actions may redirect steps, so we keep track here. We want to loop through
-  // _all_ possible actions during a test run, so that we can let people know if
-  // an action was skipped due to redirection.
-  let nextStepId = actionSteps[0]?.id
-
   for (const actionStep of actionSteps) {
-    if (actionStep.id !== nextStepId) {
-      if (!nextStepId || actionStep.id === untilStep.id) {
-        throw new Error(
-          'Unable to test step because it was skipped by conditional logic.',
-        )
-      }
-
-      continue
-    }
-
-    const { executionStep: actionExecutionStep, nextStep } =
-      await processAction({
-        flowId: flow.id,
-        stepId: actionStep.id,
-        executionId,
-        testRun: true,
-      })
+    const { executionStep: actionExecutionStep } = await processAction({
+      flowId: flow.id,
+      stepId: actionStep.id,
+      executionId,
+      testRun: true,
+    })
 
     if (actionStep.id === untilStep.id || actionExecutionStep.isFailed) {
       return { executionStep: actionExecutionStep }
     }
-
-    nextStepId = nextStep?.id
   }
 }
 
