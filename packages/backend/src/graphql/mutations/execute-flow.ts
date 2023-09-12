@@ -19,7 +19,7 @@ const executeFlow = async (
     .findById(stepId)
     .throwIfNotFound()
 
-  const { executionStep } = await testRun({ stepId })
+  const { executionStep, wouldHaveBeenSkipped } = await testRun({ stepId })
 
   untilStep.executionSteps = [executionStep] // attach missing execution step into current step
 
@@ -33,7 +33,7 @@ const executeFlow = async (
     })
   }
 
-  return { data: executionStep.dataOut, step: untilStep }
+  return { data: executionStep.dataOut, step: untilStep, wouldHaveBeenSkipped }
 }
 
 export default executeFlow

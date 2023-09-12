@@ -97,16 +97,34 @@ const testRun = async (options: TestRunOptions) => {
     return { executionStep: triggerExecutionStep }
   }
 
-  for (const actionStep of actionSteps) {
-    const { executionStep: actionExecutionStep } = await processAction({
-      flowId: flow.id,
-      stepId: actionStep.id,
-      executionId,
-      testRun: true,
-    })
+  // Actions may redirect steps. We keep track here so that we can let users
+  // know if an action would have been skipped due to redirection.
+  let nextStepId = actionSteps[0]?.id
 
-    if (actionStep.id === untilStep.id || actionExecutionStep.isFailed) {
+  for (const actionStep of actionSteps) {
+    const { executionStep: actionExecutionStep, nextStep } =
+      await processAction({
+        flowId: flow.id,
+        stepId: actionStep.id,
+        executionId,
+        testRun: true,
+      })
+
+    if (actionExecutionStep.isFailed) {
       return { executionStep: actionExecutionStep }
+    }
+
+    if (actionStep.id === untilStep.id) {
+      return {
+        executionStep: actionExecutionStep,
+        wouldHaveBeenSkipped: actionStep.id !== nextStepId,
+      }
+    }
+
+    // Don't update next step ID if actionStep wouldn't have been run in real
+    // life.
+    if (actionStep.id === nextStepId) {
+      nextStepId = nextStep?.id
     }
   }
 }
