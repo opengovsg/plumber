@@ -142,7 +142,7 @@ export default defineAction({
     })
 
     if (isBranchTaken) {
-      return {}
+      return
     }
 
     const nextStepId = $.step.parameters.nextStepIdIfSkipped

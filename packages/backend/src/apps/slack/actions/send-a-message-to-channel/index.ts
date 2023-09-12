@@ -76,7 +76,5 @@ export default defineAction({
 
   async run($) {
     await postMessage($)
-
-    return {}
   },
 })
