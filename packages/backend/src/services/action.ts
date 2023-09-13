@@ -3,6 +3,7 @@ import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
+import { sendEmail } from '@/helpers/send-email'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -23,12 +24,15 @@ export const processAction = async (options: ProcessActionOptions) => {
     .findById(executionId)
     .throwIfNotFound()
 
+  const flow = await Flow.query().findById(flowId).throwIfNotFound()
+
   const $ = await globalVariable({
-    flow: await Flow.query().findById(flowId).throwIfNotFound(),
+    flow: flow,
     app: await step.getApp(),
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
+    user: await flow.getUser(),
   })
 
   const priorExecutionSteps = await ExecutionStep.query().where({
@@ -52,6 +56,11 @@ export const processAction = async (options: ProcessActionOptions) => {
     await actionCommand.run($)
   } catch (error) {
     logger.error(error)
+    await sendEmail({
+      subject: `${flow.name} has errors`,
+      body: `<h1>${error}, please go retry!</h1>`,
+      recipient: $.userEmail,
+    })
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         details: error.details,

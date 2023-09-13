@@ -9,6 +9,7 @@ import Base from './base'
 import Execution from './execution'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
+import User from './user'
 
 class Flow extends Base {
   id!: string
@@ -131,6 +132,10 @@ class Flow extends Base {
     return await this.$relatedQuery('steps').findOne({
       type: 'trigger',
     })
+  }
+
+  async getUser(): Promise<User> {
+    return await User.query().findById(this.userId)
   }
 
   async containsFileProcessingActions(): Promise<boolean> {
