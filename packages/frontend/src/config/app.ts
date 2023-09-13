@@ -6,6 +6,8 @@ interface AppConfig {
 }
 
 function getAppConfig(): AppConfig {
+  // important: although import.meta.env.VITE_MODE is available, do not use
+  // use it as it is not available in development mode
   const env = import.meta.env.MODE
   const version = import.meta.env.PACKAGE_VERSION
   const commonEnv = {
