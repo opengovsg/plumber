@@ -225,10 +225,9 @@ const testRun = async (options: TestRunOptions) => {
   // steps outside that branch.
   const stepsToExecute = getStepIdsToExecuteForIfThen(untilStep)
   const untilStepIsInIfThenBranch = stepsToExecute.size !== flow.steps.length
-  let confirmPlusChopIfThenBranchAlreadySkipped = false
+  let untilStepInIfThenBranchIsReached = true
 
   actionSteps = actionSteps.filter((step) => stepsToExecute.has(step.id))
-
   for (let i = 0; i < actionSteps.length; i++) {
     const actionStep = actionSteps[i]
 
@@ -247,27 +246,23 @@ const testRun = async (options: TestRunOptions) => {
     if (actionStep.id === untilStep.id) {
       return {
         executionStep: actionExecutionStep,
-        wouldHaveBeenSkipped: actionStep.id !== nextStepId,
+        wouldHaveBeenSkipped: untilStepIsInIfThenBranch
+          ? untilStepInIfThenBranchIsReached
+          : actionStep.id !== nextStepId,
       }
     }
 
     // Don't update next step ID if actionStep wouldn't have been run in real
-    // life.
-    if (
-      untilStepIsInIfThenBranch &&
-      isIfThenStep(actionStep) &&
-      !confirmPlusChopIfThenBranchAlreadySkipped
-    ) {
-      if (i !== actionSteps.length && actionSteps[i + 1].id !== nextStep?.id) {
-        confirmPlusChopIfThenBranchAlreadySkipped = true
-      }
+    // life. For steps within if-then branches, the logic is much trickier, so
+    // we compute separately to reduce code complexity.
+    if (!untilStepIsInIfThenBranch && actionStep.id === nextStepId) {
+      nextStepId = nextStep?.id
     }
 
-    if (
-      !confirmPlusChopIfThenBranchAlreadySkipped &&
-      actionStep.id === nextStepId
-    ) {
-      nextStepId = nextStep?.id
+    if (untilStepIsInIfThenBranch && isIfThenStep(actionStep)) {
+      untilStepInIfThenBranchIsReached =
+        untilStepInIfThenBranchIsReached &&
+        (actionExecutionStep.dataOut.isBranchTaken as boolean)
     }
   }
 }
