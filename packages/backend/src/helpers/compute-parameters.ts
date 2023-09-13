@@ -2,6 +2,7 @@ import { IAction } from '@plumber/types'
 
 import get from 'lodash.get'
 
+import vaultWorkspace from '@/apps/vault-workspace'
 import ExecutionStep from '@/models/execution-step'
 
 import Step from '../models/step'
@@ -55,12 +56,30 @@ function findAndSubstituteVariables(
       if (isVariable) {
         const stepIdAndKeyPath = part.replace(/{{step.|}}/g, '') as string
         const [stepId, ...keyPaths] = stepIdAndKeyPath.split('.')
-        const keyPath = keyPaths.join('.')
         const executionStep = executionSteps.find((executionStep) => {
           return executionStep.stepId === stepId
         })
         const data = executionStep?.dataOut
-        const dataValue = get(data, keyPath)
+
+        const keyPath = keyPaths.join('.')
+        let dataValue = get(data, keyPath)
+        // custom logic to deal with backward compatibility of key encoding for
+        // data from vault. Under the new logic, data from vault will always have
+        // hex-encoded key while the old templates might still used non-encoded
+        // hence if the value is not defined and keysEncoded flag was set, we
+        // attempt to convert the template string to use hex-encoded key
+        if (
+          dataValue === undefined &&
+          executionStep.appKey === vaultWorkspace.key &&
+          data &&
+          data._metadata &&
+          (data._metadata as Record<string, any>).keysEncoded
+        ) {
+          keyPaths[keyPaths.length - 1] = Buffer.from(
+            keyPaths[keyPaths.length - 1],
+          ).toString('hex')
+          dataValue = get(data, keyPaths.join('.'))
+        }
         return preprocessVariable
           ? preprocessVariable(parameterKey, dataValue)
           : dataValue

@@ -51,6 +51,7 @@ const filterTableRows = async (
     _metadata: {
       success: true,
       rowsFound: response.data.rows.length,
+      keysEncoded: true,
     },
   }
 }
