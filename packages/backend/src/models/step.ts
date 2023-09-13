@@ -158,9 +158,16 @@ class Step extends Base {
     return command
   }
 
-  static async validateFlowNotPublished(
-    args: StaticHookArguments<Step>,
-  ): Promise<void> {
+  static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {
+    await super.beforeUpdate(args)
+
+    // We _have_ to use asFindQuery here instead of iterating through
+    // args.inputItems (like in beforeInsert), because patch queries don't
+    // provide the full object - fields like flowId will be undefined.
+    //
+    // Luckily,  we _shouldn't_ run into the same problem as beforeInsert: patch
+    // or update queries should _not_ start from the root unless we want to
+    // update _all_ steps.
     const numNonDistinctActivePipes = await args
       .asFindQuery()
       .joinRelated({ flow: true })
@@ -175,19 +182,23 @@ class Step extends Base {
     }
   }
 
-  static async beforeDelete(args: StaticHookArguments<Step>): Promise<void> {
-    await super.beforeDelete(args)
-    await this.validateFlowNotPublished(args)
-  }
-
-  static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {
-    await super.beforeUpdate(args)
-    await this.validateFlowNotPublished(args)
-  }
-
   static async beforeInsert(args: StaticHookArguments<Step>): Promise<void> {
     await super.beforeInsert(args)
-    await this.validateFlowNotPublished(args)
+
+    // Footgun: we avoid asFindQuery because some valid inserts start from the
+    // root (e.g. Step.query().insert(...)), which results in asFindQuery
+    // returning _all_ steps in the DB.
+    const numActivePipes = await Flow.query(args.transaction)
+      .findByIds(args.inputItems.map((step) => step.flowId))
+      .where('active', true)
+      .resultSize()
+
+    if (numActivePipes > 0) {
+      throw new ValidationError({
+        message: 'Cannot edit published pipe.',
+        type: 'editingPublishedPipeError',
+      })
+    }
   }
 }
 

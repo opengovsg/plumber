@@ -1,4 +1,3 @@
-import Step from '@/models/step'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -27,7 +26,7 @@ const createFlow = async (
       .throwIfNotFound()
   }
 
-  await Step.query().insert({
+  await flow.$relatedQuery('steps').insert({
     flowId: flow.id,
     type: 'trigger',
     position: 1,
@@ -35,7 +34,7 @@ const createFlow = async (
     connectionId,
   })
 
-  await Step.query().insert({
+  await flow.$relatedQuery('steps').insert({
     flowId: flow.id,
     type: 'action',
     position: 2,
