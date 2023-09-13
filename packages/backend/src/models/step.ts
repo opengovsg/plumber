@@ -1,5 +1,6 @@
 import type { IJSONObject, IStep } from '@plumber/types'
 
+import { type StaticHookArguments, ValidationError } from 'objection'
 import { URL } from 'url'
 
 import appConfig from '@/config/app'
@@ -155,6 +156,38 @@ class Step extends Base {
     const command = app.actions.find((action) => action.key === key)
 
     return command
+  }
+
+  static async validateFlowNotPublished(
+    args: StaticHookArguments<Step>,
+  ): Promise<void> {
+    const numNonDistinctActivePipes = await args
+      .asFindQuery()
+      .joinRelated({ flow: true })
+      .where('flow.active', true)
+      .resultSize()
+
+    if (numNonDistinctActivePipes > 0) {
+      throw new ValidationError({
+        message: 'Cannot edit published pipe.',
+        type: 'editingPublishedPipeError',
+      })
+    }
+  }
+
+  static async beforeDelete(args: StaticHookArguments<Step>): Promise<void> {
+    await super.beforeDelete(args)
+    await this.validateFlowNotPublished(args)
+  }
+
+  static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {
+    await super.beforeUpdate(args)
+    await this.validateFlowNotPublished(args)
+  }
+
+  static async beforeInsert(args: StaticHookArguments<Step>): Promise<void> {
+    await super.beforeInsert(args)
+    await this.validateFlowNotPublished(args)
   }
 }
 
