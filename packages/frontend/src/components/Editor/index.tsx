@@ -1,11 +1,12 @@
 import type { IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useState } from 'react'
+import { Fragment, useCallback, useContext, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import FlowStep from 'components/FlowStep'
+import { EditorContext } from 'contexts/Editor'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
@@ -89,6 +90,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
     triggerStep.id,
   )
 
+  const { readOnly: isReadOnlyEditor } = useContext(EditorContext)
+
   const onStepChange = useCallback(
     (step: IStep) => {
       const mutationInput: Record<string, unknown> = {
@@ -155,7 +158,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
           <AddStepButton
             onClick={() => addStep(step.id)}
-            isDisabled={creationInProgress || flow.active}
+            isDisabled={creationInProgress || isReadOnlyEditor}
             isLastStep={index === steps.length - 1}
           />
         </Fragment>
