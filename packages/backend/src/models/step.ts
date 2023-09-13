@@ -165,7 +165,7 @@ class Step extends Base {
     // args.inputItems (like in beforeInsert), because patch queries don't
     // provide the full object - fields like flowId will be undefined.
     //
-    // Luckily,  we _shouldn't_ run into the same problem as beforeInsert: patch
+    // Luckily, we _shouldn't_ run into the same problem as beforeInsert: patch
     // or update queries should _not_ start from the root unless we want to
     // update _all_ steps.
     const numNonDistinctActivePipes = await args
