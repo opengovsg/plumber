@@ -12,12 +12,12 @@ import { GET_FLOW } from 'graphql/queries/get-flow'
 
 interface AddStepButtonProps {
   onClick: () => void
-  disabled: boolean
+  isDisabled: boolean
   isLastStep: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, disabled, isLastStep } = props
+  const { onClick, isDisabled, isLastStep } = props
 
   return (
     <Box pos="relative" h={24}>
@@ -34,7 +34,7 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
       <AbsoluteCenter>
         <IconButton
           onClick={onClick}
-          disabled={disabled}
+          isDisabled={isDisabled}
           aria-label="Add Step"
           icon={<BiPlus />}
           variant="outline"
@@ -155,7 +155,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
           <AddStepButton
             onClick={() => addStep(step.id)}
-            disabled={creationInProgress || flow.active}
+            isDisabled={creationInProgress || flow.active}
             isLastStep={index === steps.length - 1}
           />
         </Fragment>
