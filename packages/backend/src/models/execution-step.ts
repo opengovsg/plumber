@@ -1,7 +1,5 @@
 import { IJSONObject } from '@plumber/types'
 
-import { type StaticHookArguments, ValidationError } from 'objection'
-
 import Base from './base'
 import Execution from './execution'
 import Step from './step'
@@ -57,30 +55,6 @@ class ExecutionStep extends Base {
 
   get isFailed() {
     return this.status === 'failure'
-  }
-
-  static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {
-    await super.beforeUpdate(args)
-
-    // We _have_ to use asFindQuery here instead of iterating through
-    // args.inputItems because patch queries don't
-    // provide the full object - fields like flowId will be undefined.
-    //
-    // Luckily, we _shouldn't_ run into the same problem as beforeInsert: patch
-    // or update queries should _not_ start from the root unless we want to
-    // update _all_ steps.
-    const numNonDistinctActivePipes = await args
-      .asFindQuery()
-      .joinRelated({ step: { flow: true } })
-      .where('step:flow.active', true)
-      .resultSize()
-
-    if (numNonDistinctActivePipes > 0) {
-      throw new ValidationError({
-        message: 'Cannot edit published pipe.',
-        type: 'editingPublishedPipeError',
-      })
-    }
   }
 }
 

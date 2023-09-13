@@ -1,3 +1,4 @@
+import Step from '@/models/step'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -19,20 +20,22 @@ const deleteStep = async (
     })
     .throwIfNotFound()
 
-  await step.$relatedQuery('executionSteps').delete()
-  await step.$query().delete()
+  await Step.transaction(async (trx) => {
+    await step.$relatedQuery('executionSteps', trx).delete()
+    await step.$query(trx).delete()
 
-  const nextSteps = await step.flow
-    .$relatedQuery('steps')
-    .where('position', '>', step.position)
+    const nextSteps = await step.flow
+      .$relatedQuery('steps')
+      .where('position', '>', step.position)
 
-  const nextStepQueries = nextSteps.map(async (nextStep) => {
-    await nextStep.$query().patch({
-      position: nextStep.position - 1,
+    const nextStepQueries = nextSteps.map(async (nextStep) => {
+      await nextStep.$query().patch({
+        position: nextStep.position - 1,
+      })
     })
-  })
 
-  await Promise.all(nextStepQueries)
+    await Promise.all(nextStepQueries)
+  })
 
   step.flow = await step.flow
     .$query()

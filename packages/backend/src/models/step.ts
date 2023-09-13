@@ -164,10 +164,14 @@ class Step extends Base {
     // We _have_ to use asFindQuery here instead of iterating through
     // args.inputItems (like in beforeInsert), because patch queries don't
     // provide the full object - fields like flowId will be undefined.
+    // Furthermore, we use patchAndFetchById from the root so args.items will
+    // be empty.
     //
     // Luckily, we _shouldn't_ run into the same problem as beforeInsert: patch
-    // or update queries should _not_ start from the root unless we want to
-    // update _all_ steps.
+    // or update queries should _not_ start _purely_ from the root ("purely"
+    // means we exclude the ...byId() functions like patchAndFetchById; those
+    // don't count as starting from the root because they filter first) unless
+    // we want to update _all_ steps.
     const numNonDistinctActivePipes = await args
       .asFindQuery()
       .joinRelated({ flow: true })
