@@ -182,7 +182,8 @@ const testRun = async (options: TestRunOptions) => {
     .modifyGraph('flow.steps', (builder) => builder.orderBy('position', 'asc'))
 
   const flow = untilStep.flow
-  const [triggerStep, ...actionSteps] = untilStep.flow.steps
+  const [triggerStep] = flow.steps
+  let actionSteps = flow.steps.slice(1)
 
   const { data, error: triggerError } = await processFlow({
     flowId: flow.id,
@@ -223,10 +224,14 @@ const testRun = async (options: TestRunOptions) => {
   // If untilStep is a step located in an If-Then branch, we don't want to run
   // steps outside that branch.
   const stepsToExecute = getStepIdsToExecuteForIfThen(untilStep)
+  const untilStepIsInIfThenBranch = stepsToExecute.size !== flow.steps.length
+  let confirmPlusChopIfThenBranchAlreadySkipped = false
 
-  for (const actionStep of actionSteps.filter((step) =>
-    stepsToExecute.has(step.id),
-  )) {
+  actionSteps = actionSteps.filter((step) => stepsToExecute.has(step.id))
+
+  for (let i = 0; i < actionSteps.length; i++) {
+    const actionStep = actionSteps[i]
+
     const { executionStep: actionExecutionStep, nextStep } =
       await processAction({
         flowId: flow.id,
@@ -248,7 +253,20 @@ const testRun = async (options: TestRunOptions) => {
 
     // Don't update next step ID if actionStep wouldn't have been run in real
     // life.
-    if (actionStep.id === nextStepId) {
+    if (
+      untilStepIsInIfThenBranch &&
+      isIfThenStep(actionStep) &&
+      !confirmPlusChopIfThenBranchAlreadySkipped
+    ) {
+      if (i !== actionSteps.length && actionSteps[i + 1].id !== nextStep?.id) {
+        confirmPlusChopIfThenBranchAlreadySkipped = true
+      }
+    }
+
+    if (
+      !confirmPlusChopIfThenBranchAlreadySkipped &&
+      actionStep.id === nextStepId
+    ) {
       nextStepId = nextStep?.id
     }
   }
