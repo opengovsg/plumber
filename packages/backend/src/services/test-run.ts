@@ -82,21 +82,24 @@ import { processTrigger } from '@/services/trigger'
  * branch. Because complexity reduction is not great, I decided to add in nested
  * branch support <.<
  */
-function getStepIdsToExecuteForIfThen(
+function getActionStepIdsToExecuteForIfThen(
   untilStep: Step,
 ): ReadonlySet<Step['id']> {
   const result = new Set([untilStep.id])
-  const previousSteps = untilStep.flow.steps.slice(0, untilStep.position - 1)
+  const previousSteps = untilStep.flow.steps.slice(
+    1, // Ignore trigger.
+    untilStep.position - 1, // Already added to result set.
+  )
 
   let stepIdsInBranch: Array<Step['id']> = []
-  let lastSeenDepth: number | null = 0
+  let lastSeenDepth: number | null = null
   for (let i = previousSteps.length - 1; i >= 0; i--) {
     const currStep = previousSteps[i]
 
     if (isIfThenStep(currStep)) {
       const depth = parseInt(currStep.parameters.depth as string)
 
-      if (!lastSeenDepth || depth < lastSeenDepth) {
+      if (lastSeenDepth == null || depth < lastSeenDepth) {
         // This branch step is the containing or ancestor branch, so we must run
         // its steps.
         for (const stepIdInBranch of stepIdsInBranch) {
@@ -104,9 +107,6 @@ function getStepIdsToExecuteForIfThen(
         }
 
         // We always run the associated branch step.
-        result.add(currStep.id)
-      } else if (depth === lastSeenDepth) {
-        // This is a sibling branch step, so run it!
         result.add(currStep.id)
       }
 
@@ -223,11 +223,12 @@ const testRun = async (options: TestRunOptions) => {
   // **EDGE CASE**
   // If untilStep is a step located in an If-Then branch, we don't want to run
   // steps outside that branch.
-  const stepsToExecute = getStepIdsToExecuteForIfThen(untilStep)
-  const untilStepIsInIfThenBranch = stepsToExecute.size !== flow.steps.length
+  const actionStepsToExecute = getActionStepIdsToExecuteForIfThen(untilStep)
+  const untilStepIsInIfThenBranch =
+    actionStepsToExecute.size !== actionSteps.length
   let untilStepInIfThenBranchIsReached = true
 
-  actionSteps = actionSteps.filter((step) => stepsToExecute.has(step.id))
+  actionSteps = actionSteps.filter((step) => actionStepsToExecute.has(step.id))
   for (let i = 0; i < actionSteps.length; i++) {
     const actionStep = actionSteps[i]
 
