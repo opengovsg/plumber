@@ -81,6 +81,7 @@ jobs:
       - name: Build and push image to ECR
         id: build-image
         env:
+          APP_ENV: ${{ inputs.environment }}
           DOCKER_BUILDKIT: 1
         run: |
           docker build . -t ${{ steps.ecr-image-uri.outputs.image }}
