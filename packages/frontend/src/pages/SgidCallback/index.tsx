@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { BsArrowRight } from 'react-icons/bs'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Center, CircularProgress, Flex, Link, Text } from '@chakra-ui/react'
-import { Infobox } from '@opengovsg/design-system-react'
+import { Flex, Icon, Image, Spinner, VStack } from '@chakra-ui/react'
+import mainLogo from 'assets/logo.svg'
+import sgidLogo from 'assets/sgid-logo.svg'
 import * as URLS from 'config/urls'
 import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
+import { useSnackbar } from 'notistack'
 
-import EmploymentList, { type Employment } from './EmploymentList'
+import SgidAccountSelect, { type Employment } from './SgidAccountSelect'
 
-export default function SgidRedirect(): JSX.Element {
-  const [loginWithSgid] = useMutation(LOGIN_WITH_SGID)
+export default function SgidCallback(): JSX.Element {
+  const { enqueueSnackbar } = useSnackbar()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+
   const [hasFailed, setFailed] = useState<boolean>(false)
   const [employments, setEmployments] = useState<Employment[] | null>(null)
+  const [loginWithSgid] = useMutation(LOGIN_WITH_SGID)
 
   // Account for React strict mode.
   const alreadyProcessed = useRef(false)
@@ -58,9 +64,9 @@ export default function SgidRedirect(): JSX.Element {
 
       // See comments in loginWithSgid mutation for details on these values.
       if (publicOfficerEmployments.length === 0) {
-        location.assign(`${URLS.LOGIN}/?not_sgid_eligible=1`)
+        navigate(`${URLS.LOGIN}/?not_sgid_eligible=1`, { replace: true })
       } else if (publicOfficerEmployments.length === 1) {
-        location.assign(URLS.FLOWS)
+        navigate(URLS.FLOWS, { replace: true })
       } else {
         setEmployments(publicOfficerEmployments)
       }
@@ -69,23 +75,27 @@ export default function SgidRedirect(): JSX.Element {
     callMutation()
   }, [])
 
+  if (hasFailed) {
+    enqueueSnackbar('There was an error logging you in. Please try again.', {
+      variant: 'error',
+    })
+    navigate(URLS.LOGIN, { replace: true })
+    return <></>
+  }
+
   return (
-    <Center flex={1}>
-      {hasFailed ? (
-        <Infobox variant="error">
-          <Text>
-            There was an error logging you in. Please try again{' '}
-            <Link href={URLS.LOGIN}>here</Link>.
-          </Text>
-        </Infobox>
-      ) : employments ? (
-        <EmploymentList employments={employments} setFailed={setFailed} />
+    <VStack flex={1} alignItems="center" justifyContent="center" gap={8}>
+      <Flex alignItems="center" justifyContent="center" gap={8}>
+        <Image src={sgidLogo} alt="plumber-logo" w={24} />
+        <Icon as={BsArrowRight} boxSize={8} color="primary.600" />
+        <Image src={mainLogo} alt="plumber-logo" w={12} mr={12} />
+      </Flex>
+
+      {employments ? (
+        <SgidAccountSelect employments={employments} setFailed={setFailed} />
       ) : (
-        <Flex alignItems="center">
-          <CircularProgress isIndeterminate size={10} mr={3} />
-          <Text>Logging you in...</Text>
-        </Flex>
+        <Spinner size="xl" thickness="4px" color="primary.500" margin="auto" />
       )}
-    </Center>
+    </VStack>
   )
 }
