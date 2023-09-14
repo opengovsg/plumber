@@ -50,10 +50,8 @@ import { processTrigger } from '@/services/trigger'
  *
  * If we are testing step S7, then we only want to execute:
  * - Concrete steps: S1, S5 and S7.
- * - Branch and sibling branch steps: B1, B2, B2.1 and B2.2
+ * - Branch steps: B2 and B2.2
  *   - This is so that we can tell if S7 would have been skipped.
- *   - Running all sibling branches is needed because we need to keep nextStepId
- *     consistent in our main execution loop.
  * ---
  *
  * This function determines what steps to run. The high level idea is:
