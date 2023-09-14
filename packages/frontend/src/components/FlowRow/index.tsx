@@ -17,7 +17,6 @@ import { Badge, IconButton } from '@opengovsg/design-system-react'
 import FlowAppIcons from 'components/FlowAppIcons'
 import FlowContextMenu from 'components/FlowContextMenu'
 import * as URLS from 'config/urls'
-import useFormatMessage from 'hooks/useFormatMessage'
 import { DateTime } from 'luxon'
 
 type FlowRowProps = {
@@ -25,7 +24,6 @@ type FlowRowProps = {
 }
 
 export default function FlowRow(props: FlowRowProps): ReactElement {
-  const formatMessage = useFormatMessage()
   const contextButtonRef = useRef<HTMLButtonElement | null>(null)
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
   const { flow } = props
@@ -109,14 +107,8 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
                   color="base.content.medium"
                   textStyle="body-2"
                 >
-                  {isUpdated &&
-                    formatMessage('flow.updatedAt', {
-                      datetime: relativeUpdatedAt,
-                    })}
-                  {!isUpdated &&
-                    formatMessage('flow.createdAt', {
-                      datetime: relativeCreatedAt,
-                    })}
+                  {isUpdated && `updated ${relativeUpdatedAt}`}
+                  {!isUpdated && `created ${relativeCreatedAt}`}
                 </Text>
               </VStack>
             </GridItem>
@@ -129,11 +121,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
                   colorScheme={flow?.active ? 'success' : 'grey'}
                   variant="subtle"
                 >
-                  <Text>
-                    {formatMessage(
-                      flow?.active ? 'flow.published' : 'flow.draft',
-                    )}
-                  </Text>
+                  <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
                 </Badge>
 
                 <IconButton

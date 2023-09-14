@@ -23,6 +23,7 @@ import useFormatMessage from 'hooks/useFormatMessage'
 import debounce from 'lodash/debounce'
 
 const FLOW_PER_PAGE = 10
+const FLOWS_TITLE = 'Pipes'
 
 const getLimitAndOffset = (page: number) => ({
   limit: FLOW_PER_PAGE,
@@ -106,7 +107,7 @@ export default function Flows(): React.ReactElement {
       <Container variant="page">
         <Grid container sx={{ mb: [0, 3] }} columnSpacing={1.5} rowSpacing={3}>
           <Grid container item xs sm alignItems="center" order={{ xs: 0 }}>
-            <PageTitle title={formatMessage('flows.title')} />
+            <PageTitle title={FLOWS_TITLE} />
           </Grid>
 
           <Grid item xs={12} sm="auto" order={{ xs: 2, sm: 1 }}>

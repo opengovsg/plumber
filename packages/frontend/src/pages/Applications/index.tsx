@@ -20,6 +20,8 @@ import * as URLS from 'config/urls'
 import { GET_CONNECTED_APPS } from 'graphql/queries/get-connected-apps'
 import useFormatMessage from 'hooks/useFormatMessage'
 
+const APPS_TITLE = 'Apps'
+
 export default function Applications(): React.ReactElement {
   const navigate = useNavigate()
   const formatMessage = useFormatMessage()
@@ -57,7 +59,7 @@ export default function Applications(): React.ReactElement {
       <Container variant="page">
         <Grid container sx={{ mb: [0, 3] }} columnSpacing={1.5} rowSpacing={3}>
           <Grid container item xs sm alignItems="center" order={{ xs: 0 }}>
-            <PageTitle title={formatMessage('apps.title')} />
+            <PageTitle title={APPS_TITLE} />
           </Grid>
 
           <Grid item xs={12} sm="auto" order={{ xs: 2, sm: 1 }}>

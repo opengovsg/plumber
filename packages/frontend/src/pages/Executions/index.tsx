@@ -17,6 +17,7 @@ import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 const EXECUTION_PER_PAGE = 10
+const EXECUTIONS_TITLE = 'Executions'
 
 const getLimitAndOffset = (page: number) => ({
   limit: EXECUTION_PER_PAGE,
@@ -57,7 +58,7 @@ export default function Executions(): React.ReactElement {
             alignItems="center"
             order={{ xs: 0, height: 80 }}
           >
-            <PageTitle title={formatMessage('executions.title')} />
+            <PageTitle title={EXECUTIONS_TITLE} />
           </Grid>
         </Grid>
 
