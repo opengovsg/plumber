@@ -19,19 +19,19 @@ function getAppConfig(): AppConfig {
     case 'prod':
       return {
         launchDarklyClientId: '64bf4b539077f112ef24e4ae',
-        sgidClientId: 'TBC',
+        sgidClientId: 'PLUMBER-c24255a5',
         ...commonEnv,
       }
     case 'staging':
       return {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
-        sgidClientId: 'TBC',
+        sgidClientId: 'PLUMBERSTAGING-776896b1',
         ...commonEnv,
       }
     default:
       return {
         launchDarklyClientId: '64bf4b539077f112ef24e4ad',
-        sgidClientId: 'TBC',
+        sgidClientId: 'PLUMBERLOCALDEV-dc1a72f7',
         ...commonEnv,
       }
   }
