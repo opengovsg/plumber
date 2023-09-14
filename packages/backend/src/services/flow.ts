@@ -1,4 +1,5 @@
 import EarlyExitError from '@/errors/early-exit'
+import { sendErrorEmail } from '@/errors/generate-error-email'
 import HttpError from '@/errors/http'
 import globalVariable from '@/helpers/global-variable'
 import Flow from '@/models/flow'
@@ -20,6 +21,7 @@ export const processFlow = async (options: ProcessFlowOptions) => {
     app: await triggerStep.getApp(),
     step: triggerStep,
     testRun: options.testRun,
+    user: await flow.getUser(),
   })
 
   try {
@@ -31,6 +33,8 @@ export const processFlow = async (options: ProcessFlowOptions) => {
     }
   } catch (error) {
     if (error instanceof EarlyExitError === false) {
+      // this should only send error email when scheduler has issues during actual runs
+      await sendErrorEmail(flow.name, $.userEmail, options.testRun)
       if (error instanceof HttpError) {
         $.triggerOutput.error = error.details
       } else {

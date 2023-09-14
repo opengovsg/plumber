@@ -1,5 +1,15 @@
 import { DateTime } from 'luxon'
 
+import { sendEmail } from '@/helpers/send-email'
+
+const MAX_LENGTH = 80
+
+function truncateFlowName(flowName: string) {
+  return flowName.length > MAX_LENGTH
+    ? flowName.slice(0, MAX_LENGTH) + '...'
+    : flowName
+}
+
 export function createBodyErrorMessage(flowName: string): string {
   const currDateTime = DateTime.now().toFormat('MMM dd yyyy, HH:mm:ss')
   const bodyMessage = `
@@ -25,4 +35,19 @@ export function createBodyErrorMessage(flowName: string): string {
     Plumber Team
   `
   return bodyMessage
+}
+
+export async function sendErrorEmail(
+  flowName: string,
+  userEmail: string,
+  isTestRun: boolean,
+) {
+  const truncatedFlowName = truncateFlowName(flowName)
+  if (!isTestRun) {
+    sendEmail({
+      subject: `${truncatedFlowName} has execution errors`,
+      body: createBodyErrorMessage(truncatedFlowName),
+      recipient: userEmail,
+    })
+  }
 }

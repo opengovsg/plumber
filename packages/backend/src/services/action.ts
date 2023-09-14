@@ -1,10 +1,9 @@
 import CancelFlowError from '@/errors/cancel-flow'
-import { createBodyErrorMessage } from '@/errors/generate-error-email'
+import { sendErrorEmail } from '@/errors/generate-error-email'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
-import { sendEmail } from '@/helpers/send-email'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -57,17 +56,13 @@ export const processAction = async (options: ProcessActionOptions) => {
     await actionCommand.run($)
   } catch (error) {
     logger.error(error)
-    await sendEmail({
-      subject: `${flow.name} has execution errors`,
-      body: createBodyErrorMessage(flow.name),
-      recipient: $.userEmail,
-    })
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         details: error.details,
         status: error.response.status,
         statusText: error.response.statusText,
       }
+      await sendErrorEmail(flow.name, $.userEmail, execution.testRun)
     } else if (error instanceof CancelFlowError) {
       proceedToNextAction = false
     } else {
@@ -75,6 +70,8 @@ export const processAction = async (options: ProcessActionOptions) => {
         $.actionOutput.error = JSON.parse(error.message)
       } catch {
         $.actionOutput.error = { error: error.message }
+      } finally {
+        await sendErrorEmail(flow.name, $.userEmail, execution.testRun)
       }
     }
   }
