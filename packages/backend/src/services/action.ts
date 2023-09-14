@@ -1,4 +1,5 @@
 import CancelFlowError from '@/errors/cancel-flow'
+import { createBodyErrorMessage } from '@/errors/generate-error-email'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
@@ -57,8 +58,8 @@ export const processAction = async (options: ProcessActionOptions) => {
   } catch (error) {
     logger.error(error)
     await sendEmail({
-      subject: `${flow.name} has errors`,
-      body: `<h1>${error}, please go retry!</h1>`,
+      subject: `${flow.name} has execution errors`,
+      body: createBodyErrorMessage(flow.name),
       recipient: $.userEmail,
     })
     if (error instanceof HttpError) {
