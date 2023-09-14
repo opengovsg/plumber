@@ -70,7 +70,7 @@ function findAndSubstituteVariables(
         // attempt to convert the template string to use hex-encoded key
         if (
           dataValue === undefined &&
-          executionStep.appKey === vaultWorkspace.key &&
+          executionStep?.appKey === vaultWorkspace.key &&
           data &&
           data._metadata &&
           (data._metadata as Record<string, any>).keysEncoded
