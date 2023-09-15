@@ -1,7 +1,12 @@
 import { type IFlow, type IStep } from '@plumber/types'
 
+import { useMemo } from 'react'
 import { Flex, Text, useDisclosure } from '@chakra-ui/react'
 import NestedEditor from 'components/FlowStepGroup/NestedEditor'
+import {
+  type StepDisplayOverridesContextData,
+  StepDisplayOverridesProvider,
+} from 'contexts/StepDisplayOverrides'
 
 interface BranchProps {
   flow: IFlow
@@ -16,6 +21,19 @@ export default function Branch(props: BranchProps): JSX.Element {
     onOpen: openEditor,
     onClose: closeEditor,
   } = useDisclosure()
+
+  const initialStep = steps[0]
+  const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
+    () => ({
+      [initialStep.id]: {
+        hintAboveCaption: 'If... Then',
+        caption: (initialStep.parameters.branchName as string) ?? defaultName,
+        disableActionChanges: true,
+        disableDelete: true,
+      },
+    }),
+    [initialStep.id, initialStep.parameters.branchName, defaultName],
+  )
 
   return (
     <>
@@ -35,12 +53,14 @@ export default function Branch(props: BranchProps): JSX.Element {
         </Text>
         {/* TODO in next PR: delete branch button */}
       </Flex>
-      <NestedEditor
-        onClose={closeEditor}
-        isOpen={editorIsOpen}
-        flow={flow}
-        steps={steps}
-      />
+      <StepDisplayOverridesProvider value={initialStepDisplayOverride}>
+        <NestedEditor
+          onClose={closeEditor}
+          isOpen={editorIsOpen}
+          flow={flow}
+          steps={steps}
+        />
+      </StepDisplayOverridesProvider>
     </>
   )
 }
