@@ -122,6 +122,7 @@ type App {
   triggers: [Trigger]
   actions: [Action]
   connections: [Connection]
+  description: String
 }
 
 type AppAuth {
