@@ -25,7 +25,7 @@ interface FlowStepHeaderProps {
   iconUrl?: string
   caption: string
   hintAboveCaption: string
-  isCompleted: boolean
+  isCompleted?: boolean
   onDelete?: MouseEventHandler
   onOpen: () => void
   onClose: () => void
@@ -105,25 +105,31 @@ export default function FlowStepHeader(
           {/*
            * Step completion status badge
            */}
-          <Flex
-            position="absolute"
-            top={0}
-            insetEnd={0}
-            boxSize={6}
-            transform="translate(0.5rem, -0.5rem)"
-            borderRadius="full"
-            bg="white"
-          >
-            {isCompleted ? (
-              <Icon
-                boxSize="full"
-                color="interaction.success.default"
-                as={BiSolidCheckCircle}
-              />
-            ) : (
-              <Icon boxSize="full" color="yellow.200" as={BiSolidErrorCircle} />
-            )}
-          </Flex>
+          {isCompleted !== undefined && (
+            <Flex
+              position="absolute"
+              top={0}
+              insetEnd={0}
+              boxSize={6}
+              transform="translate(0.5rem, -0.5rem)"
+              borderRadius="full"
+              bg="white"
+            >
+              {isCompleted ? (
+                <Icon
+                  boxSize="full"
+                  color="interaction.success.default"
+                  as={BiSolidCheckCircle}
+                />
+              ) : (
+                <Icon
+                  boxSize="full"
+                  color="yellow.200"
+                  as={BiSolidErrorCircle}
+                />
+              )}
+            </Flex>
+          )}
         </Flex>
         {/*
          * Captions

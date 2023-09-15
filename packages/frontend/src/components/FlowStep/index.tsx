@@ -105,17 +105,12 @@ export default function FlowStep(
   const { collapsed, onOpen, onClose, onChange, onContinue } = props
   const step: IStep = props.step
   const isTrigger = step.type === 'trigger'
-  const isAction = step.type === 'action'
 
   const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
   const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
 
-  // FIXME (ogp-weeloong): we shouldn't be querying for apps each time a step is
-  // loaded. Let's fix this in another PR.
-  const { data } = useQuery(GET_APPS, {
-    variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  })
+  const { data } = useQuery(GET_APPS)
   const [
     getStepWithTestExecutions,
     { data: stepWithTestExecutionsData, called: _stepWithTestExecutionsCalled },
@@ -144,7 +139,9 @@ export default function FlowStep(
     [stepExecutionsToInclude, stepWithTestExecutionsData],
   )
 
-  const apps: IApp[] = data?.getApps
+  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
+    isTrigger ? !!app.triggers?.length : !!app.actions?.length,
+  )
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
