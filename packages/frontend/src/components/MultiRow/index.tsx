@@ -46,7 +46,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
       name={name}
       control={control}
       defaultValue={[{ ...newRowDefaultValue }]}
-      render={(): JSX.Element => {
+      render={({ field: { value: fallbackRows } }): JSX.Element => {
         const {
           fields: rows,
           append,
@@ -60,13 +60,17 @@ function MultiRow(props: MultiRowProps): JSX.Element {
           append(newRowDefaultValue)
         }, [append, newRowDefaultValue])
 
+        // HACKFIX (ogp-weeloong): I don't know why `rows` lags behind
+        // `fallbackRows` on the 1st render.
+        const actualRows: typeof rows = rows.length === 0 ? fallbackRows : rows
+
         return (
           <Flex flexDir="column">
             <FormLabel isRequired={required} description={description}>
               {label}
             </FormLabel>
 
-            {rows.map((row, index) => {
+            {actualRows.map((row, index) => {
               const namePrefix = `${name}.${index}`
               const rowColour = index % 2 === 0 ? 'white' : 'primary.50'
               return (
