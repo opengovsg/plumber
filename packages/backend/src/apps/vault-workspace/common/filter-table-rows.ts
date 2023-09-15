@@ -38,7 +38,11 @@ const filterTableRows = async (
     if (name === VAULT_ID) {
       row[name] = rawData[name]
     } else {
-      row[mapping[name]] = rawData[name]
+      // keys are converted to hex here to satisfy our requirement for template
+      // keys to be alphanumeric, and will be decoded by getDataOutMetadata before
+      // displayed on frontend
+      const key = Buffer.from(mapping[name]).toString('hex')
+      row[key] = rawData[name]
     }
   }
 
@@ -47,6 +51,7 @@ const filterTableRows = async (
     _metadata: {
       success: true,
       rowsFound: response.data.rows.length,
+      keysEncoded: true,
     },
   }
 }
