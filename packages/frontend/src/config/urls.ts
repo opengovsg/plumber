@@ -67,3 +67,4 @@ export const APP_ICON_URL = (appKey: string): string =>
 export const OGP_HOMEPAGE = 'https://open.gov.sg'
 export const GUIDE_LINK = 'https://guide.plumber.gov.sg'
 export const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'
+export const STATUS_LINK = 'https://status.plumber.gov.sg/'
