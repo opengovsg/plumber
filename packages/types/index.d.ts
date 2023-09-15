@@ -402,6 +402,14 @@ export interface IBaseAction {
    * action.
    */
   groupsLaterSteps?: boolean
+
+  /**
+   * Hook that is invoked when user publishes a pipe. This is typically used by
+   * actions that need to pre-compute data before actual prod runs.
+   *
+   * @param flow The flow that will be published. Note: this is Flow, not IFlow!
+   */
+  onPipePublish?(flow: Flow): Promise<void>
 }
 
 export interface IRawAction extends IBaseAction {

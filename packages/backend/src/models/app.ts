@@ -1,6 +1,7 @@
 import { IApp } from '@plumber/types'
 
 import fs from 'fs'
+import { memoize } from 'lodash'
 import { join } from 'path'
 
 import appInfoConverter from '@/helpers/app-info-converter'
@@ -39,6 +40,10 @@ class App {
 
     return appInfoConverter(rawAppData)
   }
+
+  static getAllAppsWithFunctions = memoize(async () => {
+    return await this.findAll(null, false)
+  })
 }
 
 export default App

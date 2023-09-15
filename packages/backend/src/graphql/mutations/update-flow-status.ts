@@ -1,3 +1,6 @@
+import { IAction } from '@plumber/types'
+
+import { getOnPipePublishHook } from '@/helpers/actions'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
@@ -42,8 +45,30 @@ const updateFlowStatus = async (
     pattern: interval || EVERY_15_MINUTES_CRON,
   }
 
+  // Handle any actions that have on-publish hooks.
+  if (flow.active) {
+    const hooksToRun: ReturnType<NonNullable<IAction['onPipePublish']>>[] = []
+
+    for (const step of flow.steps) {
+      if (step.type !== 'action') {
+        continue
+      }
+
+      const hook = await getOnPipePublishHook(step.appKey, step.key)
+      if (!hook) {
+        continue
+      }
+
+      hooksToRun.push(hook(flow))
+    }
+
+    await Promise.all(hooksToRun)
+  }
+
   if (trigger.type !== 'webhook') {
     if (flow.active) {
+      // FIXME (ogp-weeloong): update published date for all flows in separate
+      // PR.
       flow = await flow.$query().patchAndFetch({
         publishedAt: new Date().toISOString(),
       })
