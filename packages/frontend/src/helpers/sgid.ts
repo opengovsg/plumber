@@ -1,7 +1,6 @@
+import appConfig from 'config/app'
 import * as URLS from 'config/urls'
 
-// FIXME (ogp-weeloong): Add prod client ID later.
-const CLIENT_ID = 'PLUMBERSTAGINGDEV-f49a9cb6'
 const SCOPE = 'openid pocdex.public_officer_employments'
 const REDIRECT_URL = `${window.location.origin}${URLS.LOGIN_SGID_REDIRECT}`
 
@@ -41,7 +40,7 @@ export async function generateSgidAuthUrl(): Promise<{
     '&code_challenge_method=S256' +
     `&code_challenge=${challenge}` +
     `&nonce=${nonce}` +
-    `&client_id=${CLIENT_ID}` +
+    `&client_id=${appConfig.sgidClientId}` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URL)}` +
     `&scope=${encodeURIComponent(SCOPE)}`
 
