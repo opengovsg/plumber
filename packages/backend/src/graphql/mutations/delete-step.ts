@@ -12,37 +12,38 @@ const deleteStep = async (
   params: Params,
   context: Context,
 ) => {
-  const step = await context.currentUser
-    .$relatedQuery('steps')
-    .withGraphFetched('flow')
-    .findOne({
-      'steps.id': params.input.id,
-    })
-    .throwIfNotFound()
+  return await Step.transaction(async (trx) => {
+    // Include SELECTs in transaction too just in case there's concurrent modification.
+    const step = await context.currentUser
+      .$relatedQuery('steps', trx)
+      .withGraphFetched('flow')
+      .findOne({
+        'steps.id': params.input.id,
+      })
+      .throwIfNotFound()
 
-  await Step.transaction(async (trx) => {
     await step.$relatedQuery('executionSteps', trx).delete()
     await step.$query(trx).delete()
 
     const nextSteps = await step.flow
-      .$relatedQuery('steps')
+      .$relatedQuery('steps', trx)
       .where('position', '>', step.position)
 
     const nextStepQueries = nextSteps.map(async (nextStep) => {
-      await nextStep.$query().patch({
+      await nextStep.$query(trx).patch({
         position: nextStep.position - 1,
       })
     })
 
     await Promise.all(nextStepQueries)
+
+    step.flow = await step.flow
+      .$query()
+      .withGraphJoined('steps')
+      .orderBy('steps.position', 'asc')
+
+    return step
   })
-
-  step.flow = await step.flow
-    .$query()
-    .withGraphJoined('steps')
-    .orderBy('steps.position', 'asc')
-
-  return step
 }
 
 export default deleteStep

@@ -26,19 +26,18 @@ const createFlow = async (
       .throwIfNotFound()
   }
 
-  await flow.$relatedQuery('steps').insert({
-    flowId: flow.id,
-    type: 'trigger',
-    position: 1,
-    appKey,
-    connectionId,
-  })
-
-  await flow.$relatedQuery('steps').insert({
-    flowId: flow.id,
-    type: 'action',
-    position: 2,
-  })
+  await flow.$relatedQuery('steps').insert([
+    {
+      type: 'trigger',
+      position: 1,
+      appKey,
+      connectionId,
+    },
+    {
+      type: 'action',
+      position: 2,
+    },
+  ])
 
   return flow
 }
