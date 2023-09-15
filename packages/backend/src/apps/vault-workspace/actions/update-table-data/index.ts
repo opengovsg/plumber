@@ -91,5 +91,7 @@ export default defineAction({
     $.setActionItem({
       raw: response,
     })
+
+    return {}
   },
 })
