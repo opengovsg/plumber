@@ -1,8 +1,16 @@
-import { IGlobalVariable, IJSONArray, IJSONObject } from '@plumber/types'
+import type {
+  IGlobalVariable,
+  IJSONArray,
+  IJSONObject,
+  IStep,
+} from '@plumber/types'
 
 import defineAction from '@/helpers/define-action'
-import Flow from '@/models/flow'
 import Step from '@/models/step'
+
+import toolbeltApp from '../..'
+
+const ACTION_KEY = 'ifThen'
 
 function evalCondition(parameters: IJSONObject): boolean {
   const { field, is, condition, value } = parameters
@@ -47,9 +55,45 @@ function shouldTakeBranch($: IGlobalVariable): boolean {
   )
 }
 
+async function getBranchStepIdToSkipTo(
+  $: IGlobalVariable,
+): Promise<IStep['id']> {
+  const currDepth = parseInt($.step.parameters.depth as string)
+  if (isNaN(currDepth)) {
+    throw new Error(
+      `Branch depth for initial branch step ${$.step.id} is not defined.`,
+    )
+  }
+
+  // PERF-FIXME: Objectionjs does no caching, so this will almost always be
+  // queried multiple times by the same worker during a test run. If it does
+  // turn out to impact perf, we can LRU memoize this by executionId.
+  const flowSteps = await Step.query()
+    .where('flow_id', $.flow.id)
+    .orderBy('position', 'asc')
+    .throwIfNotFound()
+
+  const nextBranchStep = flowSteps.slice($.step.position).find((step) => {
+    if (!(step.appKey === toolbeltApp.key && step.key === ACTION_KEY)) {
+      return false
+    }
+
+    const nextBranchDepth = parseInt(step.parameters.depth as string)
+    if (isNaN(nextBranchDepth)) {
+      throw new Error(
+        `Branch depth for future branch step ${$.step.id} is not defined.`,
+      )
+    }
+
+    return nextBranchDepth <= currDepth
+  })
+
+  return nextBranchStep?.['id']
+}
+
 export default defineAction({
   name: 'If... Then',
-  key: 'ifThen',
+  key: ACTION_KEY,
   description: '',
   groupsLaterSteps: true,
   arguments: [
@@ -64,18 +108,6 @@ export default defineAction({
     {
       // This is computed by the front-end when adding a step.
       key: 'depth',
-      type: 'string' as const,
-      label: 'FILE A BUG IF YOU SEE THIS',
-
-      hidden: true,
-      required: false,
-      variables: false,
-    },
-    {
-      // Stores the step ID to skip to if the branch is not taken. This is that
-      // is computed right before test runs, and when the pipe is published. If
-      // the flow should terminate, then it is just the empty string.
-      key: 'nextStepIdIfSkipped',
       type: 'string' as const,
       label: 'FILE A BUG IF YOU SEE THIS',
 
@@ -145,14 +177,7 @@ export default defineAction({
       return
     }
 
-    const nextStepId = $.step.parameters.nextStepIdIfSkipped
-
-    if (nextStepId === null || nextStepId === undefined) {
-      throw new Error(
-        'nextStepIdIfSkipped is unset, which should not be possible.',
-      )
-    }
-
+    const nextStepId = await getBranchStepIdToSkipTo($)
     return nextStepId
       ? {
           nextStep: {
@@ -163,97 +188,5 @@ export default defineAction({
       : {
           nextStep: { command: 'stop-execution' },
         }
-  },
-
-  async onPipePublishOrBeforeTestRun(flow: Flow) {
-    const ifThenSteps = flow.steps.filter(
-      (step) =>
-        step.appKey === 'toolbelt' &&
-        step.type === 'action' &&
-        step.key === 'ifThen',
-    )
-
-    //
-    // 1st pass - Compute concrete depths
-    //
-
-    const depths = new Map<Step['id'], number>()
-    let depth = -1
-
-    for (const step of ifThenSteps) {
-      const stepDepth = parseInt(step.parameters.depth as string)
-
-      if (isNaN(stepDepth)) {
-        // If depth is NaN, then `step` must be the 1st step of a new branch
-        // series that the user just created, so we have gone down in depth.
-        depth += 1
-      } else {
-        // Otherwise, user is editing a previously published pipe, or the 2nd+
-        // step in the branch series. Either way, the stored depth is correct.
-        depth = stepDepth
-      }
-
-      depths.set(step.id, depth)
-    }
-
-    //
-    // 2nd pass - nextStepIdIfSkipped
-    //
-
-    const stepIdsToSkipTo = new Map<Step['id'], Step['id'] | null>()
-    const stepsToBeUpdated: Step[] = []
-
-    for (const step of ifThenSteps) {
-      if (stepsToBeUpdated.length === 0) {
-        stepsToBeUpdated.push(step)
-        continue
-      }
-
-      const prevStepDepth = depths.get(
-        stepsToBeUpdated[stepsToBeUpdated.length - 1].id,
-      )
-      const currStepDepth = depths.get(step.id)
-
-      // If we went deeper, continue.
-      if (currStepDepth > prevStepDepth) {
-        stepsToBeUpdated.push(step)
-        continue
-      }
-
-      // Otherwise, the current step must be the next branch for all earlier
-      // steps that have the same or deeper depth.
-      while (
-        stepsToBeUpdated.length > 0 &&
-        currStepDepth <=
-          depths.get(stepsToBeUpdated[stepsToBeUpdated.length - 1].id)
-      ) {
-        const earlierStep = stepsToBeUpdated.pop()
-        stepIdsToSkipTo.set(earlierStep.id, step.id)
-      }
-
-      stepsToBeUpdated.push(step)
-    }
-
-    // Note: If there are still steps remaining in stepsToBeUpdated, they all
-    // don't have a next branch, and will instead terminate the pipe if skipped.
-    // So we can ignore them.
-
-    //
-    // Update DB with results
-    //
-
-    await Step.transaction(async (trx) => {
-      const updates = ifThenSteps.map((step) =>
-        step.$query(trx).patch({
-          parameters: {
-            ...step.parameters,
-            depth: depths.get(step.id),
-            nextStepIdIfSkipped: stepIdsToSkipTo.get(step.id) ?? '',
-          },
-        }),
-      )
-
-      await Promise.all(updates)
-    })
   },
 })
