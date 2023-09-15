@@ -1,6 +1,6 @@
 import { type IStep } from '@plumber/types'
 
-export const APP_KEY = 'toolbelt'
+export const APP_KEY = 'toolbox'
 
 export enum ACTIONS {
   IfThen = 'ifThen',

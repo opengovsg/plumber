@@ -4,7 +4,7 @@ import { type FunctionComponent, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 import FlowStepHeader from 'components/FlowStepHeader'
 import { GET_APP } from 'graphql/queries/get-app'
-import { isIfThenStep } from 'helpers/toolbelt'
+import { isIfThenStep } from 'helpers/toolbox'
 
 import Error from './Content/Error'
 import IfThen from './Content/IfThen'

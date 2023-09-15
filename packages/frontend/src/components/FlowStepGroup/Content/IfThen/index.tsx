@@ -7,10 +7,10 @@ import { Divider, Flex } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import {
-  ACTIONS as TOOLBELT_ACTIONS,
-  APP_KEY as TOOLBELT_APP_KEY,
+  ACTIONS as TOOLBOX_ACTIONS,
+  APP_KEY as TOOLBOX_APP_KEY,
   isIfThenStep,
-} from 'helpers/toolbelt'
+} from 'helpers/toolbox'
 
 import { ContentProps } from '../types'
 
@@ -108,8 +108,8 @@ export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
     await createStep({
       variables: {
         input: {
-          key: TOOLBELT_ACTIONS.IfThen,
-          appKey: TOOLBELT_APP_KEY,
+          key: TOOLBOX_ACTIONS.IfThen,
+          appKey: TOOLBOX_APP_KEY,
           previousStep: {
             id: steps[steps.length - 1].id,
           },

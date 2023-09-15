@@ -3,10 +3,10 @@ import defineApp from '@/helpers/define-app'
 import actions from './actions'
 
 export default defineApp({
-  name: 'Toolbelt',
-  key: 'toolbelt',
-  iconUrl: '{BASE_URL}/apps/toolbelt/assets/favicon.svg',
-  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/toolbelt',
+  name: 'Toolbox',
+  key: 'toolbox',
+  iconUrl: '{BASE_URL}/apps/toolbox/assets/favicon.svg',
+  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/toolbox',
   supportsConnections: false,
   baseUrl: '',
   apiBaseUrl: '',

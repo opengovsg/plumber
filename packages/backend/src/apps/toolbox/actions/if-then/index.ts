@@ -168,7 +168,7 @@ export default defineAction({
   async onPipePublishOrBeforeTestRun(flow: Flow) {
     const ifThenSteps = flow.steps.filter(
       (step) =>
-        step.appKey === 'toolbelt' &&
+        step.appKey === 'toolbox' &&
         step.type === 'action' &&
         step.key === 'ifThen',
     )
