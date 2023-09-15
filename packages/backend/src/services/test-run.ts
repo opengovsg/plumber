@@ -70,6 +70,7 @@ const testRun = async (options: TestRunOptions) => {
         flowId: flow.id,
         stepId: actionStep.id,
         executionId,
+        testRun: true,
       })
 
     if (actionStep.id === untilStep.id || actionExecutionStep.isFailed) {
