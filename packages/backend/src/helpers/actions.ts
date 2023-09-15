@@ -41,17 +41,23 @@ export async function doesActionProcessFiles(
 
 // Memoize since we can't use top-level await yet. Returns a map of composite
 // app-action key to the action's on-publish hook.
-const getAllOnPublishHooks = memoize(
+const getAllOnPipePublishOrBeforeTestRunHooks = memoize(
   async (): Promise<
-    ReadonlyMap<string, NonNullable<IAction['onPipePublish']>>
+    ReadonlyMap<string, NonNullable<IAction['onPipePublishOrBeforeTestRun']>>
   > => {
-    const result = new Map<string, NonNullable<IAction['onPipePublish']>>()
+    const result = new Map<
+      string,
+      NonNullable<IAction['onPipePublishOrBeforeTestRun']>
+    >()
     const apps = await App.getAllAppsWithFunctions()
 
     for (const app of apps) {
       for (const action of app.actions ?? []) {
-        if (action.onPipePublish) {
-          result.set(getCompositeKey(app.key, action.key), action.onPipePublish)
+        if (action.onPipePublishOrBeforeTestRun) {
+          result.set(
+            getCompositeKey(app.key, action.key),
+            action.onPipePublishOrBeforeTestRun,
+          )
         }
       }
     }
@@ -60,10 +66,10 @@ const getAllOnPublishHooks = memoize(
   },
 )
 
-export async function getOnPipePublishHook(
+export async function getOnPipePublishOrBeforeTestRunHook(
   appKey: string,
   actionKey: string,
-): Promise<IAction['onPipePublish'] | null> {
-  const allHooks = await getAllOnPublishHooks()
+): Promise<IAction['onPipePublishOrBeforeTestRun'] | null> {
+  const allHooks = await getAllOnPipePublishOrBeforeTestRunHooks()
   return allHooks.get(getCompositeKey(appKey, actionKey)) ?? null
 }

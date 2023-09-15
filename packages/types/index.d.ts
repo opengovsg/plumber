@@ -404,12 +404,15 @@ export interface IBaseAction {
   groupsLaterSteps?: boolean
 
   /**
-   * Hook that is invoked when user publishes a pipe. This is typically used by
-   * actions that need to pre-compute data before actual prod runs.
+   * Hook that is invoked when user publishes a pipe, or right before a test run
+   * begins. This is typically used by actions that need to pre-compute / cache
+   * data.
    *
-   * @param flow The flow that will be published. Note: this is Flow, not IFlow!
+   * @param flow The flow that will be published or test ran. It will also have
+   *   its steps available (i.e. instantiated with withGraphFetched('steps')).
+   *   However, there are no guarantees on the order of steps in the step array.
    */
-  onPipePublish?(flow: Flow): Promise<void>
+  onPipePublishOrBeforeTestRun?(flow: Flow): Promise<void>
 }
 
 export interface IRawAction extends IBaseAction {

@@ -256,9 +256,9 @@ export default defineAction({
       variables: false,
     },
     {
-      // Stores the step ID to skip to if the branch is not taken. This is
-      // computed when the pipe is published. If the flow should terminate, then
-      // is just the empty string.
+      // Stores the step ID to skip to if the branch is not taken. This is that
+      // is computed right before test runs, and when the pipe is published. If
+      // the flow should terminate, then it is just the empty string.
       key: 'nextStepIdIfSkipped',
       type: 'string' as const,
       label: 'FILE A BUG IF YOU SEE THIS',
@@ -331,6 +331,7 @@ export default defineAction({
 
     // For test runs, nextStepIdIfSkipped is not populated yet, so we compute
     // the next step manually.
+    // FIXME (ogp-weeloong): THE ABOVE IS A LIE NOW, NEXT PR FIXES THIS.
     const runningStep = await Step.query()
       .findById($.step.id)
       .withGraphFetched({ flow: { steps: true } })
@@ -387,7 +388,7 @@ export default defineAction({
         }
   },
 
-  async onPipePublish(flow: Flow) {
+  async onPipePublishOrBeforeTestRun(flow: Flow) {
     const ifThenSteps = flow.steps.filter(
       (step) =>
         step.appKey === 'toolbelt' &&

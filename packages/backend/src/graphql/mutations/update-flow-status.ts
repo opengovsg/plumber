@@ -1,6 +1,6 @@
 import { IAction } from '@plumber/types'
 
-import { getOnPipePublishHook } from '@/helpers/actions'
+import { getOnPipePublishOrBeforeTestRunHook } from '@/helpers/actions'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
@@ -45,16 +45,21 @@ const updateFlowStatus = async (
     pattern: interval || EVERY_15_MINUTES_CRON,
   }
 
-  // Handle any actions that have on-publish hooks.
+  // Process actions' on-publish hooks.
   if (flow.active) {
-    const hooksToRun: ReturnType<NonNullable<IAction['onPipePublish']>>[] = []
+    const hooksToRun: ReturnType<
+      NonNullable<IAction['onPipePublishOrBeforeTestRun']>
+    >[] = []
 
     for (const step of flow.steps) {
       if (step.type !== 'action') {
         continue
       }
 
-      const hook = await getOnPipePublishHook(step.appKey, step.key)
+      const hook = await getOnPipePublishOrBeforeTestRunHook(
+        step.appKey,
+        step.key,
+      )
       if (!hook) {
         continue
       }
