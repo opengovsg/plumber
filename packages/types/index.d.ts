@@ -341,6 +341,19 @@ export interface ITrigger extends IBaseTrigger {
   supportsWebhookRegistration?: boolean
 }
 
+export interface IActionRunResult {
+  /**
+   * This enables actions to control pipe execution flow. This is for actions
+   * that need to redirect pipe execution (e.g. if-then).
+   *
+   * If this is not set, or is falsey, pipe execution continues as per normal
+   * (i.e. next step is step with position + 1).
+   */
+  nextStep?:
+    | { command: 'jump-to-step'; stepId: IStep['id'] }
+    | { command: 'stop-execution' }
+}
+
 export interface IActionOutput {
   data: IActionItem
   error?: IJSONObject
@@ -354,7 +367,7 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  run?($: IGlobalVariable): Promise<void>
+  run?($: IGlobalVariable): Promise<IActionRunResult>
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.
