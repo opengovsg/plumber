@@ -1,23 +1,24 @@
 import type { IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useState } from 'react'
+import { Fragment, useCallback, useContext, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import FlowStep from 'components/FlowStep'
+import { EditorContext } from 'contexts/Editor'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 
 interface AddStepButtonProps {
   onClick: () => void
-  disabled: boolean
+  isDisabled: boolean
   isLastStep: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, disabled, isLastStep } = props
+  const { onClick, isDisabled, isLastStep } = props
 
   return (
     <Box pos="relative" h={24}>
@@ -34,7 +35,7 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
       <AbsoluteCenter>
         <IconButton
           onClick={onClick}
-          disabled={disabled}
+          isDisabled={isDisabled}
           aria-label="Add Step"
           icon={<BiPlus />}
           variant="outline"
@@ -88,6 +89,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const [currentStepId, setCurrentStepId] = useState<string | null>(
     triggerStep.id,
   )
+
+  const { readOnly: isReadOnlyEditor } = useContext(EditorContext)
 
   const onStepChange = useCallback(
     (step: IStep) => {
@@ -155,7 +158,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
           <AddStepButton
             onClick={() => addStep(step.id)}
-            disabled={creationInProgress || flow.active}
+            isDisabled={creationInProgress || isReadOnlyEditor}
             isLastStep={index === steps.length - 1}
           />
         </Fragment>
