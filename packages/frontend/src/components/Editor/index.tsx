@@ -71,6 +71,7 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 
 type EditorProps = {
   flow: IFlow
+  steps: IStep[]
 }
 
 export default function Editor(props: EditorProps): React.ReactElement {
@@ -82,12 +83,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
     },
   )
 
-  const { flow } = props
-  const [triggerStep] = flow.steps
+  const { flow, steps } = props
 
-  const [currentStepId, setCurrentStepId] = useState<string | null>(
-    triggerStep.id,
-  )
+  const [currentStepId, setCurrentStepId] = useState<string | null>(steps[0].id)
 
   const onStepChange = useCallback(
     (step: IStep) => {
@@ -138,7 +136,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
   return (
     <Flex flexDir="column" alignItems="center" py={3}>
-      {flow?.steps?.map((step, index, steps) => (
+      {steps.map((step, index, steps) => (
         <Fragment key={`${step.id}-${index}`}>
           <FlowStep
             key={step.id}
