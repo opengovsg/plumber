@@ -55,9 +55,10 @@ function shouldTakeBranch($: IGlobalVariable): boolean {
  * up.
  *
  * @param runningStep The currently running branch step.
+ * @param ifThenSteps All if-then steps in the flow.
  * @returns The step to skip to, or null if the flow should end instead.
  */
-function getStepToSkipTo(runningStep: Step): Step | null {
+function getStepToSkipTo(runningStep: Step, ifThenSteps: Step[]): Step | null {
   /*
    * The main problem we're dealing with is that branch depth can be undefined
    * if the user creates a branch via the "Select app & event" substep; for such
@@ -189,13 +190,6 @@ function getStepToSkipTo(runningStep: Step): Step | null {
 
   let depth = -1
   let runningStepDepth = null
-
-  const ifThenSteps = runningStep.flow.steps.filter(
-    (step) =>
-      step.appKey === 'toolbelt' &&
-      step.type === 'action' &&
-      step.key === 'ifThen',
-  )
 
   // WARNING: This is a naive but simple implementation - it's O(n) for each
   // branch step, leading to O(n * b) for the entire test run. This means pipes
@@ -340,7 +334,13 @@ export default defineAction({
     const runningStep = await Step.query()
       .findById($.step.id)
       .withGraphFetched({ flow: { steps: true } })
-    const stepToSkipTo = getStepToSkipTo(runningStep)
+    const ifThenSteps = runningStep.flow.steps.filter(
+      (step) =>
+        step.appKey === 'toolbelt' &&
+        step.type === 'action' &&
+        step.key === 'ifThen',
+    )
+    const stepToSkipTo = getStepToSkipTo(runningStep, ifThenSteps)
 
     return stepToSkipTo?.id
       ? {
@@ -387,7 +387,68 @@ export default defineAction({
         }
   },
 
-  async onPipePublish(_flow: Flow) {
-    // Stub for now; implement next PR to make review easier.
+  async onPipePublish(flow: Flow) {
+    const ifThenSteps = flow.steps.filter(
+      (step) =>
+        step.appKey === 'toolbelt' &&
+        step.type === 'action' &&
+        step.key === 'ifThen',
+    )
+
+    //
+    // 1st pass - Depth
+    //
+
+    const depths = new Map<Step['id'], number>()
+    let depth = -1
+
+    for (const step of ifThenSteps) {
+      const stepDepth = parseInt(step.parameters.depth as string)
+
+      if (isNaN(stepDepth)) {
+        // If depth is NaN, then `step` must be the 1st step of a new branch
+        // series that the user just created, so we have gone down in depth.
+        depth += 1
+      } else {
+        // Otherwise, user is editing a previously published pipe, or the 2nd+
+        // step in the branch series. Either way, the stored depth is correct.
+        depth = stepDepth
+      }
+
+      depths.set(step.id, depth)
+    }
+
+    //
+    // 2nd pass - nextStepIdIfSkipped
+    //
+
+    const stepIdsToSkipTo = new Map<Step['id'], Step['id'] | null>()
+
+    for (const step of ifThenSteps) {
+      /**
+       * DANGEROUS: O(n^2), branch limit applied within function. Later PR will
+       * address this (as per FIXME in getStepToSkipTo)
+       */
+      const stepToSkipTo = getStepToSkipTo(step, ifThenSteps)
+      stepIdsToSkipTo.set(step.id, stepToSkipTo?.id)
+    }
+
+    //
+    // Update DB with results
+    //
+
+    await Step.transaction(async (trx) => {
+      const updates = ifThenSteps.map((step) =>
+        step.$query(trx).patch({
+          parameters: {
+            ...step.parameters,
+            depth: depths.get(step.id),
+            nextStepIdIfSkipped: stepIdsToSkipTo.get(step.id) ?? '',
+          },
+        }),
+      )
+
+      await Promise.all(updates)
+    })
   },
 })
