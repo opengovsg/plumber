@@ -54,10 +54,14 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   let runResult: IActionRunResult = {}
   try {
-    runResult =
+    // Cannot assign directly to runResult due to void return type.
+    const result =
       testRun && actionCommand.testRun
         ? await actionCommand.testRun($)
         : await actionCommand.run($)
+    if (result) {
+      runResult = result
+    }
   } catch (error) {
     logger.error(error)
     if (error instanceof HttpError) {

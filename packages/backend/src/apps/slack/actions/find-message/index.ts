@@ -71,7 +71,5 @@ export default defineAction({
       sortDirection,
       count,
     })
-
-    return {}
   },
 })
