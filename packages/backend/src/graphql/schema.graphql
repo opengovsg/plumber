@@ -43,7 +43,7 @@ type Mutation {
   createFlow(input: CreateFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
-  executeFlow(input: ExecuteFlowInput): executeFlowType
+  executeFlow(input: ExecuteFlowInput): ExecuteFlowType
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
@@ -171,9 +171,10 @@ type ConnectionData {
   screenName: String
 }
 
-type executeFlowType {
+type ExecuteFlowType {
   data: JSONObject
   step: Step
+  wouldHaveBeenSkipped: Boolean
 }
 
 type ExecutionStep {
