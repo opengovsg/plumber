@@ -256,7 +256,7 @@ export default defineAction({
       type: 'string' as const,
       label: 'FILE A BUG IF YOU SEE THIS',
 
-      // Field is hidden; later PR will hide for real.
+      hidden: true,
       required: false,
       variables: false,
     },
@@ -268,7 +268,7 @@ export default defineAction({
       type: 'string' as const,
       label: 'FILE A BUG IF YOU SEE THIS',
 
-      // Field is hidden; later PR will hide for real.
+      hidden: true,
       required: false,
       variables: false,
     },

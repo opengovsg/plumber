@@ -161,6 +161,7 @@ export interface IBaseField {
   clickToCopy?: boolean
   variables?: boolean
   dependsOn?: string[]
+  hidden?: boolean
 }
 
 export interface IFieldDropdown extends IBaseField {

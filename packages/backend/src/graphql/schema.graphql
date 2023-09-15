@@ -91,6 +91,7 @@ type ActionSubstepArgument {
   options: [ArgumentOption]
   source: ActionSubstepArgumentSource
   dependsOn: [String]
+  hidden: Boolean
 
   # Only for multirow
   subFields: [ActionSubstepArgument]

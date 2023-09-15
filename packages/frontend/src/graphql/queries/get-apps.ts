@@ -150,6 +150,7 @@ export const GET_APPS = gql`
             variableTypes
             allowArbitrary
             dependsOn
+            hidden
             options {
               label
               value
