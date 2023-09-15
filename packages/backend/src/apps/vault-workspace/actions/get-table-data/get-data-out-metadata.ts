@@ -1,4 +1,4 @@
-import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
+import { IDataOutMetadata, IExecutionStep, IJSONObject } from '@plumber/types'
 
 import { VAULT_ID } from '../../common/constants'
 
@@ -9,7 +9,7 @@ async function getDataOutMetadata(
   if (!data) {
     return null
   }
-  const _metadata = data?._metadata as Record<string, any>
+  const _metadata = data?._metadata as IJSONObject
   if (!_metadata.keysEncoded) {
     return null
   }

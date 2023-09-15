@@ -1,4 +1,4 @@
-import { IAction } from '@plumber/types'
+import { IAction, IJSONObject } from '@plumber/types'
 
 import get from 'lodash.get'
 
@@ -68,12 +68,12 @@ function findAndSubstituteVariables(
         // hex-encoded key while the old templates might still used non-encoded
         // hence if the value is not defined and keysEncoded flag was set, we
         // attempt to convert the template string to use hex-encoded key
+        // FIXME: Remove this custom logic after we migrate off Vault WS
         if (
           dataValue === undefined &&
           executionStep?.appKey === vaultWorkspace.key &&
-          data &&
-          data._metadata &&
-          (data._metadata as Record<string, any>).keysEncoded
+          (data?._metadata as IJSONObject)?.keysEncoded &&
+          keyPaths.length > 0
         ) {
           keyPaths[keyPaths.length - 1] = Buffer.from(
             keyPaths[keyPaths.length - 1],
