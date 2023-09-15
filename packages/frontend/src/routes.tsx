@@ -11,7 +11,7 @@ import Executions from 'pages/Executions'
 import Flow from 'pages/Flow'
 import Flows from 'pages/Flows'
 import Login from 'pages/Login'
-import SgidRedirect from 'pages/SgidRedirect'
+import SgidCallback from 'pages/SgidCallback'
 
 const Landing = lazy(() => import('pages/Landing'))
 
@@ -21,7 +21,7 @@ export default createRoutesFromElements(
       path={URLS.LOGIN_SGID_REDIRECT}
       element={
         <PublicLayout>
-          <SgidRedirect />
+          <SgidCallback />
         </PublicLayout>
       }
     />

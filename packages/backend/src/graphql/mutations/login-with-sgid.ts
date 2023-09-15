@@ -1,27 +1,27 @@
-import {
-  SgidClient,
-  type UserInfoReturn as SgidUserInfoReturn,
-} from '@opengovsg/sgid-client'
+import { type UserInfoReturn as SgidUserInfoReturn } from '@opengovsg/sgid-client'
+import { type Response } from 'express'
+import { sign as signJwt } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import { getOrCreateUser, setAuthCookie } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import logger from '@/helpers/logger'
+import {
+  type PublicOfficerEmployment,
+  SGID_MULTI_HAT_COOKIE_NAME,
+  SGID_MULTI_HAT_COOKIE_TTL_SECONDS,
+  sgidClient,
+} from '@/helpers/sgid'
 import type Context from '@/types/express/context'
 
-const sgidClient = new SgidClient({
-  clientId: appConfig.sgid.clientId,
-  clientSecret: appConfig.sgid.clientSecret,
-  privateKey: appConfig.sgid.privateKey,
-  redirectUri: `${appConfig.webAppUrl}/login/sgid/redirect`,
-})
-
-interface PublicOfficerEmployment {
-  workEmail: string | null
-  agencyName: string | null
-  departmentName: string | null
-  employmentType: string | null
-  employmentTitle: string | null
+function setSignedCookie<T extends object>(res: Response, data: T): void {
+  const token = signJwt(data, appConfig.sessionSecretKey)
+  res.cookie(SGID_MULTI_HAT_COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: !appConfig.isDev,
+    maxAge: SGID_MULTI_HAT_COOKIE_TTL_SECONDS * 1000,
+  })
 }
 
 async function parsePocdexEmployments(
@@ -128,9 +128,8 @@ export default async function loginWithSgid(
     }
   }
 
-  // Handle multi-hat users.
-  // TODO next PR: Let user choose identity if they have more than 1 hat. For
-  // now, just throw them back to OTP page.
+  // Remaining are all multi-hat users.
+  setSignedCookie(context.res, { publicOfficerEmployments })
   return {
     publicOfficerEmployments,
   }
