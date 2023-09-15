@@ -1,19 +1,27 @@
 import { useCallback, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   AbsoluteCenter,
   Box,
   Divider,
   Flex,
+  Image,
   Link,
   Text,
 } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
+import singpassLogo from 'assets/singpass-logo.svg'
 import { SGID_CHECK_ELIGIBILITY_URL } from 'config/urls'
 import { generateSgidAuthUrl } from 'helpers/sgid'
+
+import SgidFailureModal from './SgidFailureModal'
 
 export default function SgidLoginSection(): JSX.Element {
   const [isRedirectingToSgid, setIsRedirectingToSgid] = useState(false)
   const [hasError, setHasError] = useState(false)
+
+  const [searchParams] = useSearchParams()
+  const canUseSgid = !searchParams.get('not_sgid_eligible')
 
   const handleSgidLogin = useCallback(
     async () => {
@@ -35,13 +43,13 @@ export default function SgidLoginSection(): JSX.Element {
     [],
   )
 
-  return (
+  return canUseSgid ? (
     <>
       <Box position="relative" my="2.5rem">
         <Divider />
         <AbsoluteCenter>
           <Box bg="white" p={3}>
-            <Text textStyle="subhead-1">or</Text>
+            <Text textStyle="subhead-1">OR</Text>
           </Box>
         </AbsoluteCenter>
       </Box>
@@ -57,11 +65,12 @@ export default function SgidLoginSection(): JSX.Element {
         <Button
           // isFullWidth a bit ugly
           width="full"
+          variant="outline"
           mb={2}
           onClick={handleSgidLogin}
           isLoading={isRedirectingToSgid}
         >
-          Log in with SingPass
+          Log in with <Image src={singpassLogo} mb={-0.5} h={5} /> app
         </Button>
         <Text>
           Can my agency use this? Check{' '}
@@ -71,5 +80,7 @@ export default function SgidLoginSection(): JSX.Element {
         </Text>
       </Flex>
     </>
+  ) : (
+    <SgidFailureModal />
   )
 }
