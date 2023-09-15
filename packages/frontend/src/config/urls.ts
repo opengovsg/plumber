@@ -4,7 +4,9 @@ export const EXECUTION_PATTERN = '/executions/:executionId'
 export const EXECUTION = (executionId: string): string =>
   `/executions/${executionId}`
 export const ROOT = '/'
+
 export const LOGIN = '/login'
+export const LOGIN_SGID_REDIRECT = '/login/sgid/redirect'
 
 export const APPS = '/apps'
 export const NEW_APP_CONNECTION = '/apps/new'
@@ -68,3 +70,5 @@ export const OGP_HOMEPAGE = 'https://open.gov.sg'
 export const GUIDE_LINK = 'https://guide.plumber.gov.sg'
 export const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'
 export const STATUS_LINK = 'https://status.plumber.gov.sg/'
+export const SGID_CHECK_ELIGIBILITY_URL =
+  'https://docs.id.gov.sg/faq-users#as-a-government-officer-why-am-i-not-able-to-login-to-my-work-tool-using-sgid'

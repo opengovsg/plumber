@@ -1,4 +1,4 @@
-import { deleteAuthCookie } from '@/helpers/cookie'
+import { deleteAuthCookie } from '@/helpers/auth'
 import Context from '@/types/express/context'
 
 const logout = async (

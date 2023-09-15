@@ -9,6 +9,13 @@ const bbBearTextStyles = {
     letterSpacing: '-0.006em',
     fontFamily: 'body',
   },
+  'body-1': {
+    fontWeight: 400,
+    lineHeight: '1.5rem',
+    fontSize: '1rem',
+    letterSpacing: '-0.006em',
+    fontFamily: 'body',
+  },
   'body-2': {
     fontWeight: 400,
     lineHeight: '1.25rem',

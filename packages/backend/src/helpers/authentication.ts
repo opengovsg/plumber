@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
-import { getAuthCookie } from '@/helpers/cookie'
+import { getAuthCookie } from '@/helpers/auth'
 import User from '@/models/user'
 import { UnauthenticatedContext } from '@/types/express/context'
 
@@ -62,6 +62,9 @@ const authentication = shield(
       '*': isAuthenticated,
       requestOtp: rateLimitRule({ window: '1s', max: 5 }),
       verifyOtp: rateLimitRule({ window: '1s', max: 5 }),
+      // Not OTP, but no real reason to be looser than OTP.
+      loginWithSgid: rateLimitRule({ window: '1s', max: 5 }),
+      loginWithSelectedSgid: rateLimitRule({ window: '1s', max: 5 }),
     },
   },
   {

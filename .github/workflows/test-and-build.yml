@@ -20,5 +20,5 @@ jobs:
       - run: echo "✅ Your code has been linted."
       - run: npm run test
       - run: echo "✅ All tests passed."
-      - run: npm run build
+      - run: VITE_MODE=test npm run build
       - run: echo "✅ Your code has been built."
