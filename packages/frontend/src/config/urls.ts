@@ -6,9 +6,7 @@ export const EXECUTION = (executionId: string): string =>
 export const ROOT = '/'
 
 export const LOGIN = '/login'
-// Placeholders for now - implementing in next PR.
 export const LOGIN_SGID_REDIRECT = '/login/sgid/redirect'
-export const LOGIN_SGID_FAILED = '/login/sgid/failed'
 
 export const APPS = '/apps'
 export const NEW_APP_CONNECTION = '/apps/new'
@@ -71,3 +69,5 @@ export const APP_ICON_URL = (appKey: string): string =>
 export const OGP_HOMEPAGE = 'https://open.gov.sg'
 export const GUIDE_LINK = 'https://guide.plumber.gov.sg'
 export const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'
+export const SGID_CHECK_ELIGIBILITY_URL =
+  'https://docs.id.gov.sg/faq-users#as-a-government-officer-why-am-i-not-able-to-login-to-my-work-tool-using-sgid'

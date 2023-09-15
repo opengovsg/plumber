@@ -53,6 +53,9 @@ type Mutation {
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
   logout: Boolean
   loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
+  loginWithSelectedSgid(
+    input: LoginWithSelectedSgidInput!
+  ): LoginWithSelectedSgidResult!
 }
 
 """
@@ -508,6 +511,14 @@ input LoginWithSgidInput {
 
 type LoginWithSgidResult {
   publicOfficerEmployments: [SgidPublicOfficerEmployment!]!
+}
+
+input LoginWithSelectedSgidInput {
+  workEmail: String!
+}
+
+type LoginWithSelectedSgidResult {
+  success: Boolean!
 }
 
 schema {
