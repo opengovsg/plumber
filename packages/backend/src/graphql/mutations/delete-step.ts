@@ -1,8 +1,11 @@
+import { raw } from 'objection'
+
+import Step from '@/models/step'
 import Context from '@/types/express/context'
 
 type Params = {
   input: {
-    id: string
+    ids: string[]
   }
 }
 
@@ -11,35 +14,43 @@ const deleteStep = async (
   params: Params,
   context: Context,
 ) => {
-  const step = await context.currentUser
+  if (params.input.ids.length === 0) {
+    throw new Error('Nothing to delete')
+  }
+
+  const steps = await context.currentUser
     .$relatedQuery('steps')
     .withGraphFetched('flow')
-    .findOne({
-      'steps.id': params.input.id,
-    })
+    .whereIn('steps.id', params.input.ids)
+    .orderBy('steps.position', 'asc')
     .throwIfNotFound()
 
-  await step.$relatedQuery('executionSteps').delete()
-  await step.$query().delete()
+  //
+  // ** IMPORTANT NOTE **
+  // We only support contiguous steps for now.
+  //
+  if (
+    !steps.every(
+      (step, index) =>
+        index === 0 || step.position === steps[index - 1].position + 1,
+    )
+  ) {
+    throw new Error('Must delete contiguous steps!')
+  }
 
-  const nextSteps = await step.flow
+  const stepIds = steps.map((step) => step.id)
+  await Step.relatedQuery('executionSteps').for(stepIds).delete()
+  await Step.query().findByIds(stepIds).delete()
+
+  await steps[0].flow
     .$relatedQuery('steps')
-    .where('position', '>', step.position)
+    .where('position', '>', steps[steps.length - 1].position)
+    .patch({ position: raw(`position - ${steps.length}`) })
 
-  const nextStepQueries = nextSteps.map(async (nextStep) => {
-    await nextStep.$query().patch({
-      position: nextStep.position - 1,
-    })
-  })
-
-  await Promise.all(nextStepQueries)
-
-  step.flow = await step.flow
+  return await steps[0].flow
     .$query()
     .withGraphJoined('steps')
     .orderBy('steps.position', 'asc')
-
-  return step
 }
 
 export default deleteStep

@@ -47,7 +47,7 @@ type Mutation {
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
-  deleteStep(input: DeleteStepInput): Step
+  deleteStep(input: DeleteStepInput): Flow
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
@@ -311,7 +311,7 @@ input UpdateStepInput {
 }
 
 input DeleteStepInput {
-  id: String!
+  ids: [String!]!
 }
 
 input RequestOtpInput {
