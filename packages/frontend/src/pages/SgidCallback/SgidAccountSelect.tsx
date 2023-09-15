@@ -1,9 +1,11 @@
 import { useCallback } from 'react'
 import { BiChevronRight } from 'react-icons/bi'
+import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { Box, Divider, Flex, Heading, Icon, Link, Text } from '@chakra-ui/react'
 import * as URLS from 'config/urls'
 import { LOGIN_WITH_SELECTED_SGID } from 'graphql/mutations/login-with-selected-sgid'
+import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
 
 export interface Employment {
   workEmail: string
@@ -22,7 +24,12 @@ export default function SgidAccountSelect(
 ): JSX.Element {
   const { employments, setFailed } = props
 
-  const [loginWithSelectedSgid] = useMutation(LOGIN_WITH_SELECTED_SGID)
+  const navigate = useNavigate()
+
+  const [loginWithSelectedSgid] = useMutation(LOGIN_WITH_SELECTED_SGID, {
+    refetchQueries: [GET_CURRENT_USER],
+    awaitRefetchQueries: true,
+  })
 
   const onSelectEmployment = useCallback(
     async (workEmail: string) => {
@@ -40,7 +47,7 @@ export default function SgidAccountSelect(
       if (!success) {
         setFailed(true)
       } else {
-        location.assign(URLS.FLOWS)
+        navigate(URLS.FLOWS, { replace: true })
       }
     },
     [setFailed],
