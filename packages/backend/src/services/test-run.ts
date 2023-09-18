@@ -83,7 +83,7 @@ const testRun = async (options: TestRunOptions) => {
     if (actionStep.id === untilStep.id) {
       return {
         executionStep: actionExecutionStep,
-        wouldHaveBeenSkipped: actionStep.id !== nextStepId,
+        skippedIfPublished: actionStep.id !== nextStepId,
       }
     }
 
