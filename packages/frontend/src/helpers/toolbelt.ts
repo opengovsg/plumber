@@ -1,11 +1,13 @@
 import { type IStep } from '@plumber/types'
 
-export const APP_KEY = 'toolbelt'
+export const TOOLBELT_APP_KEY = 'toolbelt'
 
-export enum ACTIONS {
+export enum TOOLBELT_ACTIONS {
   IfThen = 'ifThen',
 }
 
 export function isIfThenStep(step: IStep): boolean {
-  return step.appKey === APP_KEY && step.key === ACTIONS.IfThen
+  return (
+    step.appKey === TOOLBELT_APP_KEY && step.key === TOOLBELT_ACTIONS.IfThen
+  )
 }

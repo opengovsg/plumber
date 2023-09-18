@@ -8,9 +8,9 @@ import { Button } from '@opengovsg/design-system-react'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 import {
-  ACTIONS as TOOLBELT_ACTIONS,
-  APP_KEY as TOOLBELT_APP_KEY,
   isIfThenStep,
+  TOOLBELT_ACTIONS,
+  TOOLBELT_APP_KEY,
 } from 'helpers/toolbelt'
 
 import { ContentProps } from '../types'
@@ -88,9 +88,7 @@ function extractBranchesWithSteps(
     }
   }
 
-  if (branchWithSteps.length > 0) {
-    result.push(branchWithSteps)
-  }
+  result.push(branchWithSteps)
 
   return result
 }
