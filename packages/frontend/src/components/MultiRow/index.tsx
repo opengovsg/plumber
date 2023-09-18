@@ -94,6 +94,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                       variant="clear"
                       aria-label="Remove"
                       icon={<BiTrash />}
+                      isDisabled={isEditorReadOnly}
                       onClick={() => remove(index)}
                     />
                   </Flex>
