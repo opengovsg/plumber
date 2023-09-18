@@ -22,6 +22,7 @@ import {
 } from '@chakra-ui/react'
 import { Button, IconButton, Spinner } from '@opengovsg/design-system-react'
 import NestedEditor from 'components/FlowStepGroup/NestedEditor'
+import { EditorContext } from 'contexts/Editor'
 import {
   type StepDisplayOverridesContextData,
   StepDisplayOverridesProvider,
@@ -45,6 +46,7 @@ export default function Branch(props: BranchProps): JSX.Element {
     onClose: closeEditor,
   } = useDisclosure()
   const { depth } = useContext(BranchContext)
+  const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
   const initialStep = steps[0]
   const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
@@ -167,6 +169,7 @@ export default function Branch(props: BranchProps): JSX.Element {
               aria-label="Delete Branch"
               icon={<BiTrashAlt />}
               isLoading={isDeletingBranch}
+              isDisabled={isEditorReadOnly}
               ml="auto"
             />
           </>

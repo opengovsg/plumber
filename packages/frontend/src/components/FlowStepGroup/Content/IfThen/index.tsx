@@ -5,6 +5,7 @@ import { BiPlus } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Divider, Flex } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { EditorContext } from 'contexts/Editor'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 import {
@@ -95,6 +96,7 @@ function extractBranchesWithSteps(
 
 export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
   const { depth } = useContext(BranchContext)
+  const { readOnly: isEditorReadOnly } = useContext(EditorContext)
   const branchesWithSteps = useMemo(
     () => extractBranchesWithSteps(steps, depth),
     [steps, depth],
@@ -138,6 +140,7 @@ export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
       <Button
         onClick={onAddBranch}
         isLoading={isAddingBranch}
+        isDisabled={isEditorReadOnly}
         leftIcon={<BiPlus />}
         m={4}
         variant="outline"

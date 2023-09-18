@@ -1,12 +1,13 @@
 import type { IField } from '@plumber/types'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus, BiTrash } from 'react-icons/bi'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { FormLabel, IconButton } from '@opengovsg/design-system-react'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import InputCreator, { InputCreatorProps } from 'components/InputCreator'
+import { EditorContext } from 'contexts/Editor'
 
 export type MultiRowProps = {
   name: string
@@ -27,6 +28,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
   } = props
 
   const { control } = useFormContext()
+  const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
   // react-hook-form requires a non-undefined default value for _every_
   // sub-field when adding a new row. Otherwise, it goofs up and populates new
@@ -122,6 +124,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               variant="outline"
               icon={<BiPlus />}
               onClick={handleAddRow}
+              isDisabled={isEditorReadOnly}
             >
               And
             </ConditionalIconButton>
