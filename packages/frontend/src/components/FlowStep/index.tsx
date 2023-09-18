@@ -24,6 +24,7 @@ import { StepExecutionsProvider } from 'contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from 'contexts/StepExecutionsToInclude'
 import { DELETE_STEP } from 'graphql/mutations/delete-step'
 import { GET_APPS } from 'graphql/queries/get-apps'
+import { GET_FLOW } from 'graphql/queries/get-flow'
 import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
 import useFormatMessage from 'hooks/useFormatMessage'
 import type { BaseSchema } from 'yup'
@@ -196,7 +197,7 @@ export default function FlowStep(
       ? false
       : !isTrigger && !editorContext.readOnly
   const [deleteStep] = useMutation(DELETE_STEP, {
-    refetchQueries: ['GetFlow'],
+    refetchQueries: [GET_FLOW],
   })
   const onDelete = useCallback<MouseEventHandler>(
     async (e) => {

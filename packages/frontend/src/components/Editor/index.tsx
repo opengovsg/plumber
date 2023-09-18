@@ -90,9 +90,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const [updateStep] = useMutation(UPDATE_STEP)
   const [createStep, { loading: creationInProgress }] = useMutation(
     CREATE_STEP,
-    {
-      refetchQueries: ['GetFlow'],
-    },
+    { refetchQueries: [GET_FLOW] },
   )
 
   const { flow, steps } = props
