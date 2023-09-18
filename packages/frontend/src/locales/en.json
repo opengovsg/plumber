@@ -55,8 +55,6 @@
   "flow.updatedAt": "updated {datetime}",
   "flow.view": "View",
   "flow.delete": "Delete",
-  "flowStep.triggerType": "Trigger",
-  "flowStep.actionType": "Action",
   "flows.create": "Create pipe",
   "flows.title": "Pipes",
   "flows.noFlows": "You don't have any pipes yet.",

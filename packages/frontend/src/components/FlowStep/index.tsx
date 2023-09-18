@@ -26,7 +26,6 @@ import { DELETE_STEP } from 'graphql/mutations/delete-step'
 import { GET_APPS } from 'graphql/queries/get-apps'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
-import useFormatMessage from 'hooks/useFormatMessage'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
 
@@ -114,7 +113,6 @@ export default function FlowStep(
   const step: IStep = props.step
   const isTrigger = step.type === 'trigger'
 
-  const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
@@ -221,10 +219,7 @@ export default function FlowStep(
         (app?.name ? `${step.position}. ${app.name}` : 'Choose an app')
       }
       hintAboveCaption={
-        displayOverrides?.hintAboveCaption ??
-        (isTrigger
-          ? formatMessage('flowStep.triggerType')
-          : formatMessage('flowStep.actionType'))
+        displayOverrides?.hintAboveCaption ?? (isTrigger ? 'Trigger' : 'Action')
       }
       isCompleted={step.status === 'completed'}
       onDelete={isDeletable ? onDelete : undefined}
