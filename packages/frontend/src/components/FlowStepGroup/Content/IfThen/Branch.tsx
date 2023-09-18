@@ -35,11 +35,10 @@ import { BranchContext } from './BranchContext'
 interface BranchProps {
   flow: IFlow
   steps: IStep[]
-  defaultName: string
 }
 
 export default function Branch(props: BranchProps): JSX.Element {
-  const { flow, steps, defaultName } = props
+  const { flow, steps } = props
   const {
     isOpen: editorIsOpen,
     onOpen: openEditor,
@@ -52,12 +51,13 @@ export default function Branch(props: BranchProps): JSX.Element {
     () => ({
       [initialStep.id]: {
         hintAboveCaption: 'If... Then',
-        caption: (initialStep.parameters.branchName as string) ?? defaultName,
+        // Only the 1st branch can have an undefined name.
+        caption: (initialStep.parameters.branchName as string) ?? 'Branch 1',
         disableActionChanges: true,
         disableDelete: true,
       },
     }),
-    [initialStep.id, initialStep.parameters.branchName, defaultName],
+    [initialStep.id, initialStep.parameters.branchName],
   )
 
   //
@@ -125,6 +125,7 @@ export default function Branch(props: BranchProps): JSX.Element {
           },
           parameters: {
             ...initialStep.parameters,
+            branchName: 'Branch 1',
             depth,
           },
           connection: {
@@ -157,9 +158,8 @@ export default function Branch(props: BranchProps): JSX.Element {
         ) : (
           <>
             <Text textStyle="subhead-1">
-              {steps[0].parameters.branchName
-                ? String(steps[0].parameters.branchName)
-                : defaultName}
+              {(steps[0].parameters.branchName as string | undefined) ??
+                'Branch 1'}
             </Text>
             <IconButton
               onClick={openDeleteConfirmation}

@@ -94,11 +94,12 @@ function extractBranchesWithSteps(
 }
 
 export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
-  const branchContext = useContext(BranchContext)
+  const { depth } = useContext(BranchContext)
   const branchesWithSteps = useMemo(
-    () => extractBranchesWithSteps(steps, branchContext.depth),
-    [steps, branchContext],
+    () => extractBranchesWithSteps(steps, depth),
+    [steps, depth],
   )
+  const numBranches = branchesWithSteps.length
 
   const [createStep, { loading: isAddingBranch }] = useMutation(CREATE_STEP, {
     refetchQueries: [GET_FLOW],
@@ -116,22 +117,19 @@ export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
             id: flow.id,
           },
           parameters: {
-            depth: branchContext.depth,
+            depth,
+            branchName: `Branch ${numBranches + 1}`,
           },
         },
       },
     })
-  }, [createStep, branchContext, steps])
+  }, [createStep, depth, numBranches, steps])
 
   return (
     <Flex flexDir="column">
       {branchesWithSteps.map((steps, index) => (
         <Fragment key={steps[0].id}>
-          <Branch
-            flow={flow}
-            steps={steps}
-            defaultName={`Branch ${index + 1}`}
-          />
+          <Branch flow={flow} steps={steps} />
           {index < branchesWithSteps.length - 1 && (
             <Divider borderColor="base.divider.medium" />
           )}
