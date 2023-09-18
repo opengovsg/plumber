@@ -45,7 +45,7 @@ export default function Branch(props: BranchProps): JSX.Element {
     onOpen: openEditor,
     onClose: closeEditor,
   } = useDisclosure()
-  const branchContext = useContext(BranchContext)
+  const { depth } = useContext(BranchContext)
 
   const initialStep = steps[0]
   const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
@@ -107,9 +107,9 @@ export default function Branch(props: BranchProps): JSX.Element {
       return
     }
 
-    const branchDepth = parseInt(initialStep.parameters.depth as string)
+    const storedDepth = parseInt(initialStep.parameters.depth as string)
 
-    if (!isNaN(branchDepth)) {
+    if (!isNaN(storedDepth)) {
       openEditor()
     }
 
@@ -124,7 +124,7 @@ export default function Branch(props: BranchProps): JSX.Element {
           },
           parameters: {
             ...initialStep.parameters,
-            depth: branchContext.depth,
+            depth,
           },
           connection: {
             id: null,
@@ -135,7 +135,7 @@ export default function Branch(props: BranchProps): JSX.Element {
         openEditor()
       },
     })
-  }, [openEditor, branchContext, flow, initialStep])
+  }, [openEditor, depth, flow, initialStep])
 
   return (
     <>
@@ -207,7 +207,7 @@ export default function Branch(props: BranchProps): JSX.Element {
        * Nexted branch editor (pops up in modal)
        */}
       {/* Nested If-Thens should have depth = depth + 1 */}
-      <BranchContext.Provider value={{ depth: branchContext.depth + 1 }}>
+      <BranchContext.Provider value={{ depth: depth + 1 }}>
         <StepDisplayOverridesProvider value={initialStepDisplayOverride}>
           <NestedEditor
             onClose={closeEditor}
