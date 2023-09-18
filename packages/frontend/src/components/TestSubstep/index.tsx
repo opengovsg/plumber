@@ -21,7 +21,6 @@ import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import { extractVariables, filterVariables } from 'helpers/variables'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -70,7 +69,6 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     selectedActionOrTrigger,
   } = props
 
-  const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
 
   const [executeFlow, { data, error, loading, called }] = useMutation(
@@ -207,9 +205,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
             color="primary"
             data-test="flow-substep-continue-button"
           >
-            {isCompleted
-              ? formatMessage('flowEditor.testAgain')
-              : formatMessage('flowEditor.testStep')}
+            {isCompleted ? 'Test again' : 'Test Step'}
           </LoadingButton>
           {isCompleted && (
             <LoadingButton
@@ -222,7 +218,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
               color="primary"
               data-test="flow-substep-continue-button"
             >
-              {formatMessage('flowEditor.continue')}
+              Continue
             </LoadingButton>
           )}
         </ListItem>
