@@ -111,6 +111,7 @@ export default function Branch(props: BranchProps): JSX.Element {
 
     if (!isNaN(storedDepth)) {
       openEditor()
+      return
     }
 
     await updateStep({
