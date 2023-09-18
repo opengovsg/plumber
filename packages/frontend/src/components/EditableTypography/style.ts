@@ -16,7 +16,7 @@ export const Box = styled(MuiBox, {
   width: 300px;
   height: 33px;
   align-items: center;
-  ${({ editing }) => editing && `border-bottom: 1px dashed #000;`}
+  ${({ editing }) => editing && `border-bottom: 1px solid #e9eaee;`}
 `
 
 export const TextField = styled(MuiTextField)({
