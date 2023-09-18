@@ -6,6 +6,8 @@ import deleteFlow from './mutations/delete-flow'
 import deleteStep from './mutations/delete-step'
 import executeFlow from './mutations/execute-flow'
 import generateAuthUrl from './mutations/generate-auth-url'
+import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
+import loginWithSgid from './mutations/login-with-sgid'
 import logout from './mutations/logout'
 import registerWebhook from './mutations/register-webhook'
 import requestOtp from './mutations/request-otp'
@@ -38,6 +40,8 @@ const mutationResolvers = {
   verifyOtp,
   retryExecutionStep,
   logout,
+  loginWithSgid,
+  loginWithSelectedSgid,
 }
 
 export default mutationResolvers

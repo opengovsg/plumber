@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 
 import BaseError from '@/errors/base'
-import { setAuthCookie } from '@/helpers/cookie'
+import { setAuthCookie } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import User from '@/models/user'
 import Context from '@/types/express/context'
