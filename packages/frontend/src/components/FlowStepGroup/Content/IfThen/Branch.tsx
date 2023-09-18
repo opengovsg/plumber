@@ -7,7 +7,7 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { BiTrashAlt } from 'react-icons/bi'
+import { BiSolidCheckCircle, BiTrashAlt } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   AlertDialog,
@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   Flex,
+  Icon,
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
@@ -30,6 +31,7 @@ import {
 import { DELETE_STEP } from 'graphql/mutations/delete-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
+import { isIfThenBranchCompleted } from 'helpers/toolbelt'
 
 import { BranchContext } from './BranchContext'
 
@@ -61,6 +63,7 @@ export default function Branch(props: BranchProps): JSX.Element {
     }),
     [initialStep.id, initialStep.parameters.branchName],
   )
+  const isCompleted = useMemo(() => isIfThenBranchCompleted(steps), [steps])
 
   //
   // Handle branch deletion
@@ -163,6 +166,14 @@ export default function Branch(props: BranchProps): JSX.Element {
               {(steps[0].parameters.branchName as string | undefined) ??
                 'Branch 1'}
             </Text>
+            {isCompleted && (
+              <Icon
+                ml={1}
+                boxSize={4}
+                color="interaction.success.default"
+                as={BiSolidCheckCircle}
+              />
+            )}
             <IconButton
               onClick={openDeleteConfirmation}
               variant="clear"
