@@ -25,6 +25,10 @@ const deleteStep = async (
     .orderBy('steps.position', 'asc')
     .throwIfNotFound()
 
+  if (!steps.every((step) => step.flowId === steps[0].flowId)) {
+    throw new Error('All steps to be deleted must be from the same pipe!')
+  }
+
   //
   // ** IMPORTANT NOTE **
   // We only support contiguous steps for now.
