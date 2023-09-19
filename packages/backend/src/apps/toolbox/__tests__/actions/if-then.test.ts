@@ -2,7 +2,7 @@ import { IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import toolbeltApp from '../..'
+import toolboxApp from '../..'
 import ifThenAction from '../../actions/if-then'
 
 /**
@@ -28,7 +28,7 @@ const FLAT_PIPE_STEPS = [
   // Branch 1 is the default branch under test.
   {
     id: 'branch-1',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 2,
     parameters: {
@@ -43,7 +43,7 @@ const FLAT_PIPE_STEPS = [
   },
   {
     id: 'branch-2',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 4,
     parameters: {
@@ -101,7 +101,7 @@ const NESTED_BRANCH_PIPE_STEPS = [
   },
   {
     id: 'branch-1',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 2,
     parameters: {
@@ -116,7 +116,7 @@ const NESTED_BRANCH_PIPE_STEPS = [
   },
   {
     id: 'branch-1.1',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 4,
     parameters: {
@@ -131,7 +131,7 @@ const NESTED_BRANCH_PIPE_STEPS = [
   },
   {
     id: 'branch-1.2',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 6,
     parameters: {
@@ -140,7 +140,7 @@ const NESTED_BRANCH_PIPE_STEPS = [
   },
   {
     id: 'branch-1.2.1',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 7,
     parameters: {
@@ -149,7 +149,7 @@ const NESTED_BRANCH_PIPE_STEPS = [
   },
   {
     id: 'branch-1.2.2',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 8,
     parameters: {
@@ -164,7 +164,7 @@ const NESTED_BRANCH_PIPE_STEPS = [
   },
   {
     id: 'branch-2',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 10,
     parameters: {
@@ -179,7 +179,7 @@ const NESTED_BRANCH_PIPE_STEPS = [
   },
   {
     id: 'branch-2.1',
-    appKey: toolbeltApp.key,
+    appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 12,
     parameters: {

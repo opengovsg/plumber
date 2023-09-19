@@ -8,9 +8,9 @@ import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 import {
   extractBranchesWithSteps,
-  TOOLBELT_ACTIONS,
-  TOOLBELT_APP_KEY,
-} from 'helpers/toolbelt'
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from 'helpers/toolbox'
 
 import { ContentProps } from '../types'
 
@@ -38,8 +38,8 @@ export default function IfThen(props: ContentProps): JSX.Element {
     await createStep({
       variables: {
         input: {
-          key: TOOLBELT_ACTIONS.IfThen,
-          appKey: TOOLBELT_APP_KEY,
+          key: TOOLBOX_ACTIONS.IfThen,
+          appKey: TOOLBOX_APP_KEY,
           previousStep: {
             id: steps[steps.length - 1].id,
           },

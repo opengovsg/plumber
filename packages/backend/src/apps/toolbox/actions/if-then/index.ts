@@ -8,7 +8,7 @@ import type {
 import defineAction from '@/helpers/define-action'
 import Step from '@/models/step'
 
-import toolbeltApp from '../..'
+import toolboxApp from '../..'
 
 const ACTION_KEY = 'ifThen'
 
@@ -74,7 +74,7 @@ async function getBranchStepIdToSkipTo(
     .throwIfNotFound()
 
   const nextBranchStep = flowSteps.slice($.step.position).find((step) => {
-    if (!(step.appKey === toolbeltApp.key && step.key === ACTION_KEY)) {
+    if (!(step.appKey === toolboxApp.key && step.key === ACTION_KEY)) {
       return false
     }
 
