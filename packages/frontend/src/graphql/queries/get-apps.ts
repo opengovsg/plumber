@@ -19,6 +19,7 @@ export const GET_APPS = gql`
       primaryColor
       connectionCount
       supportsConnections
+      description
       auth {
         fields {
           key

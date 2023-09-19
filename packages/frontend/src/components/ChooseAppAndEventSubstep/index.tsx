@@ -9,7 +9,7 @@ import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
-import { FormLabel } from '@opengovsg/design-system-react'
+import { Badge, FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
@@ -34,9 +34,11 @@ type ChooseAppAndEventSubstepProps = {
 const optionGenerator = (app: {
   name: string
   key: string
-}): { label: string; value: string } => ({
+  description?: string
+}): { label: string; value: string; description: string } => ({
   label: app.name as string,
   value: app.key as string,
+  description: app?.description as string,
 })
 
 const eventOptionGenerator = (app: {
@@ -79,6 +81,13 @@ function ChooseAppAndEventSubstep(
   const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
+
+  apps.sort((a, b) => {
+    if (a.description) {
+      return -1
+    }
+    return a.name.localeCompare(b.name)
+  })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const appOptions = useMemo(
@@ -200,6 +209,32 @@ function ChooseAppAndEventSubstep(
             disableClearable
             disabled={editorContext.readOnly}
             options={appOptions}
+            renderOption={(optionProps, option) => (
+              <li
+                {...optionProps}
+                key={option.value.toString()}
+                style={{
+                  flexDirection: 'row',
+                }}
+              >
+                <Flex flexDir="column">
+                  <Flex gap={2} alignItems="center">
+                    <Text>{option.label}</Text>
+                    {option.description && (
+                      <Badge
+                        bgColor="interaction.muted.main.active"
+                        color="primary.600"
+                        px={2}
+                        py={1}
+                      >
+                        New
+                      </Badge>
+                    )}
+                  </Flex>
+                  <Text fontSize="xs">{option.description}</Text>
+                </Flex>
+              </li>
+            )}
             renderInput={(params) => (
               <FormControl>
                 <FormLabel isRequired>
@@ -209,7 +244,11 @@ function ChooseAppAndEventSubstep(
               </FormControl>
             )}
             value={
-              getOption(appOptions, step.appKey) ?? { label: '', value: '' }
+              getOption(appOptions, step.appKey) ?? {
+                label: '',
+                value: '',
+                description: '',
+              }
             }
             onChange={onAppChange}
             data-test="choose-app-autocomplete"

@@ -31,7 +31,7 @@ import {
 import { DELETE_STEP } from 'graphql/mutations/delete-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
-import { isIfThenBranchCompleted } from 'helpers/toolbelt'
+import { isIfThenBranchCompleted } from 'helpers/toolbox'
 
 import { BranchContext } from './BranchContext'
 
