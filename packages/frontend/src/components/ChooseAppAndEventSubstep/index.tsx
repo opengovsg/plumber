@@ -224,7 +224,8 @@ function ChooseAppAndEventSubstep(
                       <Badge
                         bgColor="interaction.muted.main.active"
                         color="primary.600"
-                        padding="0.25rem 0.5rem"
+                        px={2}
+                        py={1}
                       >
                         New
                       </Badge>
