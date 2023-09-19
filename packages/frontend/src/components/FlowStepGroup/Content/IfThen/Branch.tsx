@@ -138,10 +138,8 @@ export default function Branch(props: BranchProps): JSX.Element {
           },
         },
       },
-      onCompleted: () => {
-        openEditor()
-      },
     })
+    openEditor()
   }, [openEditor, depth, flow, initialStep])
 
   return (
