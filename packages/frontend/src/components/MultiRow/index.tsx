@@ -1,12 +1,13 @@
 import type { IField } from '@plumber/types'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus, BiTrash } from 'react-icons/bi'
-import { Flex } from '@chakra-ui/react'
+import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { FormLabel, IconButton } from '@opengovsg/design-system-react'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import InputCreator, { InputCreatorProps } from 'components/InputCreator'
+import { EditorContext } from 'contexts/Editor'
 
 export type MultiRowProps = {
   name: string
@@ -27,6 +28,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
   } = props
 
   const { control } = useFormContext()
+  const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
   // react-hook-form requires a non-undefined default value for _every_
   // sub-field when adding a new row. Otherwise, it goofs up and populates new
@@ -80,10 +82,9 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                   gap={2}
                   bg={rowColour}
                   mb={2}
-                  p={2}
                 >
                   {/* edge case the 1st sub-field to show our "remove row" icon */}
-                  <Flex alignItems="center">
+                  <Flex alignItems="center" p={2}>
                     <InputCreator
                       schema={subFields[0]}
                       namePrefix={namePrefix}
@@ -93,18 +94,29 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                       variant="clear"
                       aria-label="Remove"
                       icon={<BiTrash />}
+                      isDisabled={isEditorReadOnly}
                       onClick={() => remove(index)}
                     />
                   </Flex>
 
                   {subFields.slice(1).map((subField) => (
-                    <InputCreator
-                      key={`${row.id}.${subField.key}`}
-                      schema={subField}
-                      namePrefix={namePrefix}
-                      {...forwardedInputCreatorProps}
-                    />
+                    <Box p={2}>
+                      <InputCreator
+                        key={`${row.id}.${subField.key}`}
+                        schema={subField}
+                        namePrefix={namePrefix}
+                        {...forwardedInputCreatorProps}
+                      />
+                    </Box>
                   ))}
+                  {index !== actualRows.length - 1 && (
+                    <Box position="relative" my={2.5}>
+                      <AbsoluteCenter bg="white" p={2.5}>
+                        <Text textStyle="subhead-3">And</Text>
+                      </AbsoluteCenter>
+                      <Divider />
+                    </Box>
+                  )}
                 </Flex>
               )
             })}
@@ -113,8 +125,9 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               variant="outline"
               icon={<BiPlus />}
               onClick={handleAddRow}
+              isDisabled={isEditorReadOnly}
             >
-              Add
+              And
             </ConditionalIconButton>
           </Flex>
         )

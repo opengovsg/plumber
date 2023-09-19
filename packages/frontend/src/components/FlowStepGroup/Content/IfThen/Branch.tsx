@@ -7,7 +7,7 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { BiTrashAlt } from 'react-icons/bi'
+import { BiSolidCheckCircle, BiTrashAlt } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   AlertDialog,
@@ -17,11 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   Flex,
+  Icon,
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
 import { Button, IconButton, Spinner } from '@opengovsg/design-system-react'
 import NestedEditor from 'components/FlowStepGroup/NestedEditor'
+import { EditorContext } from 'contexts/Editor'
 import {
   type StepDisplayOverridesContextData,
   StepDisplayOverridesProvider,
@@ -29,36 +31,39 @@ import {
 import { DELETE_STEP } from 'graphql/mutations/delete-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
+import { isIfThenBranchCompleted } from 'helpers/toolbelt'
 
 import { BranchContext } from './BranchContext'
 
 interface BranchProps {
   flow: IFlow
   steps: IStep[]
-  defaultName: string
 }
 
 export default function Branch(props: BranchProps): JSX.Element {
-  const { flow, steps, defaultName } = props
+  const { flow, steps } = props
   const {
     isOpen: editorIsOpen,
     onOpen: openEditor,
     onClose: closeEditor,
   } = useDisclosure()
   const { depth } = useContext(BranchContext)
+  const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
   const initialStep = steps[0]
   const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
     () => ({
       [initialStep.id]: {
         hintAboveCaption: 'If... Then',
-        caption: (initialStep.parameters.branchName as string) ?? defaultName,
+        // Only the 1st branch can have an undefined name.
+        caption: (initialStep.parameters.branchName as string) ?? 'Branch 1',
         disableActionChanges: true,
         disableDelete: true,
       },
     }),
-    [initialStep.id, initialStep.parameters.branchName, defaultName],
+    [initialStep.id, initialStep.parameters.branchName],
   )
+  const isCompleted = useMemo(() => isIfThenBranchCompleted(steps), [steps])
 
   //
   // Handle branch deletion
@@ -125,6 +130,7 @@ export default function Branch(props: BranchProps): JSX.Element {
           },
           parameters: {
             ...initialStep.parameters,
+            branchName: 'Branch 1',
             depth,
           },
           connection: {
@@ -132,10 +138,8 @@ export default function Branch(props: BranchProps): JSX.Element {
           },
         },
       },
-      onCompleted: () => {
-        openEditor()
-      },
     })
+    openEditor()
   }, [openEditor, depth, flow, initialStep])
 
   return (
@@ -157,16 +161,24 @@ export default function Branch(props: BranchProps): JSX.Element {
         ) : (
           <>
             <Text textStyle="subhead-1">
-              {steps[0].parameters.branchName
-                ? String(steps[0].parameters.branchName)
-                : defaultName}
+              {(steps[0].parameters.branchName as string | undefined) ??
+                'Branch 1'}
             </Text>
+            {isCompleted && (
+              <Icon
+                ml={1}
+                boxSize={4}
+                color="interaction.success.default"
+                as={BiSolidCheckCircle}
+              />
+            )}
             <IconButton
               onClick={openDeleteConfirmation}
               variant="clear"
               aria-label="Delete Branch"
               icon={<BiTrashAlt />}
               isLoading={isDeletingBranch}
+              isDisabled={isEditorReadOnly}
               ml="auto"
             />
           </>
