@@ -6,6 +6,7 @@ import { useMutation } from '@apollo/client'
 import { Divider, Flex } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
+import { GET_FLOW } from 'graphql/queries/get-flow'
 import {
   ACTIONS as TOOLBELT_ACTIONS,
   APP_KEY as TOOLBELT_APP_KEY,
@@ -15,7 +16,7 @@ import {
 import { ContentProps } from '../types'
 
 import Branch from './Branch'
-import { BranchDepthContext } from './BranchDepthContext'
+import { BranchContext } from './BranchContext'
 
 /**
  * Extracts an array of step arrays, with each step array containing steps that
@@ -95,14 +96,14 @@ function extractBranchesWithSteps(
 }
 
 export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
-  const branchDepth = useContext(BranchDepthContext) ?? 0
+  const branchContext = useContext(BranchContext)
   const branchesWithSteps = useMemo(
-    () => extractBranchesWithSteps(steps, branchDepth),
-    [steps, branchDepth],
+    () => extractBranchesWithSteps(steps, branchContext.depth),
+    [steps, branchContext],
   )
 
   const [createStep, { loading: isAddingBranch }] = useMutation(CREATE_STEP, {
-    refetchQueries: ['GetFlow'],
+    refetchQueries: [GET_FLOW],
   })
   const onAddBranch = useCallback(async () => {
     await createStep({
@@ -117,40 +118,37 @@ export default function IfThen({ flow, steps }: ContentProps): JSX.Element {
             id: flow.id,
           },
           parameters: {
-            depth: branchDepth,
+            depth: branchContext.depth,
           },
         },
       },
     })
-  }, [branchDepth, steps])
+  }, [createStep, branchContext, steps])
 
   return (
-    // Nested If-Thens should have depth = depth + 1
-    <BranchDepthContext.Provider value={branchDepth + 1}>
-      <Flex flexDir="column">
-        {branchesWithSteps.map((steps, index) => (
-          <Fragment key={steps[0].id}>
-            <Branch
-              flow={flow}
-              steps={steps}
-              defaultName={`Branch ${index + 1}`}
-            />
-            {index < branchesWithSteps.length - 1 && (
-              <Divider borderColor="base.divider.medium" />
-            )}
-          </Fragment>
-        ))}
-        <Button
-          onClick={onAddBranch}
-          isLoading={isAddingBranch}
-          leftIcon={<BiPlus />}
-          m={4}
-          variant="outline"
-          w="fit-content"
-        >
-          Add branch
-        </Button>
-      </Flex>
-    </BranchDepthContext.Provider>
+    <Flex flexDir="column">
+      {branchesWithSteps.map((steps, index) => (
+        <Fragment key={steps[0].id}>
+          <Branch
+            flow={flow}
+            steps={steps}
+            defaultName={`Branch ${index + 1}`}
+          />
+          {index < branchesWithSteps.length - 1 && (
+            <Divider borderColor="base.divider.medium" />
+          )}
+        </Fragment>
+      ))}
+      <Button
+        onClick={onAddBranch}
+        isLoading={isAddingBranch}
+        leftIcon={<BiPlus />}
+        m={4}
+        variant="outline"
+        w="fit-content"
+      >
+        Add branch
+      </Button>
+    </Flex>
   )
 }

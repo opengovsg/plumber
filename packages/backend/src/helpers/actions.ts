@@ -1,5 +1,3 @@
-import { type IAction } from '@plumber/types'
-
 import { memoize } from 'lodash'
 
 import App from '@/models/app'
@@ -37,39 +35,4 @@ export async function doesActionProcessFiles(
   return (await getFileProcessingActions()).has(
     getCompositeKey(appKey, actionKey),
   )
-}
-
-// Memoize since we can't use top-level await yet. Returns a map of composite
-// app-action key to the action's on-publish hook.
-const getAllOnPipePublishOrBeforeTestRunHooks = memoize(
-  async (): Promise<
-    ReadonlyMap<string, NonNullable<IAction['onPipePublishOrBeforeTestRun']>>
-  > => {
-    const result = new Map<
-      string,
-      NonNullable<IAction['onPipePublishOrBeforeTestRun']>
-    >()
-    const apps = await App.getAllAppsWithFunctions()
-
-    for (const app of apps) {
-      for (const action of app.actions ?? []) {
-        if (action.onPipePublishOrBeforeTestRun) {
-          result.set(
-            getCompositeKey(app.key, action.key),
-            action.onPipePublishOrBeforeTestRun,
-          )
-        }
-      }
-    }
-
-    return result
-  },
-)
-
-export async function getOnPipePublishOrBeforeTestRunHook(
-  appKey: string,
-  actionKey: string,
-): Promise<IAction['onPipePublishOrBeforeTestRun'] | null> {
-  const allHooks = await getAllOnPipePublishOrBeforeTestRunHooks()
-  return allHooks.get(getCompositeKey(appKey, actionKey)) ?? null
 }

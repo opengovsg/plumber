@@ -70,6 +70,7 @@ describe('update row', () => {
       step: {
         id: 'herp-derp',
         appKey: 'vault-workspace',
+        position: 1,
         parameters: {},
       },
       app,

@@ -1,6 +1,12 @@
 import { type IFlow, type IStep } from '@plumber/types'
 
-import { type MouseEventHandler, useCallback, useMemo, useRef } from 'react'
+import {
+  type MouseEventHandler,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+} from 'react'
 import { BiTrashAlt } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
@@ -14,13 +20,17 @@ import {
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
-import { Button, IconButton } from '@opengovsg/design-system-react'
+import { Button, IconButton, Spinner } from '@opengovsg/design-system-react'
 import NestedEditor from 'components/FlowStepGroup/NestedEditor'
 import {
   type StepDisplayOverridesContextData,
   StepDisplayOverridesProvider,
 } from 'contexts/StepDisplayOverrides'
 import { DELETE_STEP } from 'graphql/mutations/delete-step'
+import { UPDATE_STEP } from 'graphql/mutations/update-step'
+import { GET_FLOW } from 'graphql/queries/get-flow'
+
+import { BranchContext } from './BranchContext'
 
 interface BranchProps {
   flow: IFlow
@@ -35,6 +45,7 @@ export default function Branch(props: BranchProps): JSX.Element {
     onOpen: openEditor,
     onClose: closeEditor,
   } = useDisclosure()
+  const { depth } = useContext(BranchContext)
 
   const initialStep = steps[0]
   const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
@@ -49,6 +60,9 @@ export default function Branch(props: BranchProps): JSX.Element {
     [initialStep.id, initialStep.parameters.branchName, defaultName],
   )
 
+  //
+  // Handle branch deletion
+  //
   const {
     isOpen: deleteConfirmationIsOpen,
     onOpen: openDeleteConfirmationImpl,
@@ -56,7 +70,7 @@ export default function Branch(props: BranchProps): JSX.Element {
   } = useDisclosure()
   const cancelDeleteButton = useRef<HTMLButtonElement>(null)
   const [deleteStep, { loading: isDeletingBranch }] = useMutation(DELETE_STEP, {
-    refetchQueries: ['GetFlow'],
+    refetchQueries: [GET_FLOW],
   })
   const openDeleteConfirmation = useCallback<MouseEventHandler>(
     (e) => {
@@ -72,13 +86,65 @@ export default function Branch(props: BranchProps): JSX.Element {
     closeDeleteConfirmation()
   }, [deleteStep, steps])
 
+  //
+  // ** EDGE CASE **
+  //
+  // The 1st step of a branch series can have undefined depth if the user has
+  // just chosen "If... Then" via the "Choose app & event" substep. However, our
+  // back end cannot have undefined depth. Luckily, we know that the user _must_
+  // open the branch editor to test any steps within it; thus, we
+  // opportunistically set the depth when the user does this.
+  //
+  // We do this instead of relying on other mechanisms like useEffect (even more
+  // clunk) or handling undefined depth in backend (super complex; needs
+  // additional callbacks or 300+ LoC)
+  //
+  const [updateStep, { loading: isUpdatingBranch }] = useMutation(UPDATE_STEP, {
+    refetchQueries: [GET_FLOW],
+  })
+  const onOpenBranch = useCallback(async () => {
+    if (isUpdatingBranch) {
+      return
+    }
+
+    const storedDepth = parseInt(initialStep.parameters.depth as string)
+
+    if (!isNaN(storedDepth)) {
+      openEditor()
+      return
+    }
+
+    await updateStep({
+      variables: {
+        input: {
+          id: initialStep.id,
+          appKey: initialStep.appKey,
+          key: initialStep.key,
+          flow: {
+            id: flow.id,
+          },
+          parameters: {
+            ...initialStep.parameters,
+            depth,
+          },
+          connection: {
+            id: null,
+          },
+        },
+      },
+      onCompleted: () => {
+        openEditor()
+      },
+    })
+  }, [openEditor, depth, flow, initialStep])
+
   return (
     <>
       {/*
        * Branch row
        */}
       <Flex
-        onClick={openEditor}
+        onClick={onOpenBranch}
         h={16}
         w="full"
         alignItems="center"
@@ -86,19 +152,25 @@ export default function Branch(props: BranchProps): JSX.Element {
         _hover={{ bg: 'interaction.muted.main.hover', cursor: 'pointer' }}
         _active={{ bg: 'interaction.muted.main.active' }}
       >
-        <Text textStyle="subhead-1">
-          {steps[0].parameters.branchName
-            ? String(steps[0].parameters.branchName)
-            : defaultName}
-        </Text>
-        <IconButton
-          onClick={openDeleteConfirmation}
-          variant="clear"
-          aria-label="Delete Branch"
-          icon={<BiTrashAlt />}
-          isLoading={isDeletingBranch}
-          ml="auto"
-        />
+        {isUpdatingBranch ? (
+          <Spinner />
+        ) : (
+          <>
+            <Text textStyle="subhead-1">
+              {steps[0].parameters.branchName
+                ? String(steps[0].parameters.branchName)
+                : defaultName}
+            </Text>
+            <IconButton
+              onClick={openDeleteConfirmation}
+              variant="clear"
+              aria-label="Delete Branch"
+              icon={<BiTrashAlt />}
+              isLoading={isDeletingBranch}
+              ml="auto"
+            />
+          </>
+        )}
       </Flex>
       {/*
        * Delete Confirmation Modal
@@ -135,14 +207,17 @@ export default function Branch(props: BranchProps): JSX.Element {
       {/*
        * Nexted branch editor (pops up in modal)
        */}
-      <StepDisplayOverridesProvider value={initialStepDisplayOverride}>
-        <NestedEditor
-          onClose={closeEditor}
-          isOpen={editorIsOpen}
-          flow={flow}
-          steps={steps}
-        />
-      </StepDisplayOverridesProvider>
+      {/* Nested If-Thens should have depth = depth + 1 */}
+      <BranchContext.Provider value={{ depth: depth + 1 }}>
+        <StepDisplayOverridesProvider value={initialStepDisplayOverride}>
+          <NestedEditor
+            onClose={closeEditor}
+            isOpen={editorIsOpen}
+            flow={flow}
+            steps={steps}
+          />
+        </StepDisplayOverridesProvider>
+      </BranchContext.Provider>
     </>
   )
 }

@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "vite --host --force",
     "build": "tsc && vite build",
     "prebuild": "rimraf ./build",
     "lint": "eslint . --ignore-path ../../.eslintignore",

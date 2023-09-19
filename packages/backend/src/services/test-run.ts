@@ -1,6 +1,3 @@
-import { type IAction } from '@plumber/types'
-
-import { getOnPipePublishOrBeforeTestRunHook } from '@/helpers/actions'
 import Step from '@/models/step'
 import { processAction } from '@/services/action'
 import { processFlow } from '@/services/flow'
@@ -18,37 +15,6 @@ const testRun = async (options: TestRunOptions) => {
         steps: true,
       },
     })
-
-  //
-  // Process actions' before-test-run hooks.
-  //
-  // NOTE: These hooks may modify the underlying flow / steps. Instead of
-  // forcing hooks to use patchAndFetch, we will query the DB one more time
-  // after this phase. This is because Objection's ___andFetch uses 2 queries
-  // under the hood; making hooks use this is actually a pessimization compared
-  // to us making one(-ish) more DB query later.
-
-  const hooksToRun: ReturnType<
-    NonNullable<IAction['onPipePublishOrBeforeTestRun']>
-  >[] = []
-
-  for (const step of untilStep.flow.steps) {
-    if (step.type !== 'action') {
-      continue
-    }
-
-    const hook = await getOnPipePublishOrBeforeTestRunHook(
-      step.appKey,
-      step.key,
-    )
-    if (!hook) {
-      continue
-    }
-
-    hooksToRun.push(hook(untilStep.flow))
-  }
-
-  await Promise.all(hooksToRun)
 
   //
   // Start test run
