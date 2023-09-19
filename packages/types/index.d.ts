@@ -262,6 +262,7 @@ export interface IApp {
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
+  description?: string
 }
 
 export type TBeforeRequest = {
