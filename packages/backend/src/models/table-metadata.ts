@@ -13,8 +13,8 @@ class TableMetadata extends Base {
 
   static jsonSchema = {
     type: 'object',
-    required: ['id', 'userId'],
-
+    // we cant put required id and userId here because it will throw an error
+    // although it will be auto populated by objectionjs
     properties: {
       id: { type: 'string', format: 'uuid' },
       userId: { type: 'string', format: 'uuid' },
