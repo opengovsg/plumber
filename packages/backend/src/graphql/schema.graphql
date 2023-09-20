@@ -52,6 +52,10 @@ type Mutation {
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
   logout: Boolean
+  loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
+  loginWithSelectedSgid(
+    input: LoginWithSelectedSgidInput!
+  ): LoginWithSelectedSgidResult!
 }
 
 """
@@ -489,6 +493,32 @@ type ExecutionStepConnection {
 
 type AppHealth {
   version: String
+}
+
+type SgidPublicOfficerEmployment {
+  workEmail: String
+  agencyName: String
+  departmentName: String
+  employmentType: String
+  employmentTitle: String
+}
+
+input LoginWithSgidInput {
+  authCode: String!
+  nonce: String!
+  verifier: String!
+}
+
+type LoginWithSgidResult {
+  publicOfficerEmployments: [SgidPublicOfficerEmployment!]!
+}
+
+input LoginWithSelectedSgidInput {
+  workEmail: String!
+}
+
+type LoginWithSelectedSgidResult {
+  success: Boolean!
 }
 
 schema {

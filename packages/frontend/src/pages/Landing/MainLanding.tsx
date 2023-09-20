@@ -31,6 +31,17 @@ const HeaderBar = () => {
         <HStack spacing={8}>
           <Button
             as={Link}
+            href={URLS.STATUS_LINK}
+            colorScheme="secondary"
+            target="_blank"
+            variant="link"
+            _hover={{ textDecoration: 'underline' }}
+          >
+            Status
+          </Button>
+
+          <Button
+            as={Link}
             href={URLS.GUIDE_LINK}
             colorScheme="secondary"
             target="_blank"

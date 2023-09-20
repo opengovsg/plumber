@@ -1,4 +1,5 @@
 import { RestrictedFooter } from '@opengovsg/design-system-react'
+import appConfig from 'config/app'
 import { FEEDBACK_FORM_LINK, GUIDE_LINK } from 'config/urls'
 
 export const Footer = () => (
@@ -25,6 +26,10 @@ export const Footer = () => (
       {
         label: 'Report Vulnerability',
         href: 'https://www.tech.gov.sg/report_vulnerability',
+      },
+      {
+        label: `${appConfig.version}-${appConfig.env}`,
+        href: '',
       },
     ]}
     containerProps={{

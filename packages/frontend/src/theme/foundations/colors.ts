@@ -4,8 +4,11 @@
 const bbBearColors = {
   base: {
     divider: {
+      subtle: '#F8F9F9',
       medium: '#EDEDED',
       strong: '#BFC2C8',
+      inverse: '#ffffff',
+      brand: '#cf1a68',
     },
     content: {
       default: '#454953',
@@ -15,13 +18,28 @@ const bbBearColors = {
   },
   interaction: {
     muted: {
+      main: {
+        hover: '#FEF8FB',
+        active: '#F9DDE9',
+      },
       neutral: {
         hover: '#F8F9F9',
         active: '#EDEDED',
       },
     },
+    sub: {
+      default: '#5D6785',
+    },
     success: {
       default: '#0F796F',
+    },
+    support: {
+      'disabled-content': '#A0A4AD',
+    },
+    warning: {
+      default: '#FFDA68',
+      hover: '#E2B73E',
+      active: '#C4992A',
     },
     tinted: {
       main: {

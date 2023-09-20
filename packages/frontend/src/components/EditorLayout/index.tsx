@@ -1,15 +1,12 @@
 import type { IFlow } from '@plumber/types'
 
 import * as React from 'react'
-import { Link as RouterLink, useParams } from 'react-router-dom'
+import { BiChevronLeft } from 'react-icons/bi'
+import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew'
-import Box from '@mui/material/Box'
+import { Box, HStack, Icon, Text, VStack } from '@chakra-ui/react'
 import MuiButton from '@mui/material/Button'
-import IconButton from '@mui/material/IconButton'
 import Snackbar from '@mui/material/Snackbar'
-import Stack from '@mui/material/Stack'
-import Tooltip from '@mui/material/Tooltip'
 import { Button, Link } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
@@ -73,39 +70,32 @@ export default function EditorLayout(): React.ReactElement {
 
   return (
     <>
-      <Stack direction="column" height="100%">
-        <Stack
-          direction="row"
-          bgcolor="white"
+      <VStack h="100%">
+        <HStack
+          bg="white"
+          w="100%"
           justifyContent="space-between"
           alignItems="center"
-          py={1}
-          px={1}
+          py={2}
+          px={2}
           borderBottom="1px solid"
-          borderColor="divider"
+          borderColor="base.divider.subtle"
         >
           <Box display="flex" flex={1} alignItems="center">
-            <Tooltip
-              placement="right"
-              title={formatMessage('flowEditor.goBack')}
-              disableInteractive
-            >
-              <IconButton
-                size="small"
-                component={RouterLink}
-                to={URLS.FLOWS}
-                data-test="editor-go-back-button"
-              >
-                <ArrowBackIosNewIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <Link href={URLS.FLOWS}>
+              <Icon
+                boxSize={6}
+                color="interaction.support.disabled-content"
+                as={BiChevronLeft}
+              ></Icon>
+            </Link>
 
             {!loading && (
               <EditableTypography
                 variant="body1"
                 onConfirm={onFlowNameUpdate}
                 noWrap
-                sx={{ display: 'flex', flex: 1, maxWidth: '50vw', ml: 2 }}
+                sx={{ display: 'flex', flex: 1, maxWidth: '50vw', ml: 1 }}
               >
                 {flow?.name}
               </EditableTypography>
@@ -118,27 +108,20 @@ export default function EditorLayout(): React.ReactElement {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            mr={6}
+            pr={4}
             _hover={{ textDecoration: 'underline' }}
           >
             Guide
           </Button>
 
           <Box pr={1}>
-            <MuiButton
-              variant="contained"
-              size="small"
-              onClick={() => onFlowStatusUpdate(!flow.active)}
-              data-test={
-                flow?.active ? 'unpublish-flow-button' : 'publish-flow-button'
-              }
-            >
-              {flow?.active
-                ? formatMessage('flowEditor.unpublish')
-                : formatMessage('flowEditor.publish')}
-            </MuiButton>
+            <Button size="md" onClick={() => onFlowStatusUpdate(!flow.active)}>
+              <Text textStyle="subhead-1">
+                {flow?.active ? 'Unpublish' : 'Publish'}
+              </Text>
+            </Button>
           </Box>
-        </Stack>
+        </HStack>
 
         <Container maxW={852} p={0}>
           <EditorProvider value={{ readOnly: !!flow?.active }}>
@@ -147,7 +130,7 @@ export default function EditorLayout(): React.ReactElement {
             {flow && <Editor flow={flow} />}
           </EditorProvider>
         </Container>
-      </Stack>
+      </VStack>
 
       <Snackbar
         data-test="flow-cannot-edit-info-snackbar"
