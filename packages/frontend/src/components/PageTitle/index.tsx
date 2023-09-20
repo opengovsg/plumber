@@ -1,8 +1,11 @@
 import * as React from 'react'
-import Typography, { TypographyProps } from '@mui/material/Typography'
+import { Text } from '@chakra-ui/react'
 
-type PageTitleProps = TypographyProps
+interface PageTitleProps {
+  title: string
+}
 
 export default function PageTitle(props: PageTitleProps): React.ReactElement {
-  return <Typography variant="h3" {...props} />
+  const { title } = props
+  return <Text textStyle="h4">{title}</Text>
 }

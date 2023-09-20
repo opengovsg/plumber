@@ -29,6 +29,9 @@ const bbBearColors = {
         active: '#EDEDED',
       },
     },
+    sub: {
+      default: '#5D6785',
+    },
     success: {
       default: '#0F796F',
     },
