@@ -2,6 +2,8 @@ import defineAction from '@/helpers/define-action'
 
 import filterTableRows from '../../common/filter-table-rows'
 
+import getDataOutMetadata from './get-data-out-metadata'
+
 export default defineAction({
   name: 'Get table data',
   key: 'getTableData',
@@ -26,6 +28,7 @@ export default defineAction({
         ],
       },
     },
+
     {
       label: 'Lookup Value',
       key: 'lookupValue',
@@ -34,6 +37,7 @@ export default defineAction({
       variables: true,
     },
   ],
+  getDataOutMetadata,
 
   async run($) {
     const lookupColumn = $.step.parameters.lookupColumn as string

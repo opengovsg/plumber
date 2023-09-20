@@ -13,6 +13,7 @@ import {
 import { IconButton } from '@opengovsg/design-system-react'
 import FlowStep from 'components/FlowStep'
 import FlowStepGroup from 'components/FlowStepGroup'
+import { EditorContext } from 'contexts/Editor'
 import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
@@ -24,12 +25,12 @@ import { GET_FLOW } from 'graphql/queries/get-flow'
 
 interface AddStepButtonProps {
   onClick: () => void
-  disabled: boolean
+  isDisabled: boolean
   isLastStep: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, disabled, isLastStep } = props
+  const { onClick, isDisabled, isLastStep } = props
 
   return (
     <Box pos="relative" h={24}>
@@ -46,7 +47,7 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
       <AbsoluteCenter>
         <IconButton
           onClick={onClick}
-          disabled={disabled}
+          isDisabled={isDisabled}
           aria-label="Add Step"
           icon={<BiPlus />}
           variant="outline"
@@ -98,6 +99,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const [currentStepId, setCurrentStepId] = useState<string | null>(
     steps[0]?.id,
   )
+
+  const { readOnly: isReadOnlyEditor } = useContext(EditorContext)
 
   const onStepChange = useCallback(
     (step: IStep) => {
@@ -268,13 +271,10 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 }}
                 isBannedAction={isBannedAction}
               />
-
               <AddStepButton
                 onClick={() => addStep(step.id)}
-                disabled={creationInProgress || flow.active}
-                isLastStep={
-                  groupedSteps.length === 0 && index === steps.length - 1
-                }
+                isDisabled={creationInProgress || isReadOnlyEditor}
+                isLastStep={index === steps.length - 1}
               />
             </Fragment>
           ))}
