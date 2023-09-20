@@ -4,16 +4,12 @@ type Params = {
   input: {
     id: string
     name?: string
-    addedColumns?: {
-      name: string
-    }[]
+    addedColumns?: string[]
     modifiedColumns?: {
       id: string
       name: string
     }[]
-    deletedColumns?: {
-      id: string
-    }[]
+    deletedColumns?: string[]
   }
 }
 
@@ -37,18 +33,10 @@ const updateTable = async (
     })
     .throwIfNotFound()
 
-  const updatedFlow = await table.$query().patchAndFetch({
-    name: tableName,
-  })
-
   if (addedColumns) {
-    await Promise.all(
-      addedColumns.map(async (column) => {
-        await table.$relatedQuery('columns').insert({
-          name: column.name,
-        })
-      }),
-    )
+    await table
+      .$relatedQuery('columns')
+      .insert(addedColumns.map((name) => ({ name })))
   }
 
   if (modifiedColumns) {
@@ -62,14 +50,17 @@ const updateTable = async (
   }
 
   if (deletedColumns) {
-    await Promise.all(
-      deletedColumns.map(async (column) => {
-        await table.$relatedQuery('columns').deleteById(column.id)
-      }),
-    )
+    await table.$relatedQuery('columns').delete().whereIn('id', deletedColumns)
   }
 
-  return updatedFlow
+  const updateTable = await table
+    .$query()
+    .patchAndFetch({
+      name: tableName,
+    })
+    .withGraphFetched('columns')
+
+  return updateTable
 }
 
 export default updateTable

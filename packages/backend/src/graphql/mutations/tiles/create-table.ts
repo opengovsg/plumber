@@ -1,4 +1,3 @@
-import TableColumnMetadata from '@/models/table-column-metadata'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -18,9 +17,8 @@ const createTable = async (
     name: tableName,
   })
 
-  await TableColumnMetadata.query().insert({
+  await table.$relatedQuery('columns').insert({
     name: 'Column 1',
-    tableId: table.id,
   })
 
   return table
