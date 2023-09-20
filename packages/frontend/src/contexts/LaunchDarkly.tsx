@@ -51,23 +51,18 @@ const INITIAL_SETTINGS: LDProviderConfig = {
 }
 
 /**
- * To manage MAU/MCI consumption, we share LD contexts within population groups.
+ * To manage MAU/MCI consumption, we only provide LD contexts for logged-in users.
  */
 function getLDContext(
   user: AuthenticationContextParams['currentUser'] | null | undefined,
 ): LDContext {
-  if (!user) {
-    return ANON_LD_CONTEXT
-  }
-
-  const domain = user.email.split('@')[1]
-  if (!domain) {
+  if (!user || !user.email) {
     return ANON_LD_CONTEXT
   }
 
   return {
     kind: 'user',
-    key: domain,
+    key: user.email,
   }
 }
 
