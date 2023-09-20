@@ -41,7 +41,5 @@ export default defineAction({
 
     console.log(lookupColumn)
     console.log(previousStepsVariable)
-
-    return {}
   },
 })

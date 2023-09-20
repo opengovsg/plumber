@@ -91,7 +91,5 @@ export default defineAction({
     if (!result) {
       throw new CancelFlowError()
     }
-
-    return {}
   },
 })

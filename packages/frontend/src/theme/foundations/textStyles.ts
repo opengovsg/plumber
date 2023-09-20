@@ -17,11 +17,25 @@ const bbBearTextStyles = {
     fontFamily: 'body',
     textTransform: 'uppercase',
   },
+  'body-1': {
+    fontWeight: 400,
+    lineHeight: '1.5rem',
+    fontSize: '1rem',
+    letterSpacing: '-0.006em',
+    fontFamily: 'body',
+  },
   'body-2': {
     fontWeight: 400,
     lineHeight: '1.25rem',
     fontSize: '0.875rem',
     letterSpacing: 0,
+    fontFamily: 'body',
+  },
+  h4: {
+    fontWeight: 600,
+    lineHeight: '2rem',
+    fontSize: '1.5rem',
+    letterSpacing: '-0.019em',
     fontFamily: 'body',
   },
 }

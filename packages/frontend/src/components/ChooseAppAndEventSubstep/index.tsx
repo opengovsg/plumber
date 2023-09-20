@@ -91,8 +91,18 @@ function ChooseAppAndEventSubstep(
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const appOptions = useMemo(
-    () => apps?.map((app) => optionGenerator(app)) ?? [],
-    [apps],
+    () =>
+      apps
+        // Filter away stuff hidden behind feature flags
+        ?.filter((app) => {
+          if (!launchDarkly.flags || !app?.key) {
+            return true
+          }
+          const launchDarklyKey = ['app', app.key].join('_')
+          return launchDarkly.flags[launchDarklyKey] ?? true
+        })
+        .map((app) => optionGenerator(app)) ?? [],
+    [apps, launchDarkly.flags],
   )
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
