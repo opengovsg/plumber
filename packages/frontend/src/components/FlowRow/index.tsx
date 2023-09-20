@@ -50,7 +50,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
         boxShadow="none"
         _hover={{ bg: 'interaction.muted.neutral.hover' }}
         _active={{ bg: 'interaction.muted.neutral.active' }}
-        borderRadius="0"
+        borderRadius={0}
         borderBottom="1px solid"
         borderBottomColor="base.divider.medium"
       >
@@ -75,7 +75,8 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
             }}
             gap={6}
             alignItems="center"
-            p="1.5rem 2rem"
+            py={6}
+            px={8}
           >
             <GridItem area="apps">
               <HStack>
@@ -115,9 +116,8 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
             <GridItem area="menu">
               <Flex alignItems="center" gap={1.5}>
                 <Badge
-                  style={{
-                    padding: '0.25rem 0.5rem',
-                  }}
+                  py={1}
+                  px={2}
                   colorScheme={flow?.active ? 'success' : 'grey'}
                   variant="subtle"
                 >

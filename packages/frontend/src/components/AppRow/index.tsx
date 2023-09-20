@@ -29,12 +29,12 @@ function AppRow(props: AppRowProps): ReactElement {
         boxShadow="none"
         _hover={{ bg: 'interaction.muted.neutral.hover' }}
         _active={{ bg: 'interaction.muted.neutral.active' }}
-        borderRadius="0"
+        borderRadius={0}
         borderBottom="1px solid"
         borderBottomColor="base.divider.medium"
       >
         <CardBody p={0}>
-          <Flex gap={6} alignItems="center" p="1.5rem 2rem">
+          <Flex gap={6} alignItems="center" py={6} px={8}>
             <AppIcon name={name} url={iconUrl} color={primaryColor} />
 
             <Flex gap={2} flexDir="column">

@@ -36,7 +36,7 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
         boxShadow="none"
         _hover={{ bg: 'interaction.muted.neutral.hover' }}
         _active={{ bg: 'interaction.muted.neutral.active' }}
-        borderRadius="0"
+        borderRadius={0}
         borderBottom="1px solid"
         borderBottomColor="base.divider.medium"
       >
@@ -56,7 +56,8 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
             }}
             gap={6}
             alignItems="center"
-            p="1.5rem 2rem"
+            py={6}
+            px={8}
           >
             <GridItem area="apps">
               <HStack>
@@ -94,21 +95,14 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
             <GridItem area="arrow-container">
               <Flex alignItems="center" gap={4}>
                 {execution.testRun && (
-                  <Badge
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                    }}
-                    colorScheme="grey"
-                    variant="subtle"
-                  >
+                  <Badge py={1} px={2} colorScheme="grey" variant="subtle">
                     <Text>Test run</Text>
                   </Badge>
                 )}
 
                 <Badge
-                  style={{
-                    padding: '0.25rem 0.5rem',
-                  }}
+                  py={1}
+                  px={2}
                   colorScheme={
                     execution.status === 'success' ? 'success' : 'critical'
                   }
