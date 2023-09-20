@@ -7,6 +7,8 @@ const bbBearColors = {
       subtle: '#F8F9F9',
       medium: '#EDEDED',
       strong: '#BFC2C8',
+      inverse: '#ffffff',
+      brand: '#cf1a68',
     },
     content: {
       default: '#454953',
@@ -29,6 +31,9 @@ const bbBearColors = {
     },
     success: {
       default: '#0F796F',
+    },
+    support: {
+      'disabled-content': '#A0A4AD',
     },
     warning: {
       default: '#FFDA68',

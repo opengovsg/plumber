@@ -69,6 +69,8 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: 'true'
 
       - name: Construct ECR Image URI
         id: ecr-image-uri
@@ -83,7 +85,7 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
         run: |
-          docker build . -t ${{ steps.ecr-image-uri.outputs.image }}
+          docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }}
           docker push ${{ steps.ecr-image-uri.outputs.image }}
 
   deploy:
@@ -108,6 +110,8 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: 'true'
 
       - name: Construct ECR Image URI
         id: ecr-image-uri

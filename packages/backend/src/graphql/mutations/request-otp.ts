@@ -2,9 +2,9 @@ import { customAlphabet } from 'nanoid/async'
 
 import appConfig from '@/config/app'
 import BaseError from '@/errors/base'
+import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import { sendEmail } from '@/helpers/send-email'
-import User from '@/models/user'
 
 type Params = {
   input: {
@@ -30,11 +30,7 @@ const requestOtp = async (
   if (!email) {
     throw new BaseError('Email is invalid or not whitelisted.')
   }
-  // check if user exists
-  let user = await User.query().findOne({ email })
-  if (!user) {
-    user = await User.query().insertAndFetch({ email })
-  }
+  const user = await getOrCreateUser(email)
   if (
     user.otpSentAt &&
     Date.now() - user.otpSentAt.getTime() < OTP_RESEND_TIMEOUT_IN_MS

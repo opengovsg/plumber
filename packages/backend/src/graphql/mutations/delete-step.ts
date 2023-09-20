@@ -1,3 +1,4 @@
+import Step from '@/models/step'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -11,35 +12,38 @@ const deleteStep = async (
   params: Params,
   context: Context,
 ) => {
-  const step = await context.currentUser
-    .$relatedQuery('steps')
-    .withGraphFetched('flow')
-    .findOne({
-      'steps.id': params.input.id,
+  return await Step.transaction(async (trx) => {
+    // Include SELECTs in transaction too just in case there's concurrent modification.
+    const step = await context.currentUser
+      .$relatedQuery('steps', trx)
+      .withGraphFetched('flow')
+      .findOne({
+        'steps.id': params.input.id,
+      })
+      .throwIfNotFound()
+
+    await step.$relatedQuery('executionSteps', trx).delete()
+    await step.$query(trx).delete()
+
+    const nextSteps = await step.flow
+      .$relatedQuery('steps', trx)
+      .where('position', '>', step.position)
+
+    const nextStepQueries = nextSteps.map(async (nextStep) => {
+      await nextStep.$query(trx).patch({
+        position: nextStep.position - 1,
+      })
     })
-    .throwIfNotFound()
 
-  await step.$relatedQuery('executionSteps').delete()
-  await step.$query().delete()
+    await Promise.all(nextStepQueries)
 
-  const nextSteps = await step.flow
-    .$relatedQuery('steps')
-    .where('position', '>', step.position)
+    step.flow = await step.flow
+      .$query()
+      .withGraphJoined('steps')
+      .orderBy('steps.position', 'asc')
 
-  const nextStepQueries = nextSteps.map(async (nextStep) => {
-    await nextStep.$query().patch({
-      position: nextStep.position - 1,
-    })
+    return step
   })
-
-  await Promise.all(nextStepQueries)
-
-  step.flow = await step.flow
-    .$query()
-    .withGraphJoined('steps')
-    .orderBy('steps.position', 'asc')
-
-  return step
 }
 
 export default deleteStep
