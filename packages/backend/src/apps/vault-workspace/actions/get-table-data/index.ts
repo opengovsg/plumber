@@ -46,7 +46,5 @@ export default defineAction({
     $.setActionItem({
       raw: row,
     })
-
-    return {}
   },
 })
