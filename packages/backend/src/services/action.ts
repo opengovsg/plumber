@@ -1,3 +1,5 @@
+import { type IActionRunResult } from '@plumber/types'
+
 import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
@@ -13,22 +15,25 @@ type ProcessActionOptions = {
   executionId: string
   stepId: string
   jobId?: string
+  testRun?: boolean
 }
 
 export const processAction = async (options: ProcessActionOptions) => {
-  const { flowId, stepId, executionId, jobId } = options
+  const { flowId, stepId, executionId, jobId, testRun = false } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
+  const flow = await Flow.query().findById(flowId).throwIfNotFound()
   const execution = await Execution.query()
     .findById(executionId)
     .throwIfNotFound()
 
   const $ = await globalVariable({
-    flow: await Flow.query().findById(flowId).throwIfNotFound(),
+    flow,
     app: await step.getApp(),
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
+    testRun,
   })
 
   const priorExecutionSteps = await ExecutionStep.query().where({
@@ -47,9 +52,16 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   $.step.parameters = computedParameters
 
-  let proceedToNextAction = true
+  let runResult: IActionRunResult = {}
   try {
-    await actionCommand.run($)
+    // Cannot assign directly to runResult due to void return type.
+    const result =
+      testRun && actionCommand.testRun
+        ? await actionCommand.testRun($)
+        : await actionCommand.run($)
+    if (result) {
+      runResult = result
+    }
   } catch (error) {
     logger.error(error)
     if (error instanceof HttpError) {
@@ -59,7 +71,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         statusText: error.response.statusText,
       }
     } else if (error instanceof CancelFlowError) {
-      proceedToNextAction = false
+      runResult.nextStep = { command: 'stop-execution' }
     } else {
       try {
         $.actionOutput.error = JSON.parse(error.message)
@@ -81,12 +93,27 @@ export const processAction = async (options: ProcessActionOptions) => {
       jobId,
     })
 
+  let nextStep = null
+  switch (runResult.nextStep?.command) {
+    case 'jump-to-step':
+      nextStep = await flow
+        .$relatedQuery('steps')
+        .findById(runResult.nextStep.stepId)
+        .throwIfNotFound()
+      break
+    case 'stop-execution':
+      // Nothing to do, nextStep is already null.
+      break
+    default:
+      nextStep = await step.getNextStep()
+  }
+
   return {
     flowId,
     stepId,
     executionId,
     executionStep,
-    proceedToNextAction,
     computedParameters,
+    nextStep,
   }
 }

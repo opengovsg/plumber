@@ -1,5 +1,4 @@
 import { ApolloClient } from '@apollo/client'
-import appConfig from 'config/app'
 
 import cache from './cache'
 import createLink from './link'
@@ -9,9 +8,11 @@ type CreateClientOptions = {
   token?: string | null
 }
 
+const GRAPHQL_URL = '/graphql'
+
 const client = new ApolloClient({
   cache,
-  link: createLink({ uri: appConfig.graphqlUrl }),
+  link: createLink({ uri: GRAPHQL_URL }),
   defaultOptions: {
     watchQuery: {
       fetchPolicy: 'cache-and-network',
@@ -21,7 +22,7 @@ const client = new ApolloClient({
 
 export function createClient(options: CreateClientOptions): typeof client {
   const { onError, token } = options
-  const link = createLink({ uri: appConfig.graphqlUrl, token, onError })
+  const link = createLink({ uri: GRAPHQL_URL, token, onError })
 
   client.setLink(link)
 

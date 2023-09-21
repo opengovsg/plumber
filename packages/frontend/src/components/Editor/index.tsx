@@ -1,23 +1,36 @@
-import type { IFlow, IStep } from '@plumber/types'
+import type { IApp, IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useState } from 'react'
+import { Fragment, useCallback, useContext, useMemo, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
-import { useMutation } from '@apollo/client'
-import { AbsoluteCenter, Box, Divider, Flex } from '@chakra-ui/react'
+import { useMutation, useQuery } from '@apollo/client'
+import {
+  AbsoluteCenter,
+  Box,
+  CircularProgress,
+  Divider,
+  Flex,
+} from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import FlowStep from 'components/FlowStep'
+import FlowStepGroup from 'components/FlowStepGroup'
+import { EditorContext } from 'contexts/Editor'
+import {
+  StepExecutionsToIncludeContext,
+  StepExecutionsToIncludeProvider,
+} from 'contexts/StepExecutionsToInclude'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
+import { GET_APPS } from 'graphql/queries/get-apps'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 
 interface AddStepButtonProps {
   onClick: () => void
-  disabled: boolean
+  isDisabled: boolean
   isLastStep: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, disabled, isLastStep } = props
+  const { onClick, isDisabled, isLastStep } = props
 
   return (
     <Box pos="relative" h={24}>
@@ -34,7 +47,7 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
       <AbsoluteCenter>
         <IconButton
           onClick={onClick}
-          disabled={disabled}
+          isDisabled={isDisabled}
           aria-label="Add Step"
           icon={<BiPlus />}
           variant="outline"
@@ -71,23 +84,23 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 
 type EditorProps = {
   flow: IFlow
+  steps: IStep[]
 }
 
 export default function Editor(props: EditorProps): React.ReactElement {
   const [updateStep] = useMutation(UPDATE_STEP)
   const [createStep, { loading: creationInProgress }] = useMutation(
     CREATE_STEP,
-    {
-      refetchQueries: ['GetFlow'],
-    },
+    { refetchQueries: [GET_FLOW] },
   )
 
-  const { flow } = props
-  const [triggerStep] = flow.steps
+  const { flow, steps } = props
 
   const [currentStepId, setCurrentStepId] = useState<string | null>(
-    triggerStep.id,
+    steps[0]?.id,
   )
+
+  const { readOnly: isReadOnlyEditor } = useContext(EditorContext)
 
   const onStepChange = useCallback(
     (step: IStep) => {
@@ -136,30 +149,146 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [createStep, flow.id],
   )
 
-  return (
-    <Flex flexDir="column" alignItems="center" py={3}>
-      {flow?.steps?.map((step, index, steps) => (
-        <Fragment key={`${step.id}-${index}`}>
-          <FlowStep
-            key={step.id}
-            step={step}
-            index={index + 1}
-            collapsed={currentStepId !== step.id}
-            onOpen={() => setCurrentStepId(step.id)}
-            onClose={() => setCurrentStepId(null)}
-            onChange={onStepChange}
-            onContinue={() => {
-              setCurrentStepId(steps[index + 1]?.id)
-            }}
-          />
+  // FIXME (ogp-weeloong): optimize this a bit further by omitting query.
+  const { data, loading: loadingApps } = useQuery(GET_APPS)
+  const apps: IApp[] = data?.getApps?.filter(
+    (app: IApp) => !!app.actions?.length,
+  )
 
-          <AddStepButton
-            onClick={() => addStep(step.id)}
-            disabled={creationInProgress || flow.active}
-            isLastStep={index === steps.length - 1}
-          />
-        </Fragment>
-      ))}
+  const groupingActions = useMemo(() => {
+    if (loadingApps) {
+      return null
+    }
+
+    return new Set(
+      apps?.flatMap((app) =>
+        app.actions
+          ?.filter((action) => action.groupsLaterSteps)
+          ?.map((action) => `${app.key}-${action.key}`),
+      ) ?? [],
+    )
+  }, [loadingApps, apps])
+
+  const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
+    if (!groupingActions) {
+      return [[], []]
+    }
+
+    const groupStepIdx = steps.findIndex((step, index) => {
+      if (
+        // We ignore the 1st step because it's either a trigger, or a
+        // step-grouping action that is using a nested Editor to edit steps in
+        // its group.
+        index === 0 ||
+        !step.appKey ||
+        !step.key
+      ) {
+        return false
+      }
+      return groupingActions.has(`${step.appKey}-${step.key}`)
+    })
+    return groupStepIdx === -1
+      ? [steps, []]
+      : [steps.slice(0, groupStepIdx), steps.slice(groupStepIdx)]
+  }, [
+    groupingActions,
+    // updateHandlerFactory creates a new array, so referential equality is OK.
+    // FIXME (ogp-weeloong): Maybe we can optimize our caching strategy to avoid
+    // creating new arrays.
+    steps,
+  ])
+
+  //
+  // Compute which steps are eligible for variable extraction.
+  //
+  // Note:
+  // We don't include grouped steps inside `stepExecutionsToInclude` by default,
+  // since some groups may not want to extract variables from _all_ steps in the
+  // group (e.g. If-then only wants to extract from steps in the current branch).
+  //
+  // Instead, we expect step-grouping actions to instantiate a nested Editor with
+  // the appropriate subarray of steps in the group; we will then handle merging
+  // stepExecutionsToInclude between the parent Editor and the nested Editor.
+  //
+  const parentStepExecutionsToInclude = useContext(
+    StepExecutionsToIncludeContext,
+  )
+  const stepExecutionsToInclude = useMemo(
+    () =>
+      new Set([
+        ...parentStepExecutionsToInclude,
+        ...stepsBeforeGroup.map((step) => step.id),
+      ]),
+    [stepsBeforeGroup],
+  )
+
+  //
+  // Build callback which ChooseAppAndEventSubstep uses to check which actions
+  // are banned. This returns a 2-tuple, (true/false, banned reason if true).
+  //
+  // NOTE: This can also be extended to triggers if needed.
+  //
+  const isBannedAction = useCallback(
+    (
+      step: IStep,
+      appKey: string,
+      actionKey: string,
+    ): [boolean, string | null] => {
+      // Only handle grouping actions for now :x
+      if (
+        groupingActions?.has(`${appKey}-${actionKey}`) &&
+        (groupedSteps.length > 0 ||
+          step.position !==
+            stepsBeforeGroup[stepsBeforeGroup.length - 1]?.position)
+      ) {
+        return [true, 'This must be the last step.']
+      }
+
+      return [false, null]
+    },
+    [groupingActions, groupedSteps],
+  )
+
+  if (loadingApps) {
+    return <CircularProgress isIndeterminate my={2} />
+  }
+
+  return (
+    <Flex w="full" justifyContent="center">
+      <Flex flexDir="column" alignItems="center" py={3} w="53.25rem">
+        <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
+          {stepsBeforeGroup.map((step, index, steps) => (
+            <Fragment key={`${step.id}-${index}`}>
+              <FlowStep
+                step={step}
+                index={index + 1}
+                collapsed={currentStepId !== step.id}
+                onOpen={() => setCurrentStepId(step.id)}
+                onClose={() => setCurrentStepId(null)}
+                onChange={onStepChange}
+                onContinue={() => {
+                  setCurrentStepId(steps[index + 1]?.id)
+                }}
+                isBannedAction={isBannedAction}
+              />
+              <AddStepButton
+                onClick={() => addStep(step.id)}
+                isDisabled={creationInProgress || isReadOnlyEditor}
+                isLastStep={index === steps.length - 1}
+              />
+            </Fragment>
+          ))}
+          {groupedSteps.length > 0 && (
+            <FlowStepGroup
+              flow={flow}
+              steps={groupedSteps}
+              collapsed={currentStepId !== groupedSteps[0].id}
+              onOpen={() => setCurrentStepId(groupedSteps[0].id)}
+              onClose={() => setCurrentStepId(null)}
+            />
+          )}
+        </StepExecutionsToIncludeProvider>
+      </Flex>
     </Flex>
   )
 }

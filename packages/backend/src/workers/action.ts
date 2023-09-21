@@ -23,7 +23,7 @@ export const worker = new Worker(
       stepId,
       flowId,
       executionId,
-      proceedToNextAction,
+      nextStep,
       executionStep,
       computedParameters,
     } = await processAction({ ...(job.data as JobData), jobId: job.id })
@@ -33,7 +33,6 @@ export const worker = new Worker(
     }
 
     const step = await Step.query().findById(stepId).throwIfNotFound()
-    const nextStep = await step.getNextStep()
 
     // dd-trace span tagging
     const span = tracer.scope().active()
@@ -44,7 +43,7 @@ export const worker = new Worker(
       appKey: step.appKey,
     })
 
-    if (!nextStep || !proceedToNextAction) {
+    if (!nextStep) {
       return
     }
 
