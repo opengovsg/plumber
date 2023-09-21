@@ -94,7 +94,19 @@ export default function Editor(props: EditorProps): React.ReactElement {
     { refetchQueries: [GET_FLOW] },
   )
 
-  const { flow, steps } = props
+  const { flow, steps: rawSteps } = props
+  const steps = useMemo(
+    // Populate each step's flowId so that IStep isn't LYING about flowId being
+    // non-undefined. We do it here instead of fetching in GraphQL since all
+    // steps have same pipe, so a bit wasteful to repeat this data over the wire.
+    () =>
+      rawSteps.map((step) => ({
+        ...step,
+        flow,
+        flowId: flow.id,
+      })),
+    [flow, rawSteps],
+  )
 
   const [currentStepId, setCurrentStepId] = useState<string | null>(
     steps[0]?.id,

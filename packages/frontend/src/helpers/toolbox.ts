@@ -1,5 +1,12 @@
 import { type IStep } from '@plumber/types'
 
+import { useCallback, useContext, useState } from 'react'
+import { useMutation } from '@apollo/client'
+import { BranchContext } from 'components/FlowStepGroup/Content/IfThen/BranchContext'
+import client from 'graphql/client'
+import { CREATE_STEP } from 'graphql/mutations/create-step'
+import { UPDATE_STEP } from 'graphql/mutations/update-step'
+import { GET_FLOW } from 'graphql/queries/get-flow'
 import { LDFlagSet } from 'launchdarkly-js-client-sdk'
 
 export const TOOLBOX_APP_KEY = 'toolbox'
@@ -152,4 +159,80 @@ export function isIfThenSelectable(
 
   const isNestedBranch = isIfThenStep(allEditorSteps[0])
   return !isNestedBranch
+}
+
+/**
+ * Hook used for initializing If-Then when the user _first_ chooses it via the
+ * "Choose App & Event" substep.
+ */
+export function useIfThenInitializer(): [
+  (currStep: IStep) => Promise<void>,
+  boolean,
+] {
+  const [isInitializing, setIsInitializing] = useState(false)
+  const { depth } = useContext(BranchContext)
+
+  // We run these in parallel without updating the cache, and explicitly
+  // re-fetch pipe _after_. This is because we don't want users on slow
+  // connections to see Branch 1, then have Branch 2 pop up later; this is uber
+  // confusing.
+  //
+  // It's kinda dangerous in that we're relying on GET_FLOW to contain whatever
+  // UPDATE_STEP and CREATE_STEP would have returned, but this should be fine
+  // since GET_FLOW should constitute a full refresh of the pipe.
+  const [updateStep] = useMutation(UPDATE_STEP, { fetchPolicy: 'no-cache' })
+  const [createStep] = useMutation(CREATE_STEP, { fetchPolicy: 'no-cache' })
+
+  const initialize = useCallback(
+    async (currStep: IStep) => {
+      setIsInitializing(true)
+
+      const updateFirstBranch = updateStep({
+        variables: {
+          input: {
+            id: currStep.id,
+            appKey: TOOLBOX_APP_KEY,
+            key: TOOLBOX_ACTIONS.IfThen,
+            flow: {
+              id: currStep.flow.id,
+            },
+            parameters: {
+              branchName: 'Branch 1',
+              depth,
+            },
+            connection: {
+              id: null,
+            },
+          },
+        },
+      })
+      const createSecondBranch = createStep({
+        variables: {
+          input: {
+            key: TOOLBOX_ACTIONS.IfThen,
+            appKey: TOOLBOX_APP_KEY,
+            previousStep: {
+              id: currStep.id,
+            },
+            flow: {
+              id: currStep.flow.id,
+            },
+            parameters: {
+              depth,
+              branchName: 'Branch 2',
+            },
+          },
+        },
+      })
+
+      await Promise.all([updateFirstBranch, createSecondBranch])
+      // Refetch only after completion.
+      await client.refetchQueries({ include: [GET_FLOW] })
+
+      setIsInitializing(false)
+    },
+    [depth],
+  )
+
+  return [initialize, isInitializing]
 }
