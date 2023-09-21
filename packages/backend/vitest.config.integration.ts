@@ -18,6 +18,7 @@ config({
 
 export default defineConfig({
   test: {
+    name: 'backend-integration',
     // load env variables
     setupFiles: ['dotenv/config', getPath('./test/pg-reset-db-setup.ts')],
     globalSetup: [getPath('./test/pg-global-setup.ts')],

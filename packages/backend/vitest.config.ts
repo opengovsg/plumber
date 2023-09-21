@@ -13,6 +13,7 @@ config({
 
 export default defineConfig({
   test: {
+    name: 'backend',
     // load env variables
     setupFiles: ['dotenv/config'],
     include: ['src/**/*.test.{js,ts}'],
