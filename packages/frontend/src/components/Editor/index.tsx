@@ -234,7 +234,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
-                flow={flow}
+                allEditorSteps={steps}
                 index={index + 1}
                 collapsed={currentStepId !== step.id}
                 onOpen={() => setCurrentStepId(step.id)}

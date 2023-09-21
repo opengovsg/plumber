@@ -1,11 +1,4 @@
-import type {
-  IAction,
-  IApp,
-  IFlow,
-  IStep,
-  ISubstep,
-  ITrigger,
-} from '@plumber/types'
+import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { type SyntheticEvent, useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
@@ -21,7 +14,7 @@ import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
-import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from 'helpers/toolbox'
+import { isIfThenStep, TOOLBOX_APP_KEY } from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseAppAndEventSubstepProps = {
@@ -32,7 +25,7 @@ type ChooseAppAndEventSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
-  flow: IFlow
+  allEditorSteps: IStep[]
 }
 
 const optionGenerator = (app: {
@@ -69,7 +62,7 @@ function ChooseAppAndEventSubstep(
     onExpand,
     onCollapse,
     step,
-    flow,
+    allEditorSteps,
     onSubmit,
     onChange,
   } = props
@@ -99,11 +92,12 @@ function ChooseAppAndEventSubstep(
       apps
         ?.filter((app) => {
           //
-          // ** EDGE CASE**
+          // ** EDGE CASE **
           //
-          // If-Then should not be visible if:
-          // - It's not the last step of a pipe.
-          // - We are inside a branch.
+          // If-Then should only be selectable if:
+          // - It's the last step.
+          // - We are not inside a branch (unless we're whitelisted for nested
+          //   branches).
           //
           // We edge case since a generic implementation adds too much
           // complexity; we'll move to generic if there's another use case for
@@ -113,16 +107,14 @@ function ChooseAppAndEventSubstep(
           // add a new toolbox action will get confused why toolbox is missing
           // ... and find this.
           //
-          const isInsideBranch = flow.steps
-            .slice(0, step.position - 1)
-            .some(
-              (step) =>
-                step.appKey === TOOLBOX_APP_KEY &&
-                step.key === TOOLBOX_ACTIONS.IfThen,
-            )
+          const isLastStep =
+            allEditorSteps[allEditorSteps.length - 1].position === step.position
+          const isNestedBranch = isIfThenStep(allEditorSteps[0])
+          const canUseNestedBranch =
+            launchDarkly?.flags?.['feat_nested_if_then'] ?? false
           if (
             app.key === TOOLBOX_APP_KEY &&
-            (step.position !== flow.steps.length || isInsideBranch)
+            (!isLastStep || (isNestedBranch && !canUseNestedBranch))
           ) {
             return false
           }
@@ -135,7 +127,7 @@ function ChooseAppAndEventSubstep(
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
         ?.map((app) => optionGenerator(app)) ?? [],
-    [apps, step.position, flow.steps, launchDarkly.flags],
+    [apps, step.position, allEditorSteps, launchDarkly.flags],
   )
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
