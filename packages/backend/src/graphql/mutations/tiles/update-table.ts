@@ -33,34 +33,38 @@ const updateTable = async (
     })
     .throwIfNotFound()
 
-  if (addedColumns) {
+  if (tableName?.length) {
+    await table.$query().patch({
+      name: tableName,
+    })
+  }
+
+  if (addedColumns?.length) {
     await table
       .$relatedQuery('columns')
       .insert(addedColumns.map((name) => ({ name })))
   }
 
-  if (modifiedColumns) {
+  if (modifiedColumns?.length) {
     await Promise.all(
       modifiedColumns.map(async (column) => {
-        await table.$relatedQuery('columns').patchAndFetchById(column.id, {
-          name: column.name,
-        })
+        await table
+          .$relatedQuery('columns')
+          .patchAndFetchById(column.id, {
+            name: column.name,
+          })
+          .throwIfNotFound()
       }),
     )
   }
 
-  if (deletedColumns) {
+  if (deletedColumns?.length) {
     await table.$relatedQuery('columns').delete().whereIn('id', deletedColumns)
   }
 
-  const updateTable = await table
-    .$query()
-    .patchAndFetch({
-      name: tableName,
-    })
-    .withGraphFetched('columns')
+  const updatedTable = await table.$fetchGraph('columns')
 
-  return updateTable
+  return updatedTable
 }
 
 export default updateTable
