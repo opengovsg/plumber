@@ -9,6 +9,14 @@ const bbBearTextStyles = {
     letterSpacing: '-0.006em',
     fontFamily: 'body',
   },
+  'subhead-3': {
+    fontWeight: 600,
+    lineHeight: '1.5rem',
+    fontSize: '0.875rem',
+    letterSpacing: '0.080em',
+    fontFamily: 'body',
+    textTransform: 'uppercase',
+  },
   'body-1': {
     fontWeight: 400,
     lineHeight: '1.5rem',

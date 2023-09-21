@@ -74,6 +74,7 @@ describe('decrypt form response', () => {
       step: {
         id: '123',
         appKey: app.key,
+        position: 0,
         parameters: {
           nricFilter: undefined,
         },

@@ -3,6 +3,9 @@
 // Imported from BbBear generated on Fri, 23 Jun 2023 09:14:33 GMT
 const bbBearColors = {
   base: {
+    canvas: {
+      'brand-subtle': '#fef8fb',
+    },
     divider: {
       subtle: '#F8F9F9',
       medium: '#EDEDED',
@@ -18,7 +21,7 @@ const bbBearColors = {
   interaction: {
     muted: {
       main: {
-        hover: '#FEF8FB',
+        hover: '#fef8fb',
         active: '#F9DDE9',
       },
       neutral: {
