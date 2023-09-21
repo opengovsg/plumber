@@ -1,4 +1,4 @@
-import { IGlobalVariable } from '@plumber/types'
+import { type IExecutionStep, type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -246,7 +246,7 @@ describe('If-Then', () => {
 
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toBeCalledWith({
-        raw: { isBranchTaken: true },
+        raw: { isConditionMet: true },
       })
     })
 
@@ -265,7 +265,7 @@ describe('If-Then', () => {
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
       })
       expect(mocks.setActionItem).toBeCalledWith({
-        raw: { isBranchTaken: false },
+        raw: { isConditionMet: false },
       })
     })
 
@@ -286,7 +286,7 @@ describe('If-Then', () => {
         nextStep: { command: 'stop-execution' },
       })
       expect(mocks.setActionItem).toBeCalledWith({
-        raw: { isBranchTaken: false },
+        raw: { isConditionMet: false },
       })
     })
   })
@@ -326,7 +326,7 @@ describe('If-Then', () => {
 
         expect(result).toBeFalsy()
         expect(mocks.setActionItem).toBeCalledWith({
-          raw: { isBranchTaken: true },
+          raw: { isConditionMet: true },
         })
       },
     )
@@ -357,7 +357,7 @@ describe('If-Then', () => {
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
         })
         expect(mocks.setActionItem).toBeCalledWith({
-          raw: { isBranchTaken: false },
+          raw: { isConditionMet: false },
         })
       },
     )
@@ -387,7 +387,7 @@ describe('If-Then', () => {
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
         })
         expect(mocks.setActionItem).toBeCalledWith({
-          raw: { isBranchTaken: false },
+          raw: { isConditionMet: false },
         })
       },
     )
@@ -418,8 +418,39 @@ describe('If-Then', () => {
           nextStep: { command: 'stop-execution' },
         })
         expect(mocks.setActionItem).toBeCalledWith({
-          raw: { isBranchTaken: false },
+          raw: { isConditionMet: false },
         })
+      },
+    )
+  })
+
+  describe('dataOut Metadata', () => {
+    let executionStep: IExecutionStep
+
+    beforeEach(() => {
+      executionStep = {
+        dataOut: {
+          isConditionMet: true,
+        },
+      } as unknown as IExecutionStep
+    })
+
+    it('labels isConditionMet', async () => {
+      const metadata = await ifThenAction.getDataOutMetadata(executionStep)
+      expect(metadata.isConditionMet.label).toEqual('Is Condition Met?')
+    })
+
+    it.each([
+      { wasMet: true, expectedDisplayedValue: 'Yes' },
+      { wasMet: false, expectedDisplayedValue: 'No' },
+    ])(
+      'sets displayedValue for isConditionMet',
+      async ({ wasMet, expectedDisplayedValue }) => {
+        executionStep.dataOut.isConditionMet = wasMet
+        const metadata = await ifThenAction.getDataOutMetadata(executionStep)
+        expect(metadata.isConditionMet.displayedValue).toEqual(
+          expectedDisplayedValue,
+        )
       },
     )
   })

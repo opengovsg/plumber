@@ -10,7 +10,7 @@ import type {
 import { useCallback, useContext, useMemo } from 'react'
 import { BiCheck } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import LoadingButton from '@mui/lab/LoadingButton'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
@@ -166,29 +166,35 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
             </Infobox>
           )}
 
-          {skippedIfPublished && (
-            <Infobox variant="warning" width="full">
-              <Text>
-                This step would actually have been skipped if this pipe was
-                published! We are just displaying results to enable you to test.
-                Please be careful - results here may not be indicative of actual
-                pipe output!
-              </Text>
-            </Infobox>
-          )}
-
           {stepsWithVariables.length === 1 && (
             <Box w="100%">
-              <Infobox
-                icon={<BiCheck color="#0F796F" />}
-                style={{
-                  color: '#2C2E34',
-                  background: '#E2EEED',
-                }}
-              >
-                Here is the test data we found. You can use these as variables
-                in your action steps below.
-              </Infobox>
+              {skippedIfPublished ? (
+                <Infobox variant="warning">
+                  <Flex flexDir="column" gap={2}>
+                    <Text>
+                      Here is the test data we found. You can use these as
+                      variables in your action steps below.
+                    </Text>
+                    <Text>
+                      HOWEVER: this step would actually have been skipped if
+                      this pipe was published! We are just displaying results to
+                      enable you to test. Please be careful - results here may
+                      not be indicative of actual pipe output!
+                    </Text>
+                  </Flex>
+                </Infobox>
+              ) : (
+                <Infobox
+                  icon={
+                    <Icon as={BiCheck} color="interaction.success.default" />
+                  }
+                  color="grey.900"
+                  bg="interaction.success-subtle.default"
+                >
+                  Here is the test data we found. You can use these as variables
+                  in your action steps below.
+                </Infobox>
+              )}
               <Box maxH="25rem" overflowY="scroll" w="100%">
                 <VariablesList variables={stepsWithVariables[0].output} />
               </Box>
