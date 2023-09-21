@@ -1,4 +1,3 @@
-import TableColumnMetadata from '@/models/table-column-metadata'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -7,7 +6,7 @@ type Params = {
   }
 }
 
-const deleteFlow = async (
+const deleteTable = async (
   _parent: unknown,
   params: Params,
   context: Context,
@@ -19,10 +18,10 @@ const deleteFlow = async (
     })
     .throwIfNotFound()
 
-  await TableColumnMetadata.query().delete().where('table_id', table.id)
+  await table.$relatedQuery('columns').delete()
   await table.$query().delete()
 
   return true
 }
 
-export default deleteFlow
+export default deleteTable
