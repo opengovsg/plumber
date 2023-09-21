@@ -222,33 +222,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [stepsBeforeGroup],
   )
 
-  //
-  // Build callback which ChooseAppAndEventSubstep uses to check which actions
-  // are banned. This returns a 2-tuple, (true/false, banned reason if true).
-  //
-  // NOTE: This can also be extended to triggers if needed.
-  //
-  const isBannedAction = useCallback(
-    (
-      step: IStep,
-      appKey: string,
-      actionKey: string,
-    ): [boolean, string | null] => {
-      // Only handle grouping actions for now :x
-      if (
-        groupingActions?.has(`${appKey}-${actionKey}`) &&
-        (groupedSteps.length > 0 ||
-          step.position !==
-            stepsBeforeGroup[stepsBeforeGroup.length - 1]?.position)
-      ) {
-        return [true, 'This must be the last step.']
-      }
-
-      return [false, null]
-    },
-    [groupingActions, groupedSteps],
-  )
-
   if (loadingApps) {
     return <CircularProgress isIndeterminate my={2} />
   }
@@ -261,6 +234,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
+                flow={flow}
                 index={index + 1}
                 collapsed={currentStepId !== step.id}
                 onOpen={() => setCurrentStepId(step.id)}
@@ -269,7 +243,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 onContinue={() => {
                   setCurrentStepId(steps[index + 1]?.id)
                 }}
-                isBannedAction={isBannedAction}
               />
               <AddStepButton
                 onClick={() => addStep(step.id)}

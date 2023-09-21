@@ -1,4 +1,11 @@
-import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
+import type {
+  IAction,
+  IApp,
+  IFlow,
+  IStep,
+  ISubstep,
+  ITrigger,
+} from '@plumber/types'
 
 import {
   Fragment,
@@ -32,16 +39,12 @@ import * as yup from 'yup'
 type FlowStepProps = {
   collapsed?: boolean
   step: IStep
+  flow: IFlow
   index?: number
   onOpen: () => void
   onClose: () => void
   onChange: (step: IStep) => void
   onContinue?: () => void
-  isBannedAction: (
-    step: IStep,
-    appKey: string,
-    actionKey: string,
-  ) => [boolean, string | null]
 }
 
 function generateValidationSchema(substeps: ISubstep[]) {
@@ -108,9 +111,7 @@ function generateValidationSchema(substeps: ISubstep[]) {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { collapsed, onOpen, onClose, onChange, onContinue, isBannedAction } =
-    props
-  const step: IStep = props.step
+  const { step, flow, collapsed, onOpen, onClose, onChange, onContinue } = props
   const isTrigger = step.type === 'trigger'
 
   const editorContext = useContext(EditorContext)
@@ -246,7 +247,7 @@ export default function FlowStep(
               onSubmit={expandNextStep}
               onChange={handleChange}
               step={step}
-              isBannedAction={isBannedAction}
+              flow={flow}
             />
           )}
 

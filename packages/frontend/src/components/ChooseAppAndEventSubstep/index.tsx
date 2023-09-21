@@ -1,4 +1,11 @@
-import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
+import type {
+  IAction,
+  IApp,
+  IFlow,
+  IStep,
+  ISubstep,
+  ITrigger,
+} from '@plumber/types'
 
 import { type SyntheticEvent, useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
@@ -14,6 +21,7 @@ import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseAppAndEventSubstepProps = {
@@ -24,11 +32,7 @@ type ChooseAppAndEventSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
-  isBannedAction: (
-    step: IStep,
-    appKey: string,
-    actionKey: string,
-  ) => [boolean, string | null]
+  flow: IFlow
 }
 
 const optionGenerator = (app: {
@@ -65,9 +69,9 @@ function ChooseAppAndEventSubstep(
     onExpand,
     onCollapse,
     step,
+    flow,
     onSubmit,
     onChange,
-    isBannedAction,
   } = props
 
   const launchDarkly = useContext(LaunchDarklyContext)
@@ -93,17 +97,47 @@ function ChooseAppAndEventSubstep(
   const appOptions = useMemo(
     () =>
       apps
-        // Filter away stuff hidden behind feature flags
         ?.filter((app) => {
+          //
+          // ** EDGE CASE**
+          //
+          // If-Then should not be visible if:
+          // - It's not the last step of a pipe.
+          // - We are inside a branch.
+          //
+          // We edge case since a generic implementation adds too much
+          // complexity; we'll move to generic if there's another use case for
+          // such hiding.
+          //
+          // If everyone forgets about this, it's OK because the next guy to
+          // add a new toolbox action will get confused why toolbox is missing
+          // ... and find this.
+          //
+          const isInsideBranch = flow.steps
+            .slice(0, step.position - 1)
+            .some(
+              (step) =>
+                step.appKey === TOOLBOX_APP_KEY &&
+                step.key === TOOLBOX_ACTIONS.IfThen,
+            )
+          if (
+            app.key === TOOLBOX_APP_KEY &&
+            (step.position !== flow.steps.length || isInsideBranch)
+          ) {
+            return false
+          }
+
+          // Filter away stuff hidden behind feature flags
           if (!launchDarkly.flags || !app?.key) {
             return true
           }
           const launchDarklyKey = ['app', app.key].join('_')
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
-        .map((app) => optionGenerator(app)) ?? [],
-    [apps, launchDarkly.flags],
+        ?.map((app) => optionGenerator(app)) ?? [],
+    [apps, step.position, flow.steps, launchDarkly.flags],
   )
+
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
   const actionOrTriggerOptions = useMemo(
@@ -128,17 +162,6 @@ function ChooseAppAndEventSubstep(
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
-  )
-
-  const getActionOrTriggerOptionDisabled = useCallback(
-    ({ value: actionKey }: ReturnType<typeof eventOptionGenerator>) =>
-      app?.key ? isBannedAction(step, app.key, actionKey)[0] : false,
-    [step, app?.key, isBannedAction],
-  )
-  const getActionOrTriggerOptionDisabledReason = useCallback(
-    ({ value: actionKey }: ReturnType<typeof eventOptionGenerator>) =>
-      app?.key ? isBannedAction(step, app.key, actionKey)[1] : null,
-    [step, app?.key, isBannedAction],
   )
 
   const isWebhook =
@@ -271,7 +294,6 @@ function ChooseAppAndEventSubstep(
                 disablePortal
                 disableClearable
                 disabled={editorContext.readOnly}
-                getOptionDisabled={getActionOrTriggerOptionDisabled}
                 options={launchDarkly.isLoading ? [] : actionOrTriggerOptions}
                 loading={launchDarkly.isLoading}
                 renderInput={(params) => (
@@ -309,14 +331,7 @@ function ChooseAppAndEventSubstep(
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Flex flexDir="column">
-                      <Text>{option.label}</Text>
-                      {getActionOrTriggerOptionDisabled(option) && (
-                        <Text fontSize="xs" color="red.500">
-                          {getActionOrTriggerOptionDisabledReason(option)}
-                        </Text>
-                      )}
-                    </Flex>
+                    <Text>{option.label}</Text>
 
                     {option.type === 'webhook' && (
                       <Chip
