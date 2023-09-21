@@ -7,6 +7,7 @@ import sendEmailWithAttachments from '../../actions/send-email-with-attachments'
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
   sendTransactionalEmails: vi.fn(() => []),
+  getRatelimitedRecipientList: vi.fn((recipients: string[]) => recipients),
 }))
 
 vi.mock('@/helpers/s3', async () => {
@@ -22,6 +23,10 @@ vi.mock('@/helpers/s3', async () => {
 
 vi.mock('../../common/email-helper', () => ({
   sendTransactionalEmails: mocks.sendTransactionalEmails,
+}))
+
+vi.mock('../../common/rate-limit', () => ({
+  getRatelimitedRecipientList: mocks.getRatelimitedRecipientList,
 }))
 
 describe('send email with attachments', () => {

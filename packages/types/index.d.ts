@@ -355,6 +355,7 @@ export interface IActionRunResult {
   nextStep?:
     | { command: 'jump-to-step'; stepId: IStep['id'] }
     | { command: 'stop-execution' }
+  nextStepMetadata?: IJSONObject
 }
 
 export interface IActionOutput {
@@ -370,8 +371,14 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  run?($: IGlobalVariable): Promise<IActionRunResult | void>
-  testRun?($: IGlobalVariable): Promise<IActionRunResult | void>
+  run?(
+    $: IGlobalVariable,
+    metadata?: IJSONObject,
+  ): Promise<IActionRunResult | void>
+  testRun?(
+    $: IGlobalVariable,
+    metadata?: IJSONObject,
+  ): Promise<IActionRunResult | void>
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.

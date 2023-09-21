@@ -5,6 +5,7 @@ import defineAction from '@/helpers/define-action'
 import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
+import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
 import { fields, schema } from './parameters'
 
@@ -15,7 +16,8 @@ export default defineAction({
   arguments: fields,
   doesFileProcessing: true,
 
-  async run($) {
+  async run($, metadata) {
+    const progress = metadata?.progress || 0
     const {
       subject,
       body,
@@ -45,17 +47,16 @@ export default defineAction({
       }),
     )
 
-    const results = await sendTransactionalEmails(
-      $.http,
-      result.data.destinationEmail,
-      {
-        subject: result.data.subject,
-        body: result.data.body,
-        replyTo: result.data.replyTo,
-        senderName: result.data.senderName,
-        attachments: attachmentFiles,
-      },
-    )
+    let recipients = result.data.destinationEmail.slice(+progress)
+    recipients = await getRatelimitedRecipientList(recipients)
+    const newProgress = +progress + recipients.length
+    const results = await sendTransactionalEmails($.http, recipients, {
+      subject: result.data.subject,
+      body: result.data.body,
+      replyTo: result.data.replyTo,
+      senderName: result.data.senderName,
+      attachments: attachmentFiles,
+    })
 
     $.setActionItem({
       raw: {
@@ -64,5 +65,16 @@ export default defineAction({
         ...results[0]?.params,
       },
     })
+    if (newProgress < result.data.destinationEmail.length) {
+      return {
+        nextStep: {
+          command: 'jump-to-step',
+          stepId: $.step.id,
+        },
+        nextStepMetadata: {
+          progress: newProgress,
+        },
+      }
+    }
   },
 })

@@ -8,6 +8,7 @@ import {
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
+import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
 export default defineAction({
   name: 'Send email',
@@ -15,10 +16,10 @@ export default defineAction({
   description: "Sends an email using Postman's transactional API.",
   arguments: transactionalEmailFields,
 
-  async run($) {
+  async run($, metadata) {
+    const progress = metadata?.progress || 0
     const { subject, body, destinationEmail, senderName, replyTo } =
       $.step.parameters
-
     const result = transactionalEmailSchema.safeParse({
       destinationEmail,
       senderName,
@@ -30,17 +31,16 @@ export default defineAction({
     if (!result.success) {
       throw fromZodError((result as SafeParseError<unknown>).error)
     }
+    let recipients = result.data.destinationEmail.slice(+progress)
+    recipients = await getRatelimitedRecipientList(recipients)
+    const newProgress = +progress + recipients.length
 
-    const results = await sendTransactionalEmails(
-      $.http,
-      result.data.destinationEmail,
-      {
-        subject: result.data.subject,
-        body: result.data.body,
-        replyTo: result.data.replyTo,
-        senderName: result.data.senderName,
-      },
-    )
+    const results = await sendTransactionalEmails($.http, recipients, {
+      subject: result.data.subject,
+      body: result.data.body,
+      replyTo: result.data.replyTo,
+      senderName: result.data.senderName,
+    })
 
     $.setActionItem({
       raw: {
@@ -49,5 +49,16 @@ export default defineAction({
         ...results[0]?.params,
       },
     })
+    if (newProgress < result.data.destinationEmail.length) {
+      return {
+        nextStep: {
+          command: 'jump-to-step',
+          stepId: $.step.id,
+        },
+        nextStepMetadata: {
+          progress: newProgress,
+        },
+      }
+    }
   },
 })

@@ -1,23 +1,15 @@
 import { type IActionRunResult } from '@plumber/types'
 import { IJSONObject } from '@plumber/types'
 
-import { Worker } from 'bullmq'
-import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible'
-
-import postman from '@/apps/postman'
-import appConfig from '@/config/app'
-import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
-import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
-import actionQueue from '@/queues/action'
 
 type ProcessActionOptions = {
   flowId: string
@@ -25,47 +17,18 @@ type ProcessActionOptions = {
   stepId: string
   jobId?: string
   testRun?: boolean
-  worker?: Worker
-}
-
-const redisRateLimitClient = createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)
-const emailRateCounter = new RateLimiterRedis({
-  points: appConfig.postman.rateLimit,
-  duration: 1,
-  keyPrefix: 'action-email',
-  storeClient: redisRateLimitClient,
-})
-type RateLimiterFuncReturnValue = {
-  isRateLimited: boolean
-  duration: number
-}
-type RateLimiterFunc = (
-  data: IJSONObject,
-) => Promise<RateLimiterFuncReturnValue>
-const rateLimiters: Record<string, RateLimiterFunc> = {
-  [postman.key]: async (data: {
-    destinationEmail: string[]
-  }): Promise<RateLimiterFuncReturnValue> => {
-    try {
-      await emailRateCounter.consume(data.destinationEmail.length)
-      return {
-        isRateLimited: false,
-        duration: emailRateCounter.duration,
-      }
-    } catch (e) {
-      if (e instanceof RateLimiterRes) {
-        return {
-          isRateLimited: true,
-          duration: emailRateCounter.duration,
-        }
-      }
-      throw e
-    }
-  },
+  metadata?: IJSONObject
 }
 
 export const processAction = async (options: ProcessActionOptions) => {
-  const { flowId, stepId, executionId, jobId, worker, testRun } = options
+  const {
+    flowId,
+    stepId,
+    executionId,
+    jobId,
+    testRun = false,
+    metadata,
+  } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
   const flow = await Flow.query().findById(flowId).throwIfNotFound()
@@ -97,37 +60,14 @@ export const processAction = async (options: ProcessActionOptions) => {
   )
 
   $.step.parameters = computedParameters
-  if (rateLimiters[$.app.key] && worker) {
-    const { isRateLimited, duration } = await rateLimiters[$.app.key](
-      $.step.parameters,
-    )
-    if (isRateLimited) {
-      await actionQueue.add(
-        `${executionId}-${stepId}`,
-        {
-          flowId,
-          executionId,
-          stepId,
-        },
-        { ...DEFAULT_JOB_OPTIONS, delay: duration * 1000 },
-      )
-      return {
-        stepId,
-        flowId,
-        executionId,
-        proceedToNextAction: false,
-        executionStep: new ExecutionStep(),
-      }
-    }
-  }
 
   let runResult: IActionRunResult = {}
   try {
     // Cannot assign directly to runResult due to void return type.
     const result =
       testRun && actionCommand.testRun
-        ? await actionCommand.testRun($)
-        : await actionCommand.run($)
+        ? await actionCommand.testRun($, metadata)
+        : await actionCommand.run($, metadata)
     if (result) {
       runResult = result
     }
@@ -187,5 +127,6 @@ export const processAction = async (options: ProcessActionOptions) => {
     executionStep,
     computedParameters,
     nextStep,
+    nextStepMetadata: runResult.nextStepMetadata,
   }
 }

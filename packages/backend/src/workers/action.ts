@@ -1,3 +1,5 @@
+import { IJSONObject } from '@plumber/types'
+
 import { UnrecoverableError, Worker } from 'bullmq'
 
 import appConfig from '@/config/app'
@@ -21,13 +23,20 @@ type JobData = {
   flowId: string
   executionId: string
   stepId: string
+  metadata?: IJSONObject
 }
 
 export const worker = new Worker(
   'action',
   tracer.wrap('workers.action', async (job) => {
-    const { stepId, flowId, executionId, nextStep, executionStep } =
-      await processAction({ ...(job.data as JobData), jobId: job.id, worker })
+    const {
+      stepId,
+      flowId,
+      executionId,
+      nextStep,
+      executionStep,
+      nextStepMetadata,
+    } = await processAction({ ...(job.data as JobData), jobId: job.id })
 
     if (executionStep.isFailed) {
       await Execution.query().patch({ status: 'failure' }).findById(executionId)
@@ -56,6 +65,7 @@ export const worker = new Worker(
       flowId,
       executionId,
       stepId: nextStep.id,
+      metadata: nextStepMetadata,
     }
 
     let jobOptions = DEFAULT_JOB_OPTIONS
