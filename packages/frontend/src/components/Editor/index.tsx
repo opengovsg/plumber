@@ -230,7 +230,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     <Flex w="full" justifyContent="center">
       <Flex flexDir="column" alignItems="center" py={3} w="53.25rem">
         <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-          {stepsBeforeGroup.map((step, index, steps) => (
+          {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
@@ -241,7 +241,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 onClose={() => setCurrentStepId(null)}
                 onChange={onStepChange}
                 onContinue={() => {
-                  setCurrentStepId(steps[index + 1]?.id)
+                  setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
                 }}
               />
               <AddStepButton

@@ -86,7 +86,7 @@ function ChooseAppAndEventSubstep(
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
 
-  apps.sort((a, b) => {
+  apps?.sort((a, b) => {
     if (a.description) {
       return -1
     }
