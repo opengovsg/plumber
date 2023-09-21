@@ -14,7 +14,7 @@ import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
-import { isIfThenStep, TOOLBOX_APP_KEY } from 'helpers/toolbox'
+import { isIfThenSelectable, TOOLBOX_APP_KEY } from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseAppAndEventSubstepProps = {
@@ -94,11 +94,6 @@ function ChooseAppAndEventSubstep(
           //
           // ** EDGE CASE **
           //
-          // If-Then should only be selectable if:
-          // - It's the last step.
-          // - We are not inside a branch (unless we're whitelisted for nested
-          //   branches).
-          //
           // We edge case since a generic implementation adds too much
           // complexity; we'll move to generic if there's another use case for
           // such hiding.
@@ -107,14 +102,9 @@ function ChooseAppAndEventSubstep(
           // add a new toolbox action will get confused why toolbox is missing
           // ... and find this.
           //
-          const isLastStep =
-            allEditorSteps[allEditorSteps.length - 1].position === step.position
-          const isNestedBranch = isIfThenStep(allEditorSteps[0])
-          const canUseNestedBranch =
-            launchDarkly?.flags?.['feat_nested_if_then'] ?? false
           if (
             app.key === TOOLBOX_APP_KEY &&
-            (!isLastStep || (isNestedBranch && !canUseNestedBranch))
+            !isIfThenSelectable(allEditorSteps, step, launchDarkly?.flags)
           ) {
             return false
           }
@@ -135,8 +125,28 @@ function ChooseAppAndEventSubstep(
   const actionOrTriggerOptions = useMemo(
     () =>
       actionsOrTriggers
-        // Filter away stuff hidden behind feature flags
+
         .filter((actionOrTrigger) => {
+          //
+          // ** EDGE CASE AGAIN **
+          //
+          // Hello, the if-then edge case demon here again!
+          //
+          // To ensure if-then is always the last step, we also need to guard
+          // against users selecting toolbox first, then adding steps after the
+          // toolbox step, then selecting If-Then in the toolbox step.
+          //
+          // Luckily, we can remove the top app-hiding edge case once we
+          // implement for-each, and toolbox will have multiple actions.
+          //
+          if (
+            app?.key === TOOLBOX_APP_KEY &&
+            !isIfThenSelectable(allEditorSteps, step, launchDarkly?.flags)
+          ) {
+            return false
+          }
+
+          // Filter away stuff hidden behind feature flags
           if (!launchDarkly.flags || !app?.key) {
             return true
           }
@@ -150,7 +160,7 @@ function ChooseAppAndEventSubstep(
         })
         //
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly.flags],
+    [app?.key, launchDarkly.flags, allEditorSteps, step],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
