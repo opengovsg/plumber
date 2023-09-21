@@ -145,7 +145,7 @@ export function isIfThenSelectable(
     return false
   }
 
-  const canUseNestedBranch = ldFlags?.['feat_nested_if_then'] ?? false
+  const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
   if (canUseNestedBranch) {
     return true
   }
