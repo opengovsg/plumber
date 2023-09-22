@@ -11,7 +11,7 @@
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",
     "test:unit": "vitest --config ./vitest.config.ts",
-    "test:integration": "vitest --config ./vitest-integration.config.ts",
+    "test:integration": "vitest --config ./vitest.config.integration.ts",
     "lint": "eslint . --ignore-path ../../.eslintignore",
     "db": "DOTENV_CONFIG_PATH=.env knex",
     "db:migration:create": "npm run db -- migrate:make",
