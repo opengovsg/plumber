@@ -23,7 +23,10 @@ export const processAction = async (options: ProcessActionOptions) => {
   const { flowId, stepId, executionId, jobId, testRun = false } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
-  const flow = await Flow.query().findById(flowId).throwIfNotFound()
+  const flow = await Flow.query()
+    .findById(flowId)
+    .withGraphFetched('user')
+    .throwIfNotFound()
   const execution = await Execution.query()
     .findById(executionId)
     .throwIfNotFound()
@@ -34,7 +37,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
-    user: await flow.getUser(),
+    user: flow.user,
     testRun,
   })
 

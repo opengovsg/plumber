@@ -20,6 +20,7 @@ class Flow extends Base {
   publishedAt: string
   remoteWebhookId: string
   executions?: Execution[]
+  user: User
 
   /**
    * Null means to use default config.
@@ -70,6 +71,14 @@ class Flow extends Base {
       join: {
         from: 'flows.id',
         to: 'executions.flow_id',
+      },
+    },
+    user: {
+      relation: Base.BelongsToOneRelation,
+      modelClass: User,
+      join: {
+        from: 'flows.user_id',
+        to: 'users.id',
       },
     },
   })
@@ -132,10 +141,6 @@ class Flow extends Base {
     return await this.$relatedQuery('steps').findOne({
       type: 'trigger',
     })
-  }
-
-  async getUser(): Promise<User> {
-    return await User.query().findById(this.userId)
   }
 
   async containsFileProcessingActions(): Promise<boolean> {

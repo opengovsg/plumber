@@ -11,7 +11,7 @@ function truncateFlowName(flowName: string) {
 }
 
 export function createBodyErrorMessage(flowName: string): string {
-  const currDateTime = DateTime.now().toFormat('MMM dd yyyy, HH:mm:ss')
+  const currDateTime = DateTime.now().toFormat('MMM dd yyyy, HH:mm:ss a')
   const bodyMessage = `
     Dear user,
     <br>
@@ -48,6 +48,7 @@ export async function sendErrorEmail(
       subject: `${truncatedFlowName} has execution errors`,
       body: createBodyErrorMessage(truncatedFlowName),
       recipient: userEmail,
+      replyTo: 'support@plumber.gov.sg',
     })
   }
 }

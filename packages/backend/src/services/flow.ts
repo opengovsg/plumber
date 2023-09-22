@@ -21,7 +21,7 @@ export const processFlow = async (options: ProcessFlowOptions) => {
     app: await triggerStep.getApp(),
     step: triggerStep,
     testRun: options.testRun,
-    user: await flow.getUser(),
+    user: flow.user,
   })
 
   try {
