@@ -10,7 +10,7 @@ function getCompositeKey(appKey: string, actionKey: string): string {
 const getFileProcessingActions = memoize(
   async (): Promise<ReadonlySet<string>> => {
     const result = new Set<string>()
-    const apps = await App.findAll()
+    const apps = await App.getAllAppsWithFunctions()
 
     for (const app of apps) {
       for (const action of app.actions ?? []) {

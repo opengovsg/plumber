@@ -1,5 +1,8 @@
 FROM node:18-alpine as build
 
+ARG APP_ENV=prod
+ENV VITE_MODE=$APP_ENV
+
 WORKDIR /opt/plumber
 COPY . ./
 RUN npm ci

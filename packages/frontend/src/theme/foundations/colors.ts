@@ -3,9 +3,15 @@
 // Imported from BbBear generated on Fri, 23 Jun 2023 09:14:33 GMT
 const bbBearColors = {
   base: {
+    canvas: {
+      'brand-subtle': '#fef8fb',
+    },
     divider: {
+      subtle: '#F8F9F9',
       medium: '#EDEDED',
       strong: '#BFC2C8',
+      inverse: '#ffffff',
+      brand: '#cf1a68',
     },
     content: {
       default: '#454953',
@@ -14,13 +20,34 @@ const bbBearColors = {
   },
   interaction: {
     muted: {
+      main: {
+        hover: '#fef8fb',
+        active: '#F9DDE9',
+      },
       neutral: {
         hover: '#F8F9F9',
         active: '#EDEDED',
       },
     },
+    sub: {
+      default: '#5D6785',
+    },
     success: {
       default: '#0F796F',
+    },
+    support: {
+      'disabled-content': '#A0A4AD',
+    },
+    warning: {
+      default: '#FFDA68',
+      hover: '#E2B73E',
+      active: '#C4992A',
+    },
+    tinted: {
+      main: {
+        hover: 'rgba(207, 26, 104, 0.04)',
+        active: 'rgba(207, 26, 104, 0.12)',
+      },
     },
   },
 }

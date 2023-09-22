@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
+import User from '@/models/user'
 
 const AUTH_COOKIE_NAME = 'plumber.sid'
 // 3 days expiry
@@ -31,4 +32,15 @@ export function getAuthCookie(req: Request) {
 
 export function deleteAuthCookie(res: Response) {
   res.clearCookie(AUTH_COOKIE_NAME)
+}
+
+export async function getOrCreateUser(email: string): Promise<User> {
+  email = email.trim().toLowerCase()
+
+  let user = await User.query().findOne({ email })
+  if (!user) {
+    user = await User.query().insertAndFetch({ email })
+  }
+
+  return user
 }

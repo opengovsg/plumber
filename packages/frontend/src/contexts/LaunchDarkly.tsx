@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { createContext, useEffect, useState } from 'react'
+import appConfig from 'config/app'
 import type { AuthenticationContextParams } from 'contexts/Authentication'
 import useAuthentication from 'hooks/useAuthentication'
 import type { LDContext, LDFlagSet } from 'launchdarkly-js-client-sdk'
@@ -31,11 +32,8 @@ const ANON_LD_CONTEXT: LDContext = {
   key: 'anon-plumber',
 }
 
-const PROD_ENV_CLIENT_ID = '64bf4b539077f112ef24e4ae'
-const TEST_ENV_CLIENT_ID = '64bf4b539077f112ef24e4ad'
-
 const INITIAL_SETTINGS: LDProviderConfig = {
-  clientSideID: import.meta.env.PROD ? PROD_ENV_CLIENT_ID : TEST_ENV_CLIENT_ID,
+  clientSideID: appConfig.launchDarklyClientId,
   options: {
     logger: LDLogger({ level: 'none' }),
 
@@ -53,23 +51,18 @@ const INITIAL_SETTINGS: LDProviderConfig = {
 }
 
 /**
- * To manage MAU/MCI consumption, we share LD contexts within population groups.
+ * To manage MAU/MCI consumption, we only provide LD contexts for logged-in users.
  */
 function getLDContext(
   user: AuthenticationContextParams['currentUser'] | null | undefined,
 ): LDContext {
-  if (!user) {
-    return ANON_LD_CONTEXT
-  }
-
-  const domain = user.email.split('@')[1]
-  if (!domain) {
+  if (!user || !user.email) {
     return ANON_LD_CONTEXT
   }
 
   return {
     kind: 'user',
-    key: domain,
+    key: user.email,
   }
 }
 

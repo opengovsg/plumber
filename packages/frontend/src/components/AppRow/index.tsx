@@ -1,77 +1,58 @@
 import type { IApp } from '@plumber/types'
 
-import * as React from 'react'
+import { ReactElement } from 'react'
+import { BiChevronRight } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos'
-import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import CardActionArea from '@mui/material/CardActionArea'
+import {
+  Card,
+  CardBody,
+  Center,
+  Flex,
+  Icon,
+  Spacer,
+  Text,
+} from '@chakra-ui/react'
 import AppIcon from 'components/AppIcon'
 import * as URLS from 'config/urls'
-import useFormatMessage from 'hooks/useFormatMessage'
-
-import { CardContent, Typography } from './style'
 
 type AppRowProps = {
   application: IApp
 }
 
-const countTranslation = (value: React.ReactNode) => (
-  <>
-    <Typography variant="body1">{value}</Typography>
-    <br />
-  </>
-)
-
-function AppRow(props: AppRowProps): React.ReactElement {
-  const formatMessage = useFormatMessage()
+function AppRow(props: AppRowProps): ReactElement {
   const { name, key, primaryColor, iconUrl, connectionCount, flowCount } =
     props.application
 
   return (
     <Link to={URLS.APP(key)} data-test="app-row">
-      <Card sx={{ mb: 1 }}>
-        <CardActionArea>
-          <CardContent>
-            <Box>
-              <AppIcon name={name} url={iconUrl} color={primaryColor} />
-            </Box>
+      <Card
+        boxShadow="none"
+        _hover={{ bg: 'interaction.muted.neutral.hover' }}
+        _active={{ bg: 'interaction.muted.neutral.active' }}
+        borderRadius={0}
+        borderBottom="1px solid"
+        borderBottomColor="base.divider.medium"
+      >
+        <CardBody p={0}>
+          <Flex gap={6} alignItems="center" py={6} px={8}>
+            <AppIcon name={name} url={iconUrl} color={primaryColor} />
 
-            <Box>
-              <Typography variant="h6">{name}</Typography>
-            </Box>
+            <Flex gap={2} flexDir="column">
+              <Text textStyle="subhead-1">{name}</Text>
 
-            <Box sx={{ px: 2 }}>
-              <Typography
-                variant="caption"
-                color="textSecondary"
-                sx={{ display: ['none', 'inline-block'] }}
-              >
-                {formatMessage('app.connectionCount', {
-                  count: countTranslation(connectionCount),
-                })}
-              </Typography>
-            </Box>
+              <Flex gap={4} textStyle="body-2">
+                <Text>{connectionCount} connections</Text>
+                <Text>{flowCount} pipes</Text>
+              </Flex>
+            </Flex>
 
-            <Box sx={{ px: 2 }}>
-              <Typography
-                variant="caption"
-                color="textSecondary"
-                sx={{ display: ['none', 'inline-block'] }}
-              >
-                {formatMessage('app.flowCount', {
-                  count: countTranslation(flowCount),
-                })}
-              </Typography>
-            </Box>
+            <Spacer />
 
-            <Box>
-              <ArrowForwardIosIcon
-                sx={{ color: (theme) => theme.palette.primary.main }}
-              />
-            </Box>
-          </CardContent>
-        </CardActionArea>
+            <Center p={3}>
+              <Icon boxSize={5} as={BiChevronRight} />
+            </Center>
+          </Flex>
+        </CardBody>
       </Card>
     </Link>
   )
