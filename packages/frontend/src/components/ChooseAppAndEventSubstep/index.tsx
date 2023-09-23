@@ -10,12 +10,44 @@ import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
 import { Badge, FormLabel } from '@opengovsg/design-system-react'
+import { BranchContext as IfThenBranchContext } from 'components/FlowStepGroup/Content/IfThen/BranchContext'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
-import { isIfThenSelectable, TOOLBOX_APP_KEY } from 'helpers/toolbox'
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
+import { LDFlagSet } from 'launchdarkly-js-client-sdk'
+
+/**
+ * If-Then should only be selectable if:
+ * - We're the last step.
+ * - We are not inside a branch (unless we're whitelisted for nested
+ *   branches via LD).
+ *
+ * Using many consts as purpose of the conditions may not be immediately
+ * apparent.
+ */
+function useIsIfThenSelectable(
+  isLastStep: boolean,
+  ldFlags?: LDFlagSet | null,
+): boolean {
+  const { depth } = useContext(IfThenBranchContext)
+
+  return useMemo(() => {
+    if (!isLastStep) {
+      return false
+    }
+
+    const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
+    if (canUseNestedBranch) {
+      return true
+    }
+
+    const isNestedBranch = depth > 0
+    return !isNestedBranch
+  }, [isLastStep, depth, ldFlags])
+}
 
 type ChooseAppAndEventSubstepProps = {
   substep: ISubstep
@@ -25,7 +57,7 @@ type ChooseAppAndEventSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
-  allEditorSteps: IStep[]
+  isLastStep: boolean
 }
 
 const optionGenerator = (app: {
@@ -57,12 +89,12 @@ function ChooseAppAndEventSubstep(
   props: ChooseAppAndEventSubstepProps,
 ): React.ReactElement {
   const {
+    step,
+    isLastStep,
     substep,
     expanded = false,
     onExpand,
     onCollapse,
-    step,
-    allEditorSteps,
     onSubmit,
     onChange,
   } = props
@@ -87,12 +119,19 @@ function ChooseAppAndEventSubstep(
   })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
+  const isIfThenSelectable = useIsIfThenSelectable(
+    isLastStep,
+    launchDarkly?.flags,
+  )
   const appOptions = useMemo(
     () =>
       apps
         ?.filter((app) => {
           //
           // ** EDGE CASE **
+          //
+          // We want to hide If-Then in some cases (see useIsIfThenSelectable
+          // comments).
           //
           // We edge case since a generic implementation adds too much
           // complexity; we'll move to generic if there's another use case for
@@ -102,10 +141,7 @@ function ChooseAppAndEventSubstep(
           // add a new toolbox action will get confused why toolbox is missing
           // ... and find this.
           //
-          if (
-            app.key === TOOLBOX_APP_KEY &&
-            !isIfThenSelectable(allEditorSteps, step, launchDarkly?.flags)
-          ) {
+          if (app.key === TOOLBOX_APP_KEY && !isIfThenSelectable) {
             return false
           }
 
@@ -117,7 +153,7 @@ function ChooseAppAndEventSubstep(
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
         ?.map((app) => optionGenerator(app)) ?? [],
-    [apps, step.position, allEditorSteps, launchDarkly.flags],
+    [apps, step.position, isIfThenSelectable, launchDarkly.flags],
   )
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
@@ -125,7 +161,6 @@ function ChooseAppAndEventSubstep(
   const actionOrTriggerOptions = useMemo(
     () =>
       actionsOrTriggers
-
         .filter((actionOrTrigger) => {
           //
           // ** EDGE CASE AGAIN **
@@ -141,7 +176,8 @@ function ChooseAppAndEventSubstep(
           //
           if (
             app?.key === TOOLBOX_APP_KEY &&
-            !isIfThenSelectable(allEditorSteps, step, launchDarkly?.flags)
+            actionOrTrigger?.key === TOOLBOX_ACTIONS.IfThen &&
+            !isIfThenSelectable
           ) {
             return false
           }
@@ -160,7 +196,7 @@ function ChooseAppAndEventSubstep(
         })
         //
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly.flags, allEditorSteps, step],
+    [app?.key, launchDarkly.flags, isIfThenSelectable, step],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,

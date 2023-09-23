@@ -1,7 +1,5 @@
 import { type IStep } from '@plumber/types'
 
-import { LDFlagSet } from 'launchdarkly-js-client-sdk'
-
 export const TOOLBOX_APP_KEY = 'toolbox'
 
 export enum TOOLBOX_ACTIONS {
@@ -115,41 +113,4 @@ export function areAllIfThenBranchesCompleted(
 ): boolean {
   const branches = extractBranchesWithSteps(allBranches, depth)
   return branches.every(isIfThenBranchCompleted)
-}
-
-/**
- * Helper to check if If-Then action should be selectable.
- *
- * If-Then should only be selectable if:
- * - We're the last step.
- * - We are not inside a branch (unless we're whitelisted for nested
- *   branches via LD).
- *
- * Using many consts as purpose of the conditions may not be immediately
- * apparent.
- *
- * @param allEditorSteps All steps currently displayed in the editor, including
- *   grouped steps at the end (NOT all flow steps)! We need currently displayed
- *   steps to handle nested branches.
- * @param currStep The step currently being edited.
- * @param ldFlags LaunchDarkly flags, if avaialble.
- */
-export function isIfThenSelectable(
-  allEditorSteps: IStep[],
-  currStep: IStep,
-  ldFlags?: LDFlagSet | null,
-): boolean {
-  const isLastStep =
-    allEditorSteps[allEditorSteps.length - 1].position === currStep.position
-  if (!isLastStep) {
-    return false
-  }
-
-  const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
-  if (canUseNestedBranch) {
-    return true
-  }
-
-  const isNestedBranch = isIfThenStep(allEditorSteps[0])
-  return !isNestedBranch
 }

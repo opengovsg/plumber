@@ -32,7 +32,7 @@ import * as yup from 'yup'
 type FlowStepProps = {
   collapsed?: boolean
   step: IStep
-  allEditorSteps: IStep[]
+  isLastStep: boolean
   index?: number
   onOpen: () => void
   onClose: () => void
@@ -104,15 +104,8 @@ function generateValidationSchema(substeps: ISubstep[]) {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const {
-    step,
-    allEditorSteps,
-    collapsed,
-    onOpen,
-    onClose,
-    onChange,
-    onContinue,
-  } = props
+  const { step, isLastStep, collapsed, onOpen, onClose, onChange, onContinue } =
+    props
   const isTrigger = step.type === 'trigger'
 
   const editorContext = useContext(EditorContext)
@@ -248,7 +241,7 @@ export default function FlowStep(
               onSubmit={expandNextStep}
               onChange={handleChange}
               step={step}
-              allEditorSteps={allEditorSteps}
+              isLastStep={isLastStep}
             />
           )}
 
