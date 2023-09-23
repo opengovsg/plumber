@@ -1,13 +1,13 @@
 import { type IStep } from '@plumber/types'
 
-import { useCallback, useContext, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { BranchContext } from 'components/FlowStepGroup/Content/IfThen/BranchContext'
+import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import client from 'graphql/client'
 import { CREATE_STEP } from 'graphql/mutations/create-step'
 import { UPDATE_STEP } from 'graphql/mutations/update-step'
 import { GET_FLOW } from 'graphql/queries/get-flow'
-import { LDFlagSet } from 'launchdarkly-js-client-sdk'
 
 export const TOOLBOX_APP_KEY = 'toolbox'
 
@@ -125,7 +125,8 @@ export function areAllIfThenBranchesCompleted(
 }
 
 /**
- * Helper to check if If-Then action should be selectable.
+ * Helper hook to check if If-Then action should be selectable; supports edge
+ * case in ChooseAppAndEventSubstep.
  *
  * If-Then should only be selectable if:
  * - We're the last step.
@@ -134,31 +135,24 @@ export function areAllIfThenBranchesCompleted(
  *
  * Using many consts as purpose of the conditions may not be immediately
  * apparent.
- *
- * @param allEditorSteps All steps currently displayed in the editor, including
- *   grouped steps at the end (NOT all flow steps)! We need currently displayed
- *   steps to handle nested branches.
- * @param currStep The step currently being edited.
- * @param ldFlags LaunchDarkly flags, if avaialble.
  */
-export function isIfThenSelectable(
-  allEditorSteps: IStep[],
-  currStep: IStep,
-  ldFlags?: LDFlagSet | null,
-): boolean {
-  const isLastStep =
-    allEditorSteps[allEditorSteps.length - 1].position === currStep.position
-  if (!isLastStep) {
-    return false
-  }
+export function useIsIfThenSelectable(isLastStep: boolean): boolean {
+  const { depth } = useContext(BranchContext)
+  const { flags: ldFlags } = useContext(LaunchDarklyContext)
 
-  const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
-  if (canUseNestedBranch) {
-    return true
-  }
+  return useMemo(() => {
+    if (!isLastStep) {
+      return false
+    }
 
-  const isNestedBranch = isIfThenStep(allEditorSteps[0])
-  return !isNestedBranch
+    const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
+    if (canUseNestedBranch) {
+      return true
+    }
+
+    const isNestedBranch = depth > 0
+    return !isNestedBranch
+  }, [isLastStep, depth, ldFlags])
 }
 
 /**
