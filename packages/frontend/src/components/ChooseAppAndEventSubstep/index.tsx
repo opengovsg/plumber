@@ -15,10 +15,10 @@ import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
 import {
-  isIfThenSelectable,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
   useIfThenInitializer,
+  useIsIfThenSelectable,
 } from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
 
@@ -30,7 +30,7 @@ type ChooseAppAndEventSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
-  allEditorSteps: IStep[]
+  isLastStep: boolean
 }
 
 const optionGenerator = (app: {
@@ -62,12 +62,12 @@ function ChooseAppAndEventSubstep(
   props: ChooseAppAndEventSubstepProps,
 ): React.ReactElement {
   const {
+    step,
+    isLastStep,
     substep,
     expanded = false,
     onExpand,
     onCollapse,
-    step,
-    allEditorSteps,
     onSubmit,
     onChange,
   } = props
@@ -92,12 +92,16 @@ function ChooseAppAndEventSubstep(
   })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
+  const isIfThenSelectable = useIsIfThenSelectable(isLastStep)
   const appOptions = useMemo(
     () =>
       apps
         ?.filter((app) => {
           //
           // ** EDGE CASE **
+          //
+          // We want to hide If-Then in some cases (see useIsIfThenSelectable
+          // comments).
           //
           // We edge case since a generic implementation adds too much
           // complexity; we'll move to generic if there's another use case for
@@ -107,10 +111,7 @@ function ChooseAppAndEventSubstep(
           // add a new toolbox action will get confused why toolbox is missing
           // ... and find this.
           //
-          if (
-            app.key === TOOLBOX_APP_KEY &&
-            !isIfThenSelectable(allEditorSteps, step, launchDarkly?.flags)
-          ) {
+          if (app.key === TOOLBOX_APP_KEY && !isIfThenSelectable) {
             return false
           }
 
@@ -122,7 +123,7 @@ function ChooseAppAndEventSubstep(
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
         ?.map((app) => optionGenerator(app)) ?? [],
-    [apps, step.position, allEditorSteps, launchDarkly.flags],
+    [apps, step.position, isIfThenSelectable, launchDarkly.flags],
   )
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
@@ -145,7 +146,8 @@ function ChooseAppAndEventSubstep(
           //
           if (
             app?.key === TOOLBOX_APP_KEY &&
-            !isIfThenSelectable(allEditorSteps, step, launchDarkly?.flags)
+            actionOrTrigger?.key === TOOLBOX_ACTIONS.IfThen &&
+            !isIfThenSelectable
           ) {
             return false
           }
@@ -164,7 +166,7 @@ function ChooseAppAndEventSubstep(
         })
         //
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly.flags, allEditorSteps, step],
+    [app?.key, launchDarkly.flags, isIfThenSelectable, step],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
