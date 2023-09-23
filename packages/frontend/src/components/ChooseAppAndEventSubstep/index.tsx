@@ -10,44 +10,16 @@ import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
 import { Badge, FormLabel } from '@opengovsg/design-system-react'
-import { BranchContext as IfThenBranchContext } from 'components/FlowStepGroup/Content/IfThen/BranchContext'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
-import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from 'helpers/toolbox'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+  useIsIfThenSelectable,
+} from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
-import { LDFlagSet } from 'launchdarkly-js-client-sdk'
-
-/**
- * If-Then should only be selectable if:
- * - We're the last step.
- * - We are not inside a branch (unless we're whitelisted for nested
- *   branches via LD).
- *
- * Using many consts as purpose of the conditions may not be immediately
- * apparent.
- */
-function useIsIfThenSelectable(
-  isLastStep: boolean,
-  ldFlags?: LDFlagSet | null,
-): boolean {
-  const { depth } = useContext(IfThenBranchContext)
-
-  return useMemo(() => {
-    if (!isLastStep) {
-      return false
-    }
-
-    const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
-    if (canUseNestedBranch) {
-      return true
-    }
-
-    const isNestedBranch = depth > 0
-    return !isNestedBranch
-  }, [isLastStep, depth, ldFlags])
-}
 
 type ChooseAppAndEventSubstepProps = {
   substep: ISubstep
@@ -119,10 +91,7 @@ function ChooseAppAndEventSubstep(
   })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  const isIfThenSelectable = useIsIfThenSelectable(
-    isLastStep,
-    launchDarkly?.flags,
-  )
+  const isIfThenSelectable = useIsIfThenSelectable(isLastStep)
   const appOptions = useMemo(
     () =>
       apps
