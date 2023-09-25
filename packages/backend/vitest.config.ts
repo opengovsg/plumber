@@ -17,6 +17,11 @@ export default defineConfig({
     // load env variables
     setupFiles: ['dotenv/config'],
     include: ['src/**/*.test.{js,ts}'],
+    onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
+      if (log.startsWith('vite:')) {
+        return false
+      }
+    },
   },
   resolve: {
     alias: {
