@@ -104,12 +104,20 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
                   py={1}
                   px={2}
                   colorScheme={
-                    execution.status === 'success' ? 'success' : 'critical'
+                    execution.status === 'success'
+                      ? 'success'
+                      : execution.status === 'failure'
+                      ? 'critical'
+                      : 'grey'
                   }
                   variant="subtle"
                 >
                   <Text>
-                    {execution.status === 'success' ? 'Success' : 'Failure'}
+                    {execution.status === 'success'
+                      ? 'Success'
+                      : execution.status === 'failure'
+                      ? 'Failure'
+                      : 'Pending'}
                   </Text>
                 </Badge>
 
