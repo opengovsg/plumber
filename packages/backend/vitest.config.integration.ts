@@ -20,10 +20,22 @@ export default defineConfig({
   test: {
     name: 'backend-integration',
     // load env variables
-    setupFiles: ['dotenv/config', getPath('./test/pg-reset-db-setup.ts')],
-    globalSetup: [getPath('./test/pg-global-setup.ts')],
+    setupFiles: [
+      'dotenv/config',
+      getPath('./test/pg-reset-db-setup.ts'),
+      getPath('./test/ddb-reset-db-setup.ts'),
+    ],
+    globalSetup: [
+      getPath('./test/pg-global-setup.ts'),
+      getPath('./test/ddb-global-setup.ts'),
+    ],
     include: ['src/**/*.itest.{js,ts}'],
     threads: false,
+    onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
+      if (log.startsWith('vite:')) {
+        return false
+      }
+    },
   },
   resolve: {
     alias: {
