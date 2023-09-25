@@ -56,6 +56,11 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
               Failure
             </Text>
           </MenuItemOption>
+          <MenuItemOption value="Pending">
+            <Text textStyle="body-1" color="base.content.strong">
+              Pending
+            </Text>
+          </MenuItemOption>
         </MenuOptionGroup>
       </MenuList>
     </Menu>

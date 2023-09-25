@@ -1,3 +1,4 @@
+import Execution from '@/models/execution'
 import Step from '@/models/step'
 import { processAction } from '@/services/action'
 import { processFlow } from '@/services/flow'
@@ -60,6 +61,7 @@ const testRun = async (options: TestRunOptions) => {
     })
 
   if (triggerStep.id === untilStep.id) {
+    await Execution.query().patch({ status: 'success' }).findById(executionId)
     return { executionStep: triggerExecutionStep }
   }
 
@@ -77,10 +79,12 @@ const testRun = async (options: TestRunOptions) => {
       })
 
     if (actionExecutionStep.isFailed) {
+      await Execution.query().patch({ status: 'failure' }).findById(executionId)
       return { executionStep: actionExecutionStep }
     }
 
     if (actionStep.id === untilStep.id) {
+      await Execution.query().patch({ status: 'success' }).findById(executionId)
       return {
         executionStep: actionExecutionStep,
         skippedIfPublished: actionStep.id !== nextStepId,

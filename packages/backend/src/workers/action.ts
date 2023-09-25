@@ -9,6 +9,7 @@ import tracer from '@/helpers/tracer'
 import Step from '@/models/step'
 import actionQueue from '@/queues/action'
 import { processAction } from '@/services/action'
+import Execution from '@/models/execution'
 
 type JobData = {
   flowId: string
@@ -23,6 +24,7 @@ export const worker = new Worker(
       await processAction({ ...(job.data as JobData), jobId: job.id })
 
     if (executionStep.isFailed) {
+      await Execution.query().patch({ status: 'failure' }).findById(executionId)
       throw new Error(JSON.stringify(executionStep.errorDetails))
     }
 
@@ -38,6 +40,7 @@ export const worker = new Worker(
     })
 
     if (!nextStep) {
+      await Execution.query().patch({ status: 'success' }).findById(executionId)
       return
     }
 
