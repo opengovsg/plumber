@@ -10,7 +10,11 @@ const ddb = new dynamoose.aws.ddb.DynamoDB({
 
 if (appConfig.isDev) {
   // Use local dynamodb in development env
-  dynamoose.aws.ddb.local()
+  // LOCAL_DYNAMODB_PORT is set in packages/backend/test/ddb-global-setup.ts
+  // and is only specified when running integration tests.
+  dynamoose.aws.ddb.local(
+    `http://localhost:${process.env.LOCAL_DYNAMODB_PORT ?? 8000}`,
+  )
 } else {
   dynamoose.aws.ddb.set(ddb)
 }
