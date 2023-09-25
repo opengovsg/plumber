@@ -44,6 +44,8 @@ const updateFlowStatus = async (
 
   if (trigger.type !== 'webhook') {
     if (flow.active) {
+      // FIXME (ogp-weeloong): update published date for all flows in separate
+      // PR.
       flow = await flow.$query().patchAndFetch({
         publishedAt: new Date().toISOString(),
       })

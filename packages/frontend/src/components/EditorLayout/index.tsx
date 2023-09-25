@@ -127,7 +127,7 @@ export default function EditorLayout(): React.ReactElement {
           <EditorProvider value={{ readOnly: !!flow?.active }}>
             {!flow && !loading && 'not found'}
 
-            {flow && <Editor flow={flow} />}
+            {flow && <Editor flow={flow} steps={flow.steps} />}
           </EditorProvider>
         </Container>
       </VStack>

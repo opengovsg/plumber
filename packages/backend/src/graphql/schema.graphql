@@ -43,11 +43,11 @@ type Mutation {
   createFlow(input: CreateFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
-  executeFlow(input: ExecuteFlowInput): executeFlowType
+  executeFlow(input: ExecuteFlowInput): ExecuteFlowType
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
-  deleteStep(input: DeleteStepInput): Step
+  deleteStep(input: DeleteStepInput): Flow
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
@@ -72,6 +72,7 @@ type Action {
   name: String
   key: String
   description: String
+  groupsLaterSteps: Boolean
   substeps: [ActionSubstep]
 }
 
@@ -94,6 +95,7 @@ type ActionSubstepArgument {
   options: [ArgumentOption]
   source: ActionSubstepArgumentSource
   dependsOn: [String]
+  hidden: Boolean
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
@@ -124,6 +126,7 @@ type App {
   triggers: [Trigger]
   actions: [Action]
   connections: [Connection]
+  description: String
 }
 
 type AppAuth {
@@ -173,9 +176,10 @@ type ConnectionData {
   screenName: String
 }
 
-type executeFlowType {
+type ExecuteFlowType {
   data: JSONObject
   step: Step
+  skippedIfPublished: Boolean
 }
 
 type ExecutionStep {
@@ -314,7 +318,7 @@ input UpdateStepInput {
 }
 
 input DeleteStepInput {
-  id: String!
+  ids: [String!]!
 }
 
 input RequestOtpInput {

@@ -1,18 +1,10 @@
-import { IApp, IStep } from '@plumber/types'
-
-import {
-  type MouseEventHandler,
-  type ReactNode,
-  useCallback,
-  useContext,
-} from 'react'
+import { type MouseEventHandler, type ReactNode, useCallback } from 'react'
 import {
   BiArrowFromRight,
   BiSolidCheckCircle,
   BiSolidErrorCircle,
   BiTrashAlt,
 } from 'react-icons/bi'
-import { useMutation } from '@apollo/client'
 import {
   Box,
   chakra,
@@ -23,45 +15,47 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
-import { EditorContext } from 'contexts/Editor'
-import { DELETE_STEP } from 'graphql/mutations/delete-step'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 // Chakra's `Collapse` sets `overflow: hidden` by default, which causes dropdown
 // menu items to be hidden. We override overflow by making `Collapse` a Chakra
 // element.
 const Collapse = chakra(CollapseWithHiddenOverflow)
 
-interface StepHeaderProps {
-  step: IStep
-  app?: IApp | null
-  onClick: () => void
+interface FlowStepHeaderProps {
+  iconUrl?: string
+  caption: string
+  hintAboveCaption: string
+  isCompleted?: boolean
+  onDelete?: MouseEventHandler
+  onOpen: () => void
+  onClose: () => void
   collapsed: boolean
   children: ReactNode
 }
 
-export default function StepHeader(props: StepHeaderProps): JSX.Element {
-  const { step, app, onClick, collapsed, children } = props
+export default function FlowStepHeader(
+  props: FlowStepHeaderProps,
+): JSX.Element {
+  const {
+    iconUrl,
+    caption,
+    hintAboveCaption,
+    isCompleted,
+    onDelete,
+    onOpen,
+    onClose,
+    collapsed,
+    children,
+  } = props
 
-  const formatMessage = useFormatMessage()
-  const editorContext = useContext(EditorContext)
-
-  const [deleteStep] = useMutation(DELETE_STEP, {
-    refetchQueries: ['GetFlow'],
-  })
-  const handleDelete = useCallback<MouseEventHandler>(
-    async (e) => {
-      e.stopPropagation()
-      await deleteStep({ variables: { input: { id: step.id } } })
-    },
-    [step.id],
-  )
-
-  const isTrigger = step.type === 'trigger'
-  const isCompletedStep = step.status === 'completed'
-  const isDeletable = !isTrigger && !editorContext.readOnly
-  const appIcon = app?.iconUrl
-  const caption = app?.name ? `${step.position}. ${app?.name}` : 'Choose an app'
+  const handleClick = useCallback(() => {
+    if (collapsed) {
+      // We're currently collapsed, and user just expanded us.
+      onOpen()
+    } else {
+      onClose()
+    }
+  }, [collapsed, onOpen, onClose])
 
   return (
     <Box
@@ -70,6 +64,8 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
       borderColor="base.divider.medium"
       borderRadius="lg"
       p={0}
+      bg="white"
+      boxShadow={collapsed ? undefined : 'base'}
     >
       {/*
        * Top header
@@ -80,7 +76,7 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
         _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
         _active={{ bg: 'interaction.muted.neutral.active' }}
         w="full"
-        onClick={onClick}
+        onClick={handleClick}
       >
         <Flex
           position="relative"
@@ -96,7 +92,7 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
            * App icon
            */}
           <Image
-            src={appIcon}
+            src={iconUrl}
             boxSize={8}
             borderStyle="solid"
             fit="contain"
@@ -111,34 +107,38 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
           {/*
            * Step completion status badge
            */}
-          <Flex
-            position="absolute"
-            top={0}
-            insetEnd={0}
-            boxSize={6}
-            transform="translate(0.5rem, -0.5rem)"
-            borderRadius="full"
-            bg="white"
-          >
-            {isCompletedStep ? (
-              <Icon
-                boxSize="full"
-                color="interaction.success.default"
-                as={BiSolidCheckCircle}
-              />
-            ) : (
-              <Icon boxSize="full" color="yellow.200" as={BiSolidErrorCircle} />
-            )}
-          </Flex>
+          {isCompleted !== undefined && (
+            <Flex
+              position="absolute"
+              top={0}
+              insetEnd={0}
+              boxSize={6}
+              transform="translate(0.5rem, -0.5rem)"
+              borderRadius="full"
+              bg="white"
+            >
+              {isCompleted ? (
+                <Icon
+                  boxSize="full"
+                  color="interaction.success.default"
+                  as={BiSolidCheckCircle}
+                />
+              ) : (
+                <Icon
+                  boxSize="full"
+                  color="yellow.200"
+                  as={BiSolidErrorCircle}
+                />
+              )}
+            </Flex>
+          )}
         </Flex>
         {/*
          * Captions
          */}
         <Flex direction="column" align="start">
           <Text textStyle="body-2" color="base.content.medium" p={0} mb={1.5}>
-            {isTrigger
-              ? formatMessage('flowStep.triggerType')
-              : formatMessage('flowStep.actionType')}
+            {hintAboveCaption}
           </Text>
           <Text textStyle="subhead-1" color="base.content.default">
             {caption}
@@ -148,10 +148,10 @@ export default function StepHeader(props: StepHeaderProps): JSX.Element {
         {/*
          * Delete step button
          */}
-        {isDeletable && (
+        {onDelete && (
           <Flex ml="auto">
             <IconButton
-              onClick={handleDelete}
+              onClick={onDelete}
               variant="clear"
               aria-label="Delete Step"
               icon={<BiTrashAlt />}

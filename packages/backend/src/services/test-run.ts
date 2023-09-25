@@ -8,15 +8,29 @@ type TestRunOptions = {
 }
 
 const testRun = async (options: TestRunOptions) => {
-  const untilStep = await Step.query()
+  let untilStep = await Step.query()
     .findById(options.stepId)
-    .throwIfNotFound()
+    .withGraphFetched({
+      flow: {
+        steps: true,
+      },
+    })
 
-  const flow = await untilStep.$relatedQuery('flow')
-  const [triggerStep, ...actionSteps] = await flow
-    .$relatedQuery('steps')
-    .withGraphFetched('connection')
-    .orderBy('position', 'asc')
+  //
+  // Start test run
+  //
+
+  untilStep = await Step.query()
+    .findById(options.stepId)
+    .withGraphFetched({
+      flow: {
+        steps: true,
+      },
+    })
+    .modifyGraph('flow.steps', (builder) => builder.orderBy('position', 'asc'))
+
+  const flow = untilStep.flow
+  const [triggerStep, ...actionSteps] = untilStep.flow.steps
 
   const { data, error: triggerError } = await processFlow({
     flowId: flow.id,
@@ -49,15 +63,34 @@ const testRun = async (options: TestRunOptions) => {
     return { executionStep: triggerExecutionStep }
   }
 
-  for (const actionStep of actionSteps) {
-    const { executionStep: actionExecutionStep } = await processAction({
-      flowId: flow.id,
-      stepId: actionStep.id,
-      executionId,
-    })
+  // Actions may redirect steps. We keep track here so that we can let users
+  // know if an action would have been skipped due to redirection.
+  let nextStepId = actionSteps[0]?.id
 
-    if (actionStep.id === untilStep.id || actionExecutionStep.isFailed) {
+  for (const actionStep of actionSteps) {
+    const { executionStep: actionExecutionStep, nextStep } =
+      await processAction({
+        flowId: flow.id,
+        stepId: actionStep.id,
+        executionId,
+        testRun: true,
+      })
+
+    if (actionExecutionStep.isFailed) {
       return { executionStep: actionExecutionStep }
+    }
+
+    if (actionStep.id === untilStep.id) {
+      return {
+        executionStep: actionExecutionStep,
+        skippedIfPublished: actionStep.id !== nextStepId,
+      }
+    }
+
+    // Don't update next step ID if actionStep wouldn't have been run in real
+    // life.
+    if (actionStep.id === nextStepId) {
+      nextStepId = nextStep?.id
     }
   }
 }
