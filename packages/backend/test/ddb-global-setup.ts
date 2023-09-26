@@ -3,6 +3,11 @@ import { GenericContainer, StartedTestContainer } from 'testcontainers'
 
 let dynamodbContainer: StartedTestContainer
 
+// Set dummy AWS credentials for local DynamoDB to work
+process.env.AWS_REGION = 'ap-southeast-1'
+process.env.AWS_ACCESS_KEY_ID = 'awsaccesskeyid'
+process.env.AWS_SECRET_ACCESS_KEY = 'awssecretaccesskey'
+
 export async function setup() {
   dynamodbContainer = await new GenericContainer('amazon/dynamodb-local')
     .withExposedPorts(8000)
