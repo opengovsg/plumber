@@ -1,7 +1,26 @@
 import { IJSONPrimitive } from '@plumber/types'
 
+import { randomUUID } from 'crypto'
 import dynamoose from 'dynamoose'
 import { Item } from 'dynamoose/dist/Item'
+
+import { rowExistCondition, wrapDynamoDBError } from './helpers'
+
+interface CreateRowInput {
+  tableId: string
+  data: Record<string, IJSONPrimitive>
+}
+
+interface UpdateRowInput {
+  tableId: string
+  rowId: string
+  data: Record<string, IJSONPrimitive>
+}
+
+interface DeleteRowInput {
+  tableId: string
+  rowId: string
+}
 
 export interface TableRowSchema extends Item {
   tableId: string
@@ -64,3 +83,58 @@ export const TableRow = dynamoose.model<TableRowSchema>(
     },
   ),
 )
+
+export const createTableRow = async ({
+  tableId,
+  data,
+}: CreateRowInput): Promise<TableRowSchema> => {
+  return TableRow.create({
+    tableId,
+    rowId: randomUUID(),
+    data,
+  })
+}
+
+export const updateTableRow = async ({
+  rowId,
+  tableId,
+  data,
+}: UpdateRowInput): Promise<void> => {
+  try {
+    await TableRow.update(
+      {
+        tableId,
+        rowId,
+      },
+      {
+        data,
+      },
+      {
+        // update only if exists
+        condition: rowExistCondition(tableId, rowId),
+      },
+    )
+  } catch (e: unknown) {
+    wrapDynamoDBError(e)
+  }
+}
+
+export const deleteTableRow = async ({
+  rowId,
+  tableId,
+}: DeleteRowInput): Promise<void> => {
+  try {
+    await TableRow.delete(
+      {
+        tableId,
+        rowId,
+      },
+      {
+        // delete only if exists
+        condition: rowExistCondition(tableId, rowId),
+      },
+    )
+  } catch (e: unknown) {
+    wrapDynamoDBError(e)
+  }
+}
