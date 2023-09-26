@@ -1,12 +1,14 @@
+import { IJSONPrimitive } from '@plumber/types'
+
 import dynamoose from 'dynamoose'
 import { Item } from 'dynamoose/dist/Item'
 
-interface TableRowSchema extends Item {
+export interface TableRowSchema extends Item {
   tableId: string
   rowId: string
-  data: Record<string, unknown>
-  createdAt: number
-  updatedAt: number
+  data: Record<string, IJSONPrimitive>
+  createdAt: Date
+  updatedAt: Date
 }
 
 export const TableRow = dynamoose.model<TableRowSchema>(
