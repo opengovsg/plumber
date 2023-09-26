@@ -48,10 +48,11 @@ export default function Executions(): React.ReactElement {
 
   const [searchInput, setSearchInput] = React.useState<string>('')
 
-  const setSearchInputDebounced = debounce(setSearchInput, 1000)
   const handleSearchValue = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInputDebounced(event.target.value)
+    setSearchInput(event.target.value)
+    setSearchParams({ status: filterStatus })
   }
+  const handleSearchValueDebounced = debounce(handleSearchValue, 1000)
 
   const [filterStatus, setFilterStatus] = React.useState<string>(
     searchParams.get('status') || '',
@@ -103,7 +104,7 @@ export default function Executions(): React.ReactElement {
               textStyle="body-1"
               pr="7.5rem"
               placeholder="Search by pipe name"
-              onChange={handleSearchValue}
+              onChange={handleSearchValueDebounced}
             ></Input>
             <InputRightElement w="fit-content" p={1}>
               <ChakraDivider
