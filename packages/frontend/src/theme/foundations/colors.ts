@@ -18,6 +18,7 @@ const bbBearColors = {
     },
     content: {
       default: '#454953',
+      strong: '#2C2E34',
       medium: '#666C7A',
     },
   },

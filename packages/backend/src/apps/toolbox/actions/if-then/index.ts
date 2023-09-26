@@ -10,8 +10,6 @@ import Step from '@/models/step'
 
 import toolboxApp from '../..'
 
-import getDataOutMetadata from './get-data-out-metadata'
-
 const ACTION_KEY = 'ifThen'
 
 function evalCondition(parameters: IJSONObject): boolean {
@@ -168,8 +166,6 @@ export default defineAction({
       ],
     },
   ],
-
-  getDataOutMetadata,
 
   async run($) {
     const isConditionMet = shouldTakeBranch($)

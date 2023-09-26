@@ -179,7 +179,6 @@ type ConnectionData {
 type ExecuteFlowType {
   data: JSONObject
   step: Step
-  skippedIfPublished: Boolean
 }
 
 type ExecutionStep {

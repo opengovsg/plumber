@@ -1,4 +1,4 @@
-import { type IExecutionStep, type IGlobalVariable } from '@plumber/types'
+import { type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -420,37 +420,6 @@ describe('If-Then', () => {
         expect(mocks.setActionItem).toBeCalledWith({
           raw: { isConditionMet: false },
         })
-      },
-    )
-  })
-
-  describe('dataOut Metadata', () => {
-    let executionStep: IExecutionStep
-
-    beforeEach(() => {
-      executionStep = {
-        dataOut: {
-          isConditionMet: true,
-        },
-      } as unknown as IExecutionStep
-    })
-
-    it('labels isConditionMet', async () => {
-      const metadata = await ifThenAction.getDataOutMetadata(executionStep)
-      expect(metadata.isConditionMet.label).toEqual('Is Condition Met?')
-    })
-
-    it.each([
-      { wasMet: true, expectedDisplayedValue: 'Yes' },
-      { wasMet: false, expectedDisplayedValue: 'No' },
-    ])(
-      'sets displayedValue for isConditionMet',
-      async ({ wasMet, expectedDisplayedValue }) => {
-        executionStep.dataOut.isConditionMet = wasMet
-        const metadata = await ifThenAction.getDataOutMetadata(executionStep)
-        expect(metadata.isConditionMet.displayedValue).toEqual(
-          expectedDisplayedValue,
-        )
       },
     )
   })

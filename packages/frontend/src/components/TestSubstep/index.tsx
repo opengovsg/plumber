@@ -8,19 +8,18 @@ import type {
 } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
-import { BiCheck } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import LoadingButton from '@mui/lab/LoadingButton'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import { Infobox } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
-import VariablesList from 'components/VariablesList'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import { extractVariables, filterVariables } from 'helpers/variables'
+
+import TestResult from './TestResult'
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -76,11 +75,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     { context: { autoSnackbar: false } },
   )
 
-  const {
-    data: response,
-    skippedIfPublished = false,
-    step: executionStep,
-  } = data?.executeFlow ?? {}
+  const { data: response, step: executionStep } = data?.executeFlow ?? {}
 
   const stepsWithVariables = useMemo(() => {
     if (!executionStep) {
@@ -94,7 +89,6 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
   }, [executionStep])
 
   const isExecuted = !error && called && !loading
-  const hasNoOutput = !response && isExecuted
   const isCompleted = isExecuted && response
 
   const { name } = substep
@@ -150,56 +144,12 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
             />
           )}
 
-          {hasNoOutput && (
-            <Infobox variant="warning" width="100%">
-              <Box>
-                <Text fontWeight="600">We couldn't find any test data</Text>
-                <Text mt={0.5}>
-                  {selectedActionOrTrigger &&
-                  'webhookTriggerInstructions' in selectedActionOrTrigger &&
-                  selectedActionOrTrigger.webhookTriggerInstructions?.errorMsg
-                    ? selectedActionOrTrigger.webhookTriggerInstructions
-                        .errorMsg
-                    : ''}
-                </Text>
-              </Box>
-            </Infobox>
-          )}
-
-          {stepsWithVariables.length === 1 && (
-            <Box w="100%">
-              {skippedIfPublished ? (
-                <Infobox variant="warning">
-                  <Flex flexDir="column" gap={2}>
-                    <Text>
-                      Here is the test data we found. You can use these as
-                      variables in your action steps below.
-                    </Text>
-                    <Text>
-                      HOWEVER: this step would actually have been skipped if
-                      this pipe was published! We are just displaying results to
-                      enable you to test. Please be careful - results here may
-                      not be indicative of actual pipe output!
-                    </Text>
-                  </Flex>
-                </Infobox>
-              ) : (
-                <Infobox
-                  icon={
-                    <Icon as={BiCheck} color="interaction.success.default" />
-                  }
-                  color="grey.900"
-                  bg="interaction.success-subtle.default"
-                >
-                  Here is the test data we found. You can use these as variables
-                  in your action steps below.
-                </Infobox>
-              )}
-              <Box maxH="25rem" overflowY="scroll" w="100%">
-                <VariablesList variables={stepsWithVariables[0].output} />
-              </Box>
-            </Box>
-          )}
+          <TestResult
+            step={step}
+            selectedActionOrTrigger={selectedActionOrTrigger}
+            stepsWithVariables={stepsWithVariables}
+            isExecuted={isExecuted}
+          />
 
           <LoadingButton
             fullWidth
