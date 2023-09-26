@@ -1,6 +1,6 @@
 import { type IStep } from '@plumber/types'
 
-import { useCallback, useContext, useMemo, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { BranchContext } from 'components/FlowStepGroup/Content/IfThen/BranchContext'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
@@ -136,23 +136,25 @@ export function areAllIfThenBranchesCompleted(
  * Using many consts as purpose of the conditions may not be immediately
  * apparent.
  */
-export function useIsIfThenSelectable(isLastStep: boolean): boolean {
+export function useIsIfThenSelectable({
+  isLastStep,
+}: {
+  isLastStep: boolean
+}): boolean {
   const { depth } = useContext(BranchContext)
   const { flags: ldFlags } = useContext(LaunchDarklyContext)
 
-  return useMemo(() => {
-    if (!isLastStep) {
-      return false
-    }
+  if (!isLastStep) {
+    return false
+  }
 
-    const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
-    if (canUseNestedBranch) {
-      return true
-    }
+  const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
+  if (canUseNestedBranch) {
+    return true
+  }
 
-    const isNestedBranch = depth > 0
-    return !isNestedBranch
-  }, [isLastStep, depth, ldFlags])
+  const isNestedBranch = depth > 0
+  return !isNestedBranch
 }
 
 /**

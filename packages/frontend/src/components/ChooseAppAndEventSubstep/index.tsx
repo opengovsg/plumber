@@ -92,7 +92,7 @@ function ChooseAppAndEventSubstep(
   })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  const isIfThenSelectable = useIsIfThenSelectable(isLastStep)
+  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const appOptions = useMemo(
     () =>
       apps
@@ -123,7 +123,7 @@ function ChooseAppAndEventSubstep(
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
         ?.map((app) => optionGenerator(app)) ?? [],
-    [apps, step.position, isIfThenSelectable, launchDarkly.flags],
+    [apps, isIfThenSelectable, launchDarkly.flags],
   )
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
