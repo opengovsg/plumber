@@ -3,6 +3,7 @@ import { ref } from 'objection'
 import ExecutionStep from '@/models/execution-step'
 import actionQueue from '@/queues/action'
 import Context from '@/types/express/context'
+import Execution from '@/models/execution'
 
 type Params = {
   input: {
@@ -38,6 +39,9 @@ const retryExecutionStep = async (
     throw new Error('Job not found or has expired')
   }
   await job.retry()
+  await Execution.query()
+    .patch({ status: 'pending' })
+    .findById(executionStep.executionId)
   return true
 }
 

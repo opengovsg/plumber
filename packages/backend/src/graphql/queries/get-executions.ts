@@ -1,12 +1,14 @@
 // import { raw } from 'objection'
 
 import Execution from '@/models/execution'
+import ExtendedQueryBuilder from '@/models/query-builder'
 import Context from '@/types/express/context'
 
 type Params = {
   limit: number
   offset: number
   status?: string
+  searchInput?: string
 }
 
 const getExecutions = async (
@@ -14,6 +16,16 @@ const getExecutions = async (
   params: Params,
   context: Context,
 ) => {
+  const filterBuilder = (builder: ExtendedQueryBuilder<Execution>) => {
+    builder.where('test_run', 'FALSE')
+    if (params.status) {
+      builder.where('status', params.status)
+    }
+    if (params.searchInput) {
+      builder.where('name', 'ilike', `${params.searchInput}%`)
+    }
+  }
+
   const results = context.currentUser
     .$relatedQuery('executions')
     .withGraphFetched({
@@ -21,12 +33,7 @@ const getExecutions = async (
         steps: true,
       },
     })
-    .where((builder) => {
-      builder.where('test_run', 'FALSE')
-      if (params.status) {
-        builder.where('status', params.status)
-      }
-    })
+    .where(filterBuilder)
     .limit(params.limit)
     .offset(params.offset)
     .orderBy('created_at', 'desc')
@@ -107,12 +114,7 @@ const getExecutions = async (
 
   const resultSize = context.currentUser
     .$relatedQuery('executions')
-    .where((builder) => {
-      builder.where('test_run', 'FALSE')
-      if (params.status) {
-        builder.where('executions.status', params.status)
-      }
-    })
+    .where(filterBuilder)
     .resultSize()
 
   const [records, count] = await Promise.all([results, resultSize])

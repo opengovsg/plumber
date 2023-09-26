@@ -6,10 +6,10 @@ import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
+import Execution from '@/models/execution'
 import Step from '@/models/step'
 import actionQueue from '@/queues/action'
 import { processAction } from '@/services/action'
-import Execution from '@/models/execution'
 
 type JobData = {
   flowId: string

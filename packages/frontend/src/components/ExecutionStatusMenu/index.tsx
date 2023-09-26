@@ -8,6 +8,7 @@ import {
   MenuItemOption,
   MenuList,
   MenuOptionGroup,
+  Portal,
   Text,
 } from '@chakra-ui/react'
 
@@ -24,6 +25,7 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
       <MenuButton
         bg="white"
         as={Button}
+        size="xs"
         variant="clear"
         _hover={{ bg: 'interaction.tinted.main.hover' }}
         _active={{ bg: 'interaction.tinted.main.active' }}
@@ -35,34 +37,36 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
           </Text>
         </Flex>
       </MenuButton>
-      <MenuList mt={0} minW="10.625rem" borderRadius={1}>
-        <MenuOptionGroup
-          defaultValue={filterStatus}
-          type="radio"
-          onChange={(val) => onFilterChange(val as string)}
-        >
-          <MenuItemOption value="">
-            <Text textStyle="body-1" color="base.content.strong">
-              All Executions
-            </Text>
-          </MenuItemOption>
-          <MenuItemOption value="Success">
-            <Text textStyle="body-1" color="base.content.strong">
-              Success
-            </Text>
-          </MenuItemOption>
-          <MenuItemOption value="Failure">
-            <Text textStyle="body-1" color="base.content.strong">
-              Failure
-            </Text>
-          </MenuItemOption>
-          <MenuItemOption value="Pending">
-            <Text textStyle="body-1" color="base.content.strong">
-              Pending
-            </Text>
-          </MenuItemOption>
-        </MenuOptionGroup>
-      </MenuList>
+      <Portal>
+        <MenuList mt={0} w="10.625rem" borderRadius={1}>
+          <MenuOptionGroup
+            type="radio"
+            onChange={(val) => onFilterChange(val as string)}
+            value={filterStatus}
+          >
+            <MenuItemOption value="">
+              <Text textStyle="body-1" color="base.content.strong">
+                All Executions
+              </Text>
+            </MenuItemOption>
+            <MenuItemOption value="Success">
+              <Text textStyle="body-1" color="base.content.strong">
+                Success
+              </Text>
+            </MenuItemOption>
+            <MenuItemOption value="Failure">
+              <Text textStyle="body-1" color="base.content.strong">
+                Failure
+              </Text>
+            </MenuItemOption>
+            <MenuItemOption value="Pending">
+              <Text textStyle="body-1" color="base.content.strong">
+                Pending
+              </Text>
+            </MenuItemOption>
+          </MenuOptionGroup>
+        </MenuList>
+      </Portal>
     </Menu>
   )
 }

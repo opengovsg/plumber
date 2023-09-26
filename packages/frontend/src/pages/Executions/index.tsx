@@ -1,12 +1,21 @@
 import type { IExecution } from '@plumber/types'
 
 import * as React from 'react'
+import { BiSearch } from 'react-icons/bi'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
+import {
+  Divider as ChakraDivider,
+  Flex,
+  Icon,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  InputRightElement,
+} from '@chakra-ui/react'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
-import Grid from '@mui/material/Grid'
 import Pagination from '@mui/material/Pagination'
 import PaginationItem from '@mui/material/PaginationItem'
 import Container from 'components/Container'
@@ -20,10 +29,15 @@ import useFormatMessage from 'hooks/useFormatMessage'
 const EXECUTION_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Executions'
 
-const getLimitAndOffset = (page: number, filterStatus: string) => ({
+const getLimitAndOffset = (
+  page: number,
+  filterStatus: string,
+  searchInput: string,
+) => ({
   limit: EXECUTION_PER_PAGE,
   offset: (page - 1) * EXECUTION_PER_PAGE,
   status: filterStatus,
+  searchInput: searchInput,
 })
 
 export default function Executions(): React.ReactElement {
@@ -31,16 +45,28 @@ export default function Executions(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
 
+  const [searchInput, setSearchInput] = React.useState<string>('')
+
+  const handleSearchValue = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(event.target.value)
+  }
+
   const [filterStatus, setFilterStatus] = React.useState<string>(
     searchParams.get('status') || '',
   )
+
   const onFilterChange = (status: string) => {
     setFilterStatus(status)
-    setSearchParams()
+    setSearchParams({ status })
   }
 
+  // checks for updates to re-render execution status menu
+  React.useEffect(() => {
+    setFilterStatus(searchParams.get('status') || '')
+  }, [searchParams])
+
   const { data, refetch, loading } = useQuery(GET_EXECUTIONS, {
-    variables: getLimitAndOffset(page, filterStatus),
+    variables: getLimitAndOffset(page, filterStatus, searchInput),
     fetchPolicy: 'cache-and-network',
     pollInterval: 5000,
   })
@@ -48,8 +74,8 @@ export default function Executions(): React.ReactElement {
   const { pageInfo, edges } = getExecutions
 
   React.useEffect(() => {
-    refetch(getLimitAndOffset(page, filterStatus.toLowerCase()))
-  }, [refetch, page, filterStatus])
+    refetch(getLimitAndOffset(page, filterStatus.toLowerCase(), searchInput))
+  }, [refetch, page, filterStatus, searchInput])
 
   const executions: IExecution[] = edges?.map(
     ({ node }: { node: IExecution }) => node,
@@ -59,24 +85,38 @@ export default function Executions(): React.ReactElement {
   return (
     <Box sx={{ py: 3 }}>
       <Container variant="page">
-        <Grid container sx={{ mb: [0, 3] }} columnSpacing={1.5} rowSpacing={3}>
-          <Grid
-            container
-            item
-            xs
-            sm
-            alignItems="center"
-            order={{ xs: 0, height: 80 }}
-          >
-            <PageTitle title={EXECUTIONS_TITLE} />
-          </Grid>
-          <Grid item>
-            <ExecutionStatusMenu
-              filterStatus={filterStatus}
-              onFilterChange={onFilterChange}
-            ></ExecutionStatusMenu>
-          </Grid>
-        </Grid>
+        <Flex
+          flexDir={{ base: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems="center"
+          gap={4}
+          mb={8}
+        >
+          <PageTitle title={EXECUTIONS_TITLE} />
+          <InputGroup w="25rem">
+            <InputLeftElement>
+              <Icon as={BiSearch} boxSize={5} />
+            </InputLeftElement>
+            <Input
+              textStyle="body-1"
+              pr="7.5rem"
+              placeholder="Search by pipe name"
+              onChange={handleSearchValue}
+            ></Input>
+            <InputRightElement w="fit-content" p={1}>
+              <ChakraDivider
+                borderColor="base.divider.medium"
+                h={5}
+                mr={1}
+                orientation="vertical"
+              />
+              <ExecutionStatusMenu
+                filterStatus={filterStatus}
+                onFilterChange={onFilterChange}
+              ></ExecutionStatusMenu>
+            </InputRightElement>
+          </InputGroup>
+        </Flex>
 
         <Divider sx={{ mt: [2, 0], mb: 2 }} />
 
@@ -96,14 +136,11 @@ export default function Executions(): React.ReactElement {
             <ExecutionRow key={execution.id} execution={execution} />
           ))}
 
-        {pageInfo && pageInfo.totalPages > 1 && (
+        {!loading && pageInfo && pageInfo.totalPages > 1 && (
           <Pagination
             sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}
             page={pageInfo?.currentPage}
             count={pageInfo?.totalPages}
-            onChange={(event, page) =>
-              setSearchParams({ page: page.toString(), status: filterStatus })
-            }
             renderItem={(item) => (
               <PaginationItem
                 component={Link}
