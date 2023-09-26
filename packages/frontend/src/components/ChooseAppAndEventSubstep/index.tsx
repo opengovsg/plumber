@@ -17,6 +17,7 @@ import { GET_APPS } from 'graphql/queries/get-apps'
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
+  useIfThenInitializer,
   useIsIfThenSelectable,
 } from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
@@ -178,14 +179,43 @@ function ChooseAppAndEventSubstep(
 
   const valid: boolean = !!step.key && !!step.appKey
 
-  // placeholders
+  //
+  // Handle app or event changes
+  //
+  const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
   const onEventChange = useCallback(
-    (event: React.SyntheticEvent, selectedOption: unknown) => {
+    async (_event: SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
         const typedSelectedOption = selectedOption as { value: string }
         const option: { value: string } = typedSelectedOption
         const eventKey = option?.value as string
+
+        //
+        // ** EDGE CASE AGAIN V2 **
+        //
+        // Hello, the if-then edge case demon here again and again!
+        //
+        // If-then is weird in that we need to pre-populate with 2 branches
+        // upon initial selection (the only action that spawns 2 steps upon
+        // first selection), and we also need to update the first branch's
+        // parameters.
+        //
+        // Since there are a bunch of edge cases for If-Then in this component
+        // already, let's localize the damage and continue adding edge cases
+        // here.
+        //
+        // Note that we don't need to check for inequality to the current
+        // step.key, since we don't display the action drop-down after someone
+        // selects If-Then.
+        //
+        if (
+          app?.key === TOOLBOX_APP_KEY &&
+          eventKey === TOOLBOX_ACTIONS.IfThen
+        ) {
+          await initializeIfThen(step)
+          return
+        }
 
         if (step.key !== eventKey) {
           onChange({
@@ -197,11 +227,11 @@ function ChooseAppAndEventSubstep(
         }
       }
     },
-    [step, onChange],
+    [app?.key, step, onChange, initializeIfThen],
   )
 
   const onAppChange = useCallback(
-    (event: SyntheticEvent, selectedOption: unknown) => {
+    (_event: SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
         const typedSelectedOption = selectedOption as { value: string }
@@ -225,6 +255,8 @@ function ChooseAppAndEventSubstep(
 
   const onToggle = expanded ? onCollapse : onExpand
 
+  const isLoading = launchDarkly.isLoading || isInitializingIfThen
+
   return (
     <>
       <FlowSubstepTitle
@@ -247,8 +279,10 @@ function ChooseAppAndEventSubstep(
             fullWidth
             disablePortal
             disableClearable
-            disabled={editorContext.readOnly}
-            options={appOptions}
+            disabled={isLoading || editorContext.readOnly}
+            loading={isLoading}
+            // Don't display options until we can check feature flags!
+            options={launchDarkly.isLoading ? [] : appOptions}
             renderOption={(optionProps, option) => (
               <li
                 {...optionProps}
@@ -300,9 +334,10 @@ function ChooseAppAndEventSubstep(
                 fullWidth
                 disablePortal
                 disableClearable
-                disabled={editorContext.readOnly}
-                options={launchDarkly.isLoading ? [] : actionOrTriggerOptions}
-                loading={launchDarkly.isLoading}
+                disabled={isLoading || editorContext.readOnly}
+                loading={isLoading}
+                // Don't display options until we can check feature flags!
+                options={isLoading ? [] : actionOrTriggerOptions}
                 renderInput={(params) => (
                   <FormControl>
                     <FormLabel isRequired>
