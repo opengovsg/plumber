@@ -25,6 +25,7 @@ import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
 import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
 import useFormatMessage from 'hooks/useFormatMessage'
+import debounce from 'lodash/debounce'
 
 const EXECUTION_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Executions'
@@ -47,8 +48,9 @@ export default function Executions(): React.ReactElement {
 
   const [searchInput, setSearchInput] = React.useState<string>('')
 
+  const setSearchInputDebounced = debounce(setSearchInput, 1000)
   const handleSearchValue = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(event.target.value)
+    setSearchInputDebounced(event.target.value)
   }
 
   const [filterStatus, setFilterStatus] = React.useState<string>(
