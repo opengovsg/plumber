@@ -2,32 +2,32 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import updateTable from '@/graphql/mutations/tiles/update-table'
-import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
-import User from '@/models/user'
 import Context from '@/types/express/context'
+
+import {
+  generateMockContext,
+  generateMockTable,
+  generateMockTableColumns,
+} from './table.mock'
 
 describe('update table mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
-  let dummmyColumn: TableColumnMetadata
+  let dummyColumnId: string
 
   // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
-    context = {
-      req: null,
-      res: null,
-      currentUser: await User.query().findOne({ email: 'tester@open.gov.sg' }),
-    }
+    context = await generateMockContext()
 
-    dummyTable = await TableMetadata.query().insert({
-      name: 'Test Table',
-      userId: context.currentUser.id,
-    })
+    dummyTable = await generateMockTable({ userId: context.currentUser.id })
 
-    dummmyColumn = await dummyTable.$relatedQuery('columns').insert({
-      name: 'Test Column',
-    })
+    dummyColumnId = (
+      await generateMockTableColumns({
+        tableId: dummyTable.id,
+        numColumns: 1,
+      })
+    )[0]
   })
 
   describe('table name changes', () => {
@@ -135,7 +135,7 @@ describe('update table mutation', () => {
             addedColumns: [],
             modifiedColumns: [
               {
-                id: dummmyColumn.id,
+                id: dummyColumnId,
                 name: 'New Column Name',
               },
             ],
@@ -181,7 +181,7 @@ describe('update table mutation', () => {
             name: '',
             addedColumns: [],
             modifiedColumns: [],
-            deletedColumns: [dummmyColumn.id],
+            deletedColumns: [dummyColumnId],
           },
         },
         context,
