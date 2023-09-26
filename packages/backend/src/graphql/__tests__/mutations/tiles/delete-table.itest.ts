@@ -3,33 +3,29 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import deleteTable from '@/graphql/mutations/tiles/delete-table'
 import TableMetadata from '@/models/table-metadata'
-import User from '@/models/user'
 import Context from '@/types/express/context'
+
+import {
+  generateMockContext,
+  generateMockTable,
+  generateMockTableColumns,
+} from './table.mock'
 
 describe('delete table mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
   // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
-    context = {
-      req: null,
-      res: null,
-      currentUser: await User.query().findOne({ email: 'tester@open.gov.sg' }),
-    }
+    context = await generateMockContext()
 
-    dummyTable = await TableMetadata.query().insert({
-      name: 'Test Table',
+    dummyTable = await generateMockTable({
       userId: context.currentUser.id,
     })
 
-    await dummyTable.$relatedQuery('columns').insert([
-      {
-        name: 'Test Column',
-      },
-      {
-        name: 'Test Column',
-      },
-    ])
+    await generateMockTableColumns({
+      tableId: dummyTable.id,
+      numColumns: 2,
+    })
   })
 
   it('should delete table and columns', async () => {
