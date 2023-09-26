@@ -14,6 +14,11 @@ import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+  useIsIfThenSelectable,
+} from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseAppAndEventSubstepProps = {
@@ -24,11 +29,7 @@ type ChooseAppAndEventSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
-  isBannedAction: (
-    step: IStep,
-    appKey: string,
-    actionKey: string,
-  ) => [boolean, string | null]
+  isLastStep: boolean
 }
 
 const optionGenerator = (app: {
@@ -60,14 +61,14 @@ function ChooseAppAndEventSubstep(
   props: ChooseAppAndEventSubstepProps,
 ): React.ReactElement {
   const {
+    step,
+    isLastStep,
     substep,
     expanded = false,
     onExpand,
     onCollapse,
-    step,
     onSubmit,
     onChange,
-    isBannedAction,
   } = props
 
   const launchDarkly = useContext(LaunchDarklyContext)
@@ -82,7 +83,7 @@ function ChooseAppAndEventSubstep(
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
 
-  apps.sort((a, b) => {
+  apps?.sort((a, b) => {
     if (a.description) {
       return -1
     }
@@ -90,27 +91,67 @@ function ChooseAppAndEventSubstep(
   })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
+  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const appOptions = useMemo(
     () =>
       apps
-        // Filter away stuff hidden behind feature flags
         ?.filter((app) => {
+          //
+          // ** EDGE CASE **
+          //
+          // We want to hide If-Then in some cases (see useIsIfThenSelectable
+          // comments).
+          //
+          // We edge case since a generic implementation adds too much
+          // complexity; we'll move to generic if there's another use case for
+          // such hiding.
+          //
+          // If everyone forgets about this, it's OK because the next guy to
+          // add a new toolbox action will get confused why toolbox is missing
+          // ... and find this.
+          //
+          if (app.key === TOOLBOX_APP_KEY && !isIfThenSelectable) {
+            return false
+          }
+
+          // Filter away stuff hidden behind feature flags
           if (!launchDarkly.flags || !app?.key) {
             return true
           }
           const launchDarklyKey = ['app', app.key].join('_')
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
-        .map((app) => optionGenerator(app)) ?? [],
-    [apps, launchDarkly.flags],
+        ?.map((app) => optionGenerator(app)) ?? [],
+    [apps, isIfThenSelectable, launchDarkly.flags],
   )
+
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
   const actionOrTriggerOptions = useMemo(
     () =>
       actionsOrTriggers
-        // Filter away stuff hidden behind feature flags
         .filter((actionOrTrigger) => {
+          //
+          // ** EDGE CASE AGAIN **
+          //
+          // Hello, the if-then edge case demon here again!
+          //
+          // To ensure if-then is always the last step, we also need to guard
+          // against users selecting toolbox first, then adding steps after the
+          // toolbox step, then selecting If-Then in the toolbox step.
+          //
+          // Luckily, we can remove the top app-hiding edge case once we
+          // implement for-each, and toolbox will have multiple actions.
+          //
+          if (
+            app?.key === TOOLBOX_APP_KEY &&
+            actionOrTrigger?.key === TOOLBOX_ACTIONS.IfThen &&
+            !isIfThenSelectable
+          ) {
+            return false
+          }
+
+          // Filter away stuff hidden behind feature flags
           if (!launchDarkly.flags || !app?.key) {
             return true
           }
@@ -124,21 +165,10 @@ function ChooseAppAndEventSubstep(
         })
         //
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly.flags],
+    [app?.key, launchDarkly.flags, isIfThenSelectable, step],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
-  )
-
-  const getActionOrTriggerOptionDisabled = useCallback(
-    ({ value: actionKey }: ReturnType<typeof eventOptionGenerator>) =>
-      app?.key ? isBannedAction(step, app.key, actionKey)[0] : false,
-    [step, app?.key, isBannedAction],
-  )
-  const getActionOrTriggerOptionDisabledReason = useCallback(
-    ({ value: actionKey }: ReturnType<typeof eventOptionGenerator>) =>
-      app?.key ? isBannedAction(step, app.key, actionKey)[1] : null,
-    [step, app?.key, isBannedAction],
   )
 
   const isWebhook =
@@ -271,7 +301,6 @@ function ChooseAppAndEventSubstep(
                 disablePortal
                 disableClearable
                 disabled={editorContext.readOnly}
-                getOptionDisabled={getActionOrTriggerOptionDisabled}
                 options={launchDarkly.isLoading ? [] : actionOrTriggerOptions}
                 loading={launchDarkly.isLoading}
                 renderInput={(params) => (
@@ -309,14 +338,7 @@ function ChooseAppAndEventSubstep(
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Flex flexDir="column">
-                      <Text>{option.label}</Text>
-                      {getActionOrTriggerOptionDisabled(option) && (
-                        <Text fontSize="xs" color="red.500">
-                          {getActionOrTriggerOptionDisabledReason(option)}
-                        </Text>
-                      )}
-                    </Flex>
+                    <Text>{option.label}</Text>
 
                     {option.type === 'webhook' && (
                       <Chip

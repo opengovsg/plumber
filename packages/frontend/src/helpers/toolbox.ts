@@ -1,5 +1,9 @@
 import { type IStep } from '@plumber/types'
 
+import { useContext } from 'react'
+import { BranchContext } from 'components/FlowStepGroup/Content/IfThen/BranchContext'
+import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
+
 export const TOOLBOX_APP_KEY = 'toolbox'
 
 export enum TOOLBOX_ACTIONS {
@@ -113,4 +117,37 @@ export function areAllIfThenBranchesCompleted(
 ): boolean {
   const branches = extractBranchesWithSteps(allBranches, depth)
   return branches.every(isIfThenBranchCompleted)
+}
+
+/**
+ * Helper hook to check if If-Then action should be selectable; supports edge
+ * case in ChooseAppAndEventSubstep.
+ *
+ * If-Then should only be selectable if:
+ * - We're the last step.
+ * - We are not inside a branch (unless we're whitelisted for nested
+ *   branches via LD).
+ *
+ * Using many consts as purpose of the conditions may not be immediately
+ * apparent.
+ */
+export function useIsIfThenSelectable({
+  isLastStep,
+}: {
+  isLastStep: boolean
+}): boolean {
+  const { depth } = useContext(BranchContext)
+  const { flags: ldFlags } = useContext(LaunchDarklyContext)
+
+  if (!isLastStep) {
+    return false
+  }
+
+  const canUseNestedBranch = ldFlags?.['feature_nested_if_then'] ?? false
+  if (canUseNestedBranch) {
+    return true
+  }
+
+  const isNestedBranch = depth > 0
+  return !isNestedBranch
 }
