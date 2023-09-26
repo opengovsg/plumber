@@ -94,12 +94,6 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
             </GridItem>
             <GridItem area="arrow-container">
               <Flex alignItems="center" gap={4}>
-                {execution.testRun && (
-                  <Badge py={1} px={2} colorScheme="grey" variant="subtle">
-                    <Text>Test run</Text>
-                  </Badge>
-                )}
-
                 <Badge
                   py={1}
                   px={2}
