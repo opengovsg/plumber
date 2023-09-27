@@ -13,8 +13,7 @@ export default defineAction({
       key: 'delayUntil',
       type: 'string' as const,
       required: true,
-      description:
-        'Delay until the date. E.g. 2023-08-25, 25 Aug 2023, 25/08/2023',
+      description: 'Delay until the date. E.g. 25 Aug 2023',
       variables: true,
     },
     {
