@@ -1,7 +1,8 @@
-import { Worker } from 'bullmq'
+import { Job, UnrecoverableError, Worker } from 'bullmq'
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
+import { ActionBackoffStrategy } from '@/helpers/actions'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import logger from '@/helpers/logger'
@@ -61,6 +62,28 @@ export const worker = new Worker(
     prefix: '{actionQ}',
     connection: createRedisClient(),
     concurrency: appConfig.workerActionConcurrency,
+    settings: {
+      backoffStrategy: (
+        attemptsMade: number,
+        type: string,
+        err: Error,
+        _job: Job,
+      ) => {
+        const connectivityErrSigns = ['ETIMEDOUT', 'ECONNRESET']
+        switch (type) {
+          case ActionBackoffStrategy.ExponentialConnectivity: {
+            if (!connectivityErrSigns.some((s) => err.message.includes(s))) {
+              // stop retrying
+              throw new UnrecoverableError(err.message)
+            }
+            return Math.pow(2, attemptsMade) * 5000 // 5, 10, 20, 40, ...
+          }
+          default: {
+            throw new Error('invalid type')
+          }
+        }
+      },
+    },
   },
 )
 

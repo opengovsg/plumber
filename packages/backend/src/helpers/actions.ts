@@ -36,3 +36,7 @@ export async function doesActionProcessFiles(
     getCompositeKey(appKey, actionKey),
   )
 }
+
+export enum ActionBackoffStrategy {
+  ExponentialConnectivity = 'exponential-backoff-connectivity',
+}
