@@ -1,10 +1,6 @@
-import * as React from 'react'
-import SearchIcon from '@mui/icons-material/Search'
-import FormControl from '@mui/material/FormControl'
-import InputAdornment from '@mui/material/InputAdornment'
-import InputLabel from '@mui/material/InputLabel'
-import OutlinedInput from '@mui/material/OutlinedInput'
-import useFormatMessage from 'hooks/useFormatMessage'
+import { BiSearch } from 'react-icons/bi'
+import { Icon, InputGroup, InputRightElement } from '@chakra-ui/react'
+import { Input } from '@opengovsg/design-system-react'
 
 type SearchInputProps = {
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
@@ -13,27 +9,20 @@ type SearchInputProps = {
 export default function SearchInput({
   onChange,
 }: SearchInputProps): React.ReactElement {
-  const formatMessage = useFormatMessage()
-
   return (
-    <FormControl variant="outlined" fullWidth>
-      <InputLabel htmlFor="search-input">
-        {formatMessage('searchPlaceholder')}
-      </InputLabel>
-
-      <OutlinedInput
-        id="search-input"
+    <InputGroup>
+      <Input
         type="text"
-        size="medium"
-        fullWidth
+        w="full"
+        size="lg"
+        fontSize="md"
         onChange={onChange}
-        endAdornment={
-          <InputAdornment position="end">
-            <SearchIcon sx={{ color: (theme) => theme.palette.primary.main }} />
-          </InputAdornment>
-        }
-        label={formatMessage('searchPlaceholder')}
+        placeholder="Search"
       />
-    </FormControl>
+      <InputRightElement
+        h="100%"
+        children={<Icon as={BiSearch} style={{ height: 20, width: 20 }} />}
+      />
+    </InputGroup>
   )
 }

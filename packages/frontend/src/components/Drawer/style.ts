@@ -29,6 +29,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
 })
 
 export const Drawer = styled(MuiSwipeableDrawer)(({ theme, open }) => ({
+  zIndex: 10,
   width: drawerWidth,
   flexShrink: 0,
   whiteSpace: 'nowrap',

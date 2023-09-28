@@ -2,11 +2,11 @@ import type { IConnection } from '@plumber/types'
 
 import * as React from 'react'
 import { useLazyQuery, useMutation } from '@apollo/client'
+import { Card } from '@chakra-ui/react'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
 import CardActionArea from '@mui/material/CardActionArea'
 import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
@@ -82,7 +82,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         })
       } else if (action.type === 'test') {
         setVerificationVisible(true)
-        testConnection({ variables: { id } })
+        testConnection({ variables: { connectionId: id } })
       }
     },
     [deleteConnection, id, testConnection, formatMessage, enqueueSnackbar],
@@ -94,7 +94,14 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
 
   return (
     <>
-      <Card sx={{ my: 2 }} data-test="app-connection-row">
+      <Card
+        boxShadow="none"
+        _hover={{ bg: 'interaction.muted.neutral.hover' }}
+        _active={{ bg: 'interaction.muted.neutral.active' }}
+        borderRadius="0"
+        borderBottom="1px solid"
+        borderBottomColor="base.divider.medium"
+      >
         <CardActionArea onClick={onContextMenuClick}>
           <CardContent>
             <Stack justifyContent="center" alignItems="flex-start" spacing={1}>

@@ -108,12 +108,28 @@
           "valueFrom": "plumber-<ENVIRONMENT>-postman-api-key"
         },
         {
+          "name": "FORMSG_API_KEY",
+          "valueFrom": "plumber-<ENVIRONMENT>-formsg-api-key"
+        },
+        {
           "name": "WORKER_ACTION_CONCURRENCY",
           "valueFrom": "plumber-<ENVIRONMENT>-worker-action-concurrency"
         },
         {
           "name": "S3_COMMON_BUCKET",
           "valueFrom": "plumber-<ENVIRONMENT>-s3-common-bucket"
+        },
+        {
+          "name": "SGID_CLIENT_ID",
+          "valueFrom": "plumber-<ENVIRONMENT>-sgid-client-id"
+        },
+        {
+          "name": "SGID_CLIENT_SECRET",
+          "valueFrom": "plumber-<ENVIRONMENT>-sgid-client-secret"
+        },
+        {
+          "name": "SGID_PRIVATE_KEY",
+          "valueFrom": "plumber-<ENVIRONMENT>-sgid-private-key"
         }
       ],
       "logConfiguration": {

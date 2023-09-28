@@ -7,13 +7,11 @@ import type {
   ITriggerInstructions,
 } from '@plumber/types'
 
-import * as React from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { BiCheck } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
+import { Box, Text } from '@chakra-ui/react'
 import LoadingButton from '@mui/lab/LoadingButton'
-import Alert from '@mui/material/Alert'
-import AlertTitle from '@mui/material/AlertTitle'
-import Box from '@mui/material/Box'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import { Infobox } from '@opengovsg/design-system-react'
@@ -23,7 +21,6 @@ import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import { extractVariables, filterVariables } from 'helpers/variables'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -60,7 +57,7 @@ function serializeErrors(graphQLErrors: any) {
   })
 }
 
-function TestSubstep(props: TestSubstepProps): React.ReactElement {
+function TestSubstep(props: TestSubstepProps): JSX.Element {
   const {
     substep,
     expanded = false,
@@ -72,23 +69,29 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
     selectedActionOrTrigger,
   } = props
 
-  const formatMessage = useFormatMessage()
-  const editorContext = React.useContext(EditorContext)
+  const editorContext = useContext(EditorContext)
 
   const [executeFlow, { data, error, loading, called }] = useMutation(
     EXECUTE_FLOW,
     { context: { autoSnackbar: false } },
   )
-  const response = data?.executeFlow?.data
-  const executionSteps = response && [data?.executeFlow?.step] // must contain only the current execution step
 
-  const [stepsWithVariables] = React.useMemo(() => {
-    const stepsWithVars = filterVariables(
-      extractVariables(executionSteps),
+  const {
+    data: response,
+    skippedIfPublished = false,
+    step: executionStep,
+  } = data?.executeFlow ?? {}
+
+  const stepsWithVariables = useMemo(() => {
+    if (!executionStep) {
+      return []
+    }
+
+    return filterVariables(
+      extractVariables([executionStep]),
       (variable) => (variable.type ?? 'text') === 'text',
     )
-    return [stepsWithVars]
-  }, [executionSteps])
+  }, [executionStep])
 
   const isExecuted = !error && called && !loading
   const hasNoOutput = !response && isExecuted
@@ -96,7 +99,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
 
   const { name } = substep
 
-  const executeTestFlow = React.useCallback(() => {
+  const executeTestFlow = useCallback(() => {
     executeFlow({
       variables: {
         input: {
@@ -106,7 +109,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
     })
   }, [onSubmit, onContinue, isExecuted, step.id])
 
-  const onContinueClick = React.useCallback(() => {
+  const onContinueClick = useCallback(() => {
     if (onContinue) {
       onContinue()
     }
@@ -115,7 +118,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
   const onToggle = expanded ? onCollapse : onExpand
 
   return (
-    <React.Fragment>
+    <>
       <FlowSubstepTitle expanded={expanded} onClick={onToggle} title={name} />
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <ListItem
@@ -127,14 +130,14 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
           }}
         >
           {!!error?.graphQLErrors?.length && (
-            <Alert
-              severity="error"
+            <Infobox
+              variant="error"
               sx={{ mb: 2, fontWeight: 500, width: '100%' }}
             >
               {serializeErrors(error.graphQLErrors).map((error: any) => (
                 <div>{error.message}</div>
               ))}
-            </Alert>
+            </Infobox>
           )}
           {step.webhookUrl && (
             <WebhookUrlInfo
@@ -148,23 +151,34 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
           )}
 
           {hasNoOutput && (
-            <Alert severity="warning" sx={{ mb: 1, width: '100%' }}>
-              <AlertTitle sx={{ fontWeight: 700 }}>
-                {formatMessage('flowEditor.noTestDataTitle')}
-              </AlertTitle>
-
-              <Box sx={{ fontWeight: 400 }}>
-                {selectedActionOrTrigger &&
-                'webhookTriggerInstructions' in selectedActionOrTrigger &&
-                selectedActionOrTrigger.webhookTriggerInstructions?.errorMsg
-                  ? selectedActionOrTrigger.webhookTriggerInstructions.errorMsg
-                  : formatMessage('flowEditor.noTestDataMessage')}
+            <Infobox variant="warning" width="100%">
+              <Box>
+                <Text fontWeight="600">We couldn't find any test data</Text>
+                <Text mt={0.5}>
+                  {selectedActionOrTrigger &&
+                  'webhookTriggerInstructions' in selectedActionOrTrigger &&
+                  selectedActionOrTrigger.webhookTriggerInstructions?.errorMsg
+                    ? selectedActionOrTrigger.webhookTriggerInstructions
+                        .errorMsg
+                    : ''}
+                </Text>
               </Box>
-            </Alert>
+            </Infobox>
+          )}
+
+          {skippedIfPublished && (
+            <Infobox variant="warning" width="full">
+              <Text>
+                This step would actually have been skipped if this pipe was
+                published! We are just displaying results to enable you to test.
+                Please be careful - results here may not be indicative of actual
+                pipe output!
+              </Text>
+            </Infobox>
           )}
 
           {stepsWithVariables.length === 1 && (
-            <Box sx={{ width: '100%' }}>
+            <Box w="100%">
               <Infobox
                 icon={<BiCheck color="#0F796F" />}
                 style={{
@@ -175,14 +189,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
                 Here is the test data we found. You can use these as variables
                 in your action steps below.
               </Infobox>
-              <Box
-                sx={{
-                  maxHeight: '25rem',
-                  overflowY: 'scroll',
-                  width: '100%',
-                }}
-                data-test="flow-test-substep-output"
-              >
+              <Box maxH="25rem" overflowY="scroll" w="100%">
                 <VariablesList variables={stepsWithVariables[0].output} />
               </Box>
             </Box>
@@ -198,9 +205,7 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
             color="primary"
             data-test="flow-substep-continue-button"
           >
-            {isCompleted
-              ? formatMessage('flowEditor.testAgain')
-              : formatMessage('flowEditor.testStep')}
+            {isCompleted ? 'Test again' : 'Test Step'}
           </LoadingButton>
           {isCompleted && (
             <LoadingButton
@@ -213,12 +218,12 @@ function TestSubstep(props: TestSubstepProps): React.ReactElement {
               color="primary"
               data-test="flow-substep-continue-button"
             >
-              {formatMessage('flowEditor.continue')}
+              Continue
             </LoadingButton>
           )}
         </ListItem>
       </Collapse>
-    </React.Fragment>
+    </>
   )
 }
 

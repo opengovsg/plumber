@@ -1,28 +1,41 @@
 import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { useLazyQuery, useQuery } from '@apollo/client'
+import {
+  Fragment,
+  type MouseEventHandler,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+import { useLazyQuery, useMutation, useQuery } from '@apollo/client'
 import { CircularProgress } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import ChooseAppAndEventSubstep from 'components/ChooseAppAndEventSubstep'
 import ChooseConnectionSubstep from 'components/ChooseConnectionSubstep'
+import FlowStepHeader from 'components/FlowStepHeader'
 import FlowSubstep from 'components/FlowSubstep'
 import Form from 'components/Form'
 import TestSubstep from 'components/TestSubstep'
+import { EditorContext } from 'contexts/Editor'
+import { StepDisplayOverridesContext } from 'contexts/StepDisplayOverrides'
 import { StepExecutionsProvider } from 'contexts/StepExecutions'
+import { StepExecutionsToIncludeContext } from 'contexts/StepExecutionsToInclude'
+import { DELETE_STEP } from 'graphql/mutations/delete-step'
 import { GET_APPS } from 'graphql/queries/get-apps'
+import { GET_FLOW } from 'graphql/queries/get-flow'
 import { GET_STEP_WITH_TEST_EXECUTIONS } from 'graphql/queries/get-step-with-test-executions'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
 
-import StepHeader from './StepHeader'
-
 type FlowStepProps = {
   collapsed?: boolean
   step: IStep
+  isLastStep: boolean
   index?: number
-  onOpen?: () => void
-  onClose?: () => void
+  onOpen: () => void
+  onClose: () => void
   onChange: (step: IStep) => void
   onContinue?: () => void
 }
@@ -91,18 +104,21 @@ function generateValidationSchema(substeps: ISubstep[]) {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { collapsed, onOpen, onClose, onChange, onContinue } = props
-  const step: IStep = props.step
+  const { step, isLastStep, collapsed, onOpen, onClose, onChange, onContinue } =
+    props
   const isTrigger = step.type === 'trigger'
-  const isAction = step.type === 'action'
 
-  const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
+  const editorContext = useContext(EditorContext)
+  const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
-  // FIXME (ogp-weeloong): we shouldn't be querying for apps each time a step is
-  // loaded. Let's fix this in another PR.
-  const { data } = useQuery(GET_APPS, {
-    variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
-  })
+  const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
+  const [currentSubstep, setCurrentSubstep] = useState<number | null>(
+    // OK to set to 1, even if a step has _no_ substeps, everything will just be
+    // collapsed due to matching logic below.
+    cannotChooseApp ? 1 : 0,
+  )
+
+  const { data } = useQuery(GET_APPS)
   const [
     getStepWithTestExecutions,
     { data: stepWithTestExecutionsData, called: _stepWithTestExecutionsCalled },
@@ -121,7 +137,19 @@ export default function FlowStep(
     }
   }, [collapsed, getStepWithTestExecutions, step.id, isTrigger])
 
-  const apps: IApp[] = data?.getApps
+  const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
+  const stepExecutions = useMemo(
+    () =>
+      (stepWithTestExecutionsData?.getStepWithTestExecutions ?? []).filter(
+        (stepExecution: IStep) =>
+          stepExecutionsToInclude?.has(stepExecution.id) ?? true,
+      ),
+    [stepExecutionsToInclude, stepWithTestExecutionsData],
+  )
+
+  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
+    isTrigger ? !!app.triggers?.length : !!app.actions?.length,
+  )
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
@@ -157,14 +185,20 @@ export default function FlowStep(
     [substeps],
   )
 
-  const onStepHeaderClick = useCallback(() => {
-    if (collapsed) {
-      // We're currently collapsed, and user just expanded us.
-      onOpen?.()
-    } else {
-      onClose?.()
-    }
-  }, [collapsed, onOpen, onClose])
+  const isDeletable =
+    displayOverrides?.disableDelete === true
+      ? false
+      : !isTrigger && !editorContext.readOnly
+  const [deleteStep] = useMutation(DELETE_STEP, {
+    refetchQueries: [GET_FLOW],
+  })
+  const onDelete = useCallback<MouseEventHandler>(
+    async (e) => {
+      e.stopPropagation()
+      await deleteStep({ variables: { input: { ids: [step.id] } } })
+    },
+    [step.id],
+  )
 
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
@@ -173,33 +207,43 @@ export default function FlowStep(
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
   return (
-    <StepHeader
-      step={step}
-      app={app}
-      onClick={onStepHeaderClick}
+    <FlowStepHeader
+      iconUrl={app?.iconUrl}
+      caption={
+        displayOverrides?.caption ??
+        (app?.name ? `${step.position}. ${app.name}` : 'Choose an app')
+      }
+      hintAboveCaption={
+        displayOverrides?.hintAboveCaption ?? (isTrigger ? 'Trigger' : 'Action')
+      }
+      isCompleted={step.status === 'completed'}
+      onDelete={isDeletable ? onDelete : undefined}
+      onOpen={onOpen}
+      onClose={onClose}
       collapsed={collapsed ?? false}
     >
-      <StepExecutionsProvider
-        value={stepWithTestExecutionsData?.getStepWithTestExecutions as IStep[]}
-      >
+      <StepExecutionsProvider value={stepExecutions}>
         <Form
           defaultValues={step}
           onSubmit={handleSubmit}
           resolver={stepValidationSchema}
         >
-          <ChooseAppAndEventSubstep
-            expanded={currentSubstep === 0}
-            substep={{
-              key: 'chooAppAndEvent',
-              name: 'Choose app & event',
-              arguments: [],
-            }}
-            onExpand={() => toggleSubstep(0)}
-            onCollapse={() => toggleSubstep(0)}
-            onSubmit={expandNextStep}
-            onChange={handleChange}
-            step={step}
-          />
+          {!cannotChooseApp && (
+            <ChooseAppAndEventSubstep
+              expanded={currentSubstep === 0}
+              substep={{
+                key: 'chooseAppAndEvent',
+                name: 'Choose app & event',
+                arguments: [],
+              }}
+              onExpand={() => toggleSubstep(0)}
+              onCollapse={() => toggleSubstep(0)}
+              onSubmit={expandNextStep}
+              onChange={handleChange}
+              step={step}
+              isLastStep={isLastStep}
+            />
+          )}
 
           {substeps?.length > 0 &&
             substeps.map((substep: ISubstep, index: number) => (
@@ -214,6 +258,7 @@ export default function FlowStep(
                     onChange={handleChange}
                     application={app}
                     step={step}
+                    selectedActionOrTrigger={selectedActionOrTrigger}
                   />
                 )}
 
@@ -248,6 +293,6 @@ export default function FlowStep(
             ))}
         </Form>
       </StepExecutionsProvider>
-    </StepHeader>
+    </FlowStepHeader>
   )
 }

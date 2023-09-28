@@ -1,10 +1,11 @@
 import * as React from 'react'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import ErrorIcon from '@mui/icons-material/Error'
-import ExpandLessIcon from '@mui/icons-material/ExpandLess'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-
-import { ListItemButton, Typography } from './style'
+import {
+  BiChevronDown,
+  BiChevronUp,
+  BiSolidCheckCircle,
+  BiSolidErrorCircle,
+} from 'react-icons/bi'
+import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 
 type FlowSubstepTitleProps = {
   expanded?: boolean
@@ -13,8 +14,17 @@ type FlowSubstepTitleProps = {
   valid?: boolean | null
 }
 
-const validIcon = <CheckCircleIcon color="success" />
-const errorIcon = <ErrorIcon color="error" />
+const validIcon = (
+  <Icon
+    boxSize={6}
+    as={BiSolidCheckCircle}
+    color="interaction.success.default"
+    mr={4}
+  />
+)
+const errorIcon = (
+  <Icon boxSize={6} as={BiSolidErrorCircle} color="yellow.200" mr={4} />
+)
 
 function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
   const { expanded = false, onClick = () => null, valid = null, title } = props
@@ -23,14 +33,26 @@ function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
   const validationStatusIcon = valid ? validIcon : errorIcon
 
   return (
-    <ListItemButton onClick={onClick} selected={expanded} divider>
-      <Typography variant="body2">
-        {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        {title}
-      </Typography>
+    <Box>
+      <Flex
+        onClick={onClick}
+        bg={expanded ? 'interaction.muted.neutral.active' : 'white'}
+        _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
+        justifyContent="space-between"
+        pt={5}
+        pb={5}
+      >
+        <Flex alignItems="center">
+          <Box ml={4} mr={2}>
+            {expanded ? <BiChevronUp /> : <BiChevronDown />}
+          </Box>
+          <Text textStyle="subhead-1">{title}</Text>
+        </Flex>
 
-      {hasValidation && validationStatusIcon}
-    </ListItemButton>
+        {hasValidation && validationStatusIcon}
+      </Flex>
+      <Divider borderColor="base.divider.medium"></Divider>
+    </Box>
   )
 }
 

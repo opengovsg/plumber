@@ -19,7 +19,7 @@ type JobData = {
 export const worker = new Worker(
   'action',
   tracer.wrap('workers.action', async (job) => {
-    const { stepId, flowId, executionId, proceedToNextAction, executionStep } =
+    const { stepId, flowId, executionId, nextStep, executionStep } =
       await processAction({ ...(job.data as JobData), jobId: job.id })
 
     if (executionStep.isFailed) {
@@ -27,7 +27,6 @@ export const worker = new Worker(
     }
 
     const step = await Step.query().findById(stepId).throwIfNotFound()
-    const nextStep = await step.getNextStep()
 
     // dd-trace span tagging
     const span = tracer.scope().active()
@@ -38,7 +37,7 @@ export const worker = new Worker(
       appKey: step.appKey,
     })
 
-    if (!nextStep || !proceedToNextAction) {
+    if (!nextStep) {
       return
     }
 
@@ -53,7 +52,10 @@ export const worker = new Worker(
     let jobOptions = DEFAULT_JOB_OPTIONS
 
     if (step.appKey === 'delay') {
-      jobOptions = { ...DEFAULT_JOB_OPTIONS, delay: delayAsMilliseconds(step) }
+      jobOptions = {
+        ...DEFAULT_JOB_OPTIONS,
+        delay: delayAsMilliseconds(step.key, executionStep.dataOut),
+      }
     }
 
     await actionQueue.add(jobName, jobPayload, jobOptions)

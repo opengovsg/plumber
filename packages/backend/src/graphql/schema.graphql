@@ -6,7 +6,7 @@ type Query {
   ): [App]
   getApp(key: String!): App
   getConnectedApps(name: String): [App]
-  testConnection(id: String!): Connection
+  testConnection(connectionId: String!, stepId: String): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(
     limit: Int!
@@ -39,18 +39,23 @@ type Mutation {
   resetConnection(input: ResetConnectionInput): Connection
   verifyConnection(input: VerifyConnectionInput): Connection
   deleteConnection(input: DeleteConnectionInput): Boolean
+  registerWebhook(input: RegisterWebhookInput): Boolean
   createFlow(input: CreateFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
-  executeFlow(input: ExecuteFlowInput): executeFlowType
+  executeFlow(input: ExecuteFlowInput): ExecuteFlowType
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
-  deleteStep(input: DeleteStepInput): Step
+  deleteStep(input: DeleteStepInput): Flow
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
   logout: Boolean
+  loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
+  loginWithSelectedSgid(
+    input: LoginWithSelectedSgidInput!
+  ): LoginWithSelectedSgidResult!
 }
 
 """
@@ -67,6 +72,7 @@ type Action {
   name: String
   key: String
   description: String
+  groupsLaterSteps: Boolean
   substeps: [ActionSubstep]
 }
 
@@ -89,6 +95,7 @@ type ActionSubstepArgument {
   options: [ArgumentOption]
   source: ActionSubstepArgumentSource
   dependsOn: [String]
+  hidden: Boolean
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
@@ -119,6 +126,7 @@ type App {
   triggers: [Trigger]
   actions: [Action]
   connections: [Connection]
+  description: String
 }
 
 type AppAuth {
@@ -168,9 +176,10 @@ type ConnectionData {
   screenName: String
 }
 
-type executeFlowType {
+type ExecuteFlowType {
   data: JSONObject
   step: Step
+  skippedIfPublished: Boolean
 }
 
 type ExecutionStep {
@@ -258,6 +267,11 @@ input DeleteConnectionInput {
   id: String!
 }
 
+input RegisterWebhookInput {
+  connectionId: String!
+  stepId: String!
+}
+
 input CreateFlowInput {
   triggerAppKey: String
   connectionId: String
@@ -304,7 +318,7 @@ input UpdateStepInput {
 }
 
 input DeleteStepInput {
-  id: String!
+  ids: [String!]!
 }
 
 input RequestOtpInput {
@@ -393,6 +407,7 @@ type Trigger {
   description: String
   pollInterval: Int
   type: String
+  supportsWebhookRegistration: Boolean
   webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
 }
@@ -400,6 +415,7 @@ type Trigger {
 type TriggerInstructions {
   beforeUrlMsg: String
   afterUrlMsg: String
+  hideWebhookUrl: Boolean
   errorMsg: String
 }
 
@@ -443,6 +459,12 @@ type TriggerSubstepArgumentSourceArgument {
   value: String
 }
 
+type TestConnectionResult {
+  connectionVerified: Boolean!
+  webhookVerified: Boolean
+  message: String
+}
+
 type User {
   id: String
   email: String
@@ -475,6 +497,32 @@ type ExecutionStepConnection {
 
 type AppHealth {
   version: String
+}
+
+type SgidPublicOfficerEmployment {
+  workEmail: String
+  agencyName: String
+  departmentName: String
+  employmentType: String
+  employmentTitle: String
+}
+
+input LoginWithSgidInput {
+  authCode: String!
+  nonce: String!
+  verifier: String!
+}
+
+type LoginWithSgidResult {
+  publicOfficerEmployments: [SgidPublicOfficerEmployment!]!
+}
+
+input LoginWithSelectedSgidInput {
+  workEmail: String!
+}
+
+type LoginWithSelectedSgidResult {
+  success: Boolean!
 }
 
 schema {

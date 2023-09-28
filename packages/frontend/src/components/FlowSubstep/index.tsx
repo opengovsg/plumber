@@ -39,7 +39,7 @@ function validateSubstep(substep: ISubstep, step: IStep): boolean {
   const args: IField[] = substep.arguments || []
 
   return args.every((arg) => {
-    if (arg.required === false) {
+    if (arg.hidden || arg.required === false) {
       return true
     }
 
@@ -107,16 +107,18 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
           }}
         >
           <Stack width="100%" spacing={2}>
-            {args?.map((argument) => (
-              <InputCreator
-                key={argument.key}
-                schema={argument}
-                namePrefix="parameters"
-                stepId={step.id}
-                disabled={editorContext.readOnly}
-                showOptionValue={true}
-              />
-            ))}
+            {args
+              ?.filter((argument) => !argument.hidden)
+              ?.map((argument) => (
+                <InputCreator
+                  key={argument.key}
+                  schema={argument}
+                  namePrefix="parameters"
+                  stepId={step.id}
+                  disabled={editorContext.readOnly}
+                  showOptionValue={true}
+                />
+              ))}
           </Stack>
 
           <Button

@@ -2,7 +2,6 @@ import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
-import globalVariable from '@/helpers/global-variable'
 import flowQueue from '@/queues/flow'
 import Context from '@/types/express/context'
 
@@ -43,24 +42,12 @@ const updateFlowStatus = async (
     pattern: interval || EVERY_15_MINUTES_CRON,
   }
 
-  if (trigger.type === 'webhook') {
-    const $ = await globalVariable({
-      flow,
-      connection: await triggerStep.$relatedQuery('connection'),
-      app: await triggerStep.getApp(),
-      step: triggerStep,
-      testRun: false,
-    })
-
-    if (flow.active && trigger.registerHook) {
-      await trigger.registerHook($)
-    } else if (!flow.active && trigger.unregisterHook) {
-      await trigger.unregisterHook($)
-    }
-  } else {
+  if (trigger.type !== 'webhook') {
     if (flow.active) {
+      // FIXME (ogp-weeloong): update published date for all flows in separate
+      // PR.
       flow = await flow.$query().patchAndFetch({
-        published_at: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
       })
 
       const jobName = `${JOB_NAME}-${flow.id}`

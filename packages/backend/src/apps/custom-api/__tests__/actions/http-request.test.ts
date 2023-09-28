@@ -26,6 +26,7 @@ describe('make http request', () => {
       step: {
         id: 'herp-derp',
         appKey: 'webhook',
+        position: 1,
         parameters: {},
       },
       http: {

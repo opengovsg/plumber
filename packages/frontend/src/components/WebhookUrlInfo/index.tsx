@@ -6,7 +6,7 @@ import type { AlertProps } from '@mui/material/Alert'
 
 import TextField from '../TextField'
 
-import { Alert, MessageWrapper } from './style'
+import { Alert } from './style'
 
 type WebhookUrlInfoProps = {
   webhookUrl: string
@@ -16,21 +16,25 @@ type WebhookUrlInfoProps = {
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
   const { webhookUrl, webhookTriggerInstructions, ...alertProps } = props
 
+  const { beforeUrlMsg, afterUrlMsg, hideWebhookUrl } =
+    webhookTriggerInstructions
+
   return (
     <Alert icon={false} color="info" {...alertProps}>
-      <MessageWrapper>
-        <ReactMarkdown>{webhookTriggerInstructions.beforeUrlMsg}</ReactMarkdown>
-      </MessageWrapper>
-      <TextField
-        readOnly
-        clickToCopy={true}
-        name="webhookUrl"
-        fullWidth
-        defaultValue={webhookUrl}
-      />
-      <MessageWrapper>
-        <ReactMarkdown>{webhookTriggerInstructions.afterUrlMsg}</ReactMarkdown>
-      </MessageWrapper>
+      {beforeUrlMsg && <ReactMarkdown>{beforeUrlMsg}</ReactMarkdown>}
+      {!hideWebhookUrl && (
+        <TextField
+          sx={{
+            my: '1rem',
+          }}
+          readOnly
+          clickToCopy={true}
+          name="webhookUrl"
+          fullWidth
+          defaultValue={webhookUrl}
+        />
+      )}
+      {afterUrlMsg && <ReactMarkdown>{afterUrlMsg}</ReactMarkdown>}
     </Alert>
   )
 }
