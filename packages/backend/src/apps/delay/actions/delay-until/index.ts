@@ -31,7 +31,7 @@ export default defineAction({
     const { delayUntil, delayUntilTime } = $.step.parameters
     const delayTimestamp = generateTimestamp(
       delayUntil as string,
-      (delayUntilTime as string) || defaultTime,
+      (delayUntilTime as string) || defaultTime, // catch empty string (user input), null, undefined (backwards compat)
     )
 
     if (isNaN(delayTimestamp)) {
