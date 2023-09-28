@@ -94,7 +94,19 @@ export default function Editor(props: EditorProps): React.ReactElement {
     { refetchQueries: [GET_FLOW] },
   )
 
-  const { flow, steps } = props
+  const { flow, steps: rawSteps } = props
+  const steps = useMemo(
+    // Populate each step's flowId so that IStep isn't LYING about flowId being
+    // non-undefined. We do it here instead of fetching in GraphQL since all
+    // steps have same pipe, so a bit wasteful to repeat this data over the wire.
+    () =>
+      rawSteps.map((step) => ({
+        ...step,
+        flow,
+        flowId: flow.id,
+      })),
+    [flow, rawSteps],
+  )
 
   const [currentStepId, setCurrentStepId] = useState<string | null>(
     steps[0]?.id,
@@ -222,33 +234,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [stepsBeforeGroup],
   )
 
-  //
-  // Build callback which ChooseAppAndEventSubstep uses to check which actions
-  // are banned. This returns a 2-tuple, (true/false, banned reason if true).
-  //
-  // NOTE: This can also be extended to triggers if needed.
-  //
-  const isBannedAction = useCallback(
-    (
-      step: IStep,
-      appKey: string,
-      actionKey: string,
-    ): [boolean, string | null] => {
-      // Only handle grouping actions for now :x
-      if (
-        groupingActions?.has(`${appKey}-${actionKey}`) &&
-        (groupedSteps.length > 0 ||
-          step.position !==
-            stepsBeforeGroup[stepsBeforeGroup.length - 1]?.position)
-      ) {
-        return [true, 'This must be the last step.']
-      }
-
-      return [false, null]
-    },
-    [groupingActions, groupedSteps],
-  )
-
   if (loadingApps) {
     return <CircularProgress isIndeterminate my={2} />
   }
@@ -257,19 +242,19 @@ export default function Editor(props: EditorProps): React.ReactElement {
     <Flex w="full" justifyContent="center">
       <Flex flexDir="column" alignItems="center" py={3} w="53.25rem">
         <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-          {stepsBeforeGroup.map((step, index, steps) => (
+          {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
+                isLastStep={index === steps.length - 1}
                 index={index + 1}
                 collapsed={currentStepId !== step.id}
                 onOpen={() => setCurrentStepId(step.id)}
                 onClose={() => setCurrentStepId(null)}
                 onChange={onStepChange}
                 onContinue={() => {
-                  setCurrentStepId(steps[index + 1]?.id)
+                  setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
                 }}
-                isBannedAction={isBannedAction}
               />
               <AddStepButton
                 onClick={() => addStep(step.id)}

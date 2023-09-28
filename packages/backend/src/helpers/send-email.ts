@@ -1,6 +1,9 @@
 import axios from 'axios'
 
 import app from '@/config/app'
+import HttpError from '@/errors/http'
+
+import logger from './logger'
 
 export interface PostmanEmailRequestBody {
   subject: string
@@ -15,20 +18,36 @@ export async function sendEmail(
   if (!app.postmanApiKey) {
     throw new Error('Missing POSTMAN_API_KEY')
   }
-  await axios.post(
-    'https://api.postman.gov.sg/v1/transactional/email/send',
-    {
-      subject: request.subject,
-      body: request.body,
-      recipient: request.recipient,
-      from: 'Plumber via Postman<donotreply@mail.postman.gov.sg>',
-      ...(request.replyTo && { reply_to: request.replyTo }),
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${app.postmanApiKey}`,
+  try {
+    await axios.post(
+      'https://api.postman.gov.sg/v1/transactional/email/send',
+      {
+        subject: request.subject,
+        body: request.body,
+        recipient: request.recipient,
+        from: 'Plumber via Postman<donotreply@mail.postman.gov.sg>',
+        ...(request.replyTo && { reply_to: request.replyTo }),
       },
-    },
-  )
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${app.postmanApiKey}`,
+        },
+      },
+    )
+  } catch (e) {
+    let errorMsg = 'Error sending email. Please try again later.'
+    if (axios.isAxiosError(e)) {
+      logger.error('Error sending email', { error: new HttpError(e).response })
+      errorMsg = e.response?.data?.message ?? e.message
+
+      // User has been added to Postman's blacklist, we need to contact them to remove it
+      if (errorMsg.includes('blacklisted')) {
+        logger.info('Blacklisted email', { email: request.recipient })
+        errorMsg =
+          'Your email may be blocked. Contact us at support@open.gov.sg'
+      }
+    }
+    throw new Error(errorMsg)
+  }
 }
