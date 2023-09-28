@@ -10,8 +10,6 @@ import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
 
 export type InputCreatorProps = {
-  onChange?: React.ChangeEventHandler
-  onBlur?: React.FocusEventHandler
   schema: IField
   namePrefix?: string
   stepId?: string
@@ -30,15 +28,7 @@ const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
 export default function InputCreator(
   props: InputCreatorProps,
 ): React.ReactElement {
-  const {
-    onChange,
-    onBlur,
-    schema,
-    namePrefix,
-    stepId,
-    disabled,
-    showOptionValue,
-  } = props
+  const { schema, namePrefix, stepId, disabled, showOptionValue } = props
 
   const {
     key: name,
@@ -103,8 +93,6 @@ export default function InputCreator(
         required={required}
         placeholder={placeholder}
         readOnly={readOnly || disabled}
-        onChange={onChange}
-        onBlur={onBlur}
         name={computedName}
         size="small"
         label={label}
@@ -138,8 +126,6 @@ export default function InputCreator(
         subFields={schema.subFields}
         required={required}
         // These are InputCreatorProps which MultiRow will forward.
-        onChange={onChange}
-        onBlur={onBlur}
         stepId={stepId}
         disabled={disabled}
         showOptionValue={showOptionValue}
