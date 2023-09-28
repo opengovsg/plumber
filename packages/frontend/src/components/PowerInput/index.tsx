@@ -255,9 +255,11 @@ const VariableBadge = ({
 
   return (
     <Badge variant="solid" bg="primary.100" borderRadius="50px" {...attributes}>
-      <Text color="base.content.strong">{label}</Text>
+      <Text isTruncated maxW="32rem" color="base.content.strong">
+        {label}
+      </Text>
       {testRunValue && (
-        <Text isTruncated maxW="50ch" color="base.content.medium" ml={1}>
+        <Text isTruncated maxW="16rem" color="base.content.medium" ml={1}>
           {testRunValue}
         </Text>
       )}
