@@ -1,8 +1,12 @@
 import { DateTime } from 'luxon'
 
+import { createRedisClient } from '@/config/redis'
+import logger from '@/helpers/logger'
 import { sendEmail } from '@/helpers/send-email'
+import Flow from '@/models/flow'
 
 const MAX_LENGTH = 80
+const CURR_DATETIME = DateTime.now()
 
 function truncateFlowName(flowName: string) {
   return flowName.length > MAX_LENGTH
@@ -11,7 +15,7 @@ function truncateFlowName(flowName: string) {
 }
 
 export function createBodyErrorMessage(flowName: string): string {
-  const currDateTime = DateTime.now().toFormat('MMM dd yyyy, HH:mm:ss a')
+  const currDateTime = CURR_DATETIME.toFormat('MMM dd yyyy, HH:mm:ss a')
   const bodyMessage = `
     Dear user,
     <br>
@@ -38,17 +42,51 @@ export function createBodyErrorMessage(flowName: string): string {
 }
 
 export async function sendErrorEmail(
-  flowName: string,
+  flow: Flow,
   userEmail: string,
   isTestRun: boolean,
 ) {
-  const truncatedFlowName = truncateFlowName(flowName)
-  if (!isTestRun) {
-    sendEmail({
-      subject: `${truncatedFlowName} has execution errors`,
-      body: createBodyErrorMessage(truncatedFlowName),
-      recipient: userEmail,
-      replyTo: 'support@plumber.gov.sg',
-    })
+  if (isTestRun) {
+    return
   }
+
+  const truncatedFlowName = truncateFlowName(flow.name)
+  const redisClient = createRedisClient()
+  const flowId = flow.id
+  const errorKey = `Pipe Id Error: ${flowId}`
+
+  const errorDetails = {
+    flowId,
+    flowName: flow.name,
+    userEmail,
+    timestamp: CURR_DATETIME.toMillis(),
+  }
+
+  await redisClient
+    .get(errorKey)
+    .catch((err) => {
+      logger.error('Unable to get redis key', {
+        ...errorDetails,
+        error: err.response,
+      })
+    })
+    .then((result) => {
+      if (result !== null) {
+        return
+      }
+
+      redisClient.hset(errorKey, errorDetails, () => {
+        sendEmail({
+          subject: `${truncatedFlowName} has execution errors`,
+          body: createBodyErrorMessage(truncatedFlowName),
+          recipient: userEmail,
+          replyTo: 'support@plumber.gov.sg',
+        })
+      })
+      // set redis key to expire at the end of the day
+      redisClient.expire(
+        errorKey,
+        DateTime.now().endOf('day').toMillis() - CURR_DATETIME.toMillis(),
+      )
+    })
 }

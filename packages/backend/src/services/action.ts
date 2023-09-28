@@ -1,9 +1,9 @@
 import { type IActionRunResult } from '@plumber/types'
 
 import CancelFlowError from '@/errors/cancel-flow'
-import { sendErrorEmail } from '@/errors/generate-error-email'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
+import { sendErrorEmail } from '@/helpers/generate-error-email'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
@@ -75,7 +75,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         status: error.response.status,
         statusText: error.response.statusText,
       }
-      await sendErrorEmail(flow.name, $.userEmail, execution.testRun)
+      await sendErrorEmail(flow, $.userEmail, execution.testRun)
     } else if (error instanceof CancelFlowError) {
       runResult.nextStep = { command: 'stop-execution' }
     } else {
@@ -84,7 +84,7 @@ export const processAction = async (options: ProcessActionOptions) => {
       } catch {
         $.actionOutput.error = { error: error.message }
       } finally {
-        await sendErrorEmail(flow.name, $.userEmail, execution.testRun)
+        await sendErrorEmail(flow, $.userEmail, execution.testRun)
       }
     }
   }
