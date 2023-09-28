@@ -31,9 +31,7 @@ export default defineAction({
     const { delayUntil, delayUntilTime } = $.step.parameters
     const delayTimestamp = generateTimestamp(
       delayUntil as string,
-      (delayUntilTime as string) === ''
-        ? defaultTime
-        : (delayUntilTime as string),
+      (delayUntilTime as string) || defaultTime,
     )
 
     if (isNaN(delayTimestamp)) {
@@ -42,13 +40,9 @@ export default defineAction({
       )
     }
 
-    if (!delayUntilTime) {
-      $.step.parameters.delayUntilTime = defaultTime // allow users to use it as a variable even though it is optional
-    }
-
     const dataItem = {
       delayUntil,
-      delayUntilTime: $.step.parameters.delayUntilTime,
+      delayUntilTime: delayUntilTime || defaultTime,
     }
 
     $.setActionItem({ raw: dataItem })

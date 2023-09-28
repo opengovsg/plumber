@@ -54,7 +54,7 @@ export const worker = new Worker(
     if (step.appKey === 'delay') {
       jobOptions = {
         ...DEFAULT_JOB_OPTIONS,
-        delay: delayAsMilliseconds(step.key, executionStep.dataIn),
+        delay: delayAsMilliseconds(step.key, executionStep.dataOut),
       }
     }
 
