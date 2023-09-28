@@ -1,7 +1,6 @@
 import type { IApp, IExecutionStep } from '@plumber/types'
 
 import * as React from 'react'
-import { FormattedMessage } from 'react-intl'
 import { useQuery } from '@apollo/client'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
@@ -73,11 +72,7 @@ export default function ExecutionStep({
 
             <div>
               <Typography variant="caption">
-                <FormattedMessage
-                  id={
-                    index === 0 ? 'flowStep.triggerType' : 'flowStep.actionType'
-                  }
-                />
+                {index === 0 ? 'Trigger' : 'Action'}
               </Typography>
 
               <Typography variant="body2">

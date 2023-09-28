@@ -1,21 +1,25 @@
 import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import * as React from 'react'
+import { type SyntheticEvent, useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
-import { FormControl } from '@chakra-ui/react'
+import { Flex, FormControl, Text } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
-import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import { FormLabel } from '@opengovsg/design-system-react'
+import { Badge, FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+  useIfThenInitializer,
+  useIsIfThenSelectable,
+} from 'helpers/toolbox'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseAppAndEventSubstepProps = {
@@ -26,14 +30,17 @@ type ChooseAppAndEventSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
+  isLastStep: boolean
 }
 
 const optionGenerator = (app: {
   name: string
   key: string
-}): { label: string; value: string } => ({
+  description?: string
+}): { label: string; value: string; description: string } => ({
   label: app.name as string,
   value: app.key as string,
+  description: app?.description as string,
 })
 
 const eventOptionGenerator = (app: {
@@ -55,40 +62,97 @@ function ChooseAppAndEventSubstep(
   props: ChooseAppAndEventSubstepProps,
 ): React.ReactElement {
   const {
+    step,
+    isLastStep,
     substep,
     expanded = false,
     onExpand,
     onCollapse,
-    step,
     onSubmit,
     onChange,
   } = props
 
-  const launchDarkly = React.useContext(LaunchDarklyContext)
+  const launchDarkly = useContext(LaunchDarklyContext)
 
   const formatMessage = useFormatMessage()
-  const editorContext = React.useContext(EditorContext)
+  const editorContext = useContext(EditorContext)
 
   const isTrigger = step.type === 'trigger'
-  const isAction = step.type === 'action'
 
-  const { data } = useQuery(GET_APPS, {
-    variables: { onlyWithTriggers: isTrigger, onlyWithActions: isAction },
+  const { data } = useQuery(GET_APPS)
+  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
+    isTrigger ? !!app.triggers?.length : !!app.actions?.length,
+  )
+
+  apps?.sort((a, b) => {
+    if (a.description) {
+      return -1
+    }
+    return a.name.localeCompare(b.name)
   })
-  const apps: IApp[] = data?.getApps
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  const appOptions = React.useMemo(
-    () => apps?.map((app) => optionGenerator(app)),
-    [apps],
+  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
+  const appOptions = useMemo(
+    () =>
+      apps
+        ?.filter((app) => {
+          //
+          // ** EDGE CASE **
+          //
+          // We want to hide If-Then in some cases (see useIsIfThenSelectable
+          // comments).
+          //
+          // We edge case since a generic implementation adds too much
+          // complexity; we'll move to generic if there's another use case for
+          // such hiding.
+          //
+          // If everyone forgets about this, it's OK because the next guy to
+          // add a new toolbox action will get confused why toolbox is missing
+          // ... and find this.
+          //
+          if (app.key === TOOLBOX_APP_KEY && !isIfThenSelectable) {
+            return false
+          }
+
+          // Filter away stuff hidden behind feature flags
+          if (!launchDarkly.flags || !app?.key) {
+            return true
+          }
+          const launchDarklyKey = ['app', app.key].join('_')
+          return launchDarkly.flags[launchDarklyKey] ?? true
+        })
+        ?.map((app) => optionGenerator(app)) ?? [],
+    [apps, isIfThenSelectable, launchDarkly.flags],
   )
+
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
-  const actionOrTriggerOptions = React.useMemo(
+  const actionOrTriggerOptions = useMemo(
     () =>
       actionsOrTriggers
-        // Filter away stuff hidden behind feature flags
         .filter((actionOrTrigger) => {
+          //
+          // ** EDGE CASE AGAIN **
+          //
+          // Hello, the if-then edge case demon here again!
+          //
+          // To ensure if-then is always the last step, we also need to guard
+          // against users selecting toolbox first, then adding steps after the
+          // toolbox step, then selecting If-Then in the toolbox step.
+          //
+          // Luckily, we can remove the top app-hiding edge case once we
+          // implement for-each, and toolbox will have multiple actions.
+          //
+          if (
+            app?.key === TOOLBOX_APP_KEY &&
+            actionOrTrigger?.key === TOOLBOX_ACTIONS.IfThen &&
+            !isIfThenSelectable
+          ) {
+            return false
+          }
+
+          // Filter away stuff hidden behind feature flags
           if (!launchDarkly.flags || !app?.key) {
             return true
           }
@@ -100,8 +164,9 @@ function ChooseAppAndEventSubstep(
           ].join('_')
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
+        //
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly.flags],
+    [app?.key, launchDarkly.flags, isIfThenSelectable, step],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
@@ -114,14 +179,43 @@ function ChooseAppAndEventSubstep(
 
   const valid: boolean = !!step.key && !!step.appKey
 
-  // placeholders
-  const onEventChange = React.useCallback(
-    (event: React.SyntheticEvent, selectedOption: unknown) => {
+  //
+  // Handle app or event changes
+  //
+  const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
+  const onEventChange = useCallback(
+    async (_event: SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
         const typedSelectedOption = selectedOption as { value: string }
         const option: { value: string } = typedSelectedOption
         const eventKey = option?.value as string
+
+        //
+        // ** EDGE CASE AGAIN V2 **
+        //
+        // Hello, the if-then edge case demon here again and again!
+        //
+        // If-then is weird in that we need to pre-populate with 2 branches
+        // upon initial selection (the only action that spawns 2 steps upon
+        // first selection), and we also need to update the first branch's
+        // parameters.
+        //
+        // Since there are a bunch of edge cases for If-Then in this component
+        // already, let's localize the damage and continue adding edge cases
+        // here.
+        //
+        // Note that we don't need to check for inequality to the current
+        // step.key, since we don't display the action drop-down after someone
+        // selects If-Then.
+        //
+        if (
+          app?.key === TOOLBOX_APP_KEY &&
+          eventKey === TOOLBOX_ACTIONS.IfThen
+        ) {
+          await initializeIfThen(step)
+          return
+        }
 
         if (step.key !== eventKey) {
           onChange({
@@ -133,11 +227,11 @@ function ChooseAppAndEventSubstep(
         }
       }
     },
-    [step, onChange],
+    [app?.key, step, onChange, initializeIfThen],
   )
 
-  const onAppChange = React.useCallback(
-    (event: React.SyntheticEvent, selectedOption: unknown) => {
+  const onAppChange = useCallback(
+    (_event: SyntheticEvent, selectedOption: unknown) => {
       if (typeof selectedOption === 'object') {
         // TODO: try to simplify type casting below.
         const typedSelectedOption = selectedOption as { value: string }
@@ -161,14 +255,17 @@ function ChooseAppAndEventSubstep(
 
   const onToggle = expanded ? onCollapse : onExpand
 
+  const isLoading = launchDarkly.isLoading || isInitializingIfThen
+
   return (
-    <React.Fragment>
+    <>
       <FlowSubstepTitle
         expanded={expanded}
         onClick={onToggle}
         title={name}
         valid={valid}
       />
+
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <ListItem
           sx={{
@@ -182,8 +279,36 @@ function ChooseAppAndEventSubstep(
             fullWidth
             disablePortal
             disableClearable
-            disabled={editorContext.readOnly}
-            options={appOptions}
+            disabled={isLoading || editorContext.readOnly}
+            loading={isLoading}
+            // Don't display options until we can check feature flags!
+            options={launchDarkly.isLoading ? [] : appOptions}
+            renderOption={(optionProps, option) => (
+              <li
+                {...optionProps}
+                key={option.value.toString()}
+                style={{
+                  flexDirection: 'row',
+                }}
+              >
+                <Flex flexDir="column">
+                  <Flex gap={2} alignItems="center">
+                    <Text>{option.label}</Text>
+                    {option.description && (
+                      <Badge
+                        bgColor="interaction.muted.main.active"
+                        color="primary.600"
+                        px={2}
+                        py={1}
+                      >
+                        New
+                      </Badge>
+                    )}
+                  </Flex>
+                  <Text fontSize="xs">{option.description}</Text>
+                </Flex>
+              </li>
+            )}
             renderInput={(params) => (
               <FormControl>
                 <FormLabel isRequired>
@@ -192,20 +317,27 @@ function ChooseAppAndEventSubstep(
                 <TextField {...params} />
               </FormControl>
             )}
-            value={getOption(appOptions, step.appKey)}
+            value={
+              getOption(appOptions, step.appKey) ?? {
+                label: '',
+                value: '',
+                description: '',
+              }
+            }
             onChange={onAppChange}
             data-test="choose-app-autocomplete"
           />
 
           {step.appKey && (
-            <Box display="flex" width="100%" pt={2} flexDirection="column">
+            <Flex width="full" pt={4} flexDir="column">
               <Autocomplete
                 fullWidth
                 disablePortal
                 disableClearable
-                disabled={editorContext.readOnly}
-                options={launchDarkly.isLoading ? [] : actionOrTriggerOptions}
-                loading={launchDarkly.isLoading}
+                disabled={isLoading || editorContext.readOnly}
+                loading={isLoading}
+                // Don't display options until we can check feature flags!
+                options={isLoading ? [] : actionOrTriggerOptions}
                 renderInput={(params) => (
                   <FormControl>
                     <FormLabel isRequired>
@@ -241,7 +373,7 @@ function ChooseAppAndEventSubstep(
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Typography>{option.label}</Typography>
+                    <Text>{option.label}</Text>
 
                     {option.type === 'webhook' && (
                       <Chip
@@ -251,11 +383,17 @@ function ChooseAppAndEventSubstep(
                     )}
                   </li>
                 )}
-                value={getOption(actionOrTriggerOptions, step.key)}
+                value={
+                  getOption(actionOrTriggerOptions, step.key) ?? {
+                    label: '',
+                    value: '',
+                    type: '',
+                  }
+                }
                 onChange={onEventChange}
                 data-test="choose-event-autocomplete"
               />
-            </Box>
+            </Flex>
           )}
 
           {isTrigger && (selectedActionOrTrigger as ITrigger)?.pollInterval && (
@@ -282,7 +420,7 @@ function ChooseAppAndEventSubstep(
           </Button>
         </ListItem>
       </Collapse>
-    </React.Fragment>
+    </>
   )
 }
 

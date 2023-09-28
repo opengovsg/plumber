@@ -120,7 +120,7 @@ export default function Application(): React.ReactElement | null {
             </Grid>
 
             <Grid item xs>
-              <PageTitle>{app.name}</PageTitle>
+              <PageTitle title={app.name} />
             </Grid>
 
             <Grid item xs="auto">

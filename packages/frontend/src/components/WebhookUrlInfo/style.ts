@@ -12,7 +12,3 @@ export const Alert = styled(MuiAlert)(() => ({
     width: '100%',
   },
 }))
-
-export const MessageWrapper = styled('div')`
-  margin: 1rem auto;
-`

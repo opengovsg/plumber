@@ -6,6 +6,7 @@ import { getItemForSession, setItemForSession } from 'helpers/storage'
 
 const LAUNCH_DARKLY_BANNER_KEY = 'banner_display'
 const EMPTY_BANNER_MESSAGE = ''
+const SESSION_STORAGE_HIDE_BANNER_KEY = 'hide-banner'
 
 const SiteWideBanner = (): JSX.Element | null => {
   const [bannerMessage, setBannerMessage] = useState(EMPTY_BANNER_MESSAGE)
@@ -13,7 +14,7 @@ const SiteWideBanner = (): JSX.Element | null => {
 
   const closeBanner = useCallback(() => {
     setBannerMessage(EMPTY_BANNER_MESSAGE)
-    setItemForSession('hide-banner', bannerMessage)
+    setItemForSession(SESSION_STORAGE_HIDE_BANNER_KEY, bannerMessage)
   }, [bannerMessage])
 
   // check for feature flag (takes time to load) to display banner
@@ -21,7 +22,9 @@ const SiteWideBanner = (): JSX.Element | null => {
     if (launchDarkly.flags) {
       // message needs to be fetched everytime the page is re-rendered
       const message = launchDarkly.flags[LAUNCH_DARKLY_BANNER_KEY]
-      const bannerMessageStored = getItemForSession('hide-banner')
+      const bannerMessageStored = getItemForSession(
+        SESSION_STORAGE_HIDE_BANNER_KEY,
+      )
       if (message !== bannerMessageStored) {
         setBannerMessage(message)
       } else {

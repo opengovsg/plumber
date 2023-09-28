@@ -6,7 +6,7 @@ import type { AlertProps } from '@mui/material/Alert'
 
 import TextField from '../TextField'
 
-import { Alert, MessageWrapper } from './style'
+import { Alert } from './style'
 
 type WebhookUrlInfoProps = {
   webhookUrl: string
@@ -21,13 +21,12 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
 
   return (
     <Alert icon={false} color="info" {...alertProps}>
-      {beforeUrlMsg && (
-        <MessageWrapper>
-          <ReactMarkdown>{beforeUrlMsg}</ReactMarkdown>
-        </MessageWrapper>
-      )}
+      {beforeUrlMsg && <ReactMarkdown>{beforeUrlMsg}</ReactMarkdown>}
       {!hideWebhookUrl && (
         <TextField
+          sx={{
+            my: '1rem',
+          }}
           readOnly
           clickToCopy={true}
           name="webhookUrl"
@@ -35,11 +34,7 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
           defaultValue={webhookUrl}
         />
       )}
-      {afterUrlMsg && (
-        <MessageWrapper>
-          <ReactMarkdown>{afterUrlMsg}</ReactMarkdown>
-        </MessageWrapper>
-      )}
+      {afterUrlMsg && <ReactMarkdown>{afterUrlMsg}</ReactMarkdown>}
     </Alert>
   )
 }

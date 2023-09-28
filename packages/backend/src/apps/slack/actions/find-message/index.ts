@@ -65,13 +65,11 @@ export default defineAction({
     const sortDirection = parameters.sortDirection as string
     const count = 1
 
-    const messages = await findMessage($, {
+    await findMessage($, {
       query,
       sortBy,
       sortDirection,
       count,
     })
-
-    return messages
   },
 })

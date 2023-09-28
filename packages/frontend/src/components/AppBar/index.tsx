@@ -1,19 +1,16 @@
 import { useState } from 'react'
-import { FormattedMessage } from 'react-intl'
 import { Box as ChakraBox, BoxProps as ChakraBoxProps } from '@chakra-ui/react'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import { Box, useMediaQuery } from '@mui/material'
 import MuiAppBar from '@mui/material/AppBar'
 import IconButton from '@mui/material/IconButton'
 import Toolbar from '@mui/material/Toolbar'
-import Typography from '@mui/material/Typography'
-import { Link } from '@opengovsg/design-system-react'
+import { Button, Link } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
 import AccountDropdownMenu from 'components/AccountDropdownMenu'
+import NewsDrawer from 'components/NewsDrawer'
 import * as URLS from 'config/urls'
 import theme from 'styles/theme'
-
-import { Link as RouterLink } from './style'
 
 type AppBarProps = {
   drawerOpen: boolean
@@ -46,43 +43,48 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
     <MuiAppBar
       color="transparent"
       position={drawerOpen && matchSmallScreens ? 'fixed' : 'relative'}
+      sx={{ zIndex: 11 }}
     >
       <ChakraBox maxW={maxWidth}>
         <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="open drawer"
-            onClick={drawerOpen ? onDrawerClose : onDrawerOpen}
-            disableRipple
-          >
-            <Box component="img" src={mainLogo} height="80%" width="80%" />
-          </IconButton>
-
           <div style={{ flexGrow: 1 }}>
-            <RouterLink to={URLS.DASHBOARD}>
-              <Typography
-                variant="h5"
-                component="h2"
-                fontFamily={'Space Grotesk'}
-                noWrap
-                fontWeight="bold"
-              >
-                <FormattedMessage id="brandText" />
-              </Typography>
-            </RouterLink>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="open drawer"
+              onClick={drawerOpen ? onDrawerClose : onDrawerOpen}
+              disableRipple
+            >
+              <Box component="img" src={mainLogo} height="80%" width="80%" />
+            </IconButton>
           </div>
 
-          <Link
+          <Button
+            as={Link}
+            href={URLS.STATUS_LINK}
+            colorScheme="secondary"
+            target="_blank"
+            variant="link"
+            mr={4}
+            _hover={{ textDecoration: 'underline' }}
+          >
+            Status
+          </Button>
+
+          <Button
+            as={Link}
             href={URLS.GUIDE_LINK}
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            mr={6}
+            mr={4}
+            _hover={{ textDecoration: 'underline' }}
           >
             Guide
-          </Link>
+          </Button>
+
+          <NewsDrawer />
 
           <IconButton
             size="large"

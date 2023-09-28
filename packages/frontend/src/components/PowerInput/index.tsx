@@ -130,7 +130,11 @@ const PowerInput = (props: PowerInputProps) => {
               }}
             >
               {/* ref-able single child for ClickAwayListener */}
-              <div style={{ width: '100%' }} data-test="power-input">
+              <div
+                style={{ width: '100%' }}
+                data-test="power-input"
+                ref={editorRef}
+              >
                 <FakeInput disabled={disabled}>
                   <VariableInfoMapContext.Provider value={variableInfoMap}>
                     <Editable
@@ -148,9 +152,6 @@ const PowerInput = (props: PowerInputProps) => {
                     />
                   </VariableInfoMapContext.Provider>
                 </FakeInput>
-
-                {/* ghost placer for the variables popover */}
-                <div ref={editorRef} style={{ width: '100%' }} />
 
                 <SuggestionsPopper
                   open={showVariableSuggestions}
@@ -181,14 +182,21 @@ const SuggestionsPopper = (props: SuggestionsPopperProps) => {
     <Popper
       open={open}
       anchorEl={anchorEl}
-      style={{ width: anchorEl?.clientWidth, zIndex: 1 }}
+      // Allow (ugly) scrolling in nested modals for small viewports; modals
+      // can't account for popper overflow if it is portalled to body.
+      disablePortal
+      style={{
+        width: anchorEl?.clientWidth,
+        // FIXME (ogp-weeloong): HACKY, temporary workaround. Needed to render
+        // sugestions within nested editors, since Chakra renders modals at 40
+        // z-index. Will migrate to chakra Popover in separate PR if team is
+        // agreeable to flip change.
+        zIndex: 40,
+      }}
       modifiers={[
         {
           name: 'flip',
-          enabled: false,
-          options: {
-            altBoundary: false,
-          },
+          enabled: true,
         },
       ]}
     >

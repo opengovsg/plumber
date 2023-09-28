@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import vaultWorkspace from '@/apps/vault-workspace'
 import ExecutionStep from '@/models/execution-step'
 
 import computeParameters from '../compute-parameters'
@@ -232,5 +233,27 @@ describe('compute parameters', () => {
         '123',
       ],
     })
+  })
+  it('can compute on  templates with non-hex-encoded param keys using new vault WS objects whose keys hex-encoded', () => {
+    const vaultWSExecutionStep = [
+      {
+        stepId: 'some-step-id',
+        appKey: vaultWorkspace.key,
+        dataOut: {
+          '4974732d612d6d65': 'Mario!', // key is hex-encoded `Its a me`
+          _metadata: {
+            keysEncoded: true,
+          },
+        },
+      } as unknown as ExecutionStep,
+    ]
+    const params = {
+      toSubstitute: 'Its a me {{step.some-step-id.Its-a-me}}',
+    }
+    const expected = {
+      toSubstitute: 'Its a me Mario!',
+    }
+    const result = computeParameters(params, vaultWSExecutionStep)
+    expect(result).toEqual(expected)
   })
 })
