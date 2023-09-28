@@ -46,6 +46,12 @@ export default defineAction({
   async run($) {
     const { delayForUnit, delayForValue } = $.step.parameters
 
+    if (isNaN(Number(delayForValue))) {
+      throw new Error(
+        'Invalid delay for value entered, please check that you keyed in a number',
+      )
+    }
+
     const dataItem = {
       delayForUnit,
       delayForValue,

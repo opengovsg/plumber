@@ -161,6 +161,7 @@ export interface IBaseField {
   clickToCopy?: boolean
   variables?: boolean
   dependsOn?: string[]
+  hidden?: boolean
 }
 
 export interface IFieldDropdown extends IBaseField {
@@ -261,6 +262,7 @@ export interface IApp {
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
+  description?: string
 }
 
 export type TBeforeRequest = {
@@ -341,6 +343,19 @@ export interface ITrigger extends IBaseTrigger {
   supportsWebhookRegistration?: boolean
 }
 
+export interface IActionRunResult {
+  /**
+   * This enables actions to control pipe execution flow. This is for actions
+   * that need to redirect pipe execution (e.g. if-then).
+   *
+   * If this is not set, or is falsey, pipe execution continues as per normal
+   * (i.e. next step is step with position + 1).
+   */
+  nextStep?:
+    | { command: 'jump-to-step'; stepId: IStep['id'] }
+    | { command: 'stop-execution' }
+}
+
 export interface IActionOutput {
   data: IActionItem
   error?: IJSONObject
@@ -354,7 +369,8 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  run?($: IGlobalVariable): Promise<void>
+  run?($: IGlobalVariable): Promise<IActionRunResult | void>
+  testRun?($: IGlobalVariable): Promise<IActionRunResult | void>
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.
@@ -378,6 +394,15 @@ export interface IBaseAction {
    * the pipe has at least 1 action which processes files.
    */
   doesFileProcessing?: boolean
+
+  /**
+   * Specifies if this action "groups" steps after it, and only allows adding
+   * later steps in nested modal (e.g. if-then).
+   *
+   * If true, the front end will not render the "add step" button after this
+   * action.
+   */
+  groupsLaterSteps?: boolean
 }
 
 export interface IRawAction extends IBaseAction {
@@ -423,6 +448,7 @@ export type IGlobalVariable = {
   step?: {
     id: string
     appKey: string
+    position: number
     parameters: IJSONObject
   }
   nextStep?: {

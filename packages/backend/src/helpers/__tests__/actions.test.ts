@@ -5,12 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { doesActionProcessFiles } from '../actions'
 
 const mocks = vi.hoisted(() => ({
-  appFindAll: vi.fn(),
+  getAllAppsWithFunctions: vi.fn(),
 }))
 
 vi.mock('@/models/app', () => ({
   default: {
-    findAll: mocks.appFindAll,
+    getAllAppsWithFunctions: mocks.getAllAppsWithFunctions,
   },
 }))
 
@@ -39,31 +39,31 @@ describe('action helper functions', () => {
     })
 
     it('returns true for actions that process files', async () => {
-      mocks.appFindAll.mockResolvedValue(apps)
+      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('test-app', 'action1')
       expect(result).toEqual(true)
     })
 
     it('returns false for actions that do not process files', async () => {
-      mocks.appFindAll.mockResolvedValue(apps)
+      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('test-app', 'action2')
       expect(result).toEqual(false)
     })
 
     it('assumes that action does not process files if flag is not specified', async () => {
-      mocks.appFindAll.mockResolvedValue(apps)
+      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('legacy-app', 'action1')
       expect(result).toEqual(false)
     })
 
     it('returns false for actions that do not exist', async () => {
-      mocks.appFindAll.mockResolvedValue(apps)
+      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('test-app', 'herp')
       expect(result).toEqual(false)
     })
 
     it('returns false for apps that do not exist', async () => {
-      mocks.appFindAll.mockResolvedValue(apps)
+      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('topkek', 'action1')
       expect(result).toEqual(false)
     })

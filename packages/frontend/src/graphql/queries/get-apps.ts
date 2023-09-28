@@ -19,6 +19,7 @@ export const GET_APPS = gql`
       primaryColor
       connectionCount
       supportsConnections
+      description
       auth {
         fields {
           key
@@ -135,6 +136,7 @@ export const GET_APPS = gql`
         name
         key
         description
+        groupsLaterSteps
         substeps {
           key
           name
@@ -149,6 +151,7 @@ export const GET_APPS = gql`
             variableTypes
             allowArbitrary
             dependsOn
+            hidden
             options {
               label
               value

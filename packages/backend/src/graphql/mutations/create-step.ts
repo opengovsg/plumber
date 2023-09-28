@@ -1,3 +1,5 @@
+import { type IJSONObject } from '@plumber/types'
+
 import Step from '@/models/step'
 import Context from '@/types/express/context'
 
@@ -14,6 +16,7 @@ type Params = {
     previousStep: {
       id: string
     }
+    parameters: IJSONObject
   }
 }
 
@@ -45,6 +48,7 @@ const createStep = async (
       appKey: input.appKey,
       type: 'action',
       position: previousStep.position + 1,
+      parameters: input.parameters,
     })
 
     const nextSteps = await flow
