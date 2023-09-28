@@ -254,12 +254,18 @@ const VariableBadge = ({
   const testRunValue = variableInfo?.testRunValue
 
   return (
-    <Badge variant="solid" bg="primary.100" borderRadius="50px" {...attributes}>
-      <Text isTruncated maxW="32rem" color="base.content.strong">
+    <Badge
+      maxW="full"
+      variant="solid"
+      bg="primary.100"
+      borderRadius="50px"
+      {...attributes}
+    >
+      <Text isTruncated maxW="67%" color="base.content.strong">
         {label}
       </Text>
       {testRunValue && (
-        <Text isTruncated maxW="16rem" color="base.content.medium" ml={1}>
+        <Text isTruncated maxW="33%" color="base.content.medium" ml={1}>
           {testRunValue}
         </Text>
       )}
