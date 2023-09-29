@@ -12,9 +12,12 @@ export interface PostmanEmailRequestBody {
   replyTo?: string
 }
 
-export async function sendEmail(
-  request: PostmanEmailRequestBody,
-): Promise<void> {
+export async function sendEmail({
+  subject,
+  body,
+  recipient,
+  replyTo,
+}: PostmanEmailRequestBody): Promise<void> {
   if (!app.postmanApiKey) {
     throw new Error('Missing POSTMAN_API_KEY')
   }
@@ -22,11 +25,11 @@ export async function sendEmail(
     await axios.post(
       'https://api.postman.gov.sg/v1/transactional/email/send',
       {
-        subject: request.subject,
-        body: request.body,
-        recipient: request.recipient,
+        subject: subject,
+        body: body,
+        recipient: recipient,
         from: 'Plumber via Postman<donotreply@mail.postman.gov.sg>',
-        ...(request.replyTo && { reply_to: request.replyTo }),
+        ...(replyTo && { reply_to: replyTo }),
       },
       {
         headers: {
@@ -43,7 +46,7 @@ export async function sendEmail(
 
       // User has been added to Postman's blacklist, we need to contact them to remove it
       if (errorMsg.includes('blacklisted')) {
-        logger.info('Blacklisted email', { email: request.recipient })
+        logger.info('Blacklisted email', { email: recipient })
         errorMsg =
           'Your email may be blocked. Contact us at support@open.gov.sg'
       }

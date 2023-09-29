@@ -1,12 +1,11 @@
 import { DateTime } from 'luxon'
 
-import { createRedisClient } from '@/config/redis'
-import logger from '@/helpers/logger'
+import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { sendEmail } from '@/helpers/send-email'
 import Flow from '@/models/flow'
 
 const MAX_LENGTH = 80
-const CURR_DATETIME = DateTime.now()
+const redisClient = createRedisClient(REDIS_DB_INDEX.PIPE_ERRORS)
 
 function truncateFlowName(flowName: string) {
   return flowName.length > MAX_LENGTH
@@ -15,7 +14,7 @@ function truncateFlowName(flowName: string) {
 }
 
 export function createBodyErrorMessage(flowName: string): string {
-  const currDateTime = CURR_DATETIME.toFormat('MMM dd yyyy, HH:mm:ss a')
+  const currDateTime = DateTime.now().toFormat('MMM dd yyyy, HH:mm:ss a')
   const bodyMessage = `
     Dear user,
     <br>
@@ -41,52 +40,32 @@ export function createBodyErrorMessage(flowName: string): string {
   return bodyMessage
 }
 
-export async function sendErrorEmail(
-  flow: Flow,
-  userEmail: string,
-  isTestRun: boolean,
-) {
-  if (isTestRun) {
-    return
-  }
+export async function checkErrorEmail(flowId: string) {
+  const errorKey = `error-alert:${flowId}`
+  return await redisClient.hexists(errorKey, 'flowId')
+}
 
+export async function sendErrorEmail(flow: Flow, userEmail: string) {
   const truncatedFlowName = truncateFlowName(flow.name)
-  const redisClient = createRedisClient()
   const flowId = flow.id
-  const errorKey = `Pipe Id Error: ${flowId}`
+  const errorKey = `error-alert:${flowId}`
+  const currDatetime = DateTime.now()
 
   const errorDetails = {
     flowId,
     flowName: flow.name,
     userEmail,
-    timestamp: CURR_DATETIME.toMillis(),
+    timestamp: currDatetime.toMillis(),
   }
 
-  await redisClient
-    .get(errorKey)
-    .catch((err) => {
-      logger.error('Unable to get redis key', {
-        ...errorDetails,
-        error: err.response,
-      })
+  await redisClient.hset(errorKey, errorDetails, () => {
+    sendEmail({
+      subject: `${truncatedFlowName} has execution errors`,
+      body: createBodyErrorMessage(truncatedFlowName),
+      recipient: userEmail,
+      replyTo: 'support@plumber.gov.sg',
     })
-    .then((result) => {
-      if (result !== null) {
-        return
-      }
-
-      redisClient.hset(errorKey, errorDetails, () => {
-        sendEmail({
-          subject: `${truncatedFlowName} has execution errors`,
-          body: createBodyErrorMessage(truncatedFlowName),
-          recipient: userEmail,
-          replyTo: 'support@plumber.gov.sg',
-        })
-      })
-      // set redis key to expire at the end of the day
-      redisClient.expire(
-        errorKey,
-        DateTime.now().endOf('day').toMillis() - CURR_DATETIME.toMillis(),
-      )
-    })
+  })
+  // set redis key to expire at the end of the day
+  redisClient.pexpireat(errorKey, currDatetime.endOf('day').toMillis())
 }

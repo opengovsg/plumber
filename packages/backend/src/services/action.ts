@@ -3,7 +3,6 @@ import { type IActionRunResult } from '@plumber/types'
 import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
-import { sendErrorEmail } from '@/helpers/generate-error-email'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
@@ -23,10 +22,7 @@ export const processAction = async (options: ProcessActionOptions) => {
   const { flowId, stepId, executionId, jobId, testRun = false } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
-  const flow = await Flow.query()
-    .findById(flowId)
-    .withGraphFetched('user')
-    .throwIfNotFound()
+  const flow = await Flow.query().findById(flowId).throwIfNotFound()
   const execution = await Execution.query()
     .findById(executionId)
     .throwIfNotFound()
@@ -37,7 +33,6 @@ export const processAction = async (options: ProcessActionOptions) => {
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
-    user: flow.user,
     testRun,
   })
 
@@ -68,23 +63,23 @@ export const processAction = async (options: ProcessActionOptions) => {
       runResult = result
     }
   } catch (error) {
-    logger.error(error)
-    if (error instanceof HttpError) {
-      $.actionOutput.error = {
-        details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
-      await sendErrorEmail(flow, $.userEmail, execution.testRun)
-    } else if (error instanceof CancelFlowError) {
+    if (error instanceof CancelFlowError) {
+      // don't log error for cancel flow
       runResult.nextStep = { command: 'stop-execution' }
     } else {
-      try {
-        $.actionOutput.error = JSON.parse(error.message)
-      } catch {
-        $.actionOutput.error = { error: error.message }
-      } finally {
-        await sendErrorEmail(flow, $.userEmail, execution.testRun)
+      logger.error(error)
+      if (error instanceof HttpError) {
+        $.actionOutput.error = {
+          details: error.details,
+          status: error.response.status,
+          statusText: error.response.statusText,
+        }
+      } else {
+        try {
+          $.actionOutput.error = JSON.parse(error.message)
+        } catch {
+          $.actionOutput.error = { error: error.message }
+        }
       }
     }
   }
