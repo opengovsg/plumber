@@ -31,9 +31,10 @@ export default defineAction({
     if (!result.success) {
       throw fromZodError((result as SafeParseError<unknown>).error)
     }
-    let recipients = result.data.destinationEmail.slice(+progress)
-    recipients = await getRatelimitedRecipientList(recipients)
-    const newProgress = +progress + recipients.length
+    const { recipients, newProgress } = await getRatelimitedRecipientList(
+      result.data.destinationEmail,
+      +progress,
+    )
 
     const results = await sendTransactionalEmails($.http, recipients, {
       subject: result.data.subject,

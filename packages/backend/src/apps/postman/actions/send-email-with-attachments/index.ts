@@ -47,9 +47,10 @@ export default defineAction({
       }),
     )
 
-    let recipients = result.data.destinationEmail.slice(+progress)
-    recipients = await getRatelimitedRecipientList(recipients)
-    const newProgress = +progress + recipients.length
+    const { recipients, newProgress } = await getRatelimitedRecipientList(
+      result.data.destinationEmail,
+      +progress,
+    )
     const results = await sendTransactionalEmails($.http, recipients, {
       subject: result.data.subject,
       body: result.data.body,
