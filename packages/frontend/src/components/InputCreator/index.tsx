@@ -14,7 +14,6 @@ export type InputCreatorProps = {
   namePrefix?: string
   stepId?: string
   disabled?: boolean
-  showOptionValue?: boolean
 }
 
 type RawOption = {
@@ -28,7 +27,7 @@ const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
 export default function InputCreator(
   props: InputCreatorProps,
 ): React.ReactElement {
-  const { schema, namePrefix, stepId, disabled, showOptionValue } = props
+  const { schema, namePrefix, stepId, disabled } = props
 
   const {
     key: name,
@@ -67,7 +66,7 @@ export default function InputCreator(
         // if schema source is defined, dynamic data is supported
         onRefresh={schema.source ? () => refetch() : undefined}
         disabled={disabled}
-        showOptionValue={showOptionValue}
+        showOptionValue={schema.showOptionValue ?? true}
         label={label}
       />
     )
@@ -128,7 +127,6 @@ export default function InputCreator(
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
         disabled={disabled}
-        showOptionValue={showOptionValue}
       />
     )
   }
