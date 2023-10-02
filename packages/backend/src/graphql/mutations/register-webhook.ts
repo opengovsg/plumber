@@ -58,7 +58,7 @@ const registerWebhook = async (
     await trigger.registerHook($)
   } catch (e) {
     logger.error('Unable to register webhook', e)
-    throw new Error('Unable to register webhook')
+    throw new Error(e.message ?? 'Unable to register webhook')
   }
 
   return true

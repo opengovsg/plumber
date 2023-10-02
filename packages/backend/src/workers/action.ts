@@ -52,7 +52,10 @@ export const worker = new Worker(
     let jobOptions = DEFAULT_JOB_OPTIONS
 
     if (step.appKey === 'delay') {
-      jobOptions = { ...DEFAULT_JOB_OPTIONS, delay: delayAsMilliseconds(step) }
+      jobOptions = {
+        ...DEFAULT_JOB_OPTIONS,
+        delay: delayAsMilliseconds(step.key, executionStep.dataOut),
+      }
     }
 
     await actionQueue.add(jobName, jobPayload, jobOptions)
