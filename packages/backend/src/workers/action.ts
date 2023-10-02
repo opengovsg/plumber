@@ -1,4 +1,4 @@
-import { IJSONObject } from '@plumber/types'
+import { NextStepMetadata } from '@plumber/types'
 
 import { UnrecoverableError, Worker } from 'bullmq'
 
@@ -23,7 +23,7 @@ type JobData = {
   flowId: string
   executionId: string
   stepId: string
-  metadata?: IJSONObject
+  metadata?: NextStepMetadata
 }
 
 export const worker = new Worker(

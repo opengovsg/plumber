@@ -17,7 +17,10 @@ export default defineAction({
   arguments: transactionalEmailFields,
 
   async run($, metadata) {
-    const progress = metadata?.progress || 0
+    let progress = 0
+    if (metadata?.type === 'postman-send-email') {
+      progress = metadata.progress
+    }
     const { subject, body, destinationEmail, senderName, replyTo } =
       $.step.parameters
     const result = transactionalEmailSchema.safeParse({
@@ -57,6 +60,7 @@ export default defineAction({
           stepId: $.step.id,
         },
         nextStepMetadata: {
+          type: 'postman-send-email',
           progress: newProgress,
         },
       }

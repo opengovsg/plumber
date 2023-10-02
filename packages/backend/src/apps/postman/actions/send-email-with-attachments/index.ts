@@ -17,7 +17,10 @@ export default defineAction({
   doesFileProcessing: true,
 
   async run($, metadata) {
-    const progress = metadata?.progress || 0
+    let progress = 0
+    if (metadata?.type === 'postman-send-email') {
+      progress = metadata.progress
+    }
     const {
       subject,
       body,
@@ -73,6 +76,7 @@ export default defineAction({
           stepId: $.step.id,
         },
         nextStepMetadata: {
+          type: 'postman-send-email',
           progress: newProgress,
         },
       }

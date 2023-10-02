@@ -344,6 +344,12 @@ export interface ITrigger extends IBaseTrigger {
   supportsWebhookRegistration?: boolean
 }
 
+interface PostmanSendEmailMetadata {
+  type: 'postman-send-email'
+  progress?: number
+}
+// Can add more type in this union later for different action types
+export type NextStepMetadata = PostmanSendEmailMetadata
 export interface IActionRunResult {
   /**
    * This enables actions to control pipe execution flow. This is for actions
@@ -355,7 +361,7 @@ export interface IActionRunResult {
   nextStep?:
     | { command: 'jump-to-step'; stepId: IStep['id'] }
     | { command: 'stop-execution' }
-  nextStepMetadata?: IJSONObject
+  nextStepMetadata?: NextStepMetadata
 }
 
 export interface IActionOutput {
@@ -373,11 +379,11 @@ export interface IBaseAction {
   description: string
   run?(
     $: IGlobalVariable,
-    metadata?: IJSONObject,
+    metadata?: NextStepMetadata,
   ): Promise<IActionRunResult | void>
   testRun?(
     $: IGlobalVariable,
-    metadata?: IJSONObject,
+    metadata?: NextStepMetadata,
   ): Promise<IActionRunResult | void>
 
   /**

@@ -44,6 +44,10 @@
         {
           "name": "SERVE_WEB_APP_SEPARATELY",
           "value": "false"
+        },
+        {
+          "name": "POSTMAN_FROM_ADDRESS",
+          "value": "donotreply@plumber.gov.sg"
         }
       ],
       "secrets": [

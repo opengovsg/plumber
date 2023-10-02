@@ -1,5 +1,4 @@
-import { type IActionRunResult } from '@plumber/types'
-import { IJSONObject } from '@plumber/types'
+import { type IActionRunResult, NextStepMetadata } from '@plumber/types'
 
 import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
@@ -17,7 +16,7 @@ type ProcessActionOptions = {
   stepId: string
   jobId?: string
   testRun?: boolean
-  metadata?: IJSONObject
+  metadata?: NextStepMetadata
 }
 
 export const processAction = async (options: ProcessActionOptions) => {
