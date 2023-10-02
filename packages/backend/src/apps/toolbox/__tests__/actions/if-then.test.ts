@@ -239,7 +239,7 @@ describe('If-Then', () => {
           field: 1,
           is: 'is',
           condition: 'equals',
-          value: 1,
+          text: 1,
         },
       ]
       const result = await ifThenAction.run($)
@@ -256,7 +256,7 @@ describe('If-Then', () => {
           field: 1,
           is: 'is',
           condition: 'equals',
-          value: 9999,
+          text: 9999,
         },
       ]
       const result = await ifThenAction.run($)
@@ -275,7 +275,7 @@ describe('If-Then', () => {
           field: 1,
           is: 'is',
           condition: 'equals',
-          value: 9999,
+          text: 9999,
         },
       ]
       // Exclude all of branch-2 from pipe for this test.
@@ -319,7 +319,7 @@ describe('If-Then', () => {
             field: 1,
             is: 'is',
             condition: 'equals',
-            value: 1,
+            text: 1,
           },
         ]
         const result = await ifThenAction.run($)
@@ -347,7 +347,7 @@ describe('If-Then', () => {
             field: 1,
             is: 'is',
             condition: 'equals',
-            value: 9999,
+            text: 9999,
           },
         ]
 
@@ -377,7 +377,7 @@ describe('If-Then', () => {
             field: 1,
             is: 'is',
             condition: 'equals',
-            value: 9999,
+            text: 9999,
           },
         ]
 
@@ -408,7 +408,7 @@ describe('If-Then', () => {
             field: 1,
             is: 'is',
             condition: 'equals',
-            value: 9999,
+            text: 9999,
           },
         ]
 

@@ -13,7 +13,7 @@ import toolboxApp from '../..'
 const ACTION_KEY = 'ifThen'
 
 function evalCondition(parameters: IJSONObject): boolean {
-  const { field, is, condition, value } = parameters
+  const { field, is, condition, text: value } = parameters
 
   let result: boolean
   switch (condition) {
@@ -160,7 +160,7 @@ export default defineAction({
         },
         {
           placeholder: 'Value',
-          key: 'value',
+          key: 'text', // Legacy naming from onlyContinueIf
           type: 'string' as const,
           required: true,
           variables: true,
