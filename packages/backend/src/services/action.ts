@@ -1,6 +1,5 @@
 import { type IActionRunResult } from '@plumber/types'
 
-import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
@@ -63,23 +62,18 @@ export const processAction = async (options: ProcessActionOptions) => {
       runResult = result
     }
   } catch (error) {
-    if (error instanceof CancelFlowError) {
-      // don't log error for cancel flow
-      runResult.nextStep = { command: 'stop-execution' }
+    logger.error(error)
+    if (error instanceof HttpError) {
+      $.actionOutput.error = {
+        details: error.details,
+        status: error.response.status,
+        statusText: error.response.statusText,
+      }
     } else {
-      logger.error(error)
-      if (error instanceof HttpError) {
-        $.actionOutput.error = {
-          details: error.details,
-          status: error.response.status,
-          statusText: error.response.statusText,
-        }
-      } else {
-        try {
-          $.actionOutput.error = JSON.parse(error.message)
-        } catch {
-          $.actionOutput.error = { error: error.message }
-        }
+      try {
+        $.actionOutput.error = JSON.parse(error.message)
+      } catch {
+        $.actionOutput.error = { error: error.message }
       }
     }
   }
