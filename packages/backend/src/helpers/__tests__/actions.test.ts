@@ -72,15 +72,11 @@ describe('action helper functions', () => {
 
   describe('error handling and retry', () => {
     it.each([
-      { errorMessage: 'read ECONNRESET' },
-      { errorMessage: 'connect ETIMEDOUT 1.2.3.4:123' },
-    ])('retries connectivity errors', ({ errorMessage }) => {
-      const callback = () =>
-        handleErrorAndThrow({
-          details: {
-            error: errorMessage,
-          },
-        } as IJSONObject)
+      { details: { error: 'read ECONNRESET' } },
+      { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
+      { status: 504 },
+    ])('retries connectivity errors', (errorDetails: IJSONObject) => {
+      const callback = () => handleErrorAndThrow(errorDetails)
 
       // Assert it throws, and that it doesn't throw the wrong type of error.
       expect(callback).toThrowError(Error)

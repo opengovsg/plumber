@@ -1,7 +1,7 @@
 import { IJSONObject } from '@plumber/types'
 
 import { UnrecoverableError } from 'bullmq'
-import { memoize } from 'lodash'
+import { get, memoize } from 'lodash'
 
 import App from '@/models/app'
 
@@ -41,20 +41,20 @@ export async function doesActionProcessFiles(
 }
 
 const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
+const CONNECTIVITY_STATUS_CODE = [504]
 
-export function handleErrorAndThrow(errorDetails: IJSONObject): void {
-  // FIXME: wth at errorString derivation.
-  const errorString = ((errorDetails?.details as IJSONObject)?.error ??
-    errorDetails?.error ??
-    (errorDetails?.error as IJSONObject)?.error) as string
-  if (!errorString) {
+export function handleErrorAndThrow(errorDetails: IJSONObject): never {
+  const errorString = get(errorDetails, 'details.error', '') as string
+  const statusCode = Number(get(errorDetails, 'status', 0))
+  if (!errorString && !statusCode) {
     throw new UnrecoverableError(JSON.stringify(errorDetails))
   }
 
   // Certain connectivity errors can be retried.
-  const isConnectivityIssue = CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
-    errorString.includes(errorSign),
-  )
+  const isConnectivityIssue =
+    CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
+      errorString.includes(errorSign),
+    ) || CONNECTIVITY_STATUS_CODE.includes(statusCode)
   if (isConnectivityIssue) {
     throw new Error(JSON.stringify(errorDetails))
   }
