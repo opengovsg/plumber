@@ -76,15 +76,8 @@ const testRun = async (options: TestRunOptions) => {
         testRun: true,
       })
 
-    if (actionExecutionStep.isFailed) {
+    if (actionExecutionStep.isFailed || actionStep.id === untilStep.id) {
       return { executionStep: actionExecutionStep }
-    }
-
-    if (actionStep.id === untilStep.id) {
-      return {
-        executionStep: actionExecutionStep,
-        skippedIfPublished: actionStep.id !== nextStepId,
-      }
     }
 
     // Don't update next step ID if actionStep wouldn't have been run in real

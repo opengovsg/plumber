@@ -13,7 +13,7 @@ import toolboxApp from '../..'
 const ACTION_KEY = 'ifThen'
 
 function evalCondition(parameters: IJSONObject): boolean {
-  const { field, is, condition, value } = parameters
+  const { field, is, condition, text: value } = parameters
 
   let result: boolean
   switch (condition) {
@@ -131,14 +131,15 @@ export default defineAction({
           variables: true,
         },
         {
-          placeholder: 'Is or Not',
+          placeholder: 'Is or is not',
           key: 'is',
           type: 'dropdown' as const,
           required: true,
           variables: false,
+          showOptionValue: false,
           options: [
             { label: 'Is', value: 'is' },
-            { label: 'Not', value: 'not' },
+            { label: 'Is not', value: 'not' },
           ],
         },
         {
@@ -147,18 +148,19 @@ export default defineAction({
           type: 'dropdown' as const,
           required: true,
           variables: false,
+          showOptionValue: false,
           options: [
-            { label: '=', value: 'equals' },
-            { label: '>=', value: 'gte' },
-            { label: '>', value: 'gt' },
-            { label: '<=', value: 'lte' },
-            { label: '<', value: 'lt' },
-            { label: 'contains', value: 'contains' },
+            { label: 'Equals to', value: 'equals' },
+            { label: 'Greater than ', value: 'gt' },
+            { label: 'Greater than or equals to', value: 'gte' },
+            { label: 'Less than', value: 'lt' },
+            { label: 'Less than or equals to', value: 'lte' },
+            { label: 'Contains', value: 'contains' },
           ],
         },
         {
           placeholder: 'Value',
-          key: 'value',
+          key: 'text', // Legacy naming from onlyContinueIf
           type: 'string' as const,
           required: true,
           variables: true,
@@ -168,12 +170,12 @@ export default defineAction({
   ],
 
   async run($) {
-    const isBranchTaken = shouldTakeBranch($)
+    const isConditionMet = shouldTakeBranch($)
     $.setActionItem({
-      raw: { isBranchTaken },
+      raw: { isConditionMet },
     })
 
-    if (isBranchTaken) {
+    if (isConditionMet) {
       return
     }
 

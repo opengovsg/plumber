@@ -17,7 +17,6 @@ export const EXECUTE_FLOW = gql`
         }
       }
       data
-      skippedIfPublished
     }
   }
 `

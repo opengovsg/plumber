@@ -3,9 +3,8 @@ import type { IField } from '@plumber/types'
 import { useCallback, useContext, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus, BiTrash } from 'react-icons/bi'
-import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
-import { FormLabel, IconButton } from '@opengovsg/design-system-react'
-import ConditionalIconButton from 'components/ConditionalIconButton'
+import { Divider, Flex, Text } from '@chakra-ui/react'
+import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
 import InputCreator, { InputCreatorProps } from 'components/InputCreator'
 import { EditorContext } from 'contexts/Editor'
 
@@ -74,17 +73,15 @@ function MultiRow(props: MultiRowProps): JSX.Element {
 
             {actualRows.map((row, index) => {
               const namePrefix = `${name}.${index}`
-              const rowColour = index % 2 === 0 ? 'white' : 'primary.50'
               return (
-                <Flex
-                  key={namePrefix}
-                  flexDir="column"
-                  gap={2}
-                  bg={rowColour}
-                  mb={2}
-                >
-                  {/* edge case the 1st sub-field to show our "remove row" icon */}
-                  <Flex alignItems="center" p={2}>
+                <Flex key={namePrefix} flexDir="column" gap={4} mb={4}>
+                  {/*
+                   * Sub-Fields
+                   *
+                   * Note: we edge case the 1st sub-field to show our "remove
+                   * row" icon
+                   */}
+                  <Flex alignItems="center">
                     <InputCreator
                       schema={subFields[0]}
                       namePrefix={namePrefix}
@@ -98,37 +95,41 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                       onClick={() => remove(index)}
                     />
                   </Flex>
-
                   {subFields.slice(1).map((subField) => (
-                    <Box p={2}>
-                      <InputCreator
-                        key={`${row.id}.${subField.key}`}
-                        schema={subField}
-                        namePrefix={namePrefix}
-                        {...forwardedInputCreatorProps}
-                      />
-                    </Box>
+                    <InputCreator
+                      key={`${row.id}.${subField.key}`}
+                      schema={subField}
+                      namePrefix={namePrefix}
+                      {...forwardedInputCreatorProps}
+                    />
                   ))}
+
+                  {/*
+                   * "And" divider
+                   */}
                   {index !== actualRows.length - 1 && (
-                    <Box position="relative" my={2.5}>
-                      <AbsoluteCenter bg="white" p={2.5}>
-                        <Text textStyle="subhead-3">And</Text>
-                      </AbsoluteCenter>
+                    <Flex alignItems="center">
                       <Divider />
-                    </Box>
+                      <Text textStyle="subhead-3" mx={2.5}>
+                        And
+                      </Text>
+                      <Divider />
+                    </Flex>
                   )}
                 </Flex>
               )
             })}
 
-            <ConditionalIconButton
+            <Button
               variant="outline"
-              icon={<BiPlus />}
+              leftIcon={<BiPlus />}
               onClick={handleAddRow}
               isDisabled={isEditorReadOnly}
+              maxW="fit-content"
+              mb={4}
             >
               And
-            </ConditionalIconButton>
+            </Button>
           </Flex>
         )
       }}
