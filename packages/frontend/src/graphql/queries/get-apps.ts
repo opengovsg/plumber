@@ -92,6 +92,7 @@ export const GET_APPS = gql`
             variableTypes
             allowArbitrary
             dependsOn
+            showOptionValue
             options {
               label
               value
@@ -116,6 +117,7 @@ export const GET_APPS = gql`
               variableTypes
               allowArbitrary
               dependsOn
+              showOptionValue
               options {
                 label
                 value
@@ -152,6 +154,7 @@ export const GET_APPS = gql`
             allowArbitrary
             dependsOn
             hidden
+            showOptionValue
             options {
               label
               value
@@ -176,6 +179,7 @@ export const GET_APPS = gql`
               variableTypes
               allowArbitrary
               dependsOn
+              showOptionValue
               options {
                 label
                 value

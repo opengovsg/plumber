@@ -1,6 +1,7 @@
 import { Button } from './Button'
 import { Container } from './Container'
 import { FormLabel } from './FormLabel'
+import { Infobox } from './Infobox'
 import { Link } from './Link'
 
 export const components = {
@@ -8,4 +9,5 @@ export const components = {
   Button,
   FormLabel,
   Link,
+  Infobox,
 }
