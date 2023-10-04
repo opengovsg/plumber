@@ -1,3 +1,6 @@
+import { IJSONObject } from '@plumber/types'
+
+import { UnrecoverableError } from 'bullmq'
 import { memoize } from 'lodash'
 
 import App from '@/models/app'
@@ -37,6 +40,25 @@ export async function doesActionProcessFiles(
   )
 }
 
-export enum ActionBackoffStrategy {
-  ExponentialConnectivity = 'exponential-backoff-connectivity',
+const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
+
+export function handleErrorAndThrow(errorDetails: IJSONObject): void {
+  // FIXME: wth at errorString derivation.
+  const errorString = ((errorDetails?.details as IJSONObject)?.error ??
+    errorDetails?.error ??
+    (errorDetails?.error as IJSONObject)?.error) as string
+  if (!errorString) {
+    throw new UnrecoverableError(JSON.stringify(errorDetails))
+  }
+
+  // Certain connectivity errors can be retried.
+  const isConnectivityIssue = CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
+    errorString.includes(errorSign),
+  )
+  if (isConnectivityIssue) {
+    throw new Error(JSON.stringify(errorDetails))
+  }
+
+  // All other errors cannot be retried.
+  throw new UnrecoverableError(JSON.stringify(errorDetails))
 }
