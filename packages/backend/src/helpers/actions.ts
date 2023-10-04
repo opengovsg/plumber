@@ -44,9 +44,11 @@ const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
 export function isRetriableError(errorDetails: IJSONObject): boolean {
   // Connectivity error
   if (
-    errorDetails.error &&
+    (errorDetails?.details as IJSONObject)?.error &&
     CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
-      (errorDetails.error as string).includes(errorSign),
+      ((errorDetails.details as IJSONObject).error as string).includes(
+        errorSign,
+      ),
     )
   ) {
     return true
