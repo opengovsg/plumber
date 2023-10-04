@@ -16,7 +16,7 @@ const EXPONENTIAL_BACKOFF_INITIAL_DELAY_MS = 5000
 export const DEFAULT_JOB_OPTIONS: JobsOptions = {
   removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   removeOnFail: REMOVE_AFTER_30_DAYS,
-  attempts: 3,
+  attempts: 4,
   backoff: {
     type: 'exponential',
     delay: EXPONENTIAL_BACKOFF_INITIAL_DELAY_MS,

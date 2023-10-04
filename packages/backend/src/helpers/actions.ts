@@ -46,16 +46,16 @@ export function handleErrorAndThrow(errorDetails: IJSONObject): void {
   //
   // Retriable errors.
   //
-  if (
-    (errorDetails?.details as IJSONObject)?.error &&
-    CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
-      ((errorDetails.details as IJSONObject).error as string).includes(
-        errorSign,
-      ),
-    )
-  ) {
-    throw new Error(JSON.stringify(errorDetails))
+  const errorString = errorDetails?.error as string
+  if (!errorString) {
+    throw new UnrecoverableError(JSON.stringify(errorDetails))
+  }
+  const isConnectivityIssue = CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
+    errorString.includes(errorSign),
+  )
+  if (!isConnectivityIssue) {
+    throw new UnrecoverableError(JSON.stringify(errorDetails))
   }
 
-  throw new UnrecoverableError(JSON.stringify(errorDetails))
+  throw new Error(JSON.stringify(errorDetails))
 }
