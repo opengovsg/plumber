@@ -1,8 +1,9 @@
-import { IApp } from '@plumber/types'
+import { IApp, IJSONObject } from '@plumber/types'
 
+import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { doesActionProcessFiles } from '../actions'
+import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
 
 const mocks = vi.hoisted(() => ({
   getAllAppsWithFunctions: vi.fn(),
@@ -66,6 +67,33 @@ describe('action helper functions', () => {
       mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('topkek', 'action1')
       expect(result).toEqual(false)
+    })
+  })
+
+  describe('error handling and retry', () => {
+    it.each([
+      { errorMessage: 'read ECONNRESET' },
+      { errorMessage: 'connect ETIMEDOUT 1.2.3.4:123' },
+    ])('retries connectivity errors', ({ errorMessage }) => {
+      const callback = () =>
+        handleErrorAndThrow({
+          details: {
+            error: errorMessage,
+          },
+        } as IJSONObject)
+
+      // Assert it throws, and that it doesn't throw the wrong type of error.
+      expect(callback).toThrowError(Error)
+      expect(callback).not.toThrowError(UnrecoverableError)
+    })
+
+    it.each([
+      {}, // Edge case - empty object just in case
+      { status: 500, details: { description: 'Internal Server Error' } },
+      { error: 'connect ECONNREFUSED 1.2.3.4' },
+    ])('does not retry other types of errors', (errorDetails) => {
+      const callback = () => handleErrorAndThrow(errorDetails as IJSONObject)
+      expect(callback).toThrowError(UnrecoverableError)
     })
   })
 })
