@@ -1,3 +1,5 @@
+import { IJSONObject } from '@plumber/types'
+
 import { memoize } from 'lodash'
 
 import App from '@/models/app'
@@ -37,6 +39,18 @@ export async function doesActionProcessFiles(
   )
 }
 
-export enum ActionBackoffStrategy {
-  ExponentialConnectivity = 'exponential-backoff-connectivity',
+const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
+
+export function isRetriableError(errorDetails: IJSONObject): boolean {
+  // Connectivity error
+  if (
+    errorDetails.error &&
+    CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
+      (errorDetails.error as string).includes(errorSign),
+    )
+  ) {
+    return true
+  }
+
+  return false
 }
