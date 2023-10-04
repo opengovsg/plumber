@@ -43,19 +43,22 @@ export async function doesActionProcessFiles(
 const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
 
 export function handleErrorAndThrow(errorDetails: IJSONObject): void {
-  //
-  // Retriable errors.
-  //
-  const errorString = errorDetails?.error as string
+  // FIXME: wth at errorString derivation.
+  const errorString = ((errorDetails?.details as IJSONObject)?.error ??
+    errorDetails?.error ??
+    (errorDetails?.error as IJSONObject)?.error) as string
   if (!errorString) {
     throw new UnrecoverableError(JSON.stringify(errorDetails))
   }
+
+  // Certain connectivity errors can be retried.
   const isConnectivityIssue = CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
     errorString.includes(errorSign),
   )
-  if (!isConnectivityIssue) {
-    throw new UnrecoverableError(JSON.stringify(errorDetails))
+  if (isConnectivityIssue) {
+    throw new Error(JSON.stringify(errorDetails))
   }
 
-  throw new Error(JSON.stringify(errorDetails))
+  // All other errors cannot be retried.
+  throw new UnrecoverableError(JSON.stringify(errorDetails))
 }
