@@ -1,8 +1,8 @@
-import { UnrecoverableError, Worker } from 'bullmq'
+import { Worker } from 'bullmq'
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
-import { isRetriableError } from '@/helpers/actions'
+import { handleErrorAndThrow } from '@/helpers/actions'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import logger from '@/helpers/logger'
@@ -24,10 +24,7 @@ export const worker = new Worker(
       await processAction({ ...(job.data as JobData), jobId: job.id })
 
     if (executionStep.isFailed) {
-      if (isRetriableError(executionStep.errorDetails)) {
-        throw new Error(JSON.stringify(executionStep.errorDetails))
-      }
-      throw new UnrecoverableError(JSON.stringify(executionStep.errorDetails))
+      return handleErrorAndThrow(executionStep.errorDetails)
     }
 
     const step = await Step.query().findById(stepId).throwIfNotFound()

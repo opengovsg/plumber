@@ -1,5 +1,6 @@
 import { IJSONObject } from '@plumber/types'
 
+import { UnrecoverableError } from 'bullmq'
 import { memoize } from 'lodash'
 
 import App from '@/models/app'
@@ -41,8 +42,10 @@ export async function doesActionProcessFiles(
 
 const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
 
-export function isRetriableError(errorDetails: IJSONObject): boolean {
-  // Connectivity error
+export function handleErrorAndThrow(errorDetails: IJSONObject): void {
+  //
+  // Retriable errors.
+  //
   if (
     (errorDetails?.details as IJSONObject)?.error &&
     CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
@@ -51,8 +54,8 @@ export function isRetriableError(errorDetails: IJSONObject): boolean {
       ),
     )
   ) {
-    return true
+    throw new Error(JSON.stringify(errorDetails))
   }
 
-  return false
+  throw new UnrecoverableError(JSON.stringify(errorDetails))
 }
