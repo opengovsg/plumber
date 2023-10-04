@@ -168,12 +168,12 @@ export default defineAction({
   ],
 
   async run($) {
-    const isBranchTaken = shouldTakeBranch($)
+    const isConditionMet = shouldTakeBranch($)
     $.setActionItem({
-      raw: { isBranchTaken },
+      raw: { isConditionMet },
     })
 
-    if (isBranchTaken) {
+    if (isConditionMet) {
       return
     }
 
