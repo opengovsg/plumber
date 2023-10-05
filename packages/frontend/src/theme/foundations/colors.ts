@@ -2,6 +2,9 @@
 // size.
 // Imported from BbBear generated on Fri, 23 Jun 2023 09:14:33 GMT
 const bbBearColors = {
+  grey: {
+    '900': '#2C2E34',
+  },
   base: {
     canvas: {
       'brand-subtle': '#fef8fb',
@@ -15,6 +18,7 @@ const bbBearColors = {
     },
     content: {
       default: '#454953',
+      strong: '#2C2E34',
       medium: '#666C7A',
     },
   },
@@ -34,6 +38,9 @@ const bbBearColors = {
     },
     success: {
       default: '#0F796F',
+    },
+    'success-subtle': {
+      default: '#E2EEED',
     },
     support: {
       'disabled-content': '#A0A4AD',

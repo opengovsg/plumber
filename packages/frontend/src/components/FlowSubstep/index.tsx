@@ -116,7 +116,6 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
                   namePrefix="parameters"
                   stepId={step.id}
                   disabled={editorContext.readOnly}
-                  showOptionValue={true}
                 />
               ))}
           </Stack>

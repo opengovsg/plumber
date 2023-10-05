@@ -166,6 +166,7 @@ export interface IBaseField {
 
 export interface IFieldDropdown extends IBaseField {
   type: 'dropdown'
+  showOptionValue?: boolean
   allowArbitrary?: boolean
   value?: string | boolean
   options?: IFieldDropdownOption[]

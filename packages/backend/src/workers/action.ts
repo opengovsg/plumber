@@ -2,6 +2,7 @@ import { Worker } from 'bullmq'
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
+import { handleErrorAndThrow } from '@/helpers/actions'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import { checkErrorEmail, sendErrorEmail } from '@/helpers/generate-error-email'
@@ -25,7 +26,7 @@ export const worker = new Worker(
       await processAction({ ...(job.data as JobData), jobId: job.id })
 
     if (executionStep.isFailed) {
-      throw new Error(JSON.stringify(executionStep.errorDetails))
+      return handleErrorAndThrow(executionStep.errorDetails)
     }
 
     const step = await Step.query().findById(stepId).throwIfNotFound()

@@ -1,4 +1,4 @@
-import { IGlobalVariable } from '@plumber/types'
+import { type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -239,14 +239,14 @@ describe('If-Then', () => {
           field: 1,
           is: 'is',
           condition: 'equals',
-          value: 1,
+          text: 1,
         },
       ]
       const result = await ifThenAction.run($)
 
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toBeCalledWith({
-        raw: { isBranchTaken: true },
+        raw: { isConditionMet: true },
       })
     })
 
@@ -256,7 +256,7 @@ describe('If-Then', () => {
           field: 1,
           is: 'is',
           condition: 'equals',
-          value: 9999,
+          text: 9999,
         },
       ]
       const result = await ifThenAction.run($)
@@ -265,7 +265,7 @@ describe('If-Then', () => {
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
       })
       expect(mocks.setActionItem).toBeCalledWith({
-        raw: { isBranchTaken: false },
+        raw: { isConditionMet: false },
       })
     })
 
@@ -275,7 +275,7 @@ describe('If-Then', () => {
           field: 1,
           is: 'is',
           condition: 'equals',
-          value: 9999,
+          text: 9999,
         },
       ]
       // Exclude all of branch-2 from pipe for this test.
@@ -286,7 +286,7 @@ describe('If-Then', () => {
         nextStep: { command: 'stop-execution' },
       })
       expect(mocks.setActionItem).toBeCalledWith({
-        raw: { isBranchTaken: false },
+        raw: { isConditionMet: false },
       })
     })
   })
@@ -319,14 +319,14 @@ describe('If-Then', () => {
             field: 1,
             is: 'is',
             condition: 'equals',
-            value: 1,
+            text: 1,
           },
         ]
         const result = await ifThenAction.run($)
 
         expect(result).toBeFalsy()
         expect(mocks.setActionItem).toBeCalledWith({
-          raw: { isBranchTaken: true },
+          raw: { isConditionMet: true },
         })
       },
     )
@@ -347,7 +347,7 @@ describe('If-Then', () => {
             field: 1,
             is: 'is',
             condition: 'equals',
-            value: 9999,
+            text: 9999,
           },
         ]
 
@@ -357,7 +357,7 @@ describe('If-Then', () => {
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
         })
         expect(mocks.setActionItem).toBeCalledWith({
-          raw: { isBranchTaken: false },
+          raw: { isConditionMet: false },
         })
       },
     )
@@ -377,7 +377,7 @@ describe('If-Then', () => {
             field: 1,
             is: 'is',
             condition: 'equals',
-            value: 9999,
+            text: 9999,
           },
         ]
 
@@ -387,7 +387,7 @@ describe('If-Then', () => {
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
         })
         expect(mocks.setActionItem).toBeCalledWith({
-          raw: { isBranchTaken: false },
+          raw: { isConditionMet: false },
         })
       },
     )
@@ -408,7 +408,7 @@ describe('If-Then', () => {
             field: 1,
             is: 'is',
             condition: 'equals',
-            value: 9999,
+            text: 9999,
           },
         ]
 
@@ -418,7 +418,7 @@ describe('If-Then', () => {
           nextStep: { command: 'stop-execution' },
         })
         expect(mocks.setActionItem).toBeCalledWith({
-          raw: { isBranchTaken: false },
+          raw: { isConditionMet: false },
         })
       },
     )

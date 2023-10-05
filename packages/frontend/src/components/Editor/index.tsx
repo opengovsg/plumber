@@ -6,6 +6,7 @@ import { useMutation, useQuery } from '@apollo/client'
 import {
   AbsoluteCenter,
   Box,
+  Center,
   CircularProgress,
   Divider,
   Flex,
@@ -162,13 +163,13 @@ export default function Editor(props: EditorProps): React.ReactElement {
   )
 
   // FIXME (ogp-weeloong): optimize this a bit further by omitting query.
-  const { data, loading: loadingApps } = useQuery(GET_APPS)
+  const { data } = useQuery(GET_APPS)
   const apps: IApp[] = data?.getApps?.filter(
     (app: IApp) => !!app.actions?.length,
   )
 
   const groupingActions = useMemo(() => {
-    if (loadingApps) {
+    if (!apps) {
       return null
     }
 
@@ -179,7 +180,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           ?.map((action) => `${app.key}-${action.key}`),
       ) ?? [],
     )
-  }, [loadingApps, apps])
+  }, [apps])
 
   const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
     if (!groupingActions) {
@@ -209,6 +210,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
     // creating new arrays.
     steps,
   ])
+  const flowStepGroupIconUrl = useMemo(() => {
+    if (groupedSteps.length === 0) {
+      return undefined
+    }
+    return apps.find((app) => app.key === groupedSteps[0].appKey)?.iconUrl
+  }, [apps, groupedSteps])
 
   //
   // Compute which steps are eligible for variable extraction.
@@ -234,8 +241,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [stepsBeforeGroup],
   )
 
-  if (loadingApps) {
-    return <CircularProgress isIndeterminate my={2} />
+  if (!apps) {
+    return (
+      <Center w="full" h="100vh">
+        <CircularProgress isIndeterminate my={2} />
+      </Center>
+    )
   }
 
   return (
@@ -265,6 +276,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           ))}
           {groupedSteps.length > 0 && (
             <FlowStepGroup
+              iconUrl={flowStepGroupIconUrl}
               flow={flow}
               steps={groupedSteps}
               collapsed={currentStepId !== groupedSteps[0].id}
