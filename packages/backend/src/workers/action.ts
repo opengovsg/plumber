@@ -1,9 +1,12 @@
-import { Worker } from 'bullmq'
+import { UnrecoverableError, Worker } from 'bullmq'
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { handleErrorAndThrow } from '@/helpers/actions'
-import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import {
+  DEFAULT_JOB_OPTIONS,
+  MAXIMUM_JOB_ATTEMPTS,
+} from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import { checkErrorEmail, sendErrorEmail } from '@/helpers/generate-error-email'
 import logger from '@/helpers/logger'
@@ -94,7 +97,13 @@ worker.on('failed', async (job, err) => {
     },
   )
   const isEmailSent = await checkErrorEmail(job.data.flowId)
-  if (!isEmailSent) {
+  if (isEmailSent) {
+    return
+  }
+  if (
+    err instanceof UnrecoverableError ||
+    (job.attemptsMade === MAXIMUM_JOB_ATTEMPTS && err instanceof Error)
+  ) {
     const flow = await Flow.query()
       .findById(job.data.flowId)
       .withGraphFetched('user')
