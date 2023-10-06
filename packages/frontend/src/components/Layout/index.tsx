@@ -1,7 +1,7 @@
 import * as React from 'react'
+import { BiHistory, BiSolidGrid } from 'react-icons/bi'
 import { Navigate } from 'react-router-dom'
-import AppsIcon from '@mui/icons-material/Apps'
-import HistoryIcon from '@mui/icons-material/History'
+import { Icon } from '@chakra-ui/react'
 import SchemaIcon from '@mui/icons-material/Schema'
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
@@ -20,21 +20,18 @@ type PublicLayoutProps = {
 const drawerLinks = [
   {
     Icon: SchemaIcon,
-    primary: 'drawer.flows',
+    text: 'Pipes',
     to: URLS.FLOWS,
-    dataTest: 'flows-page-drawer-link',
   },
   {
-    Icon: AppsIcon,
-    primary: 'drawer.apps',
+    Icon: () => <Icon as={BiSolidGrid} boxSize={6}></Icon>,
+    text: 'My Apps',
     to: URLS.APPS,
-    dataTest: 'apps-page-drawer-link',
   },
   {
-    Icon: HistoryIcon,
-    primary: 'drawer.executions',
+    Icon: () => <Icon as={BiHistory} boxSize={6}></Icon>,
+    text: 'Executions',
     to: URLS.EXECUTIONS,
-    dataTest: 'executions-page-drawer-link',
   },
 ]
 
