@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { Box as ChakraBox, BoxProps as ChakraBoxProps } from '@chakra-ui/react'
+import {
+  Box as ChakraBox,
+  BoxProps as ChakraBoxProps,
+  Text,
+} from '@chakra-ui/react'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import { Box, useMediaQuery } from '@mui/material'
 import MuiAppBar from '@mui/material/AppBar'
@@ -66,10 +70,10 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            mr={4}
+            mr={6}
             _hover={{ textDecoration: 'underline' }}
           >
-            Status
+            <Text textStyle="subhead-1">Status</Text>
           </Button>
 
           <Button
@@ -78,10 +82,10 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            mr={4}
+            mr={6}
             _hover={{ textDecoration: 'underline' }}
           >
-            Guide
+            <Text textStyle="subhead-1">Guide</Text>
           </Button>
 
           <NewsDrawer />
