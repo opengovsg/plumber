@@ -10,7 +10,7 @@ import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
 export default defineTrigger({
-  name: 'Weekly - triggers every week, choose what day of the week',
+  name: 'Weekly - triggers every week, choose a specific day of the week',
   key: 'everyWeek',
   description: 'Triggers every week.',
   arguments: [

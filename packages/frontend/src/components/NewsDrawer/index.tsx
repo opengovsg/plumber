@@ -51,8 +51,7 @@ export default function NewsDrawer() {
           <Box
             borderRadius="50%"
             bg="primary.600"
-            w={1.5}
-            h={1.5}
+            boxSize={1.5}
             top={0.5}
             right={-2}
             position="absolute"

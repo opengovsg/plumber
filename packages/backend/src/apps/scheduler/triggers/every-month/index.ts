@@ -10,7 +10,7 @@ import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
 export default defineTrigger({
-  name: 'Monthly - triggers every month, choose what day of the month',
+  name: 'Monthly - triggers every month, choose a specific day of the month',
   key: 'everyMonth',
   description: 'Triggers every month.',
   arguments: [
