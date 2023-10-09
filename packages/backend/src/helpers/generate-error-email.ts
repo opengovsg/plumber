@@ -1,6 +1,5 @@
 import { DateTime } from 'luxon'
 
-import appConfig from '@/config/app'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { sendEmail } from '@/helpers/send-email'
 import Flow from '@/models/flow'
@@ -8,28 +7,19 @@ import Flow from '@/models/flow'
 const MAX_LENGTH = 80
 const redisClient = createRedisClient(REDIS_DB_INDEX.PIPE_ERRORS)
 
-function redirectFlowLink(flowId: string) {
-  return `${
-    appConfig.isDev ? appConfig.webAppUrl : appConfig.baseUrl
-  }/editor/${flowId}`
-}
-
 function truncateFlowName(flowName: string) {
   return flowName.length > MAX_LENGTH
     ? flowName.slice(0, MAX_LENGTH) + '...'
     : flowName
 }
 
-export function createBodyErrorMessage(
-  flowName: string,
-  flowId: string,
-): string {
-  const currDateTime = DateTime.now().toFormat('MMM dd yyyy, HH:mm:ss a')
+export function createBodyErrorMessage(flowName: string): string {
+  const currDateTime = DateTime.now().toFormat('MMM dd yyyy, hh:mm a')
   const bodyMessage = `
-    Dear Plumber admin,
+    Dear fellow plumber,
     <br>
     <br>
-    We have detected that your pipe: <strong>${flowName}</strong>, has failed as of ${currDateTime}.
+    We have detected that your pipe: <strong>${flowName}</strong>, has encountered an error on ${currDateTime}.
     <br>
     <br>
     This could be because of the following:
@@ -37,14 +27,12 @@ export function createBodyErrorMessage(
       <li>One of the apps you are using may be down.</li>
       <li>Some parts of the pipe you have set up may not be working as intended.</li>
     </ol>
-    <br>
     <p>What should you do?</p>
     <ol>
-      <li>Retry the failed execution by heading to the executions tab, filter for failures and click on retry button.</li>
+      <li>Retry the failed execution by heading to the executions tab, and clicking on the <strong>Retry</strong> button after finding the failed execution.</li>
       <li>Check our status page at https://status.plumber.gov.sg/ to see if Plumber or any of the apps you are using are down.</li>
-      <li>Edit your pipe at ${redirectFlowLink(flowId)}
+      <li>Correct the configuration for your broken pipe.</li>
     </ol>
-    <br>
     <br>
     If you are still having issues with your pipe, reply to this email and we'd be happy to help you get your pipe running again!
     <br>
@@ -56,14 +44,15 @@ export function createBodyErrorMessage(
   return bodyMessage
 }
 
-export async function checkErrorEmail(flowId: string) {
+export async function checkErrorEmail(flowId: string): Promise<boolean> {
   const errorKey = `error-alert:${flowId}`
-  return await redisClient.hexists(errorKey, 'flowId')
+  return !!(await redisClient.hexists(errorKey, 'flowId'))
 }
 
-export async function sendErrorEmail(flow: Flow, userEmail: string) {
+export async function sendErrorEmail(flow: Flow) {
   const truncatedFlowName = truncateFlowName(flow.name)
   const flowId = flow.id
+  const userEmail = flow.user.email
   const errorKey = `error-alert:${flowId}`
   const currDatetime = DateTime.now()
 
@@ -74,14 +63,17 @@ export async function sendErrorEmail(flow: Flow, userEmail: string) {
     timestamp: currDatetime.toMillis(),
   }
 
-  await redisClient.hset(errorKey, errorDetails, () => {
-    sendEmail({
-      subject: `Plumber: Possible error on ${truncatedFlowName}`,
-      body: createBodyErrorMessage(truncatedFlowName, flowId),
-      recipient: userEmail,
-      replyTo: 'support@plumber.gov.sg',
-    })
+  await sendEmail({
+    subject: `Plumber: Possible error on ${truncatedFlowName}`,
+    body: createBodyErrorMessage(truncatedFlowName),
+    recipient: userEmail,
+    replyTo: 'support@plumber.gov.sg',
   })
-  // set redis key to expire at the end of the day
-  redisClient.pexpireat(errorKey, currDatetime.endOf('day').toMillis())
+
+  await redisClient
+    .hset(errorKey, errorDetails)
+    .then(() =>
+      redisClient.pexpireat(errorKey, currDatetime.endOf('day').toMillis()),
+    )
+  return errorDetails
 }

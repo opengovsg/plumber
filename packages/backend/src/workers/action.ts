@@ -102,13 +102,16 @@ worker.on('failed', async (job, err) => {
   }
   if (
     err instanceof UnrecoverableError ||
-    (job.attemptsMade === MAXIMUM_JOB_ATTEMPTS && err instanceof Error)
+    job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
   ) {
     const flow = await Flow.query()
       .findById(job.data.flowId)
       .withGraphFetched('user')
       .throwIfNotFound()
-    sendErrorEmail(flow, flow.user.email)
+    const errorDetails = await sendErrorEmail(flow)
+    logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
+      errorDetails,
+    })
   }
 })
 
