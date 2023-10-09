@@ -21,7 +21,10 @@ export default defineConfig({
     name: 'backend-integration',
     // load env variables
     setupFiles: ['dotenv/config', getPath('./test/pg-reset-db-setup.ts')],
-    globalSetup: [getPath('./test/pg-global-setup.ts')],
+    globalSetup: [
+      getPath('./test/pg-global-setup.ts'),
+      getPath('./test/redis-global-setup.ts'),
+    ],
     include: ['src/**/*.itest.{js,ts}'],
     threads: false,
   },
