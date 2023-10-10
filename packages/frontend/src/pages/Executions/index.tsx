@@ -1,8 +1,9 @@
 import type { IExecution } from '@plumber/types'
 
 import * as React from 'react'
+import { useCallback, useMemo } from 'react'
 import { BiSearch } from 'react-icons/bi'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import {
   Divider as ChakraDivider,
@@ -17,7 +18,6 @@ import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import Pagination from '@mui/material/Pagination'
-import PaginationItem from '@mui/material/PaginationItem'
 import Container from 'components/Container'
 import ExecutionRow from 'components/ExecutionRow'
 import ExecutionStatusMenu from 'components/ExecutionStatusMenu'
@@ -29,6 +29,12 @@ import debounce from 'lodash/debounce'
 
 const EXECUTION_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Executions'
+
+interface ExecutionParameters {
+  page: number
+  status: string
+  input: string
+}
 
 const getLimitAndOffset = (
   page: number,
@@ -46,39 +52,65 @@ export default function Executions(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
 
-  const [searchInput, setSearchInput] = React.useState<string>('')
-
-  const handleSearchValue = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(event.target.value)
-    setSearchParams({ status: filterStatus })
-  }
-  const handleSearchValueDebounced = debounce(handleSearchValue, 1000)
-
+  const [searchInput, setSearchInput] = React.useState<string>(
+    searchParams.get('input') || '',
+  )
   const [filterStatus, setFilterStatus] = React.useState<string>(
     searchParams.get('status') || '',
   )
 
-  const onFilterChange = (status: string) => {
-    setFilterStatus(status)
-    setSearchParams({ status })
+  // format search params for empty strings and first page
+  const formatSearchParams = (params: Partial<ExecutionParameters>) => {
+    setSearchParams({
+      ...(params.page && params.page !== 1 && { page: params.page.toString() }),
+      ...(params.status !== '' && { status: params.status }),
+      ...(params.input !== '' && { input: params.input }),
+    })
   }
 
-  // checks for updates to re-render execution status menu
+  // search value handling
+  const handleSearchInputChange = useCallback(
+    (input: string) => {
+      formatSearchParams({ status: filterStatus, input })
+      setSearchInput(input)
+    },
+    [searchInput],
+  )
+
+  const handleSearchInputChangeDebounced = useMemo(
+    () => debounce(handleSearchInputChange, 500),
+    [handleSearchInputChange],
+  )
+
+  const onSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      handleSearchInputChangeDebounced(event.target.value)
+    },
+    [handleSearchInputChangeDebounced],
+  )
+
+  // filter status handling
+  const onFilterChange = (status: string) => {
+    setFilterStatus(status)
+    formatSearchParams({ status, input: searchInput })
+  }
+
   React.useEffect(() => {
     setFilterStatus(searchParams.get('status') || '')
   }, [searchParams])
 
-  const { data, refetch, loading } = useQuery(GET_EXECUTIONS, {
+  const { data, loading } = useQuery(GET_EXECUTIONS, {
     variables: getLimitAndOffset(page, filterStatus, searchInput),
     fetchPolicy: 'cache-and-network',
     pollInterval: 5000,
   })
+
+  // React.useEffect(() => {
+  //   refetch(getLimitAndOffset(page, filterStatus.toLowerCase(), searchInput))
+  // }, [refetch, page, filterStatus, searchInput])
+
   const getExecutions = data?.getExecutions || {}
   const { pageInfo, edges } = getExecutions
-
-  React.useEffect(() => {
-    refetch(getLimitAndOffset(page, filterStatus.toLowerCase(), searchInput))
-  }, [refetch, page, filterStatus, searchInput])
 
   const executions: IExecution[] = edges?.map(
     ({ node }: { node: IExecution }) => node,
@@ -104,7 +136,8 @@ export default function Executions(): React.ReactElement {
               textStyle="body-1"
               pr="7.5rem"
               placeholder="Search by pipe name"
-              onChange={handleSearchValueDebounced}
+              defaultValue={searchInput}
+              onChange={onSearchInputChange}
             ></Input>
             <InputRightElement w="fit-content" p={1}>
               <ChakraDivider
@@ -144,17 +177,13 @@ export default function Executions(): React.ReactElement {
             sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}
             page={pageInfo?.currentPage}
             count={pageInfo?.totalPages}
-            renderItem={(item) => (
-              <PaginationItem
-                component={Link}
-                to={`${
-                  item.page === 1
-                    ? ''
-                    : `?page=${item.page}&status=${filterStatus}`
-                }`}
-                {...item}
-              />
-            )}
+            onChange={(event, page) => {
+              formatSearchParams({
+                page,
+                status: filterStatus,
+                input: searchInput,
+              })
+            }}
           />
         )}
       </Container>

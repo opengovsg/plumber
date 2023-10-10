@@ -12,6 +12,29 @@ import {
   Text,
 } from '@chakra-ui/react'
 
+const filterOptions = [
+  {
+    displayLabel: 'Status',
+    inputLabel: 'All Executions',
+    value: '',
+  },
+  {
+    displayLabel: 'Success',
+    inputLabel: 'Success',
+    value: 'success',
+  },
+  {
+    displayLabel: 'Failure',
+    inputLabel: 'Failure',
+    value: 'failure',
+  },
+  {
+    displayLabel: 'Pending',
+    inputLabel: 'Pending',
+    value: 'pending',
+  },
+]
+
 interface ExecutionStatusMenuProps {
   filterStatus: string
   onFilterChange: (status: string) => void
@@ -33,7 +56,8 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
         <Flex alignItems="center">
           <Icon boxSize={5} as={BiFilter} color="primary.600" mr={2} />
           <Text textStyle="subhead-2" color="primary.600">
-            {filterStatus || 'Status'}
+            {filterOptions.find((option) => option.value === filterStatus)
+              ?.displayLabel || 'Status'}
           </Text>
         </Flex>
       </MenuButton>
@@ -44,26 +68,13 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
             onChange={(val) => onFilterChange(val as string)}
             value={filterStatus}
           >
-            <MenuItemOption value="">
-              <Text textStyle="body-1" color="base.content.strong">
-                All Executions
-              </Text>
-            </MenuItemOption>
-            <MenuItemOption value="Success">
-              <Text textStyle="body-1" color="base.content.strong">
-                Success
-              </Text>
-            </MenuItemOption>
-            <MenuItemOption value="Failure">
-              <Text textStyle="body-1" color="base.content.strong">
-                Failure
-              </Text>
-            </MenuItemOption>
-            <MenuItemOption value="Pending">
-              <Text textStyle="body-1" color="base.content.strong">
-                Pending
-              </Text>
-            </MenuItemOption>
+            {filterOptions.map((option) => (
+              <MenuItemOption key={option.value} value={option.value}>
+                <Text textStyle="body-1" color="base.content.strong">
+                  {option.inputLabel}
+                </Text>
+              </MenuItemOption>
+            ))}
           </MenuOptionGroup>
         </MenuList>
       </Portal>

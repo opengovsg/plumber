@@ -22,7 +22,7 @@ const getExecutions = async (
       builder.where('status', params.status)
     }
     if (params.searchInput) {
-      builder.where('name', 'ilike', `${params.searchInput}%`)
+      builder.where('name', 'ilike', `%${params.searchInput}%`)
     }
   }
 
