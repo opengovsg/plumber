@@ -1,9 +1,13 @@
 import { IGlobalVariable, IHttpClient } from '@plumber/types'
 
+import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import HttpError from '@/errors/http'
 
 import app from '../..'
 import {
+  FORMSG_WEBHOOK_REGISTRATION_MESSAGE,
   FORMSG_WEBHOOK_VERIFICATION_MESSAGE,
   registerWebhookUrl,
   verifyWebhookUrl,
@@ -38,7 +42,7 @@ describe('formsg webhook registration', () => {
   })
 
   describe('verify webhook url', () => {
-    it('should return success if webhook url is already set', () => {
+    it('should return success if webhook url is already set', async () => {
       $.http.post = vi.fn().mockResolvedValueOnce({
         data: {
           webhook: {
@@ -46,13 +50,13 @@ describe('formsg webhook registration', () => {
           },
         },
       })
-      expect(verifyWebhookUrl($)).resolves.toEqual({
+      await expect(verifyWebhookUrl($)).resolves.toEqual({
         webhookVerified: true,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.VERIFIED,
       })
     })
 
-    it('should return false if webhook url is not set', () => {
+    it('should return false if webhook url is not set', async () => {
       $.http.post = vi.fn().mockResolvedValueOnce({
         data: {
           webhook: {
@@ -60,13 +64,13 @@ describe('formsg webhook registration', () => {
           },
         },
       })
-      expect(verifyWebhookUrl($)).resolves.toEqual({
+      await expect(verifyWebhookUrl($)).resolves.toEqual({
         webhookVerified: false,
         message: undefined,
       })
     })
 
-    it('should return false if webhook url is set to another pipe', () => {
+    it('should return false if webhook url is set to another pipe', async () => {
       $.http.post = vi.fn().mockResolvedValueOnce({
         data: {
           webhook: {
@@ -74,13 +78,13 @@ describe('formsg webhook registration', () => {
           },
         },
       })
-      expect(verifyWebhookUrl($)).resolves.toEqual({
+      await expect(verifyWebhookUrl($)).resolves.toEqual({
         webhookVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_PIPE,
       })
     })
 
-    it('should return false if webhook url is set to another non-pipe url', () => {
+    it('should return false if webhook url is set to another non-pipe url', async () => {
       $.http.post = vi.fn().mockResolvedValueOnce({
         data: {
           webhook: {
@@ -88,27 +92,54 @@ describe('formsg webhook registration', () => {
           },
         },
       })
-      expect(verifyWebhookUrl($)).resolves.toEqual({
+      await expect(verifyWebhookUrl($)).resolves.toEqual({
         webhookVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_ENDPOINT,
       })
     })
 
-    it('should return false if an error occurs', () => {
-      $.http.post = vi.fn().mockRejectedValueOnce({
+    it('should return false if an error occurs', async () => {
+      const error = {
         response: {
           status: 500,
         },
-      })
-      expect(verifyWebhookUrl($)).resolves.toEqual({
+      } as AxiosError
+      $.http.post = vi.fn().mockRejectedValueOnce(new HttpError(error))
+      await expect(verifyWebhookUrl($)).resolves.toEqual({
         webhookVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ERROR,
       })
     })
+
+    it('should return false with err msg if user is not owner or editor', async () => {
+      const error403 = {
+        response: {
+          status: 403,
+        },
+      } as AxiosError
+      $.http.post = vi.fn().mockRejectedValueOnce(new HttpError(error403))
+      await expect(verifyWebhookUrl($)).resolves.toEqual({
+        webhookVerified: false,
+        message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.UNAUTHORIZED,
+      })
+    })
+
+    it('should return false if user is not a registered formsg user', async () => {
+      const error422 = {
+        response: {
+          status: 422,
+        },
+      } as AxiosError
+      $.http.post = vi.fn().mockRejectedValueOnce(new HttpError(error422))
+      await expect(verifyWebhookUrl($)).resolves.toEqual({
+        webhookVerified: false,
+        message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.UNAUTHORIZED,
+      })
+    })
   })
 
-  describe('verify webhook url', () => {
-    it('should resolve if webhook is set correctly', () => {
+  describe('register webhook url', () => {
+    it('should resolve if webhook is set correctly', async () => {
       $.http.patch = vi.fn().mockResolvedValueOnce({
         data: {
           webhook: {
@@ -117,16 +148,39 @@ describe('formsg webhook registration', () => {
           },
         },
       })
-      expect(registerWebhookUrl($)).resolves.toBeUndefined()
+      await expect(registerWebhookUrl($)).resolves.toBeUndefined()
     })
 
-    it('should resolve if patch endpoint fails', () => {
+    it('should resolve if patch endpoint fails', async () => {
       $.http.patch = vi.fn().mockRejectedValueOnce({
         response: {
           status: 400,
         },
       })
-      expect(registerWebhookUrl($)).rejects.toThrowError()
+      await expect(registerWebhookUrl($)).rejects.toThrowError()
+    })
+
+    it('should reject if user is not owner or editor', async () => {
+      const error403 = {
+        response: {
+          status: 403,
+        },
+      } as AxiosError
+      $.http.patch = vi.fn().mockRejectedValueOnce(new HttpError(error403))
+      await expect(registerWebhookUrl($)).rejects.toThrowError(
+        FORMSG_WEBHOOK_REGISTRATION_MESSAGE.UNAUTHORIZED,
+      )
+    })
+    it('should reject if user is not a registered formsg user', async () => {
+      const error422 = {
+        response: {
+          status: 422,
+        },
+      } as AxiosError
+      $.http.patch = vi.fn().mockRejectedValueOnce(new HttpError(error422))
+      await expect(registerWebhookUrl($)).rejects.toThrowError(
+        FORMSG_WEBHOOK_REGISTRATION_MESSAGE.UNAUTHORIZED,
+      )
     })
   })
 })

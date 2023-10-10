@@ -97,6 +97,7 @@ type ActionSubstepArgument {
   variableTypes: [String]
   allowArbitrary: Boolean
   placeholder: String
+  showOptionValue: Boolean
   options: [ArgumentOption]
   source: ActionSubstepArgumentSource
   dependsOn: [String]
@@ -184,7 +185,6 @@ type ConnectionData {
 type ExecuteFlowType {
   data: JSONObject
   step: Step
-  skippedIfPublished: Boolean
 }
 
 type ExecutionStep {
@@ -216,6 +216,7 @@ type Field {
   docUrl: String
   clickToCopy: Boolean
   autoComplete: String
+  showOptionValue: Boolean
   options: [ArgumentOption]
 }
 
@@ -442,6 +443,7 @@ type TriggerSubstepArgument {
   placeholder: String
   source: TriggerSubstepArgumentSource
   dependsOn: [String]
+  showOptionValue: Boolean
   options: [ArgumentOption]
 
   # Only for multirow

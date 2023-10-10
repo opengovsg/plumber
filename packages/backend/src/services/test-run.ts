@@ -85,10 +85,7 @@ const testRun = async (options: TestRunOptions) => {
 
     if (actionStep.id === untilStep.id) {
       await Execution.query().patch({ status: 'success' }).findById(executionId)
-      return {
-        executionStep: actionExecutionStep,
-        skippedIfPublished: actionStep.id !== nextStepId,
-      }
+      return { executionStep: actionExecutionStep }
     }
 
     // Don't update next step ID if actionStep wouldn't have been run in real

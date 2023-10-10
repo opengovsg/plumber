@@ -6,6 +6,7 @@ import { useMutation, useQuery } from '@apollo/client'
 import {
   AbsoluteCenter,
   Box,
+  Center,
   CircularProgress,
   Divider,
   Flex,
@@ -94,7 +95,19 @@ export default function Editor(props: EditorProps): React.ReactElement {
     { refetchQueries: [GET_FLOW] },
   )
 
-  const { flow, steps } = props
+  const { flow, steps: rawSteps } = props
+  const steps = useMemo(
+    // Populate each step's flowId so that IStep isn't LYING about flowId being
+    // non-undefined. We do it here instead of fetching in GraphQL since all
+    // steps have same pipe, so a bit wasteful to repeat this data over the wire.
+    () =>
+      rawSteps.map((step) => ({
+        ...step,
+        flow,
+        flowId: flow.id,
+      })),
+    [flow, rawSteps],
+  )
 
   const [currentStepId, setCurrentStepId] = useState<string | null>(
     steps[0]?.id,
@@ -150,13 +163,13 @@ export default function Editor(props: EditorProps): React.ReactElement {
   )
 
   // FIXME (ogp-weeloong): optimize this a bit further by omitting query.
-  const { data, loading: loadingApps } = useQuery(GET_APPS)
+  const { data } = useQuery(GET_APPS)
   const apps: IApp[] = data?.getApps?.filter(
     (app: IApp) => !!app.actions?.length,
   )
 
   const groupingActions = useMemo(() => {
-    if (loadingApps) {
+    if (!apps) {
       return null
     }
 
@@ -167,7 +180,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           ?.map((action) => `${app.key}-${action.key}`),
       ) ?? [],
     )
-  }, [loadingApps, apps])
+  }, [apps])
 
   const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
     if (!groupingActions) {
@@ -197,6 +210,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
     // creating new arrays.
     steps,
   ])
+  const flowStepGroupIconUrl = useMemo(() => {
+    if (groupedSteps.length === 0) {
+      return undefined
+    }
+    return apps.find((app) => app.key === groupedSteps[0].appKey)?.iconUrl
+  }, [apps, groupedSteps])
 
   //
   // Compute which steps are eligible for variable extraction.
@@ -222,54 +241,31 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [stepsBeforeGroup],
   )
 
-  //
-  // Build callback which ChooseAppAndEventSubstep uses to check which actions
-  // are banned. This returns a 2-tuple, (true/false, banned reason if true).
-  //
-  // NOTE: This can also be extended to triggers if needed.
-  //
-  const isBannedAction = useCallback(
-    (
-      step: IStep,
-      appKey: string,
-      actionKey: string,
-    ): [boolean, string | null] => {
-      // Only handle grouping actions for now :x
-      if (
-        groupingActions?.has(`${appKey}-${actionKey}`) &&
-        (groupedSteps.length > 0 ||
-          step.position !==
-            stepsBeforeGroup[stepsBeforeGroup.length - 1]?.position)
-      ) {
-        return [true, 'This must be the last step.']
-      }
-
-      return [false, null]
-    },
-    [groupingActions, groupedSteps],
-  )
-
-  if (loadingApps) {
-    return <CircularProgress isIndeterminate my={2} />
+  if (!apps) {
+    return (
+      <Center w="full" h="100vh">
+        <CircularProgress isIndeterminate my={2} />
+      </Center>
+    )
   }
 
   return (
     <Flex w="full" justifyContent="center">
       <Flex flexDir="column" alignItems="center" py={3} w="53.25rem">
         <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-          {stepsBeforeGroup.map((step, index, steps) => (
+          {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
+                isLastStep={index === steps.length - 1}
                 index={index + 1}
                 collapsed={currentStepId !== step.id}
                 onOpen={() => setCurrentStepId(step.id)}
                 onClose={() => setCurrentStepId(null)}
                 onChange={onStepChange}
                 onContinue={() => {
-                  setCurrentStepId(steps[index + 1]?.id)
+                  setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
                 }}
-                isBannedAction={isBannedAction}
               />
               <AddStepButton
                 onClick={() => addStep(step.id)}
@@ -280,6 +276,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           ))}
           {groupedSteps.length > 0 && (
             <FlowStepGroup
+              iconUrl={flowStepGroupIconUrl}
               flow={flow}
               steps={groupedSteps}
               collapsed={currentStepId !== groupedSteps[0].id}

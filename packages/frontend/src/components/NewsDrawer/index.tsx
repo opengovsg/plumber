@@ -46,15 +46,14 @@ export default function NewsDrawer() {
   return (
     <>
       <Button colorScheme="secondary" variant="link" mr={6} onClick={onOpen}>
-        <Text>What's new</Text>
+        <Text textStyle="subhead-1">What's new</Text>
         {localLatestTimestamp !== latestNewsTimestamp && (
           <Box
             borderRadius="50%"
-            bg="#C05050"
-            w={1.5}
-            h={1.5}
-            top={2}
-            right={-1}
+            bg="primary.600"
+            boxSize={1.5}
+            top={0.5}
+            right={-2}
             position="absolute"
           />
         )}

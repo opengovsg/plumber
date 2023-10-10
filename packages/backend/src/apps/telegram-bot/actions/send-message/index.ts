@@ -72,7 +72,6 @@ export default defineAction({
       disable_notification: $.step.parameters.disableNotification,
       parse_mode: 'markdown', // legacy markdown to allow only a small set of modifiers
     }
-
     const response = await $.http.post('/sendMessage', payload)
 
     $.setActionItem({

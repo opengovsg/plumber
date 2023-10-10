@@ -2,6 +2,7 @@ import { Worker } from 'bullmq'
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
+import { handleErrorAndThrow } from '@/helpers/actions'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import logger from '@/helpers/logger'
@@ -25,7 +26,7 @@ export const worker = new Worker(
 
     if (executionStep.isFailed) {
       await Execution.query().patch({ status: 'failure' }).findById(executionId)
-      throw new Error(JSON.stringify(executionStep.errorDetails))
+      return handleErrorAndThrow(executionStep.errorDetails)
     }
 
     const step = await Step.query().findById(stepId).throwIfNotFound()
@@ -55,7 +56,10 @@ export const worker = new Worker(
     let jobOptions = DEFAULT_JOB_OPTIONS
 
     if (step.appKey === 'delay') {
-      jobOptions = { ...DEFAULT_JOB_OPTIONS, delay: delayAsMilliseconds(step) }
+      jobOptions = {
+        ...DEFAULT_JOB_OPTIONS,
+        delay: delayAsMilliseconds(step.key, executionStep.dataOut),
+      }
     }
 
     await actionQueue.add(jobName, jobPayload, jobOptions)

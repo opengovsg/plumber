@@ -1,9 +1,7 @@
-import { type IApp, type IFlow, type IStep } from '@plumber/types'
+import { type IFlow, type IStep } from '@plumber/types'
 
 import { type FunctionComponent, useMemo } from 'react'
-import { useQuery } from '@apollo/client'
 import FlowStepHeader from 'components/FlowStepHeader'
-import { GET_APP } from 'graphql/queries/get-app'
 import { areAllIfThenBranchesCompleted, isIfThenStep } from 'helpers/toolbox'
 
 import Error from './Content/Error'
@@ -36,6 +34,7 @@ function getStepContent(steps: IStep[]): {
 }
 
 interface FlowStepGroupProps {
+  iconUrl?: string
   flow: IFlow
   steps: IStep[]
   onOpen: () => void
@@ -44,18 +43,14 @@ interface FlowStepGroupProps {
 }
 
 function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
-  const { flow, steps, onOpen, onClose, collapsed } = props
+  const { iconUrl, flow, steps, onOpen, onClose, collapsed } = props
 
   const { StepContent, hintAboveCaption, caption, isStepGroupCompleted } =
     useMemo(() => getStepContent(steps), [steps])
 
-  const app: IApp = useQuery(GET_APP, {
-    variables: { key: steps[0].appKey },
-  })?.data?.getApp
-
   return (
     <FlowStepHeader
-      iconUrl={app?.iconUrl}
+      iconUrl={iconUrl}
       caption={caption}
       hintAboveCaption={hintAboveCaption}
       onOpen={onOpen}

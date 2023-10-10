@@ -10,7 +10,7 @@ import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
 export default defineTrigger({
-  name: 'Daily - triggers every day, choose at what hour of time',
+  name: 'Daily - triggers every day, choose a specific hour timeslot',
   key: 'everyDay',
   description: 'Triggers every day.',
   arguments: [
