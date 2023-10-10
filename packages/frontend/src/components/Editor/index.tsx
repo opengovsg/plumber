@@ -251,7 +251,13 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
   return (
     <Flex w="full" justifyContent="center">
-      <Flex flexDir="column" alignItems="center" py={3} w="53.25rem">
+      <Flex
+        flexDir="column"
+        alignItems="center"
+        py={3}
+        w="53.25rem"
+        maxW="full"
+      >
         <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
           {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
