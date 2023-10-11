@@ -5,6 +5,7 @@ import appConfig from './app'
 export const REDIS_DB_INDEX = {
   JOBS: 0,
   RATE_LIMIT: 1,
+  PIPE_ERRORS: 2,
 }
 
 export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
