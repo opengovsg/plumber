@@ -5,11 +5,11 @@ import ListItemButton, {
   ListItemButtonProps,
 } from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
-import { Variable } from 'helpers/variables'
+import { type Variable } from 'helpers/variables'
 
 function makeListItemComponent(
   variable: Variable,
-  onClick?: (variable: any) => void,
+  onClick?: (variable: Variable) => void,
 ): ComponentType<ListItemButtonProps> | ComponentType<ListItemProps> {
   if (onClick) {
     return (props: ListItemButtonProps) => (
@@ -27,7 +27,7 @@ function makeListItemComponent(
 
 interface VariablesListProps {
   variables: Variable[]
-  onClick?: (variable: any) => void
+  onClick?: (variable: Variable) => void
   listHeight?: number
 }
 

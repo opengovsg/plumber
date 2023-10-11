@@ -5,15 +5,19 @@ import HttpError from '@/errors/http'
 
 import logger from './logger'
 
+export interface PostmanEmailRequestBody {
+  subject: string
+  body: string
+  recipient: string
+  replyTo?: string
+}
+
 export async function sendEmail({
   subject,
   body,
   recipient,
-}: {
-  subject: string
-  body: string
-  recipient: string
-}): Promise<void> {
+  replyTo,
+}: PostmanEmailRequestBody): Promise<void> {
   if (!app.postmanApiKey) {
     throw new Error('Missing POSTMAN_API_KEY')
   }
@@ -21,10 +25,11 @@ export async function sendEmail({
     await axios.post(
       'https://api.postman.gov.sg/v1/transactional/email/send',
       {
-        subject,
-        body,
-        recipient,
+        subject: subject,
+        body: body,
+        recipient: recipient,
         from: 'Plumber via Postman<donotreply@mail.postman.gov.sg>',
+        ...(replyTo && { reply_to: replyTo }),
       },
       {
         headers: {

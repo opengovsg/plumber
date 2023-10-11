@@ -46,15 +46,14 @@ export default function NewsDrawer() {
   return (
     <>
       <Button colorScheme="secondary" variant="link" mr={6} onClick={onOpen}>
-        <Text>What's new</Text>
+        <Text textStyle="subhead-1">What's new</Text>
         {localLatestTimestamp !== latestNewsTimestamp && (
           <Box
             borderRadius="50%"
-            bg="#C05050"
-            w={1.5}
-            h={1.5}
-            top={2}
-            right={-1}
+            bg="primary.600"
+            boxSize={1.5}
+            top={0.5}
+            right={-2}
             position="absolute"
           />
         )}
@@ -62,10 +61,12 @@ export default function NewsDrawer() {
 
       <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="lg">
         <DrawerOverlay />
-        <DrawerContent>
+        <DrawerContent pl={2.5} pr={2.5}>
           <DrawerCloseButton />
-          <DrawerHeader textStyle="h2" fontSize="2xl" color="secondary.700">
-            What's New
+          <DrawerHeader fontSize="2xl">
+            <Text textStyle="h4" color="base.content.default">
+              What's New
+            </Text>
           </DrawerHeader>
 
           <DrawerBody>

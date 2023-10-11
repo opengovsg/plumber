@@ -63,20 +63,23 @@ export const processAction = async (options: ProcessActionOptions) => {
       runResult = result
     }
   } catch (error) {
-    logger.error(error)
-    if (error instanceof HttpError) {
-      $.actionOutput.error = {
-        details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
-    } else if (error instanceof CancelFlowError) {
+    if (error instanceof CancelFlowError) {
+      // don't log error for cancel flow
       runResult.nextStep = { command: 'stop-execution' }
     } else {
-      try {
-        $.actionOutput.error = JSON.parse(error.message)
-      } catch {
-        $.actionOutput.error = { error: error.message }
+      logger.error(error)
+      if (error instanceof HttpError) {
+        $.actionOutput.error = {
+          details: error.details,
+          status: error.response.status,
+          statusText: error.response.statusText,
+        }
+      } else {
+        try {
+          $.actionOutput.error = JSON.parse(error.message)
+        } catch {
+          $.actionOutput.error = { error: error.message }
+        }
       }
     }
   }
