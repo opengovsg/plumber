@@ -5,6 +5,28 @@ import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2023-10-11',
+    tag: NEW_FEATURE_TAG,
+    title: `Introducing Toolbox`,
+    details: dedent`
+      Toolbox is a new app that you can find when you add an action. This will contain built in tools that can enhance your workflows! Logic has been moved into Toolbox and renamed to **Only continue if**. Stay tuned for the release of our new feature **If... Then** in the coming weeks!
+    `,
+  },
+  {
+    date: '2023-10-11',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: `Enhancements this week!`,
+    details: dedent`
+      * Email notifications for pipe failures
+          * Sent on the first failed execution for a pipe
+          * You will only receive a maximum of 1 per day per pipe
+      
+
+      * Variable values are now displayed
+          * Values will now be shown in the pill together with the variable name
+    `,
+  },
+  {
     date: '2023-08-30',
     tag: NEW_FEATURE_TAG,
     title: `What's new on Plumber`,

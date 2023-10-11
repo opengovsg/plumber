@@ -49,7 +49,7 @@ export default function NewsItem(props: NewsItemProps) {
         {formattedDate}
       </Text>
       <NewsItemTag tag={tag} />
-      <Text textStyle="h5" mb="0.5rem" mt="0.5rem" color="secondary.700">
+      <Text textStyle="h6" mb="0.5rem" mt="1rem" color="base.content.default">
         {title}
       </Text>
       <MarkdownRenderer source={details}></MarkdownRenderer>
