@@ -11,6 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import InputCreator from 'components/InputCreator'
 import { processStep } from 'helpers/authenticationSteps'
 import computeAuthStepVariables from 'helpers/computeAuthStepVariables'
+import { getOpenerOrigin } from 'helpers/window'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 import { generateExternalLink } from '../../helpers/translation-values'
@@ -42,9 +43,8 @@ export default function AddAppConnection(
 
   React.useEffect(() => {
     if (
-      window.opener &&
       // checks if this window/popup is opened by the same origin
-      document.referrer.startsWith(window.location.origin + '/')
+      getOpenerOrigin() === window.location.origin
     ) {
       window.opener.postMessage(
         {
