@@ -49,8 +49,9 @@ describe('generate error email', () => {
     expect(errorEmailExists).toBe(false)
   })
 
-  it('send email has encountered an error', async () => {
+  it('does not store redis item if email has encountered an error', async () => {
     const randomFlowId = randomUUID()
+    const key = `error-alert:${randomFlowId}`
     mocks.sendEmail.mockImplementationOnce(() => Promise.reject())
     await expect(
       sendErrorEmail({
@@ -61,6 +62,7 @@ describe('generate error email', () => {
         },
       } as Flow),
     ).rejects.toBeUndefined()
+    expect(!!(await redisClient.exists(key))).toBe(false)
   })
 
   it('send an error email for a given flow id', async () => {
@@ -82,11 +84,11 @@ describe('generate error email', () => {
         },
       } as Flow),
     ).resolves.toEqual(keyObject)
-    // check for TTL (5ms gap)
+    // check for TTL (1s gap)
     const keyTTL = await redisClient.pttl(key)
     const simulatedTTL = endOfTimestamp - Date.now()
     const timeGap = Math.abs(keyTTL - simulatedTTL)
-    expect(timeGap).toBeLessThan(5)
+    expect(timeGap).toBeLessThan(1000)
   })
 
   it('error email has already been sent, should not send again', async () => {

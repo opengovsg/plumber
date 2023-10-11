@@ -29,7 +29,7 @@ export function createBodyErrorMessage(flowName: string): string {
     </ol>
     <p>What should you do?</p>
     <ol>
-      <li>Retry the failed execution by heading to the executions tab, and clicking on the <strong>Retry</strong> button on the failed execution.</li>
+      <li>Retry the failed execution by heading to the executions tab, and clicking the <strong>Retry</strong> button on the failed execution.</li>
       <li>Check our status page at https://status.plumber.gov.sg/ to see if Plumber or any of the apps you are using are down.</li>
       <li>Correct the configuration for your broken pipe.</li>
     </ol>
