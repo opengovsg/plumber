@@ -3,7 +3,7 @@ import defineApp from '@/helpers/define-app'
 import actions from './actions'
 
 export default defineApp({
-  name: 'Logic (DEPRECATED)',
+  name: 'Logic',
   key: 'logic',
   iconUrl: '{BASE_URL}/apps/logic/assets/favicon.svg',
   authDocUrl: '',
