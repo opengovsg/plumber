@@ -3,12 +3,16 @@ import { describe, expect, it, vi } from 'vitest'
 
 import Flow from '@/models/flow'
 
-import { checkErrorEmail, sendErrorEmail } from '../generate-error-email'
+import {
+  checkErrorEmail,
+  redisClient,
+  sendErrorEmail,
+} from '../generate-error-email'
 
-const randomFlowId = randomUUID()
 const randomFlowName = 'flowww'
 const randomEmail = 'test@open.gov.sg'
 const currTestTimestamp = 1917878340000
+const endOfTimestamp = 1917878399000
 
 const mocks = vi.hoisted(() => {
   return {
@@ -23,7 +27,7 @@ vi.mock('luxon', () => {
       now: () => ({
         toMillis: () => currTestTimestamp, // 2030-10-10T23:59:00.000+08:00
         endOf: (_interval: string) => ({
-          toMillis: () => 1917878399000, // 2030-10-10T23:59:59.000+08:00
+          toMillis: () => endOfTimestamp, // 2030-10-10T23:59:59.000+08:00
         }),
         toFormat: (_format: string) => '10 Oct 2030 at 11:59:00 PM',
       }),
@@ -40,12 +44,14 @@ vi.mock('@/helpers/send-email', () => {
 
 describe('generate error email', () => {
   it('check if error email has been sent the first time', async () => {
+    const randomFlowId = randomUUID()
     const errorEmailExists = await checkErrorEmail(randomFlowId)
     expect(errorEmailExists).toBe(false)
   })
 
   it('send email has encountered an error', async () => {
-    mocks.sendEmail.mockImplementation(() => Promise.reject())
+    const randomFlowId = randomUUID()
+    mocks.sendEmail.mockImplementationOnce(() => Promise.reject())
     await expect(
       sendErrorEmail({
         id: randomFlowId,
@@ -58,7 +64,15 @@ describe('generate error email', () => {
   })
 
   it('send an error email for a given flow id', async () => {
-    mocks.sendEmail.mockImplementation(() => Promise.resolve())
+    const randomFlowId = randomUUID()
+    const key = `error-alert:${randomFlowId}`
+    const keyObject = {
+      flowId: randomFlowId,
+      flowName: randomFlowName,
+      userEmail: randomEmail,
+      timestamp: currTestTimestamp,
+    }
+    mocks.sendEmail.mockImplementationOnce(() => Promise.resolve())
     await expect(
       sendErrorEmail({
         id: randomFlowId,
@@ -67,15 +81,24 @@ describe('generate error email', () => {
           email: randomEmail,
         },
       } as Flow),
-    ).resolves.toEqual({
+    ).resolves.toEqual(keyObject)
+    // check for TTL (5ms gap)
+    const keyTTL = await redisClient.pttl(key)
+    const simulatedTTL = endOfTimestamp - Date.now()
+    const timeGap = Math.abs(keyTTL - simulatedTTL)
+    expect(timeGap).toBeLessThan(5)
+  })
+
+  it('error email has already been sent, should not send again', async () => {
+    const randomFlowId = randomUUID()
+    const key = `error-alert:${randomFlowId}`
+    const keyObject = {
       flowId: randomFlowId,
       flowName: randomFlowName,
       userEmail: randomEmail,
       timestamp: currTestTimestamp,
-    })
-  })
-
-  it('error email has already been sent, should not send again', async () => {
+    }
+    redisClient.hset(key, keyObject)
     const errorEmailExists = await checkErrorEmail(randomFlowId)
     expect(errorEmailExists).toBe(true)
   })

@@ -5,7 +5,7 @@ import { sendEmail } from '@/helpers/send-email'
 import Flow from '@/models/flow'
 
 const MAX_LENGTH = 80
-const redisClient = createRedisClient(REDIS_DB_INDEX.PIPE_ERRORS)
+export const redisClient = createRedisClient(REDIS_DB_INDEX.PIPE_ERRORS)
 
 function truncateFlowName(flowName: string) {
   return flowName.length > MAX_LENGTH
@@ -29,7 +29,7 @@ export function createBodyErrorMessage(flowName: string): string {
     </ol>
     <p>What should you do?</p>
     <ol>
-      <li>Retry the failed execution by heading to the executions tab, and clicking on the <strong>Retry</strong> button after finding the failed execution.</li>
+      <li>Retry the failed execution by heading to the executions tab, and clicking on the <strong>Retry</strong> button on the failed execution.</li>
       <li>Check our status page at https://status.plumber.gov.sg/ to see if Plumber or any of the apps you are using are down.</li>
       <li>Correct the configuration for your broken pipe.</li>
     </ol>
@@ -46,7 +46,7 @@ export function createBodyErrorMessage(flowName: string): string {
 
 export async function checkErrorEmail(flowId: string): Promise<boolean> {
   const errorKey = `error-alert:${flowId}`
-  return !!(await redisClient.hexists(errorKey, 'flowId'))
+  return !!(await redisClient.exists(errorKey))
 }
 
 export async function sendErrorEmail(flow: Flow) {
@@ -71,9 +71,9 @@ export async function sendErrorEmail(flow: Flow) {
   })
 
   await redisClient
+    .multi()
     .hset(errorKey, errorDetails)
-    .then(() =>
-      redisClient.pexpireat(errorKey, currDatetime.endOf('day').toMillis()),
-    )
+    .pexpireat(errorKey, currDatetime.endOf('day').toMillis())
+    .exec()
   return errorDetails
 }
