@@ -65,9 +65,18 @@ const processOpenWithPopup = (
     }, 1000)
 
     const messageHandler = async (event: MessageEvent) => {
-      if (event.data.source !== 'plumber') {
+      if (
+        event.data.source !== 'plumber' ||
+        // if message source is from a different origin, reject
+        event.origin !== window.location.origin ||
+        // event source should be the same reference as popup window
+        event.source !== popup
+      ) {
         return
       }
+
+      // close the popup after receving the message
+      popup?.close()
 
       const data = parseUrlSearchParams(event)
       window.removeEventListener('message', messageHandler)

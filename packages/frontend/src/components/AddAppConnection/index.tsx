@@ -41,12 +41,19 @@ export default function AddAppConnection(
     : auth?.authenticationSteps
 
   React.useEffect(() => {
-    if (window.opener) {
-      window.opener.postMessage({
-        source: 'plumber',
-        payload: window.location.search,
-      })
-      window.close()
+    if (
+      window.opener &&
+      // checks if this window/popup is opened by the same origin
+      document.referrer.startsWith(window.location.origin + '/')
+    ) {
+      window.opener.postMessage(
+        {
+          source: 'plumber',
+          payload: window.location.search,
+        },
+        // ensures that the message is only sent to the origin that opened the popup
+        window.location.origin,
+      )
     }
   }, [])
 
