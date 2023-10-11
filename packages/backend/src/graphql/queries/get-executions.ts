@@ -37,7 +37,6 @@ const getExecutions = async (
     .limit(params.limit)
     .offset(params.offset)
     .orderBy('created_at', 'desc')
-    .debug()
 
   // remove when only confirmed data is backfilled
   // disgustingly long query to fetch latest execution step for each execution to get status

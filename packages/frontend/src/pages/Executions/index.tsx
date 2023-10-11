@@ -1,7 +1,6 @@
 import type { IExecution } from '@plumber/types'
 
-import * as React from 'react'
-import { useCallback, useMemo } from 'react'
+import { ChangeEvent, ReactElement, useEffect, useRef, useState } from 'react'
 import { BiSearch } from 'react-icons/bi'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
@@ -36,28 +35,27 @@ interface ExecutionParameters {
   input: string
 }
 
-const getLimitAndOffset = (
-  page: number,
-  filterStatus: string,
-  searchInput: string,
-) => ({
+const getLimitAndOffset = (params: ExecutionParameters) => ({
   limit: EXECUTION_PER_PAGE,
-  offset: (page - 1) * EXECUTION_PER_PAGE,
-  status: filterStatus,
-  searchInput: searchInput,
+  offset: (params.page - 1) * EXECUTION_PER_PAGE,
+  status: params.status,
+  searchInput: params.input,
 })
 
-export default function Executions(): React.ReactElement {
+export default function Executions(): ReactElement {
   const formatMessage = useFormatMessage()
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
 
-  const [searchInput, setSearchInput] = React.useState<string>(
+  const [searchInput, setSearchInput] = useState<string>(
     searchParams.get('input') || '',
   )
-  const [filterStatus, setFilterStatus] = React.useState<string>(
+  const [filterStatus, setFilterStatus] = useState<string>(
     searchParams.get('status') || '',
   )
+
+  const filterRef = useRef<HTMLDivElement>(null)
+  const [inputPadding, setInputPadding] = useState<number>(0)
 
   // format search params for empty strings and first page
   const formatSearchParams = (params: Partial<ExecutionParameters>) => {
@@ -69,25 +67,19 @@ export default function Executions(): React.ReactElement {
   }
 
   // search value handling
-  const handleSearchInputChange = useCallback(
-    (input: string) => {
-      formatSearchParams({ status: filterStatus, input })
-      setSearchInput(input)
-    },
-    [searchInput],
+  const handleSearchInputChange = (input: string) => {
+    formatSearchParams({ status: filterStatus, input })
+    setSearchInput(input)
+  }
+
+  const handleSearchInputChangeDebounced = debounce(
+    handleSearchInputChange,
+    1000,
   )
 
-  const handleSearchInputChangeDebounced = useMemo(
-    () => debounce(handleSearchInputChange, 500),
-    [handleSearchInputChange],
-  )
-
-  const onSearchInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      handleSearchInputChangeDebounced(event.target.value)
-    },
-    [handleSearchInputChangeDebounced],
-  )
+  const onSearchInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    handleSearchInputChangeDebounced(event.target.value)
+  }
 
   // filter status handling
   const onFilterChange = (status: string) => {
@@ -95,19 +87,39 @@ export default function Executions(): React.ReactElement {
     formatSearchParams({ status, input: searchInput })
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilterStatus(searchParams.get('status') || '')
   }, [searchParams])
 
+  // update padding of input element when filter element width changes.
+  useEffect(() => {
+    if (!filterRef.current) {
+      return
+    }
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === filterRef.current) {
+          setInputPadding(entry.contentRect.width + 8)
+        }
+      }
+    })
+    resizeObserver.observe(filterRef.current)
+
+    return () => {
+      // clean up the observer when the component unmounts
+      resizeObserver.disconnect()
+    }
+  }, [])
+
   const { data, loading } = useQuery(GET_EXECUTIONS, {
-    variables: getLimitAndOffset(page, filterStatus, searchInput),
+    variables: getLimitAndOffset({
+      page,
+      status: filterStatus,
+      input: searchInput,
+    }),
     fetchPolicy: 'cache-and-network',
     pollInterval: 5000,
   })
-
-  // React.useEffect(() => {
-  //   refetch(getLimitAndOffset(page, filterStatus.toLowerCase(), searchInput))
-  // }, [refetch, page, filterStatus, searchInput])
 
   const getExecutions = data?.getExecutions || {}
   const { pageInfo, edges } = getExecutions
@@ -134,12 +146,12 @@ export default function Executions(): React.ReactElement {
             </InputLeftElement>
             <Input
               textStyle="body-1"
-              pr="7.5rem"
+              pr={inputPadding}
               placeholder="Search by pipe name"
               defaultValue={searchInput}
               onChange={onSearchInputChange}
             ></Input>
-            <InputRightElement w="fit-content" p={1}>
+            <InputRightElement w="fit-content" p={1} ref={filterRef}>
               <ChakraDivider
                 borderColor="base.divider.medium"
                 h={5}
