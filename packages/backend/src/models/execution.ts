@@ -2,13 +2,14 @@ import Base from './base'
 import ExecutionStep from './execution-step'
 import Flow from './flow'
 
+type ExecutionStatus = 'success' | 'failure' | null
 class Execution extends Base {
   id!: string
   flowId!: string
   testRun: boolean
   internalId: string
   executionSteps: ExecutionStep[]
-  status: string
+  status: ExecutionStatus
 
   static tableName = 'executions'
 
