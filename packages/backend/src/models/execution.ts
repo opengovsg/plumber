@@ -8,6 +8,7 @@ class Execution extends Base {
   testRun: boolean
   internalId: string
   executionSteps: ExecutionStep[]
+  status: string
 
   static tableName = 'executions'
 
