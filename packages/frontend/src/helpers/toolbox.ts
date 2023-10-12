@@ -220,9 +220,45 @@ export function useIfThenInitializer(): [
           },
         },
       })
+      const [_firstBranch, secondBranch] = await Promise.all([
+        updateFirstBranch,
+        createSecondBranch,
+      ])
 
-      await Promise.all([updateFirstBranch, createSecondBranch])
-      // Refetch only after completion.
+      // After creating branches, we create a sample step to each branch. This is
+      // because users always get confused on how to add actions within a
+      // branch.
+      //
+      // For code simplicity, we create these steps in concurrent, separate
+      // mutations instead of batching. This concurrency is safe under Postgres'
+      // default isolation level.
+      const addFirstBranchAction = createStep({
+        variables: {
+          input: {
+            previousStep: {
+              id: currStep.id,
+            },
+            flow: {
+              id: currStep.flow.id,
+            },
+          },
+        },
+      })
+      const addSecondBranchAction = createStep({
+        variables: {
+          input: {
+            previousStep: {
+              id: secondBranch.data.createStep.id,
+            },
+            flow: {
+              id: currStep.flow.id,
+            },
+          },
+        },
+      })
+      await Promise.all([addFirstBranchAction, addSecondBranchAction])
+
+      // Refetch only after completion of all initialization steps.
       await client.refetchQueries({ include: [GET_FLOW] })
 
       setIsInitializing(false)

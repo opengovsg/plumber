@@ -62,7 +62,6 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       variables: false,
-      description: 'A name that describes this If... Then branch',
     },
     {
       // This is computed by the front-end when adding a step.

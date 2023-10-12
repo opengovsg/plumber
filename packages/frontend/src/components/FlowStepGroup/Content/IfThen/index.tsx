@@ -31,11 +31,18 @@ export default function IfThen(props: ContentProps): JSX.Element {
   //
   // Handle branch creation
   //
+  // Note: We're intentionally _not_ updating the UI to reflect isAddingBranch
+  // because this mutation usually runs fast, and updating the UI for a split
+  // second looks very janks\.
   const [createStep, { loading: isAddingBranch }] = useMutation(CREATE_STEP, {
     refetchQueries: [GET_FLOW],
   })
   const onAddBranch = useCallback(async () => {
-    await createStep({
+    if (isAddingBranch) {
+      return
+    }
+
+    const branchStep = await createStep({
       variables: {
         input: {
           key: TOOLBOX_ACTIONS.IfThen,
@@ -53,7 +60,22 @@ export default function IfThen(props: ContentProps): JSX.Element {
         },
       },
     })
-  }, [createStep, depth, numBranches, steps])
+
+    // Add an empty blank step; otherwise users are confused how to add more
+    // steps to the branch.
+    await createStep({
+      variables: {
+        input: {
+          previousStep: {
+            id: branchStep.data.createStep.id,
+          },
+          flow: {
+            id: flow.id,
+          },
+        },
+      },
+    })
+  }, [createStep, depth, numBranches, steps, isAddingBranch])
 
   return (
     <Flex flexDir="column">
@@ -67,7 +89,6 @@ export default function IfThen(props: ContentProps): JSX.Element {
       ))}
       <Button
         onClick={onAddBranch}
-        isLoading={isAddingBranch}
         isDisabled={isEditorReadOnly}
         leftIcon={<BiPlus />}
         m={4}
