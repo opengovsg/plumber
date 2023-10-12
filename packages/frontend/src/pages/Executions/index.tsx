@@ -5,7 +5,9 @@ import { BiSearch } from 'react-icons/bi'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import {
-  Divider as ChakraDivider,
+  Box,
+  CircularProgress,
+  Divider,
   Flex,
   Icon,
   Input,
@@ -13,9 +15,6 @@ import {
   InputLeftElement,
   InputRightElement,
 } from '@chakra-ui/react'
-import Box from '@mui/material/Box'
-import CircularProgress from '@mui/material/CircularProgress'
-import Divider from '@mui/material/Divider'
 import Pagination from '@mui/material/Pagination'
 import Container from 'components/Container'
 import ExecutionRow from 'components/ExecutionRow'
@@ -118,7 +117,7 @@ export default function Executions(): ReactElement {
   const hasExecutions = executions?.length
 
   return (
-    <Box sx={{ py: 3 }}>
+    <Box py={9}>
       <Container variant="page">
         <Flex
           flexDir={{ base: 'column', sm: 'row' }}
@@ -140,7 +139,7 @@ export default function Executions(): ReactElement {
               onChange={onSearchInputChange}
             ></Input>
             <InputRightElement w="fit-content" p={1} ref={filterRef}>
-              <ChakraDivider
+              <Divider
                 borderColor="base.divider.medium"
                 h={5}
                 mr={1}
@@ -154,12 +153,15 @@ export default function Executions(): ReactElement {
           </InputGroup>
         </Flex>
 
-        <Divider sx={{ mt: [2, 0], mb: 2 }} />
+        <Divider borderColor="base.divider.medium" mb={4} />
 
         {loading && (
           <CircularProgress
-            data-test="executions-loader"
-            sx={{ display: 'block', margin: '20px auto' }}
+            isIndeterminate
+            color="primary.600"
+            display="flex"
+            justifyContent="center"
+            my={5}
           />
         )}
 
