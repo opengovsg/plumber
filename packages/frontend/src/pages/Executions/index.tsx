@@ -19,7 +19,7 @@ import Divider from '@mui/material/Divider'
 import Pagination from '@mui/material/Pagination'
 import Container from 'components/Container'
 import ExecutionRow from 'components/ExecutionRow'
-import ExecutionStatusMenu from 'components/ExecutionStatusMenu'
+import ExecutionStatusMenu, { StatusType } from 'components/ExecutionStatusMenu'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
 import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
@@ -38,7 +38,7 @@ interface ExecutionParameters {
 const getLimitAndOffset = (params: ExecutionParameters) => ({
   limit: EXECUTION_PER_PAGE,
   offset: (params.page - 1) * EXECUTION_PER_PAGE,
-  status: params.status,
+  ...(params.status !== StatusType.Waiting && { status: params.status }),
   searchInput: params.input,
 })
 
@@ -96,20 +96,8 @@ export default function Executions(): ReactElement {
     if (!filterRef.current) {
       return
     }
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === filterRef.current) {
-          setInputPadding(entry.contentRect.width + 8)
-        }
-      }
-    })
-    resizeObserver.observe(filterRef.current)
-
-    return () => {
-      // clean up the observer when the component unmounts
-      resizeObserver.disconnect()
-    }
-  }, [])
+    setInputPadding(filterRef.current.offsetWidth + 8)
+  }, [filterStatus])
 
   const { data, loading } = useQuery(GET_EXECUTIONS, {
     variables: getLimitAndOffset({

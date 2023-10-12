@@ -18,6 +18,9 @@ const getExecutions = async (
 ) => {
   const filterBuilder = (builder: ExtendedQueryBuilder<Execution>) => {
     builder.where('test_run', 'FALSE')
+    if (!('status' in params)) {
+      builder.whereNull('status')
+    }
     if (params.status) {
       builder.where('status', params.status)
     }

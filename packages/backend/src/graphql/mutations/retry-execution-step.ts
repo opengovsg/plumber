@@ -39,9 +39,9 @@ const retryExecutionStep = async (
     throw new Error('Job not found or has expired')
   }
   await job.retry()
-  // allow for status to change to pending in case there are delay actions after
+  // allow for status to change to null in case there are delay actions after
   await Execution.query()
-    .patch({ status: 'pending' })
+    .patch({ status: null })
     .findById(executionStep.executionId)
   return true
 }

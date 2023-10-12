@@ -20,7 +20,7 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
     flowId,
     testRun,
     internalId: triggerItem?.meta.internalId,
-    status: error ? 'failure' : 'pending',
+    ...(error && { status: 'failure' }),
   })
 
   const executionStep = await execution

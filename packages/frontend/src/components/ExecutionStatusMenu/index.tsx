@@ -12,26 +12,33 @@ import {
   Text,
 } from '@chakra-ui/react'
 
+export enum StatusType {
+  Empty = '',
+  Success = 'success',
+  Failure = 'failure',
+  Waiting = 'waiting',
+}
+
 const filterOptions = [
   {
     displayLabel: 'Status',
     inputLabel: 'All Executions',
-    value: '',
+    value: StatusType.Empty,
   },
   {
     displayLabel: 'Success',
     inputLabel: 'Success',
-    value: 'success',
+    value: StatusType.Success,
   },
   {
     displayLabel: 'Failure',
     inputLabel: 'Failure',
-    value: 'failure',
+    value: StatusType.Failure,
   },
   {
-    displayLabel: 'Pending',
-    inputLabel: 'Pending',
-    value: 'pending',
+    displayLabel: 'Waiting',
+    inputLabel: 'Waiting',
+    value: StatusType.Waiting,
   },
 ]
 
@@ -56,8 +63,10 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
         <Flex alignItems="center">
           <Icon boxSize={5} as={BiFilter} color="primary.600" mr={2} />
           <Text textStyle="subhead-2" color="primary.600">
-            {filterOptions.find((option) => option.value === filterStatus)
-              ?.displayLabel || 'Status'}
+            {
+              filterOptions.find((option) => option.value === filterStatus)
+                ?.displayLabel
+            }
           </Text>
         </Flex>
       </MenuButton>

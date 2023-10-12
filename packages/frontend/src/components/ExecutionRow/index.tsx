@@ -15,6 +15,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Badge } from '@opengovsg/design-system-react'
+import { StatusType } from 'components/ExecutionStatusMenu'
 import FlowAppIcons from 'components/FlowAppIcons'
 import * as URLS from 'config/urls'
 import { DateTime } from 'luxon'
@@ -98,20 +99,20 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
                   py={1}
                   px={2}
                   colorScheme={
-                    execution.status === 'success'
+                    execution.status === StatusType.Success
                       ? 'success'
-                      : execution.status === 'failure'
+                      : execution.status === StatusType.Failure
                       ? 'critical'
                       : 'grey'
                   }
                   variant="subtle"
                 >
                   <Text>
-                    {execution.status === 'success'
+                    {execution.status === StatusType.Success
                       ? 'Success'
-                      : execution.status === 'failure'
+                      : execution.status === StatusType.Failure
                       ? 'Failure'
-                      : 'Pending'}
+                      : 'Waiting'}
                   </Text>
                 </Badge>
 
