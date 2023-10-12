@@ -1,3 +1,4 @@
+import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -11,15 +12,17 @@ const deleteTable = async (
   params: Params,
   context: Context,
 ) => {
-  const table = await context.currentUser
-    .$relatedQuery('tables')
-    .findOne({
-      id: params.input.id,
-    })
-    .throwIfNotFound()
+  await TableMetadata.transaction(async (trx) => {
+    const table = await context.currentUser
+      .$relatedQuery('tables', trx)
+      .findOne({
+        id: params.input.id,
+      })
+      .throwIfNotFound()
 
-  await table.$relatedQuery('columns').delete()
-  await table.$query().delete()
+    await table.$relatedQuery('columns', trx).delete()
+    await table.$query(trx).delete()
+  })
 
   return true
 }
