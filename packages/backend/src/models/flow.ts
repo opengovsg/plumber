@@ -9,6 +9,7 @@ import Base from './base'
 import Execution from './execution'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
+import User from './user'
 
 class Flow extends Base {
   id!: string
@@ -19,6 +20,7 @@ class Flow extends Base {
   publishedAt: string
   remoteWebhookId: string
   executions?: Execution[]
+  user: User
 
   /**
    * Null means to use default config.
@@ -69,6 +71,14 @@ class Flow extends Base {
       join: {
         from: 'flows.id',
         to: 'executions.flow_id',
+      },
+    },
+    user: {
+      relation: Base.BelongsToOneRelation,
+      modelClass: User,
+      join: {
+        from: 'flows.user_id',
+        to: 'users.id',
       },
     },
   })

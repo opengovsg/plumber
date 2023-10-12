@@ -1,13 +1,18 @@
-import { Worker } from 'bullmq'
+import { UnrecoverableError, Worker } from 'bullmq'
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { handleErrorAndThrow } from '@/helpers/actions'
-import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import {
+  DEFAULT_JOB_OPTIONS,
+  MAXIMUM_JOB_ATTEMPTS,
+} from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
+import { checkErrorEmail, sendErrorEmail } from '@/helpers/generate-error-email'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
 import actionQueue from '@/queues/action'
 import { processAction } from '@/services/action'
@@ -86,7 +91,7 @@ worker.on('completed', (job) => {
   )
 })
 
-worker.on('failed', (job, err) => {
+worker.on('failed', async (job, err) => {
   logger.error(
     `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
     {
@@ -94,6 +99,23 @@ worker.on('failed', (job, err) => {
       job: job.data,
     },
   )
+  const isEmailSent = await checkErrorEmail(job.data.flowId)
+  if (isEmailSent) {
+    return
+  }
+  if (
+    err instanceof UnrecoverableError ||
+    job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
+  ) {
+    const flow = await Flow.query()
+      .findById(job.data.flowId)
+      .withGraphFetched('user')
+      .throwIfNotFound()
+    const errorDetails = await sendErrorEmail(flow)
+    logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
+      errorDetails,
+    })
+  }
 })
 
 process.on('SIGTERM', async () => {

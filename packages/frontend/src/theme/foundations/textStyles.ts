@@ -45,6 +45,20 @@ const bbBearTextStyles = {
     letterSpacing: '-0.019em',
     fontFamily: 'body',
   },
+  h5: {
+    fontWeight: 600,
+    lineHeight: '1.75rem',
+    fontSize: '1.25rem',
+    letterSpacing: '-0.014em',
+    fontFamily: 'body',
+  },
+  h6: {
+    fontWeight: 500,
+    lineHeight: '1.5rem',
+    fontSize: '1.125rem',
+    letterSpacing: '-0.014em',
+    fontFamily: 'body',
+  },
 }
 
 export const textStyles = {

@@ -1,58 +1,17 @@
-import type {
-  IGlobalVariable,
-  IJSONArray,
-  IJSONObject,
-  IStep,
-} from '@plumber/types'
+import type { IGlobalVariable, IJSONObject, IStep } from '@plumber/types'
 
 import defineAction from '@/helpers/define-action'
 import Step from '@/models/step'
 
 import toolboxApp from '../..'
+import conditionIsTrue from '../../common/condition-is-true'
+import getConditionArgs from '../../common/get-condition-args'
 
 const ACTION_KEY = 'ifThen'
 
-function evalCondition(parameters: IJSONObject): boolean {
-  const { field, is, condition, text: value } = parameters
-
-  let result: boolean
-  switch (condition) {
-    case 'equals':
-      result = field === value
-      break
-    case 'gte':
-      result = Number(field) >= Number(value)
-      break
-    case 'gt':
-      result = Number(field) > Number(value)
-      break
-    case 'lte':
-      result = Number(field) <= Number(value)
-      break
-    case 'lt':
-      result = Number(field) < Number(value)
-      break
-    case 'contains':
-      result = field.toString().includes(value.toString())
-      break
-    default:
-      throw new Error(
-        `Conditional logic block contains an unknown operator: ${condition}`,
-      )
-  }
-
-  if (is === 'not') {
-    result = !result
-  }
-
-  return result
-}
-
 function shouldTakeBranch($: IGlobalVariable): boolean {
-  const conditions = $.step.parameters.conditions as IJSONArray
-  return conditions.every((condition) =>
-    evalCondition(condition as IJSONObject),
-  )
+  const conditions = $.step.parameters.conditions as IJSONObject[]
+  return conditions.every((condition) => conditionIsTrue(condition))
 }
 
 async function getBranchStepIdToSkipTo(
@@ -122,50 +81,7 @@ export default defineAction({
       required: true,
       description:
         'Every condition has to be satisfied for this branch to be taken.',
-      subFields: [
-        {
-          placeholder: 'Field',
-          key: 'field',
-          type: 'string' as const,
-          required: true,
-          variables: true,
-        },
-        {
-          placeholder: 'Is or is not',
-          key: 'is',
-          type: 'dropdown' as const,
-          required: true,
-          variables: false,
-          showOptionValue: false,
-          options: [
-            { label: 'Is', value: 'is' },
-            { label: 'Is not', value: 'not' },
-          ],
-        },
-        {
-          placeholder: 'Condition',
-          key: 'condition',
-          type: 'dropdown' as const,
-          required: true,
-          variables: false,
-          showOptionValue: false,
-          options: [
-            { label: 'Equals to', value: 'equals' },
-            { label: 'Greater than ', value: 'gt' },
-            { label: 'Greater than or equals to', value: 'gte' },
-            { label: 'Less than', value: 'lt' },
-            { label: 'Less than or equals to', value: 'lte' },
-            { label: 'Contains', value: 'contains' },
-          ],
-        },
-        {
-          placeholder: 'Value',
-          key: 'text', // Legacy naming from onlyContinueIf
-          type: 'string' as const,
-          required: true,
-          variables: true,
-        },
-      ],
+      subFields: getConditionArgs({ usePlaceholders: true }),
     },
   ],
 

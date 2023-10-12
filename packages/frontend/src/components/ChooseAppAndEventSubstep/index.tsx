@@ -92,29 +92,10 @@ function ChooseAppAndEventSubstep(
   })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const appOptions = useMemo(
     () =>
       apps
         ?.filter((app) => {
-          //
-          // ** EDGE CASE **
-          //
-          // We want to hide If-Then in some cases (see useIsIfThenSelectable
-          // comments).
-          //
-          // We edge case since a generic implementation adds too much
-          // complexity; we'll move to generic if there's another use case for
-          // such hiding.
-          //
-          // If everyone forgets about this, it's OK because the next guy to
-          // add a new toolbox action will get confused why toolbox is missing
-          // ... and find this.
-          //
-          if (app.key === TOOLBOX_APP_KEY && !isIfThenSelectable) {
-            return false
-          }
-
           // Filter away stuff hidden behind feature flags
           if (!launchDarkly.flags || !app?.key) {
             return true
@@ -123,26 +104,21 @@ function ChooseAppAndEventSubstep(
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
         ?.map((app) => optionGenerator(app)) ?? [],
-    [apps, isIfThenSelectable, launchDarkly.flags],
+    [apps, launchDarkly.flags],
   )
 
   const actionsOrTriggers: Array<ITrigger | IAction> =
     (isTrigger ? app?.triggers : app?.actions) || []
+  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const actionOrTriggerOptions = useMemo(
     () =>
       actionsOrTriggers
         .filter((actionOrTrigger) => {
           //
-          // ** EDGE CASE AGAIN **
+          // ** EDGE CASE **
           //
-          // Hello, the if-then edge case demon here again!
-          //
-          // To ensure if-then is always the last step, we also need to guard
-          // against users selecting toolbox first, then adding steps after the
-          // toolbox step, then selecting If-Then in the toolbox step.
-          //
-          // Luckily, we can remove the top app-hiding edge case once we
-          // implement for-each, and toolbox will have multiple actions.
+          // We want to hide If-Then in some cases (see useIsIfThenSelectable
+          // comments).
           //
           if (
             app?.key === TOOLBOX_APP_KEY &&
@@ -194,7 +170,7 @@ function ChooseAppAndEventSubstep(
         //
         // ** EDGE CASE AGAIN V2 **
         //
-        // Hello, the if-then edge case demon here again and again!
+        // Hello, the if-then edge case demon here again!
         //
         // If-then is weird in that we need to pre-populate with 2 branches
         // upon initial selection (the only action that spawns 2 steps upon
