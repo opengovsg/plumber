@@ -11,6 +11,7 @@ import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import { checkErrorEmail, sendErrorEmail } from '@/helpers/generate-error-email'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
+import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import actionQueue from '@/queues/action'
@@ -29,6 +30,7 @@ export const worker = new Worker(
       await processAction({ ...(job.data as JobData), jobId: job.id })
 
     if (executionStep.isFailed) {
+      await Execution.query().patch({ status: 'failure' }).findById(executionId)
       return handleErrorAndThrow(executionStep.errorDetails)
     }
 
@@ -44,6 +46,7 @@ export const worker = new Worker(
     })
 
     if (!nextStep) {
+      await Execution.query().patch({ status: 'success' }).findById(executionId)
       return
     }
 
