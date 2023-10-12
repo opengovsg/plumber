@@ -1,12 +1,12 @@
 import * as React from 'react'
+import { Link, useMatch } from 'react-router-dom'
+import { Text } from '@chakra-ui/react'
 import Divider from '@mui/material/Divider'
-import List from '@mui/material/List'
 import { useTheme } from '@mui/material/styles'
 import { SwipeableDrawerProps } from '@mui/material/SwipeableDrawer'
 import Toolbar from '@mui/material/Toolbar'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import ListItemLink from 'components/ListItemLink'
-import useFormatMessage from 'hooks/useFormatMessage'
+import { SidebarContainer, SidebarItem } from '@opengovsg/design-system-react'
 
 import { Drawer as BaseDrawer } from './style'
 
@@ -16,10 +16,8 @@ const iOS =
 
 type DrawerLink = {
   Icon: React.ElementType
-  primary: string
+  text: string
   to: string
-  badgeContent?: React.ReactNode
-  dataTest?: string
 }
 
 type DrawerProps = {
@@ -32,13 +30,14 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
     noSsr: true,
   })
-  const formatMessage = useFormatMessage()
 
   const closeOnClick = (event: React.SyntheticEvent) => {
     if (matchSmallScreens) {
       props.onClose(event)
     }
   }
+
+  const selected = (to: string) => useMatch({ path: to, end: true })
 
   return (
     <BaseDrawer
@@ -53,18 +52,34 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
       <div>
         {matchSmallScreens && <Toolbar />}
 
-        <List sx={{ py: 0, mt: 3 }}>
-          {links.map(({ Icon, primary, to, dataTest }, index) => (
-            <ListItemLink
+        <SidebarContainer>
+          {links.map(({ Icon, text, to }, index) => (
+            <SidebarItem
               key={`${to}-${index}`}
-              icon={<Icon htmlColor={theme.palette.primary.main} />}
-              primary={formatMessage(primary)}
+              pl={6}
+              icon={Icon}
+              as={Link}
               to={to}
               onClick={closeOnClick}
-              data-test={dataTest}
-            />
+              isActive={!!selected(to)}
+              color="base.content.default"
+              _hover={{
+                color: 'primary.600',
+                bg: 'interaction.muted.main.hover',
+                borderRadius: '0',
+              }}
+              _active={{
+                color: 'primary.600',
+                bg: 'interaction.muted.main.active',
+                borderRadius: '0',
+              }}
+            >
+              <Text textStyle="subhead-1" ml={4}>
+                {text}
+              </Text>
+            </SidebarItem>
           ))}
-        </List>
+        </SidebarContainer>
 
         <Divider />
       </div>
