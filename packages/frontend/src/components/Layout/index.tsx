@@ -7,9 +7,9 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import Drawer from 'components/Drawer'
+import { PipeIcon } from 'components/Icons'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
-import { PipeIcon } from 'helpers/customLogos'
 import useAuthentication from 'hooks/useAuthentication'
 
 type PublicLayoutProps = {
