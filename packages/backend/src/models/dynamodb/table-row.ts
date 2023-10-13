@@ -1,4 +1,4 @@
-import { IJSONPrimitive } from '@plumber/types'
+import { IJSONPrimitive, ITableRow } from '@plumber/types'
 
 import { randomUUID } from 'crypto'
 import dynamoose from 'dynamoose'
@@ -137,4 +137,21 @@ export const deleteTableRow = async ({
   } catch (e: unknown) {
     wrapDynamoDBError(e)
   }
+}
+
+export const getAllTableRows = async ({
+  tableId,
+}: {
+  tableId: string
+}): Promise<ITableRow[]> => {
+  const rows = await TableRow.query('tableId')
+    .eq(tableId)
+    .attributes(['rowId', 'data'])
+    // sort by createdAt ascending
+    .using('createdAtIndex')
+    .sort('ascending')
+    // return all rows even if more than 1MB
+    .all()
+    .exec()
+  return rows.map((row) => row.toJSON() as ITableRow)
 }
