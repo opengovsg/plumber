@@ -9,7 +9,7 @@ import {
   generateMockContext,
   generateMockTable,
   generateMockTableColumns,
-  generateMockTableRow,
+  generateMockTableRowData,
 } from './table.mock'
 
 describe('update row mutation', () => {
@@ -30,14 +30,14 @@ describe('update row mutation', () => {
   })
 
   it('should update a row in a given table', async () => {
-    const originalData = generateMockTableRow({ columnIds: dummyColumnIds })
+    const originalData = generateMockTableRowData({ columnIds: dummyColumnIds })
 
     const rowToUpdate = await createTableRow({
       tableId: dummyTable.id,
       data: originalData,
     })
 
-    const newData = generateMockTableRow({ columnIds: dummyColumnIds })
+    const newData = generateMockTableRowData({ columnIds: dummyColumnIds })
 
     const success = await updateRow(
       null,
@@ -67,13 +67,15 @@ describe('update row mutation', () => {
   })
 
   it('should remove keys that are not specified in the updated data (not a patch operation)', async () => {
-    const originalData = generateMockTableRow({ columnIds: dummyColumnIds })
+    const originalData = generateMockTableRowData({ columnIds: dummyColumnIds })
     const rowToUpdate = await createTableRow({
       tableId: dummyTable.id,
       data: originalData,
     })
 
-    const newData = generateMockTableRow({ columnIds: dummyColumnIds.slice(2) })
+    const newData = generateMockTableRowData({
+      columnIds: dummyColumnIds.slice(2),
+    })
     const success = await updateRow(
       null,
       {
@@ -95,13 +97,13 @@ describe('update row mutation', () => {
   })
 
   it('should throw an error if it tries to update a row with new invalid keys', async () => {
-    const originalData = generateMockTableRow({ columnIds: dummyColumnIds })
+    const originalData = generateMockTableRowData({ columnIds: dummyColumnIds })
     const rowToUpdate = await createTableRow({
       tableId: dummyTable.id,
       data: originalData,
     })
 
-    const newData = generateMockTableRow({
+    const newData = generateMockTableRowData({
       columnIds: [...dummyColumnIds, 'invalid_column'],
     })
     await expect(
