@@ -40,6 +40,19 @@ class TableMetadata extends Base {
       },
     },
   })
+
+  async validateRowKeys(data: Record<string, unknown>): Promise<boolean> {
+    const columns = await this.$relatedQuery('columns')
+    const columnIdsSet = new Set(columns.map((column) => column.id))
+
+    // Ensure that all keys in data are valid column ids
+    for (const key of Object.keys(data)) {
+      if (!columnIdsSet.has(key)) {
+        return false
+      }
+    }
+    return true
+  }
 }
 
 export default TableMetadata
