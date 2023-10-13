@@ -11,6 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import InputCreator from 'components/InputCreator'
 import { processStep } from 'helpers/authenticationSteps'
 import computeAuthStepVariables from 'helpers/computeAuthStepVariables'
+import { getOpenerOrigin } from 'helpers/window'
 import useFormatMessage from 'hooks/useFormatMessage'
 
 import { generateExternalLink } from '../../helpers/translation-values'
@@ -41,12 +42,18 @@ export default function AddAppConnection(
     : auth?.authenticationSteps
 
   React.useEffect(() => {
-    if (window.opener) {
-      window.opener.postMessage({
-        source: 'plumber',
-        payload: window.location.search,
-      })
-      window.close()
+    if (
+      // checks if this window/popup is opened by the same origin
+      getOpenerOrigin() === window.location.origin
+    ) {
+      window.opener.postMessage(
+        {
+          source: 'plumber',
+          payload: window.location.search,
+        },
+        // ensures that the message is only sent to the origin that opened the popup
+        window.location.origin,
+      )
     }
   }, [])
 

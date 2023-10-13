@@ -1,14 +1,13 @@
 import * as React from 'react'
+import { BiHistory, BiSolidGrid } from 'react-icons/bi'
 import { Navigate } from 'react-router-dom'
-import AppsIcon from '@mui/icons-material/Apps'
-import HistoryIcon from '@mui/icons-material/History'
-import SchemaIcon from '@mui/icons-material/Schema'
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import Drawer from 'components/Drawer'
+import { PipeIcon } from 'components/Icons'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 import useAuthentication from 'hooks/useAuthentication'
@@ -19,22 +18,19 @@ type PublicLayoutProps = {
 
 const drawerLinks = [
   {
-    Icon: SchemaIcon,
-    primary: 'drawer.flows',
+    Icon: PipeIcon,
+    text: 'Pipes',
     to: URLS.FLOWS,
-    dataTest: 'flows-page-drawer-link',
   },
   {
-    Icon: AppsIcon,
-    primary: 'drawer.apps',
+    Icon: BiSolidGrid,
+    text: 'My Apps',
     to: URLS.APPS,
-    dataTest: 'apps-page-drawer-link',
   },
   {
-    Icon: HistoryIcon,
-    primary: 'drawer.executions',
+    Icon: BiHistory,
+    text: 'Executions',
     to: URLS.EXECUTIONS,
-    dataTest: 'executions-page-drawer-link',
   },
 ]
 
