@@ -57,8 +57,8 @@ type Mutation {
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
   # Tiles
-  createTable(input: CreateTableInput!): Table!
-  updateTable(input: UpdateTableInput!): Table!
+  createTable(input: CreateTableInput!): TableMetadata!
+  updateTable(input: UpdateTableInput!): TableMetadata!
   deleteTable(input: DeleteTableInput!): Boolean!
 }
 
@@ -504,10 +504,15 @@ input CreateTableInput {
   name: String!
 }
 
+input TableColumnMetadataInput {
+  id: String!
+  name: String
+}
+
 input UpdateTableInput {
   id: String!
   name: String
-  modifiedColumns: [TableColumnMetadata]
+  modifiedColumns: [TableColumnMetadataInput]
   addedColumns: [String]
   deletedColumns: [String]
 }
@@ -518,7 +523,7 @@ input DeleteTableInput {
 
 type TableColumnMetadata {
   id: String!
-  name: String
+  name: String!
 }
 
 type TableMetadata {
