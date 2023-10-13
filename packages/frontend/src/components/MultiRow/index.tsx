@@ -78,7 +78,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
             {actualRows.map((row, index) => {
               const namePrefix = `${name}.${index}`
               return (
-                <Flex key={namePrefix} flexDir="column" gap={4} mb={4}>
+                <Flex key={row.id} flexDir="column" gap={4} mb={4}>
                   {/*
                    * Sub-Fields
                    *
