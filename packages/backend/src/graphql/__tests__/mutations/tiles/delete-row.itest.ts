@@ -10,7 +10,7 @@ import {
   generateMockContext,
   generateMockTable,
   generateMockTableColumns,
-  generateMockTableRow,
+  generateMockTableRowData,
 } from './table.mock'
 
 describe('delete row mutation', () => {
@@ -38,7 +38,7 @@ describe('delete row mutation', () => {
       items.push({
         tableId: dummyTable.id,
         rowId,
-        data: generateMockTableRow({ columnIds }),
+        data: generateMockTableRowData({ columnIds }),
       })
       rowIds.push(rowId)
     }

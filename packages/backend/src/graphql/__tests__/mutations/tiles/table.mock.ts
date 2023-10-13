@@ -43,7 +43,7 @@ export async function generateMockTableColumns({
   return (await Promise.all(promises)).map((column) => column.id)
 }
 
-export function generateMockTableRow({
+export function generateMockTableRowData({
   columnIds,
 }: {
   columnIds: string[]
