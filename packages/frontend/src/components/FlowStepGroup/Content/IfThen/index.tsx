@@ -33,7 +33,7 @@ export default function IfThen(props: ContentProps): JSX.Element {
   //
   // Note: We're intentionally _not_ updating the UI to reflect isAddingBranch
   // because this mutation usually runs fast, and updating the UI for a split
-  // second looks very janks\.
+  // second looks very disruptive.
   const [createStep, { loading: isAddingBranch }] = useMutation(CREATE_STEP, {
     refetchQueries: [GET_FLOW],
   })
