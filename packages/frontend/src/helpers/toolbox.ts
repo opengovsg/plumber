@@ -229,10 +229,9 @@ export function useIfThenInitializer(): [
       // because users always get confused on how to add actions within a
       // branch.
       //
-      // For code simplicity, we create these steps in concurrent, separate
-      // mutations instead of batching. This concurrency is safe under Postgres'
-      // default isolation level.
-      const addFirstBranchAction = createStep({
+      // FIXME (ogp-weeloong): Intentionally serial; need to fix createSteps to
+      // enable concurrent updates on same pipe.
+      await createStep({
         variables: {
           input: {
             previousStep: {
@@ -244,7 +243,7 @@ export function useIfThenInitializer(): [
           },
         },
       })
-      const addSecondBranchAction = createStep({
+      await createStep({
         variables: {
           input: {
             previousStep: {
@@ -256,7 +255,6 @@ export function useIfThenInitializer(): [
           },
         },
       })
-      await Promise.all([addFirstBranchAction, addSecondBranchAction])
 
       // Refetch only after completion of all initialization steps.
       await client.refetchQueries({ include: [GET_FLOW] })
