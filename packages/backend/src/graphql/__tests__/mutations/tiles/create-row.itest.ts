@@ -8,7 +8,7 @@ import {
   generateMockContext,
   generateMockTable,
   generateMockTableColumns,
-  generateMockTableRow,
+  generateMockTableRowData,
 } from './table.mock'
 
 describe('create row mutation', () => {
@@ -43,7 +43,7 @@ describe('create row mutation', () => {
   })
 
   it('should create a row with valid keys in a given table', async () => {
-    const validData = generateMockTableRow({ columnIds: dummyColumnIds })
+    const validData = generateMockTableRowData({ columnIds: dummyColumnIds })
     const row = await createRow(
       null,
       {
@@ -58,7 +58,7 @@ describe('create row mutation', () => {
   })
 
   it('should throw an error when creating a row with invalid keys', async () => {
-    const invalidData = generateMockTableRow({
+    const invalidData = generateMockTableRowData({
       columnIds: [...dummyColumnIds, 'invalid_column_id'],
     })
     await expect(
