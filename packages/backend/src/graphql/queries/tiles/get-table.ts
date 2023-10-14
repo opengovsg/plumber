@@ -1,3 +1,4 @@
+import { NotFoundError } from 'objection'
 import { SetRequired } from 'type-fest'
 
 import TableMetadata from '@/models/table-metadata'
@@ -15,13 +16,21 @@ const getTable = async (
   context: Context,
 ): Promise<SetRequired<TableMetadata, 'columns'>> => {
   const { tableId } = params.input
-  const table = await context.currentUser
-    .$relatedQuery('tables')
-    .withGraphJoined('columns')
-    .findById(tableId)
-    .throwIfNotFound()
 
-  return table
+  try {
+    const table = await context.currentUser
+      .$relatedQuery('tables')
+      .withGraphJoined('columns')
+      .findById(tableId)
+      .throwIfNotFound()
+
+    return table
+  } catch (e) {
+    if (e instanceof NotFoundError) {
+      throw new Error('Table not found')
+    }
+    throw new Error('Error fetching table')
+  }
 }
 
 export default getTable
