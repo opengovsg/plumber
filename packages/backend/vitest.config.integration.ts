@@ -30,7 +30,7 @@ export default defineConfig({
       getPath('./test/ddb-global-setup.ts'),
     ],
     include: ['src/**/*.itest.{js,ts}'],
-    threads: false,
+    singleThread: true,
     onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
       if (log.startsWith('vite:')) {
         return false
