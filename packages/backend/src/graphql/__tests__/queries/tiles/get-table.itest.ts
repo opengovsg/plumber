@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import getTable from '@/graphql/queries/tiles/get-table'
@@ -10,7 +11,7 @@ import {
   generateMockTableColumns,
 } from '../../mutations/tiles/table.mock'
 
-describe('get table metadata query', () => {
+describe('get single table query', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnIds: string[] = []
@@ -57,5 +58,19 @@ describe('get table metadata query', () => {
       context,
     )
     expect(table.columns).toHaveLength(0)
+  })
+
+  it('should throw an error if table does not exist', async () => {
+    await expect(
+      getTable(
+        null,
+        {
+          input: {
+            tableId: randomUUID(),
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow('Table not found')
   })
 })
