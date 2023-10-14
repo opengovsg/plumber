@@ -26,7 +26,12 @@ export default defineConfig({
       getPath('./test/redis-global-setup.ts'),
     ],
     include: ['src/**/*.itest.{js,ts}'],
-    threads: false,
+    singleThread: true,
+    onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
+      if (log.startsWith('vite:')) {
+        return false
+      }
+    },
   },
   resolve: {
     alias: {
