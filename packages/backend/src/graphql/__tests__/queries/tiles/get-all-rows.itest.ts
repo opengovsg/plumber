@@ -61,6 +61,7 @@ describe('get all rows query', () => {
   it('should return rows in ascending order of createdAt', async () => {
     // Insert rows in descending order of createdAt
     const numRowsToInsert = 10
+    const currentDate = Date.now()
     const rowsToInsert = []
     for (let i = 0; i < numRowsToInsert; i++) {
       const rowId = randomUUID()
@@ -68,7 +69,7 @@ describe('get all rows query', () => {
         rowId,
         tableId: dummyTable.id,
         data: {},
-        createdAt: Date.now() - i,
+        createdAt: currentDate - i,
       })
     }
     await insertMockTableRows(rowsToInsert)
