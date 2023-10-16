@@ -33,6 +33,8 @@ type Query {
     key: String!
     parameters: JSONObject
   ): JSONObject
+  getTable(tableId: String!): TableMetadata!
+  getTables: [TableMetadata!]!
   getCurrentUser: User
   healthcheck: AppHealth
 }
