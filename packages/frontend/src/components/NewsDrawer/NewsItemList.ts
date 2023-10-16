@@ -5,6 +5,15 @@ import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2023-10-16',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'Plumber default email credentials for Postman action',
+    details: dedent`
+      * Postman credentials are not required for sending email action anymore
+      * All future emails will be sent from donotreply@plumber.gov.sg
+    `,
+  },
+  {
     date: '2023-10-11',
     tag: NEW_FEATURE_TAG,
     title: `Introducing Toolbox`,
