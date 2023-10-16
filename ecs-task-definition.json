@@ -134,6 +134,10 @@
         {
           "name": "SGID_PRIVATE_KEY",
           "valueFrom": "plumber-<ENVIRONMENT>-sgid-private-key"
+        },
+        {
+          "name": "POSTMAN_RATE_LIMIT",
+          "valueFrom": "plumber-<ENVIRONMENT>-postman-rate-limit"
         }
       ],
       "logConfiguration": {
