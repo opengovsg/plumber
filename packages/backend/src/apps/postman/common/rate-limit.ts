@@ -27,10 +27,11 @@ export async function getRatelimitedRecipientList(
     const recipients = allRecipients.slice(progress)
     const pointsToConsume =
       recipients.length > remainingPoints ? remainingPoints : recipients.length
+    const recipientsToSend = recipients.slice(0, pointsToConsume)
     await emailRateCounter.consume('send', pointsToConsume)
     return {
-      recipients: recipients.slice(0, pointsToConsume),
-      newProgress: progress + recipients.length,
+      recipients: recipientsToSend,
+      newProgress: progress + recipientsToSend.length,
     }
   } catch (e) {
     if (e instanceof RateLimiterRes) {
