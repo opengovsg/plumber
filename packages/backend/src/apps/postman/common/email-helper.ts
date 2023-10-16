@@ -2,6 +2,8 @@ import { IHttpClient } from '@plumber/types'
 
 import FormData from 'form-data'
 
+import appConfig from '@/config/app'
+
 const ENDPOINT = '/v1/transactional/email/send'
 
 export interface SendTransactionalEmailResponse {
@@ -45,7 +47,6 @@ export interface Email {
   senderName: string
   attachments?: { fileName: string; data: Uint8Array }[]
   replyTo?: string
-  fromAddress?: string
 }
 
 export async function sendTransactionalEmails(
@@ -60,9 +61,7 @@ export async function sendTransactionalEmails(
     requestData.append('recipient', recipientEmail)
     requestData.append(
       'from',
-      email.fromAddress
-        ? `${email.senderName} <${email.fromAddress}>`
-        : `${email.senderName} via Postman <donotreply@mail.postman.gov.sg>`,
+      `${email.senderName} <${appConfig.postman.fromAddress}>`,
     )
 
     if (email.replyTo) {
@@ -83,6 +82,7 @@ export async function sendTransactionalEmails(
       {
         headers: {
           ...requestData.getHeaders(),
+          Authorization: `Bearer ${appConfig.postman.apiKey}`,
         },
       },
     )

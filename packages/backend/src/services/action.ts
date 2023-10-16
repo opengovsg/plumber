@@ -1,4 +1,4 @@
-import { type IActionRunResult } from '@plumber/types'
+import { type IActionRunResult, NextStepMetadata } from '@plumber/types'
 
 import CancelFlowError from '@/errors/cancel-flow'
 import HttpError from '@/errors/http'
@@ -16,10 +16,18 @@ type ProcessActionOptions = {
   stepId: string
   jobId?: string
   testRun?: boolean
+  metadata?: NextStepMetadata
 }
 
 export const processAction = async (options: ProcessActionOptions) => {
-  const { flowId, stepId, executionId, jobId, testRun = false } = options
+  const {
+    flowId,
+    stepId,
+    executionId,
+    jobId,
+    testRun = false,
+    metadata,
+  } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
   const flow = await Flow.query().findById(flowId).throwIfNotFound()
@@ -57,8 +65,8 @@ export const processAction = async (options: ProcessActionOptions) => {
     // Cannot assign directly to runResult due to void return type.
     const result =
       testRun && actionCommand.testRun
-        ? await actionCommand.testRun($)
-        : await actionCommand.run($)
+        ? await actionCommand.testRun($, metadata)
+        : await actionCommand.run($, metadata)
     if (result) {
       runResult = result
     }
@@ -118,5 +126,6 @@ export const processAction = async (options: ProcessActionOptions) => {
     executionStep,
     computedParameters,
     nextStep,
+    nextStepMetadata: runResult.nextStepMetadata,
   }
 }

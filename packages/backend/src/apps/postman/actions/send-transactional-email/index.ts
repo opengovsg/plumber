@@ -8,6 +8,7 @@ import {
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
+import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
 export default defineAction({
   name: 'Send email',
@@ -15,10 +16,13 @@ export default defineAction({
   description: "Sends an email using Postman's transactional API.",
   arguments: transactionalEmailFields,
 
-  async run($) {
+  async run($, metadata) {
+    let progress = 0
+    if (metadata?.type === 'postman-send-email') {
+      progress = metadata.progress
+    }
     const { subject, body, destinationEmail, senderName, replyTo } =
       $.step.parameters
-
     const result = transactionalEmailSchema.safeParse({
       destinationEmail,
       senderName,
@@ -30,24 +34,42 @@ export default defineAction({
     if (!result.success) {
       throw fromZodError((result as SafeParseError<unknown>).error)
     }
-
-    const results = await sendTransactionalEmails(
-      $.http,
+    const { recipients, newProgress } = await getRatelimitedRecipientList(
       result.data.destinationEmail,
-      {
-        subject: result.data.subject,
-        body: result.data.body,
-        replyTo: result.data.replyTo,
-        senderName: result.data.senderName,
-      },
+      +progress,
     )
 
+    const results = await sendTransactionalEmails($.http, recipients, {
+      subject: result.data.subject,
+      body: result.data.body,
+      replyTo: result.data.replyTo,
+      senderName: result.data.senderName,
+    })
+
+    const recipientListUptilNow = result.data.destinationEmail.slice(
+      0,
+      newProgress,
+    )
     $.setActionItem({
       raw: {
-        status: results.map((result) => result.status),
-        recipient: results.map((result) => result.recipient),
+        // if not accepted, the whole action would have already failed hence we
+        // can safely hardcode this here
+        status: recipientListUptilNow.map(() => 'ACCEPTED'),
+        recipient: result.data.destinationEmail.slice(0, newProgress),
         ...results[0]?.params,
       },
     })
+    if (newProgress < result.data.destinationEmail.length) {
+      return {
+        nextStep: {
+          command: 'jump-to-step',
+          stepId: $.step.id,
+        },
+        nextStepMetadata: {
+          type: 'postman-send-email',
+          progress: newProgress,
+        },
+      }
+    }
   },
 })

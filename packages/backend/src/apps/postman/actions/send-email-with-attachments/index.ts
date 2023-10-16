@@ -5,6 +5,7 @@ import defineAction from '@/helpers/define-action'
 import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
+import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
 import { fields, schema } from './parameters'
 
@@ -15,21 +16,23 @@ export default defineAction({
   arguments: fields,
   doesFileProcessing: true,
 
-  async run($) {
+  async run($, metadata) {
+    let progress = 0
+    if (metadata?.type === 'postman-send-email') {
+      progress = metadata.progress
+    }
     const {
       subject,
       body,
       destinationEmail,
       replyTo,
       senderName,
-      fromAddress,
       attachments,
     } = $.step.parameters
 
     const result = schema.safeParse({
       destinationEmail,
       senderName,
-      fromAddress,
       subject,
       body,
       replyTo,
@@ -47,25 +50,42 @@ export default defineAction({
       }),
     )
 
-    const results = await sendTransactionalEmails(
-      $.http,
+    const { recipients, newProgress } = await getRatelimitedRecipientList(
       result.data.destinationEmail,
-      {
-        subject: result.data.subject,
-        body: result.data.body,
-        replyTo: result.data.replyTo,
-        senderName: result.data.senderName,
-        fromAddress: result.data.fromAddress,
-        attachments: attachmentFiles,
-      },
+      +progress,
     )
+    const results = await sendTransactionalEmails($.http, recipients, {
+      subject: result.data.subject,
+      body: result.data.body,
+      replyTo: result.data.replyTo,
+      senderName: result.data.senderName,
+      attachments: attachmentFiles,
+    })
 
+    const recipientListUptilNow = result.data.destinationEmail.slice(
+      0,
+      newProgress,
+    )
     $.setActionItem({
       raw: {
-        status: results.map((result) => result.status),
-        recipient: results.map((result) => result.recipient),
+        // if not accepted, the whole action would have already failed hence we
+        // can safely hardcode this here
+        status: recipientListUptilNow.map(() => 'ACCEPTED'),
+        recipient: recipientListUptilNow,
         ...results[0]?.params,
       },
     })
+    if (newProgress < result.data.destinationEmail.length) {
+      return {
+        nextStep: {
+          command: 'jump-to-step',
+          stepId: $.step.id,
+        },
+        nextStepMetadata: {
+          type: 'postman-send-email',
+          progress: newProgress,
+        },
+      }
+    }
   },
 })

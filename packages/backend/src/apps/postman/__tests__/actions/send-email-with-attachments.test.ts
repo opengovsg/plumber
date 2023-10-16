@@ -7,6 +7,10 @@ import sendEmailWithAttachments from '../../actions/send-email-with-attachments'
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
   sendTransactionalEmails: vi.fn(() => []),
+  getRatelimitedRecipientList: vi.fn((recipients: string[], progress) => ({
+    recipients,
+    newProgress: progress + recipients.length,
+  })),
 }))
 
 vi.mock('@/helpers/s3', async () => {
@@ -24,6 +28,10 @@ vi.mock('../../common/email-helper', () => ({
   sendTransactionalEmails: mocks.sendTransactionalEmails,
 }))
 
+vi.mock('../../common/rate-limit', () => ({
+  getRatelimitedRecipientList: mocks.getRatelimitedRecipientList,
+}))
+
 describe('send email with attachments', () => {
   let $: IGlobalVariable
 
@@ -38,7 +46,6 @@ describe('send email with attachments', () => {
           body: 'hello\nhihi',
           replyTo: 'replyto@example.com',
           senderName: 'sender name',
-          fromAddress: 'noreply@open.gov.sg',
           attachments: [
             's3:my-bucket:abcd/file 1.txt',
             's3:my-bucket:wxyz/file-2.png',
@@ -71,7 +78,6 @@ describe('send email with attachments', () => {
         body: 'hello<br>hihi',
         replyTo: 'replyto@example.com',
         senderName: 'sender name',
-        fromAddress: 'noreply@open.gov.sg',
         attachments: [
           {
             fileName: 'file 1.txt',
