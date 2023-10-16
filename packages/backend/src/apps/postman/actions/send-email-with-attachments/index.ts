@@ -62,10 +62,16 @@ export default defineAction({
       attachments: attachmentFiles,
     })
 
+    const recipientListUptilNow = result.data.destinationEmail.slice(
+      0,
+      newProgress,
+    )
     $.setActionItem({
       raw: {
-        status: results.map((result) => result.status),
-        recipient: results.map((result) => result.recipient),
+        // if not accepted, the whole action would have already failed hence we
+        // can safely hardcode this here
+        status: recipientListUptilNow.map(() => 'ACCEPTED'),
+        recipient: recipientListUptilNow,
         ...results[0]?.params,
       },
     })
