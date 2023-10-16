@@ -141,6 +141,7 @@ export default function Branch(props: BranchProps): JSX.Element {
             </AlertDialogBody>
             <AlertDialogFooter>
               <Button
+                colorScheme="neutral"
                 variant="clear"
                 ref={cancelDeleteButton}
                 onClick={closeDeleteConfirmation}
