@@ -16,11 +16,8 @@ export async function sendEmail({
   subject,
   body,
   recipient,
-}: {
-  subject: string
-  body: string
-  recipient: string
-}): Promise<void> {
+  replyTo,
+}: PostmanEmailRequestBody): Promise<void> {
   try {
     await axios.post(
       'https://api.postman.gov.sg/v1/transactional/email/send',
@@ -29,6 +26,7 @@ export async function sendEmail({
         body,
         recipient,
         from: `Plumber <${appConfig.postman.fromAddress}>`,
+        ...(replyTo && { reply_to: replyTo }),
       },
       {
         headers: {
