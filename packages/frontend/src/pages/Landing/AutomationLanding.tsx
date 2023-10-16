@@ -77,7 +77,7 @@ const AUTOMATIONS = [
           'Ask for feedback by automatically sending a survey via Postman to attendees after your event',
       },
       {
-        steps: ['formsg', 'logic', 'vault-workspace'],
+        steps: ['formsg', 'toolbox', 'vault-workspace'],
         title: 'Create mailing lists',
         description: 'Store form submitter emails in an excel format',
       },
