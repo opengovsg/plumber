@@ -26,7 +26,7 @@ export default function AvatarDropdownMenu() {
         style={{ pointerEvents: 'none' }}
         icon={<Icon as={BiUser} boxSize={5} />}
       >
-        <Text textStyle="subhead-1">{currentUser?.email}</Text>
+        <Text>{currentUser?.email}</Text>
       </Menu.Item>
 
       <AvatarMenuDivider />
@@ -35,13 +35,14 @@ export default function AvatarDropdownMenu() {
         icon={<Icon as={BiChat} boxSize={5} />}
         onClick={() => window.open(URLS.FEEDBACK_FORM_LINK, '_blank')}
       >
-        <Text textStyle="body-1">Give feedback</Text>
+        <Text>Give feedback</Text>
       </Menu.Item>
+
       <Menu.Item
-        icon={<Icon ml={-0.5} as={BiLogOut} boxSize={5} color="primary.600" />}
+        icon={<Icon ml={-0.5} as={BiLogOut} boxSize={5} />}
         onClick={onLogoutClick}
       >
-        <Text textStyle="body-1">Logout</Text>
+        <Text>Logout</Text>
       </Menu.Item>
     </AvatarMenu>
   )
