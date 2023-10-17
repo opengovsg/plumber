@@ -42,6 +42,10 @@ class Execution extends Base {
       },
     },
   })
+
+  static async setStatus(executionId: string, status: ExecutionStatus) {
+    return Execution.query().findById(executionId).patch({ status })
+  }
 }
 
 export default Execution
