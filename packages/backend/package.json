@@ -89,7 +89,6 @@
     "testcontainers": "^10.2.1",
     "ts-node": "^10.9.1",
     "tsc-alias": "^1.8.6",
-    "tsconfig-paths": "^4.2.0",
-    "vitest": "^0.32.2"
+    "tsconfig-paths": "^4.2.0"
   }
 }
