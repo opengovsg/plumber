@@ -1,8 +1,15 @@
 import './RichTextEditor.scss'
 
-import { useEffect } from 'react'
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import { FormControl } from '@mui/material'
+import { ClickAwayListener, FormControl } from '@mui/material'
 import { FormLabel } from '@opengovsg/design-system-react'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -13,22 +20,42 @@ import TableRow from '@tiptap/extension-table-row'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import { genVariableInfoMap } from 'components/PowerInput/utils'
+import { StepExecutionsContext } from 'contexts/StepExecutions'
+import { extractVariables, filterVariables, Variable } from 'helpers/variables'
 
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
+import { StepVariable } from './StepVariablePlugin'
+import { SuggestionsPopper } from './SuggestionPopper'
 
 interface EditorProps {
   onChange: (...event: any[]) => void
   initialValue: string
   editable?: boolean
   placeholder?: string
+  variablesEnabled?: boolean
 }
 const Editor = ({
   onChange,
   initialValue,
   editable,
   placeholder,
+  variablesEnabled,
 }: EditorProps) => {
+  const priorStepsWithExecutions = useContext(StepExecutionsContext)
+  const [showVarSuggestions, setShowVarSuggestions] = useState(false)
+  const editorRef = useRef<HTMLDivElement | null>(null)
+
+  const [stepsWithVariables] = useMemo(() => {
+    const stepsWithVars = filterVariables(
+      extractVariables(priorStepsWithExecutions),
+      (variable) => (variable.type ?? 'text') === 'text',
+    )
+    const info = genVariableInfoMap(stepsWithVars)
+    return [stepsWithVars, info]
+  }, [priorStepsWithExecutions])
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -55,6 +82,7 @@ const Editor = ({
       ImageResize.configure({
         inline: true,
       }),
+      StepVariable,
     ],
     content: initialValue,
     onUpdate: ({ editor }) => {
@@ -76,14 +104,44 @@ const Editor = ({
     // publish and unpublish of pipe
     editor?.setOptions({ editable })
   }, [editable])
+  const handleVariableClick = useCallback(
+    (variable: Variable) => {
+      editor?.commands.insertContent({
+        type: StepVariable.name,
+        attrs: {
+          id: variable.name,
+          label: variable.label,
+          value: variable.value,
+        },
+      })
+    },
+    [editor],
+  )
+
   return (
     <div className="editor">
       <MenuBar editor={editor} />
-      <EditorContent
-        className="editor__content"
-        editor={editor}
-        placeholder="Hello world"
-      />
+      <ClickAwayListener
+        mouseEvent="onMouseDown"
+        onClickAway={() => setShowVarSuggestions(false)}
+      >
+        <div ref={editorRef}>
+          <EditorContent
+            className="editor__content"
+            editor={editor}
+            placeholder="Hello world"
+            onFocus={() => setShowVarSuggestions(true)}
+          />
+          {variablesEnabled && (
+            <SuggestionsPopper
+              open={showVarSuggestions}
+              anchorEl={editorRef.current}
+              data={stepsWithVariables}
+              onSuggestionClick={handleVariableClick}
+            />
+          )}
+        </div>
+      </ClickAwayListener>
     </div>
   )
 }
@@ -96,6 +154,7 @@ interface RichTextEditorProps {
   description?: string
   disabled?: boolean
   placeholder?: string
+  variablesEnabled?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -105,6 +164,7 @@ const RichTextEditor = ({
   description,
   disabled,
   placeholder,
+  variablesEnabled,
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
   return (
@@ -126,6 +186,7 @@ const RichTextEditor = ({
             initialValue={value}
             editable={!disabled}
             placeholder={placeholder}
+            variablesEnabled={variablesEnabled}
           />
         )}
       />
