@@ -31,7 +31,9 @@ export const worker = new Worker(
   tracer.wrap('workers.action', async (job) => {
     const jobData = job.data as JobData
 
-    const step = await Step.query().findById(jobData.stepId)
+    // the reason why we dont add .throwIfNotFound() here is to prevent job retries
+    // delegating the error throwing and handling to processAction where it also queries for Step
+    const step: Step = await Step.query().findById(jobData.stepId)
 
     const span = tracer.scope().active()
     span?.addTags({
