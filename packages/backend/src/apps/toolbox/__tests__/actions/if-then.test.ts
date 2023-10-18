@@ -211,7 +211,7 @@ vi.mock('@/models/step', () => ({
   },
 }))
 
-describe('If-Then', () => {
+describe('If-then', () => {
   let $: IGlobalVariable
 
   afterEach(() => {

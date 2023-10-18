@@ -114,7 +114,7 @@ function ChooseAppAndEventSubstep(
           //
           // ** EDGE CASE **
           //
-          // We want to hide If-Then in some cases (see useIsIfThenSelectable
+          // We want to hide If-then in some cases (see useIsIfThenSelectable
           // comments).
           //
           if (
@@ -174,13 +174,13 @@ function ChooseAppAndEventSubstep(
         // first selection), and we also need to update the first branch's
         // parameters.
         //
-        // Since there are a bunch of edge cases for If-Then in this component
+        // Since there are a bunch of edge cases for If-then in this component
         // already, let's localize the damage and continue adding edge cases
         // here.
         //
         // Note that we don't need to check for inequality to the current
         // step.key, since we don't display the action drop-down after someone
-        // selects If-Then.
+        // selects If-then.
         //
         if (
           app?.key === TOOLBOX_APP_KEY &&

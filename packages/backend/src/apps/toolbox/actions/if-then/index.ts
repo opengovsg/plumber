@@ -51,7 +51,7 @@ async function getBranchStepIdToSkipTo(
 }
 
 export default defineAction({
-  name: 'If... Then',
+  name: 'If-then',
   key: ACTION_KEY,
   description: '',
   groupsLaterSteps: true,
