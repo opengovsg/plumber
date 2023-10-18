@@ -62,7 +62,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     )
   }
 
-  // Edge case for If-Then
+  // Edge case for If-then
   //
   // FIXME (ogp-weeloong): Revamp UI to allow special handling for
   // toolbox actions in an isolated codepath.

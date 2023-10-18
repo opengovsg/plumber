@@ -54,7 +54,7 @@ export default function Branch(props: BranchProps): JSX.Element {
   const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
     () => ({
       [initialStep.id]: {
-        hintAboveCaption: 'If-Then',
+        hintAboveCaption: 'If-then',
         // Only the 1st branch can have an undefined name.
         caption: (initialStep.parameters.branchName as string) ?? 'Branch 1',
         disableActionChanges: true,
@@ -158,7 +158,7 @@ export default function Branch(props: BranchProps): JSX.Element {
       {/*
        * Nexted branch editor (pops up in modal)
        */}
-      {/* Nested If-Thens should have depth = depth + 1 */}
+      {/* Nested If-thens should have depth = depth + 1 */}
       <BranchContext.Provider value={{ depth: depth + 1 }}>
         <StepDisplayOverridesProvider value={initialStepDisplayOverride}>
           <NestedEditor

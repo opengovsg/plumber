@@ -21,7 +21,7 @@ function getStepContent(steps: IStep[]): {
     return {
       StepContent: IfThen,
       hintAboveCaption: 'Action',
-      caption: 'If-Then',
+      caption: 'If-then',
       isStepGroupCompleted: areAllIfThenBranchesCompleted(steps, 0),
     }
   }
