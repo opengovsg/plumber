@@ -82,6 +82,7 @@ export default function InputCreator(
         description={description}
         disabled={disabled}
         placeholder={placeholder}
+        variablesEnabled={variables}
       />
     )
   }
