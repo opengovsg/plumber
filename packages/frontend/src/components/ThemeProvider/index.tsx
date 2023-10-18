@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Box } from '@chakra-ui/react'
 import {
   THEME_ID,
   ThemeProvider as MaterialThemeProvider,
@@ -18,7 +19,9 @@ const ThemeProvider = ({
   return (
     <ChakraThemeProvider theme={chakraTheme}>
       <MaterialThemeProvider theme={{ [THEME_ID]: materialTheme }}>
-        {children}
+        <Box display="flex" flexDir="column" minH="100vh">
+          {children}
+        </Box>
       </MaterialThemeProvider>
     </ChakraThemeProvider>
   )

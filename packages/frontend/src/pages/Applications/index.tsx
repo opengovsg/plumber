@@ -57,7 +57,13 @@ export default function Applications(): React.ReactElement {
   return (
     <Box sx={{ py: 3 }}>
       <Container variant="page">
-        <Grid container sx={{ mb: [0, 3] }} columnSpacing={1.5} rowSpacing={3}>
+        <Grid
+          container
+          sx={{ mb: [0, 3] }}
+          columnSpacing={1.5}
+          paddingLeft={[0, 4.5]}
+          rowSpacing={3}
+        >
           <Grid container item xs sm alignItems="center" order={{ xs: 0 }}>
             <PageTitle title={APPS_TITLE} />
           </Grid>
