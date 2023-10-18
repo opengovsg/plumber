@@ -29,33 +29,36 @@ type JobData = {
 export const worker = new Worker(
   'action',
   tracer.wrap('workers.action', async (job) => {
-    const {
-      stepId,
-      flowId,
-      executionId,
-      nextStep,
-      executionStep,
-      nextStepMetadata,
-    } = await processAction({ ...(job.data as JobData), jobId: job.id })
+    const jobData = job.data as JobData
+
+    // the reason why we dont add .throwIfNotFound() here is to prevent job retries
+    // delegating the error throwing and handling to processAction where it also queries for Step
+    const step: Step = await Step.query().findById(jobData.stepId)
+
+    const span = tracer.scope().active()
+    span?.addTags({
+      flowId: jobData.flowId,
+      executionId: jobData.executionId,
+      stepId: jobData.stepId,
+      actionKey: step?.key,
+      appKey: step?.appKey,
+    })
+
+    const { flowId, executionId, nextStep, executionStep, nextStepMetadata } =
+      await processAction({ ...jobData, jobId: job.id }).catch(async (err) => {
+        // this happens when the prerequisite steps for the action fails (e.g. db error, missing execution, flow, step, etc...)
+        // in such cases, we do not want to retry
+        await Execution.setStatus(jobData.executionId, 'failure')
+        throw new UnrecoverableError(err.message || 'Action failed to execute')
+      })
 
     if (executionStep.isFailed) {
-      await Execution.query().patch({ status: 'failure' }).findById(executionId)
+      await Execution.setStatus(executionId, 'failure')
       return handleErrorAndThrow(executionStep.errorDetails)
     }
 
-    const step = await Step.query().findById(stepId).throwIfNotFound()
-
-    // dd-trace span tagging
-    const span = tracer.scope().active()
-    span?.addTags({
-      flowId,
-      executionId,
-      stepId,
-      appKey: step.appKey,
-    })
-
     if (!nextStep) {
-      await Execution.query().patch({ status: 'success' }).findById(executionId)
+      await Execution.setStatus(executionId, 'success')
       return
     }
 

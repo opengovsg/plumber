@@ -65,6 +65,10 @@ function MultiRow(props: MultiRowProps): JSX.Element {
         // `fallbackRows` on the 1st render.
         const actualRows: typeof rows = rows.length === 0 ? fallbackRows : rows
 
+        // If field is required, don't allow removal if there is only 1 row
+        // remaining.
+        const canRemoveRow = !required || actualRows.length > 1
+
         return (
           <Flex flexDir="column">
             <FormLabel isRequired={required} description={description}>
@@ -74,7 +78,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
             {actualRows.map((row, index) => {
               const namePrefix = `${name}.${index}`
               return (
-                <Flex key={namePrefix} flexDir="column" gap={4} mb={4}>
+                <Flex key={row.id} flexDir="column" gap={4} mb={4}>
                   {/*
                    * Sub-Fields
                    *
@@ -87,13 +91,15 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                       namePrefix={namePrefix}
                       {...forwardedInputCreatorProps}
                     />
-                    <IconButton
-                      variant="clear"
-                      aria-label="Remove"
-                      icon={<BiTrash />}
-                      isDisabled={isEditorReadOnly}
-                      onClick={() => remove(index)}
-                    />
+                    {canRemoveRow && (
+                      <IconButton
+                        variant="clear"
+                        aria-label="Remove"
+                        icon={<BiTrash />}
+                        isDisabled={isEditorReadOnly}
+                        onClick={() => remove(index)}
+                      />
+                    )}
                   </Flex>
                   {subFields.slice(1).map((subField) => (
                     <InputCreator

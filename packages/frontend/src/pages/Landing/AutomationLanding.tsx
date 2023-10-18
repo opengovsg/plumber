@@ -27,7 +27,7 @@ const AUTOMATIONS = [
         description: 'Track completion rate of onboarding forms',
       },
       {
-        steps: ['formsg', 'logic', 'postman'],
+        steps: ['formsg', 'toolbox', 'postman'],
         title: 'Route applications to department',
         description: 'Send job applications to the relevant recipients',
       },
@@ -77,7 +77,7 @@ const AUTOMATIONS = [
           'Ask for feedback by automatically sending a survey via Postman to attendees after your event',
       },
       {
-        steps: ['formsg', 'logic', 'vault-workspace'],
+        steps: ['formsg', 'toolbox', 'vault-workspace'],
         title: 'Create mailing lists',
         description: 'Store form submitter emails in an excel format',
       },
@@ -100,7 +100,7 @@ const AUTOMATIONS = [
           'Receive a notification from Postman for every new storage-mode form submission is made',
       },
       {
-        steps: ['formsg', 'logic', 'twilio'],
+        steps: ['formsg', 'toolbox', 'twilio'],
         title: 'Flag out high priority tickets',
         description: 'Alert relevant parties via SMS for urgent tickets',
       },
@@ -122,7 +122,7 @@ const AUTOMATIONS = [
         description: 'Track status of incoming tickets in Vault Workspace',
       },
       {
-        steps: ['formsg', 'logic', 'postman'],
+        steps: ['formsg', 'toolbox', 'postman'],
         title: 'Route tickets to different teams',
         description:
           'Redirect formsg responses to relevant teams based on certain conditions',

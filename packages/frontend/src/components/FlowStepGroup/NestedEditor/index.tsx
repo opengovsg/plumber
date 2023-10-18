@@ -29,8 +29,12 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
       closeOnEsc={false}
       motionPreset="none"
     >
-      <ModalOverlay bg="blackAlpha.400" backdropFilter="blur(4px)" />
-      <ModalContent bg="base.canvas.brand-subtle" mt={{ base: 0, lg: 16 }}>
+      <ModalOverlay />
+      <ModalContent
+        bg="base.canvas.brand-subtle"
+        mt={{ base: 0, lg: 16 }}
+        borderRadius="lg"
+      >
         <ModalHeader display="flex" justifyContent="center">
           <Button
             left={4}
@@ -43,13 +47,10 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
             onClick={onClose}
             leftIcon={<BiChevronLeft size={28} />}
           >
-            Back to main pipe
+            Back to pipe
           </Button>
         </ModalHeader>
         <Box p={8}>
-          {/* <Text textAlign="center" textStyle="h4" mb={4}>
-            Editing Branch
-          </Text> */}
           <Editor flow={flow} steps={steps} />
         </Box>
       </ModalContent>

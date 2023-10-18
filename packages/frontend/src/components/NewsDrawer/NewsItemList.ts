@@ -1,9 +1,24 @@
 import dedent from 'dedent'
 
+import IfThenAnimation from './assets/If-ThenGraphic.json'
 import { NewsItemProps } from './NewsItem'
 import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
 
+const IF_THEN_EXTERNAL_LINK =
+  'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
+
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
+  {
+    date: '2023-10-18',
+    tag: NEW_FEATURE_TAG,
+    title: `Introducing If-then!`,
+    details: dedent`
+      **If-then** uses branching logic to perform actions when certain conditions are met! Look for this feature under Toolbox when you add an action! Read [our guide](${IF_THEN_EXTERNAL_LINK}) to understand how to use this feature to do more with your pipes!
+    `,
+    multimedia: {
+      animationData: IfThenAnimation,
+    },
+  },
   {
     date: '2023-10-16',
     tag: NEW_ENHANCEMENT_TAG,
@@ -21,7 +36,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     tag: NEW_FEATURE_TAG,
     title: `Introducing Toolbox`,
     details: dedent`
-      Toolbox is a new app that you can find when you add an action. This will contain built in tools that can enhance your workflows! Logic has been moved into Toolbox and renamed to **Only continue if**. Stay tuned for the release of our new feature **If... Then** in the coming weeks!
+      Toolbox is a new app that you can find when you add an action. This will contain built in tools that can enhance your workflows! Logic has been moved into Toolbox and renamed to **Only continue if**. Stay tuned for the release of our new feature **If-then** in the coming weeks!
     `,
   },
   {
