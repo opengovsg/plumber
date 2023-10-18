@@ -22,7 +22,7 @@ export const transactionalEmailFields: IField[] = [
   {
     label: 'Body',
     key: 'body',
-    type: 'string' as const,
+    type: 'rich-text' as const,
     required: true,
     description: 'Email body HTML.',
     variables: true,

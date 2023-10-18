@@ -217,12 +217,18 @@ export interface IFieldMultiRow extends IBaseField {
   subFields: IField[]
 }
 
+export interface IFieldRichText extends IBaseField {
+  type: 'rich-text'
+  value?: string
+}
+
 export type IField =
   | IFieldDropdown
   | IFieldText
   | IFieldMultiline
   | IFieldMultiSelect
   | IFieldMultiRow
+  | IFieldRichText
 
 export interface IAuthenticationStepField {
   name: string
