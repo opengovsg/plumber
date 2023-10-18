@@ -44,7 +44,12 @@ const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
 const CONNECTIVITY_STATUS_CODE = [504]
 
 export function handleErrorAndThrow(errorDetails: IJSONObject): never {
-  const errorString = get(errorDetails, 'details.error', '') as string
+  const errorVariable = get(errorDetails, 'details.error', '') as unknown
+  const errorString =
+    typeof errorVariable === 'string'
+      ? errorVariable
+      : JSON.stringify(errorVariable)
+
   const statusCode = Number(get(errorDetails, 'status', 0))
   if (!errorString && !statusCode) {
     throw new UnrecoverableError(JSON.stringify(errorDetails))
