@@ -38,7 +38,7 @@ export function extractBranchesWithSteps(
   steps: IStep[],
 
   // We can't extract current depth from steps[0].parameters.depth - it may be
-  // undefined if the user has just chosen "If... Then" via the
+  // undefined if the user has just chosen "If-Then" via the
   // "Choose app & event" substep. We grab it from the context instead; it's
   // guaranteed to be correct via induction.
   //

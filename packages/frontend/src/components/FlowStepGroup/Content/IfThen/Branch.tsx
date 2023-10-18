@@ -54,7 +54,7 @@ export default function Branch(props: BranchProps): JSX.Element {
   const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
     () => ({
       [initialStep.id]: {
-        hintAboveCaption: 'If... Then',
+        hintAboveCaption: 'If-Then',
         // Only the 1st branch can have an undefined name.
         caption: (initialStep.parameters.branchName as string) ?? 'Branch 1',
         disableActionChanges: true,

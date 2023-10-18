@@ -4,9 +4,9 @@ import conditionIsTrue from '../../common/condition-is-true'
 import getConditionArgs from '../../common/get-condition-args'
 
 export default defineAction({
-  name: 'Only continue if...',
+  name: 'Only continue if',
   key: 'onlyContinueIf',
-  description: 'Only continue if...',
+  description: 'Only continue if',
   arguments: getConditionArgs({ usePlaceholders: false }),
 
   async run($) {

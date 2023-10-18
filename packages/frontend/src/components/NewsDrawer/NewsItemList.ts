@@ -21,7 +21,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     tag: NEW_FEATURE_TAG,
     title: `Introducing Toolbox`,
     details: dedent`
-      Toolbox is a new app that you can find when you add an action. This will contain built in tools that can enhance your workflows! Logic has been moved into Toolbox and renamed to **Only continue if**. Stay tuned for the release of our new feature **If... Then** in the coming weeks!
+      Toolbox is a new app that you can find when you add an action. This will contain built in tools that can enhance your workflows! Logic has been moved into Toolbox and renamed to **Only continue if**. Stay tuned for the release of our new feature **If-Then** in the coming weeks!
     `,
   },
   {

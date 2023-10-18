@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
 }))
 
-describe('Only continue if...', () => {
+describe('Only continue if', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
