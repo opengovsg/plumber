@@ -6,6 +6,7 @@ import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
 import PowerInput from 'components/PowerInput'
+import RichTextEditor from 'components/RichTextEditor'
 import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
 
@@ -72,6 +73,18 @@ export default function InputCreator(
     )
   }
 
+  if (type === 'rich-text') {
+    return (
+      <RichTextEditor
+        name={computedName}
+        required={required}
+        label={label}
+        description={description}
+        disabled={disabled}
+        placeholder={placeholder}
+      />
+    )
+  }
   if (type === 'string' || type === 'multiline') {
     if (variables) {
       return (
