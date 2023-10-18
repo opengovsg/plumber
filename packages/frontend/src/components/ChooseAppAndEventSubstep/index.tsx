@@ -20,7 +20,6 @@ import {
   useIfThenInitializer,
   useIsIfThenSelectable,
 } from 'helpers/toolbox'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseAppAndEventSubstepProps = {
   substep: ISubstep
@@ -73,8 +72,6 @@ function ChooseAppAndEventSubstep(
   } = props
 
   const launchDarkly = useContext(LaunchDarklyContext)
-
-  const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
 
   const isTrigger = step.type === 'trigger'
@@ -267,7 +264,7 @@ function ChooseAppAndEventSubstep(
                   flexDirection: 'row',
                 }}
               >
-                <Flex flexDir="column">
+                <Flex gap={2} flexDir="column">
                   <Flex gap={2} alignItems="center">
                     <Text>{option.label}</Text>
                     {option.description && (
@@ -287,9 +284,7 @@ function ChooseAppAndEventSubstep(
             )}
             renderInput={(params) => (
               <FormControl>
-                <FormLabel isRequired>
-                  {formatMessage('flowEditor.chooseApp')}
-                </FormLabel>
+                <FormLabel isRequired>Choose an app</FormLabel>
                 <TextField {...params} />
               </FormControl>
             )}
@@ -316,22 +311,14 @@ function ChooseAppAndEventSubstep(
                 options={isLoading ? [] : actionOrTriggerOptions}
                 renderInput={(params) => (
                   <FormControl>
-                    <FormLabel isRequired>
-                      {formatMessage('flowEditor.chooseEvent')}
-                    </FormLabel>
+                    <FormLabel isRequired>Choose an event</FormLabel>
                     <TextField
                       {...params}
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
                           <>
-                            {isWebhook && (
-                              <Chip
-                                label={formatMessage(
-                                  'flowEditor.instantTriggerType',
-                                )}
-                              />
-                            )}
+                            {isWebhook && <Chip label="Instant" />}
 
                             {params.InputProps.endAdornment}
                           </>
@@ -352,10 +339,7 @@ function ChooseAppAndEventSubstep(
                     <Text>{option.label}</Text>
 
                     {option.type === 'webhook' && (
-                      <Chip
-                        label={formatMessage('flowEditor.instantTriggerType')}
-                        sx={{ mr: 3 }}
-                      />
+                      <Chip label="Instant" sx={{ mr: 3 }} />
                     )}
                   </li>
                 )}
@@ -374,10 +358,10 @@ function ChooseAppAndEventSubstep(
 
           {isTrigger && (selectedActionOrTrigger as ITrigger)?.pollInterval && (
             <TextField
-              label={formatMessage('flowEditor.pollIntervalLabel')}
-              value={formatMessage('flowEditor.pollIntervalValue', {
-                minutes: (selectedActionOrTrigger as ITrigger)?.pollInterval,
-              })}
+              label="Poll interval"
+              value={`Every ${
+                (selectedActionOrTrigger as ITrigger)?.pollInterval
+              } minutes`}
               sx={{ mt: 2 }}
               fullWidth
               disabled
