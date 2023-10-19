@@ -28,6 +28,7 @@ import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
 import { StepVariable } from './StepVariablePlugin'
 import { SuggestionsPopper } from './SuggestionPopper'
+import { substituteOldTemplates } from './utils'
 
 interface EditorProps {
   onChange: (...event: any[]) => void
@@ -84,7 +85,7 @@ const Editor = ({
       }),
       StepVariable,
     ],
-    content: initialValue,
+    content: substituteOldTemplates(initialValue), // back-ward compatibility with old values from PowerInput
     onUpdate: ({ editor }) => {
       const content = editor.getHTML()
       if (content === '<p></p>') {
