@@ -41,7 +41,7 @@ export default function ContextMenu(
     enqueueSnackbar(formatMessage('flow.successfullyDeleted'), {
       variant: 'success',
     })
-  }, [flowId, deleteFlow])
+  }, [deleteFlow, flowId, enqueueSnackbar, formatMessage])
 
   return (
     <Menu

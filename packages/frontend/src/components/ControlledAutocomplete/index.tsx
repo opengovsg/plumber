@@ -1,6 +1,6 @@
 import type { IFieldDropdownOption } from '@plumber/types'
 
-import * as React from 'react'
+import { useEffect, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { BiRefresh } from 'react-icons/bi'
 import { Flex, FormControl } from '@chakra-ui/react'
@@ -95,12 +95,12 @@ function ControlledAutocomplete(
     ...autocompleteProps
   } = props
 
-  let dependsOnValues: unknown[] = []
-  if (dependsOn?.length) {
-    dependsOnValues = watch(dependsOn)
-  }
+  const dependsOnValues: unknown[] = useMemo(
+    () => (dependsOn?.length ? watch(dependsOn) : []),
+    [dependsOn, watch],
+  )
 
-  React.useEffect(() => {
+  useEffect(() => {
     const hasDependencies = dependsOnValues.length
     const allDepsSatisfied = dependsOnValues.every(Boolean)
 
@@ -109,7 +109,7 @@ function ControlledAutocomplete(
       setValue(name, null)
       resetField(name)
     }
-  }, dependsOnValues)
+  }, [dependsOnValues, name, resetField, setValue])
 
   return (
     <Controller

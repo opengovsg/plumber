@@ -50,7 +50,7 @@ export default function SgidAccountSelect(
         navigate(URLS.FLOWS, { replace: true })
       }
     },
-    [setFailed],
+    [loginWithSelectedSgid, navigate, setFailed],
   )
 
   return (
