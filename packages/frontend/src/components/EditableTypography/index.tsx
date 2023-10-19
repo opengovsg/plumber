@@ -38,7 +38,7 @@ function EditableTypography(props: EditableTypographyProps) {
         setEditing(false)
       }
     },
-    [children],
+    [children, onConfirm],
   )
 
   const handleTextFieldBlur = React.useCallback(

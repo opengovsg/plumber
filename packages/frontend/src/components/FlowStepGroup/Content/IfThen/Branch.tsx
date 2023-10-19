@@ -89,7 +89,7 @@ export default function Branch(props: BranchProps): JSX.Element {
       variables: { input: { ids: steps.map((step) => step.id) } },
     })
     closeDeleteConfirmation()
-  }, [deleteStep, steps])
+  }, [closeDeleteConfirmation, deleteStep, steps])
 
   return (
     <>

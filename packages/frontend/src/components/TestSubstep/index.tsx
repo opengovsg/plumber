@@ -33,7 +33,6 @@ type TestSubstepProps = {
   onExpand: () => void
   onCollapse: () => void
   onChange?: ({ step }: { step: IStep }) => void
-  onSubmit?: () => void
   onContinue?: () => void
   step: IStep
   selectedActionOrTrigger?: ITrigger | IAction
@@ -62,7 +61,6 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     expanded = false,
     onExpand,
     onCollapse,
-    onSubmit,
     onContinue,
     step,
     selectedActionOrTrigger,
@@ -101,7 +99,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
         },
       },
     })
-  }, [onSubmit, onContinue, isExecuted, step.id])
+  }, [executeFlow, step.id])
 
   const onContinueClick = useCallback(() => {
     if (onContinue) {
@@ -128,9 +126,11 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
               variant="error"
               sx={{ mb: 2, fontWeight: 500, width: '100%' }}
             >
-              {serializeErrors(error.graphQLErrors).map((error: any) => (
-                <div>{error.message}</div>
-              ))}
+              {serializeErrors(error.graphQLErrors).map(
+                (error: any, i: number) => (
+                  <div key={`error-${i}`}>{error.message}</div>
+                ),
+              )}
             </Infobox>
           )}
           {step.webhookUrl && (

@@ -261,7 +261,7 @@ export function useIfThenInitializer(): [
 
       setIsInitializing(false)
     },
-    [depth],
+    [createStep, depth, updateStep],
   )
 
   return [initialize, isInitializing]

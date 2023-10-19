@@ -238,7 +238,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
         ...parentStepExecutionsToInclude,
         ...stepsBeforeGroup.map((step) => step.id),
       ]),
-    [stepsBeforeGroup],
+    [parentStepExecutionsToInclude, stepsBeforeGroup],
   )
 
   if (!apps) {

@@ -27,6 +27,7 @@ type DrawerProps = {
 export default function Drawer(props: DrawerProps): React.ReactElement {
   const { links = [], ...drawerProps } = props
   const theme = useTheme()
+
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
     noSsr: true,
   })
@@ -37,6 +38,7 @@ export default function Drawer(props: DrawerProps): React.ReactElement {
     }
   }
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const selected = (to: string) => useMatch({ path: to, end: true })
 
   return (

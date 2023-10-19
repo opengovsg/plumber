@@ -152,8 +152,10 @@ export default function FlowStep(
   )
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
-  const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || []
+  const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
+    () => (isTrigger ? app?.triggers : app?.actions) || [],
+    [app?.actions, app?.triggers, isTrigger],
+  )
 
   const selectedActionOrTrigger = useMemo(
     () =>
@@ -168,9 +170,12 @@ export default function FlowStep(
     [selectedActionOrTrigger],
   )
 
-  const handleChange = useCallback(({ step }: { step: IStep }) => {
-    onChange(step)
-  }, [])
+  const handleChange = useCallback(
+    ({ step }: { step: IStep }) => {
+      onChange(step)
+    },
+    [onChange],
+  )
 
   const expandNextStep = useCallback(() => {
     setCurrentSubstep((currentSubstep) => (currentSubstep ?? 0) + 1)
@@ -197,7 +202,7 @@ export default function FlowStep(
       e.stopPropagation()
       await deleteStep({ variables: { input: { ids: [step.id] } } })
     },
-    [step.id],
+    [deleteStep, step.id],
   )
 
   if (!apps) {
@@ -268,7 +273,6 @@ export default function FlowStep(
                     substep={substep}
                     onExpand={() => toggleSubstep(index + 1)}
                     onCollapse={() => toggleSubstep(index + 1)}
-                    onSubmit={expandNextStep}
                     onChange={handleChange}
                     onContinue={onContinue}
                     step={step}

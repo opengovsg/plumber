@@ -28,8 +28,9 @@ export default function AppIcon(
       imgProps={{ style: inlineImgStyle }}
       src={url}
       alt={name}
-      children={initialLetter}
       {...restProps}
-    />
+    >
+      {initialLetter}
+    </Avatar>
   )
 }

@@ -41,7 +41,7 @@ export default function NewsItem(props: NewsItemProps) {
       )
     }
     return <Image fit="fill" src={multimedia.url} title={title} alt={title} />
-  }, [multimedia])
+  }, [multimedia, title])
 
   return (
     <Box>
