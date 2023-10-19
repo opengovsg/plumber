@@ -71,14 +71,17 @@ export default function Flows(): React.ReactElement {
       // reset search params which only consists of `page`
       setSearchParams({})
     },
-    [flowName],
+    [flowName, setSearchParams],
   )
 
-  React.useEffect(function cancelDebounceOnUnmount() {
-    return () => {
-      fetchData.cancel()
-    }
-  }, [])
+  React.useEffect(
+    function cancelDebounceOnUnmount() {
+      return () => {
+        fetchData.cancel()
+      }
+    },
+    [fetchData],
+  )
 
   const { pageInfo, edges } = data?.getFlows || {}
 

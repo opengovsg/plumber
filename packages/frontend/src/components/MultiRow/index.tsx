@@ -40,6 +40,19 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     return result
   }, [subFields])
 
+  const {
+    fields: rows,
+    append,
+    remove,
+  } = useFieldArray({
+    name,
+    rules: { required },
+  })
+
+  const handleAddRow = useCallback(() => {
+    append(newRowDefaultValue)
+  }, [append, newRowDefaultValue])
+
   return (
     // Use Controller's defaultValue to introduce 1 blank row by default. We
     // copy newRowDefaultValue to account for pass-by-reference.
@@ -48,19 +61,6 @@ function MultiRow(props: MultiRowProps): JSX.Element {
       control={control}
       defaultValue={[{ ...newRowDefaultValue }]}
       render={({ field: { value: fallbackRows } }): JSX.Element => {
-        const {
-          fields: rows,
-          append,
-          remove,
-        } = useFieldArray({
-          name,
-          rules: { required },
-        })
-
-        const handleAddRow = useCallback(() => {
-          append(newRowDefaultValue)
-        }, [append, newRowDefaultValue])
-
         // HACKFIX (ogp-weeloong): I don't know why `rows` lags behind
         // `fallbackRows` on the 1st render.
         const actualRows: typeof rows = rows.length === 0 ? fallbackRows : rows

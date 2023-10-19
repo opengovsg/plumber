@@ -67,11 +67,14 @@ export default function AddNewAppConnection(
     [fetchData, appName],
   )
 
-  React.useEffect(function cancelDebounceOnUnmount() {
-    return () => {
-      fetchData.cancel()
-    }
-  }, [])
+  React.useEffect(
+    function cancelDebounceOnUnmount() {
+      return () => {
+        fetchData.cancel()
+      }
+    },
+    [fetchData],
+  )
 
   return (
     <Dialog open={true} onClose={onClose} maxWidth="sm" fullWidth>

@@ -19,7 +19,6 @@ import { EditorContext } from 'contexts/Editor'
 import { REGISTER_WEBHOOK } from 'graphql/mutations/register-webhook'
 import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
 import { TEST_CONNECTION } from 'graphql/queries/test-connection'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseConnectionSubstepProps = {
   application: IApp
@@ -60,7 +59,6 @@ function ChooseConnectionSubstep(
     selectedActionOrTrigger,
   } = props
   const { connection, appKey } = step
-  const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
   const { data, loading, refetch } = useQuery(GET_APP_CONNECTIONS, {
     variables: { key: appKey },
@@ -93,7 +91,7 @@ function ChooseConnectionSubstep(
       ) || []
 
     return options
-  }, [data, formatMessage])
+  }, [data])
 
   const { name } = substep
 
@@ -129,7 +127,7 @@ function ChooseConnectionSubstep(
       })
       await retestConnection()
     }
-  }, [step, registerWebhook, supportsWebhookRegistration])
+  }, [step, registerWebhook, supportsWebhookRegistration, retestConnection])
 
   const onToggle = expanded ? onCollapse : onExpand
 
@@ -144,7 +142,7 @@ function ChooseConnectionSubstep(
       return false
     }
     return true
-  }, [testResultLoading || testConnectionData])
+  }, [testConnectionData?.testConnection, testResultLoading])
 
   return (
     <>

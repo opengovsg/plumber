@@ -75,7 +75,7 @@ export default function IfThen(props: ContentProps): JSX.Element {
         },
       },
     })
-  }, [createStep, depth, numBranches, steps, isAddingBranch])
+  }, [isAddingBranch, createStep, steps, flow.id, depth, numBranches])
 
   return (
     <Flex flexDir="column">

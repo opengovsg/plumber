@@ -104,8 +104,11 @@ function ChooseAppAndEventSubstep(
     [apps, launchDarkly.flags],
   )
 
-  const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || []
+  const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
+    () => (isTrigger ? app?.triggers : app?.actions) || [],
+    [app?.actions, app?.triggers, isTrigger],
+  )
+
   const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const actionOrTriggerOptions = useMemo(
     () =>
@@ -139,7 +142,13 @@ function ChooseAppAndEventSubstep(
         })
         //
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly.flags, isIfThenSelectable, step],
+    [
+      actionsOrTriggers,
+      app?.key,
+      isIfThenSelectable,
+      launchDarkly.flags,
+      isTrigger,
+    ],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,

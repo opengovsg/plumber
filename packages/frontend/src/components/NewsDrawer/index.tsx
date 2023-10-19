@@ -35,7 +35,7 @@ export default function NewsDrawer() {
     // only way to update this is to change the news or clear the local storage
     localStorage.setItem(LOCAL_STORAGE_LAST_READ_KEY, latestNewsTimestamp)
     setLocalLatestTimestamp(latestNewsTimestamp)
-  }, [latestNewsTimestamp])
+  }, [])
 
   const { isOpen, onOpen, onClose } = useDisclosure({ onOpen: handleOpen })
 
@@ -46,7 +46,7 @@ export default function NewsDrawer() {
   return (
     <>
       <Button colorScheme="secondary" variant="link" mr={6} onClick={onOpen}>
-        <Text textStyle="subhead-1">What's new</Text>
+        <Text textStyle="subhead-1">{`What's new`}</Text>
         {localLatestTimestamp !== latestNewsTimestamp && (
           <Box
             borderRadius="50%"
@@ -65,7 +65,7 @@ export default function NewsDrawer() {
           <DrawerCloseButton />
           <DrawerHeader fontSize="2xl">
             <Text textStyle="h4" color="base.content.default">
-              What's New
+              {`What's new`}
             </Text>
           </DrawerHeader>
 

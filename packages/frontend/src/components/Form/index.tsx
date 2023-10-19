@@ -45,11 +45,11 @@ export default function Form(props: FormProps): React.ReactElement {
    */
   React.useEffect(() => {
     methods.trigger()
-  }, [methods.trigger, form])
+  }, [methods.trigger, form, methods])
 
   React.useEffect(() => {
     methods.reset(defaultValues)
-  }, [defaultValues])
+  }, [defaultValues, methods])
 
   return (
     <FormProvider {...methods}>
