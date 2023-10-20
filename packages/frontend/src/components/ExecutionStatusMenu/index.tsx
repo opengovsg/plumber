@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react'
 import { BiFilter } from 'react-icons/bi'
 import {
   Button,
@@ -47,8 +48,15 @@ interface ExecutionStatusMenuProps {
   onFilterChange: (status: string) => void
 }
 
-export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
+function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
   const { filterStatus, onFilterChange } = props
+
+  const filterLabel = useMemo(
+    () =>
+      filterOptions.find((option) => option.value === filterStatus)
+        ?.displayLabel,
+    [filterStatus],
+  )
 
   return (
     <Menu placement="bottom-end">
@@ -63,10 +71,7 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
         <Flex alignItems="center">
           <Icon boxSize={5} as={BiFilter} color="primary.600" mr={2} />
           <Text textStyle="subhead-2" color="primary.600">
-            {
-              filterOptions.find((option) => option.value === filterStatus)
-                ?.displayLabel
-            }
+            {filterLabel}
           </Text>
         </Flex>
       </MenuButton>
@@ -90,3 +95,5 @@ export default function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
     </Menu>
   )
 }
+
+export default memo(ExecutionStatusMenu)

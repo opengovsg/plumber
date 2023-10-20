@@ -1,6 +1,14 @@
 import type { IExecution } from '@plumber/types'
 
-import { ChangeEvent, ReactElement, useEffect, useRef, useState } from 'react'
+import {
+  ChangeEvent,
+  ReactElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { BiSearch } from 'react-icons/bi'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
@@ -46,49 +54,63 @@ export default function Executions(): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
 
-  const [searchInput, setSearchInput] = useState<string>(
-    searchParams.get('input') || '',
-  )
-  const [filterStatus, setFilterStatus] = useState<string>(
-    searchParams.get('status') || '',
-  )
+  const searchInput = searchParams.get('input') || ''
+  const filterStatus = searchParams.get('status') || ''
 
   const filterRef = useRef<HTMLDivElement>(null)
   const [inputPadding, setInputPadding] = useState<number>(0)
 
   // format search params for empty strings and first page
-  const formatSearchParams = (params: Partial<ExecutionParameters>) => {
-    setSearchParams({
-      ...(params.page && params.page !== 1 && { page: params.page.toString() }),
-      ...(params.status !== '' && { status: params.status }),
-      ...(params.input !== '' && { input: params.input }),
-    })
-  }
-
-  // search value handling
-  const handleSearchInputChange = (input: string) => {
-    formatSearchParams({ status: filterStatus, input })
-    setSearchInput(input)
-  }
-
-  const handleSearchInputChangeDebounced = debounce(
-    handleSearchInputChange,
-    1000,
+  const formatSearchParams = useCallback(
+    (params: Partial<ExecutionParameters>) => {
+      setSearchParams({
+        ...(params.page &&
+          params.page !== 1 && { page: params.page.toString() }),
+        ...(params.status !== '' && { status: params.status }),
+        ...(params.input !== '' && { input: params.input }),
+      })
+    },
+    [setSearchParams],
   )
 
-  const onSearchInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    handleSearchInputChangeDebounced(event.target.value)
-  }
+  // page handling
+  const handlePageChange = useCallback(
+    (event: ChangeEvent<unknown>, page: number) =>
+      formatSearchParams({
+        page,
+        status: filterStatus,
+        input: searchInput,
+      }),
+    [filterStatus, searchInput, formatSearchParams],
+  )
+
+  // search value handling
+  const handleSearchInputChange = useCallback(
+    (input: string) => {
+      formatSearchParams({ status: filterStatus, input })
+    },
+    [filterStatus, formatSearchParams],
+  )
+
+  const handleSearchInputChangeDebounced = useMemo(
+    () => debounce(handleSearchInputChange, 1000),
+    [handleSearchInputChange],
+  )
+
+  const onSearchInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      handleSearchInputChangeDebounced(event.target.value)
+    },
+    [handleSearchInputChangeDebounced],
+  )
 
   // filter status handling
-  const onFilterChange = (status: string) => {
-    setFilterStatus(status)
-    formatSearchParams({ status, input: searchInput })
-  }
-
-  useEffect(() => {
-    setFilterStatus(searchParams.get('status') || '')
-  }, [searchParams])
+  const onFilterChange = useCallback(
+    (status: string) => {
+      formatSearchParams({ status, input: searchInput })
+    },
+    [searchInput, formatSearchParams],
+  )
 
   // update padding of input element when filter element width changes.
   useEffect(() => {
@@ -180,13 +202,7 @@ export default function Executions(): ReactElement {
             sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}
             page={pageInfo?.currentPage}
             count={pageInfo?.totalPages}
-            onChange={(event, page) => {
-              formatSearchParams({
-                page,
-                status: filterStatus,
-                input: searchInput,
-              })
-            }}
+            onChange={handlePageChange}
           />
         )}
       </Container>

@@ -76,11 +76,7 @@ const testRun = async (options: TestRunOptions) => {
         testRun: true,
       })
 
-    if (actionExecutionStep.isFailed) {
-      return { executionStep: actionExecutionStep }
-    }
-
-    if (actionStep.id === untilStep.id) {
+    if (actionExecutionStep.isFailed || actionStep.id === untilStep.id) {
       return { executionStep: actionExecutionStep }
     }
 
