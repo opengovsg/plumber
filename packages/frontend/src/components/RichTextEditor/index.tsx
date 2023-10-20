@@ -20,7 +20,6 @@ import TableRow from '@tiptap/extension-table-row'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { genVariableInfoMap } from 'components/PowerInput/utils'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
 import { extractVariables, filterVariables, Variable } from 'helpers/variables'
 
@@ -28,7 +27,7 @@ import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
 import { StepVariable } from './StepVariablePlugin'
 import { SuggestionsPopper } from './SuggestionPopper'
-import { substituteOldTemplates } from './utils'
+import { genVariableInfoMap, substituteOldTemplates } from './utils'
 
 interface EditorProps {
   onChange: (...event: any[]) => void
@@ -48,7 +47,7 @@ const Editor = ({
   const [showVarSuggestions, setShowVarSuggestions] = useState(false)
   const editorRef = useRef<HTMLDivElement | null>(null)
 
-  const [stepsWithVariables] = useMemo(() => {
+  const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
       extractVariables(priorStepsWithExecutions),
       (variable) => (variable.type ?? 'text') === 'text',
@@ -85,7 +84,7 @@ const Editor = ({
       }),
       StepVariable,
     ],
-    content: substituteOldTemplates(initialValue), // back-ward compatibility with old values from PowerInput
+    content: substituteOldTemplates(initialValue, varInfo), // back-ward compatibility with old values from PowerInput
     onUpdate: ({ editor }) => {
       const content = editor.getHTML()
       if (content === '<p></p>') {
