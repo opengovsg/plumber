@@ -54,11 +54,7 @@ export const transactionalEmailFields: IField[] = [
 
 export const transactionalEmailSchema = z.object({
   subject: z.string().min(1).trim(),
-  body: z
-    .string()
-    .min(1)
-    // convert \n to <br> for HTML emails
-    .transform((value) => value.replace(/\n/g, '<br>')),
+  body: z.string().min(1),
   destinationEmail: z.string().transform((value, ctx) => {
     const recipients = recipientStringToArray(value)
     if (recipients.some((recipient) => !validator.validate(recipient))) {
