@@ -48,12 +48,13 @@ export default function Branch(props: BranchProps): JSX.Element {
   } = useDisclosure()
   const { depth } = useContext(BranchContext)
   const { readOnly: isEditorReadOnly } = useContext(EditorContext)
+  const branchName = steps[0].parameters.branchName as string
 
   const initialStep = steps[0]
   const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
     () => ({
       [initialStep.id]: {
-        hintAboveCaption: 'If... Then',
+        hintAboveCaption: 'If-then',
         // Only the 1st branch can have an undefined name.
         caption: (initialStep.parameters.branchName as string) ?? 'Branch 1',
         disableActionChanges: true,
@@ -88,7 +89,7 @@ export default function Branch(props: BranchProps): JSX.Element {
       variables: { input: { ids: steps.map((step) => step.id) } },
     })
     closeDeleteConfirmation()
-  }, [deleteStep, steps])
+  }, [closeDeleteConfirmation, deleteStep, steps])
 
   return (
     <>
@@ -101,12 +102,10 @@ export default function Branch(props: BranchProps): JSX.Element {
         w="full"
         alignItems="center"
         px={4}
-        _hover={{ bg: 'interaction.muted.main.hover', cursor: 'pointer' }}
-        _active={{ bg: 'interaction.muted.main.active' }}
+        _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
+        _active={{ bg: 'interaction.muted.neutral.active' }}
       >
-        <Text textStyle="subhead-1">
-          {(steps[0].parameters.branchName as string | undefined) ?? 'Branch 1'}
-        </Text>
+        <Text textStyle="subhead-1">{branchName}</Text>
         {isCompleted && (
           <Icon
             ml={1}
@@ -135,23 +134,22 @@ export default function Branch(props: BranchProps): JSX.Element {
       >
         <AlertDialogOverlay>
           <AlertDialogContent>
-            <AlertDialogHeader>Delete Branch</AlertDialogHeader>
+            <AlertDialogHeader>Delete {branchName}</AlertDialogHeader>
             <AlertDialogBody>
-              Are you sure?{' '}
-              {steps.length > 1 &&
-                `You will delete all ${steps.length} steps in the branch!`}{' '}
-              You cannot undo this action afterwards.
+              Are you sure you want to delete this branch? This action cannot be
+              undone.
             </AlertDialogBody>
             <AlertDialogFooter>
               <Button
-                variant="outline"
+                colorScheme="neutral"
+                variant="clear"
                 ref={cancelDeleteButton}
                 onClick={closeDeleteConfirmation}
               >
                 Cancel
               </Button>
               <Button colorScheme="red" onClick={deleteBranch} ml={3}>
-                Delete
+                Yes, delete branch
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -160,7 +158,7 @@ export default function Branch(props: BranchProps): JSX.Element {
       {/*
        * Nexted branch editor (pops up in modal)
        */}
-      {/* Nested If-Thens should have depth = depth + 1 */}
+      {/* Nested If-thens should have depth = depth + 1 */}
       <BranchContext.Provider value={{ depth: depth + 1 }}>
         <StepDisplayOverridesProvider value={initialStepDisplayOverride}>
           <NestedEditor

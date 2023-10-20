@@ -44,7 +44,7 @@ export default function EditorLayout(): React.ReactElement {
         },
       })
     },
-    [flow?.id],
+    [flow?.id, flowId, updateFlow],
   )
 
   const onFlowStatusUpdate = React.useCallback(
@@ -65,7 +65,7 @@ export default function EditorLayout(): React.ReactElement {
         },
       })
     },
-    [flow?.id],
+    [flow?.id, flowId, updateFlowStatus],
   )
 
   return (

@@ -69,6 +69,7 @@ export default function SgidCallback(): JSX.Element {
     }
 
     callMutation()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (hasFailed) {

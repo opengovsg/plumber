@@ -42,7 +42,7 @@ function ChooseConnectionDropdown({
       }
       onChange(value, false)
     },
-    [onChange, setShowAddConnectionDialog],
+    [onChange],
   )
 
   const handleAddConnectionClose = useCallback(
@@ -55,7 +55,7 @@ function ChooseConnectionDropdown({
         onChange(newConnectionId, true)
       }
     },
-    [setShowAddConnectionDialog],
+    [onChange],
   )
 
   return (

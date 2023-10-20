@@ -16,7 +16,7 @@ export enum TOOLBOX_ACTIONS {
 }
 
 //
-// Helpers for If-Then
+// Helpers for If-then
 //
 // TODO: Move into separate file if we get more toolbox stuff.
 //
@@ -38,7 +38,7 @@ export function extractBranchesWithSteps(
   steps: IStep[],
 
   // We can't extract current depth from steps[0].parameters.depth - it may be
-  // undefined if the user has just chosen "If... Then" via the
+  // undefined if the user has just chosen "If-then" via the
   // "Choose app & event" substep. We grab it from the context instead; it's
   // guaranteed to be correct via induction.
   //
@@ -111,7 +111,7 @@ export function isIfThenBranchCompleted(branchSteps: IStep[]): boolean {
 /**
  * Scrappy O(n) function to check branch completion, including nested branches.
  *
- * NOTE: This is not optimal, since nested If-Thens will re-check their steps
+ * NOTE: This is not optimal, since nested If-thens will re-check their steps
  * again. But it's a lot less complex than re-parsing steps or doing some sort
  * of callback system. We can optimize this in a separate PR if this is too
  * jank.
@@ -125,10 +125,10 @@ export function areAllIfThenBranchesCompleted(
 }
 
 /**
- * Helper hook to check if If-Then action should be selectable; supports edge
+ * Helper hook to check if If-then action should be selectable; supports edge
  * case in ChooseAppAndEventSubstep.
  *
- * If-Then should only be selectable if:
+ * If-then should only be selectable if:
  * - We're the last step.
  * - We are not inside a branch (unless we're whitelisted for nested
  *   branches via LD).
@@ -158,7 +158,7 @@ export function useIsIfThenSelectable({
 }
 
 /**
- * Hook used for initializing If-Then when the user _first_ chooses it via the
+ * Hook used for initializing If-then when the user _first_ chooses it via the
  * "Choose App & Event" substep.
  */
 export function useIfThenInitializer(): [
@@ -220,14 +220,48 @@ export function useIfThenInitializer(): [
           },
         },
       })
+      const [_firstBranch, secondBranch] = await Promise.all([
+        updateFirstBranch,
+        createSecondBranch,
+      ])
 
-      await Promise.all([updateFirstBranch, createSecondBranch])
-      // Refetch only after completion.
+      // After creating branches, we create a sample step to each branch. This is
+      // because users always get confused on how to add actions within a
+      // branch.
+      //
+      // FIXME (ogp-weeloong): Intentionally serial; need to fix createSteps to
+      // enable concurrent updates on same pipe.
+      await createStep({
+        variables: {
+          input: {
+            previousStep: {
+              id: currStep.id,
+            },
+            flow: {
+              id: currStep.flow.id,
+            },
+          },
+        },
+      })
+      await createStep({
+        variables: {
+          input: {
+            previousStep: {
+              id: secondBranch.data.createStep.id,
+            },
+            flow: {
+              id: currStep.flow.id,
+            },
+          },
+        },
+      })
+
+      // Refetch only after completion of all initialization steps.
       await client.refetchQueries({ include: [GET_FLOW] })
 
       setIsInitializing(false)
     },
-    [depth],
+    [createStep, depth, updateStep],
   )
 
   return [initialize, isInitializing]

@@ -12,5 +12,5 @@ export default defineApp({
   apiBaseUrl: '',
   primaryColor: '000000',
   actions,
-  description: `Use Plumber's built in tools like if... then to add more functionality to your pipes`,
+  description: `Use Plumber's built in tools like If-then and Only continue if to add more functionality to your pipes`,
 })

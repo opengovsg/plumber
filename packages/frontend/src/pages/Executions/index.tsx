@@ -125,6 +125,7 @@ export default function Executions(): ReactElement {
           alignItems="center"
           gap={4}
           mb={8}
+          pl={{ base: 0, sm: '2rem' }}
         >
           <PageTitle title={EXECUTIONS_TITLE} />
           <InputGroup w="25rem">

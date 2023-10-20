@@ -1,17 +1,15 @@
-import { useState } from 'react'
 import {
   Box as ChakraBox,
   BoxProps as ChakraBoxProps,
   Text,
 } from '@chakra-ui/react'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import { Box, useMediaQuery } from '@mui/material'
 import MuiAppBar from '@mui/material/AppBar'
 import IconButton from '@mui/material/IconButton'
 import Toolbar from '@mui/material/Toolbar'
 import { Button, Link } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
-import AccountDropdownMenu from 'components/AccountDropdownMenu'
+import AvatarDropdownMenu from 'components/AvatarDropdownMenu'
 import NewsDrawer from 'components/NewsDrawer'
 import * as URLS from 'config/urls'
 import theme from 'styles/theme'
@@ -23,25 +21,11 @@ type AppBarProps = {
   maxWidth?: ChakraBoxProps['maxW']
 }
 
-const accountMenuId = 'account-menu'
-
 export default function AppBar(props: AppBarProps): React.ReactElement {
   const { drawerOpen, onDrawerOpen, onDrawerClose, maxWidth = 'full' } = props
   const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
     noSsr: true,
   })
-  const [accountMenuAnchorElement, setAccountMenuAnchorElement] =
-    useState<null | HTMLElement>(null)
-
-  const isMenuOpen = Boolean(accountMenuAnchorElement)
-
-  const handleAccountMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAccountMenuAnchorElement(event.currentTarget)
-  }
-
-  const handleAccountMenuClose = () => {
-    setAccountMenuAnchorElement(null)
-  }
 
   return (
     <MuiAppBar
@@ -90,25 +74,9 @@ export default function AppBar(props: AppBarProps): React.ReactElement {
 
           <NewsDrawer />
 
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            onClick={handleAccountMenuOpen}
-            aria-controls={accountMenuId}
-            aria-label="open profile menu"
-            data-test="profile-menu-button"
-          >
-            <AccountCircleIcon />
-          </IconButton>
+          <AvatarDropdownMenu />
         </Toolbar>
       </ChakraBox>
-      <AccountDropdownMenu
-        anchorEl={accountMenuAnchorElement}
-        id={accountMenuId}
-        open={isMenuOpen}
-        onClose={handleAccountMenuClose}
-      />
     </MuiAppBar>
   )
 }

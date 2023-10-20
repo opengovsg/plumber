@@ -20,7 +20,6 @@ import {
   useIfThenInitializer,
   useIsIfThenSelectable,
 } from 'helpers/toolbox'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 type ChooseAppAndEventSubstepProps = {
   substep: ISubstep
@@ -73,8 +72,6 @@ function ChooseAppAndEventSubstep(
   } = props
 
   const launchDarkly = useContext(LaunchDarklyContext)
-
-  const formatMessage = useFormatMessage()
   const editorContext = useContext(EditorContext)
 
   const isTrigger = step.type === 'trigger'
@@ -107,8 +104,11 @@ function ChooseAppAndEventSubstep(
     [apps, launchDarkly.flags],
   )
 
-  const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || []
+  const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
+    () => (isTrigger ? app?.triggers : app?.actions) || [],
+    [app?.actions, app?.triggers, isTrigger],
+  )
+
   const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const actionOrTriggerOptions = useMemo(
     () =>
@@ -117,7 +117,7 @@ function ChooseAppAndEventSubstep(
           //
           // ** EDGE CASE **
           //
-          // We want to hide If-Then in some cases (see useIsIfThenSelectable
+          // We want to hide If-then in some cases (see useIsIfThenSelectable
           // comments).
           //
           if (
@@ -142,7 +142,13 @@ function ChooseAppAndEventSubstep(
         })
         //
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly.flags, isIfThenSelectable, step],
+    [
+      actionsOrTriggers,
+      app?.key,
+      isIfThenSelectable,
+      launchDarkly.flags,
+      isTrigger,
+    ],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
@@ -177,13 +183,13 @@ function ChooseAppAndEventSubstep(
         // first selection), and we also need to update the first branch's
         // parameters.
         //
-        // Since there are a bunch of edge cases for If-Then in this component
+        // Since there are a bunch of edge cases for If-then in this component
         // already, let's localize the damage and continue adding edge cases
         // here.
         //
         // Note that we don't need to check for inequality to the current
         // step.key, since we don't display the action drop-down after someone
-        // selects If-Then.
+        // selects If-then.
         //
         if (
           app?.key === TOOLBOX_APP_KEY &&
@@ -267,7 +273,7 @@ function ChooseAppAndEventSubstep(
                   flexDirection: 'row',
                 }}
               >
-                <Flex flexDir="column">
+                <Flex gap={2} flexDir="column">
                   <Flex gap={2} alignItems="center">
                     <Text>{option.label}</Text>
                     {option.description && (
@@ -287,9 +293,7 @@ function ChooseAppAndEventSubstep(
             )}
             renderInput={(params) => (
               <FormControl>
-                <FormLabel isRequired>
-                  {formatMessage('flowEditor.chooseApp')}
-                </FormLabel>
+                <FormLabel isRequired>Choose an app</FormLabel>
                 <TextField {...params} />
               </FormControl>
             )}
@@ -316,22 +320,14 @@ function ChooseAppAndEventSubstep(
                 options={isLoading ? [] : actionOrTriggerOptions}
                 renderInput={(params) => (
                   <FormControl>
-                    <FormLabel isRequired>
-                      {formatMessage('flowEditor.chooseEvent')}
-                    </FormLabel>
+                    <FormLabel isRequired>Choose an event</FormLabel>
                     <TextField
                       {...params}
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
                           <>
-                            {isWebhook && (
-                              <Chip
-                                label={formatMessage(
-                                  'flowEditor.instantTriggerType',
-                                )}
-                              />
-                            )}
+                            {isWebhook && <Chip label="Instant" />}
 
                             {params.InputProps.endAdornment}
                           </>
@@ -352,10 +348,7 @@ function ChooseAppAndEventSubstep(
                     <Text>{option.label}</Text>
 
                     {option.type === 'webhook' && (
-                      <Chip
-                        label={formatMessage('flowEditor.instantTriggerType')}
-                        sx={{ mr: 3 }}
-                      />
+                      <Chip label="Instant" sx={{ mr: 3 }} />
                     )}
                   </li>
                 )}
@@ -374,10 +367,10 @@ function ChooseAppAndEventSubstep(
 
           {isTrigger && (selectedActionOrTrigger as ITrigger)?.pollInterval && (
             <TextField
-              label={formatMessage('flowEditor.pollIntervalLabel')}
-              value={formatMessage('flowEditor.pollIntervalValue', {
-                minutes: (selectedActionOrTrigger as ITrigger)?.pollInterval,
-              })}
+              label="Poll interval"
+              value={`Every ${
+                (selectedActionOrTrigger as ITrigger)?.pollInterval
+              } minutes`}
               sx={{ mt: 2 }}
               fullWidth
               disabled

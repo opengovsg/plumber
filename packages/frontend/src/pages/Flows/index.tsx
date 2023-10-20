@@ -71,14 +71,17 @@ export default function Flows(): React.ReactElement {
       // reset search params which only consists of `page`
       setSearchParams({})
     },
-    [flowName],
+    [flowName, setSearchParams],
   )
 
-  React.useEffect(function cancelDebounceOnUnmount() {
-    return () => {
-      fetchData.cancel()
-    }
-  }, [])
+  React.useEffect(
+    function cancelDebounceOnUnmount() {
+      return () => {
+        fetchData.cancel()
+      }
+    },
+    [fetchData],
+  )
 
   const { pageInfo, edges } = data?.getFlows || {}
 
@@ -105,7 +108,13 @@ export default function Flows(): React.ReactElement {
   return (
     <Box sx={{ py: 3 }}>
       <Container variant="page">
-        <Grid container sx={{ mb: [0, 3] }} columnSpacing={1.5} rowSpacing={3}>
+        <Grid
+          container
+          sx={{ mb: [0, 3] }}
+          paddingLeft={[0, 4.5]}
+          columnSpacing={1.5}
+          rowSpacing={3}
+        >
           <Grid container item xs sm alignItems="center" order={{ xs: 0 }}>
             <PageTitle title={FLOWS_TITLE} />
           </Grid>

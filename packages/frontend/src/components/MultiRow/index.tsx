@@ -40,6 +40,19 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     return result
   }, [subFields])
 
+  const {
+    fields: rows,
+    append,
+    remove,
+  } = useFieldArray({
+    name,
+    rules: { required },
+  })
+
+  const handleAddRow = useCallback(() => {
+    append(newRowDefaultValue)
+  }, [append, newRowDefaultValue])
+
   return (
     // Use Controller's defaultValue to introduce 1 blank row by default. We
     // copy newRowDefaultValue to account for pass-by-reference.
@@ -48,22 +61,13 @@ function MultiRow(props: MultiRowProps): JSX.Element {
       control={control}
       defaultValue={[{ ...newRowDefaultValue }]}
       render={({ field: { value: fallbackRows } }): JSX.Element => {
-        const {
-          fields: rows,
-          append,
-          remove,
-        } = useFieldArray({
-          name,
-          rules: { required },
-        })
-
-        const handleAddRow = useCallback(() => {
-          append(newRowDefaultValue)
-        }, [append, newRowDefaultValue])
-
         // HACKFIX (ogp-weeloong): I don't know why `rows` lags behind
         // `fallbackRows` on the 1st render.
         const actualRows: typeof rows = rows.length === 0 ? fallbackRows : rows
+
+        // If field is required, don't allow removal if there is only 1 row
+        // remaining.
+        const canRemoveRow = !required || actualRows.length > 1
 
         return (
           <Flex flexDir="column">
@@ -74,7 +78,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
             {actualRows.map((row, index) => {
               const namePrefix = `${name}.${index}`
               return (
-                <Flex key={namePrefix} flexDir="column" gap={4} mb={4}>
+                <Flex key={row.id} flexDir="column" gap={4} mb={4}>
                   {/*
                    * Sub-Fields
                    *
@@ -87,13 +91,15 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                       namePrefix={namePrefix}
                       {...forwardedInputCreatorProps}
                     />
-                    <IconButton
-                      variant="clear"
-                      aria-label="Remove"
-                      icon={<BiTrash />}
-                      isDisabled={isEditorReadOnly}
-                      onClick={() => remove(index)}
-                    />
+                    {canRemoveRow && (
+                      <IconButton
+                        variant="clear"
+                        aria-label="Remove"
+                        icon={<BiTrash />}
+                        isDisabled={isEditorReadOnly}
+                        onClick={() => remove(index)}
+                      />
+                    )}
                   </Flex>
                   {subFields.slice(1).map((subField) => (
                     <InputCreator

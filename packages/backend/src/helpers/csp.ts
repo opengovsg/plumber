@@ -56,7 +56,7 @@ const helmetOptions: HelmetOptions = {
   crossOriginResourcePolicy: {
     policy: appConfig.isDev ? 'cross-origin' : 'same-site',
   },
-  crossOriginEmbedderPolicy: !appConfig.isDev,
+  crossOriginEmbedderPolicy: false,
 }
 
 export default helmet(helmetOptions)

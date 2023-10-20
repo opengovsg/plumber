@@ -19,10 +19,9 @@ export default function SearchInput({
         onChange={onChange}
         placeholder="Search"
       />
-      <InputRightElement
-        h="100%"
-        children={<Icon as={BiSearch} style={{ height: 20, width: 20 }} />}
-      />
+      <InputRightElement h="100%">
+        <Icon as={BiSearch} style={{ height: 20, width: 20 }} />
+      </InputRightElement>
     </InputGroup>
   )
 }

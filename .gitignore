@@ -21,6 +21,7 @@ lib-cov
 
 # Coverage directory used by tools like istanbul
 coverage
+html
 *.lcov
 
 # nyc test coverage
@@ -133,3 +134,4 @@ dump.rdb
 
 # vs code config
 .vscode
+tmp/

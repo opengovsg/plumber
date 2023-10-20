@@ -49,7 +49,6 @@ function useDynamicData(stepId: string | undefined, schema: IField) {
   const [getDynamicData, { called, data, loading, refetch }] =
     useLazyQuery(GET_DYNAMIC_DATA)
   const { getValues } = useFormContext()
-  const formValues = getValues()
 
   /**
    * Return `null` when even a field is missing value.
@@ -80,7 +79,7 @@ function useDynamicData(stepId: string | undefined, schema: IField) {
      * `formValues` is to trigger recomputation when form is updated.
      * `getValues` is for convenience as it supports paths for fields like `getValues('foo.bar.baz')`.
      */
-  }, [schema, formValues, getValues])
+  }, [schema, getValues])
 
   React.useEffect(() => {
     if (

@@ -1,6 +1,5 @@
 import { IField } from '@plumber/types'
 
-import validator from 'email-validator'
 import { z } from 'zod'
 
 import { parseS3Id } from '@/helpers/s3'
@@ -13,15 +12,6 @@ import {
 export const fields: IField[] = [
   ...transactionalEmailFields,
   {
-    label: 'From Address',
-    key: 'fromAddress',
-    type: 'string' as const,
-    required: true,
-    description:
-      'This MUST be a custom From Address configured with the Postman team. Currently, custom From Address is needed to use attachments.',
-    variables: false,
-  },
-  {
     label: 'Attachments',
     key: 'attachments',
     type: 'multiselect' as const,
@@ -33,24 +23,6 @@ export const fields: IField[] = [
 
 export const schema = transactionalEmailSchema.merge(
   z.object({
-    fromAddress: z.nullable(
-      z
-        .string()
-        .trim()
-        .transform((email, context) => {
-          if (!email) {
-            return null
-          }
-          if (!validator.validate(email)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'Invalid from address',
-            })
-            return z.NEVER
-          }
-          return email
-        }),
-    ),
     attachments: z.array(z.string()).transform((array, context) => {
       const result: string[] = []
       for (const value of array) {
