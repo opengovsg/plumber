@@ -43,6 +43,7 @@ describe('replaceOldTemplates', () => {
       expect(substituteOldTemplates(t.input, varInfo)).toEqual(t.expected)
     }
   })
+
   it('should not replace {{.}} that is followed by </span>', () => {
     const testCases = [
       {
@@ -67,6 +68,13 @@ describe('replaceOldTemplates', () => {
     ]
     for (const t of testCases) {
       expect(substituteOldTemplates(t.input, varInfo)).toEqual(t.expected)
+    }
+  })
+
+  it('should handle undefined values', () => {
+    const testInputs = [undefined, null] as unknown as string[] // this is to force the value in
+    for (const input of testInputs) {
+      expect(substituteOldTemplates(input, varInfo)).toEqual('')
     }
   })
 })

@@ -35,6 +35,9 @@ export function substituteOldTemplates(
   original: string,
   varInfo: VariableInfoMap,
 ): string {
+  if (!original) {
+    return ''
+  }
   const searchRegex = /({{[^{}]+}})(?!<\/span>)/
   const nodes = original.split(searchRegex)
   for (const i in nodes) {
