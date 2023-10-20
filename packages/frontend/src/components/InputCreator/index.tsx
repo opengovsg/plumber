@@ -73,7 +73,7 @@ export default function InputCreator(
     )
   }
 
-  if (type === 'rich-text') {
+  if (type === 'rich-text' || type === 'string' || type === 'multiline') {
     return (
       <RichTextEditor
         name={computedName}
@@ -83,37 +83,7 @@ export default function InputCreator(
         disabled={disabled}
         placeholder={placeholder}
         variablesEnabled={variables}
-      />
-    )
-  }
-  if (type === 'string' || type === 'multiline') {
-    if (variables) {
-      return (
-        <PowerInput
-          label={label}
-          description={description}
-          name={computedName}
-          required={required}
-          disabled={disabled}
-          placeholder={placeholder}
-        />
-      )
-    }
-
-    return (
-      <TextField
-        defaultValue={value}
-        required={required}
-        placeholder={placeholder}
-        readOnly={readOnly || disabled}
-        name={computedName}
-        size="small"
-        label={label}
-        fullWidth
-        multiline={type === 'multiline'}
-        description={description}
-        clickToCopy={clickToCopy}
-        autoComplete={schema.autoComplete}
+        isRich={type === 'rich-text'}
       />
     )
   }
