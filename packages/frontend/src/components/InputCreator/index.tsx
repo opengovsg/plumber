@@ -5,9 +5,7 @@ import MuiTextField from '@mui/material/TextField'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
-import PowerInput from 'components/PowerInput'
 import RichTextEditor from 'components/RichTextEditor'
-import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
 
 export type InputCreatorProps = {
@@ -34,10 +32,8 @@ export default function InputCreator(
     key: name,
     label,
     required,
-    readOnly = false,
     value,
     description,
-    clickToCopy,
     variables,
     type,
     placeholder,
