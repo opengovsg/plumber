@@ -15,6 +15,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Badge } from '@opengovsg/design-system-react'
+import { StatusType } from 'components/ExecutionStatusMenu'
 import FlowAppIcons from 'components/FlowAppIcons'
 import * as URLS from 'config/urls'
 import { DateTime } from 'luxon'
@@ -94,22 +95,24 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
             </GridItem>
             <GridItem area="arrow-container">
               <Flex alignItems="center" gap={4}>
-                {execution.testRun && (
-                  <Badge py={1} px={2} colorScheme="grey" variant="subtle">
-                    <Text>Test run</Text>
-                  </Badge>
-                )}
-
                 <Badge
                   py={1}
                   px={2}
                   colorScheme={
-                    execution.status === 'success' ? 'success' : 'critical'
+                    execution.status === StatusType.Success
+                      ? 'success'
+                      : execution.status === StatusType.Failure
+                      ? 'critical'
+                      : 'grey'
                   }
                   variant="subtle"
                 >
                   <Text>
-                    {execution.status === 'success' ? 'Success' : 'Failure'}
+                    {execution.status === StatusType.Success
+                      ? 'Success'
+                      : execution.status === StatusType.Failure
+                      ? 'Failure'
+                      : 'Waiting'}
                   </Text>
                 </Badge>
 
