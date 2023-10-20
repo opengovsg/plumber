@@ -43,7 +43,7 @@ describe('send email with attachments', () => {
         parameters: {
           destinationEmail: 'recipient@example.com ',
           subject: ' asd',
-          body: 'hello\nhihi',
+          body: '<p>hello</p><p>hihi</p>',
           replyTo: 'replyto@example.com',
           senderName: 'sender name',
           attachments: [
@@ -75,7 +75,7 @@ describe('send email with attachments', () => {
       ['recipient@example.com'],
       {
         subject: 'asd',
-        body: 'hello<br>hihi',
+        body: '<p>hello</p><p>hihi</p>',
         replyTo: 'replyto@example.com',
         senderName: 'sender name',
         attachments: [
