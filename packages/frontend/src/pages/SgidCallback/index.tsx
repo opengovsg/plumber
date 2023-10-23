@@ -83,6 +83,7 @@ export default function SgidCallback(): JSX.Element {
     return <Navigate to={`${URLS.LOGIN}/?not_sgid_eligible=1`} replace />
   }
 
+  // this doesn't occur because of auth cookie set in login-with-sgid mutation
   if (employments?.length === 1) {
     return <Navigate to={URLS.FLOWS} replace />
   }
