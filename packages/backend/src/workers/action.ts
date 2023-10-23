@@ -126,7 +126,7 @@ worker.on('failed', async (job, err) => {
       .throwIfNotFound()
     const errorDetails = await sendErrorEmail(flow)
     logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
-      errorDetails,
+      errorDetails: { ...errorDetails, ...job.data },
     })
   }
 })
