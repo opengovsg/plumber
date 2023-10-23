@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { sendEmail } from '@/helpers/send-email'
 import Flow from '@/models/flow'
+import { ActionJobData } from '@/workers/action'
 
 const MAX_LENGTH = 80
 export const redisClient = createRedisClient(REDIS_DB_INDEX.PIPE_ERRORS)
@@ -49,7 +50,7 @@ export async function checkErrorEmail(flowId: string): Promise<boolean> {
   return !!(await redisClient.exists(errorKey))
 }
 
-export async function sendErrorEmail(flow: Flow) {
+export async function sendErrorEmail(flow: Flow, jobData: ActionJobData) {
   const truncatedFlowName = truncateFlowName(flow.name)
   const flowId = flow.id
   const userEmail = flow.user.email
@@ -61,6 +62,8 @@ export async function sendErrorEmail(flow: Flow) {
     flowName: flow.name,
     userEmail,
     timestamp: currDatetime.toMillis(),
+    executionId: jobData.executionId,
+    stepId: jobData.stepId,
   }
 
   await sendEmail({

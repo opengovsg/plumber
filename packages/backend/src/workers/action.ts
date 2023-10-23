@@ -19,7 +19,7 @@ import Step from '@/models/step'
 import actionQueue from '@/queues/action'
 import { processAction } from '@/services/action'
 
-type JobData = {
+export type ActionJobData = {
   flowId: string
   executionId: string
   stepId: string
@@ -29,7 +29,7 @@ type JobData = {
 export const worker = new Worker(
   'action',
   tracer.wrap('workers.action', async (job) => {
-    const jobData = job.data as JobData
+    const jobData = job.data as ActionJobData
 
     // the reason why we dont add .throwIfNotFound() here is to prevent job retries
     // delegating the error throwing and handling to processAction where it also queries for Step
@@ -124,7 +124,7 @@ worker.on('failed', async (job, err) => {
       .findById(job.data.flowId)
       .withGraphFetched('user')
       .throwIfNotFound()
-    const errorDetails = await sendErrorEmail(flow)
+    const errorDetails = await sendErrorEmail(flow, job.data)
     logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
       errorDetails,
     })

@@ -9,7 +9,7 @@ import Step from '@/models/step'
 import actionQueue from '@/queues/action'
 import { processTrigger } from '@/services/trigger'
 
-type JobData = {
+type TriggerJobData = {
   flowId: string
   stepId: string
   triggerItem?: ITriggerItem
@@ -20,7 +20,7 @@ export const worker = new Worker(
   'trigger',
   async (job) => {
     const { flowId, executionId, stepId, executionStep } = await processTrigger(
-      job.data as JobData,
+      job.data as TriggerJobData,
     )
 
     if (executionStep.isFailed) {

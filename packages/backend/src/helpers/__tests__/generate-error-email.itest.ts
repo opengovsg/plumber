@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { describe, expect, it, vi } from 'vitest'
 
 import Flow from '@/models/flow'
+import { ActionJobData } from '@/workers/action'
 
 import {
   checkErrorEmail,
@@ -11,6 +12,8 @@ import {
 
 const randomFlowName = 'flowww'
 const randomEmail = 'test@open.gov.sg'
+const randomExecutionId = '123'
+const randomStepId = '456'
 const currTestTimestamp = 1917878340000
 const endOfTimestamp = 1917878399000
 
@@ -53,15 +56,22 @@ describe('generate error email', () => {
     const randomFlowId = randomUUID()
     const key = `error-alert:${randomFlowId}`
     mocks.sendEmail.mockImplementationOnce(() => Promise.reject())
-    await expect(
-      sendErrorEmail({
-        id: randomFlowId,
-        name: randomFlowName,
-        user: {
-          email: randomEmail,
-        },
-      } as Flow),
-    ).rejects.toBeUndefined()
+
+    const testFlow = {
+      id: randomFlowId,
+      name: randomFlowName,
+      user: {
+        email: randomEmail,
+      },
+    } as Flow
+
+    const testJobData: ActionJobData = {
+      flowId: randomFlowId,
+      executionId: randomExecutionId,
+      stepId: randomStepId,
+    }
+
+    await expect(sendErrorEmail(testFlow, testJobData)).rejects.toBeUndefined()
     expect(!!(await redisClient.exists(key))).toBe(false)
   })
 
@@ -73,17 +83,28 @@ describe('generate error email', () => {
       flowName: randomFlowName,
       userEmail: randomEmail,
       timestamp: currTestTimestamp,
+      executionId: randomExecutionId,
+      stepId: randomStepId,
     }
     mocks.sendEmail.mockImplementationOnce(() => Promise.resolve())
-    await expect(
-      sendErrorEmail({
-        id: randomFlowId,
-        name: randomFlowName,
-        user: {
-          email: randomEmail,
-        },
-      } as Flow),
-    ).resolves.toEqual(keyObject)
+
+    const testFlow = {
+      id: randomFlowId,
+      name: randomFlowName,
+      user: {
+        email: randomEmail,
+      },
+    } as Flow
+
+    const testJobData: ActionJobData = {
+      flowId: randomFlowId,
+      executionId: randomExecutionId,
+      stepId: randomStepId,
+    }
+
+    await expect(sendErrorEmail(testFlow, testJobData)).resolves.toEqual(
+      keyObject,
+    )
     // check for TTL (1s gap)
     const keyTTL = await redisClient.pttl(key)
     const simulatedTTL = endOfTimestamp - Date.now()
@@ -99,6 +120,8 @@ describe('generate error email', () => {
       flowName: randomFlowName,
       userEmail: randomEmail,
       timestamp: currTestTimestamp,
+      executionId: randomExecutionId,
+      stepId: randomStepId,
     }
     redisClient.hset(key, keyObject)
     const errorEmailExists = await checkErrorEmail(randomFlowId)
