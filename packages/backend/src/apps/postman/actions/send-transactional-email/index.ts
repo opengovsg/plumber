@@ -8,6 +8,7 @@ import {
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
+import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
 export default defineAction({
@@ -28,7 +29,7 @@ export default defineAction({
       senderName,
       subject,
       body,
-      replyTo,
+      replyTo: replyTo || (await getDefaultReplyTo($.flow.id)),
     })
 
     if (!result.success) {
