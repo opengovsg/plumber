@@ -124,9 +124,9 @@ worker.on('failed', async (job, err) => {
       .findById(job.data.flowId)
       .withGraphFetched('user')
       .throwIfNotFound()
-    const errorDetails = await sendErrorEmail(flow)
+    const emailErrorDetails = await sendErrorEmail(flow)
     logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
-      errorDetails: { ...errorDetails, ...job.data },
+      errorDetails: { ...emailErrorDetails, ...job.data },
     })
   }
 })
