@@ -186,7 +186,10 @@ const menuButtons = [
   },
 ]
 
-export const MenuBar = ({ editor }: { editor: Editor | null }) => {
+interface MenuBarProps {
+  editor: Editor | null
+}
+export const MenuBar = ({ editor }: MenuBarProps) => {
   if (!editor) {
     return null
   }
