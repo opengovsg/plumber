@@ -94,4 +94,44 @@ describe('create row', () => {
       await expect(createRowAction.run($)).rejects.toThrowError()
     },
   )
+
+  describe('should decode url-encoded commas and double quotes properly', async () => {
+    it('should decode escaped commas', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1, value %2Cwith%2C quotes'
+      await expect(createRowAction.run($)).resolves.toBe(undefined)
+      expect(mocks.createTableRow).toHaveBeenCalledWith($, {
+        column_1: 'value_1',
+        column_2: 'value ,with, quotes',
+      })
+    })
+    it('should decode escaped double quotes', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1, %22value %22with%22 quotes%22'
+      await expect(createRowAction.run($)).resolves.toBe(undefined)
+      expect(mocks.createTableRow).toHaveBeenCalledWith($, {
+        column_1: 'value_1',
+        column_2: '"value "with" quotes"',
+      })
+    })
+    it('should decode escaped double quotes within double quotes', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1, "%22value %22with%22 quotes%22"'
+      await expect(createRowAction.run($)).resolves.toBe(undefined)
+      expect(mocks.createTableRow).toHaveBeenCalledWith($, {
+        column_1: 'value_1',
+        column_2: '"value "with" quotes"',
+      })
+    })
+
+    it('should decode escaped double quotes within other double quotes', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1, asas"%22value %22with%22 quotes%22"'
+      await expect(createRowAction.run($)).resolves.toBe(undefined)
+      expect(mocks.createTableRow).toHaveBeenCalledWith($, {
+        column_1: 'value_1',
+        column_2: 'asas""value "with" quotes""',
+      })
+    })
+  })
 })
