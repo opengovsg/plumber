@@ -17,17 +17,18 @@ import StarterKit from '@tiptap/starter-kit'
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
 
+interface EditorProps {
+  onChange: (...event: any[]) => void
+  initialValue: string
+  editable?: boolean
+  placeholder?: string
+}
 const Editor = ({
   onChange,
   initialValue,
   editable,
   placeholder,
-}: {
-  onChange: (...event: any[]) => void
-  initialValue: string
-  editable?: boolean
-  placeholder?: string
-}) => {
+}: EditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -87,6 +88,15 @@ const Editor = ({
   )
 }
 
+interface RichTextEditorProps {
+  required?: boolean
+  defaultValue?: string
+  name: string
+  label?: string
+  description?: string
+  disabled?: boolean
+  placeholder?: string
+}
 const RichTextEditor = ({
   required,
   defaultValue,
@@ -95,15 +105,7 @@ const RichTextEditor = ({
   description,
   disabled,
   placeholder,
-}: {
-  required?: boolean
-  defaultValue?: string
-  name: string
-  label?: string
-  description?: string
-  disabled?: boolean
-  placeholder?: string
-}) => {
+}: RichTextEditorProps) => {
   const { control } = useFormContext()
   return (
     <FormControl>
@@ -113,7 +115,7 @@ const RichTextEditor = ({
         </FormLabel>
       )}
       <Controller
-        rules={{ required: true }}
+        rules={{ required }}
         name={name}
         control={control}
         defaultValue={defaultValue}
