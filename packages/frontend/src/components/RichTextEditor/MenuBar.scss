@@ -1,5 +1,9 @@
+.editor__header {
+  padding: 0.5rem;
+}
+
 .divider {
-  background-color: rgba(#fff, 0.25);
+  background-color: var(--chakra-colors-grey-700);
   height: 1.25rem;
   margin-left: 0.5rem;
   margin-right: 0.75rem;
@@ -10,10 +14,10 @@
   background-color: transparent;
   border: none;
   border-radius: 0.4rem;
-  color: #fff;
+  color: var(--chakra-colors-grey-700);
   cursor: pointer;
   height: 1.75rem;
-  margin-right: 0.25rem;
+  margin-right: 0.35rem;
   padding: 0.25rem;
   width: 1.75rem;
 
