@@ -8,6 +8,7 @@ import {
   RiDeleteColumn,
   RiDeleteRow,
   RiFormatClear,
+  RiImageFill,
   RiInsertColumnRight,
   RiInsertRowBottom,
   RiItalic,
@@ -119,6 +120,17 @@ const menuButtons = [
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleOrderedList().run(),
     isActive: (editor: Editor) => editor.isActive('orderedList'),
+  },
+  {
+    label: 'Add Image',
+    icon: <RiImageFill />,
+    onClick: (editor: Editor) => {
+      const url = window.prompt('URL')
+      if (url === null) {
+        return
+      }
+      editor.chain().focus().setImage({ src: url }).run()
+    },
   },
   {
     label: 'divider',
