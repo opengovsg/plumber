@@ -200,8 +200,8 @@
 
   &__header {
     align-items: center;
-    background: #cf1a68;
-    border-bottom: 3px solid #cf1a68;
+    background: var(--chakra-colors-grey-50);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.23);
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
     display: flex;

@@ -24,7 +24,8 @@ export const transactionalEmailFields: IField[] = [
     key: 'body',
     type: 'rich-text' as const,
     required: true,
-    description: 'Email body HTML.',
+    description:
+      'Email body HTML. We are upgrading this field to a rich-text field, if you observe any issues while editing your existing pipes, please contact us via support@plumber.gov.sg',
     variables: true,
   },
   {
