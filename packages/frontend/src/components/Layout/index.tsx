@@ -49,7 +49,12 @@ export default function Layout({
   const closeDrawer = () => setDrawerOpen(false)
 
   if (!currentUser) {
-    return <Navigate to={URLS.LOGIN} />
+    const redirectQueryParam = window.location.pathname + window.location.search
+    return (
+      <Navigate
+        to={URLS.ADD_REDIRECT_TO_LOGIN(encodeURIComponent(redirectQueryParam))}
+      />
+    )
   }
 
   return (

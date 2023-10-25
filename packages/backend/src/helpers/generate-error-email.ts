@@ -16,11 +16,13 @@ function truncateFlowName(flowName: string) {
 
 export function createBodyErrorMessage(flowName: string): string {
   const currDateTime = DateTime.now().toFormat('MMM dd yyyy, hh:mm a')
-  const appPrefixURL = appConfig.isDev ? appConfig.webAppUrl : appConfig.baseUrl
-  const redirectURL = `/executions/?status=failure&input=${flowName}`
-  const formattedURL = `${appPrefixURL}/login/?redirect=${encodeURIComponent(
-    redirectURL,
-  )}`
+  const searchParams = new URLSearchParams()
+  searchParams.set('status', 'failure')
+  searchParams.set('input', flowName)
+
+  const appPrefixUrl = appConfig.isDev ? appConfig.webAppUrl : appConfig.baseUrl
+  const redirectUrl = `/executions?${searchParams.toString()}`
+  const formattedUrl = `${appPrefixUrl}${redirectUrl}`
 
   const bodyMessage = `
     Dear fellow plumber,
@@ -36,7 +38,7 @@ export function createBodyErrorMessage(flowName: string): string {
     </ol>
     <p>What should you do?</p>
     <ol>
-      <li>Retry the failed execution by heading to the executions tab, and clicking the <strong>Retry</strong> button on the failed execution using this link: ${formattedURL}</li>
+      <li>Retry the failed execution by heading to the executions tab, and clicking the <strong>Retry</strong> button on the failed execution using this link: ${formattedUrl}</li>
       <li>Check our status page at https://status.plumber.gov.sg/ to see if Plumber or any of the apps you are using are down.</li>
       <li>Correct the configuration for your broken pipe.</li>
     </ol>

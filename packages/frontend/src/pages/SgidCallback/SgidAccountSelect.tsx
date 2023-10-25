@@ -26,7 +26,7 @@ export default function SgidAccountSelect(
 
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirectURL = searchParams.get('state')
+  const redirectUrl = searchParams.get('state')
 
   const [loginWithSelectedSgid] = useMutation(LOGIN_WITH_SELECTED_SGID, {
     refetchQueries: [GET_CURRENT_USER],
@@ -49,12 +49,10 @@ export default function SgidAccountSelect(
       if (!success) {
         setFailed(true)
       } else {
-        return redirectURL === null
-          ? navigate(URLS.FLOWS, { replace: true })
-          : navigate(redirectURL, { replace: true })
+        return navigate(redirectUrl ?? URLS.DASHBOARD, { replace: true })
       }
     },
-    [loginWithSelectedSgid, navigate, setFailed, redirectURL],
+    [loginWithSelectedSgid, navigate, setFailed, redirectUrl],
   )
 
   return (
