@@ -9,9 +9,9 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   _job: Job,
 ): number {
   // This implements FullJitter-like jitter, with the following changes:
-  //.
+  //
   // * We wait _at least_ the full duration of the previous delay (or on the 1st
-  //   retry, at least full initial delay).
+  //   retry, at least the full initial delay).
   // * No cap on wait time; capping should not matter here since we cap total
   //   attempts.
   //
