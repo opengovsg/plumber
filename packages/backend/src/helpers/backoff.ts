@@ -5,7 +5,7 @@ export const INITIAL_DELAY_MS = 3000
 export const exponentialBackoffWithJitter: BackoffStrategy = function (
   attemptsMade: number,
   _type: string,
-  _err: Error,
+  err: Error,
   _job: Job,
 ): number {
   // This implements FullJitter-like jitter, with the following changes:
@@ -18,6 +18,17 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   // Reference:
   // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 
-  const prevFullDelay = Math.pow(2, attemptsMade - 1) * INITIAL_DELAY_MS
+  //
+  // Edge case for 429.
+  //
+  // We need to cooldown 1 minute to support telegram 429. To provide proper
+  // fix later.
+  //
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const initialDelay_HACKFIX = err?.message?.includes('"status":429')
+    ? 60 * 1000
+    : INITIAL_DELAY_MS
+
+  const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay_HACKFIX
   return prevFullDelay + Math.round(Math.random() * prevFullDelay)
 }

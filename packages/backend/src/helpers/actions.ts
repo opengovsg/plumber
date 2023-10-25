@@ -41,7 +41,7 @@ export async function doesActionProcessFiles(
 }
 
 const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
-const CONNECTIVITY_STATUS_CODE = [504]
+const CONNECTIVITY_STATUS_CODE = [504, 429]
 
 export function handleErrorAndThrow(errorDetails: IJSONObject): never {
   const errorVariable = get(errorDetails, 'details.error', '') as unknown
