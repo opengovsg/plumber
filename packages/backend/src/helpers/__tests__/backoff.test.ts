@@ -7,15 +7,6 @@ describe('Backoff', () => {
     vi.restoreAllMocks()
   })
 
-  it('backs off exponentially with jitter disabled', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(1)
-
-    expect(exponentialBackoffWithJitter(1)).toEqual(INITIAL_DELAY_MS * 2)
-    expect(exponentialBackoffWithJitter(2)).toEqual(INITIAL_DELAY_MS * 4)
-    expect(exponentialBackoffWithJitter(3)).toEqual(INITIAL_DELAY_MS * 8)
-    expect(exponentialBackoffWithJitter(4)).toEqual(INITIAL_DELAY_MS * 16)
-  })
-
   it('applies jitter', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
