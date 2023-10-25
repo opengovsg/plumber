@@ -13,7 +13,9 @@ type LayoutProps = {
 export default function Layout({ children }: LayoutProps): React.ReactElement {
   const { currentUser } = useAuthentication()
   if (currentUser) {
-    return <Navigate to={URLS.DASHBOARD} />
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirectUrl = urlParams.get('redirect') ?? urlParams.get('state')
+    return <Navigate to={redirectUrl ?? URLS.DASHBOARD} />
   }
 
   return (

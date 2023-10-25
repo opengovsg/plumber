@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { BiChevronRight } from 'react-icons/bi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { Box, Divider, Flex, Heading, Icon, Link, Text } from '@chakra-ui/react'
 import * as URLS from 'config/urls'
@@ -25,6 +25,8 @@ export default function SgidAccountSelect(
   const { employments, setFailed } = props
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectUrl = searchParams.get('state')
 
   const [loginWithSelectedSgid] = useMutation(LOGIN_WITH_SELECTED_SGID, {
     refetchQueries: [GET_CURRENT_USER],
@@ -47,10 +49,10 @@ export default function SgidAccountSelect(
       if (!success) {
         setFailed(true)
       } else {
-        navigate(URLS.FLOWS, { replace: true })
+        return navigate(redirectUrl ?? URLS.DASHBOARD, { replace: true })
       }
     },
-    [loginWithSelectedSgid, navigate, setFailed],
+    [loginWithSelectedSgid, navigate, setFailed, redirectUrl],
   )
 
   return (

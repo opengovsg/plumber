@@ -7,6 +7,8 @@ export const ROOT = '/'
 
 export const LOGIN = '/login'
 export const LOGIN_SGID_REDIRECT = '/login/sgid/redirect'
+export const ADD_REDIRECT_TO_LOGIN = (redirectQueryParam: string): string =>
+  `${LOGIN}/?redirect=${redirectQueryParam}`
 
 export const APPS = '/apps'
 export const NEW_APP_CONNECTION = '/apps/new'

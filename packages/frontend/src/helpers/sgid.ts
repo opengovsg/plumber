@@ -33,6 +33,12 @@ export async function generateSgidAuthUrl(): Promise<{
   verifier: string
   nonce: string
 }> {
+  const redirectQueryParam = new URLSearchParams(window.location.search).get(
+    'redirect',
+  )
+  const stateQueryParamString = redirectQueryParam
+    ? `&state=${encodeURIComponent(redirectQueryParam)}`
+    : ''
   const { challenge, verifier, nonce } = await generatePkceAndNonce()
   const sgidUrl =
     'https://api.id.gov.sg/v2/oauth/authorize?' +
@@ -42,7 +48,8 @@ export async function generateSgidAuthUrl(): Promise<{
     `&nonce=${nonce}` +
     `&client_id=${appConfig.sgidClientId}` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URL)}` +
-    `&scope=${encodeURIComponent(SCOPE)}`
+    `&scope=${encodeURIComponent(SCOPE)}` +
+    stateQueryParamString
 
   return {
     url: sgidUrl,
