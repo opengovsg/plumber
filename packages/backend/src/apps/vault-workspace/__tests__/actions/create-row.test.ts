@@ -76,11 +76,11 @@ describe('create row', () => {
   describe('should decode url-encoded commas and double quotes properly', async () => {
     it('should decode escaped commas', async () => {
       $.step.parameters.columns = 'column_1, column_2'
-      $.step.parameters.values = 'value_1, value %2Cwith%2C quotes'
+      $.step.parameters.values = 'value_1, value %2Cwith%2C commas'
       await expect(createRowAction.run($)).resolves.toBe(undefined)
       expect(mocks.createTableRow).toHaveBeenCalledWith($, {
         column_1: 'value_1',
-        column_2: 'value ,with, quotes',
+        column_2: 'value ,with, commas',
       })
     })
     it('should decode escaped double quotes', async () => {

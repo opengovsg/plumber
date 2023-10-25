@@ -3,6 +3,10 @@ import { parse as parseAsCsv } from 'csv-parse/sync'
 import defineAction from '@/helpers/define-action'
 
 import createTableRow from '../../common/create-table-row'
+import {
+  escapeSpecialChars,
+  unescapeSpecialChars,
+} from '../../common/escape-characters'
 
 export default defineAction({
   name: 'Create row',
@@ -29,14 +33,14 @@ export default defineAction({
     },
   ],
   preprocessVariable: (key, value) => {
-    if (key !== 'values' && key !== 'columns') {
+    if (key !== 'values') {
       return value
     }
     if (typeof value !== 'string') {
       return value
     }
     // url encode commas and double quotes
-    return value.replace(/,/g, '%2C').replace(/"/g, '%22')
+    return escapeSpecialChars(value)
   },
 
   async run($) {
@@ -58,8 +62,8 @@ export default defineAction({
 
     const row: { [key: string]: string } = {}
     for (let i = 0; i < columns.length; i++) {
-      const columnName = decodeURIComponent(columns[i])
-      const rowValue = decodeURIComponent(values[i])
+      const columnName = columns[i]
+      const rowValue = unescapeSpecialChars(values[i])
       row[columnName] = rowValue
     }
 
