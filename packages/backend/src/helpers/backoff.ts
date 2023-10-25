@@ -19,10 +19,13 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 
   //
-  // Edge case for 429, telegram-only for now. We need to cooldown 1 minute.
+  // Edge case for 429.
+  //
+  // We need to cooldown 1 minute to support telegram 429. To provide proper
+  // fix later.
   //
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const initialDelay_HACKFIX = err.message.includes('"statusCode": 429')
+  const initialDelay_HACKFIX = err.message.includes('"status":429')
     ? 60 * 1000
     : INITIAL_DELAY_MS
 
