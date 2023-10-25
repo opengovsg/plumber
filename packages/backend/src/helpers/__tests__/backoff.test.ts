@@ -31,4 +31,15 @@ describe('Backoff', () => {
     expect(exponentialBackoffWithJitter(3)).toEqual(INITIAL_DELAY_MS * 4)
     expect(exponentialBackoffWithJitter(4)).toEqual(INITIAL_DELAY_MS * 8)
   })
+
+  it('EDGE CASE: base delay is 1 minute on 429', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    expect(
+      exponentialBackoffWithJitter(1, '', new Error('"status":429')),
+    ).toEqual(60000)
+    expect(
+      exponentialBackoffWithJitter(2, '', new Error('"status":429')),
+    ).toEqual(120000)
+  })
 })

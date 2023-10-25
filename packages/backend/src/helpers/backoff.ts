@@ -25,7 +25,7 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   // fix later.
   //
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const initialDelay_HACKFIX = err.message.includes('"status":429')
+  const initialDelay_HACKFIX = err?.message?.includes('"status":429')
     ? 60 * 1000
     : INITIAL_DELAY_MS
 
