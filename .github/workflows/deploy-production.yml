@@ -19,9 +19,7 @@ jobs:
       cicd-role: 'arn:aws:iam::964715690079:role/plumber-prod-github-oidc-role'
       ecr-repository: 'plumber-prod'
       ecs-cluster-name: 'plumber-prod-ecs'
-      ecs-service-name: 'plumber-prod-ecs-service'
-      ecs-worker-service-name: 'plumber-prod-ecs-worker-service'
-      ecs-container-name: 'app'
+      ecs-service-name: 'plumber-prod-c-ecs-service'
       codedeploy-application: 'plumber-prod-ecs-app'
       codedeploy-deployment-group: 'plumber-prod-ecs-dg'
       release-version: ${{ github.sha }}

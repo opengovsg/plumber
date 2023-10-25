@@ -26,14 +26,6 @@ on:
         description: 'ECS service for server'
         required: true
         type: string
-      ecs-worker-service-name:
-        description: 'ECS service for worker'
-        required: true
-        type: string
-      ecs-container-name:
-        description: 'Name of container in ECS task definition'
-        required: true
-        type: string
       codedeploy-application:
         description: 'CodeDeploy application to use'
         required: true
@@ -89,11 +81,6 @@ jobs:
           docker push ${{ steps.ecr-image-uri.outputs.image }}
 
   deploy:
-    strategy:
-      matrix:
-        service:
-          - server
-          - worker
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -121,50 +108,46 @@ jobs:
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
         run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+      - name: Merge ECS task definition templates
+        id: merge-ecs-templates
+        run: |
+          cp ecs/task-definition.json ecs-task-definition.json
+          jq --argjson environment "$(jq '.environment' ecs/env.json)" '.containerDefinitions[0].environment += $environment' ecs-task-definition.json
+          jq --argjson environment "$(jq '.secrets' ecs/env.json)" '.containerDefinitions[0].environment += $environment' ecs-task-definition.json
+          jq --argjson environment "$(jq '.environment' ecs/env.json)" '.containerDefinitions[1].environment += $environment' ecs-task-definition.json
+          jq --argjson environment "$(jq '.secrets' ecs/env.json)" '.containerDefinitions[1].environment += $environment' ecs-task-definition.json
+          cp ecs/appspec.json appspec.json
+
       - name: Replace variables in task definition file
         run: |
           sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' ecs-task-definition.json
           sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' ecs-task-definition.json
-          sed -i 's/<SERVICE>/${{ matrix.service }}/g' ecs-task-definition.json
           sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' appspec.json
           sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' appspec.json
-          sed -i 's/<SERVICE>/${{ matrix.service }}/g' appspec.json
-
-      - name: Replace start command in task definition file (server)
-        if: matrix.service == 'server'
-        run: |
-          sed -i 's/<START_COMMAND>/start/g' ecs-task-definition.json
-
-      - name: Replace start command in task definition file (worker)
-        if: matrix.service == 'worker'
-        run: |
-          sed -i 's/<START_COMMAND>/start:worker/g' ecs-task-definition.json
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: server-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ecs-task-definition.json
-          container-name: ${{ inputs.ecs-container-name }}
+          container-name: server
+          image: ${{ steps.ecr-image-uri.outputs.image }}
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: full-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.server-task-def.outputs.task-definition }}
+          container-name: worker
           image: ${{ steps.ecr-image-uri.outputs.image }}
 
       - name: Deploy Amazon ECS task definition to server
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        if: matrix.service == 'server'
         with:
-          task-definition: ${{ steps.server-task-def.outputs.task-definition }}
+          task-definition: ${{ steps.full-task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
           service: ${{ inputs.ecs-service-name }}
           wait-for-service-stability: false
           codedeploy-appspec: appspec.json
           codedeploy-application: ${{ inputs.codedeploy-application }}
           codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}
-
-      - name: Deploy Amazon ECS task definition to worker
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        if: matrix.service == 'worker'
-        with:
-          task-definition: ${{ steps.server-task-def.outputs.task-definition }}
-          cluster: ${{ inputs.ecs-cluster-name }}
-          service: ${{ inputs.ecs-worker-service-name }}
-          wait-for-service-stability: false
