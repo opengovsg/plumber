@@ -28,8 +28,7 @@ export default defineAction({
       type: 'string' as const,
       required: true,
       variables: true,
-      description:
-        'Put a comma between each value. Enclose values with double-quotes (") if you think it may contain commas (e.g. form answers). Values CANNOT contain double quotes.',
+      description: 'Put a comma between each value.',
     },
   ],
   preprocessVariable: (key, value) => {
