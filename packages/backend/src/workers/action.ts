@@ -5,6 +5,7 @@ import { UnrecoverableError, Worker } from 'bullmq'
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { handleErrorAndThrow } from '@/helpers/actions'
+import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import {
   DEFAULT_JOB_OPTIONS,
   MAXIMUM_JOB_ATTEMPTS,
@@ -86,6 +87,9 @@ export const worker = new Worker(
     prefix: '{actionQ}',
     connection: createRedisClient(),
     concurrency: appConfig.workerActionConcurrency,
+    settings: {
+      backoffStrategy: exponentialBackoffWithJitter,
+    },
   },
 )
 
