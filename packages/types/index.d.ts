@@ -3,7 +3,8 @@ import type { AxiosInstance, AxiosRequestConfig } from 'axios'
 export type IHttpClient = AxiosInstance
 import type { Request } from 'express'
 
-export type IJSONValue = string | number | boolean | IJSONObject | IJSONArray
+export type IJSONPrimitive = string | number | boolean
+export type IJSONValue = IJSONPrimitive | IJSONObject | IJSONArray
 export type IJSONArray = Array<IJSONValue>
 export interface IJSONObject {
   [x: string]: IJSONValue
