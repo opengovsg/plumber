@@ -34,7 +34,7 @@ export default function SgidFailureModal(): JSX.Element {
           <Icon boxSize={40} as={BiSad} />
           <Box my={12}>
             <Heading textAlign="center" mb={4}>
-              Oops, we don't have your employee profile in the system
+              {`Oops, we don't have your employee profile in the system`}
             </Heading>
             <Text textStyle="body-1" textAlign="center">
               Please check{' '}

@@ -104,27 +104,16 @@ function ChooseAppAndEventSubstep(
     [apps, launchDarkly.flags],
   )
 
-  const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || []
+  const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
+    () => (isTrigger ? app?.triggers : app?.actions) || [],
+    [app?.actions, app?.triggers, isTrigger],
+  )
+
   const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const actionOrTriggerOptions = useMemo(
     () =>
       actionsOrTriggers
         .filter((actionOrTrigger) => {
-          //
-          // ** EDGE CASE **
-          //
-          // We want to hide If-then in some cases (see useIsIfThenSelectable
-          // comments).
-          //
-          if (
-            app?.key === TOOLBOX_APP_KEY &&
-            actionOrTrigger?.key === TOOLBOX_ACTIONS.IfThen &&
-            !isIfThenSelectable
-          ) {
-            return false
-          }
-
           // Filter away stuff hidden behind feature flags
           if (!launchDarkly.flags || !app?.key) {
             return true
@@ -139,7 +128,7 @@ function ChooseAppAndEventSubstep(
         })
         //
         .map((trigger) => eventOptionGenerator(trigger)),
-    [app?.key, launchDarkly.flags, isIfThenSelectable, step],
+    [actionsOrTriggers, app?.key, launchDarkly.flags, isTrigger],
   )
   const selectedActionOrTrigger = actionsOrTriggers.find(
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === step?.key,
@@ -165,9 +154,8 @@ function ChooseAppAndEventSubstep(
         const eventKey = option?.value as string
 
         //
-        // ** EDGE CASE AGAIN V2 **
-        //
-        // Hello, the if-then edge case demon here again!
+        // ** EDGE CASE **
+        // The if-then edge case demon here!
         //
         // If-then is weird in that we need to pre-populate with 2 branches
         // upon initial selection (the only action that spawns 2 steps upon
@@ -224,6 +212,21 @@ function ChooseAppAndEventSubstep(
       }
     },
     [step, onChange],
+  )
+
+  //
+  // ** EDGE CASE V2 **
+  // The if-then edge case demon again!
+  //
+  // To prevent user confusion, we want to show If-Then as a disabled option
+  // when we're not the last step.
+  //
+  const getIsIfThenDisabled = useCallback(
+    ({ value: actionKey }: ReturnType<typeof eventOptionGenerator>) =>
+      step.appKey === TOOLBOX_APP_KEY &&
+      actionKey === TOOLBOX_ACTIONS.IfThen &&
+      !isIfThenSelectable,
+    [step.appKey, isIfThenSelectable],
   )
 
   const onToggle = expanded ? onCollapse : onExpand
@@ -309,6 +312,7 @@ function ChooseAppAndEventSubstep(
                 loading={isLoading}
                 // Don't display options until we can check feature flags!
                 options={isLoading ? [] : actionOrTriggerOptions}
+                getOptionDisabled={getIsIfThenDisabled}
                 renderInput={(params) => (
                   <FormControl>
                     <FormLabel isRequired>Choose an event</FormLabel>
@@ -336,7 +340,14 @@ function ChooseAppAndEventSubstep(
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Text>{option.label}</Text>
+                    <Flex flexDir="column">
+                      <Text>{option.label}</Text>
+                      {getIsIfThenDisabled(option) && (
+                        <Text fontSize="xs" color="red.500">
+                          This can only be used in the last step
+                        </Text>
+                      )}
+                    </Flex>
 
                     {option.type === 'webhook' && (
                       <Chip label="Instant" sx={{ mr: 3 }} />

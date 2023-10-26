@@ -75,6 +75,7 @@ describe('action helper functions', () => {
       { details: { error: 'read ECONNRESET' } },
       { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
       { status: 504 },
+      { status: 429 },
     ])('retries connectivity errors', (errorDetails: IJSONObject) => {
       const callback = () => handleErrorAndThrow(errorDetails)
 

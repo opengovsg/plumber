@@ -37,7 +37,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
       return (
         <Infobox variant="warning" width="full">
           <Box>
-            <Text fontWeight="600">We couldn't find any test data</Text>
+            <Text fontWeight="600">{`We couldn't find any test data`}</Text>
             <Text mt={0.5}>{getNoOutputMessage(selectedActionOrTrigger)}</Text>
           </Box>
         </Infobox>

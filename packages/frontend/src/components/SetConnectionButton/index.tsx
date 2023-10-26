@@ -33,7 +33,7 @@ const SetConnectionButton = ({
     } else {
       onNextStep()
     }
-  }, [supportsWebhookRegistration, testResult])
+  }, [onNextStep, onRegisterWebhook, supportsWebhookRegistration, testResult])
 
   const buttonText = useMemo(() => {
     if (testResultLoading) {

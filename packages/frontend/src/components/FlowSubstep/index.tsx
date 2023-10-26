@@ -85,7 +85,7 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
     const subscription = formContext.watch(validate)
 
     return () => subscription.unsubscribe()
-  }, [substep, formContext.watch])
+  }, [substep, formContext.watch, formContext])
 
   const onToggle = expanded ? onCollapse : onExpand
 

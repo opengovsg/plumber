@@ -73,25 +73,43 @@ describe('create row', () => {
     },
   )
 
-  it.each([
-    { columns: 'column_1, column_2', values: 'value_1, value_"with"_quotes' },
-    {
-      columns: 'column_1, column_with_one_quote"',
-      values: 'value_1, value_2',
-    },
-    {
-      columns: 'column_1, column_"with"_quotes',
-      values: 'value_1, "value_with_"single_quote',
-    },
-    // Edge case: this will unexpectedly work if col/val is quoted in accordance
-    // with CSV format - e.g. "column". Although the user will notice that the
-    // quotes are missing. But that's OK.
-  ])(
-    'errors if columns or values contain double quotes',
-    async ({ columns, values }) => {
-      $.step.parameters.columns = columns
-      $.step.parameters.values = values
-      await expect(createRowAction.run($)).rejects.toThrowError()
-    },
-  )
+  describe('should decode url-encoded commas and double quotes properly', async () => {
+    it('should decode escaped commas', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1, value %2Cwith%2C commas'
+      await expect(createRowAction.run($)).resolves.toBe(undefined)
+      expect(mocks.createTableRow).toHaveBeenCalledWith($, {
+        column_1: 'value_1',
+        column_2: 'value ,with, commas',
+      })
+    })
+    it('should decode escaped double quotes', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1, %22value %22with%22 quotes%22'
+      await expect(createRowAction.run($)).resolves.toBe(undefined)
+      expect(mocks.createTableRow).toHaveBeenCalledWith($, {
+        column_1: 'value_1',
+        column_2: '"value "with" quotes"',
+      })
+    })
+    it('should decode escaped double quotes within double quotes', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1, "%22value %22with%22 quotes%22"'
+      await expect(createRowAction.run($)).resolves.toBe(undefined)
+      expect(mocks.createTableRow).toHaveBeenCalledWith($, {
+        column_1: 'value_1',
+        column_2: '"value "with" quotes"',
+      })
+    })
+
+    it('should decode escaped double quotes within other double quotes', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1, asas"%22value %22with%22 quotes%22"'
+      await expect(createRowAction.run($)).resolves.toBe(undefined)
+      expect(mocks.createTableRow).toHaveBeenCalledWith($, {
+        column_1: 'value_1',
+        column_2: 'asas""value "with" quotes""',
+      })
+    })
+  })
 })

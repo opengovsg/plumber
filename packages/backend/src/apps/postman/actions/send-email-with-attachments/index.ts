@@ -5,6 +5,7 @@ import defineAction from '@/helpers/define-action'
 import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
+import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
 import { fields, schema } from './parameters'
@@ -35,7 +36,7 @@ export default defineAction({
       senderName,
       subject,
       body,
-      replyTo,
+      replyTo: replyTo || (await getDefaultReplyTo($.flow.id)),
       attachments,
     })
 
