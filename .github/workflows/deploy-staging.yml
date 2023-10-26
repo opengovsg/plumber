@@ -19,7 +19,7 @@ jobs:
       cicd-role: 'arn:aws:iam::964715690079:role/plumber-staging-github-oidc-role'
       ecr-repository: 'plumber-staging'
       ecs-cluster-name: 'plumber-staging-ecs'
-      ecs-service-name: 'plumber-staging-c-ecs-service'
+      ecs-service-name: 'plumber-staging-ecs-service'
       codedeploy-application: 'plumber-staging-ecs-app'
       codedeploy-deployment-group: 'plumber-staging-ecs-dg'
       release-version: ${{ github.sha }}
