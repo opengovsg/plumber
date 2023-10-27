@@ -1,4 +1,3 @@
-import type HttpError from '@/errors/http'
 import type { AxiosInstance, AxiosRequestConfig } from 'axios'
 
 export type IHttpClient = AxiosInstance
@@ -364,6 +363,7 @@ export interface IActionRunResult {
     | { command: 'stop-execution' }
   nextStepMetadata?: NextStepMetadata
 }
+
 export interface IActionOutput {
   data: IActionItem
   error?: IJSONObject
