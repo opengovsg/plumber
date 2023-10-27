@@ -22,6 +22,6 @@ export default class HttpError extends BaseError {
       headers: error.response?.headers,
       config: error.config,
     }
-    this.errorCode = error.code
+    this.errorCode = error.code ?? null
   }
 }
