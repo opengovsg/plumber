@@ -1,7 +1,6 @@
 import { type IActionRunResult, NextStepMetadata } from '@plumber/types'
 
 import HttpError from '@/errors/http'
-import { parseRetryAfter } from '@/helpers/actions'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
@@ -61,6 +60,7 @@ export const processAction = async (options: ProcessActionOptions) => {
   $.step.parameters = computedParameters
 
   let runResult: IActionRunResult = {}
+  let executionError: unknown = null
   try {
     // Cannot assign directly to runResult due to void return type.
     const result =
@@ -72,15 +72,13 @@ export const processAction = async (options: ProcessActionOptions) => {
     }
   } catch (error) {
     logger.error(error)
+    executionError = error
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         type: 'http',
         details: error.details,
         status: error.response.status,
         statusText: error.response.statusText,
-        metadata: {
-          retryAfter: parseRetryAfter(error.response?.headers['retry-after']),
-        },
       }
     } else {
       try {
@@ -132,5 +130,6 @@ export const processAction = async (options: ProcessActionOptions) => {
     computedParameters,
     nextStep,
     nextStepMetadata: runResult.nextStepMetadata,
+    executionError,
   }
 }

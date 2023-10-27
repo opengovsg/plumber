@@ -1,8 +1,9 @@
-import type { IActionError, IJSONObject } from '@plumber/types'
+import type { IJSONObject } from '@plumber/types'
 
 import { UnrecoverableError } from 'bullmq'
 import { get, memoize } from 'lodash'
 
+import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import App from '@/models/app'
 
@@ -47,7 +48,7 @@ export async function doesActionProcessFiles(
  * @returns Non-negative (>= 0) number of seconds to wait before retrying, or
  * null on failure (badly formatted value, or retry-after in the past)
  */
-export function parseRetryAfter(
+function parseRetryAfter(
   rawHeaderValue: string | null | undefined,
 ): number | null {
   if (!rawHeaderValue) {
@@ -70,41 +71,31 @@ export function parseRetryAfter(
   return retryAfter >= 0 ? retryAfter : null
 }
 
-// One more pre-req that we can't statically check: errorDetails must be from
-// ExecutionStep.
-function isExecutionStepActionError(
-  errorDetails: IJSONObject,
-): errorDetails is IActionError {
-  return (
-    errorDetails &&
-    // Manually synced with IActionError in index.d.ts :(
-    (errorDetails.type === 'http' || errorDetails.type === 'app')
-  )
-}
-
 const RETRY_AFTER_LIMIT_SECONDS = 10000
 const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
 const CONNECTIVITY_STATUS_CODE = [504]
 
-export function handleErrorAndThrow(errorDetails: IJSONObject): never {
-  // Only able to retry HTTP errors for now.
-  if (
-    !isExecutionStepActionError(errorDetails) ||
-    errorDetails.type === 'app'
-  ) {
-    throw new UnrecoverableError(JSON.stringify(errorDetails))
-  }
-
-  // Retry if we get a reasonable Retry-After header
+export function handleErrorAndThrow(
+  errorDetails: IJSONObject,
+  // This is thrown from app.run, which _in theory_ can be anything.
+  executionError: unknown,
+): never {
+  // Retry if we get a reasonable Retry-After header.
   // Note that we will only retry up to our max retry limit; this limit is
   // enforced by BullMQ and not this function).
-  if (errorDetails.metadata?.retryAfter) {
-    throw errorDetails.metadata.retryAfter <= RETRY_AFTER_LIMIT_SECONDS
-      ? new RetriableError({
-          error: errorDetails,
-          delay: errorDetails.metadata.retryAfter,
-        })
-      : new UnrecoverableError(JSON.stringify(errorDetails))
+  if (executionError && executionError instanceof HttpError) {
+    const retryAfter = parseRetryAfter(
+      executionError.response.headers['retry-after'],
+    )
+
+    if (retryAfter !== null) {
+      throw retryAfter <= RETRY_AFTER_LIMIT_SECONDS
+        ? new RetriableError({
+            error: errorDetails,
+            delay: retryAfter,
+          })
+        : new UnrecoverableError(JSON.stringify(errorDetails))
+    }
   }
 
   //

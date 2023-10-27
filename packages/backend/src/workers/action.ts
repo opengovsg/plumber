@@ -45,17 +45,25 @@ export const worker = new Worker(
       appKey: step?.appKey,
     })
 
-    const { flowId, executionId, nextStep, executionStep, nextStepMetadata } =
-      await processAction({ ...jobData, jobId: job.id }).catch(async (err) => {
+    const {
+      flowId,
+      executionId,
+      nextStep,
+      executionStep,
+      nextStepMetadata,
+      executionError,
+    } = await processAction({ ...jobData, jobId: job.id }).catch(
+      async (err) => {
         // this happens when the prerequisite steps for the action fails (e.g. db error, missing execution, flow, step, etc...)
         // in such cases, we do not want to retry
         await Execution.setStatus(jobData.executionId, 'failure')
         throw new UnrecoverableError(err.message || 'Action failed to execute')
-      })
+      },
+    )
 
     if (executionStep.isFailed) {
       await Execution.setStatus(executionId, 'failure')
-      return handleErrorAndThrow(executionStep.errorDetails)
+      return handleErrorAndThrow(executionStep.errorDetails, executionError)
     }
 
     if (!nextStep) {

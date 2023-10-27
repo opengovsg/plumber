@@ -364,27 +364,9 @@ export interface IActionRunResult {
     | { command: 'stop-execution' }
   nextStepMetadata?: NextStepMetadata
 }
-
-export interface IActionHttpError extends IJSONObject {
-  type: 'http'
-  details: HttpError['details']
-  status: HttpError['response']['status']
-  statusText: HttpError['response']['statusText']
-  metadata: {
-    retryAfter: number | null
-  }
-}
-
-export interface IActionAppError extends IJSONObject {
-  type: 'app'
-  error: IJSONValue
-}
-
-export type IActionError = IActionHttpError | IActionAppError
-
 export interface IActionOutput {
   data: IActionItem
-  error?: IActionError
+  error?: IJSONObject
 }
 
 export interface IActionItem {
