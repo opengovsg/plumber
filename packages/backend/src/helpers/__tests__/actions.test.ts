@@ -78,11 +78,11 @@ describe('action helper functions', () => {
     })
 
     it.each([
-      { type: 'http', details: { error: 'read ECONNRESET' } },
-      { type: 'http', details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
-      { type: 'http', status: 504 },
+      { details: { error: 'read ECONNRESET' } },
+      { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
+      { status: 504 },
     ])('retries connectivity errors', (errorDetails: IJSONObject) => {
-      const callback = () => handleErrorAndThrow(errorDetails)
+      const callback = () => handleErrorAndThrow(errorDetails, null)
 
       // Assert it throws, and that it doesn't throw the wrong type of error.
       expect(callback).toThrowError(RetriableError)
@@ -91,16 +91,15 @@ describe('action helper functions', () => {
 
     it.each([
       {}, // Edge case - empty object just in case
-      { type: 'app', error: {} },
       {
-        type: 'http',
         status: 500,
         details: { description: 'Internal Server Error' },
       },
-      { type: 'http', error: 'connect ECONNREFUSED 1.2.3.4' },
+      { error: 'connect ECONNREFUSED 1.2.3.4' },
       { error: 'no type for some reason' },
     ])('does not retry other types of errors', (errorDetails) => {
-      const callback = () => handleErrorAndThrow(errorDetails as IJSONObject)
+      const callback = () =>
+        handleErrorAndThrow(errorDetails as IJSONObject, null)
       expect(callback).toThrowError(UnrecoverableError)
     })
   })
