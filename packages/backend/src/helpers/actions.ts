@@ -1,7 +1,7 @@
 import type { IJSONObject } from '@plumber/types'
 
 import { UnrecoverableError } from 'bullmq'
-import { get, memoize } from 'lodash'
+import { memoize } from 'lodash'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
@@ -72,55 +72,47 @@ function parseRetryAfter(
 }
 
 const RETRY_AFTER_LIMIT_SECONDS = 10000
-const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
-const CONNECTIVITY_STATUS_CODE = [504]
+const RETRIABLE_AXIOS_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET']
+const RETRIABLE_STATUS_CODES = [504]
 
 export function handleErrorAndThrow(
   errorDetails: IJSONObject,
   // This is thrown from app.run, which _in theory_ can be anything.
   executionError: unknown,
 ): never {
-  // Retry if we get a reasonable Retry-After header.
-  // Note that we will only retry up to our max retry limit; this limit is
-  // enforced by BullMQ and not this function).
-  if (executionError && executionError instanceof HttpError) {
-    const retryAfter = parseRetryAfter(
-      executionError.response.headers['retry-after'],
-    )
-
-    if (retryAfter !== null) {
-      throw retryAfter <= RETRY_AFTER_LIMIT_SECONDS
-        ? new RetriableError({
-            error: errorDetails,
-            delay: retryAfter,
-          })
-        : new UnrecoverableError(JSON.stringify(errorDetails))
-    }
-  }
-
-  //
-  // Other remaining retriable edge cases....
-  //
-  const errorVariable = get(errorDetails, 'details.error', '') as unknown
-  const errorString =
-    typeof errorVariable === 'string'
-      ? errorVariable
-      : JSON.stringify(errorVariable)
-
-  const statusCode = Number(get(errorDetails, 'status', 0))
-  if (!errorString && !statusCode) {
+  // Only support retrying HTTP errors for now.
+  if (!executionError || !(executionError instanceof HttpError)) {
     throw new UnrecoverableError(JSON.stringify(errorDetails))
   }
 
-  // Certain connectivity errors can be retried.
-  const isConnectivityIssue =
-    CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
-      errorString.includes(errorSign),
-    ) || CONNECTIVITY_STATUS_CODE.includes(statusCode)
-  if (isConnectivityIssue) {
+  // Handle reasonable Retry-After responses.
+  const retryAfter = parseRetryAfter(
+    executionError.response?.headers?.['retry-after'],
+  )
+
+  if (retryAfter !== null) {
+    if (retryAfter <= RETRY_AFTER_LIMIT_SECONDS) {
+      throw new RetriableError({
+        error: errorDetails,
+        delay: retryAfter,
+      })
+    }
+    throw new UnrecoverableError(`Retry-After (${retryAfter}) is too long!`)
+  }
+
+  // Handle retriable status codes
+  if (RETRIABLE_STATUS_CODES.includes(executionError.response?.status)) {
     throw new RetriableError({
       error: errorDetails,
-      delay: null,
+      delay: 'default',
+    })
+  }
+
+  // Handle retriable Axios error codes
+  if (RETRIABLE_AXIOS_ERROR_CODES.includes(executionError.errorCode)) {
+    throw new RetriableError({
+      error: errorDetails,
+      delay: 'default',
     })
   }
 
