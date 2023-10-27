@@ -1,3 +1,4 @@
+import type HttpError from '@/errors/http'
 import type { AxiosInstance, AxiosRequestConfig } from 'axios'
 
 export type IHttpClient = AxiosInstance
@@ -364,9 +365,26 @@ export interface IActionRunResult {
   nextStepMetadata?: NextStepMetadata
 }
 
+export interface IActionHttpError extends IJSONObject {
+  type: 'http'
+  details: HttpError['details']
+  status: HttpError['response']['status']
+  statusText: HttpError['response']['statusText']
+  metadata: {
+    retryAfter: number | null
+  }
+}
+
+export interface IActionAppError extends IJSONObject {
+  type: 'app'
+  error: IJSONValue
+}
+
+export type IActionError = IActionHttpError | IActionAppError
+
 export interface IActionOutput {
   data: IActionItem
-  error?: IJSONObject
+  error?: IActionError
 }
 
 export interface IActionItem {

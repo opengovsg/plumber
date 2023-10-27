@@ -1,6 +1,23 @@
 import { type BackoffStrategy, type Job } from 'bullmq'
 
+import RetriableError from '@/errors/retriable-error'
+
+import logger from './logger'
+
 export const INITIAL_DELAY_MS = 3000
+
+function computeInitialDelay(err: Error): number {
+  if (!(err instanceof RetriableError)) {
+    logger.error('Triggered BullMQ retry without RetriableError', {
+      event: 'bullmq-retry-without-retriable-error',
+    })
+    return INITIAL_DELAY_MS
+  }
+
+  return err.delay === 'default'
+    ? INITIAL_DELAY_MS
+    : Math.max(INITIAL_DELAY_MS, err.delay)
+}
 
 export const exponentialBackoffWithJitter: BackoffStrategy = function (
   attemptsMade: number,
@@ -18,17 +35,8 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   // Reference:
   // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 
-  //
-  // Edge case for 429.
-  //
-  // We need to cooldown 1 minute to support telegram 429. To provide proper
-  // fix later.
-  //
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const initialDelay_HACKFIX = err?.message?.includes('"status":429')
-    ? 60 * 1000
-    : INITIAL_DELAY_MS
+  const initialDelay = computeInitialDelay(err)
 
-  const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay_HACKFIX
+  const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay
   return prevFullDelay + Math.round(Math.random() * prevFullDelay)
 }

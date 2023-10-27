@@ -1,6 +1,7 @@
 import { type IActionRunResult, NextStepMetadata } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import { parseRetryAfter } from '@/helpers/actions'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
@@ -73,15 +74,25 @@ export const processAction = async (options: ProcessActionOptions) => {
     logger.error(error)
     if (error instanceof HttpError) {
       $.actionOutput.error = {
+        type: 'http',
         details: error.details,
         status: error.response.status,
         statusText: error.response.statusText,
+        metadata: {
+          retryAfter: parseRetryAfter(error.response?.headers['retry-after']),
+        },
       }
     } else {
       try {
-        $.actionOutput.error = JSON.parse(error.message)
+        $.actionOutput.error = {
+          type: 'app',
+          error: JSON.parse(error.message),
+        }
       } catch {
-        $.actionOutput.error = { error: error.message }
+        $.actionOutput.error = {
+          type: 'app',
+          error: error.message,
+        }
       }
     }
   }

@@ -1,7 +1,9 @@
-import { IApp, IJSONObject } from '@plumber/types'
+import type { IApp, IJSONObject } from '@plumber/types'
 
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import RetriableError from '@/errors/retriable-error'
 
 import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
 
@@ -71,23 +73,32 @@ describe('action helper functions', () => {
   })
 
   describe('error handling and retry', () => {
+    it('retries errors with Retry-After appropriately', () => {
+      // TODO: AFTER PR ALIGNMENT
+    })
+
     it.each([
-      { details: { error: 'read ECONNRESET' } },
-      { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
-      { status: 504 },
-      { status: 429 },
+      { type: 'http', details: { error: 'read ECONNRESET' } },
+      { type: 'http', details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
+      { type: 'http', status: 504 },
     ])('retries connectivity errors', (errorDetails: IJSONObject) => {
       const callback = () => handleErrorAndThrow(errorDetails)
 
       // Assert it throws, and that it doesn't throw the wrong type of error.
-      expect(callback).toThrowError(Error)
+      expect(callback).toThrowError(RetriableError)
       expect(callback).not.toThrowError(UnrecoverableError)
     })
 
     it.each([
       {}, // Edge case - empty object just in case
-      { status: 500, details: { description: 'Internal Server Error' } },
-      { error: 'connect ECONNREFUSED 1.2.3.4' },
+      { type: 'app', error: {} },
+      {
+        type: 'http',
+        status: 500,
+        details: { description: 'Internal Server Error' },
+      },
+      { type: 'http', error: 'connect ECONNREFUSED 1.2.3.4' },
+      { error: 'no type for some reason' },
     ])('does not retry other types of errors', (errorDetails) => {
       const callback = () => handleErrorAndThrow(errorDetails as IJSONObject)
       expect(callback).toThrowError(UnrecoverableError)
