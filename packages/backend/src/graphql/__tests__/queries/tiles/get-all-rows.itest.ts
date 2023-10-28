@@ -49,9 +49,7 @@ describe('get all rows query', () => {
     const rows = await getAllRows(
       null,
       {
-        input: {
-          tableId: dummyTable.id,
-        },
+        tableId: dummyTable.id,
       },
       context,
     )
@@ -77,9 +75,7 @@ describe('get all rows query', () => {
     const rows = await getAllRows(
       null,
       {
-        input: {
-          tableId: dummyTable.id,
-        },
+        tableId: dummyTable.id,
       },
       context,
     )
@@ -110,9 +106,7 @@ describe('get all rows query', () => {
     const rows = await getAllRows(
       null,
       {
-        input: {
-          tableId: dummyTable.id,
-        },
+        tableId: dummyTable.id,
       },
       context,
     )
@@ -124,9 +118,7 @@ describe('get all rows query', () => {
     const rows = await getAllRows(
       null,
       {
-        input: {
-          tableId: dummyTable.id,
-        },
+        tableId: dummyTable.id,
       },
       context,
     )
@@ -150,9 +142,7 @@ describe('get all rows query', () => {
     const rows = await getAllRows(
       null,
       {
-        input: {
-          tableId: dummyTable.id,
-        },
+        tableId: dummyTable.id,
       },
       context,
     )

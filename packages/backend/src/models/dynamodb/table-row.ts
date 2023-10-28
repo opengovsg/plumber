@@ -6,20 +6,20 @@ import { Item } from 'dynamoose/dist/Item'
 
 import { rowExistCondition, wrapDynamoDBError } from './helpers'
 
-interface CreateRowInput {
+export interface CreateRowInput {
   tableId: string
   data: Record<string, IJSONPrimitive>
 }
 
-interface UpdateRowInput {
+export interface UpdateRowInput {
   tableId: string
   rowId: string
   data: Record<string, IJSONPrimitive>
 }
 
-interface DeleteRowInput {
+export interface DeleteRowInput {
   tableId: string
-  rowId: string
+  rowIds: string[]
 }
 
 export interface TableRowSchema extends Item {
@@ -119,21 +119,23 @@ export const updateTableRow = async ({
   }
 }
 
-export const deleteTableRow = async ({
-  rowId,
+export const deleteTableRows = async ({
+  rowIds,
   tableId,
 }: DeleteRowInput): Promise<void> => {
   try {
-    await TableRow.delete(
-      {
+    let batch = []
+    for (const rowId of rowIds) {
+      batch.push({
         tableId,
         rowId,
-      },
-      {
-        // delete only if exists
-        condition: rowExistCondition(tableId, rowId),
-      },
-    )
+      })
+      if (batch.length === 25 || rowId === rowIds[rowIds.length - 1]) {
+        await TableRow.batchDelete(batch)
+        batch = []
+      }
+    }
+    return
   } catch (e: unknown) {
     wrapDynamoDBError(e)
   }
