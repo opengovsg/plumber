@@ -31,9 +31,7 @@ describe('get single table query', () => {
     const table = await getTable(
       null,
       {
-        input: {
-          tableId: dummyTable.id,
-        },
+        tableId: dummyTable.id,
       },
       context,
     )
@@ -51,9 +49,7 @@ describe('get single table query', () => {
     const table = await getTable(
       null,
       {
-        input: {
-          tableId: insertedTable.id,
-        },
+        tableId: insertedTable.id,
       },
       context,
     )
@@ -65,9 +61,7 @@ describe('get single table query', () => {
       getTable(
         null,
         {
-          input: {
-            tableId: randomUUID(),
-          },
+          tableId: randomUUID(),
         },
         context,
       ),

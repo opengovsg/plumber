@@ -1,20 +1,15 @@
-import { IJSONPrimitive } from '@plumber/types'
-
-import { createTableRow } from '@/models/dynamodb/table-row'
+import { CreateRowInput, createTableRow } from '@/models/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 type Params = {
-  input: {
-    tableId: string
-    data: Record<string, IJSONPrimitive>
-  }
+  input: CreateRowInput
 }
 
 const createRow = async (
   _parent: unknown,
   params: Params,
   context: Context,
-) => {
+): Promise<string> => {
   const { tableId, data } = params.input
   const table = await context.currentUser
     .$relatedQuery('tables')
@@ -27,7 +22,7 @@ const createRow = async (
 
   const row = await createTableRow({ tableId, data })
 
-  return row
+  return row.rowId
 }
 
 export default createRow

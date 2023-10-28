@@ -2,9 +2,7 @@ import { getAllTableRows, TableRowSchema } from '@/models/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 type Params = {
-  input: {
-    tableId: string
-  }
+  tableId: string
 }
 
 const getAllRows = async (
@@ -12,11 +10,13 @@ const getAllRows = async (
   params: Params,
   context: Context,
 ): Promise<Pick<TableRowSchema, 'rowId' | 'data'>[]> => {
-  const { tableId } = params.input
+  const { tableId } = params
   const table = await context.currentUser
     .$relatedQuery('tables')
+    .withGraphJoined('columns')
     .findById(tableId)
     .throwIfNotFound()
+    .debug()
 
   const rawRows = await getAllTableRows({ tableId })
 

@@ -1,14 +1,8 @@
-import { IJSONPrimitive } from '@plumber/types'
-
-import { updateTableRow } from '@/models/dynamodb/table-row'
+import { UpdateRowInput, updateTableRow } from '@/models/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 type Params = {
-  input: {
-    tableId: string
-    rowId: string
-    data: Record<string, IJSONPrimitive>
-  }
+  input: UpdateRowInput
 }
 
 const updateRow = async (
@@ -29,7 +23,7 @@ const updateRow = async (
 
   await updateTableRow({ tableId, rowId, data })
 
-  return true
+  return rowId
 }
 
 export default updateRow
