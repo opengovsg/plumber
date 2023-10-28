@@ -39,7 +39,7 @@ describe('update row mutation', () => {
 
     const newData = generateMockTableRowData({ columnIds: dummyColumnIds })
 
-    const success = await updateRow(
+    const updatedId = await updateRow(
       null,
       {
         input: {
@@ -54,7 +54,7 @@ describe('update row mutation', () => {
       rowId: rowToUpdate.rowId,
       tableId: dummyTable.id,
     })
-    expect(success).toBe(true)
+    expect(updatedId).toBe(rowToUpdate.rowId)
     expect(updatedRow.data).toEqual(newData)
     // check that updatedAt gets updated
     // there's a bug in terms of timestamp return type( ref: https://github.com/dynamoose/dynamoose/issues/1548 )
@@ -76,7 +76,7 @@ describe('update row mutation', () => {
     const newData = generateMockTableRowData({
       columnIds: dummyColumnIds.slice(2),
     })
-    const success = await updateRow(
+    const updatedId = await updateRow(
       null,
       {
         input: {
@@ -92,7 +92,7 @@ describe('update row mutation', () => {
       rowId: rowToUpdate.rowId,
       tableId: dummyTable.id,
     })
-    expect(success).toBe(true)
+    expect(updatedId).toBe(rowToUpdate.rowId)
     expect(updatedRow.data).toEqual(newData)
   })
 
