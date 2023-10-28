@@ -83,9 +83,7 @@ export const processAction = async (options: ProcessActionOptions) => {
       try {
         $.actionOutput.error = JSON.parse(error.message)
       } catch {
-        $.actionOutput.error = {
-          error: error.message,
-        }
+        $.actionOutput.error = { error: error.message }
       }
     }
   }
