@@ -75,20 +75,15 @@ export const processAction = async (options: ProcessActionOptions) => {
     executionError = error
     if (error instanceof HttpError) {
       $.actionOutput.error = {
-        type: 'http',
         details: error.details,
         status: error.response.status,
         statusText: error.response.statusText,
       }
     } else {
       try {
-        $.actionOutput.error = {
-          type: 'app',
-          error: JSON.parse(error.message),
-        }
+        $.actionOutput.error = JSON.parse(error.message)
       } catch {
         $.actionOutput.error = {
-          type: 'app',
           error: error.message,
         }
       }

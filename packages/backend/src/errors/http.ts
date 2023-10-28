@@ -6,7 +6,6 @@ import BaseError from './base'
 
 export default class HttpError extends BaseError {
   response: AxiosResponse
-  errorCode: Required<AxiosError>['code'] | null
 
   constructor(error: AxiosError) {
     const computedError =
@@ -22,6 +21,5 @@ export default class HttpError extends BaseError {
       headers: error.response?.headers,
       config: error.config,
     }
-    this.errorCode = error.code ?? null
   }
 }

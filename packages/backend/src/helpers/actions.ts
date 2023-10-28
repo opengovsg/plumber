@@ -1,7 +1,7 @@
 import type { IJSONObject } from '@plumber/types'
 
 import { UnrecoverableError } from 'bullmq'
-import { memoize } from 'lodash'
+import { get, memoize } from 'lodash'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
@@ -72,7 +72,7 @@ function parseRetryAfterToMs(
 }
 
 const RETRY_AFTER_LIMIT_MS = 12 * 60 * 60 * 1000 // 12 hours
-const RETRIABLE_AXIOS_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET']
+const RETRIABLE_ERROR_SUBSTRINGS = ['ETIMEDOUT', 'ECONNRESET']
 const RETRIABLE_STATUS_CODES = [504]
 
 export function handleErrorAndThrow(
@@ -108,12 +108,19 @@ export function handleErrorAndThrow(
     })
   }
 
-  // Handle retriable Axios error codes
-  if (RETRIABLE_AXIOS_ERROR_CODES.includes(executionError.errorCode)) {
-    throw new RetriableError({
-      error: errorDetails,
-      delayInMs: 'default',
-    })
+  // Handle retriable errors (identified by message substring)
+  const errorVariable = get(errorDetails, 'details.error', '') as unknown
+  const errorString =
+    typeof errorVariable === 'string'
+      ? errorVariable
+      : JSON.stringify(errorVariable)
+  for (const errorSubstring of RETRIABLE_ERROR_SUBSTRINGS) {
+    if (errorString.includes(errorSubstring)) {
+      throw new RetriableError({
+        error: errorDetails,
+        delayInMs: 'default',
+      })
+    }
   }
 
   // All other errors cannot be retried.
