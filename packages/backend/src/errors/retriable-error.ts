@@ -2,17 +2,17 @@ import BaseError from './base'
 
 interface RetriableErrorParams {
   error: ConstructorParameters<typeof BaseError>[0]
-  delay: number | 'default'
+  delayInMs: number | 'default'
 }
 
 /**
  * Throw this in a worker action body to get BullMQ to retry.
  */
 export default class RetriableError extends BaseError {
-  delay: RetriableErrorParams['delay']
+  delayInMs: RetriableErrorParams['delayInMs']
 
-  constructor({ error, delay }: RetriableErrorParams) {
+  constructor({ error, delayInMs }: RetriableErrorParams) {
     super(error)
-    this.delay = delay
+    this.delayInMs = delayInMs
   }
 }

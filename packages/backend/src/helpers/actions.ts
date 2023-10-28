@@ -43,12 +43,12 @@ export async function doesActionProcessFiles(
 }
 
 /**
- * Helper to parse Retry-After header, which can can be integer seconds or Date.
+ * Helper to parse Retry-After header, which we receive as seconds or Date.
  *
- * @returns Non-negative (>= 0) number of seconds to wait before retrying, or
- * null on failure (badly formatted value, or retry-after in the past)
+ * @returns Non-negative (>= 0) number of milliseconds to wait before retrying,
+ * or null on failure (badly formatted value, or retry-after in the past)
  */
-function parseRetryAfter(
+function parseRetryAfterToMs(
   rawHeaderValue: string | null | undefined,
 ): number | null {
   if (!rawHeaderValue) {
@@ -58,7 +58,7 @@ function parseRetryAfter(
   // Try parsing as seconds.
   let retryAfter = parseInt(rawHeaderValue)
   if (!isNaN(retryAfter)) {
-    return retryAfter >= 0 ? retryAfter : null
+    return retryAfter >= 0 ? retryAfter * 1000 : null
   }
 
   // Try parsing as date.
@@ -71,7 +71,7 @@ function parseRetryAfter(
   return retryAfter >= 0 ? retryAfter : null
 }
 
-const RETRY_AFTER_LIMIT_SECONDS = 10000
+const RETRY_AFTER_LIMIT_MS = 12 * 60 * 60 * 1000 // 12 hours
 const RETRIABLE_AXIOS_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET']
 const RETRIABLE_STATUS_CODES = [504]
 
@@ -86,25 +86,25 @@ export function handleErrorAndThrow(
   }
 
   // Handle reasonable Retry-After responses.
-  const retryAfter = parseRetryAfter(
+  const retryAfterMs = parseRetryAfterToMs(
     executionError.response?.headers?.['retry-after'],
   )
 
-  if (retryAfter !== null) {
-    if (retryAfter <= RETRY_AFTER_LIMIT_SECONDS) {
+  if (retryAfterMs !== null) {
+    if (retryAfterMs <= RETRY_AFTER_LIMIT_MS) {
       throw new RetriableError({
         error: errorDetails,
-        delay: retryAfter,
+        delayInMs: retryAfterMs,
       })
     }
-    throw new UnrecoverableError(`Retry-After (${retryAfter}) is too long!`)
+    throw new UnrecoverableError(`Retry-After (${retryAfterMs}ms) is too long!`)
   }
 
   // Handle retriable status codes
   if (RETRIABLE_STATUS_CODES.includes(executionError.response?.status)) {
     throw new RetriableError({
       error: errorDetails,
-      delay: 'default',
+      delayInMs: 'default',
     })
   }
 
@@ -112,7 +112,7 @@ export function handleErrorAndThrow(
   if (RETRIABLE_AXIOS_ERROR_CODES.includes(executionError.errorCode)) {
     throw new RetriableError({
       error: errorDetails,
-      delay: 'default',
+      delayInMs: 'default',
     })
   }
 

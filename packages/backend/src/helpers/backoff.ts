@@ -14,9 +14,11 @@ function computeInitialDelay(err: Error): number {
     return INITIAL_DELAY_MS
   }
 
-  return err.delay === 'default'
+  return err.delayInMs === 'default'
     ? INITIAL_DELAY_MS
-    : Math.max(INITIAL_DELAY_MS, err.delay)
+    : // Take max to prevent stuff like 10ms delay causing effectively zero
+      // backoff.
+      Math.max(INITIAL_DELAY_MS, err.delayInMs)
 }
 
 export const exponentialBackoffWithJitter: BackoffStrategy = function (
