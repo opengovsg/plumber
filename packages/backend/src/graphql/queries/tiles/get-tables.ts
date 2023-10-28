@@ -5,7 +5,9 @@ const getTables = async (
   _params: unknown,
   context: Context,
 ) => {
-  const tables = await context.currentUser.$relatedQuery('tables')
+  const tables = await context.currentUser
+    .$relatedQuery('tables')
+    .withGraphJoined('columns')
 
   return tables
 }

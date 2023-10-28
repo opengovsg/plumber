@@ -5,9 +5,7 @@ import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
 
 type Params = {
-  input: {
-    tableId: string
-  }
+  tableId: string
 }
 
 const getTable = async (
@@ -15,7 +13,7 @@ const getTable = async (
   params: Params,
   context: Context,
 ): Promise<SetRequired<TableMetadata, 'columns'>> => {
-  const { tableId } = params.input
+  const { tableId } = params
 
   try {
     const table = await context.currentUser
