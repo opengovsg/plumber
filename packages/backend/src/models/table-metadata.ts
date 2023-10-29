@@ -1,3 +1,5 @@
+import { ITableRow } from '@plumber/types'
+
 import Base from './base'
 import TableColumnMetadata from './table-column-metadata'
 import User from './user'
@@ -52,6 +54,22 @@ class TableMetadata extends Base {
       }
     }
     return true
+  }
+
+  async stripInvalidKeys(rows: ITableRow[]): Promise<ITableRow[]> {
+    const columns = await this.$relatedQuery('columns')
+    const columnIdsSet = new Set(columns.map((column) => column.id))
+
+    return rows.map((row) => {
+      const validKeys = Object.keys(row.data).filter((key) =>
+        columnIdsSet.has(key),
+      )
+      const validData = validKeys.reduce(
+        (acc, key) => ({ ...acc, [key]: row.data[key] }),
+        {},
+      )
+      return { ...row, data: validData }
+    })
   }
 }
 
