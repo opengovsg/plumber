@@ -1,0 +1,23 @@
+.saving {
+  background-color: #efce8b;
+}
+
+.saved {
+  background-color: transparent;
+  animation: completeSaving 1s linear;
+}
+
+@keyframes completeSaving {
+  0% {
+    background-color: #efce8b;
+  }
+  20% {
+    background-color: #98ef8b;
+  }
+  60% {
+    background-color: #98ef8b;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
