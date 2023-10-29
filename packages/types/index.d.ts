@@ -577,3 +577,9 @@ export interface IStepError {
   appName: string
   details?: IJSONObject
 }
+
+// Tiles
+export interface ITableRow {
+  rowId: string
+  data: Record<string, IJSONPrimitive>
+}
