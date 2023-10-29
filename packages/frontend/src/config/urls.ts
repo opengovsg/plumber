@@ -62,6 +62,11 @@ export const FLOWS = '/flows'
 export const FLOW = (flowId: string): string => `/editor/${flowId}`
 export const FLOW_PATTERN = '/flows/:flowId'
 
+// Tiles routes
+export const TILES = '/tiles'
+export const TILE = (tableId: string): string => `/tiles/${tableId}`
+export const TILES_PATTERN = '/tiles/:tileId' // unused for now
+
 export const DASHBOARD = FLOWS
 
 export const APP_ICON_URL = (appKey: string): string =>
