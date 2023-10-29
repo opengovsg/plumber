@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { BiHistory, BiSolidGrid } from 'react-icons/bi'
+import { BsBricks } from 'react-icons/bs'
 import { Navigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
@@ -21,6 +22,11 @@ const drawerLinks = [
     Icon: PipeIcon,
     text: 'Pipes',
     to: URLS.FLOWS,
+  },
+  {
+    Icon: BsBricks,
+    text: 'Tiles',
+    to: URLS.TILES,
   },
   {
     Icon: BiSolidGrid,
