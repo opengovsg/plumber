@@ -1,35 +1,20 @@
 import { ITableColumnMetadata, ITableRow } from '@plumber/types'
 
-import { Dispatch, useMemo, useRef, useState } from 'react'
-import { useMutation } from '@apollo/client'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Flex } from '@chakra-ui/react'
 import {
   flexRender,
   getCoreRowModel,
   Row,
-  RowData,
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { UPDATE_ROW } from 'graphql/mutations/update-row'
 
 import { createColumns } from '../helpers/columns-helper'
-import { flattenRows, GenericRowData } from '../helpers/flatten-rows'
+import { flattenRows } from '../helpers/flatten-rows'
 import { shallowCompare } from '../helpers/shallow-compare'
-
-declare module '@tanstack/react-table' {
-  interface TableMeta<TData extends RowData> {
-    editingRowId: string | null
-    setEditingRow: (fn: (x: string | null) => string | null) => void
-    updateData: (rowIndex: number, value: TData) => void
-    removeRow: (rowIndex: number) => void
-    editingCell: string | null
-    setEditingCell: Dispatch<React.SetStateAction<string | null>>
-    isSavingData: Record<string, boolean>
-    rowData: GenericRowData | null
-    setRowData: Dispatch<React.SetStateAction<GenericRowData | null>>
-  }
-}
+import { useUpdateRow } from '../hooks/useUpdateRow'
+import { CellType, GenericRowData } from '../types'
 
 interface TableProps {
   tableId: string
@@ -47,14 +32,11 @@ export default function Table({
   const parentRef = useRef<HTMLDivElement>(null)
 
   const [data, setData] = useState<GenericRowData[]>(flatData)
-  const [editingRowId, setEditingRowId] = useState<string | null>(null)
-  const [editingCell, setEditingCell] = useState<string | null>(null)
-  const [editingRowData, setEditingRowData] = useState<GenericRowData | null>(
-    null,
-  )
-  const [dataSaveState, setDataSaveState] = useState<Record<string, boolean>>(
-    {},
-  )
+  const [editingCell, setEditingCell] = useState<CellType | null>(null)
+  // We use ref instead of state to prevent re-rendering on change
+  // it's only used as a cache
+  const tempRowData = useRef<GenericRowData | null>(null)
+
   const rowVirtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => parentRef.current,
@@ -62,20 +44,37 @@ export default function Table({
     overscan: 35,
   })
 
-  const [updateRow] = useMutation(UPDATE_ROW, {
-    onCompleted: ({ updateRow: updatedRowId }) => {
-      setDataSaveState((state) => {
-        state[updatedRowId] = false
-        return { ...state }
+  const { rowsUpdating, updateRow } = useUpdateRow(tableId)
+
+  const setActiveCell = useCallback(
+    (newCell: CellType | null) => {
+      setEditingCell((currentCell) => {
+        // If no previous cell is active or same row, do nothing
+        if (currentCell?.row.id === newCell?.row.id) {
+          return newCell
+        }
+        const rowDataToSave = tempRowData.current
+        // If new cell is selected, store original row data in cache
+        if (newCell) {
+          tempRowData.current = { ...newCell?.row.original }
+        }
+        // if cache data has changed, save new data
+        if (
+          currentCell &&
+          rowDataToSave &&
+          !shallowCompare(currentCell.row.original, rowDataToSave)
+        ) {
+          updateRow(rowDataToSave)
+          setData((oldData) => {
+            oldData[currentCell.row.index] = rowDataToSave
+            return [...oldData]
+          })
+        }
+        return newCell
       })
-      setTimeout(() => {
-        setDataSaveState((state) => {
-          delete state[updatedRowId]
-          return { ...state }
-        })
-      }, 1000)
     },
-  })
+    [tempRowData, updateRow],
+  )
 
   const table = useReactTable({
     data,
@@ -84,62 +83,10 @@ export default function Table({
     getCoreRowModel: getCoreRowModel(),
     enableRowSelection: true,
     meta: {
-      isSavingData: dataSaveState,
-      editingRowId,
-      rowData: editingRowData,
-      setRowData: setEditingRowData,
-      setEditingRow: (fn: (x: string | null) => string | null) => {
-        setEditingRowId((prevEditingRowId) => {
-          const newEditingRowId = fn(prevEditingRowId)
-          if (prevEditingRowId === newEditingRowId) {
-            return newEditingRowId
-          }
-          if (prevEditingRowId) {
-            const row = table.getRow(prevEditingRowId)
-            if (row && editingRowData) {
-              if (!shallowCompare(row.original, editingRowData)) {
-                const { rowId, ...rowData } = editingRowData
-                setDataSaveState((state) => {
-                  state[rowId] = true
-                  return { ...state }
-                })
-                updateRow({
-                  variables: {
-                    input: {
-                      tableId,
-                      rowId,
-                      data: rowData,
-                    },
-                  },
-                })
-                setData((old) => {
-                  old[row.index] = editingRowData
-                  return [...old]
-                })
-              }
-            }
-          }
-          if (newEditingRowId) {
-            setEditingRowData(table.getRow(newEditingRowId)?.original ?? null)
-          }
-          return newEditingRowId
-        })
-      },
-      editingCell,
-      setEditingCell,
-      updateData: (rowIndex: number, value: GenericRowData) => {
-        setData((old) => {
-          old[rowIndex] = value
-          return [...old]
-        })
-      },
-      removeRow: (rowIndex: number) => {
-        const setFilterFunc = (old: GenericRowData[]) =>
-          old.filter(
-            (_row: GenericRowData, index: number) => index !== rowIndex,
-          )
-        setData(setFilterFunc)
-      },
+      rowsUpdating,
+      tempRowData,
+      activeCell: editingCell,
+      setActiveCell,
     },
   })
 
@@ -147,14 +94,7 @@ export default function Table({
   const virtualRows = rowVirtualizer.getVirtualItems()
 
   return (
-    <Box
-      borderRadius="lg"
-      overflow="hidden"
-      // onBlur={() => {
-      //   table.options.meta?.setEditingRow(() => null)
-      //   setEditingCell(null)
-      // }}
-    >
+    <Box borderRadius="lg" overflow="hidden">
       {table.getHeaderGroups().map((headerGroup) => (
         <Flex key={headerGroup.id}>
           {headerGroup.headers.map((header) => (
