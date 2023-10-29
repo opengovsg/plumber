@@ -21,6 +21,8 @@
     "@mui/material": "5.12.0",
     "@opengovsg/design-system-react": "1.11.0",
     "@plumber/types": "file:../types",
+    "@tanstack/react-table": "8.10.7",
+    "@tanstack/react-virtual": "3.0.0-beta.68",
     "@tiptap/extension-image": "2.1.12",
     "@tiptap/extension-link": "2.1.12",
     "@tiptap/extension-placeholder": "2.1.12",
