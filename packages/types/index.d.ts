@@ -506,3 +506,9 @@ export interface IVerifyHookOutput {
 export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
   connectionVerified: boolean
 }
+
+// Tiles
+export interface ITableRow {
+  rowId: string
+  data: Record<string, IJSONPrimitive>
+}
