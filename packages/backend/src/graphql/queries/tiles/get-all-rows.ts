@@ -16,7 +16,6 @@ const getAllRows = async (
     .withGraphJoined('columns')
     .findById(tableId)
     .throwIfNotFound()
-    .debug()
 
   const rawRows = await getAllTableRows({ tableId })
 
