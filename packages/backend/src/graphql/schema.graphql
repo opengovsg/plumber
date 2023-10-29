@@ -33,8 +33,11 @@ type Query {
     key: String!
     parameters: JSONObject
   ): JSONObject
+  # Tiles
   getTable(tableId: String!): TableMetadata!
   getTables: [TableMetadata!]!
+  # Tiles rows
+  getAllRows(tableId: String!): [TileRow!]!
   getCurrentUser: User
   healthcheck: AppHealth
 }
@@ -67,6 +70,10 @@ type Mutation {
   createTable(input: CreateTableInput!): TableMetadata!
   updateTable(input: UpdateTableInput!): TableMetadata!
   deleteTable(input: DeleteTableInput!): Boolean!
+  # Tiles rows
+  createRow(input: CreateTableRowInput!): ID!
+  updateRow(input: UpdateTableRowInput!): ID!
+  deleteRow(input: DeleteTableRowInput!): Boolean!
 }
 
 """
@@ -515,34 +522,58 @@ input CreateTableInput {
 }
 
 input TableColumnMetadataInput {
-  id: String!
+  id: ID!
   name: String
 }
 
 input UpdateTableInput {
-  id: String!
-  name: String
-  modifiedColumns: [TableColumnMetadataInput]
-  addedColumns: [String]
-  deletedColumns: [String]
+  id: ID!
+  name: String!
+  modifiedColumns: [TableColumnMetadataInput!]
+  addedColumns: [String!]
+  deletedColumns: [ID!]
 }
 
 input DeleteTableInput {
-  id: String!
+  id: ID!
 }
 
 type TableColumnMetadata {
-  id: String!
+  id: ID!
   name: String!
 }
 
 type TableMetadata {
-  id: String!
-  name: String
-  columns: [TableColumnMetadata]
+  id: ID!
+  name: String!
+  columns: [TableColumnMetadata!]
 }
 
 # End Tiles types
+
+# Start Tiles row types
+type TileRow {
+  rowId: ID!
+  data: JSONObject!
+}
+
+input CreateTableRowInput {
+  tableId: ID!
+  data: JSONObject!
+}
+
+input UpdateTableRowInput {
+  tableId: ID!
+  rowId: ID!
+  data: JSONObject!
+}
+
+input DeleteTableRowInput {
+  tableId: ID!
+  rowIds: [ID!]!
+}
+
+# End Tiles row types
 
 type AppHealth {
   version: String
