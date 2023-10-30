@@ -505,3 +505,14 @@ export interface IVerifyHookOutput {
 export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
   connectionVerified: boolean
 }
+
+export interface CustomisedHttpErrorDetails {
+  details: Record<string, unknown>
+  status: number
+  statusText: string
+}
+export interface IStepError {
+  name: string
+  solution: string
+  httpErrorDetails?: CustomisedHttpErrorDetails
+}

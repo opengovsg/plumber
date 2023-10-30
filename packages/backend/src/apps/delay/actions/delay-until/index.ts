@@ -1,3 +1,6 @@
+import { IStepError } from '@plumber/types'
+
+import StepError from '@/errors/step'
 import defineAction from '@/helpers/define-action'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
@@ -35,9 +38,12 @@ export default defineAction({
     )
 
     if (isNaN(delayTimestamp)) {
-      throw new Error(
-        'Invalid timestamp entered, please check that you keyed in the date and time in the correct format',
-      )
+      const stepError: IStepError = {
+        name: 'Delay Action Error: Invalid timestamp entered.',
+        solution:
+          'Click on set up action and check for the format of the date or time entered.',
+      }
+      throw new StepError(stepError)
     }
 
     const dataItem = {

@@ -1,5 +1,7 @@
 import { URL } from 'url'
 
+import StepError from '@/errors/step'
+import customiseHttpErrorDetails from '@/helpers/customise-http-error-details'
 import defineAction from '@/helpers/define-action'
 
 import { isUrlAllowed } from '../../common/ip-resolver'
@@ -59,14 +61,22 @@ export default defineAction({
       throw new Error('The URL you are trying to call is not allowed.')
     }
 
-    const response = await $.http.request({
-      url,
-      method,
-      data,
-      // Redirects open up way too many vulns (e.g. someone changes the
-      // redirect target to a malicious endpoint), so disable it.
-      maxRedirects: 0,
-    })
+    const response = await $.http
+      .request({
+        url,
+        method,
+        data,
+        // Redirects open up way too many vulns (e.g. someone changes the
+        // redirect target to a malicious endpoint), so disable it.
+        maxRedirects: 0,
+      })
+      .catch((err) => {
+        throw new StepError({
+          name: 'Custom API error',
+          solution: 'Check your custom app and retry again',
+          httpErrorDetails: customiseHttpErrorDetails(err),
+        })
+      })
 
     let responseData = response.data
 

@@ -1,6 +1,7 @@
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
+import StepError from '@/errors/step'
 import defineAction from '@/helpers/define-action'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
@@ -33,8 +34,15 @@ export default defineAction({
     })
 
     if (!result.success) {
-      throw fromZodError((result as SafeParseError<unknown>).error)
+      const validationError = fromZodError(
+        (result as SafeParseError<unknown>).error,
+      )
+      throw new StepError({
+        name: validationError.details[0].message,
+        solution: 'Click set up action and reconfigure the invalid field.',
+      })
     }
+
     const { recipients, newProgress } = await getRatelimitedRecipientList(
       result.data.destinationEmail,
       +progress,

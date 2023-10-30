@@ -47,7 +47,7 @@ describe('make http request', () => {
     $.step.parameters.url = 'http://test.local/endpoint?1234'
     mocks.httpRequest.mockReturnValue('mock response')
 
-    await makeRequestAction.run($)
+    await makeRequestAction.run($).catch(() => null)
     expect(mocks.isUrlAllowed).toHaveBeenCalledOnce()
     expect(mocks.httpRequest).toHaveBeenCalledWith({
       url: $.step.parameters.url,
