@@ -46,7 +46,7 @@ async function seedRows(tableId: string) {
   const columnIds = columns.map((column) => column.id)
 
   let rows = []
-  const batchPutPromises = []
+  // rows added sequentially to preserve row order
   for (let i = 0; i < ROW_COUNT; i++) {
     const row = {
       tableId,
@@ -58,11 +58,11 @@ async function seedRows(tableId: string) {
     }
     rows.push(row)
     if (rows.length === 25 || i === ROW_COUNT - 1) {
-      batchPutPromises.push(TableRow.batchPut(rows))
+      await TableRow.batchPut(rows)
+      console.log(`Seeded ${i + 1} dynamodb rows`)
       rows = []
     }
   }
-  await Promise.all(batchPutPromises)
 }
 
 seedRows(TABLE_ID).then(() => {
