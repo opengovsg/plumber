@@ -2,7 +2,7 @@ import { ITableColumnMetadata } from '@plumber/types'
 
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table'
 
-import { TableCell } from '../components/TableCell'
+import TableCell from '../components/TableCell'
 import { GenericRowData } from '../types'
 
 const columnHelper = createColumnHelper<GenericRowData>()

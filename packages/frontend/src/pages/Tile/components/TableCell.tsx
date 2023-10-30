@@ -14,13 +14,13 @@ import { CellType, GenericRowData } from '../types'
 
 import styles from './TableCell.module.css'
 
-export const TableCell = ({
+export default function TableCell({
   getValue,
   row,
   column,
   table,
   cell,
-}: CellContext<GenericRowData, string>) => {
+}: CellContext<GenericRowData, string>) {
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const tableMeta = table.options.meta
   const isEditingRow = tableMeta?.activeCell?.row.id === row.id
