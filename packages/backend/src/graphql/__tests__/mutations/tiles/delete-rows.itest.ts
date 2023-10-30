@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import deleteRow from '@/graphql/mutations/tiles/delete-row'
+import deleteRow from '@/graphql/mutations/tiles/delete-rows'
 import { TableRow } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
@@ -13,7 +13,8 @@ import {
   generateMockTableRowData,
 } from './table.mock'
 
-describe('delete row mutation', () => {
+const NUM_ROWS_TO_GENERATE = 35
+describe('delete rows mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
   let rowIds: string[] = []
@@ -32,8 +33,8 @@ describe('delete row mutation', () => {
 
     // populate with some rows
     rowIds = []
-    const items = []
-    for (let i = 0; i < 5; i++) {
+    let items = []
+    for (let i = 0; i < NUM_ROWS_TO_GENERATE; i++) {
       const rowId = randomUUID()
       items.push({
         tableId: dummyTable.id,
@@ -41,14 +42,18 @@ describe('delete row mutation', () => {
         data: generateMockTableRowData({ columnIds }),
       })
       rowIds.push(rowId)
+      if (items.length === 25 || i === NUM_ROWS_TO_GENERATE - 1) {
+        await TableRow.batchPut(items)
+        items = []
+      }
     }
-    await TableRow.batchPut(items)
   })
 
-  it('should delete row with given id', async () => {
+  it('should delete rows with given ids', async () => {
+    const slicedRows = rowIds.slice(0, 5)
     const success = await deleteRow(
       null,
-      { input: { tableId: dummyTable.id, rowId: rowIds[0] } },
+      { input: { tableId: dummyTable.id, rowIds: slicedRows } },
       context,
     )
     const { count } = await TableRow.query({
@@ -57,18 +62,36 @@ describe('delete row mutation', () => {
       .count()
       .exec()
 
-    expect(success).toEqual(true)
+    expect(success).toEqual(slicedRows)
 
-    expect(count).toEqual(4)
+    expect(count).toEqual(NUM_ROWS_TO_GENERATE - 5)
   })
 
-  it('should throw an error if row id does not exist', async () => {
+  it('should be able to delete more than 25 rows', async () => {
+    const success = await deleteRow(
+      null,
+      { input: { tableId: dummyTable.id, rowIds } },
+      context,
+    )
+    const { count } = await TableRow.query({
+      tableId: dummyTable.id,
+    })
+      .count()
+      .exec()
+
+    expect(success).toEqual(rowIds)
+
+    expect(count).toEqual(0)
+  })
+
+  it('should not throw an error if row id does not exist', async () => {
+    const invalidRowIds = ['invalid row id 123', 'invalid row id 456']
     await expect(
       deleteRow(
         null,
-        { input: { tableId: dummyTable.id, rowId: 'invalid row id 123' } },
+        { input: { tableId: dummyTable.id, rowIds: invalidRowIds } },
         context,
       ),
-    ).rejects.toThrow()
+    ).resolves.toEqual(invalidRowIds)
   })
 })
