@@ -11,6 +11,7 @@ import getFlows from './queries/get-flows'
 import getStepWithTestExecutions from './queries/get-step-with-test-executions'
 import healthcheck from './queries/healthcheck'
 import testConnection from './queries/test-connection'
+import tilesQueryResolvers from './queries/tiles'
 
 const queryResolvers = {
   getApps,
@@ -26,6 +27,7 @@ const queryResolvers = {
   getDynamicData,
   getCurrentUser,
   healthcheck,
+  ...tilesQueryResolvers,
 }
 
 export default queryResolvers
