@@ -14,13 +14,11 @@ import { EditorProvider } from 'contexts/Editor'
 import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
 import { GET_FLOW } from 'graphql/queries/get-flow'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 import EditorSnackbar from './EditorSnackbar'
 
 export default function EditorLayout(): React.ReactElement {
   const { flowId } = useParams()
-  const formatMessage = useFormatMessage()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
   const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
