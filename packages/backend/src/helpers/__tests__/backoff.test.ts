@@ -4,9 +4,13 @@ import RetriableError from '@/errors/retriable-error'
 
 import { exponentialBackoffWithJitter, INITIAL_DELAY_MS } from '../backoff'
 
+const mocks = vi.hoisted(() => ({
+  logError: vi.fn(),
+}))
+
 vi.mock('@/helpers/logger', () => ({
   default: {
-    error: vi.fn(),
+    error: mocks.logError,
   },
 }))
 
@@ -90,7 +94,7 @@ describe('Backoff', () => {
     )
   })
 
-  it('reverts to default delay if error is not RetriableError', () => {
+  it('reverts to default delay and logs if error is not RetriableError', () => {
     const err = new Error('test error')
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
@@ -101,5 +105,6 @@ describe('Backoff', () => {
     expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
       INITIAL_DELAY_MS * 4,
     )
+    expect(mocks.logError).toBeCalled()
   })
 })
