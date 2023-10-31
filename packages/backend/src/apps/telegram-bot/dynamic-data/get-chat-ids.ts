@@ -47,7 +47,7 @@ export default defineDynamicData({
     const chatIdsMap: { name: string; value: string }[] = []
     const chatIdsSet = new Set<number>()
     try {
-      const { data }: { data: TelegramGetUpdatesResponse } = await $.http.get(
+      const { data } = await $.http.get<TelegramGetUpdatesResponse>(
         getUpdatesApi,
       )
 
