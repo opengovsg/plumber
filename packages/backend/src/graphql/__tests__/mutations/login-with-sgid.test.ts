@@ -70,16 +70,16 @@ describe('Login with SGID', () => {
   it('should log users in directly if they only have 1 pocdex entry', async () => {
     const pocdexData = [
       {
-        workEmail: 'loong_loong@coffee.gov.sg',
-        agencyName: 'Ministry of Coffee',
-        departmentName: 'Baristas',
-        employmentType: 'Permanent',
-        employmentTitle: 'Chief Barista',
+        work_email: 'loong_loong@coffee.gov.sg',
+        agency_name: 'Ministry of Coffee',
+        department_name: 'Baristas',
+        employment_type: 'Permanent',
+        employment_title: 'Chief Barista',
       },
     ]
     mocks.sgidUserInfo.mockResolvedValueOnce({
       data: {
-        'pocdex.public_officer_employments': JSON.stringify(pocdexData),
+        'pocdex.public_officer_details': JSON.stringify(pocdexData),
       },
     })
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
@@ -92,14 +92,22 @@ describe('Login with SGID', () => {
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
-    expect(result.publicOfficerEmployments).toEqual(pocdexData)
+    expect(result.publicOfficerEmployments).toEqual([
+      {
+        workEmail: 'loong_loong@coffee.gov.sg',
+        agencyName: 'Ministry of Coffee',
+        departmentName: 'Baristas',
+        employmentType: 'Permanent',
+        employmentTitle: 'Chief Barista',
+      },
+    ])
   })
 
   it.each([
     // No pocdex data at all
     {},
     // Empty array from pocdex
-    { 'pocdex.public_officer_employments': '[]' },
+    { 'pocdex.public_officer_details': '[]' },
   ])(
     'should return an empty array if there is nothing from pocdex',
     async (data) => {
@@ -116,13 +124,13 @@ describe('Login with SGID', () => {
   it('should exclude pocdex entries with missing / NA work emails (failed due to no other emails scenario)', async () => {
     mocks.sgidUserInfo.mockResolvedValueOnce({
       data: {
-        'pocdex.public_officer_employments': JSON.stringify([
+        'pocdex.public_officer_details': JSON.stringify([
           {
-            workEmail: 'NA',
-            agencyName: 'Ministry of Coffee',
-            departmentName: 'Baristas',
-            employmentType: 'Permanent',
-            employmentTitle: 'Chief Barista',
+            work_email: 'NA',
+            agency_name: 'Ministry of Coffee',
+            department_name: 'Baristas',
+            employment_type: 'Permanent',
+            employment_title: 'Chief Barista',
           },
         ]),
       },
@@ -138,27 +146,27 @@ describe('Login with SGID', () => {
   it('should exclude pocdex entries with missing / NA work emails (direct login due to one other email scenario)', async () => {
     mocks.sgidUserInfo.mockResolvedValueOnce({
       data: {
-        'pocdex.public_officer_employments': JSON.stringify([
+        'pocdex.public_officer_details': JSON.stringify([
           {
-            workEmail: 'NA',
-            agencyName: 'Ministry of Coffee',
-            departmentName: 'Baristas',
-            employmentType: 'Permanent',
-            employmentTitle: 'Chief Barista',
+            work_email: 'NA',
+            agency_name: 'Ministry of Coffee',
+            department_name: 'Baristas',
+            employment_type: 'Permanent',
+            employment_title: 'Chief Barista',
           },
           {
-            workEmail: 'NA',
-            agencyName: 'Ministry of Macarons',
-            departmentName: 'Tasting',
-            employmentType: 'Permanent',
-            employmentTitle: 'Chief Taste Tester',
+            work_email: 'NA',
+            agency_name: 'Ministry of Macarons',
+            department_name: 'Tasting',
+            employment_type: 'Permanent',
+            employment_title: 'Chief Taste Tester',
           },
           {
-            workEmail: 'loong@tea.gov.sg',
-            agencyName: 'Ministry of Tea',
-            departmentName: 'Drinkers',
-            employmentType: 'Permanent',
-            employmentTitle: 'Tea Chugger Extraordinaire',
+            work_email: 'loong@tea.gov.sg',
+            agency_name: 'Ministry of Tea',
+            department_name: 'Drinkers',
+            employment_type: 'Permanent',
+            employment_title: 'Tea Chugger Extraordinaire',
           },
         ]),
       },
@@ -187,17 +195,17 @@ describe('Login with SGID', () => {
     async ({ isWhitelisted }) => {
       const pocdexData = [
         {
-          workEmail: 'loong_loong@gahmen-coffee.com.sg',
-          agencyName: 'Coffee Research Institute',
-          departmentName: 'Beanology',
-          employmentType: 'Permanent',
-          employmentTitle: 'Bean Scientist',
+          work_email: 'loong_loong@gahmen-coffee.com.sg',
+          agency_name: 'Coffee Research Institute',
+          department_name: 'Beanology',
+          employment_type: 'Permanent',
+          employment_title: 'Bean Scientist',
         },
       ]
       mocks.isWhitelistedEmail.mockResolvedValueOnce(isWhitelisted)
       mocks.sgidUserInfo.mockResolvedValueOnce({
         data: {
-          'pocdex.public_officer_employments': JSON.stringify(pocdexData),
+          'pocdex.public_officer_details': JSON.stringify(pocdexData),
         },
       })
       mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
@@ -210,7 +218,15 @@ describe('Login with SGID', () => {
         expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
           userId: 'abc-def',
         })
-        expect(result.publicOfficerEmployments).toEqual(pocdexData)
+        expect(result.publicOfficerEmployments).toEqual([
+          {
+            workEmail: 'loong_loong@gahmen-coffee.com.sg',
+            agencyName: 'Coffee Research Institute',
+            departmentName: 'Beanology',
+            employmentType: 'Permanent',
+            employmentTitle: 'Bean Scientist',
+          },
+        ])
       } else {
         expect(mocks.getOrCreateUser).not.toBeCalled()
         expect(mocks.setAuthCookie).not.toBeCalled()
@@ -222,7 +238,7 @@ describe('Login with SGID', () => {
   it('should log error when POCDEX parsing fails', async () => {
     mocks.sgidUserInfo.mockResolvedValueOnce({
       data: {
-        'pocdex.public_officer_employments': '[Invalid JSON string',
+        'pocdex.public_officer_details': '[Invalid JSON string',
       },
     })
 
@@ -232,7 +248,10 @@ describe('Login with SGID', () => {
 
     expect(mocks.logError).toBeCalledWith(
       'Received malformed data from POCDEX',
-      { event: 'sgid-login-malformed-pocdex', rawData: '[Invalid JSON string' },
+      {
+        event: 'sgid-login-malformed-pocdex',
+        pocdexString: '[Invalid JSON string',
+      },
     )
     expect(mocks.getOrCreateUser).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
@@ -258,39 +277,39 @@ describe('Login with SGID', () => {
     const pocdexData = [
       // Should be included.
       {
-        workEmail: 'loong_loong@potato.gov.sg',
-        agencyName: 'Ministry of Potato Chips',
-        departmentName: 'Flavouring',
-        employmentType: 'Permanent',
-        employmentTitle: 'Sea Salt Scientist',
+        work_email: 'loong_loong@potato.gov.sg',
+        agency_name: 'Ministry of Potato Chips',
+        department_name: 'Flavouring',
+        employment_type: 'Permanent',
+        employment_title: 'Sea Salt Scientist',
       },
       {
-        workEmail: 'loong@tea.gov.sg',
-        agencyName: 'Ministry of Tea',
-        departmentName: 'Drinkers',
-        employmentType: 'Permanent',
-        employmentTitle: 'Tea Chugger Extraordinaire',
+        work_email: 'loong@tea.gov.sg',
+        agency_name: 'Ministry of Tea',
+        department_name: 'Drinkers',
+        employment_type: 'Permanent',
+        employment_title: 'Tea Chugger Extraordinaire',
       },
 
       // Should be filtered out
       {
-        workEmail: 'NA',
-        agencyName: 'Ministry of Macarons',
-        departmentName: 'Tasting',
-        employmentType: 'Permanent',
-        employmentTitle: 'Chief Taste Tester',
+        work_email: 'NA',
+        agency_name: 'Ministry of Macarons',
+        department_name: 'Tasting',
+        employment_type: 'Permanent',
+        employment_title: 'Chief Taste Tester',
       },
       {
-        workEmail: 'wee@non-whitelisted-glc.com.sg',
-        agencyName: 'Non-whitelisted GLC',
-        departmentName: 'Herp',
-        employmentType: 'Permanent',
-        employmentTitle: 'Derp',
+        work_email: 'wee@non-whitelisted-glc.com.sg',
+        agency_name: 'Non-whitelisted GLC',
+        department_name: 'Herp',
+        employment_type: 'Permanent',
+        employment_title: 'Derp',
       },
     ]
     mocks.sgidUserInfo.mockResolvedValueOnce({
       data: {
-        'pocdex.public_officer_employments': JSON.stringify(pocdexData),
+        'pocdex.public_officer_details': JSON.stringify(pocdexData),
       },
     })
     const expectedEntries = [
@@ -327,20 +346,20 @@ describe('Login with SGID', () => {
   it("should convert non-email 'NA' values to null before returning POCDEX entries", async () => {
     mocks.sgidUserInfo.mockResolvedValueOnce({
       data: {
-        'pocdex.public_officer_employments': JSON.stringify([
+        'pocdex.public_officer_details': JSON.stringify([
           {
-            workEmail: 'loong_loong@potato.gov.sg',
-            agencyName: 'NA',
-            departmentName: 'NA',
-            employmentType: 'NA',
-            employmentTitle: 'NA',
+            work_email: 'loong_loong@potato.gov.sg',
+            agency_name: 'NA',
+            department_name: 'NA',
+            employment_type: 'NA',
+            employment_title: 'NA',
           },
           {
-            workEmail: 'loong@tea.gov.sg',
-            agencyName: 'Ministry of Tea',
-            departmentName: 'NA',
-            employmentType: 'NA',
-            employmentTitle: 'Tea Chugger Extraordinaire',
+            work_email: 'loong@tea.gov.sg',
+            agency_name: 'Ministry of Tea',
+            department_name: 'NA',
+            employment_type: 'NA',
+            employment_title: 'Tea Chugger Extraordinaire',
           },
         ]),
       },

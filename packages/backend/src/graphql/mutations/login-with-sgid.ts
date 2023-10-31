@@ -24,40 +24,54 @@ function setSignedCookie<T extends object>(res: Response, data: T): void {
   })
 }
 
-async function parsePocdexEmployments(
-  rawData: string,
-): Promise<PublicOfficerEmployment[]> {
-  let allEmployments: PublicOfficerEmployment[] = []
+// POCDEX returns snake case and 'NA' instead of null
+interface RawPocdexData {
+  work_email: string | 'NA'
+  agency_name: string | 'NA'
+  department_name: string | 'NA'
+  employment_type: string | 'NA'
+  employment_title: string | 'NA'
+}
 
+function makeNaNull(value: string | 'NA'): string | null {
+  return value === 'NA' ? null : value
+}
+
+async function parsePocdexData(
+  pocdexString: string,
+): Promise<PublicOfficerEmployment[]> {
+  const result: PublicOfficerEmployment[] = []
+
+  // Parse & convert POCDEX data into a more conventional format:
+  // * camelCase
+  // * null instead of 'NA'
   try {
-    allEmployments = JSON.parse(rawData) as PublicOfficerEmployment[]
+    for (const pocdexDatum of JSON.parse(pocdexString) as RawPocdexData[]) {
+      result.push({
+        workEmail: makeNaNull(pocdexDatum.work_email),
+        agencyName: makeNaNull(pocdexDatum.agency_name),
+        departmentName: makeNaNull(pocdexDatum.department_name),
+        employmentType: makeNaNull(pocdexDatum.employment_type),
+        employmentTitle: makeNaNull(pocdexDatum.employment_title),
+      })
+    }
   } catch {
     logger.error('Received malformed data from POCDEX', {
       event: 'sgid-login-malformed-pocdex',
-      rawData,
+      pocdexString,
     })
     throw new Error('Received malformed data from POCDEX')
   }
 
-  // POCDEX returns 'NA' instead of null, let's fix that.
-  allEmployments = allEmployments.map((employment) => {
-    for (const [k, v] of Object.entries(employment)) {
-      if (v === 'NA') {
-        employment[k as keyof PublicOfficerEmployment] = null
-      }
-    }
-    return employment
-  })
-
-  const validEmployments = await Promise.all(
-    allEmployments.map(
+  // Ignore entries with bad work emails.
+  const validResults = await Promise.all(
+    result.map(
       async (employment) =>
         employment.workEmail &&
         (await validateAndParseEmail(employment.workEmail)),
     ),
   )
-
-  return allEmployments.filter((_, index) => validEmployments[index])
+  return result.filter((_, index) => validResults[index])
 }
 
 interface LoginWithSgidParams {
@@ -103,8 +117,8 @@ export default async function loginWithSgid(
     throw error
   }
 
-  const publicOfficerEmployments = await parsePocdexEmployments(
-    userInfo.data?.['pocdex.public_officer_employments'] ?? '[]',
+  const publicOfficerEmployments = await parsePocdexData(
+    userInfo.data?.['pocdex.public_officer_details'] ?? '[]',
   )
 
   //
