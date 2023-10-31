@@ -1,8 +1,10 @@
 import type { IApp, IJSONObject } from '@plumber/types'
 
+import type { AxiosError } from 'axios'
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 
 import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
@@ -73,34 +75,162 @@ describe('action helper functions', () => {
   })
 
   describe('error handling and retry', () => {
-    it('retries errors with Retry-After appropriately', () => {
-      // TODO: AFTER PR ALIGNMENT
+    const EMPTY_HTTP_ERROR = new HttpError({} as unknown as AxiosError)
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it.each([
+      { retryAfter: '31 Oct 2023 00:01:00 GMT', expectedResult: 60000 },
+      { retryAfter: '15', expectedResult: 15000 },
+    ])(
+      'retries if valid Retry-After ($retryAfter) is in headers',
+      ({ retryAfter, expectedResult }) => {
+        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+
+        const error = new HttpError({
+          response: {
+            headers: {
+              'retry-after': retryAfter,
+            },
+          },
+        } as unknown as AxiosError)
+
+        try {
+          handleErrorAndThrow({}, error)
+        } catch (e) {
+          expect(e instanceof RetriableError).toEqual(true)
+          expect((e as RetriableError).delayInMs).toEqual(expectedResult)
+        }
+      },
+    )
+
+    it.each([
+      { retryAfter: '31 Nov 2023 00:01:00 GMT' },
+      { retryAfter: '2000000' },
+    ])(
+      'does not retry Retry-After ($retryAfter) if wait is too long',
+      ({ retryAfter }) => {
+        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+        const error = new HttpError({
+          response: {
+            headers: {
+              'retry-after': retryAfter,
+            },
+          },
+        } as unknown as AxiosError)
+
+        try {
+          handleErrorAndThrow({}, error)
+        } catch (e) {
+          expect(e instanceof UnrecoverableError).toEqual(true)
+          expect(
+            (e as UnrecoverableError).message.endsWith('is too long!'),
+          ).toEqual(true)
+        }
+      },
+    )
+
+    it.each([
+      { retryAfter: '' },
+      { retryAfter: 'not a date string derp' },
+      { retryAfter: '-200' },
+    ])(
+      'does not retry Retry-After if value ("$retryAfter") is invalid',
+      ({ retryAfter }) => {
+        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+        const error = new HttpError({
+          response: {
+            headers: {
+              'retry-after': retryAfter,
+            },
+          },
+        } as unknown as AxiosError)
+
+        expect(() => handleErrorAndThrow({}, error)).toThrowError(
+          UnrecoverableError,
+        )
+      },
+    )
+
+    it.each([504, 429])('retries some http status codes (%d)', (code) => {
+      expect(() =>
+        handleErrorAndThrow(
+          {},
+          new HttpError({
+            response: {
+              status: code,
+            },
+          } as unknown as AxiosError),
+        ),
+      ).toThrowError(RetriableError)
     })
 
     it.each([
       { details: { error: 'read ECONNRESET' } },
       { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
-      { status: 504 },
-    ])('retries connectivity errors', (errorDetails: IJSONObject) => {
-      const callback = () => handleErrorAndThrow(errorDetails, null)
-
-      // Assert it throws, and that it doesn't throw the wrong type of error.
-      expect(callback).toThrowError(RetriableError)
-      expect(callback).not.toThrowError(UnrecoverableError)
-    })
+    ])(
+      'retries errors with retriable messages ($details.error)',
+      (errorDetails: IJSONObject) => {
+        expect(() =>
+          handleErrorAndThrow(errorDetails, EMPTY_HTTP_ERROR),
+        ).toThrowError(RetriableError)
+      },
+    )
 
     it.each([
-      {}, // Edge case - empty object just in case
       {
-        status: 500,
-        details: { description: 'Internal Server Error' },
+        errorDetails: {
+          status: 500,
+          details: { description: 'Internal Server Error' },
+        },
+        executionError: EMPTY_HTTP_ERROR,
       },
-      { error: 'connect ECONNREFUSED 1.2.3.4' },
-      { error: 'no type for some reason' },
-    ])('does not retry other types of errors', (errorDetails) => {
-      const callback = () =>
-        handleErrorAndThrow(errorDetails as IJSONObject, null)
-      expect(callback).toThrowError(UnrecoverableError)
-    })
+      {
+        errorDetails: { error: 'connect ECONNREFUSED 1.2.3.4' },
+        executionError: EMPTY_HTTP_ERROR,
+      },
+      {
+        errorDetails: { error: 'no type for some reason' },
+        executionError: EMPTY_HTTP_ERROR,
+      },
+      // Edge case: empty error details
+      { errorDetails: {}, executionError: EMPTY_HTTP_ERROR },
+      // Edge cases: non-error-type execution error
+      {
+        errorDetails: { error: 'loong was here' },
+        executionError: 'some string',
+      },
+      {
+        errorDetails: { error: 'loong was here' },
+        executionError: 42,
+      },
+      {
+        errorDetails: { error: 'loong was here' },
+        executionError: null,
+      },
+      {
+        errorDetails: { error: 'loong was here' },
+        executionError: undefined,
+      },
+    ])(
+      'does not retry other types of errors',
+      ({
+        errorDetails,
+        executionError,
+      }: {
+        errorDetails: IJSONObject
+        executionError: unknown
+      }) => {
+        expect(() =>
+          handleErrorAndThrow(errorDetails, executionError),
+        ).toThrowError(UnrecoverableError)
+      },
+    )
   })
 })

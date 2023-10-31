@@ -15,29 +15,70 @@ describe('Backoff', () => {
     vi.restoreAllMocks()
   })
 
-  //
-  // TODO: MORE TESTS AFTER PR
-  //
+  it.each([
+    {
+      delayInMs: 'default' as const,
+      expectedBaseDelay: INITIAL_DELAY_MS,
+    },
+    { delayInMs: 5000, expectedBaseDelay: 5000 },
+  ])(
+    'applies jitter (delayInMs = $delayInMs)',
+    ({ delayInMs, expectedBaseDelay }) => {
+      const err = new RetriableError({
+        error: 'test error',
+        delayInMs,
+      })
+      vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
-  it('applies jitter for errors without a specified delay', () => {
-    const err = new RetriableError({ error: 'test error', delay: null })
-    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+      expect(exponentialBackoffWithJitter(1, null, err)).toEqual(
+        expectedBaseDelay + expectedBaseDelay / 2,
+      )
+      expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+        expectedBaseDelay * 2 /* Full delay for 1st retry */ +
+          expectedBaseDelay /* 50% of full delay*/,
+      )
+      expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+        expectedBaseDelay * 4 /* Full delay for 2nd retry */ +
+          expectedBaseDelay * 2 /* 50% of full delay*/,
+      )
+    },
+  )
 
-    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(
-      INITIAL_DELAY_MS + INITIAL_DELAY_MS / 2,
-    )
-    expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
-      INITIAL_DELAY_MS * 2 /* Full delay for 1st retry */ +
-        INITIAL_DELAY_MS /* 50% of full delay*/,
-    )
-    expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
-      INITIAL_DELAY_MS * 4 /* Full delay for 2nd retry */ +
-        INITIAL_DELAY_MS * 2 /* 50% of full delay*/,
-    )
-  })
+  it.each([
+    {
+      delayInMs: 'default' as const,
+      expectedBaseDelay: INITIAL_DELAY_MS,
+    },
+    { delayInMs: 5000, expectedBaseDelay: 5000 },
+  ])(
+    'will wait at least the full duration of the previous default delay',
+    ({ delayInMs, expectedBaseDelay }) => {
+      const err = new RetriableError({
+        error: 'test error',
+        delayInMs,
+      })
+      vi.spyOn(Math, 'random').mockReturnValue(0)
 
-  it('will wait at least the full duration of the previous default delay', () => {
-    const err = new RetriableError({ error: 'test error', delay: null })
+      expect(exponentialBackoffWithJitter(1, null, err)).toEqual(
+        expectedBaseDelay,
+      )
+      expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+        expectedBaseDelay * 2,
+      )
+      expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+        expectedBaseDelay * 4,
+      )
+      expect(exponentialBackoffWithJitter(4, null, err)).toEqual(
+        expectedBaseDelay * 8,
+      )
+    },
+  )
+
+  it('reverts to default delay if specified delay is too small', () => {
+    const err = new RetriableError({
+      error: 'test error',
+      delayInMs: 10,
+    })
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
     expect(exponentialBackoffWithJitter(1, null, err)).toEqual(INITIAL_DELAY_MS)
@@ -47,10 +88,18 @@ describe('Backoff', () => {
     expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
       INITIAL_DELAY_MS * 4,
     )
-    expect(exponentialBackoffWithJitter(4, null, err)).toEqual(
-      INITIAL_DELAY_MS * 8,
-    )
   })
 
-  it('makes  the base delay if specified ')
+  it('reverts to default delay if error is not RetriableError', () => {
+    const err = new Error('test error')
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(INITIAL_DELAY_MS)
+    expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+      INITIAL_DELAY_MS * 2,
+    )
+    expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+      INITIAL_DELAY_MS * 4,
+    )
+  })
 })
