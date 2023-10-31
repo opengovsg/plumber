@@ -15,7 +15,7 @@ describe('Test getDataOutMetadata', () => {
     expect(testMetadata.pretty_date.label).toEqual('Date')
   })
 
-  it('pretty_date to convert to Date', async () => {
+  it('pretty_time to convert to Time', async () => {
     const testExecutionStep = {
       dataOut: {
         pretty_time: {},
@@ -25,7 +25,7 @@ describe('Test getDataOutMetadata', () => {
     expect(testMetadata.pretty_time.label).toEqual('Time')
   })
 
-  it('pretty_date to convert to Date', async () => {
+  it('ISO_date_time to convert to date and time', async () => {
     const testExecutionStep = {
       dataOut: {
         ISO_date_time: {},
@@ -35,7 +35,7 @@ describe('Test getDataOutMetadata', () => {
     expect(testMetadata.ISO_date_time.label).toEqual('Standard date and time')
   })
 
-  it('pretty_date to convert to Date', async () => {
+  it('pretty_day_of_week to convert to day of the week', async () => {
     const testExecutionStep = {
       dataOut: {
         pretty_day_of_week: {},
