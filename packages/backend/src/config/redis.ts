@@ -1,4 +1,4 @@
-import iosRedis from 'ioredis'
+import ioRedis from 'ioredis'
 
 import appConfig from './app'
 
@@ -10,7 +10,7 @@ export const REDIS_DB_INDEX = {
 
 export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
   appConfig.redisClusterMode
-    ? new iosRedis.Cluster(
+    ? new ioRedis.Cluster(
         [
           {
             host: appConfig.redisHost,
@@ -27,7 +27,7 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
           },
         },
       )
-    : new iosRedis({
+    : new ioRedis({
         host: appConfig.redisHost,
         port: appConfig.redisPort,
         tls: appConfig.redisTls ? {} : undefined,

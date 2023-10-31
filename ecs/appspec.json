@@ -5,9 +5,9 @@
       "TargetService": {
         "Type": "AWS::ECS::Service",
         "Properties": {
-          "TaskDefinition": "arn:aws:ecs:ap-southeast-1:<AWS_ACCOUNT_ID>:task-definition/plumber-<ENVIRONMENT>-ecs-<SERVICE>:1",
+          "TaskDefinition": "arn:aws:ecs:ap-southeast-1:<AWS_ACCOUNT_ID>:task-definition/plumber-<ENVIRONMENT>-ecs:1",
           "LoadBalancerInfo": {
-            "ContainerName": "app",
+            "ContainerName": "server",
             "ContainerPort": 8080
           }
         }

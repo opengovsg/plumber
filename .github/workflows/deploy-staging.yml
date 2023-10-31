@@ -20,8 +20,6 @@ jobs:
       ecr-repository: 'plumber-staging'
       ecs-cluster-name: 'plumber-staging-ecs'
       ecs-service-name: 'plumber-staging-ecs-service'
-      ecs-worker-service-name: 'plumber-staging-ecs-worker-service'
-      ecs-container-name: 'app'
       codedeploy-application: 'plumber-staging-ecs-app'
       codedeploy-deployment-group: 'plumber-staging-ecs-dg'
       release-version: ${{ github.sha }}
