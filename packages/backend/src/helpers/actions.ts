@@ -56,7 +56,7 @@ function parseRetryAfterToMs(
   }
 
   // Try parsing as seconds.
-  let retryAfter = parseInt(rawHeaderValue)
+  let retryAfter = Number(rawHeaderValue)
   if (!isNaN(retryAfter)) {
     return retryAfter >= 0 ? retryAfter * 1000 : null
   }
@@ -73,7 +73,10 @@ function parseRetryAfterToMs(
 
 const RETRY_AFTER_LIMIT_MS = 12 * 60 * 60 * 1000 // 12 hours
 const RETRIABLE_ERROR_SUBSTRINGS = ['ETIMEDOUT', 'ECONNRESET']
-const RETRIABLE_STATUS_CODES = [504]
+const RETRIABLE_STATUS_CODES = [
+  504,
+  429, // Some 429s may not have Retry-After
+]
 
 export function handleErrorAndThrow(
   errorDetails: IJSONObject,
@@ -109,11 +112,7 @@ export function handleErrorAndThrow(
   }
 
   // Handle retriable errors (identified by message substring)
-  const errorVariable = get(errorDetails, 'details.error', '') as unknown
-  const errorString =
-    typeof errorVariable === 'string'
-      ? errorVariable
-      : JSON.stringify(errorVariable)
+  const errorString = JSON.stringify(get(errorDetails, 'details.error', ''))
   for (const errorSubstring of RETRIABLE_ERROR_SUBSTRINGS) {
     if (errorString.includes(errorSubstring)) {
       throw new RetriableError({
