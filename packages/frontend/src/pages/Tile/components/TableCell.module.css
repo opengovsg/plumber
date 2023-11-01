@@ -1,5 +1,5 @@
 .saving {
-  background-color: #efce8b;
+  background-color: #ffeac0;
 }
 
 .saved {
@@ -9,13 +9,13 @@
 
 @keyframes completeSaving {
   0% {
-    background-color: #efce8b;
+    background-color: #ffeac0;
   }
   20% {
-    background-color: #98ef8b;
+    background-color: #9af5ab;
   }
   60% {
-    background-color: #98ef8b;
+    background-color: #9af5ab;
   }
   100% {
     background-color: transparent;

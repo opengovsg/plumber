@@ -3,7 +3,6 @@ import { ITableMetadata, ITableRow } from '@plumber/types'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex, Spinner, Text } from '@chakra-ui/react'
-import Container from 'components/Container'
 import { GET_ALL_ROWS } from 'graphql/queries/get-all-rows'
 import { GET_TABLE } from 'graphql/queries/get-table'
 
@@ -47,16 +46,15 @@ export default function Tile(): JSX.Element {
   const { getAllRows: rows } = getAllRowsData
 
   return (
-    <Container py={7}>
-      <Flex
-        flexDir={{ base: 'column' }}
-        justifyContent="space-between"
-        alignItems="stretch"
-        gap={4}
-      >
-        <Text textStyle="h4">{name}</Text>
-        <Table tableId={id} tableColumns={columns} tableRows={rows} />
-      </Flex>
-    </Container>
+    <Flex
+      flexDir={{ base: 'column' }}
+      justifyContent="space-between"
+      alignItems="stretch"
+      gap={4}
+      p={8}
+    >
+      <Text textStyle="h4">{name}</Text>
+      <Table tableId={id} tableColumns={columns} tableRows={rows} />
+    </Flex>
   )
 }

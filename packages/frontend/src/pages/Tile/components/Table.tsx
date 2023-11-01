@@ -1,7 +1,7 @@
 import { ITableColumnMetadata, ITableRow } from '@plumber/types'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { Box, Flex } from '@chakra-ui/react'
+import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
   flexRender,
   getCoreRowModel,
@@ -10,11 +10,16 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
+import { DELAY, NEW_ROW_ID } from '../constants'
 import { createColumns } from '../helpers/columns-helper'
 import { flattenRows } from '../helpers/flatten-rows'
+import { scrollToBottom } from '../helpers/scroll-helper'
 import { shallowCompare } from '../helpers/shallow-compare'
+import { useCreateRow } from '../hooks/useCreateRow'
 import { useUpdateRow } from '../hooks/useUpdateRow'
 import { CellType, GenericRowData } from '../types'
+
+import TableFooter from './TableFooter'
 
 interface TableProps {
   tableId: string
@@ -37,14 +42,20 @@ export default function Table({
   // it's only used as a cache
   const tempRowData = useRef<GenericRowData | null>(null)
 
+  const isAddingNewRow = data[data.length - 1].rowId === NEW_ROW_ID
+
   const rowVirtualizer = useVirtualizer({
-    count: data.length,
+    count: isAddingNewRow ? data.length - 1 : data.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 46,
+    estimateSize: useCallback(
+      (index) => (index === editingCell?.row.index ? 132 : 50),
+      [editingCell?.row.index],
+    ),
     overscan: 35,
   })
 
-  const { rowsUpdating, updateRow } = useUpdateRow(tableId)
+  const { rowsUpdating, updateRow } = useUpdateRow(tableId, setData)
+  const { rowsCreated, createRow } = useCreateRow(tableId, setData)
 
   const setActiveCell = useCallback(
     (newCell: CellType | null) => {
@@ -53,6 +64,7 @@ export default function Table({
         if (currentCell?.row.id === newCell?.row.id) {
           return newCell
         }
+        rowVirtualizer.measure()
         const rowDataToSave = tempRowData.current
         // If new cell is selected, store original row data in cache
         if (newCell) {
@@ -64,17 +76,31 @@ export default function Table({
           rowDataToSave &&
           !shallowCompare(currentCell.row.original, rowDataToSave)
         ) {
-          updateRow(rowDataToSave)
-          setData((oldData) => {
-            oldData[currentCell.row.index] = rowDataToSave
-            return [...oldData]
-          })
+          if (rowDataToSave.rowId !== NEW_ROW_ID) {
+            // update row
+            updateRow(rowDataToSave)
+          } else {
+            // add new row
+            createRow(rowDataToSave)
+            scrollToBottom(parentRef)
+          }
         }
         return newCell
       })
     },
-    [tempRowData, updateRow],
+    [createRow, rowVirtualizer, updateRow],
   )
+
+  const addNewRow = useCallback(() => {
+    if (!isAddingNewRow) {
+      const newRow = {
+        rowId: NEW_ROW_ID,
+      } as GenericRowData
+      setData((data) => [...data, newRow])
+    } else {
+      setData((data) => data.slice(0, data.length - 1))
+    }
+  }, [isAddingNewRow])
 
   const table = useReactTable({
     data,
@@ -84,9 +110,32 @@ export default function Table({
     enableRowSelection: true,
     meta: {
       rowsUpdating,
+      rowsCreated,
       tempRowData,
       activeCell: editingCell,
       setActiveCell,
+      addNewRow,
+      isAddingNewRow,
+      focusOnNewRow: () => {
+        setTimeout(() => {
+          try {
+            const newRowCell = table
+              .getRow(NEW_ROW_ID)
+              ?.getVisibleCells()[0] as CellType | null
+            setActiveCell(newRowCell)
+          } catch (_) {
+            // no newRow found, do nothing
+          }
+        }, DELAY.FOCUS_CELL)
+      },
+    },
+  })
+
+  // Handle click outside of table
+  useOutsideClick({
+    ref: parentRef,
+    handler: () => {
+      setActiveCell(null)
     },
   })
 
@@ -118,38 +167,33 @@ export default function Table({
           ))}
         </Flex>
       ))}
+
       <Box
         ref={parentRef}
-        h="calc(100vh - 250px)"
-        minH="600px"
+        h="calc(100vh - 300px)"
+        minH="300px"
         overflow="auto"
         position="relative"
         borderColor="primary.800"
-        borderBottomRadius="lg"
         borderWidth={1}
+        borderY="none"
       >
-        <Box height={rowVirtualizer.getTotalSize()} width="100%">
-          {virtualRows.map((virtualRow, index) => {
+        <Box h={rowVirtualizer.getTotalSize()} w="100%">
+          {virtualRows.map((virtualRow) => {
             const row = rows[virtualRow.index] as Row<GenericRowData>
             return (
               <Flex
                 key={row.id}
-                transform={`translateY(${
-                  virtualRow.start - index * virtualRow.size
-                }px)`}
+                w="100%"
+                position="absolute"
+                transform={`translateY(${virtualRow.start}px)`}
                 alignItems="stretch"
                 _even={{
                   bg: 'primary.50',
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <Flex
-                    key={cell.id}
-                    flexGrow={1}
-                    flexShrink={0}
-                    minH={virtualRow.size}
-                    padding={0}
-                  >
+                  <Flex key={cell.id} w="100%" padding={0}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </Flex>
                 ))}
@@ -157,8 +201,25 @@ export default function Table({
             )
           })}
         </Box>
+        {isAddingNewRow && (
+          <Flex
+            w="100%"
+            position="sticky"
+            bottom={0}
+            alignItems="stretch"
+            bg="white"
+            borderTopWidth={1}
+            borderTopColor="primary.800"
+          >
+            {rows[rows.length - 1].getVisibleCells().map((cell) => (
+              <Flex key={cell.id} w="100%" padding={0}>
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </Flex>
+            ))}
+          </Flex>
+        )}
       </Box>
-      {/* <pre>{JSON.stringify(data, null, "\t")}</pre> */}
+      <TableFooter table={table} parentRef={parentRef} />
     </Box>
   )
 }
