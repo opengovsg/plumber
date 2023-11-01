@@ -7,7 +7,11 @@ declare module '@tanstack/react-table' {
     activeCell: CellType | null
     setActiveCell: (newCell: CellType | null) => void
     rowsUpdating: Record<string, boolean>
+    rowsCreated: Set<string>
     tempRowData: MutableRefObject<GenericRowData | null>
+    addNewRow: () => void
+    isAddingNewRow: boolean
+    focusOnNewRow: () => void
   }
 }
 

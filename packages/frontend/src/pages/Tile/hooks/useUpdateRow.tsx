@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { Dispatch, SetStateAction, useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { UPDATE_ROW } from 'graphql/mutations/update-row'
 
@@ -16,7 +16,10 @@ interface UpdateRowOutput {
   updateRow: string
 }
 
-export function useUpdateRow(tableId: string) {
+export function useUpdateRow(
+  tableId: string,
+  setData: Dispatch<SetStateAction<GenericRowData[]>>,
+) {
   const [rowsUpdating, setRowsUpdating] = useState<Record<string, boolean>>({})
 
   const [updateRowMutation] = useMutation<UpdateRowOutput, UpdateRowInput>(
@@ -41,10 +44,15 @@ export function useUpdateRow(tableId: string) {
     async (updatedRow: GenericRowData) => {
       const { rowId, ...data } = updatedRow
       setRowsUpdating((oldState) => {
-        oldState[updatedRow.rowId] = true
+        oldState[rowId] = true
         return { ...oldState }
       })
-      return updateRowMutation({
+      setData((oldData) => {
+        const rowIndex = oldData.findIndex((row) => row.rowId === rowId)
+        oldData[rowIndex] = updatedRow
+        return [...oldData]
+      })
+      await updateRowMutation({
         variables: {
           input: {
             tableId,
@@ -54,7 +62,7 @@ export function useUpdateRow(tableId: string) {
         },
       })
     },
-    [tableId, updateRowMutation],
+    [setData, tableId, updateRowMutation],
   )
   return {
     rowsUpdating,
