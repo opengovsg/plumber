@@ -7,3 +7,9 @@ export const DELAY = {
   FOCUS_CELL: 0,
   SCROLL: 1,
 }
+
+// Fixed height need for virtualized list
+export const ROW_HEIGHT = {
+  DEFAULT: 50,
+  EXPANDED: 132,
+}
