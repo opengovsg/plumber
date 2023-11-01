@@ -135,7 +135,10 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
                       errorDetails={error.errorDetails}
                     />
                   ) : (
-                    <GenericErrorResult key={index} />
+                    <GenericErrorResult
+                      key={index}
+                      errorDetails={error.errorDetails}
+                    />
                   ),
               )}
             </Box>
