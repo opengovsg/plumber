@@ -1,5 +1,6 @@
 import { ITableColumnMetadata } from '@plumber/types'
 
+import { Box } from '@chakra-ui/react'
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table'
 
 import TableCell from '../components/TableCell'

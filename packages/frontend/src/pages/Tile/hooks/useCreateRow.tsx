@@ -51,7 +51,6 @@ export function useCreateRow(
         } else {
           oldData.push(newTempRow)
         }
-        console.log(oldData.slice(-5))
         return [...oldData]
       })
       const { data: mutationData } = await createRowMutation({
