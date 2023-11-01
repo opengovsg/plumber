@@ -3,9 +3,18 @@ import '@/config/orm'
 import '@/config/dynamodb'
 
 import { randomUUID } from 'crypto'
+import { argv } from 'process'
 
 import { TableRow } from '@/models/dynamodb/table-row'
 import TableColumnMetadata from '@/models/table-column-metadata'
+
+const TABLE_ID = argv[2]
+if (!TABLE_ID) {
+  console.log(
+    'Please provide a table ID e.g. npm run -w backend dynamodb:seed -- <YOUR_TABLE_ID>',
+  )
+  process.exit(1)
+}
 
 const ROW_COUNT = 1000
 
@@ -17,17 +26,19 @@ async function seedRows(tableId: string) {
     .all()
     .exec()
   let deleteBatch = []
-  for (const row of existingRows) {
+  const batchDeletePromises = []
+  for (let i = 0; i < existingRows.length; i++) {
+    const row = existingRows[i]
     deleteBatch.push({ tableId, rowId: row.rowId })
-    if (
-      deleteBatch.length === 25 ||
-      row === existingRows[existingRows.length - 1]
-    ) {
-      await TableRow.batchDelete(deleteBatch)
+    if (deleteBatch.length === 25 || i === existingRows.length - 1) {
+      batchDeletePromises.push(TableRow.batchDelete(deleteBatch))
       deleteBatch = []
     }
   }
+  await Promise.all(batchDeletePromises)
+  console.log(`Deleted ${existingRows.length} dynamodb rows`)
 
+  // seed new rows
   const columns = await TableColumnMetadata.query()
     .select('id')
     .where('table_id', tableId)
@@ -35,6 +46,7 @@ async function seedRows(tableId: string) {
   const columnIds = columns.map((column) => column.id)
 
   let rows = []
+  // rows added sequentially to preserve row order
   for (let i = 0; i < ROW_COUNT; i++) {
     const row = {
       tableId,
@@ -47,13 +59,13 @@ async function seedRows(tableId: string) {
     rows.push(row)
     if (rows.length === 25 || i === ROW_COUNT - 1) {
       await TableRow.batchPut(rows)
-      console.log(rows)
+      console.log(`Seeded ${i + 1} dynamodb rows`)
       rows = []
     }
   }
 }
 
-seedRows('f753aa42-6071-4260-be42-ca60cd9896be').then(() => {
+seedRows(TABLE_ID).then(() => {
   console.log(`${ROW_COUNT} dynamodb rows seeded`)
   process.exit(0)
 })

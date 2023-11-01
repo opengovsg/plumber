@@ -125,16 +125,18 @@ export const deleteTableRows = async ({
 }: DeleteRowInput): Promise<void> => {
   try {
     let batch = []
+    const batchDeletePromises = []
     for (const rowId of rowIds) {
       batch.push({
         tableId,
         rowId,
       })
       if (batch.length === 25 || rowId === rowIds[rowIds.length - 1]) {
-        await TableRow.batchDelete(batch)
+        batchDeletePromises.push(TableRow.batchDelete(batch))
         batch = []
       }
     }
+    await Promise.all(batchDeletePromises)
     return
   } catch (e: unknown) {
     wrapDynamoDBError(e)
