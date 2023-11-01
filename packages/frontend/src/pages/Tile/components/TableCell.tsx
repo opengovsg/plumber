@@ -8,10 +8,10 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { Box, Flex, Textarea } from '@chakra-ui/react'
+import { Box, Flex, Text, Textarea } from '@chakra-ui/react'
 import { CellContext } from '@tanstack/react-table'
 
-import { NEW_ROW_ID, TEMP_ROW_ID_PREFIX } from '../constants'
+import { NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../constants'
 import { shallowCompare } from '../helpers/shallow-compare'
 import { CellType, GenericRowData } from '../types'
 
@@ -133,8 +133,8 @@ export default function TableCell({
 
   return (
     <Box
-      h="100%"
-      minH="50px"
+      h={isEditingRow ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT}
+      minH={ROW_HEIGHT.DEFAULT}
       w="100%"
       alignItems="center"
       onClick={startEditing}
@@ -157,30 +157,30 @@ export default function TableCell({
           zIndex={isEditingCell ? 1 : 0}
           defaultValue={originalValue}
           onChange={onChange}
+          h="100%"
           _focusWithin={{
             boxShadow: 'none',
             bgColor: 'primary.100',
           }}
           rows={5}
           resize="none"
-          h="130px"
           onKeyDown={onKeyDown}
           borderRadius={0}
           borderWidth={0}
         />
       ) : (
         <Flex
-          h="48px"
+          h="100%"
           w="100%"
           minWidth="100%"
           maxW={0}
-          alignItems="flex-start"
+          alignItems="center"
           px={4}
           wordBreak="break-word"
           className={className}
           overflow="hidden"
         >
-          {originalValue}
+          <Text maxH="100%">{originalValue}</Text>
         </Flex>
       )}
     </Box>

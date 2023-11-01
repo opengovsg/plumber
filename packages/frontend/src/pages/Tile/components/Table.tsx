@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
-import { DELAY, NEW_ROW_ID } from '../constants'
+import { DELAY, NEW_ROW_ID, ROW_HEIGHT } from '../constants'
 import { createColumns } from '../helpers/columns-helper'
 import { flattenRows } from '../helpers/flatten-rows'
 import { scrollToBottom } from '../helpers/scroll-helper'
@@ -48,7 +48,10 @@ export default function Table({
     count: isAddingNewRow ? data.length - 1 : data.length,
     getScrollElement: () => parentRef.current,
     estimateSize: useCallback(
-      (index) => (index === editingCell?.row.index ? 132 : 50),
+      (index) =>
+        index === editingCell?.row.index
+          ? ROW_HEIGHT.EXPANDED
+          : ROW_HEIGHT.DEFAULT,
       [editingCell?.row.index],
     ),
     overscan: 35,
