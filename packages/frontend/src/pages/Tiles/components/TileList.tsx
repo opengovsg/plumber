@@ -48,7 +48,7 @@ const TileList = (): JSX.Element => {
   }
 
   return (
-    <Flex gap={4} px={8} alignItems="stretch">
+    <Flex gap={4} px={8} alignItems="stretch" flexWrap="wrap">
       {data.getTables.map((tile) => (
         <TileListItem key={tile.id} table={tile} />
       ))}
