@@ -508,6 +508,17 @@ export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
 }
 
 // Tiles
+export interface ITableColumnMetadata {
+  id: string
+  name: string
+}
+
+export interface ITableMetadata {
+  id: string
+  name: string
+  columns: ITableColumnMetadata[]
+}
+
 export interface ITableRow {
   rowId: string
   data: Record<string, IJSONPrimitive>
