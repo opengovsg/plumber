@@ -21,10 +21,11 @@ export default function TableFooter({ table, parentRef }: TableFooterProps) {
   return (
     <Flex
       w="100%"
+      position="sticky"
+      left={0}
       justifyContent="space-between"
       borderColor="primary.800"
-      borderWidth={1}
-      borderBottomRadius="lg"
+      borderTopWidth={1}
     >
       <Flex>
         <Button

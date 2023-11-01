@@ -146,81 +146,86 @@ export default function Table({
   const virtualRows = rowVirtualizer.getVirtualItems()
 
   return (
-    <Box borderRadius="lg" overflow="hidden">
-      {table.getHeaderGroups().map((headerGroup) => (
-        <Flex key={headerGroup.id}>
-          {headerGroup.headers.map((header) => (
-            <Flex
-              key={header.id}
-              paddingX={4}
-              paddingY={3}
-              flexGrow={1}
-              flexShrink={0}
-              bgColor="primary.700"
-              color="white"
-              fontWeight="bold"
-            >
-              {header.isPlaceholder
-                ? null
-                : flexRender(
-                    header.column.columnDef.header,
-                    header.getContext(),
-                  )}
-            </Flex>
-          ))}
-        </Flex>
-      ))}
-
-      <Box
-        ref={parentRef}
-        h="calc(100vh - 300px)"
-        minH="300px"
-        overflow="auto"
-        position="relative"
-        borderColor="primary.800"
-        borderWidth={1}
-        borderY="none"
-      >
-        <Box h={rowVirtualizer.getTotalSize()} w="100%">
-          {virtualRows.map((virtualRow) => {
-            const row = rows[virtualRow.index] as Row<GenericRowData>
-            return (
-              <Flex
-                key={row.id}
-                w="100%"
-                position="absolute"
-                transform={`translateY(${virtualRow.start}px)`}
-                alignItems="stretch"
-                _even={{
-                  bg: 'primary.50',
-                }}
+    <Box
+      borderRadius="lg"
+      overflowY="hidden"
+      w="100%"
+      borderColor="primary.800"
+      borderWidth={1}
+    >
+      <Box w="fit-content" minW="100%">
+        {table.getHeaderGroups().map((headerGroup) => (
+          <Flex key={headerGroup.id} bgColor="primary.700" alignItems="stretch">
+            {headerGroup.headers.map((header) => (
+              <Box
+                key={header.id}
+                p={0}
+                w={header.getSize()}
+                color="white"
+                fontWeight="bold"
               >
-                {row.getVisibleCells().map((cell) => (
-                  <Flex key={cell.id} w="100%" padding={0}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </Flex>
-                ))}
-              </Flex>
-            )
-          })}
-        </Box>
-        {isAddingNewRow && (
-          <Flex
-            w="100%"
-            position="sticky"
-            bottom={0}
-            alignItems="stretch"
-            bg="white"
-            borderTopWidth={1}
-            borderTopColor="primary.800"
-          >
-            {rows[rows.length - 1].getVisibleCells().map((cell) => (
-              <Flex key={cell.id} w="100%" padding={0}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </Flex>
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+              </Box>
             ))}
           </Flex>
-        )}
+        ))}
+
+        <Box
+          ref={parentRef}
+          h="calc(100vh - 300px)"
+          minH="300px"
+          overflow="auto"
+          position="relative"
+          borderY="none"
+        >
+          <Box h={rowVirtualizer.getTotalSize()}>
+            {virtualRows.map((virtualRow) => {
+              const row = rows[virtualRow.index] as Row<GenericRowData>
+              return (
+                <Flex
+                  key={row.id}
+                  position="absolute"
+                  transform={`translateY(${virtualRow.start}px)`}
+                  alignItems="stretch"
+                  _even={{
+                    bg: 'primary.50',
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <Flex key={cell.id} w={cell.column.getSize()} padding={0}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </Flex>
+                  ))}
+                </Flex>
+              )
+            })}
+          </Box>
+          {isAddingNewRow && (
+            <Flex
+              w="100%"
+              position="sticky"
+              bottom={0}
+              alignItems="stretch"
+              bg="white"
+              borderTopWidth={1}
+              borderTopColor="primary.800"
+            >
+              {rows[rows.length - 1].getVisibleCells().map((cell) => (
+                <Flex key={cell.id} w="100%" padding={0}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </Flex>
+              ))}
+            </Flex>
+          )}
+        </Box>
       </Box>
       <TableFooter table={table} parentRef={parentRef} />
     </Box>
