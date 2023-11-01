@@ -95,8 +95,7 @@ export default function Layout({
               />
             </Box>
           </Show>
-
-          <Box sx={{ flex: 1 }}>{children}</Box>
+          <Box sx={{ flex: 1, overflowX: 'hidden' }}>{children}</Box>
         </Box>
       </LayoutNavigationProvider>
     </>
