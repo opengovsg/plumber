@@ -27,7 +27,9 @@ const CreateTileButton = (): JSX.Element => {
 
   const [tableName, setTableName] = useState('')
 
-  const [createTable, { loading }] = useMutation<ITableMetadata>(CREATE_TABLE)
+  const [createTable, { loading }] = useMutation<{
+    createTable: ITableMetadata
+  }>(CREATE_TABLE)
 
   const onSubmit = useCallback(async () => {
     const { data } = await createTable({
@@ -37,7 +39,7 @@ const CreateTileButton = (): JSX.Element => {
         },
       },
     })
-    navigate(URLS.TILE(data?.id as string))
+    navigate(URLS.TILE(data?.createTable.id as string))
     onClose()
   }, [createTable, tableName, navigate, onClose])
 
