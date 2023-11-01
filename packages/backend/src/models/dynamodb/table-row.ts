@@ -150,6 +150,7 @@ export const getAllTableRows = async ({
 }): Promise<ITableRow[]> => {
   const rows = await TableRow.query('tableId')
     .eq(tableId)
+    // TODO: select only existing columns
     .attributes(['rowId', 'data'])
     // sort by createdAt ascending
     .using('createdAtIndex')

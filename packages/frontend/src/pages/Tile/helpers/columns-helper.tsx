@@ -13,8 +13,13 @@ export function createColumns(
   return columns.map(({ id, name }) =>
     columnHelper.accessor(id, {
       id,
-      header: () => <span>{name}</span>,
+      header: () => (
+        <Box py={2} px={4}>
+          {name}
+        </Box>
+      ),
       cell: TableCell,
+      minSize: 200,
     }),
   )
 }
