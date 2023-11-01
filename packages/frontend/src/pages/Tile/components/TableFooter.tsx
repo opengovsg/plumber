@@ -21,7 +21,9 @@ export default function TableFooter({ table, parentRef }: TableFooterProps) {
   return (
     <Flex
       w="100%"
+      bg="white"
       position="sticky"
+      bottom={0}
       left={0}
       justifyContent="space-between"
       borderColor="primary.800"

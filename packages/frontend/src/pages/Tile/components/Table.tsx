@@ -148,41 +148,41 @@ export default function Table({
   return (
     <Box
       borderRadius="lg"
-      overflowY="hidden"
+      overflow="auto"
       w="100%"
       borderColor="primary.800"
       borderWidth={1}
+      ref={parentRef}
+      h="calc(100vh - 210px)"
+      minH="300px"
     >
       <Box w="fit-content" minW="100%">
-        {table.getHeaderGroups().map((headerGroup) => (
-          <Flex key={headerGroup.id} bgColor="primary.700" alignItems="stretch">
-            {headerGroup.headers.map((header) => (
-              <Box
-                key={header.id}
-                p={0}
-                w={header.getSize()}
-                color="white"
-                fontWeight="bold"
-              >
-                {header.isPlaceholder
-                  ? null
-                  : flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-              </Box>
-            ))}
-          </Flex>
-        ))}
-
-        <Box
-          ref={parentRef}
-          h="calc(100vh - 300px)"
-          minH="300px"
-          overflow="auto"
-          position="relative"
-          borderY="none"
+        <Flex
+          bgColor="primary.700"
+          alignItems="stretch"
+          position="sticky"
+          top={0}
+          zIndex={10}
         >
+          {table.getFlatHeaders().map((header) => (
+            <Box
+              key={header.id}
+              p={0}
+              w={header.getSize()}
+              color="white"
+              fontWeight="bold"
+            >
+              {header.isPlaceholder
+                ? null
+                : flexRender(
+                    header.column.columnDef.header,
+                    header.getContext(),
+                  )}
+            </Box>
+          ))}
+        </Flex>
+
+        <Box overflow="auto" position="relative" borderY="none">
           <Box h={rowVirtualizer.getTotalSize()}>
             {virtualRows.map((virtualRow) => {
               const row = rows[virtualRow.index] as Row<GenericRowData>
@@ -219,7 +219,7 @@ export default function Table({
               borderTopColor="primary.800"
             >
               {rows[rows.length - 1].getVisibleCells().map((cell) => (
-                <Flex key={cell.id} w="100%" padding={0}>
+                <Flex key={cell.id} w={cell.column.getSize()} padding={0}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </Flex>
               ))}
