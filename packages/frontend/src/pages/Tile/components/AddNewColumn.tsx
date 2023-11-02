@@ -39,6 +39,7 @@ export default function AddNewColumn() {
       <PopoverTrigger>
         <Box h="100%">
           <Icon
+            tabIndex={0}
             as={FiPlus}
             px={4}
             display="block"
@@ -46,6 +47,9 @@ export default function AddNewColumn() {
             w="100%"
             _hover={{
               bg: 'primary.800',
+            }}
+            _focus={{
+              outline: 'none',
             }}
             cursor="pointer"
           />
