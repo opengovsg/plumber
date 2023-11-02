@@ -528,7 +528,7 @@ input TableColumnMetadataInput {
 
 input UpdateTableInput {
   id: ID!
-  name: String!
+  name: String
   modifiedColumns: [TableColumnMetadataInput!]
   addedColumns: [String!]
   deletedColumns: [ID!]
