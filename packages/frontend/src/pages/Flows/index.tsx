@@ -4,6 +4,7 @@ import * as React from 'react'
 import type { LinkProps } from 'react-router-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useLazyQuery } from '@apollo/client'
+import { Hide } from '@chakra-ui/react'
 import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -14,6 +15,7 @@ import PaginationItem from '@mui/material/PaginationItem'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import Container from 'components/Container'
 import FlowRow from 'components/FlowRow'
+import NavigationDrawer from 'components/Layout/NavigationDrawer'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
 import SearchInput from 'components/SearchInput'
@@ -116,6 +118,9 @@ export default function Flows(): React.ReactElement {
           rowSpacing={3}
         >
           <Grid container item xs sm alignItems="center" order={{ xs: 0 }}>
+            <Hide above="sm">
+              <NavigationDrawer />
+            </Hide>
             <PageTitle title={FLOWS_TITLE} />
           </Grid>
 

@@ -1,3 +1,4 @@
+import { useContext } from 'react'
 import { BiMenu } from 'react-icons/bi'
 import {
   Drawer,
@@ -7,19 +8,14 @@ import {
   DrawerOverlay,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { LayoutNavigationContext } from 'contexts/LayoutNavigation'
 
 import NavigationSidebar from './NavigationSidebar'
-import { DrawerLink } from '.'
 
-interface NavigationDrawerProps {
-  isOpen: boolean
-  onOpen: () => void
-  onClose: () => void
-  links: DrawerLink[]
-}
-
-export default function NavigationDrawer(props: NavigationDrawerProps) {
-  const { isOpen, onOpen, onClose, links } = props
+export default function NavigationDrawer() {
+  const { isDrawerOpen, openDrawer, closeDrawer } = useContext(
+    LayoutNavigationContext,
+  )
 
   return (
     <>
@@ -27,9 +23,13 @@ export default function NavigationDrawer(props: NavigationDrawerProps) {
         aria-label="Open Navigation Drawer Icon Button"
         icon={<BiMenu />}
         variant="clear"
-        onClick={onOpen}
+        onClick={openDrawer}
+        mr={2}
+        color="base.content.strong"
+        _hover={{ bg: 'interaction.muted.neutral.hover' }}
+        _active={{ bg: 'interaction.muted.neutral.active' }}
       />
-      <Drawer placement="left" onClose={onClose} isOpen={isOpen}>
+      <Drawer placement="left" onClose={closeDrawer} isOpen={isDrawerOpen}>
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton
@@ -39,7 +39,7 @@ export default function NavigationDrawer(props: NavigationDrawerProps) {
             color="base.content.strong"
           />
           <DrawerBody p={4}>
-            <NavigationSidebar links={links} onClose={onClose} />
+            <NavigationSidebar />
           </DrawerBody>
         </DrawerContent>
       </Drawer>

@@ -1,16 +1,19 @@
 import * as React from 'react'
 import { BiHistory, BiSolidGrid } from 'react-icons/bi'
 import { Navigate } from 'react-router-dom'
-import { Divider, Hide, Show } from '@chakra-ui/react'
+import { Divider, Show } from '@chakra-ui/react'
 import Box from '@mui/material/Box'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import { PipeIcon } from 'components/Icons'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
+import {
+  LayoutNavigationProvider,
+  LayoutNavigationProviderData,
+} from 'contexts/LayoutNavigation'
 import useAuthentication from 'hooks/useAuthentication'
 
-import NavigationDrawer from './NavigationDrawer'
 import NavigationSidebar from './NavigationSidebar'
 
 type PublicLayoutProps = {
@@ -51,6 +54,15 @@ export default function Layout({
   const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
 
+  const layoutNavigationProviderData = React.useMemo(() => {
+    return {
+      links: drawerLinks,
+      isDrawerOpen,
+      openDrawer,
+      closeDrawer,
+    } as LayoutNavigationProviderData
+  }, [isDrawerOpen])
+
   if (!currentUser) {
     const redirectQueryParam = window.location.pathname + window.location.search
     return (
@@ -65,27 +77,23 @@ export default function Layout({
       <SiteWideBanner />
       <RestrictedGovtMasthead />
       <AppBar />
-      <Box sx={{ display: 'flex', flex: 1 }}>
-        <Show above="md">
-          <Box mt={1}>
-            <NavigationSidebar links={drawerLinks} onClose={closeDrawer} />
-          </Box>
-        </Show>
-        <Hide above="md">
-          <NavigationDrawer
-            isOpen={isDrawerOpen}
-            onOpen={openDrawer}
-            onClose={closeDrawer}
-            links={drawerLinks}
-          />
-        </Hide>
+      <LayoutNavigationProvider value={layoutNavigationProviderData}>
+        <Box sx={{ display: 'flex', flex: 1 }}>
+          <Show above="sm">
+            <Box mt={1}>
+              <NavigationSidebar />
+            </Box>
+            <Box>
+              <Divider
+                orientation="vertical"
+                borderColor="base.divider.medium"
+              />
+            </Box>
+          </Show>
 
-        <Box>
-          <Divider orientation="vertical" borderColor="base.divider.medium" />
+          <Box sx={{ flex: 1 }}>{children}</Box>
         </Box>
-
-        <Box sx={{ flex: 1 }}>{children}</Box>
-      </Box>
+      </LayoutNavigationProvider>
     </>
   )
 }

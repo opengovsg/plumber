@@ -1,16 +1,11 @@
+import { useContext } from 'react'
 import { Link, useMatch } from 'react-router-dom'
 import { Text } from '@chakra-ui/react'
 import { SidebarContainer, SidebarItem } from '@opengovsg/design-system-react'
+import { LayoutNavigationContext } from 'contexts/LayoutNavigation'
 
-import { DrawerLink } from '.'
-
-interface NavigationSidebarProps {
-  links: DrawerLink[]
-  onClose: () => void
-}
-
-export default function NavigationSidebar(props: NavigationSidebarProps) {
-  const { links, onClose } = props
+export default function NavigationSidebar() {
+  const { links, closeDrawer } = useContext(LayoutNavigationContext)
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const selected = (to: string) => useMatch({ path: to, end: true })
@@ -20,12 +15,12 @@ export default function NavigationSidebar(props: NavigationSidebarProps) {
       {links.map(({ Icon, text, to }, index) => (
         <SidebarItem
           key={`${to}-${index}`}
-          mx={{ md: '8px' }}
+          mx={{ sm: '8px' }}
           w={{ lg: '268px' }}
           icon={Icon}
           as={Link}
           to={to}
-          onClick={onClose}
+          onClick={closeDrawer}
           isActive={!!selected(to)}
           color="base.content.default"
           _hover={{
@@ -40,7 +35,7 @@ export default function NavigationSidebar(props: NavigationSidebarProps) {
           <Text
             textStyle="subhead-1"
             ml={4}
-            display={{ md: 'none', lg: 'block' }}
+            display={{ sm: 'none', lg: 'block' }}
           >
             {text}
           </Text>
