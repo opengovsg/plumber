@@ -4,6 +4,7 @@ import { Flex, Kbd } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import { Table } from '@tanstack/react-table'
 
+import { ROW_HEIGHT } from '../constants'
 import { scrollToBottom, scrollToTop } from '../helpers/scroll-helper'
 import { GenericRowData } from '../types'
 
@@ -25,21 +26,25 @@ export default function TableFooter({ table, parentRef }: TableFooterProps) {
       position="sticky"
       bottom={0}
       left={0}
+      maxH={ROW_HEIGHT.FOOTER}
       justifyContent="space-between"
       borderColor="primary.800"
+      boxSizing="content-box"
       borderTopWidth={1}
     >
       <Flex>
         <Button
           variant="clear"
-          size="sm"
+          size="xs"
+          h="100%"
           onClick={() => scrollToTop(parentRef)}
         >
           Scroll to Top <Kbd bg="white">home</Kbd>
         </Button>
         <Button
           variant="clear"
-          size="sm"
+          size="xs"
+          h="100%"
           onClick={() => scrollToBottom(parentRef)}
         >
           Scroll to bottom <Kbd bg="white">end</Kbd>
@@ -47,11 +52,12 @@ export default function TableFooter({ table, parentRef }: TableFooterProps) {
       </Flex>
       <Button
         variant="clear"
-        size="sm"
+        size="xs"
+        h="100%"
         leftIcon={<BsPlus />}
         onClick={onAddNewRow}
       >
-        Add New Row
+        Add new row
       </Button>
     </Flex>
   )

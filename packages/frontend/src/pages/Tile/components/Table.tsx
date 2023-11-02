@@ -20,6 +20,7 @@ import { useUpdateRow } from '../hooks/useUpdateRow'
 import { CellType, GenericRowData } from '../types'
 
 import TableFooter from './TableFooter'
+import TableRow from './TableRow'
 
 interface TableProps {
   tableId: string
@@ -42,7 +43,7 @@ export default function Table({
   // it's only used as a cache
   const tempRowData = useRef<GenericRowData | null>(null)
 
-  const isAddingNewRow = data[data.length - 1].rowId === NEW_ROW_ID
+  const isAddingNewRow = data[data.length - 1]?.rowId === NEW_ROW_ID
 
   const rowVirtualizer = useVirtualizer({
     count: isAddingNewRow ? data.length - 1 : data.length,
@@ -146,7 +147,7 @@ export default function Table({
   const virtualRows = rowVirtualizer.getVirtualItems()
 
   return (
-    <Box
+    <Flex
       borderRadius="lg"
       overflow="auto"
       w="100%"
@@ -155,8 +156,10 @@ export default function Table({
       ref={parentRef}
       h="calc(100vh - 210px)"
       minH="300px"
+      flexDir="column"
+      position="relative"
     >
-      <Box w="fit-content" minW="100%">
+      <Flex flexDir="column" w="fit-content" minW="100%" flex={1}>
         <Flex
           bgColor="primary.700"
           alignItems="stretch"
@@ -182,52 +185,25 @@ export default function Table({
           ))}
         </Flex>
 
-        <Box overflow="auto" position="relative" borderY="none">
-          <Box h={rowVirtualizer.getTotalSize()}>
-            {virtualRows.map((virtualRow) => {
-              const row = rows[virtualRow.index] as Row<GenericRowData>
-              return (
-                <Flex
-                  key={row.id}
-                  position="absolute"
-                  transform={`translateY(${virtualRow.start}px)`}
-                  alignItems="stretch"
-                  _even={{
-                    bg: 'primary.50',
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <Flex key={cell.id} w={cell.column.getSize()} padding={0}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </Flex>
-                  ))}
-                </Flex>
-              )
-            })}
-          </Box>
+        <Box position="relative" borderY="none">
+          {rows.length ? (
+            <Box h={rowVirtualizer.getTotalSize()}>
+              {virtualRows.map((virtualRow) => {
+                const row = rows[virtualRow.index] as Row<GenericRowData>
+                return (
+                  <TableRow key={row.id} row={row} virtualRow={virtualRow} />
+                )
+              })}
+            </Box>
+          ) : (
+            <>{/* insert some call to action to add new row here */}</>
+          )}
           {isAddingNewRow && (
-            <Flex
-              w="100%"
-              position="sticky"
-              bottom={0}
-              alignItems="stretch"
-              bg="white"
-              borderTopWidth={1}
-              borderTopColor="primary.800"
-            >
-              {rows[rows.length - 1].getVisibleCells().map((cell) => (
-                <Flex key={cell.id} w={cell.column.getSize()} padding={0}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </Flex>
-              ))}
-            </Flex>
+            <TableRow row={rows[rows.length - 1]} stickyBottom />
           )}
         </Box>
-      </Box>
+      </Flex>
       <TableFooter table={table} parentRef={parentRef} />
-    </Box>
+    </Flex>
   )
 }
