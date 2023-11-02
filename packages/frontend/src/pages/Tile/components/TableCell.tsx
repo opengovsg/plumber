@@ -8,7 +8,7 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { Box, Flex, Text, Textarea } from '@chakra-ui/react'
+import { Textarea } from '@chakra-ui/react'
 import { CellContext } from '@tanstack/react-table'
 
 import { NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../constants'
@@ -74,7 +74,7 @@ export default function TableCell({
           return
         }
         const nextRowId = table.getSortedRowModel().rows[row.index + 1]?.id
-        const nextActiveCell = getCell(nextRowId, column.id)
+        const nextActiveCell = nextRowId ? getCell(nextRowId, column.id) : null
         tableMeta?.setActiveCell(nextActiveCell)
       }
       // on tab
@@ -132,21 +132,20 @@ export default function TableCell({
   }, [row.id, tableMeta?.rowsCreated, tableMeta?.rowsUpdating])
 
   return (
-    <Box
-      h={isEditingRow ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT}
-      minH={ROW_HEIGHT.DEFAULT}
-      w="100%"
-      alignItems="center"
-      onClick={startEditing}
-      cursor="default"
-      borderWidth="0.5px"
-      borderStyle="solid"
-      borderColor={isEditingCell ? 'primary.600' : 'primary.100'}
-      _hover={{
-        bg: isEditingRow ? 'transparent' : 'gray.50',
+    <div
+      style={{
+        height: isEditingRow ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT,
+        minHeight: ROW_HEIGHT.DEFAULT,
+        width: '100%',
+        cursor: 'default',
+        borderWidth: '0.5px',
+        borderStyle: 'solid',
+        borderColor: isEditingCell
+          ? 'var(--chakra-colors-primary-600)'
+          : 'var(--chakra-colors-primary-100)',
       }}
-      position={row.id === 'new-row' ? 'sticky' : undefined}
-      bottom={row.id === 'new-row' ? 0 : undefined}
+      className={!isEditingCell ? styles.cell : undefined}
+      onClick={startEditing}
     >
       {isEditingRow ? (
         <Textarea
@@ -169,20 +168,30 @@ export default function TableCell({
           borderWidth={0}
         />
       ) : (
-        <Flex
-          h="100%"
-          w="100%"
-          minWidth="100%"
-          maxW={0}
-          alignItems="center"
-          px={4}
-          wordBreak="break-word"
+        <div
+          style={{
+            display: 'flex',
+            height: '100%',
+            width: '100%',
+            minWidth: '100%',
+            maxWidth: 0,
+            alignItems: 'center',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+            wordBreak: 'break-word',
+            overflow: 'hidden',
+          }}
           className={className}
-          overflow="hidden"
         >
-          <Text maxH="100%">{originalValue}</Text>
-        </Flex>
+          <p
+            style={{
+              maxHeight: '100%',
+            }}
+          >
+            {originalValue}
+          </p>
+        </div>
       )}
-    </Box>
+    </div>
   )
 }
