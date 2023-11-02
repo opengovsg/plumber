@@ -7,11 +7,12 @@ import { GET_ALL_ROWS } from 'graphql/queries/get-all-rows'
 import { GET_TABLE } from 'graphql/queries/get-table'
 
 import Table from './components/Table'
+import { TableContextProvider } from './contexts/TableContext'
 
 export default function Tile(): JSX.Element {
   const { tableId } = useParams<{ tableId: string }>()
 
-  const { data: getTableData, loading: getTableLoading } = useQuery<{
+  const { data: getTableData } = useQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
     variables: {
@@ -19,7 +20,7 @@ export default function Tile(): JSX.Element {
     },
   })
 
-  const { data: getAllRowsData, loading: getAllRowsLoading } = useQuery<{
+  const { data: getAllRowsData } = useQuery<{
     getAllRows: ITableRow[]
   }>(GET_ALL_ROWS, {
     variables: {
@@ -27,12 +28,7 @@ export default function Tile(): JSX.Element {
     },
   })
 
-  if (
-    !getTableData?.getTable ||
-    !getAllRowsData?.getAllRows ||
-    getTableLoading ||
-    getAllRowsLoading
-  ) {
+  if (!getTableData?.getTable || !getAllRowsData?.getAllRows) {
     return (
       <Center height="100vh">
         <Spinner size="xl" thickness="4px" color="primary.500" margin="auto" />
@@ -40,10 +36,8 @@ export default function Tile(): JSX.Element {
     )
   }
 
-  const {
-    getTable: { id, name, columns },
-  } = getTableData
-  const { getAllRows: rows } = getAllRowsData
+  const { id, name, columns } = getTableData.getTable
+  const rows = getAllRowsData.getAllRows
 
   return (
     <Flex
@@ -53,8 +47,16 @@ export default function Tile(): JSX.Element {
       gap={4}
       p={8}
     >
-      <Text textStyle="h4">{name}</Text>
-      <Table tableId={id} tableColumns={columns} tableRows={rows} />
+      <Text textStyle="h4" cursor="pointer">
+        {name}
+      </Text>
+      <TableContextProvider
+        tableId={id}
+        tableColumns={columns}
+        tableRows={rows}
+      >
+        <Table />
+      </TableContextProvider>
     </Flex>
   )
 }
