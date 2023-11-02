@@ -2,6 +2,7 @@ import { Dispatch, SetStateAction, useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { UPDATE_ROW } from 'graphql/mutations/update-row'
 
+import { useTableContext } from '../contexts/TableContext'
 import { GenericRowData } from '../types'
 
 interface UpdateRowInput {
@@ -17,9 +18,9 @@ interface UpdateRowOutput {
 }
 
 export function useUpdateRow(
-  tableId: string,
   setData: Dispatch<SetStateAction<GenericRowData[]>>,
 ) {
+  const { tableId } = useTableContext()
   const [rowsUpdating, setRowsUpdating] = useState<Record<string, boolean>>({})
 
   const [updateRowMutation] = useMutation<UpdateRowOutput, UpdateRowInput>(

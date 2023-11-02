@@ -3,6 +3,7 @@ import { useMutation } from '@apollo/client'
 import { CREATE_ROW } from 'graphql/mutations/create-row'
 
 import { NEW_ROW_ID, TEMP_ROW_ID_PREFIX } from '../constants'
+import { useTableContext } from '../contexts/TableContext'
 import { GenericRowData } from '../types'
 
 interface CreateRowInput {
@@ -17,9 +18,9 @@ interface CreateRowOutput {
 }
 
 export function useCreateRow(
-  tableId: string,
   setData: Dispatch<SetStateAction<GenericRowData[]>>,
 ) {
+  const { tableId } = useTableContext()
   const [rowsCreated, setRowsCreated] = useState<Set<string>>(new Set())
 
   const [createRowMutation] = useMutation<CreateRowOutput, CreateRowInput>(
