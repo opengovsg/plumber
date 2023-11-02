@@ -1,5 +1,3 @@
-import { ITableColumnMetadata, ITableRow } from '@plumber/types'
-
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
@@ -11,8 +9,8 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 import { DELAY, NEW_ROW_ID, ROW_HEIGHT } from '../constants'
+import { useTableContext } from '../contexts/TableContext'
 import { createColumns } from '../helpers/columns-helper'
-import { flattenRows } from '../helpers/flatten-rows'
 import { scrollToBottom } from '../helpers/scroll-helper'
 import { shallowCompare } from '../helpers/shallow-compare'
 import { useCreateRow } from '../hooks/useCreateRow'
@@ -22,22 +20,12 @@ import { CellType, GenericRowData } from '../types'
 import TableFooter from './TableFooter'
 import TableRow from './TableRow'
 
-interface TableProps {
-  tableId: string
-  tableColumns: ITableColumnMetadata[]
-  tableRows: ITableRow[]
-}
-
-export default function Table({
-  tableId,
-  tableColumns,
-  tableRows,
-}: TableProps): JSX.Element {
-  const flatData = useMemo(() => flattenRows(tableRows), [tableRows])
-  const columns = useMemo(() => createColumns(tableColumns), [tableColumns])
+export default function Table(): JSX.Element {
+  const { tableColumns, flattenedData } = useTableContext()
+  const [data, setData] = useState<GenericRowData[]>(flattenedData)
   const parentRef = useRef<HTMLDivElement>(null)
+  const columns = useMemo(() => createColumns(tableColumns), [tableColumns])
 
-  const [data, setData] = useState<GenericRowData[]>(flatData)
   const [editingCell, setEditingCell] = useState<CellType | null>(null)
   // We use ref instead of state to prevent re-rendering on change
   // it's only used as a cache
@@ -58,8 +46,8 @@ export default function Table({
     overscan: 35,
   })
 
-  const { rowsUpdating, updateRow } = useUpdateRow(tableId, setData)
-  const { rowsCreated, createRow } = useCreateRow(tableId, setData)
+  const { rowsUpdating, updateRow } = useUpdateRow(setData)
+  const { rowsCreated, createRow } = useCreateRow(setData)
 
   const setActiveCell = useCallback(
     (newCell: CellType | null) => {
@@ -112,6 +100,8 @@ export default function Table({
     getRowId: (row) => row.rowId,
     getCoreRowModel: getCoreRowModel(),
     enableRowSelection: true,
+    columnResizeMode: 'onChange',
+    debugColumns: true,
     meta: {
       rowsUpdating,
       rowsCreated,
@@ -174,6 +164,7 @@ export default function Table({
               w={header.getSize()}
               color="white"
               fontWeight="bold"
+              position="relative"
             >
               {header.isPlaceholder
                 ? null
