@@ -1,19 +1,26 @@
 import * as React from 'react'
 import { BiHistory, BiSolidGrid } from 'react-icons/bi'
 import { Navigate } from 'react-router-dom'
+import { Divider, Hide, Show } from '@chakra-ui/react'
 import Box from '@mui/material/Box'
-import { useTheme } from '@mui/material/styles'
-import useMediaQuery from '@mui/material/useMediaQuery'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
-import Drawer from 'components/Drawer'
 import { PipeIcon } from 'components/Icons'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 import useAuthentication from 'hooks/useAuthentication'
 
+import NavigationDrawer from './NavigationDrawer'
+import NavigationSidebar from './NavigationSidebar'
+
 type PublicLayoutProps = {
   children: React.ReactNode
+}
+
+export type DrawerLink = {
+  Icon: React.ElementType
+  text: string
+  to: string
 }
 
 const drawerLinks = [
@@ -37,13 +44,9 @@ const drawerLinks = [
 export default function Layout({
   children,
 }: PublicLayoutProps): React.ReactElement {
-  const theme = useTheme()
   const { currentUser } = useAuthentication()
 
-  const matchSmallScreens = useMediaQuery(theme.breakpoints.down('lg'), {
-    noSsr: true,
-  })
-  const [isDrawerOpen, setDrawerOpen] = React.useState(!matchSmallScreens)
+  const [isDrawerOpen, setDrawerOpen] = React.useState(false)
 
   const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
@@ -61,18 +64,25 @@ export default function Layout({
     <>
       <SiteWideBanner />
       <RestrictedGovtMasthead />
-      <AppBar
-        drawerOpen={isDrawerOpen}
-        onDrawerOpen={openDrawer}
-        onDrawerClose={closeDrawer}
-      />
+      <AppBar />
       <Box sx={{ display: 'flex', flex: 1 }}>
-        <Drawer
-          links={drawerLinks}
-          open={isDrawerOpen}
-          onOpen={openDrawer}
-          onClose={closeDrawer}
-        />
+        <Show above="md">
+          <Box mt={1}>
+            <NavigationSidebar links={drawerLinks} onClose={closeDrawer} />
+          </Box>
+        </Show>
+        <Hide above="md">
+          <NavigationDrawer
+            isOpen={isDrawerOpen}
+            onOpen={openDrawer}
+            onClose={closeDrawer}
+            links={drawerLinks}
+          />
+        </Hide>
+
+        <Box>
+          <Divider orientation="vertical" borderColor="base.divider.medium" />
+        </Box>
 
         <Box sx={{ flex: 1 }}>{children}</Box>
       </Box>
