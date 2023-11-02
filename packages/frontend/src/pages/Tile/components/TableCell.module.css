@@ -7,6 +7,10 @@
   animation: completeSaving 1s linear;
 }
 
+.cell:hover {
+  background-color: var(--chakra-colors-primary-200);
+}
+
 @keyframes completeSaving {
   0% {
     background-color: #ffeac0;
