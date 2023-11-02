@@ -24,6 +24,7 @@ interface UpdateTableOutput {
 export function useUpdateTable() {
   const { tableId } = useTableContext()
   const [isCreatingColumn, setIsCreatingColumn] = useState(false)
+  const [isUpdatingColumn, setIsUpdatingColumn] = useState(false)
 
   const [updateTable] = useMutation<UpdateTableOutput, UpdateTableInput>(
     UPDATE_TABLE,
@@ -54,5 +55,31 @@ export function useUpdateTable() {
     [tableId, updateTable],
   )
 
-  return { createColumn, isCreatingColumn }
+  const updateColumn = useCallback(
+    (columnId: string, newColumnName: string) => {
+      setIsUpdatingColumn(true)
+      return updateTable({
+        variables: {
+          input: {
+            id: tableId,
+            modifiedColumns: [
+              {
+                id: columnId,
+                name: newColumnName,
+              },
+            ],
+          },
+        },
+        onCompleted: () => {
+          setIsUpdatingColumn(false)
+        },
+        onError: () => {
+          setIsUpdatingColumn(false)
+        },
+      })
+    },
+    [tableId, updateTable],
+  )
+
+  return { createColumn, isCreatingColumn, updateColumn, isUpdatingColumn }
 }
