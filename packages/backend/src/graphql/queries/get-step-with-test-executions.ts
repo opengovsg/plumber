@@ -38,7 +38,10 @@ const getStepWithTestExecutions = async (
           ),
         )
         .from('execution_steps')
-        .whereIn('step_id', [...previousSteps.map((step) => step.id), step.id])
+        .whereIn(
+          'step_id',
+          previousSteps.map((step) => step.id),
+        )
     })
     .select('*')
     .from('latest_execution_steps')
