@@ -44,7 +44,6 @@ const getStepWithTestExecutions = async (
     .from('latest_execution_steps')
     .where('rn', '=', 1)
     .withSoftDeleted()
-    .debug()
 
   previousSteps.map((previousStep) => {
     previousStep.executionSteps = []
