@@ -18,12 +18,13 @@ export function createColumns(
       id,
       header: () => <ColumnCell columnId={id} columnName={name} />,
       cell: TableCell,
-      minSize: 300,
+      minSize: 100,
+      size: 300,
     }),
   )
   const addNewColumn = columnHelper.display({
     id: 'addNew',
-    header: () => <AddNewColumn />,
+    header: AddNewColumn,
     cell: () => <Box bgColor="white" h="100%" w="100%" />,
     size: 50,
   })
