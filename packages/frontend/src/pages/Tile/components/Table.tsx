@@ -17,6 +17,7 @@ import { useCreateRow } from '../hooks/useCreateRow'
 import { useUpdateRow } from '../hooks/useUpdateRow'
 import { CellType, GenericRowData } from '../types'
 
+import ColumnResizer from './ColumnResizer'
 import TableFooter from './TableFooter'
 import TableRow from './TableRow'
 
@@ -172,6 +173,7 @@ export default function Table(): JSX.Element {
                     header.column.columnDef.header,
                     header.getContext(),
                   )}
+              {header.id !== 'addNew' && <ColumnResizer header={header} />}
             </Box>
           ))}
         </Flex>
