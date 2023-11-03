@@ -42,6 +42,7 @@ const getStepWithTestExecutions = async (
           'step_id',
           previousSteps.map((step) => step.id),
         )
+        .andWhere('status', '=', 'success')
     })
     .select('*')
     .from('latest_execution_steps')
@@ -50,11 +51,11 @@ const getStepWithTestExecutions = async (
 
   previousSteps.map((previousStep) => {
     previousStep.executionSteps = []
-    const latestExecustionStep = latestExecutionSteps.find(
+    const latestExecutionStep = latestExecutionSteps.find(
       (latestExecutionStep) => latestExecutionStep.stepId === previousStep.id,
     )
-    if (latestExecustionStep) {
-      previousStep.executionSteps.push(latestExecustionStep)
+    if (latestExecutionStep) {
+      previousStep.executionSteps.push(latestExecutionStep)
     }
   })
 
