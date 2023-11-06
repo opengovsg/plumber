@@ -1,15 +1,13 @@
-import { IGlobalVariable } from '@plumber/types'
+import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
 import { DateTime } from 'luxon'
-
-import defineTrigger from '@/helpers/define-trigger'
 
 import cronTimes from '../../common/cron-times'
 import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
-export default defineTrigger({
+const trigger: IRawTrigger = {
   name: 'Weekly - triggers every week, choose a specific day of the week',
   key: 'everyWeek',
   description: 'Triggers every week.',
@@ -190,4 +188,6 @@ export default defineTrigger({
 
     await $.pushTriggerItem(dataItem)
   },
-})
+}
+
+export default trigger

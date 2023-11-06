@@ -1,8 +1,8 @@
-import defineTrigger from '@/helpers/define-trigger'
+import { IRawTrigger } from '@plumber/types'
 
 import fetchMessages from './fetch-messages'
 
-export default defineTrigger({
+const trigger: IRawTrigger = {
   name: 'Receive SMS',
   key: 'receiveSms',
   pollInterval: 15,
@@ -21,4 +21,6 @@ export default defineTrigger({
   async run($) {
     await fetchMessages($)
   },
-})
+}
+
+export default trigger
