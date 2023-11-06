@@ -1,8 +1,8 @@
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import StepError from '@/errors/step'
 import defineAction from '@/helpers/define-action'
+import { generateStepError } from '@/helpers/generate-step-error'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
 import {
@@ -11,7 +11,6 @@ import {
 } from '../../common/parameters'
 import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
-import { generateStepError } from '@/helpers/generate-step-error'
 
 export default defineAction({
   name: 'Send email',

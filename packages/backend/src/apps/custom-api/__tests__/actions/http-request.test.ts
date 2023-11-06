@@ -1,6 +1,9 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import HttpError from '@/errors/http'
 
 import app from '../..'
 import makeRequestAction from '../../actions/http-request'
@@ -55,6 +58,25 @@ describe('make http request', () => {
       data: $.step.parameters.data,
       maxRedirects: 0,
     })
+  })
+
+  it('should throw an error for error with http request', async () => {
+    $.step.parameters.method = 'POST'
+    $.step.parameters.data = 'meep meep'
+    $.step.parameters.url = 'http://test.local/endpoint?1234'
+    const error403 = {
+      response: {
+        status: 403,
+        statusText: 'forbidden',
+      },
+    } as AxiosError
+    const httpError = new HttpError(error403)
+    mocks.httpRequest.mockRejectedValueOnce(httpError)
+
+    // throw partial step error message
+    await expect(makeRequestAction.run($)).rejects.toThrowError(
+      'Status code: 403',
+    )
   })
 
   it('should throw an error if url is not malformed', async () => {
