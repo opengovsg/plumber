@@ -1,8 +1,7 @@
 import { URL } from 'url'
 
-import StepError from '@/errors/step'
-import customiseHttpErrorDetails from '@/helpers/customise-http-error-details'
 import defineAction from '@/helpers/define-action'
+import { generateHttpStepError } from '@/helpers/generate-step-error'
 
 import { isUrlAllowed } from '../../common/ip-resolver'
 
@@ -71,11 +70,14 @@ export default defineAction({
         maxRedirects: 0,
       })
       .catch((err) => {
-        throw new StepError({
-          name: 'Custom API error',
-          solution: 'Check your custom app and retry again',
-          httpErrorDetails: customiseHttpErrorDetails(err),
-        })
+        const stepErrorSolution =
+          'Check your custom app based on the status code and retry again.'
+        throw generateHttpStepError(
+          err,
+          stepErrorSolution,
+          $.step.position,
+          $.step.appKey,
+        )
       })
 
     let responseData = response.data

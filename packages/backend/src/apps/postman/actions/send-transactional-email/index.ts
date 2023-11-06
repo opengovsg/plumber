@@ -11,6 +11,7 @@ import {
 } from '../../common/parameters'
 import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
+import { generateStepError } from '@/helpers/generate-step-error'
 
 export default defineAction({
   name: 'Send email',
@@ -37,10 +38,16 @@ export default defineAction({
       const validationError = fromZodError(
         (result as SafeParseError<unknown>).error,
       )
-      throw new StepError({
-        name: validationError.details[0].message,
-        solution: 'Click set up action and reconfigure the invalid field.',
-      })
+
+      const stepErrorName = validationError.details[0].message
+      const stepErrorSolution =
+        'Click set up action and reconfigure the invalid field.'
+      throw generateStepError(
+        stepErrorName,
+        stepErrorSolution,
+        $.step.position,
+        $.step.appKey,
+      )
     }
 
     const { recipients, newProgress } = await getRatelimitedRecipientList(
