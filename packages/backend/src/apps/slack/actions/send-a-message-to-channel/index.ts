@@ -1,6 +1,5 @@
-
-
 import { IRawAction } from '@plumber/types'
+
 import postMessage from './post-message'
 
 const action: IRawAction = {
