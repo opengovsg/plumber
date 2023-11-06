@@ -1,11 +1,11 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
 import dynamicData from './dynamic-data'
 
-export default defineApp({
+const app: IApp = {
   name: 'Telegram',
   key: 'telegram-bot',
   iconUrl: '{BASE_URL}/apps/telegram-bot/assets/favicon.svg',
@@ -18,4 +18,6 @@ export default defineApp({
   dynamicData,
   auth,
   actions,
-})
+}
+
+export default app
