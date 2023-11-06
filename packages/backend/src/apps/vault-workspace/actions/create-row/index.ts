@@ -1,6 +1,6 @@
-import { parse as parseAsCsv } from 'csv-parse/sync'
+import { IRawAction } from '@plumber/types'
 
-import defineAction from '@/helpers/define-action'
+import { parse as parseAsCsv } from 'csv-parse/sync'
 
 import createTableRow from '../../common/create-table-row'
 import {
@@ -8,7 +8,7 @@ import {
   unescapeSpecialChars,
 } from '../../common/escape-characters'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Create row',
   key: 'createRow',
   description: 'Creates a new row in Vault table.',
@@ -68,4 +68,6 @@ export default defineAction({
 
     await createTableRow($, row)
   },
-})
+}
+
+export default action

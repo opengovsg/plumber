@@ -1,10 +1,10 @@
-import defineAction from '@/helpers/define-action'
+import { IRawAction } from '@plumber/types'
 
 import filterTableRows from '../../common/filter-table-rows'
 
 import getDataOutMetadata from './get-data-out-metadata'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Get table data',
   key: 'getTableData',
   description: 'Get table data from the vault workspace.',
@@ -47,4 +47,6 @@ export default defineAction({
       raw: row,
     })
   },
-})
+}
+
+export default action

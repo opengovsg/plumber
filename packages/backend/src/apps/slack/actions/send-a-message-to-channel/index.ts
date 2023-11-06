@@ -1,8 +1,9 @@
-import defineAction from '@/helpers/define-action'
 
+
+import { IRawAction } from '@plumber/types'
 import postMessage from './post-message'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Send a message to channel',
   key: 'sendMessageToChannel',
   description: 'Sends a message to a channel you specify.',
@@ -77,4 +78,6 @@ export default defineAction({
   async run($) {
     await postMessage($)
   },
-})
+}
+
+export default action
