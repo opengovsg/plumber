@@ -1,17 +1,13 @@
-import * as React from 'react'
+import { type ElementType, useState } from 'react'
 import { BiHistory, BiSolidGrid } from 'react-icons/bi'
 import { Navigate } from 'react-router-dom'
-import { Divider, Show } from '@chakra-ui/react'
-import Box from '@mui/material/Box'
+import { Box, Divider, Show } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import { PipeIcon } from 'components/Icons'
+import NavigationDrawer from 'components/Layout/NavigationDrawer'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
-import {
-  LayoutNavigationProvider,
-  LayoutNavigationProviderData,
-} from 'contexts/LayoutNavigation'
 import useAuthentication from 'hooks/useAuthentication'
 
 import NavigationSidebar from './NavigationSidebar'
@@ -21,12 +17,12 @@ type PublicLayoutProps = {
 }
 
 export type DrawerLink = {
-  Icon: React.ElementType
+  Icon: ElementType
   text: string
   to: string
 }
 
-const drawerLinks = [
+const drawerLinks: DrawerLink[] = [
   {
     Icon: PipeIcon,
     text: 'Pipes',
@@ -44,24 +40,13 @@ const drawerLinks = [
   },
 ]
 
-export default function Layout({
-  children,
-}: PublicLayoutProps): React.ReactElement {
+export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   const { currentUser } = useAuthentication()
 
-  const [isDrawerOpen, setDrawerOpen] = React.useState(false)
+  const [isDrawerOpen, setDrawerOpen] = useState(false)
 
   const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
-
-  const layoutNavigationProviderData = React.useMemo(() => {
-    return {
-      links: drawerLinks,
-      isDrawerOpen,
-      openDrawer,
-      closeDrawer,
-    } as LayoutNavigationProviderData
-  }, [isDrawerOpen])
 
   if (!currentUser) {
     const redirectQueryParam = window.location.pathname + window.location.search
@@ -77,23 +62,26 @@ export default function Layout({
       <SiteWideBanner />
       <RestrictedGovtMasthead />
       <AppBar />
-      <LayoutNavigationProvider value={layoutNavigationProviderData}>
-        <Box sx={{ display: 'flex', flex: 1 }}>
-          <Show above="sm">
-            <Box mt={1}>
-              <NavigationSidebar />
-            </Box>
-            <Box>
-              <Divider
-                orientation="vertical"
-                borderColor="base.divider.medium"
-              />
-            </Box>
-          </Show>
+      <Box sx={{ display: 'flex', flex: 1 }}>
+        <Show above="sm">
+          <Box mt={1}>
+            <NavigationSidebar links={drawerLinks} closeDrawer={closeDrawer} />
+          </Box>
+          <Box>
+            <Divider orientation="vertical" borderColor="base.divider.medium" />
+          </Box>
+        </Show>
+        <Show below="sm">
+          <NavigationDrawer
+            links={drawerLinks}
+            isDrawerOpen={isDrawerOpen}
+            openDrawer={openDrawer}
+            closeDrawer={closeDrawer}
+          />
+        </Show>
 
-          <Box sx={{ flex: 1 }}>{children}</Box>
-        </Box>
-      </LayoutNavigationProvider>
+        <Box sx={{ flex: 1 }}>{children}</Box>
+      </Box>
     </>
   )
 }

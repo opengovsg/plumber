@@ -1,4 +1,3 @@
-import { useContext } from 'react'
 import { BiMenu } from 'react-icons/bi'
 import {
   Drawer,
@@ -8,14 +7,19 @@ import {
   DrawerOverlay,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
-import { LayoutNavigationContext } from 'contexts/LayoutNavigation'
+import { type DrawerLink } from 'components/Layout'
 
 import NavigationSidebar from './NavigationSidebar'
 
-export default function NavigationDrawer() {
-  const { isDrawerOpen, openDrawer, closeDrawer } = useContext(
-    LayoutNavigationContext,
-  )
+interface NavigationDrawerProps {
+  links: DrawerLink[]
+  isDrawerOpen: boolean
+  openDrawer: () => void
+  closeDrawer: () => void
+}
+
+export default function NavigationDrawer(props: NavigationDrawerProps) {
+  const { links, isDrawerOpen, openDrawer, closeDrawer } = props
 
   return (
     <>
@@ -39,7 +43,7 @@ export default function NavigationDrawer() {
             color="base.content.strong"
           />
           <DrawerBody p={4}>
-            <NavigationSidebar />
+            <NavigationSidebar links={links} closeDrawer={closeDrawer} />
           </DrawerBody>
         </DrawerContent>
       </Drawer>
