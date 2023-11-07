@@ -23,9 +23,14 @@ export default function EditorSnackbar(props: EditorSnackbarProps) {
       boxShadow="0px 0px 10px 0px rgba(191, 191, 191, 0.50)"
       display={isOpen ? 'block' : 'none'}
     >
-      <Flex justifyContent="center" alignItems="center" gap={4}>
+      <Flex justifyContent="center" alignItems="center" gap={2}>
         <Text textStyle={{ sm: 'body-2', md: 'body-1' }}>{snackbarText}</Text>
-        <Button onClick={handleUnpublish} size={{ sm: 'sm', md: 'md' }}>
+        <Button
+          variant="clear"
+          colorScheme="inverse"
+          onClick={handleUnpublish}
+          size={{ sm: 'sm', md: 'md' }}
+        >
           Unpublish
         </Button>
       </Flex>
