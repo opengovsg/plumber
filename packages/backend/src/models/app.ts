@@ -1,17 +1,14 @@
 import { IApp } from '@plumber/types'
 
-import fs from 'fs'
 import { memoize } from 'lodash'
-import { join } from 'path'
 
 import appInfoConverter from '@/helpers/app-info-converter'
 import getApp from '@/helpers/get-app'
 
+import apps from '../apps'
+
 class App {
-  static folderPath = join(__dirname, '../apps')
-  static list = fs
-    .readdirSync(this.folderPath)
-    .filter((file) => fs.statSync(this.folderPath + '/' + file).isDirectory())
+  static list = Object.keys(apps)
 
   static async findAll(name?: string, stripFuncs = true): Promise<IApp[]> {
     if (!name) {
