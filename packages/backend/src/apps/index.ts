@@ -8,6 +8,7 @@ import SchedulerApp from './scheduler'
 import SlackApp from './slack'
 import TelegramBotApp from './telegram-bot'
 import ToolboxApp from './toolbox'
+import TwilioApp from './twilio'
 import VaultWorkspaceApp from './vault-workspace'
 import WebhookApp from './webhook'
 
@@ -22,6 +23,7 @@ const apps: Record<string, IApp> = {
   [ToolboxApp.key]: ToolboxApp,
   [VaultWorkspaceApp.key]: VaultWorkspaceApp,
   [WebhookApp.key]: WebhookApp,
+  [TwilioApp.key]: TwilioApp,
 }
 
 export default apps
