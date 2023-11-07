@@ -71,7 +71,6 @@ export const processAction = async (options: ProcessActionOptions) => {
     }
   } catch (error) {
     logger.error(error)
-    // logger.error(error.cause)
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         details: error.details,

@@ -16,11 +16,15 @@ export default function ErrorResult(props: ErrorResultProps) {
   return (
     <Infobox variant="error">
       <Box>
-        <Badge mb={2} colorScheme="critical" variant="solid">
-          <Text>{`Error on Step ${position}: ${action}`}</Text>
+        <Badge
+          mb={2}
+          bg="interaction.critical-subtle.default"
+          color="interaction.critical.default"
+        >
+          <Text>{`Step ${position}: ${action} error`}</Text>
         </Badge>
 
-        <Text mb={2} textStyle="subhead-1">
+        <Text mb={0.5} textStyle="subhead-1">
           {name}
         </Text>
 
