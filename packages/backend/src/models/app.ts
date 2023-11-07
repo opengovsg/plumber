@@ -2,10 +2,9 @@ import { IApp } from '@plumber/types'
 
 import { memoize } from 'lodash'
 
+import apps from '@/apps'
 import appInfoConverter from '@/helpers/app-info-converter'
 import getApp from '@/helpers/get-app'
-
-import apps from '../apps'
 
 class App {
   static list = Object.keys(apps)

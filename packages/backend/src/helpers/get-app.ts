@@ -8,7 +8,7 @@ import {
 
 import { cloneDeep, omit } from 'lodash'
 
-import apps from '../apps'
+import apps from '@/apps'
 
 import addAuthenticationSteps from './add-authentication-steps'
 import addReconnectionSteps from './add-reconnection-steps'

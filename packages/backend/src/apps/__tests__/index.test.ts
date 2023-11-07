@@ -2,7 +2,7 @@ import fs from 'fs'
 import { join } from 'path'
 import { describe, expect, it } from 'vitest'
 
-import exportedApps from '..'
+import exportedApps from '@/apps'
 
 describe('index.ts', () => {
   it('should export all apps keys that also match their folder names', () => {

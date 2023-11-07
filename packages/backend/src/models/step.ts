@@ -3,9 +3,9 @@ import type { IJSONObject, IStep } from '@plumber/types'
 import { type StaticHookArguments, ValidationError } from 'objection'
 import { URL } from 'url'
 
+import apps from '@/apps'
 import appConfig from '@/config/app'
 
-import App from './app'
 import Base from './base'
 import Connection from './connection'
 import ExecutionStep from './execution-step'
@@ -112,7 +112,7 @@ class Step extends Base {
       return null
     }
 
-    return await App.findOneByKey(this.appKey)
+    return apps[this.appKey]
   }
 
   async getLastExecutionStep() {
@@ -140,8 +140,7 @@ class Step extends Base {
       return null
     }
 
-    const app = await App.findOneByKey(appKey)
-    const command = app.triggers.find((trigger) => trigger.key === key)
+    const command = apps[appKey].triggers.find((trigger) => trigger.key === key)
 
     return command
   }
@@ -152,8 +151,7 @@ class Step extends Base {
       return null
     }
 
-    const app = await App.findOneByKey(appKey)
-    const command = app.actions.find((action) => action.key === key)
+    const command = apps[appKey].actions.find((action) => action.key === key)
 
     return command
   }
