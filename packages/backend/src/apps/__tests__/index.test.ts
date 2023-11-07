@@ -10,10 +10,11 @@ describe('index.ts', () => {
 
     // Dynamic apps
     const folderPath = join(__dirname, '..')
-    const appFolderNames = fs
-      .readdirSync(folderPath)
-      .filter((file) => fs.statSync(folderPath + '/' + file).isDirectory())
 
+    const appFolderNames = fs
+      .readdirSync(folderPath, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory() && dirent.name !== '__tests__')
+      .map((dirent) => dirent.name)
     // Set comparison
     expect(exportedAppNames.length).toEqual(appFolderNames.length)
     expect(exportedAppNames.sort()).toEqual(appFolderNames.sort())
