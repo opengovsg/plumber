@@ -1,29 +1,29 @@
 import { IApp } from '@plumber/types'
 
-import CustomApiApp from './custom-api'
-import DelayApp from './delay'
-import FormsgApp from './formsg'
-import PostmanApp from './postman'
-import SchedulerApp from './scheduler'
-import SlackApp from './slack'
-import TelegramBotApp from './telegram-bot'
-import ToolboxApp from './toolbox'
-import TwilioApp from './twilio'
-import VaultWorkspaceApp from './vault-workspace'
-import WebhookApp from './webhook'
+import customApiApp from './custom-api'
+import delayApp from './delay'
+import formsgApp from './formsg'
+import postmanApp from './postman'
+import schedulerApp from './scheduler'
+import slackApp from './slack'
+import telegramBotApp from './telegram-bot'
+import toolboxApp from './toolbox'
+import twilioApp from './twilio'
+import vaultWorkspaceApp from './vault-workspace'
+import webhookApp from './webhook'
 
 const apps: Record<string, IApp> = {
-  [CustomApiApp.key]: CustomApiApp,
-  [DelayApp.key]: DelayApp,
-  [FormsgApp.key]: FormsgApp,
-  [PostmanApp.key]: PostmanApp,
-  [SchedulerApp.key]: SchedulerApp,
-  [SlackApp.key]: SlackApp,
-  [TelegramBotApp.key]: TelegramBotApp,
-  [ToolboxApp.key]: ToolboxApp,
-  [VaultWorkspaceApp.key]: VaultWorkspaceApp,
-  [WebhookApp.key]: WebhookApp,
-  [TwilioApp.key]: TwilioApp,
+  [customApiApp.key]: customApiApp,
+  [delayApp.key]: delayApp,
+  [formsgApp.key]: formsgApp,
+  [postmanApp.key]: postmanApp,
+  [schedulerApp.key]: schedulerApp,
+  [slackApp.key]: slackApp,
+  [telegramBotApp.key]: telegramBotApp,
+  [toolboxApp.key]: toolboxApp,
+  [vaultWorkspaceApp.key]: vaultWorkspaceApp,
+  [webhookApp.key]: webhookApp,
+  [twilioApp.key]: twilioApp,
 }
 
 export default apps
