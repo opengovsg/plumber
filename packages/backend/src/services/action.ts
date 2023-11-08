@@ -71,6 +71,10 @@ export const processAction = async (options: ProcessActionOptions) => {
     }
   } catch (error) {
     logger.error(error)
+    // log raw http error from StepError
+    if (error.cause) {
+      logger.error(error.cause)
+    }
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         details: error.details,

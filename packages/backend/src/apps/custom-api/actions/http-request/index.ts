@@ -69,7 +69,7 @@ export default defineAction({
         // redirect target to a malicious endpoint), so disable it.
         maxRedirects: 0,
       })
-      .catch((err) => {
+      .catch((err): never => {
         const stepErrorSolution =
           'Check your custom app based on the status code and retry again.'
         throw generateHttpStepError(

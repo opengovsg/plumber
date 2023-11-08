@@ -40,7 +40,7 @@ export default defineAction({
 
       const stepErrorName = validationError.details[0].message
       const stepErrorSolution =
-        'Click set up action and reconfigure the invalid field.'
+        'Click on set up action and reconfigure the invalid field.'
       throw generateStepError(
         stepErrorName,
         stepErrorSolution,
