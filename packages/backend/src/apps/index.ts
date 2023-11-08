@@ -3,6 +3,7 @@ import { IApp } from '@plumber/types'
 import customApiApp from './custom-api'
 import delayApp from './delay'
 import formsgApp from './formsg'
+import paysgApp from './paysg'
 import postmanApp from './postman'
 import schedulerApp from './scheduler'
 import slackApp from './slack'
@@ -16,6 +17,7 @@ const apps: Record<string, IApp> = {
   [customApiApp.key]: customApiApp,
   [delayApp.key]: delayApp,
   [formsgApp.key]: formsgApp,
+  [paysgApp.key]: paysgApp,
   [postmanApp.key]: postmanApp,
   [schedulerApp.key]: schedulerApp,
   [slackApp.key]: slackApp,
