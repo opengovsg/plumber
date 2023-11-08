@@ -3,6 +3,8 @@ import { IRawAction } from '@plumber/types'
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
+import { generateStepError } from '@/helpers/generate-step-error'
+
 import { sendTransactionalEmails } from '../../common/email-helper'
 import {
   transactionalEmailFields,
@@ -33,8 +35,21 @@ const action: IRawAction = {
     })
 
     if (!result.success) {
-      throw fromZodError((result as SafeParseError<unknown>).error)
+      const validationError = fromZodError(
+        (result as SafeParseError<unknown>).error,
+      )
+
+      const stepErrorName = validationError.details[0].message
+      const stepErrorSolution =
+        'Click on set up action and reconfigure the invalid field.'
+      throw generateStepError(
+        stepErrorName,
+        stepErrorSolution,
+        $.step.position,
+        $.app.name,
+      )
     }
+
     const { recipients, newProgress } = await getRatelimitedRecipientList(
       result.data.destinationEmail,
       +progress,

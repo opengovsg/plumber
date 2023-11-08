@@ -2,6 +2,8 @@ import { IRawAction } from '@plumber/types'
 
 import { URL } from 'url'
 
+import { generateHttpStepError } from '@/helpers/generate-step-error'
+
 import { isUrlAllowed } from '../../common/ip-resolver'
 
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
@@ -59,14 +61,25 @@ const action: IRawAction = {
       throw new Error('The URL you are trying to call is not allowed.')
     }
 
-    const response = await $.http.request({
-      url,
-      method,
-      data,
-      // Redirects open up way too many vulns (e.g. someone changes the
-      // redirect target to a malicious endpoint), so disable it.
-      maxRedirects: 0,
-    })
+    const response = await $.http
+      .request({
+        url,
+        method,
+        data,
+        // Redirects open up way too many vulns (e.g. someone changes the
+        // redirect target to a malicious endpoint), so disable it.
+        maxRedirects: 0,
+      })
+      .catch((err): never => {
+        const stepErrorSolution =
+          'Check your custom app based on the status code and retry again.'
+        throw generateHttpStepError(
+          err,
+          stepErrorSolution,
+          $.step.position,
+          $.app.name,
+        )
+      })
 
     let responseData = response.data
 

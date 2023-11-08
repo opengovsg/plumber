@@ -2,6 +2,7 @@ import type {
   IAction,
   IBaseTrigger,
   IStep,
+  IStepError,
   ISubstep,
   ITrigger,
   ITriggerInstructions,
@@ -9,17 +10,30 @@ import type {
 
 import { useCallback, useContext, useMemo } from 'react'
 import { useMutation } from '@apollo/client'
+import { Box } from '@chakra-ui/react'
 import LoadingButton from '@mui/lab/LoadingButton'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
-import { Infobox } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import { extractVariables, filterVariables } from 'helpers/variables'
 
+import ErrorResult from './ErrorResult'
+import GenericErrorResult from './GenericErrorResult'
 import TestResult from './TestResult'
+
+const isStepError = (value: IStepError): value is IStepError => {
+  // Type guard for IStepError
+  return (
+    value &&
+    !!value.name &&
+    !!value.solution &&
+    !!value.position &&
+    !!value.appName
+  )
+}
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -43,11 +57,7 @@ function serializeErrors(graphQLErrors: any) {
     try {
       return {
         ...error,
-        message: (
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-            {JSON.stringify(JSON.parse(error.message as string), null, 2)}
-          </pre>
-        ),
+        errorDetails: JSON.parse(error.message as string),
       }
     } catch {
       return error
@@ -122,16 +132,22 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
           }}
         >
           {!!error?.graphQLErrors?.length && (
-            <Infobox
-              variant="error"
-              sx={{ mb: 2, fontWeight: 500, width: '100%' }}
-            >
+            <Box w="100%">
               {serializeErrors(error.graphQLErrors).map(
-                (error: any, i: number) => (
-                  <div key={`error-${i}`}>{error.message}</div>
-                ),
+                (error: any, index: number) =>
+                  isStepError(error.errorDetails) ? (
+                    <ErrorResult
+                      key={index}
+                      errorDetails={error.errorDetails}
+                    />
+                  ) : (
+                    <GenericErrorResult
+                      key={index}
+                      errorDetails={error.errorDetails}
+                    />
+                  ),
               )}
-            </Infobox>
+            </Box>
           )}
           {step.webhookUrl && (
             <WebhookUrlInfo

@@ -3,7 +3,7 @@
     "baseUrl": "./src",
     "declaration": true,
     "esModuleInterop": true,
-    "lib": ["es2021"],
+    "lib": ["es2021", "ES2022.Error"],
     "module": "commonjs",
     "moduleResolution": "node",
     "noImplicitAny": true,
