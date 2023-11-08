@@ -2,7 +2,6 @@ import { type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import toolboxApp from '../..'
 import onlyContinueIfAction from '../../actions/only-continue-if'
 
 const mocks = vi.hoisted(() => ({
@@ -19,7 +18,7 @@ describe('Only continue if', () => {
       },
       step: {
         id: 'test-step',
-        appKey: toolboxApp.key,
+        appKey: 'toolbox',
         key: onlyContinueIfAction.key,
         position: 2,
         parameters: {},

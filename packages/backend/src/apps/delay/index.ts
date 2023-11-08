@@ -1,8 +1,8 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import actions from './actions'
 
-export default defineApp({
+const app: IApp = {
   name: 'Delay',
   key: 'delay',
   iconUrl: '{BASE_URL}/apps/delay/assets/favicon.svg',
@@ -12,4 +12,6 @@ export default defineApp({
   apiBaseUrl: '',
   primaryColor: '001F52',
   actions,
-})
+}
+
+export default app

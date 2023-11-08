@@ -1,7 +1,8 @@
+import { IRawAction } from '@plumber/types'
+
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import defineAction from '@/helpers/define-action'
 import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
@@ -10,7 +11,7 @@ import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
 import { fields, schema } from './parameters'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Send email with attachments',
   key: 'sendEmailWithAttachments',
   description: "Sends an email with attachments (via Postman's API).",
@@ -89,4 +90,6 @@ export default defineAction({
       }
     }
   },
-})
+}
+
+export default action

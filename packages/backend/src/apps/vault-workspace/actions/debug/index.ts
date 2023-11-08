@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
-import defineAction from '@/helpers/define-action'
 
-export default defineAction({
+import { IRawAction } from '@plumber/types'
+
+const action: IRawAction = {
   name: 'Debug action',
   key: 'debugAction',
   description: 'Debug action from the vault workspace.',
@@ -42,4 +43,6 @@ export default defineAction({
     console.log(lookupColumn)
     console.log(previousStepsVariable)
   },
-})
+}
+
+export default action

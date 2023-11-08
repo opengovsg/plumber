@@ -1,9 +1,9 @@
-import defineAction from '@/helpers/define-action'
+import { IRawAction } from '@plumber/types'
 
 import conditionIsTrue from '../../common/condition-is-true'
 import getConditionArgs from '../../common/get-condition-args'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Only continue if',
   key: 'onlyContinueIf',
   description: 'Only continue if',
@@ -21,4 +21,6 @@ export default defineAction({
       }
     }
   },
-})
+}
+
+export default action
