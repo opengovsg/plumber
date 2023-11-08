@@ -1,8 +1,9 @@
 import { IUser } from '@plumber/types'
 
-import { createContext } from 'react'
-import { type FetchResult, useMutation, useQuery } from '@apollo/client'
+import { createContext, useEffect } from 'react'
+import { FetchResult, useMutation, useQuery } from '@apollo/client'
 import { Center, Spinner } from '@chakra-ui/react'
+import { datadogRum } from '@datadog/browser-rum'
 import { LOGOUT } from 'graphql/mutations/logout'
 import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
 
@@ -29,11 +30,16 @@ export const AuthenticationProvider = ({
   }>(GET_CURRENT_USER, {
     fetchPolicy: 'no-cache',
   })
-
+  const currentUser = data?.getCurrentUser
   const [logout] = useMutation(LOGOUT, {
     refetchQueries: [GET_CURRENT_USER],
     awaitRefetchQueries: true,
   })
+  useEffect(() => {
+    if (currentUser) {
+      datadogRum.setUser(currentUser)
+    }
+  }, [currentUser])
 
   if (fetchingCurrentUser) {
     return (
@@ -46,7 +52,7 @@ export const AuthenticationProvider = ({
   return (
     <AuthenticationContext.Provider
       value={{
-        currentUser: data?.getCurrentUser ?? null,
+        currentUser: currentUser ?? null,
         logout,
       }}
     >
