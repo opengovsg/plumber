@@ -26,7 +26,13 @@ import TestResult from './TestResult'
 
 const isStepError = (value: IStepError): value is IStepError => {
   // Type guard for IStepError
-  return !!value.name && !!value.solution && !!value.position && !!value.appName
+  return (
+    value &&
+    !!value.name &&
+    !!value.solution &&
+    !!value.position &&
+    !!value.appName
+  )
 }
 
 // the default alert follows the raw webhook alert
