@@ -1,8 +1,8 @@
+import { IRawAction } from '@plumber/types'
+
 import qs from 'qs'
 
-import defineAction from '@/helpers/define-action'
-
-export default defineAction({
+const action: IRawAction = {
   name: 'Send an SMS',
   key: 'sendSms',
   description: 'Sends an SMS',
@@ -53,4 +53,6 @@ export default defineAction({
     const { from, to, body, status, sid } = response.data
     $.setActionItem({ raw: { from, to, body, status, sid, success: true } })
   },
-})
+}
+
+export default action

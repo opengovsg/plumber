@@ -1,8 +1,11 @@
-import { DynamicDataOutput, IGlobalVariable, IJSONObject } from '@plumber/types'
+import {
+  DynamicDataOutput,
+  IDynamicData,
+  IGlobalVariable,
+  IJSONObject,
+} from '@plumber/types'
 
-import defineDynamicData from '@/helpers/define-dynamic-data'
-
-export default defineDynamicData({
+const dynamicData: IDynamicData = {
   name: 'List channels',
   key: 'listChannels',
 
@@ -33,4 +36,6 @@ export default defineDynamicData({
 
     return channels
   },
-})
+}
+
+export default dynamicData

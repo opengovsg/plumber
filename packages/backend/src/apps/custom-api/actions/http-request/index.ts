@@ -1,13 +1,14 @@
+import { IRawAction } from '@plumber/types'
+
 import { URL } from 'url'
 
-import defineAction from '@/helpers/define-action'
 import { generateHttpStepError } from '@/helpers/generate-step-error'
 
 import { isUrlAllowed } from '../../common/ip-resolver'
 
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Make a HTTP Request',
   key: 'httpRequest',
   description: 'Makes a custom HTTP request by providing raw details.',
@@ -88,4 +89,6 @@ export default defineAction({
 
     $.setActionItem({ raw: { data: responseData } })
   },
-})
+}
+
+export default action

@@ -1,17 +1,31 @@
-import { DynamicDataOutput, IGlobalVariable } from '@plumber/types'
+import {
+  DynamicDataOutput,
+  IDynamicData,
+  IGlobalVariable,
+} from '@plumber/types'
 
-import defineDynamicData from '@/helpers/define-dynamic-data'
+import {
+  HasTelegramChat,
+  TelegramGetUpdatesResponse,
+  TelegramUpdate,
+} from './types'
 
 const getUpdatesApi = '/getUpdates'
 
-function extractChatFromUpdate(update: any) {
-  const messageObject =
+type ChatInfo = {
+  title: string
+  id: number
+}
+
+function extractChatFromUpdate(update: TelegramUpdate): ChatInfo {
+  const messageObject: HasTelegramChat =
     update.message ||
     update.my_chat_member ||
     update.channel_post ||
     update.chat_member ||
     update.edited_channel_post ||
     update.edited_message
+
   if (!messageObject) {
     return null
   }
@@ -21,8 +35,6 @@ function extractChatFromUpdate(update: any) {
   }
   const { title, username, type, id } = chatObject
 
-  // type can be channel, private or group
-
   if (!id || !(title || username)) {
     return null
   }
@@ -30,20 +42,23 @@ function extractChatFromUpdate(update: any) {
   return { title: name || username, id }
 }
 
-export default defineDynamicData({
+const dynamicData: IDynamicData = {
   key: 'getTelegramChatIds',
   name: 'Get Telegram Chat IDs',
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     const chatIdsMap: { name: string; value: string }[] = []
-    const chatIdsSet = new Set<string>()
+    const chatIdsSet = new Set<number>()
     try {
-      const { data } = await $.http.get(getUpdatesApi)
+      const { data } = await $.http.get<TelegramGetUpdatesResponse>(
+        getUpdatesApi,
+      )
+
       if (!data.result) {
         return {
           data: [],
         }
       }
-      data.result.reverse().forEach((update: any) => {
+      data.result.reverse().forEach((update) => {
         const chat = extractChatFromUpdate(update)
         if (!chat) {
           return
@@ -65,42 +80,6 @@ export default defineDynamicData({
       }
     }
   },
-})
+}
 
-// Reference: https://core.telegram.org/bots/api#getupdates
-// Sample response:
-// {
-//   "ok": true,
-//   "result": [
-//     {
-//       "update_id": 123123,
-//       "message": {
-//         "message_id": 123,
-//         "from": ...
-//         "chat": {
-//           "id": 345345345,
-//           "title": "test",
-//           "type": "group",
-//           "all_members_are_administrators": true
-//         },
-//         "date": ...,
-//         "text": "/invite @get_id_bot",
-//         "entities": ...
-//       }
-//     },
-//     {
-//       "update_id": 123,
-//       "my_chat_member": {
-//         "chat": {
-//           "id": -100123123123123,
-//           "title": "teete",
-//           "type": "channel"
-//         },
-//         "from": { ... },
-//         "date": ...,
-//         "old_chat_member": {...},
-//         "new_chat_member": {...}
-//       }
-//     }
-//   ]
-// }
+export default dynamicData

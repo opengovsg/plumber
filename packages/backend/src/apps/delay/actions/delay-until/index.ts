@@ -1,9 +1,10 @@
-import defineAction from '@/helpers/define-action'
+import { IRawAction } from '@plumber/types'
+
 import { generateStepError } from '@/helpers/generate-step-error'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Delay Until',
   key: 'delayUntil',
   description:
@@ -54,4 +55,6 @@ export default defineAction({
 
     $.setActionItem({ raw: dataItem })
   },
-})
+}
+
+export default action

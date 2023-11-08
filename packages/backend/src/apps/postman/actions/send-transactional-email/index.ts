@@ -1,7 +1,8 @@
+import { IRawAction } from '@plumber/types'
+
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import defineAction from '@/helpers/define-action'
 import { generateStepError } from '@/helpers/generate-step-error'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
@@ -12,7 +13,7 @@ import {
 import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
   description: "Sends an email using Postman's transactional API.",
@@ -87,4 +88,6 @@ export default defineAction({
       }
     }
   },
-})
+}
+
+export default action

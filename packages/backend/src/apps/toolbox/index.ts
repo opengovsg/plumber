@@ -1,8 +1,8 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import actions from './actions'
 
-export default defineApp({
+const app: IApp = {
   name: 'Toolbox',
   key: 'toolbox',
   iconUrl: '{BASE_URL}/apps/toolbox/assets/favicon.svg',
@@ -13,4 +13,6 @@ export default defineApp({
   primaryColor: '000000',
   actions,
   description: `Use Plumber's built in tools like If-then and Only continue if to add more functionality to your pipes`,
-})
+}
+
+export default app

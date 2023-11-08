@@ -3,12 +3,12 @@ import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
-  const data = executionStep.dataOut
+  const { dataOut: data } = executionStep
   if (!data) {
     return null
   }
 
-  const metadata = Object.create(null)
+  const metadata: IDataOutMetadata = {}
   for (const key of Object.keys(data)) {
     // re-label "pretty" variables for scheduler
     switch (key) {

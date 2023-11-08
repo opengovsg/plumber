@@ -1,0 +1,104 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "server",
+      "cpu": 512,
+      "command": ["npm", "run", "start"],
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/application-server",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
+      "name": "worker",
+      "cpu": 512,
+      "command": ["npm", "run", "start:worker"],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/application-worker",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
+      "name": "dd-agent",
+      "image": "public.ecr.aws/datadog/agent:latest",
+      "portMappings": [
+        {
+          "containerPort": 8126,
+          "hostPort": 8126,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "TZ",
+          "value": "Asia/Singapore"
+        },
+        {
+          "name": "DD_APM_NON_LOCAL_TRAFFIC",
+          "value": "true"
+        },
+        {
+          "name": "ECS_FARGATE",
+          "value": "true"
+        },
+        {
+          "name": "DD_APM_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "DD_SITE",
+          "value": "datadoghq.com"
+        },
+        {
+          "name": "DD_SERVICE",
+          "value": "plumber-<ENVIRONMENT>-ecs"
+        },
+        {
+          "name": "DD_TAGS",
+          "value": "env:<ENVIRONMENT> service:plumber team:plumber"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "secrets": [
+        {
+          "name": "DD_API_KEY",
+          "valueFrom": "plumber-dd-api-key"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/dd-agent",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "family": "plumber-<ENVIRONMENT>-ecs",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-ecs-task-exec-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-ecs-task-role",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "4096"
+}

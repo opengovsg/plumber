@@ -8,6 +8,7 @@ const bbBearColors = {
   base: {
     canvas: {
       'brand-subtle': '#fef8fb',
+      inverse: '#3A3E46',
     },
     divider: {
       subtle: '#F8F9F9',
