@@ -509,5 +509,6 @@ export interface IStepError {
   name: string
   solution: string
   position: string
-  action: string
+  appName: string
+  details?: IJSONObject
 }

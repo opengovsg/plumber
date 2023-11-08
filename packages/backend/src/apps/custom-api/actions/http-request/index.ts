@@ -77,7 +77,7 @@ const action: IRawAction = {
           err,
           stepErrorSolution,
           $.step.position,
-          $.step.appKey,
+          $.app.name,
         )
       })
 

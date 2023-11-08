@@ -1,17 +1,13 @@
+import type { IJSONObject } from '@plumber/types'
+
 import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
-
-const appKeyToActionMapping: Record<string, string> = {
-  'custom-api': 'Custom API',
-  delay: 'Delay',
-  postman: 'Email by Postman',
-}
 
 export function generateHttpStepError(
   error: HttpError,
   solution: string,
   position: number,
-  appKey: string,
+  appName: string,
 ) {
   const stepErrorName = `Status code: ${error.response.status} (${error.response.statusText})`
   return new StepError(
@@ -19,7 +15,8 @@ export function generateHttpStepError(
       name: stepErrorName,
       solution,
       position: position.toString(),
-      action: appKeyToActionMapping[appKey] ?? appKey,
+      appName,
+      details: error.details as IJSONObject,
     },
     { cause: error },
   )
@@ -29,12 +26,12 @@ export function generateStepError(
   name: string,
   solution: string,
   position: number,
-  appKey: string,
+  appName: string,
 ) {
   return new StepError({
     name,
     solution,
     position: position.toString(),
-    action: appKeyToActionMapping[appKey] ?? appKey,
+    appName,
   })
 }

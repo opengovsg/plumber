@@ -1,7 +1,9 @@
 import { IStepError } from '@plumber/types'
 
-import { Box, Text } from '@chakra-ui/react'
-import { Badge, Infobox } from '@opengovsg/design-system-react'
+import { useCallback, useState } from 'react'
+import { Box, Collapse, Text } from '@chakra-ui/react'
+import { Badge, Button, Infobox } from '@opengovsg/design-system-react'
+import JSONViewer from 'components/JSONViewer'
 
 interface ErrorResultProps {
   errorDetails: IStepError
@@ -12,7 +14,12 @@ const contactPlumberMessage =
 
 export default function ErrorResult(props: ErrorResultProps) {
   const { errorDetails } = props
-  const { name, solution, position, action } = errorDetails
+  const { name, solution, position, appName, details } = errorDetails
+  const [isOpen, setIsOpen] = useState(false)
+  const toggleDropdown = useCallback(() => {
+    setIsOpen((value) => !value)
+  }, [])
+
   return (
     <Infobox variant="error">
       <Box>
@@ -21,7 +28,7 @@ export default function ErrorResult(props: ErrorResultProps) {
           bg="interaction.critical-subtle.default"
           color="interaction.critical.default"
         >
-          <Text>{`Step ${position}: ${action} error`}</Text>
+          <Text>{`Step ${position}: ${appName} error`}</Text>
         </Badge>
 
         <Text mb={0.5} textStyle="subhead-1">
@@ -29,7 +36,25 @@ export default function ErrorResult(props: ErrorResultProps) {
         </Text>
 
         <Text textStyle="body-1">
-          {solution} {contactPlumberMessage}
+          {solution} {contactPlumberMessage}{' '}
+          {details && (
+            <>
+              <Button
+                onClick={toggleDropdown}
+                variant="link"
+                size="sm"
+                sx={{ textDecoration: 'underline' }}
+              >
+                View http error details below.
+              </Button>
+
+              <Box>
+                <Collapse in={isOpen}>
+                  <JSONViewer data={details}></JSONViewer>
+                </Collapse>
+              </Box>
+            </>
+          )}
         </Text>
       </Box>
     </Infobox>
