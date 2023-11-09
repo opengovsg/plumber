@@ -39,7 +39,7 @@ const action: IRawAction = {
     if (isNaN(delayTimestamp)) {
       const stepErrorName = 'Invalid timestamp entered'
       const stepErrorSolution =
-        'Click on set up action and check for the validity of the format of the date or time entered.'
+        'Click on set up action and check that the date or time entered is of a valid format.'
       throw generateStepError(
         stepErrorName,
         stepErrorSolution,
