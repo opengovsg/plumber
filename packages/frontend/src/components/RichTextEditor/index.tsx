@@ -114,6 +114,7 @@ const Editor = ({
           value: variable.value,
         },
       })
+      editor?.commands.focus()
     },
     [editor],
   )
