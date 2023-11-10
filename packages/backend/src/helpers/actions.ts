@@ -43,7 +43,7 @@ export async function doesActionProcessFiles(
 }
 
 /**
- * Helper to parse Retry-After header, which we receive as seconds or Date.
+ * Helper to parse Retry-After header, which we receive as seconds to delay, or Date after which to retry.
  *
  * @returns Non-negative (>= 0) number of milliseconds to wait before retrying,
  * or null on failure (badly formatted value, or retry-after in the past)
