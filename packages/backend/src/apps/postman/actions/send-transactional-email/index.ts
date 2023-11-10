@@ -4,6 +4,7 @@ import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import { generateStepError } from '@/helpers/generate-step-error'
+import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
 import {
@@ -18,20 +19,28 @@ const action: IRawAction = {
   key: 'sendTransactionalEmail',
   description: "Sends an email using Postman's transactional API.",
   arguments: transactionalEmailFields,
+  doesFileProcessing: true,
 
   async run($, metadata) {
     let progress = 0
     if (metadata?.type === 'postman-send-email') {
       progress = metadata.progress
     }
-    const { subject, body, destinationEmail, senderName, replyTo } =
-      $.step.parameters
+    const {
+      subject,
+      body,
+      destinationEmail,
+      senderName,
+      replyTo,
+      attachments,
+    } = $.step.parameters
     const result = transactionalEmailSchema.safeParse({
       destinationEmail,
       senderName,
       subject,
       body,
       replyTo: replyTo || (await getDefaultReplyTo($.flow.id)),
+      attachments,
     })
 
     if (!result.success) {
@@ -50,6 +59,13 @@ const action: IRawAction = {
       )
     }
 
+    const attachmentFiles = await Promise.all(
+      result.data.attachments?.map(async (attachment) => {
+        const obj = await getObjectFromS3Id(attachment)
+        return { fileName: obj.name, data: obj.data }
+      }),
+    )
+
     const { recipients, newProgress } = await getRatelimitedRecipientList(
       result.data.destinationEmail,
       +progress,
@@ -60,6 +76,7 @@ const action: IRawAction = {
       body: result.data.body,
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
+      attachments: attachmentFiles,
     })
 
     const recipientListUptilNow = result.data.destinationEmail.slice(
