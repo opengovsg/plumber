@@ -10,7 +10,6 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
 import Pagination from '@mui/material/Pagination'
-import PaginationItem from '@mui/material/PaginationItem'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import Container from 'components/Container'
 import FlowRow from 'components/FlowRow'
@@ -66,12 +65,18 @@ export default function Flows(): React.ReactElement {
     [fetchData, flowName],
   )
 
+  // setSearchParams is "unstable": updates whenever searchParams change
+  const setSearchParamsRef = React.useRef(setSearchParams)
+  const stableSetSearchParams = React.useCallback(
+    (...args: Parameters<typeof setSearchParams>) =>
+      setSearchParamsRef.current(...args),
+    [],
+  )
+
   React.useEffect(
-    function resetPageOnSearch() {
-      // reset search params which only consists of `page`
-      setSearchParams({})
-    },
-    [flowName, setSearchParams],
+    // reset search params which only consists of `page`
+    () => stableSetSearchParams({}),
+    [flowName, stableSetSearchParams],
   )
 
   React.useEffect(
@@ -165,15 +170,8 @@ export default function Flows(): React.ReactElement {
             page={pageInfo?.currentPage}
             count={pageInfo?.totalPages}
             onChange={(event, page) =>
-              setSearchParams({ page: page.toString() })
+              stableSetSearchParams({ page: page.toString() })
             }
-            renderItem={(item) => (
-              <PaginationItem
-                component={Link}
-                to={`${item.page === 1 ? '' : `?page=${item.page}`}`}
-                {...item}
-              />
-            )}
           />
         )}
       </Container>
