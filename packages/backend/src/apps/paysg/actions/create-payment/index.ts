@@ -1,4 +1,4 @@
-import type { IJSONArray, IJSONObject, IRawAction } from '@plumber/types'
+import type { IJSONObject, IRawAction } from '@plumber/types'
 
 import getApiBaseUrl from '../../common/get-api-base-url'
 
@@ -35,7 +35,12 @@ function constructPayload(parameters: IJSONObject): CreatePaymentPayload {
     payload['return_url'] = parameters.returnUrl as string
   }
 
-  const metadata = parameters.metadata as IJSONArray | null
+  // FIXME (ogp-weeloong): by default, we populate metadata with 1 empty row
+  // even if its optional, for UX reasons. for now, account for this case in
+  // code until we make the necessary UX changes to not need that 1 empty row.
+  const metadata = ((parameters.metadata as IJSONObject[] | null) ?? []).filter(
+    (metadatum) => !!metadatum.key,
+  )
   if (metadata?.length) {
     for (const metadatum of metadata) {
       const { key, value } = metadatum as { key: string; value: string }
