@@ -1,8 +1,10 @@
-import defineAction from '@/helpers/define-action'
+import { IRawAction } from '@plumber/types'
+
+import { generateStepError } from '@/helpers/generate-step-error'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Delay Until',
   key: 'delayUntil',
   description:
@@ -35,8 +37,14 @@ export default defineAction({
     )
 
     if (isNaN(delayTimestamp)) {
-      throw new Error(
-        'Invalid timestamp entered, please check that you keyed in the date and time in the correct format',
+      const stepErrorName = 'Invalid timestamp entered'
+      const stepErrorSolution =
+        'Click on set up action and check for the validity of the format of the date or time entered.'
+      throw generateStepError(
+        stepErrorName,
+        stepErrorSolution,
+        $.step.position,
+        $.app.name,
       )
     }
 
@@ -47,4 +55,6 @@ export default defineAction({
 
     $.setActionItem({ raw: dataItem })
   },
-})
+}
+
+export default action

@@ -1,9 +1,9 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import auth from './auth'
 import triggers from './triggers'
 
-export default defineApp({
+const app: IApp = {
   name: 'FormSG',
   key: 'formsg',
   iconUrl: '{BASE_URL}/apps/formsg/assets/favicon.svg',
@@ -16,4 +16,6 @@ export default defineApp({
   auth,
   triggers,
   actions: [],
-})
+}
+
+export default app

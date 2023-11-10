@@ -1,10 +1,10 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import addHeaders from './common/add-headers'
 import actions from './actions'
 import auth from './auth'
 
-export default defineApp({
+const app: IApp = {
   name: 'Custom API',
   key: 'custom-api',
   iconUrl: '{BASE_URL}/apps/custom-api/assets/favicon.svg',
@@ -16,4 +16,6 @@ export default defineApp({
   apiBaseUrl: '',
   primaryColor: '0059F7',
   actions,
-})
+}
+
+export default app

@@ -1,6 +1,10 @@
-import type { IGlobalVariable, IJSONObject, IStep } from '@plumber/types'
+import type {
+  IGlobalVariable,
+  IJSONObject,
+  IRawAction,
+  IStep,
+} from '@plumber/types'
 
-import defineAction from '@/helpers/define-action'
 import Step from '@/models/step'
 
 import toolboxApp from '../..'
@@ -50,7 +54,7 @@ async function getBranchStepIdToSkipTo(
   return nextBranchStep?.['id']
 }
 
-export default defineAction({
+const action: IRawAction = {
   name: 'If-then',
   key: ACTION_KEY,
   description: '',
@@ -106,4 +110,6 @@ export default defineAction({
           nextStep: { command: 'stop-execution' },
         }
   },
-})
+}
+
+export default action

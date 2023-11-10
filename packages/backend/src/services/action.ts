@@ -1,6 +1,7 @@
 import { type IActionRunResult, NextStepMetadata } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import StepError from '@/errors/step'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
@@ -71,6 +72,10 @@ export const processAction = async (options: ProcessActionOptions) => {
     }
   } catch (error) {
     logger.error(error)
+    // log raw http error from StepError
+    if (error instanceof StepError && error.cause) {
+      logger.error(error.cause)
+    }
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         details: error.details,
