@@ -5,6 +5,7 @@ import { fromZodError } from 'zod-validation-error'
 
 import { generateStepError } from '@/helpers/generate-step-error'
 
+import { VALIDATION_ERROR_SOLUTION } from '../../common/constants'
 import { sendTransactionalEmails } from '../../common/email-helper'
 import {
   transactionalEmailFields,
@@ -12,6 +13,7 @@ import {
 } from '../../common/parameters'
 import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
+import { throwSendEmailError } from '../../common/throw-errors'
 
 const action: IRawAction = {
   name: 'Send email',
@@ -40,11 +42,9 @@ const action: IRawAction = {
       )
 
       const stepErrorName = validationError.details[0].message
-      const stepErrorSolution =
-        'Click on set up action and reconfigure the invalid field.'
       throw generateStepError(
         stepErrorName,
-        stepErrorSolution,
+        VALIDATION_ERROR_SOLUTION,
         $.step.position,
         $.app.name,
       )
@@ -55,12 +55,17 @@ const action: IRawAction = {
       +progress,
     )
 
-    const results = await sendTransactionalEmails($.http, recipients, {
-      subject: result.data.subject,
-      body: result.data.body,
-      replyTo: result.data.replyTo,
-      senderName: result.data.senderName,
-    })
+    let results
+    try {
+      results = await sendTransactionalEmails($.http, recipients, {
+        subject: result.data.subject,
+        body: result.data.body,
+        replyTo: result.data.replyTo,
+        senderName: result.data.senderName,
+      })
+    } catch (err) {
+      throwSendEmailError(err, $.step.position, $.app.name)
+    }
 
     const recipientListUptilNow = result.data.destinationEmail.slice(
       0,
