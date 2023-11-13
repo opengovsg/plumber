@@ -1,9 +1,9 @@
 import type { IFlow } from '@plumber/types'
 
-import * as React from 'react'
+import { forwardRef, useEffect, useMemo, useState } from 'react'
 import type { LinkProps } from 'react-router-dom'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useLazyQuery } from '@apollo/client'
+import { useQuery } from '@apollo/client'
 import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -18,7 +18,6 @@ import PageTitle from 'components/PageTitle'
 import SearchInput from 'components/SearchInput'
 import * as URLS from 'config/urls'
 import { GET_FLOWS } from 'graphql/queries/get-flows'
-import useFormatMessage from 'hooks/useFormatMessage'
 import debounce from 'lodash/debounce'
 
 const FLOW_PER_PAGE = 10
@@ -30,83 +29,44 @@ const getLimitAndOffset = (page: number) => ({
 })
 
 export default function Flows(): React.ReactElement {
-  const formatMessage = useFormatMessage()
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
-  const [flowName, setFlowName] = React.useState('')
-  const [loading, setLoading] = React.useState(false)
-  const [getFlows, { data }] = useLazyQuery(GET_FLOWS, {
-    onCompleted: () => {
-      setLoading(false)
+
+  const [flowName, setFlowName] = useState('')
+  const onFlowSearchChange = useMemo(
+    () =>
+      debounce((event: React.ChangeEvent<HTMLInputElement>) => {
+        setFlowName(event.target.value)
+        setSearchParams({})
+      }, 300),
+    [setFlowName, setSearchParams],
+  )
+  useEffect(() => {
+    return () => {
+      onFlowSearchChange.cancel()
+    }
+  }, [onFlowSearchChange])
+
+  const { data, loading } = useQuery(GET_FLOWS, {
+    variables: {
+      ...getLimitAndOffset(page),
+      name: flowName,
     },
   })
-
-  const fetchData = React.useMemo(
-    () =>
-      debounce(
-        (name) =>
-          getFlows({
-            variables: {
-              ...getLimitAndOffset(page),
-              name,
-            },
-          }),
-        300,
-      ),
-    [page, getFlows],
-  )
-
-  React.useEffect(
-    function fetchFlowsOnSearch() {
-      setLoading(true)
-
-      fetchData(flowName)
-    },
-    [fetchData, flowName],
-  )
-
-  // setSearchParams is "unstable": updates whenever searchParams change
-  const setSearchParamsRef = React.useRef(setSearchParams)
-  const stableSetSearchParams = React.useCallback(
-    (...args: Parameters<typeof setSearchParams>) =>
-      setSearchParamsRef.current(...args),
-    [],
-  )
-
-  React.useEffect(
-    // reset search params which only consists of `page`
-    () => stableSetSearchParams({}),
-    [flowName, stableSetSearchParams],
-  )
-
-  React.useEffect(
-    function cancelDebounceOnUnmount() {
-      return () => {
-        fetchData.cancel()
-      }
-    },
-    [fetchData],
-  )
 
   const { pageInfo, edges } = data?.getFlows || {}
 
   const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
   const hasFlows = flows?.length
 
-  const onSearchChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFlowName(event.target.value)
-    },
-    [],
-  )
-
-  const CreateFlowLink = React.useMemo(
+  const CreateFlowLink = useMemo(
     () =>
-      React.forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(
-        function InlineLink(linkProps, ref) {
-          return <Link ref={ref} to={URLS.CREATE_FLOW} {...linkProps} />
-        },
-      ),
+      forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(function InlineLink(
+        linkProps,
+        ref,
+      ) {
+        return <Link ref={ref} to={URLS.CREATE_FLOW} {...linkProps} />
+      }),
     [],
   )
 
@@ -125,7 +85,7 @@ export default function Flows(): React.ReactElement {
           </Grid>
 
           <Grid item xs={12} sm="auto" order={{ xs: 2, sm: 1 }}>
-            <SearchInput onChange={onSearchChange} />
+            <SearchInput onChange={onFlowSearchChange} />
           </Grid>
 
           <Grid
@@ -143,7 +103,7 @@ export default function Flows(): React.ReactElement {
               icon={<AddIcon />}
               data-test="create-flow-button"
             >
-              {formatMessage('flows.create')}
+              Create Pipe
             </ConditionalIconButton>
           </Grid>
         </Grid>
@@ -159,7 +119,7 @@ export default function Flows(): React.ReactElement {
 
         {!loading && !hasFlows && (
           <NoResultFound
-            text={formatMessage('flows.noFlows')}
+            text="You don't have any pipes yet."
             to={URLS.CREATE_FLOW}
           />
         )}
@@ -169,8 +129,8 @@ export default function Flows(): React.ReactElement {
             sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}
             page={pageInfo?.currentPage}
             count={pageInfo?.totalPages}
-            onChange={(event, page) =>
-              stableSetSearchParams({ page: page.toString() })
+            onChange={(_event, page) =>
+              setSearchParams({ page: page.toString() })
             }
           />
         )}
