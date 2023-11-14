@@ -1,8 +1,8 @@
-import defineAction from '@/helpers/define-action'
+import { IRawAction } from '@plumber/types'
 
 import findMessage from './find-message'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Find a message',
   key: 'findMessage',
   description: 'Finds a message using the Slack feature.',
@@ -72,4 +72,6 @@ export default defineAction({
       count,
     })
   },
-})
+}
+
+export default action

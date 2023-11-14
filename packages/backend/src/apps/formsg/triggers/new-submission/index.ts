@@ -1,8 +1,6 @@
-import { IGlobalVariable } from '@plumber/types'
+import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
 import isEmpty from 'lodash/isEmpty'
-
-import defineTrigger from '@/helpers/define-trigger'
 
 import {
   registerWebhookUrl,
@@ -18,7 +16,7 @@ export const NricFilter = {
   Hash: 'hash',
 }
 
-export default defineTrigger({
+const trigger: IRawTrigger = {
   name: 'New form submission',
   key: 'newSubmission',
   type: 'webhook',
@@ -75,4 +73,6 @@ export default defineTrigger({
       })
     }
   },
-})
+}
+
+export default trigger

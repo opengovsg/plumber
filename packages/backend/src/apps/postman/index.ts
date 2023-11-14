@@ -1,8 +1,8 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import actions from './actions'
 
-export default defineApp({
+const app: IApp = {
   name: 'Email by Postman',
   key: 'postman',
   iconUrl: '{BASE_URL}/apps/postman/assets/favicon.svg',
@@ -12,4 +12,6 @@ export default defineApp({
   apiBaseUrl: 'https://api.postman.gov.sg',
   primaryColor: '000000',
   actions,
-})
+}
+
+export default app

@@ -505,3 +505,10 @@ export interface IVerifyHookOutput {
 export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
   connectionVerified: boolean
 }
+export interface IStepError {
+  name: string
+  solution: string
+  position: string
+  appName: string
+  details?: IJSONObject
+}

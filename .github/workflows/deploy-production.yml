@@ -20,8 +20,6 @@ jobs:
       ecr-repository: 'plumber-prod'
       ecs-cluster-name: 'plumber-prod-ecs'
       ecs-service-name: 'plumber-prod-ecs-service'
-      ecs-worker-service-name: 'plumber-prod-ecs-worker-service'
-      ecs-container-name: 'app'
       codedeploy-application: 'plumber-prod-ecs-app'
       codedeploy-deployment-group: 'plumber-prod-ecs-dg'
       release-version: ${{ github.sha }}

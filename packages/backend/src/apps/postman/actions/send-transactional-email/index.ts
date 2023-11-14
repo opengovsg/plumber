@@ -1,7 +1,9 @@
+import { IRawAction } from '@plumber/types'
+
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import defineAction from '@/helpers/define-action'
+import { generateStepError } from '@/helpers/generate-step-error'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
 import {
@@ -11,7 +13,7 @@ import {
 import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
   description: "Sends an email using Postman's transactional API.",
@@ -33,8 +35,21 @@ export default defineAction({
     })
 
     if (!result.success) {
-      throw fromZodError((result as SafeParseError<unknown>).error)
+      const validationError = fromZodError(
+        (result as SafeParseError<unknown>).error,
+      )
+
+      const stepErrorName = validationError.details[0].message
+      const stepErrorSolution =
+        'Click on set up action and reconfigure the invalid field.'
+      throw generateStepError(
+        stepErrorName,
+        stepErrorSolution,
+        $.step.position,
+        $.app.name,
+      )
     }
+
     const { recipients, newProgress } = await getRatelimitedRecipientList(
       result.data.destinationEmail,
       +progress,
@@ -73,4 +88,6 @@ export default defineAction({
       }
     }
   },
-})
+}
+
+export default action

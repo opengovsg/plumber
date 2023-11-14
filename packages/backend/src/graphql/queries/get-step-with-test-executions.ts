@@ -1,6 +1,7 @@
-import { ref } from 'objection'
+import { raw } from 'objection'
 
 import ExecutionStep from '@/models/execution-step'
+import Step from '@/models/step'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -17,23 +18,48 @@ const getStepWithTestExecutions = async (
     .findOne({ 'steps.id': params.stepId })
     .throwIfNotFound()
 
-  const previousStepsWithCurrentStep = await context.currentUser
-    .$relatedQuery('steps')
-    .withGraphJoined('executionSteps')
+  const previousSteps = await Step.query()
+    .select('*')
     .where('flow_id', '=', step.flowId)
-    .andWhere('position', '<', step.position)
-    .andWhere(
-      'executionSteps.created_at',
-      '=',
-      ExecutionStep.query()
-        .max('created_at')
-        .where('step_id', '=', ref('steps.id'))
-        .andWhere('status', 'success'),
-    )
-    .andWhere('executionSteps.app_key', '=', ref('steps.app_key'))
-    .orderBy('steps.position', 'asc')
+    .where('position', '<', step.position)
+    .orderBy('position', 'asc')
 
-  return previousStepsWithCurrentStep
+  if (previousSteps.length === 0) {
+    return []
+  }
+
+  const latestExecutionSteps = await ExecutionStep.query()
+    .with('latest_execution_steps', (builder) => {
+      builder
+        .select(
+          '*',
+          raw(
+            'ROW_NUMBER() OVER (PARTITION BY step_id ORDER BY created_at DESC) as rn',
+          ),
+        )
+        .from('execution_steps')
+        .whereIn(
+          'step_id',
+          previousSteps.map((step) => step.id),
+        )
+        .andWhere('status', '=', 'success')
+    })
+    .select('*')
+    .from('latest_execution_steps')
+    .where('rn', '=', 1)
+    .withSoftDeleted()
+
+  previousSteps.map((previousStep) => {
+    previousStep.executionSteps = []
+    const latestExecutionStep = latestExecutionSteps.find(
+      (latestExecutionStep) => latestExecutionStep.stepId === previousStep.id,
+    )
+    if (latestExecutionStep) {
+      previousStep.executionSteps.push(latestExecutionStep)
+    }
+  })
+
+  return previousSteps
 }
 
 export default getStepWithTestExecutions

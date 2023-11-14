@@ -1,8 +1,8 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import triggers from './triggers'
 
-export default defineApp({
+const app: IApp = {
   name: 'Scheduler',
   key: 'scheduler',
   iconUrl: '{BASE_URL}/apps/scheduler/assets/favicon.svg',
@@ -13,4 +13,6 @@ export default defineApp({
   primaryColor: '0059F7',
   supportsConnections: false,
   triggers,
-})
+}
+
+export default app

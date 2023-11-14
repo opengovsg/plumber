@@ -1,10 +1,10 @@
-import defineAction from '@/helpers/define-action'
+import { IRawAction } from '@plumber/types'
 
 import { VAULT_ID } from '../../common/constants'
 import filterTableRows from '../../common/filter-table-rows'
 import updateTableRow from '../../common/update-table-row'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Update table data',
   key: 'updateTableData',
   description: 'Update table data from the vault workspace.',
@@ -92,4 +92,6 @@ export default defineAction({
       raw: response,
     })
   },
-})
+}
+
+export default action

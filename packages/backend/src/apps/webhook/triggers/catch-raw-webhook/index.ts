@@ -1,6 +1,6 @@
-import defineTrigger from '@/helpers/define-trigger'
+import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
-export default defineTrigger({
+const trigger: IRawTrigger = {
   name: 'Catch raw webhook',
   key: 'catchRawWebhook',
   type: 'webhook',
@@ -10,7 +10,7 @@ export default defineTrigger({
     afterUrlMsg: `# 2. Send some data to the webhook URL after configuration. Then, click test step.`,
   },
 
-  async testRun($) {
+  async testRun($: IGlobalVariable) {
     const lastExecutionStep = await $.getLastExecutionStep()
     // Allow for empty webhook body
     await $.pushTriggerItem({
@@ -20,4 +20,6 @@ export default defineTrigger({
       },
     })
   },
-})
+}
+
+export default trigger
