@@ -47,9 +47,7 @@ export default function Tile(): JSX.Element {
       gap={4}
       p={8}
     >
-      <Text textStyle="h4" cursor="pointer">
-        {name}
-      </Text>
+      <Text textStyle="h4">{name}</Text>
       <TableContextProvider
         tableId={id}
         tableColumns={columns}

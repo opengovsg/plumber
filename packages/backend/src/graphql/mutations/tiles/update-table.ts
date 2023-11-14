@@ -50,8 +50,7 @@ const updateTable = async (
     await TableColumnMetadata.transaction(async (trx) => {
       const results = await table
         .$relatedQuery('columns', trx)
-        .max('position as position')
-        .debug()
+        .max('position as position') // aliasing for more convenient typing
       const maxPosition = results[0].position || 0
       await table.$relatedQuery('columns', trx).insert(
         addedColumns.map((name, i) => ({
@@ -70,7 +69,7 @@ const updateTable = async (
           if (rest.name != null && !rest.name.trim().length) {
             throw new Error('Invalid column name')
           }
-          if (rest.config.width != null && rest.config.width < 1) {
+          if (rest.config?.width != null && rest.config.width < 1) {
             throw new Error('Invalid column width')
           }
           await table

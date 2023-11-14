@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { UPDATE_TABLE } from 'graphql/mutations/update-table'
 import { GET_TABLE } from 'graphql/queries/get-table'
+import { type SetOptional } from 'type-fest'
 
 import { useTableContext } from '../contexts/TableContext'
 
@@ -11,7 +12,10 @@ interface UpdateTableInput {
   input: {
     id: string
     name?: string
-    modifiedColumns?: ITableColumnMetadata[]
+    modifiedColumns?: SetOptional<
+      ITableColumnMetadata,
+      'name' | 'position' | 'config'
+    >[]
     addedColumns?: string[]
     deletedColumns?: string[]
   }
@@ -24,7 +28,7 @@ interface UpdateTableOutput {
 export function useUpdateTable() {
   const { tableId } = useTableContext()
   const [isCreatingColumn, setIsCreatingColumn] = useState(false)
-  const [isUpdatingColumn, setIsUpdatingColumn] = useState(false)
+  const [isUpdatingColumns, setIsUpdatingColumns] = useState(false)
 
   const [updateTable] = useMutation<UpdateTableOutput, UpdateTableInput>(
     UPDATE_TABLE,
@@ -55,31 +59,26 @@ export function useUpdateTable() {
     [tableId, updateTable],
   )
 
-  const updateColumn = useCallback(
-    (columnId: string, newColumnName: string) => {
-      setIsUpdatingColumn(true)
+  const updateColumns = useCallback(
+    (modifiedColumns: UpdateTableInput['input']['modifiedColumns']) => {
+      setIsUpdatingColumns(true)
       return updateTable({
         variables: {
           input: {
             id: tableId,
-            modifiedColumns: [
-              {
-                id: columnId,
-                name: newColumnName,
-              },
-            ],
+            modifiedColumns,
           },
         },
         onCompleted: () => {
-          setIsUpdatingColumn(false)
+          setIsUpdatingColumns(false)
         },
         onError: () => {
-          setIsUpdatingColumn(false)
+          setIsUpdatingColumns(false)
         },
       })
     },
     [tableId, updateTable],
   )
 
-  return { createColumn, isCreatingColumn, updateColumn, isUpdatingColumn }
+  return { createColumn, isCreatingColumn, updateColumns, isUpdatingColumns }
 }
