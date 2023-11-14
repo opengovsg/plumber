@@ -520,9 +520,14 @@ input CreateTableInput {
   name: String!
 }
 
+input TableColumnConfigInput {
+  width: Int
+}
+
 input TableColumnMetadataInput {
   id: ID!
   name: String
+  config: TableColumnConfigInput
 }
 
 input UpdateTableInput {
@@ -540,6 +545,7 @@ input DeleteTableInput {
 type TableColumnMetadata {
   id: ID!
   name: String!
+  config: TableColumnConfig!
 }
 
 type TableMetadata {

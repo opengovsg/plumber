@@ -508,9 +508,14 @@ export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
 }
 
 // Tiles
+export interface ITableColumnConfig {
+  width?: number
+}
+
 export interface ITableColumnMetadata {
   id: string
   name: string
+  position: number
 }
 
 export interface ITableMetadata {

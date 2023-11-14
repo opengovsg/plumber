@@ -22,6 +22,9 @@ const getTable = async (
       .findById(tableId)
       .throwIfNotFound()
 
+    // sort by position
+    table.columns.sort((a, b) => a.position - b.position)
+
     return table
   } catch (e) {
     if (e instanceof NotFoundError) {
