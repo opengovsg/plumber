@@ -579,9 +579,14 @@ export interface IStepError {
 }
 
 // Tiles
+export interface ITableColumnConfig {
+  width?: number
+}
+
 export interface ITableColumnMetadata {
   id: string
   name: string
+  position: number
 }
 
 export interface ITableMetadata {
