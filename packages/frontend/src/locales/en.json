@@ -33,8 +33,6 @@
   "flowEditor.actionEvent": "Action event",
   "flow.view": "View",
   "flow.delete": "Delete",
-  "flows.create": "Create pipe",
-  "flows.noFlows": "You don't have any pipes yet.",
   "flowEditor.goBack": "Go back to pipes",
   "executions.noExecutions": "There is no execution data point to show.",
   "execution.noDataTitle": "No data",
