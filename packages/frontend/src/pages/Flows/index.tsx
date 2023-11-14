@@ -130,7 +130,7 @@ export default function Flows(): React.ReactElement {
             page={pageInfo?.currentPage}
             count={pageInfo?.totalPages}
             onChange={(_event, page) =>
-              setSearchParams({ page: page.toString() })
+              setSearchParams(page === 1 ? {} : { page: page.toString() })
             }
           />
         )}
