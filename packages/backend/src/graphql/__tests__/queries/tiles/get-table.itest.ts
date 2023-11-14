@@ -27,7 +27,7 @@ describe('get single table query', () => {
       numColumns: 5,
     })
   })
-  it('should return table metadata', async () => {
+  it('should return table metadata with ordered columns', async () => {
     const table = await getTable(
       null,
       {
@@ -39,7 +39,7 @@ describe('get single table query', () => {
       id: dummyTable.id,
       name: dummyTable.name,
     })
-    expect(table.columns.map((c) => c.id).sort()).toEqual(dummyColumnIds.sort())
+    expect(table.columns.map((c) => c.id)).toEqual(dummyColumnIds)
   })
 
   it('should return empty array of columns if no columns exist', async () => {

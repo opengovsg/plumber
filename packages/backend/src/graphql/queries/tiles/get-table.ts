@@ -20,10 +20,8 @@ const getTable = async (
       .$relatedQuery('tables')
       .withGraphJoined('columns')
       .findById(tableId)
+      .orderBy('columns.position', 'asc')
       .throwIfNotFound()
-
-    // sort by position
-    table.columns.sort((a, b) => a.position - b.position)
 
     return table
   } catch (e) {
