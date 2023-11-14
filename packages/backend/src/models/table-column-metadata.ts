@@ -1,3 +1,5 @@
+import { ITableColumnConfig } from '@plumber/types'
+
 import Base from './base'
 import TableMetadata from './table-metadata'
 
@@ -5,6 +7,8 @@ class TableColumnMetadata extends Base {
   id!: string
   tableId!: string
   name: string
+  position: number
+  config: ITableColumnConfig
   table!: TableMetadata
 
   static tableName = 'table_column_metadata'
@@ -17,6 +21,8 @@ class TableColumnMetadata extends Base {
       id: { type: 'string', format: 'uuid' },
       tableId: { type: 'string', format: 'uuid' },
       name: { type: 'string' },
+      position: { type: 'integer' },
+      config: { type: 'object' },
     },
   }
 

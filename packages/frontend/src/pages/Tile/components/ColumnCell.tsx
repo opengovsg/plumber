@@ -29,10 +29,11 @@ export default function ColumnCell({ columnId, columnName }: ColumnCellProps) {
   const onSave = useCallback(
     async (e: FormEvent) => {
       e.preventDefault()
-      if (!newColumnName.length) {
+      const trimmedNewColumnName = newColumnName.trim()
+      if (!trimmedNewColumnName.length) {
         return
       }
-      await updateColumn(columnId, newColumnName)
+      await updateColumn(columnId, trimmedNewColumnName)
     },
     [newColumnName, updateColumn, columnId],
   )
@@ -66,6 +67,7 @@ export default function ColumnCell({ columnId, columnName }: ColumnCellProps) {
             <PopoverBody>
               <Input
                 placeholder="Column name"
+                isRequired
                 value={newColumnName}
                 onChange={(e) => setNewColumnName(e.target.value)}
               />
