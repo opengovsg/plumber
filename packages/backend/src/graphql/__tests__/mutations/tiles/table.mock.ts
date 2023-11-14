@@ -37,6 +37,10 @@ export async function generateMockTableColumns({
       TableColumnMetadata.query().insert({
         name: `Test Column ${i}`,
         tableId,
+        position: i,
+        config: {
+          width: 100 + i,
+        },
       }),
     )
   }
