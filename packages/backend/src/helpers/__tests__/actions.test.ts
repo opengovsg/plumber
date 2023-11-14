@@ -2,12 +2,16 @@ import type { IApp, IJSONObject } from '@plumber/types'
 
 import type { AxiosError } from 'axios'
 import { UnrecoverableError } from 'bullmq'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 
 import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
+import {
+  generateHttpStepError,
+  generateStepError,
+} from '../generate-step-error'
 
 vi.mock('@/apps', () => ({
   default: {
@@ -165,6 +169,38 @@ describe('action helper functions', () => {
         ).toThrowError(RetriableError)
       },
     )
+
+    it.each([
+      {
+        stepError: generateHttpStepError(
+          new HttpError({
+            response: {
+              headers: {
+                'retry-after': '15',
+              },
+            },
+          } as unknown as AxiosError),
+          'test solution',
+          1,
+          'test-app',
+        ),
+        isRetried: true,
+      },
+      {
+        stepError: generateStepError(
+          'non-http-step-error',
+          'test solution',
+          1,
+          'test-app',
+        ),
+        isRetried: false,
+      },
+    ])('inspects the cause in StepError', ({ stepError, isRetried }) => {
+      const expectedErrorType = isRetried ? RetriableError : UnrecoverableError
+      expect(() => handleErrorAndThrow({}, stepError)).toThrowError(
+        expectedErrorType,
+      )
+    })
 
     it.each([
       {

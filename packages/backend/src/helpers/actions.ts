@@ -6,6 +6,7 @@ import { get, memoize } from 'lodash'
 import apps from '@/apps'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 
 function getCompositeKey(appKey: string, actionKey: string): string {
   return `${appKey}:${actionKey}`
@@ -83,6 +84,9 @@ export function handleErrorAndThrow(
   executionError: unknown,
 ): never {
   // Only support retrying HTTP errors for now.
+  if (executionError instanceof StepError) {
+    executionError = executionError.cause
+  }
   if (!executionError || !(executionError instanceof HttpError)) {
     throw new UnrecoverableError(JSON.stringify(errorDetails))
   }
