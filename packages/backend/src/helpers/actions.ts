@@ -1,9 +1,12 @@
-import { IJSONObject } from '@plumber/types'
+import type { IJSONObject } from '@plumber/types'
 
 import { UnrecoverableError } from 'bullmq'
 import { get, memoize } from 'lodash'
 
 import apps from '@/apps'
+import HttpError from '@/errors/http'
+import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 
 function getCompositeKey(appKey: string, actionKey: string): string {
   return `${appKey}:${actionKey}`
@@ -39,28 +42,87 @@ export async function doesActionProcessFiles(
   )
 }
 
-const CONNECTIVITY_ERROR_SIGNS = ['ETIMEDOUT', 'ECONNRESET']
-const CONNECTIVITY_STATUS_CODE = [504, 429]
+/**
+ * Helper to parse Retry-After header, which we receive as seconds to delay, or Date after which to retry.
+ *
+ * @returns Non-negative (>= 0) number of milliseconds to wait before retrying,
+ * or null on failure (badly formatted value, or retry-after in the past)
+ */
+function parseRetryAfterToMs(
+  rawHeaderValue: string | null | undefined,
+): number | null {
+  if (!rawHeaderValue) {
+    return null
+  }
 
-export function handleErrorAndThrow(errorDetails: IJSONObject): never {
-  const errorVariable = get(errorDetails, 'details.error', '') as unknown
-  const errorString =
-    typeof errorVariable === 'string'
-      ? errorVariable
-      : JSON.stringify(errorVariable)
+  // Try parsing as seconds.
+  let retryAfter = Number(rawHeaderValue)
+  if (!isNaN(retryAfter)) {
+    return retryAfter >= 0 ? retryAfter * 1000 : null
+  }
 
-  const statusCode = Number(get(errorDetails, 'status', 0))
-  if (!errorString && !statusCode) {
+  // Try parsing as date.
+  retryAfter = new Date(rawHeaderValue).getTime()
+  if (isNaN(retryAfter)) {
+    return null
+  }
+
+  retryAfter = retryAfter - Date.now()
+  return retryAfter >= 0 ? retryAfter : null
+}
+
+const RETRY_AFTER_LIMIT_MS = 12 * 60 * 60 * 1000 // 12 hours
+const RETRIABLE_ERROR_SUBSTRINGS = ['ETIMEDOUT', 'ECONNRESET']
+const RETRIABLE_STATUS_CODES = [
+  504,
+  429, // Some 429s may not have Retry-After
+]
+
+export function handleErrorAndThrow(
+  errorDetails: IJSONObject,
+  // This is thrown from app.run, which _in theory_ can be anything.
+  executionError: unknown,
+): never {
+  // Only support retrying HTTP errors for now.
+  if (executionError instanceof StepError) {
+    executionError = executionError.cause
+  }
+  if (!executionError || !(executionError instanceof HttpError)) {
     throw new UnrecoverableError(JSON.stringify(errorDetails))
   }
 
-  // Certain connectivity errors can be retried.
-  const isConnectivityIssue =
-    CONNECTIVITY_ERROR_SIGNS.some((errorSign) =>
-      errorString.includes(errorSign),
-    ) || CONNECTIVITY_STATUS_CODE.includes(statusCode)
-  if (isConnectivityIssue) {
-    throw new Error(JSON.stringify(errorDetails))
+  // Handle reasonable Retry-After responses.
+  const retryAfterMs = parseRetryAfterToMs(
+    executionError.response?.headers?.['retry-after'],
+  )
+
+  if (retryAfterMs !== null) {
+    if (retryAfterMs <= RETRY_AFTER_LIMIT_MS) {
+      throw new RetriableError({
+        error: errorDetails,
+        delayInMs: retryAfterMs,
+      })
+    }
+    throw new UnrecoverableError(`Retry-After (${retryAfterMs}ms) is too long!`)
+  }
+
+  // Handle retriable status codes
+  if (RETRIABLE_STATUS_CODES.includes(executionError.response?.status)) {
+    throw new RetriableError({
+      error: errorDetails,
+      delayInMs: 'default',
+    })
+  }
+
+  // Handle retriable errors (identified by message substring)
+  const errorString = JSON.stringify(get(errorDetails, 'details.error', ''))
+  for (const errorSubstring of RETRIABLE_ERROR_SUBSTRINGS) {
+    if (errorString.includes(errorSubstring)) {
+      throw new RetriableError({
+        error: errorDetails,
+        delayInMs: 'default',
+      })
+    }
   }
 
   // All other errors cannot be retried.

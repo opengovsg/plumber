@@ -61,6 +61,7 @@ export const processAction = async (options: ProcessActionOptions) => {
   $.step.parameters = computedParameters
 
   let runResult: IActionRunResult = {}
+  let executionError: unknown = null
   try {
     // Cannot assign directly to runResult due to void return type.
     const result =
@@ -71,6 +72,8 @@ export const processAction = async (options: ProcessActionOptions) => {
       runResult = result
     }
   } catch (error) {
+    executionError = error
+
     logger.error(error)
     // log raw http error from StepError
     if (error instanceof StepError && error.cause) {
@@ -126,5 +129,6 @@ export const processAction = async (options: ProcessActionOptions) => {
     computedParameters,
     nextStep,
     nextStepMetadata: runResult.nextStepMetadata,
+    executionError,
   }
 }
