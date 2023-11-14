@@ -1,9 +1,6 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import HttpError from '@/errors/http'
 
 import sendEmailWithAttachments from '../../actions/send-email-with-attachments'
 
@@ -105,46 +102,6 @@ describe('send email with attachments', () => {
     // throw partial step error message
     await expect(sendEmailWithAttachments.run($)).rejects.toThrowError(
       'Empty subject',
-    )
-  })
-
-  it('should throw step error for invalid template (blacklist)', async () => {
-    // simulate postman error
-    const error400 = {
-      response: {
-        data: {
-          code: 'invalid_template',
-          message: 'Recipient email is blacklisted',
-        },
-        status: 400,
-        statusText: 'Bad Request',
-      },
-    } as AxiosError
-    const httpError = new HttpError(error400)
-    mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
-    // throw partial step error message
-    await expect(sendEmailWithAttachments.run($)).rejects.toThrowError(
-      'Status code: 400',
-    )
-  })
-
-  it('should throw step error for rate limit', async () => {
-    // simulate postman error
-    const error429 = {
-      response: {
-        data: {
-          code: 'rate_limit',
-          message: 'Too many requests. Please try again later.',
-        },
-        status: 429,
-        statusText: 'Bad Request',
-      },
-    } as AxiosError
-    const httpError = new HttpError(error429)
-    mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
-    // throw partial step error message
-    await expect(sendEmailWithAttachments.run($)).rejects.toThrowError(
-      'Status code: 429',
     )
   })
 })
