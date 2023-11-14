@@ -1,3 +1,6 @@
+import { ITableColumnConfig } from '@plumber/types'
+
+import TableColumnMetadata from '@/models/table-column-metadata'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -7,7 +10,8 @@ type Params = {
     addedColumns?: string[]
     modifiedColumns?: {
       id: string
-      name: string
+      name?: string
+      config?: ITableColumnConfig
     }[]
     deletedColumns?: string[]
   }
@@ -40,26 +44,49 @@ const updateTable = async (
   }
 
   if (addedColumns?.length) {
-    await table
-      .$relatedQuery('columns')
-      .insert(addedColumns.map((name) => ({ name })))
+    if (addedColumns.some((name) => !name.trim().length)) {
+      throw new Error('Invalid column name')
+    }
+    await TableColumnMetadata.transaction(async (trx) => {
+      const results = await table
+        .$relatedQuery('columns', trx)
+        .max('position as position')
+        .debug()
+      const maxPosition = results[0].position || 0
+      await table.$relatedQuery('columns', trx).insert(
+        addedColumns.map((name, i) => ({
+          name,
+          position: maxPosition + i + 1,
+        })),
+      )
+    })
   }
 
   if (modifiedColumns?.length) {
-    await Promise.all(
-      modifiedColumns.map(async (column) => {
-        await table
-          .$relatedQuery('columns')
-          .patchAndFetchById(column.id, {
-            name: column.name,
-          })
-          .throwIfNotFound()
-      }),
-    )
+    await TableColumnMetadata.transaction(async (trx) => {
+      await Promise.all(
+        modifiedColumns.map(async (column) => {
+          const { id, ...rest } = column
+          if (rest.name != null && !rest.name.trim().length) {
+            throw new Error('Invalid column name')
+          }
+          if (rest.config.width != null && rest.config.width < 1) {
+            throw new Error('Invalid column width')
+          }
+          await table
+            .$relatedQuery('columns', trx)
+            .patchAndFetchById(id, rest)
+            .throwIfNotFound()
+        }),
+      )
+    })
   }
 
   if (deletedColumns?.length) {
-    await table.$relatedQuery('columns').delete().whereIn('id', deletedColumns)
+    await table
+      .$relatedQuery('columns')
+      .hardDelete()
+      .whereIn('id', deletedColumns)
   }
 
   const updatedTable = await table.$fetchGraph('columns')

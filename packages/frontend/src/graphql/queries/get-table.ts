@@ -8,6 +8,10 @@ export const GET_TABLE = gql`
       columns {
         id
         name
+        position
+        config {
+          width
+        }
       }
     }
   }
