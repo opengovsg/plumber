@@ -578,6 +578,7 @@ export interface ITableColumnMetadata {
   id: string
   name: string
   position: number
+  config: ITableColumnConfig
 }
 
 export interface ITableMetadata {
