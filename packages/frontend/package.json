@@ -11,6 +11,7 @@
   "dependencies": {
     "@apollo/client": "3.8.7",
     "@chakra-ui/react": "2.6.1",
+    "@datadog/browser-rum": "^5.2.0",
     "@emotion/react": "11.10.5",
     "@emotion/styled": "11.10.5",
     "@fontsource/space-grotesk": "4.5.13",
