@@ -7,6 +7,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import appConfig from 'config/app'
 
 import { DELAY, NEW_ROW_ID, ROW_HEIGHT } from '../constants'
 import { useTableContext } from '../contexts/TableContext'
@@ -17,7 +18,6 @@ import { useCreateRow } from '../hooks/useCreateRow'
 import { useUpdateRow } from '../hooks/useUpdateRow'
 import { CellType, GenericRowData } from '../types'
 
-import ColumnResizer from './ColumnResizer'
 import TableFooter from './TableFooter'
 import TableRow from './TableRow'
 
@@ -102,7 +102,7 @@ export default function Table(): JSX.Element {
     getCoreRowModel: getCoreRowModel(),
     enableRowSelection: true,
     columnResizeMode: 'onChange',
-    debugColumns: true,
+    debugAll: appConfig.isDev,
     meta: {
       rowsUpdating,
       rowsCreated,
@@ -173,7 +173,6 @@ export default function Table(): JSX.Element {
                     header.column.columnDef.header,
                     header.getContext(),
                   )}
-              {header.id !== 'addNew' && <ColumnResizer header={header} />}
             </Box>
           ))}
         </Flex>

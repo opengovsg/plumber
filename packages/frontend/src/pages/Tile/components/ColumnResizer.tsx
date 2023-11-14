@@ -1,6 +1,8 @@
+import { useCallback } from 'react'
 import { Box } from '@chakra-ui/react'
 import { Header } from '@tanstack/react-table'
 
+import { useUpdateTable } from '../hooks/useUpdateTable'
 import { GenericRowData } from '../types'
 
 interface ColumnResizerProps {
@@ -8,13 +10,17 @@ interface ColumnResizerProps {
 }
 
 export default function ColumnResizer({ header }: ColumnResizerProps) {
+  const { updateColumns } = useUpdateTable()
+
+  const onResizeEnd = useCallback(async () => {
+    const newSize = header.getSize()
+    await updateColumns([{ id: header.id, config: { width: newSize } }])
+  }, [header, updateColumns])
+
   return (
     <Box
-      position="absolute"
-      right={0}
       w={2}
-      bottom={0}
-      top={0}
+      h="100%"
       cursor="col-resize"
       _hover={{
         bg: 'primary.600',
@@ -24,6 +30,8 @@ export default function ColumnResizer({ header }: ColumnResizerProps) {
       }}
       onMouseDown={header.getResizeHandler()}
       onTouchStart={header.getResizeHandler()}
+      onMouseUp={onResizeEnd}
+      onTouchEnd={onResizeEnd}
     />
   )
 }

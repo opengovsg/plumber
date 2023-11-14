@@ -542,9 +542,14 @@ input DeleteTableInput {
   id: ID!
 }
 
+type TableColumnConfig {
+  width: Int
+}
+
 type TableColumnMetadata {
   id: ID!
   name: String!
+  position: Int!
   config: TableColumnConfig!
 }
 

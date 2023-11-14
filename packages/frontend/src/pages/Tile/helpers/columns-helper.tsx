@@ -4,7 +4,7 @@ import { Box } from '@chakra-ui/react'
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table'
 
 import AddNewColumn from '../components/AddNewColumn'
-import ColumnCell from '../components/ColumnCell'
+import ColumnHeaderCell from '../components/ColumnHeaderCell'
 import TableCell from '../components/TableCell'
 import { GenericRowData } from '../types'
 
@@ -13,13 +13,15 @@ const columnHelper = createColumnHelper<GenericRowData>()
 export function createColumns(
   columns: ITableColumnMetadata[],
 ): ColumnDef<GenericRowData, any>[] {
-  const accessorColumns = columns.map(({ id, name }) =>
+  const accessorColumns = columns.map(({ id, name, config }) =>
     columnHelper.accessor(id, {
       id,
-      header: () => <ColumnCell columnId={id} columnName={name} />,
+      header: ({ header }) => (
+        <ColumnHeaderCell columnName={name} header={header} />
+      ),
       cell: TableCell,
       minSize: 100,
-      size: 300,
+      size: config?.width ?? 200,
     }),
   )
   const addNewColumn = columnHelper.display({

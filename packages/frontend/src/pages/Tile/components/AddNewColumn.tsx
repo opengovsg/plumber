@@ -10,6 +10,7 @@ import {
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
+  useDisclosure,
 } from '@chakra-ui/react'
 import {
   Button,
@@ -20,6 +21,7 @@ import {
 import { useUpdateTable } from '../hooks/useUpdateTable'
 
 export default function AddNewColumn() {
+  const { isOpen, onClose, onOpen } = useDisclosure()
   const { createColumn, isCreatingColumn } = useUpdateTable()
   const [newColumnName, setNewColumnName] = useState('')
 
@@ -30,12 +32,20 @@ export default function AddNewColumn() {
         return
       }
       await createColumn(newColumnName)
+      setNewColumnName('')
+      onClose()
     },
-    [createColumn, newColumnName],
+    [createColumn, newColumnName, onClose],
   )
 
   return (
-    <Popover closeOnBlur={true} computePositionOnMount>
+    <Popover
+      closeOnBlur={true}
+      computePositionOnMount
+      onClose={onClose}
+      onOpen={onOpen}
+      isOpen={isOpen}
+    >
       <PopoverTrigger>
         <Box h="100%">
           <Icon

@@ -8,22 +8,32 @@ import {
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
+  useDisclosure,
 } from '@chakra-ui/react'
 import {
   Button,
   Input,
   PopoverCloseButton,
 } from '@opengovsg/design-system-react'
+import { Header } from '@tanstack/react-table'
 
 import { useUpdateTable } from '../hooks/useUpdateTable'
+import { GenericRowData } from '../types'
 
-interface ColumnCellProps {
-  columnId: string
+import ColumnResizer from './ColumnResizer'
+
+interface ColumnHeaderCellProps {
   columnName: string
+  header: Header<GenericRowData, unknown>
 }
 
-export default function ColumnCell({ columnId, columnName }: ColumnCellProps) {
-  const { updateColumn, isUpdatingColumn } = useUpdateTable()
+export default function ColumnHeaderCell({
+  header,
+  columnName,
+}: ColumnHeaderCellProps) {
+  const { id } = header
+  const { isOpen, onClose, onOpen } = useDisclosure()
+  const { updateColumns, isUpdatingColumns } = useUpdateTable()
   const [newColumnName, setNewColumnName] = useState(columnName)
 
   const onSave = useCallback(
@@ -33,16 +43,23 @@ export default function ColumnCell({ columnId, columnName }: ColumnCellProps) {
       if (!trimmedNewColumnName.length) {
         return
       }
-      await updateColumn(columnId, trimmedNewColumnName)
+      await updateColumns([{ id, name: trimmedNewColumnName }])
+      onClose()
     },
-    [newColumnName, updateColumn, columnId],
+    [newColumnName, updateColumns, id, onClose],
   )
 
   return (
     <Flex h="100%">
-      <Popover closeOnBlur={true}>
+      <Popover
+        closeOnBlur={true}
+        isOpen={isOpen}
+        onClose={onClose}
+        onOpen={onOpen}
+      >
         <PopoverTrigger>
           <Flex
+            w="100%"
             tabIndex={0}
             py={2}
             px={4}
@@ -73,13 +90,14 @@ export default function ColumnCell({ columnId, columnName }: ColumnCellProps) {
               />
             </PopoverBody>
             <PopoverFooter justifyContent="flex-end" display="flex">
-              <Button type="submit" isLoading={isUpdatingColumn}>
+              <Button type="submit" isLoading={isUpdatingColumns}>
                 Save
               </Button>
             </PopoverFooter>
           </form>
         </PopoverContent>
       </Popover>
+      <ColumnResizer header={header} />
     </Flex>
   )
 }
