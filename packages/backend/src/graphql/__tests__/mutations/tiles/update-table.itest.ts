@@ -83,7 +83,7 @@ describe('update table mutation', () => {
   })
 
   describe('adding columns to table', () => {
-    it('should add columns to table', async () => {
+    it('should add columns to table with correct positions', async () => {
       const updatedTable = await updateTable(
         null,
         {
@@ -97,10 +97,12 @@ describe('update table mutation', () => {
         },
         context,
       )
-      const tableColumnCount = await updatedTable
+      const columns = await updatedTable
         .$relatedQuery('columns')
-        .resultSize()
-      expect(tableColumnCount).toBe(3)
+        .select('position')
+        .orderBy('position')
+      expect(columns.length).toBe(3)
+      expect(columns.map((c) => c.position)).toEqual([0, 1, 2])
     })
 
     it('should add columns to table with same name', async () => {
@@ -145,6 +147,31 @@ describe('update table mutation', () => {
         context,
       )
       expect(updatedTable.columns[0].name).toBe('New Column Name')
+    })
+
+    it('should modify column widths', async () => {
+      const updatedTable = await updateTable(
+        null,
+        {
+          input: {
+            id: dummyTable.id,
+            name: '',
+            addedColumns: [],
+            modifiedColumns: [
+              {
+                id: dummyColumnId,
+                name: 'New Column Name',
+                config: {
+                  width: 100,
+                },
+              },
+            ],
+            deletedColumns: [],
+          },
+        },
+        context,
+      )
+      expect(updatedTable.columns[0].config.width).toBe(100)
     })
 
     it('should fail if column does not exist', async () => {
