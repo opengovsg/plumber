@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "scripts": {
     "dev": "vite --host --force",
     "build": "tsc && vite build --mode=${VITE_MODE:-prod}",
@@ -9,8 +9,9 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@apollo/client": "3.7.17",
+    "@apollo/client": "3.8.7",
     "@chakra-ui/react": "2.6.1",
+    "@datadog/browser-rum": "^5.2.0",
     "@emotion/react": "11.10.5",
     "@emotion/styled": "11.10.5",
     "@fontsource/space-grotesk": "4.5.13",

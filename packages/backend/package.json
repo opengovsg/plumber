@@ -34,7 +34,7 @@
     "cookie-parser": "1.4.6",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
-    "crypto-js": "^4.1.1",
+    "crypto-js": "^4.2.0",
     "csv-parse": "5.4.0",
     "dd-trace": "4.17.0",
     "dedent": "1.5.1",

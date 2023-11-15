@@ -1,12 +1,14 @@
+import { IRawAction } from '@plumber/types'
+
 import { URL } from 'url'
 
-import defineAction from '@/helpers/define-action'
+import { generateHttpStepError } from '@/helpers/generate-step-error'
 
 import { isUrlAllowed } from '../../common/ip-resolver'
 
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Make a HTTP Request',
   key: 'httpRequest',
   description: 'Makes a custom HTTP request by providing raw details.',
@@ -59,14 +61,25 @@ export default defineAction({
       throw new Error('The URL you are trying to call is not allowed.')
     }
 
-    const response = await $.http.request({
-      url,
-      method,
-      data,
-      // Redirects open up way too many vulns (e.g. someone changes the
-      // redirect target to a malicious endpoint), so disable it.
-      maxRedirects: 0,
-    })
+    const response = await $.http
+      .request({
+        url,
+        method,
+        data,
+        // Redirects open up way too many vulns (e.g. someone changes the
+        // redirect target to a malicious endpoint), so disable it.
+        maxRedirects: 0,
+      })
+      .catch((err): never => {
+        const stepErrorSolution =
+          'Check your custom app based on the status code and retry again.'
+        throw generateHttpStepError(
+          err,
+          stepErrorSolution,
+          $.step.position,
+          $.app.name,
+        )
+      })
 
     let responseData = response.data
 
@@ -76,4 +89,6 @@ export default defineAction({
 
     $.setActionItem({ raw: { data: responseData } })
   },
-})
+}
+
+export default action

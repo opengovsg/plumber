@@ -1,4 +1,4 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
@@ -8,7 +8,7 @@ import dynamicData from './dynamic-data'
 const WORKSPACE_BASEURL =
   'https://jcxk888grj.execute-api.ap-southeast-1.amazonaws.com'
 
-export default defineApp({
+const app: IApp = {
   name: 'Vault Workspace',
   key: 'vault-workspace',
   baseUrl: WORKSPACE_BASEURL,
@@ -23,4 +23,6 @@ export default defineApp({
   actions,
   // disabling triggers from vault workspace
   dynamicData,
-})
+}
+
+export default app

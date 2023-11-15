@@ -1,6 +1,6 @@
-import defineAction from '@/helpers/define-action'
+import { IRawAction } from '@plumber/types'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Delay For',
   key: 'delayFor',
   description:
@@ -59,4 +59,6 @@ export default defineAction({
 
     $.setActionItem({ raw: dataItem })
   },
-})
+}
+
+export default action

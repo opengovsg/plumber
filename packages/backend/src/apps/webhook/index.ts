@@ -1,8 +1,8 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import triggers from './triggers'
 
-export default defineApp({
+const app: IApp = {
   name: 'Webhook',
   key: 'webhook',
   iconUrl: '{BASE_URL}/apps/webhook/assets/favicon.svg',
@@ -12,4 +12,6 @@ export default defineApp({
   apiBaseUrl: '',
   primaryColor: '0059F7',
   triggers,
-})
+}
+
+export default app
