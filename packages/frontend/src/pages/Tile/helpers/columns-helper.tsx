@@ -6,6 +6,7 @@ import { ColumnDef, createColumnHelper } from '@tanstack/react-table'
 import ColumnHeaderCell from '../components/ColumnHeaderCell'
 import NewColumnHeaderCell from '../components/NewColumnHeaderCell'
 import TableCell from '../components/TableCell'
+import { NEW_COLUMN_ID } from '../constants'
 import { GenericRowData } from '../types'
 
 const columnHelper = createColumnHelper<GenericRowData>()
@@ -25,7 +26,7 @@ export function createColumns(
     }),
   )
   const addNewColumn = columnHelper.display({
-    id: 'addNew',
+    id: NEW_COLUMN_ID,
     header: NewColumnHeaderCell,
     cell: () => <Box bgColor="white" h="100%" w="100%" />,
     size: 50,
