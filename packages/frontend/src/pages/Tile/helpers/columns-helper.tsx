@@ -3,8 +3,8 @@ import { ITableColumnMetadata } from '@plumber/types'
 import { Box } from '@chakra-ui/react'
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table'
 
-import AddNewColumn from '../components/AddNewColumn'
 import ColumnHeaderCell from '../components/ColumnHeaderCell'
+import NewColumnHeaderCell from '../components/NewColumnHeaderCell'
 import TableCell from '../components/TableCell'
 import { GenericRowData } from '../types'
 
@@ -26,7 +26,7 @@ export function createColumns(
   )
   const addNewColumn = columnHelper.display({
     id: 'addNew',
-    header: AddNewColumn,
+    header: NewColumnHeaderCell,
     cell: () => <Box bgColor="white" h="100%" w="100%" />,
     size: 50,
   })

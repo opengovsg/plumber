@@ -20,7 +20,7 @@ import {
 
 import { useUpdateTable } from '../hooks/useUpdateTable'
 
-export default function AddNewColumn() {
+export default function NewColumnHeaderCell() {
   const { isOpen, onClose, onOpen } = useDisclosure()
   const { createColumn, isCreatingColumn } = useUpdateTable()
   const [newColumnName, setNewColumnName] = useState('')
@@ -47,7 +47,7 @@ export default function AddNewColumn() {
       isOpen={isOpen}
     >
       <PopoverTrigger>
-        <Box h="100%">
+        <Box h="100%" position="relative" w={50}>
           <Icon
             tabIndex={0}
             as={FiPlus}
