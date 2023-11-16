@@ -53,6 +53,12 @@ export default function Headers({ table }: HeadersProps) {
   return (
     <DndContext
       sensors={sensors}
+      autoScroll={{
+        threshold: {
+          x: 0.2, // default value in source code
+          y: -1, // disable vertical scrolling when dragging
+        },
+      }}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
       modifiers={[restrictToHorizontalAxis]}
