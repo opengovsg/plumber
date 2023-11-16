@@ -8,6 +8,8 @@ import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import Step from '@/models/step'
 
+import Step from '@/models/step'
+
 import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
 import {
   generateHttpStepError,
