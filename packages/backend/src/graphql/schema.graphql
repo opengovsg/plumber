@@ -527,6 +527,7 @@ input TableColumnConfigInput {
 input TableColumnMetadataInput {
   id: ID!
   name: String
+  position: Int
   config: TableColumnConfigInput
 }
 
