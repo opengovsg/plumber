@@ -50,7 +50,12 @@ export default function ColumnHeaderCell({
   )
 
   return (
-    <Flex h="100%">
+    <Flex
+      h="100%"
+      w={header.getSize()}
+      borderRightWidth={'0.5px'}
+      borderColor="primary.400"
+    >
       <Popover
         closeOnBlur={true}
         isOpen={isOpen}
