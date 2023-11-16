@@ -1,6 +1,8 @@
 import { FormEvent, useCallback, useState } from 'react'
+import { MdDragIndicator } from 'react-icons/md'
 import {
   Flex,
+  Icon,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -10,6 +12,8 @@ import {
   PopoverTrigger,
   useDisclosure,
 } from '@chakra-ui/react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   Button,
   Input,
@@ -36,6 +40,20 @@ export default function ColumnHeaderCell({
   const { updateColumns, isUpdatingColumns } = useUpdateTable()
   const [newColumnName, setNewColumnName] = useState(columnName)
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id })
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  }
+
   const onSave = useCallback(
     async (e: FormEvent) => {
       e.preventDefault()
@@ -52,9 +70,14 @@ export default function ColumnHeaderCell({
   return (
     <Flex
       h="100%"
+      style={{ ...style }}
+      scaleX={1}
       w={header.getSize()}
       borderRightWidth={'0.5px'}
       borderColor="primary.400"
+      ref={setNodeRef}
+      bg="primary.700"
+      zIndex={isDragging ? 2 : undefined}
     >
       <Popover
         closeOnBlur={true}
@@ -102,6 +125,25 @@ export default function ColumnHeaderCell({
           </form>
         </PopoverContent>
       </Popover>
+      <Icon
+        as={MdDragIndicator}
+        w={5}
+        h="100%"
+        opacity={0.5}
+        cursor="grab"
+        _hover={{
+          opacity: 1,
+          bg: 'primary.800',
+        }}
+        _focus={{
+          outline: 'none',
+        }}
+        _active={{
+          cursor: 'grabbing',
+        }}
+        {...attributes}
+        {...listeners}
+      />
       <ColumnResizer header={header} />
     </Flex>
   )

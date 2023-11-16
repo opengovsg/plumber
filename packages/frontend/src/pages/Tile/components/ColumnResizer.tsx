@@ -23,10 +23,10 @@ export default function ColumnResizer({ header }: ColumnResizerProps) {
       h="100%"
       cursor="col-resize"
       _hover={{
-        bg: 'primary.600',
+        bg: 'primary.800',
       }}
       _active={{
-        bg: 'primary.500',
+        bg: 'primary.800',
       }}
       onMouseDown={header.getResizeHandler()}
       onTouchStart={header.getResizeHandler()}

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
-  flexRender,
+  ColumnOrderState,
   getCoreRowModel,
   Row,
   useReactTable,
@@ -18,6 +18,7 @@ import { useCreateRow } from '../hooks/useCreateRow'
 import { useUpdateRow } from '../hooks/useUpdateRow'
 import { CellType, GenericRowData } from '../types'
 
+import Headers from './Headers'
 import TableFooter from './TableFooter'
 import TableRow from './TableRow'
 
@@ -26,6 +27,9 @@ export default function Table(): JSX.Element {
   const [data, setData] = useState<GenericRowData[]>(flattenedData)
   const parentRef = useRef<HTMLDivElement>(null)
   const columns = useMemo(() => createColumns(tableColumns), [tableColumns])
+  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
+    columns.map((c) => c.id as string),
+  )
 
   const [editingCell, setEditingCell] = useState<CellType | null>(null)
   // We use ref instead of state to prevent re-rendering on change
@@ -101,8 +105,12 @@ export default function Table(): JSX.Element {
     getRowId: (row) => row.rowId,
     getCoreRowModel: getCoreRowModel(),
     enableRowSelection: true,
+    onColumnOrderChange: setColumnOrder,
     columnResizeMode: 'onChange',
     debugAll: appConfig.isDev,
+    state: {
+      columnOrder,
+    },
     meta: {
       rowsUpdating,
       rowsCreated,
@@ -160,11 +168,7 @@ export default function Table(): JSX.Element {
           color="white"
           fontWeight="bold"
         >
-          {table
-            .getFlatHeaders()
-            .map((header) =>
-              flexRender(header.column.columnDef.header, header.getContext()),
-            )}
+          <Headers table={table} />
         </Flex>
 
         <Box position="relative" borderY="none">
