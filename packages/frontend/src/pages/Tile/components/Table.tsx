@@ -157,24 +157,14 @@ export default function Table(): JSX.Element {
           position="sticky"
           top={0}
           zIndex={10}
+          color="white"
+          fontWeight="bold"
         >
-          {table.getFlatHeaders().map((header) => (
-            <Box
-              key={header.id}
-              p={0}
-              w={header.getSize()}
-              color="white"
-              fontWeight="bold"
-              position="relative"
-            >
-              {header.isPlaceholder
-                ? null
-                : flexRender(
-                    header.column.columnDef.header,
-                    header.getContext(),
-                  )}
-            </Box>
-          ))}
+          {table
+            .getFlatHeaders()
+            .map((header) =>
+              flexRender(header.column.columnDef.header, header.getContext()),
+            )}
         </Flex>
 
         <Box position="relative" borderY="none">
