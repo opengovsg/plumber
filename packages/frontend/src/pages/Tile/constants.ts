@@ -14,3 +14,5 @@ export const ROW_HEIGHT = {
   EXPANDED: 132,
   FOOTER: 40,
 }
+
+export const NEW_COLUMN_ID = 'add-new'
