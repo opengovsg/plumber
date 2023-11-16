@@ -1,10 +1,11 @@
-import { IRawAction } from '@plumber/types'
+import { IJSONArray, IRawAction } from '@plumber/types'
 
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import { generateStepError } from '@/helpers/generate-step-error'
 import { getObjectFromS3Id } from '@/helpers/s3'
+import Step from '@/models/step'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
 import {
@@ -19,7 +20,12 @@ const action: IRawAction = {
   key: 'sendTransactionalEmail',
   description: "Sends an email using Postman's transactional API.",
   arguments: transactionalEmailFields,
-  doesFileProcessing: true,
+  doesFileProcessing: (step: Step) => {
+    return (
+      step.parameters.attachments &&
+      (step.parameters.attachments as IJSONArray).length > 0
+    )
+  },
 
   async run($, metadata) {
     let progress = 0
