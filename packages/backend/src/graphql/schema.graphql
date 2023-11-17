@@ -73,7 +73,7 @@ type Mutation {
   # Tiles rows
   createRow(input: CreateTableRowInput!): ID!
   updateRow(input: UpdateTableRowInput!): ID!
-  deleteRow(input: DeleteTableRowInput!): Boolean!
+  deleteRows(input: DeleteTableRowsInput!): [ID!]!
 }
 
 """
@@ -580,7 +580,7 @@ input UpdateTableRowInput {
   data: JSONObject!
 }
 
-input DeleteTableRowInput {
+input DeleteTableRowsInput {
   tableId: ID!
   rowIds: [ID!]!
 }

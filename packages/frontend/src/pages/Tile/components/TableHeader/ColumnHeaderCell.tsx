@@ -91,6 +91,8 @@ export default function ColumnHeaderCell({
             tabIndex={0}
             py={2}
             px={4}
+            overflow="hidden"
+            whiteSpace="nowrap"
             cursor="pointer"
             alignItems="center"
             justifyContent="space-between"

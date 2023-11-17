@@ -17,7 +17,7 @@ export interface UpdateRowInput {
   data: Record<string, IJSONPrimitive>
 }
 
-export interface DeleteRowInput {
+export interface DeleteRowsInput {
   tableId: string
   rowIds: string[]
 }
@@ -122,7 +122,7 @@ export const updateTableRow = async ({
 export const deleteTableRows = async ({
   rowIds,
   tableId,
-}: DeleteRowInput): Promise<void> => {
+}: DeleteRowsInput): Promise<void> => {
   try {
     let batch = []
     const batchDeletePromises = []
