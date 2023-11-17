@@ -4,9 +4,9 @@ import { Flex, Kbd } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import { Table } from '@tanstack/react-table'
 
-import { ROW_HEIGHT } from '../constants'
-import { scrollToBottom, scrollToTop } from '../helpers/scroll-helper'
-import { GenericRowData } from '../types'
+import { ROW_HEIGHT } from '../../constants'
+import { scrollToBottom, scrollToTop } from '../../helpers/scroll-helper'
+import { GenericRowData } from '../../types'
 
 interface TableFooterProps {
   table: Table<GenericRowData>

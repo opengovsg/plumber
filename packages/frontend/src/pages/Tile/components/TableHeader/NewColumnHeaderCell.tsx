@@ -18,7 +18,7 @@ import {
   PopoverCloseButton,
 } from '@opengovsg/design-system-react'
 
-import { useUpdateTable } from '../hooks/useUpdateTable'
+import { useUpdateTable } from '../../hooks/useUpdateTable'
 
 export default function NewColumnHeaderCell() {
   const { isOpen, onClose, onOpen } = useDisclosure()
