@@ -15,15 +15,15 @@ import {
 } from '@dnd-kit/sortable'
 import { flexRender, Table } from '@tanstack/react-table'
 
-import { NEW_COLUMN_ID } from '../constants'
-import { useUpdateTable } from '../hooks/useUpdateTable'
-import { GenericRowData } from '../types'
+import { NEW_COLUMN_ID, SELECT_COLUMN_ID } from '../../constants'
+import { useUpdateTable } from '../../hooks/useUpdateTable'
+import { GenericRowData } from '../../types'
 
-interface HeadersProps {
+interface TableHeaderProps {
   table: Table<GenericRowData>
 }
 
-export default function Headers({ table }: HeadersProps) {
+export default function TableHeader({ table }: TableHeaderProps) {
   const sensors = useSensors(useSensor(PointerSensor))
 
   const { updateColumns } = useUpdateTable()
@@ -42,7 +42,7 @@ export default function Headers({ table }: HeadersProps) {
 
         updateColumns(
           newOrder
-            .filter((id) => id !== NEW_COLUMN_ID)
+            .filter((id) => ![SELECT_COLUMN_ID, NEW_COLUMN_ID].includes(id))
             .map((id, position) => ({ id, position })),
         )
       }

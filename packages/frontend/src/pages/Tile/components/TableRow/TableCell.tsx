@@ -11,9 +11,9 @@ import {
 import { Textarea } from '@chakra-ui/react'
 import { CellContext } from '@tanstack/react-table'
 
-import { NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../constants'
-import { shallowCompare } from '../helpers/shallow-compare'
-import { CellType, GenericRowData } from '../types'
+import { NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../../constants'
+import { shallowCompare } from '../../helpers/shallow-compare'
+import { CellType, GenericRowData } from '../../types'
 
 import styles from './TableCell.module.css'
 

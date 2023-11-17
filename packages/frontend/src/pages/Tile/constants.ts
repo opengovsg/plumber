@@ -16,3 +16,4 @@ export const ROW_HEIGHT = {
 }
 
 export const NEW_COLUMN_ID = 'add-new'
+export const SELECT_COLUMN_ID = 'select'

@@ -21,8 +21,8 @@ import {
 } from '@opengovsg/design-system-react'
 import { Header } from '@tanstack/react-table'
 
-import { useUpdateTable } from '../hooks/useUpdateTable'
-import { GenericRowData } from '../types'
+import { useUpdateTable } from '../../hooks/useUpdateTable'
+import { GenericRowData } from '../../types'
 
 import ColumnResizer from './ColumnResizer'
 
