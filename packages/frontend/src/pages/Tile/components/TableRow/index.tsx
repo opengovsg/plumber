@@ -1,8 +1,8 @@
 import { flexRender, Row } from '@tanstack/react-table'
 import { VirtualItem } from '@tanstack/react-virtual'
 
-import { ROW_HEIGHT } from '../constants'
-import { GenericRowData } from '../types'
+import { ROW_HEIGHT } from '../../constants'
+import { GenericRowData } from '../../types'
 
 import styles from './TableRow.module.css'
 

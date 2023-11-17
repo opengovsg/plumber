@@ -18,8 +18,8 @@ import { useCreateRow } from '../hooks/useCreateRow'
 import { useUpdateRow } from '../hooks/useUpdateRow'
 import { CellType, GenericRowData } from '../types'
 
-import Headers from './Headers'
 import TableFooter from './TableFooter'
+import TableHeader from './TableHeader'
 import TableRow from './TableRow'
 
 export default function Table(): JSX.Element {
@@ -27,6 +27,7 @@ export default function Table(): JSX.Element {
   const [data, setData] = useState<GenericRowData[]>(flattenedData)
   const parentRef = useRef<HTMLDivElement>(null)
   const columns = useMemo(() => createColumns(tableColumns), [tableColumns])
+  const [rowSelection, setRowSelection] = useState({})
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
     columns.map((c) => c.id as string),
   )
@@ -104,12 +105,14 @@ export default function Table(): JSX.Element {
     columns,
     getRowId: (row) => row.rowId,
     getCoreRowModel: getCoreRowModel(),
-    enableRowSelection: true,
     onColumnOrderChange: setColumnOrder,
     columnResizeMode: 'onChange',
     debugAll: appConfig.isDev,
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     state: {
       columnOrder,
+      rowSelection,
     },
     meta: {
       rowsUpdating,
@@ -168,7 +171,7 @@ export default function Table(): JSX.Element {
           color="white"
           fontWeight="bold"
         >
-          <Headers table={table} />
+          <TableHeader table={table} />
         </Flex>
 
         <Box position="relative" borderY="none">
