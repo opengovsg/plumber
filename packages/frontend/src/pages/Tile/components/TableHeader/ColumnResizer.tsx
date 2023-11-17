@@ -2,8 +2,8 @@ import { useCallback } from 'react'
 import { Box } from '@chakra-ui/react'
 import { Header } from '@tanstack/react-table'
 
-import { useUpdateTable } from '../hooks/useUpdateTable'
-import { GenericRowData } from '../types'
+import { useUpdateTable } from '../../hooks/useUpdateTable'
+import { GenericRowData } from '../../types'
 
 interface ColumnResizerProps {
   header: Header<GenericRowData, unknown>
