@@ -5,6 +5,10 @@ import { GenericRowData } from '../../types'
 export default function CheckboxCell({
   row,
 }: CellContext<GenericRowData, unknown>) {
+  if (!row.getCanSelect()) {
+    return null
+  }
+
   return (
     <label
       style={{

@@ -8,6 +8,8 @@ import { ROW_HEIGHT } from '../../constants'
 import { scrollToBottom, scrollToTop } from '../../helpers/scroll-helper'
 import { GenericRowData } from '../../types'
 
+import DeleteRowsButton from './DeleteRowsButton'
+
 interface TableFooterProps {
   table: Table<GenericRowData>
   parentRef: React.RefObject<HTMLDivElement>
@@ -50,15 +52,18 @@ export default function TableFooter({ table, parentRef }: TableFooterProps) {
           Scroll to bottom <Kbd bg="white">end</Kbd>
         </Button>
       </Flex>
-      <Button
-        variant="clear"
-        size="xs"
-        h="100%"
-        leftIcon={<BsPlus />}
-        onClick={onAddNewRow}
-      >
-        Add new row
-      </Button>
+      <Flex>
+        {<DeleteRowsButton table={table} />}
+        <Button
+          variant="clear"
+          size="xs"
+          h="100%"
+          leftIcon={<BsPlus />}
+          onClick={onAddNewRow}
+        >
+          Add new row
+        </Button>
+      </Flex>
     </Flex>
   )
 }

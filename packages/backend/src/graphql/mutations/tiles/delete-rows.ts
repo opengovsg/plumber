@@ -1,8 +1,8 @@
-import { DeleteRowInput, deleteTableRows } from '@/models/dynamodb/table-row'
+import { DeleteRowsInput, deleteTableRows } from '@/models/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 type Params = {
-  input: DeleteRowInput
+  input: DeleteRowsInput
 }
 
 const deleteRows = async (
