@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
   ColumnOrderState,
@@ -7,9 +7,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import appConfig from 'config/app'
 
-import { DELAY, NEW_ROW_ID, ROW_HEIGHT } from '../constants'
+import { DELAY, NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../constants'
 import { useTableContext } from '../contexts/TableContext'
 import { createColumns } from '../helpers/columns-helper'
 import { scrollToBottom } from '../helpers/scroll-helper'
@@ -31,6 +30,9 @@ export default function Table(): JSX.Element {
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
     columns.map((c) => c.id as string),
   )
+  useEffect(() => {
+    setColumnOrder(columns.map((c) => c.id as string))
+  }, [columns])
 
   const [editingCell, setEditingCell] = useState<CellType | null>(null)
   // We use ref instead of state to prevent re-rendering on change
@@ -100,6 +102,14 @@ export default function Table(): JSX.Element {
     }
   }, [isAddingNewRow])
 
+  const removeRows = useCallback(
+    (rowIds: string[]) => {
+      const deletedRowIds = new Set(rowIds)
+      setData((data) => data.filter((row) => !deletedRowIds.has(row.rowId)))
+    },
+    [setData],
+  )
+
   const table = useReactTable({
     data,
     columns,
@@ -107,8 +117,10 @@ export default function Table(): JSX.Element {
     getCoreRowModel: getCoreRowModel(),
     onColumnOrderChange: setColumnOrder,
     columnResizeMode: 'onChange',
-    debugAll: appConfig.isDev,
-    enableRowSelection: true,
+    // debugAll: appConfig.isDev,
+    enableRowSelection: (row) =>
+      // prevent selection of new and temp rows
+      row.id !== NEW_ROW_ID && !row.id.startsWith(TEMP_ROW_ID_PREFIX),
     onRowSelectionChange: setRowSelection,
     state: {
       columnOrder,
@@ -122,6 +134,7 @@ export default function Table(): JSX.Element {
       setActiveCell,
       addNewRow,
       isAddingNewRow,
+      removeRows,
       focusOnNewRow: () => {
         setTimeout(() => {
           try {

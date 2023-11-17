@@ -23,7 +23,7 @@ export function createColumns(
         <ColumnHeaderCell columnName={name} header={header} />
       ),
       cell: TableCell,
-      minSize: 100,
+      minSize: 150,
       size: config?.width ?? 200,
     }),
   )

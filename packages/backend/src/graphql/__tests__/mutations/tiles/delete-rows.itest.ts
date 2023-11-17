@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import deleteRow from '@/graphql/mutations/tiles/delete-rows'
+import deleteRows from '@/graphql/mutations/tiles/delete-rows'
 import { TableRow } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
@@ -51,7 +51,7 @@ describe('delete rows mutation', () => {
 
   it('should delete rows with given ids', async () => {
     const slicedRows = rowIds.slice(0, 5)
-    const success = await deleteRow(
+    const success = await deleteRows(
       null,
       { input: { tableId: dummyTable.id, rowIds: slicedRows } },
       context,
@@ -68,7 +68,7 @@ describe('delete rows mutation', () => {
   })
 
   it('should be able to delete more than 25 rows', async () => {
-    const success = await deleteRow(
+    const success = await deleteRows(
       null,
       { input: { tableId: dummyTable.id, rowIds } },
       context,
@@ -87,7 +87,7 @@ describe('delete rows mutation', () => {
   it('should not throw an error if row id does not exist', async () => {
     const invalidRowIds = ['invalid row id 123', 'invalid row id 456']
     await expect(
-      deleteRow(
+      deleteRows(
         null,
         { input: { tableId: dummyTable.id, rowIds: invalidRowIds } },
         context,

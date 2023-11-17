@@ -10,6 +10,7 @@ declare module '@tanstack/react-table' {
     rowsCreated: Set<string>
     tempRowData: MutableRefObject<GenericRowData | null>
     addNewRow: () => void
+    removeRows: (rowIds: string[]) => void
     isAddingNewRow: boolean
     focusOnNewRow: () => void
   }

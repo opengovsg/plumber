@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { Fragment, useCallback } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -49,6 +49,7 @@ export default function TableHeader({ table }: TableHeaderProps) {
     },
     [table, updateColumns],
   )
+  const columnOrder = table.getState().columnOrder
 
   return (
     <DndContext
@@ -64,14 +65,16 @@ export default function TableHeader({ table }: TableHeaderProps) {
       modifiers={[restrictToHorizontalAxis]}
     >
       <SortableContext
-        items={table.getState().columnOrder}
+        items={columnOrder}
         strategy={horizontalListSortingStrategy}
       >
-        {table
-          .getFlatHeaders()
-          .map((header) =>
-            flexRender(header.column.columnDef.header, header.getContext()),
-          )}
+        {table.getFlatHeaders().map((header) => (
+          <Fragment key={header.id}>
+            {/* prevents new column from temporarily appearing after the + column */}
+            {columnOrder.includes(header.id) &&
+              flexRender(header.column.columnDef.header, header.getContext())}
+          </Fragment>
+        ))}
       </SortableContext>
     </DndContext>
   )
