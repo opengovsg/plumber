@@ -29,6 +29,7 @@ export function useUpdateTable() {
   const { tableId } = useTableContext()
   const [isCreatingColumn, setIsCreatingColumn] = useState(false)
   const [isUpdatingColumns, setIsUpdatingColumns] = useState(false)
+  const [isDeletingColumns, setIsDeletingColumns] = useState(false)
 
   const [updateTable] = useMutation<UpdateTableOutput, UpdateTableInput>(
     UPDATE_TABLE,
@@ -80,5 +81,33 @@ export function useUpdateTable() {
     [tableId, updateTable],
   )
 
-  return { createColumn, isCreatingColumn, updateColumns, isUpdatingColumns }
+  const deleteColumns = useCallback(
+    (deletedColumns: UpdateTableInput['input']['deletedColumns']) => {
+      setIsUpdatingColumns(true)
+      return updateTable({
+        variables: {
+          input: {
+            id: tableId,
+            deletedColumns,
+          },
+        },
+        onCompleted: () => {
+          setIsDeletingColumns(false)
+        },
+        onError: () => {
+          setIsDeletingColumns(false)
+        },
+      })
+    },
+    [tableId, updateTable],
+  )
+
+  return {
+    createColumn,
+    isCreatingColumn,
+    updateColumns,
+    isUpdatingColumns,
+    deleteColumns,
+    isDeletingColumns,
+  }
 }
