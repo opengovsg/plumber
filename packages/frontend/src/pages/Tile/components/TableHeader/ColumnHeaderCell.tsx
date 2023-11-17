@@ -1,11 +1,9 @@
-import { FormEvent, useCallback, useState } from 'react'
 import { MdDragIndicator } from 'react-icons/md'
 import {
   Flex,
   Icon,
   Popover,
   PopoverArrow,
-  PopoverBody,
   PopoverContent,
   PopoverFooter,
   PopoverHeader,
@@ -14,17 +12,13 @@ import {
 } from '@chakra-ui/react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import {
-  Button,
-  Input,
-  PopoverCloseButton,
-} from '@opengovsg/design-system-react'
 import { Header } from '@tanstack/react-table'
 
-import { useUpdateTable } from '../../hooks/useUpdateTable'
 import { GenericRowData } from '../../types'
 
 import ColumnResizer from './ColumnResizer'
+import DeleteColumnButton from './DeleteColumnButton'
+import EditColumnName from './EditColumnName'
 
 interface ColumnHeaderCellProps {
   columnName: string
@@ -37,8 +31,6 @@ export default function ColumnHeaderCell({
 }: ColumnHeaderCellProps) {
   const { id } = header
   const { isOpen, onClose, onOpen } = useDisclosure()
-  const { updateColumns, isUpdatingColumns } = useUpdateTable()
-  const [newColumnName, setNewColumnName] = useState(columnName)
 
   const {
     attributes,
@@ -53,19 +45,6 @@ export default function ColumnHeaderCell({
     transform: CSS.Translate.toString(transform),
     transition,
   }
-
-  const onSave = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault()
-      const trimmedNewColumnName = newColumnName.trim()
-      if (!trimmedNewColumnName.length) {
-        return
-      }
-      await updateColumns([{ id, name: trimmedNewColumnName }])
-      onClose()
-    },
-    [newColumnName, updateColumns, id, onClose],
-  )
 
   return (
     <Flex
@@ -108,23 +87,12 @@ export default function ColumnHeaderCell({
         </PopoverTrigger>
         <PopoverContent color="secondary.900" outline="none">
           <PopoverArrow />
-          <PopoverCloseButton top={0} right={1} />
-          <PopoverHeader>Edit column</PopoverHeader>
-          <form onSubmit={onSave}>
-            <PopoverBody>
-              <Input
-                placeholder="Column name"
-                isRequired
-                value={newColumnName}
-                onChange={(e) => setNewColumnName(e.target.value)}
-              />
-            </PopoverBody>
-            <PopoverFooter justifyContent="flex-end" display="flex">
-              <Button type="submit" isLoading={isUpdatingColumns}>
-                Save
-              </Button>
-            </PopoverFooter>
-          </form>
+          <PopoverHeader>
+            <EditColumnName id={id} columnName={columnName} />
+          </PopoverHeader>
+          <PopoverFooter justifyContent="flex-start" display="flex">
+            <DeleteColumnButton id={id} />
+          </PopoverFooter>
         </PopoverContent>
       </Popover>
       <Icon
