@@ -32,6 +32,9 @@ export function throwSendMessageError(
     } else if (errorString.includes('chat not found')) {
       stepErrorSolution =
         'Click on set up action and check that a valid chat ID is used. Otherwise, remove and re-add the bot into the group. Make sure that you send a message to the bot before the bot can send messages to you.'
+    } else {
+      // return original error since uncaught
+      throw err
     }
   } else if (status === 403) {
     stepErrorSolution =
