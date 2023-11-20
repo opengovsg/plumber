@@ -1,12 +1,10 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import {
-  generateHttpStepError,
-  generateStepError,
-} from '@/helpers/generate-step-error'
+import { generateStepError } from '@/helpers/generate-step-error'
 
 import { VAULT_ID } from './constants'
 import { getColumnMapping } from './get-column-mapping'
+import { throwGetFilteredRowsError } from './throw-errors'
 
 const filterTableRows = async (
   $: IGlobalVariable,
@@ -26,25 +24,7 @@ const filterTableRows = async (
       },
     })
     .catch((err): never => {
-      let stepErrorSolution
-      if (err.response.status === 400) {
-        // note this catches two different errors: when user doesn't select a column and when user deletes column on vault
-        stepErrorSolution =
-          'Click on set up action and check that the lookup column is not empty and is present on your vault table. The column could have been accidentally deleted on your vault table, please re-create the column or select another valid lookup column.'
-      } else if (err.response.status === 500) {
-        // invalid lookup column used
-        stepErrorSolution =
-          'Click on set up action and ensure that you have selected a valid column instead.'
-      } else {
-        // return original error since uncaught
-        throw err
-      }
-      throw generateHttpStepError(
-        err,
-        stepErrorSolution,
-        $.step.position,
-        $.app.name,
-      )
+      throwGetFilteredRowsError(err, $.step.position, $.app.name)
     })
 
   if (response.data.rows.length < 1) {

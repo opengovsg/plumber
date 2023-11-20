@@ -9,6 +9,7 @@ import {
   escapeSpecialChars,
   unescapeSpecialChars,
 } from '../../common/escape-characters'
+import { throwParseAsCsvError } from '../../common/throw-errors'
 
 const action: IRawAction = {
   name: 'Create row',
@@ -59,30 +60,7 @@ const action: IRawAction = {
         relaxQuotes: true,
       })[0] as string[]
     } catch (err) {
-      // only three possible errors caught in DB
-      let stepErrorName, stepErrorSolution
-      if (err.code === 'CSV_NON_TRIMABLE_CHAR_AFTER_CLOSING_QUOTE') {
-        stepErrorName = 'Invalid usage of double quotes'
-        stepErrorSolution =
-          'Click on set up action and check that double quotes should only be used if column or value contains commas. Use single quotes instead if necessary.'
-      } else if (err.code === 'CSV_QUOTE_NOT_CLOSED') {
-        stepErrorName = 'No closing quote'
-        stepErrorSolution =
-          'Click on set up action and check if an opening quote is used for a column or value, a closing quote is paired with it.'
-      } else if (err.code === 'CSV_RECORD_INCONSISTENT_FIELDS_LENGTH') {
-        stepErrorName = 'Incorrect format for values field'
-        stepErrorSolution =
-          'Click on set up action and check that the values field has no newline. Separate each value with a comma on the same line.'
-      } else {
-        // return original error since uncaught
-        throw err
-      }
-      throw generateStepError(
-        stepErrorName,
-        stepErrorSolution,
-        $.step.position,
-        $.app.name,
-      )
+      throwParseAsCsvError(err, $.step.position, $.app.name)
     }
 
     if (values === undefined) {
