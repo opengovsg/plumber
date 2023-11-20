@@ -79,66 +79,50 @@ describe('send transactional email', () => {
     )
   })
 
-  it('should throw step error for invalid template (blacklist)', async () => {
-    // simulate postman error
-    const error400 = {
-      response: {
-        data: {
-          code: 'invalid_template',
-          message: 'Recipient email is blacklisted',
-        },
-        status: 400,
-        statusText: 'Bad Request',
+  it.each([
+    {
+      postmanResponseData: {
+        code: 'invalid_template',
+        message: 'Recipient email is blacklisted',
       },
-    } as AxiosError
-    const httpError = new HttpError(error400)
-    mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
-    // throw partial step error message
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
-      'Status code: 400',
-    )
-  })
-
-  it('should throw step error for rate limit', async () => {
-    // simulate postman error
-    const error429 = {
-      response: {
-        data: {
-          code: 'rate_limit',
-          message: 'Too many requests. Please try again later.',
-        },
-        status: 429,
-        statusText: 'Bad Request',
+      errorStatusCode: 400,
+      errorStatusText: 'Bad Request',
+    },
+    {
+      postmanResponseData: {
+        code: 'rate_limit',
+        message: 'Too many requests. Please try again later.',
       },
-    } as AxiosError
-    const httpError = new HttpError(error429)
-    mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
-    // throw partial step error message
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
-      'Status code: 429',
-    )
-  })
-
-  it('should throw step error for currently unavailable service', async () => {
-    // simulate postman error
-    const error503 = {
-      response: {
-        data: {
-          code: 'service_unavailable',
-          message:
-            'Service is temporarily unavailable. Please try again later.',
-        },
-        status: 503,
-        statusText: 'Service Temporarily Unavailable',
+      errorStatusCode: 429,
+      errorStatusText: 'Bad Request',
+    },
+    {
+      postmanResponseData: {
+        code: 'service_unavailable',
+        message: 'Service is temporarily unavailable. Please try again later.',
       },
-    } as AxiosError
-    const httpError = new HttpError(error503)
-    mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
-    // throw partial step error message
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
-      'Status code: 503',
-    )
-  })
+      errorStatusCode: 503,
+      errorStatusText: 'Service Temporarily Unavailable',
+    },
+  ])(
+    'should throw step error for different postman errors',
+    async ({ postmanResponseData, errorStatusCode, errorStatusText }) => {
+      // simulate postman error
+      const error = {
+        response: {
+          data: postmanResponseData,
+          status: errorStatusCode,
+          statusText: errorStatusText,
+        },
+      } as AxiosError
+      const httpError = new HttpError(error)
+      mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
+      // throw partial step error message
+      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+        `Status code: ${errorStatusCode} (${errorStatusText})`,
+      )
+    },
+  )
 
   it('should throw back raw http error for unknown error', async () => {
     // simulate "uncaught" postman error on our end
