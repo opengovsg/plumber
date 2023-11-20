@@ -24,6 +24,9 @@ export function createColumns(
       ),
       cell: TableCell,
       minSize: 150,
+      enableSorting: true,
+      enableMultiSort: true,
+      sortingFn: 'alphanumeric',
       size: config?.width ?? 200,
     }),
   )
