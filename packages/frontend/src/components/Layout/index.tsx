@@ -1,8 +1,7 @@
 import * as React from 'react'
 import { BiHistory, BiSolidGrid } from 'react-icons/bi'
 import { Navigate } from 'react-router-dom'
-import { Divider, Show } from '@chakra-ui/react'
-import Box from '@mui/material/Box'
+import { Box, Divider, Show } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import { PipeIcon } from 'components/Icons'
@@ -78,7 +77,7 @@ export default function Layout({
       <RestrictedGovtMasthead />
       <AppBar />
       <LayoutNavigationProvider value={layoutNavigationProviderData}>
-        <Box sx={{ display: 'flex', flex: 1 }}>
+        <Box display="flex" flex="1">
           <Show above="sm">
             <Box mt={1}>
               <NavigationSidebar />
