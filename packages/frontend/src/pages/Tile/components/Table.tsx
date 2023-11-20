@@ -3,6 +3,7 @@ import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
   ColumnOrderState,
   getCoreRowModel,
+  getSortedRowModel,
   Row,
   useReactTable,
 } from '@tanstack/react-table'
@@ -35,6 +36,7 @@ export default function Table(): JSX.Element {
   }, [columns])
 
   const [editingCell, setEditingCell] = useState<CellType | null>(null)
+  const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
   // We use ref instead of state to prevent re-rendering on change
   // it's only used as a cache
   const tempRowData = useRef<GenericRowData | null>(null)
@@ -46,10 +48,8 @@ export default function Table(): JSX.Element {
     getScrollElement: () => parentRef.current,
     estimateSize: useCallback(
       (index) =>
-        index === editingCell?.row.index
-          ? ROW_HEIGHT.EXPANDED
-          : ROW_HEIGHT.DEFAULT,
-      [editingCell?.row.index],
+        index === editingRowIndex ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT,
+      [editingRowIndex],
     ),
     overscan: 35,
   })
@@ -115,6 +115,7 @@ export default function Table(): JSX.Element {
     columns,
     getRowId: (row) => row.rowId,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     onColumnOrderChange: setColumnOrder,
     columnResizeMode: 'onChange',
     // debugAll: appConfig.isDev,
@@ -135,6 +136,7 @@ export default function Table(): JSX.Element {
       addNewRow,
       isAddingNewRow,
       removeRows,
+      setEditingRowIndex,
       focusOnNewRow: () => {
         setTimeout(() => {
           try {
@@ -155,10 +157,11 @@ export default function Table(): JSX.Element {
     ref: parentRef,
     handler: () => {
       setActiveCell(null)
+      setEditingRowIndex(null)
     },
   })
 
-  const { rows } = table.getRowModel()
+  const { rows } = table.getSortedRowModel()
   const virtualRows = rowVirtualizer.getVirtualItems()
 
   return (

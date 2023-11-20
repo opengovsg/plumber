@@ -12,6 +12,7 @@ import { Textarea } from '@chakra-ui/react'
 import { CellContext } from '@tanstack/react-table'
 
 import { NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../../constants'
+import { useRowContext } from '../../contexts/RowContext'
 import { shallowCompare } from '../../helpers/shallow-compare'
 import { CellType, GenericRowData } from '../../types'
 
@@ -24,6 +25,7 @@ export default function TableCell({
   table,
   cell,
 }: CellContext<GenericRowData, string>) {
+  const { sortedIndex } = useRowContext()
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const tableMeta = table.options.meta
   const isEditingRow = tableMeta?.activeCell?.row.id === row.id
@@ -39,17 +41,18 @@ export default function TableCell({
         | MouseEvent<HTMLDivElement>,
     ) => {
       tableMeta?.setActiveCell(cell)
+      tableMeta?.setEditingRowIndex(sortedIndex)
       if (e.target instanceof HTMLTextAreaElement) {
         e.target.select()
       }
     },
-    [cell, tableMeta],
+    [cell, sortedIndex, tableMeta],
   )
 
   const getCell = useCallback(
     (rowId: string, columnId: string) => {
       const row = table.getRow(rowId)
-      const rowCells = row.getAllCells()
+      const rowCells = row.getVisibleCells()
       return (
         (rowCells.find((cell) => cell.column.id === columnId) as CellType) ??
         null
@@ -62,7 +65,8 @@ export default function TableCell({
     (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
-        if (row.id === NEW_ROW_ID) {
+
+        if (row.id === NEW_ROW_ID || sortedIndex === -1) {
           if (
             !shallowCompare(tableMeta?.tempRowData.current, {
               rowId: NEW_ROW_ID,
@@ -73,9 +77,10 @@ export default function TableCell({
           }
           return
         }
-        const nextRowId = table.getSortedRowModel().rows[row.index + 1]?.id
+        const nextRowId = table.getSortedRowModel().rows[sortedIndex + 1]?.id
         const nextActiveCell = nextRowId ? getCell(nextRowId, column.id) : null
         tableMeta?.setActiveCell(nextActiveCell)
+        tableMeta?.setEditingRowIndex(sortedIndex + 1)
       }
       // on tab
       if (e.key === 'Tab') {
@@ -89,13 +94,15 @@ export default function TableCell({
         const nextColumnId = columnIds[nextColumnIndex]
         const nextActiveCell = getCell(row.id, nextColumnId)
         tableMeta?.setActiveCell(nextActiveCell)
+        tableMeta?.setEditingRowIndex(sortedIndex)
       }
 
       if (e.key === 'Escape') {
         tableMeta?.setActiveCell(null)
+        tableMeta?.setEditingRowIndex(null)
       }
     },
-    [table, row, getCell, column.id, tableMeta, columnIds],
+    [row.id, sortedIndex, table, getCell, column.id, tableMeta, columnIds],
   )
 
   const onChange = useCallback(
