@@ -6,36 +6,19 @@ import {
   ITrigger,
 } from '@plumber/types'
 
-import fs from 'fs'
 import { cloneDeep, omit } from 'lodash'
-import path from 'path'
+
+import apps from '@/apps'
 
 import addAuthenticationSteps from './add-authentication-steps'
 import addReconnectionSteps from './add-reconnection-steps'
-
-type TApps = Record<string, Promise<{ default: IApp }>>
-const apps = fs
-  .readdirSync(path.resolve(__dirname, `../apps/`), { withFileTypes: true })
-  .reduce((apps, dirent) => {
-    if (!dirent.isDirectory()) {
-      return apps
-    }
-
-    apps[dirent.name] = import(path.resolve(__dirname, '../apps', dirent.name))
-
-    return apps
-  }, {} as TApps)
-
-async function getDefaultExport(appKey: string) {
-  return (await apps[appKey]).default
-}
 
 function stripFunctions<C>(data: C): C {
   return JSON.parse(JSON.stringify(data))
 }
 
-const getApp = async (appKey: string, stripFuncs = true) => {
-  let appData: IApp = cloneDeep(await getDefaultExport(appKey))
+const getApp = (appKey: string, stripFuncs = true) => {
+  let appData: IApp = cloneDeep(apps[appKey])
 
   if (appData.auth) {
     appData = addAuthenticationSteps(appData)

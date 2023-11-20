@@ -8,6 +8,7 @@ const bbBearColors = {
   base: {
     canvas: {
       'brand-subtle': '#fef8fb',
+      inverse: '#3A3E46',
     },
     divider: {
       subtle: '#F8F9F9',
@@ -49,6 +50,16 @@ const bbBearColors = {
       default: '#FFDA68',
       hover: '#E2B73E',
       active: '#C4992A',
+    },
+    critical: {
+      default: '#c03434',
+      hover: '#992a2a',
+      active: '#852424',
+    },
+    'critical-subtle': {
+      default: '#FBE9E9',
+      hover: '#f4acac',
+      active: '#ee8080',
     },
     tinted: {
       main: {

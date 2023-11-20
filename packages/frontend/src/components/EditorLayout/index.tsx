@@ -5,8 +5,6 @@ import { BiChevronLeft } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import { Box, HStack, Icon, Text, VStack } from '@chakra-ui/react'
-import MuiButton from '@mui/material/Button'
-import Snackbar from '@mui/material/Snackbar'
 import { Button, Link } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
@@ -16,11 +14,11 @@ import { EditorProvider } from 'contexts/Editor'
 import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
 import { GET_FLOW } from 'graphql/queries/get-flow'
-import useFormatMessage from 'hooks/useFormatMessage'
+
+import EditorSnackbar from './EditorSnackbar'
 
 export default function EditorLayout(): React.ReactElement {
   const { flowId } = useParams()
-  const formatMessage = useFormatMessage()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
   const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
@@ -132,23 +130,10 @@ export default function EditorLayout(): React.ReactElement {
         </Container>
       </VStack>
 
-      <Snackbar
-        data-test="flow-cannot-edit-info-snackbar"
-        open={!!flow?.active}
-        message={formatMessage('flowEditor.publishedFlowCannotBeUpdated')}
-        anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}
-        ContentProps={{ sx: { fontWeight: 300 } }}
-        action={
-          <MuiButton
-            variant="contained"
-            size="small"
-            onClick={() => onFlowStatusUpdate(!flow.active)}
-            data-test="unpublish-flow-from-snackbar"
-          >
-            {formatMessage('flowEditor.unpublish')}
-          </MuiButton>
-        }
-      />
+      <EditorSnackbar
+        isOpen={!!flow?.active}
+        handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
+      ></EditorSnackbar>
     </>
   )
 }

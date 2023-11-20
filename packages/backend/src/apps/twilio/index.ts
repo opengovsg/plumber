@@ -1,10 +1,10 @@
-import defineApp from '@/helpers/define-app'
+import { IApp } from '@plumber/types'
 
 import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
 
-export default defineApp({
+const app: IApp = {
   name: 'Twilio',
   key: 'twilio',
   iconUrl: '{BASE_URL}/apps/twilio/assets/favicon.svg',
@@ -15,6 +15,7 @@ export default defineApp({
   primaryColor: 'e1000f',
   beforeRequest: [addAuthHeader],
   auth,
-  // removing receive sms trigger
   actions,
-})
+}
+
+export default app

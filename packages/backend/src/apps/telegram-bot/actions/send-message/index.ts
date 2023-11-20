@@ -1,8 +1,8 @@
-import defineAction from '@/helpers/define-action'
+import { IRawAction } from '@plumber/types'
 
 import { escapeMarkdown, sanitizeMarkdown } from '../../common/markdown-v1'
 
-export default defineAction({
+const action: IRawAction = {
   name: 'Send message',
   key: 'sendMessage',
   description: 'Sends a message to a chat you specify.',
@@ -78,4 +78,6 @@ export default defineAction({
       raw: response.data,
     })
   },
-})
+}
+
+export default action

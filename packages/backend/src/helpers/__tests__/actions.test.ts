@@ -1,17 +1,31 @@
-import { IApp, IJSONObject } from '@plumber/types'
+import type { IApp, IJSONObject } from '@plumber/types'
 
+import type { AxiosError } from 'axios'
 import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import HttpError from '@/errors/http'
+import RetriableError from '@/errors/retriable-error'
+
 import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
+import {
+  generateHttpStepError,
+  generateStepError,
+} from '../generate-step-error'
 
-const mocks = vi.hoisted(() => ({
-  getAllAppsWithFunctions: vi.fn(),
-}))
-
-vi.mock('@/models/app', () => ({
+vi.mock('@/apps', () => ({
   default: {
-    getAllAppsWithFunctions: mocks.getAllAppsWithFunctions,
+    'test-app': {
+      key: 'test-app',
+      actions: [
+        { key: 'action1', doesFileProcessing: true },
+        { key: 'action2', doesFileProcessing: false },
+      ],
+    } as IApp,
+    'legacy-app': {
+      key: 'legacy-app',
+      actions: [{ key: 'action1' }],
+    } as IApp,
   },
 }))
 
@@ -21,76 +35,221 @@ describe('action helper functions', () => {
   })
 
   describe('file processing', () => {
-    let apps: IApp[]
-
-    beforeEach(() => {
-      apps = [
-        {
-          key: 'test-app',
-          actions: [
-            { key: 'action1', doesFileProcessing: true },
-            { key: 'action2', doesFileProcessing: false },
-          ],
-        },
-        {
-          key: 'legacy-app',
-          actions: [{ key: 'action1' }],
-        },
-      ] as unknown as IApp[]
-    })
-
     it('returns true for actions that process files', async () => {
-      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('test-app', 'action1')
       expect(result).toEqual(true)
     })
 
     it('returns false for actions that do not process files', async () => {
-      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('test-app', 'action2')
       expect(result).toEqual(false)
     })
 
     it('assumes that action does not process files if flag is not specified', async () => {
-      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('legacy-app', 'action1')
       expect(result).toEqual(false)
     })
 
     it('returns false for actions that do not exist', async () => {
-      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('test-app', 'herp')
       expect(result).toEqual(false)
     })
 
     it('returns false for apps that do not exist', async () => {
-      mocks.getAllAppsWithFunctions.mockResolvedValue(apps)
       const result = await doesActionProcessFiles('topkek', 'action1')
       expect(result).toEqual(false)
     })
   })
 
   describe('error handling and retry', () => {
+    const EMPTY_HTTP_ERROR = new HttpError({} as unknown as AxiosError)
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it.each([
+      { retryAfter: '31 Oct 2023 00:01:00 GMT', expectedResult: 60000 },
+      { retryAfter: '15', expectedResult: 15000 },
+    ])(
+      'retries if valid Retry-After ($retryAfter) is in headers',
+      ({ retryAfter, expectedResult }) => {
+        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+
+        const error = new HttpError({
+          response: {
+            headers: {
+              'retry-after': retryAfter,
+            },
+          },
+        } as unknown as AxiosError)
+
+        try {
+          handleErrorAndThrow({}, error)
+        } catch (e) {
+          expect(e instanceof RetriableError).toEqual(true)
+          expect((e as RetriableError).delayInMs).toEqual(expectedResult)
+        }
+      },
+    )
+
+    it.each([
+      { retryAfter: '31 Nov 2023 00:01:00 GMT' },
+      { retryAfter: '2000000' },
+    ])(
+      'does not retry Retry-After ($retryAfter) if wait is too long',
+      ({ retryAfter }) => {
+        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+        const error = new HttpError({
+          response: {
+            headers: {
+              'retry-after': retryAfter,
+            },
+          },
+        } as unknown as AxiosError)
+
+        try {
+          handleErrorAndThrow({}, error)
+        } catch (e) {
+          expect(e instanceof UnrecoverableError).toEqual(true)
+          expect(
+            (e as UnrecoverableError).message.endsWith('is too long!'),
+          ).toEqual(true)
+        }
+      },
+    )
+
+    it.each([
+      { retryAfter: '' },
+      { retryAfter: 'not a date string derp' },
+      { retryAfter: '-200' },
+    ])(
+      'does not retry Retry-After if value ("$retryAfter") is invalid',
+      ({ retryAfter }) => {
+        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+        const error = new HttpError({
+          response: {
+            headers: {
+              'retry-after': retryAfter,
+            },
+          },
+        } as unknown as AxiosError)
+
+        expect(() => handleErrorAndThrow({}, error)).toThrowError(
+          UnrecoverableError,
+        )
+      },
+    )
+
+    it.each([504, 429])('retries some http status codes (%d)', (code) => {
+      expect(() =>
+        handleErrorAndThrow(
+          {},
+          new HttpError({
+            response: {
+              status: code,
+            },
+          } as unknown as AxiosError),
+        ),
+      ).toThrowError(RetriableError)
+    })
+
     it.each([
       { details: { error: 'read ECONNRESET' } },
       { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
-      { status: 504 },
-      { status: 429 },
-    ])('retries connectivity errors', (errorDetails: IJSONObject) => {
-      const callback = () => handleErrorAndThrow(errorDetails)
+    ])(
+      'retries errors with retriable messages ($details.error)',
+      (errorDetails: IJSONObject) => {
+        expect(() =>
+          handleErrorAndThrow(errorDetails, EMPTY_HTTP_ERROR),
+        ).toThrowError(RetriableError)
+      },
+    )
 
-      // Assert it throws, and that it doesn't throw the wrong type of error.
-      expect(callback).toThrowError(Error)
-      expect(callback).not.toThrowError(UnrecoverableError)
+    it.each([
+      {
+        stepError: generateHttpStepError(
+          new HttpError({
+            response: {
+              headers: {
+                'retry-after': '15',
+              },
+            },
+          } as unknown as AxiosError),
+          'test solution',
+          1,
+          'test-app',
+        ),
+        isRetried: true,
+      },
+      {
+        stepError: generateStepError(
+          'non-http-step-error',
+          'test solution',
+          1,
+          'test-app',
+        ),
+        isRetried: false,
+      },
+    ])('inspects the cause in StepError', ({ stepError, isRetried }) => {
+      const expectedErrorType = isRetried ? RetriableError : UnrecoverableError
+      expect(() => handleErrorAndThrow({}, stepError)).toThrowError(
+        expectedErrorType,
+      )
     })
 
     it.each([
-      {}, // Edge case - empty object just in case
-      { status: 500, details: { description: 'Internal Server Error' } },
-      { error: 'connect ECONNREFUSED 1.2.3.4' },
-    ])('does not retry other types of errors', (errorDetails) => {
-      const callback = () => handleErrorAndThrow(errorDetails as IJSONObject)
-      expect(callback).toThrowError(UnrecoverableError)
-    })
+      {
+        errorDetails: {
+          status: 500,
+          details: { description: 'Internal Server Error' },
+        },
+        executionError: EMPTY_HTTP_ERROR,
+      },
+      {
+        errorDetails: { error: 'connect ECONNREFUSED 1.2.3.4' },
+        executionError: EMPTY_HTTP_ERROR,
+      },
+      {
+        errorDetails: { error: 'no type for some reason' },
+        executionError: EMPTY_HTTP_ERROR,
+      },
+      // Edge case: empty error details
+      { errorDetails: {}, executionError: EMPTY_HTTP_ERROR },
+      // Edge cases: non-error-type execution error
+      {
+        errorDetails: { error: 'loong was here' },
+        executionError: 'some string',
+      },
+      {
+        errorDetails: { error: 'loong was here' },
+        executionError: 42,
+      },
+      {
+        errorDetails: { error: 'loong was here' },
+        executionError: null,
+      },
+      {
+        errorDetails: { error: 'loong was here' },
+        executionError: undefined,
+      },
+    ])(
+      'does not retry other types of errors',
+      ({
+        errorDetails,
+        executionError,
+      }: {
+        errorDetails: IJSONObject
+        executionError: unknown
+      }) => {
+        expect(() =>
+          handleErrorAndThrow(errorDetails, executionError),
+        ).toThrowError(UnrecoverableError)
+      },
+    )
   })
 })

@@ -1,6 +1,7 @@
 import { type IActionRunResult, NextStepMetadata } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import StepError from '@/errors/step'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
@@ -60,6 +61,7 @@ export const processAction = async (options: ProcessActionOptions) => {
   $.step.parameters = computedParameters
 
   let runResult: IActionRunResult = {}
+  let executionError: unknown = null
   try {
     // Cannot assign directly to runResult due to void return type.
     const result =
@@ -70,7 +72,13 @@ export const processAction = async (options: ProcessActionOptions) => {
       runResult = result
     }
   } catch (error) {
+    executionError = error
+
     logger.error(error)
+    // log raw http error from StepError
+    if (error instanceof StepError && error.cause) {
+      logger.error(error.cause)
+    }
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         details: error.details,
@@ -121,5 +129,6 @@ export const processAction = async (options: ProcessActionOptions) => {
     computedParameters,
     nextStep,
     nextStepMetadata: runResult.nextStepMetadata,
+    executionError,
   }
 }
