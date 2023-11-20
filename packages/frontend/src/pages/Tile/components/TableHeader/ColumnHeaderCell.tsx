@@ -1,17 +1,23 @@
-import { MdDragIndicator } from 'react-icons/md'
+import { useCallback } from 'react'
+import { BiCaretDown } from 'react-icons/bi'
+import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
+import { MdCheck, MdDragIndicator } from 'react-icons/md'
 import {
   Flex,
   Icon,
   Popover,
   PopoverArrow,
+  PopoverBody,
   PopoverContent,
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
   useDisclosure,
+  VStack,
 } from '@chakra-ui/react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Button } from '@opengovsg/design-system-react'
 import { Header } from '@tanstack/react-table'
 
 import { GenericRowData } from '../../types'
@@ -31,6 +37,7 @@ export default function ColumnHeaderCell({
 }: ColumnHeaderCellProps) {
   const { id } = header
   const { isOpen, onClose, onOpen } = useDisclosure()
+  const column = header.getContext().column
 
   const {
     attributes,
@@ -45,6 +52,18 @@ export default function ColumnHeaderCell({
     transform: CSS.Translate.toString(transform),
     transition,
   }
+
+  const sortDir = column.getIsSorted()
+
+  const setSort = useCallback(
+    (dir: 'asc' | 'desc') => {
+      if (sortDir === dir) {
+        return column.clearSorting()
+      }
+      column.toggleSorting(dir === 'desc', true)
+    },
+    [column, sortDir],
+  )
 
   return (
     <Flex
@@ -83,6 +102,14 @@ export default function ColumnHeaderCell({
             }}
           >
             {columnName}
+            {sortDir && (
+              <Icon
+                as={BiCaretDown}
+                transform={sortDir === 'desc' ? 'rotate(180deg)' : undefined}
+                w={5}
+                h={5}
+              />
+            )}
           </Flex>
         </PopoverTrigger>
         <PopoverContent color="secondary.900" outline="none">
@@ -90,6 +117,30 @@ export default function ColumnHeaderCell({
           <PopoverHeader>
             <EditColumnName id={id} columnName={columnName} />
           </PopoverHeader>
+          <PopoverBody>
+            <VStack alignItems="stretch">
+              <Button
+                variant="clear"
+                leftIcon={<ImSortAlphaAsc />}
+                colorScheme={'secondary'}
+                rightIcon={sortDir === 'asc' ? <MdCheck /> : undefined}
+                justifyContent="flex-start"
+                onClick={() => setSort('asc')}
+              >
+                Ascending
+              </Button>
+              <Button
+                variant="clear"
+                leftIcon={<ImSortAlphaDesc />}
+                rightIcon={sortDir === 'desc' ? <MdCheck /> : undefined}
+                justifyContent="flex-start"
+                colorScheme={'secondary'}
+                onClick={() => setSort('desc')}
+              >
+                Descending
+              </Button>
+            </VStack>
+          </PopoverBody>
           <PopoverFooter justifyContent="flex-start" display="flex">
             <DeleteColumnButton id={id} />
           </PopoverFooter>
