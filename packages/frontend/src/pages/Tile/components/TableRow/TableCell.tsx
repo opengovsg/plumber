@@ -2,6 +2,7 @@ import {
   ChangeEvent,
   FocusEvent,
   KeyboardEvent,
+  memo,
   MouseEvent,
   useCallback,
   useEffect,
@@ -9,16 +10,21 @@ import {
   useRef,
 } from 'react'
 import { Textarea } from '@chakra-ui/react'
-import { CellContext } from '@tanstack/react-table'
+import { CellContext, Row, TableMeta } from '@tanstack/react-table'
 
-import { NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../../constants'
+import {
+  DELAY,
+  NEW_ROW_ID,
+  ROW_HEIGHT,
+  TEMP_ROW_ID_PREFIX,
+} from '../../constants'
 import { useRowContext } from '../../contexts/RowContext'
 import { shallowCompare } from '../../helpers/shallow-compare'
 import { CellType, GenericRowData } from '../../types'
 
 import styles from './TableCell.module.css'
 
-export default function TableCell({
+function TableCell({
   getValue,
   row,
   column,
@@ -27,12 +33,14 @@ export default function TableCell({
 }: CellContext<GenericRowData, string>) {
   const { sortedIndex } = useRowContext()
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
-  const tableMeta = table.options.meta
-  const isEditingRow = tableMeta?.activeCell?.row.id === row.id
+  const tableMeta = table.options.meta as TableMeta<GenericRowData>
   const isEditingCell = tableMeta?.activeCell?.id === cell.id
+  const editingRowId = tableMeta?.activeCell?.row.id
+  const isEditingRow = row.id === editingRowId
+  const columnIds = table.getState().columnOrder
+  const columnIndex = columnIds.indexOf(column.id)
 
   const originalValue = getValue()
-  const columnIds = table.getAllLeafColumns().map((c) => c.id)
 
   const startEditing = useCallback(
     (
@@ -41,24 +49,25 @@ export default function TableCell({
         | MouseEvent<HTMLDivElement>,
     ) => {
       tableMeta?.setActiveCell(cell)
-      tableMeta?.setEditingRowIndex(sortedIndex)
       if (e.target instanceof HTMLTextAreaElement) {
         e.target.select()
       }
     },
-    [cell, sortedIndex, tableMeta],
+    [cell, tableMeta],
   )
 
-  const getCell = useCallback(
-    (rowId: string, columnId: string) => {
-      const row = table.getRow(rowId)
-      const rowCells = row.getVisibleCells()
-      return (
-        (rowCells.find((cell) => cell.column.id === columnId) as CellType) ??
-        null
-      )
+  const focusOnFirstCell = useCallback(
+    (row: Row<GenericRowData>) => {
+      setTimeout(() => {
+        try {
+          const newRowCell = row.getVisibleCells()[1] as CellType | null
+          tableMeta?.setActiveCell(newRowCell)
+        } catch (_) {
+          // no newRow found, do nothing
+        }
+      }, DELAY.FOCUS_CELL)
     },
-    [table],
+    [tableMeta],
   )
 
   const onKeyDown = useCallback(
@@ -73,36 +82,43 @@ export default function TableCell({
             })
           ) {
             tableMeta?.setActiveCell(null)
-            tableMeta?.focusOnNewRow()
+            focusOnFirstCell(row)
           }
           return
         }
-        const nextRowId = table.getSortedRowModel().rows[sortedIndex + 1]?.id
-        const nextActiveCell = nextRowId ? getCell(nextRowId, column.id) : null
+        const nextRow = table.getSortedRowModel().rows[sortedIndex + 1]
+        const nextActiveCell = nextRow
+          ? (nextRow.getVisibleCells()[columnIndex] as CellType)
+          : null
         tableMeta?.setActiveCell(nextActiveCell)
-        tableMeta?.setEditingRowIndex(sortedIndex + 1)
       }
       // on tab
       if (e.key === 'Tab') {
         e.preventDefault()
-        const columnIndex = columnIds.indexOf(column.id)
         const increment = e.shiftKey ? -1 : 1
         const nextColumnIndex = Math.min(
-          Math.max(0, columnIndex + increment),
-          columnIds.length - 1,
+          Math.max(1, columnIndex + increment),
+          columnIds.length - 2, // -2 to account for select and new columns
         )
-        const nextColumnId = columnIds[nextColumnIndex]
-        const nextActiveCell = getCell(row.id, nextColumnId)
+        const nextActiveCell = row.getVisibleCells()[
+          nextColumnIndex
+        ] as CellType
         tableMeta?.setActiveCell(nextActiveCell)
-        tableMeta?.setEditingRowIndex(sortedIndex)
       }
 
       if (e.key === 'Escape') {
         tableMeta?.setActiveCell(null)
-        tableMeta?.setEditingRowIndex(null)
       }
     },
-    [row.id, sortedIndex, table, getCell, column.id, tableMeta, columnIds],
+    [
+      row,
+      sortedIndex,
+      table,
+      columnIndex,
+      tableMeta,
+      focusOnFirstCell,
+      columnIds.length,
+    ],
   )
 
   const onChange = useCallback(
@@ -141,38 +157,34 @@ export default function TableCell({
   return (
     <div
       style={{
-        height: isEditingRow ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT,
-        minHeight: ROW_HEIGHT.DEFAULT,
-        width: '100%',
+        height: '100%',
+        width: `${column.getSize()}px`,
+        flexShrink: 0,
         cursor: 'default',
-        borderWidth: '0.5px',
+        borderWidth: '1px',
         borderStyle: 'solid',
-        borderColor: isEditingCell
-          ? 'var(--chakra-colors-primary-600)'
-          : 'var(--chakra-colors-primary-100)',
+        borderColor: 'var(--chakra:-colors-primary-100)',
+        borderTopWidth: 0,
+        borderLeftWidth: 0,
+        zIndex: isEditingCell ? 1 : 0,
       }}
       className={!isEditingCell ? styles.cell : undefined}
       onClick={startEditing}
     >
-      {isEditingRow ? (
+      {isEditingCell ||
+      (row.id === NEW_ROW_ID && editingRowId === NEW_ROW_ID) ? (
         <Textarea
           ref={textAreaRef}
-          background="transparent"
-          onFocus={startEditing}
+          fontSize="0.875rem"
+          h={ROW_HEIGHT.EXPANDED}
+          background="white"
           outline="none"
-          zIndex={isEditingCell ? 1 : 0}
-          defaultValue={originalValue}
+          border="none"
           onChange={onChange}
-          h="100%"
-          _focusWithin={{
-            boxShadow: 'none',
-            bgColor: 'primary.100',
-          }}
-          rows={5}
-          resize="none"
           onKeyDown={onKeyDown}
           borderRadius={0}
-          borderWidth={0}
+          resize="none"
+          onFocus={startEditing}
         />
       ) : (
         <div
@@ -180,25 +192,31 @@ export default function TableCell({
             display: 'flex',
             height: '100%',
             width: '100%',
-            minWidth: '100%',
-            maxWidth: 0,
             alignItems: 'center',
             paddingLeft: '1rem',
             paddingRight: '1rem',
             wordBreak: 'break-word',
-            overflow: 'hidden',
+            fontSize: '0.875rem',
           }}
           className={className}
         >
           <p
             style={{
               maxHeight: '100%',
+              overflow: 'hidden',
+              // no wrap
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
             }}
           >
-            {originalValue}
+            {isEditingRow
+              ? tableMeta.tempRowData.current?.[column.id]
+              : originalValue}
           </p>
         </div>
       )}
     </div>
   )
 }
+
+export default memo(TableCell)

@@ -28,8 +28,6 @@ export default function CheckboxHeaderCell({
       <input
         ref={ref}
         style={{
-          height: '1rem',
-          width: '1rem',
           cursor: 'pointer',
           accentColor: 'var(--chakra-colors-primary-500)',
         }}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
   ColumnOrderState,
+  createRow as createEmptyRow,
   getCoreRowModel,
   getSortedRowModel,
   Row,
@@ -9,7 +10,7 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
-import { DELAY, NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../constants'
+import { NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../constants'
 import { useTableContext } from '../contexts/TableContext'
 import { createColumns } from '../helpers/columns-helper'
 import { scrollToBottom } from '../helpers/scroll-helper'
@@ -25,6 +26,7 @@ import TableRow from './TableRow'
 export default function Table(): JSX.Element {
   const { tableColumns, flattenedData } = useTableContext()
   const [data, setData] = useState<GenericRowData[]>(flattenedData)
+  // const [data, setData] = useState<GenericRowData[]>([...flattenedData, newRow])
   const parentRef = useRef<HTMLDivElement>(null)
   const columns = useMemo(() => createColumns(tableColumns), [tableColumns])
   const [rowSelection, setRowSelection] = useState({})
@@ -36,21 +38,15 @@ export default function Table(): JSX.Element {
   }, [columns])
 
   const [editingCell, setEditingCell] = useState<CellType | null>(null)
-  const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
   // We use ref instead of state to prevent re-rendering on change
   // it's only used as a cache
   const tempRowData = useRef<GenericRowData | null>(null)
 
-  const isAddingNewRow = data[data.length - 1]?.rowId === NEW_ROW_ID
-
   const rowVirtualizer = useVirtualizer({
-    count: isAddingNewRow ? data.length - 1 : data.length,
+    count: data.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: useCallback(
-      (index) =>
-        index === editingRowIndex ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT,
-      [editingRowIndex],
-    ),
+    estimateSize: () => ROW_HEIGHT.DEFAULT,
+    paddingEnd: ROW_HEIGHT.EXPANDED - ROW_HEIGHT.DEFAULT + 1,
     overscan: 35,
   })
 
@@ -91,17 +87,6 @@ export default function Table(): JSX.Element {
     [createRow, rowVirtualizer, updateRow],
   )
 
-  const addNewRow = useCallback(() => {
-    if (!isAddingNewRow) {
-      const newRow = {
-        rowId: NEW_ROW_ID,
-      } as GenericRowData
-      setData((data) => [...data, newRow])
-    } else {
-      setData((data) => data.slice(0, data.length - 1))
-    }
-  }, [isAddingNewRow])
-
   const removeRows = useCallback(
     (rowIds: string[]) => {
       const deletedRowIds = new Set(rowIds)
@@ -126,6 +111,9 @@ export default function Table(): JSX.Element {
     state: {
       columnOrder,
       rowSelection,
+      rowPinning: {
+        bottom: [NEW_ROW_ID],
+      },
     },
     meta: {
       rowsUpdating,
@@ -133,31 +121,23 @@ export default function Table(): JSX.Element {
       tempRowData,
       activeCell: editingCell,
       setActiveCell,
-      addNewRow,
-      isAddingNewRow,
       removeRows,
-      setEditingRowIndex,
-      focusOnNewRow: () => {
-        setTimeout(() => {
-          try {
-            const newRowCell = table
-              .getRow(NEW_ROW_ID)
-              ?.getVisibleCells()[0] as CellType | null
-            setActiveCell(newRowCell)
-          } catch (_) {
-            // no newRow found, do nothing
-          }
-        }, DELAY.FOCUS_CELL)
-      },
     },
   })
+
+  const newRow = createEmptyRow(
+    table,
+    NEW_ROW_ID,
+    { rowId: NEW_ROW_ID },
+    data.length,
+    0,
+  )
 
   // Handle click outside of table
   useOutsideClick({
     ref: parentRef,
     handler: () => {
       setActiveCell(null)
-      setEditingRowIndex(null)
     },
   })
 
@@ -176,6 +156,10 @@ export default function Table(): JSX.Element {
       minH="300px"
       flexDir="column"
       position="relative"
+      // prevent active element from being hidden by footer
+      scrollPaddingBottom={
+        editingCell?.row.id === NEW_ROW_ID ? 0 : ROW_HEIGHT.FOOTER
+      }
     >
       <Flex flexDir="column" w="fit-content" minW="100%" flex={1}>
         <Flex
@@ -192,22 +176,29 @@ export default function Table(): JSX.Element {
 
         <Box position="relative" borderY="none">
           {rows.length ? (
-            <Box h={rowVirtualizer.getTotalSize()}>
+            <Box h={rowVirtualizer.getTotalSize()} w={}>
               {virtualRows.map((virtualRow) => {
                 const row = rows[virtualRow.index] as Row<GenericRowData>
                 return (
-                  <TableRow key={row.id} row={row} virtualRow={virtualRow} />
+                  <TableRow
+                    key={row.id}
+                    row={row}
+                    isEditing={editingCell?.row.id === row.id}
+                    virtualRow={virtualRow}
+                  />
                 )
               })}
             </Box>
           ) : (
             <>{/* insert some call to action to add new row here */}</>
           )}
-          {isAddingNewRow && (
-            <TableRow row={rows[rows.length - 1]} stickyBottom />
-          )}
         </Box>
       </Flex>
+      <TableRow
+        row={newRow}
+        isEditing={editingCell?.row.id === NEW_ROW_ID}
+        stickyBottom
+      />
       <TableFooter table={table} parentRef={parentRef} />
     </Flex>
   )
