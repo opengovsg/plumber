@@ -12,6 +12,7 @@ import Grid from '@mui/material/Grid'
 import Pagination from '@mui/material/Pagination'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import Container from 'components/Container'
+import EmptyFlowsTemplate from 'components/EmptyFlows'
 import FlowRow from 'components/FlowRow'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
@@ -69,6 +70,10 @@ export default function Flows(): React.ReactElement {
       }),
     [],
   )
+
+  if (!hasFlows && flowName === '') {
+    return <EmptyFlowsTemplate CreateFlowLink={CreateFlowLink} />
+  }
 
   return (
     <Box sx={{ py: 3 }}>
