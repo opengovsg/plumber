@@ -1,6 +1,5 @@
 import { ITableColumnMetadata } from '@plumber/types'
 
-import { Box } from '@chakra-ui/react'
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table'
 
 import CheckboxHeaderCell from '../components/TableHeader/CheckboxHeaderCell'
@@ -20,7 +19,11 @@ export function createColumns(
     columnHelper.accessor(id, {
       id,
       header: ({ header }) => (
-        <ColumnHeaderCell columnName={name} header={header} />
+        <ColumnHeaderCell
+          columnName={name}
+          header={header}
+          columnWidth={header.getSize()}
+        />
       ),
       cell: TableCell,
       minSize: 150,
@@ -39,7 +42,15 @@ export function createColumns(
   const addNewColumn = columnHelper.display({
     id: NEW_COLUMN_ID,
     header: NewColumnHeaderCell,
-    cell: () => <Box bgColor="white" h="100%" w="100%" />,
+    cell: ({ column }) => (
+      <div
+        style={{
+          background: 'white',
+          height: '100%',
+          width: column.getSize(),
+        }}
+      />
+    ),
     size: 50,
   })
   return [selectColumn, ...accessorColumns, addNewColumn]

@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { memo, useCallback } from 'react'
 import { BiCaretDown } from 'react-icons/bi'
 import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
 import { MdCheck, MdDragIndicator } from 'react-icons/md'
@@ -28,12 +28,14 @@ import EditColumnName from './EditColumnName'
 
 interface ColumnHeaderCellProps {
   columnName: string
+  columnWidth: number
   header: Header<GenericRowData, unknown>
 }
 
-export default function ColumnHeaderCell({
+function ColumnHeaderCell({
   header,
   columnName,
+  columnWidth,
 }: ColumnHeaderCellProps) {
   const { id } = header
   const { isOpen, onClose, onOpen } = useDisclosure()
@@ -70,7 +72,7 @@ export default function ColumnHeaderCell({
       h="100%"
       style={{ ...style }}
       scaleX={1}
-      w={header.getSize()}
+      w={columnWidth}
       borderRightWidth={'0.5px'}
       borderColor="primary.400"
       ref={setNodeRef}
@@ -169,3 +171,5 @@ export default function ColumnHeaderCell({
     </Flex>
   )
 }
+
+export default memo(ColumnHeaderCell)

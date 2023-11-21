@@ -42,7 +42,7 @@ export default function TableHeader({ table }: TableHeaderProps) {
 
         updateColumns(
           newOrder
-            .filter((id) => ![SELECT_COLUMN_ID, NEW_COLUMN_ID].includes(id))
+            .filter((id) => ![NEW_COLUMN_ID, SELECT_COLUMN_ID].includes(id))
             .map((id, position) => ({ id, position })),
         )
       }
