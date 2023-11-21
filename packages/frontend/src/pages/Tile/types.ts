@@ -1,4 +1,4 @@
-import { Dispatch, MutableRefObject, SetStateAction } from 'react'
+import { MutableRefObject } from 'react'
 import { Cell, RowData } from '@tanstack/react-table'
 
 declare module '@tanstack/react-table' {
@@ -9,11 +9,7 @@ declare module '@tanstack/react-table' {
     rowsUpdating: Record<string, boolean>
     rowsCreated: Set<string>
     tempRowData: MutableRefObject<GenericRowData | null>
-    addNewRow: () => void
     removeRows: (rowIds: string[]) => void
-    isAddingNewRow: boolean
-    focusOnNewRow: () => void
-    setEditingRowIndex: Dispatch<SetStateAction<number | null>>
   }
 }
 

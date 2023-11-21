@@ -8,18 +8,18 @@
 }
 
 .cell:hover {
-  background-color: var(--chakra-colors-primary-200);
+  background-color: var(--chakra-colors-primary-100);
 }
 
 @keyframes completeSaving {
   0% {
-    background-color: #ffeac0;
+    background-color: #ffeac090;
   }
   20% {
-    background-color: #9af5ab;
+    background-color: #9af5ab90;
   }
   60% {
-    background-color: #9af5ab;
+    background-color: #9af5ab90;
   }
   100% {
     background-color: transparent;
