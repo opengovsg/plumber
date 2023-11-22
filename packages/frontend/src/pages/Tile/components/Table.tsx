@@ -176,7 +176,7 @@ export default function Table(): JSX.Element {
 
         <Box position="relative" borderY="none">
           {rows.length ? (
-            <Box h={rowVirtualizer.getTotalSize()} w={}>
+            <Box h={rowVirtualizer.getTotalSize()}>
               {virtualRows.map((virtualRow) => {
                 const row = rows[virtualRow.index] as Row<GenericRowData>
                 return (
