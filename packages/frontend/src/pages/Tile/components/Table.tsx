@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
   ColumnOrderState,
@@ -28,6 +35,8 @@ export default function Table(): JSX.Element {
   const [data, setData] = useState<GenericRowData[]>(flattenedData)
   // const [data, setData] = useState<GenericRowData[]>([...flattenedData, newRow])
   const parentRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const childRef = useRef<HTMLDivElement>(null)
   const columns = useMemo(() => createColumns(tableColumns), [tableColumns])
   const [rowSelection, setRowSelection] = useState({})
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
@@ -141,6 +150,20 @@ export default function Table(): JSX.Element {
     },
   })
 
+  // Handle blur when user clicks on whitespace in table
+  const onBlurClick = useCallback(
+    (e: MouseEvent) => {
+      if (
+        [parentRef.current, containerRef.current, childRef.current].includes(
+          e.target as HTMLDivElement,
+        )
+      ) {
+        setActiveCell(null)
+      }
+    },
+    [setActiveCell],
+  )
+
   const { rows } = table.getSortedRowModel()
   const virtualRows = rowVirtualizer.getVirtualItems()
 
@@ -160,8 +183,15 @@ export default function Table(): JSX.Element {
       scrollPaddingBottom={
         editingCell?.row.id === NEW_ROW_ID ? 0 : ROW_HEIGHT.FOOTER
       }
+      onClick={onBlurClick}
     >
-      <Flex flexDir="column" w="fit-content" minW="100%" flex={1}>
+      <Flex
+        flexDir="column"
+        w="fit-content"
+        minW="100%"
+        flex={1}
+        ref={containerRef}
+      >
         <Flex
           bgColor="primary.700"
           alignItems="stretch"
@@ -174,24 +204,18 @@ export default function Table(): JSX.Element {
           <TableHeader table={table} />
         </Flex>
 
-        <Box position="relative" borderY="none">
-          {rows.length ? (
-            <Box h={rowVirtualizer.getTotalSize()}>
-              {virtualRows.map((virtualRow) => {
-                const row = rows[virtualRow.index] as Row<GenericRowData>
-                return (
-                  <TableRow
-                    key={row.id}
-                    row={row}
-                    isEditing={editingCell?.row.id === row.id}
-                    virtualRow={virtualRow}
-                  />
-                )
-              })}
-            </Box>
-          ) : (
-            <>{/* insert some call to action to add new row here */}</>
-          )}
+        <Box h={rowVirtualizer.getTotalSize()} ref={childRef}>
+          {virtualRows.map((virtualRow) => {
+            const row = rows[virtualRow.index] as Row<GenericRowData>
+            return (
+              <TableRow
+                key={row.id}
+                row={row}
+                isEditing={editingCell?.row.id === row.id}
+                virtualRow={virtualRow}
+              />
+            )
+          })}
         </Box>
       </Flex>
       <TableRow
