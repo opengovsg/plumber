@@ -90,6 +90,15 @@ describe('send transactional email', () => {
     },
     {
       postmanResponseData: {
+        code: 'invalid_template',
+        message:
+          'One or more attachments may be an unsupported file type. Please check the attached files.',
+      },
+      errorStatusCode: 400,
+      errorStatusText: 'Bad Request',
+    },
+    {
+      postmanResponseData: {
         code: 'rate_limit',
         message: 'Too many requests. Please try again later.',
       },
@@ -124,24 +133,40 @@ describe('send transactional email', () => {
     },
   )
 
-  it('should throw back raw http error for unknown error', async () => {
-    // simulate "uncaught" postman error on our end
-    const postmanResponseData = {
-      code: 'unauthenticated',
-      message: 'test',
-    }
-    const errorUnknown = {
-      response: {
-        data: postmanResponseData,
-        status: 401,
-        statusText: 'Unauthenticated',
+  it.each([
+    {
+      postmanResponseData: {
+        code: 'invalid_template',
+        message: 'Unknown error message',
       },
-    } as AxiosError
-    const httpError = new HttpError(errorUnknown)
-    mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
-    // throw partial http error message
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
-      postmanResponseData.code,
-    )
-  })
+      errorStatusCode: 400,
+      errorStatusText: 'Bad Request',
+    },
+    {
+      postmanResponseData: {
+        code: 'unauthenticated',
+        message: 'test',
+      },
+      errorStatusCode: 401,
+      errorStatusText: 'Unauthenticated',
+    },
+  ])(
+    'should throw back raw http error for unknown errors',
+    async ({ postmanResponseData, errorStatusCode, errorStatusText }) => {
+      // simulate "uncaught" postman error on our end
+      const errorUnknown = {
+        response: {
+          data: postmanResponseData,
+          status: errorStatusCode,
+          statusText: errorStatusText,
+        },
+      } as AxiosError
+      const httpError = new HttpError(errorUnknown)
+      mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
+      // throw partial http error message
+      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+        postmanResponseData.code,
+      )
+    },
+  )
 })
