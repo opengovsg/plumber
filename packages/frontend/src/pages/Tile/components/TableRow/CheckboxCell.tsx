@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BsPlus } from 'react-icons/bs'
 import { Icon } from '@chakra-ui/react'
-import { CellContext } from '@tanstack/react-table'
+import { CellContext, TableMeta } from '@tanstack/react-table'
 
 import { Z_INDEX_CELL } from '../../constants'
 import { useRowContext } from '../../contexts/RowContext'
@@ -10,12 +10,17 @@ import { GenericRowData } from '../../types'
 export default function CheckboxCell({
   row,
   column,
+  table,
 }: CellContext<GenericRowData, unknown>) {
-  const { sortedIndex } = useRowContext()
+  const { sortedIndex, getClassName } = useRowContext()
   const [onHover, setOnHover] = useState(false)
+
+  const tableMeta = table.options.meta as TableMeta<GenericRowData>
+  const className = getClassName(tableMeta, row.id)
 
   return (
     <div
+      className={className}
       style={{
         width: `${column.getSize()}px`,
         flexShrink: 0,
