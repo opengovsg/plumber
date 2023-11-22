@@ -6,19 +6,12 @@ import {
   MouseEvent,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
 } from 'react'
 import { Textarea } from '@chakra-ui/react'
 import { CellContext, Row, TableMeta } from '@tanstack/react-table'
 
-import {
-  DELAY,
-  NEW_ROW_ID,
-  ROW_HEIGHT,
-  TEMP_ROW_ID_PREFIX,
-  Z_INDEX_CELL,
-} from '../../constants'
+import { DELAY, NEW_ROW_ID, ROW_HEIGHT, Z_INDEX_CELL } from '../../constants'
 import { useRowContext } from '../../contexts/RowContext'
 import { shallowCompare } from '../../helpers/shallow-compare'
 import { CellType, GenericRowData } from '../../types'
@@ -32,7 +25,7 @@ function TableCell({
   table,
   cell,
 }: CellContext<GenericRowData, string>) {
-  const { sortedIndex } = useRowContext()
+  const { sortedIndex, getClassName } = useRowContext()
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const tableMeta = table.options.meta as TableMeta<GenericRowData>
   const isEditingCell = tableMeta?.activeCell?.id === cell.id
@@ -139,23 +132,7 @@ function TableCell({
     }
   }, [isEditingCell])
 
-  const className = useMemo(() => {
-    const isSavingRow = tableMeta?.rowsUpdating[row.id]
-    const isSavedRow = tableMeta?.rowsCreated.has(row.id)
-    if (isSavingRow === true) {
-      return styles.saving
-    }
-    if (isSavingRow === false) {
-      return styles.saved
-    }
-    if (row.id.startsWith(TEMP_ROW_ID_PREFIX)) {
-      return styles.saving
-    }
-    if (isSavedRow) {
-      return styles.saved
-    }
-    return undefined
-  }, [row.id, tableMeta?.rowsCreated, tableMeta?.rowsUpdating])
+  const className = getClassName(tableMeta, row.id)
 
   return (
     <div
@@ -189,6 +166,7 @@ function TableCell({
           borderRadius={0}
           resize="none"
           onFocus={startEditing}
+          boxShadow="0 0 0 1px var(--chakra-colors-primary-400)"
         />
       ) : (
         <div
