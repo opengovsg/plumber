@@ -47,7 +47,7 @@ export function useCreateRow(
           ...data,
           rowId: tempRowId,
         }
-        if (oldData[oldData.length - 1].rowId === NEW_ROW_ID) {
+        if (oldData[oldData.length - 1]?.rowId === NEW_ROW_ID) {
           oldData.splice(-1, 0, newTempRow)
         } else {
           oldData.push(newTempRow)

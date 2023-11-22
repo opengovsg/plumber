@@ -17,6 +17,7 @@ import {
   NEW_ROW_ID,
   ROW_HEIGHT,
   TEMP_ROW_ID_PREFIX,
+  Z_INDEX_CELL,
 } from '../../constants'
 import { useRowContext } from '../../contexts/RowContext'
 import { shallowCompare } from '../../helpers/shallow-compare'
@@ -40,7 +41,9 @@ function TableCell({
   const columnIds = table.getState().columnOrder
   const columnIndex = columnIds.indexOf(column.id)
 
-  const originalValue = getValue()
+  const value = isEditingRow
+    ? tableMeta.tempRowData.current?.[column.id]
+    : getValue()
 
   const startEditing = useCallback(
     (
@@ -166,7 +169,7 @@ function TableCell({
         borderColor: 'var(--chakra:-colors-primary-100)',
         borderTopWidth: 0,
         borderLeftWidth: 0,
-        zIndex: isEditingCell ? 1 : 0,
+        zIndex: isEditingCell ? Z_INDEX_CELL.ACTIVE_CELL : Z_INDEX_CELL.DEFAULT,
       }}
       className={!isEditingCell ? styles.cell : undefined}
       onClick={startEditing}
@@ -180,6 +183,7 @@ function TableCell({
           background="white"
           outline="none"
           border="none"
+          defaultValue={value}
           onChange={onChange}
           onKeyDown={onKeyDown}
           borderRadius={0}
@@ -209,9 +213,7 @@ function TableCell({
               textOverflow: 'ellipsis',
             }}
           >
-            {isEditingRow
-              ? tableMeta.tempRowData.current?.[column.id]
-              : originalValue}
+            {value}
           </p>
         </div>
       )}
