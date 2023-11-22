@@ -1,3 +1,4 @@
+import { createTableRows } from '@/models/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -17,9 +18,24 @@ const createTable = async (
     name: tableName,
   })
 
-  await table.$relatedQuery('columns').insert({
-    name: 'Column 1',
-  })
+  await table.$relatedQuery('columns').insert([
+    {
+      name: 'Column 1',
+      position: 0,
+    },
+    {
+      name: 'Column 2',
+      position: 1,
+    },
+    {
+      name: 'Column 3',
+      position: 2,
+    },
+  ])
+
+  const emptyDataArray = new Array(5).fill({})
+
+  await createTableRows({ tableId: table.id, dataArray: emptyDataArray })
 
   return table
 }
