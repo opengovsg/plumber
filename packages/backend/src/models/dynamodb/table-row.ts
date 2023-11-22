@@ -11,6 +11,11 @@ export interface CreateRowInput {
   data: Record<string, IJSONPrimitive>
 }
 
+export interface CreateRowsInput {
+  tableId: string
+  dataArray: Array<Record<string, IJSONPrimitive>>
+}
+
 export interface UpdateRowInput {
   tableId: string
   rowId: string
@@ -93,6 +98,21 @@ export const createTableRow = async ({
     rowId: randomUUID(),
     data,
   })
+}
+
+export const createTableRows = async ({
+  tableId,
+  dataArray,
+}: CreateRowsInput): Promise<{
+  unprocessedItems: unknown[]
+}> => {
+  const rows = dataArray.map((data) => ({
+    tableId,
+    rowId: randomUUID(),
+    data,
+  }))
+
+  return TableRow.batchPut(rows)
 }
 
 export const updateTableRow = async ({
