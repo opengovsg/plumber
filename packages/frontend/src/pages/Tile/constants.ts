@@ -8,6 +8,12 @@ export const Z_INDEX = {
   FOOTER: 3,
 }
 
+export const Z_INDEX_CELL = {
+  DEFAULT: 0,
+  CHECKBOX: 1,
+  ACTIVE_CELL: 2,
+}
+
 // Used in setTimeout delay, to allow for the browser to render
 // This determines the order in which the functions are executed
 export const DELAY = {

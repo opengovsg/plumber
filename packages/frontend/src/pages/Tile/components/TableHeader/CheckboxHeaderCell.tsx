@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Flex } from '@chakra-ui/react'
 import { HeaderContext } from '@tanstack/react-table'
 
+import { Z_INDEX_CELL } from '../../constants'
 import { GenericRowData } from '../../types'
 
 export default function CheckboxHeaderCell({
@@ -24,6 +25,12 @@ export default function CheckboxHeaderCell({
       alignItems="center"
       justifyContent="center"
       cursor="pointer"
+      position="sticky"
+      left={0}
+      background="primary.700"
+      zIndex={Z_INDEX_CELL.CHECKBOX}
+      borderRightWidth={'0.5px'}
+      borderColor="primary.400"
     >
       <input
         ref={ref}
