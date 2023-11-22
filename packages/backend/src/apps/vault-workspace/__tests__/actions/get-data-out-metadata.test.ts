@@ -10,7 +10,7 @@ function convertKeyToHex(key: string) {
 }
 
 describe('Test getDataOutMetadata', () => {
-  it('vault metadata example that has not dataOut (should not occur)', async () => {
+  it('vault metadata example that has no dataOut should not occur', async () => {
     const testExecutionStep = {
       empty: '',
     } as unknown as IExecutionStep
@@ -18,7 +18,7 @@ describe('Test getDataOutMetadata', () => {
     expect(testMetadata).toBeNull()
   })
 
-  it('vault metadata example that is not keysEncoded (should not occur)', async () => {
+  it('vault metadata example that is not keysEncoded should not occur', async () => {
     const testExecutionStep = {
       dataOut: {
         _metadata: {},
