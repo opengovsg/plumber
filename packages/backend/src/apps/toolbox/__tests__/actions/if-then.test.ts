@@ -229,6 +229,9 @@ describe('If-then', () => {
         step: {
           ...FLAT_PIPE_STEPS[1],
         },
+        app: {
+          name: 'Toolbox',
+        },
         setActionItem: mocks.setActionItem,
       } as unknown as IGlobalVariable
     })
@@ -288,6 +291,31 @@ describe('If-then', () => {
       expect(mocks.setActionItem).toBeCalledWith({
         raw: { isConditionMet: false },
       })
+    })
+
+    it('should throw step error if no condition is configured', async () => {
+      $.step.parameters.conditions = undefined
+      // throw partial step error message
+      await expect(ifThenAction.run($)).rejects.toThrowError(
+        `Cannot read properties of undefined (reading 'every')`,
+      )
+    })
+
+    it('should throw step error if invalid condition is configured', async () => {
+      const invalidCondition = '==='
+      $.step.parameters.conditions = [
+        {
+          field: 1,
+          is: 'is',
+          condition: invalidCondition,
+          text: 9999,
+        },
+      ]
+
+      // throw partial step error message
+      await expect(ifThenAction.run($)).rejects.toThrowError(
+        `Conditional logic block contains an unknown operator: ${invalidCondition}`,
+      )
     })
   })
 
