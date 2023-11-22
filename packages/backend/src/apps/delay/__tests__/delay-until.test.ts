@@ -65,6 +65,20 @@ describe('Delay until action', () => {
     })
   })
 
+  it('returns void if delay until has a valid configuration of both date and time but with whitespaces', async () => {
+    const whitespaces = '   '
+    $.step.parameters = {
+      delayUntil: whitespaces + VALID_DATE,
+      delayUntilTime: VALID_TIME + whitespaces,
+    }
+
+    const result = await delayUntilAction.run($)
+    expect(result).toBeFalsy()
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { delayUntil: VALID_DATE, delayUntilTime: VALID_TIME },
+    })
+  })
+
   it('throws step error if delay until has an invalid configuration', async () => {
     $.step.parameters = {
       delayUntil: VALID_DATE,

@@ -30,11 +30,15 @@ const action: IRawAction = {
 
   async run($) {
     const defaultTime = '00:00'
-    const { delayUntil, delayUntilTime } = $.step.parameters
-    const delayTimestamp = generateTimestamp(
-      delayUntil as string,
-      (delayUntilTime as string) || defaultTime, // catch empty string (user input), null, undefined (backwards compat)
-    )
+    // trim the date and time for user
+    let { delayUntil, delayUntilTime } = $.step.parameters
+    delayUntil = (delayUntil as string).trim()
+    // catch empty string (user input), null, undefined (backwards compat)
+    delayUntilTime = delayUntilTime
+      ? (delayUntilTime as string).trim()
+      : defaultTime
+
+    const delayTimestamp = generateTimestamp(delayUntil, delayUntilTime)
 
     if (isNaN(delayTimestamp)) {
       const stepErrorName = 'Invalid timestamp entered'
@@ -50,7 +54,7 @@ const action: IRawAction = {
 
     const dataItem = {
       delayUntil,
-      delayUntilTime: delayUntilTime || defaultTime,
+      delayUntilTime,
     }
 
     $.setActionItem({ raw: dataItem })
