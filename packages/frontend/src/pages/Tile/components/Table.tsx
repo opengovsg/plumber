@@ -36,7 +36,6 @@ import TableRow from './TableRow'
 export default function Table(): JSX.Element {
   const { tableColumns, flattenedData } = useTableContext()
   const [data, setData] = useState<GenericRowData[]>(flattenedData)
-  // const [data, setData] = useState<GenericRowData[]>([...flattenedData, newRow])
   const parentRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const childRef = useRef<HTMLDivElement>(null)
