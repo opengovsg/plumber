@@ -1,7 +1,6 @@
-import { memo, useCallback } from 'react'
-import { BiCaretDown } from 'react-icons/bi'
+import { memo, startTransition, useCallback } from 'react'
 import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
-import { MdCheck, MdDragIndicator } from 'react-icons/md'
+import { MdCheck, MdDoNotDisturb, MdDragIndicator } from 'react-icons/md'
 import {
   Flex,
   Icon,
@@ -12,6 +11,7 @@ import {
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
+  Text,
   useDisclosure,
   VStack,
 } from '@chakra-ui/react'
@@ -30,12 +30,14 @@ interface ColumnHeaderCellProps {
   columnName: string
   columnWidth: number
   header: Header<GenericRowData, unknown>
+  sortDir: 'asc' | 'desc' | false
 }
 
 function ColumnHeaderCell({
   header,
   columnName,
   columnWidth,
+  sortDir,
 }: ColumnHeaderCellProps) {
   const { id } = header
   const { isOpen, onClose, onOpen } = useDisclosure()
@@ -55,14 +57,14 @@ function ColumnHeaderCell({
     transition,
   }
 
-  const sortDir = column.getIsSorted()
-
   const setSort = useCallback(
     (dir: 'asc' | 'desc') => {
-      if (sortDir === dir) {
-        return column.clearSorting()
-      }
-      column.toggleSorting(dir === 'desc', true)
+      startTransition(() => {
+        if (sortDir === dir) {
+          return column.clearSorting()
+        }
+        column.toggleSorting(dir === 'desc', true)
+      })
     },
     [column, sortDir],
   )
@@ -84,17 +86,20 @@ function ColumnHeaderCell({
         isOpen={isOpen}
         onClose={onClose}
         onOpen={onOpen}
+        isLazy={true}
+        lazyBehavior="unmount"
       >
         <PopoverTrigger>
           <Flex
             w="100%"
             tabIndex={0}
             py={2}
-            px={4}
+            pl={4}
+            pr={1}
             overflow="hidden"
-            whiteSpace="nowrap"
             cursor="pointer"
             alignItems="center"
+            gap={1}
             justifyContent="space-between"
             _hover={{
               bg: 'primary.800',
@@ -103,17 +108,24 @@ function ColumnHeaderCell({
               outline: 'none',
             }}
           >
-            {columnName}
+            <Text
+              overflow="hidden"
+              whiteSpace="nowrap"
+              textOverflow="ellipsis"
+              maxW="100%"
+            >
+              {columnName}
+            </Text>
             {sortDir && (
               <Icon
-                as={BiCaretDown}
-                transform={sortDir === 'desc' ? 'rotate(180deg)' : undefined}
-                w={5}
-                h={5}
+                as={sortDir === 'desc' ? ImSortAlphaDesc : ImSortAlphaAsc}
+                w={4}
+                h={4}
               />
             )}
           </Flex>
         </PopoverTrigger>
+
         <PopoverContent color="secondary.900" outline="none">
           <PopoverArrow />
           <PopoverHeader>
@@ -141,6 +153,17 @@ function ColumnHeaderCell({
               >
                 Descending
               </Button>
+              {sortDir && (
+                <Button
+                  variant="clear"
+                  leftIcon={<MdDoNotDisturb />}
+                  justifyContent="flex-start"
+                  colorScheme={'secondary'}
+                  onClick={() => column.clearSorting()}
+                >
+                  Clear Sort
+                </Button>
+              )}
             </VStack>
           </PopoverBody>
           <PopoverFooter justifyContent="flex-start" display="flex">
@@ -148,6 +171,7 @@ function ColumnHeaderCell({
           </PopoverFooter>
         </PopoverContent>
       </Popover>
+
       <Icon
         as={MdDragIndicator}
         w={5}

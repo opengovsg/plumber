@@ -4,6 +4,7 @@ import {
   KeyboardEvent,
   memo,
   MouseEvent,
+  startTransition,
   useCallback,
   useEffect,
   useRef,
@@ -25,18 +26,19 @@ function TableCell({
   table,
   cell,
 }: CellContext<GenericRowData, string>) {
-  const { sortedIndex, getClassName } = useRowContext()
+  const { sortedIndex, className, isEditingRow } = useRowContext()
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
+  const cellContainerRef = useRef<HTMLDivElement>(null)
   const tableMeta = table.options.meta as TableMeta<GenericRowData>
   const isEditingCell = tableMeta?.activeCell?.id === cell.id
   const editingRowId = tableMeta?.activeCell?.row.id
-  const isEditingRow = row.id === editingRowId
   const columnIds = table.getState().columnOrder
   const columnIndex = columnIds.indexOf(column.id)
 
   const value = isEditingRow
     ? tableMeta.tempRowData.current?.[column.id]
     : getValue()
+  const isHighlightingCell = tableMeta?.highlightedCell?.id === cell.id
 
   const startEditing = useCallback(
     (
@@ -68,43 +70,45 @@ function TableCell({
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
+      startTransition(() => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault()
 
-        if (row.id === NEW_ROW_ID || sortedIndex === -1) {
-          if (
-            !shallowCompare(tableMeta?.tempRowData.current, {
-              rowId: NEW_ROW_ID,
-            })
-          ) {
-            tableMeta?.setActiveCell(null)
-            focusOnFirstCell(row)
+          if (row.id === NEW_ROW_ID || sortedIndex === -1) {
+            if (
+              !shallowCompare(tableMeta?.tempRowData.current, {
+                rowId: NEW_ROW_ID,
+              })
+            ) {
+              tableMeta?.setActiveCell(null)
+              focusOnFirstCell(row)
+            }
+            return
           }
-          return
+          const nextRow = table.getSortedRowModel().rows[sortedIndex + 1]
+          const nextActiveCell = nextRow
+            ? (nextRow.getVisibleCells()[columnIndex] as CellType)
+            : null
+          tableMeta?.setActiveCell(nextActiveCell)
         }
-        const nextRow = table.getSortedRowModel().rows[sortedIndex + 1]
-        const nextActiveCell = nextRow
-          ? (nextRow.getVisibleCells()[columnIndex] as CellType)
-          : null
-        tableMeta?.setActiveCell(nextActiveCell)
-      }
-      // on tab
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        const increment = e.shiftKey ? -1 : 1
-        const nextColumnIndex = Math.min(
-          Math.max(1, columnIndex + increment),
-          columnIds.length - 2, // -2 to account for select and new columns
-        )
-        const nextActiveCell = row.getVisibleCells()[
-          nextColumnIndex
-        ] as CellType
-        tableMeta?.setActiveCell(nextActiveCell)
-      }
+        // on tab
+        if (e.key === 'Tab') {
+          e.preventDefault()
+          const increment = e.shiftKey ? -1 : 1
+          const nextColumnIndex = Math.min(
+            Math.max(1, columnIndex + increment),
+            columnIds.length - 2, // -2 to account for select and new columns
+          )
+          const nextActiveCell = row.getVisibleCells()[
+            nextColumnIndex
+          ] as CellType
+          tableMeta?.setActiveCell(nextActiveCell)
+        }
 
-      if (e.key === 'Escape') {
-        tableMeta?.setActiveCell(null)
-      }
+        if (e.key === 'Escape') {
+          tableMeta?.setActiveCell(null)
+        }
+      })
     },
     [
       row,
@@ -132,7 +136,15 @@ function TableCell({
     }
   }, [isEditingCell])
 
-  const className = getClassName(tableMeta, row.id)
+  useEffect(() => {
+    if (isHighlightingCell) {
+      cellContainerRef.current?.scrollIntoView({ block: 'nearest' })
+    }
+  }, [isHighlightingCell])
+
+  const hasMatchingSearch =
+    tableMeta?.searchString !== '' &&
+    value?.toLowerCase().includes(tableMeta?.searchString)
 
   return (
     <div
@@ -143,14 +155,16 @@ function TableCell({
         cursor: 'default',
         borderWidth: '1px',
         borderStyle: 'solid',
-        borderColor: 'var(--chakra:-colors-primary-100)',
+        borderColor: 'var(--chakra-colors-primary-100)',
         borderTopWidth: 0,
         borderLeftWidth: 0,
         zIndex: isEditingCell ? Z_INDEX_CELL.ACTIVE_CELL : Z_INDEX_CELL.DEFAULT,
       }}
-      className={!isEditingCell ? styles.cell : undefined}
+      ref={cellContainerRef}
+      className={styles.cell}
       onClick={startEditing}
     >
+      {/* if editing new row, show text area for all cells in the row */}
       {isEditingCell ||
       (row.id === NEW_ROW_ID && editingRowId === NEW_ROW_ID) ? (
         <Textarea
@@ -179,6 +193,11 @@ function TableCell({
             paddingRight: '1rem',
             wordBreak: 'break-word',
             fontSize: '0.875rem',
+            backgroundColor: isHighlightingCell
+              ? 'var(--chakra-colors-orange-200)'
+              : hasMatchingSearch
+              ? 'var(--chakra-colors-orange-100'
+              : 'transparent',
           }}
           className={className}
         >
