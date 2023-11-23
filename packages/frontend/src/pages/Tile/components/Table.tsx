@@ -11,6 +11,7 @@ import {
   ColumnOrderState,
   createRow as createEmptyRow,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
   Row,
   TableMeta,
@@ -55,14 +56,6 @@ export default function Table(): JSX.Element {
   // it's only used as a cache
   const tempRowData = useRef<GenericRowData | null>(null)
 
-  const rowVirtualizer = useVirtualizer({
-    count: data.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT.DEFAULT,
-    paddingEnd: ROW_HEIGHT.EXPANDED - ROW_HEIGHT.DEFAULT + 1,
-    overscan: 35,
-  })
-
   const { rowsUpdating, updateRow } = useUpdateRow(setData)
   const { rowsCreated, createRow } = useCreateRow(setData)
 
@@ -73,7 +66,6 @@ export default function Table(): JSX.Element {
         if (currentCell?.row.id === newCell?.row.id) {
           return newCell
         }
-        rowVirtualizer.measure()
         const rowDataToSave = tempRowData.current
         // If new cell is selected, store original row data in cache
         if (newCell) {
@@ -97,7 +89,7 @@ export default function Table(): JSX.Element {
         return newCell
       })
     },
-    [createRow, rowVirtualizer, updateRow],
+    [createRow, updateRow],
   )
 
   const removeRows = useCallback(
@@ -114,6 +106,7 @@ export default function Table(): JSX.Element {
     getRowId: (row) => row.rowId,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     onColumnOrderChange: setColumnOrder,
     columnResizeMode: 'onChange',
     // debugAll: appConfig.isDev,
@@ -172,7 +165,15 @@ export default function Table(): JSX.Element {
     [setActiveCell],
   )
 
-  const { rows } = table.getSortedRowModel()
+  const { rows } = table.getRowModel()
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ROW_HEIGHT.DEFAULT,
+    paddingEnd: ROW_HEIGHT.EXPANDED - ROW_HEIGHT.DEFAULT + 1,
+    overscan: 35,
+  })
   const virtualRows = rowVirtualizer.getVirtualItems()
 
   return (
@@ -215,18 +216,19 @@ export default function Table(): JSX.Element {
           >
             <TableHeader table={table} />
           </Flex>
-
           <Box h={rowVirtualizer.getTotalSize()} ref={childRef}>
             {virtualRows.map((virtualRow) => {
               const row = rows[virtualRow.index] as Row<GenericRowData>
-              return (
-                <TableRow
-                  key={row.id}
-                  row={row}
-                  tableMeta={table.options.meta as TableMeta<GenericRowData>}
-                  virtualRow={virtualRow}
-                />
-              )
+              if (row) {
+                return (
+                  <TableRow
+                    key={row.id}
+                    row={row}
+                    tableMeta={table.options.meta as TableMeta<GenericRowData>}
+                    virtualRow={virtualRow}
+                  />
+                )
+              }
             })}
           </Box>
         </Flex>

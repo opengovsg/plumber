@@ -1,7 +1,9 @@
-import { memo, startTransition, useCallback } from 'react'
+import { memo } from 'react'
+import { FaFilter } from 'react-icons/fa'
 import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
-import { MdCheck, MdDoNotDisturb, MdDragIndicator } from 'react-icons/md'
+import { MdDragIndicator } from 'react-icons/md'
 import {
+  Divider,
   Flex,
   Icon,
   Popover,
@@ -13,16 +15,16 @@ import {
   PopoverTrigger,
   Text,
   useDisclosure,
-  VStack,
 } from '@chakra-ui/react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Button } from '@opengovsg/design-system-react'
 import { Header } from '@tanstack/react-table'
 
 import { GenericRowData } from '../../types'
 
+import { ColumnFilter } from './ColumnFilter'
 import ColumnResizer from './ColumnResizer'
+import ColumnSort from './ColumnSort'
 import DeleteColumnButton from './DeleteColumnButton'
 import EditColumnName from './EditColumnName'
 
@@ -31,6 +33,7 @@ interface ColumnHeaderCellProps {
   columnWidth: number
   header: Header<GenericRowData, unknown>
   sortDir: 'asc' | 'desc' | false
+  isFiltered: boolean
 }
 
 function ColumnHeaderCell({
@@ -38,6 +41,7 @@ function ColumnHeaderCell({
   columnName,
   columnWidth,
   sortDir,
+  isFiltered,
 }: ColumnHeaderCellProps) {
   const { id } = header
   const { isOpen, onClose, onOpen } = useDisclosure()
@@ -56,18 +60,6 @@ function ColumnHeaderCell({
     transform: CSS.Translate.toString(transform),
     transition,
   }
-
-  const setSort = useCallback(
-    (dir: 'asc' | 'desc') => {
-      startTransition(() => {
-        if (sortDir === dir) {
-          return column.clearSorting()
-        }
-        column.toggleSorting(dir === 'desc', true)
-      })
-    },
-    [column, sortDir],
-  )
 
   return (
     <Flex
@@ -116,13 +108,16 @@ function ColumnHeaderCell({
             >
               {columnName}
             </Text>
-            {sortDir && (
-              <Icon
-                as={sortDir === 'desc' ? ImSortAlphaDesc : ImSortAlphaAsc}
-                w={4}
-                h={4}
-              />
-            )}
+            <Flex gap={2}>
+              {isFiltered && <Icon as={FaFilter} w={4} h={4} />}
+              {sortDir && (
+                <Icon
+                  as={sortDir === 'desc' ? ImSortAlphaDesc : ImSortAlphaAsc}
+                  w={4}
+                  h={4}
+                />
+              )}
+            </Flex>
           </Flex>
         </PopoverTrigger>
 
@@ -132,39 +127,9 @@ function ColumnHeaderCell({
             <EditColumnName id={id} columnName={columnName} />
           </PopoverHeader>
           <PopoverBody>
-            <VStack alignItems="stretch">
-              <Button
-                variant="clear"
-                leftIcon={<ImSortAlphaAsc />}
-                colorScheme={'secondary'}
-                rightIcon={sortDir === 'asc' ? <MdCheck /> : undefined}
-                justifyContent="flex-start"
-                onClick={() => setSort('asc')}
-              >
-                Ascending
-              </Button>
-              <Button
-                variant="clear"
-                leftIcon={<ImSortAlphaDesc />}
-                rightIcon={sortDir === 'desc' ? <MdCheck /> : undefined}
-                justifyContent="flex-start"
-                colorScheme={'secondary'}
-                onClick={() => setSort('desc')}
-              >
-                Descending
-              </Button>
-              {sortDir && (
-                <Button
-                  variant="clear"
-                  leftIcon={<MdDoNotDisturb />}
-                  justifyContent="flex-start"
-                  colorScheme={'secondary'}
-                  onClick={() => column.clearSorting()}
-                >
-                  Clear Sort
-                </Button>
-              )}
-            </VStack>
+            <ColumnSort column={column} />
+            <Divider />
+            <ColumnFilter column={column} />
           </PopoverBody>
           <PopoverFooter justifyContent="flex-start" display="flex">
             <DeleteColumnButton id={id} />
