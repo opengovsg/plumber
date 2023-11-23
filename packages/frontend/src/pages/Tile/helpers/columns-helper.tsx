@@ -23,12 +23,13 @@ export function createColumns(
           columnName={name}
           header={header}
           columnWidth={header.getSize()}
+          sortDir={header.column.getIsSorted()}
         />
       ),
       cell: TableCell,
       minSize: 150,
       enableSorting: true,
-      enableMultiSort: true,
+      enableMultiSort: false,
       sortingFn: 'alphanumeric',
       size: config?.width ?? 200,
     }),

@@ -1,14 +1,16 @@
-import { Fragment } from 'react'
-import { flexRender, Row } from '@tanstack/react-table'
+import { Fragment, useMemo } from 'react'
+import { flexRender, Row, TableMeta } from '@tanstack/react-table'
 import { VirtualItem } from '@tanstack/react-virtual'
 
-import { ROW_HEIGHT, Z_INDEX } from '../../constants'
+import { ROW_HEIGHT, TEMP_ROW_ID_PREFIX, Z_INDEX } from '../../constants'
 import { RowContextProvider } from '../../contexts/RowContext'
 import { GenericRowData } from '../../types'
 
+import styles from './TableCell.module.css'
+
 interface TableRowProps {
   row: Row<GenericRowData>
-  isEditing: boolean
+  tableMeta: TableMeta<GenericRowData>
   virtualRow?: VirtualItem
   stickyBottom?: boolean
 }
@@ -16,11 +18,50 @@ interface TableRowProps {
 export default function TableRow({
   row,
   stickyBottom,
-  isEditing,
+  tableMeta,
   virtualRow,
 }: TableRowProps) {
+  const className = useMemo(() => {
+    const isSavingRow = tableMeta.rowsUpdating[row.id]
+    const isSavedRow = tableMeta.rowsCreated.has(row.id)
+    if (isSavingRow === true) {
+      return styles.saving
+    }
+    if (isSavingRow === false) {
+      return styles.saved
+    }
+    if (row.id.startsWith(TEMP_ROW_ID_PREFIX)) {
+      return styles.saving
+    }
+    if (isSavedRow) {
+      return styles.saved
+    }
+    return undefined
+  }, [row.id, tableMeta.rowsCreated, tableMeta.rowsUpdating])
+
+  const isHighlightingRow = useMemo(
+    () => tableMeta.highlightedCell?.row.id === row.id,
+    [tableMeta.highlightedCell?.row.id, row.id],
+  )
+
+  const backgroundColor = useMemo(
+    () =>
+      (virtualRow?.index ?? 0) % 2
+        ? 'var(--chakra-colors-primary-50)'
+        : 'white',
+    [virtualRow?.index],
+  )
+
+  const isEditingRow = tableMeta.activeCell?.row.id === row.id
+
   return (
-    <RowContextProvider sortedIndex={virtualRow?.index}>
+    <RowContextProvider
+      sortedIndex={virtualRow?.index}
+      className={className}
+      isHighlightingRow={isHighlightingRow}
+      isEditingRow={isEditingRow}
+      backgroundColor={backgroundColor}
+    >
       <div
         style={
           stickyBottom
@@ -31,7 +72,7 @@ export default function TableRow({
                 bottom: ROW_HEIGHT.FOOTER,
                 display: 'flex',
                 alignItems: 'stretch',
-                height: isEditing ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT,
+                height: isEditingRow ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT,
                 flexShrink: 0,
                 backgroundColor: 'white',
                 zIndex: Z_INDEX.NEW_ROW,
@@ -42,11 +83,10 @@ export default function TableRow({
                 transform: `translateY(${virtualRow?.start}px)`,
                 display: 'flex',
                 alignItems: 'stretch',
-                zIndex: isEditing ? Z_INDEX.ACTIVE_ROW : Z_INDEX.INACTIVE_ROW,
-                backgroundColor:
-                  (virtualRow?.index ?? 0) % 2
-                    ? 'var(--chakra-colors-primary-50)'
-                    : 'white',
+                zIndex: isEditingRow
+                  ? Z_INDEX.ACTIVE_ROW
+                  : Z_INDEX.INACTIVE_ROW,
+                backgroundColor,
                 height: ROW_HEIGHT.DEFAULT,
               }
         }
