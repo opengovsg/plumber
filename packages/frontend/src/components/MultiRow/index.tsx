@@ -3,6 +3,7 @@ import type { IField } from '@plumber/types'
 import { useCallback, useContext, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus, BiTrash } from 'react-icons/bi'
+import Markdown from 'react-markdown'
 import { Divider, Flex, Text } from '@chakra-ui/react'
 import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
 import InputCreator, { InputCreatorProps } from 'components/InputCreator'
@@ -71,7 +72,10 @@ function MultiRow(props: MultiRowProps): JSX.Element {
 
         return (
           <Flex flexDir="column">
-            <FormLabel isRequired={required} description={description}>
+            <FormLabel
+              isRequired={required}
+              description={description && <Markdown>{description}</Markdown>}
+            >
               {label}
             </FormLabel>
 

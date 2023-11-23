@@ -55,6 +55,8 @@ export const transactionalEmailFields: IField[] = [
   {
     label: 'Attachments',
     key: 'attachments',
+    description:
+      'Find out more about support file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
     type: 'multiselect' as const,
     required: false,
     variables: true,

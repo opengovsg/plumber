@@ -3,6 +3,7 @@ import type { IFieldDropdownOption } from '@plumber/types'
 import { useEffect, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { BiRefresh } from 'react-icons/bi'
+import Markdown from 'react-markdown'
 import { Flex, FormControl } from '@chakra-ui/react'
 import { Paper, PaperProps } from '@mui/material'
 import Autocomplete, {
@@ -124,7 +125,10 @@ function ControlledAutocomplete(
         return (
           <FormControl isInvalid={isError}>
             {label && (
-              <FormLabel isRequired={required} description={description}>
+              <FormLabel
+                isRequired={required}
+                description={description && <Markdown>{description}</Markdown>}
+              >
                 {label}
               </FormLabel>
             )}

@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import Markdown from 'react-markdown'
 import { Badge, FormControl, Text } from '@chakra-ui/react'
 import ClickAwayListener from '@mui/base/ClickAwayListener'
 import Popper from '@mui/material/Popper'
@@ -119,7 +120,10 @@ const PowerInput = (props: PowerInputProps) => {
             }}
           >
             {label && (
-              <FormLabel isRequired={required} description={description}>
+              <FormLabel
+                isRequired={required}
+                description={description && <Markdown>{description}</Markdown>}
+              >
                 {label}
               </FormLabel>
             )}
