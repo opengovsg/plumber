@@ -26,6 +26,7 @@ export default function Tile(): JSX.Element {
     variables: {
       tableId,
     },
+    fetchPolicy: 'network-only',
   })
 
   if (!getTableData?.getTable || !getAllRowsData?.getAllRows) {
