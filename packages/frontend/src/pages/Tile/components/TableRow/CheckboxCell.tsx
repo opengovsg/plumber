@@ -1,19 +1,25 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { BsPlus } from 'react-icons/bs'
 import { Icon } from '@chakra-ui/react'
 import { CellContext } from '@tanstack/react-table'
 
 import { Z_INDEX_CELL } from '../../constants'
 import { useRowContext } from '../../contexts/RowContext'
-import { GenericRowData } from '../../types'
+import { CellType, GenericRowData } from '../../types'
 
 export default function CheckboxCell({
   row,
   column,
+  table,
 }: CellContext<GenericRowData, unknown>) {
   const { sortedIndex, className, isHighlightingRow, backgroundColor } =
     useRowContext()
   const [onHover, setOnHover] = useState(false)
+  const tableMeta = table.options.meta
+  const selectFirstCell = useCallback(() => {
+    const firstCell = row.getVisibleCells()[1]
+    tableMeta?.setActiveCell(firstCell as CellType)
+  }, [row, tableMeta])
 
   return (
     <div
@@ -35,7 +41,9 @@ export default function CheckboxCell({
           ? 'var(--chakra-colors-orange-200)'
           : backgroundColor,
         zIndex: Z_INDEX_CELL.CHECKBOX,
+        cursor: 'pointer',
       }}
+      onClick={row.getCanSelect() ? undefined : selectFirstCell}
     >
       {row.getCanSelect() ? (
         <label
@@ -66,7 +74,15 @@ export default function CheckboxCell({
           )}
         </label>
       ) : (
-        <Icon as={BsPlus} color="primary.500" w={6} h={6} />
+        <Icon
+          as={BsPlus}
+          color="primary.500"
+          _hover={{
+            color: 'primary.600',
+          }}
+          w={6}
+          h={6}
+        />
       )}
     </div>
   )
