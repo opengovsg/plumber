@@ -10,6 +10,7 @@ import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import Typography from '@mui/material/Typography'
 import AppIcon from 'components/AppIcon'
+import ErrorResult from 'components/ErrorResult'
 import JSONViewer from 'components/JSONViewer'
 import TabPanel from 'components/TabPanel'
 import { GET_APP } from 'graphql/queries/get-app'
@@ -106,7 +107,10 @@ export default function ExecutionStep({
 
         {hasError && (
           <TabPanel value={activeTabIndex} index={2}>
-            <JSONViewer data={executionStep.errorDetails} />
+            <ErrorResult
+              errorDetails={executionStep.errorDetails}
+              isTestRun={false}
+            />
           </TabPanel>
         )}
       </Content>

@@ -5,15 +5,16 @@ import { Box, Collapse, Text } from '@chakra-ui/react'
 import { Badge, Button, Infobox } from '@opengovsg/design-system-react'
 import JSONViewer from 'components/JSONViewer'
 
-interface ErrorResultProps {
+interface SpecificErrorResultProps {
   errorDetails: IStepError
+  isTestRun: boolean
 }
 
 const contactPlumberMessage =
   'If this error still persists, contact us at support@plumber.gov.sg.'
 
-export default function ErrorResult(props: ErrorResultProps) {
-  const { errorDetails } = props
+export default function SpecificErrorResult(props: SpecificErrorResultProps) {
+  const { errorDetails, isTestRun } = props
   const { name, solution, position, appName, details } = errorDetails
   const [isOpen, setIsOpen] = useState(false)
   const toggleDropdown = useCallback(() => {
@@ -23,13 +24,16 @@ export default function ErrorResult(props: ErrorResultProps) {
   return (
     <Infobox variant="error">
       <Box>
-        <Badge
-          mb={2}
-          bg="interaction.critical-subtle.default"
-          color="interaction.critical.default"
-        >
-          <Text>{`Step ${position}: ${appName} error`}</Text>
-        </Badge>
+        {/* Actual executions will not need to show step position and app name */}
+        {isTestRun && (
+          <Badge
+            mb={2}
+            bg="interaction.critical-subtle.default"
+            color="interaction.critical.default"
+          >
+            <Text>{`Step ${position}: ${appName} error`}</Text>
+          </Badge>
+        )}
 
         <Text mb={0.5} textStyle="subhead-1">
           {name}
