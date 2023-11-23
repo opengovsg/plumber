@@ -28,16 +28,21 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
     null,
   )
 
+  const resetSearch = useCallback(() => {
+    setSearchPosition(null)
+    tableMeta.setHighlightedCell(null)
+    tableMeta.setSearchString('')
+  }, [tableMeta])
+
   const onInputChange = useCallback(
     (e: FormEvent<HTMLInputElement>) => {
       setTempSearchString(e.currentTarget.value)
       setSearchPosition(null)
       if (!e.currentTarget.value) {
-        tableMeta.setHighlightedCell(null)
-        tableMeta.setSearchString('')
+        resetSearch()
       }
     },
-    [tableMeta],
+    [resetSearch],
   )
 
   const doesCellContainSearchString = useCallback(
@@ -51,16 +56,19 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
     [],
   )
 
-  const searchBarShortcut = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault()
-      setShowSearchBar(true)
-    }
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      setShowSearchBar(false)
-    }
-  }, [])
+  const searchBarShortcut = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        setShowSearchBar(true)
+      }
+      if (e.key === 'Escape') {
+        setShowSearchBar(false)
+        resetSearch()
+      }
+    },
+    [resetSearch],
+  )
 
   // Override global search bar
   useEffect(() => {
@@ -98,6 +106,7 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
             firstCellVisited = [i, j]
           } else {
             if (i === firstCellVisited[0] && j === firstCellVisited[1]) {
+              resetSearch()
               return
             }
           }
@@ -113,6 +122,7 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
     })
   }, [
     doesCellContainSearchString,
+    resetSearch,
     rowVirtualizer,
     rows,
     searchPosition,
@@ -144,6 +154,7 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
             firstCellVisited = [i, j]
           } else {
             if (i === firstCellVisited[0] && j === firstCellVisited[1]) {
+              resetSearch()
               return
             }
           }
@@ -159,6 +170,7 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
     })
   }, [
     doesCellContainSearchString,
+    resetSearch,
     rowVirtualizer,
     rows,
     searchPosition,
