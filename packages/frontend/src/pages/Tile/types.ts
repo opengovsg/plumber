@@ -6,10 +6,14 @@ declare module '@tanstack/react-table' {
   interface TableMeta<TData extends RowData> {
     activeCell: CellType | null
     setActiveCell: (newCell: CellType | null) => void
+    highlightedCell: CellType | null
+    setHighlightedCell: (cell: CellType | null) => void
     rowsUpdating: Record<string, boolean>
     rowsCreated: Set<string>
     tempRowData: MutableRefObject<GenericRowData | null>
     removeRows: (rowIds: string[]) => void
+    searchString: string
+    setSearchString: (searchString: string) => void
   }
 }
 
