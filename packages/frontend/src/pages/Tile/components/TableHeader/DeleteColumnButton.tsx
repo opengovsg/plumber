@@ -14,6 +14,7 @@ export default function DeleteColumnButton({ id }: DeleteColumnButtonProps) {
     <Button
       leftIcon={<BsTrash />}
       variant="clear"
+      colorScheme="red"
       isLoading={isDeletingColumns}
       onClick={() => deleteColumns([id])}
     >

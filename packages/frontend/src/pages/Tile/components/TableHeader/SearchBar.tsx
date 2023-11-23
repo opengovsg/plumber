@@ -20,7 +20,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
-  const { rows } = table.getSortedRowModel()
+  const { rows } = table.getRowModel()
   const tableMeta = table.options.meta as TableMeta<GenericRowData>
   const [showSearchBar, setShowSearchBar] = useState(false)
   const [tempSearchString, setTempSearchString] = useState('')

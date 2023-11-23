@@ -24,14 +24,17 @@ export function createColumns(
           header={header}
           columnWidth={header.getSize()}
           sortDir={header.column.getIsSorted()}
+          isFiltered={header.column.getIsFiltered()}
         />
       ),
       cell: TableCell,
       minSize: 150,
+      size: config?.width ?? 200,
       enableSorting: true,
       enableMultiSort: false,
       sortingFn: 'alphanumeric',
-      size: config?.width ?? 200,
+      enableColumnFilter: true,
+      filterFn: 'includesString',
     }),
   )
   const selectColumn = columnHelper.display({

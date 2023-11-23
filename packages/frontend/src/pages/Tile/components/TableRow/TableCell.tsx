@@ -85,7 +85,7 @@ function TableCell({
             }
             return
           }
-          const nextRow = table.getSortedRowModel().rows[sortedIndex + 1]
+          const nextRow = table.getRowModel().rows[sortedIndex + 1]
           const nextActiveCell = nextRow
             ? (nextRow.getVisibleCells()[columnIndex] as CellType)
             : null
