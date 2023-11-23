@@ -4,7 +4,6 @@ import {
   KeyboardEvent,
   memo,
   MouseEvent,
-  startTransition,
   useCallback,
   useEffect,
   useRef,
@@ -70,45 +69,43 @@ function TableCell({
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      startTransition(() => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault()
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
 
-          if (row.id === NEW_ROW_ID || sortedIndex === -1) {
-            if (
-              !shallowCompare(tableMeta?.tempRowData.current, {
-                rowId: NEW_ROW_ID,
-              })
-            ) {
-              tableMeta?.setActiveCell(null)
-              focusOnFirstCell(row)
-            }
-            return
+        if (row.id === NEW_ROW_ID || sortedIndex === -1) {
+          if (
+            !shallowCompare(tableMeta?.tempRowData.current, {
+              rowId: NEW_ROW_ID,
+            })
+          ) {
+            tableMeta?.setActiveCell(null)
+            focusOnFirstCell(row)
           }
-          const nextRow = table.getRowModel().rows[sortedIndex + 1]
-          const nextActiveCell = nextRow
-            ? (nextRow.getVisibleCells()[columnIndex] as CellType)
-            : null
-          tableMeta?.setActiveCell(nextActiveCell)
+          return
         }
-        // on tab
-        if (e.key === 'Tab') {
-          e.preventDefault()
-          const increment = e.shiftKey ? -1 : 1
-          const nextColumnIndex = Math.min(
-            Math.max(1, columnIndex + increment),
-            columnIds.length - 2, // -2 to account for select and new columns
-          )
-          const nextActiveCell = row.getVisibleCells()[
-            nextColumnIndex
-          ] as CellType
-          tableMeta?.setActiveCell(nextActiveCell)
-        }
+        const nextRow = table.getRowModel().rows[sortedIndex + 1]
+        const nextActiveCell = nextRow
+          ? (nextRow.getVisibleCells()[columnIndex] as CellType)
+          : null
+        tableMeta?.setActiveCell(nextActiveCell)
+      }
+      // on tab
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        const increment = e.shiftKey ? -1 : 1
+        const nextColumnIndex = Math.min(
+          Math.max(1, columnIndex + increment),
+          columnIds.length - 2, // -2 to account for select and new columns
+        )
+        const nextActiveCell = row.getVisibleCells()[
+          nextColumnIndex
+        ] as CellType
+        tableMeta?.setActiveCell(nextActiveCell)
+      }
 
-        if (e.key === 'Escape') {
-          tableMeta?.setActiveCell(null)
-        }
-      })
+      if (e.key === 'Escape') {
+        tableMeta?.setActiveCell(null)
+      }
     },
     [
       row,
