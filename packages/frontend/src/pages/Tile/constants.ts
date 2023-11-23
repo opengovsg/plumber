@@ -25,6 +25,7 @@ export const DELAY = {
 export const ROW_HEIGHT = {
   DEFAULT: 30,
   EXPANDED: 132,
+  HEADER: 40,
   FOOTER: 40,
 }
 
