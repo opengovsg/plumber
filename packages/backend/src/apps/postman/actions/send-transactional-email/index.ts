@@ -1,9 +1,11 @@
-import { IRawAction } from '@plumber/types'
+import { IJSONArray, IRawAction } from '@plumber/types'
 
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import { generateStepError } from '@/helpers/generate-step-error'
+import { getObjectFromS3Id } from '@/helpers/s3'
+import Step from '@/models/step'
 
 import { sendTransactionalEmails } from '../../common/email-helper'
 import {
@@ -18,20 +20,33 @@ const action: IRawAction = {
   key: 'sendTransactionalEmail',
   description: "Sends an email using Postman's transactional API.",
   arguments: transactionalEmailFields,
+  doesFileProcessing: (step: Step) => {
+    return (
+      step.parameters.attachments &&
+      (step.parameters.attachments as IJSONArray).length > 0
+    )
+  },
 
   async run($, metadata) {
     let progress = 0
     if (metadata?.type === 'postman-send-email') {
       progress = metadata.progress
     }
-    const { subject, body, destinationEmail, senderName, replyTo } =
-      $.step.parameters
+    const {
+      subject,
+      body,
+      destinationEmail,
+      senderName,
+      replyTo,
+      attachments = [],
+    } = $.step.parameters
     const result = transactionalEmailSchema.safeParse({
       destinationEmail,
       senderName,
       subject,
       body,
       replyTo: replyTo || (await getDefaultReplyTo($.flow.id)),
+      attachments,
     })
 
     if (!result.success) {
@@ -39,9 +54,13 @@ const action: IRawAction = {
         (result as SafeParseError<unknown>).error,
       )
 
+      const fieldName = validationError.details[0].path[0]
       const stepErrorName = validationError.details[0].message
-      const stepErrorSolution =
-        'Click on set up action and reconfigure the invalid field.'
+      const isAttachmentNotStoredError =
+        fieldName === 'attachments' && stepErrorName.includes('not a S3 ID')
+      const stepErrorSolution = isAttachmentNotStoredError
+        ? 'This attachment was not stored in the last submission. Please make a new submission with attachments to successfully configure this pipe.'
+        : 'Click on set up action and reconfigure the invalid field.'
       throw generateStepError(
         stepErrorName,
         stepErrorSolution,
@@ -49,6 +68,13 @@ const action: IRawAction = {
         $.app.name,
       )
     }
+
+    const attachmentFiles = await Promise.all(
+      result.data.attachments?.map(async (attachment) => {
+        const obj = await getObjectFromS3Id(attachment)
+        return { fileName: obj.name, data: obj.data }
+      }),
+    )
 
     const { recipients, newProgress } = await getRatelimitedRecipientList(
       result.data.destinationEmail,
@@ -60,6 +86,7 @@ const action: IRawAction = {
       body: result.data.body,
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
+      attachments: attachmentFiles,
     })
 
     const recipientListUptilNow = result.data.destinationEmail.slice(

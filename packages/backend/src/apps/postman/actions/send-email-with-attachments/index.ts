@@ -16,7 +16,7 @@ const action: IRawAction = {
   key: 'sendEmailWithAttachments',
   description: "Sends an email with attachments (via Postman's API).",
   arguments: fields,
-  doesFileProcessing: true,
+  doesFileProcessing: () => true,
 
   async run($, metadata) {
     let progress = 0
