@@ -56,9 +56,9 @@ const action: IRawAction = {
 
       const fieldName = validationError.details[0].path[0]
       const stepErrorName = validationError.details[0].message
-      const isAttachmentNotStoreError =
+      const isAttachmentNotStoredError =
         fieldName === 'attachments' && stepErrorName.includes('not a S3 ID')
-      const stepErrorSolution = isAttachmentNotStoreError
+      const stepErrorSolution = isAttachmentNotStoredError
         ? 'This attachment was not stored in the last submission. Please make a new submission with attachments to successfully configure this pipe.'
         : 'Click on set up action and reconfigure the invalid field.'
       throw generateStepError(
