@@ -11,6 +11,7 @@
           "protocol": "tcp"
         }
       ],
+      "stopTimeout": 120,
       "essential": true,
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -26,6 +27,7 @@
       "cpu": 512,
       "command": ["npm", "run", "start:worker"],
       "essential": true,
+      "stopTimeout": 120,
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
