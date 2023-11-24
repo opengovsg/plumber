@@ -35,12 +35,6 @@
   "flow.delete": "Delete",
   "flowEditor.goBack": "Go back to pipes",
   "executions.noExecutions": "There is no execution data point to show.",
-  "execution.noDataTitle": "No data",
-  "execution.noDataMessage": "We successfully ran the execution, but there was no new data to process.",
-  "executionStep.retry": "Retry",
-  "executionStep.retrySuccessMessage": "Retry has been enqueued. Please reload your page after a few seconds to see updated status.",
-  "executionStep.retryStarted": "Retry started",
-  "executionStep.retryFailed": "Retry failed",
   "webhookUrlInfo.title": "Your webhook URL",
   "webhookUrlInfo.description": "You'll need to configure your application with this webhook URL.",
   "webhookUrlInfo.copy": "Copy"

@@ -1,10 +1,8 @@
 import type { IExecution } from '@plumber/types'
 
-import * as React from 'react'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Tooltip from '@mui/material/Tooltip'
-import Typography from '@mui/material/Typography'
+import { Fragment, ReactElement } from 'react'
+import { Flex, Stack, Text } from '@chakra-ui/react'
+import { Tooltip } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
 
 type ExecutionHeaderProps = {
@@ -13,22 +11,22 @@ type ExecutionHeaderProps = {
 
 function ExecutionName(props: Pick<IExecution['flow'], 'name'>) {
   return (
-    <Typography variant="h3" gutterBottom>
+    <Text textStyle="h4" mb={4}>
       {props.name}
-    </Typography>
+    </Text>
   )
 }
 
 function ExecutionId(props: Pick<IExecution, 'id'>) {
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Typography variant="body2">
+    <Flex>
+      <Text textStyle="h5">
         Execution ID:{' '}
-        <Typography variant="body1" component="span">
+        <Text as="span" textStyle="body-1">
           {props.id}
-        </Typography>
-      </Typography>
-    </Box>
+        </Text>
+      </Text>
+    </Flex>
   )
 }
 
@@ -37,27 +35,28 @@ function ExecutionDate(props: Pick<IExecution, 'createdAt'>) {
   const relativeCreatedAt = createdAt.toRelative()
 
   return (
-    <Tooltip title={createdAt.toLocaleString(DateTime.DATE_MED)}>
-      <Typography variant="body1" gutterBottom>
-        {relativeCreatedAt}
-      </Typography>
+    <Tooltip
+      label={createdAt.toLocaleString(DateTime.DATE_MED)}
+      aria-label="Created at tooltip"
+    >
+      <Text textStyle="body-1">{relativeCreatedAt}</Text>
     </Tooltip>
   )
 }
 
 export default function ExecutionHeader(
   props: ExecutionHeaderProps,
-): React.ReactElement {
+): ReactElement {
   const { execution } = props
 
   if (!execution) {
-    return <React.Fragment />
+    return <Fragment />
   }
 
   return (
     <Stack direction="column">
       <Stack
-        direction={{ xs: 'column', sm: 'row' }}
+        direction={{ base: 'column', sm: 'row' }}
         justifyContent="space-between"
       >
         <ExecutionDate createdAt={execution.createdAt} />
