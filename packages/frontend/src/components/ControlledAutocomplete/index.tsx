@@ -127,7 +127,11 @@ function ControlledAutocomplete(
             {label && (
               <FormLabel
                 isRequired={required}
-                description={description && <Markdown>{description}</Markdown>}
+                description={
+                  description && (
+                    <Markdown linkTarget="_blank">{description}</Markdown>
+                  )
+                }
               >
                 {label}
               </FormLabel>

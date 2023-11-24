@@ -71,7 +71,11 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
           {label && (
             <FormLabel
               isRequired={required}
-              description={description && <Markdown>{description}</Markdown>}
+              description={
+                description && (
+                  <Markdown linkTarget="_blank">{description}</Markdown>
+                )
+              }
             >
               {label}
             </FormLabel>
