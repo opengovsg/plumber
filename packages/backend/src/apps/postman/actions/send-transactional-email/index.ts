@@ -38,7 +38,7 @@ const action: IRawAction = {
       destinationEmail,
       senderName,
       replyTo,
-      attachments,
+      attachments = [],
     } = $.step.parameters
     const result = transactionalEmailSchema.safeParse({
       destinationEmail,
