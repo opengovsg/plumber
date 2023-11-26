@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { MouseEvent, useCallback, useMemo } from 'react'
 import { Box } from '@chakra-ui/react'
 import { Header } from '@tanstack/react-table'
 
@@ -17,11 +17,18 @@ export default function ColumnResizer({ header }: ColumnResizerProps) {
     updateColumns([{ id: header.id, config: { width: newSize } }])
   }, [header, updateColumns])
 
-  const onResizeStart = useMemo(() => {
-    // this is necessary because mouse up outside of the element will not be registered otherwise
-    document.addEventListener('mouseup', onMouseUp, { once: true })
+  const resizeHandler = useMemo(() => {
     return header.getResizeHandler()
-  }, [header, onMouseUp])
+  }, [header])
+
+  const onResizeStart = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      // this is necessary because mouse up outside of the element will not be registered otherwise
+      document.addEventListener('mouseup', onMouseUp, { once: true })
+      return resizeHandler(e)
+    },
+    [onMouseUp, resizeHandler],
+  )
 
   return (
     <Box

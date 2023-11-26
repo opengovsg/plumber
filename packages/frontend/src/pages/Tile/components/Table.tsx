@@ -209,6 +209,7 @@ export default function Table(): JSX.Element {
             position="sticky"
             top={0}
             h={`${ROW_HEIGHT.HEADER}px`}
+            maxH={`${ROW_HEIGHT.HEADER}px`}
             zIndex={10}
             color="white"
             fontWeight="bold"
