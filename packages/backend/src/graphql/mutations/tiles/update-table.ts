@@ -1,5 +1,7 @@
 import { ITableColumnConfig } from '@plumber/types'
 
+import pLimit from 'p-limit'
+
 import TableColumnMetadata from '@/models/table-column-metadata'
 import Context from '@/types/express/context'
 
@@ -62,7 +64,12 @@ const updateTable = async (
   }
 
   if (modifiedColumns?.length) {
+    const limit = pLimit(5)
     await TableColumnMetadata.transaction(async (trx) => {
+      // Ideally, we want to update multiple columns in a single query, but there's
+      // no easy way to do that with objectionjs. So we'll just do it one by one.
+      // But to prevent too many queries from being executed at the same time,
+      // we're setting a concurrency limit of 5.
       await Promise.all(
         modifiedColumns.map(async (column) => {
           const { id, ...rest } = column
@@ -72,10 +79,12 @@ const updateTable = async (
           if (rest.config?.width != null && rest.config.width < 1) {
             throw new Error('Invalid column width')
           }
-          await table
-            .$relatedQuery('columns', trx)
-            .patchAndFetchById(id, rest)
-            .throwIfNotFound()
+          return limit(() =>
+            table
+              .$relatedQuery('columns', trx)
+              .patchAndFetchById(id, rest)
+              .throwIfNotFound(),
+          )
         }),
       )
     })

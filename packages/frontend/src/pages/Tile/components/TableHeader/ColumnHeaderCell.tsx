@@ -1,9 +1,7 @@
 import { memo } from 'react'
-import { FaFilter } from 'react-icons/fa'
+import { FaCaretDown, FaFilter } from 'react-icons/fa'
 import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
-import { MdDragIndicator } from 'react-icons/md'
 import {
-  Divider,
   Flex,
   Icon,
   Popover,
@@ -64,6 +62,8 @@ function ColumnHeaderCell({
   return (
     <Flex
       h="100%"
+      maxH="100%"
+      overflow="visible"
       style={{ ...style }}
       scaleX={1}
       w={columnWidth}
@@ -78,18 +78,15 @@ function ColumnHeaderCell({
         isOpen={isOpen}
         onClose={onClose}
         onOpen={onOpen}
-        isLazy={true}
-        lazyBehavior="unmount"
       >
         <PopoverTrigger>
           <Flex
             w="100%"
-            tabIndex={0}
             py={2}
             pl={4}
             pr={1}
             overflow="hidden"
-            cursor="pointer"
+            cursor={isDragging ? 'grabbing' : 'pointer'}
             alignItems="center"
             gap={1}
             justifyContent="space-between"
@@ -99,6 +96,8 @@ function ColumnHeaderCell({
             _focus={{
               outline: 'none',
             }}
+            {...attributes}
+            {...listeners}
           >
             <Text
               overflow="hidden"
@@ -117,18 +116,31 @@ function ColumnHeaderCell({
                   h={4}
                 />
               )}
+              {!isFiltered && !sortDir && (
+                <Icon
+                  as={FaCaretDown}
+                  transform={isOpen ? 'rotate(180deg)' : undefined}
+                  w={4}
+                  h={4}
+                />
+              )}
             </Flex>
           </Flex>
         </PopoverTrigger>
 
-        <PopoverContent color="secondary.900" outline="none">
+        <PopoverContent
+          color="secondary.900"
+          outline="none"
+          _focusVisible={{
+            boxShadow: 'none',
+          }}
+        >
           <PopoverArrow />
           <PopoverHeader>
             <EditColumnName id={id} columnName={columnName} />
           </PopoverHeader>
           <PopoverBody>
             <ColumnSort column={column} />
-            <Divider />
             <ColumnFilter column={column} />
           </PopoverBody>
           <PopoverFooter justifyContent="flex-start" display="flex">
@@ -136,26 +148,6 @@ function ColumnHeaderCell({
           </PopoverFooter>
         </PopoverContent>
       </Popover>
-
-      <Icon
-        as={MdDragIndicator}
-        w={5}
-        h="100%"
-        opacity={0.5}
-        cursor="grab"
-        _hover={{
-          opacity: 1,
-          bg: 'primary.800',
-        }}
-        _focus={{
-          outline: 'none',
-        }}
-        _active={{
-          cursor: 'grabbing',
-        }}
-        {...attributes}
-        {...listeners}
-      />
       <ColumnResizer header={header} />
     </Flex>
   )

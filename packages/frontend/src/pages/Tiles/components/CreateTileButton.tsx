@@ -1,6 +1,6 @@
 import { ITableMetadata } from '@plumber/types'
 
-import { useCallback, useState } from 'react'
+import { FormEvent, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -31,17 +31,21 @@ const CreateTileButton = (): JSX.Element => {
     createTable: ITableMetadata
   }>(CREATE_TABLE)
 
-  const onSubmit = useCallback(async () => {
-    const { data } = await createTable({
-      variables: {
-        input: {
-          name: tableName,
+  const onSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault()
+      const { data } = await createTable({
+        variables: {
+          input: {
+            name: tableName,
+          },
         },
-      },
-    })
-    navigate(URLS.TILE(data?.createTable.id as string))
-    onClose()
-  }, [createTable, tableName, navigate, onClose])
+      })
+      navigate(URLS.TILE(data?.createTable.id as string))
+      onClose()
+    },
+    [createTable, tableName, navigate, onClose],
+  )
 
   return (
     <>
@@ -49,24 +53,22 @@ const CreateTileButton = (): JSX.Element => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Tiles</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <FormLabel isRequired>Enter a name for your new tiles.</FormLabel>
-            <Input
-              value={tableName}
-              onChange={(e) => setTableName(e.target.value)}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              onClick={onSubmit}
-              colorScheme="primary"
-              isLoading={loading}
-            >
-              Confirm
-            </Button>
-          </ModalFooter>
+          <form onSubmit={onSubmit}>
+            <ModalHeader>Tiles</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <FormLabel isRequired>Enter a name for your new tiles.</FormLabel>
+              <Input
+                value={tableName}
+                onChange={(e) => setTableName(e.target.value)}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button type="submit" colorScheme="primary" isLoading={loading}>
+                Confirm
+              </Button>
+            </ModalFooter>
+          </form>
         </ModalContent>
       </Modal>
     </>

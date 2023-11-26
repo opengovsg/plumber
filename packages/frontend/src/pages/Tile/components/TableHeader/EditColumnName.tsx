@@ -52,7 +52,9 @@ export default function EditColumnName({
         </>
       ) : (
         <>
-          <Text px={4}>{columnName}</Text>
+          <Text px={4} wordBreak="break-word">
+            {columnName}
+          </Text>
           <IconButton
             alignSelf="flex-start"
             aria-label="edit"

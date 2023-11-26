@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Flex, Text, VStack } from '@chakra-ui/react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 import { Input } from '@opengovsg/design-system-react'
 import { Column } from '@tanstack/react-table'
 import { debounce } from 'lodash'
@@ -37,8 +37,8 @@ export function ColumnFilter({ column }: ColumnFilterProps) {
   }, [column])
 
   return (
-    <VStack p={4} gap={1} alignItems="flex-start">
-      <Flex justifyContent="space-between" w="100%">
+    <Box p={4} textStyle="subhead-2" fontWeight={500}>
+      <Flex justifyContent="space-between" w="100%" mb={3}>
         <Text textStyle="subhead-2">Filter</Text>
         {!!column.getFilterValue() && (
           <Text
@@ -52,11 +52,7 @@ export function ColumnFilter({ column }: ColumnFilterProps) {
           </Text>
         )}
       </Flex>
-      <Input
-        onChange={onChange}
-        defaultValue={value}
-        placeholder="Filter text"
-      />
-    </VStack>
+      <Input onChange={onChange} value={value} placeholder="Filter text" />
+    </Box>
   )
 }
