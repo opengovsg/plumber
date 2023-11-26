@@ -24,7 +24,15 @@ interface TableHeaderProps {
 }
 
 export default function TableHeader({ table }: TableHeaderProps) {
-  const sensors = useSensors(useSensor(PointerSensor))
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: {
+          x: 10,
+        },
+      },
+    }),
+  )
 
   const { updateColumns } = useUpdateTable()
 

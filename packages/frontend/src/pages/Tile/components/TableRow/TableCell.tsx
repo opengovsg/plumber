@@ -194,7 +194,7 @@ function TableCell({
               ? 'var(--chakra-colors-orange-200)'
               : hasMatchingSearch
               ? 'var(--chakra-colors-orange-100'
-              : 'transparent',
+              : undefined,
           }}
           className={className}
         >

@@ -6,31 +6,36 @@ import { useQuery } from '@apollo/client'
 import {
   Box,
   Center,
+  Divider,
   Flex,
-  ListItem,
   Spinner,
   Text,
-  UnorderedList,
+  VStack,
 } from '@chakra-ui/react'
-import { Tile } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 import { GET_TABLES } from 'graphql/queries/get-tables'
 
 const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
   return (
     <Link to={URLS.TILE(table.id)}>
-      <Tile variant="complex" icon={BsBricks} w={48}>
-        <Box py={4}>
+      <Flex
+        px={8}
+        py={4}
+        w="100%"
+        alignItems="center"
+        gap={8}
+        _hover={{
+          backgroundColor: 'primary.50',
+        }}
+      >
+        <BsBricks size={24} />
+        <Box>
           <Text textStyle="h6">{table.name}</Text>
-          <UnorderedList>
-            {table.columns.map((column) => (
-              <ListItem key={column.id}>
-                <Text textStyle="body-2">{column.name}</Text>
-              </ListItem>
-            ))}
-          </UnorderedList>
+          <Text textStyle="body-2">
+            {table.columns.map((c) => c.name).join(', ')}
+          </Text>
         </Box>
-      </Tile>
+      </Flex>
     </Link>
   )
 }
@@ -48,11 +53,11 @@ const TileList = (): JSX.Element => {
   }
 
   return (
-    <Flex gap={4} px={8} alignItems="stretch" flexWrap="wrap">
+    <VStack alignItems="stretch" flexWrap="wrap" divider={<Divider />}>
       {data.getTables.map((tile) => (
         <TileListItem key={tile.id} table={tile} />
       ))}
-    </Flex>
+    </VStack>
   )
 }
 

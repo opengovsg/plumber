@@ -45,6 +45,8 @@ export default function NewColumnHeaderCell() {
       onClose={onClose}
       onOpen={onOpen}
       isOpen={isOpen}
+      isLazy={true}
+      lazyBehavior="unmount"
     >
       <PopoverTrigger>
         <Box h="100%" position="relative" w={50}>
