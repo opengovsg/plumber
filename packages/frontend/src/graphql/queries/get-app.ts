@@ -11,6 +11,7 @@ export const GET_APP = gql`
       primaryColor
       auth {
         connectionType
+        connectionRegistrationType
         fields {
           key
           label
