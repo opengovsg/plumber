@@ -13,34 +13,24 @@ import {
   horizontalListSortingStrategy,
   SortableContext,
 } from '@dnd-kit/sortable'
-import {
-  ColumnFiltersState,
-  ColumnOrderState,
-  ColumnSizingState,
-  flexRender,
-  Header,
-  SortingState,
-} from '@tanstack/react-table'
+import { flexRender, Header, TableState } from '@tanstack/react-table'
 
 import { NEW_COLUMN_ID, SELECT_COLUMN_ID } from '../../constants'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 import { GenericRowData } from '../../types'
 
 interface TableHeaderProps {
-  columnOrder: ColumnOrderState
+  tableState: TableState
   setColumnOrder: (columnOrder: string[]) => void
   headers: Header<GenericRowData, unknown>[]
-  rowSelection: Record<string, boolean>
-  sorting: SortingState
-  columnSizing: ColumnSizingState
-  columnFilters: ColumnFiltersState
 }
 
 function TableHeader({
-  columnOrder,
+  tableState,
   setColumnOrder,
   headers,
 }: TableHeaderProps) {
+  const { columnOrder } = tableState
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -103,4 +93,16 @@ function TableHeader({
   )
 }
 
-export default memo(TableHeader)
+export default memo(TableHeader, (prev, next) => {
+  // Manually tell React to re-render TableHeader when the following properties change
+  // passing tableState or table alone will cause headers to re-render on each cell change
+  return (
+    prev.tableState.columnOrder === next.tableState.columnOrder &&
+    prev.tableState.columnSizing === next.tableState.columnSizing &&
+    prev.tableState.columnFilters === next.tableState.columnFilters &&
+    prev.tableState.sorting === next.tableState.sorting &&
+    prev.tableState.rowSelection === next.tableState.rowSelection &&
+    prev.headers === next.headers &&
+    prev.setColumnOrder === next.setColumnOrder
+  )
+})
