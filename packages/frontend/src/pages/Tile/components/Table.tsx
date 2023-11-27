@@ -8,15 +8,12 @@ import {
 } from 'react'
 import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
-  ColumnFiltersState,
   ColumnOrderState,
-  ColumnSizingState,
   createRow as createEmptyRow,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   Row,
-  SortingState,
   TableMeta,
   useReactTable,
 } from '@tanstack/react-table'
@@ -48,9 +45,6 @@ export default function Table(): JSX.Element {
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
     columns.map((c) => c.id as string),
   )
-  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({})
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   useEffect(() => {
     setColumnOrder(columns.map((c) => c.id as string))
   }, [columns])
@@ -114,9 +108,6 @@ export default function Table(): JSX.Element {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnOrderChange: setColumnOrder,
-    onColumnSizingChange: setColumnSizing,
-    onColumnFiltersChange: setColumnFilters,
-    onSortingChange: setSorting,
     columnResizeMode: 'onChange',
     // debugAll: appConfig.isDev,
     enableRowSelection: (row) =>
@@ -125,13 +116,10 @@ export default function Table(): JSX.Element {
     onRowSelectionChange: setRowSelection,
     state: {
       columnOrder,
-      columnSizing,
       rowSelection,
       rowPinning: {
         bottom: [NEW_ROW_ID],
       },
-      sorting,
-      columnFilters,
     },
     meta: {
       rowsUpdating,
@@ -228,13 +216,9 @@ export default function Table(): JSX.Element {
             fontWeight="bold"
           >
             <TableHeader
-              columnOrder={columnOrder}
-              rowSelection={rowSelection}
               setColumnOrder={setColumnOrder}
               headers={table.getFlatHeaders()}
-              columnSizing={columnSizing}
-              sorting={sorting}
-              columnFilters={columnFilters}
+              tableState={table.getState()}
             />
           </Flex>
           <Box h={rowVirtualizer.getTotalSize()} ref={childRef}>
