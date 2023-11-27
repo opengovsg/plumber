@@ -8,6 +8,8 @@ import {
 } from '@/config/app-env-vars/m365'
 import type { IHttpClient } from '@/helpers/http-client'
 
+import { MS_GRAPH_OAUTH_BASE_URL } from '../constants'
+
 export interface MsGraphAccessToken {
   value: string
   requestTimestamp: number
@@ -26,7 +28,7 @@ function makeClientAssertion(tenant: M365TenantInfo): string {
   const payload = {
     jti: randomUUID(),
 
-    aud: `https://login.microsoftonline.com/${tenant.id}/oauth2/v2.0/token`,
+    aud: `${MS_GRAPH_OAUTH_BASE_URL}/${tenant.id}/oauth2/v2.0/token`,
     iss: tenant.clientId,
     sub: tenant.clientId,
 
@@ -68,7 +70,7 @@ export async function makeAccessTokenRequest(
     {
       // Our http-client is already instantiated with MS Graph's base URL, but
       // MS uses a different URL for auth, so we override it here.
-      baseURL: 'https://login.microsoftonline.com',
+      baseURL: MS_GRAPH_OAUTH_BASE_URL,
       headers: body.getHeaders(),
     },
   )

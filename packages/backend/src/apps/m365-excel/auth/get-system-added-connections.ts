@@ -6,7 +6,7 @@ import { getM365TenantInfo, M365TenantKey } from '@/config/app-env-vars/m365'
 import type Connection from '@/models/connection'
 import User from '@/models/user'
 
-import { APP_KEY } from '../common/app-key'
+import { APP_KEY } from '../common/constants'
 import getEligibleTenantKeys from '../common/get-eligible-tenant-keys'
 
 function getCurrentTenantKeys(connections: Connection[]): ReadonlySet<string> {
