@@ -14,19 +14,16 @@ import FlowTemplate, { FlowTemplateProps } from './FlowTemplate'
 
 const flowTemplates: FlowTemplateProps[] = [
   {
-    count: 999,
     title: 'Notifications for form submission',
     description: 'Set up notifications when a new form submission comes in',
     link: 'https://guide.plumber.gov.sg/use-cases/notifications-for-formsg',
   },
   {
-    count: 145,
     title: 'Customised acknowledgements',
     description: `Send respondents’ customised acknowledgements based on their form responses`,
     link: 'https://guide.plumber.gov.sg/use-cases/email-acknowledgements-to-respondent',
   },
   {
-    count: 145,
     title: 'Attendance tracking',
     description: 'Track turnout for events',
     link: 'https://guide.plumber.gov.sg/use-cases/attendance-taking',
@@ -51,10 +48,9 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
         />
       </Text>
       <Grid mt={4} gridTemplateColumns="repeat(3, 1fr)" gap={4}>
-        {flowTemplates.map(({ count, title, description, link }, index) => (
+        {flowTemplates.map(({ title, description, link }, index) => (
           <FlowTemplate
             key={index}
-            count={count}
             title={title}
             description={description}
             link={link}

@@ -73,7 +73,7 @@ export default function Flows(): React.ReactElement {
     [],
   )
 
-  if (!hasFlows && flowName === '') {
+  if (!loading && !hasFlows && flowName === '') {
     return <EmptyFlowsTemplate CreateFlowLink={CreateFlowLink} />
   }
 
