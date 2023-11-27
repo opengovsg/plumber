@@ -1,4 +1,4 @@
-import { Fragment, useCallback } from 'react'
+import { Fragment, memo, useCallback } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -13,17 +13,34 @@ import {
   horizontalListSortingStrategy,
   SortableContext,
 } from '@dnd-kit/sortable'
-import { flexRender, Table } from '@tanstack/react-table'
+import {
+  ColumnFiltersState,
+  ColumnOrderState,
+  ColumnSizingState,
+  flexRender,
+  Header,
+  SortingState,
+} from '@tanstack/react-table'
 
 import { NEW_COLUMN_ID, SELECT_COLUMN_ID } from '../../constants'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 import { GenericRowData } from '../../types'
 
 interface TableHeaderProps {
-  table: Table<GenericRowData>
+  columnOrder: ColumnOrderState
+  setColumnOrder: (columnOrder: string[]) => void
+  headers: Header<GenericRowData, unknown>[]
+  rowSelection: Record<string, boolean>
+  sorting: SortingState
+  columnSizing: ColumnSizingState
+  columnFilters: ColumnFiltersState
 }
 
-export default function TableHeader({ table }: TableHeaderProps) {
+function TableHeader({
+  columnOrder,
+  setColumnOrder,
+  headers,
+}: TableHeaderProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -41,12 +58,11 @@ export default function TableHeader({ table }: TableHeaderProps) {
       const { active, over } = event
 
       if (over && active.id !== over.id) {
-        const columnIds = table.getState().columnOrder
-        const oldIndex = columnIds.indexOf(active.id as string)
-        const newIndex = columnIds.indexOf(over.id as string)
+        const oldIndex = columnOrder.indexOf(active.id as string)
+        const newIndex = columnOrder.indexOf(over.id as string)
 
-        const newOrder = arrayMove(columnIds, oldIndex, newIndex)
-        table.setColumnOrder(newOrder)
+        const newOrder = arrayMove(columnOrder, oldIndex, newIndex)
+        setColumnOrder(newOrder)
 
         updateColumns(
           newOrder
@@ -55,9 +71,8 @@ export default function TableHeader({ table }: TableHeaderProps) {
         )
       }
     },
-    [table, updateColumns],
+    [columnOrder, setColumnOrder, updateColumns],
   )
-  const columnOrder = table.getState().columnOrder
 
   return (
     <DndContext
@@ -76,7 +91,7 @@ export default function TableHeader({ table }: TableHeaderProps) {
         items={columnOrder}
         strategy={horizontalListSortingStrategy}
       >
-        {table.getFlatHeaders().map((header) => (
+        {headers.map((header) => (
           <Fragment key={header.id}>
             {/* prevents new column from temporarily appearing after the + column */}
             {columnOrder.includes(header.id) &&
@@ -87,3 +102,5 @@ export default function TableHeader({ table }: TableHeaderProps) {
     </DndContext>
   )
 }
+
+export default memo(TableHeader)

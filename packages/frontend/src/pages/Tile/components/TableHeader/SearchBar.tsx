@@ -210,7 +210,7 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
         onChange={onInputChange}
         onKeyDown={onKeyDown}
         autoFocus
-        pr={24}
+        pr={32}
       />
       <InputRightElement
         width="auto"

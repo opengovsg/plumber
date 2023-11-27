@@ -37,7 +37,7 @@ export function ColumnFilter({ column }: ColumnFilterProps) {
   }, [column])
 
   return (
-    <Box p={4} textStyle="subhead-2" fontWeight={500}>
+    <Box textStyle="subhead-2" fontWeight={500} py={2}>
       <Flex justifyContent="space-between" w="100%" mb={3}>
         <Text textStyle="subhead-2">Filter</Text>
         {!!column.getFilterValue() && (

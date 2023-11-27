@@ -1,26 +1,26 @@
 import { useCallback } from 'react'
 import { BsTrash } from 'react-icons/bs'
 import { Button } from '@chakra-ui/react'
-import { Table } from '@tanstack/react-table'
 
 import { useDeleteRows } from '../../hooks/useDeleteRows'
-import { GenericRowData } from '../../types'
 
 interface DeleteRowsButtonProps {
-  table: Table<GenericRowData>
+  rowSelection: Record<string, boolean>
+  removeRows: (rows: string[]) => void
 }
 
-export default function DeleteRowsButton({ table }: DeleteRowsButtonProps) {
-  const rowSelection = table.getState().rowSelection
+export default function DeleteRowsButton({
+  rowSelection,
+  removeRows,
+}: DeleteRowsButtonProps) {
   const rowsSelected = Object.keys(rowSelection)
 
   const { deleteRows, rowsDeleting } = useDeleteRows()
 
   const onClick = useCallback(async () => {
     await deleteRows(rowsSelected)
-    table.options.meta?.removeRows(rowsSelected)
-    table.setRowSelection({})
-  }, [deleteRows, rowsSelected, table])
+    removeRows(rowsSelected)
+  }, [deleteRows, removeRows, rowsSelected])
 
   if (!rowsSelected.length) {
     return null
