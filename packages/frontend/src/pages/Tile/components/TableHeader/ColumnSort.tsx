@@ -26,7 +26,7 @@ export default function ColumnSort({ column }: ColumnSortProps) {
   )
 
   return (
-    <Box py={2} px={4}>
+    <Box py={2}>
       <Flex
         justifyContent="space-between"
         w="100%"

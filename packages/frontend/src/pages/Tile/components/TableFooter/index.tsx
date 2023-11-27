@@ -1,19 +1,23 @@
+import { memo } from 'react'
 import { Flex, Kbd } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import { Table } from '@tanstack/react-table'
 
 import { ROW_HEIGHT, Z_INDEX } from '../../constants'
 import { scrollToBottom, scrollToTop } from '../../helpers/scroll-helper'
-import { GenericRowData } from '../../types'
 
 import DeleteRowsButton from './DeleteRowsButton'
 
 interface TableFooterProps {
-  table: Table<GenericRowData>
+  removeRows: (rows: string[]) => void
+  rowSelection: Record<string, boolean>
   parentRef: React.RefObject<HTMLDivElement>
 }
 
-export default function TableFooter({ table, parentRef }: TableFooterProps) {
+function TableFooter({
+  removeRows,
+  rowSelection,
+  parentRef,
+}: TableFooterProps) {
   return (
     <Flex
       w="100%"
@@ -46,7 +50,16 @@ export default function TableFooter({ table, parentRef }: TableFooterProps) {
           Scroll to bottom <Kbd bg="white">end</Kbd>
         </Button>
       </Flex>
-      <Flex>{<DeleteRowsButton table={table} />}</Flex>
+      <Flex>
+        {
+          <DeleteRowsButton
+            rowSelection={rowSelection}
+            removeRows={removeRows}
+          />
+        }
+      </Flex>
     </Flex>
   )
 }
+
+export default memo(TableFooter)

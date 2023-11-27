@@ -32,7 +32,7 @@ export default function EditColumnName({
       {isEditingColumnName ? (
         <>
           <Input
-            h={10}
+            size="sm"
             value={newColumnName}
             onChange={(e) => setNewColumnName(e.target.value)}
             onKeyDown={(e) => {
@@ -52,7 +52,7 @@ export default function EditColumnName({
         </>
       ) : (
         <>
-          <Text px={4} wordBreak="break-word">
+          <Text textStyle="subhead-2" wordBreak="break-word">
             {columnName}
           </Text>
           <IconButton
