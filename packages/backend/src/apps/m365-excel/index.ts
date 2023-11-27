@@ -1,5 +1,6 @@
 import type { IApp } from '@plumber/types'
 
+import beforeRequest from './common/interceptors/before-request'
 import actions from './actions'
 import auth from './auth'
 
@@ -13,6 +14,7 @@ const app: IApp = {
   primaryColor: '000000',
   auth,
   actions,
+  beforeRequest,
 }
 
 export default app
