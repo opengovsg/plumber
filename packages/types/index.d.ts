@@ -141,9 +141,9 @@ export interface IFlow {
 export interface IUser {
   id: string
   email: string
-  connections: IConnection[]
-  flows: IFlow[]
-  steps: IStep[]
+  connections?: IConnection[]
+  flows?: IFlow[]
+  steps?: IStep[]
 }
 
 // Subset of HTML autocomplete values.
