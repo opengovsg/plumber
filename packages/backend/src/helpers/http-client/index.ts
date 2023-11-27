@@ -31,12 +31,15 @@ export default function createHttpClient({
   })
 
   instance.interceptors.request.use(
-    (requestConfig: AxiosRequestConfig): AxiosRequestConfig => {
-      const newRequestConfig = removeBaseUrlForAbsoluteUrls(requestConfig)
+    async (requestConfig: AxiosRequestConfig): Promise<AxiosRequestConfig> => {
+      let newRequestConfig = removeBaseUrlForAbsoluteUrls(requestConfig)
 
-      return beforeRequest.reduce((newConfig, beforeRequestFunc) => {
-        return beforeRequestFunc($, newConfig)
-      }, newRequestConfig)
+      // Intentionally serial as each callback works on result of previous one.
+      for (const callback of beforeRequest) {
+        newRequestConfig = await callback($, newRequestConfig)
+      }
+
+      return newRequestConfig
     },
   )
 

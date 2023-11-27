@@ -1,6 +1,6 @@
 import { TBeforeRequest } from '@plumber/types'
 
-const addHeaders: TBeforeRequest = ($, requestConfig) => {
+const addHeaders: TBeforeRequest = async ($, requestConfig) => {
   const authData = $.auth.data
   if (authData?.headers) {
     requestConfig.headers = {
