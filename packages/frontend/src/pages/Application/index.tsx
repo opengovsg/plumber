@@ -171,7 +171,7 @@ export default function Application(): React.ReactElement | null {
                     label={formatMessage('app.connections')}
                     to={URLS.APP_CONNECTIONS(appKey)}
                     value={URLS.APP_CONNECTIONS_PATTERN}
-                    disabled={!app.supportsConnections}
+                    disabled={!app.auth}
                     component={Link}
                   />
 
@@ -200,7 +200,7 @@ export default function Application(): React.ReactElement | null {
                   element={
                     <Navigate
                       to={
-                        app.supportsConnections
+                        app.auth?.connectionType
                           ? URLS.APP_CONNECTIONS(appKey)
                           : URLS.APP_FLOWS(appKey)
                       }

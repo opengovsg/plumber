@@ -9,7 +9,6 @@ const app: IApp = {
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
   baseUrl: 'https://www.office.com',
   apiBaseUrl: 'https://graph.microsoft.com',
-  supportsConnections: true,
   primaryColor: '000000',
   actions,
 }

@@ -11,7 +11,6 @@ const app: IApp = {
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '0059F7',
-  supportsConnections: false,
   triggers,
 }
 

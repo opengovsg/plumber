@@ -9,7 +9,6 @@ const app: IApp = {
   key: 'custom-api',
   iconUrl: '{BASE_URL}/apps/custom-api/assets/favicon.svg',
   authDocUrl: '',
-  supportsConnections: true,
   beforeRequest: [addHeaders],
   auth,
   baseUrl: '',

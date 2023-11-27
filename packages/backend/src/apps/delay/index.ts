@@ -7,7 +7,6 @@ const app: IApp = {
   key: 'delay',
   iconUrl: '{BASE_URL}/apps/delay/assets/favicon.svg',
   authDocUrl: 'https://automatisch.io/docs/apps/delay/connection',
-  supportsConnections: false,
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '001F52',
