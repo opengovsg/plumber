@@ -49,12 +49,9 @@ const action: IRawAction = {
     const { delayForUnit, delayForValue } = $.step.parameters
 
     if (isNaN(Number(delayForValue))) {
-      const stepErrorName = 'Invalid delay for value entered'
-      const stepErrorSolution =
-        'Click on set up action and check that the value is a valid number.'
       throw generateStepError(
-        stepErrorName,
-        stepErrorSolution,
+        'Invalid delay for value entered',
+        'Click on set up action and check that the value is a valid number.',
         $.step.position,
         $.app.name,
       )
