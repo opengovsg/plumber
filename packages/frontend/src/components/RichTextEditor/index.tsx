@@ -140,12 +140,12 @@ const Editor = ({
 
   return (
     <div className="editor">
-      <MenuBar editor={editor} />
       <ClickAwayListener
         mouseEvent="onMouseDown"
         onClickAway={() => setShowVarSuggestions(false)}
       >
         <div ref={editorRef}>
+          <MenuBar editor={editor} />
           <EditorContent
             className="editor__content"
             editor={editor}
