@@ -279,7 +279,7 @@ export type TBeforeRequest = {
   (
     $: IGlobalVariable,
     requestConfig: InternalAxiosRequestConfig,
-  ): InternalAxiosRequestConfig
+  ): Promise<InternalAxiosRequestConfig>
 }
 
 export interface DynamicDataOutput {
