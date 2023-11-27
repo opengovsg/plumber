@@ -13,8 +13,12 @@ export default function DeleteColumnButton({ id }: DeleteColumnButtonProps) {
   return (
     <Button
       leftIcon={<BsTrash />}
-      variant="clear"
-      colorScheme="red"
+      variant="link"
+      py={2}
+      color="utility.feedback.critical"
+      _hover={{
+        color: 'red.400',
+      }}
       isLoading={isDeletingColumns}
       onClick={() => deleteColumns([id])}
     >
