@@ -4,13 +4,13 @@ import { forwardRef, useEffect, useMemo, useState } from 'react'
 import type { LinkProps } from 'react-router-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Hide } from '@chakra-ui/react'
+import { Flex, Hide } from '@chakra-ui/react'
 import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
-import Pagination from '@mui/material/Pagination'
+import { Pagination } from '@opengovsg/design-system-react'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import Container from 'components/Container'
 import FlowRow from 'components/FlowRow'
@@ -57,7 +57,6 @@ export default function Flows(): React.ReactElement {
   })
 
   const { pageInfo, edges } = data?.getFlows || {}
-
   const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
   const hasFlows = flows?.length
 
@@ -129,15 +128,17 @@ export default function Flows(): React.ReactElement {
           />
         )}
 
-        {!loading && pageInfo && pageInfo.totalPages > 1 && (
-          <Pagination
-            sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}
-            page={pageInfo?.currentPage}
-            count={pageInfo?.totalPages}
-            onChange={(_event, page) =>
-              setSearchParams(page === 1 ? {} : { page: page.toString() })
-            }
-          />
+        {!loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE && (
+          <Flex justifyContent="center" mt={6}>
+            <Pagination
+              currentPage={pageInfo?.currentPage}
+              onPageChange={(page) =>
+                setSearchParams(page === 1 ? {} : { page: page.toString() })
+              }
+              pageSize={FLOW_PER_PAGE}
+              totalCount={pageInfo?.totalCount}
+            ></Pagination>
+          </Flex>
         )}
       </Container>
     </Box>

@@ -1,12 +1,14 @@
 import type { IExecutionStep } from '@plumber/types'
 
 import * as React from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
+import { Flex } from '@chakra-ui/react'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
 import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
+import { Pagination } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import ExecutionHeader from 'components/ExecutionHeader'
 import ExecutionStep from 'components/ExecutionStep'
@@ -18,24 +20,26 @@ type ExecutionParams = {
   executionId: string
 }
 
-const EXECUTION_PER_PAGE = 100
+export const EXECUTION_STEP_PER_PAGE = 100
 
 const getLimitAndOffset = (page: number) => ({
-  limit: EXECUTION_PER_PAGE,
-  offset: (page - 1) * EXECUTION_PER_PAGE,
+  limit: EXECUTION_STEP_PER_PAGE,
+  offset: (page - 1) * EXECUTION_STEP_PER_PAGE,
 })
 
 export default function Execution(): React.ReactElement {
   const { executionId } = useParams() as ExecutionParams
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parseInt(searchParams.get('page') || '', 10) || 1
   const formatMessage = useFormatMessage()
   const { data: execution } = useQuery(GET_EXECUTION, {
     variables: { executionId },
   })
   const { data, loading } = useQuery(GET_EXECUTION_STEPS, {
-    variables: { executionId, ...getLimitAndOffset(1) },
+    variables: { executionId, ...getLimitAndOffset(page) },
   })
 
-  const { edges } = data?.getExecutionSteps || {}
+  const { pageInfo, edges } = data?.getExecutionSteps || {}
   const executionSteps: IExecutionStep[] = edges?.map(
     (edge: { node: IExecutionStep }) => edge.node,
   )
@@ -62,9 +66,25 @@ export default function Execution(): React.ReactElement {
             key={executionStep.id}
             executionStep={executionStep}
             index={i}
+            page={page}
           />
         ))}
       </Grid>
+
+      {!loading &&
+        pageInfo &&
+        pageInfo.totalCount > EXECUTION_STEP_PER_PAGE && (
+          <Flex justifyContent="center" mt={6}>
+            <Pagination
+              currentPage={pageInfo?.currentPage}
+              onPageChange={(page) =>
+                setSearchParams(page === 1 ? {} : { page: page.toString() })
+              }
+              pageSize={EXECUTION_STEP_PER_PAGE}
+              totalCount={pageInfo?.totalCount}
+            ></Pagination>
+          </Flex>
+        )}
     </Container>
   )
 }

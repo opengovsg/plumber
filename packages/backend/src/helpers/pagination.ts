@@ -19,7 +19,7 @@ const paginate = async (
   return {
     pageInfo: {
       currentPage: Math.ceil(offset / limit + 1),
-      totalPages: Math.ceil(count / limit),
+      totalCount: count,
     },
     edges: records.map((record: Model) => {
       return {

@@ -13,6 +13,7 @@ import AppIcon from 'components/AppIcon'
 import JSONViewer from 'components/JSONViewer'
 import TabPanel from 'components/TabPanel'
 import { GET_APP } from 'graphql/queries/get-app'
+import { EXECUTION_STEP_PER_PAGE } from 'pages/Execution'
 
 import RetryButton from './RetryButton'
 import {
@@ -25,14 +26,19 @@ import {
 
 type ExecutionStepProps = {
   index: number
+  page: number
   executionStep: IExecutionStep
 }
 
 const validIcon = <CheckCircleIcon color="success" />
 const errorIcon = <ErrorIcon color="error" />
+const getStepPosition = (page: number, index: number) => {
+  return (page - 1) * EXECUTION_STEP_PER_PAGE + index + 1
+}
 
 export default function ExecutionStep({
   index,
+  page,
   executionStep,
 }: ExecutionStepProps): React.ReactElement | null {
   const [activeTabIndex, setActiveTabIndex] = React.useState(0)
@@ -72,11 +78,11 @@ export default function ExecutionStep({
 
             <div>
               <Typography variant="caption">
-                {index === 0 ? 'Trigger' : 'Action'}
+                {index === 0 && page === 1 ? 'Trigger' : 'Action'}
               </Typography>
 
               <Typography variant="body2">
-                {index + 1}. {app?.name}
+                {getStepPosition(page, index)}. {app?.name}
               </Typography>
             </div>
           </Stack>

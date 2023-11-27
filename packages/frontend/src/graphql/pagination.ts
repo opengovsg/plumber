@@ -10,7 +10,7 @@ export type TEdge<TNode> =
 
 export type TPageInfo = {
   currentPage: number
-  totalPages: number
+  totalCount: number
 }
 
 export type TExisting<TNode> = Readonly<{
@@ -34,7 +34,7 @@ const makeEmptyData = <TNode>(): TExisting<TNode> => {
     edges: [],
     pageInfo: {
       currentPage: 1,
-      totalPages: 1,
+      totalCount: 0,
     },
   }
 }
