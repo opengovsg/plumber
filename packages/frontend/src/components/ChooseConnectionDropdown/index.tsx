@@ -58,6 +58,11 @@ function ChooseConnectionDropdown({
     [onChange],
   )
 
+  const items = [...connectionOptions]
+  if (application?.auth?.connectionType === 'user-added') {
+    items.push(ADD_NEW_CONNECTION_OPTION)
+  }
+
   return (
     <>
       <FormControl>
@@ -67,7 +72,7 @@ function ChooseConnectionDropdown({
           isRequired={true}
           isClearable={false}
           isDisabled={isDisabled}
-          items={[...connectionOptions, ADD_NEW_CONNECTION_OPTION]}
+          items={items}
           value={value || ''}
           onChange={onSelectionChange}
         />
