@@ -4,11 +4,14 @@ import {
   As,
   Box,
   Divider,
+  Flex,
   Grid,
+  Hide,
   Icon,
   Text,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import NavigationDrawer from 'components/Layout/NavigationDrawer'
 
 import FlowTemplate, { FlowTemplateProps } from './FlowTemplate'
 
@@ -38,15 +41,22 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
   const { CreateFlowLink } = props
   return (
     <Box px="10vw" py="10vh">
-      <Text textStyle="h4" display="inline">
-        {`You don't have any pipes, see what others are creating`}{' '}
-        <Icon
-          as={BiWinkSmile}
-          verticalAlign="middle"
-          color="primary.600"
-          boxSize={8}
-        />
-      </Text>
+      <Flex>
+        <Hide above="sm">
+          <Box mt={-1.5}>
+            <NavigationDrawer />
+          </Box>
+        </Hide>
+        <Text textStyle="h4" display="inline">
+          {`You don't have any pipes, see what others are creating`}{' '}
+          <Icon
+            as={BiWinkSmile}
+            verticalAlign="middle"
+            color="primary.600"
+            boxSize={8}
+          />
+        </Text>
+      </Flex>
       <Grid mt={4} gridTemplateColumns="repeat(3, 1fr)" gap={4}>
         {flowTemplates.map(({ title, description, link }, index) => (
           <FlowTemplate
