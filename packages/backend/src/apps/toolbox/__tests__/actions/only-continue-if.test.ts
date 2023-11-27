@@ -23,6 +23,9 @@ describe('Only continue if', () => {
         position: 2,
         parameters: {},
       },
+      app: {
+        name: 'Toolbox',
+      },
       setActionItem: mocks.setActionItem,
     } as unknown as IGlobalVariable
   })
@@ -61,5 +64,20 @@ describe('Only continue if', () => {
     expect(mocks.setActionItem).toBeCalledWith({
       raw: { result: false },
     })
+  })
+
+  it('should throw step error if invalid condition is configured', async () => {
+    const invalidCondition = '==='
+    $.step.parameters = {
+      field: 1,
+      is: 'is',
+      condition: invalidCondition,
+      text: 0,
+    }
+
+    // throw partial step error message
+    await expect(onlyContinueIfAction.run($)).rejects.toThrowError(
+      `Conditional logic block contains an unknown operator: ${invalidCondition}`,
+    )
   })
 })

@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Divider,
   Flex,
+  Hide,
   Icon,
   Input,
   InputGroup,
@@ -27,6 +28,7 @@ import Pagination from '@mui/material/Pagination'
 import Container from 'components/Container'
 import ExecutionRow from 'components/ExecutionRow'
 import ExecutionStatusMenu, { StatusType } from 'components/ExecutionStatusMenu'
+import NavigationDrawer from 'components/Layout/NavigationDrawer'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
 import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
@@ -142,14 +144,19 @@ export default function Executions(): ReactElement {
     <Box py={9}>
       <Container variant="page">
         <Flex
-          flexDir={{ base: 'column', sm: 'row' }}
+          flexDir={{ base: 'column', md: 'row' }}
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={{ base: 'flex-start', md: 'center' }}
           gap={4}
           mb={8}
-          pl={{ base: 0, sm: '2rem' }}
+          pl={{ base: 0, sm: '1rem', md: '2rem' }}
         >
-          <PageTitle title={EXECUTIONS_TITLE} />
+          <Flex alignItems="center">
+            <Hide above="sm">
+              <NavigationDrawer />
+            </Hide>
+            <PageTitle title={EXECUTIONS_TITLE} />
+          </Flex>
           <InputGroup w="25rem">
             <InputLeftElement>
               <Icon as={BiSearch} boxSize={5} />

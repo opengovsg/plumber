@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
+import Step from '@/models/step'
 
 import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
 import {
@@ -18,8 +19,8 @@ vi.mock('@/apps', () => ({
     'test-app': {
       key: 'test-app',
       actions: [
-        { key: 'action1', doesFileProcessing: true },
-        { key: 'action2', doesFileProcessing: false },
+        { key: 'action1', doesFileProcessing: (_s: Step) => true },
+        { key: 'action2', doesFileProcessing: (_s: Step) => false },
       ],
     } as IApp,
     'legacy-app': {
@@ -36,27 +37,42 @@ describe('action helper functions', () => {
 
   describe('file processing', () => {
     it('returns true for actions that process files', async () => {
-      const result = await doesActionProcessFiles('test-app', 'action1')
+      const result = await doesActionProcessFiles({
+        appKey: 'test-app',
+        key: 'action1',
+      } as Step)
       expect(result).toEqual(true)
     })
 
     it('returns false for actions that do not process files', async () => {
-      const result = await doesActionProcessFiles('test-app', 'action2')
+      const result = await doesActionProcessFiles({
+        appKey: 'test-app',
+        key: 'action2',
+      } as Step)
       expect(result).toEqual(false)
     })
 
     it('assumes that action does not process files if flag is not specified', async () => {
-      const result = await doesActionProcessFiles('legacy-app', 'action1')
+      const result = await doesActionProcessFiles({
+        appKey: 'legacy-app',
+        key: 'action1',
+      } as Step)
       expect(result).toEqual(false)
     })
 
     it('returns false for actions that do not exist', async () => {
-      const result = await doesActionProcessFiles('test-app', 'herp')
+      const result = await doesActionProcessFiles({
+        appKey: 'test-app',
+        key: 'herp',
+      } as Step)
       expect(result).toEqual(false)
     })
 
     it('returns false for apps that do not exist', async () => {
-      const result = await doesActionProcessFiles('topkek', 'action1')
+      const result = await doesActionProcessFiles({
+        appKey: 'topkek',
+        key: 'action1',
+      } as Step)
       expect(result).toEqual(false)
     })
   })
