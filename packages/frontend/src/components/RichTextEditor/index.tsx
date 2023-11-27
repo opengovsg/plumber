@@ -11,6 +11,7 @@ import {
 import { Controller, useFormContext } from 'react-hook-form'
 import { ClickAwayListener, FormControl } from '@mui/material'
 import { FormLabel } from '@opengovsg/design-system-react'
+import Hardbreak from '@tiptap/extension-hard-break'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import Table from '@tiptap/extension-table'
@@ -56,35 +57,52 @@ const Editor = ({
     return [stepsWithVars, info]
   }, [priorStepsWithExecutions])
 
+  const extensions: Array<any> = [
+    StarterKit,
+    Link.configure({
+      HTMLAttributes: { rel: null, target: '_blank' },
+    }),
+    Underline,
+    Table.configure({
+      resizable: false,
+      HTMLAttributes: {
+        style: 'border-collapse:collapse;',
+      },
+    }),
+    TableRow,
+    TableHeader,
+    TableCell.configure({
+      HTMLAttributes: {
+        style: 'border:1px solid black;',
+      },
+    }),
+    Placeholder.configure({
+      placeholder,
+    }),
+    ImageResize.configure({
+      inline: true,
+    }),
+    StepVariable,
+  ]
+  let content = substituteOldTemplates(initialValue, varInfo) // back-ward compatibility with old values from PowerInput
+
+  // convert new line character into br elem so tiptap can load the content correctly
+  content = content.replaceAll('\n', '<br>')
+  // this extension is to have <br /> as new line instead of new paragraph
+  // as new paragraph will translate to a double \n\n instead of \n when getText
+  extensions.push(
+    Hardbreak.extend({
+      addKeyboardShortcuts() {
+        return {
+          Enter: () => this.editor.commands.setHardBreak(),
+        }
+      },
+    }),
+  )
+
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Link.configure({
-        HTMLAttributes: { rel: null, target: '_blank' },
-      }),
-      Underline,
-      Table.configure({
-        resizable: false,
-        HTMLAttributes: {
-          style: 'border-collapse:collapse;',
-        },
-      }),
-      TableRow,
-      TableHeader,
-      TableCell.configure({
-        HTMLAttributes: {
-          style: 'border:1px solid black;',
-        },
-      }),
-      Placeholder.configure({
-        placeholder,
-      }),
-      ImageResize.configure({
-        inline: true,
-      }),
-      StepVariable,
-    ],
-    content: substituteOldTemplates(initialValue, varInfo), // back-ward compatibility with old values from PowerInput
+    extensions,
+    content,
     onUpdate: ({ editor }) => {
       const content = editor.getHTML()
       if (content === '<p></p>') {
@@ -103,7 +121,8 @@ const Editor = ({
     // have to listen to editable as this element might not re-render upon
     // publish and unpublish of pipe
     editor?.setOptions({ editable })
-  }, [editable])
+  }, [editable, editor])
+
   const handleVariableClick = useCallback(
     (variable: Variable) => {
       editor?.commands.insertContent({
