@@ -134,16 +134,32 @@ function ColumnHeaderCell({
           _focusVisible={{
             boxShadow: 'none',
           }}
+          motionProps={{
+            variants: {
+              exit: {
+                opacity: 0,
+                transition: {
+                  duration: 0,
+                },
+              },
+              enter: {
+                opacity: 1,
+                transition: {
+                  duration: 0,
+                },
+              },
+            },
+          }}
         >
           <PopoverArrow />
-          <PopoverHeader>
+          <PopoverHeader px={4}>
             <EditColumnName id={id} columnName={columnName} />
           </PopoverHeader>
-          <PopoverBody>
+          <PopoverBody px={4}>
             <ColumnSort column={column} />
             <ColumnFilter column={column} />
           </PopoverBody>
-          <PopoverFooter justifyContent="flex-start" display="flex">
+          <PopoverFooter justifyContent="flex-start" display="flex" px={4}>
             <DeleteColumnButton id={id} />
           </PopoverFooter>
         </PopoverContent>

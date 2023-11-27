@@ -8,12 +8,15 @@ import {
 } from 'react'
 import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
+  ColumnFiltersState,
   ColumnOrderState,
+  ColumnSizingState,
   createRow as createEmptyRow,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   Row,
+  SortingState,
   TableMeta,
   useReactTable,
 } from '@tanstack/react-table'
@@ -45,6 +48,9 @@ export default function Table(): JSX.Element {
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
     columns.map((c) => c.id as string),
   )
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({})
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   useEffect(() => {
     setColumnOrder(columns.map((c) => c.id as string))
   }, [columns])
@@ -95,6 +101,7 @@ export default function Table(): JSX.Element {
     (rowIds: string[]) => {
       const deletedRowIds = new Set(rowIds)
       setData((data) => data.filter((row) => !deletedRowIds.has(row.rowId)))
+      setRowSelection({})
     },
     [setData],
   )
@@ -107,6 +114,9 @@ export default function Table(): JSX.Element {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnOrderChange: setColumnOrder,
+    onColumnSizingChange: setColumnSizing,
+    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
     columnResizeMode: 'onChange',
     // debugAll: appConfig.isDev,
     enableRowSelection: (row) =>
@@ -115,10 +125,13 @@ export default function Table(): JSX.Element {
     onRowSelectionChange: setRowSelection,
     state: {
       columnOrder,
+      columnSizing,
       rowSelection,
       rowPinning: {
         bottom: [NEW_ROW_ID],
       },
+      sorting,
+      columnFilters,
     },
     meta: {
       rowsUpdating,
@@ -171,7 +184,7 @@ export default function Table(): JSX.Element {
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT.DEFAULT,
     paddingEnd: ROW_HEIGHT.EXPANDED - ROW_HEIGHT.DEFAULT + 1,
-    overscan: 35,
+    overscan: 15,
   })
   const virtualRows = rowVirtualizer.getVirtualItems()
 
@@ -214,7 +227,15 @@ export default function Table(): JSX.Element {
             color="white"
             fontWeight="bold"
           >
-            <TableHeader table={table} />
+            <TableHeader
+              columnOrder={columnOrder}
+              rowSelection={rowSelection}
+              setColumnOrder={setColumnOrder}
+              headers={table.getFlatHeaders()}
+              columnSizing={columnSizing}
+              sorting={sorting}
+              columnFilters={columnFilters}
+            />
           </Flex>
           <Box h={rowVirtualizer.getTotalSize()} ref={childRef}>
             {virtualRows.map((virtualRow) => {
@@ -237,7 +258,11 @@ export default function Table(): JSX.Element {
           row={newRow}
           stickyBottom
         />
-        <TableFooter table={table} parentRef={parentRef} />
+        <TableFooter
+          removeRows={removeRows}
+          rowSelection={rowSelection}
+          parentRef={parentRef}
+        />
       </Flex>
       <SearchBar table={table} rowVirtualizer={rowVirtualizer} />
     </Box>
