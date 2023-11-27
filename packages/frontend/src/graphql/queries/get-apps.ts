@@ -21,6 +21,7 @@ export const GET_APPS = gql`
       description
       auth {
         connectionType
+        connectionRegistrationType
         fields {
           key
           label
@@ -77,7 +78,6 @@ export const GET_APPS = gql`
           errorMsg
           hideWebhookUrl
         }
-        supportsWebhookRegistration
         substeps {
           key
           name

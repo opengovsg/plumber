@@ -51,7 +51,7 @@ describe('formsg webhook registration', () => {
         },
       })
       await expect(verifyWebhookUrl($)).resolves.toEqual({
-        webhookVerified: true,
+        registrationVerified: true,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.VERIFIED,
       })
     })
@@ -65,7 +65,7 @@ describe('formsg webhook registration', () => {
         },
       })
       await expect(verifyWebhookUrl($)).resolves.toEqual({
-        webhookVerified: false,
+        registrationVerified: false,
         message: undefined,
       })
     })
@@ -79,7 +79,7 @@ describe('formsg webhook registration', () => {
         },
       })
       await expect(verifyWebhookUrl($)).resolves.toEqual({
-        webhookVerified: false,
+        registrationVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_PIPE,
       })
     })
@@ -93,7 +93,7 @@ describe('formsg webhook registration', () => {
         },
       })
       await expect(verifyWebhookUrl($)).resolves.toEqual({
-        webhookVerified: false,
+        registrationVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_ENDPOINT,
       })
     })
@@ -106,7 +106,7 @@ describe('formsg webhook registration', () => {
       } as AxiosError
       $.http.post = vi.fn().mockRejectedValueOnce(new HttpError(error))
       await expect(verifyWebhookUrl($)).resolves.toEqual({
-        webhookVerified: false,
+        registrationVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ERROR,
       })
     })
@@ -119,7 +119,7 @@ describe('formsg webhook registration', () => {
       } as AxiosError
       $.http.post = vi.fn().mockRejectedValueOnce(new HttpError(error403))
       await expect(verifyWebhookUrl($)).resolves.toEqual({
-        webhookVerified: false,
+        registrationVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.UNAUTHORIZED,
       })
     })
@@ -132,7 +132,7 @@ describe('formsg webhook registration', () => {
       } as AxiosError
       $.http.post = vi.fn().mockRejectedValueOnce(new HttpError(error422))
       await expect(verifyWebhookUrl($)).resolves.toEqual({
-        webhookVerified: false,
+        registrationVerified: false,
         message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.UNAUTHORIZED,
       })
     })
