@@ -31,7 +31,10 @@ describe('formsg webhook registration', () => {
         post: vi.fn(),
         patch: vi.fn(),
       } as unknown as IHttpClient, // deliberately cast,
-      userEmail: 'tester@open.gov.sg',
+      user: {
+        id: 'abc-def',
+        email: 'tester@open.gov.sg',
+      },
       app,
     }
   })
