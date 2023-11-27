@@ -43,6 +43,7 @@ type AppConfig = {
     clientSecret: string
     privateKey: string
   }
+  launchDarklySdkKey: string
 }
 
 const port = process.env.PORT || '3000'
@@ -100,6 +101,7 @@ const appConfig: AppConfig = {
       process.env.POSTMAN_FROM_ADDRESS || 'donotreply@plumber.gov.sg',
     rateLimit: parseInt(process.env.POSTMAN_RATE_LIMIT) || 169,
   },
+  launchDarklySdkKey: process.env.LAUNCH_DARKLY_SDK_KEY,
 }
 
 if (!appConfig.encryptionKey) {
@@ -121,6 +123,10 @@ if (
   !appConfig.sgid.privateKey
 ) {
   throw new Error('Sgid environment variables need to be set!')
+}
+
+if (!appConfig.launchDarklySdkKey) {
+  throw new Error('LAUNCH_DARKLY_SDK_KEY environment variable needs to be set!')
 }
 
 // Force SGT date-time formatting no matter what
