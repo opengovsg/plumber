@@ -1,3 +1,5 @@
+import type { IJSONObject } from '@plumber/types'
+
 import Base from './base'
 import ExecutionStep from './execution-step'
 import Flow from './flow'
@@ -10,6 +12,7 @@ class Execution extends Base {
   internalId: string
   executionSteps: ExecutionStep[]
   status: ExecutionStatus
+  appData: IJSONObject
 
   static tableName = 'executions'
 
@@ -21,6 +24,7 @@ class Execution extends Base {
       flowId: { type: 'string', format: 'uuid' },
       testRun: { type: 'boolean', default: false },
       internalId: { type: 'string' },
+      appData: { type: ['object', 'null'] },
     },
   }
 

@@ -501,6 +501,10 @@ export type IGlobalVariable = {
   execution?: {
     id: string
     testRun: boolean
+    appData: {
+      get<T extends IJSONObject>(): T | null
+      set<T extends IJSONObject>(data: T): Promise<void>
+    }
   }
   webhookUrl?: string
   triggerOutput?: ITriggerOutput

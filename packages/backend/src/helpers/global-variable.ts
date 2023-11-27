@@ -83,6 +83,33 @@ const globalVariable = async (
     execution: {
       id: execution?.id,
       testRun,
+      appData: {
+        get: <T extends IJSONObject>() => {
+          const data = execution?.appData?.[app.key] as IJSONObject
+          if (!data) {
+            return null
+          }
+
+          return (execution.appData ?? null) as T | null
+        },
+        set: async <T extends IJSONObject>(data: T) => {
+          if (!execution) {
+            return
+          }
+
+          await execution.$query().patch({
+            appData: {
+              ...(execution.appData ?? {}),
+              [app.key]: data,
+            },
+          })
+
+          if (!execution.appData) {
+            execution.appData = {}
+          }
+          execution.appData[app.key] = data
+        },
+      },
     },
     getLastExecutionStep: async () =>
       (await step?.getLastExecutionStep())?.toJSON(),
