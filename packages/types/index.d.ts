@@ -262,7 +262,6 @@ export interface IApp {
   docUrl?: string
   authDocUrl: string
   primaryColor: string
-  supportsConnections: boolean
   apiBaseUrl: string
   baseUrl: string
   auth?: IAuth
@@ -291,17 +290,32 @@ export interface DynamicDataOutput {
   error?: IJSONObject
 }
 
-export interface IAuth {
+export type AuthConnectionType = 'user-added' | 'system-added'
+
+interface IBaseAuth {
+  connectionType: AuthConnectionType
+
   generateAuthUrl?($: IGlobalVariable): Promise<void>
   verifyCredentials?($: IGlobalVariable): Promise<void>
   isStillVerified?($: IGlobalVariable): Promise<boolean>
   refreshToken?($: IGlobalVariable): Promise<void>
   verifyWebhook?($: IGlobalVariable): Promise<boolean>
   isRefreshTokenRequested?: boolean
-  fields?: IField[]
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
 }
+
+interface IUserAddedConnectionAuth extends IBaseAuth {
+  connectionType: 'user-added'
+  fields?: IField[]
+}
+
+interface ISystemAddedConnectionAuth extends IBaseAuth {
+  connectionType: 'system-added'
+  getSystemAddedConnections?(user: IUser): Promise<IConnection[]>
+}
+
+export type IAuth = IUserAddedConnectionAuth | ISystemAddedConnectionAuth
 
 export interface ITriggerOutput {
   data: ITriggerItem[]

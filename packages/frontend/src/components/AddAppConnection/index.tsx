@@ -8,6 +8,7 @@ import Dialog from '@mui/material/Dialog'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
+import { Infobox } from '@opengovsg/design-system-react'
 import InputCreator from 'components/InputCreator'
 import { processStep } from 'helpers/authenticationSteps'
 import computeAuthStepVariables from 'helpers/computeAuthStepVariables'
@@ -102,6 +103,17 @@ export default function AddAppConnection(
     },
     [connectionId, key, steps, onClose],
   )
+
+  if (auth?.connectionType !== 'user-added') {
+    return (
+      <Dialog open={true} onClose={onClose}>
+        <DialogTitle>Error</DialogTitle>
+        <DialogContent>
+          <Infobox variant="error">Connections are not supported</Infobox>
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   return (
     <Dialog open={true} onClose={onClose} data-test="add-app-connection-dialog">

@@ -7,7 +7,6 @@ const app: IApp = {
   key: 'webhook',
   iconUrl: '{BASE_URL}/apps/webhook/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/triggers/webhooks',
-  supportsConnections: false,
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '0059F7',

@@ -1,6 +1,10 @@
+import type { IUserAddedConnectionAuth } from '@plumber/types'
+
 import verifyCredentials from './verify-credentials'
 
-export default {
+const auth: IUserAddedConnectionAuth = {
+  connectionType: 'user-added' as const,
+
   fields: [
     {
       key: 'label',
@@ -27,3 +31,5 @@ export default {
   verifyCredentials,
   isStillVerified: () => Promise.resolve(true),
 }
+
+export default auth

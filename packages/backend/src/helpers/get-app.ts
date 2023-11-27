@@ -78,7 +78,7 @@ function addStaticSubsteps(
 
   computedStep.substeps = []
 
-  if (appData.supportsConnections) {
+  if (appData.auth) {
     computedStep.substeps.push(chooseConnectionStep)
   }
 
