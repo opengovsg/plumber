@@ -28,7 +28,7 @@ export const FORMSG_WEBHOOK_REGISTRATION_MESSAGE = {
 }
 
 function getFormDetailsFromGlobalVariable($: IGlobalVariable) {
-  const userEmail = $.userEmail
+  const userEmail = $.user?.email
   if (!userEmail) {
     throw new Error('Missing User Email')
   }
