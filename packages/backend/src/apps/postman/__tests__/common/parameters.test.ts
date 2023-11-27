@@ -123,4 +123,11 @@ describe('postman transactional email schema zod validation', () => {
     assert(result.success === false)
     expect(result.error?.errors[0].message).toEqual('Empty sender name')
   })
+
+  it('should work with legacy body value', () => {
+    validPayload.body = 'hello\nhihi'
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.body).toBe('hello<br />hihi')
+  })
 })

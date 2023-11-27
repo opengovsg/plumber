@@ -66,12 +66,12 @@ export const transactionalEmailFields: IField[] = [
 ]
 
 export const transactionalEmailSchema = z.object({
-  subject: z.string().min(1, { message: 'Empty subject' }).trim(),
+  subject: z.string().min(1).trim(),
   body: z
     .string()
     .min(1, { message: 'Empty body' })
-    // convert \n to <br> for HTML emails
-    .transform((value) => value.replace(/\n/g, '<br>')),
+    // for backward-compatibility with content produced by the old editor
+    .transform((v) => v.replace(/\n/g, '<br />')),
   destinationEmail: z.string().transform((value, ctx) => {
     const recipients = recipientStringToArray(value)
     if (recipients.length === 0) {
