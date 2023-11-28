@@ -32,10 +32,10 @@ const action: IRawAction = {
     const defaultTime = '00:00'
     // trim the date and time for user
     const { delayUntil, delayUntilTime } = $.step.parameters
-    const delayUntilString = (delayUntil as string).trim()
+    const delayUntilString = new String(delayUntil).trim()
     // catch empty string (user input), null, undefined (backwards compat)
     const delayUntilTimeString = delayUntilTime
-      ? (delayUntilTime as string).trim()
+      ? new String(delayUntilTime).trim()
       : defaultTime
 
     const delayTimestamp = generateTimestamp(
