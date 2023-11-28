@@ -12,6 +12,7 @@ describe('postman transactional email schema zod validation', () => {
       body: 'hello\nhihi',
       replyTo: 'replyto@example.com',
       senderName: 'sender name',
+      attachments: [],
     }
   })
 

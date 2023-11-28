@@ -9,6 +9,11 @@ export const theme = extendTheme(
   {
     ...foundations,
     components,
+    Form: {
+      helperText: {
+        color: 'red',
+      },
+    },
   },
   withDefaultColorScheme({ colorScheme: 'primary' }),
 )
