@@ -128,6 +128,6 @@ describe('postman transactional email schema zod validation', () => {
     validPayload.body = 'hello\nhihi'
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === true)
-    expect(result.data.body).toBe('hello<br />hihi')
+    expect(result.data.body).toBe('hello<br>hihi')
   })
 })

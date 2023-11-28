@@ -71,7 +71,7 @@ export const transactionalEmailSchema = z.object({
     .string()
     .min(1, { message: 'Empty body' })
     // for backward-compatibility with content produced by the old editor
-    .transform((v) => v.replace(/\n/g, '<br />')),
+    .transform((v) => v.replace(/\n/g, '<br>')),
   destinationEmail: z.string().transform((value, ctx) => {
     const recipients = recipientStringToArray(value)
     if (recipients.length === 0) {

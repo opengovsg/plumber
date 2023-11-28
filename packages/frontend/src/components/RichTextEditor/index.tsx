@@ -11,7 +11,6 @@ import {
 import { Controller, useFormContext } from 'react-hook-form'
 import { ClickAwayListener, FormControl } from '@mui/material'
 import { FormLabel } from '@opengovsg/design-system-react'
-import Hardbreak from '@tiptap/extension-hard-break'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import Table from '@tiptap/extension-table'
@@ -88,17 +87,6 @@ const Editor = ({
 
   // convert new line character into br elem so tiptap can load the content correctly
   content = content.replaceAll('\n', '<br>')
-  // this extension is to have <br /> as new line instead of new paragraph
-  // as new paragraph will translate to a double \n\n instead of \n when getText
-  extensions.push(
-    Hardbreak.extend({
-      addKeyboardShortcuts() {
-        return {
-          Enter: () => this.editor.commands.setHardBreak(),
-        }
-      },
-    }),
-  )
 
   const editor = useEditor({
     extensions,
