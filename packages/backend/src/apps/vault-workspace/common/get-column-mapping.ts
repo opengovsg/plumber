@@ -1,5 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import { throwGetColumnMappingError } from './throw-errors'
+
 const getColumnMappingInAlias = async (
   $: IGlobalVariable,
 ): Promise<{ [key: string]: string }> => {
@@ -10,7 +12,11 @@ const getColumnMappingInAlias = async (
 const getColumnMapping = async (
   $: IGlobalVariable,
 ): Promise<{ [key: string]: string }> => {
-  const response = await $.http.get('/api/tables/column-mapping')
+  const response = await $.http
+    .get('/api/tables/column-mapping')
+    .catch((err): never => {
+      throwGetColumnMappingError(err, $.step.position, $.app.name)
+    })
   return response.data
 }
 
