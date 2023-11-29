@@ -16,40 +16,43 @@ const ResizableImageTemplate = ({ node, updateAttributes }: NodeViewProps) => {
     Pick<CSSProperties, 'width'> | undefined
   >()
 
-  const handleMouseDown = useCallback((event: React.MouseEvent) => {
-    if (!imgRef.current) {
-      return
-    }
-    event.preventDefault()
-
-    const initialXPosition = event.clientX
-    const currentWidth = imgRef.current.width
-    let newWidth = currentWidth
-
-    const removeListeners = () => {
-      window.removeEventListener('mousemove', mouseMoveHandler)
-      window.removeEventListener('mouseup', removeListeners)
-      updateAttributes({ width: newWidth })
-      setResizingStyle(undefined)
-    }
-
-    const mouseMoveHandler = (event: MouseEvent) => {
-      newWidth = Math.max(
-        currentWidth + (event.clientX - initialXPosition),
-        MIN_WIDTH,
-      )
-      newWidth = Math.min(newWidth, MAX_WIDTH)
-      setResizingStyle({ width: newWidth })
-
-      // If mouse is up, remove event listeners
-      if (!event.buttons) {
-        removeListeners()
+  const handleMouseDown = useCallback(
+    (event: React.MouseEvent) => {
+      if (!imgRef.current) {
+        return
       }
-    }
+      event.preventDefault()
 
-    window.addEventListener('mousemove', mouseMoveHandler)
-    window.addEventListener('mouseup', removeListeners)
-  }, [])
+      const initialXPosition = event.clientX
+      const currentWidth = imgRef.current.width
+      let newWidth = currentWidth
+
+      const removeListeners = () => {
+        window.removeEventListener('mousemove', mouseMoveHandler)
+        window.removeEventListener('mouseup', removeListeners)
+        updateAttributes({ width: newWidth })
+        setResizingStyle(undefined)
+      }
+
+      const mouseMoveHandler = (event: MouseEvent) => {
+        newWidth = Math.max(
+          currentWidth + (event.clientX - initialXPosition),
+          MIN_WIDTH,
+        )
+        newWidth = Math.min(newWidth, MAX_WIDTH)
+        setResizingStyle({ width: newWidth })
+
+        // If mouse is up, remove event listeners
+        if (!event.buttons) {
+          removeListeners()
+        }
+      }
+
+      window.addEventListener('mousemove', mouseMoveHandler)
+      window.addEventListener('mouseup', removeListeners)
+    },
+    [updateAttributes],
+  )
 
   return (
     <NodeViewWrapper as="span" draggable data-drag-handle>

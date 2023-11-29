@@ -66,7 +66,7 @@ export const transactionalEmailFields: IField[] = [
 ]
 
 export const transactionalEmailSchema = z.object({
-  subject: z.string().min(1).trim(),
+  subject: z.string().min(1, { message: 'Empty subject' }).trim(),
   body: z
     .string()
     .min(1, { message: 'Empty body' })
