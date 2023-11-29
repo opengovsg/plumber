@@ -6,12 +6,22 @@ const testAction: IRawAction = {
   description: 'To make excel show up in app list; real actions in later PR.',
   arguments: [
     {
-      label: 'Placeholder',
-      key: 'data',
-      type: 'string' as const,
+      key: 'fileId',
+      label: 'Excel File',
       required: true,
-      description: 'Beep boop',
-      variables: true,
+      description: 'File to edit',
+      type: 'dropdown' as const,
+      variables: false,
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [
+          {
+            name: 'key',
+            value: 'listFiles',
+          },
+        ],
+      },
     },
   ],
 
