@@ -3,11 +3,14 @@ import { IRawAction } from '@plumber/types'
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
+import { generateStepError } from '@/helpers/generate-step-error'
 import { getObjectFromS3Id } from '@/helpers/s3'
 
+import { VALIDATION_ERROR_SOLUTION } from '../../common/constants'
 import { sendTransactionalEmails } from '../../common/email-helper'
 import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
+import { throwSendEmailError } from '../../common/throw-errors'
 
 import { fields, schema } from './parameters'
 
@@ -42,7 +45,17 @@ const action: IRawAction = {
     })
 
     if (!result.success) {
-      throw fromZodError((result as SafeParseError<unknown>).error)
+      const validationError = fromZodError(
+        (result as SafeParseError<unknown>).error,
+      )
+
+      const stepErrorName = validationError.details[0].message
+      throw generateStepError(
+        stepErrorName,
+        VALIDATION_ERROR_SOLUTION,
+        $.step.position,
+        $.app.name,
+      )
     }
 
     const attachmentFiles = await Promise.all(
@@ -56,13 +69,19 @@ const action: IRawAction = {
       result.data.destinationEmail,
       +progress,
     )
-    const results = await sendTransactionalEmails($.http, recipients, {
-      subject: result.data.subject,
-      body: result.data.body,
-      replyTo: result.data.replyTo,
-      senderName: result.data.senderName,
-      attachments: attachmentFiles,
-    })
+
+    let results
+    try {
+      results = await sendTransactionalEmails($.http, recipients, {
+        subject: result.data.subject,
+        body: result.data.body,
+        replyTo: result.data.replyTo,
+        senderName: result.data.senderName,
+        attachments: attachmentFiles,
+      })
+    } catch (err) {
+      throwSendEmailError(err, $.step.position, $.app.name)
+    }
 
     const recipientListUptilNow = result.data.destinationEmail.slice(
       0,
