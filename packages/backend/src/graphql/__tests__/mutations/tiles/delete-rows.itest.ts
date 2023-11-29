@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import deleteRows from '@/graphql/mutations/tiles/delete-rows'
-import { TableRow } from '@/models/dynamodb/table-row'
+import { createTableRows, getTableRowCount } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
 
@@ -32,21 +31,10 @@ describe('delete rows mutation', () => {
     })
 
     // populate with some rows
-    rowIds = []
-    let items = []
-    for (let i = 0; i < NUM_ROWS_TO_GENERATE; i++) {
-      const rowId = randomUUID()
-      items.push({
-        tableId: dummyTable.id,
-        rowId,
-        data: generateMockTableRowData({ columnIds }),
-      })
-      rowIds.push(rowId)
-      if (items.length === 25 || i === NUM_ROWS_TO_GENERATE - 1) {
-        await TableRow.batchPut(items)
-        items = []
-      }
-    }
+    const dataArray = new Array(NUM_ROWS_TO_GENERATE)
+      .fill(null)
+      .map(() => generateMockTableRowData({ columnIds }))
+    rowIds = await createTableRows({ tableId: dummyTable.id, dataArray })
   })
 
   it('should delete rows with given ids', async () => {
@@ -56,13 +44,8 @@ describe('delete rows mutation', () => {
       { input: { tableId: dummyTable.id, rowIds: slicedRows } },
       context,
     )
-    const { count } = await TableRow.query({
-      tableId: dummyTable.id,
-    })
-      .count()
-      .exec()
-
     expect(success).toEqual(slicedRows)
+    const count = await getTableRowCount({ tableId: dummyTable.id })
 
     expect(count).toEqual(NUM_ROWS_TO_GENERATE - 5)
   })
@@ -73,12 +56,7 @@ describe('delete rows mutation', () => {
       { input: { tableId: dummyTable.id, rowIds } },
       context,
     )
-    const { count } = await TableRow.query({
-      tableId: dummyTable.id,
-    })
-      .count()
-      .exec()
-
+    const count = await getTableRowCount({ tableId: dummyTable.id })
     expect(success).toEqual(rowIds)
 
     expect(count).toEqual(0)

@@ -1,28 +1,24 @@
-import dynamoose from 'dynamoose'
+import { randomUUID } from 'crypto'
 
-import appConfig from '@/config/app'
-import { TableRowSchema } from '@/models/dynamodb/table-row'
+import { _batchCreate } from '@/models/dynamodb/table-row'
 
-const TABLE_NAME = `${appConfig.appEnv}-plumber-table`
+import { generateMockTableRowData } from '../../mutations/tiles/table.mock'
 
-type MockTableRow = Pick<TableRowSchema, 'tableId' | 'rowId'> & {
-  data: Record<string, string>
-  createdAt?: number
-}
-const ddb = dynamoose.aws.ddb()
-const converter = dynamoose.aws.converter()
-
-export async function insertMockTableRows(rows: MockTableRow[]): Promise<void> {
-  // batch in 25 rows at a time
-  const BATCH_SIZE = 25
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const batch = rows.slice(i, i + BATCH_SIZE)
-    await ddb.batchWriteItem({
-      RequestItems: {
-        [TABLE_NAME]: batch.map((row) => ({
-          PutRequest: { Item: converter.marshall(row) },
-        })),
-      },
+export async function insertMockTableRows(
+  tableId: string,
+  numRowsToInsert: number,
+  columnIds: string[],
+): Promise<string[]> {
+  const rows = []
+  for (let i = 0; i < numRowsToInsert; i++) {
+    rows.push({
+      tableId,
+      rowId: randomUUID(),
+      data: generateMockTableRowData({ columnIds }),
     })
   }
+
+  await _batchCreate(rows)
+
+  return rows.map((r) => r.rowId)
 }

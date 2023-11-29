@@ -1,4 +1,4 @@
-import { getAllTableRows, TableRowSchema } from '@/models/dynamodb/table-row'
+import { getAllTableRows, TableRowItem } from '@/models/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -9,7 +9,7 @@ const getAllRows = async (
   _parent: unknown,
   params: Params,
   context: Context,
-): Promise<Pick<TableRowSchema, 'rowId' | 'data'>[]> => {
+): Promise<Pick<TableRowItem, 'rowId' | 'data'>[]> => {
   const { tableId } = params
   const table = await context.currentUser
     .$relatedQuery('tables')

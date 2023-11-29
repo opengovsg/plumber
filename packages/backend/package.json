@@ -18,11 +18,13 @@
     "db:list": "npm run db -- migrate:list",
     "db:rollback": "npm run db -- migrate:rollback",
     "db:migrate": "npm run db -- migrate:latest",
+    "postsetup": "ts-node src/db/dynamodb_seeds/create_table.ts",
     "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
     "copy-statics": "copyfiles -u 1 src/**/*.{graphql,json,svg} dist"
   },
   "dependencies": {
     "@apollo/server": "4.9.4",
+    "@aws-sdk/client-dynamodb": "3.460.0",
     "@aws-sdk/client-s3": "3.369.0",
     "@bull-board/express": "5.6.0",
     "@graphql-tools/schema": "10.0.0",
@@ -40,7 +42,7 @@
     "dd-trace": "4.17.0",
     "dedent": "1.5.1",
     "dotenv": "^10.0.0",
-    "dynamoose": "3.2.0",
+    "electrodb": "2.12.0",
     "email-validator": "2.0.4",
     "express": "4.18.2",
     "express-basic-auth": "^1.2.1",

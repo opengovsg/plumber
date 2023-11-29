@@ -2,10 +2,14 @@
 import '@/config/orm'
 import '@/config/dynamodb'
 
-import { randomUUID } from 'crypto'
 import { argv } from 'process'
 
-import { TableRow } from '@/models/dynamodb/table-row'
+import {
+  createTableRows,
+  deleteTableRows,
+  getAllTableRows,
+  getTableRowCount,
+} from '@/models/dynamodb/table-row'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
 const TABLE_ID = argv[2]
@@ -16,27 +20,30 @@ if (!TABLE_ID) {
   process.exit(1)
 }
 
-const ROW_COUNT = 1000
+const COUNT_ONLY = argv[3]
 
+const ROW_COUNT = 10000
 async function seedRows(tableId: string) {
   // delete existing rows
-  const existingRows = await TableRow.query('tableId')
-    .eq(tableId)
-    .attributes(['rowId'])
-    .all()
-    .exec()
-  let deleteBatch = []
-  const batchDeletePromises = []
-  for (let i = 0; i < existingRows.length; i++) {
-    const row = existingRows[i]
-    deleteBatch.push({ tableId, rowId: row.rowId })
-    if (deleteBatch.length === 25 || i === existingRows.length - 1) {
-      batchDeletePromises.push(TableRow.batchDelete(deleteBatch))
-      deleteBatch = []
-    }
+  const existingRows = await getAllTableRows({ tableId })
+  console.log('count', existingRows.length)
+
+  if (COUNT_ONLY === 'count') {
+    return
   }
-  await Promise.all(batchDeletePromises)
-  console.log(`Deleted ${existingRows.length} dynamodb rows`)
+
+  const rowIdsToDelete = existingRows.map((row) => row.rowId)
+
+  console.time('deleteTableRows')
+  await deleteTableRows({
+    tableId,
+    rowIds: rowIdsToDelete,
+  })
+  console.timeEnd('deleteTableRows')
+
+  const newCount = await getTableRowCount({ tableId })
+  console.log('new count', newCount)
+  console.log(`Deleted ${existingRows.length - newCount} dynamodb rows`)
 
   // seed new rows
   const columns = await TableColumnMetadata.query()
@@ -45,27 +52,23 @@ async function seedRows(tableId: string) {
 
   const columnIds = columns.map((column) => column.id)
 
-  let rows = []
+  const dataArray = []
   // rows added sequentially to preserve row order
   for (let i = 0; i < ROW_COUNT; i++) {
-    const row = {
-      tableId,
-      rowId: randomUUID(),
-      data: {} as Record<string, string>,
-    }
+    const data = {} as Record<string, string>
     for (const columnId of columnIds) {
-      row.data[columnId] = `${i}_${columnId}`
+      data[columnId] = `${i}_${columnId}`
     }
-    rows.push(row)
-    if (rows.length === 25 || i === ROW_COUNT - 1) {
-      await TableRow.batchPut(rows)
-      console.log(`Seeded ${i + 1} dynamodb rows`)
-      rows = []
-    }
+    dataArray.push(data)
   }
+  console.time('createTableRows')
+  await createTableRows({ tableId, dataArray })
+  console.timeEnd('createTableRows')
+
+  const addedCount = await getTableRowCount({ tableId })
+  console.log(`${addedCount} dynamodb rows seeded`)
 }
 
 seedRows(TABLE_ID).then(() => {
-  console.log(`${ROW_COUNT} dynamodb rows seeded`)
   process.exit(0)
 })
