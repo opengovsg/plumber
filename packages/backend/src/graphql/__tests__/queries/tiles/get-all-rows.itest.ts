@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import getAllRows from '@/graphql/queries/tiles/get-all-rows'
+import { createTableRow } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
 
@@ -33,18 +34,7 @@ describe('get all rows query', () => {
 
   it('should fetch all rows in a given table', async () => {
     const numRowsToInsert = 100
-    const rowsToInsert = []
-    for (let i = 0; i < numRowsToInsert; i++) {
-      const data = generateMockTableRowData({ columnIds: dummyColumnIds })
-      rowsToInsert.push({
-        tableId: dummyTable.id,
-        rowId: randomUUID(),
-        data,
-        createdAt: Date.now(),
-      })
-    }
-
-    await insertMockTableRows(rowsToInsert)
+    await insertMockTableRows(dummyTable.id, numRowsToInsert, dummyColumnIds)
 
     const rows = await getAllRows(
       null,
@@ -59,18 +49,15 @@ describe('get all rows query', () => {
   it('should return rows in ascending order of createdAt', async () => {
     // Insert rows in descending order of createdAt
     const numRowsToInsert = 10
-    const currentDate = Date.now()
-    const rowsToInsert = []
+    const rowIdsInserted = []
+    // inserting 1 by 1 so createdAt is different
     for (let i = 0; i < numRowsToInsert; i++) {
-      const rowId = randomUUID()
-      rowsToInsert.push({
-        rowId,
+      const { rowId } = await createTableRow({
         tableId: dummyTable.id,
         data: {},
-        createdAt: currentDate - i,
       })
+      rowIdsInserted.push(rowId)
     }
-    await insertMockTableRows(rowsToInsert)
 
     const rows = await getAllRows(
       null,
@@ -80,28 +67,14 @@ describe('get all rows query', () => {
       context,
     )
 
-    // Get row ids in ascending order of createdAt
-    const expectedOrderedRowIds = rowsToInsert.map((r) => r.rowId).reverse()
-
-    expect(rows.map((r) => r.rowId)).toEqual(expectedOrderedRowIds)
+    expect(rows.map((r) => r.rowId)).toEqual(rowIdsInserted)
   })
 
   it('should fetch all rows even if more than 1MB', async () => {
     // 1 randomly generated row is about 470 bytes
     // 4000 rows will be about about 1.8MB
     const numRowsToInsert = 4000
-    const rowsToInsert = []
-    for (let i = 0; i < numRowsToInsert; i++) {
-      const data = generateMockTableRowData({ columnIds: dummyColumnIds })
-      rowsToInsert.push({
-        tableId: dummyTable.id,
-        rowId: randomUUID(),
-        data,
-        createdAt: Date.now(),
-      })
-    }
-
-    await insertMockTableRows(rowsToInsert)
+    await insertMockTableRows(dummyTable.id, numRowsToInsert, dummyColumnIds)
 
     const rows = await getAllRows(
       null,
@@ -134,10 +107,9 @@ describe('get all rows query', () => {
       tableId: dummyTable.id,
       rowId: randomUUID(),
       data,
-      createdAt: Date.now(),
     }
 
-    await insertMockTableRows([rowToInsert])
+    await createTableRow(rowToInsert)
 
     const rows = await getAllRows(
       null,

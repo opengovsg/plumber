@@ -20,6 +20,10 @@ export async function setup() {
   const mappedPort = dynamodbContainer.getMappedPort(8000).toString()
   process.env.LOCAL_DYNAMODB_PORT = mappedPort
 
+  const { createDynamoDBTable } = await import('../src/config/dynamodb')
+  await createDynamoDBTable()
+  console.log('DynamoDB table created')
+
   console.info(`DynamoDB container started at port ${mappedPort}`)
 }
 

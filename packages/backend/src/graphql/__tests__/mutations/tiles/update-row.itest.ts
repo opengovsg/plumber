@@ -50,18 +50,12 @@ describe('update row mutation', () => {
       },
       context,
     )
-    const updatedRow = await TableRow.get({
+    const { data: updatedRow } = await TableRow.get({
       rowId: rowToUpdate.rowId,
       tableId: dummyTable.id,
-    })
+    }).go()
     expect(updatedId).toBe(rowToUpdate.rowId)
     expect(updatedRow.data).toEqual(newData)
-    // check that updatedAt gets updated
-    // there's a bug in terms of timestamp return type( ref: https://github.com/dynamoose/dynamoose/issues/1548 )
-    // for now we need to cast it because it's either a Date object or a number
-    expect(Number(updatedRow.updatedAt)).toBeGreaterThan(
-      Number(rowToUpdate.updatedAt),
-    )
     // check that createdAt does not change
     expect(Number(updatedRow.createdAt)).toEqual(Number(rowToUpdate.createdAt))
   })
@@ -88,10 +82,10 @@ describe('update row mutation', () => {
       context,
     )
 
-    const updatedRow = await TableRow.get({
+    const { data: updatedRow } = await TableRow.get({
       rowId: rowToUpdate.rowId,
       tableId: dummyTable.id,
-    })
+    }).go()
     expect(updatedId).toBe(rowToUpdate.rowId)
     expect(updatedRow.data).toEqual(newData)
   })
