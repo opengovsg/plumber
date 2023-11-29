@@ -3,6 +3,7 @@ import type { IApp } from '@plumber/types'
 import beforeRequest from './common/interceptors/before-request'
 import actions from './actions'
 import auth from './auth'
+import dynamicData from './dynamic-data'
 
 const app: IApp = {
   name: 'M365 Excel',
@@ -15,6 +16,7 @@ const app: IApp = {
   auth,
   actions,
   beforeRequest,
+  dynamicData,
 }
 
 export default app
