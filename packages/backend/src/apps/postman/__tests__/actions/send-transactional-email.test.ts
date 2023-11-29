@@ -8,6 +8,7 @@ import HttpError from '@/errors/http'
 import sendTransactionalEmail from '../../actions/send-transactional-email'
 
 const mocks = vi.hoisted(() => ({
+  getObjectFromS3Id: vi.fn(),
   sendTransactionalEmails: vi.fn(() => []),
   getRatelimitedRecipientList: vi.fn((recipients: string[], progress) => ({
     recipients,
@@ -15,6 +16,17 @@ const mocks = vi.hoisted(() => ({
   })),
   getDefaultReplyTo: vi.fn(() => 'replyTo@open.gov.sg'),
 }))
+
+vi.mock('@/helpers/s3', async () => {
+  // No reason to mock other things like parseS3Id
+  const actual = await vi.importActual<typeof import('@/helpers/s3')>(
+    '@/helpers/s3',
+  )
+  return {
+    ...actual,
+    getObjectFromS3Id: mocks.getObjectFromS3Id,
+  }
+})
 
 vi.mock('../../common/email-helper', () => ({
   sendTransactionalEmails: mocks.sendTransactionalEmails,
@@ -41,6 +53,10 @@ describe('send transactional email', () => {
           subject: 'test subject',
           body: 'test body',
           senderName: 'jack',
+          attachments: [
+            's3:my-bucket:abcd/file 1.txt',
+            's3:my-bucket:wxyz/file-2.png',
+          ],
         },
         position: 2,
       },
@@ -51,6 +67,16 @@ describe('send transactional email', () => {
         id: '123',
       },
     } as unknown as IGlobalVariable
+
+    mocks.getObjectFromS3Id
+      .mockResolvedValueOnce({
+        name: 'file 1.txt',
+        data: '0000',
+      })
+      .mockResolvedValueOnce({
+        name: 'file-2.png',
+        data: '1111',
+      })
   })
 
   afterEach(() => {
@@ -67,6 +93,16 @@ describe('send transactional email', () => {
         body: 'test body',
         replyTo: 'replyTo@open.gov.sg',
         senderName: 'jack',
+        attachments: [
+          {
+            fileName: 'file 1.txt',
+            data: '0000',
+          },
+          {
+            fileName: 'file-2.png',
+            data: '1111',
+          },
+        ],
       },
     )
   })

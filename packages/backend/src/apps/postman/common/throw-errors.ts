@@ -19,10 +19,10 @@ export function throwSendEmailError(
   if (errorCode === 'invalid_template') {
     if (errorMessage.includes('attachments')) {
       stepErrorSolution =
-        'Click on set up action and check that the attachment type is supported by postman. Please check the supported types at this link: https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types.'
+        'Click on set up action and check that the attachment type is supported by postman. Please check the supported types at [this link](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).'
     } else if (errorMessage.includes('blacklisted')) {
       stepErrorSolution =
-        'Recipient email is blacklisted. Please request for the recipient email to be whitelisted at: https://guide.postman.gov.sg/api-guide/programmatic-email-api/send-email-api/recipient-blacklist.'
+        'Recipient email is blacklisted. Please request for the recipient email to be whitelisted at [this link](https://guide.postman.gov.sg/api-guide/programmatic-email-api/send-email-api/recipient-blacklist).'
     } else {
       // return original error if not caught
       throw error
