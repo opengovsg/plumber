@@ -21,7 +21,7 @@ describe('create table mutation', () => {
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()
     expect(table.name).toBe('Test Table')
-    expect(tableColumnCount).toBe(1)
+    expect(tableColumnCount).toBe(3)
   })
 
   it('should be able create tables with the same name', async () => {
