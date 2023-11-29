@@ -78,6 +78,8 @@ function ColumnHeaderCell({
         isOpen={isOpen}
         onClose={onClose}
         onOpen={onOpen}
+        isLazy
+        lazyBehavior="unmount"
       >
         <PopoverTrigger>
           <Flex
