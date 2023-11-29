@@ -23,6 +23,28 @@ const testAction: IRawAction = {
         ],
       },
     },
+    {
+      key: 'worksheetId',
+      label: 'Worksheet',
+      required: true,
+      description: 'Worksheet to edit',
+      type: 'dropdown' as const,
+      variables: false,
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [
+          {
+            name: 'key',
+            value: 'listWorksheets',
+          },
+          {
+            name: 'parameters.fileId',
+            value: '{parameters.fileId}',
+          },
+        ],
+      },
+    },
   ],
 
   async run($) {
