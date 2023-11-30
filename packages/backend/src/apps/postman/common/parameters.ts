@@ -24,9 +24,10 @@ export const transactionalEmailFields: IField[] = [
   {
     label: 'Body',
     key: 'body',
-    type: 'string' as const,
+    type: 'rich-text' as const,
     required: true,
-    description: 'Email body HTML.',
+    description:
+      'Email body HTML. We are upgrading this field to a rich-text field, if you observe any issues while editing your existing pipes, please contact us via support@plumber.gov.sg',
     variables: true,
   },
   {
@@ -69,8 +70,8 @@ export const transactionalEmailSchema = z.object({
   body: z
     .string()
     .min(1, { message: 'Empty body' })
-    // convert \n to <br> for HTML emails
-    .transform((value) => value.replace(/\n/g, '<br>')),
+    // for backward-compatibility with content produced by the old editor
+    .transform((v) => v.replace(/\n/g, '<br>')),
   destinationEmail: z.string().transform((value, ctx) => {
     const recipients = recipientStringToArray(value)
     if (recipients.length === 0) {

@@ -9,7 +9,7 @@ describe('postman transactional email schema zod validation', () => {
     validPayload = {
       destinationEmail: 'recipient@example.com ',
       subject: ' asd',
-      body: 'hello\nhihi',
+      body: '<p>hello</p><p>hihi</p>',
       replyTo: 'replyto@example.com',
       senderName: 'sender name',
       attachments: [],
@@ -21,7 +21,7 @@ describe('postman transactional email schema zod validation', () => {
     assert(result.success === true) // using assert here for type assertion
     expect(result.data.destinationEmail).toEqual(['recipient@example.com'])
     expect(result.data.subject).toEqual('asd')
-    expect(result.data.body).toEqual('hello<br>hihi')
+    expect(result.data.body).toEqual('<p>hello</p><p>hihi</p>')
     expect(result.data.replyTo).toEqual('replyto@example.com')
     expect(result.data.senderName).toEqual('sender name')
   })
@@ -122,5 +122,12 @@ describe('postman transactional email schema zod validation', () => {
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
     expect(result.error?.errors[0].message).toEqual('Empty sender name')
+  })
+
+  it('should work with legacy body value', () => {
+    validPayload.body = 'hello\nhihi'
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.body).toBe('hello<br>hihi')
   })
 })
