@@ -14,6 +14,7 @@ import {
 } from '../../common/parameters'
 import { getDefaultReplyTo } from '../../common/parameters-helper'
 import { getRatelimitedRecipientList } from '../../common/rate-limit'
+import { throwSendEmailError } from '../../common/throw-errors'
 
 const action: IRawAction = {
   name: 'Send email',
@@ -81,13 +82,18 @@ const action: IRawAction = {
       +progress,
     )
 
-    const results = await sendTransactionalEmails($.http, recipients, {
-      subject: result.data.subject,
-      body: result.data.body,
-      replyTo: result.data.replyTo,
-      senderName: result.data.senderName,
-      attachments: attachmentFiles,
-    })
+    let results
+    try {
+      results = await sendTransactionalEmails($.http, recipients, {
+        subject: result.data.subject,
+        body: result.data.body,
+        replyTo: result.data.replyTo,
+        senderName: result.data.senderName,
+        attachments: attachmentFiles,
+      })
+    } catch (err) {
+      throwSendEmailError(err, $.step.position, $.app.name)
+    }
 
     const recipientListUptilNow = result.data.destinationEmail.slice(
       0,

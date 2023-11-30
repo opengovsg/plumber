@@ -24,9 +24,10 @@ export const transactionalEmailFields: IField[] = [
   {
     label: 'Body',
     key: 'body',
-    type: 'string' as const,
+    type: 'rich-text' as const,
     required: true,
-    description: 'Email body HTML.',
+    description:
+      'Email body HTML. We are upgrading this field to a rich-text field, if you observe any issues while editing your existing pipes, please contact us via support@plumber.gov.sg',
     variables: true,
   },
   {
@@ -65,14 +66,20 @@ export const transactionalEmailFields: IField[] = [
 ]
 
 export const transactionalEmailSchema = z.object({
-  subject: z.string().min(1).trim(),
+  subject: z.string().min(1, { message: 'Empty subject' }).trim(),
   body: z
     .string()
-    .min(1)
-    // convert \n to <br> for HTML emails
-    .transform((value) => value.replace(/\n/g, '<br>')),
+    .min(1, { message: 'Empty body' })
+    // for backward-compatibility with content produced by the old editor
+    .transform((v) => v.replace(/\n/g, '<br>')),
   destinationEmail: z.string().transform((value, ctx) => {
     const recipients = recipientStringToArray(value)
+    if (recipients.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Empty recipient email',
+      })
+    }
     if (recipients.some((recipient) => !validator.validate(recipient))) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -86,8 +93,8 @@ export const transactionalEmailSchema = z.object({
       return value
     }
     return value.trim() === '' ? undefined : value.trim()
-  }, z.string().email().optional()),
-  senderName: z.string().min(1).trim(),
+  }, z.string().email({ message: 'Invalid reply to email' }).optional()),
+  senderName: z.string().min(1, { message: 'Empty sender name' }).trim(),
   attachments: z.array(z.string()).transform((array, context) => {
     const result: string[] = []
     for (const value of array) {

@@ -3,6 +3,7 @@ import { Container } from './Container'
 import { FormLabel } from './FormLabel'
 import { Infobox } from './Infobox'
 import { Link } from './Link'
+import { Text } from './Text'
 
 export const components = {
   Container,
@@ -10,4 +11,5 @@ export const components = {
   FormLabel,
   Link,
   Infobox,
+  Text,
 }

@@ -103,6 +103,12 @@ describe('delay until date and time handler', () => {
       expect(generateTimestamp(date, time)).toBeTruthy()
     })
 
+    it('[Valid]: Long date format for SG (with time)', () => {
+      const date = '05 Sept 2023'
+      const time = VALID_TIME
+      expect(generateTimestamp(date, time)).toBeTruthy()
+    })
+
     it('[Invalid]: Wrong day format', () => {
       const date = '32 Sep 2023'
       const time = DEFAULT_TIME
