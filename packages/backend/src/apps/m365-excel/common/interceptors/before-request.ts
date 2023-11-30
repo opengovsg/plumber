@@ -1,9 +1,25 @@
 import type { TBeforeRequest } from '@plumber/types'
 
+import logger from '@/helpers/logger'
+
 import { MS_GRAPH_OAUTH_BASE_URL } from '../constants'
 import { getAccessToken } from '../oauth/token-cache'
 
-// TODO in later PR: usage tracker
+// This explicitly overcounts - e.g we will log if the request times out, even
+// we can't confirm that it reached Microsoft. The intent is to assume the worst
+// case scenario and not miss cases such as:
+// 1. We sent a request and it reached Microsoft.
+// 2. Microsoft responds; response is routed by various routers on the net.
+// 3. One of the routers in the response trip crashes and we get a timeout.
+const usageTracker: TBeforeRequest = async function (_$, requestConfig) {
+  logger.info('Making request to MS Graph', {
+    event: 'm365-ms-graph-request',
+    baseUrl: requestConfig.baseURL, // base URL is different for auth requests
+    urlPath: requestConfig.url,
+  })
+
+  return requestConfig
+}
 
 const addAuthToken: TBeforeRequest = async function ($, requestConfig) {
   // Don't add token if we're trying to request a token.
@@ -31,4 +47,4 @@ const addAuthToken: TBeforeRequest = async function ($, requestConfig) {
 // until we implement the plumber-wide rate limiting system; building this
 // first to unblock M365 pilot).
 
-export default [addAuthToken]
+export default [usageTracker, addAuthToken]
