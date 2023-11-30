@@ -2,7 +2,13 @@ import { Fragment, useMemo } from 'react'
 import { flexRender, Row, TableMeta } from '@tanstack/react-table'
 import { VirtualItem } from '@tanstack/react-virtual'
 
-import { ROW_HEIGHT, TEMP_ROW_ID_PREFIX, Z_INDEX } from '../../constants'
+import {
+  BORDER_COLOR,
+  ROW_COLOR,
+  ROW_HEIGHT,
+  TEMP_ROW_ID_PREFIX,
+  Z_INDEX,
+} from '../../constants'
 import { RowContextProvider } from '../../contexts/RowContext'
 import { GenericRowData } from '../../types'
 
@@ -43,14 +49,14 @@ export default function TableRow({
     () => tableMeta.highlightedCell?.row.id === row.id,
     [tableMeta.highlightedCell?.row.id, row.id],
   )
+  const isRowSelected = row.getIsSelected()
 
-  const backgroundColor = useMemo(
-    () =>
-      (virtualRow?.index ?? 0) % 2
-        ? 'var(--chakra-colors-primary-50)'
-        : 'white',
-    [virtualRow?.index],
-  )
+  const backgroundColor = useMemo(() => {
+    if (isRowSelected) {
+      return ROW_COLOR.SELECTED
+    }
+    return (virtualRow?.index ?? 0) % 2 ? ROW_COLOR.EVEN : ROW_COLOR.ODD
+  }, [isRowSelected, virtualRow?.index])
 
   const isEditingRow = tableMeta.activeCell?.row.id === row.id
 
@@ -72,11 +78,13 @@ export default function TableRow({
                 bottom: ROW_HEIGHT.FOOTER,
                 display: 'flex',
                 alignItems: 'stretch',
-                height: isEditingRow ? ROW_HEIGHT.EXPANDED : ROW_HEIGHT.DEFAULT,
+                height: isEditingRow
+                  ? ROW_HEIGHT.EXPANDED + 2
+                  : ROW_HEIGHT.DEFAULT,
                 flexShrink: 0,
                 backgroundColor: 'white',
                 zIndex: Z_INDEX.NEW_ROW,
-                borderTop: '1px solid var(--chakra-colors-primary-800)',
+                borderTop: `1px solid ${BORDER_COLOR.ACTIVE}`,
               }
             : {
                 position: 'absolute',

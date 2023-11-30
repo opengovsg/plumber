@@ -34,6 +34,11 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
     tableMeta.setSearchString('')
   }, [tableMeta])
 
+  const closeSearchBar = useCallback(() => {
+    setShowSearchBar(false)
+    resetSearch()
+  }, [resetSearch])
+
   const onInputChange = useCallback(
     (e: FormEvent<HTMLInputElement>) => {
       setTempSearchString(e.currentTarget.value)
@@ -63,11 +68,10 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
         setShowSearchBar(true)
       }
       if (e.key === 'Escape') {
-        setShowSearchBar(false)
-        resetSearch()
+        closeSearchBar()
       }
     },
-    [resetSearch],
+    [closeSearchBar],
   )
 
   // Override global search bar
@@ -247,7 +251,7 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
           colorScheme="secondary"
           icon={<MdOutlineClear />}
           aria-label="close-search"
-          onClick={() => setShowSearchBar(false)}
+          onClick={closeSearchBar}
         />
       </InputRightElement>
     </InputGroup>

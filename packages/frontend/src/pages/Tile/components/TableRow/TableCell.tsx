@@ -11,7 +11,13 @@ import {
 import { Textarea } from '@chakra-ui/react'
 import { CellContext, Row, TableMeta } from '@tanstack/react-table'
 
-import { DELAY, NEW_ROW_ID, ROW_HEIGHT, Z_INDEX_CELL } from '../../constants'
+import {
+  BORDER_COLOR,
+  DELAY,
+  NEW_ROW_ID,
+  ROW_HEIGHT,
+  Z_INDEX_CELL,
+} from '../../constants'
 import { useRowContext } from '../../contexts/RowContext'
 import { shallowCompare } from '../../helpers/shallow-compare'
 import { CellType, GenericRowData } from '../../types'
@@ -150,11 +156,10 @@ function TableCell({
         width: `${column.getSize()}px`,
         flexShrink: 0,
         cursor: 'default',
-        borderWidth: '1px',
+        borderBottomWidth: 1,
+        borderRightWidth: 1,
         borderStyle: 'solid',
-        borderColor: 'var(--chakra-colors-primary-100)',
-        borderTopWidth: 0,
-        borderLeftWidth: 0,
+        borderColor: BORDER_COLOR.DEFAULT,
         zIndex: isEditingCell ? Z_INDEX_CELL.ACTIVE_CELL : Z_INDEX_CELL.DEFAULT,
       }}
       ref={cellContainerRef}
@@ -176,8 +181,8 @@ function TableCell({
           onKeyDown={onKeyDown}
           borderRadius={0}
           resize="none"
+          spellCheck={false}
           onFocus={startEditing}
-          boxShadow="0 0 0 1px var(--chakra-colors-primary-400)"
         />
       ) : (
         <div
