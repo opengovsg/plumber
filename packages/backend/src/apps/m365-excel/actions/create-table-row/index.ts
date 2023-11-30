@@ -1,5 +1,6 @@
 import type { IJSONObject, IRawAction } from '@plumber/types'
 
+import { runWithM365Retry } from '../../common/retry-step'
 import WorkbookSession from '../../common/workbook-session'
 
 interface TableInfo {
@@ -124,51 +125,54 @@ const action: IRawAction = {
   ],
 
   async run($) {
-    const { fileId, tableId } = $.step.parameters
-    const columnValues = ($.step.parameters.columnValues as IJSONObject[]) ?? []
-    if (columnValues.length === 0) {
+    return await runWithM365Retry($, async () => {
+      const { fileId, tableId } = $.step.parameters
+      const columnValues =
+        ($.step.parameters.columnValues as IJSONObject[]) ?? []
+      if (columnValues.length === 0) {
+        $.setActionItem({
+          raw: {
+            success: true,
+          },
+        })
+        return
+      }
+
+      const session = await WorkbookSession.create($, fileId as string)
+
+      const tableInfoResponse = await session.request<TableInfo>(
+        `/tables/${tableId}/range?$select=columnCount,rowIndex`,
+        'get',
+      )
+      const createRowResponse = await session.request<{ index: number }>(
+        `/tables/${tableId}/rows`,
+        'post',
+        {
+          data: {
+            index: null,
+            values: [
+              constructMsGraphArgment(
+                tableInfoResponse.data,
+                columnValues.map((val) => ({
+                  index: Number(val.index),
+                  value: String(val.value),
+                })),
+              ),
+            ],
+          },
+        },
+      )
+
+      await session.closeIfLastExcelStepInPipe()
+
       $.setActionItem({
         raw: {
+          relativeRowNumber: createRowResponse.data.index + 1,
+          rowNumber:
+            tableInfoResponse.data.rowIndex + createRowResponse.data.index + 2,
           success: true,
         },
       })
-      return
-    }
-
-    const session = await WorkbookSession.create($, fileId as string)
-
-    const tableInfoResponse = await session.request<TableInfo>(
-      `/tables/${tableId}/range?$select=columnCount,rowIndex`,
-      'get',
-    )
-    const createRowResponse = await session.request<{ index: number }>(
-      `/tables/${tableId}/rows`,
-      'post',
-      {
-        data: {
-          index: null,
-          values: [
-            constructMsGraphArgment(
-              tableInfoResponse.data,
-              columnValues.map((val) => ({
-                index: Number(val.index),
-                value: String(val.value),
-              })),
-            ),
-          ],
-        },
-      },
-    )
-
-    await session.closeIfLastExcelStepInPipe()
-
-    $.setActionItem({
-      raw: {
-        relativeRowNumber: createRowResponse.data.index + 1,
-        rowNumber:
-          tableInfoResponse.data.rowIndex + createRowResponse.data.index + 2,
-        success: true,
-      },
     })
   },
 }

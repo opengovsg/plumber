@@ -81,6 +81,21 @@ export const m365TenantInfo = Object.freeze({
     : {}),
 })
 
+export const m365RateLimits = Object.freeze({
+  graphApi: {
+    points: 13000,
+    durationSeconds: 10,
+  },
+  sharePoint: {
+    points: 3000,
+    durationSeconds: 60,
+  },
+  excel: {
+    points: 1500,
+    durationSeconds: 10,
+  },
+})
+
 //
 // Convenience stuff
 //
