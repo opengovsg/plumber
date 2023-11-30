@@ -45,6 +45,28 @@ const testAction: IRawAction = {
         ],
       },
     },
+    {
+      key: 'tableId',
+      label: 'Table',
+      required: true,
+      description: 'Table to edit',
+      type: 'dropdown' as const,
+      variables: false,
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [
+          {
+            name: 'key',
+            value: 'listTables',
+          },
+          {
+            name: 'parameters.fileId',
+            value: '{parameters.fileId}',
+          },
+        ],
+      },
+    },
   ],
 
   async run($) {
