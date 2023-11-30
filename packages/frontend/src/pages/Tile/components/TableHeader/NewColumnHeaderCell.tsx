@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useState } from 'react'
 import { FiPlus } from 'react-icons/fi'
 import {
-  Box,
+  Flex,
   Icon,
   Popover,
   PopoverArrow,
@@ -10,6 +10,7 @@ import {
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
+  Text,
   useDisclosure,
 } from '@chakra-ui/react'
 import {
@@ -17,10 +18,15 @@ import {
   Input,
   PopoverCloseButton,
 } from '@opengovsg/design-system-react'
+import { HeaderContext } from '@tanstack/react-table'
+import { GenericRowData } from 'pages/Tile/types'
 
+import { HEADER_COLOR, POPOVER_MOTION_PROPS } from '../../constants'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 
-export default function NewColumnHeaderCell() {
+export default function NewColumnHeaderCell({
+  column,
+}: HeaderContext<GenericRowData, unknown>) {
   const { isOpen, onClose, onOpen } = useDisclosure()
   const { createColumn, isCreatingColumn } = useUpdateTable()
   const [newColumnName, setNewColumnName] = useState('')
@@ -49,38 +55,40 @@ export default function NewColumnHeaderCell() {
       lazyBehavior="unmount"
     >
       <PopoverTrigger>
-        <Box h="100%" position="relative" w={50}>
-          <Icon
-            tabIndex={0}
-            as={FiPlus}
-            px={4}
-            display="block"
-            h="100%"
-            w="100%"
-            _hover={{
-              bg: 'primary.800',
-            }}
-            _focus={{
-              outline: 'none',
-            }}
-            cursor="pointer"
-          />
-        </Box>
+        <Flex
+          h="100%"
+          position="relative"
+          w={column.getSize() + 'px'}
+          _hover={{
+            bg: HEADER_COLOR.HOVER,
+          }}
+          _focus={{
+            outline: 'none',
+          }}
+          cursor="pointer"
+          tabIndex={0}
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Icon as={FiPlus} h={5} w={5} />
+        </Flex>
       </PopoverTrigger>
-      <PopoverContent color="secondary.900">
+      <PopoverContent color="secondary.900" motionProps={POPOVER_MOTION_PROPS}>
         <PopoverArrow />
         <PopoverCloseButton top={0} right={1} />
-        <PopoverHeader>Add new column</PopoverHeader>
+        <PopoverHeader py={4} px={4}>
+          <Text textStyle="subhead-2">Add new column</Text>
+        </PopoverHeader>
         <form onSubmit={onSubmit}>
-          <PopoverBody>
+          <PopoverBody px={4}>
             <Input
               placeholder="Column name"
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}
             />
           </PopoverBody>
-          <PopoverFooter justifyContent="flex-end" display="flex">
-            <Button type="submit" isLoading={isCreatingColumn}>
+          <PopoverFooter justifyContent="flex-end" display="flex" px={4}>
+            <Button type="submit" isLoading={isCreatingColumn} size="sm">
               Add
             </Button>
           </PopoverFooter>

@@ -3,7 +3,7 @@ import { BsPlus } from 'react-icons/bs'
 import { Icon } from '@chakra-ui/react'
 import { CellContext } from '@tanstack/react-table'
 
-import { Z_INDEX_CELL } from '../../constants'
+import { BORDER_COLOR, Z_INDEX_CELL } from '../../constants'
 import { useRowContext } from '../../contexts/RowContext'
 import { CellType, GenericRowData } from '../../types'
 
@@ -29,7 +29,7 @@ export default function CheckboxCell({
         flexShrink: 0,
         borderWidth: '1px',
         borderStyle: 'solid',
-        borderColor: 'var(--chakra-colors-primary-100)',
+        borderColor: BORDER_COLOR.DEFAULT,
         borderTopWidth: 0,
         borderLeftWidth: 0,
         display: 'flex',

@@ -6,7 +6,9 @@
     "build": "tsc && vite build --mode=${VITE_MODE:-prod}",
     "prebuild": "rimraf ./build",
     "lint": "eslint . --ignore-path ../../.eslintignore",
-    "test": "vitest"
+    "test": "vitest",
+    "gen:theme-typings": "chakra-cli tokens ./src/theme/index.ts",
+    "postinstall": "npm run gen:theme-typings"
   },
   "dependencies": {
     "@apollo/client": "3.8.7",
@@ -57,6 +59,7 @@
     "yup": "^0.32.11"
   },
   "devDependencies": {
+    "@chakra-ui/cli": "^2.4.1",
     "@types/jest": "^26.0.15",
     "@types/lodash": "^4.14.182",
     "@types/luxon": "^2.0.8",
