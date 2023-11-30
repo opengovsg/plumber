@@ -13,8 +13,8 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     tag: NEW_FEATURE_TAG,
     title: 'Rich text editor for email body',
     details: dedent`
-      * Email body can now be formatted easily with our brand-new rich-text editor with elements like table, list, headings, images.
-      * There might be some backward-compatbility issues if you are editing old pipes that use raw HTML. Keep a look out for our emails for more details.
+      * Email body can now be formatted easily with our brand new rich-text editor with elements like table, list, headings and images.
+      * There might be some backward compatbility issues if you are editing old pipes that use raw HTML. Keep a look out for our emails for more details.
     `,
   },
   {
