@@ -10,12 +10,12 @@ import Box from '@mui/material/Box'
 import CardActionArea from '@mui/material/CardActionArea'
 import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
+import { useToast } from '@opengovsg/design-system-react'
 import ConnectionContextMenu from 'components/AppConnectionContextMenu'
 import { DELETE_CONNECTION } from 'graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from 'graphql/queries/test-connection'
 import useFormatMessage from 'hooks/useFormatMessage'
 import { DateTime } from 'luxon'
-import { useSnackbar } from 'notistack'
 
 import { CardContent, Typography } from './style'
 
@@ -31,7 +31,7 @@ const countTranslation = (value: React.ReactNode) => (
 )
 
 function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
-  const { enqueueSnackbar } = useSnackbar()
+  const toast = useToast()
   const [verificationVisible, setVerificationVisible] = React.useState(false)
   const [testConnection, { called: testCalled, loading: testLoading }] =
     useLazyQuery(TEST_CONNECTION, {
@@ -77,15 +77,19 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
           },
         })
 
-        enqueueSnackbar(formatMessage('connection.deletedMessage'), {
-          variant: 'success',
+        toast({
+          title: 'The connection has been deleted.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+          position: 'bottom-right',
         })
       } else if (action.type === 'test') {
         setVerificationVisible(true)
         testConnection({ variables: { connectionId: id } })
       }
     },
-    [deleteConnection, id, testConnection, formatMessage, enqueueSnackbar],
+    [deleteConnection, id, testConnection, toast],
   )
 
   const relativeCreatedAt = DateTime.fromMillis(
