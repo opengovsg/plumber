@@ -2,6 +2,7 @@ import { MouseEvent, useCallback, useMemo } from 'react'
 import { Box } from '@chakra-ui/react'
 import { Header } from '@tanstack/react-table'
 
+import { HEADER_COLOR } from '../../constants'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 import { GenericRowData } from '../../types'
 
@@ -36,10 +37,10 @@ export default function ColumnResizer({ header }: ColumnResizerProps) {
       h="100%"
       cursor="col-resize"
       _hover={{
-        bg: 'primary.800',
+        bg: HEADER_COLOR.HOVER,
       }}
       _active={{
-        bg: 'primary.800',
+        bg: HEADER_COLOR.HOVER,
       }}
       onMouseDown={onResizeStart}
     />

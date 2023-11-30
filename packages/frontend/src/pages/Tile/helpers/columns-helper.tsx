@@ -41,8 +41,9 @@ export function createColumns(
     id: SELECT_COLUMN_ID,
     header: CheckboxHeaderCell,
     cell: CheckboxCell,
-    size: 40,
+    size: 60,
   })
+
   const addNewColumn = columnHelper.display({
     id: NEW_COLUMN_ID,
     header: NewColumnHeaderCell,
