@@ -12,7 +12,7 @@ describe('Test get date time object format', () => {
       )
     })
 
-    it('Double digit date should be double padded', () => {
+    it('Double digit date should not require extra padding', () => {
       const dateTime = DateTime.local(2023, 10, 21)
       expect(getDateTimeObjectRepresentation(dateTime).pretty_date).toEqual(
         '21 Oct 2023',
