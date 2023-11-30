@@ -1,5 +1,6 @@
-import { memo } from 'react'
-import { FaCaretDown, FaFilter } from 'react-icons/fa'
+import { memo, useState } from 'react'
+import { BsTrash } from 'react-icons/bs'
+import { GoChevronDown, GoFilter } from 'react-icons/go'
 import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
 import {
   Flex,
@@ -16,14 +17,20 @@ import {
 } from '@chakra-ui/react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Button } from '@opengovsg/design-system-react'
 import { Header } from '@tanstack/react-table'
 
+import {
+  BORDER_COLOR,
+  HEADER_COLOR,
+  POPOVER_MOTION_PROPS,
+} from '../../constants'
 import { GenericRowData } from '../../types'
 
 import { ColumnFilter } from './ColumnFilter'
 import ColumnResizer from './ColumnResizer'
 import ColumnSort from './ColumnSort'
-import DeleteColumnButton from './DeleteColumnButton'
+import DeletionModal from './DeleteColumnModal'
 import EditColumnName from './EditColumnName'
 
 interface ColumnHeaderCellProps {
@@ -43,6 +50,7 @@ function ColumnHeaderCell({
 }: ColumnHeaderCellProps) {
   const { id } = header
   const { isOpen, onClose, onOpen } = useDisclosure()
+  const [isDeletionModalOpen, setIsDeletionModalOpen] = useState(false)
   const column = header.getContext().column
 
   const {
@@ -68,9 +76,8 @@ function ColumnHeaderCell({
       scaleX={1}
       w={columnWidth}
       borderRightWidth={'0.5px'}
-      borderColor="primary.400"
+      borderColor={BORDER_COLOR.DEFAULT}
       ref={setNodeRef}
-      bg="primary.700"
       zIndex={isDragging ? 2 : undefined}
     >
       <Popover
@@ -93,7 +100,7 @@ function ColumnHeaderCell({
             gap={1}
             justifyContent="space-between"
             _hover={{
-              bg: 'primary.800',
+              bg: HEADER_COLOR.HOVER,
             }}
             _focus={{
               outline: 'none',
@@ -106,21 +113,35 @@ function ColumnHeaderCell({
               whiteSpace="nowrap"
               textOverflow="ellipsis"
               maxW="100%"
+              fontWeight="medium"
+              userSelect="none"
             >
               {columnName}
             </Text>
             <Flex gap={2}>
-              {isFiltered && <Icon as={FaFilter} w={4} h={4} />}
+              {isFiltered && (
+                <Icon
+                  as={GoFilter}
+                  w={6}
+                  h={6}
+                  p={1}
+                  bg="primary.200"
+                  borderRadius="lg"
+                />
+              )}
               {sortDir && (
                 <Icon
                   as={sortDir === 'desc' ? ImSortAlphaDesc : ImSortAlphaAsc}
-                  w={4}
-                  h={4}
+                  w={6}
+                  h={6}
+                  p={1}
+                  bg="primary.200"
+                  borderRadius="lg"
                 />
               )}
               {!isFiltered && !sortDir && (
                 <Icon
-                  as={FaCaretDown}
+                  as={GoChevronDown}
                   transform={isOpen ? 'rotate(180deg)' : undefined}
                   w={4}
                   h={4}
@@ -131,27 +152,11 @@ function ColumnHeaderCell({
         </PopoverTrigger>
 
         <PopoverContent
-          color="secondary.900"
           outline="none"
           _focusVisible={{
             boxShadow: 'none',
           }}
-          motionProps={{
-            variants: {
-              exit: {
-                opacity: 0,
-                transition: {
-                  duration: 0,
-                },
-              },
-              enter: {
-                opacity: 1,
-                transition: {
-                  duration: 0,
-                },
-              },
-            },
-          }}
+          motionProps={POPOVER_MOTION_PROPS}
         >
           <PopoverArrow />
           <PopoverHeader px={4}>
@@ -162,11 +167,29 @@ function ColumnHeaderCell({
             <ColumnFilter column={column} />
           </PopoverBody>
           <PopoverFooter justifyContent="flex-start" display="flex" px={4}>
-            <DeleteColumnButton id={id} />
+            <Button
+              leftIcon={<BsTrash />}
+              variant="link"
+              py={2}
+              color="utility.feedback.critical"
+              _hover={{
+                color: 'red.400',
+              }}
+              onClick={() => setIsDeletionModalOpen(true)}
+            >
+              Delete column
+            </Button>
           </PopoverFooter>
         </PopoverContent>
       </Popover>
       <ColumnResizer header={header} />
+      {isDeletionModalOpen && (
+        <DeletionModal
+          columnId={column.id}
+          columnName={columnName}
+          onClose={() => setIsDeletionModalOpen(false)}
+        />
+      )}
     </Flex>
   )
 }

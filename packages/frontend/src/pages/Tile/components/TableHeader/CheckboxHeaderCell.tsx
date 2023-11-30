@@ -2,10 +2,11 @@ import { useEffect, useRef } from 'react'
 import { Flex } from '@chakra-ui/react'
 import { HeaderContext } from '@tanstack/react-table'
 
-import { Z_INDEX_CELL } from '../../constants'
+import { BORDER_COLOR, Z_INDEX_CELL } from '../../constants'
 import { GenericRowData } from '../../types'
 
 export default function CheckboxHeaderCell({
+  column,
   table,
 }: HeaderContext<GenericRowData, unknown>) {
   const isAllRowsSelected = table.getIsAllRowsSelected()
@@ -21,16 +22,15 @@ export default function CheckboxHeaderCell({
   return (
     <Flex
       as="label"
-      w={'40px'}
+      w={column.getSize() + 'px'}
       alignItems="center"
       justifyContent="center"
       cursor="pointer"
       position="sticky"
       left={0}
-      background="primary.700"
       zIndex={Z_INDEX_CELL.CHECKBOX}
       borderRightWidth={'0.5px'}
-      borderColor="primary.400"
+      borderColor={BORDER_COLOR.DEFAULT}
     >
       <input
         ref={ref}

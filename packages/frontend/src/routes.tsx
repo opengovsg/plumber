@@ -12,9 +12,10 @@ import Flow from 'pages/Flow'
 import Flows from 'pages/Flows'
 import Login from 'pages/Login'
 import SgidCallback from 'pages/SgidCallback'
-import TilesRoutes from 'pages/Tiles/routes'
+import Tiles from 'pages/Tiles'
 
 const Landing = lazy(() => import('pages/Landing'))
+const Tile = lazy(() => import('pages/Tile'))
 
 export default createRoutesFromElements(
   <Route path="/">
@@ -84,13 +85,20 @@ export default createRoutesFromElements(
     <Route path={`${URLS.EDITOR}/*`} element={<EditorRoutes />} />
 
     <Route
-      path={`${URLS.TILES}/*`}
+      path={URLS.TILES}
       element={
         <Layout>
-          <Suspense fallback={<></>}>
-            <TilesRoutes />
-          </Suspense>
+          <Tiles />
         </Layout>
+      }
+    />
+
+    <Route
+      path={URLS.TILE_PATTERN}
+      element={
+        <Suspense fallback={<></>}>
+          <Tile />
+        </Suspense>
       }
     />
 

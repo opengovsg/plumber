@@ -19,7 +19,15 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
-import { NEW_ROW_ID, ROW_HEIGHT, TEMP_ROW_ID_PREFIX } from '../constants'
+import {
+  BORDER_COLOR,
+  HEADER_COLOR,
+  NEW_ROW_ID,
+  ROW_HEIGHT,
+  TABLE_BANNER_HEIGHT,
+  TEMP_ROW_ID_PREFIX,
+  Z_INDEX,
+} from '../constants'
 import { useTableContext } from '../contexts/TableContext'
 import { createColumns } from '../helpers/columns-helper'
 import { scrollToBottom } from '../helpers/scroll-helper'
@@ -171,30 +179,29 @@ export default function Table(): JSX.Element {
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT.DEFAULT,
+    // + 1 so the last cell's textarea bottom border is visible
     paddingEnd: ROW_HEIGHT.EXPANDED - ROW_HEIGHT.DEFAULT + 1,
-    overscan: 15,
+    overscan: 20,
   })
   const virtualRows = rowVirtualizer.getVirtualItems()
 
   return (
     <Box position="relative">
       <Flex
-        borderRadius="lg"
         overflow="auto"
         w="100%"
-        borderColor="primary.800"
-        borderWidth={1}
         ref={parentRef}
-        h="calc(100vh - 210px)"
+        h={`calc(100vh - ${TABLE_BANNER_HEIGHT})`}
         minH="300px"
         flexDir="column"
         position="relative"
         // prevent active element from being hidden by footer
+        scrollBehavior="smooth"
         scrollPaddingBottom={
           editingCell?.row.id === NEW_ROW_ID ? 0 : ROW_HEIGHT.FOOTER
         }
         // so highlighted element doesnt get blocked by checkbox column
-        scrollPaddingLeft={30}
+        scrollPaddingLeft={60}
         onClick={onBlurClick}
       >
         <Flex
@@ -205,14 +212,17 @@ export default function Table(): JSX.Element {
           ref={containerRef}
         >
           <Flex
-            bgColor="primary.700"
+            bgColor={HEADER_COLOR.DEFAULT}
             alignItems="stretch"
             position="sticky"
             top={0}
             h={`${ROW_HEIGHT.HEADER}px`}
             maxH={`${ROW_HEIGHT.HEADER}px`}
-            zIndex={10}
-            color="white"
+            zIndex={Z_INDEX.FOOTER}
+            borderTopWidth="1px"
+            borderBottomWidth="1px"
+            borderColor={BORDER_COLOR.DEFAULT}
+            marginBottom="1px"
             fontWeight="bold"
           >
             <TableHeader
@@ -244,6 +254,7 @@ export default function Table(): JSX.Element {
         />
         <TableFooter
           removeRows={removeRows}
+          rowCount={rows.length}
           rowSelection={rowSelection}
           parentRef={parentRef}
         />

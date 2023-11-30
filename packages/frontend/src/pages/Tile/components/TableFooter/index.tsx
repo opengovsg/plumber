@@ -6,15 +6,18 @@ import { ROW_HEIGHT, Z_INDEX } from '../../constants'
 import { scrollToBottom, scrollToTop } from '../../helpers/scroll-helper'
 
 import DeleteRowsButton from './DeleteRowsButton'
+import RowCount from './RowCount'
 
 interface TableFooterProps {
   removeRows: (rows: string[]) => void
+  rowCount: number
   rowSelection: Record<string, boolean>
   parentRef: React.RefObject<HTMLDivElement>
 }
 
 function TableFooter({
   removeRows,
+  rowCount,
   rowSelection,
   parentRef,
 }: TableFooterProps) {
@@ -25,13 +28,17 @@ function TableFooter({
       position="sticky"
       bottom={0}
       left={0}
+      right={0}
       zIndex={Z_INDEX.FOOTER}
-      maxH={ROW_HEIGHT.FOOTER - 1} // -1 to prevent border from overflowing
+      minH={`${ROW_HEIGHT.FOOTER}px`}
+      maxH={`${ROW_HEIGHT.FOOTER}px`}
       justifyContent="space-between"
-      borderColor="primary.800"
       boxSizing="content-box"
-      borderTopWidth={1}
     >
+      <Flex>
+        <RowCount rowCount={rowCount} rowSelection={rowSelection} />
+        <DeleteRowsButton rowSelection={rowSelection} removeRows={removeRows} />
+      </Flex>
       <Flex>
         <Button
           variant="clear"
@@ -49,14 +56,6 @@ function TableFooter({
         >
           Scroll to bottom <Kbd bg="white">end</Kbd>
         </Button>
-      </Flex>
-      <Flex>
-        {
-          <DeleteRowsButton
-            rowSelection={rowSelection}
-            removeRows={removeRows}
-          />
-        }
       </Flex>
     </Flex>
   )
