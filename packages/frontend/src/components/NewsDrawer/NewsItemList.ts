@@ -9,6 +9,18 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2023-11-23',
+    tag: NEW_FEATURE_TAG,
+    title: 'Email attachments for Postman action',
+    details: dedent`
+      * Email attachments are now supported.
+      * Checkout the supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/clipplumer.png',
+    },
+  },
+  {
     date: '2023-10-18',
     tag: NEW_FEATURE_TAG,
     title: `Introducing If-then!`,

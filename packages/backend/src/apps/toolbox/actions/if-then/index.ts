@@ -10,6 +10,7 @@ import Step from '@/models/step'
 import toolboxApp from '../..'
 import conditionIsTrue from '../../common/condition-is-true'
 import getConditionArgs from '../../common/get-condition-args'
+import { throwInvalidConditionError } from '../../common/throw-errors'
 
 const ACTION_KEY = 'ifThen'
 
@@ -89,7 +90,12 @@ const action: IRawAction = {
   ],
 
   async run($) {
-    const isConditionMet = shouldTakeBranch($)
+    let isConditionMet
+    try {
+      isConditionMet = shouldTakeBranch($)
+    } catch (err) {
+      throwInvalidConditionError(err.message, $.step.position, $.app.name)
+    }
     $.setActionItem({
       raw: { isConditionMet },
     })

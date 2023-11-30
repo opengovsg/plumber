@@ -2,6 +2,7 @@ import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import Markdown from 'react-markdown'
 import { FormControl } from '@chakra-ui/react'
 import {
   FormErrorMessage,
@@ -54,7 +55,14 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
       }) => (
         <FormControl isInvalid={!!error}>
           {label && (
-            <FormLabel isRequired={required} description={description}>
+            <FormLabel
+              isRequired={required}
+              description={
+                description && (
+                  <Markdown linkTarget="_blank">{description}</Markdown>
+                )
+              }
+            >
               {label}
             </FormLabel>
           )}

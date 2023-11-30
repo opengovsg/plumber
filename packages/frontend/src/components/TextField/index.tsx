@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import Markdown from 'react-markdown'
 import { FormControl } from '@chakra-ui/react'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import IconButton from '@mui/material/IconButton'
@@ -68,7 +69,14 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
       }) => (
         <FormControl>
           {label && (
-            <FormLabel isRequired={required} description={description}>
+            <FormLabel
+              isRequired={required}
+              description={
+                description && (
+                  <Markdown linkTarget="_blank">{description}</Markdown>
+                )
+              }
+            >
               {label}
             </FormLabel>
           )}

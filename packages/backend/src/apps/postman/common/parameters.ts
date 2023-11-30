@@ -3,6 +3,8 @@ import { IField } from '@plumber/types'
 import validator from 'email-validator'
 import { z } from 'zod'
 
+import { parseS3Id } from '@/helpers/s3'
+
 function recipientStringToArray(value: string) {
   return value
     .split(',')
@@ -50,17 +52,33 @@ export const transactionalEmailFields: IField[] = [
     required: true,
     variables: true,
   },
+  {
+    label: 'Attachments',
+    key: 'attachments',
+    description:
+      'Find out more about supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
+    type: 'multiselect' as const,
+    required: false,
+    variables: true,
+    variableTypes: ['file'],
+  },
 ]
 
 export const transactionalEmailSchema = z.object({
-  subject: z.string().min(1).trim(),
+  subject: z.string().min(1, { message: 'Empty subject' }).trim(),
   body: z
     .string()
-    .min(1)
+    .min(1, { message: 'Empty body' })
     // convert \n to <br> for HTML emails
     .transform((value) => value.replace(/\n/g, '<br>')),
   destinationEmail: z.string().transform((value, ctx) => {
     const recipients = recipientStringToArray(value)
+    if (recipients.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Empty recipient email',
+      })
+    }
     if (recipients.some((recipient) => !validator.validate(recipient))) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -74,6 +92,24 @@ export const transactionalEmailSchema = z.object({
       return value
     }
     return value.trim() === '' ? undefined : value.trim()
-  }, z.string().email().optional()),
-  senderName: z.string().min(1).trim(),
+  }, z.string().email({ message: 'Invalid reply to email' }).optional()),
+  senderName: z.string().min(1, { message: 'Empty sender name' }).trim(),
+  attachments: z.array(z.string()).transform((array, context) => {
+    const result: string[] = []
+    for (const value of array) {
+      // Account for optional attachment fields with no response.
+      if (!value) {
+        continue
+      }
+      if (!parseS3Id(value)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${value} is not a S3 ID.`,
+        })
+        return z.NEVER
+      }
+      result.push(value)
+    }
+    return result
+  }),
 })

@@ -1,6 +1,7 @@
 import { IStepError } from '@plumber/types'
 
 import { useCallback, useState } from 'react'
+import Markdown from 'react-markdown'
 import { Box, Collapse, Text } from '@chakra-ui/react'
 import { Badge, Button, Infobox } from '@opengovsg/design-system-react'
 import JSONViewer from 'components/JSONViewer'
@@ -40,7 +41,8 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
         </Text>
 
         <Text textStyle="body-1">
-          {solution} {contactPlumberMessage}{' '}
+          <Markdown linkTarget="_blank">{solution}</Markdown>
+          {contactPlumberMessage}{' '}
           {details && (
             <>
               <Button

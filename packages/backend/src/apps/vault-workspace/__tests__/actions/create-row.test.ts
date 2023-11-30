@@ -48,8 +48,9 @@ describe('create row', () => {
   it('errors if columns and values have different lengths', async () => {
     $.step.parameters.columns = 'column_1, column_2'
     $.step.parameters.values = 'value_1'
+    // throw partial step error message
     await expect(createRowAction.run($)).rejects.toThrowError(
-      'The number of columns and values must be equal.',
+      'Unequal number of columns and values',
     )
   })
 
@@ -110,6 +111,42 @@ describe('create row', () => {
         column_1: 'value_1',
         column_2: 'asas""value "with" quotes""',
       })
+    })
+
+    it('should throw step error for invalid usage of double quotes', async () => {
+      $.step.parameters.columns = 'column_1, "column"2"'
+      $.step.parameters.values = 'value_1, value_2'
+      // throw partial step error message
+      await expect(createRowAction.run($)).rejects.toThrowError(
+        'Invalid usage of double quotes',
+      )
+    })
+
+    it('should throw step error for no closing quotes', async () => {
+      $.step.parameters.columns = 'column_1, "column_2'
+      $.step.parameters.values = 'value_1, value_2'
+      // throw partial step error message
+      await expect(createRowAction.run($)).rejects.toThrowError(
+        'No closing quote',
+      )
+    })
+
+    it('should throw step error for newline characters in values field', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = 'value_1\n, value_2'
+      // throw partial step error message
+      await expect(createRowAction.run($)).rejects.toThrowError(
+        'Incorrect format for values field',
+      )
+    })
+
+    it('should throw step error for undefined values field', async () => {
+      $.step.parameters.columns = 'column_1, column_2'
+      $.step.parameters.values = undefined
+      // throw partial step error message
+      await expect(createRowAction.run($)).rejects.toThrowError(
+        'Undefined values field',
+      )
     })
   })
 })

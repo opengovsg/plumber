@@ -1,45 +1,24 @@
 import type { IJSONObject } from '@plumber/types'
 
 import { UnrecoverableError } from 'bullmq'
-import { get, memoize } from 'lodash'
+import { get } from 'lodash'
 
 import apps from '@/apps'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import Step from '@/models/step'
 
-function getCompositeKey(appKey: string, actionKey: string): string {
-  return `${appKey}:${actionKey}`
-}
-
-// Memoize as we can't use top-level awaits yet.
-const getFileProcessingActions = memoize(
-  async (): Promise<ReadonlySet<string>> => {
-    const result = new Set<string>()
-
-    for (const app of Object.values(apps)) {
-      for (const action of app.actions ?? []) {
-        if (action.doesFileProcessing ?? false) {
-          result.add(getCompositeKey(app.key, action.key))
-        }
-      }
-    }
-
-    return result
-  },
-)
-
-export async function doesActionProcessFiles(
-  appKey: string,
-  actionKey: string,
-): Promise<boolean> {
-  if (!appKey || !actionKey) {
+export function doesActionProcessFiles(step: Step): boolean {
+  if (!apps[step.appKey]) {
+    return false
+  }
+  const action = apps[step.appKey].actions.find((a) => a.key === step.key)
+  if (!action || !action.doesFileProcessing) {
     return false
   }
 
-  return (await getFileProcessingActions()).has(
-    getCompositeKey(appKey, actionKey),
-  )
+  return action.doesFileProcessing(step)
 }
 
 /**

@@ -9,7 +9,12 @@ export function generateHttpStepError(
   position: number,
   appName: string,
 ) {
-  const stepErrorName = `Status code: ${error.response.status} (${error.response.statusText})`
+  let stepErrorName
+  if (!error.response.status && !error.response.statusText) {
+    stepErrorName = 'Empty status code'
+  } else {
+    stepErrorName = `Status code: ${error.response.status} (${error.response.statusText})`
+  }
   return new StepError(
     {
       name: stepErrorName,
