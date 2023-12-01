@@ -1,0 +1,56 @@
+name: Version Bump
+
+on:
+  pull_request_review:
+    types:
+      - submitted
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  version-bump:
+    if: github.event.pull_request.base.ref == 'production' && startsWith(github.event.pull_request.title, 'Release') && github.event.review.state == 'APPROVED'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get version number from pull request title
+        id: check-release
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          new_version=$(echo "$PR_TITLE" | cut -d' ' -f2)
+          if [[ ! "$new_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version number "$new_version" not found or invalid. Exiting."
+            exit 1
+          fi
+          echo "$new_version"
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Bump version number
+        id: bump-version
+        run: |
+          npm version ${{ steps.check-release.outputs.new_version }} --workspaces=true --allow-same-version=false
+          git add .
+          git config user.email "action@github.com"
+          git config user.name "Version bump[bot]"
+          git commit -m "${{ steps.check-release.outputs.new_version }}"
+          git tag ${{ steps.check-release.outputs.new_version }}
+          git push
+          git push --tags
+
+      - name: Comment on PR
+        uses: actions/github-script@v3
+        with:
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Version bumped to **${{ steps.check-release.outputs.new_version }}** :rocket:'
+            })
