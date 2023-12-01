@@ -74,12 +74,6 @@ export const transactionalEmailSchema = z.object({
     .transform((v) => v.replace(/\n/g, '<br>')),
   destinationEmail: z.string().transform((value, ctx) => {
     const recipients = recipientStringToArray(value)
-    if (recipients.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Empty recipient email',
-      })
-    }
     if (recipients.some((recipient) => !validator.validate(recipient))) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
