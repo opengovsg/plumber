@@ -4,8 +4,6 @@ on:
   pull_request_review:
     types:
       - submitted
-    branches:
-      - production
 
 permissions:
   pull-requests: write
@@ -13,11 +11,11 @@ permissions:
 
 jobs:
   version-bump:
+    if: github.event.pull_request.base.ref == 'production' && startsWith(github.event.pull_request.title, 'Release') && github.event.review.state == 'APPROVED'
     runs-on: ubuntu-latest
     steps:
       - name: Get version number from pull request title
         id: check-release
-        if: startsWith(github.event.pull_request.title, 'Release') && github.event.review.state == 'APPROVED'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
