@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import createPaymentAction from '../../actions/create-payment'
-import getApiBaseUrl from '../../common/get-api-base-url'
+import { getApiBaseUrl } from '../../common/api'
 
 const mocks = vi.hoisted(() => ({
   httpPost: vi.fn(() => ({
@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   })),
 }))
 
-describe('Create payment action', () => {
+describe('create payment', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
@@ -28,7 +28,16 @@ describe('Create payment action', () => {
         id: 'herp-derp',
         appKey: 'paysg',
         position: 2,
-        parameters: {},
+        parameters: {
+          // Pre-fill some required fields
+          referenceId: 'test-reference-id',
+          payerName: 'test-name',
+          payerAddress: 'test-address',
+          payerIdentifier: 'test-identifier',
+          payerEmail: 'test@email.local',
+          description: 'test-description',
+          paymentAmountCents: '12345',
+        },
       },
       http: {
         post: mocks.httpPost,
@@ -36,40 +45,45 @@ describe('Create payment action', () => {
       setActionItem: vi.fn(),
       app,
     }
+
+    mocks.httpPost.mockResolvedValue({
+      data: {
+        id: 'payment-id',
+        payment_url: 'https://test2.local',
+        stripe_payment_intent_id: 'stripe-payment',
+        payment_qr_code_url: 'https://test3.local',
+      },
+    })
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('invokes the correct URL based on the API key', async () => {
-    $.auth.data.apiKey = 'paysg_stag_abcd'
-    const expectedBaseUrl = getApiBaseUrl($.auth.data.apiKey)
+  it.each(['paysg_stag_abcd'])(
+    'invokes the correct URL based on the API key',
+    async (apiKey) => {
+      $.auth.data.apiKey = apiKey
+      const expectedBaseUrl = getApiBaseUrl($.auth.data.apiKey)
 
-    await createPaymentAction.run($)
+      await createPaymentAction.run($)
 
-    expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/v1/payment-services/sample-payment-service-id/payments',
-      expect.anything(),
-      expect.objectContaining({
-        baseURL: expectedBaseUrl,
-        headers: {
-          'x-api-key': $.auth.data.apiKey,
-        },
-      }),
-    )
-  })
+      expect(mocks.httpPost).toHaveBeenCalledWith(
+        '/v1/payment-services/sample-payment-service-id/payments',
+        expect.anything(),
+        expect.objectContaining({
+          baseURL: expectedBaseUrl,
+          headers: {
+            'x-api-key': $.auth.data.apiKey,
+          },
+        }),
+      )
+    },
+  )
 
   it('builds the payload correctly', async () => {
-    $.step.parameters.referenceId = 'test-reference-id'
-    $.step.parameters.payerName = 'test-name'
-    $.step.parameters.payerAddress = 'test-address'
-    $.step.parameters.payerIdentifier = 'test-identifier'
-    $.step.parameters.payerEmail = 'test@email.local'
-    $.step.parameters.description = 'test-description'
-    $.step.parameters.paymentAmountCents = '12345'
-    $.step.parameters.dueDate = '12-12-2023'
-    $.step.parameters.returnUrl = 'test.local'
+    $.step.parameters.dueDate = '02 Jan 2023'
+    $.step.parameters.returnUrl = 'https://test.local'
     $.step.parameters.metadata = [
       { key: 'test-key-1', value: 'test-value-1' },
       { key: 'test-key-2', value: 'test-value-2' },
@@ -88,8 +102,8 @@ describe('Create payment action', () => {
         payer_email: 'test@email.local',
         description: 'test-description',
         amount_in_cents: 12345, // Converted to number
-        due_date: '12-12-2023',
-        return_url: 'test.local',
+        due_date: '02-JAN-2023',
+        return_url: 'https://test.local',
         metadata: {
           'test-key-1': 'test-value-1',
           'test-key-2': 'test-value-2',

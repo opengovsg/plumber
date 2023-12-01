@@ -7,7 +7,8 @@ const app: IApp = {
   name: 'PaySG',
   key: 'paysg',
   iconUrl: '{BASE_URL}/apps/paysg/assets/favicon.svg',
-  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/paysg',
+  authDocUrl:
+    'https://guide.pay.gov.sg/api/get-started-build-your-integration/get-started-with-paysgs-api',
   supportsConnections: true,
   baseUrl: '',
   apiBaseUrl: '',

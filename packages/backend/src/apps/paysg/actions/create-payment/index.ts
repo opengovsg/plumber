@@ -1,55 +1,14 @@
-import type { IJSONObject, IRawAction } from '@plumber/types'
+import type { IRawAction } from '@plumber/types'
 
-import getApiBaseUrl from '../../common/get-api-base-url'
+import { ZodError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
 
-type CreatePaymentPayload = {
-  reference_id: string
-  payer_name: string
-  payer_address: string
-  payer_identifier: string
-  payer_email: string
-  description: string
-  amount_in_cents: number
-  metadata: Record<string, string>
-  due_date?: string
-  return_url?: string
-}
+import { VALIDATION_ERROR_SOLUTION } from '@/apps/postman/common/constants'
+import { generateStepError } from '@/helpers/generate-step-error'
 
-function constructPayload(parameters: IJSONObject): CreatePaymentPayload {
-  const payload: CreatePaymentPayload = {
-    reference_id: parameters.referenceId as string,
-    payer_name: parameters.payerName as string,
-    payer_address: parameters.payerAddress as string,
-    payer_identifier: parameters.payerIdentifier as string,
-    payer_email: parameters.payerEmail as string,
-    description: parameters.description as string,
-    amount_in_cents: Number(parameters.paymentAmountCents),
-    metadata: Object.create(null),
-  }
+import { getApiBaseUrl } from '../../common/api'
 
-  if (parameters.dueDate) {
-    payload['due_date'] = parameters.dueDate as string
-  }
-
-  if (parameters.returnUrl) {
-    payload['return_url'] = parameters.returnUrl as string
-  }
-
-  // FIXME (ogp-weeloong): by default, we populate metadata with 1 empty row
-  // even if its optional, for UX reasons. for now, account for this case in
-  // code until we make the necessary UX changes to not need that 1 empty row.
-  const metadata = ((parameters.metadata as IJSONObject[] | null) ?? []).filter(
-    (metadatum) => !!metadatum.key,
-  )
-  if (metadata?.length) {
-    for (const metadatum of metadata) {
-      const { key, value } = metadatum as { key: string; value: string }
-      payload['metadata'][key] = value
-    }
-  }
-
-  return payload
-}
+import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Create Payment',
@@ -108,7 +67,8 @@ const action: IRawAction = {
     },
     {
       label: 'Due Date',
-      description: 'Must be formatted as DD-MM-YYYY (e.g. 31-DEC-2023)',
+      description:
+        'Must be formatted in "2-digit-day month 4-digit-year" format (e.g. 02 Nov 2023)',
       key: 'dueDate',
       type: 'string' as const,
       required: false,
@@ -149,20 +109,37 @@ const action: IRawAction = {
     const apiKey = $.auth.data.apiKey as string
     const baseUrl = getApiBaseUrl(apiKey)
     const paymentServiceId = $.auth.data.paymentServiceId as string
-    const payload = constructPayload($.step.parameters)
 
-    const response = await $.http.post(
-      `/v1/payment-services/${paymentServiceId}/payments`,
-      payload,
-      {
-        baseURL: baseUrl,
-        headers: {
-          'x-api-key': apiKey,
+    try {
+      const payload = requestSchema.parse($.step.parameters)
+
+      const rawResponse = await $.http.post(
+        `/v1/payment-services/${paymentServiceId}/payments`,
+        payload,
+        {
+          baseURL: baseUrl,
+          headers: {
+            'x-api-key': apiKey,
+          },
         },
-      },
-    )
+      )
+      const response = responseSchema.parse(rawResponse.data)
 
-    $.setActionItem({ raw: { ...response.data } })
+      $.setActionItem({ raw: response })
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const firstError = fromZodError(error).details[0]
+
+        throw generateStepError(
+          `${firstError.message} at "${firstError.path}"`,
+          VALIDATION_ERROR_SOLUTION,
+          $.step.position,
+          $.app.name,
+        )
+      }
+
+      throw error
+    }
   },
 }
 
