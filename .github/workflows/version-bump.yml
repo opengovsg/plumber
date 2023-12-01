@@ -41,7 +41,7 @@ jobs:
           git config user.name "Version bump[bot]"
           git commit -m "${{ steps.check-release.outputs.new_version }}"
           git tag ${{ steps.check-release.outputs.new_version }}
-          git push
+          git push --force
           git push --tags
 
       - name: Comment on PR
