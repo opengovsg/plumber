@@ -2,7 +2,6 @@ import type {
   IAction,
   IBaseTrigger,
   IStep,
-  IStepError,
   ISubstep,
   ITrigger,
   ITriggerInstructions,
@@ -14,26 +13,14 @@ import { Box } from '@chakra-ui/react'
 import LoadingButton from '@mui/lab/LoadingButton'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
+import ErrorResult from 'components/ErrorResult'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
 import { extractVariables, filterVariables } from 'helpers/variables'
 
-import ErrorResult from './ErrorResult'
-import GenericErrorResult from './GenericErrorResult'
 import TestResult from './TestResult'
-
-const isStepError = (value: IStepError): value is IStepError => {
-  // Type guard for IStepError
-  return (
-    value &&
-    !!value.name &&
-    !!value.solution &&
-    !!value.position &&
-    !!value.appName
-  )
-}
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -134,18 +121,13 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
           {!!error?.graphQLErrors?.length && (
             <Box w="100%">
               {serializeErrors(error.graphQLErrors).map(
-                (error: any, index: number) =>
-                  isStepError(error.errorDetails) ? (
-                    <ErrorResult
-                      key={index}
-                      errorDetails={error.errorDetails}
-                    />
-                  ) : (
-                    <GenericErrorResult
-                      key={index}
-                      errorDetails={error.errorDetails}
-                    />
-                  ),
+                (error: any, index: number) => (
+                  <ErrorResult
+                    key={index}
+                    errorDetails={error.errorDetails}
+                    isTestRun={true}
+                  />
+                ),
               )}
             </Box>
           )}

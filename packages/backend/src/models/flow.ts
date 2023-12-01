@@ -156,9 +156,7 @@ class Flow extends Base {
     )
 
     const actionFileFlags = await Promise.all(
-      actionSteps.map(
-        async (step) => await doesActionProcessFiles(step.appKey, step.key),
-      ),
+      actionSteps.map(async (step) => await doesActionProcessFiles(step)),
     )
 
     return actionFileFlags.some(Boolean)

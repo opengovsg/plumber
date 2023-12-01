@@ -16,6 +16,7 @@ import {
 } from '@chakra-ui/react'
 import { Tab, Tabs } from '@opengovsg/design-system-react'
 import AppIcon from 'components/AppIcon'
+import ErrorResult from 'components/ErrorResult'
 import JSONViewer from 'components/JSONViewer'
 import { GET_APP } from 'graphql/queries/get-app'
 
@@ -120,9 +121,14 @@ export default function ExecutionStep({
               <TabPanel>
                 <JSONViewer data={executionStep.dataOut} />
               </TabPanel>
-              <TabPanel>
-                <JSONViewer data={executionStep.errorDetails} />
-              </TabPanel>
+              {hasError && (
+                <TabPanel>
+                  <ErrorResult
+                    errorDetails={executionStep.errorDetails}
+                    isTestRun={false}
+                  />
+                </TabPanel>
+              )}
             </TabPanels>
           </Tabs>
         </Box>

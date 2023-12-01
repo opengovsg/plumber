@@ -7,10 +7,11 @@ import JSONViewer from 'components/JSONViewer'
 
 interface GenericErrorResultProps {
   errorDetails: IJSONObject
+  isTestRun: boolean
 }
 
 export default function GenericErrorResult(props: GenericErrorResultProps) {
-  const { errorDetails } = props
+  const { errorDetails, isTestRun } = props
   const [isOpen, setIsOpen] = useState(false)
   const toggleDropdown = useCallback(() => {
     setIsOpen((value) => !value)
@@ -24,8 +25,10 @@ export default function GenericErrorResult(props: GenericErrorResultProps) {
         </Text>
 
         <Text textStyle="body-1">
-          Check if you have configured the steps above correctly and retest. If
-          this error still persists, contact us at support@plumber.gov.sg.{' '}
+          {`Check if you have configured ${
+            isTestRun ? 'the steps above' : 'this step'
+          } correctly and retest. If
+          this error still persists, contact us at support@plumber.gov.sg. `}
           <Button
             onClick={toggleDropdown}
             variant="link"

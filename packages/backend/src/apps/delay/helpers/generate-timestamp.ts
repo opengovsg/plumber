@@ -11,7 +11,9 @@ export default function generateTimestamp(date: string, time: string): number {
   // check through our accepted formats
   for (const datetimeFormat of VALID_DATETIME_FORMATS) {
     // check both en-SG and en-US because Sept accepted for SG but Sep accepted for US
-    let datetime = DateTime.fromFormat(datetimeString, datetimeFormat)
+    let datetime = DateTime.fromFormat(datetimeString, datetimeFormat, {
+      locale: 'en-SG',
+    })
     if (datetime.isValid) {
       return datetime.toMillis()
     }

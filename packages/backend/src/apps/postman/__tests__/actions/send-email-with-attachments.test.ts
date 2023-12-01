@@ -43,7 +43,7 @@ describe('send email with attachments', () => {
         parameters: {
           destinationEmail: 'recipient@example.com ',
           subject: ' asd',
-          body: 'hello\nhihi',
+          body: '<p>hello</p><p>hihi</p>',
           replyTo: 'replyto@example.com',
           senderName: 'sender name',
           attachments: [
@@ -51,15 +51,13 @@ describe('send email with attachments', () => {
             's3:my-bucket:wxyz/file-2.png',
           ],
         },
+        position: 2,
+      },
+      app: {
+        name: 'Email by Postman',
       },
     } as unknown as IGlobalVariable
-  })
 
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it("invokes Postman's API with corresponding attachment data", async () => {
     mocks.getObjectFromS3Id
       .mockResolvedValueOnce({
         name: 'file 1.txt',
@@ -69,13 +67,20 @@ describe('send email with attachments', () => {
         name: 'file-2.png',
         data: '1111',
       })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("invokes Postman's API with corresponding attachment data", async () => {
     await sendEmailWithAttachments.run($)
     expect(mocks.sendTransactionalEmails).toHaveBeenLastCalledWith(
       $.http,
       ['recipient@example.com'],
       {
         subject: 'asd',
-        body: 'hello<br>hihi',
+        body: '<p>hello</p><p>hihi</p>',
         replyTo: 'replyto@example.com',
         senderName: 'sender name',
         attachments: [
@@ -89,6 +94,14 @@ describe('send email with attachments', () => {
           },
         ],
       },
+    )
+  })
+
+  it('should throw step error for invalid parameters', async () => {
+    $.step.parameters.subject = ''
+    // throw partial step error message
+    await expect(sendEmailWithAttachments.run($)).rejects.toThrowError(
+      'Empty subject',
     )
   })
 })

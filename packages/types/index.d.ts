@@ -217,12 +217,18 @@ export interface IFieldMultiRow extends IBaseField {
   subFields: IField[]
 }
 
+export interface IFieldRichText extends IBaseField {
+  type: 'rich-text'
+  value?: string
+}
+
 export type IField =
   | IFieldDropdown
   | IFieldText
   | IFieldMultiline
   | IFieldMultiSelect
   | IFieldMultiRow
+  | IFieldRichText
 
 export interface IAuthenticationStepField {
   name: string
@@ -407,7 +413,7 @@ export interface IBaseAction {
    * For optimizing our S3 storage; we won't store files into our S3 unless
    * the pipe has at least 1 action which processes files.
    */
-  doesFileProcessing?: boolean
+  doesFileProcessing?(step: Step): boolean
 
   /**
    * Specifies if this action "groups" steps after it, and only allows adding
