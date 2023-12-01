@@ -1,6 +1,6 @@
 export enum PaySgEnvironment {
-  Staging,
-  Live,
+  Staging = 'staging',
+  Live = 'live',
 }
 
 const STAGING_ENV_API_KEY_PREFIX = 'paysg_stag_'

@@ -22,11 +22,10 @@ export default async function verifyCredentials(
       break
   }
 
-  if (($.auth.data.screenName as string).endsWith(labelSuffix)) {
-    return
-  }
-
   await $.auth.set({
-    screenName: `${authData.screenName}${labelSuffix}`,
+    screenName: !($.auth.data.screenName as string).endsWith(labelSuffix)
+      ? `${authData.screenName}${labelSuffix}`
+      : undefined,
+    env,
   })
 }

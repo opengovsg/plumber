@@ -5,25 +5,36 @@ import { zodParser as plumberDate } from '@/helpers/internal-date-format'
 
 export const requestSchema = z
   .object({
-    referenceId: z.string().trim().min(1, { message: 'Empty reference ID' }),
-    payerName: z.string().trim().min(1, { message: 'Empty payer name' }),
-    payerAddress: z.string().trim().min(1, { message: 'Empty payer address' }),
+    referenceId: z
+      .string()
+      .trim()
+      .min(1, { message: 'Empty reference ID' })
+      .max(255, { message: 'Reference ID cannot be more than 255 characters' }),
+    payerName: z
+      .string()
+      .trim()
+      .min(1, { message: 'Empty payer name' })
+      .max(255, { message: 'Payer name cannot be more than 255 characters' }),
+    payerAddress: z
+      .string()
+      .trim()
+      .min(1, { message: 'Empty payer address' })
+      .max(255, {
+        message: 'Payer address cannot be more than 255 characters',
+      }),
     payerIdentifier: z
       .string()
       .trim()
-      .min(1, { message: 'Empty payer identifier' }),
+      .min(1, { message: 'Empty payer identifier' })
+      .max(10, {
+        message: 'Payer identifier cannot be more than 10 characters',
+      }),
     payerEmail: z
       .string()
       .trim()
+      .min(1, { message: 'Empty payer email' })
+      .max(255, { message: 'Payer email cannot be more than 255 characters' })
       .transform((value, context) => {
-        if (value.length === 0) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Empty payer email',
-          })
-          return z.NEVER
-        }
-
         if (!emailValidator.validate(value)) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
@@ -34,7 +45,11 @@ export const requestSchema = z
 
         return value
       }),
-    description: z.string().trim().min(1, { message: 'Empty description' }),
+    description: z
+      .string()
+      .trim()
+      .min(1, { message: 'Empty description' })
+      .max(500, { message: 'Payer email cannot be more than 500 characters' }),
     paymentAmountCents: z
       .string()
       .trim()
@@ -42,7 +57,10 @@ export const requestSchema = z
       .pipe(
         z.coerce
           .number()
-          .min(1, { message: 'Payment amount must be larger than 0' }),
+          .min(50, { message: 'Payment amount must be larger than 50 cents' })
+          .max(99999999, {
+            message: 'Payment amount cannot be larger than $999999.99',
+          }),
       ),
 
     //
@@ -55,11 +73,23 @@ export const requestSchema = z
           // row even if its optional, for UX reasons. For now, account for this
           // case in code until we make the necessary UX changes to not need
           // that 1 empty row.
-          key: z.string().trim().nullish(),
-          value: z.string().trim().nullish(),
+          key: z
+            .string()
+            .trim()
+            .max(40, {
+              message: 'metadata key cannot be more than 40 characters',
+            })
+            .nullish(),
+          value: z
+            .string()
+            .trim()
+            .max(255, {
+              message: 'metadata value cannot be more than 255 characters',
+            })
+            .nullish(),
         }),
       )
-      .max(10)
+      .max(10, 'cannot have more than 10 metadata entries')
       .transform((rawMetadata, context) => {
         // Again.. to remove this when we fix the UX issue.
         const metadata = rawMetadata.filter((metadatum) => !!metadatum.key)
