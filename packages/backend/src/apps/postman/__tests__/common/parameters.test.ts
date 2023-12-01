@@ -38,17 +38,16 @@ describe('postman transactional email schema zod validation', () => {
     ])
   })
 
-  it('should invalidate empty email strings or strings with only whitespaces', () => {
-    const expectedErrorMessage = 'Empty recipient email'
+  it('should validate empty email strings or strings with only whitespaces', () => {
     validPayload.destinationEmail = '   '
     const result = transactionalEmailSchema.safeParse(validPayload)
-    assert(result.success === false) // using assert here for type assertion
-    expect(result.error?.errors[0].message).toEqual(expectedErrorMessage)
+    assert(result.success === true) // using assert here for type assertion
+    expect(result.data.destinationEmail).toEqual([])
 
     validPayload.destinationEmail = ''
     const result2 = transactionalEmailSchema.safeParse(validPayload)
-    assert(result2.success === false) // using assert here for type assertion
-    expect(result.error?.errors[0].message).toEqual(expectedErrorMessage)
+    assert(result2.success === true) // using assert here for type assertion
+    expect(result2.data.destinationEmail).toEqual([])
   })
 
   it('should allow for empty values', () => {
