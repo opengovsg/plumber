@@ -33,7 +33,7 @@ describe('create payment', () => {
           referenceId: 'test-reference-id',
           payerName: 'test-name',
           payerAddress: 'test-address',
-          payerIdentifier: 'test-identifier',
+          payerIdentifier: 'test-id',
           payerEmail: 'test@email.local',
           description: 'test-description',
           paymentAmountCents: '12345',
@@ -98,7 +98,7 @@ describe('create payment', () => {
         reference_id: 'test-reference-id',
         payer_name: 'test-name',
         payer_address: 'test-address',
-        payer_identifier: 'test-identifier',
+        payer_identifier: 'test-id',
         payer_email: 'test@email.local',
         description: 'test-description',
         amount_in_cents: 12345, // Converted to number
