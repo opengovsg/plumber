@@ -6,6 +6,7 @@ import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
 import RichTextEditor from 'components/RichTextEditor'
+import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
 
 export type InputCreatorProps = {
@@ -32,8 +33,10 @@ export default function InputCreator(
     key: name,
     label,
     required,
+    readOnly = false,
     value,
     description,
+    clickToCopy,
     variables,
     type,
     placeholder,
@@ -69,7 +72,7 @@ export default function InputCreator(
     )
   }
 
-  if (type === 'rich-text' || type === 'string' || type === 'multiline') {
+  if (type === 'rich-text') {
     return (
       <RichTextEditor
         name={computedName}
@@ -79,7 +82,40 @@ export default function InputCreator(
         disabled={disabled}
         placeholder={placeholder}
         variablesEnabled={variables}
-        isRich={type === 'rich-text'}
+        isRich
+      />
+    )
+  }
+
+  if (type === 'string' || type === 'multiline') {
+    if (variables) {
+      return (
+        <RichTextEditor
+          name={computedName}
+          required={required}
+          label={label}
+          description={description}
+          disabled={disabled}
+          placeholder={placeholder}
+          variablesEnabled
+        />
+      )
+    }
+
+    return (
+      <TextField
+        defaultValue={value}
+        required={required}
+        placeholder={placeholder}
+        readOnly={readOnly || disabled}
+        name={computedName}
+        size="small"
+        label={label}
+        fullWidth
+        multiline={type === 'multiline'}
+        description={description}
+        clickToCopy={clickToCopy}
+        autoComplete={schema.autoComplete}
       />
     )
   }
