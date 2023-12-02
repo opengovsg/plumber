@@ -10,7 +10,7 @@ import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 
-type ProcessActionOptions = {
+interface ProcessActionOptions {
   flowId: string
   executionId: string
   stepId: string
@@ -19,7 +19,31 @@ type ProcessActionOptions = {
   metadata?: NextStepMetadata
 }
 
-export const processAction = async (options: ProcessActionOptions) => {
+interface NextStepInfo {
+  step: Step
+  metadata?: NextStepMetadata
+}
+
+interface ExecutionInfo {
+  execution: Execution
+  executionStep: ExecutionStep
+  error?: unknown // could be any thrown error.
+}
+
+interface ProcessActionResult {
+  flowId: Flow['id']
+  stepId: Step['id']
+  executionInfo: ExecutionInfo
+
+  /**
+   * This is null if there is no next step and pipe should terminate.
+   */
+  nextStepInfo: NextStepInfo | null
+}
+
+export const processAction = async (
+  options: ProcessActionOptions,
+): Promise<ProcessActionResult> => {
   const {
     flowId,
     stepId,
@@ -106,7 +130,8 @@ export const processAction = async (options: ProcessActionOptions) => {
       jobId,
     })
 
-  let nextStep = null
+  // Determine and fill up info for next step if needed.
+  let nextStep: Step | null = null
   switch (runResult.nextStep?.command) {
     case 'jump-to-step':
       nextStep = await flow
@@ -115,20 +140,27 @@ export const processAction = async (options: ProcessActionOptions) => {
         .throwIfNotFound()
       break
     case 'stop-execution':
-      // Nothing to do, nextStep is already null.
+      // Nothing to do, nextStepInfo is already null.
       break
     default:
       nextStep = await step.getNextStep()
   }
 
+  const nextStepInfo: NextStepInfo | null = nextStep
+    ? {
+        step: nextStep,
+        metadata: runResult.nextStepMetadata,
+      }
+    : null
+
   return {
     flowId,
     stepId,
-    executionId,
-    executionStep,
-    computedParameters,
-    nextStep,
-    nextStepMetadata: runResult.nextStepMetadata,
-    executionError,
+    executionInfo: {
+      execution,
+      executionStep,
+      error: executionError,
+    },
+    nextStepInfo,
   }
 }

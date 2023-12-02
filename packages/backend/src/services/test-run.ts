@@ -68,22 +68,24 @@ const testRun = async (options: TestRunOptions) => {
   let nextStepId = actionSteps[0]?.id
 
   for (const actionStep of actionSteps) {
-    const { executionStep: actionExecutionStep, nextStep } =
-      await processAction({
-        flowId: flow.id,
-        stepId: actionStep.id,
-        executionId,
-        testRun: true,
-      })
+    const {
+      executionInfo: { executionStep },
+      nextStepInfo,
+    } = await processAction({
+      flowId: flow.id,
+      stepId: actionStep.id,
+      executionId,
+      testRun: true,
+    })
 
-    if (actionExecutionStep.isFailed || actionStep.id === untilStep.id) {
-      return { executionStep: actionExecutionStep }
+    if (executionStep.isFailed || actionStep.id === untilStep.id) {
+      return { executionStep }
     }
 
     // Don't update next step ID if actionStep wouldn't have been run in real
     // life.
     if (actionStep.id === nextStepId) {
-      nextStepId = nextStep?.id
+      nextStepId = nextStepInfo?.step.id
     }
   }
 }

@@ -78,7 +78,9 @@ describe('Action worker', () => {
   describe('Automatic retries with default job options', () => {
     it('does not retry successful executions', async () => {
       mocks.processAction.mockResolvedValueOnce({
-        executionStep: { isFailed: false, nextStep: null },
+        executionInfo: {
+          executionStep: { isFailed: false, nextStep: null },
+        },
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
@@ -102,7 +104,9 @@ describe('Action worker', () => {
 
     it('retries retriable executions using our custom backoff strategy', async () => {
       mocks.processAction.mockResolvedValueOnce({
-        executionStep: { isFailed: true },
+        executionInfo: {
+          executionStep: { isFailed: true },
+        },
       })
       mocks.handleErrorAndThrow.mockImplementationOnce(() => {
         throw new Error('retriable error')
@@ -131,7 +135,9 @@ describe('Action worker', () => {
 
     it('does not retry non-executable executions', async () => {
       mocks.processAction.mockResolvedValueOnce({
-        executionStep: { isFailed: true },
+        executionInfo: {
+          executionStep: { isFailed: true },
+        },
       })
       mocks.handleErrorAndThrow.mockImplementationOnce(() => {
         throw new UnrecoverableError('not retriable error')
