@@ -271,12 +271,10 @@ export interface IApp {
   description?: string
 }
 
-export type TBeforeRequest = {
-  (
-    $: IGlobalVariable,
-    requestConfig: AxiosRequestConfig,
-  ): Promise<AxiosRequestConfig>
-}
+export type TBeforeRequest = (
+  $: IGlobalVariable,
+  requestConfig: AxiosRequestConfig,
+) => Promise<AxiosRequestConfig>
 
 export interface DynamicDataOutput {
   data: {
