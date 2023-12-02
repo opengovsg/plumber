@@ -6,6 +6,10 @@ import logger from './logger'
 
 export const INITIAL_DELAY_MS = 3000
 
+export function applyJitter(delay: number): number {
+  return delay + Math.round(Math.random() * delay)
+}
+
 function computeInitialDelay(err: Error): number {
   if (!(err instanceof RetriableError)) {
     logger.error('Triggered BullMQ retry without RetriableError', {
@@ -21,7 +25,7 @@ function computeInitialDelay(err: Error): number {
       Math.max(INITIAL_DELAY_MS, err.delayInMs)
 }
 
-export const exponentialBackoffWithJitter: BackoffStrategy = function (
+export const exponentialBackoffWithJitterStrategy: BackoffStrategy = function (
   attemptsMade: number,
   _type: string,
   err: Error,
@@ -40,5 +44,5 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   const initialDelay = computeInitialDelay(err)
 
   const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay
-  return prevFullDelay + Math.round(Math.random() * prevFullDelay)
+  return applyJitter(prevFullDelay)
 }

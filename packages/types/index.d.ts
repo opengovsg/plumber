@@ -389,6 +389,7 @@ export interface IActionRunResult {
     | { command: 'jump-to-step'; stepId: IStep['id'] }
     | { command: 'stop-execution' }
   nextStepMetadata?: NextStepMetadata
+  nextStepDelayMs?: number
 }
 
 export interface IActionOutput {

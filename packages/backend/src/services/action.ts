@@ -22,6 +22,7 @@ interface ProcessActionOptions {
 interface NextStepInfo {
   step: Step
   metadata?: NextStepMetadata
+  delayMs: number | null
 }
 
 interface ExecutionInfo {
@@ -150,6 +151,7 @@ export const processAction = async (
     ? {
         step: nextStep,
         metadata: runResult.nextStepMetadata,
+        delayMs: runResult.nextStepDelayMs,
       }
     : null
 

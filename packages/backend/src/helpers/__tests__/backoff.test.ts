@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
 
-import { exponentialBackoffWithJitter, INITIAL_DELAY_MS } from '../backoff'
+import {
+  exponentialBackoffWithJitterStrategy,
+  INITIAL_DELAY_MS,
+} from '../backoff'
 
 const mocks = vi.hoisted(() => ({
   logError: vi.fn(),
@@ -34,14 +37,14 @@ describe('Backoff', () => {
       })
       vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
-      expect(exponentialBackoffWithJitter(1, null, err)).toEqual(
+      expect(exponentialBackoffWithJitterStrategy(1, null, err)).toEqual(
         expectedBaseDelay + expectedBaseDelay / 2,
       )
-      expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+      expect(exponentialBackoffWithJitterStrategy(2, null, err)).toEqual(
         expectedBaseDelay * 2 /* Full delay for 1st retry */ +
           expectedBaseDelay /* 50% of full delay*/,
       )
-      expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+      expect(exponentialBackoffWithJitterStrategy(3, null, err)).toEqual(
         expectedBaseDelay * 4 /* Full delay for 2nd retry */ +
           expectedBaseDelay * 2 /* 50% of full delay*/,
       )
@@ -63,16 +66,16 @@ describe('Backoff', () => {
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
 
-      expect(exponentialBackoffWithJitter(1, null, err)).toEqual(
+      expect(exponentialBackoffWithJitterStrategy(1, null, err)).toEqual(
         expectedBaseDelay,
       )
-      expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+      expect(exponentialBackoffWithJitterStrategy(2, null, err)).toEqual(
         expectedBaseDelay * 2,
       )
-      expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+      expect(exponentialBackoffWithJitterStrategy(3, null, err)).toEqual(
         expectedBaseDelay * 4,
       )
-      expect(exponentialBackoffWithJitter(4, null, err)).toEqual(
+      expect(exponentialBackoffWithJitterStrategy(4, null, err)).toEqual(
         expectedBaseDelay * 8,
       )
     },
@@ -85,11 +88,13 @@ describe('Backoff', () => {
     })
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
-    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(INITIAL_DELAY_MS)
-    expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+    expect(exponentialBackoffWithJitterStrategy(1, null, err)).toEqual(
+      INITIAL_DELAY_MS,
+    )
+    expect(exponentialBackoffWithJitterStrategy(2, null, err)).toEqual(
       INITIAL_DELAY_MS * 2,
     )
-    expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+    expect(exponentialBackoffWithJitterStrategy(3, null, err)).toEqual(
       INITIAL_DELAY_MS * 4,
     )
   })
@@ -98,11 +103,13 @@ describe('Backoff', () => {
     const err = new Error('test error')
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
-    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(INITIAL_DELAY_MS)
-    expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+    expect(exponentialBackoffWithJitterStrategy(1, null, err)).toEqual(
+      INITIAL_DELAY_MS,
+    )
+    expect(exponentialBackoffWithJitterStrategy(2, null, err)).toEqual(
       INITIAL_DELAY_MS * 2,
     )
-    expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+    expect(exponentialBackoffWithJitterStrategy(3, null, err)).toEqual(
       INITIAL_DELAY_MS * 4,
     )
     expect(mocks.logError).toBeCalled()
