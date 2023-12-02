@@ -39,14 +39,16 @@ describe('Delay for action', () => {
     vi.restoreAllMocks()
   })
 
-  it('returns void if delay for has a valid configuration of unit and value', async () => {
+  it('configures next step delay with user-provided unit and value', async () => {
     $.step.parameters = {
       delayForUnit: DELAY_UNIT,
       delayForValue: DELAY_VALUE,
     }
 
     const result = await delayForAction.run($)
-    expect(result).toBeFalsy()
+    expect(result).toEqual({
+      nextStepDelayMs: 60 * 1000,
+    })
     expect(mocks.setActionItem).toBeCalledWith({
       raw: { delayForUnit: DELAY_UNIT, delayForValue: DELAY_VALUE },
     })
