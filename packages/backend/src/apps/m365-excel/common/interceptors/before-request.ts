@@ -64,7 +64,10 @@ const rateLimitCheck: TBeforeRequest = async function ($, requestConfig) {
         event: 'm365-internally-rate-limited',
         executionId: $.execution?.id ?? 'Test run',
       })
-      throw new M365RetryStepError('Reached internal M365 rate limit')
+      throw new M365RetryStepError(
+        'Reached internal M365 rate limit',
+        error.msBeforeNext,
+      )
     }
 
     throw error

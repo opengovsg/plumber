@@ -16,7 +16,7 @@ import { worker } from '@/workers/action'
 
 const mocks = vi.hoisted(() => ({
   processAction: vi.fn(),
-  exponentialBackoffWithJitter: vi.fn(() => 0),
+  exponentialBackoffWithJitterStrategy: vi.fn(() => 0),
   handleErrorAndThrow: vi.fn(),
 }))
 
@@ -52,7 +52,8 @@ vi.mock('@/helpers/actions', () => ({
 }))
 
 vi.mock('@/helpers/backoff', () => ({
-  exponentialBackoffWithJitter: mocks.exponentialBackoffWithJitter,
+  exponentialBackoffWithJitterStrategy:
+    mocks.exponentialBackoffWithJitterStrategy,
 }))
 
 describe('Action worker', () => {
@@ -99,7 +100,7 @@ describe('Action worker', () => {
       )
       await jobProcessed
 
-      expect(mocks.exponentialBackoffWithJitter).not.toBeCalled()
+      expect(mocks.exponentialBackoffWithJitterStrategy).not.toBeCalled()
     })
 
     it('retries retriable executions using our custom backoff strategy', async () => {
@@ -130,7 +131,7 @@ describe('Action worker', () => {
       )
       await jobProcessed
 
-      expect(mocks.exponentialBackoffWithJitter).toBeCalled()
+      expect(mocks.exponentialBackoffWithJitterStrategy).toBeCalled()
     })
 
     it('does not retry non-executable executions', async () => {
@@ -162,7 +163,7 @@ describe('Action worker', () => {
       await jobProcessed
 
       // Should not be called, since it was not retried.
-      expect(mocks.exponentialBackoffWithJitter).not.toBeCalled()
+      expect(mocks.exponentialBackoffWithJitterStrategy).not.toBeCalled()
     })
   })
 })
