@@ -8,7 +8,7 @@ import logger from '@/helpers/logger'
 import { MS_GRAPH_OAUTH_BASE_URL } from '../constants'
 import { getAccessToken } from '../oauth/token-cache'
 import { rateLimiter } from '../rate-limiter'
-import { M365RetryStepError } from '../retry-step'
+import { M365RetryStepError } from '../request-safety-net'
 
 // This explicitly overcounts - e.g we will log if the request times out, even
 // we can't confirm that it reached Microsoft. The intent is to assume the worst

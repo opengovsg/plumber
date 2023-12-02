@@ -1,6 +1,6 @@
 import type { IJSONObject, IRawAction } from '@plumber/types'
 
-import { runWithM365Retry } from '../../common/retry-step'
+import { runWithM365RequestSafetyNet } from '../../common/request-safety-net'
 import WorkbookSession from '../../common/workbook-session'
 
 interface TableInfo {
@@ -125,7 +125,7 @@ const action: IRawAction = {
   ],
 
   async run($) {
-    return await runWithM365Retry($, async () => {
+    return await runWithM365RequestSafetyNet($, async () => {
       const { fileId, tableId } = $.step.parameters
       const columnValues =
         ($.step.parameters.columnValues as IJSONObject[]) ?? []

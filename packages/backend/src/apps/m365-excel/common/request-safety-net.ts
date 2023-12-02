@@ -1,7 +1,9 @@
 import { IBaseAction, IGlobalVariable } from '@plumber/types'
 
+import HttpError from '@/errors/http'
 import { applyJitter } from '@/helpers/backoff'
 import { generateStepError } from '@/helpers/generate-step-error'
+import logger from '@/helpers/logger'
 
 /**
  * Internal to M365 actions only; this should never pop up in our logs for
@@ -35,15 +37,14 @@ type TestRunResult = ReturnType<NonNullable<IBaseAction['testRun']>>
 /**
  * Helper HOC
  */
-export async function runWithM365Retry<T extends () => RunResult>(
+export async function runWithM365RequestSafetyNet<T extends () => RunResult>(
   $: IGlobalVariable,
   run: T,
 ): RunResult
-export async function runWithM365Retry<T extends () => TestRunResult>(
-  $: IGlobalVariable,
-  run: T,
-): TestRunResult
-export async function runWithM365Retry<
+export async function runWithM365RequestSafetyNet<
+  T extends () => TestRunResult,
+>($: IGlobalVariable, run: T): TestRunResult
+export async function runWithM365RequestSafetyNet<
   T extends () => RunResult | TestRunResult,
 >($: IGlobalVariable, run: T): RunResult | TestRunResult {
   try {
@@ -68,7 +69,18 @@ export async function runWithM365Retry<
           nextStepDelayMs: applyJitter(error.retryAfterMs),
         }
       }
+    } else if (error instanceof HttpError && error.response.status === 429) {
+      // A 429 response is considered a SEV-2+ incident for some tenants; log it
+      // explicitly so that we can easily trigger incident creation from DD.
+      logger.error('Received HTTP 429 from MS Graph', {
+        event: 'ms-graph-http-429',
+        tenant: $.auth?.data?.tenantKey as string,
+        flowId: $.flow?.id,
+        stepId: $.step?.id,
+        executionId: $.execution?.id,
+      })
     }
+
     throw error
   }
 }
