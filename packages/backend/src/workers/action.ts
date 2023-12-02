@@ -47,37 +47,35 @@ export const worker = new Worker(
 
     const {
       flowId,
-      executionId,
-      nextStep,
-      executionStep,
-      nextStepMetadata,
-      executionError,
-    } = await processAction({ ...jobData, jobId: job.id }).catch(
-      async (err) => {
-        // this happens when the prerequisite steps for the action fails (e.g. db error, missing execution, flow, step, etc...)
-        // in such cases, we do not want to retry
-        await Execution.setStatus(jobData.executionId, 'failure')
-        throw new UnrecoverableError(err.message || 'Action failed to execute')
-      },
-    )
+      executionInfo: { execution, executionStep, error: executionError },
+      nextStepInfo,
+    } = await processAction({
+      ...jobData,
+      jobId: job.id,
+    }).catch(async (err) => {
+      // this happens when the prerequisite steps for the action fails (e.g. db error, missing execution, flow, step, etc...)
+      // in such cases, we do not want to retry
+      await Execution.setStatus(jobData.executionId, 'failure')
+      throw new UnrecoverableError(err.message || 'Action failed to execute')
+    })
 
     if (executionStep.isFailed) {
-      await Execution.setStatus(executionId, 'failure')
+      await Execution.setStatus(executionStep.id, 'failure')
       return handleErrorAndThrow(executionStep.errorDetails, executionError)
     }
 
-    if (!nextStep) {
-      await Execution.setStatus(executionId, 'success')
+    if (!nextStepInfo) {
+      await Execution.setStatus(executionStep.id, 'success')
       return
     }
 
-    const jobName = `${executionId}-${nextStep.id}`
+    const jobName = `${executionStep.id}-${nextStepInfo.step.id}`
 
     const jobPayload = {
       flowId,
-      executionId,
-      stepId: nextStep.id,
-      metadata: nextStepMetadata,
+      executionId: execution.id,
+      stepId: nextStepInfo.step.id,
+      metadata: nextStepInfo.metadata,
     }
 
     let jobOptions = DEFAULT_JOB_OPTIONS
