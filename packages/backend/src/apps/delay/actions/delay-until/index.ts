@@ -4,6 +4,8 @@ import { generateStepError } from '@/helpers/generate-step-error'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
 
+import delayUntilAsMilliseconds from './delay-until-as-milliseconds'
+
 const action: IRawAction = {
   name: 'Delay Until',
   key: 'delayUntil',
@@ -58,6 +60,13 @@ const action: IRawAction = {
     }
 
     $.setActionItem({ raw: dataItem })
+
+    return {
+      nextStepDelayMs: delayUntilAsMilliseconds(
+        delayUntilString,
+        delayUntilTimeString,
+      ),
+    }
   },
 }
 

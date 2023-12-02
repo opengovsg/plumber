@@ -10,7 +10,6 @@ import {
   DEFAULT_JOB_OPTIONS,
   MAXIMUM_JOB_ATTEMPTS,
 } from '@/helpers/default-job-configuration'
-import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import { checkErrorEmail, sendErrorEmail } from '@/helpers/generate-error-email'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
@@ -78,18 +77,9 @@ export const worker = new Worker(
       metadata: nextStepInfo.metadata,
     }
 
-    let jobOptions = DEFAULT_JOB_OPTIONS
-
-    if (step.appKey === 'delay') {
-      jobOptions = {
-        ...DEFAULT_JOB_OPTIONS,
-        delay: delayAsMilliseconds(step.key, executionStep.dataOut),
-      }
-    } else if (nextStepInfo.delayMs) {
-      jobOptions = {
-        ...DEFAULT_JOB_OPTIONS,
-        delay: nextStepInfo.delayMs,
-      }
+    const jobOptions = {
+      ...DEFAULT_JOB_OPTIONS,
+      ...(nextStepInfo.delayMs ? { delay: nextStepInfo.delayMs } : {}),
     }
 
     await actionQueue.add(jobName, jobPayload, jobOptions)

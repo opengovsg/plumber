@@ -2,6 +2,10 @@ import { IRawAction } from '@plumber/types'
 
 import { generateStepError } from '@/helpers/generate-step-error'
 
+import delayForAsMilliseconds, {
+  TDelayForUnit,
+} from './delay-for-as-milliseconds'
+
 const action: IRawAction = {
   name: 'Delay For',
   key: 'delayFor',
@@ -63,6 +67,13 @@ const action: IRawAction = {
     }
 
     $.setActionItem({ raw: dataItem })
+
+    return {
+      nextStepDelayMs: delayForAsMilliseconds(
+        delayForUnit as TDelayForUnit,
+        Number(delayForValue),
+      ),
+    }
   },
 }
 
