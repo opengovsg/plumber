@@ -1,4 +1,9 @@
-import { IDataOutMetadatum, IExecutionStep, IJSONObject } from '@plumber/types'
+import {
+  IDataOutMetadata,
+  IDataOutMetadatum,
+  IExecutionStep,
+  IJSONObject,
+} from '@plumber/types'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -16,6 +21,9 @@ describe('new submission trigger', () => {
             answer: 'herp derp',
             fieldType: 'textField',
             order: 1,
+            myInfo: {
+              attr: 'name',
+            },
           },
         },
         verifiedSubmitterInfo: {
@@ -35,6 +43,12 @@ describe('new submission trigger', () => {
       for (const [propName, data] of Object.entries(
         metadata.fields.textFieldId,
       )) {
+        // only myInfo contains IDataOutMetadata instead of IDataOutMetadatum
+        if (propName === 'myInfo') {
+          expect((data as IDataOutMetadata)['attr'].isHidden)
+          continue
+        }
+
         if (['question', 'answer', 'answerArray'].includes(propName)) {
           expect((data as IDataOutMetadatum).isHidden).toBeUndefined()
         } else {
