@@ -1,4 +1,5 @@
 import { StepWithVariables } from 'helpers/variables'
+import { HTMLElement, parse, TextNode } from 'node-html-parser'
 
 export type VariableInfoMap = Map<
   string,
@@ -31,15 +32,12 @@ export function genVariableInfoMap(
   return result
 }
 
-export function substituteOldTemplates(
-  original: string,
+function substituteTemplateStringWithSpan(
+  s: string,
   varInfo: VariableInfoMap,
-): string {
-  if (!original) {
-    return ''
-  }
+): HTMLElement {
   const searchRegex = /({{[^{}]+}})(?!<\/span>)/
-  const nodes = original.split(searchRegex)
+  const nodes = s.split(searchRegex)
   for (const i in nodes) {
     if (!searchRegex.test(nodes[i])) {
       continue
@@ -52,5 +50,36 @@ export function substituteOldTemplates(
       i
     ] = `<span data-type="variable" data-id="${id}" data-label="${label}" data-value="${value}">${nodes[i]}</span>`
   }
-  return nodes.join('')
+  return parse(nodes.join(''))
+}
+function recursiveSubstitute(
+  el: HTMLElement,
+  varInfo: VariableInfoMap,
+): HTMLElement {
+  if (
+    el.getAttribute('data-type') === 'variable' &&
+    el.getAttribute('data-id')
+  ) {
+    // is already a variable span
+    return el
+  }
+  el.childNodes = el.childNodes.map((n) => {
+    if (n instanceof HTMLElement) {
+      return recursiveSubstitute(n, varInfo)
+    } else if (n instanceof TextNode) {
+      return substituteTemplateStringWithSpan(n.textContent, varInfo)
+    }
+    return n
+  })
+  return el
+}
+export function substituteOldTemplates(
+  original: string,
+  varInfo: VariableInfoMap,
+): string {
+  if (!original) {
+    return ''
+  }
+  const originalElem = parse(original)
+  return recursiveSubstitute(originalElem, varInfo).outerHTML
 }
