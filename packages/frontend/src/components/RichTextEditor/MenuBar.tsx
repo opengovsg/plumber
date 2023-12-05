@@ -33,21 +33,43 @@ import { parse } from 'node-html-parser'
 
 import { BareEditor } from '.'
 
+enum MenuLabels {
+  Bold = 'Bold',
+  Italic = 'Italic',
+  Underline = 'Underline',
+  LinkSet = 'Set Link',
+  LinkRemove = 'Remove Link',
+  Heading1 = 'Heading 1',
+  Heading2 = 'Heading 2',
+  Heading3 = 'Heading 3',
+  Heading4 = 'Heading 4',
+  ListBullet = 'Bullet List',
+  ListOrdered = 'Ordered List',
+  ImageAdd = 'Add Image',
+  TableAdd = 'Add Table',
+  ColumnAdd = 'Add Column',
+  ColumnRemove = 'Remove Column',
+  RowAdd = 'Add Row',
+  RowRemove = 'Remove Row',
+  FormatClear = 'Clear Format',
+  Undo = 'Undo',
+  Redo = 'Redo',
+}
 const menuButtons = [
   {
-    label: 'Bold',
+    label: MenuLabels.Bold,
     onClick: (editor: Editor) => editor.chain().focus().toggleBold().run(),
     icon: <RiBold />,
     isActive: (editor: Editor) => editor.isActive('bold'),
   },
   {
-    label: 'Italic',
+    label: MenuLabels.Italic,
     onClick: (editor: Editor) => editor.chain().focus().toggleItalic().run(),
     icon: <RiItalic />,
     isActive: (editor: Editor) => editor.isActive('italic'),
   },
   {
-    label: 'Underline',
+    label: MenuLabels.Underline,
     icon: <RiUnderline />,
     onClick: (editor: Editor) => editor.chain().focus().toggleUnderline().run(),
     isActive: (editor: Editor) => editor.isActive('underline'),
@@ -56,7 +78,7 @@ const menuButtons = [
     label: 'divider',
   },
   {
-    label: 'Set link',
+    label: MenuLabels.LinkSet,
     icon: <RiLink />,
     onClick: (editor: Editor) => {
       const previousUrl = editor.getAttributes('link').href
@@ -84,7 +106,7 @@ const menuButtons = [
     },
   },
   {
-    label: 'Remove link',
+    label: MenuLabels.LinkRemove,
     icon: <RiLinkUnlink />,
     onClick: (editor: Editor) => editor.chain().focus().unsetLink().run(),
   },
@@ -92,49 +114,49 @@ const menuButtons = [
     label: 'divider',
   },
   {
-    label: 'Heading 1',
+    label: MenuLabels.Heading1,
     icon: <LuHeading1 />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleHeading({ level: 1 }).run(),
     isActive: (editor: Editor) => editor.isActive('heading', { level: 1 }),
   },
   {
-    label: 'Heading 2',
+    label: MenuLabels.Heading2,
     icon: <LuHeading2 />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleHeading({ level: 2 }).run(),
     isActive: (editor: Editor) => editor.isActive('heading', { level: 2 }),
   },
   {
-    label: 'Heading 3',
+    label: MenuLabels.Heading3,
     icon: <LuHeading3 />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleHeading({ level: 3 }).run(),
     isActive: (editor: Editor) => editor.isActive('heading', { level: 3 }),
   },
   {
-    label: 'Heading 4',
+    label: MenuLabels.Heading4,
     icon: <LuHeading4 />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleHeading({ level: 4 }).run(),
     isActive: (editor: Editor) => editor.isActive('heading', { level: 4 }),
   },
   {
-    label: 'Bullet List',
+    label: MenuLabels.ListBullet,
     icon: <RiListUnordered />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleBulletList().run(),
     isActive: (editor: Editor) => editor.isActive('bulletList'),
   },
   {
-    label: 'Ordered List',
+    label: MenuLabels.ListOrdered,
     icon: <RiListOrdered />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleOrderedList().run(),
     isActive: (editor: Editor) => editor.isActive('orderedList'),
   },
   {
-    label: 'Add Image',
+    label: MenuLabels.ImageAdd,
     icon: <RiImageFill />,
     onClick: (editor: Editor) => {
       const url = window.prompt('URL')
@@ -148,7 +170,7 @@ const menuButtons = [
     label: 'divider',
   },
   {
-    label: 'Add Table',
+    label: MenuLabels.TableAdd,
     icon: <RiTableLine />,
     onClick: (editor: Editor) =>
       editor
@@ -158,22 +180,22 @@ const menuButtons = [
         .run(),
   },
   {
-    label: 'Add column',
+    label: MenuLabels.ColumnAdd,
     icon: <RiInsertColumnRight />,
     onClick: (editor: Editor) => editor.chain().focus().addColumnAfter().run(),
   },
   {
-    label: 'Remove column',
+    label: MenuLabels.ColumnRemove,
     icon: <RiDeleteColumn />,
     onClick: (editor: Editor) => editor.chain().focus().deleteColumn().run(),
   },
   {
-    label: 'Add row',
+    label: MenuLabels.RowAdd,
     icon: <RiInsertRowBottom />,
     onClick: (editor: Editor) => editor.chain().focus().addRowAfter().run(),
   },
   {
-    label: 'Remove row',
+    label: MenuLabels.RowRemove,
     icon: <RiDeleteRow />,
     onClick: (editor: Editor) => editor.chain().focus().deleteRow().run(),
   },
@@ -181,18 +203,18 @@ const menuButtons = [
     label: 'divider',
   },
   {
-    label: 'Clear Format',
+    label: MenuLabels.FormatClear,
     icon: <RiFormatClear />,
     onClick: (editor: Editor) =>
       editor.chain().focus().clearNodes().unsetAllMarks().run(),
   },
   {
-    label: 'Undo',
+    label: MenuLabels.Undo,
     icon: <RiArrowGoBackLine />,
     onClick: (editor: Editor) => editor.chain().focus().undo().run(),
   },
   {
-    label: 'Redo',
+    label: MenuLabels.Redo,
     icon: <RiArrowGoForwardLine />,
     onClick: (editor: Editor) => editor.chain().focus().redo().run(),
   },
@@ -204,28 +226,28 @@ interface MenuBarProps {
 export const MenuBar = ({ editor }: MenuBarProps) => {
   const [showValueDialog, setShowValueDialog] = useState(false)
   const [dialogValue, setDialogValue] = useState('')
-  const [dialogLabel, setDialogLabel] = useState('')
+  const [dialogLabel, setDialogLabel] = useState<MenuLabels | null>(null)
   const onClickOverrides: { [key: string]: () => void } = {
-    ['Set link']: useCallback(() => {
+    [MenuLabels.LinkSet]: useCallback(() => {
       if (!editor) {
         return
       }
       const previousUrl = editor.getAttributes('link').href
-      setDialogLabel('Set link')
+      setDialogLabel(MenuLabels.LinkSet)
       setDialogValue(previousUrl)
       setShowValueDialog(true)
     }, [editor]),
-    ['Add Image']: useCallback(() => {
+    [MenuLabels.ImageAdd]: useCallback(() => {
       if (!editor) {
         return
       }
-      setDialogLabel('Add Image')
+      setDialogLabel(MenuLabels.ImageAdd)
       setDialogValue('')
       setShowValueDialog(true)
     }, [editor]),
   }
   const dialogOnSubmits: { [key: string]: () => void } = {
-    ['Set link']: useCallback(() => {
+    [MenuLabels.LinkSet]: useCallback(() => {
       if (!editor) {
         return
       }
@@ -251,7 +273,7 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
         .run()
       setShowValueDialog(false)
     }, [editor, dialogValue, setShowValueDialog]),
-    ['Add Image']: useCallback(() => {
+    [MenuLabels.ImageAdd]: useCallback(() => {
       if (!editor) {
         return
       }
@@ -264,8 +286,8 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
     }, [editor, dialogValue]),
   }
   const dialogPlaceholders: { [key: string]: string } = {
-    ['Set link']: 'Enter a full URL with http prefix',
-    ['Add Image']:
+    [MenuLabels.LinkSet]: 'Enter a full URL with http prefix',
+    [MenuLabels.ImageAdd]:
       'Enter direct image link (e.g. https://file.go.gov.sg/clipplumer.png)',
   }
   if (!editor) {
@@ -320,24 +342,26 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
             component="div"
             className="menubar-dialog-content"
           >
-            <Form onSubmit={() => dialogOnSubmits[dialogLabel]()}>
-              <BareEditor
-                // val is in HTML, need to parse back to plain text
-                onChange={(val) => setDialogValue(parse(val).textContent)}
-                initialValue={dialogValue}
-                editable
-                variablesEnabled
-                placeholder={dialogPlaceholders[dialogLabel]}
-              />
-              <LoadingButton
-                type="submit"
-                variant="contained"
-                color="primary"
-                sx={{ boxShadow: 2 }}
-              >
-                Submit
-              </LoadingButton>
-            </Form>
+            {dialogLabel && (
+              <Form onSubmit={() => dialogOnSubmits[dialogLabel]()}>
+                <BareEditor
+                  // val is in HTML, need to parse back to plain text
+                  onChange={(val) => setDialogValue(parse(val).textContent)}
+                  initialValue={dialogValue}
+                  editable
+                  variablesEnabled
+                  placeholder={dialogPlaceholders[dialogLabel]}
+                />
+                <LoadingButton
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  sx={{ boxShadow: 2 }}
+                >
+                  Submit
+                </LoadingButton>
+              </Form>
+            )}
           </DialogContentText>
         </DialogContent>
       </Dialog>
