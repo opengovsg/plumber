@@ -36,7 +36,7 @@ function substituteTemplateStringWithSpan(
   s: string,
   varInfo: VariableInfoMap,
 ): HTMLElement {
-  const searchRegex = /({{[^{}]+}})(?!<\/span>)/
+  const searchRegex = /({{[^{}]+}})/
   const nodes = s.split(searchRegex)
   for (const i in nodes) {
     if (!searchRegex.test(nodes[i])) {
