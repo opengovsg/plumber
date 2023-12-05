@@ -1,5 +1,6 @@
 import './MenuBar.scss'
 
+import { useCallback, useState } from 'react'
 import { LuHeading1, LuHeading2, LuHeading3, LuHeading4 } from 'react-icons/lu'
 import {
   RiArrowGoBackLine,
@@ -19,7 +20,18 @@ import {
   RiTableLine,
   RiUnderline,
 } from 'react-icons/ri'
+import { LoadingButton } from '@mui/lab'
+import {
+  Dialog,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material'
 import { Editor } from '@tiptap/react'
+import Form from 'components/Form'
+import { parse } from 'node-html-parser'
+
+import { BareEditor } from '.'
 
 const menuButtons = [
   {
@@ -190,35 +202,145 @@ interface MenuBarProps {
   editor: Editor | null
 }
 export const MenuBar = ({ editor }: MenuBarProps) => {
+  const [showValueDialog, setShowValueDialog] = useState(false)
+  const [dialogValue, setDialogValue] = useState('')
+  const [dialogLabel, setDialogLabel] = useState('')
+  const onClickOverrides: { [key: string]: () => void } = {
+    ['Set link']: useCallback(() => {
+      if (!editor) {
+        return
+      }
+      const previousUrl = editor.getAttributes('link').href
+      setDialogLabel('Set link')
+      setDialogValue(previousUrl)
+      setShowValueDialog(true)
+    }, [editor]),
+    ['Add Image']: useCallback(() => {
+      if (!editor) {
+        return
+      }
+      setDialogLabel('Add Image')
+      setDialogValue('')
+      setShowValueDialog(true)
+    }, [editor]),
+  }
+  const dialogOnSubmits: { [key: string]: () => void } = {
+    ['Set link']: useCallback(() => {
+      if (!editor) {
+        return
+      }
+      const url = dialogValue
+      // cancelled
+      if (url === null) {
+        return
+      }
+
+      // empty
+      if (url === '') {
+        editor.chain().focus().extendMarkRange('link').unsetLink().run()
+
+        return
+      }
+
+      // update link
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange('link')
+        .setLink({ href: url })
+        .run()
+      setShowValueDialog(false)
+    }, [editor, dialogValue, setShowValueDialog]),
+    ['Add Image']: useCallback(() => {
+      if (!editor) {
+        return
+      }
+      const url = dialogValue
+      if (url === null) {
+        return
+      }
+      editor.chain().focus().setImage({ src: url }).run()
+      setShowValueDialog(false)
+    }, [editor, dialogValue]),
+  }
+  const dialogPlaceholders: { [key: string]: string } = {
+    ['Set link']: 'Enter a full URL with http prefix',
+    ['Add Image']:
+      'Enter direct image link (e.g. https://file.go.gov.sg/clipplumer.png)',
+  }
   if (!editor) {
     return null
   }
 
   return (
-    <div className="editor__header">
-      {menuButtons.map(({ onClick, label, icon, isActive }, index) => {
-        if (!onClick) {
-          return <div className="divider" key={`${label}${index}`} />
-        }
-        return (
-          <button
-            key={`${label}${index}`}
-            title={label}
-            style={{
-              borderRadius: '0.25rem',
-              width: 'auto',
-              minWidth: 0,
-              backgroundColor: isActive?.(editor)
-                ? 'rgba(0,0,0,0.1)'
-                : 'transparent',
-            }}
-            className={`menu-item${isActive?.(editor) ? ' is-active' : ''}`}
-            onClick={() => onClick(editor)}
+    <>
+      <div className="editor__header">
+        {menuButtons.map(({ onClick, label, icon, isActive }, index) => {
+          if (!onClick) {
+            return <div className="divider" key={`${label}${index}`} />
+          }
+          return (
+            <button
+              key={`${label}${index}`}
+              title={label}
+              style={{
+                borderRadius: '0.25rem',
+                width: 'auto',
+                minWidth: 0,
+                backgroundColor: isActive?.(editor)
+                  ? 'rgba(0,0,0,0.1)'
+                  : 'transparent',
+              }}
+              className={`menu-item${isActive?.(editor) ? ' is-active' : ''}`}
+              onClick={() => {
+                if (onClickOverrides && onClickOverrides[label]) {
+                  onClickOverrides[label]()
+                  return
+                }
+                onClick(editor)
+              }}
+            >
+              {icon}
+            </button>
+          )
+        })}
+      </div>
+      <Dialog
+        open={showValueDialog}
+        onClose={() => setShowValueDialog(false)}
+        PaperProps={{
+          // so that the variable selector float can overlay
+          sx: { display: 'inline-table' },
+        }}
+      >
+        <DialogTitle>{dialogLabel}</DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            tabIndex={-1}
+            component="div"
+            className="menubar-dialog-content"
           >
-            {icon}
-          </button>
-        )
-      })}
-    </div>
+            <Form onSubmit={() => dialogOnSubmits[dialogLabel]()}>
+              <BareEditor
+                // val is in HTML, need to parse back to plain text
+                onChange={(val) => setDialogValue(parse(val).textContent)}
+                initialValue={dialogValue}
+                editable
+                variablesEnabled
+                placeholder={dialogPlaceholders[dialogLabel]}
+              />
+              <LoadingButton
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{ boxShadow: 2 }}
+              >
+                Submit
+              </LoadingButton>
+            </Form>
+          </DialogContentText>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
