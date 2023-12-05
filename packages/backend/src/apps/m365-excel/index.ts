@@ -1,6 +1,7 @@
 import type { IApp } from '@plumber/types'
 
 import actions from './actions'
+import auth from './auth'
 
 const app: IApp = {
   name: 'M365 Excel',
@@ -10,6 +11,7 @@ const app: IApp = {
   baseUrl: 'https://www.office.com',
   apiBaseUrl: 'https://graph.microsoft.com',
   primaryColor: '000000',
+  auth,
   actions,
 }
 
