@@ -59,16 +59,16 @@ export const m365TenantInfo = Object.freeze({
     clientThumbprint: process.env.M365_SG_GOVT_CLIENT_THUMBPRINT,
     clientPrivateKey: process.env.M365_SG_GOVT_CLIENT_PRIVATE_KEY,
   }),
-  'govtech-staging': makeTenantInfo({
-    label: 'GovTech Staging',
-    id: process.env.M365_GOVTECH_STAGING_TENANT_ID,
-    sharePointSiteId: process.env.M365_GOVTECH_STAGING_SHAREPOINT_SITE_ID,
-    clientId: process.env.M365_GOVTECH_STAGING_CLIENT_ID,
-    clientThumbprint: process.env.M365_GOVTECH_STAGING_CLIENT_THUMBPRINT,
-    clientPrivateKey: process.env.M365_GOVTECH_STAGING_CLIENT_PRIVATE_KEY,
-  }),
   ...(appConfig.isDev
     ? {
+        'govtech-staging': makeTenantInfo({
+          label: 'GovTech Staging',
+          id: process.env.M365_GOVTECH_STAGING_TENANT_ID,
+          sharePointSiteId: process.env.M365_GOVTECH_STAGING_SHAREPOINT_SITE_ID,
+          clientId: process.env.M365_GOVTECH_STAGING_CLIENT_ID,
+          clientThumbprint: process.env.M365_GOVTECH_STAGING_CLIENT_THUMBPRINT,
+          clientPrivateKey: process.env.M365_GOVTECH_STAGING_CLIENT_PRIVATE_KEY,
+        }),
         'local-dev': makeTenantInfo({
           label: 'Local Development',
           id: process.env.M365_LOCAL_DEV_TENANT_ID,
