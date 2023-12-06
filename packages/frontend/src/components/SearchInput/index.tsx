@@ -21,7 +21,6 @@ export default function SearchInput({
         onChange={onChange}
         defaultValue={searchValue}
         placeholder="Search"
-        autoFocus
       />
       <InputRightElement h="100%">
         <Icon as={BiSearch} style={{ height: 20, width: 20 }} />

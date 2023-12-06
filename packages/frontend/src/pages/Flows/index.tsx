@@ -106,11 +106,7 @@ export default function Flows(): React.ReactElement {
     [],
   )
 
-  if (loading) {
-    return <CircularProgress sx={{ display: 'block', margin: '20px auto' }} />
-  }
-
-  if (!hasFlows && flowName === '') {
+  if (!loading && !hasFlows && flowName === '' && page === 1) {
     return <EmptyFlowsTemplate CreateFlowLink={CreateFlowLink} />
   }
 
@@ -159,6 +155,10 @@ export default function Flows(): React.ReactElement {
         </Grid>
 
         <Divider sx={{ mt: [2, 0], mb: 2 }} />
+
+        {loading && (
+          <CircularProgress sx={{ display: 'block', margin: '20px auto' }} />
+        )}
 
         {!loading &&
           flows?.map((flow) => <FlowRow key={flow.id} flow={flow} />)}
