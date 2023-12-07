@@ -3,16 +3,13 @@ import type { IExecutionStep } from '@plumber/types'
 import * as React from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import Alert from '@mui/material/Alert'
-import AlertTitle from '@mui/material/AlertTitle'
-import Box from '@mui/material/Box'
-import Grid from '@mui/material/Grid'
+import { Box, Grid, Text } from '@chakra-ui/react'
+import { Infobox } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import ExecutionHeader from 'components/ExecutionHeader'
 import ExecutionStep from 'components/ExecutionStep'
 import { GET_EXECUTION } from 'graphql/queries/get-execution'
 import { GET_EXECUTION_STEPS } from 'graphql/queries/get-execution-steps'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 type ExecutionParams = {
   executionId: string
@@ -27,7 +24,6 @@ const getLimitAndOffset = (page: number) => ({
 
 export default function Execution(): React.ReactElement {
   const { executionId } = useParams() as ExecutionParams
-  const formatMessage = useFormatMessage()
   const { data: execution } = useQuery(GET_EXECUTION, {
     variables: { executionId },
   })
@@ -44,17 +40,21 @@ export default function Execution(): React.ReactElement {
     <Container sx={{ py: 3 }}>
       <ExecutionHeader execution={execution?.getExecution} />
 
-      <Grid container item sx={{ mt: 2, mb: [2, 5] }} rowGap={3}>
+      <Grid mt={4} mb={{ base: '16px', sm: '40px' }} rowGap={6}>
         {!loading && !executionSteps?.length && (
-          <Alert severity="warning" sx={{ flex: 1 }}>
-            <AlertTitle sx={{ fontWeight: 700 }}>
-              {formatMessage('execution.noDataTitle')}
-            </AlertTitle>
-
-            <Box sx={{ fontWeight: 400 }}>
-              {formatMessage('execution.noDataMessage')}
-            </Box>
-          </Alert>
+          <>
+            <Infobox variant="warning">
+              <Box>
+                <Text textStyle="subhead-1" mb={1}>
+                  No data
+                </Text>
+                <Text textStyle="body-1">
+                  We successfully ran the execution, but there was no new data
+                  to process.
+                </Text>
+              </Box>
+            </Infobox>
+          </>
         )}
 
         {executionSteps?.map((executionStep, i) => (

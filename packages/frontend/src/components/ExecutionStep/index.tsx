@@ -1,43 +1,51 @@
 import type { IApp, IExecutionStep } from '@plumber/types'
 
 import * as React from 'react'
+import { BiSolidCheckCircle, BiSolidErrorCircle } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import ErrorIcon from '@mui/icons-material/Error'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Tab from '@mui/material/Tab'
-import Tabs from '@mui/material/Tabs'
-import Typography from '@mui/material/Typography'
+import {
+  Box,
+  Card,
+  CardBody,
+  HStack,
+  Icon,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Text,
+} from '@chakra-ui/react'
+import { Tab, Tabs } from '@opengovsg/design-system-react'
 import AppIcon from 'components/AppIcon'
 import ErrorResult from 'components/ErrorResult'
 import JSONViewer from 'components/JSONViewer'
-import TabPanel from 'components/TabPanel'
 import { GET_APP } from 'graphql/queries/get-app'
 
 import RetryButton from './RetryButton'
-import {
-  AppIconStatusIconWrapper,
-  AppIconWrapper,
-  Content,
-  Header,
-  Wrapper,
-} from './style'
 
 type ExecutionStepProps = {
   index: number
   executionStep: IExecutionStep
 }
 
-const validIcon = <CheckCircleIcon color="success" />
-const errorIcon = <ErrorIcon color="error" />
+const validIcon = (
+  <Icon
+    boxSize={6}
+    as={BiSolidCheckCircle}
+    color="interaction.success.default"
+  />
+)
+const errorIcon = (
+  <Icon
+    boxSize={6}
+    as={BiSolidErrorCircle}
+    color="interaction.critical.default"
+  />
+)
 
 export default function ExecutionStep({
   index,
   executionStep,
 }: ExecutionStepProps): React.ReactElement | null {
-  const [activeTabIndex, setActiveTabIndex] = React.useState(0)
-
   const { data } = useQuery(GET_APP, {
     variables: { key: executionStep.appKey },
   })
@@ -55,65 +63,76 @@ export default function ExecutionStep({
   const canRetry = !isStepSuccessful && !!executionStep.jobId
 
   return (
-    <Wrapper elevation={1} data-test="execution-step">
-      <Header>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <Stack direction="row" gap={2}>
-            <AppIconWrapper>
+    <Card boxShadow="none" border="1px solid" borderColor="base.divider.medium">
+      <CardBody p={0}>
+        {/* top half: step number and app details */}
+        <HStack p={4} alignItems="center" justifyContent="space-between">
+          <HStack gap={2}>
+            <Box position="relative">
               <AppIcon url={app?.iconUrl} name={app?.name} />
-
-              <AppIconStatusIconWrapper>
+              <Box
+                position="absolute"
+                right="0"
+                top="0"
+                transform="translate(50%, -50%)"
+                display="inline-flex"
+                sx={{
+                  svg: {
+                    // to make it distinguishable over an app icon
+                    background: 'white',
+                    borderRadius: '100%',
+                    overflow: 'hidden',
+                  },
+                }}
+              >
                 {isStepSuccessful ? validIcon : errorIcon}
-              </AppIconStatusIconWrapper>
-            </AppIconWrapper>
+              </Box>
+            </Box>
 
-            <div>
-              <Typography variant="caption">
+            <Box>
+              <Text textStyle="body-2">
                 {index === 0 ? 'Trigger' : 'Action'}
-              </Typography>
+              </Text>
 
-              <Typography variant="body2">
+              <Text textStyle="h5">
                 {index + 1}. {app?.name}
-              </Typography>
-            </div>
-          </Stack>
-          <RetryButton canRetry={canRetry} executionStepId={executionStep.id} />
-        </Stack>
-      </Header>
+              </Text>
+            </Box>
+          </HStack>
+          {canRetry && <RetryButton executionStepId={executionStep.id} />}
+        </HStack>
 
-      <Content sx={{ px: 2 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={activeTabIndex}
-            onChange={(event, tabIndex) => setActiveTabIndex(tabIndex)}
-          >
-            <Tab label="Data in" data-test="data-in-tab" />
-            <Tab label="Data out" data-test="data-out-tab" />
-            {hasError && <Tab label="Error" data-test="error-tab" />}
+        {/* bottom half: data in, data out and error */}
+        <Box borderTop="1px solid" borderTopColor="base.divider.strong" p={4}>
+          <Tabs>
+            <TabList
+              borderBottom="1px solid"
+              borderBottomColor="base.divider.medium"
+              mb={4}
+            >
+              <Tab>Data In</Tab>
+              <Tab>Data Out</Tab>
+              {hasError && <Tab>Error</Tab>}
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <JSONViewer data={executionStep.dataIn} />
+              </TabPanel>
+              <TabPanel>
+                <JSONViewer data={executionStep.dataOut} />
+              </TabPanel>
+              {hasError && (
+                <TabPanel>
+                  <ErrorResult
+                    errorDetails={executionStep.errorDetails}
+                    isTestRun={false}
+                  />
+                </TabPanel>
+              )}
+            </TabPanels>
           </Tabs>
         </Box>
-
-        <TabPanel value={activeTabIndex} index={0}>
-          <JSONViewer data={executionStep.dataIn} />
-        </TabPanel>
-
-        <TabPanel value={activeTabIndex} index={1}>
-          <JSONViewer data={executionStep.dataOut} />
-        </TabPanel>
-
-        {hasError && (
-          <TabPanel value={activeTabIndex} index={2}>
-            <ErrorResult
-              errorDetails={executionStep.errorDetails}
-              isTestRun={false}
-            />
-          </TabPanel>
-        )}
-      </Content>
-    </Wrapper>
+      </CardBody>
+    </Card>
   )
 }
