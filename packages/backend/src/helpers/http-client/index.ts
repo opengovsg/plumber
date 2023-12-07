@@ -34,11 +34,9 @@ export default function createHttpClient({
     (requestConfig: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
       const newRequestConfig = removeBaseUrlForAbsoluteUrls(requestConfig)
 
-      const result = beforeRequest.reduce((newConfig, beforeRequestFunc) => {
+      return beforeRequest.reduce((newConfig, beforeRequestFunc) => {
         return beforeRequestFunc($, newConfig)
       }, newRequestConfig)
-      // axios specifically wants InternalAxiosRequestConfig instead of AxiosRequestConfig, can utilise an assertion since both interfaces are similar
-      return result as InternalAxiosRequestConfig
     },
   )
 
