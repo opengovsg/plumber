@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios'
+import axios, { InternalAxiosRequestConfig } from 'axios'
 
 export { AxiosInstance as IHttpClient } from 'axios'
 import { IHttpClientParams } from '@plumber/types'
@@ -8,8 +8,8 @@ import { URL } from 'url'
 import HttpError from '@/errors/http'
 
 const removeBaseUrlForAbsoluteUrls = (
-  requestConfig: AxiosRequestConfig,
-): AxiosRequestConfig => {
+  requestConfig: InternalAxiosRequestConfig,
+): InternalAxiosRequestConfig => {
   try {
     const url = new URL(requestConfig.url)
     requestConfig.baseURL = url.origin
@@ -31,7 +31,7 @@ export default function createHttpClient({
   })
 
   instance.interceptors.request.use(
-    (requestConfig: AxiosRequestConfig): AxiosRequestConfig => {
+    (requestConfig: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
       const newRequestConfig = removeBaseUrlForAbsoluteUrls(requestConfig)
 
       return beforeRequest.reduce((newConfig, beforeRequestFunc) => {

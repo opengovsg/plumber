@@ -1,4 +1,8 @@
-import type { AxiosInstance, AxiosRequestConfig } from 'axios'
+import type {
+  AxiosInstance,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
+} from 'axios'
 
 export type IHttpClient = AxiosInstance
 import type { Request } from 'express'
@@ -273,7 +277,10 @@ export interface IApp {
 }
 
 export type TBeforeRequest = {
-  ($: IGlobalVariable, requestConfig: AxiosRequestConfig): AxiosRequestConfig
+  (
+    $: IGlobalVariable,
+    requestConfig: InternalAxiosRequestConfig,
+  ): InternalAxiosRequestConfig
 }
 
 export interface DynamicDataOutput {

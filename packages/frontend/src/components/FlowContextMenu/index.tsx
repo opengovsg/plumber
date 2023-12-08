@@ -4,10 +4,10 @@ import { useMutation } from '@apollo/client'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import type { PopoverProps } from '@mui/material/Popover'
+import { useToast } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 import { DELETE_FLOW } from 'graphql/mutations/delete-flow'
 import useFormatMessage from 'hooks/useFormatMessage'
-import { useSnackbar } from 'notistack'
 
 type ContextMenuProps = {
   flowId: string
@@ -19,7 +19,7 @@ export default function ContextMenu(
   props: ContextMenuProps,
 ): React.ReactElement {
   const { flowId, onClose, anchorEl } = props
-  const { enqueueSnackbar } = useSnackbar()
+  const toast = useToast()
   const [deleteFlow] = useMutation(DELETE_FLOW)
   const formatMessage = useFormatMessage()
 
@@ -38,10 +38,14 @@ export default function ContextMenu(
       },
     })
 
-    enqueueSnackbar(formatMessage('flow.successfullyDeleted'), {
-      variant: 'success',
+    toast({
+      title: 'The pipe and associated executions have been deleted.',
+      status: 'success',
+      duration: 3000,
+      isClosable: true,
+      position: 'bottom-right',
     })
-  }, [deleteFlow, flowId, enqueueSnackbar, formatMessage])
+  }, [deleteFlow, flowId, toast])
 
   return (
     <Menu

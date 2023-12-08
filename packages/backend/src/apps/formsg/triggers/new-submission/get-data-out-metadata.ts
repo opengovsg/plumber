@@ -138,6 +138,7 @@ async function getDataOutMetadata(
       answer: buildAnswerMetadatum(fieldData),
       fieldType: { isHidden: true },
       order: { isHidden: true },
+      myInfo: { attr: { isHidden: true } },
     }
     if (isAnswerArrayValid(fieldData)) {
       fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(
@@ -186,7 +187,7 @@ async function getDataOutMetadata(
 
 export default getDataOutMetadata
 
-// Reference dataOut
+// Reference dataOut with myInfo fields
 // ---
 // {
 //   fields: {
@@ -194,19 +195,28 @@ export default getDataOutMetadata
 //       answer: 'zzz',
 //       question: 'What is the air speed velocity of an unladen swallow?',
 //       fieldType: 'textfield',
-//       order: 2
+//       order: 2,
 //     },
 //     648fe18a9175ce001196b3d5: {
 //       answer: 'aaaa',
 //       question: 'What is your name?',
 //       fieldType: 'textfield',
-//       order: 1
-//     }
+//       order: 1,
+//     },
 //     649d3183c4c52f00124ceb16: {
 //       question: 'Attach your sparrow velocity readings.',
 //       answer: 's3:common-bucket:649306c1ac8851001149af0a/649d3183c4c52f00124ceb16/my readings.txt',
 //       fieldType: 'attachment',
-//       order: 3
+//       order: 3,
+//     },
+//     655c766835b8460012ed7475: {
+//       answer: 'Male',
+//       question: '[MyInfo] Gender',
+//       fieldType: 'dropdown',
+//       order: 4,
+//       myInfo: {
+//         attr: 'sex',
+//       }
 //     },
 //   },
 //   # verifiedSubmitterInfo may not exist!

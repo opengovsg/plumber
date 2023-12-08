@@ -6,7 +6,6 @@ import { datadogRum } from '@datadog/browser-rum'
 import ApolloProvider from 'components/ApolloProvider'
 import IntlProvider from 'components/IntlProvider'
 import router from 'components/Router'
-import SnackbarProvider from 'components/SnackbarProvider'
 import ThemeProvider from 'components/ThemeProvider'
 import appConfig from 'config/app'
 import { AuthenticationProvider } from 'contexts/Authentication'
@@ -36,17 +35,15 @@ if (['prod', 'staging'].includes(appConfig.env)) {
   })
 }
 root.render(
-  <SnackbarProvider>
-    <ThemeProvider>
-      <ApolloProvider>
-        <AuthenticationProvider>
-          <IntlProvider>
-            <LaunchDarklyProvider>
-              <RouterProvider router={router} />
-            </LaunchDarklyProvider>
-          </IntlProvider>
-        </AuthenticationProvider>
-      </ApolloProvider>
-    </ThemeProvider>
-  </SnackbarProvider>,
+  <ThemeProvider>
+    <ApolloProvider>
+      <AuthenticationProvider>
+        <IntlProvider>
+          <LaunchDarklyProvider>
+            <RouterProvider router={router} />
+          </LaunchDarklyProvider>
+        </IntlProvider>
+      </AuthenticationProvider>
+    </ApolloProvider>
+  </ThemeProvider>,
 )

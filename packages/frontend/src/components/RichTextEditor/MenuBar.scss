@@ -32,3 +32,14 @@
     background-color: #303030;
   }
 }
+
+.menubar-dialog {
+  .MuiDialog-container {
+    // so that the variable drop down will have enough space even in small screen
+    // to show "See all"
+    align-items: flex-start;
+  }
+  .MuiDialogContentText-root .MuiButton-root {
+    margin-top: 16px;
+  }
+}

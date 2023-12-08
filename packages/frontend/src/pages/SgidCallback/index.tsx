@@ -3,17 +3,17 @@ import { BsArrowRight } from 'react-icons/bs'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { Flex, Icon, Image, Spinner, VStack } from '@chakra-ui/react'
+import { useToast } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
 import sgidLogo from 'assets/sgid-logo.svg'
 import * as URLS from 'config/urls'
 import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
 import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
-import { useSnackbar } from 'notistack'
 
 import SgidAccountSelect, { type Employment } from './SgidAccountSelect'
 
 export default function SgidCallback(): JSX.Element {
-  const { enqueueSnackbar } = useSnackbar()
+  const toast = useToast()
   const [searchParams] = useSearchParams()
 
   const [hasFailed, setFailed] = useState<boolean>(false)
@@ -73,8 +73,12 @@ export default function SgidCallback(): JSX.Element {
   }, [])
 
   if (hasFailed) {
-    enqueueSnackbar('There was an error logging you in. Please try again.', {
-      variant: 'error',
+    toast({
+      title: 'There was an error logging you in. Please try again.',
+      status: 'error',
+      duration: 3000,
+      isClosable: true,
+      position: 'bottom-right',
     })
     return <Navigate to={URLS.LOGIN} replace />
   }

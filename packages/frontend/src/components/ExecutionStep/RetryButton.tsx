@@ -1,25 +1,23 @@
 import { useState } from 'react'
-import { FormattedMessage } from 'react-intl'
+import { BiErrorCircle, BiRedo } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
-import ReplayIcon from '@mui/icons-material/Replay'
-import { Button, Stack, Typography } from '@mui/material'
+import { HStack, Icon, Text } from '@chakra-ui/react'
+import { Button, useToast } from '@opengovsg/design-system-react'
 import { RETRY_EXECUTION_STEP } from 'graphql/mutations/retry-execution-step'
-import useFormatMessage from 'hooks/useFormatMessage'
-import { useSnackbar } from 'notistack'
 
 interface RetryButtonProps {
   executionStepId: string
-  canRetry: boolean
 }
 
-const RetryButton = ({ executionStepId, canRetry }: RetryButtonProps) => {
+const retryIcon = <Icon boxSize={6} as={BiRedo} />
+
+const RetryButton = ({ executionStepId }: RetryButtonProps) => {
   const [isRetrySuccessful, setIsRetrySuccessful] = useState<boolean | null>(
     null,
   )
-
-  const { enqueueSnackbar } = useSnackbar()
-  const formatMessage = useFormatMessage()
+  const toast = useToast()
+  const retrySuccessMessage =
+    'Retry has been enqueued. Please reload your page after a few seconds to see updated status.'
 
   const [retryExecutionStep] = useMutation(RETRY_EXECUTION_STEP, {
     variables: {
@@ -28,8 +26,12 @@ const RetryButton = ({ executionStepId, canRetry }: RetryButtonProps) => {
       },
     },
     onCompleted: () => {
-      enqueueSnackbar(formatMessage('executionStep.retrySuccessMessage'), {
-        variant: 'success',
+      toast({
+        title: retrySuccessMessage,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'bottom-right',
       })
       setIsRetrySuccessful(true)
     },
@@ -38,37 +40,31 @@ const RetryButton = ({ executionStepId, canRetry }: RetryButtonProps) => {
     },
   })
 
-  if (!canRetry) {
-    return null
-  }
-
   if (isRetrySuccessful == null) {
     return (
       <Button
-        variant="text"
-        endIcon={<ReplayIcon />}
+        variant="clear"
+        leftIcon={retryIcon}
         onClick={() => retryExecutionStep()}
       >
-        <FormattedMessage id="executionStep.retry" />
+        Retry
       </Button>
     )
   } else {
     return (
-      <Stack alignItems="center" flexDirection="row" gap={1} px={2}>
-        <ErrorOutlineIcon color={isRetrySuccessful ? 'success' : 'error'} />
-        <Typography
-          variant="body2"
-          color={isRetrySuccessful ? 'success.main' : 'error.main'}
-        >
-          <FormattedMessage
-            id={
-              isRetrySuccessful
-                ? 'executionStep.retryStarted'
-                : 'executionStep.retryFailed'
-            }
-          />
-        </Typography>
-      </Stack>
+      <HStack
+        px={4}
+        color={
+          isRetrySuccessful
+            ? 'interaction.success.default'
+            : 'interaction.critical.default'
+        }
+      >
+        <Icon as={BiErrorCircle} boxSize={6} />
+        <Text textStyle="subhead-1">
+          {isRetrySuccessful ? 'Retry started' : 'Retry failed'}
+        </Text>
+      </HStack>
     )
   }
 }
