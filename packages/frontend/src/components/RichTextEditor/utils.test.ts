@@ -44,20 +44,13 @@ describe('replaceOldTemplates', () => {
     }
   })
 
-  it('should not replace {{.}} that is followed by </span>', () => {
+  it('should not replace {{.}} that is already inside a variable span', () => {
     const testCases = [
       {
         input:
           '<span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span>',
         expected:
           '<span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span>',
-      },
-      {
-        // won't substitute even if it's a span-wrap entered by user
-        input:
-          '<span>{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span>',
-        expected:
-          '<span>{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span>',
       },
       {
         input:
@@ -75,6 +68,26 @@ describe('replaceOldTemplates', () => {
     const testInputs = [undefined, null] as unknown as string[] // this is to force the value in
     for (const input of testInputs) {
       expect(substituteOldTemplates(input, varInfo)).toEqual('')
+    }
+  })
+
+  it('should be not parse {{.}} inside element attributes', () => {
+    const testCases = [
+      {
+        input:
+          '<a href="https://form.gov.sg/abc?prefilled_value={{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}">Click here</a>',
+        expected:
+          '<a href="https://form.gov.sg/abc?prefilled_value={{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}">Click here</a>',
+      },
+      {
+        input:
+          '<img src="https://myownhosting.website/{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}" >',
+        expected:
+          '<img src="https://myownhosting.website/{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}" >',
+      },
+    ]
+    for (const t of testCases) {
+      expect(substituteOldTemplates(t.input, varInfo)).toEqual(t.expected)
     }
   })
 })
