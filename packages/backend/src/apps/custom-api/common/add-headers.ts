@@ -3,7 +3,7 @@ import { TBeforeRequest } from '@plumber/types'
 const addHeaders: TBeforeRequest = ($, requestConfig) => {
   const authData = $.auth.data
   if (authData?.headers) {
-    requestConfig.headers['Content-Type'] = 'application/json'
+    requestConfig.headers.set('Content-Type', 'application/json', true)
     Object.entries(authData.headers).forEach(([key, value]) =>
       requestConfig.headers.set(key, value),
     )
