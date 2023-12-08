@@ -35,6 +35,7 @@ interface EditorProps {
   editable?: boolean
   placeholder?: string
   variablesEnabled?: boolean
+  isRich?: boolean
 }
 const Editor = ({
   onChange,
@@ -42,6 +43,7 @@ const Editor = ({
   editable,
   placeholder,
   variablesEnabled,
+  isRich,
 }: EditorProps) => {
   const priorStepsWithExecutions = useContext(StepExecutionsContext)
   const [showVarSuggestions, setShowVarSuggestions] = useState(false)
@@ -133,7 +135,7 @@ const Editor = ({
         onClickAway={() => setShowVarSuggestions(false)}
       >
         <div ref={editorRef}>
-          <MenuBar editor={editor} />
+          {isRich && <MenuBar editor={editor} />}
           <EditorContent
             className="editor__content"
             editor={editor}
@@ -195,6 +197,7 @@ const RichTextEditor = ({
             editable={!disabled}
             placeholder={placeholder}
             variablesEnabled={variablesEnabled}
+            isRich
           />
         )}
       />
@@ -202,4 +205,5 @@ const RichTextEditor = ({
   )
 }
 
+export const BareEditor = Editor
 export default RichTextEditor

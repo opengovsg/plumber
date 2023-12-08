@@ -26,7 +26,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
       * Checkout the supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).
     `,
     multimedia: {
-      url: 'https://file.go.gov.sg/clipplumer.png',
+      url: 'https://file.go.gov.sg/clipplumber.png',
     },
   },
   {
