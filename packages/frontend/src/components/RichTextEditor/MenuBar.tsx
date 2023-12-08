@@ -288,7 +288,7 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
   const dialogPlaceholders: { [key: string]: string } = {
     [MenuLabels.LinkSet]: 'Enter a full URL with http prefix',
     [MenuLabels.ImageAdd]:
-      'Enter direct image link (e.g. https://file.go.gov.sg/clipplumer.png)',
+      'Enter direct image link (e.g. https://file.go.gov.sg/clipplumber.png)',
   }
   if (!editor) {
     return null
