@@ -329,7 +329,9 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
       </div>
       <Dialog
         open={showValueDialog}
+        className="menubar-dialog"
         onClose={() => setShowValueDialog(false)}
+        sx={{ alignItems: 'flex-start' }}
         PaperProps={{
           // so that the variable selector float can overlay
           sx: { display: 'inline-table' },
