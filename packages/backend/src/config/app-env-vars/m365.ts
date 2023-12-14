@@ -1,8 +1,29 @@
+import z from 'zod'
+
 import appConfig from '../app'
 
 if (!appConfig) {
   throw new Error('Cyclic import of appConfig from app-env-vars')
 }
+
+const sensitivityLabelGuidsSchema = z
+  .string()
+  .trim()
+  .transform((val) => val.split(','))
+  .pipe(
+    z
+      .array(
+        z
+          .string()
+          .trim()
+          // Microsoft's GUID is just a UUID :/
+          .uuid()
+          .transform((guid) => guid.toUpperCase()),
+      )
+      // Must have at least 1 item; otherwise, no file can be processed.
+      .min(1)
+      .transform((guids) => new Set<string>(guids)),
+  )
 
 export interface M365TenantInfo {
   // Internal descriptive label for easier referencing
@@ -13,6 +34,8 @@ export interface M365TenantInfo {
   clientId: string
   clientThumbprint: string
   clientPrivateKey: string
+
+  allowedSensitivityLabelGuids: ReadonlySet<string>
 }
 
 function makeTenantInfo(opts: Partial<M365TenantInfo>): M365TenantInfo {
@@ -23,6 +46,7 @@ function makeTenantInfo(opts: Partial<M365TenantInfo>): M365TenantInfo {
     clientId,
     clientThumbprint,
     clientPrivateKey,
+    allowedSensitivityLabelGuids,
   } = opts
 
   if (
@@ -47,6 +71,7 @@ function makeTenantInfo(opts: Partial<M365TenantInfo>): M365TenantInfo {
     clientId,
     clientThumbprint,
     clientPrivateKey,
+    allowedSensitivityLabelGuids,
   }
 }
 
@@ -58,6 +83,9 @@ export const m365TenantInfo = Object.freeze({
     clientId: process.env.M365_SG_GOVT_CLIENT_ID,
     clientThumbprint: process.env.M365_SG_GOVT_CLIENT_THUMBPRINT,
     clientPrivateKey: process.env.M365_SG_GOVT_CLIENT_PRIVATE_KEY,
+    allowedSensitivityLabelGuids: sensitivityLabelGuidsSchema.parse(
+      process.env.M365_SG_GOVT_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
+    ),
   }),
   ...(appConfig.isDev
     ? {
@@ -68,6 +96,10 @@ export const m365TenantInfo = Object.freeze({
           clientId: process.env.M365_GOVTECH_STAGING_CLIENT_ID,
           clientThumbprint: process.env.M365_GOVTECH_STAGING_CLIENT_THUMBPRINT,
           clientPrivateKey: process.env.M365_GOVTECH_STAGING_CLIENT_PRIVATE_KEY,
+          allowedSensitivityLabelGuids: sensitivityLabelGuidsSchema.parse(
+            process.env
+              .M365_GOVTECH_STAGING_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
+          ),
         }),
         'local-dev': makeTenantInfo({
           label: 'Local Development',
@@ -76,6 +108,9 @@ export const m365TenantInfo = Object.freeze({
           clientId: process.env.M365_LOCAL_DEV_CLIENT_ID,
           clientThumbprint: process.env.M365_LOCAL_DEV_CLIENT_THUMBPRINT,
           clientPrivateKey: process.env.M365_LOCAL_DEV_CLIENT_PRIVATE_KEY,
+          allowedSensitivityLabelGuids: sensitivityLabelGuidsSchema.parse(
+            process.env.M365_LOCAL_DEV_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
+          ),
         }),
       }
     : {}),
