@@ -1,6 +1,7 @@
-import Redlock from 'redlock'
+import Redlock, { ResourceLockedError } from 'redlock'
 
 import { type M365TenantInfo } from '@/config/app-env-vars/m365'
+import RetriableError from '@/errors/retriable-error'
 import {
   makeRedisAppDataKey,
   redisAppDataClient,
@@ -49,18 +50,36 @@ const redlock = new Redlock([redisAppDataClient], {
 // before continuing.
 const DEAD_LOCK_HOLDER_PREVENTION_TIMEOUT_MS = 150 * 1000
 
-export async function runWithLock<T>(
+// This is the delay to retry if a worker is unable to acquire a lock (e.g. due
+// to some other worker acquiring it and starting a new workbook session).
+//
+// I chose 5 seconds as that seems to be a reasonable-ish value where p90 (from
+// personal experience...) of Graph API requests will complete.
+const LOCK_FAILURE_RETRY_DELAY_MS = 5 * 1000
+
+export async function runWithLockElseRetryStep<T>(
   tenant: M365TenantInfo,
   fileId: string,
   callback: Parameters<typeof redlock.using<T>>[2],
 ): Promise<T> {
   const lockKey = `${makeRedisKeyPrefix(tenant, fileId)}session:lock`
 
-  return await redlock.using(
-    [lockKey],
-    DEAD_LOCK_HOLDER_PREVENTION_TIMEOUT_MS,
-    callback,
-  )
+  try {
+    return await redlock.using(
+      [lockKey],
+      DEAD_LOCK_HOLDER_PREVENTION_TIMEOUT_MS,
+      callback,
+    )
+  } catch (error) {
+    if (!(error instanceof ResourceLockedError)) {
+      throw error
+    }
+
+    throw new RetriableError({
+      error: 'Unable to acquire excel session lock.',
+      delayInMs: LOCK_FAILURE_RETRY_DELAY_MS,
+    })
+  }
 }
 
 //

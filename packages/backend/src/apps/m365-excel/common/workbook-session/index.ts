@@ -14,7 +14,7 @@ import { tryParseGraphApiError } from '../parse-graph-api-error'
 import {
   clearSessionIdFromRedis,
   getSessionIdFromRedis,
-  runWithLock,
+  runWithLockElseRetryStep,
   setSessionIdInRedis,
 } from './redis'
 
@@ -23,7 +23,7 @@ async function invalidateSessionId(
   fileId: string,
   badSessionId: string,
 ): Promise<void> {
-  await runWithLock(tenant, fileId, async (signal) => {
+  await runWithLockElseRetryStep(tenant, fileId, async (signal) => {
     // Nothing to do if another worker has already switched our fleet to a
     // different session.
     const sessionIdInRedis = await getSessionIdFromRedis(tenant, fileId)
@@ -44,7 +44,7 @@ async function refreshSessionId(
   fileId: string,
   $: IGlobalVariable,
 ): Promise<string> {
-  return await runWithLock(tenant, fileId, async (signal) => {
+  return await runWithLockElseRetryStep(tenant, fileId, async (signal) => {
     // It's possible for multiple workers - or even multiple calls by the same
     // worker - to await this. When this happens, the 1st caller will have
     // refreshed the session and stored its ID in redis, so subsequent callers
