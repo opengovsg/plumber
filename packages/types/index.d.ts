@@ -1,3 +1,4 @@
+import HttpError from '@/errors/http'
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -273,14 +274,31 @@ export interface IApp {
   actions?: IAction[]
   connections?: IConnection[]
   description?: string
+
+  /**
+   * An _ordered_ array of callbacks that are invoked if there's an error when
+   * making a HTTP request.
+   *
+   * This is useful to perform per-request monitoring, such as logging on
+   * specific HTTP response codes. Typical use case is to prevent forgetfulness
+   * (e.g. without this, the team has to remember to surround requests with
+   * try / catch).
+   *
+   * As suggested by the naming, observers _should_ be passive. Errors thrown in
+   * observers are ignored.
+   */
+  requestErrorObservers?: TRequestErrorObservers[]
 }
 
-export type TBeforeRequest = {
-  (
-    $: IGlobalVariable,
-    requestConfig: InternalAxiosRequestConfig,
-  ): Promise<InternalAxiosRequestConfig>
-}
+export type TBeforeRequest = (
+  $: IGlobalVariable,
+  requestConfig: InternalAxiosRequestConfig,
+) => Promise<InternalAxiosRequestConfig>
+
+export type TRequestErrorObservers = (
+  $: IGlobalVariable,
+  error: HttpError,
+) => Promise<void>
 
 export interface DynamicDataOutput {
   data: {
@@ -473,7 +491,8 @@ export interface ISubstep {
 export type IHttpClientParams = {
   $: IGlobalVariable
   baseURL?: string
-  beforeRequest?: TBeforeRequest[]
+  beforeRequest: TBeforeRequest[]
+  requestErrorObservers: TRequestErrorObservers[]
 }
 
 export type IGlobalVariable = {
