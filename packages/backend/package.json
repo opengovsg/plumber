@@ -29,6 +29,7 @@
     "@opengovsg/sgid-client": "2.1.0",
     "@plumber/types": "file:../types",
     "ajv-formats": "^2.1.1",
+    "async-mutex": "0.4.0",
     "axios": "1.6.2",
     "bullmq": "^3.0.0",
     "cookie-parser": "1.4.6",
