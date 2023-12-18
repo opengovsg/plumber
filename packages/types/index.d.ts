@@ -521,7 +521,7 @@ export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
 export interface IStepError {
   name: string
   solution: string
-  position: string
+  position: number
   appName: string
   details?: IJSONObject
 }

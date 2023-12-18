@@ -1,6 +1,6 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import { VAULT_ID } from './constants'
 import { getColumnMapping } from './get-column-mapping'
@@ -56,12 +56,9 @@ const filterTableRows = async (
     }
   } catch (err) {
     if (err instanceof TypeError) {
-      const stepErrorName = 'Undefined column name in Vault'
-      const stepErrorSolution =
-        'Your vault table has an undefined column due to a bug. Please create a new vault table to be used.'
-      throw generateStepError(
-        stepErrorName,
-        stepErrorSolution,
+      throw new StepError(
+        'Undefined column name in Vault',
+        'Your vault table has an undefined column due to a bug. Please create a new vault table to be used.',
         $.step.position,
         $.app.name,
       )

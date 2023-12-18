@@ -1,6 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 const action: IRawAction = {
   name: 'Delay For',
@@ -49,7 +49,7 @@ const action: IRawAction = {
     const { delayForUnit, delayForValue } = $.step.parameters
 
     if (isNaN(Number(delayForValue))) {
-      throw generateStepError(
+      throw new StepError(
         'Invalid delay for value entered',
         'Click on set up action and check that the value is a valid number.',
         $.step.position,

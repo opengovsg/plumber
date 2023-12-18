@@ -6,13 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 import Step from '@/models/step'
 
 import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
-import {
-  generateHttpStepError,
-  generateStepError,
-} from '../generate-step-error'
 
 vi.mock('@/apps', () => ({
   default: {
@@ -188,7 +185,11 @@ describe('action helper functions', () => {
 
     it.each([
       {
-        stepError: generateHttpStepError(
+        stepError: new StepError(
+          'http-step-error',
+          'test solution',
+          1,
+          'test-app',
           new HttpError({
             response: {
               headers: {
@@ -196,14 +197,11 @@ describe('action helper functions', () => {
               },
             },
           } as unknown as AxiosError),
-          'test solution',
-          1,
-          'test-app',
         ),
         isRetried: true,
       },
       {
-        stepError: generateStepError(
+        stepError: new StepError(
           'non-http-step-error',
           'test solution',
           1,

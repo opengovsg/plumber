@@ -1,4 +1,4 @@
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 export function throwInvalidConditionError(
   errorName: string,
@@ -14,5 +14,5 @@ export function throwInvalidConditionError(
     stepErrorSolution =
       'Click on set up action and check that one of valid options in the condition dropdown is being selected.'
   }
-  throw generateStepError(errorName, stepErrorSolution, position, appName)
+  throw new StepError(errorName, stepErrorSolution, position, appName)
 }
