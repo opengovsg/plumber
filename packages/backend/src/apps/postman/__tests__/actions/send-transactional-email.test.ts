@@ -123,6 +123,7 @@ describe('send transactional email', () => {
       },
       errorStatusCode: 400,
       errorStatusText: 'Bad Request',
+      stepErrorName: 'Blacklisted recipient email',
     },
     {
       postmanResponseData: {
@@ -132,6 +133,7 @@ describe('send transactional email', () => {
       },
       errorStatusCode: 400,
       errorStatusText: 'Bad Request',
+      stepErrorName: 'Unsupported attachment file type',
     },
     {
       postmanResponseData: {
@@ -140,6 +142,7 @@ describe('send transactional email', () => {
       },
       errorStatusCode: 429,
       errorStatusText: 'Bad Request',
+      stepErrorName: 'Too many requests',
     },
     {
       postmanResponseData: {
@@ -148,10 +151,16 @@ describe('send transactional email', () => {
       },
       errorStatusCode: 503,
       errorStatusText: 'Service Temporarily Unavailable',
+      stepErrorName: 'Twilio service is currently unavailable',
     },
   ])(
     'should throw step error for different postman errors',
-    async ({ postmanResponseData, errorStatusCode, errorStatusText }) => {
+    async ({
+      postmanResponseData,
+      errorStatusCode,
+      errorStatusText,
+      stepErrorName,
+    }) => {
       // simulate postman error
       const error = {
         response: {
@@ -164,7 +173,7 @@ describe('send transactional email', () => {
       mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
       // throw partial step error message
       await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
-        `Status code: ${errorStatusCode} (${errorStatusText})`,
+        stepErrorName,
       )
     },
   )
