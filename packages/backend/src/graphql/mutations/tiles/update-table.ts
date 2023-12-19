@@ -39,9 +39,12 @@ const updateTable = async (
     })
     .throwIfNotFound()
 
-  if (tableName?.length) {
+  if (tableName !== null) {
+    if (!tableName.trim().length || tableName.trim().length > 64) {
+      throw new Error('Invalid table name')
+    }
     await table.$query().patch({
-      name: tableName,
+      name: tableName.trim(),
     })
   }
 
