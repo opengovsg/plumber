@@ -9,72 +9,14 @@ import {
 import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
-import { isFileTooSensitive } from '../data-classification'
-import { tryParseGraphApiError } from '../parse-graph-api-error'
+import { isFileTooSensitive } from './data-classification'
+import { tryParseGraphApiError } from './parse-graph-api-error'
+import { RedisCachedValue } from './redis-cached-value'
 
-import {
-  clearSessionIdFromRedis,
-  getSessionIdFromRedis,
-  runWithLockElseRetryStep,
-  setSessionIdInRedis,
-} from './redis'
-
-async function invalidateSessionId(
-  tenant: M365TenantInfo,
-  fileId: string,
-  badSessionId: string,
-): Promise<void> {
-  await runWithLockElseRetryStep(tenant, fileId, async (signal) => {
-    // Nothing to do if another worker has already switched our fleet to a
-    // different session.
-    const sessionIdInRedis = await getSessionIdFromRedis(tenant, fileId)
-    if (sessionIdInRedis !== badSessionId) {
-      return
-    }
-
-    if (signal.aborted) {
-      throw new Error(`Redis lock error: ${signal.reason}`)
-    }
-
-    await clearSessionIdFromRedis(tenant, fileId)
-  })
-}
-
-async function refreshSessionId(
-  tenant: M365TenantInfo,
-  fileId: string,
-  $: IGlobalVariable,
-): Promise<string> {
-  return await runWithLockElseRetryStep(tenant, fileId, async (signal) => {
-    // It's possible for multiple workers - or even multiple calls by the same
-    // worker - to await this. When this happens, the 1st caller will have
-    // refreshed the session and stored its ID in redis, so subsequent callers
-    // should use that stored session.
-    //
-    // We perform a check here to ensure that these subsequent callers use the
-    // refreshed session instead of requesting for a new one.
-    const sessionIdInRedis = await getSessionIdFromRedis(tenant, fileId)
-
-    if (sessionIdInRedis) {
-      return sessionIdInRedis
-    }
-
-    const createSessionResponse = await $.http.post<{ id: string }>(
-      `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/workbook/createSession`,
-      {
-        persistChanges: true,
-      },
-    )
-    const sessionId = createSessionResponse.data.id
-
-    if (signal.aborted) {
-      throw new Error(`Redis lock error: ${signal.reason}`)
-    }
-
-    await setSessionIdInRedis(tenant, fileId, sessionId)
-    return sessionId
-  })
-}
+// Session ID redis key expiry
+//
+// Arbitrarily set to 1 hour. See giant comment below for details.
+const SESSION_ID_EXPIRY_SECONDS = 60 * 60
 
 /**
  * To prevent data races, when working on the same excel file, we need use the
@@ -156,7 +98,7 @@ export default class WorkbookSession {
 
   private tenant: M365TenantInfo
   private fileId: string
-  private sessionId: string
+  private cachedSessionId: RedisCachedValue<string>
 
   static async acquire(
     $: IGlobalVariable,
@@ -171,24 +113,36 @@ export default class WorkbookSession {
       throw new Error(`File is too sensitive!`)
     }
 
-    let sessionId = await getSessionIdFromRedis(tenant, fileId)
-    if (!sessionId) {
-      sessionId = await refreshSessionId(tenant, fileId, $)
-    }
-
-    return new WorkbookSession($, tenant, fileId, sessionId)
+    return new WorkbookSession($, tenant, fileId)
   }
 
   private constructor(
     $: IGlobalVariable,
     tenant: M365TenantInfo,
     fileId: string,
-    sessionId: string,
   ) {
     this.$ = $
     this.fileId = fileId
     this.tenant = tenant
-    this.sessionId = sessionId
+
+    this.cachedSessionId = new RedisCachedValue({
+      tenant,
+      objectId: fileId,
+      cacheKey: 'excel:session-id',
+
+      expirySeconds: SESSION_ID_EXPIRY_SECONDS,
+      extendExpiryOnRead: true,
+
+      queryValueFromSource: async () => {
+        const createSessionResponse = await $.http.post<{ id: string }>(
+          `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/workbook/createSession`,
+          {
+            persistChanges: true,
+          },
+        )
+        return createSessionResponse.data.id
+      },
+    })
   }
 
   private async _requestImpl<T>(
@@ -197,6 +151,13 @@ export default class WorkbookSession {
     config: AxiosRequestConfig | null,
     canRetry: boolean,
   ): Promise<AxiosResponse<T>> {
+    // We need to store this locally so that we can check for unexpected session
+    // invalidation after our request.
+    //
+    // Note that get() will automatically refresh / create a new session if
+    // needed.
+    const sessionIdInCurrentRequest = await this.cachedSessionId.get()
+
     try {
       const response = await this.$.http.request<T>({
         ...(config ?? {}),
@@ -204,7 +165,7 @@ export default class WorkbookSession {
         method: method,
         headers: {
           ...(config?.headers ?? {}),
-          'workbook-session-id': this.sessionId,
+          'workbook-session-id': sessionIdInCurrentRequest,
         },
       })
 
@@ -223,11 +184,8 @@ export default class WorkbookSession {
       // before propagating session data to other machines. This error is just a
       // nice-to-have.
 
-      const sessionIdInRedis = await getSessionIdFromRedis(
-        this.tenant,
-        this.fileId,
-      )
-      if (sessionIdInRedis !== this.sessionId) {
+      const sessionIdInRedis = await this.cachedSessionId.get()
+      if (sessionIdInRedis !== sessionIdInCurrentRequest) {
         throw new Error(
           "The current Excel session was invalidated due to an error; please double check the file's data",
         )
@@ -252,21 +210,12 @@ export default class WorkbookSession {
         throw err
       }
 
-      await invalidateSessionId(this.tenant, this.fileId, this.sessionId)
+      await this.cachedSessionId.invalidateIfValueIs(sessionIdInCurrentRequest)
 
-      if (graphApiInnerError === 'invalidSessionReCreatable') {
-        // This typically happens for expired sessions, hence it's the only
-        // retriable error. We will retry at most _once_.
-        //
-        // Note that we don't combine invalidate + refresh to keep code simpler,
-        // at the cost of having to acquire the lock twice. This should be rare,
-        // so we should be ok...
-        //
-        // (The 2 await calls are intentionally serial, duh.)
-        if (canRetry) {
-          await refreshSessionId(this.tenant, this.fileId, this.$)
-          return await this._requestImpl(apiEndpoint, method, config, false)
-        }
+      // This typically happens for expired sessions, hence it's the only
+      // retriable error. We will retry at most _once_.
+      if (canRetry && graphApiInnerError === 'invalidSessionReCreatable') {
+        return await this._requestImpl(apiEndpoint, method, config, false)
       }
 
       logger.warn('M365 Excel session was unexpectedly invalidated.', {
