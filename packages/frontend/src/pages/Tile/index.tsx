@@ -1,24 +1,14 @@
 import { ITableMetadata, ITableRow } from '@plumber/types'
 
-import { FaChevronRight } from 'react-icons/fa'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  Center,
-  Flex,
-  Icon,
-  Spinner,
-} from '@chakra-ui/react'
-import * as URLS from 'config/urls'
+import { Center, Flex, Spinner } from '@chakra-ui/react'
 import { GET_ALL_ROWS } from 'graphql/queries/get-all-rows'
 import { GET_TABLE } from 'graphql/queries/get-table'
 
 import Table from './components/Table'
+import TableBanner from './components/TableBanner'
 import { TableContextProvider } from './contexts/TableContext'
-import { TABLE_BANNER_HEIGHT } from './constants'
 
 export default function Tile(): JSX.Element {
   const { tileId: tableId } = useParams<{ tileId: string }>()
@@ -52,33 +42,15 @@ export default function Tile(): JSX.Element {
   const rows = getAllRowsData.getAllRows
 
   return (
-    <Flex
-      flexDir={{ base: 'column' }}
-      justifyContent="space-between"
-      alignItems="stretch"
-    >
-      <Flex px={8} h={TABLE_BANNER_HEIGHT} alignItems="center">
-        <Breadcrumb
-          spacing={4}
-          separator={<Icon as={FaChevronRight} color="secondary.300" h={3} />}
-        >
-          <BreadcrumbItem>
-            <BreadcrumbLink as={Link} to={URLS.TILES}>
-              Tiles
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem isCurrentPage>
-            <BreadcrumbLink>{name}</BreadcrumbLink>
-          </BreadcrumbItem>
-        </Breadcrumb>
-      </Flex>
-      <TableContextProvider
-        tableId={id}
-        tableColumns={columns}
-        tableRows={rows}
+    <TableContextProvider tableId={id} tableColumns={columns} tableRows={rows}>
+      <Flex
+        flexDir={{ base: 'column' }}
+        justifyContent="space-between"
+        alignItems="stretch"
       >
+        <TableBanner name={name} />
         <Table />
-      </TableContextProvider>
-    </Flex>
+      </Flex>
+    </TableContextProvider>
   )
 }
