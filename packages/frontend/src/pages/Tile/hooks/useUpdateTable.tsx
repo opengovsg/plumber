@@ -27,6 +27,7 @@ interface UpdateTableOutput {
 
 export function useUpdateTable() {
   const { tableId } = useTableContext()
+  const [isUpdatingTableName, setIsUpdatingTableName] = useState(false)
   const [isCreatingColumn, setIsCreatingColumn] = useState(false)
   const [isUpdatingColumns, setIsUpdatingColumns] = useState(false)
   const [isDeletingColumns, setIsDeletingColumns] = useState(false)
@@ -37,6 +38,27 @@ export function useUpdateTable() {
       awaitRefetchQueries: true,
       refetchQueries: [GET_TABLE],
     },
+  )
+
+  const updateTableName = useCallback(
+    (newName: string) => {
+      setIsUpdatingTableName(true)
+      return updateTable({
+        variables: {
+          input: {
+            id: tableId,
+            name: newName,
+          },
+        },
+        onCompleted: () => {
+          setIsUpdatingTableName(false)
+        },
+        onError: () => {
+          setIsUpdatingTableName(false)
+        },
+      })
+    },
+    [tableId, updateTable],
   )
 
   const createColumn = useCallback(
@@ -103,6 +125,8 @@ export function useUpdateTable() {
   )
 
   return {
+    updateTableName,
+    isUpdatingTableName,
     createColumn,
     isCreatingColumn,
     updateColumns,
