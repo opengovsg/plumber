@@ -2,7 +2,7 @@ import { ITableMetadata } from '@plumber/types'
 
 import { MouseEvent, useCallback, useRef } from 'react'
 import { BsBricks, BsEyeFill, BsThreeDots, BsTrash } from 'react-icons/bs'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import {
   AlertDialog,
@@ -31,6 +31,7 @@ import { DELETE_TABLE } from 'graphql/mutations/delete-table'
 import { GET_TABLES } from 'graphql/queries/get-tables'
 
 const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
+  const navigate = useNavigate()
   const [deleteTable, { loading: isDeletingTable }] = useMutation(
     DELETE_TABLE,
     {
@@ -102,7 +103,10 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
             }}
           />
           <MenuList>
-            <MenuItem icon={<BsEyeFill />} as="a" href={URLS.TILE(table.id)}>
+            <MenuItem
+              icon={<BsEyeFill />}
+              onClick={() => navigate(URLS.TILE(table.id))}
+            >
               View
             </MenuItem>
             <MenuItem
