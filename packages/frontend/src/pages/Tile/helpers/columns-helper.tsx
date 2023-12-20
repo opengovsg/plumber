@@ -12,7 +12,7 @@ import { GenericRowData } from '../types'
 
 const columnHelper = createColumnHelper<GenericRowData>()
 
-export function createColumns(
+export function generateColumns(
   columns: ITableColumnMetadata[],
 ): ColumnDef<GenericRowData, any>[] {
   const accessorColumns = columns.map(({ id, name, config }) =>

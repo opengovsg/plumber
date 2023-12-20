@@ -17,9 +17,8 @@ const getAllRows = async (
     .findById(tableId)
     .throwIfNotFound()
 
-  const rawRows = await getAllTableRows({ tableId })
-
-  return table.stripInvalidKeys(rawRows)
+  const columnIds = table.columns.map((column) => column.id)
+  return getAllTableRows({ tableId, columnIds })
 }
 
 export default getAllRows

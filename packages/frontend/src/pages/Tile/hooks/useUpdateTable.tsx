@@ -28,7 +28,7 @@ interface UpdateTableOutput {
 export function useUpdateTable() {
   const { tableId } = useTableContext()
   const [isUpdatingTableName, setIsUpdatingTableName] = useState(false)
-  const [isCreatingColumn, setIsCreatingColumn] = useState(false)
+  const [isCreatingColumns, setIsCreatingColumns] = useState(false)
   const [isUpdatingColumns, setIsUpdatingColumns] = useState(false)
   const [isDeletingColumns, setIsDeletingColumns] = useState(false)
 
@@ -61,21 +61,21 @@ export function useUpdateTable() {
     [tableId, updateTable],
   )
 
-  const createColumn = useCallback(
-    (newColumnName: string) => {
-      setIsCreatingColumn(true)
+  const createColumns = useCallback(
+    (newColumnNames: string[]) => {
+      setIsCreatingColumns(true)
       return updateTable({
         variables: {
           input: {
             id: tableId,
-            addedColumns: [newColumnName],
+            addedColumns: newColumnNames,
           },
         },
         onCompleted: () => {
-          setIsCreatingColumn(false)
+          setIsCreatingColumns(false)
         },
         onError: () => {
-          setIsCreatingColumn(false)
+          setIsCreatingColumns(false)
         },
       })
     },
@@ -127,8 +127,8 @@ export function useUpdateTable() {
   return {
     updateTableName,
     isUpdatingTableName,
-    createColumn,
-    isCreatingColumn,
+    createColumns,
+    isCreatingColumns,
     updateColumns,
     isUpdatingColumns,
     deleteColumns,

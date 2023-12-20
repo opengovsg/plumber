@@ -1,5 +1,6 @@
+import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
-import { CreateEntityItem } from 'electrodb'
+import { type CreateEntityItem } from 'electrodb'
 
 import { handleDynamoDBError } from '../helpers'
 
@@ -10,11 +11,16 @@ const EXPONENTIAL_BACKOFF_BASE_DELAY = 1000 // 1 second
 
 export type TableRowItem = CreateEntityItem<typeof TableRow>
 export type CreateRowInput = Pick<TableRowItem, 'tableId' | 'data'>
+export type CreateRowsInput = {
+  tableId: string
+  dataArray: Record<string, string>[]
+}
 export type UpdateRowInput = Pick<TableRowItem, 'tableId' | 'data' | 'rowId'>
 export interface DeleteRowsInput {
   tableId: string
   rowIds: string[]
 }
+export type TableRowOutput = Pick<TableRowItem, 'rowId' | 'data'>
 
 /**
  * Internal functions
@@ -93,15 +99,14 @@ export const createTableRow = async ({
 export const createTableRows = async ({
   tableId,
   dataArray,
-}: {
-  tableId: string
-  dataArray: Record<string, string>[]
-}): Promise<string[]> => {
+}: CreateRowsInput): Promise<string[]> => {
   try {
-    const rows = dataArray.map((data) => ({
+    const rows = dataArray.map((data, i) => ({
       tableId,
       rowId: randomUUID(),
       data,
+      // manually bumping the createdAt timestamp to ensure that row order is preserved
+      createdAt: Date.now() + i,
     }))
     await _batchCreate(rows)
     return rows.map((row) => row.rowId)
@@ -169,22 +174,53 @@ export const getTableRowCount = async ({
 
 export const getAllTableRows = async ({
   tableId,
+  columnIds,
 }: {
   tableId: string
-}): Promise<
-  {
-    rowId: string
-    data: any
-  }[]
-> => {
+  columnIds?: string[]
+}): Promise<TableRowOutput[]> => {
   try {
-    const { data } = await TableRow.query.byCreatedAt({ tableId }).go({
-      order: 'asc',
-      pages: 'all',
-      attributes: ['rowId', 'data'],
-      ignoreOwnership: true,
-    })
-    return data
+    // need to use ProjectionExpression to select nested attributes
+    const ProjectionExpression = [
+      'rowId',
+      ...(columnIds ? columnIds.map((_id, i) => `#data.#col${i}`) : ['#data']),
+    ].join(',')
+    // need to use ExpressionAttributeNames to since data is a reserved keyword and attribute names with
+    // special characters (e.g. '-') need to be escaped
+    const ExpressionAttributeNames = columnIds
+      ? columnIds.reduce(
+          (acc, id, i) => ({
+            ...acc,
+            [`#col${i}`]: id,
+          }),
+          { '#data': 'data', '#pk': 'tableId' },
+        )
+      : undefined
+    const tableRows = []
+    let cursor: any = null
+    do {
+      const response = await TableRow.query.byCreatedAt({ tableId }).go({
+        order: 'asc',
+        pages: 'all',
+        cursor,
+        params: {
+          ProjectionExpression,
+          ExpressionAttributeNames,
+        },
+        // use data:'raw' to bypass electrodb formatting, since we're using ProjectionExpression to select nested attributes
+        // ref: https://electrodb.dev/en/queries/get/#execution-options
+        data: 'raw',
+        pager: 'raw',
+        ignoreOwnership: true,
+      })
+      // need to explicitly cast to DynamoDB's raw output because of the 'raw' option
+      const data = response.data as unknown as QueryCommandOutput & {
+        Items: TableRowOutput[]
+      }
+      tableRows.push(...data.Items)
+      cursor = data.LastEvaluatedKey
+    } while (cursor)
+    return tableRows
   } catch (e: unknown) {
     handleDynamoDBError(e)
   }

@@ -28,7 +28,7 @@ export default function NewColumnHeaderCell({
   column,
 }: HeaderContext<GenericRowData, unknown>) {
   const { isOpen, onClose, onOpen } = useDisclosure()
-  const { createColumn, isCreatingColumn } = useUpdateTable()
+  const { createColumns, isCreatingColumns } = useUpdateTable()
   const [newColumnName, setNewColumnName] = useState('')
 
   const onSubmit = useCallback(
@@ -37,11 +37,11 @@ export default function NewColumnHeaderCell({
       if (!newColumnName.length) {
         return
       }
-      await createColumn(newColumnName)
+      await createColumns([newColumnName])
       setNewColumnName('')
       onClose()
     },
-    [createColumn, newColumnName, onClose],
+    [createColumns, newColumnName, onClose],
   )
 
   return (
@@ -88,7 +88,7 @@ export default function NewColumnHeaderCell({
             />
           </PopoverBody>
           <PopoverFooter justifyContent="flex-end" display="flex" px={4}>
-            <Button type="submit" isLoading={isCreatingColumn} size="sm">
+            <Button type="submit" isLoading={isCreatingColumns} size="sm">
               Add
             </Button>
           </PopoverFooter>

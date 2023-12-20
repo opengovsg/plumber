@@ -33,10 +33,8 @@ export const TableRow = new Entity(
       },
       createdAt: {
         type: 'number',
-        readOnly: true,
         required: true,
         default: () => Date.now(),
-        set: () => Date.now(),
       },
       updatedAt: {
         type: 'number',

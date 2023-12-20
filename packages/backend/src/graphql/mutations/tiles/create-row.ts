@@ -16,7 +16,7 @@ const createRow = async (
     .findById(tableId)
     .throwIfNotFound()
 
-  if (!(await table.validateRowKeys(data))) {
+  if (!(await table.validateRows([data]))) {
     throw new Error('Invalid column id')
   }
 
