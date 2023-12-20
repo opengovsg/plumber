@@ -1,6 +1,7 @@
 import { ITableColumnConfig } from '@plumber/types'
 
 import pLimit from 'p-limit'
+import { z } from 'zod'
 
 import TableColumnMetadata from '@/models/table-column-metadata'
 import Context from '@/types/express/context'
@@ -13,11 +14,33 @@ type Params = {
     modifiedColumns?: {
       id: string
       name?: string
+      position?: number
       config?: ITableColumnConfig
     }[]
     deletedColumns?: string[]
   }
 }
+
+export const updateTableSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().trim().min(1).max(64).optional(),
+  addedColumns: z.array(z.string().trim().min(1).max(255)).optional(),
+  modifiedColumns: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        name: z.string().trim().min(1).max(255).optional(),
+        position: z.number().int().min(0).optional(),
+        config: z
+          .object({
+            width: z.number().int().min(1).optional(),
+          })
+          .optional(),
+      }),
+    )
+    .optional(),
+  deletedColumns: z.array(z.string().uuid()).optional(),
+})
 
 const updateTable = async (
   _parent: unknown,
@@ -30,7 +53,7 @@ const updateTable = async (
     addedColumns,
     modifiedColumns,
     deletedColumns,
-  } = params.input
+  } = updateTableSchema.parse(params.input)
 
   const table = await context.currentUser
     .$relatedQuery('tables')
@@ -39,19 +62,13 @@ const updateTable = async (
     })
     .throwIfNotFound()
 
-  if (tableName !== null) {
-    if (!tableName.trim().length || tableName.trim().length > 64) {
-      throw new Error('Invalid table name')
-    }
+  if (tableName) {
     await table.$query().patch({
       name: tableName.trim(),
     })
   }
 
   if (addedColumns?.length) {
-    if (addedColumns.some((name) => !name.trim().length)) {
-      throw new Error('Invalid column name')
-    }
     await TableColumnMetadata.transaction(async (trx) => {
       const results = await table
         .$relatedQuery('columns', trx)
@@ -76,12 +93,6 @@ const updateTable = async (
       await Promise.all(
         modifiedColumns.map(async (column) => {
           const { id, ...rest } = column
-          if (rest.name != null && !rest.name.trim().length) {
-            throw new Error('Invalid column name')
-          }
-          if (rest.config?.width != null && rest.config.width < 1) {
-            throw new Error('Invalid column width')
-          }
           return limit(() =>
             table
               .$relatedQuery('columns', trx)

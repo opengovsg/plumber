@@ -59,7 +59,7 @@ export default function DeleteRowsButton({
         trapFocus={false}
         onClose={() => setIsDialogOpen(false)}
       >
-        <AlertDialogOverlay bg="none" backdropFilter="auto" backdropBlur="2px">
+        <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
               Delete Column
