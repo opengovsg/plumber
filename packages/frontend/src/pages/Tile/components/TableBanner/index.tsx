@@ -14,6 +14,8 @@ import * as URLS from 'config/urls'
 import { TABLE_BANNER_HEIGHT } from '../../constants'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 
+import ImportExportToolbar from './ImportExportToolbar'
+
 interface TableBannerProps {
   name: string
 }
@@ -46,7 +48,14 @@ function TableBanner({ name }: TableBannerProps) {
   )
 
   return (
-    <Flex px={8} h={TABLE_BANNER_HEIGHT} alignItems="center" overflow="hidden">
+    <Flex
+      px={8}
+      h={TABLE_BANNER_HEIGHT}
+      alignItems="center"
+      justifyContent="space-between"
+      overflow="hidden"
+      zIndex={10}
+    >
       <Breadcrumb
         spacing={4}
         separator={<Icon as={FaChevronRight} color="secondary.300" h={3} />}
@@ -112,6 +121,7 @@ function TableBanner({ name }: TableBannerProps) {
           )}
         </BreadcrumbItem>
       </Breadcrumb>
+      <ImportExportToolbar />
     </Flex>
   )
 }

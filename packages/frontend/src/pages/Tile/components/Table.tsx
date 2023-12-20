@@ -29,7 +29,7 @@ import {
   Z_INDEX,
 } from '../constants'
 import { useTableContext } from '../contexts/TableContext'
-import { createColumns } from '../helpers/columns-helper'
+import { generateColumns } from '../helpers/columns-helper'
 import { scrollToBottom } from '../helpers/scroll-helper'
 import { shallowCompare } from '../helpers/shallow-compare'
 import { useCreateRow } from '../hooks/useCreateRow'
@@ -47,7 +47,7 @@ export default function Table(): JSX.Element {
   const parentRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const childRef = useRef<HTMLDivElement>(null)
-  const columns = useMemo(() => createColumns(tableColumns), [tableColumns])
+  const columns = useMemo(() => generateColumns(tableColumns), [tableColumns])
   const [rowSelection, setRowSelection] = useState({})
   const [searchString, setSearchString] = useState('')
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
@@ -56,6 +56,10 @@ export default function Table(): JSX.Element {
   useEffect(() => {
     setColumnOrder(columns.map((c) => c.id as string))
   }, [columns])
+
+  useEffect(() => {
+    setData(flattenedData)
+  }, [flattenedData])
 
   const [editingCell, setEditingCell] = useState<CellType | null>(null)
   const [highlightedCell, setHighlightedCell] = useState<CellType | null>(null)
