@@ -42,13 +42,18 @@ export default function Tile(): JSX.Element {
   const rows = getAllRowsData.getAllRows
 
   return (
-    <TableContextProvider tableId={id} tableColumns={columns} tableRows={rows}>
+    <TableContextProvider
+      tableName={name}
+      tableId={id}
+      tableColumns={columns}
+      tableRows={rows}
+    >
       <Flex
         flexDir={{ base: 'column' }}
         justifyContent="space-between"
         alignItems="stretch"
       >
-        <TableBanner name={name} />
+        <TableBanner />
         <Table />
       </Flex>
     </TableContextProvider>

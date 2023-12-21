@@ -10,6 +10,10 @@ const baseStyle = definePartsStyle({
     backdropFilter: 'auto',
     backdropBlur: '2px',
   },
+  header: {
+    fontSize: 'lg',
+    fontWeight: 'bold',
+  },
 })
 
 export const Modal = defineMultiStyleConfig({

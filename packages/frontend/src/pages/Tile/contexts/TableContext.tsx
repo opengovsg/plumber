@@ -1,14 +1,22 @@
 import { ITableColumnMetadata, ITableRow } from '@plumber/types'
 
-import React, { createContext, useContext, useMemo } from 'react'
+import React, {
+  createContext,
+  MutableRefObject,
+  useContext,
+  useMemo,
+  useRef,
+} from 'react'
 
 import { flattenRows } from '../helpers/flatten-rows'
 import { GenericRowData } from '../types'
 
 interface TableContextProps {
   tableId: string
+  tableName: string
   flattenedData: GenericRowData[]
   tableColumns: ITableColumnMetadata[]
+  filteredDataRef: MutableRefObject<GenericRowData[]>
 }
 
 const TableContext = createContext<TableContextProps | undefined>(undefined)
@@ -25,6 +33,7 @@ export const useTableContext = () => {
 
 interface TableContextProviderProps {
   tableId: string
+  tableName: string
   tableColumns: ITableColumnMetadata[]
   tableRows: ITableRow[]
   children: React.ReactNode
@@ -32,18 +41,21 @@ interface TableContextProviderProps {
 
 export const TableContextProvider = ({
   tableId,
+  tableName,
   tableColumns,
   tableRows,
   children,
 }: TableContextProviderProps) => {
   const flattenedData = useMemo(() => flattenRows(tableRows), [tableRows])
-
+  const filteredDataRef = useRef<GenericRowData[]>([])
   return (
     <TableContext.Provider
       value={{
         tableId,
+        tableName,
         flattenedData,
         tableColumns,
+        filteredDataRef,
       }}
     >
       {children}

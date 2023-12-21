@@ -185,7 +185,12 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
   ])
 
   return (
-    <Modal isOpen={true} onClose={onClose} closeOnOverlayClick={!importStatus}>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      closeOnOverlayClick={!importStatus}
+      motionPreset="none"
+    >
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
