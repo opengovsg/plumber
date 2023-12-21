@@ -9,6 +9,7 @@ import SnackbarProvider from 'components/SnackbarProvider'
 import ThemeProvider from 'components/ThemeProvider'
 import { AuthenticationProvider } from 'contexts/Authentication'
 import { LaunchDarklyProvider } from 'contexts/LaunchDarkly'
+import { MotionConfig } from 'framer-motion'
 
 const container = document.getElementById('root')
 
@@ -21,15 +22,17 @@ const root = createRoot(container)
 root.render(
   <SnackbarProvider>
     <ThemeProvider>
-      <ApolloProvider>
-        <AuthenticationProvider>
-          <IntlProvider>
-            <LaunchDarklyProvider>
-              <RouterProvider router={router} />
-            </LaunchDarklyProvider>
-          </IntlProvider>
-        </AuthenticationProvider>
-      </ApolloProvider>
+      <MotionConfig reducedMotion="always">
+        <ApolloProvider>
+          <AuthenticationProvider>
+            <IntlProvider>
+              <LaunchDarklyProvider>
+                <RouterProvider router={router} />
+              </LaunchDarklyProvider>
+            </IntlProvider>
+          </AuthenticationProvider>
+        </ApolloProvider>
+      </MotionConfig>
     </ThemeProvider>
   </SnackbarProvider>,
 )
