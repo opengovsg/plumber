@@ -12,23 +12,21 @@ import { IconButton, Input } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 
 import { TABLE_BANNER_HEIGHT } from '../../constants'
+import { useTableContext } from '../../contexts/TableContext'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 
 import ImportExportToolbar from './ImportExportToolbar'
 
-interface TableBannerProps {
-  name: string
-}
-
-function TableBanner({ name }: TableBannerProps) {
+function TableBanner() {
+  const { tableName: initialTableName } = useTableContext()
   const [isEditingTableName, setIsEditingTableName] = useState(false)
-  const [tableName, setTableName] = useState(name)
+  const [tableName, setTableName] = useState(initialTableName)
   const { updateTableName, isUpdatingTableName } = useUpdateTable()
 
   const resetField = useCallback(() => {
-    setTableName(name)
+    setTableName(initialTableName)
     setIsEditingTableName(false)
-  }, [name])
+  }, [initialTableName])
 
   const onSave = useCallback(async () => {
     await updateTableName(tableName)
@@ -106,7 +104,7 @@ function TableBanner({ name }: TableBannerProps) {
               display="flex"
               role="group"
             >
-              {name}
+              {initialTableName}
               <IconButton
                 icon={<FaPencilAlt size={14} />}
                 aria-label="Edit"
