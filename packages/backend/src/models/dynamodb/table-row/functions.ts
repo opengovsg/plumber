@@ -220,7 +220,10 @@ export const getAllTableRows = async ({
       tableRows.push(...data.Items)
       cursor = data.LastEvaluatedKey
     } while (cursor)
-    return tableRows
+    return tableRows.map((row) => ({
+      ...row,
+      data: row.data || {}, // data can be undefined if values are empty
+    }))
   } catch (e: unknown) {
     handleDynamoDBError(e)
   }
