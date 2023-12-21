@@ -49,13 +49,12 @@ describe('update table mutation', () => {
       expect(updatedTable.name).toBe(newTableName)
     })
 
-    it('will not amend table name if null or empty string', async () => {
+    it('will not amend table name if undefined', async () => {
       const updatedTable = await updateTable(
         null,
         {
           input: {
             id: dummyTable.id,
-            name: null,
             addedColumns: [],
             modifiedColumns: [],
             deletedColumns: [],
@@ -64,21 +63,6 @@ describe('update table mutation', () => {
         context,
       )
       expect(updatedTable.name).toBe('Test Table')
-
-      const updatedTable2 = await updateTable(
-        null,
-        {
-          input: {
-            id: dummyTable.id,
-            name: '',
-            addedColumns: [],
-            modifiedColumns: [],
-            deletedColumns: [],
-          },
-        },
-        context,
-      )
-      expect(updatedTable2.name).toBe('Test Table')
     })
   })
 
@@ -89,7 +73,6 @@ describe('update table mutation', () => {
         {
           input: {
             id: dummyTable.id,
-            name: '',
             addedColumns: ['New Column 1', 'New Column 2'],
             modifiedColumns: [],
             deletedColumns: [],
@@ -111,7 +94,6 @@ describe('update table mutation', () => {
         {
           input: {
             id: dummyTable.id,
-            name: '',
             addedColumns: ['New Column 1', 'New Column 1', 'New Column 1'],
             modifiedColumns: [],
             deletedColumns: [],
@@ -133,7 +115,6 @@ describe('update table mutation', () => {
         {
           input: {
             id: dummyTable.id,
-            name: '',
             addedColumns: [],
             modifiedColumns: [
               {
@@ -155,7 +136,6 @@ describe('update table mutation', () => {
         {
           input: {
             id: dummyTable.id,
-            name: '',
             addedColumns: [],
             modifiedColumns: [
               {
@@ -180,7 +160,6 @@ describe('update table mutation', () => {
         {
           input: {
             id: dummyTable.id,
-            name: '',
             addedColumns: [],
             modifiedColumns: [
               {
@@ -205,7 +184,6 @@ describe('update table mutation', () => {
         {
           input: {
             id: dummyTable.id,
-            name: '',
             addedColumns: [],
             modifiedColumns: [],
             deletedColumns: [dummyColumnId],
@@ -233,7 +211,6 @@ describe('update table mutation', () => {
         {
           input: {
             id: dummyTable.id,
-            name: '',
             addedColumns: [],
             modifiedColumns: [],
             deletedColumns: [dummmyColumn2.id],
