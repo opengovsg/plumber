@@ -204,7 +204,7 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
             title="Upload CSV"
             name="file-upload"
             showFileSize={true}
-            accept=".csv"
+            accept={{ 'text/csv': ['.csv'] }}
             isDisabled={importStatus === 'importing'}
             value={file}
           />
