@@ -1,8 +1,8 @@
 import { BiChevronDown, BiExport, BiImport } from 'react-icons/bi'
-import { BsFiletypeCsv } from 'react-icons/bs'
 import { Flex, Menu, MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
+import ExportCsvButton from './ExportCsvButton'
 import ImportCsvButton from './ImportCsvButton'
 
 const ImportExportToolbar = (): JSX.Element => {
@@ -35,9 +35,7 @@ const ImportExportToolbar = (): JSX.Element => {
           Export
         </MenuButton>
         <MenuList borderRadius="md">
-          <MenuItem fontSize={14} icon={<BsFiletypeCsv size={16} />}>
-            CSV
-          </MenuItem>
+          <MenuItem as={ExportCsvButton} />
         </MenuList>
       </Menu>
     </Flex>
