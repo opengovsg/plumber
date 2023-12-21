@@ -1,0 +1,27 @@
+name: Deploy to uat
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - uat
+
+jobs:
+  deploy:
+    name: Deploy
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: 'uat'
+      aws-account-id: '964715690079'
+      cicd-role: 'arn:aws:iam::964715690079:role/plumber-uat-github-oidc-role'
+      ecr-repository: 'plumber-uat'
+      ecs-cluster-name: 'plumber-uat-ecs'
+      ecs-service-name: 'plumber-uat-ecs-service'
+      ecs-worker-service-name: 'plumber-uat-ecs-worker-service'
+      ecs-container-name: 'app'
+      codedeploy-application: 'plumber-uat-ecs-app'
+      codedeploy-deployment-group: 'plumber-uat-ecs-dg'
+      release-version: ${{ github.sha }}
