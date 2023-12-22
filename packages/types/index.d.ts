@@ -1,4 +1,8 @@
-import type { AxiosInstance, AxiosRequestConfig } from 'axios'
+import type {
+  AxiosInstance,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
+} from 'axios'
 
 export type IHttpClient = AxiosInstance
 import type { Request } from 'express'
@@ -217,12 +221,18 @@ export interface IFieldMultiRow extends IBaseField {
   subFields: IField[]
 }
 
+export interface IFieldRichText extends IBaseField {
+  type: 'rich-text'
+  value?: string
+}
+
 export type IField =
   | IFieldDropdown
   | IFieldText
   | IFieldMultiline
   | IFieldMultiSelect
   | IFieldMultiRow
+  | IFieldRichText
 
 export interface IAuthenticationStepField {
   name: string
@@ -267,7 +277,10 @@ export interface IApp {
 }
 
 export type TBeforeRequest = {
-  ($: IGlobalVariable, requestConfig: AxiosRequestConfig): AxiosRequestConfig
+  (
+    $: IGlobalVariable,
+    requestConfig: InternalAxiosRequestConfig,
+  ): InternalAxiosRequestConfig
 }
 
 export interface DynamicDataOutput {

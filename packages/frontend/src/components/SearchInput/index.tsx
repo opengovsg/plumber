@@ -4,10 +4,12 @@ import { Input } from '@opengovsg/design-system-react'
 
 type SearchInputProps = {
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
+  searchValue?: string
 }
 
 export default function SearchInput({
   onChange,
+  searchValue,
 }: SearchInputProps): React.ReactElement {
   return (
     <InputGroup>
@@ -17,6 +19,7 @@ export default function SearchInput({
         size="lg"
         fontSize="md"
         onChange={onChange}
+        defaultValue={searchValue}
         placeholder="Search"
       />
       <InputRightElement h="100%">

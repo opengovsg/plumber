@@ -30,27 +30,31 @@ const action: IRawAction = {
 
   async run($) {
     const defaultTime = '00:00'
+    // trim the date and time for user
     const { delayUntil, delayUntilTime } = $.step.parameters
+    const delayUntilString = new String(delayUntil).trim()
+    // catch empty string (user input), null, undefined (backwards compat)
+    const delayUntilTimeString = delayUntilTime
+      ? new String(delayUntilTime).trim()
+      : defaultTime
+
     const delayTimestamp = generateTimestamp(
-      delayUntil as string,
-      (delayUntilTime as string) || defaultTime, // catch empty string (user input), null, undefined (backwards compat)
+      delayUntilString,
+      delayUntilTimeString,
     )
 
     if (isNaN(delayTimestamp)) {
-      const stepErrorName = 'Invalid timestamp entered'
-      const stepErrorSolution =
-        'Click on set up action and check for the validity of the format of the date or time entered.'
       throw generateStepError(
-        stepErrorName,
-        stepErrorSolution,
+        'Invalid timestamp entered',
+        'Click on set up action and check that the date or time entered is of a valid format.',
         $.step.position,
         $.app.name,
       )
     }
 
     const dataItem = {
-      delayUntil,
-      delayUntilTime: delayUntilTime || defaultTime,
+      delayUntil: delayUntilString,
+      delayUntilTime: delayUntilTimeString,
     }
 
     $.setActionItem({ raw: dataItem })

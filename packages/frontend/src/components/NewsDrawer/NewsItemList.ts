@@ -9,6 +9,15 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2023-11-30',
+    tag: NEW_FEATURE_TAG,
+    title: 'Rich text editor for email body',
+    details: dedent`
+      * Email body can now be formatted easily with our brand new rich-text editor with elements like table, list, headings and images.
+      * There might be some backward compatbility issues if you are editing old pipes that use raw HTML. Keep a look out for our emails for more details.
+    `,
+  },
+  {
     date: '2023-11-23',
     tag: NEW_FEATURE_TAG,
     title: 'Email attachments for Postman action',
@@ -17,7 +26,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
       * Checkout the supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).
     `,
     multimedia: {
-      url: 'https://file.go.gov.sg/clipplumer.png',
+      url: 'https://file.go.gov.sg/clipplumber.png',
     },
   },
   {

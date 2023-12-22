@@ -1,0 +1,45 @@
+.editor__header {
+  padding: 0.5rem;
+}
+
+.divider {
+  background-color: var(--chakra-colors-grey-700);
+  height: 1.25rem;
+  margin-left: 0.5rem;
+  margin-right: 0.75rem;
+  width: 1px;
+}
+
+.menu-item {
+  background-color: transparent;
+  border: none;
+  border-radius: 0.4rem;
+  color: var(--chakra-colors-grey-700);
+  cursor: pointer;
+  height: 1.75rem;
+  margin-right: 0.35rem;
+  padding: 0.25rem;
+  width: 1.75rem;
+
+  svg {
+    fill: currentColor;
+    height: 100%;
+    width: 100%;
+  }
+
+  &:hover,
+  &.is-active {
+    background-color: #303030;
+  }
+}
+
+.menubar-dialog {
+  .MuiDialog-container {
+    // so that the variable drop down will have enough space even in small screen
+    // to show "See all"
+    align-items: flex-start;
+  }
+  .MuiDialogContentText-root .MuiButton-root {
+    margin-top: 16px;
+  }
+}

@@ -1,6 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import { forwardRef, useEffect, useMemo, useState } from 'react'
+import { forwardRef, useCallback, useMemo } from 'react'
 import type { LinkProps } from 'react-router-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
@@ -13,6 +13,7 @@ import Grid from '@mui/material/Grid'
 import { Pagination } from '@opengovsg/design-system-react'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import Container from 'components/Container'
+import EmptyFlowsTemplate from 'components/EmptyFlows'
 import FlowRow from 'components/FlowRow'
 import NavigationDrawer from 'components/Layout/NavigationDrawer'
 import NoResultFound from 'components/NoResultFound'
@@ -25,6 +26,11 @@ import debounce from 'lodash/debounce'
 const FLOW_PER_PAGE = 10
 const FLOWS_TITLE = 'Pipes'
 
+interface FlowsParameters {
+  page: number
+  input: string
+}
+
 const getLimitAndOffset = (page: number) => ({
   limit: FLOW_PER_PAGE,
   offset: (page - 1) * FLOW_PER_PAGE,
@@ -33,21 +39,49 @@ const getLimitAndOffset = (page: number) => ({
 export default function Flows(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
+  const flowName = searchParams.get('input') || ''
 
-  const [flowName, setFlowName] = useState('')
-  const onFlowSearchChange = useMemo(
-    () =>
-      debounce((event: React.ChangeEvent<HTMLInputElement>) => {
-        setFlowName(event.target.value)
-        setSearchParams({})
-      }, 300),
-    [setFlowName, setSearchParams],
+  // format search params for empty string input and first page
+  const formatSearchParams = useCallback(
+    (params: Partial<FlowsParameters>) => {
+      setSearchParams({
+        ...(params.page &&
+          params.page != 1 && { page: params.page.toString() }),
+        ...(params.input != '' && { input: params.input }),
+      })
+    },
+    [setSearchParams],
   )
-  useEffect(() => {
-    return () => {
-      onFlowSearchChange.cancel()
-    }
-  }, [onFlowSearchChange])
+
+  const handlePageChange = useCallback(
+    (page: number) => {
+      formatSearchParams({
+        page,
+        input: flowName,
+      })
+    },
+    [flowName, formatSearchParams],
+  )
+
+  // handle and debounce input
+  const handleSearchInputChange = useCallback(
+    (input: string) => {
+      formatSearchParams({ input })
+    },
+    [formatSearchParams],
+  )
+
+  const handleSearchInputChangeDebounced = useMemo(
+    () => debounce(handleSearchInputChange, 1000),
+    [handleSearchInputChange],
+  )
+
+  const onSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      handleSearchInputChangeDebounced(event.target.value)
+    },
+    [handleSearchInputChangeDebounced],
+  )
 
   const { data, loading } = useQuery(GET_FLOWS, {
     variables: {
@@ -71,6 +105,10 @@ export default function Flows(): React.ReactElement {
     [],
   )
 
+  if (!loading && !hasFlows && flowName === '' && page === 1) {
+    return <EmptyFlowsTemplate CreateFlowLink={CreateFlowLink} />
+  }
+
   return (
     <Box sx={{ py: 3 }}>
       <Container variant="page">
@@ -89,7 +127,10 @@ export default function Flows(): React.ReactElement {
           </Grid>
 
           <Grid item xs={12} sm="auto" order={{ xs: 2, sm: 1 }}>
-            <SearchInput onChange={onFlowSearchChange} />
+            <SearchInput
+              searchValue={flowName}
+              onChange={onSearchInputChange}
+            />
           </Grid>
 
           <Grid
@@ -132,9 +173,7 @@ export default function Flows(): React.ReactElement {
           <Flex justifyContent="center" mt={6}>
             <Pagination
               currentPage={pageInfo?.currentPage}
-              onPageChange={(page) =>
-                setSearchParams(page === 1 ? {} : { page: page.toString() })
-              }
+              onPageChange={handlePageChange}
               pageSize={FLOW_PER_PAGE}
               totalCount={pageInfo?.totalCount}
             ></Pagination>

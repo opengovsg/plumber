@@ -15,7 +15,8 @@ function makeListItemComponent(
     return (props: ListItemButtonProps) => (
       <ListItemButton
         {...props}
-        onClick={() => {
+        // onClick doesn't work sometimes due to latency between mousedown and immediate mouseup event after
+        onMouseDown={() => {
           onClick(variable)
         }}
       />
