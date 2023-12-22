@@ -86,18 +86,14 @@ export class RedisCachedValue<T extends IJSONValue> {
   //
 
   public async get(forceInvalidation = false): Promise<T> {
-    const redisValueGetter = this.extendExpiryOnRead
-      ? this._getFromRedisAndExtendExpiry
-      : this._getFromRedis
-
     if (!forceInvalidation) {
-      const valueInRedis = await redisValueGetter()
+      const valueInRedis = await this._getFromRedisAndMaybeExtendExpiry()
       if (valueInRedis) {
         return JSON.parse(valueInRedis)
       }
     }
 
-    return await this._refreshCachedValue(redisValueGetter, forceInvalidation)
+    return await this._refreshCachedValue(forceInvalidation)
   }
 
   public async invalidateIfValueIs(expectedValue: T): Promise<void> {
@@ -106,7 +102,7 @@ export class RedisCachedValue<T extends IJSONValue> {
       //
       // Note that we always use raw get without bumping expiry because expiries
       // should only ever be bumped on value read - but a clear isn't a read.
-      const valueInRedis = await this._getFromRedis()
+      const valueInRedis = await redisAppDataClient.get(this.redisKey)
       if (valueInRedis !== expectedValue) {
         return
       }
@@ -123,12 +119,7 @@ export class RedisCachedValue<T extends IJSONValue> {
   // Implementation details
   //
 
-  private async _refreshCachedValue(
-    redisValueGetter:
-      | typeof this._getFromRedis
-      | typeof this._getFromRedisAndExtendExpiry,
-    forceInvalidation: boolean,
-  ): Promise<T> {
+  private async _refreshCachedValue(forceInvalidation: boolean): Promise<T> {
     return await runWithLockElseRetryStep(this.lockKey, async (signal) => {
       // If we're not forcing invalidation, then we must be calling this because
       // the data was not in redis when we tried to get it earlier (i.e. it has
@@ -139,9 +130,7 @@ export class RedisCachedValue<T extends IJSONValue> {
       // redis for us already. So we check redis again at lock entry to see if
       // we can avoid making our query.
       if (!forceInvalidation) {
-        // We abstract away redisValueGetter because we may need to extend
-        // expiry on get.
-        const valueInRedis = await redisValueGetter()
+        const valueInRedis = await this._getFromRedisAndMaybeExtendExpiry()
         if (valueInRedis) {
           return JSON.parse(valueInRedis)
         }
@@ -168,24 +157,24 @@ export class RedisCachedValue<T extends IJSONValue> {
     })
   }
 
-  private async _getFromRedis(): Promise<string | null> {
-    return await redisAppDataClient.get(this.redisKey)
-  }
+  private async _getFromRedisAndMaybeExtendExpiry(): Promise<string | null> {
+    if (this.extendExpiryOnRead) {
+      const [[getErr, valueInRedis], [expireErr]] = await redisAppDataClient
+        .multi()
+        .get(this.redisKey)
+        .expire(this.redisKey, this.expirySeconds)
+        .exec()
 
-  private async _getFromRedisAndExtendExpiry(): Promise<string | null> {
-    const [[getErr, valueInRedis], [expireErr]] = await redisAppDataClient
-      .multi()
-      .get(this.redisKey)
-      .expire(this.redisKey, this.expirySeconds)
-      .exec()
+      if (getErr) {
+        throw getErr
+      }
+      if (expireErr) {
+        throw expireErr
+      }
 
-    if (getErr) {
-      throw getErr
+      return valueInRedis as string | null
+    } else {
+      return await redisAppDataClient.get(this.redisKey)
     }
-    if (expireErr) {
-      throw expireErr
-    }
-
-    return valueInRedis as string | null
   }
 }
