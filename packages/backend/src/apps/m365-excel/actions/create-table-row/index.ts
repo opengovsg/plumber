@@ -1,8 +1,9 @@
 import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
 
+import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 import { generateStepError } from '@/helpers/generate-step-error'
 
-import WorkbookSession from '../../common/workbook-session'
+import { ExcelWorkbook } from '../../common/sharepoint/excel-workbook'
 
 interface TableHeaderInfo {
   columnCount: number
@@ -168,26 +169,24 @@ const action: IRawAction = {
       seenColumnNames.add(currColumnName)
     }
 
-    const session = await WorkbookSession.acquire($, fileId as string)
+    const tenant = getM365TenantInfo($.auth.data?.tenantKey as string)
+    const workbook = await ExcelWorkbook.init($, tenant, fileId as string)
 
-    const tableHeaderInfoResponse = await session.request<{
+    const tableHeaderInfoResponse = await workbook.withSession().request<{
       columnCount: number
       rowIndex: number
       values: string[][] // Guaranteed to be length 1 at top level
-    }>(
-      `/tables/${tableId}/headerRowRange?$select=columnCount,rowIndex,values`,
-      'get',
-    )
+    }>(`/tables/${tableId}/headerRowRange?$select=columnCount,rowIndex,values`, 'get')
+
     const tableHeaderInfo: TableHeaderInfo = {
       columnCount: tableHeaderInfoResponse.data.columnCount,
       rowIndex: tableHeaderInfoResponse.data.rowIndex,
       columnNames: tableHeaderInfoResponse.data.values[0],
     }
 
-    const createRowResponse = await session.request<{ index: number }>(
-      `/tables/${tableId}/rows`,
-      'post',
-      {
+    const createRowResponse = await workbook
+      .withSession()
+      .request<{ index: number }>(`/tables/${tableId}/rows`, 'post', {
         data: {
           index: null,
           values: [
@@ -201,8 +200,7 @@ const action: IRawAction = {
             ),
           ],
         },
-      },
-    )
+      })
 
     $.setActionItem({
       raw: {

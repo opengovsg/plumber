@@ -2,16 +2,12 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 
-import {
-  getM365TenantInfo,
-  type M365TenantInfo,
-} from '@/config/app-env-vars/m365'
+import { type M365TenantInfo } from '@/config/app-env-vars/m365'
 import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
-import { isFileTooSensitive } from './sharepoint/excel-workbook/data-classification'
-import { tryParseGraphApiError } from './parse-graph-api-error'
-import { RedisCachedValue } from './redis-cached-value'
+import { tryParseGraphApiError } from '../../parse-graph-api-error'
+import { RedisCachedValue } from '../../redis-cached-value'
 
 // Session ID redis key expiry
 //
@@ -100,23 +96,7 @@ export default class WorkbookSession {
   private fileId: string
   private cachedSessionId: RedisCachedValue<string>
 
-  static async acquire(
-    $: IGlobalVariable,
-    fileId: string,
-  ): Promise<WorkbookSession> {
-    const tenant = getM365TenantInfo($.auth.data?.tenantKey as string)
-
-    // We _always_ check against the server in case file sensitivity has
-    // changed. This guards against things likes delayed actions working on
-    // files whose sensitivity has been upgraded during the delay period.
-    if (await isFileTooSensitive(tenant, fileId, $.http)) {
-      throw new Error(`File is too sensitive!`)
-    }
-
-    return new WorkbookSession($, tenant, fileId)
-  }
-
-  private constructor(
+  public constructor(
     $: IGlobalVariable,
     tenant: M365TenantInfo,
     fileId: string,

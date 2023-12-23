@@ -15,6 +15,7 @@ import {
   type ExcelWorksheet,
 } from './constants'
 import { isFileTooSensitive } from './data-classification'
+import WorkbookSession from './workbook-session'
 
 /**
  * A small abstraction to make it easier to fetch, cache and manipulate excel
@@ -25,7 +26,7 @@ import { isFileTooSensitive } from './data-classification'
  * 1. Ensure that a file is not too sensitive before working on it.
  * 2. Query (with automatic caching) _infrequently_ changed data such as
  *    worksheets, tables and table columns.
- * 3. (TODO) Spin up sessions to safely manipulate excel data in a concurrent
+ * 3. Spin up sessions to safely manipulate excel data in a concurrent
  *    environment.
  *
  * Some design notes:
@@ -96,6 +97,8 @@ export class ExcelWorkbook {
   private tables: RedisCachedValue<ExcelTable[]>
   private tableColumns: Map<string, RedisCachedValue<ExcelTableColumn[]>>
 
+  private session: WorkbookSession | null
+
   public static async init(
     $: IGlobalVariable,
     tenant: M365TenantInfo,
@@ -120,6 +123,9 @@ export class ExcelWorkbook {
     this.tables = initCachedTables($, tenant, fileId)
     this.worksheets = initCachedWorksheets($, tenant, fileId)
     this.tableColumns = new Map()
+
+    // Lazily initialized in withSession.
+    this.session = null
   }
 
   public async getTables(forceInvalidation = false): Promise<ExcelTable[]> {
@@ -144,5 +150,13 @@ export class ExcelWorkbook {
     }
 
     return await this.tableColumns.get(tableId).get(forceInvalidation)
+  }
+
+  public withSession(): WorkbookSession {
+    if (!this.session) {
+      this.session = new WorkbookSession(this.$, this.tenant, this.fileId)
+    }
+
+    return this.session
   }
 }

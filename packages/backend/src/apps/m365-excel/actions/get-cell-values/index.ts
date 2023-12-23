@@ -1,8 +1,9 @@
 import type { IRawAction } from '@plumber/types'
 
+import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 import { generateStepError } from '@/helpers/generate-step-error'
 
-import WorkbookSession from '../../common/workbook-session'
+import { ExcelWorkbook } from '../../common/sharepoint/excel-workbook'
 
 import type { DataOut } from './data-out'
 import getDataOutMetadata from './get-data-out-metadata'
@@ -101,14 +102,17 @@ const action: IRawAction = {
       }
     }
 
-    const session = await WorkbookSession.acquire($, fileId as string)
+    const tenant = getM365TenantInfo($.auth.data?.tenantKey as string)
+    const workbook = await ExcelWorkbook.init($, tenant, fileId as string)
 
     const results: DataOut['results'] = await Promise.all(
       cells.map(async (cell) => {
-        const response = await session.request<{ values: string[][] }>(
-          `/worksheets/${worksheetId}/range(address='${cell.address}')`,
-          'get',
-        )
+        const response = await workbook
+          .withSession()
+          .request<{ values: string[][] }>(
+            `/worksheets/${worksheetId}/range(address='${cell.address}')`,
+            'get',
+          )
         return {
           cellAddress: cell.address,
           cellValue: response.data.values[0][0],
