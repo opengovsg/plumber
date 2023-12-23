@@ -74,15 +74,14 @@ export function initCachedTableColumns(
     extendExpiryOnRead: false,
     queryValueFromSource: async () => {
       const response = await $.http.get<{
-        value: Array<{ index: number; name: string }>
+        value: Array<{ name: string }>
       }>(
-        `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/workbook/tables/${tableId}/columns?$select=index,name&$orderby=index`,
+        `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/workbook/tables/${tableId}/columns?$select=name&$orderby=index`,
       )
 
       return response.data.value.map((entry) => ({
-        name: `Column ${entry.index} (${entry.name})`,
-        // We return indices because excel works with indices, not names.
-        value: String(entry.index),
+        name: entry.name,
+        value: entry.name,
       }))
     },
   })
