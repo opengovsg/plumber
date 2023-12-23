@@ -3,7 +3,7 @@ import type { IDynamicData } from '@plumber/types'
 import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 
 import { getRegisteredAuthData } from '../../common/auth-data'
-import { isFileTooSensitive } from '../../common/data-classification'
+import { isFileTooSensitive } from '../../common/sharepoint/excel-workbook/data-classification'
 
 const dynamicData: IDynamicData = {
   name: 'List Worksheets',

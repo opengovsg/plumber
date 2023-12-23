@@ -9,7 +9,7 @@ import {
 import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
-import { isFileTooSensitive } from './data-classification'
+import { isFileTooSensitive } from './sharepoint/excel-workbook/data-classification'
 import { tryParseGraphApiError } from './parse-graph-api-error'
 import { RedisCachedValue } from './redis-cached-value'
 

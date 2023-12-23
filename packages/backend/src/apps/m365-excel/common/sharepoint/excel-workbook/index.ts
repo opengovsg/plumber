@@ -14,6 +14,7 @@ import {
   type ExcelTableColumn,
   type ExcelWorksheet,
 } from './constants'
+import { isFileTooSensitive } from './data-classification'
 
 /**
  * A small abstraction to make it easier to fetch, cache and manipulate excel
@@ -21,7 +22,7 @@ import {
  * ===
  *
  * This class allows users to:
- * 1. (TODO) Ensure that a file is not too sensitive before working on it.
+ * 1. Ensure that a file is not too sensitive before working on it.
  * 2. Query (with automatic caching) _infrequently_ changed data such as
  *    worksheets, tables and table columns.
  * 3. (TODO) Spin up sessions to safely manipulate excel data in a concurrent
@@ -64,11 +65,27 @@ import {
  *    the cost of data staleness (which doesn't matter _that_ much due to the
  *    short expiry).
  *
- * c) Data is cached (DEFAULT_CACHE_LIFETIME_SECONDS) for quite a long time; the
- *    long TTL is because this _only_ caches data we don't expect to frequently
- *    change. For example, any change in table column names would likely lead to
- *    a user updating their pipe; when they do this, they can invalidate our
- *    cache manually (manual invalidation TODO in later PR).
+ * c) Data, other than the sensitivity label, is cached for quite a long time
+ *    (see DEFAULT_CACHE_LIFETIME_SECONDS); the long TTL is because we _only_
+ *    cache data we don't expect to frequently change. For example, any change
+ *    in table column names would likely lead to a user updating their pipe;
+ *    when they do this, they can invalidate our cache  (manual invalidation
+ *    TODO in later PR).
+ *
+ * d) We _do_ cache the file sensitivity label for a very short time (see
+ *    SENSITIVITY_LABEL_CACHE_LIFETIME_SECONDS); the goal is to eliminate extra
+ *    queries during _transient_ usage spikes. I believe this is OK to do
+ *    because:
+ *
+ *    1. End users are already instructed not to use us for sensitive data. This
+ *       is just an extra "precaution" check: its intent is aimed more at
+ *       preventing users from _selecting_ too sensitive files during pipe
+ *       setup, instead of guarding against changes in a file's sensitivity
+ *       (plus, in my experience, file sensitivity rarely changes).
+ *    2. Even if a user is careless and changes a file's sensitivity to a level
+ *       that is too sensitive for us to process, our label cache has a special,
+ *       extra short TTL (see SENSITIVITY_LABEL_CACHE_LIFETIME_SECONDS).This
+ *       limits any potential data exposure.
  */
 export class ExcelWorkbook {
   private $: IGlobalVariable
@@ -79,7 +96,19 @@ export class ExcelWorkbook {
   private tables: RedisCachedValue<ExcelTable[]>
   private tableColumns: Map<string, RedisCachedValue<ExcelTableColumn[]>>
 
-  public constructor(
+  public static async init(
+    $: IGlobalVariable,
+    tenant: M365TenantInfo,
+    fileId: string,
+  ): Promise<ExcelWorkbook> {
+    if (await isFileTooSensitive(tenant, fileId, $.http)) {
+      throw new Error(`File is too sensitive!`)
+    }
+
+    return new ExcelWorkbook($, tenant, fileId)
+  }
+
+  private constructor(
     $: IGlobalVariable,
     tenant: M365TenantInfo,
     fileId: string,
