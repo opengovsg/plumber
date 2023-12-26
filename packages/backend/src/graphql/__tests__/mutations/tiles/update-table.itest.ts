@@ -198,10 +198,12 @@ describe('update table mutation', () => {
     })
 
     it('should not be able to delete a column from a different table', async () => {
-      const dummyTable2 = await TableMetadata.query().insert({
-        name: 'Test Table',
-        userId: context.currentUser.id,
-      })
+      const dummyTable2 = await context.currentUser
+        .$relatedQuery('tables')
+        .insertGraph({
+          name: 'Test Table',
+          role: 'owner',
+        })
 
       const dummmyColumn2 = await dummyTable2.$relatedQuery('columns').insert({
         name: 'Test Column',

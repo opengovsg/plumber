@@ -591,3 +591,5 @@ export interface ITableRow {
   rowId: string
   data: Record<string, IJSONPrimitive>
 }
+
+export type ITableCollabRole = 'owner' | 'editor' | 'viewer'
