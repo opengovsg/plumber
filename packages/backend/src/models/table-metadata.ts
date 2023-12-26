@@ -1,15 +1,20 @@
-import { ITableRow } from '@plumber/types'
+import { ITableCollabRole } from '@plumber/types'
 
 import Base from './base'
+import TableCollaborator from './table-collaborators'
 import TableColumnMetadata from './table-column-metadata'
 import User from './user'
 
 class TableMetadata extends Base {
   id!: string
-  userId!: string
   name: string
-  user!: User
+  collaborators!: User[]
   columns: TableColumnMetadata[]
+
+  /**
+   * for typescript support when creating TableCollaborator row in insertGraph
+   */
+  role?: ITableCollabRole
 
   static tableName = 'table_metadata'
 
@@ -19,17 +24,24 @@ class TableMetadata extends Base {
     // although it will be auto populated by objectionjs
     properties: {
       id: { type: 'string', format: 'uuid' },
-      userId: { type: 'string', format: 'uuid' },
       name: { type: 'string' },
     },
   }
 
   static relationMappings = () => ({
-    user: {
-      relation: Base.BelongsToOneRelation,
+    collaborators: {
+      relation: Base.ManyToManyRelation,
       modelClass: User,
       join: {
-        from: `${this.tableName}.user_id`,
+        from: `${this.tableName}.id`,
+        through: {
+          modelClass: TableCollaborator,
+          from: `${TableCollaborator.tableName}.table_id`,
+          to: `${TableCollaborator.tableName}.user_id`,
+          extra: {
+            role: 'role',
+          },
+        },
         to: `${User.tableName}.id`,
       },
     },
@@ -56,25 +68,6 @@ class TableMetadata extends Base {
       }
     }
     return true
-  }
-
-  /**
-   * @deprecated since we are only selecting existing columns now
-   */
-  async stripInvalidKeys(rows: ITableRow[]): Promise<ITableRow[]> {
-    const columns = await this.$relatedQuery('columns')
-    const columnIdsSet = new Set(columns.map((column) => column.id))
-
-    return rows.map((row) => {
-      const validKeys = Object.keys(row.data).filter((key) =>
-        columnIdsSet.has(key),
-      )
-      const validData = validKeys.reduce(
-        (acc, key) => ({ ...acc, [key]: row.data[key] }),
-        {},
-      )
-      return { ...row, data: validData }
-    })
   }
 }
 

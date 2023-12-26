@@ -18,9 +18,10 @@ export async function generateMockTable({
 }: {
   userId: string
 }): Promise<TableMetadata> {
-  return TableMetadata.query().insert({
+  const currentUser = await User.query().findById(userId)
+  return currentUser.$relatedQuery('tables').insert({
     name: 'Test Table',
-    userId: userId,
+    role: 'owner',
   })
 }
 
