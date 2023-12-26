@@ -1,3 +1,5 @@
+import { ITableCollabRole } from '@plumber/types'
+
 import crypto from 'crypto'
 import { ModelOptions, QueryContext } from 'objection'
 
@@ -6,6 +8,7 @@ import Connection from './connection'
 import Execution from './execution'
 import Flow from './flow'
 import Step from './step'
+import TableCollaborator from './table-collaborators'
 import TableMetadata from './table-metadata'
 
 class User extends Base {
@@ -19,6 +22,9 @@ class User extends Base {
   steps?: Step[]
   executions?: Execution[]
   tables?: TableMetadata[]
+
+  // for typescript support when creating TableCollaborator row in insertGraph
+  role?: ITableCollabRole
 
   static tableName = 'users'
 
@@ -74,11 +80,19 @@ class User extends Base {
       },
     },
     tables: {
-      relation: Base.HasManyRelation,
+      relation: Base.ManyToManyRelation,
       modelClass: TableMetadata,
       join: {
         from: `${this.tableName}.id`,
-        to: `${TableMetadata.tableName}.user_id`,
+        through: {
+          modelClass: TableCollaborator,
+          from: `${TableCollaborator.tableName}.user_id`,
+          to: `${TableCollaborator.tableName}.table_id`,
+          extra: {
+            role: 'role',
+          },
+        },
+        to: `${TableMetadata.tableName}.id`,
       },
     },
   })
