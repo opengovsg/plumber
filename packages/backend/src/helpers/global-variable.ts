@@ -25,7 +25,7 @@ type GlobalVariableOptions = {
   execution?: Execution
   testRun?: boolean
   request?: IRequest
-  user?: User // only required for verifyHook and registerHook now
+  user?: User // only required for verifyConnection and registerConnection now
 }
 
 const globalVariable = async (

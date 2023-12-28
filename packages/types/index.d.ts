@@ -291,6 +291,7 @@ export interface DynamicDataOutput {
 }
 
 export type AuthConnectionType = 'user-added' | 'system-added'
+export type ConnectionRegistrationType = 'global' | 'per-step'
 
 interface IBaseAuth {
   connectionType: AuthConnectionType
@@ -303,6 +304,13 @@ interface IBaseAuth {
   isRefreshTokenRequested?: boolean
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
+
+  connectionRegistrationType?: ConnectionRegistrationType
+  registerConnection?($: IGlobalVariable): Promise<void>
+  unregisterConnection?($: IGlobalVariable): Promise<void>
+  verifyConnectionRegistration?(
+    $: IGlobalVariable,
+  ): Promise<IVerifyConnectionRegistrationOutput>
 }
 
 interface IUserAddedConnectionAuth extends IBaseAuth {
@@ -346,9 +354,6 @@ export interface IBaseTrigger {
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
-  registerHook?($: IGlobalVariable): Promise<void>
-  verifyHook?($: IGlobalVariable): Promise<IVerifyHookOutput>
-  unregisterHook?($: IGlobalVariable): Promise<void>
   sort?(item: ITriggerItem, nextItem: ITriggerItem): number
 
   /**
@@ -368,7 +373,6 @@ export interface IRawTrigger extends IBaseTrigger {
 
 export interface ITrigger extends IBaseTrigger {
   substeps?: ISubstep[]
-  supportsWebhookRegistration?: boolean
 }
 
 interface PostmanSendEmailMetadata {
@@ -524,12 +528,13 @@ export interface IRequest extends Request {
   rawBody?: Buffer
 }
 
-export interface IVerifyHookOutput {
-  webhookVerified: boolean
+export interface IVerifyConnectionRegistrationOutput {
+  registrationVerified: boolean
   message: string
 }
 
-export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
+export interface ITestConnectionOutput
+  extends Partial<IVerifyConnectionRegistrationOutput> {
   connectionVerified: boolean
 }
 export interface IStepError {

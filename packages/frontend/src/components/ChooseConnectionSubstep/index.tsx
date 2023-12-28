@@ -1,11 +1,9 @@
 import type {
-  IAction,
   IApp,
   IConnection,
   IStep,
   ISubstep,
   ITestConnectionOutput,
-  ITrigger,
 } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
@@ -16,7 +14,7 @@ import ChooseConnectionDropdown from 'components/ChooseConnectionDropdown'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import SetConnectionButton from 'components/SetConnectionButton'
 import { EditorContext } from 'contexts/Editor'
-import { REGISTER_WEBHOOK } from 'graphql/mutations/register-webhook'
+import { REGISTER_CONNECTION } from 'graphql/mutations/register-connection'
 import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
 import { TEST_CONNECTION } from 'graphql/queries/test-connection'
 
@@ -29,7 +27,6 @@ type ChooseConnectionSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
-  selectedActionOrTrigger?: ITrigger | IAction
 }
 
 type ConnectionDropdownOption = {
@@ -56,15 +53,15 @@ function ChooseConnectionSubstep(
     onSubmit,
     onChange,
     application,
-    selectedActionOrTrigger,
   } = props
   const { connection, appKey } = step
   const editorContext = useContext(EditorContext)
   const { data, loading, refetch } = useQuery(GET_APP_CONNECTIONS, {
     variables: { key: appKey },
   })
-  const supportsWebhookRegistration =
-    (selectedActionOrTrigger as ITrigger)?.supportsWebhookRegistration || false
+
+  const supportsConnectionRegistration =
+    !!application.auth?.connectionRegistrationType
 
   const {
     loading: testResultLoading,
@@ -75,13 +72,13 @@ function ChooseConnectionSubstep(
   }>(TEST_CONNECTION, {
     variables: {
       connectionId: connection?.id,
-      stepId: supportsWebhookRegistration ? step.id : undefined,
+      stepId: supportsConnectionRegistration ? step.id : undefined,
     },
     skip: !connection?.id,
   })
 
-  const [registerWebhook, { loading: registerWebhookLoading }] =
-    useMutation(REGISTER_WEBHOOK)
+  const [registerConnection, { loading: registerConnectionLoading }] =
+    useMutation(REGISTER_CONNECTION)
 
   const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
@@ -115,9 +112,9 @@ function ChooseConnectionSubstep(
     [step, onChange, refetch],
   )
 
-  const onRegisterWebhook = useCallback(async () => {
-    if (step.connection?.id && supportsWebhookRegistration) {
-      await registerWebhook({
+  const onRegisterConnection = useCallback(async () => {
+    if (step.connection?.id && supportsConnectionRegistration) {
+      await registerConnection({
         variables: {
           input: {
             connectionId: step.connection.id,
@@ -127,7 +124,12 @@ function ChooseConnectionSubstep(
       })
       await retestConnection()
     }
-  }, [step, registerWebhook, supportsWebhookRegistration, retestConnection])
+  }, [
+    step,
+    registerConnection,
+    supportsConnectionRegistration,
+    retestConnection,
+  ])
 
   const onToggle = expanded ? onCollapse : onExpand
 
@@ -137,7 +139,7 @@ function ChooseConnectionSubstep(
     }
     if (
       testConnectionData?.testConnection?.connectionVerified === false ||
-      testConnectionData.testConnection.webhookVerified === false
+      testConnectionData.testConnection.registrationVerified === false
     ) {
       return false
     }
@@ -171,12 +173,12 @@ function ChooseConnectionSubstep(
           />
           <SetConnectionButton
             onNextStep={onSubmit}
-            onRegisterWebhook={onRegisterWebhook}
+            onRegisterConnection={onRegisterConnection}
             readOnly={editorContext.readOnly}
-            supportsWebhookRegistration={supportsWebhookRegistration}
+            supportsConnectionRegistration={supportsConnectionRegistration}
             testResult={testConnectionData?.testConnection}
             testResultLoading={testResultLoading}
-            registerWebhookLoading={registerWebhookLoading}
+            registerConnectionLoading={registerConnectionLoading}
           />
         </ListItem>
       </Collapse>
