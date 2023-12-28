@@ -166,7 +166,7 @@ function ControlledAutocomplete(
                 filterOptions={(options, params) => {
                   const filtered = filter(options, params)
 
-                  if (params.inputValue !== '') {
+                  if (freeSolo && params.inputValue !== '') {
                     filtered.push({
                       value: params.inputValue,
                       label: `Use: ${params.inputValue}`,
