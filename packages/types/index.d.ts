@@ -279,7 +279,7 @@ export type TBeforeRequest = {
   (
     $: IGlobalVariable,
     requestConfig: InternalAxiosRequestConfig,
-  ): InternalAxiosRequestConfig
+  ): Promise<InternalAxiosRequestConfig>
 }
 
 export interface DynamicDataOutput {
@@ -511,7 +511,11 @@ export type IGlobalVariable = {
   actionOutput?: IActionOutput
   pushTriggerItem?: (triggerItem: ITriggerItem) => Promise<void>
   setActionItem?: (actionItem: IActionItem) => void
-  userEmail?: string
+
+  /**
+   * Only available in GraphQL context.
+   */
+  user?: IUser
 }
 
 declare module 'axios' {

@@ -34,7 +34,13 @@ const getDynamicData = async (
   }
 
   const app = await App.findOneByKey(step.appKey)
-  const $ = await globalVariable({ connection, app, flow: step.flow, step })
+  const $ = await globalVariable({
+    connection,
+    app,
+    flow: step.flow,
+    step,
+    user: context.currentUser,
+  })
 
   const command = app.dynamicData.find(
     (data: IDynamicData) => data.key === params.key,
