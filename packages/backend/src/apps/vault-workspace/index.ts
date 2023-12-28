@@ -17,7 +17,6 @@ const app: IApp = {
   authDocUrl:
     'https://guide.plumber.gov.sg/user-guides/actions/vault-workspace',
   primaryColor: '000000',
-  supportsConnections: true,
   beforeRequest: [addAuthHeader],
   auth,
   actions,

@@ -127,7 +127,6 @@ type App {
   docUrl: String
   authDocUrl: String
   primaryColor: String
-  supportsConnections: Boolean
   auth: AppAuth
   triggers: [Trigger]
   actions: [Action]
@@ -136,7 +135,8 @@ type App {
 }
 
 type AppAuth {
-  fields: [Field]
+  connectionType: String!
+  fields: [Field] # Only for user-added connections
   authenticationSteps: [AuthenticationStep]
   reconnectionSteps: [ReconnectionStep]
 }

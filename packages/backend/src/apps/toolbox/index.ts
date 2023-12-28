@@ -7,7 +7,6 @@ const app: IApp = {
   key: 'toolbox',
   iconUrl: '{BASE_URL}/apps/toolbox/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/toolbox',
-  supportsConnections: false,
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '000000',

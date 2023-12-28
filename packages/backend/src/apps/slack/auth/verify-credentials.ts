@@ -1,11 +1,12 @@
-import { IGlobalVariable } from '@plumber/types'
+import type { IGlobalVariable, IUserAddedConnectionAuth } from '@plumber/types'
 
 import getCurrentUser from '../common/get-current-user'
 
 const verifyCredentials = async ($: IGlobalVariable) => {
-  const oauthRedirectUrlField = $.app.auth.fields.find(
-    (field) => field.key == 'oAuthRedirectUrl',
-  )
+  // Our own auth, so safe to cast $.app.auth
+  const oauthRedirectUrlField = (
+    $.app.auth as IUserAddedConnectionAuth
+  ).fields.find((field) => field.key == 'oAuthRedirectUrl')
   const redirectUri = oauthRedirectUrlField.value as string
   const params = {
     code: $.auth.data.code,

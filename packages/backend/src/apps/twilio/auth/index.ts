@@ -1,7 +1,11 @@
+import type { IUserAddedConnectionAuth } from '@plumber/types'
+
 import isStillVerified from './is-still-verified'
 import verifyCredentials from './verify-credentials'
 
-export default {
+const auth: IUserAddedConnectionAuth = {
+  connectionType: 'user-added' as const,
+
   fields: [
     {
       key: 'accountSid',
@@ -44,3 +48,5 @@ export default {
   verifyCredentials,
   isStillVerified,
 }
+
+export default auth

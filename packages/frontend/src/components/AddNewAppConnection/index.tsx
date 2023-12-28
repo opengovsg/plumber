@@ -26,12 +26,12 @@ import { GET_APPS } from 'graphql/queries/get-apps'
 import useFormatMessage from 'hooks/useFormatMessage'
 import debounce from 'lodash/debounce'
 
-function createConnectionOrFlow(appKey: string, supportsConnections = false) {
-  if (!supportsConnections) {
-    return URLS.CREATE_FLOW_WITH_APP(appKey)
+function createConnectionOrFlow(app: IApp) {
+  if (app.auth) {
+    return URLS.APP_ADD_CONNECTION(app.key)
   }
 
-  return URLS.APP_ADD_CONNECTION(appKey)
+  return URLS.CREATE_FLOW_WITH_APP(app.key)
 }
 
 type AddNewAppConnectionProps = {
@@ -120,7 +120,7 @@ export default function AddNewAppConnection(
               <ListItem disablePadding key={app.name} data-test="app-list-item">
                 <ListItemButton
                   component={Link}
-                  to={createConnectionOrFlow(app.key, app.supportsConnections)}
+                  to={createConnectionOrFlow(app)}
                 >
                   <ListItemIcon sx={{ minWidth: 74 }}>
                     <AppIcon

@@ -8,7 +8,22 @@ type Params = {
 const getApp = async (_parent: unknown, params: Params, context: Context) => {
   const app = await App.findOneByKey(params.key)
 
-  if (context.currentUser) {
+  if (!context.currentUser) {
+    return app
+  }
+
+  if (app.auth?.connectionType === 'system-added') {
+    const connections = await app.auth.getSystemAddedConnections(
+      context.currentUser,
+    )
+
+    return {
+      ...app,
+      connections,
+    }
+  }
+
+  if (app.auth?.connectionType === 'user-added') {
     const connections = await context.currentUser
       .$relatedQuery('connections')
       .select('connections.*')
