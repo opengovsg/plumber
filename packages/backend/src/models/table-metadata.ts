@@ -69,6 +69,19 @@ class TableMetadata extends Base {
     }
     return true
   }
+
+  async mapColumnIdsToNames(
+    data: Record<string, string>,
+  ): Promise<Record<string, string>> {
+    const columns = await this.$relatedQuery('columns')
+    const columnMap = new Map(columns.map((column) => [column.id, column.name]))
+
+    const mappedData: Record<string, string> = {}
+    for (const [key, value] of Object.entries(data)) {
+      mappedData[columnMap.get(key)] = value
+    }
+    return mappedData
+  }
 }
 
 export default TableMetadata

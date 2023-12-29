@@ -66,6 +66,7 @@ const globalVariable = async (
     app: app,
     flow: {
       id: flow?.id,
+      userId: flow?.userId,
       hasFileProcessingActions:
         (await flow?.containsFileProcessingActions()) ?? false,
     },
@@ -125,7 +126,6 @@ const globalVariable = async (
 
   if (flow) {
     const webhookUrl = appConfig.webhookUrl + '/webhooks/' + flow.id
-
     $.webhookUrl = webhookUrl
   }
 

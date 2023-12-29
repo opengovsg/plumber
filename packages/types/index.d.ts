@@ -146,6 +146,7 @@ export interface IFlow {
 export interface IUser {
   id: string
   email: string
+  // TODO: remove these unused properties?
   connections?: IConnection[]
   flows?: IFlow[]
   steps?: IStep[]
@@ -488,6 +489,7 @@ export type IGlobalVariable = {
   flow?: {
     id: string
     hasFileProcessingActions: boolean
+    userId: string
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
   }
