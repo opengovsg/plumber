@@ -1,7 +1,7 @@
 import { ITableMetadata } from '@plumber/types'
 
 import { MouseEvent, useCallback, useRef } from 'react'
-import { BsBricks, BsEyeFill, BsThreeDots, BsTrash } from 'react-icons/bs'
+import { BsEyeFill, BsSuitDiamond, BsThreeDots, BsTrash } from 'react-icons/bs'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import {
@@ -82,7 +82,7 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
         }}
       >
         <Flex gap={8} alignItems="center">
-          <Icon as={BsBricks} w={6} h={6} />
+          <Icon as={BsSuitDiamond} w={6} h={6} transform="rotate(90deg)" />
           <Box>
             <Text textStyle="h6">{table.name}</Text>
             <Text textStyle="body-2">
