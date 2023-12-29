@@ -25,17 +25,18 @@ const getDynamicData = async (
     })
     .findById(stepId)
 
-  if (!step) {
-    return null
-  }
-
-  const connection = step.connection
-
-  if (!connection || !step.appKey) {
+  if (!step || !step.appKey) {
     return null
   }
 
   const app = apps[step.appKey]
+  const connection = step.connection
+
+  // if app requires connection, only proceed if connection has been set up
+  if (app.auth && !connection) {
+    return null
+  }
+
   const $ = await globalVariable({
     connection,
     app,
