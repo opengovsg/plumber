@@ -9,6 +9,7 @@ import postmanApp from './postman'
 import schedulerApp from './scheduler'
 import slackApp from './slack'
 import telegramBotApp from './telegram-bot'
+import tilesApp from './tiles'
 import toolboxApp from './toolbox'
 import twilioApp from './twilio'
 import vaultWorkspaceApp from './vault-workspace'
@@ -24,10 +25,11 @@ const apps: Record<string, IApp> = {
   [schedulerApp.key]: schedulerApp,
   [slackApp.key]: slackApp,
   [telegramBotApp.key]: telegramBotApp,
+  [tilesApp.key]: tilesApp,
   [toolboxApp.key]: toolboxApp,
+  [twilioApp.key]: twilioApp,
   [vaultWorkspaceApp.key]: vaultWorkspaceApp,
   [webhookApp.key]: webhookApp,
-  [twilioApp.key]: twilioApp,
 }
 
 export default apps
