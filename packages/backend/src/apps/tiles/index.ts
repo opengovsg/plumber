@@ -1,5 +1,6 @@
 import { IApp } from '@plumber/types'
 
+import actions from './actions'
 import dynamicData from './dynamic-data'
 
 const app: IApp = {
@@ -11,6 +12,7 @@ const app: IApp = {
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '',
+  actions,
   dynamicData,
 }
 
