@@ -16,7 +16,7 @@ const auth: IUserAddedConnectionAuth = {
       readOnly: true,
       value: '{WEB_APP_URL}/app/slack/connections/add',
       description:
-        'When asked to input an OAuth callback or redirect URL in Slack OAuth, enter the URL above.',
+        'When asked to input an OAuth callback or redirect URL in Slack OAuth, enter the URL below.',
       clickToCopy: true,
       autoComplete: 'url' as const,
     },
