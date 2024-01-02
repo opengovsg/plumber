@@ -79,9 +79,8 @@ const action: IRawAction = {
 
       $.setActionItem({ raw: { data: responseData } })
     } catch (err) {
-      const stepErrorName = `Status code: ${err.response.status} (${err.response.statusText})`
       throw new StepError(
-        stepErrorName,
+        `Status code: ${err.response.status} (${err.response.statusText})`,
         'Check your custom app based on the status code and retry again.',
         $.step.position,
         $.app.name,

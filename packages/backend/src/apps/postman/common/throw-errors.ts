@@ -12,8 +12,7 @@ export function throwSendEmailError(
   appName: string,
 ): never {
   const postmanErrorData: PostmanApiErrorData = error.response.data
-  const errorCode = postmanErrorData.code
-  const errorMessage = postmanErrorData.message
+  const { code: errorCode, message: errorMessage } = postmanErrorData
   // catch common postman error codes and provide solution
   switch (errorCode) {
     case 'invalid_template':
