@@ -1,16 +1,21 @@
 import { LightMode } from '@chakra-ui/react'
 import { Footer } from 'components/Footer'
 
+import Agencies from './Agencies'
 import { AutomationLanding } from './AutomationLanding'
-import { BottomLanding } from './BottomLanding'
+//import { BottomLanding } from './BottomLanding'
 import { MainLanding } from './MainLanding'
+import ToolsLanding from './ToolsLanding'
+import TrainingSession from './TrainingSession'
 
 const Landing = () => {
   return (
     <LightMode>
       <MainLanding />
+      <Agencies />
+      <ToolsLanding />
       <AutomationLanding />
-      <BottomLanding />
+      <TrainingSession />
       <Footer />
     </LightMode>
   )
