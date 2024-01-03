@@ -18,17 +18,18 @@ const dynamicData: IDynamicData = {
 
     const authData = getRegisteredAuthData($)
     const tenant = getM365TenantInfo(authData.tenantKey)
-    const results = await $.http.get<{
-      value: Array<{ index: number; name: string }>
-    }>(
-      `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/workbook/tables/${tableId}/columns?$select=index,name&$orderby=index`,
-    )
+    const columnNames = (
+      await $.http.get<{
+        value: Array<{ name: string }>
+      }>(
+        `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/workbook/tables/${tableId}/columns?$select=name&$orderby=index`,
+      )
+    ).data.value.map((column) => column.name)
 
     return {
-      data: results.data.value.map((entry) => ({
-        name: `Column ${entry.index} (${entry.name})`,
-        // We return indices because excel works with indices, not names.
-        value: String(entry.index),
+      data: columnNames.map((columnName) => ({
+        name: columnName,
+        value: columnName,
       })),
     }
   },

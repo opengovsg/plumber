@@ -69,8 +69,9 @@ export async function runWithLock<T>(
 
 // Session ID redis key expiry
 //
-// Arbitrarily set to 1 hour. See giant comment in index.ts for more details.
-const SESSION_ID_EXPIRY_SECONDS = 60 * 60
+// Set to 5 minutes as per Microsoft's docs. See giant comment in index.ts for
+// more details.
+const SESSION_ID_EXPIRY_SECONDS = 5 * 60
 
 export async function getSessionIdFromRedis(
   tenant: M365TenantInfo,
@@ -78,14 +79,14 @@ export async function getSessionIdFromRedis(
 ): Promise<string | null> {
   const key = `${makeRedisKeyPrefix(tenant, fileId)}session:id`
 
-  const [[hgetErr, sessionId], [expireErr]] = await redisAppDataClient
+  const [[getErr, sessionId], [expireErr]] = await redisAppDataClient
     .multi()
     .get(key)
     .expire(key, SESSION_ID_EXPIRY_SECONDS)
     .exec()
 
-  if (hgetErr) {
-    throw hgetErr
+  if (getErr) {
+    throw getErr
   }
   if (expireErr) {
     throw expireErr
