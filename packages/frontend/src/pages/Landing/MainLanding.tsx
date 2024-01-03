@@ -1,16 +1,19 @@
+import { BiRightArrowAlt } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
 import {
-  Center,
   Container,
   HStack,
+  Hide,
   Image,
+  Show,
   Text,
   VStack,
 } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
-import leftLandingImg from 'assets/landing/left-landing.svg'
-import rightLandingImg from 'assets/landing/right-landing.svg'
-import mainLogo from 'assets/logo.svg'
+//import leftLandingImg from 'assets/landing/left-landing.svg'
+import PlumberLandingAnimation from 'assets/landing/PlumberLandingAnimation.svg'
+import brandmarkLogo from 'assets/logo.svg'
+import mainLogo from 'assets/plumber-logo.svg'
 import * as URLS from 'config/urls'
 
 const HeaderBar = () => {
@@ -18,16 +21,23 @@ const HeaderBar = () => {
   return (
     <Container>
       <HStack justify="space-between">
-        <HStack
+        {/* <HStack
           userSelect="none"
           cursor="pointer"
           onClick={() => navigate(URLS.ROOT)}
         >
           <Image src={mainLogo} alt="plumber-logo" />
-          <Text textStyle="logo" display={{ base: 'none', md: 'block' }}>
-            plumber
-          </Text>
-        </HStack>
+        </HStack> */}
+        <Image
+          src={mainLogo}
+          alt="plumber-logo"
+          display={{ base: 'none', md: 'inline' }}
+        />
+        <Image
+          src={brandmarkLogo}
+          alt="brandmark-logo"
+          display={{ base: 'inline', md: 'none' }}
+        />
         <HStack spacing={8}>
           <Button
             as={Link}
@@ -62,54 +72,42 @@ export const MainLanding = () => {
   return (
     <>
       <HeaderBar />
-      <Container maxW="1600px" position="relative">
-        <Center>
+      <Container position="relative">
+        <HStack
+          wrap={{ base: 'wrap', md: 'nowrap', lg: 'nowrap' }}
+          justifyContent="space-between"
+          gap={8}
+        >
           <VStack
-            textAlign={{ base: 'left', md: 'center' }}
-            align={{ base: 'start', md: 'center' }}
+            textAlign={{ base: 'left', md: 'left' }}
+            align={{ base: 'left', md: 'left' }}
             py={{ base: '0vh', md: '10vh' }}
             w="100%"
             maxW={{ base: 'unset', lg: '35rem' }}
             spacing={8}
           >
             <Text textStyle="heading">
-              Focus on more
+              Automating
               <br />
-              important work
+              300,000+ tasks
+              <br />
+              for public service
             </Text>
-            <Text>
-              Let Plumber handle your manual and repetitive tasks so you can
-              deliver value in other areas.
+            <Text textStyle="subehad-1">
+              1,900+ public officers have started automating their work
             </Text>
             <Button
               onClick={() => navigate(URLS.LOGIN)}
               w={{ base: 'full', md: 'xs' }}
+              rightIcon={<BiRightArrowAlt fontSize="1.5rem" />}
             >
-              Get started
+              Start automating your work
             </Button>
           </VStack>
-        </Center>
-        <HStack
-          zIndex={-1}
-          position={{ base: 'relative', lg: 'absolute' }}
-          h={{ base: 'fit-content', lg: '100%' }}
-          w="100%"
-          margin="auto"
-          pt={{ base: 16, md: 0 }}
-          pr={2}
-          top={0}
-          left={0}
-          justify="space-between"
-        >
           <Image
-            src={leftLandingImg}
-            alt="left-landing"
-            w={{ base: '45vw', md: 'auto' }}
-          />
-          <Image
-            src={rightLandingImg}
+            src={PlumberLandingAnimation}
             alt="right-landing"
-            w={{ base: '35vw', md: 'auto' }}
+            w={{ base: '100%', md: 'auto' }}
           />
         </HStack>
       </Container>
