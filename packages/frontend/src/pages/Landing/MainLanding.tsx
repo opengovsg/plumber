@@ -3,41 +3,30 @@ import { useNavigate } from 'react-router-dom'
 import {
   Container,
   HStack,
-  Hide,
   Image,
-  Show,
   Text,
+  useBreakpointValue,
   VStack,
 } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
-//import leftLandingImg from 'assets/landing/left-landing.svg'
-import PlumberLandingAnimation from 'assets/landing/PlumberLandingAnimation.svg'
+import PlumberLandingAnimation from 'assets/landing/PlumberLandingAnimation.json'
 import brandmarkLogo from 'assets/logo.svg'
 import mainLogo from 'assets/plumber-logo.svg'
+import LottieWebAnimation from 'components/NewsDrawer/LottieWebAnimation'
 import * as URLS from 'config/urls'
 
 const HeaderBar = () => {
   const navigate = useNavigate()
+  const imgSrc = useBreakpointValue({
+    base: brandmarkLogo,
+    md: mainLogo,
+  })
   return (
-    <Container>
+    <Container px={6}>
       <HStack justify="space-between">
-        {/* <HStack
-          userSelect="none"
-          cursor="pointer"
-          onClick={() => navigate(URLS.ROOT)}
-        >
-          <Image src={mainLogo} alt="plumber-logo" />
-        </HStack> */}
-        <Image
-          src={mainLogo}
-          alt="plumber-logo"
-          display={{ base: 'none', md: 'inline' }}
-        />
-        <Image
-          src={brandmarkLogo}
-          alt="brandmark-logo"
-          display={{ base: 'inline', md: 'none' }}
-        />
+        <HStack>
+          <Image h={10} src={imgSrc} alt="plumber-logo" />
+        </HStack>
         <HStack spacing={8}>
           <Button
             as={Link}
@@ -67,33 +56,33 @@ const HeaderBar = () => {
   )
 }
 
-export const MainLanding = () => {
+export default function MainLanding() {
   const navigate = useNavigate()
   return (
     <>
       <HeaderBar />
-      <Container position="relative">
+      <Container position="relative" py={0} px={6}>
         <HStack
-          wrap={{ base: 'wrap', md: 'nowrap', lg: 'nowrap' }}
-          justifyContent="space-between"
-          gap={8}
+          wrap={{ base: 'wrap', md: 'nowrap' }}
+          gap={{ base: '2rem', md: 0 }}
         >
           <VStack
-            textAlign={{ base: 'left', md: 'left' }}
-            align={{ base: 'left', md: 'left' }}
+            align="start"
             py={{ base: '0vh', md: '10vh' }}
             w="100%"
             maxW={{ base: 'unset', lg: '35rem' }}
             spacing={8}
           >
-            <Text textStyle="heading">
+            <Text
+              textStyle={{ base: 'heading', md: 'subheading', lg: 'heading' }}
+            >
               Automating
               <br />
               300,000+ tasks
               <br />
               for public service
             </Text>
-            <Text textStyle="subehad-1">
+            <Text textStyle="subhead-1">
               1,900+ public officers have started automating their work
             </Text>
             <Button
@@ -104,11 +93,10 @@ export const MainLanding = () => {
               Start automating your work
             </Button>
           </VStack>
-          <Image
-            src={PlumberLandingAnimation}
-            alt="right-landing"
-            w={{ base: '100%', md: 'auto' }}
-          />
+          <LottieWebAnimation
+            title="right-landing"
+            animationData={PlumberLandingAnimation}
+          ></LottieWebAnimation>
         </HStack>
       </Container>
     </>

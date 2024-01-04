@@ -9,11 +9,11 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import customerIcon from 'assets/landing/customer2.svg'
-import itIcon from 'assets/landing/devops.svg'
-import hrIcon from 'assets/landing/HRv2.svg'
-import marketingIcon from 'assets/landing/marketing2.svg'
-import operationsIcon from 'assets/landing/ops2.svg'
+import customerIcon from 'assets/landing/Customer.svg'
+import itIcon from 'assets/landing/Devops.svg'
+import hrIcon from 'assets/landing/HR.svg'
+import marketingIcon from 'assets/landing/Marketing.svg'
+import operationsIcon from 'assets/landing/Operations.svg'
 import { APP_ICON_URL } from 'config/urls'
 
 const AUTOMATIONS = [
@@ -199,23 +199,23 @@ const AutomationItem = ({
         />
       ))}
     </HStack>
-    {/* <Box> */}
-    <Text fontSize="md" fontWeight="medium">
-      {title}
-    </Text>
-    <Text mt={4} fontSize="sm">
-      {description}
-    </Text>
-    {/* </Box> */}
+    <Box>
+      <Text fontSize="md" fontWeight="medium">
+        {title}
+      </Text>
+      <Text mt={4} fontSize="sm">
+        {description}
+      </Text>
+    </Box>
   </VStack>
 )
 
-export const AutomationLanding = () => {
+export default function AutomationLanding() {
   const [activeIndex, setActiveIndex] = useState(0)
 
   return (
-    <Box bg="primary.50" py={88} maxW="100%" overflow="hidden">
-      <Container py={0}>
+    <Box bg="primary.50" py="88px" maxW="100%" overflow="hidden">
+      <Container py={0} px={6}>
         <VStack spacing={{ base: 2, md: 10 }} align="left">
           <Text textStyle="subheading">Automation for everyone</Text>
           <HStack
@@ -241,7 +241,7 @@ export const AutomationLanding = () => {
             justify="space-between"
             spacing={0}
             gap={{ base: 4, md: 8 }}
-            //py={{ base: 4, md: 10 }}
+            py={{ base: 4, md: 10 }}
             align="stretch"
             w="100%"
           >
