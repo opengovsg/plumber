@@ -10,7 +10,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import customerIcon from 'assets/landing/Customer.svg'
-import itIcon from 'assets/landing/Devops.svg'
+import itIcon from 'assets/landing/DevWorkflow.svg'
 import hrIcon from 'assets/landing/HR.svg'
 import marketingIcon from 'assets/landing/Marketing.svg'
 import operationsIcon from 'assets/landing/Operations.svg'
