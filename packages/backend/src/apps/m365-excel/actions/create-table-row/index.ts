@@ -32,7 +32,7 @@ function constructMsGraphArgment(
   for (const columnValue of columnValues) {
     const index = columnNameToIndex.get(columnValue.columnName)
 
-    if (!index) {
+    if (index === undefined) {
       throw new Error(
         `Trying to update non-existent column '${columnValue.columnName}'.`,
       )
