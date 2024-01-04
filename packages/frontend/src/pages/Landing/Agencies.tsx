@@ -1,16 +1,4 @@
-import {
-  Box,
-  Container,
-  Flex,
-  flexWrap,
-  Grid,
-  Hide,
-  HStack,
-  Image,
-  Show,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
+import { Box, Flex, Hide, Image } from '@chakra-ui/react'
 import CPFLogo from 'assets/landing/CPF.svg'
 import GovTechLogo from 'assets/landing/GOVTECH.svg'
 import MindefLogo from 'assets/landing/MINDEF.svg'
@@ -22,17 +10,17 @@ import SpfLogo from 'assets/landing/SPF.svg'
 
 export default function Agencies() {
   return (
-    <Box bg="white" py={88}>
+    <Box bg="white" py="88px">
       <Flex
         py={4}
-        justifyContent={{ base: 'space-evenly', md: 'space-around' }}
+        justifyContent="space-evenly"
         bg="secondary.50"
-        flexWrap={{ base: 'wrap', md: 'nowrap' }}
+        flexWrap="wrap"
       >
         <Image src={MindefLogo} />
         <Image src={MoeLogo} />
         <Image src={GovTechLogo} />
-        <Hide below="md">
+        <Hide below="sm">
           <Image src={MomLogo} />
           <Image src={CPFLogo} />
           <Image src={MsfLogo} />

@@ -1,21 +1,7 @@
 <svg width="80" height="81" viewBox="0 0 80 81" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g filter="url(#filter0_d_743_31650)">
-<path d="M41.123 11.001L54.0245 14.4579L38.8778 70.986L25.9764 67.529L41.123 11.001Z" fill="#F9DDE9"/>
-<path d="M14.5898 25.0264L24.0344 15.5819L65.4158 56.9633L55.9713 66.4078L14.5898 25.0264Z" fill="#F9DDE9"/>
-<path d="M13.4668 55.0186L10.0099 42.1171L66.5379 26.9705L69.9949 39.8719L13.4668 55.0186Z" fill="#F9DDE9"/>
-<ellipse cx="40.2073" cy="41.318" rx="23.6072" ry="23.6072" transform="rotate(-12.0948 40.2073 41.318)" fill="#F9DDE9"/>
-<circle cx="40.0007" cy="40.9924" r="6.80339" fill="#CF1A68"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M52.2982 20.9033L54.0263 14.4591L41.1261 11L39.398 17.4472C35.6751 17.543 32.0283 18.5228 28.7586 20.3057L24.0337 15.5955L14.5896 25.0395L19.2998 29.7498C17.52 33.0223 16.5432 36.671 16.4501 40.395L10 42.1231L13.4591 55.0234L19.9122 53.2953C21.8528 56.4735 24.5206 59.1453 27.6959 61.0908L25.9708 67.535L38.871 70.9912L40.5991 64.5469C44.3218 64.4497 47.9683 63.47 51.2384 61.6884L55.9634 66.3987L65.4134 56.9634L60.7031 52.2531C62.483 48.9806 63.4597 45.332 63.5528 41.6079L70 39.8798L66.5438 26.9796L60.0908 28.7077C58.1484 25.5254 55.4775 22.8505 52.2982 20.9033V20.9033Z" stroke="black"/>
-</g>
-<defs>
-<filter id="filter0_d_743_31650" x="9.3877" y="10.3877" width="61.2246" height="65.2158" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-<feOffset dy="4"/>
-<feComposite in2="hardAlpha" operator="out"/>
-<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/>
-<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_743_31650"/>
-<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_743_31650" result="shape"/>
-</filter>
-</defs>
+<path d="M41.123 10.582L54.0245 14.039L38.8778 70.567L25.9764 67.1101L41.123 10.582Z" fill="#F0B0CA"/>
+<path d="M14.5898 24.6074L24.0344 15.1629L65.4158 56.5443L55.9713 65.9888L14.5898 24.6074Z" fill="#F0B0CA"/>
+<path d="M13.4668 54.5996L10.0099 41.6982L66.5379 26.5515L69.9949 39.453L13.4668 54.5996Z" fill="#F0B0CA"/>
+<ellipse cx="40.2073" cy="40.899" rx="23.6072" ry="23.6072" transform="rotate(-12.0948 40.2073 40.899)" fill="#F0B0CA"/>
+<circle cx="40.0007" cy="40.5734" r="6.80339" fill="#CF1A68"/>
 </svg>

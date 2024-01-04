@@ -1,24 +1,37 @@
-import { useNavigate } from 'react-router-dom'
-import { Container, HStack, Text, VStack } from '@chakra-ui/react'
-import { Button, Link } from '@opengovsg/design-system-react'
+import { BiRightArrowAlt } from 'react-icons/bi'
+import { Box, Container, Flex, Spacer, Text } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 
 export default function TrainingSession() {
-  const navigate = useNavigate()
   return (
-    <Container py={88}>
-      <VStack align="left" maxW="720" gap={5}>
-        <Text textStyle={{ base: 'h3', md: 'heading' }}>
-          Save time for your agency with automations
-        </Text>
-        <Text textStyle={{ base: 'subhead-2', md: 'h6' }}>
-          We are passionate about spreading the benefits of automations
-          throughout WOG. Get started on automations for your agency.
-        </Text>
-        <Button onClick={() => navigate('/go.gov.sg/plumber-ama')} width="50%">
+    <Container py="88px" px={6}>
+      <Flex
+        flexDir={{ base: 'column', md: 'row' }}
+        alignItems={{ base: 'flex-start', md: 'center' }}
+        gap={6}
+      >
+        <Box w={{ base: '100%', md: '60%' }}>
+          <Text
+            textStyle={{ base: 'h3', md: 'subheading', lg: 'heading' }}
+            mb={6}
+          >
+            Save time for your agency with automations
+          </Text>
+          <Text textStyle={{ base: 'subhead-2', md: 'h6' }}>
+            We are passionate about spreading the benefits of automations
+            throughout WOG. Get started on automations for your agency.
+          </Text>
+        </Box>
+        <Spacer></Spacer>
+        <Button
+          onClick={() => window.open(URLS.PLUMBER_AMA_LINK, '_blank')}
+          w={{ base: '100%', md: 'auto' }}
+          rightIcon={<BiRightArrowAlt fontSize="1.5rem" />}
+        >
           Arrange a training session with us
         </Button>
-      </VStack>
+      </Flex>
     </Container>
   )
 }
