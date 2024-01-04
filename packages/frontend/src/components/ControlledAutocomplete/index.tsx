@@ -36,6 +36,7 @@ function PaperWithRefresh(props: PaperWithRefreshProps): JSX.Element {
           onMouseDown={(e) => {
             e.preventDefault()
           }}
+          spinner={<Spinner fontSize={24} color="primary.600" />}
           onClick={onRefresh}
           isLoading={loading}
         >
