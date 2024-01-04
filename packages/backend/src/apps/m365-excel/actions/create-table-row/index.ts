@@ -1,4 +1,6 @@
-import type { IJSONObject, IRawAction } from '@plumber/types'
+import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
+
+import { generateStepError } from '@/helpers/generate-step-error'
 
 import WorkbookSession from '../../common/workbook-session'
 
@@ -17,6 +19,7 @@ interface ColumnValue {
 // of columns in the table, with values in the same order as the corresponding
 // column index.
 function constructMsGraphArgment(
+  $: IGlobalVariable,
   tableHeaderInfo: TableHeaderInfo,
   columnValues: ColumnValue[],
 ): Array<string | null> {
@@ -33,8 +36,11 @@ function constructMsGraphArgment(
     const index = columnNameToIndex.get(columnValue.columnName)
 
     if (index === undefined) {
-      throw new Error(
-        `Trying to update non-existent column '${columnValue.columnName}'.`,
+      throw generateStepError(
+        `Cannot update non-existent column '${columnValue.columnName}'.`,
+        'Click on set up action and double check columns are valid. You can click on "Refresh Items" in the column drop down to refresh the column list.',
+        $.step?.position,
+        $.app.name,
       )
     }
 
@@ -151,8 +157,11 @@ const action: IRawAction = {
       const currColumnName = String(val.columnName)
 
       if (seenColumnNames.has(currColumnName)) {
-        throw new Error(
-          `Trying to write 2 different values to the same column (${currColumnName})`,
+        throw generateStepError(
+          `Cannot write 2 different values to the same column (${currColumnName})`,
+          `Click on set up action and make sure '${currColumnName}' only appears once.`,
+          $.step?.position,
+          $.app.name,
         )
       }
 
@@ -183,6 +192,7 @@ const action: IRawAction = {
           index: null,
           values: [
             constructMsGraphArgment(
+              $,
               tableHeaderInfo,
               columnValues.map((val) => ({
                 columnName: String(val.columnName),
