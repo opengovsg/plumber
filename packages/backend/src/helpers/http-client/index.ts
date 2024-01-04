@@ -6,6 +6,7 @@ import { IHttpClientParams } from '@plumber/types'
 import { URL } from 'url'
 
 import HttpError from '@/errors/http'
+import RetriableError from '@/errors/retriable-error'
 
 const removeBaseUrlForAbsoluteUrls = (
   requestConfig: InternalAxiosRequestConfig,
@@ -48,6 +49,20 @@ export default function createHttpClient({
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
+      // EDGE CASE: We allow actions / triggers to throw RetriableError, and
+      // some of them may choose to throw from beforeRequest. If this happens,
+      // Axios will still process the error through this response interceptor.
+      //
+      // Since RetriableError is supposed to be passed directly through to
+      // BullMQ, we special case it here instead of converting it to HttpError.
+      //
+      // Note that we still want to convert _other_ error types (even if
+      // they're not axios errors!) to HttpError; this helps prevent accidental
+      // sensitive data leakage via error objects in our logs.
+      if (error instanceof RetriableError) {
+        throw error
+      }
+
       // This handles system errors like ECONNREFUSED, which don't have a
       // response body.
       if (!error.response) {
