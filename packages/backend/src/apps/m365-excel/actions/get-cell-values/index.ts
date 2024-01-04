@@ -62,7 +62,7 @@ const action: IRawAction = {
       description: 'Specify cells you want to get the values of. (Max 3)',
       subFields: [
         {
-          label: 'Cell Address (e.g. A1, B10)',
+          label: 'Cell Address (e.g. A1)',
           key: 'address',
           type: 'string' as const,
           required: true,
@@ -76,7 +76,9 @@ const action: IRawAction = {
 
   async run($) {
     const { fileId, worksheetId, cells: rawCells } = $.step.parameters
-    const cells = rawCells as Array<{ address: string }>
+    const cells = (rawCells as Array<{ address: string }>).map((cell) => ({
+      address: cell.address.trim(),
+    }))
 
     // Basic sanity checks
     if (cells.length > 3) {
