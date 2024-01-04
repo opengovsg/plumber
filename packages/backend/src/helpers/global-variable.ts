@@ -25,7 +25,7 @@ type GlobalVariableOptions = {
   execution?: Execution
   testRun?: boolean
   request?: IRequest
-  user?: User // only required for verifyHook and registerHook now
+  user?: User // only required in GraphQL context
 }
 
 const globalVariable = async (
@@ -110,6 +110,7 @@ const globalVariable = async (
     setActionItem: (actionItem: IActionItem) => {
       $.actionOutput.data = actionItem
     },
+    user,
   }
 
   if (request) {
@@ -151,10 +152,6 @@ const globalVariable = async (
       lastInternalIds = await flow?.lastInternalIds(500)
     }
     return lastInternalIds?.includes(internalId)
-  }
-
-  if (user) {
-    $.userEmail = user.email
   }
 
   return $

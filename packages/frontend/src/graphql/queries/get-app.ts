@@ -9,8 +9,9 @@ export const GET_APP = gql`
       docUrl
       authDocUrl
       primaryColor
-      supportsConnections
       auth {
+        connectionType
+        connectionRegistrationType
         fields {
           key
           label

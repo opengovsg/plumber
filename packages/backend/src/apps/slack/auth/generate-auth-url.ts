@@ -1,4 +1,8 @@
-import { IField, IGlobalVariable } from '@plumber/types'
+import type {
+  IField,
+  IGlobalVariable,
+  IUserAddedConnectionAuth,
+} from '@plumber/types'
 
 import qs from 'qs'
 
@@ -44,9 +48,10 @@ const userScopes = [
 ]
 
 export default async function generateAuthUrl($: IGlobalVariable) {
-  const oauthRedirectUrlField = $.app.auth.fields.find(
-    (field: IField) => field.key == 'oAuthRedirectUrl',
-  )
+  // Our own auth, so safe to cast $.app.auth
+  const oauthRedirectUrlField = (
+    $.app.auth as IUserAddedConnectionAuth
+  ).fields.find((field: IField) => field.key == 'oAuthRedirectUrl')
   const redirectUri = oauthRedirectUrlField.value as string
   const searchParams = qs.stringify({
     client_id: $.auth.data.consumerKey as string,

@@ -145,9 +145,9 @@ export interface IFlow {
 export interface IUser {
   id: string
   email: string
-  connections: IConnection[]
-  flows: IFlow[]
-  steps: IStep[]
+  connections?: IConnection[]
+  flows?: IFlow[]
+  steps?: IStep[]
 }
 
 // Subset of HTML autocomplete values.
@@ -262,7 +262,6 @@ export interface IApp {
   docUrl?: string
   authDocUrl: string
   primaryColor: string
-  supportsConnections: boolean
   apiBaseUrl: string
   baseUrl: string
   auth?: IAuth
@@ -280,7 +279,7 @@ export type TBeforeRequest = {
   (
     $: IGlobalVariable,
     requestConfig: InternalAxiosRequestConfig,
-  ): InternalAxiosRequestConfig
+  ): Promise<InternalAxiosRequestConfig>
 }
 
 export interface DynamicDataOutput {
@@ -291,17 +290,40 @@ export interface DynamicDataOutput {
   error?: IJSONObject
 }
 
-export interface IAuth {
+export type AuthConnectionType = 'user-added' | 'system-added'
+export type ConnectionRegistrationType = 'global' | 'per-step'
+
+interface IBaseAuth {
+  connectionType: AuthConnectionType
+
   generateAuthUrl?($: IGlobalVariable): Promise<void>
   verifyCredentials?($: IGlobalVariable): Promise<void>
   isStillVerified?($: IGlobalVariable): Promise<boolean>
   refreshToken?($: IGlobalVariable): Promise<void>
   verifyWebhook?($: IGlobalVariable): Promise<boolean>
   isRefreshTokenRequested?: boolean
-  fields?: IField[]
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
+
+  connectionRegistrationType?: ConnectionRegistrationType
+  registerConnection?($: IGlobalVariable): Promise<void>
+  unregisterConnection?($: IGlobalVariable): Promise<void>
+  verifyConnectionRegistration?(
+    $: IGlobalVariable,
+  ): Promise<IVerifyConnectionRegistrationOutput>
 }
+
+interface IUserAddedConnectionAuth extends IBaseAuth {
+  connectionType: 'user-added'
+  fields?: IField[]
+}
+
+interface ISystemAddedConnectionAuth extends IBaseAuth {
+  connectionType: 'system-added'
+  getSystemAddedConnections?(user: IUser): Promise<IConnection[]>
+}
+
+export type IAuth = IUserAddedConnectionAuth | ISystemAddedConnectionAuth
 
 export interface ITriggerOutput {
   data: ITriggerItem[]
@@ -332,9 +354,6 @@ export interface IBaseTrigger {
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
-  registerHook?($: IGlobalVariable): Promise<void>
-  verifyHook?($: IGlobalVariable): Promise<IVerifyHookOutput>
-  unregisterHook?($: IGlobalVariable): Promise<void>
   sort?(item: ITriggerItem, nextItem: ITriggerItem): number
 
   /**
@@ -354,7 +373,6 @@ export interface IRawTrigger extends IBaseTrigger {
 
 export interface ITrigger extends IBaseTrigger {
   substeps?: ISubstep[]
-  supportsWebhookRegistration?: boolean
 }
 
 interface PostmanSendEmailMetadata {
@@ -493,7 +511,11 @@ export type IGlobalVariable = {
   actionOutput?: IActionOutput
   pushTriggerItem?: (triggerItem: ITriggerItem) => Promise<void>
   setActionItem?: (actionItem: IActionItem) => void
-  userEmail?: string
+
+  /**
+   * Only available in GraphQL context.
+   */
+  user?: IUser
 }
 
 declare module 'axios' {
@@ -510,12 +532,13 @@ export interface IRequest extends Request {
   rawBody?: Buffer
 }
 
-export interface IVerifyHookOutput {
-  webhookVerified: boolean
+export interface IVerifyConnectionRegistrationOutput {
+  registrationVerified: boolean
   message: string
 }
 
-export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
+export interface ITestConnectionOutput
+  extends Partial<IVerifyConnectionRegistrationOutput> {
   connectionVerified: boolean
 }
 export interface IStepError {
