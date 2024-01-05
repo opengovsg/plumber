@@ -24,9 +24,7 @@ export function tryParseGraphApiError(
   err: HttpError,
 ): z.infer<typeof graphApiErrorSchema> | null {
   try {
-    return graphApiErrorSchema.parse(
-      JSON.parse(String(err.response?.data ?? '')),
-    )
+    return graphApiErrorSchema.parse(err.response?.data?.error)
   } catch {
     return null
   }
