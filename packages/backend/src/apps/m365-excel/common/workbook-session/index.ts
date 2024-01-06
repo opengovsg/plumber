@@ -78,17 +78,15 @@ async function refreshSessionId(
 
 /**
  * To prevent data races, when working on the same excel file, we need use the
- * same session ID across our entire fleet. Furthermore, we need to avoid
- * changing session IDs, as there's always a possibility of data races when we
- * change sessions (e.g. we start writing to the new session before Microsoft
- * has finished flushing & propagating the file data in the old session to its
- * entire fleet).
+ * same session ID across our entire fleet. We should also avoid changing
+ * session IDs, as there is a chance of a data race when we do this (e.g. we
+ * start writing to the new session before Microsoft has finished propagating
+ * the data in the old session).
  *
  * To achieve this:
  * - We store each file's session ID in redis.
  * - We try to keep using the same session ID for each file, until it naturally
- *   expires on Microsoft's server (signalled by a specific Graph API error when
- *   we try using that session again).
+ *   expires on Microsoft's server.
  *
  *   Note that Microsoft only expires sessions after a period of inactivity, so
  *   any write we make will always have the maximum possible time window to
@@ -146,26 +144,10 @@ async function refreshSessionId(
  *      requests using their own session IDs (following the scenario above),
  *      leading to a user-visible error cascade. This is a UX nightmare.
  *
- * 3. Despite saying we will keep using session IDs until they naturally expire
- *    in Microsoft's servers, we actually expire session ID keys in our redis
- *    after some time (see SESSION_ID_EXPIRY_SECONDS constant), with the expiry
- *    being refreshed each time we fetch the session ID from redis.
- *
- *    The reason:
- *    - Since we don't know if a session is expired on Microsoft's servers until
- *      we make a request with, we should always try making requests with the
- *      last-used session ID, no matter how long ago the previous request was.
- *      This can be done in an ideal world by storing the last-used session ID
- *      forever.
- *
- *      However, in the real world, memory is finite... so we expire the key
- *      after some delay. This delay is set to an arbitrary estimate of the
- *      longest time period Microsoft could possibly want to keep an inactive
- *      session around for.
- *
- *    - That being said, Microsoft expires its sessions based on inactivity. To
- *      prevent premature expiration, we optimistically extend the session ID
- *      key's expiry each time we fetch it from redis.
+ * 3. We sync expiry times of the session ID keys in redis (see the
+ *    SESSION_ID_EXPIRY_SECONDS constant) to the same time period as Microsoft's
+ *    session inactivity timeout. This saves memory and prevents extraneous
+ *    retries from "session expired" errors.
  *
  * 4. Read locks should not be needed at all, as far as I can tell.
  */
@@ -247,7 +229,7 @@ export default class WorkbookSession {
       )
       if (sessionIdInRedis !== this.sessionId) {
         throw new Error(
-          "M365 servers encountered an error and invalidated the current Excel session; please double check the file's data",
+          "The current Excel session was invalidated due to an error; please double check the file's data",
         )
       }
 
