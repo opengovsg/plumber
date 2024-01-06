@@ -276,18 +276,18 @@ export interface IApp {
   description?: string
 
   /**
-   * An _ordered_ array of callbacks that are invoked if there's an error when
-   * making a HTTP request.
+   * A callback that is invoked if there's an error for any HTTP request this
+   * app makes using $.http.
    *
-   * This is useful to perform per-request monitoring, such as logging on
-   * specific HTTP response codes. Typical use case is to prevent forgetfulness
-   * (e.g. without this, the team has to remember to surround requests with
-   * try / catch).
+   * This is useful to perform per-request monitoring or error transformations
+   * (e.g logging on specific HTTP response codes or converting 429s to a
+   * non-HttpError to prevent automated retries).
    *
-   * As suggested by the naming, observers _should_ be passive. Errors thrown in
-   * observers are ignored.
+   * We support this because if an app needs custom error monitoring for _all_
+   * requests, it allows us to stop having to remember to surround all our code
+   * with try / catch.
    */
-  requestErrorObservers?: TRequestErrorObservers[]
+  requestErrorHandler?: TRequestErrorHandler
 }
 
 export type TBeforeRequest = (
@@ -295,7 +295,7 @@ export type TBeforeRequest = (
   requestConfig: InternalAxiosRequestConfig,
 ) => Promise<InternalAxiosRequestConfig>
 
-export type TRequestErrorObservers = (
+export type TRequestErrorHandler = (
   $: IGlobalVariable,
   error: HttpError,
 ) => Promise<void>
@@ -492,7 +492,7 @@ export type IHttpClientParams = {
   $: IGlobalVariable
   baseURL?: string
   beforeRequest: TBeforeRequest[]
-  requestErrorObservers: TRequestErrorObservers[]
+  requestErrorHandler: TRequestErrorHandler
 }
 
 export type IGlobalVariable = {

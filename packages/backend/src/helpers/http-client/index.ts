@@ -26,7 +26,7 @@ export default function createHttpClient({
   $,
   baseURL,
   beforeRequest,
-  requestErrorObservers,
+  requestErrorHandler,
 }: IHttpClientParams) {
   const instance = axios.create({
     baseURL,
@@ -91,12 +91,12 @@ export default function createHttpClient({
       throw new HttpError(error)
     },
   )
-  // We use a separate interceptor for requestErrorObservers to allow the above
+  // We use a separate interceptor for requestErrorHandler to allow the above
   // HttpError inteceptor to throw early.
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
-      if (!requestErrorObservers?.length) {
+      if (!requestErrorHandler) {
         throw error
       }
 
@@ -106,11 +106,7 @@ export default function createHttpClient({
         throw error
       }
 
-      // Fire off error observers, if any. Intentionally ignoring promise
-      // rejections as per comment block in requestErrorObservers.
-      await Promise.allSettled(
-        requestErrorObservers.map((callback) => callback($, error)),
-      )
+      await requestErrorHandler($, error)
 
       throw error
     },

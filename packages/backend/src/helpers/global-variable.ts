@@ -121,7 +121,7 @@ const globalVariable = async (
     $,
     baseURL: app.apiBaseUrl,
     beforeRequest: app.beforeRequest ?? [],
-    requestErrorObservers: app.requestErrorObservers ?? [],
+    requestErrorHandler: app.requestErrorHandler ?? null,
   })
 
   if (flow) {

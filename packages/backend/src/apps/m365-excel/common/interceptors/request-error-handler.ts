@@ -2,10 +2,7 @@ import type { IApp } from '@plumber/types'
 
 import logger from '@/helpers/logger'
 
-const http429Watcher: IApp['requestErrorObservers'][number] = async function (
-  $,
-  error,
-) {
+const http429Handler: IApp['requestErrorHandler'] = async function ($, error) {
   if (error.response.status !== 429) {
     return
   }
@@ -21,6 +18,9 @@ const http429Watcher: IApp['requestErrorObservers'][number] = async function (
     stepId: $.step?.id,
     executionId: $.execution?.id,
   })
+
+  // We don't want to retry 429s from M365, so convert it into a non-HttpError.
+  throw new Error('Rate limited by Microsoft Graph.')
 }
 
-export default [http429Watcher]
+export default http429Handler
