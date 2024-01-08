@@ -64,7 +64,7 @@ export default function AppFlows(props: AppFlowsProps): React.ReactElement {
             }
             pageSize={FLOW_PER_PAGE}
             totalCount={pageInfo?.totalCount}
-          ></Pagination>
+          />
         </Flex>
       )}
     </>

@@ -80,7 +80,7 @@ export default function Execution(): React.ReactElement {
               }
               pageSize={EXECUTION_STEP_PER_PAGE}
               totalCount={pageInfo?.totalCount}
-            ></Pagination>
+            />
           </Flex>
         )}
     </Container>

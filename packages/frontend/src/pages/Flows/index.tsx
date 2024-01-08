@@ -176,7 +176,7 @@ export default function Flows(): React.ReactElement {
               onPageChange={handlePageChange}
               pageSize={FLOW_PER_PAGE}
               totalCount={pageInfo?.totalCount}
-            ></Pagination>
+            />
           </Flex>
         )}
       </Container>

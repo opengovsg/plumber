@@ -211,7 +211,7 @@ export default function Executions(): ReactElement {
               onPageChange={handlePageChange}
               pageSize={EXECUTION_PER_PAGE}
               totalCount={pageInfo?.totalCount}
-            ></Pagination>
+            />
           </Flex>
         )}
       </Container>
