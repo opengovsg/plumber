@@ -1,6 +1,6 @@
 import type { IRawAction } from '@plumber/types'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import WorkbookSession from '../../common/workbook-session'
 
@@ -82,7 +82,7 @@ const action: IRawAction = {
 
     // Basic sanity checks
     if (cells.length > 3) {
-      throw generateStepError(
+      throw new StepError(
         'Too many cells',
         'Please only input up to 3 cells',
         $.step.position,
@@ -92,7 +92,7 @@ const action: IRawAction = {
 
     for (const cell of cells) {
       if (!/^[a-zA-Z]+[1-9][0-9]*$/.test(cell.address)) {
-        throw generateStepError(
+        throw new StepError(
           `Invalid cell address ${cell.address}`,
           'Please specify cell addresses in A1 notation.',
           $.step.position,
