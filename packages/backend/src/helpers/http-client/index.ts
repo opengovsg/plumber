@@ -25,7 +25,8 @@ const removeBaseUrlForAbsoluteUrls = (
 export default function createHttpClient({
   $,
   baseURL,
-  beforeRequest = [],
+  beforeRequest,
+  requestErrorHandler,
 }: IHttpClientParams) {
   const instance = axios.create({
     baseURL,
@@ -88,6 +89,26 @@ export default function createHttpClient({
       }
 
       throw new HttpError(error)
+    },
+  )
+  // We use a separate interceptor for requestErrorHandler to allow the above
+  // HttpError inteceptor to throw early.
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      if (!requestErrorHandler) {
+        throw error
+      }
+
+      // Passthrough other errors... although other errors should really only be
+      // RetriableError.
+      if (!(error instanceof HttpError)) {
+        throw error
+      }
+
+      await requestErrorHandler($, error)
+
+      throw error
     },
   )
 

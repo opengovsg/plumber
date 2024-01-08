@@ -1,6 +1,7 @@
 import type { IApp } from '@plumber/types'
 
 import beforeRequest from './common/interceptors/before-request'
+import requestErrorHandler from './common/interceptors/request-error-handler'
 import actions from './actions'
 import auth from './auth'
 import dynamicData from './dynamic-data'
@@ -16,6 +17,7 @@ const app: IApp = {
   auth,
   actions,
   beforeRequest,
+  requestErrorHandler,
   dynamicData,
 }
 
