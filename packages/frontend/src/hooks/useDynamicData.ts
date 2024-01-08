@@ -1,40 +1,52 @@
-import type { IField, IFieldDropdownSource, IJSONObject } from '@plumber/types'
+import type { IField, IFieldDropdownSource } from '@plumber/types'
 
-import * as React from 'react'
-import type { UseFormReturn } from 'react-hook-form'
-import { useFormContext } from 'react-hook-form'
-import { useLazyQuery } from '@apollo/client'
+import { useEffect, useMemo } from 'react'
+import { type FieldValues, useFormContext } from 'react-hook-form'
+import { useQuery } from '@apollo/client'
 import { GET_DYNAMIC_DATA } from 'graphql/queries/get-dynamic-data'
-import isEqual from 'lodash/isEqual'
-import set from 'lodash/set'
+import { get, set } from 'lodash'
 
-const variableRegExp = /({.*?})/g
+/**
+ * Map of field path -> argument name
+ */
+type WatchedFormFields = ReadonlyMap<string, string>
 
-function computeArguments(
-  args: IFieldDropdownSource['arguments'],
-  getValues: UseFormReturn['getValues'],
-): IJSONObject {
-  const initialValue = {}
-  return args.reduce((result, { name, value }) => {
-    const isVariable = variableRegExp.test(value)
+function processArguments(args: IFieldDropdownSource['arguments']): {
+  nonFormFieldArgs: Readonly<Record<string, string>>
+  watchedFormFields: WatchedFormFields
+} {
+  const nonFormFieldArgs: Record<string, string> = Object.create(null)
+  const watchedFormFields = new Map()
 
+  for (const arg of args) {
+    const { name, value } = arg
+
+    const isVariable = value.startsWith('{') && value.endsWith('}')
     if (isVariable) {
-      const sanitizedFieldPath = value.replace(/{|}/g, '')
-      const computedValue = getValues(sanitizedFieldPath)
-
-      if (computedValue === undefined) {
-        throw new Error(`The ${sanitizedFieldPath} field is required.`)
-      }
-
-      set(result, name, computedValue)
-
-      return result
+      const fieldPath = value.slice(1, value.length - 1)
+      watchedFormFields.set(fieldPath, name)
+    } else {
+      nonFormFieldArgs[name] = value
     }
+  }
 
-    set(result, name, value)
+  return { nonFormFieldArgs, watchedFormFields }
+}
 
-    return result
-  }, initialValue)
+function getWatchedFormFieldValues(
+  watchedFormFields: WatchedFormFields,
+  formFieldValues: FieldValues,
+): Readonly<Record<string, string>> {
+  const result: Record<string, string> = Object.create(null)
+
+  for (const [fieldPath, argumentName] of watchedFormFields.entries()) {
+    const value = get(formFieldValues, fieldPath)
+    if (value) {
+      set(result, argumentName, value)
+    }
+  }
+
+  return result
 }
 
 /**
@@ -45,57 +57,65 @@ function computeArguments(
  * @param schema - the field that needs the dynamic data
  */
 function useDynamicData(stepId: string | undefined, schema: IField) {
-  const lastComputedVariables = React.useRef({})
-  const [getDynamicData, { called, data, loading, refetch }] =
-    useLazyQuery(GET_DYNAMIC_DATA)
-  const { getValues } = useFormContext()
-
-  /**
-   * Return `null` when even a field is missing value.
-   *
-   * This must return the same reference if no computed variable is changed.
-   * Otherwise, it causes redundant network request!
-   */
-  const computedVariables = React.useMemo(() => {
-    if (schema.type === 'dropdown' && schema.source) {
-      try {
-        const variables = computeArguments(schema.source.arguments, getValues)
-
-        // if computed variables are the same, return the last computed variables.
-        if (isEqual(variables, lastComputedVariables.current)) {
-          return lastComputedVariables.current
-        }
-
-        lastComputedVariables.current = variables
-
-        return variables
-      } catch (err) {
-        return null
+  const { getValues, watch } = useFormContext()
+  const { nonFormFieldArgs, watchedFormFields } = useMemo(() => {
+    if (schema.type !== 'dropdown' || !schema.source) {
+      return {
+        nonFormFieldArgs: {},
+        watchedFormFields: new Map(),
       }
     }
 
-    return null
-    /**
-     * `formValues` is to trigger recomputation when form is updated.
-     * `getValues` is for convenience as it supports paths for fields like `getValues('foo.bar.baz')`.
-     */
-  }, [schema, getValues])
+    return processArguments(schema.source.arguments)
+  }, [schema])
+  const watchedFormFieldValues = useMemo(
+    () => getWatchedFormFieldValues(watchedFormFields, getValues()),
+    [
+      watchedFormFields,
+      // We depend on getValues instead of its result, because we don't want to
+      // re-query each time a form value changes. Instead, we use watch (below)
+      // on the fields we're interested in.
+      getValues,
+    ],
+  )
 
-  React.useEffect(() => {
-    if (
-      schema.type === 'dropdown' &&
-      stepId &&
-      schema.source &&
-      computedVariables
-    ) {
-      getDynamicData({
-        variables: {
-          stepId,
-          ...computedVariables,
-        },
-      })
+  const shouldSkipQuery =
+    !stepId || schema.type !== 'dropdown' || !schema.source
+  const { called, data, loading, refetch } = useQuery(GET_DYNAMIC_DATA, {
+    variables: {
+      stepId,
+      ...nonFormFieldArgs,
+      ...watchedFormFieldValues,
+    },
+    skip: shouldSkipQuery,
+    notifyOnNetworkStatusChange: true,
+  })
+
+  // Refetch if any of our watched form fields changes.
+  useEffect(() => {
+    if (watchedFormFields.size === 0) {
+      return
     }
-  }, [getDynamicData, stepId, schema, computedVariables])
+
+    const watchSubscription = watch(
+      (newFieldValues, { name: fieldPath, type }) => {
+        if (
+          !fieldPath ||
+          !type ||
+          type !== 'change' ||
+          !watchedFormFields.has(fieldPath)
+        ) {
+          return
+        }
+
+        refetch({
+          ...getWatchedFormFieldValues(watchedFormFields, newFieldValues),
+        })
+      },
+    )
+
+    return () => watchSubscription.unsubscribe()
+  }, [refetch, watch, watchedFormFields])
 
   return {
     called,

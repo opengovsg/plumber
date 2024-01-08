@@ -1,7 +1,7 @@
-import {
-  IBaseTrigger,
+import type {
+  IAuth,
   IGlobalVariable,
-  IVerifyHookOutput,
+  IVerifyConnectionRegistrationOutput,
 } from '@plumber/types'
 
 import appConfig from '@/config/app'
@@ -28,7 +28,7 @@ export const FORMSG_WEBHOOK_REGISTRATION_MESSAGE = {
 }
 
 function getFormDetailsFromGlobalVariable($: IGlobalVariable) {
-  const userEmail = $.userEmail
+  const userEmail = $.user?.email
   if (!userEmail) {
     throw new Error('Missing User Email')
   }
@@ -52,7 +52,7 @@ function getFormDetailsFromGlobalVariable($: IGlobalVariable) {
 
 export async function registerWebhookUrl(
   $: IGlobalVariable,
-): ReturnType<IBaseTrigger['registerHook']> {
+): ReturnType<IAuth['registerConnection']> {
   const { userEmail, webhookUrl, formId } = getFormDetailsFromGlobalVariable($)
 
   try {
@@ -95,7 +95,7 @@ export async function registerWebhookUrl(
 
 export async function verifyWebhookUrl(
   $: IGlobalVariable,
-): Promise<IVerifyHookOutput> {
+): Promise<IVerifyConnectionRegistrationOutput> {
   const { userEmail, webhookUrl, formId } = getFormDetailsFromGlobalVariable($)
 
   try {
@@ -130,7 +130,7 @@ export async function verifyWebhookUrl(
       }
     }
     return {
-      webhookVerified: isWebhookAlreadySet,
+      registrationVerified: isWebhookAlreadySet,
       message,
     }
   } catch (e: unknown) {
@@ -151,7 +151,7 @@ export async function verifyWebhookUrl(
       error,
     })
     return {
-      webhookVerified: false,
+      registrationVerified: false,
       message: errorMsg,
     }
   }

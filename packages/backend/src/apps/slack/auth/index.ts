@@ -1,8 +1,12 @@
+import type { IUserAddedConnectionAuth } from '@plumber/types'
+
 import generateAuthUrl from './generate-auth-url'
 import isStillVerified from './is-still-verified'
 import verifyCredentials from './verify-credentials'
 
-export default {
+const auth: IUserAddedConnectionAuth = {
+  connectionType: 'user-added' as const,
+
   fields: [
     {
       key: 'oAuthRedirectUrl',
@@ -12,7 +16,7 @@ export default {
       readOnly: true,
       value: '{WEB_APP_URL}/app/slack/connections/add',
       description:
-        'When asked to input an OAuth callback or redirect URL in Slack OAuth, enter the URL above.',
+        'When asked to input an OAuth callback or redirect URL in Slack OAuth, enter the URL below.',
       clickToCopy: true,
       autoComplete: 'url' as const,
     },
@@ -44,3 +48,5 @@ export default {
   verifyCredentials,
   isStillVerified,
 }
+
+export default auth

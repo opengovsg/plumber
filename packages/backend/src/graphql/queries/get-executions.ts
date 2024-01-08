@@ -1,3 +1,4 @@
+import paginate from '@/helpers/pagination'
 import Execution from '@/models/execution'
 import ExtendedQueryBuilder from '@/models/query-builder'
 import Context from '@/types/express/context'
@@ -27,7 +28,7 @@ const getExecutions = async (
     }
   }
 
-  const results = context.currentUser
+  const executionsQuery = context.currentUser
     .$relatedQuery('executions')
     .withGraphFetched({
       flow: {
@@ -35,27 +36,8 @@ const getExecutions = async (
       },
     })
     .where(filterBuilder)
-    .limit(params.limit)
-    .offset(params.offset)
     .orderBy('created_at', 'desc')
 
-  const resultSize = context.currentUser
-    .$relatedQuery('executions')
-    .where(filterBuilder)
-    .resultSize()
-
-  const [records, count] = await Promise.all([results, resultSize])
-
-  return {
-    pageInfo: {
-      currentPage: Math.ceil(params.offset / params.limit + 1),
-      totalPages: Math.ceil(count / params.limit),
-    },
-    edges: records.map((record: Execution) => {
-      return {
-        node: record,
-      }
-    }),
-  }
+  return paginate(executionsQuery, params.limit, params.offset)
 }
 export default getExecutions

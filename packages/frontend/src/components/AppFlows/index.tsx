@@ -1,9 +1,9 @@
 import type { IFlow } from '@plumber/types'
 
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import Pagination from '@mui/material/Pagination'
-import PaginationItem from '@mui/material/PaginationItem'
+import { Flex } from '@chakra-ui/react'
+import { Pagination } from '@opengovsg/design-system-react'
 import AppFlowRow from 'components/FlowRow'
 import NoResultFound from 'components/NoResultFound'
 import * as URLS from 'config/urls'
@@ -55,20 +55,17 @@ export default function AppFlows(props: AppFlowsProps): React.ReactElement {
         <AppFlowRow key={appFlow.id} flow={appFlow} />
       ))}
 
-      {pageInfo && pageInfo.totalPages > 1 && (
-        <Pagination
-          sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}
-          page={pageInfo?.currentPage}
-          count={pageInfo?.totalPages}
-          onChange={(event, page) => setSearchParams({ page: page.toString() })}
-          renderItem={(item) => (
-            <PaginationItem
-              component={Link}
-              to={`${item.page === 1 ? '' : `?page=${item.page}`}`}
-              {...item}
-            />
-          )}
-        />
+      {pageInfo && pageInfo.totalCount > FLOW_PER_PAGE && (
+        <Flex justifyContent="center" mt={6}>
+          <Pagination
+            currentPage={pageInfo?.currentPage}
+            onPageChange={(page) =>
+              setSearchParams(page === 1 ? {} : { page: page.toString() })
+            }
+            pageSize={FLOW_PER_PAGE}
+            totalCount={pageInfo?.totalCount}
+          />
+        </Flex>
       )}
     </>
   )

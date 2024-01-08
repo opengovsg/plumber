@@ -44,7 +44,7 @@ type Mutation {
   resetConnection(input: ResetConnectionInput): Connection
   verifyConnection(input: VerifyConnectionInput): Connection
   deleteConnection(input: DeleteConnectionInput): Boolean
-  registerWebhook(input: RegisterWebhookInput): Boolean
+  registerConnection(input: RegisterConnectionInput): Boolean
   createFlow(input: CreateFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
@@ -127,7 +127,6 @@ type App {
   docUrl: String
   authDocUrl: String
   primaryColor: String
-  supportsConnections: Boolean
   auth: AppAuth
   triggers: [Trigger]
   actions: [Action]
@@ -136,7 +135,10 @@ type App {
 }
 
 type AppAuth {
-  fields: [Field]
+  connectionType: String!
+  connectionRegistrationType: String
+
+  fields: [Field] # Only for user-added connections
   authenticationSteps: [AuthenticationStep]
   reconnectionSteps: [ReconnectionStep]
 }
@@ -273,9 +275,9 @@ input DeleteConnectionInput {
   id: String!
 }
 
-input RegisterWebhookInput {
+input RegisterConnectionInput {
   connectionId: String!
-  stepId: String!
+  stepId: String
 }
 
 input CreateFlowInput {
@@ -413,7 +415,6 @@ type Trigger {
   description: String
   pollInterval: Int
   type: String
-  supportsWebhookRegistration: Boolean
   webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
 }
@@ -468,7 +469,7 @@ type TriggerSubstepArgumentSourceArgument {
 
 type TestConnectionResult {
   connectionVerified: Boolean!
-  webhookVerified: Boolean
+  registrationVerified: Boolean
   message: String
 }
 
@@ -481,7 +482,7 @@ type User {
 
 type PageInfo {
   currentPage: Int!
-  totalPages: Int!
+  totalCount: Int!
 }
 
 type ExecutionEdge {
