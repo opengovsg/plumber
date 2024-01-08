@@ -1,3 +1,4 @@
+import HttpError from '@/errors/http'
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -273,14 +274,31 @@ export interface IApp {
   actions?: IAction[]
   connections?: IConnection[]
   description?: string
+
+  /**
+   * A callback that is invoked if there's an error for any HTTP request this
+   * app makes using $.http.
+   *
+   * This is useful to perform per-request monitoring or error transformations
+   * (e.g logging on specific HTTP response codes or converting 429s to a
+   * non-HttpError to prevent automated retries).
+   *
+   * We support this because if an app needs custom error monitoring for _all_
+   * requests, it allows us to stop having to remember to surround all our code
+   * with try / catch.
+   */
+  requestErrorHandler?: TRequestErrorHandler
 }
 
-export type TBeforeRequest = {
-  (
-    $: IGlobalVariable,
-    requestConfig: InternalAxiosRequestConfig,
-  ): Promise<InternalAxiosRequestConfig>
-}
+export type TBeforeRequest = (
+  $: IGlobalVariable,
+  requestConfig: InternalAxiosRequestConfig,
+) => Promise<InternalAxiosRequestConfig>
+
+export type TRequestErrorHandler = (
+  $: IGlobalVariable,
+  error: HttpError,
+) => Promise<void>
 
 export interface DynamicDataOutput {
   data: {
@@ -473,7 +491,8 @@ export interface ISubstep {
 export type IHttpClientParams = {
   $: IGlobalVariable
   baseURL?: string
-  beforeRequest?: TBeforeRequest[]
+  beforeRequest: TBeforeRequest[]
+  requestErrorHandler: TRequestErrorHandler
 }
 
 export type IGlobalVariable = {

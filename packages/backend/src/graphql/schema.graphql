@@ -482,7 +482,7 @@ type User {
 
 type PageInfo {
   currentPage: Int!
-  totalPages: Int!
+  totalCount: Int!
 }
 
 type ExecutionEdge {

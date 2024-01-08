@@ -8,8 +8,8 @@ import * as URLS from 'config/urls'
 export default function AppBar(): React.ReactElement {
   return (
     <Box maxW="full">
-      <Flex alignItems="center" pl={6} pr={3} py={4} gap={6}>
-        <Box flexGrow="1">
+      <Flex alignItems="center" pl={6} pr={3} py={4} gap={{ base: 3, sm: 6 }}>
+        <Box flexGrow="1" flexShrink="0">
           <Image src={mainLogo} h={8} w={8} />
         </Box>
 

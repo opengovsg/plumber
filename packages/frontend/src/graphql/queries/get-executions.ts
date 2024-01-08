@@ -15,7 +15,7 @@ export const GET_EXECUTIONS = gql`
     ) {
       pageInfo {
         currentPage
-        totalPages
+        totalCount
       }
       edges {
         node {

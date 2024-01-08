@@ -24,7 +24,7 @@ import {
   InputLeftElement,
   InputRightElement,
 } from '@chakra-ui/react'
-import Pagination from '@mui/material/Pagination'
+import { Pagination } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import ExecutionRow from 'components/ExecutionRow'
 import ExecutionStatusMenu, { StatusType } from 'components/ExecutionStatusMenu'
@@ -77,7 +77,7 @@ export default function Executions(): ReactElement {
 
   // page handling
   const handlePageChange = useCallback(
-    (event: ChangeEvent<unknown>, page: number) =>
+    (page: number) =>
       formatSearchParams({
         page,
         status: filterStatus,
@@ -157,7 +157,7 @@ export default function Executions(): ReactElement {
             </Hide>
             <PageTitle title={EXECUTIONS_TITLE} />
           </Flex>
-          <InputGroup w="25rem">
+          <InputGroup maxW="25rem">
             <InputLeftElement>
               <Icon as={BiSearch} boxSize={5} />
             </InputLeftElement>
@@ -204,13 +204,15 @@ export default function Executions(): ReactElement {
             <ExecutionRow key={execution.id} execution={execution} />
           ))}
 
-        {!loading && pageInfo && pageInfo.totalPages > 1 && (
-          <Pagination
-            sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}
-            page={pageInfo?.currentPage}
-            count={pageInfo?.totalPages}
-            onChange={handlePageChange}
-          />
+        {!loading && pageInfo && pageInfo.totalCount > EXECUTION_PER_PAGE && (
+          <Flex justifyContent="center" mt={6}>
+            <Pagination
+              currentPage={pageInfo?.currentPage}
+              onPageChange={handlePageChange}
+              pageSize={EXECUTION_PER_PAGE}
+              totalCount={pageInfo?.totalCount}
+            />
+          </Flex>
         )}
       </Container>
     </Box>

@@ -120,7 +120,8 @@ const globalVariable = async (
   $.http = createHttpClient({
     $,
     baseURL: app.apiBaseUrl,
-    beforeRequest: app.beforeRequest,
+    beforeRequest: app.beforeRequest ?? [],
+    requestErrorHandler: app.requestErrorHandler ?? null,
   })
 
   if (flow) {

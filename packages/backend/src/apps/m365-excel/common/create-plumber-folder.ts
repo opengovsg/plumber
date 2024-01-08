@@ -22,19 +22,6 @@ export async function createPlumberFolder(
   )
   const folderId = createFolderResult.data.id
 
-  // Clear inherited permissions to make folder fully private.
-  const folderPermissions = await $.http.get<{ value: Array<{ id: string }> }>(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${folderId}/permissions`,
-  )
-
-  await Promise.all(
-    folderPermissions.data.value.map(async (permission) =>
-      $.http.delete(
-        `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${folderId}/permissions/${permission.id}`,
-      ),
-    ),
-  )
-
   // Allow user R/W access to folder.
   await $.http.post(
     `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${folderId}/invite`,
