@@ -1,4 +1,6 @@
-export const CUSTOM_APPS = [
+import { AppIntegrationProps } from './AppIntegration'
+
+export const CUSTOM_APPS: AppIntegrationProps[] = [
   {
     iconName: 'scheduler',
     name: 'Scheduler',
@@ -36,7 +38,7 @@ export const CUSTOM_APPS = [
   },
 ]
 
-export const COMMON_APPS = [
+export const COMMON_APPS: AppIntegrationProps[] = [
   {
     iconName: 'formsg',
     name: 'FormSG',

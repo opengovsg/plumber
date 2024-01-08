@@ -9,7 +9,7 @@ export default function ToolsLanding() {
       <Text textStyle="h1" color="primary.600" mb={16}>
         Our tools and integrations
       </Text>
-      <VStack gap="64px" align="start">
+      <VStack gap={16} align="start">
         <VStack gap={12}>
           <Box>
             <Text textStyle="h5" color="primary.600" mb={2}>
