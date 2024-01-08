@@ -9,7 +9,6 @@ const app: IApp = {
   iconUrl: '{BASE_URL}/apps/paysg/assets/favicon.svg',
   authDocUrl:
     'https://guide.pay.gov.sg/api/get-started-build-your-integration/get-started-with-paysgs-api',
-  supportsConnections: true,
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '000000',

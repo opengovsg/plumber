@@ -1,8 +1,17 @@
+import type { IUserAddedConnectionAuth } from '@plumber/types'
+
+import {
+  registerWebhookUrl,
+  verifyWebhookUrl,
+} from '../common/webhook-settings'
+
 import { decryptFormResponse } from './decrypt-form-response'
 import isStillVerified from './is-still-verified'
 import verifyCredentials from './verify-credentials'
 
-export default {
+const auth: IUserAddedConnectionAuth = {
+  connectionType: 'user-added' as const,
+
   fields: [
     {
       key: 'formId',
@@ -28,7 +37,14 @@ export default {
       autoComplete: 'off' as const,
     },
   ],
+
   verifyCredentials,
   isStillVerified,
   verifyWebhook: decryptFormResponse,
+
+  connectionRegistrationType: 'per-step' as const,
+  registerConnection: registerWebhookUrl,
+  verifyConnectionRegistration: verifyWebhookUrl,
 }
+
+export default auth

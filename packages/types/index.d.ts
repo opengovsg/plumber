@@ -1,3 +1,4 @@
+import HttpError from '@/errors/http'
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -145,9 +146,9 @@ export interface IFlow {
 export interface IUser {
   id: string
   email: string
-  connections: IConnection[]
-  flows: IFlow[]
-  steps: IStep[]
+  connections?: IConnection[]
+  flows?: IFlow[]
+  steps?: IStep[]
 }
 
 // Subset of HTML autocomplete values.
@@ -262,7 +263,6 @@ export interface IApp {
   docUrl?: string
   authDocUrl: string
   primaryColor: string
-  supportsConnections: boolean
   apiBaseUrl: string
   baseUrl: string
   auth?: IAuth
@@ -274,14 +274,31 @@ export interface IApp {
   actions?: IAction[]
   connections?: IConnection[]
   description?: string
+
+  /**
+   * A callback that is invoked if there's an error for any HTTP request this
+   * app makes using $.http.
+   *
+   * This is useful to perform per-request monitoring or error transformations
+   * (e.g logging on specific HTTP response codes or converting 429s to a
+   * non-HttpError to prevent automated retries).
+   *
+   * We support this because if an app needs custom error monitoring for _all_
+   * requests, it allows us to stop having to remember to surround all our code
+   * with try / catch.
+   */
+  requestErrorHandler?: TRequestErrorHandler
 }
 
-export type TBeforeRequest = {
-  (
-    $: IGlobalVariable,
-    requestConfig: InternalAxiosRequestConfig,
-  ): InternalAxiosRequestConfig
-}
+export type TBeforeRequest = (
+  $: IGlobalVariable,
+  requestConfig: InternalAxiosRequestConfig,
+) => Promise<InternalAxiosRequestConfig>
+
+export type TRequestErrorHandler = (
+  $: IGlobalVariable,
+  error: HttpError,
+) => Promise<void>
 
 export interface DynamicDataOutput {
   data: {
@@ -291,17 +308,40 @@ export interface DynamicDataOutput {
   error?: IJSONObject
 }
 
-export interface IAuth {
+export type AuthConnectionType = 'user-added' | 'system-added'
+export type ConnectionRegistrationType = 'global' | 'per-step'
+
+interface IBaseAuth {
+  connectionType: AuthConnectionType
+
   generateAuthUrl?($: IGlobalVariable): Promise<void>
   verifyCredentials?($: IGlobalVariable): Promise<void>
   isStillVerified?($: IGlobalVariable): Promise<boolean>
   refreshToken?($: IGlobalVariable): Promise<void>
   verifyWebhook?($: IGlobalVariable): Promise<boolean>
   isRefreshTokenRequested?: boolean
-  fields?: IField[]
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
+
+  connectionRegistrationType?: ConnectionRegistrationType
+  registerConnection?($: IGlobalVariable): Promise<void>
+  unregisterConnection?($: IGlobalVariable): Promise<void>
+  verifyConnectionRegistration?(
+    $: IGlobalVariable,
+  ): Promise<IVerifyConnectionRegistrationOutput>
 }
+
+interface IUserAddedConnectionAuth extends IBaseAuth {
+  connectionType: 'user-added'
+  fields?: IField[]
+}
+
+interface ISystemAddedConnectionAuth extends IBaseAuth {
+  connectionType: 'system-added'
+  getSystemAddedConnections?(user: IUser): Promise<IConnection[]>
+}
+
+export type IAuth = IUserAddedConnectionAuth | ISystemAddedConnectionAuth
 
 export interface ITriggerOutput {
   data: ITriggerItem[]
@@ -332,9 +372,6 @@ export interface IBaseTrigger {
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
-  registerHook?($: IGlobalVariable): Promise<void>
-  verifyHook?($: IGlobalVariable): Promise<IVerifyHookOutput>
-  unregisterHook?($: IGlobalVariable): Promise<void>
   sort?(item: ITriggerItem, nextItem: ITriggerItem): number
 
   /**
@@ -354,7 +391,6 @@ export interface IRawTrigger extends IBaseTrigger {
 
 export interface ITrigger extends IBaseTrigger {
   substeps?: ISubstep[]
-  supportsWebhookRegistration?: boolean
 }
 
 interface PostmanSendEmailMetadata {
@@ -455,7 +491,8 @@ export interface ISubstep {
 export type IHttpClientParams = {
   $: IGlobalVariable
   baseURL?: string
-  beforeRequest?: TBeforeRequest[]
+  beforeRequest: TBeforeRequest[]
+  requestErrorHandler: TRequestErrorHandler
 }
 
 export type IGlobalVariable = {
@@ -493,7 +530,11 @@ export type IGlobalVariable = {
   actionOutput?: IActionOutput
   pushTriggerItem?: (triggerItem: ITriggerItem) => Promise<void>
   setActionItem?: (actionItem: IActionItem) => void
-  userEmail?: string
+
+  /**
+   * Only available in GraphQL context.
+   */
+  user?: IUser
 }
 
 declare module 'axios' {
@@ -510,12 +551,13 @@ export interface IRequest extends Request {
   rawBody?: Buffer
 }
 
-export interface IVerifyHookOutput {
-  webhookVerified: boolean
+export interface IVerifyConnectionRegistrationOutput {
+  registrationVerified: boolean
   message: string
 }
 
-export interface ITestConnectionOutput extends Partial<IVerifyHookOutput> {
+export interface ITestConnectionOutput
+  extends Partial<IVerifyConnectionRegistrationOutput> {
   connectionVerified: boolean
 }
 export interface IStepError {

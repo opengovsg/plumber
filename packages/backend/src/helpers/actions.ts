@@ -62,11 +62,18 @@ export function handleErrorAndThrow(
   // This is thrown from app.run, which _in theory_ can be anything.
   executionError: unknown,
 ): never {
-  // Only support retrying HTTP errors for now.
+  // Edge case as some actions throw StepError now, but others don't.
   if (executionError instanceof StepError) {
     executionError = executionError.cause
   }
-  if (!executionError || !(executionError instanceof HttpError)) {
+
+  // We passthrough RetriableErrors thrown directly by the action.
+  if (executionError instanceof RetriableError) {
+    throw executionError
+  }
+
+  // Otherwise... we only support automatically retrying HTTP errors for now.
+  if (!(executionError instanceof HttpError)) {
     throw new UnrecoverableError(JSON.stringify(errorDetails))
   }
 

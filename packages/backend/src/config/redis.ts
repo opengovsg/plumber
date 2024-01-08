@@ -2,10 +2,12 @@ import ioRedis from 'ioredis'
 
 import appConfig from './app'
 
+// Maximum of 16; be careful when adding!
 export const REDIS_DB_INDEX = {
   JOBS: 0,
   RATE_LIMIT: 1,
   PIPE_ERRORS: 2,
+  APP_DATA: 3,
 }
 
 export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>

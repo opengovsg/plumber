@@ -6,34 +6,39 @@ import { Button } from '@opengovsg/design-system-react'
 
 interface SetConnectionButtonProps {
   onNextStep: () => void
-  onRegisterWebhook: () => void
+  onRegisterConnection: () => void
   readOnly: boolean
-  supportsWebhookRegistration: boolean
+  supportsConnectionRegistration: boolean
   testResult: ITestConnectionOutput | undefined
   testResultLoading: boolean
-  registerWebhookLoading: boolean
+  registerConnectionLoading: boolean
 }
 
 const SetConnectionButton = ({
   onNextStep,
   readOnly,
-  onRegisterWebhook,
-  supportsWebhookRegistration,
+  onRegisterConnection,
+  supportsConnectionRegistration,
   testResult,
   testResultLoading,
-  registerWebhookLoading,
+  registerConnectionLoading,
 }: SetConnectionButtonProps) => {
   const onSubmit = useCallback(() => {
     if (
-      supportsWebhookRegistration &&
+      supportsConnectionRegistration &&
       testResult &&
-      !testResult.webhookVerified
+      !testResult.registrationVerified
     ) {
-      onRegisterWebhook()
+      onRegisterConnection()
     } else {
       onNextStep()
     }
-  }, [onNextStep, onRegisterWebhook, supportsWebhookRegistration, testResult])
+  }, [
+    onNextStep,
+    onRegisterConnection,
+    supportsConnectionRegistration,
+    testResult,
+  ])
 
   const buttonText = useMemo(() => {
     if (testResultLoading) {
@@ -44,19 +49,19 @@ const SetConnectionButton = ({
       return 'Continue'
     }
 
-    if (registerWebhookLoading) {
-      return 'Registering webhook...'
+    if (registerConnectionLoading) {
+      return 'Registering connection...'
     }
 
     if (!testResult.connectionVerified) {
       return 'Connection not verified'
     }
 
-    if (!supportsWebhookRegistration) {
+    if (!supportsConnectionRegistration) {
       return readOnly ? 'Connection verified' : 'Continue'
     }
 
-    if (!testResult.webhookVerified) {
+    if (!testResult.registrationVerified) {
       return readOnly ? 'Not connected' : 'Connect'
     }
 
@@ -65,15 +70,15 @@ const SetConnectionButton = ({
     readOnly,
     testResultLoading,
     testResult,
-    supportsWebhookRegistration,
-    registerWebhookLoading,
+    supportsConnectionRegistration,
+    registerConnectionLoading,
   ])
 
   return (
     <>
-      {supportsWebhookRegistration && testResult?.message && (
+      {supportsConnectionRegistration && testResult?.message && (
         <Alert
-          status={testResult?.webhookVerified ? 'success' : 'warning'}
+          status={testResult?.registrationVerified ? 'success' : 'warning'}
           borderRadius={4}
         >
           <AlertIcon />
@@ -85,7 +90,7 @@ const SetConnectionButton = ({
         onClick={onSubmit}
         isDisabled={
           testResultLoading ||
-          registerWebhookLoading ||
+          registerConnectionLoading ||
           !testResult?.connectionVerified ||
           readOnly
         }

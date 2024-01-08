@@ -5,7 +5,7 @@ import { Controller, useFormContext } from 'react-hook-form'
 import { BiRefresh } from 'react-icons/bi'
 import Markdown from 'react-markdown'
 import { Flex, FormControl } from '@chakra-ui/react'
-import { Paper, PaperProps } from '@mui/material'
+import { Paper, PaperProps, TextField } from '@mui/material'
 import Autocomplete, {
   AutocompleteProps,
   createFilterOptions,
@@ -15,6 +15,7 @@ import {
   Button,
   FormErrorMessage,
   FormLabel,
+  Spinner,
 } from '@opengovsg/design-system-react'
 
 interface PaperWithRefreshProps extends PaperProps {
@@ -35,6 +36,7 @@ function PaperWithRefresh(props: PaperWithRefreshProps): JSX.Element {
           onMouseDown={(e) => {
             e.preventDefault()
           }}
+          spinner={<Spinner fontSize={24} color="primary.600" />}
           onClick={onRefresh}
           isLoading={loading}
         >
@@ -145,6 +147,22 @@ function ControlledAutocomplete(
                 freeSolo={freeSolo}
                 options={options}
                 value={getOption(options, field.value, freeSolo)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loading && (
+                            <Spinner fontSize={24} color="primary.600" />
+                          )}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
                 onChange={(_event, selectedOption) => {
                   const typedSelectedOption =
                     selectedOption as IFieldDropdownOption
@@ -166,7 +184,7 @@ function ControlledAutocomplete(
                 filterOptions={(options, params) => {
                   const filtered = filter(options, params)
 
-                  if (params.inputValue !== '') {
+                  if (freeSolo && params.inputValue !== '') {
                     filtered.push({
                       value: params.inputValue,
                       label: `Use: ${params.inputValue}`,

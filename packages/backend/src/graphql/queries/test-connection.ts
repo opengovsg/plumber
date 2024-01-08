@@ -1,7 +1,7 @@
-import { ITestConnectionOutput } from '@plumber/types'
+import type { ITestConnectionOutput } from '@plumber/types'
 
+import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
-import App from '@/models/app'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -22,7 +22,7 @@ const testConnection = async (
     })
     .throwIfNotFound()
 
-  const app = await App.findOneByKey(connection.key, false)
+  const app = apps[connection.key]
   let $ = await globalVariable({ connection, app })
 
   let step
@@ -65,15 +65,17 @@ const testConnection = async (
     return { connectionVerified: isStillVerified }
   }
 
-  const trigger = await step.getTriggerCommand()
-  if (!trigger.verifyHook) {
-    throw new Error('Verify webhook not implemented')
+  // TODO (ogp-weeloong): We should actually _disallow_ testing connections
+  // from outside the pipe editor if app needs per-step connection registration.
+  if (!app.auth?.verifyConnectionRegistration) {
+    throw new Error('Connection registration verification not implemented')
   }
-  const { webhookVerified, message } = await trigger.verifyHook($)
+  const { registrationVerified, message } =
+    await app.auth.verifyConnectionRegistration($)
 
   return {
     connectionVerified: isStillVerified,
-    webhookVerified,
+    registrationVerified,
     message,
   }
 }

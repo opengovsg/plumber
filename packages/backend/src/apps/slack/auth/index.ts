@@ -1,8 +1,12 @@
+import type { IUserAddedConnectionAuth } from '@plumber/types'
+
 import generateAuthUrl from './generate-auth-url'
 import isStillVerified from './is-still-verified'
 import verifyCredentials from './verify-credentials'
 
-export default {
+const auth: IUserAddedConnectionAuth = {
+  connectionType: 'user-added' as const,
+
   fields: [
     {
       key: 'oAuthRedirectUrl',
@@ -44,3 +48,5 @@ export default {
   verifyCredentials,
   isStillVerified,
 }
+
+export default auth

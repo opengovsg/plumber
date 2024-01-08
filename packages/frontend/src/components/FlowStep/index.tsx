@@ -263,7 +263,6 @@ export default function FlowStep(
                     onChange={handleChange}
                     application={app}
                     step={step}
-                    selectedActionOrTrigger={selectedActionOrTrigger}
                   />
                 )}
 

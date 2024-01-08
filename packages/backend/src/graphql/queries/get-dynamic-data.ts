@@ -1,7 +1,7 @@
 import { IDynamicData, IJSONObject } from '@plumber/types'
 
+import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
-import App from '@/models/app'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -15,13 +15,15 @@ const getDynamicData = async (
   params: Params,
   context: Context,
 ) => {
+  const { stepId, key: dynamicDataKey, parameters } = params
+
   const step = await context.currentUser
     .$relatedQuery('steps')
     .withGraphFetched({
       connection: true,
       flow: true,
     })
-    .findById(params.stepId)
+    .findById(stepId)
 
   if (!step) {
     return null
@@ -33,15 +35,21 @@ const getDynamicData = async (
     return null
   }
 
-  const app = await App.findOneByKey(step.appKey)
-  const $ = await globalVariable({ connection, app, flow: step.flow, step })
+  const app = apps[step.appKey]
+  const $ = await globalVariable({
+    connection,
+    app,
+    flow: step.flow,
+    step,
+    user: context.currentUser,
+  })
 
   const command = app.dynamicData.find(
-    (data: IDynamicData) => data.key === params.key,
+    (data: IDynamicData) => data.key === dynamicDataKey,
   )
 
-  for (const parameterKey in params.parameters) {
-    const parameterValue = params.parameters[parameterKey]
+  for (const parameterKey in parameters) {
+    const parameterValue = parameters[parameterKey]
     $.step.parameters[parameterKey] = parameterValue
   }
 

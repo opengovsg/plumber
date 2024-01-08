@@ -8,7 +8,10 @@ const appInfoConverter = (rawAppData: IApp) => {
     appConfig.baseUrl,
   )
 
-  if (rawAppData.auth?.fields) {
+  if (
+    rawAppData.auth?.connectionType === 'user-added' &&
+    rawAppData.auth?.fields
+  ) {
     rawAppData.auth.fields = rawAppData.auth.fields.map((field) => {
       if (typeof field.value === 'string') {
         return {

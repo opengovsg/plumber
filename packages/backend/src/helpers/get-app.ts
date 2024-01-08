@@ -52,13 +52,6 @@ const testStep = (stepType: 'trigger' | 'action') => {
   }
 }
 
-function isTrigger(
-  stepType: 'trigger' | 'action',
-  computedStep: any,
-): computedStep is ITrigger {
-  return stepType === 'trigger'
-}
-
 function addStaticSubsteps(
   stepType: 'trigger',
   appData: IApp,
@@ -78,13 +71,8 @@ function addStaticSubsteps(
 
   computedStep.substeps = []
 
-  if (appData.supportsConnections) {
+  if (appData.auth) {
     computedStep.substeps.push(chooseConnectionStep)
-  }
-
-  if (isTrigger(stepType, computedStep)) {
-    computedStep.supportsWebhookRegistration =
-      !!computedStep.verifyHook && !!computedStep.registerHook
   }
 
   if (step.arguments) {

@@ -9,7 +9,6 @@ const app: IApp = {
   key: 'twilio',
   iconUrl: '{BASE_URL}/apps/twilio/assets/favicon.svg',
   authDocUrl: 'https://automatisch.io/docs/apps/twilio/connection',
-  supportsConnections: true,
   baseUrl: 'https://twilio.com',
   apiBaseUrl: 'https://api.twilio.com',
   primaryColor: 'e1000f',
