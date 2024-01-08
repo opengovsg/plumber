@@ -157,7 +157,7 @@ export default function Executions(): ReactElement {
             </Hide>
             <PageTitle title={EXECUTIONS_TITLE} />
           </Flex>
-          <InputGroup w="25rem">
+          <InputGroup maxW="25rem">
             <InputLeftElement>
               <Icon as={BiSearch} boxSize={5} />
             </InputLeftElement>
