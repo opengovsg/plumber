@@ -19,11 +19,13 @@ import AppIcon from 'components/AppIcon'
 import ErrorResult from 'components/ErrorResult'
 import JSONViewer from 'components/JSONViewer'
 import { GET_APP } from 'graphql/queries/get-app'
+import { EXECUTION_STEP_PER_PAGE } from 'pages/Execution'
 
 import RetryButton from './RetryButton'
 
 type ExecutionStepProps = {
   index: number
+  page: number
   executionStep: IExecutionStep
 }
 
@@ -41,9 +43,13 @@ const errorIcon = (
     color="interaction.critical.default"
   />
 )
+const getStepPosition = (page: number, index: number) => {
+  return (page - 1) * EXECUTION_STEP_PER_PAGE + index + 1
+}
 
 export default function ExecutionStep({
   index,
+  page,
   executionStep,
 }: ExecutionStepProps): React.ReactElement | null {
   const { data } = useQuery(GET_APP, {
@@ -91,11 +97,11 @@ export default function ExecutionStep({
 
             <Box>
               <Text textStyle="body-2">
-                {index === 0 ? 'Trigger' : 'Action'}
+                {index === 0 && page === 1 ? 'Trigger' : 'Action'}
               </Text>
 
               <Text textStyle="h5">
-                {index + 1}. {app?.name}
+                {getStepPosition(page, index)}. {app?.name}
               </Text>
             </Box>
           </HStack>
