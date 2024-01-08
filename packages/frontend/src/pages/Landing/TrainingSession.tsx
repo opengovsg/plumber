@@ -5,7 +5,7 @@ import * as URLS from 'config/urls'
 
 export default function TrainingSession() {
   return (
-    <Container py="88px" px={6}>
+    <Container py="5.5rem" px={6}>
       <Flex
         flexDir={{ base: 'column', md: 'row' }}
         alignItems={{ base: 'flex-start', md: 'center' }}

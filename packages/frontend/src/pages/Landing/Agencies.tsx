@@ -10,7 +10,7 @@ import SpfLogo from 'assets/landing/SPF.svg'
 
 export default function Agencies() {
   return (
-    <Box bg="white" py="88px">
+    <Box bg="white" py="5.5rem">
       <Flex
         py={4}
         justifyContent="space-evenly"
