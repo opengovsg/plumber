@@ -1,26 +1,22 @@
 import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
-import { type CreateEntityItem } from 'electrodb'
 
 import { handleDynamoDBError } from '../helpers'
 
 import { TableRow } from './model'
+import {
+  CreateRowInput,
+  CreateRowsInput,
+  DeleteRowsInput,
+  TableRowFilter,
+  TableRowFilterOperator,
+  TableRowItem,
+  TableRowOutput,
+  UpdateRowInput,
+} from './types'
 
 const MAX_RETRIES = 8
 const EXPONENTIAL_BACKOFF_BASE_DELAY = 1000 // 1 second
-
-export type TableRowItem = CreateEntityItem<typeof TableRow>
-export type CreateRowInput = Pick<TableRowItem, 'tableId' | 'data'>
-export type CreateRowsInput = {
-  tableId: string
-  dataArray: Record<string, string>[]
-}
-export type UpdateRowInput = Pick<TableRowItem, 'tableId' | 'data' | 'rowId'>
-export interface DeleteRowsInput {
-  tableId: string
-  rowIds: string[]
-}
-export type TableRowOutput = Pick<TableRowItem, 'rowId' | 'data'>
 
 /**
  * Internal functions
@@ -189,7 +185,7 @@ export const getAllTableRows = async ({
     // special characters (e.g. '-') need to be escaped
     const ExpressionAttributeNames = columnIds
       ? columnIds.reduce(
-          (acc, id, i) => ({
+          (acc: Record<string, string>, id: string, i: number) => ({
             ...acc,
             [`#col${i}`]: id,
           }),
@@ -224,6 +220,60 @@ export const getAllTableRows = async ({
       ...row,
       data: row.data || {}, // data can be undefined if values are empty
     }))
+  } catch (e: unknown) {
+    handleDynamoDBError(e)
+  }
+}
+
+export const findTableRows = async ({
+  tableId,
+  filters,
+}: {
+  tableId: string
+  filters: TableRowFilter[]
+}): Promise<TableRowOutput[]> => {
+  try {
+    const res = await TableRow.query
+      .byCreatedAt({ tableId })
+      .where(
+        ({ data }, { eq, begins, contains, gt, gte, lt, lte, notExists }) => {
+          const whereExpressions: string[] = []
+          for (const filter of filters) {
+            const { columnId, operator, value } = filter
+            switch (operator) {
+              case TableRowFilterOperator.Equals:
+                whereExpressions.push(eq(data[columnId], value))
+                break
+              case TableRowFilterOperator.BeginsWith:
+                whereExpressions.push(begins(data[columnId], value))
+                break
+              case TableRowFilterOperator.Contains:
+                whereExpressions.push(contains(data[columnId], value))
+                break
+              case TableRowFilterOperator.GreaterThan:
+                whereExpressions.push(gt(data[columnId], value))
+                break
+              case TableRowFilterOperator.GreaterThanOrEquals:
+                whereExpressions.push(gte(data[columnId], value))
+                break
+              case TableRowFilterOperator.LessThan:
+                whereExpressions.push(lt(data[columnId], value))
+                break
+              case TableRowFilterOperator.LessThanOrEquals:
+                whereExpressions.push(lte(data[columnId], value))
+                break
+              case TableRowFilterOperator.IsEmpty:
+                whereExpressions.push(
+                  `(${eq(data[columnId], '')} OR ${notExists(data[columnId])})`,
+                )
+                break
+            }
+          }
+          return whereExpressions.join(' AND ')
+        },
+      )
+      .go({ ignoreOwnership: true })
+    return res.data
   } catch (e: unknown) {
     handleDynamoDBError(e)
   }
