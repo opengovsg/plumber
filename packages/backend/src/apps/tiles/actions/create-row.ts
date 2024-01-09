@@ -4,7 +4,7 @@ import { generateStepError } from '@/helpers/generate-step-error'
 import { createTableRow } from '@/models/dynamodb/table-row/functions'
 import TableMetadata from '@/models/table-metadata'
 
-import { validateTileAccess } from '../../common/validate-tile-access'
+import { validateTileAccess } from '../common/validate-tile-access'
 
 const action: IRawAction = {
   name: 'Create row',
