@@ -1,10 +1,12 @@
 import { IRawAction } from '@plumber/types'
 
 import {
-  findTableRows,
+  getRawRowById,
+  getTableRows,
   TableRowFilter,
   TableRowFilterOperator,
 } from '@/models/dynamodb/table-row'
+import TableMetadata from '@/models/table-metadata'
 
 import { validateTileAccess } from '../common/validate-tile-access'
 
@@ -85,7 +87,7 @@ const action: IRawAction = {
             { label: 'Begins with', value: TableRowFilterOperator.BeginsWith },
             { label: 'Contains', value: TableRowFilterOperator.Contains },
             {
-              label: 'is empty (leave value blank)',
+              label: 'Is empty (leave value blank)',
               value: TableRowFilterOperator.IsEmpty,
             },
           ],
@@ -108,13 +110,28 @@ const action: IRawAction = {
     }
     await validateTileAccess($.flow?.userId, tableId as string)
 
-    const result = await findTableRows({ tableId, filters })
+    const table = await TableMetadata.query().findById(tableId)
+
+    const result = await getTableRows({ tableId, filters })
+
+    if (!result || !result.length) {
+      $.setActionItem({
+        raw: {
+          rowsFound: 0,
+        },
+      })
+      return
+    }
+    const firstRowId = result[0].rowId
+    const firstRow = await getRawRowById({ tableId, rowId: firstRowId })
+
+    const mappedData = await table.mapColumnIdsToNames(firstRow.data)
 
     $.setActionItem({
       raw: {
-        success: true,
-        rowCount: result.length,
-        row: result.length > 0 ? result[0].data : null,
+        rowsFound: result.length,
+        rowId: firstRowId,
+        rowData: mappedData,
       },
     })
   },

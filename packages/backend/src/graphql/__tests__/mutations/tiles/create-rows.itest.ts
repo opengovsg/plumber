@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import createRows from '@/graphql/mutations/tiles/create-rows'
-import { getAllTableRows } from '@/models/dynamodb/table-row/functions'
+import { getTableRows } from '@/models/dynamodb/table-row/functions'
 import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
 
@@ -47,7 +47,7 @@ describe('create row mutation', () => {
       context,
     )
 
-    const rows = await getAllTableRows({
+    const rows = await getTableRows({
       tableId: dummyTable.id,
       columnIds: dummyColumnIds,
     })
@@ -72,7 +72,7 @@ describe('create row mutation', () => {
       context,
     )
 
-    const rows = await getAllTableRows({
+    const rows = await getTableRows({
       tableId: dummyTable.id,
       columnIds: dummyColumnIds,
     })

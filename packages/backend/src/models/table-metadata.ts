@@ -70,6 +70,10 @@ class TableMetadata extends Base {
     return true
   }
 
+  /**
+   * Maps column ids to column names
+   * Strips away any keys that are not column ids
+   */
   async mapColumnIdsToNames(
     data: Record<string, string>,
   ): Promise<Record<string, string>> {
@@ -78,7 +82,9 @@ class TableMetadata extends Base {
 
     const mappedData: Record<string, string> = {}
     for (const [key, value] of Object.entries(data)) {
-      mappedData[columnMap.get(key)] = value
+      if (columnMap.get(key)) {
+        mappedData[columnMap.get(key)] = value
+      }
     }
     return mappedData
   }

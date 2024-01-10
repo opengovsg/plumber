@@ -1,7 +1,7 @@
 import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
 
-import { handleDynamoDBError } from '../helpers'
+import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
 
 import { TableRow } from './model'
 import {
@@ -168,12 +168,14 @@ export const getTableRowCount = async ({
   }
 }
 
-export const getAllTableRows = async ({
+export const getTableRows = async ({
   tableId,
   columnIds,
+  filters,
 }: {
   tableId: string
   columnIds?: string[]
+  filters?: TableRowFilter[]
 }): Promise<TableRowOutput[]> => {
   try {
     // need to use ProjectionExpression to select nested attributes
@@ -183,19 +185,65 @@ export const getAllTableRows = async ({
     ].join(',')
     // need to use ExpressionAttributeNames to since data is a reserved keyword and attribute names with
     // special characters (e.g. '-') need to be escaped
-    const ExpressionAttributeNames = columnIds
-      ? columnIds.reduce(
-          (acc: Record<string, string>, id: string, i: number) => ({
-            ...acc,
-            [`#col${i}`]: id,
-          }),
-          { '#data': 'data', '#pk': 'tableId' },
-        )
-      : undefined
+    const ExpressionAttributeNames: Record<string, string> = {
+      '#data': 'data',
+      '#pk': 'tableId',
+    }
+    if (columnIds) {
+      columnIds.forEach((id: string, i: number) => {
+        ExpressionAttributeNames[`#col${i}`] = id
+      })
+    }
     const tableRows = []
     let cursor: any = null
     do {
-      const response = await TableRow.query.byCreatedAt({ tableId }).go({
+      const query = TableRow.query.byCreatedAt({ tableId })
+      if (filters?.length) {
+        query.where(
+          ({ data }, { eq, begins, contains, gt, gte, lt, lte, notExists }) => {
+            const whereExpressions: string[] = []
+            for (const filter of filters) {
+              const { columnId, operator, value } = filter
+              ExpressionAttributeNames[`#${columnId.replaceAll('-', '')}`] =
+                columnId
+              const marshalledValue = autoMarshallNumberStrings(value)
+              switch (operator) {
+                case TableRowFilterOperator.Equals:
+                  whereExpressions.push(eq(data[columnId], marshalledValue))
+                  break
+                case TableRowFilterOperator.BeginsWith:
+                  whereExpressions.push(begins(data[columnId], value))
+                  break
+                case TableRowFilterOperator.Contains:
+                  whereExpressions.push(contains(data[columnId], value))
+                  break
+                case TableRowFilterOperator.GreaterThan:
+                  whereExpressions.push(gt(data[columnId], marshalledValue))
+                  break
+                case TableRowFilterOperator.GreaterThanOrEquals:
+                  whereExpressions.push(gte(data[columnId], marshalledValue))
+                  break
+                case TableRowFilterOperator.LessThan:
+                  whereExpressions.push(lt(data[columnId], marshalledValue))
+                  break
+                case TableRowFilterOperator.LessThanOrEquals:
+                  whereExpressions.push(lte(data[columnId], marshalledValue))
+                  break
+                case TableRowFilterOperator.IsEmpty:
+                  whereExpressions.push(
+                    `(${eq(data[columnId], '')} OR ${notExists(
+                      data[columnId],
+                    )})`,
+                  )
+                  break
+              }
+            }
+            return whereExpressions.join(' AND ')
+          },
+        )
+      }
+
+      const response = await query.go({
         order: 'asc',
         pages: 'all',
         cursor,
@@ -208,6 +256,7 @@ export const getAllTableRows = async ({
         data: 'raw',
         pager: 'raw',
         ignoreOwnership: true,
+        logger: console.log,
       })
       // need to explicitly cast to DynamoDB's raw output because of the 'raw' option
       const data = response.data as unknown as QueryCommandOutput & {
@@ -225,55 +274,26 @@ export const getAllTableRows = async ({
   }
 }
 
-export const findTableRows = async ({
+/**
+ * Column IDs are unmapped and includes delete columns
+ */
+export const getRawRowById = async ({
   tableId,
-  filters,
+  rowId,
 }: {
   tableId: string
-  filters: TableRowFilter[]
-}): Promise<TableRowOutput[]> => {
+  rowId: string
+}): Promise<TableRowOutput | undefined> => {
   try {
-    const res = await TableRow.query
-      .byCreatedAt({ tableId })
-      .where(
-        ({ data }, { eq, begins, contains, gt, gte, lt, lte, notExists }) => {
-          const whereExpressions: string[] = []
-          for (const filter of filters) {
-            const { columnId, operator, value } = filter
-            switch (operator) {
-              case TableRowFilterOperator.Equals:
-                whereExpressions.push(eq(data[columnId], value))
-                break
-              case TableRowFilterOperator.BeginsWith:
-                whereExpressions.push(begins(data[columnId], value))
-                break
-              case TableRowFilterOperator.Contains:
-                whereExpressions.push(contains(data[columnId], value))
-                break
-              case TableRowFilterOperator.GreaterThan:
-                whereExpressions.push(gt(data[columnId], value))
-                break
-              case TableRowFilterOperator.GreaterThanOrEquals:
-                whereExpressions.push(gte(data[columnId], value))
-                break
-              case TableRowFilterOperator.LessThan:
-                whereExpressions.push(lt(data[columnId], value))
-                break
-              case TableRowFilterOperator.LessThanOrEquals:
-                whereExpressions.push(lte(data[columnId], value))
-                break
-              case TableRowFilterOperator.IsEmpty:
-                whereExpressions.push(
-                  `(${eq(data[columnId], '')} OR ${notExists(data[columnId])})`,
-                )
-                break
-            }
-          }
-          return whereExpressions.join(' AND ')
-        },
-      )
-      .go({ ignoreOwnership: true })
-    return res.data
+    const res = await TableRow.query.byRowId({ tableId, rowId }).go({
+      ignoreOwnership: true,
+    })
+    if (!res.data.length) {
+      return undefined
+    }
+
+    const firstRow = res.data[0]
+    return firstRow
   } catch (e: unknown) {
     handleDynamoDBError(e)
   }
