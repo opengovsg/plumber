@@ -33,10 +33,10 @@ const dynamicData: IDynamicData = {
         .orderBy('position', 'asc')
 
       return {
-        data: columns.map(({ id, name, position }) => ({
+        data: columns.map(({ id, name }) => ({
           value: id,
           // + 1 since zero-indexed
-          name: `${position + 1}. ${name}`,
+          name: name,
         })),
       }
     } catch (e) {

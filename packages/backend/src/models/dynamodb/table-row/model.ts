@@ -2,6 +2,8 @@ import { Entity } from 'electrodb'
 
 import client, { tableName } from '@/config/dynamodb'
 
+import { autoMarshallDataObj } from '../helpers'
+
 export const TableRow = new Entity(
   {
     model: {
@@ -23,13 +25,7 @@ export const TableRow = new Entity(
       data: {
         type: 'any',
         required: true,
-        validate: (value) => {
-          for (const key in value) {
-            if (typeof value[key] !== 'string') {
-              throw new Error('value must be a string')
-            }
-          }
-        },
+        set: autoMarshallDataObj,
       },
       createdAt: {
         type: 'number',
