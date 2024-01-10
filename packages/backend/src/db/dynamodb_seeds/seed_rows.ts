@@ -7,8 +7,8 @@ import { argv } from 'process'
 import {
   createTableRows,
   deleteTableRows,
-  getAllTableRows,
   getTableRowCount,
+  getTableRows,
 } from '@/models/dynamodb/table-row'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
@@ -25,7 +25,7 @@ const COUNT_ONLY = argv[3]
 const ROW_COUNT = 10000
 async function seedRows(tableId: string) {
   // delete existing rows
-  const existingRows = await getAllTableRows({ tableId })
+  const existingRows = await getTableRows({ tableId })
   console.log('count', existingRows.length)
 
   if (COUNT_ONLY === 'count') {

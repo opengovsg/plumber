@@ -1,4 +1,4 @@
-import { getAllTableRows, TableRowItem } from '@/models/dynamodb/table-row'
+import { getTableRows, TableRowItem } from '@/models/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -18,7 +18,7 @@ const getAllRows = async (
     .throwIfNotFound()
 
   const columnIds = table.columns.map((column) => column.id)
-  return getAllTableRows({ tableId, columnIds })
+  return getTableRows({ tableId, columnIds })
 }
 
 export default getAllRows
