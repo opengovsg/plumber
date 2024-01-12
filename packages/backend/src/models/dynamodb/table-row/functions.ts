@@ -72,6 +72,87 @@ export const _batchCreate = async (
   return
 }
 
+const generateProjectionExpressions = ({
+  columnIds = [],
+  filters = [],
+  indexUsed = 'byCreatedAt',
+}: {
+  columnIds?: string[]
+  filters?: TableRowFilter[]
+  indexUsed?: 'byCreatedAt' | 'byRowId'
+}): {
+  ProjectionExpression: string
+  ExpressionAttributeNames: Record<string, string>
+} => {
+  const ProjectionExpression = [
+    'rowId',
+    ...columnIds.map((_id, i) => `#data.#col${i}`),
+  ].join(',')
+  const ExpressionAttributeNames: Record<string, string> = {
+    '#pk': 'tableId',
+    '#data': 'data',
+  }
+  if (indexUsed === 'byRowId') {
+    ExpressionAttributeNames['#sk1'] = 'rowId'
+  }
+  // Add attribute name mapping for column name projection
+  columnIds.forEach((id: string, i: number) => {
+    ExpressionAttributeNames[`#col${i}`] = id
+  })
+  // Add attribute name mapping for filter expression
+  filters.forEach((filter) => {
+    ExpressionAttributeNames[`#${filter.columnId.replaceAll('-', '')}`] =
+      filter.columnId
+  })
+  return { ProjectionExpression, ExpressionAttributeNames }
+}
+
+const addFiltersToQuery = (
+  query: ReturnType<typeof TableRow.query.byCreatedAt>,
+  filters: TableRowFilter[],
+): void => {
+  if (filters?.length) {
+    query.where(
+      ({ data }, { eq, begins, contains, gt, gte, lt, lte, notExists }) => {
+        const whereExpressions: string[] = []
+        for (const filter of filters) {
+          const { columnId, operator, value } = filter
+          const marshalledValue = autoMarshallNumberStrings(value)
+          switch (operator) {
+            case TableRowFilterOperator.Equals:
+              whereExpressions.push(eq(data[columnId], marshalledValue))
+              break
+            case TableRowFilterOperator.BeginsWith:
+              whereExpressions.push(begins(data[columnId], value))
+              break
+            case TableRowFilterOperator.Contains:
+              whereExpressions.push(contains(data[columnId], value))
+              break
+            case TableRowFilterOperator.GreaterThan:
+              whereExpressions.push(gt(data[columnId], marshalledValue))
+              break
+            case TableRowFilterOperator.GreaterThanOrEquals:
+              whereExpressions.push(gte(data[columnId], marshalledValue))
+              break
+            case TableRowFilterOperator.LessThan:
+              whereExpressions.push(lt(data[columnId], marshalledValue))
+              break
+            case TableRowFilterOperator.LessThanOrEquals:
+              whereExpressions.push(lte(data[columnId], marshalledValue))
+              break
+            case TableRowFilterOperator.IsEmpty:
+              whereExpressions.push(
+                `(${eq(data[columnId], '')} OR ${notExists(data[columnId])})`,
+              )
+              break
+          }
+        }
+        return whereExpressions.join(' AND ')
+      },
+    )
+  }
+}
+
 /**
  * External functions
  */
@@ -179,70 +260,19 @@ export const getTableRows = async ({
 }): Promise<TableRowOutput[]> => {
   try {
     // need to use ProjectionExpression to select nested attributes
-    const ProjectionExpression = [
-      'rowId',
-      ...(columnIds ? columnIds.map((_id, i) => `#data.#col${i}`) : ['#data']),
-    ].join(',')
-    // need to use ExpressionAttributeNames to since data is a reserved keyword and attribute names with
-    // special characters (e.g. '-') need to be escaped
-    const ExpressionAttributeNames: Record<string, string> = {
-      '#data': 'data',
-      '#pk': 'tableId',
-    }
-    if (columnIds) {
-      columnIds.forEach((id: string, i: number) => {
-        ExpressionAttributeNames[`#col${i}`] = id
+    const { ProjectionExpression, ExpressionAttributeNames } =
+      generateProjectionExpressions({
+        columnIds,
+        filters,
+        indexUsed: 'byCreatedAt',
       })
-    }
     const tableRows = []
     let cursor: any = null
     do {
       const query = TableRow.query.byCreatedAt({ tableId })
       if (filters?.length) {
-        query.where(
-          ({ data }, { eq, begins, contains, gt, gte, lt, lte, notExists }) => {
-            const whereExpressions: string[] = []
-            for (const filter of filters) {
-              const { columnId, operator, value } = filter
-              ExpressionAttributeNames[`#${columnId.replaceAll('-', '')}`] =
-                columnId
-              const marshalledValue = autoMarshallNumberStrings(value)
-              switch (operator) {
-                case TableRowFilterOperator.Equals:
-                  whereExpressions.push(eq(data[columnId], marshalledValue))
-                  break
-                case TableRowFilterOperator.BeginsWith:
-                  whereExpressions.push(begins(data[columnId], value))
-                  break
-                case TableRowFilterOperator.Contains:
-                  whereExpressions.push(contains(data[columnId], value))
-                  break
-                case TableRowFilterOperator.GreaterThan:
-                  whereExpressions.push(gt(data[columnId], marshalledValue))
-                  break
-                case TableRowFilterOperator.GreaterThanOrEquals:
-                  whereExpressions.push(gte(data[columnId], marshalledValue))
-                  break
-                case TableRowFilterOperator.LessThan:
-                  whereExpressions.push(lt(data[columnId], marshalledValue))
-                  break
-                case TableRowFilterOperator.LessThanOrEquals:
-                  whereExpressions.push(lte(data[columnId], marshalledValue))
-                  break
-                case TableRowFilterOperator.IsEmpty:
-                  whereExpressions.push(
-                    `(${eq(data[columnId], '')} OR ${notExists(
-                      data[columnId],
-                    )})`,
-                  )
-                  break
-              }
-            }
-            return whereExpressions.join(' AND ')
-          },
-        )
+        addFiltersToQuery(query, filters)
       }
-
       const response = await query.go({
         order: 'asc',
         pages: 'all',
@@ -256,7 +286,6 @@ export const getTableRows = async ({
         data: 'raw',
         pager: 'raw',
         ignoreOwnership: true,
-        logger: console.log,
       })
       // need to explicitly cast to DynamoDB's raw output because of the 'raw' option
       const data = response.data as unknown as QueryCommandOutput & {
@@ -280,20 +309,33 @@ export const getTableRows = async ({
 export const getRawRowById = async ({
   tableId,
   rowId,
+  columnIds,
 }: {
   tableId: string
   rowId: string
-}): Promise<TableRowOutput | undefined> => {
+  columnIds?: string[]
+}): Promise<TableRowOutput | null> => {
   try {
-    const res = await TableRow.query.byRowId({ tableId, rowId }).go({
-      ignoreOwnership: true,
-    })
-    if (!res.data.length) {
-      return undefined
-    }
+    const { ProjectionExpression, ExpressionAttributeNames } =
+      generateProjectionExpressions({ columnIds, indexUsed: 'byRowId' })
+    const response = await TableRow.query
+      .byRowId({ tableId, rowId: rowId })
+      .go({
+        ignoreOwnership: true,
+        params: {
+          ProjectionExpression,
+          ExpressionAttributeNames,
+        },
+        data: 'raw',
+      })
 
-    const firstRow = res.data[0]
-    return firstRow
+    const { Items } = response.data as unknown as QueryCommandOutput & {
+      Items: TableRowOutput[]
+    }
+    if (!Items?.length) {
+      return null
+    }
+    return Items[0]
   } catch (e: unknown) {
     handleDynamoDBError(e)
   }
