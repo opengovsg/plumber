@@ -7,7 +7,7 @@ import auth from './auth'
 import dynamicData from './dynamic-data'
 
 const app: IApp = {
-  name: 'M365 Excel',
+  name: 'M365 Excel (Pilot)',
   key: 'm365-excel',
   iconUrl: '{BASE_URL}/apps/m365-excel/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
