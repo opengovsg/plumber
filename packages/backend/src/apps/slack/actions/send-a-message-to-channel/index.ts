@@ -5,7 +5,7 @@ import postMessage from './post-message'
 const action: IRawAction = {
   name: 'Send a message to channel',
   key: 'sendMessageToChannel',
-  description: 'Sends a message to a channel you specify.',
+  description: 'Sends a message to a specified Slack channel',
   arguments: [
     {
       label: 'Channel',

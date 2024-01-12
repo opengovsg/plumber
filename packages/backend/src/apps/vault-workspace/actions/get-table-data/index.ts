@@ -7,7 +7,7 @@ import getDataOutMetadata from './get-data-out-metadata'
 const action: IRawAction = {
   name: 'Get table data',
   key: 'getTableData',
-  description: 'Get table data from the vault workspace.',
+  description: 'Gets a single row data from a Vault Workspace table',
   arguments: [
     {
       label: 'Lookup Column',

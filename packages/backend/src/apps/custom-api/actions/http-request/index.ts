@@ -11,7 +11,7 @@ type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 const action: IRawAction = {
   name: 'Make a HTTP Request',
   key: 'httpRequest',
-  description: 'Makes a custom HTTP request by providing raw details.',
+  description: 'Makes a custom HTTP request of any method and body',
   arguments: [
     {
       label: 'Method',

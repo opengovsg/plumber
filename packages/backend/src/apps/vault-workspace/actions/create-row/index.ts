@@ -14,7 +14,7 @@ import { throwParseAsCsvError } from '../../common/throw-errors'
 const action: IRawAction = {
   name: 'Create row',
   key: 'createRow',
-  description: 'Creates a new row in Vault table.',
+  description: 'Creates a new row in Vault Workspace table.',
   arguments: [
     {
       label: 'Columns',

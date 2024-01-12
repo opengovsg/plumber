@@ -58,7 +58,8 @@ async function getBranchStepIdToSkipTo(
 const action: IRawAction = {
   name: 'If-then',
   key: ACTION_KEY,
-  description: '',
+  description:
+    'Creates different sub-pipes that will execute if specified conditions are met',
   groupsLaterSteps: true,
   arguments: [
     {

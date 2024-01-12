@@ -53,7 +53,7 @@ function constructMsGraphArgment(
 const action: IRawAction = {
   name: 'Create row',
   key: 'createTableRow',
-  description: 'Creates a new row in the excel spreadsheet table',
+  description: 'Creates a new row in an Excel spreadsheet table',
   arguments: [
     {
       key: 'fileId',
