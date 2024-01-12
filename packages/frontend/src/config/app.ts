@@ -22,6 +22,7 @@ function getAppConfig(): AppConfig {
         sgidClientId: 'PLUMBER-c24255a5',
         ...commonEnv,
       }
+    case 'uat':
     case 'staging':
       return {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
