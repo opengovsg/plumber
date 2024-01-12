@@ -10,7 +10,8 @@ import getDataOutMetadata from './get-data-out-metadata'
 const action: IRawAction = {
   name: 'Get cell value',
   key: 'getCellValues',
-  description: 'Gets the value of cells in a spreadsheet',
+  description:
+    'Gets the value of a specific cell in an Excel spreadsheet tbale',
   arguments: [
     {
       key: 'fileId',

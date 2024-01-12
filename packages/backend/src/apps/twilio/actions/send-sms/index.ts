@@ -5,7 +5,7 @@ import qs from 'qs'
 const action: IRawAction = {
   name: 'Send an SMS',
   key: 'sendSms',
-  description: 'Sends an SMS',
+  description: 'Sends an SMS with Twilio',
   arguments: [
     {
       label: 'From Number',
