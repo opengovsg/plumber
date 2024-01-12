@@ -4,7 +4,10 @@ import { generateStepError } from '@/helpers/generate-step-error'
 import { createTableRow } from '@/models/dynamodb/table-row/functions'
 import TableMetadata from '@/models/table-metadata'
 
-import { validateTileAccess } from '../common/validate-tile-access'
+import { validateTileAccess } from '../../common/validate-tile-access'
+import { CreateRowOutput } from '../../types'
+
+import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {
   name: 'Create row',
@@ -69,6 +72,8 @@ const action: IRawAction = {
     },
   ],
 
+  getDataOutMetadata,
+
   async run($) {
     const { tableId, rowData } = $.step.parameters as {
       tableId: string
@@ -98,16 +103,11 @@ const action: IRawAction = {
 
     const newRow = await createTableRow({ tableId, data: rowDataObject })
 
-    /**
-     * convert row data keys from column ids to column names
-     */
-    const newRowData = await table.mapColumnIdsToNames(newRow.data)
     $.setActionItem({
       raw: {
-        success: true,
         rowId: newRow.rowId,
-        data: newRowData,
-      },
+        row: newRow.data,
+      } satisfies CreateRowOutput,
     })
   },
 }

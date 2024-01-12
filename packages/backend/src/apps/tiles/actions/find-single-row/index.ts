@@ -6,9 +6,12 @@ import {
   TableRowFilter,
   TableRowFilterOperator,
 } from '@/models/dynamodb/table-row'
-import TableMetadata from '@/models/table-metadata'
+import TableColumnMetadata from '@/models/table-column-metadata'
 
-import { validateTileAccess } from '../common/validate-tile-access'
+import { validateTileAccess } from '../../common/validate-tile-access'
+import { FindSingleRowOutput } from '../../types'
+
+import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {
   name: 'Find single row',
@@ -102,6 +105,7 @@ const action: IRawAction = {
       ],
     },
   ],
+  getDataOutMetadata,
 
   async run($) {
     const { tableId, filters } = $.step.parameters as {
@@ -110,7 +114,9 @@ const action: IRawAction = {
     }
     await validateTileAccess($.flow?.userId, tableId as string)
 
-    const table = await TableMetadata.query().findById(tableId)
+    const columns = await TableColumnMetadata.query().where({
+      table_id: tableId,
+    })
 
     const result = await getTableRows({ tableId, filters })
 
@@ -118,21 +124,23 @@ const action: IRawAction = {
       $.setActionItem({
         raw: {
           rowsFound: 0,
-        },
+        } satisfies FindSingleRowOutput,
       })
       return
     }
     const firstRowId = result[0].rowId
-    const firstRow = await getRawRowById({ tableId, rowId: firstRowId })
-
-    const mappedData = await table.mapColumnIdsToNames(firstRow.data)
+    const firstRow = await getRawRowById({
+      tableId,
+      rowId: firstRowId,
+      columnIds: columns.map((c) => c.id),
+    })
 
     $.setActionItem({
       raw: {
         rowsFound: result.length,
         rowId: firstRowId,
-        rowData: mappedData,
-      },
+        row: firstRow.data,
+      } satisfies FindSingleRowOutput,
     })
   },
 }

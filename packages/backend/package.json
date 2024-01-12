@@ -19,7 +19,10 @@
     "db:rollback": "npm run db -- migrate:rollback",
     "db:migrate": "npm run db -- migrate:latest",
     "postsetup": "ts-node src/db/dynamodb_seeds/create_table.ts",
+    "readme:dynamodb:seed": "echo 'Seeds the specified table with 10k rows, use with -- <YOUR_TABLE_ID>'",
     "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
+    "readme:dynamodb:setup": "echo 'Run this function to create the required tile table in dynamodb locally.'",
+    "dynamodb:setup": "ts-node src/db/dynamodb_seeds/create_table.ts",
     "copy-statics": "copyfiles -u 1 src/**/*.{graphql,json,svg} dist"
   },
   "dependencies": {
