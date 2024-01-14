@@ -66,3 +66,20 @@ export function mapColumnIdsToNames(
   }
   return mappedData
 }
+
+export function stripInvalidKeys({
+  columnIds,
+  data,
+}: {
+  columnIds: string[]
+  data: Record<string, string | number>
+}) {
+  const validKeys = new Set(columnIds)
+  const strippedData: Record<string, string | number> = {}
+  for (const [key, value] of Object.entries(data)) {
+    if (validKeys.has(key)) {
+      strippedData[key] = value
+    }
+  }
+  return strippedData
+}
