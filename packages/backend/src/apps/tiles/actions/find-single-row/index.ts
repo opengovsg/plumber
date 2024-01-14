@@ -39,6 +39,8 @@ const action: IRawAction = {
     },
     {
       label: 'Lookup conditions',
+      description:
+        'If lookup conditions satisfy multiple rows, the first row (oldest) will be returned.',
       key: 'filters',
       type: 'multirow' as const,
       required: false,
@@ -104,13 +106,31 @@ const action: IRawAction = {
         },
       ],
     },
+    {
+      label: 'Return most recent row instead?',
+      key: 'returnLastRow',
+      type: 'dropdown' as const,
+      required: false,
+      variables: false,
+      options: [
+        {
+          label: 'No (default)',
+          value: false,
+        },
+        {
+          label: 'Yes',
+          value: true,
+        },
+      ],
+    },
   ],
   getDataOutMetadata,
 
   async run($) {
-    const { tableId, filters } = $.step.parameters as {
+    const { tableId, filters, returnLastRow } = $.step.parameters as {
       tableId: string
       filters: TableRowFilter[]
+      returnLastRow: boolean | undefined
     }
     await validateTileAccess($.flow?.userId, tableId as string)
 
@@ -128,18 +148,20 @@ const action: IRawAction = {
       })
       return
     }
-    const firstRowId = result[0].rowId
-    const firstRow = await getRawRowById({
+    const rowIdToUse = returnLastRow
+      ? result[0].rowId
+      : result[result.length - 1].rowId
+    const rowToReturn = await getRawRowById({
       tableId,
-      rowId: firstRowId,
+      rowId: rowIdToUse,
       columnIds: columns.map((c) => c.id),
     })
 
     $.setActionItem({
       raw: {
         rowsFound: result.length,
-        rowId: firstRowId,
-        row: firstRow.data,
+        rowId: rowIdToUse,
+        row: rowToReturn.data,
       } satisfies FindSingleRowOutput,
     })
   },
