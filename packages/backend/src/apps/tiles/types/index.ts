@@ -10,3 +10,8 @@ export interface CreateRowOutput extends IJSONObject {
   rowId: string
   row: Record<string, string | number>
 }
+
+export interface UpdateRowOutput extends IJSONObject {
+  rowId: string
+  row: Record<string, string | number>
+}
