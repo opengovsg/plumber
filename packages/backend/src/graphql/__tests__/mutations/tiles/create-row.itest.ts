@@ -14,7 +14,7 @@ import {
 describe('create row mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
-  let dummyColumnIds: string[] = []
+  let dummyColumnIds: string[]
 
   // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {

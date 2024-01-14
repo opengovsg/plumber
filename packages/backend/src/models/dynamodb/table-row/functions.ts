@@ -192,6 +192,9 @@ export const createTableRows = async ({
   }
 }
 
+/**
+ * This replaces the entire data object for the row
+ */
 export const updateTableRow = async ({
   rowId,
   tableId,
