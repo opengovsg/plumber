@@ -25,7 +25,7 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   attemptsMade: number,
   _type: string,
   err: Error,
-  _job: Job,
+  job: Job,
 ): number {
   // This implements FullJitter-like jitter, with the following changes:
   //
@@ -40,5 +40,11 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   const initialDelay = computeInitialDelay(err)
 
   const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay
-  return prevFullDelay + Math.round(Math.random() * prevFullDelay)
+  const totalDelay = prevFullDelay + Math.round(Math.random() * prevFullDelay)
+  logger.info('Job delay calculation', {
+    ...job?.data,
+    attemptsMade,
+    delay: totalDelay,
+  })
+  return totalDelay
 }

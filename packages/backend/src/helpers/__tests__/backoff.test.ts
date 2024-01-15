@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/helpers/logger', () => ({
   default: {
     error: mocks.logError,
+    info: vi.fn(),
   },
 }))
 
