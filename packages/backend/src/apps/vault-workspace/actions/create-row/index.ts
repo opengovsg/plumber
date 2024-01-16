@@ -2,7 +2,7 @@ import { IRawAction } from '@plumber/types'
 
 import { parse as parseAsCsv } from 'csv-parse/sync'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import createTableRow from '../../common/create-table-row'
 import {
@@ -14,7 +14,7 @@ import { throwParseAsCsvError } from '../../common/throw-errors'
 const action: IRawAction = {
   name: 'Create row',
   key: 'createRow',
-  description: 'Creates a new row in Vault table.',
+  description: 'Creates a new row in Vault Workspace table.',
   arguments: [
     {
       label: 'Columns',
@@ -64,24 +64,18 @@ const action: IRawAction = {
     }
 
     if (values === undefined) {
-      const stepErrorName = 'Undefined values field'
-      const stepErrorSolution =
-        'Click on set up action and check that the values field is not empty. This is most likely because you are using a single variable that could be empty.'
-      throw generateStepError(
-        stepErrorName,
-        stepErrorSolution,
+      throw new StepError(
+        'Undefined values field',
+        'Click on set up action and check that the values field is not empty. This is most likely because you are using a single variable that could be empty.',
         $.step.position,
         $.app.name,
       )
     }
 
     if (columns.length !== values.length) {
-      const stepErrorName = 'Unequal number of columns and values'
-      const stepErrorSolution =
-        'Click on set up action and check that every column or value is separated by a comma when intended. Then, verify that the number of columns and values are exactly equal in quantity.'
-      throw generateStepError(
-        stepErrorName,
-        stepErrorSolution,
+      throw new StepError(
+        'Unequal number of columns and values',
+        'Click on set up action and check that every column or value is separated by a comma when intended. Then, verify that the number of columns and values are exactly equal in quantity.',
         $.step.position,
         $.app.name,
       )

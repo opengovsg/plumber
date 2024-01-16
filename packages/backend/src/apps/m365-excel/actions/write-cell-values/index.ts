@@ -4,14 +4,12 @@ import StepError from '@/errors/step'
 
 import WorkbookSession from '../../common/workbook-session'
 
-import type { DataOut } from './data-out'
-import getDataOutMetadata from './get-data-out-metadata'
+import { parametersSchema } from './parameters-schema'
 
 const action: IRawAction = {
-  name: 'Get cell value',
-  key: 'getCellValues',
-  description:
-    'Gets the value of a specific cell in an Excel spreadsheet tbale',
+  name: 'Write cell values',
+  key: 'writeCellValues',
+  description: "Write values into a spreadsheet's cells",
   arguments: [
     {
       key: 'fileId',
@@ -35,7 +33,7 @@ const action: IRawAction = {
       key: 'worksheetId',
       label: 'Worksheet',
       required: true,
-      description: 'Worksheet to query',
+      description: 'Worksheet to edit',
       type: 'dropdown' as const,
       variables: false,
       source: {
@@ -60,7 +58,8 @@ const action: IRawAction = {
       required: true,
       // We need to make 1 separate request for each cell, so limit to 3 as a
       // balance between convenience and API quota usage.
-      description: 'Specify cells you want to get the values of. (Max 3)',
+      description:
+        'Specify cells you want to write values to (max 3). Leave a value blank to clear the cell.',
       subFields: [
         {
           label: 'Cell Address (e.g. A1)',
@@ -69,57 +68,49 @@ const action: IRawAction = {
           required: true,
           variables: true,
         },
+        {
+          label: 'Value',
+          key: 'value',
+          type: 'string' as const,
+          required: false,
+          variables: true,
+        },
       ],
     },
   ],
 
-  getDataOutMetadata,
-
   async run($) {
-    const { fileId, worksheetId, cells: rawCells } = $.step.parameters
-    const cells = (rawCells as Array<{ address: string }>).map((cell) => ({
-      address: cell.address.trim(),
-    }))
+    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
 
-    // Basic sanity checks
-    if (cells.length > 3) {
+    if (parametersParseResult.success === false) {
       throw new StepError(
-        'Too many cells',
-        'Please only input up to 3 cells',
-        $.step.position,
-        $.app.key,
+        'Action is set up incorrectly.',
+        parametersParseResult.error.issues[0].message,
+        $.step?.position,
+        $.app.name,
       )
     }
 
-    for (const cell of cells) {
-      if (!/^[a-zA-Z]+[1-9][0-9]*$/.test(cell.address)) {
-        throw new StepError(
-          `Invalid cell address ${cell.address}`,
-          'Please specify cell addresses in A1 notation.',
-          $.step.position,
-          $.app.key,
-        )
-      }
-    }
+    const { fileId, worksheetId, cells } = parametersParseResult.data
+    const session = await WorkbookSession.acquire($, fileId)
 
-    const session = await WorkbookSession.acquire($, fileId as string)
-
-    const results: DataOut['results'] = await Promise.all(
-      cells.map(async (cell) => {
-        const response = await session.request<{ values: string[][] }>(
+    await Promise.all(
+      cells.map(async (cell) =>
+        session.request(
           `/worksheets/${worksheetId}/range(address='${cell.address}')`,
-          'get',
-        )
-        return {
-          cellAddress: cell.address,
-          cellValue: response.data.values[0][0],
-        }
-      }),
+          'patch',
+          {
+            data: {
+              values: [[cell.value]],
+            },
+          },
+        ),
+      ),
     )
 
     $.setActionItem({
       raw: {
-        results,
+        success: true,
       },
     })
   },

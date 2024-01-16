@@ -3,7 +3,7 @@ import { IJSONArray, IRawAction } from '@plumber/types'
 import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 import { getObjectFromS3Id } from '@/helpers/s3'
 import Step from '@/models/step'
 
@@ -19,7 +19,7 @@ import { throwSendEmailError } from '../../common/throw-errors'
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
-  description: "Sends an email using Postman's transactional API.",
+  description: 'Sends an email with Postman',
   arguments: transactionalEmailFields,
   doesFileProcessing: (step: Step) => {
     return (
@@ -62,7 +62,8 @@ const action: IRawAction = {
       const stepErrorSolution = isAttachmentNotStoredError
         ? 'This attachment was not stored in the last submission. Please make a new submission with attachments to successfully configure this pipe.'
         : 'Click on set up action and reconfigure the invalid field.'
-      throw generateStepError(
+
+      throw new StepError(
         stepErrorName,
         stepErrorSolution,
         $.step.position,

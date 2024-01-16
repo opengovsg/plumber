@@ -2,7 +2,7 @@ import { IRawAction } from '@plumber/types'
 
 import { URL } from 'url'
 
-import { generateHttpStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import { isUrlAllowed } from '../../common/ip-resolver'
 
@@ -11,7 +11,7 @@ type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 const action: IRawAction = {
   name: 'Make a HTTP Request',
   key: 'httpRequest',
-  description: 'Makes a custom HTTP request by providing raw details.',
+  description: 'Makes a custom HTTP request of any method and body',
   arguments: [
     {
       label: 'Method',
@@ -61,8 +61,8 @@ const action: IRawAction = {
       throw new Error('The URL you are trying to call is not allowed.')
     }
 
-    const response = await $.http
-      .request({
+    try {
+      const response = await $.http.request({
         url,
         method,
         data,
@@ -70,24 +70,23 @@ const action: IRawAction = {
         // redirect target to a malicious endpoint), so disable it.
         maxRedirects: 0,
       })
-      .catch((err): never => {
-        const stepErrorSolution =
-          'Check your custom app based on the status code and retry again.'
-        throw generateHttpStepError(
-          err,
-          stepErrorSolution,
-          $.step.position,
-          $.app.name,
-        )
-      })
 
-    let responseData = response.data
+      let responseData = response.data
 
-    if (typeof response.data === 'string') {
-      responseData = response.data.replaceAll('\u0000', '')
+      if (typeof response.data === 'string') {
+        responseData = response.data.replaceAll('\u0000', '')
+      }
+
+      $.setActionItem({ raw: { data: responseData } })
+    } catch (err) {
+      throw new StepError(
+        `Status code: ${err.response.status} (${err.response.statusText})`,
+        'Check your custom app based on the status code and retry again.',
+        $.step.position,
+        $.app.name,
+        err,
+      )
     }
-
-    $.setActionItem({ raw: { data: responseData } })
   },
 }
 

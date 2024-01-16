@@ -4,7 +4,7 @@ import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import { VALIDATION_ERROR_SOLUTION } from '@/apps/postman/common/constants'
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import { getApiBaseUrl } from '../../common/api'
 
@@ -130,7 +130,7 @@ const action: IRawAction = {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
 
-        throw generateStepError(
+        throw new StepError(
           `${firstError.message} at "${firstError.path}"`,
           VALIDATION_ERROR_SOLUTION,
           $.step.position,

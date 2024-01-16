@@ -1,14 +1,13 @@
 import { IRawAction } from '@plumber/types'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
 
 const action: IRawAction = {
   name: 'Delay Until',
   key: 'delayUntil',
-  description:
-    'Delays the execution of the next action until a specified date.',
+  description: 'Delays the execution of the next action until a specified date',
   arguments: [
     {
       label: 'Delay until (Date)',
@@ -44,7 +43,7 @@ const action: IRawAction = {
     )
 
     if (isNaN(delayTimestamp)) {
-      throw generateStepError(
+      throw new StepError(
         'Invalid timestamp entered',
         'Click on set up action and check that the date or time entered is of a valid format.',
         $.step.position,

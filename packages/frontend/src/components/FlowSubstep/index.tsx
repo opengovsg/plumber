@@ -50,9 +50,17 @@ function validateSubstep(substep: ISubstep, step: IStep): boolean {
         return false
       }
 
-      return arg.subFields.every((subField) =>
-        rows.every((row) => isValidArgValue(row[subField.key])),
-      )
+      return arg.subFields
+        .filter(
+          // Ignore hidden or optional subfields
+          (subField) => !(subField.hidden || subField.required === false),
+        )
+        .every((subField) =>
+          rows.every((row) => {
+            subField
+            return isValidArgValue(row[subField.key])
+          }),
+        )
     }
 
     return isValidArgValue(step.parameters[arg.key])

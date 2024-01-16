@@ -1,6 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import { escapeMarkdown, sanitizeMarkdown } from '../../common/markdown-v1'
 import { throwSendMessageError } from '../../common/throw-errors'
@@ -8,7 +8,7 @@ import { throwSendMessageError } from '../../common/throw-errors'
 const action: IRawAction = {
   name: 'Send message',
   key: 'sendMessage',
-  description: 'Sends a message to a chat you specify.',
+  description: 'Sends a message to a Telegram chat',
   arguments: [
     {
       label: 'Chat ID',
@@ -70,12 +70,9 @@ const action: IRawAction = {
   async run($) {
     const messageText = ($.step.parameters.text as string).trim()
     if (!messageText) {
-      const stepErrorName = 'Empty message text'
-      const stepErrorSolution =
-        'Click on set up action and check that the message text is not empty, especially if variables are used.'
-      throw generateStepError(
-        stepErrorName,
-        stepErrorSolution,
+      throw new StepError(
+        'Empty message text',
+        'Click on set up action and check that the message text is not empty, especially if variables are used.',
         $.step.position,
         $.app.name,
       )
@@ -88,15 +85,14 @@ const action: IRawAction = {
       disable_notification: $.step.parameters.disableNotification,
       parse_mode: 'markdown', // legacy markdown to allow only a small set of modifiers
     }
-    const response = await $.http
-      .post('/sendMessage', payload)
-      .catch((err): never => {
-        throwSendMessageError(err, $.step.position, $.app.name)
+    try {
+      const response = await $.http.post('/sendMessage', payload)
+      $.setActionItem({
+        raw: response.data,
       })
-
-    $.setActionItem({
-      raw: response.data,
-    })
+    } catch (err) {
+      throwSendMessageError(err, $.step.position, $.app.name)
+    }
   },
 }
 

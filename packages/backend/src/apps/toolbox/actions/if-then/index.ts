@@ -5,17 +5,20 @@ import type {
   IStep,
 } from '@plumber/types'
 
+import StepError from '@/errors/step'
 import Step from '@/models/step'
 
 import toolboxApp from '../..'
 import conditionIsTrue from '../../common/condition-is-true'
 import getConditionArgs from '../../common/get-condition-args'
-import { throwInvalidConditionError } from '../../common/throw-errors'
 
 const ACTION_KEY = 'ifThen'
 
 function shouldTakeBranch($: IGlobalVariable): boolean {
   const conditions = $.step.parameters.conditions as IJSONObject[]
+  if (!Array.isArray(conditions)) {
+    throw new Error('No conditions found')
+  }
   return conditions.every((condition) => conditionIsTrue(condition))
 }
 
@@ -58,7 +61,8 @@ async function getBranchStepIdToSkipTo(
 const action: IRawAction = {
   name: 'If-then',
   key: ACTION_KEY,
-  description: '',
+  description:
+    'Creates different sub-pipes that will execute if specified conditions are met',
   groupsLaterSteps: true,
   arguments: [
     {
@@ -94,7 +98,12 @@ const action: IRawAction = {
     try {
       isConditionMet = shouldTakeBranch($)
     } catch (err) {
-      throwInvalidConditionError(err.message, $.step.position, $.app.name)
+      throw new StepError(
+        err.message,
+        'Click on set up action and check that the condition has been configured properly.',
+        $.step.position,
+        $.app.name,
+      )
     }
     $.setActionItem({
       raw: { isConditionMet },

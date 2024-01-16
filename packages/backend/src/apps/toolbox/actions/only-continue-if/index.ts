@@ -1,13 +1,14 @@
 import { IRawAction } from '@plumber/types'
 
+import StepError from '@/errors/step'
+
 import conditionIsTrue from '../../common/condition-is-true'
 import getConditionArgs from '../../common/get-condition-args'
-import { throwInvalidConditionError } from '../../common/throw-errors'
 
 const action: IRawAction = {
   name: 'Only continue if',
   key: 'onlyContinueIf',
-  description: 'Only continue if',
+  description: 'Only runs later actions if specified conditions are met',
   arguments: getConditionArgs({ usePlaceholders: false }),
 
   async run($) {
@@ -15,7 +16,12 @@ const action: IRawAction = {
     try {
       result = conditionIsTrue($.step.parameters)
     } catch (err) {
-      throwInvalidConditionError(err.message, $.step.position, $.app.name)
+      throw new StepError(
+        err.message,
+        'Click on set up action and check that one of valid options in the condition dropdown is being selected.',
+        $.step.position,
+        $.app.name,
+      )
     }
     $.setActionItem({
       raw: { result },

@@ -99,24 +99,29 @@ describe('send message', () => {
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
       await expect(sendMessageAction.run($)).rejects.toThrowError(
-        'Empty status code',
+        'Connection issues',
       )
     },
   )
 
   it.each([
-    { errorDescription: 'Bad Request: chat not found' },
-    {
-      errorDescription:
-        'Bad Request: group chat was upgraded to a supergroup chat',
-    },
     {
       errorDescription:
         'Bad Request: not enough rights to send text messages to the chat',
+      stepErrorName: 'No permission for bot',
+    },
+    {
+      errorDescription:
+        'Bad Request: group chat was upgraded to a supergroup chat',
+      stepErrorName: 'Supergroup chat upgrade',
+    },
+    {
+      errorDescription: 'Bad Request: chat not found',
+      stepErrorName: 'Incorrect bot configuration',
     },
   ])(
     'should throw step error for 400 error codes',
-    async ({ errorDescription }) => {
+    async ({ errorDescription, stepErrorName }) => {
       $.step.parameters.text = 'test message'
       $.step.parameters.chatId = '123'
       $.step.parameters.disableNotification = null
@@ -133,15 +138,16 @@ describe('send message', () => {
       const httpError = new HttpError(error400)
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrowError(
-        'Status code: 400',
-      )
+      await expect(sendMessageAction.run($)).rejects.toThrowError(stepErrorName)
     },
   )
 
-  it.each([{ errorStatusCode: 403 }, { errorStatusCode: 429 }])(
+  it.each([
+    { errorStatusCode: 403, stepErrorName: 'Forbidden' },
+    { errorStatusCode: 429, stepErrorName: 'Rate limit exceeded' },
+  ])(
     'should throw step error for other recognised error codes',
-    async ({ errorStatusCode }) => {
+    async ({ errorStatusCode, stepErrorName }) => {
       $.step.parameters.text = 'test message'
       $.step.parameters.chatId = '123'
       $.step.parameters.disableNotification = null
@@ -154,9 +160,7 @@ describe('send message', () => {
       const httpError = new HttpError(error)
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrowError(
-        `Status code: ${errorStatusCode}`,
-      )
+      await expect(sendMessageAction.run($)).rejects.toThrowError(stepErrorName)
     },
   )
 

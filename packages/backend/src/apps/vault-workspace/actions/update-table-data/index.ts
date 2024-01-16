@@ -7,7 +7,7 @@ import updateTableRow from '../../common/update-table-row'
 const action: IRawAction = {
   name: 'Update table data',
   key: 'updateTableData',
-  description: 'Update table data from the vault workspace.',
+  description: 'Updates a single row in a Vault Workspace table',
   arguments: [
     {
       label: 'Lookup Column',

@@ -563,7 +563,7 @@ export interface ITestConnectionOutput
 export interface IStepError {
   name: string
   solution: string
-  position: string
+  position: number
   appName: string
   details?: IJSONObject
 }

@@ -103,9 +103,8 @@ describe('get table row', () => {
 
     mocks.httpGet.mockRejectedValueOnce(httpError)
     // throw partial step error message
-    await expect(getTableDataAction.run($)).rejects.toThrowError(
-      'Status code: 400',
-    )
+    const stepErrorName = 'Missing lookup column'
+    await expect(getTableDataAction.run($)).rejects.toThrowError(stepErrorName)
   })
 
   it('should throw step error for invalid get request: internal status error', async () => {
@@ -121,9 +120,8 @@ describe('get table row', () => {
 
     mocks.httpGet.mockRejectedValueOnce(httpError)
     // throw partial step error message
-    await expect(getTableDataAction.run($)).rejects.toThrowError(
-      'Status code: 500',
-    )
+    const stepErrorName = 'Invalid lookup column used'
+    await expect(getTableDataAction.run($)).rejects.toThrowError(stepErrorName)
   })
 
   it('return success as false if no rows found', async () => {

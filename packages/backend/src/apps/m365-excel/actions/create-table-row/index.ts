@@ -1,6 +1,6 @@
 import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import WorkbookSession from '../../common/workbook-session'
 
@@ -36,7 +36,7 @@ function constructMsGraphArgment(
     const index = columnNameToIndex.get(columnValue.columnName)
 
     if (index === undefined) {
-      throw generateStepError(
+      throw new StepError(
         `Cannot update non-existent column '${columnValue.columnName}'.`,
         'Click on set up action and double check columns are valid. You can click on "Refresh Items" in the column drop down to refresh the column list.',
         $.step?.position,
@@ -53,7 +53,7 @@ function constructMsGraphArgment(
 const action: IRawAction = {
   name: 'Create row',
   key: 'createTableRow',
-  description: 'Creates a new row in the excel spreadsheet table',
+  description: 'Creates a new row in an Excel spreadsheet table',
   arguments: [
     {
       key: 'fileId',
@@ -157,7 +157,7 @@ const action: IRawAction = {
       const currColumnName = String(val.columnName)
 
       if (seenColumnNames.has(currColumnName)) {
-        throw generateStepError(
+        throw new StepError(
           `Cannot write 2 different values to the same column (${currColumnName})`,
           `Click on set up action and make sure '${currColumnName}' only appears once.`,
           $.step?.position,

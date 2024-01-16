@@ -19,6 +19,7 @@ import { consumeOrThrowLimiterWithLongestDelay } from '../rate-limiter'
 const usageTracker: TBeforeRequest = async function ($, requestConfig) {
   logger.info('Making request to MS Graph', {
     event: 'm365-ms-graph-request',
+    tenant: $.auth.data?.tenantKey as string,
     baseUrl: requestConfig.baseURL, // base URL is different for auth requests
     urlPath: requestConfig.url,
     flowId: $.flow?.id,
