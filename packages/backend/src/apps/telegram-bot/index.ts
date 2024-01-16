@@ -1,6 +1,7 @@
 import { IApp } from '@plumber/types'
 
 import addAuthHeader from './common/add-auth-header'
+import rateLimitHandler from './common/interceptor/rate-limit'
 import actions from './actions'
 import auth from './auth'
 import dynamicData from './dynamic-data'
@@ -14,6 +15,7 @@ const app: IApp = {
   apiBaseUrl: 'https://api.telegram.org',
   primaryColor: '2AABEE',
   beforeRequest: [addAuthHeader],
+  requestErrorHandler: rateLimitHandler,
   dynamicData,
   auth,
   actions,
