@@ -10,7 +10,7 @@ export const REMOVE_AFTER_7_DAYS_OR_50_JOBS = {
 }
 
 export const DEFAULT_JOB_DELAY_DURATION = 0
-export const MAXIMUM_JOB_ATTEMPTS = 4
+export const MAXIMUM_JOB_ATTEMPTS = 6
 
 export const DEFAULT_JOB_OPTIONS: JobsOptions = {
   removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,

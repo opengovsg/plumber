@@ -7,8 +7,7 @@ import generateTimestamp from '../../helpers/generate-timestamp'
 const action: IRawAction = {
   name: 'Delay Until',
   key: 'delayUntil',
-  description:
-    'Delays the execution of the next action until a specified date.',
+  description: 'Delays the execution of the next action until a specified date',
   arguments: [
     {
       label: 'Delay until (Date)',

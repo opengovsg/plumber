@@ -8,7 +8,7 @@ import { throwSendMessageError } from '../../common/throw-errors'
 const action: IRawAction = {
   name: 'Send message',
   key: 'sendMessage',
-  description: 'Sends a message to a chat you specify.',
+  description: 'Sends a message to a Telegram chat',
   arguments: [
     {
       label: 'Chat ID',

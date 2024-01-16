@@ -15,7 +15,7 @@ const trigger: IRawTrigger = {
   name: 'New form submission',
   key: 'newSubmission',
   type: 'webhook',
-  description: 'Triggers when the webhook receives a request.',
+  description: 'Triggers when a new form submission is received',
   webhookTriggerInstructions: {
     beforeUrlMsg: `# Make a new submission to the form you connected. Then, click test step.`,
     hideWebhookUrl: true,

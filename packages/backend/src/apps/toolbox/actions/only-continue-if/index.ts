@@ -7,7 +7,7 @@ import { throwInvalidConditionError } from '../../common/throw-errors'
 const action: IRawAction = {
   name: 'Only continue if',
   key: 'onlyContinueIf',
-  description: 'Only continue if',
+  description: 'Only runs later actions if specified conditions are met',
   arguments: getConditionArgs({ usePlaceholders: false }),
 
   async run($) {

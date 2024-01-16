@@ -77,7 +77,7 @@ function makeTenantInfo(opts: Partial<M365TenantInfo>): M365TenantInfo {
 
 export const m365TenantInfo = Object.freeze({
   'sg-govt': makeTenantInfo({
-    label: 'SG Govt',
+    label: 'SG Govt SharePoint',
     id: process.env.M365_SG_GOVT_TENANT_ID,
     sharePointSiteId: process.env.M365_SG_GOVT_SHAREPOINT_SITE_ID,
     clientId: process.env.M365_SG_GOVT_CLIENT_ID,
@@ -90,7 +90,7 @@ export const m365TenantInfo = Object.freeze({
   ...(appConfig.isDev
     ? {
         'govtech-staging': makeTenantInfo({
-          label: 'GovTech Staging',
+          label: 'GovTech Staging SharePoint',
           id: process.env.M365_GOVTECH_STAGING_TENANT_ID,
           sharePointSiteId: process.env.M365_GOVTECH_STAGING_SHAREPOINT_SITE_ID,
           clientId: process.env.M365_GOVTECH_STAGING_CLIENT_ID,
@@ -102,7 +102,7 @@ export const m365TenantInfo = Object.freeze({
           ),
         }),
         'local-dev': makeTenantInfo({
-          label: 'Local Development',
+          label: 'Local Development SharePoint',
           id: process.env.M365_LOCAL_DEV_TENANT_ID,
           sharePointSiteId: process.env.M365_LOCAL_DEV_SHAREPOINT_SITE_ID,
           clientId: process.env.M365_LOCAL_DEV_CLIENT_ID,

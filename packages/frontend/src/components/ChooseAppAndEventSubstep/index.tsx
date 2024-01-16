@@ -45,11 +45,13 @@ const optionGenerator = (app: {
 const eventOptionGenerator = (app: {
   name: string
   key: string
+  description: string
   type?: string
-}): { label: string; value: string; type: string } => ({
+}): { label: string; value: string; type: string; description: string } => ({
   label: app.name as string,
   value: app.key as string,
-  type: app?.type as string,
+  type: app.type as string,
+  description: app.description,
 })
 
 const getOption = <T extends { value: string }>(
@@ -342,11 +344,16 @@ function ChooseAppAndEventSubstep(
                   >
                     <Flex flexDir="column">
                       <Text>{option.label}</Text>
-                      {getIsIfThenDisabled(option) && (
-                        <Text fontSize="xs" color="red.500">
-                          This can only be used in the last step
-                        </Text>
-                      )}
+                      <Text
+                        fontSize="xs"
+                        color={
+                          getIsIfThenDisabled(option) ? 'red.500' : 'inherit'
+                        }
+                      >
+                        {getIsIfThenDisabled(option)
+                          ? 'This can only be used in the last step'
+                          : option.description}
+                      </Text>
                     </Flex>
 
                     {option.type === 'webhook' && (
@@ -359,6 +366,7 @@ function ChooseAppAndEventSubstep(
                     label: '',
                     value: '',
                     type: '',
+                    description: '',
                   }
                 }
                 onChange={onEventChange}

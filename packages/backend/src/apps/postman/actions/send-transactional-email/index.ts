@@ -19,7 +19,7 @@ import { throwSendEmailError } from '../../common/throw-errors'
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
-  description: "Sends an email using Postman's transactional API.",
+  description: 'Sends an email with Postman',
   arguments: transactionalEmailFields,
   doesFileProcessing: (step: Step) => {
     return (

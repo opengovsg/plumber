@@ -8,9 +8,10 @@ import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
 const trigger: IRawTrigger = {
-  name: 'Weekly - triggers every week, choose a specific day of the week',
+  name: 'Weekly',
   key: 'everyWeek',
-  description: 'Triggers every week.',
+  description:
+    'Triggers every week, choose a specific day and hour of the week',
   arguments: [
     {
       label: 'Day of the week',
