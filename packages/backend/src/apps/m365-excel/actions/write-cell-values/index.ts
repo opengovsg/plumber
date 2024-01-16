@@ -1,6 +1,6 @@
 import type { IRawAction } from '@plumber/types'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 
 import WorkbookSession from '../../common/workbook-session'
 
@@ -83,7 +83,7 @@ const action: IRawAction = {
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)
 
     if (parametersParseResult.success === false) {
-      throw generateStepError(
+      throw new StepError(
         'Action is set up incorrectly.',
         parametersParseResult.error.issues[0].message,
         $.step?.position,
