@@ -2,6 +2,8 @@ import { type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import StepError from '@/errors/step'
+
 import toolboxApp from '../..'
 import ifThenAction from '../../actions/if-then'
 
@@ -295,10 +297,7 @@ describe('If-then', () => {
 
     it('should throw step error if no condition is configured', async () => {
       $.step.parameters.conditions = undefined
-      // throw partial step error message
-      await expect(ifThenAction.run($)).rejects.toThrowError(
-        `Cannot read properties of undefined (reading 'every')`,
-      )
+      await expect(ifThenAction.run($)).rejects.toThrowError(StepError)
     })
 
     it('should throw step error if invalid condition is configured', async () => {
