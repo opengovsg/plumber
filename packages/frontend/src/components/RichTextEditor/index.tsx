@@ -88,7 +88,7 @@ const Editor = ({
     StepVariable,
     Paragraph.configure({
       HTMLAttributes: {
-        style: 'margin: 0;',
+        style: 'margin: 0;min-height: 1em;',
       },
     }),
   ]
