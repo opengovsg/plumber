@@ -75,7 +75,8 @@ const Editor = ({
     TableHeader,
     TableCell.configure({
       HTMLAttributes: {
-        style: 'border:1px solid black;',
+        style:
+          'border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;',
       },
     }),
     Placeholder.configure({
