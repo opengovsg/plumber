@@ -2,6 +2,8 @@ import type { IApp } from '@plumber/types'
 
 import logger from '@/helpers/logger'
 
+const ADDITONAL_RATE_LIMIT_IN_SEC = 45
+
 const rateLimitHandler: IApp['requestErrorHandler'] = async function (
   $,
   error,
@@ -15,6 +17,8 @@ const rateLimitHandler: IApp['requestErrorHandler'] = async function (
     return
   }
 
+  const newRetryAfter = retryAfter + ADDITONAL_RATE_LIMIT_IN_SEC
+
   logger.error('Telegram rate limit error', {
     executionId: $.execution.id,
     flowId: $.flow.id,
@@ -22,10 +26,10 @@ const rateLimitHandler: IApp['requestErrorHandler'] = async function (
     data: error.response.data,
     headers: error.response.headers,
     oldRetryAfter: retryAfter,
-    newRetryAfter: retryAfter + 30,
+    newRetryAfter,
   })
 
-  error.response.headers['retry-after'] = `${retryAfter + 30}`
+  error.response.headers['retry-after'] = newRetryAfter.toString()
   throw error
 }
 

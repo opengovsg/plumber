@@ -42,7 +42,9 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay
   const totalDelay = prevFullDelay + Math.round(Math.random() * prevFullDelay)
   logger.info('Job delay calculation', {
-    ...job?.data,
+    flowId: job?.data?.flowId,
+    executionId: job?.data?.executionId,
+    stepId: job?.data?.stepId,
     attemptsMade,
     delay: totalDelay,
   })
