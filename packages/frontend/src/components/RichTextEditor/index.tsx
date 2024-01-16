@@ -12,6 +12,7 @@ import { Controller, useFormContext } from 'react-hook-form'
 import { ClickAwayListener, FormControl } from '@mui/material'
 import { FormLabel } from '@opengovsg/design-system-react'
 import Link from '@tiptap/extension-link'
+import Paragraph from '@tiptap/extension-paragraph'
 import Placeholder from '@tiptap/extension-placeholder'
 import Table from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
@@ -84,6 +85,11 @@ const Editor = ({
       inline: true,
     }),
     StepVariable,
+    Paragraph.configure({
+      HTMLAttributes: {
+        style: 'margin: 0;',
+      },
+    }),
   ]
   let content = substituteOldTemplates(initialValue, varInfo) // back-ward compatibility with old values from PowerInput
 
