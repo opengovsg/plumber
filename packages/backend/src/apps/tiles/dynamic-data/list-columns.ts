@@ -40,7 +40,12 @@ const dynamicData: IDynamicData = {
         })),
       }
     } catch (e) {
-      logger.error(e)
+      logger.error('Tiles dynamic data: list columns error', {
+        userId: $.user?.id,
+        tableId: $.step.parameters.tableId,
+        flowId: $.flow?.id,
+        stepId: $.step?.id,
+      })
       throw new Error('Unable to fetch columns')
     }
   },
