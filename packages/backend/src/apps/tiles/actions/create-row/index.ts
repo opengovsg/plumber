@@ -1,6 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
-import { generateStepError } from '@/helpers/generate-step-error'
+import StepError from '@/errors/step'
 import { createTableRow } from '@/models/dynamodb/table-row/functions'
 import TableMetadata from '@/models/table-metadata'
 
@@ -37,7 +37,7 @@ const action: IRawAction = {
       label: 'New row data',
       key: 'rowData',
       type: 'multirow' as const,
-      required: false,
+      required: true,
       subFields: [
         {
           placeholder: 'Column',
@@ -93,8 +93,8 @@ const action: IRawAction = {
     }, {} as Record<string, string>)
 
     if (!(await table.validateRows([rowDataObject]))) {
-      throw generateStepError(
-        'Invalid column id',
+      throw new StepError(
+        'Invalid column ID(s)',
         'Column(s) may have been deleted or modified. Please check your tile and pipe setup.',
         $.step.position,
         'tiles',
