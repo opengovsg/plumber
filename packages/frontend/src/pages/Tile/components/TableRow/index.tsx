@@ -85,6 +85,7 @@ export default function TableRow({
                 backgroundColor: 'white',
                 zIndex: Z_INDEX.NEW_ROW,
                 borderTop: `1px solid ${BORDER_COLOR.ACTIVE}`,
+                borderBottom: `1px solid ${BORDER_COLOR.DEFAULT}`,
               }
             : {
                 position: 'absolute',

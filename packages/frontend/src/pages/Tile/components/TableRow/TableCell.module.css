@@ -1,5 +1,18 @@
 .saving {
-  background-color: #ffeac090;
+  animation: beginSaving 1s linear forwards;
+  background-color: #fdefd290;
+}
+
+@keyframes beginSaving {
+  0% {
+    background-color: unset;
+  }
+  30% {
+    background-color: unset;
+  }
+  100% {
+    background-color: #fdefd290;
+  }
 }
 
 .saved {
@@ -13,13 +26,10 @@
 
 @keyframes completeSaving {
   0% {
-    background-color: #ffeac090;
+    background-color: #c0fecb90;
   }
-  20% {
-    background-color: #9af5ab90;
-  }
-  60% {
-    background-color: #9af5ab90;
+  50% {
+    background-color: #c0fecb90;
   }
   100% {
     background-color: transparent;
