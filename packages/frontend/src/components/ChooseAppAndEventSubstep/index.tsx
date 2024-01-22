@@ -11,6 +11,7 @@ import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
 import { Badge, FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
+import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from 'config/flags'
 import { EditorContext } from 'contexts/Editor'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { GET_APPS } from 'graphql/queries/get-apps'
@@ -99,8 +100,8 @@ function ChooseAppAndEventSubstep(
           if (!launchDarkly.flags || !app?.key) {
             return true
           }
-          const launchDarklyKey = ['app', app.key].join('_')
-          return launchDarkly.flags[launchDarklyKey] ?? true
+          const ldAppFlag = getAppFlag(app.key)
+          return launchDarkly.flags[ldAppFlag] ?? true
         })
         ?.map((app) => optionGenerator(app)) ?? [],
     [apps, launchDarkly.flags],
@@ -120,12 +121,9 @@ function ChooseAppAndEventSubstep(
           if (!launchDarkly.flags || !app?.key) {
             return true
           }
-          const launchDarklyKey = [
-            'app',
-            app.key,
-            isTrigger ? 'trigger' : 'action',
-            actionOrTrigger.key,
-          ].join('_')
+          const launchDarklyKey = isTrigger
+            ? getAppTriggerFlag(app.key, actionOrTrigger.key)
+            : getAppActionFlag(app.key, actionOrTrigger.key)
           return launchDarkly.flags[launchDarklyKey] ?? true
         })
         //
