@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { BiHistory, BiSolidGrid } from 'react-icons/bi'
 import { HiOutlineSquare3Stack3D } from 'react-icons/hi2'
 import { Navigate } from 'react-router-dom'
@@ -9,7 +9,6 @@ import { PipeIcon } from 'components/Icons'
 import SiteWideBanner from 'components/SiteWideBanner'
 import { TILES_FEATURE_FLAG } from 'config/flags'
 import * as URLS from 'config/urls'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import {
   LayoutNavigationProvider,
   LayoutNavigationProviderData,
@@ -26,6 +25,7 @@ export type DrawerLink = {
   Icon: React.ElementType
   text: string
   to: string
+  badge?: string
   // Optional LaunchDarkly flag key to control visibility of link
   ldFlagKey?: string
 }
@@ -40,6 +40,7 @@ const drawerLinks = [
     Icon: HiOutlineSquare3Stack3D,
     text: 'Tiles',
     to: URLS.TILES,
+    badge: '✨ Coming soon',
     ldFlagKey: TILES_FEATURE_FLAG,
   },
   {
@@ -56,7 +57,6 @@ const drawerLinks = [
 
 export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   const { currentUser } = useAuthentication()
-  const { flags } = useContext(LaunchDarklyContext)
 
   const [isDrawerOpen, setDrawerOpen] = useState(false)
 
@@ -64,23 +64,13 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   const closeDrawer = () => setDrawerOpen(false)
 
   const layoutNavigationProviderData = useMemo(() => {
-    // dont show all drawer links while flags are loading
-    const filteredLinks = flags
-      ? drawerLinks.filter((link) => {
-          // If flag is removed, default to show tab
-          if (!link.ldFlagKey) {
-            return true
-          }
-          return flags[link.ldFlagKey] !== false
-        })
-      : []
     return {
-      links: filteredLinks,
+      links: drawerLinks,
       isDrawerOpen,
       openDrawer,
       closeDrawer,
     } as LayoutNavigationProviderData
-  }, [flags, isDrawerOpen])
+  }, [isDrawerOpen])
 
   if (!currentUser) {
     const redirectQueryParam = window.location.pathname + window.location.search
