@@ -156,7 +156,7 @@ function TableCell({
         width: `${column.getSize()}px`,
         flexShrink: 0,
         cursor: 'default',
-        borderBottomWidth: 1,
+        borderBottomWidth: row.id === NEW_ROW_ID ? 0 : 1,
         borderRightWidth: 1,
         borderStyle: 'solid',
         borderColor: BORDER_COLOR.DEFAULT,

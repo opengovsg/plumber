@@ -6,6 +6,7 @@ import CheckboxHeaderCell from '../components/TableHeader/CheckboxHeaderCell'
 import ColumnHeaderCell from '../components/TableHeader/ColumnHeaderCell'
 import NewColumnHeaderCell from '../components/TableHeader/NewColumnHeaderCell'
 import CheckboxCell from '../components/TableRow/CheckboxCell'
+import NoopCell from '../components/TableRow/NoopCell'
 import TableCell from '../components/TableRow/TableCell'
 import { NEW_COLUMN_ID, SELECT_COLUMN_ID } from '../constants'
 import { GenericRowData } from '../types'
@@ -47,15 +48,7 @@ export function generateColumns(
   const addNewColumn = columnHelper.display({
     id: NEW_COLUMN_ID,
     header: NewColumnHeaderCell,
-    cell: ({ column }) => (
-      <div
-        style={{
-          background: 'white',
-          height: '100%',
-          width: column.getSize(),
-        }}
-      />
-    ),
+    cell: NoopCell,
     size: 50,
   })
   return [selectColumn, ...accessorColumns, addNewColumn]
