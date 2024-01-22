@@ -18,9 +18,7 @@ const getTable = async (
   try {
     const table = await context.currentUser
       .$relatedQuery('tables')
-      .withGraphJoined('columns')
       .findById(tableId)
-      .orderBy('columns.position', 'asc')
       .throwIfNotFound()
 
     return table

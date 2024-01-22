@@ -29,6 +29,7 @@ import { Button, IconButton } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 import { DELETE_TABLE } from 'graphql/mutations/delete-table'
 import { GET_TABLES } from 'graphql/queries/get-tables'
+import { toPrettyDateString } from 'helpers/dateTime'
 
 const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
   const navigate = useNavigate()
@@ -86,7 +87,7 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
           <Box>
             <Text textStyle="h6">{table.name}</Text>
             <Text textStyle="body-2">
-              {table.columns.map((c) => c.name).join(', ')}
+              Last opened: {toPrettyDateString(+table.accessedAt)}
             </Text>
           </Box>
         </Flex>

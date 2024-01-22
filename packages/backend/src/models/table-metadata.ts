@@ -10,6 +10,7 @@ class TableMetadata extends Base {
   name: string
   collaborators!: User[]
   columns: TableColumnMetadata[]
+  accessedAt!: Date
 
   /**
    * for typescript support when creating TableCollaborator row in insertGraph

@@ -1,7 +1,12 @@
+import { DateTime } from 'luxon'
+
 /**
- * in YYYY-MM-DD format
+ * in yyyy-MM-dd format
  */
 export function dateString() {
-  const date = new Date()
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+  return DateTime.local().toFormat('yyyy-MM-dd')
+}
+
+export function toPrettyDateString(msSinceEpoch: number) {
+  return DateTime.fromMillis(msSinceEpoch).toFormat('dd MMM yyyy h:mm a')
 }

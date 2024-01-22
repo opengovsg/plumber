@@ -7,8 +7,7 @@ const getTables = async (
 ) => {
   const tables = await context.currentUser
     .$relatedQuery('tables')
-    .withGraphFetched('columns')
-    .orderBy('created_at', 'desc')
+    .orderBy('accessed_at', 'desc')
 
   return tables
 }
