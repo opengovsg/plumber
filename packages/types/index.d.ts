@@ -1,9 +1,10 @@
-import HttpError from '@/errors/http'
 import type {
   AxiosInstance,
   AxiosRequestConfig,
   InternalAxiosRequestConfig,
 } from 'axios'
+
+import HttpError from '@/errors/http'
 
 export type IHttpClient = AxiosInstance
 import type { Request } from 'express'
@@ -587,6 +588,7 @@ export interface ITableMetadata {
   id: string
   name: string
   columns: ITableColumnMetadata[]
+  accessedAt: string
 }
 
 export interface ITableRow {

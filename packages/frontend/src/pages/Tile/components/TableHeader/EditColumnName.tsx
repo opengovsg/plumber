@@ -40,6 +40,7 @@ export default function EditColumnName({
                 onSave()
               }
             }}
+            onBlur={onSave}
           />
           <IconButton
             aria-label="save"

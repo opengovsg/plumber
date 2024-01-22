@@ -5,10 +5,7 @@ export const GET_TABLES = gql`
     getTables {
       id
       name
-      columns {
-        id
-        name
-      }
+      accessedAt
     }
   }
 `
