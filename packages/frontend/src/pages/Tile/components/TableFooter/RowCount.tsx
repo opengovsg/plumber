@@ -18,7 +18,7 @@ export default function RowCount({ rowCount, rowSelection }: RowCountProps) {
       justifyContent="center"
       borderRightWidth={1}
       bg={numRowsSelected ? 'primary.50' : 'white'}
-      borderRightColor={BORDER_COLOR.DEFAULT}
+      borderColor={BORDER_COLOR.DEFAULT}
       px={4}
     >
       <Text textStyle="body-2">

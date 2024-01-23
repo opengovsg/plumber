@@ -75,7 +75,7 @@ export default function TableRow({
                 width: 'fit-content',
                 minWidth: '100%',
                 position: 'sticky',
-                bottom: ROW_HEIGHT.FOOTER,
+                bottom: ROW_HEIGHT.FOOTER + 1,
                 display: 'flex',
                 alignItems: 'stretch',
                 height: isEditingRow
@@ -85,7 +85,6 @@ export default function TableRow({
                 backgroundColor: 'white',
                 zIndex: Z_INDEX.NEW_ROW,
                 borderTop: `1px solid ${BORDER_COLOR.ACTIVE}`,
-                borderBottom: `1px solid ${BORDER_COLOR.DEFAULT}`,
               }
             : {
                 position: 'absolute',

@@ -10,6 +10,8 @@ import {
 } from 'react'
 import { Textarea } from '@chakra-ui/react'
 import { CellContext, Row, TableMeta } from '@tanstack/react-table'
+import { useTableContext } from 'pages/Tile/contexts/TableContext'
+import { moveCell } from 'pages/Tile/helpers/cell-navigation'
 
 import {
   BORDER_COLOR,
@@ -31,7 +33,8 @@ function TableCell({
   table,
   cell,
 }: CellContext<GenericRowData, string>) {
-  const { sortedIndex, className, isEditingRow } = useRowContext()
+  const { mode } = useTableContext()
+  const { sortedIndex: rowIndex, className, isEditingRow } = useRowContext()
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const cellContainerRef = useRef<HTMLDivElement>(null)
   const tableMeta = table.options.meta as TableMeta<GenericRowData>
@@ -39,6 +42,7 @@ function TableCell({
   const editingRowId = tableMeta?.activeCell?.row.id
   const columnIds = table.getState().columnOrder
   const columnIndex = columnIds.indexOf(column.id)
+  const isViewMode = mode === 'view'
 
   const value = isEditingRow
     ? tableMeta.tempRowData.current?.[column.id]
@@ -52,13 +56,14 @@ function TableCell({
         | MouseEvent<HTMLDivElement>,
     ) => {
       tableMeta?.setActiveCell(cell)
-      if (e.target instanceof HTMLTextAreaElement) {
+      if (!isViewMode && e.target instanceof HTMLTextAreaElement) {
         e.target.select()
       }
     },
-    [cell, tableMeta],
+    [cell, isViewMode, tableMeta],
   )
 
+  // When adding new rows, re-focus on the first cell
   const focusOnFirstCell = useCallback(
     (row: Row<GenericRowData>) => {
       setTimeout(() => {
@@ -75,52 +80,127 @@ function TableCell({
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-
-        if (row.id === NEW_ROW_ID || sortedIndex === -1) {
-          if (
-            !shallowCompare(tableMeta?.tempRowData.current, {
-              rowId: NEW_ROW_ID,
-            })
-          ) {
-            tableMeta?.setActiveCell(null)
-            focusOnFirstCell(row)
+      /**
+       * Keydown events for both readonly and edit mode
+       */
+      switch (e.key) {
+        case 'Enter': {
+          if (e.shiftKey) {
+            return
           }
-          return
+          e.preventDefault()
+          if (!isViewMode) {
+            if (row.id === NEW_ROW_ID || rowIndex === -1) {
+              if (
+                !shallowCompare(tableMeta?.tempRowData.current, {
+                  rowId: NEW_ROW_ID,
+                })
+              ) {
+                tableMeta?.setActiveCell(null)
+                focusOnFirstCell(row)
+              }
+              return
+            }
+          }
+          moveCell({
+            table,
+            row,
+            rowIndex,
+            columnIndex,
+            direction: 'down',
+            allowCrossBoundaries: true,
+          })
+          break
         }
-        const nextRow = table.getRowModel().rows[sortedIndex + 1]
-        const nextActiveCell = nextRow
-          ? (nextRow.getVisibleCells()[columnIndex] as CellType)
-          : null
-        tableMeta?.setActiveCell(nextActiveCell)
+        // on tab
+        case 'Tab': {
+          e.preventDefault()
+          moveCell({
+            table,
+            row,
+            rowIndex,
+            columnIndex,
+            direction: e.shiftKey ? 'left' : 'right',
+          })
+          break
+        }
+        case 'Escape': {
+          tableMeta.setActiveCell(null)
+          break
+        }
       }
-      // on tab
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        const increment = e.shiftKey ? -1 : 1
-        const nextColumnIndex = Math.min(
-          Math.max(1, columnIndex + increment),
-          columnIds.length - 2, // -2 to account for select and new columns
-        )
-        const nextActiveCell = row.getVisibleCells()[
-          nextColumnIndex
-        ] as CellType
-        tableMeta?.setActiveCell(nextActiveCell)
+      if (!isViewMode) {
+        return
       }
-
-      if (e.key === 'Escape') {
-        tableMeta?.setActiveCell(null)
+      /**
+       * The following keydown events are only for readonly mode
+       */
+      switch (e.key) {
+        case 'ArrowUp': {
+          e.preventDefault()
+          moveCell({
+            table,
+            row,
+            rowIndex,
+            columnIndex,
+            direction: 'up',
+          })
+          break
+        }
+        case 'ArrowDown': {
+          e.preventDefault()
+          moveCell({
+            table,
+            row,
+            rowIndex,
+            columnIndex,
+            direction: 'down',
+          })
+          break
+        }
+        case 'ArrowLeft': {
+          e.preventDefault()
+          moveCell({
+            table,
+            row,
+            rowIndex,
+            columnIndex,
+            direction: 'left',
+          })
+          break
+        }
+        case 'ArrowRight': {
+          e.preventDefault()
+          moveCell({
+            table,
+            row,
+            rowIndex,
+            columnIndex,
+            direction: 'right',
+          })
+          break
+        }
+        // Allow copying of cell value when focused
+        case 'C':
+        case 'c': {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            const value = getValue()
+            navigator.clipboard.writeText(value)
+          }
+          break
+        }
       }
     },
     [
+      isViewMode,
       row,
-      sortedIndex,
+      rowIndex,
       table,
       columnIndex,
       tableMeta,
       focusOnFirstCell,
-      columnIds.length,
+      getValue,
     ],
   )
 
@@ -174,8 +254,15 @@ function TableCell({
           fontSize="0.875rem"
           h={ROW_HEIGHT.EXPANDED}
           background="white"
+          borderColor="transparent"
           outline="none"
-          border="none"
+          _hover={{
+            borderColor: 'primary.200',
+          }}
+          _focus={{
+            borderColor: 'primary.400',
+          }}
+          isReadOnly={isViewMode}
           defaultValue={value}
           onChange={onChange}
           onKeyDown={onKeyDown}

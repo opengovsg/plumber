@@ -42,7 +42,8 @@ import TableHeader from './TableHeader'
 import TableRow from './TableRow'
 
 export default function Table(): JSX.Element {
-  const { tableColumns, flattenedData, filteredDataRef } = useTableContext()
+  const { tableColumns, flattenedData, filteredDataRef, mode } =
+    useTableContext()
   const [data, setData] = useState<GenericRowData[]>(flattenedData)
   const parentRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -256,11 +257,13 @@ export default function Table(): JSX.Element {
             })}
           </Box>
         </Flex>
-        <TableRow
-          tableMeta={table.options.meta as TableMeta<GenericRowData>}
-          row={newRow}
-          stickyBottom
-        />
+        {mode === 'edit' && (
+          <TableRow
+            tableMeta={table.options.meta as TableMeta<GenericRowData>}
+            row={newRow}
+            stickyBottom
+          />
+        )}
         <TableFooter
           removeRows={removeRows}
           rowCount={rows.length}

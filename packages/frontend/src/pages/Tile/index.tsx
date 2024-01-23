@@ -47,6 +47,7 @@ export default function Tile(): JSX.Element {
       tableId={id}
       tableColumns={columns}
       tableRows={rows}
+      hasEditPermission={true}
     >
       <Flex
         flexDir={{ base: 'column' }}
