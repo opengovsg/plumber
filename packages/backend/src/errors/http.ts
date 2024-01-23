@@ -31,7 +31,10 @@ export default class HttpError extends BaseError {
         error.response?.headers?.['retry-after']
     }
 
-    // Get request headers from pipe config instead.
-    this.response.config.headers = undefined
+    // We can strip this completely; all relevant request headers should be in
+    // the pipe config.
+    if (this.response.config?.headers) {
+      this.response.config.headers = undefined
+    }
   }
 }
