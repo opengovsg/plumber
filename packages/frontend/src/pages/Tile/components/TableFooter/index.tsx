@@ -34,6 +34,7 @@ function TableFooter({
       maxH={`${ROW_HEIGHT.FOOTER}px`}
       justifyContent="space-between"
       boxSizing="content-box"
+      borderTopWidth={1}
     >
       <Flex>
         <RowCount rowCount={rowCount} rowSelection={rowSelection} />

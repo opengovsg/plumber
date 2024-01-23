@@ -22,3 +22,5 @@ export interface GenericRowData extends Record<string, string> {
 }
 
 export type CellType = Cell<GenericRowData, string>
+
+export type EditMode = 'edit' | 'view'

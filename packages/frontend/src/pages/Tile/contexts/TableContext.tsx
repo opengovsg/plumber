@@ -6,10 +6,11 @@ import React, {
   useContext,
   useMemo,
   useRef,
+  useState,
 } from 'react'
 
 import { flattenRows } from '../helpers/flatten-rows'
-import { GenericRowData } from '../types'
+import { EditMode, GenericRowData } from '../types'
 
 interface TableContextProps {
   tableId: string
@@ -17,6 +18,9 @@ interface TableContextProps {
   flattenedData: GenericRowData[]
   tableColumns: ITableColumnMetadata[]
   filteredDataRef: MutableRefObject<GenericRowData[]>
+  mode: EditMode
+  setMode: (mode: EditMode) => void
+  hasEditPermission: boolean
 }
 
 const TableContext = createContext<TableContextProps | undefined>(undefined)
@@ -37,6 +41,7 @@ interface TableContextProviderProps {
   tableColumns: ITableColumnMetadata[]
   tableRows: ITableRow[]
   children: React.ReactNode
+  hasEditPermission: boolean
 }
 
 export const TableContextProvider = ({
@@ -45,9 +50,11 @@ export const TableContextProvider = ({
   tableColumns,
   tableRows,
   children,
+  hasEditPermission,
 }: TableContextProviderProps) => {
   const flattenedData = useMemo(() => flattenRows(tableRows), [tableRows])
   const filteredDataRef = useRef<GenericRowData[]>([])
+  const [mode, setMode] = useState<EditMode>('view')
   return (
     <TableContext.Provider
       value={{
@@ -56,6 +63,9 @@ export const TableContextProvider = ({
         flattenedData,
         tableColumns,
         filteredDataRef,
+        mode,
+        setMode,
+        hasEditPermission,
       }}
     >
       {children}
