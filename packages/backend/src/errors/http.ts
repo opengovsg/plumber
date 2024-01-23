@@ -18,8 +18,20 @@ export default class HttpError extends BaseError {
       data: error.response?.data,
       status: error.response?.status,
       statusText: error.response?.statusText,
-      headers: error.response?.headers,
       config: error.config,
+      headers: {},
     }
+
+    //
+    // Only preserve selected headers to avoid storing sensitive data.
+    //
+
+    if (error.response?.headers?.['retry-after']) {
+      this.response.headers['retry-after'] =
+        error.response?.headers?.['retry-after']
+    }
+
+    // Get request headers from pipe config instead.
+    this.response.config.headers = undefined
   }
 }
