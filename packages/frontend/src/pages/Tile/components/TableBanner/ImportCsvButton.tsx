@@ -1,7 +1,8 @@
 import { ITableColumnMetadata, ITableMetadata } from '@plumber/types'
 
 import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
-import { BsCheckCircle, BsFiletypeCsv, BsPlusCircleFill } from 'react-icons/bs'
+import { BiImport } from 'react-icons/bi'
+import { BsCheckCircle, BsPlusCircleFill } from 'react-icons/bs'
 import { useLazyQuery, useMutation } from '@apollo/client'
 import {
   Card,
@@ -64,6 +65,7 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
   const [isParsing, setIsParsing] = useState(false)
   const [result, setResult] = useState<ValidParseResult | null>(null)
   const [columnsToCreate, setColumnsToCreate] = useState<string[]>([])
+  const [matchedColumns, setMatchedColumns] = useState<string[]>([])
 
   const [file, setFile] = useState<File>()
 
@@ -98,6 +100,9 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
           const columns = parseResult.meta.fields
           setColumnsToCreate(
             columns.filter((csvColumn) => !columnNamesSet.has(csvColumn)),
+          )
+          setMatchedColumns(
+            columns.filter((csvColumn) => columnNamesSet.has(csvColumn)),
           )
         }
       },
@@ -218,35 +223,46 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
               )}
               {result && (
                 <>
-                  <Text textStyle="subhead-1">
-                    {result.meta.fields.length} columns found
-                    {columnsToCreate.length > 0 && (
-                      <Text as="span" ml={1} color="primary.600">
-                        ({columnsToCreate.length} columns will be added)
+                  {matchedColumns.length > 0 && (
+                    <>
+                      <Text color="green.600">
+                        {matchedColumns.length} columns matched
                       </Text>
-                    )}
-                  </Text>
-                  <List spacing={3} mt={2}>
-                    {result.meta.fields.map((field, i) => {
-                      return (
-                        <Flex key={i} alignItems="center">
-                          <ListIcon
-                            as={
-                              columnNamesSet.has(field)
-                                ? BsCheckCircle
-                                : BsPlusCircleFill
-                            }
-                            color={
-                              columnNamesSet.has(field)
-                                ? 'green.500'
-                                : 'primary.500'
-                            }
-                          />
-                          <ListItem>{field}</ListItem>
-                        </Flex>
-                      )
-                    })}
-                  </List>
+                      <List spacing={3} my={2}>
+                        {matchedColumns.map((field, i) => {
+                          return (
+                            <Flex key={i} alignItems="center">
+                              <ListIcon
+                                as={BsCheckCircle}
+                                color={'green.500'}
+                              />
+                              <ListItem>{field}</ListItem>
+                            </Flex>
+                          )
+                        })}
+                      </List>
+                    </>
+                  )}
+                  {columnsToCreate.length > 0 && (
+                    <>
+                      <Text color="primary.600">
+                        {columnsToCreate.length} columns will be created
+                      </Text>
+                      <List spacing={3} my={2}>
+                        {columnsToCreate.map((field, i) => {
+                          return (
+                            <Flex key={i} alignItems="center">
+                              <ListIcon
+                                as={BsPlusCircleFill}
+                                color={'primary.500'}
+                              />
+                              <ListItem>{field}</ListItem>
+                            </Flex>
+                          )
+                        })}
+                      </List>
+                    </>
+                  )}
                 </>
               )}
               {}
@@ -284,9 +300,9 @@ const ImportCsvButton = forwardRef<HTMLButtonElement>((_, ref) => {
         colorScheme="secondary"
         size="xs"
         onClick={onOpen}
-        leftIcon={<BsFiletypeCsv size={16} />}
+        leftIcon={<BiImport />}
       >
-        CSV
+        Import
       </Button>
       {/* unmount component when closed to reset all state */}
       {isOpen && <ImportCsvModal onClose={onClose} />}

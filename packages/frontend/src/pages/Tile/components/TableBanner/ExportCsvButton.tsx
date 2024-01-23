@@ -1,5 +1,5 @@
 import { forwardRef, useCallback } from 'react'
-import { BsFiletypeCsv } from 'react-icons/bs'
+import { BiExport } from 'react-icons/bi'
 import {
   Flex,
   Modal,
@@ -94,9 +94,9 @@ const ExportCsvButton = forwardRef<HTMLButtonElement>((_, ref) => {
         colorScheme="secondary"
         size="xs"
         onClick={onOpen}
-        leftIcon={<BsFiletypeCsv size={16} />}
+        leftIcon={<BiExport />}
       >
-        CSV
+        Export
       </Button>
       {/* unmount component when closed to reset all state */}
       {isOpen && <ExportCsvModal onClose={onClose} />}
