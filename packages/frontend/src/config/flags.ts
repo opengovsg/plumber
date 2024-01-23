@@ -4,7 +4,7 @@
 /**
  * Display flags
  */
-export const BANNER_DISPLAY_FLAG = 'banner_display'
+export const BANNER_TEXT_FLAG = 'banner_display'
 
 /**
  * Feature flags
@@ -18,6 +18,6 @@ export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
  */
 export const getAppFlag = (appKey: string) => `app_${appKey}`
 export const getAppTriggerFlag = (appKey: string, triggerKey: string) =>
-  `action_${appKey}_trigger_${triggerKey}`
+  `app_${appKey}_trigger_${triggerKey}`
 export const getAppActionFlag = (appKey: string, actionKey: string) =>
-  `action_${appKey}_action_${actionKey}`
+  `app_${appKey}_action_${actionKey}`
