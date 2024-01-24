@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useMemo, useState } from 'react'
 import { BiHistory, BiSolidGrid } from 'react-icons/bi'
 import { HiOutlineSquare3Stack3D } from 'react-icons/hi2'
 import { Navigate } from 'react-router-dom'
@@ -7,6 +7,7 @@ import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import { PipeIcon } from 'components/Icons'
 import SiteWideBanner from 'components/SiteWideBanner'
+import { TILES_FEATURE_FLAG } from 'config/flags'
 import * as URLS from 'config/urls'
 import {
   LayoutNavigationProvider,
@@ -24,6 +25,9 @@ export type DrawerLink = {
   Icon: React.ElementType
   text: string
   to: string
+  badge?: string
+  // Optional LaunchDarkly flag key to control visibility of link
+  ldFlagKey?: string
 }
 
 const drawerLinks = [
@@ -36,6 +40,8 @@ const drawerLinks = [
     Icon: HiOutlineSquare3Stack3D,
     text: 'Tiles',
     to: URLS.TILES,
+    badge: '✨ Coming soon',
+    ldFlagKey: TILES_FEATURE_FLAG,
   },
   {
     Icon: BiSolidGrid,
@@ -49,17 +55,15 @@ const drawerLinks = [
   },
 ]
 
-export default function Layout({
-  children,
-}: PublicLayoutProps): React.ReactElement {
+export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   const { currentUser } = useAuthentication()
 
-  const [isDrawerOpen, setDrawerOpen] = React.useState(false)
+  const [isDrawerOpen, setDrawerOpen] = useState(false)
 
   const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
 
-  const layoutNavigationProviderData = React.useMemo(() => {
+  const layoutNavigationProviderData = useMemo(() => {
     return {
       links: drawerLinks,
       isDrawerOpen,

@@ -1,10 +1,10 @@
 import { useCallback, useContext, useEffect, useState } from 'react'
 import CloseIcon from '@mui/icons-material/Close'
 import { Box, IconButton } from '@mui/material'
+import { BANNER_TEXT_FLAG } from 'config/flags'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { getItemForSession, setItemForSession } from 'helpers/storage'
 
-const LAUNCH_DARKLY_BANNER_KEY = 'banner_display'
 const EMPTY_BANNER_MESSAGE = ''
 const SESSION_STORAGE_HIDE_BANNER_KEY = 'hide-banner'
 
@@ -21,7 +21,7 @@ const SiteWideBanner = (): JSX.Element | null => {
   useEffect(() => {
     if (launchDarkly.flags) {
       // message needs to be fetched everytime the page is re-rendered
-      const message = launchDarkly.flags[LAUNCH_DARKLY_BANNER_KEY]
+      const message = launchDarkly.flags[BANNER_TEXT_FLAG]
       const bannerMessageStored = getItemForSession(
         SESSION_STORAGE_HIDE_BANNER_KEY,
       )
