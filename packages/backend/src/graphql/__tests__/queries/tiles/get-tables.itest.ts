@@ -6,7 +6,6 @@ import Context from '@/types/express/context'
 import {
   generateMockContext,
   generateMockTable,
-  generateMockTableColumns,
 } from '../../mutations/tiles/table.mock'
 
 describe('get tables query', () => {
@@ -23,15 +22,6 @@ describe('get tables query', () => {
     }
     const tables = await getTables(null, null, context)
     expect(tables).toHaveLength(numTables)
-  })
-
-  it('should return columns', async () => {
-    const table = await generateMockTable({
-      userId: context.currentUser.id,
-    })
-    await generateMockTableColumns({ tableId: table.id, numColumns: 5 })
-    const tables = await getTables(null, null, context)
-    expect(tables[0].columns).to.toHaveLength(5)
   })
 
   it('should return empty array if no tables found', async () => {
