@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import TableMetadataResolver from '@/graphql/custom-resolvers/table-metadata'
 import getTable from '@/graphql/queries/tiles/get-table'
 import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
@@ -39,7 +40,8 @@ describe('get single table query', () => {
       id: dummyTable.id,
       name: dummyTable.name,
     })
-    expect(table.columns.map((c) => c.id)).toEqual(dummyColumnIds)
+    const columns = await TableMetadataResolver.columns(dummyTable)
+    expect(columns.map((c) => c.id)).toEqual(dummyColumnIds)
   })
 
   it('should return empty array of columns if no columns exist', async () => {
@@ -53,7 +55,8 @@ describe('get single table query', () => {
       },
       context,
     )
-    expect(table.columns).toHaveLength(0)
+    const columns = await TableMetadataResolver.columns(table)
+    expect(columns).toHaveLength(0)
   })
 
   it('should throw an error if table does not exist', async () => {
