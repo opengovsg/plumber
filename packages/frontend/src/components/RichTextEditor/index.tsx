@@ -107,13 +107,7 @@ const Editor = ({
         return
       }
 
-      const content = editor.getHTML()
-      const contentWithBreaks = content.replace(
-        /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
-        '<p style="margin: 0">&nbsp;</p>',
-      )
-
-      onChange(contentWithBreaks)
+      onChange(editor.getHTML())
     },
     editable,
   })
