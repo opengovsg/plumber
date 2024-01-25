@@ -63,6 +63,7 @@ export async function sendTransactionalEmails(
       'from',
       `${email.senderName} <${appConfig.postman.fromAddress}>`,
     )
+    requestData.append('disable_tracking', 'true')
 
     if (email.replyTo) {
       requestData.append('reply_to', email.replyTo)
