@@ -135,9 +135,9 @@ const action: IRawAction = {
      * | 1. Create workbook session.      | 1. Create workbook session         |
      * | 2. Query table address range.    | 2. Query all table rows starting   |
      * | 3. Perform a MATCH() formula     |    from header row, up to the      |
-     * |    call on table's address       |    5000th row. Then compute the    |
-     * |    range to find the 1st row     |    action output using this alone. |
-     * |    number which satisfies the    |                                    |
+     * |    call on table's address       |    MAX_ROW-th row. Then compute    |
+     * |    range to find the 1st row     |    the action output using this    |
+     * |    number which satisfies the    |    alone.                          |
      * |    search criteria.              |                                    |
      * | 4. Query table row data using    |                                    |
      * |    row number from MATCH's       |                                    |
@@ -148,11 +148,11 @@ const action: IRawAction = {
      * |    output                        |                                    |
      *
      * The main pitfalls and mitigations for this are:
-     *   1. Although we only fetch up to 5000 rows, fetching large tables with
-     *      many columns could take a lot of time. This should be very rare, but
-     *      if this ever becomes common we could mitigate it by querying only
-     *      the searched-for column first, then making another query to get the
-     *      full row data for the matched row.
+     *   1. Although we only fetch up to MAX_ROWS rows, fetching large tables
+     *      with many columns could take a lot of time. This should be very
+     *      rare, but if this ever becomes common we could mitigate it by
+     *      querying only the searched-for column first, then making another
+     *      query to get the full row data for the matched row.
      *   2. Long strings in cells may cause our scan to be slow. This should
      *      also be rare; if this ever becomes an issue, we could restrict the
      *      max length of the value to match.
