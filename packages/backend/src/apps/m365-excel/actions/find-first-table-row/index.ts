@@ -18,7 +18,7 @@ type DataOut = Required<z.infer<typeof dataOutSchema>>
 const MAX_ROWS = 10000
 
 const action: IRawAction = {
-  name: 'Find first table row (SEE LIMITS IN DOCUMENTATION)',
+  name: 'Find first table row (SEE LIMITS IN GUIDE)',
   key: 'findFirstTableRow',
   description:
     // The MAX_ROWS row limit is a hard limit, but the cell / column limit (50k cells
@@ -96,9 +96,9 @@ const action: IRawAction = {
       key: 'valueToFind' as const,
       label: 'Value to find',
       description:
-        "Case sensitive. Do not include formatting (e.g. when matching '$5.00', input '5').",
+        "Case sensitive. Do not include Excel's formatting (e.g. if Excel shows '$5.20', enter '5.2' instead). Leave blank to match empty cell.",
       type: 'string' as const,
-      required: true,
+      required: false,
       variables: true,
     },
   ],
@@ -163,7 +163,8 @@ const action: IRawAction = {
       (
         await session.request(
           // This is a little tricky. Each path segment loosely corresponds to a
-          // Graph API function call. Breakdown as follows:
+          // Graph API function call, and subsequent segments operate on the
+          // output of the previous segment. Breakdown as follows:
           // * headerRowRange: Grabs the row containing column names
           // * resizedRange(deltaRows=...,deltaColumns=0): Extends our query
           //   range down by MAX_ROWS + 1 rows (i.e. makes the query include our
@@ -183,7 +184,7 @@ const action: IRawAction = {
 
     if (columnIndex === -1) {
       throw new StepError(
-        `Could not find column ${columnName} in excel table`,
+        `Could not find column "${columnName}" in excel table`,
         'Double-check that you have configured the find first table row excel step correctly.',
         $.step.position,
         $.app.name,

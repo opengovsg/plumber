@@ -13,10 +13,14 @@ export const parametersSchema = z.object({
   columnName: z.string().min(1, {
     message: 'Please select a column to match against.',
   }),
-  // We don't trim as we want to match _exactly_ on the user's input.
-  valueToFind: z.string().min(1, {
-    message: 'Please input a value to match against.',
-  }),
+  // * We don't trim as we want to match _exactly_ on the user's input.
+  // * We allow nullish input to enable matching blank cells, but we convert
+  //   such inputs to an empty string, as Excel represents blank cells as an
+  //   empty string.
+  valueToFind: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? ''),
 })
 
 export const tableRowResponseSchema = z
