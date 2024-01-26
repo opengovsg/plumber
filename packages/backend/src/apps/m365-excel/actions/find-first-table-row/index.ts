@@ -95,6 +95,9 @@ const action: IRawAction = {
     {
       key: 'valueToFind' as const,
       label: 'Value to find',
+      // We don't support matching on Excel-formatted text because it's very
+      // weird (e.g. currency cells have a trailing space), and will lead to too
+      // much user confusion.
       description:
         "Case sensitive. Do not include Excel's formatting (e.g. if Excel shows '$5.20', enter '5.2' instead). Leave blank to match empty cell.",
       type: 'string' as const,
