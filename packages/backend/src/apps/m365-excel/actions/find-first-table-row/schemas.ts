@@ -1,5 +1,7 @@
 import z from 'zod'
 
+import { hexEncodedRowRecordSchema } from '../../common/workbook-helpers/tables'
+
 export const parametersSchema = z.object({
   fileId: z
     .string()
@@ -23,24 +25,11 @@ export const parametersSchema = z.object({
     .transform((value) => value ?? ''),
 })
 
-export const tableRowResponseSchema = z.object({
-  values: z
-    .array(z.array(z.coerce.string()))
-    // Must contain at least the header row.
-    .min(1),
-  rowIndex: z.number(),
-})
-
 export const dataOutSchema = z.discriminatedUnion('success', [
   z.object({ success: z.literal(false) }),
   z.object({
     success: z.literal(true),
-    rowData: z.record(
-      z.object({
-        value: z.string(),
-        columnName: z.string(),
-      }),
-    ),
+    rowData: hexEncodedRowRecordSchema,
     tableRowNumber: z.number(),
     sheetRowNumber: z.number(),
   }),

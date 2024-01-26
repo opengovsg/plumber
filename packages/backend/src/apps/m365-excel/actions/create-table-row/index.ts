@@ -1,53 +1,13 @@
-import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
+import type { IJSONObject, IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
+import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 
 interface TableHeaderInfo {
-  columnCount: number
   rowIndex: number
   columnNames: string[] // Ordered
-}
-
-interface ColumnValue {
-  columnName: string
-  value: string
-}
-
-// MS Graph expects the row data to be an array of the same length as the number
-// of columns in the table, with values in the same order as the corresponding
-// column index.
-function constructMsGraphArgment(
-  $: IGlobalVariable,
-  tableHeaderInfo: TableHeaderInfo,
-  columnValues: ColumnValue[],
-): Array<string | null> {
-  const columnNameToIndex = new Map(
-    // Excel itself doesn't allow duplicate column names, so we don't need to
-    // worry about key conflicts in this map.
-    tableHeaderInfo.columnNames.map((name, index) => [name, index]),
-  )
-
-  const result: Array<string | null> = new Array(
-    tableHeaderInfo.columnCount,
-  ).fill(null)
-  for (const columnValue of columnValues) {
-    const index = columnNameToIndex.get(columnValue.columnName)
-
-    if (index === undefined) {
-      throw new StepError(
-        `Cannot update non-existent column '${columnValue.columnName}'.`,
-        'Click on set up action and double check columns are valid. You can click on "Refresh Items" in the column drop down to refresh the column list.',
-        $.step?.position,
-        $.app.name,
-      )
-    }
-
-    result[index] = columnValue.value
-  }
-
-  return result
 }
 
 const action: IRawAction = {
@@ -171,15 +131,10 @@ const action: IRawAction = {
     const session = await WorkbookSession.acquire($, fileId as string)
 
     const tableHeaderInfoResponse = await session.request<{
-      columnCount: number
       rowIndex: number
       values: string[][] // Guaranteed to be length 1 at top level
-    }>(
-      `/tables/${tableId}/headerRowRange?$select=columnCount,rowIndex,values`,
-      'get',
-    )
+    }>(`/tables/${tableId}/headerRowRange?$select=rowIndex,values`, 'get')
     const tableHeaderInfo: TableHeaderInfo = {
-      columnCount: tableHeaderInfoResponse.data.columnCount,
       rowIndex: tableHeaderInfoResponse.data.rowIndex,
       columnNames: tableHeaderInfoResponse.data.values[0],
     }
@@ -191,14 +146,26 @@ const action: IRawAction = {
         data: {
           index: null,
           values: [
-            constructMsGraphArgment(
-              $,
-              tableHeaderInfo,
-              columnValues.map((val) => ({
-                columnName: String(val.columnName),
-                value: String(val.value),
-              })),
-            ),
+            (() => {
+              // IIFE which throws StepError to avoid $ becoming viral
+              // throughout the codebase.
+              try {
+                return constructMsGraphValuesArrayForRowWrite(
+                  tableHeaderInfo.columnNames,
+                  columnValues.map((val) => ({
+                    columnName: String(val.columnName),
+                    value: String(val.value),
+                  })),
+                )
+              } catch (err) {
+                throw new StepError(
+                  'Error creating table row',
+                  err.message,
+                  $.step.position,
+                  $.app.name,
+                )
+              }
+            })(),
           ],
         },
       },
