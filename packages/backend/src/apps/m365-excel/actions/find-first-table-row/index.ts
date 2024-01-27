@@ -176,13 +176,13 @@ const action: IRawAction = {
           //   query to only rows with data.
           `/tables/${tableId}/headerRowRange/resizedRange(deltaRows=${
             MAX_ROWS + 1
-          },deltaColumns=0)/usedRange?$select=values`,
+          },deltaColumns=0)/usedRange?$select=rowIndex,values`,
           'get',
         )
       ).data,
     )
 
-    const columns = tableRows[0]
+    const columns = tableRows.values[0]
     const columnIndex = columns.indexOf(columnName)
 
     if (columnIndex === -1) {
@@ -195,7 +195,7 @@ const action: IRawAction = {
     }
 
     // +1 for header row
-    if (tableRows.length > MAX_ROWS + 1) {
+    if (tableRows.values.length > MAX_ROWS + 1) {
       throw new StepError(
         `Table is too large`,
         `Your table has more than ${MAX_ROWS} rows and is too large for the "find first table row" action. Please reduce the size of your table.`,
@@ -205,9 +205,11 @@ const action: IRawAction = {
     }
 
     let foundRow: string[] | null = null
-    for (const dataRow of tableRows.slice(1)) {
+    let foundRowIndex: number | null = null
+    for (const [dataRowIndex, dataRow] of tableRows.values.slice(1).entries()) {
       if (dataRow[columnIndex] === valueToFind) {
         foundRow = dataRow
+        foundRowIndex = dataRowIndex
         break
       }
     }
@@ -239,6 +241,10 @@ const action: IRawAction = {
       raw: {
         success: true,
         rowData,
+
+        // See createTableRow action for what these mean.
+        tableRowNumber: foundRowIndex + 1,
+        sheetRowNumber: tableRows.rowIndex + foundRowIndex + 2,
       } satisfies DataOut,
     })
   },

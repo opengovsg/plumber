@@ -31,6 +31,15 @@ async function getDataOutMetadata(
     }
   }
 
+  metadata.tableRowNumber = {
+    type: 'text',
+    label: 'Table Row Number',
+  }
+  metadata.sheetRowNumber = {
+    type: 'text',
+    label: 'Sheet Row Number',
+  }
+
   return metadata
 }
 
@@ -49,4 +58,6 @@ export default getDataOutMetadata
 //       value: '$5.00',
 //     },
 //   },
+//   tableRowNumber: 2,
+//   sheetRowNumber: 3
 // }

@@ -23,14 +23,13 @@ export const parametersSchema = z.object({
     .transform((value) => value ?? ''),
 })
 
-export const tableRowResponseSchema = z
-  .object({
-    values: z
-      .array(z.array(z.coerce.string()))
-      // Must contain at least the header row.
-      .min(1),
-  })
-  .transform((response) => response.values)
+export const tableRowResponseSchema = z.object({
+  values: z
+    .array(z.array(z.coerce.string()))
+    // Must contain at least the header row.
+    .min(1),
+  rowIndex: z.number(),
+})
 
 export const dataOutSchema = z.discriminatedUnion('success', [
   z.object({ success: z.literal(false) }),
@@ -42,5 +41,7 @@ export const dataOutSchema = z.discriminatedUnion('success', [
         columnName: z.string(),
       }),
     ),
+    tableRowNumber: z.number(),
+    sheetRowNumber: z.number(),
   }),
 ])
