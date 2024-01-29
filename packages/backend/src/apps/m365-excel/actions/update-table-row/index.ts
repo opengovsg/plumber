@@ -10,6 +10,7 @@ import {
 } from '../../common/workbook-helpers/tables'
 import { getTopNTableRows } from '../../common/workbook-helpers/tables/get-top-n-table-rows'
 import WorkbookSession from '../../common/workbook-session'
+import getTableRow from '../get-table-row'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import {
@@ -23,90 +24,13 @@ type DataOut = Required<z.infer<typeof dataOutSchema>>
 const MAX_ROWS = 10000
 
 const action: IRawAction = {
-  name: 'Update first found table row (SEE LIMITS IN GUIDE)',
-  key: 'updateFirstFoundTableRow',
-  description:
-    // See comments in findFirstTableRow action for context.
-    `Updates columns in the 1st table row whose column contains a value. Tables should not have more than ${MAX_ROWS} rows or 50000 cells.`,
+  name: 'Update table row',
+  key: 'updateTableRow',
+  description: 'Updates a single row of data in your Excel table',
   arguments: [
-    {
-      key: 'fileId',
-      label: 'Excel File',
-      required: true,
-      description: 'File to update',
-      type: 'dropdown' as const,
-      variables: false,
-      source: {
-        type: 'query' as const,
-        name: 'getDynamicData' as const,
-        arguments: [
-          {
-            name: 'key',
-            value: 'listFiles',
-          },
-        ],
-      },
-    },
-    {
-      key: 'tableId',
-      label: 'Table',
-      required: true,
-      description: 'Table to update',
-      type: 'dropdown' as const,
-      variables: false,
-      source: {
-        type: 'query' as const,
-        name: 'getDynamicData' as const,
-        arguments: [
-          {
-            name: 'key',
-            value: 'listTables',
-          },
-          {
-            name: 'parameters.fileId',
-            value: '{parameters.fileId}',
-          },
-        ],
-      },
-    },
-    {
-      key: 'columnName' as const,
-      type: 'dropdown' as const,
-      showOptionValue: false,
-      required: true,
-      variables: false,
-      label: 'Column',
-      source: {
-        type: 'query' as const,
-        name: 'getDynamicData' as const,
-        arguments: [
-          {
-            name: 'key',
-            value: 'listTableColumns',
-          },
-          {
-            name: 'parameters.fileId',
-            value: '{parameters.fileId}',
-          },
-          {
-            name: 'parameters.tableId',
-            value: '{parameters.tableId}',
-          },
-        ],
-      },
-    },
-    {
-      key: 'valueToFind' as const,
-      label: 'Value to find',
-      // We don't support matching on Excel-formatted text because it's very
-      // weird (e.g. currency cells have a trailing space), and will lead to too
-      // much user confusion.
-      description:
-        "Case sensitive. Do not include Excel's formatting (e.g. if Excel shows '$5.20', enter '5.2' instead). Leave blank to match empty cell.",
-      type: 'string' as const,
-      required: false,
-      variables: true,
-    },
+    // We're doing an update based on a lookup, so just re-use our lookup table
+    // action args.
+    ...getTableRow['arguments'],
     {
       key: 'columnsToUpdate' as const,
       label: 'Columns to update',
@@ -143,9 +67,9 @@ const action: IRawAction = {
         {
           key: 'value' as const,
           type: 'string' as const,
-          required: false,
+          required: true,
           variables: true,
-          placeholder: 'Value to write. Leave blank to clear the cell',
+          placeholder: 'Value to write',
         },
       ],
     },
@@ -165,7 +89,7 @@ const action: IRawAction = {
       )
     }
 
-    const { fileId, tableId, columnName, valueToFind, columnsToUpdate } =
+    const { fileId, tableId, lookupColumn, lookupValue, columnsToUpdate } =
       parametersParseResult.data
 
     //
@@ -189,10 +113,10 @@ const action: IRawAction = {
       }
     })()
 
-    const columnIndex = columns.indexOf(columnName)
+    const columnIndex = columns.indexOf(lookupColumn)
     if (columnIndex === -1) {
       throw new StepError(
-        `Could not find column "${columnName}" in excel table`,
+        `Could not find column "${lookupColumn}" in the excel table`,
         'Double-check that you have configured the step correctly.',
         $.step.position,
         $.app.name,
@@ -201,7 +125,7 @@ const action: IRawAction = {
 
     let rowToUpdateIndex: number | null = null
     for (const [index, row] of rows.entries()) {
-      if (row[columnIndex] === valueToFind) {
+      if (row[columnIndex] === lookupValue) {
         rowToUpdateIndex = index
         break
       }
@@ -213,7 +137,7 @@ const action: IRawAction = {
     if (rowToUpdateIndex === null) {
       $.setActionItem({
         raw: {
-          success: false,
+          foundRow: false,
         } satisfies DataOut,
       })
     }
@@ -256,7 +180,7 @@ const action: IRawAction = {
 
     $.setActionItem({
       raw: {
-        success: true,
+        foundRow: true,
         rowData: convertRowToHexEncodedRowRecord({ row: updatedRow, columns }),
 
         // See comment block in createTableRow for what this means.

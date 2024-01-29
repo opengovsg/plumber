@@ -11,7 +11,7 @@ async function getDataOutMetadata(
   }
 
   const dataOut = dataOutSchema.parse(rawDataOut)
-  if (!dataOut.success) {
+  if (!dataOut.foundRow) {
     return null
   }
 
@@ -23,7 +23,7 @@ async function getDataOutMetadata(
     metadata.rowData[key] = {
       value: {
         type: 'text',
-        label: `"${datum.columnName}" Column`,
+        label: datum.columnName,
       },
       columnName: {
         isHidden: true,
@@ -55,7 +55,7 @@ export default getDataOutMetadata
 //     },
 //     '556E6974205072696365': {
 //       columnName: 'Unit Price',
-//       value: '$5.00',
+//       value: '5',
 //     },
 //   },
 //   tableRowNumber: 2,

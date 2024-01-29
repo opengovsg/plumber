@@ -1,13 +1,13 @@
 import createTableRow from './create-table-row'
-import findFirstTableRow from './find-first-table-row'
 import getCellValues from './get-cell-values'
-import updateFirstfoundTableRow from './update-first-found-table-row'
+import getTableRow from './get-table-row'
+import updateTableRow from './update-table-row'
 import writeCellValues from './write-cell-values'
 
 export default [
   createTableRow,
-  findFirstTableRow,
+  getTableRow,
   getCellValues,
-  updateFirstfoundTableRow,
+  updateTableRow,
   writeCellValues,
 ]

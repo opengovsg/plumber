@@ -16,20 +16,17 @@ type DataOut = Required<z.infer<typeof dataOutSchema>>
 const MAX_ROWS = 10000
 
 const action: IRawAction = {
-  name: 'Find first table row (SEE LIMITS IN GUIDE)',
-  key: 'findFirstTableRow',
-  description:
-    // The MAX_ROWS row limit is a hard limit, but the cell / column limit (50k cells
-    // implies 5 cols @ 10k rows) is a soft limit. The cell limit serves as
-    // messaging to tell users not to feed enormous tables.
-    `Finds the 1st table row whose column contains a value. Tables should not have more than ${MAX_ROWS} rows or 50000 cells.`,
+  name: 'Get table row',
+  key: 'getTableRow',
+  description: 'Gets a single row of data from your Excel table.',
   arguments: [
     {
       key: 'fileId',
       label: 'Excel File',
       required: true,
-      description: 'File to read from',
+      description: 'This should be a file in your Plumber folder.',
       type: 'dropdown' as const,
+      showOptionValue: false,
       variables: false,
       source: {
         type: 'query' as const,
@@ -46,8 +43,12 @@ const action: IRawAction = {
       key: 'tableId',
       label: 'Table',
       required: true,
-      description: 'Table to find from',
+      // The MAX_ROWS row limit is a hard limit, but the cell / column limit
+      // (50k cells implies 5 cols @ 10k rows) is a soft limit. The cell limit
+      // serves as messaging to tell users not to feed enormous tables.
+      description: `Tables should not have more than ${MAX_ROWS.toLocaleString()} rows or 50,000 cells.`,
       type: 'dropdown' as const,
+      showOptionValue: false,
       variables: false,
       source: {
         type: 'query' as const,
@@ -65,12 +66,14 @@ const action: IRawAction = {
       },
     },
     {
-      key: 'columnName' as const,
+      key: 'lookupColumn' as const,
       type: 'dropdown' as const,
       showOptionValue: false,
       required: true,
       variables: false,
-      label: 'Column',
+      label: 'Lookup Column',
+      description:
+        'Specify a column we should look for cells which match the Lookup Value.',
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
@@ -91,15 +94,15 @@ const action: IRawAction = {
       },
     },
     {
-      key: 'valueToFind' as const,
-      label: 'Value to find',
+      key: 'lookupValue' as const,
+      label: 'Lookup Value',
       // We don't support matching on Excel-formatted text because it's very
       // weird (e.g. currency cells have a trailing space), and will lead to too
       // much user confusion.
       description:
-        "Case sensitive. Do not include Excel's formatting (e.g. if Excel shows '$5.20', enter '5.2' instead). Leave blank to match empty cell.",
+        "Value is case sensitive and should not include units e.g. if Excel shows '$5.20', enter '5.2'.",
       type: 'string' as const,
-      required: false,
+      required: true,
       variables: true,
     },
   ],
@@ -156,7 +159,7 @@ const action: IRawAction = {
      *      max length of the value to match.
      **/
 
-    const { fileId, tableId, columnName, valueToFind } =
+    const { fileId, tableId, lookupColumn, lookupValue } =
       parametersParseResult.data
 
     const session = await WorkbookSession.acquire($, fileId)
@@ -177,11 +180,11 @@ const action: IRawAction = {
       }
     })()
 
-    const columnIndex = columns.indexOf(columnName)
+    const columnIndex = columns.indexOf(lookupColumn)
     if (columnIndex === -1) {
       throw new StepError(
-        `Could not find column "${columnName}" in excel table`,
-        'Double-check that you have configured the find first table row excel step correctly.',
+        `Could not find column "${lookupColumn}" in excel table`,
+        'Double-check that you have configured the step correctly.',
         $.step.position,
         $.app.name,
       )
@@ -189,7 +192,7 @@ const action: IRawAction = {
 
     let foundRowIndex: number | null = null
     for (const [rowIndex, row] of rows.entries()) {
-      if (row[columnIndex] === valueToFind) {
+      if (row[columnIndex] === lookupValue) {
         foundRowIndex = rowIndex
         break
       }
@@ -198,7 +201,7 @@ const action: IRawAction = {
     if (foundRowIndex === null) {
       $.setActionItem({
         raw: {
-          success: false,
+          foundRow: false,
         } satisfies DataOut,
       })
 
@@ -207,7 +210,7 @@ const action: IRawAction = {
 
     $.setActionItem({
       raw: {
-        success: true,
+        foundRow: true,
         // Hex-encode column names to account for our parameter regex.
         rowData: convertRowToHexEncodedRowRecord({
           row: rows[foundRowIndex],
