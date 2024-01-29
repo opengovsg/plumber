@@ -10,6 +10,7 @@ class TableMetadata extends Base {
   name: string
   collaborators!: User[]
   columns: TableColumnMetadata[]
+  viewOnlyKey?: string
 
   /**
    * for typescript support when creating TableCollaborator row in insertGraph
@@ -24,6 +25,7 @@ class TableMetadata extends Base {
     properties: {
       id: { type: 'string', format: 'uuid' },
       name: { type: 'string' },
+      viewOnlyKey: { type: 'string' },
     },
   }
 

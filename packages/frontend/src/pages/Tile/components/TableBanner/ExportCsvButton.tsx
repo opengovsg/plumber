@@ -1,7 +1,6 @@
 import { forwardRef, useCallback } from 'react'
 import { BiExport } from 'react-icons/bi'
 import {
-  Flex,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -65,17 +64,19 @@ const ExportCsvModal = ({ onClose }: { onClose: () => void }) => {
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <Flex mt={4} gap={4}>
-            <Button onClick={() => onExport({ filtered: false })}>
-              Export all rows
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => onExport({ filtered: true })}
-            >
-              Export current view
-            </Button>
-          </Flex>
+          <Text mb={2}>Export all data in this table</Text>
+          <Button onClick={() => onExport({ filtered: false })}>
+            Export all
+          </Button>
+          <Text mt={4} mb={2}>
+            Export rows based on current filter(s)
+          </Text>
+          <Button
+            variant="outline"
+            onClick={() => onExport({ filtered: true })}
+          >
+            Export filtered rows
+          </Button>
         </ModalBody>
 
         <ModalFooter></ModalFooter>
