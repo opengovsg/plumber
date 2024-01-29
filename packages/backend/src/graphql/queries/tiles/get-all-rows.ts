@@ -16,7 +16,10 @@ const getAllRows = async (
     .withGraphJoined('columns')
     .findById(tableId)
     .throwIfNotFound()
-  await table.$query().patch({ accessedAt: new Date() })
+  // update last accessed at for collaborator/table
+  await table.$relatedQuery('collaborators').patch({
+    lastAccessedAt: new Date().toISOString(),
+  })
   const columnIds = table.columns.map((column) => column.id)
   return getTableRows({ tableId, columnIds })
 }

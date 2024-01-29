@@ -560,7 +560,7 @@ type TableMetadata {
   id: ID!
   name: String!
   columns: [TableColumnMetadata!]
-  accessedAt: String!
+  lastAccessedAt: String!
 }
 
 # End Tiles types

@@ -87,7 +87,7 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
           <Box>
             <Text textStyle="h6">{table.name}</Text>
             <Text textStyle="body-2">
-              Last opened: {toPrettyDateString(+table.accessedAt)}
+              Last opened: {toPrettyDateString(+table.lastAccessedAt)}
             </Text>
           </Box>
         </Flex>
