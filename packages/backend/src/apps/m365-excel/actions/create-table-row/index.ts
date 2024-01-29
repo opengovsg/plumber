@@ -13,14 +13,15 @@ interface TableHeaderInfo {
 const action: IRawAction = {
   name: 'Create row',
   key: 'createTableRow',
-  description: 'Creates a new row in an Excel spreadsheet table',
+  description: 'Creates a new row in your Excel table',
   arguments: [
     {
       key: 'fileId',
       label: 'Excel File',
       required: true,
-      description: 'File to edit',
+      description: 'This should be a file in your Plumber folder.',
       type: 'dropdown' as const,
+      showOptionValue: false,
       variables: false,
       source: {
         type: 'query' as const,
@@ -37,8 +38,8 @@ const action: IRawAction = {
       key: 'tableId',
       label: 'Table',
       required: true,
-      description: 'Table to add new rows to',
       type: 'dropdown' as const,
+      showOptionValue: false,
       variables: false,
       source: {
         type: 'query' as const,
