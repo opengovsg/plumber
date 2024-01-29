@@ -10,18 +10,19 @@ class TableCollaborator extends Base {
   role!: ITableCollabRole
   user!: User
   table!: TableMetadata
+  lastAccessedAt?: string
 
   static tableName = 'table_collaborators'
 
   static jsonSchema = {
     type: 'object',
-    // we cant put required id and userId here because it will throw an error
-    // although it will be auto populated by objectionjs
     properties: {
       userId: { type: 'string', format: 'uuid' },
+      tableId: { type: 'string', format: 'uuid' },
       name: { type: 'string', format: 'uuid' },
       role: { type: 'string', enum: ['owner', 'editor', 'viewer'] },
-      deletedAt: { type: 'null' }, // disallow soft deletes
+      deletedAt: { type: 'null' }, // disallow soft deletes]
+      lastAccessedAt: { type: 'string', format: 'date-time' },
     },
   }
 

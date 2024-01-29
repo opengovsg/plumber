@@ -25,6 +25,7 @@ class User extends Base {
 
   // for typescript support when creating TableCollaborator row in insertGraph
   role?: ITableCollabRole
+  lastAccessedAt?: string
 
   static tableName = 'users'
 
@@ -90,6 +91,7 @@ class User extends Base {
           to: `${TableCollaborator.tableName}.table_id`,
           extra: {
             role: 'role',
+            lastAccessedAt: 'last_accessed_at',
           },
         },
         to: `${TableMetadata.tableName}.id`,

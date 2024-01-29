@@ -10,19 +10,17 @@ class TableMetadata extends Base {
   name: string
   collaborators!: User[]
   columns: TableColumnMetadata[]
-  accessedAt!: Date
 
   /**
    * for typescript support when creating TableCollaborator row in insertGraph
    */
   role?: ITableCollabRole
+  lastAccessedAt?: Date
 
   static tableName = 'table_metadata'
 
   static jsonSchema = {
     type: 'object',
-    // we cant put required id and userId here because it will throw an error
-    // although it will be auto populated by objectionjs
     properties: {
       id: { type: 'string', format: 'uuid' },
       name: { type: 'string' },
@@ -41,6 +39,7 @@ class TableMetadata extends Base {
           to: `${TableCollaborator.tableName}.user_id`,
           extra: {
             role: 'role',
+            lastAccessedAt: 'last_accessed_at',
           },
         },
         to: `${User.tableName}.id`,

@@ -15,8 +15,6 @@ class TableColumnMetadata extends Base {
 
   static jsonSchema = {
     type: 'object',
-    // we cant put required id and tableId here because it will throw an error
-    // although it will be auto populated by objectionjs
     properties: {
       id: { type: 'string', format: 'uuid' },
       tableId: { type: 'string', format: 'uuid' },

@@ -588,7 +588,7 @@ export interface ITableMetadata {
   id: string
   name: string
   columns: ITableColumnMetadata[]
-  accessedAt: string
+  lastAccessedAt: string
 }
 
 export interface ITableRow {
