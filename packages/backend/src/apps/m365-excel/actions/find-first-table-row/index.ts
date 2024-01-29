@@ -4,14 +4,12 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
+import { getTopNTableRows } from '../../common/workbook-helpers/tables/get-top-n-table-rows'
 import WorkbookSession from '../../common/workbook-session'
 
 import getDataOutMetadata from './get-data-out-metadata'
-import {
-  dataOutSchema,
-  parametersSchema,
-  tableRowResponseSchema,
-} from './schemas'
+import { dataOutSchema, parametersSchema } from './schemas'
 
 type DataOut = Required<z.infer<typeof dataOutSchema>>
 
@@ -162,29 +160,24 @@ const action: IRawAction = {
       parametersParseResult.data
 
     const session = await WorkbookSession.acquire($, fileId)
-    const tableRows = tableRowResponseSchema.parse(
-      (
-        await session.request(
-          // This is a little tricky. Each path segment loosely corresponds to a
-          // Graph API function call, and subsequent segments operate on the
-          // output of the previous segment. Breakdown as follows:
-          // * headerRowRange: Grabs the row containing column names
-          // * resizedRange(deltaRows=...,deltaColumns=0): Extends our query
-          //   range down by MAX_ROWS + 1 rows (i.e. makes the query include our
-          //   data rows). We fetch 1 more row to check if table is too large.
-          // * usedRange: Most tables will not have 5k rows; this shrinks our
-          //   query to only rows with data.
-          `/tables/${tableId}/headerRowRange/resizedRange(deltaRows=${
-            MAX_ROWS + 1
-          },deltaColumns=0)/usedRange?$select=rowIndex,values`,
-          'get',
+    const { columns, rows, headerRowSheetRowIndex } = await (async () => {
+      // Using an IIFE here to avoid passing $ to API / helper functions. $ is
+      // already becoming viral in the codebase - very bad.
+      // FIXME (ogp-weeloong): Probably we can evolve StepError to account for
+      // this....?
+      try {
+        return await getTopNTableRows(session, tableId, MAX_ROWS)
+      } catch (err) {
+        throw new StepError(
+          'There was a problem with the Excel table',
+          err.message,
+          $.step.position,
+          $.app.name,
         )
-      ).data,
-    )
+      }
+    })()
 
-    const columns = tableRows.values[0]
     const columnIndex = columns.indexOf(columnName)
-
     if (columnIndex === -1) {
       throw new StepError(
         `Could not find column "${columnName}" in excel table`,
@@ -194,27 +187,15 @@ const action: IRawAction = {
       )
     }
 
-    // +1 for header row
-    if (tableRows.values.length > MAX_ROWS + 1) {
-      throw new StepError(
-        `Table is too large`,
-        `Your table has more than ${MAX_ROWS} rows and is too large for the "find first table row" action. Please reduce the size of your table.`,
-        $.step.position,
-        $.app.name,
-      )
-    }
-
-    let foundRow: string[] | null = null
     let foundRowIndex: number | null = null
-    for (const [dataRowIndex, dataRow] of tableRows.values.slice(1).entries()) {
-      if (dataRow[columnIndex] === valueToFind) {
-        foundRow = dataRow
-        foundRowIndex = dataRowIndex
+    for (const [rowIndex, row] of rows.entries()) {
+      if (row[columnIndex] === valueToFind) {
+        foundRowIndex = rowIndex
         break
       }
     }
 
-    if (!foundRow) {
+    if (foundRowIndex === null) {
       $.setActionItem({
         raw: {
           success: false,
@@ -224,27 +205,18 @@ const action: IRawAction = {
       return
     }
 
-    // Hex-encode column names to account for our parameter regex.
-    const rowData: Extract<DataOut, { success: true }>['rowData'] =
-      Object.create(null)
-    for (const [cellIndex, cell] of foundRow.entries()) {
-      const cellColumnName = columns[cellIndex]
-      const hexEncodedColumnName = Buffer.from(cellColumnName).toString('hex')
-
-      rowData[hexEncodedColumnName] = {
-        value: cell,
-        columnName: cellColumnName,
-      }
-    }
-
     $.setActionItem({
       raw: {
         success: true,
-        rowData,
+        // Hex-encode column names to account for our parameter regex.
+        rowData: convertRowToHexEncodedRowRecord({
+          row: rows[foundRowIndex],
+          columns,
+        }),
 
         // See createTableRow action for what these mean.
         tableRowNumber: foundRowIndex + 1,
-        sheetRowNumber: tableRows.rowIndex + foundRowIndex + 2,
+        sheetRowNumber: headerRowSheetRowIndex + foundRowIndex + 2,
       } satisfies DataOut,
     })
   },
