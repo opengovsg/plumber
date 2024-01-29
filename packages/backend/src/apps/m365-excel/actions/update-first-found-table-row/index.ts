@@ -120,7 +120,7 @@ const action: IRawAction = {
           showOptionValue: false,
           required: true,
           variables: false,
-          label: 'Column',
+          placeholder: 'Column',
           source: {
             type: 'query' as const,
             name: 'getDynamicData' as const,
