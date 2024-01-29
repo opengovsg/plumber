@@ -5,6 +5,7 @@ export const GET_TABLE = gql`
     getTable(tableId: $tableId) {
       id
       name
+      viewOnlyKey
       columns {
         id
         name

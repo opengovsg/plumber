@@ -21,6 +21,7 @@ interface TableContextProps {
   mode: EditMode
   setMode: (mode: EditMode) => void
   hasEditPermission: boolean
+  shareableLink?: string
 }
 
 const TableContext = createContext<TableContextProps | undefined>(undefined)
@@ -42,6 +43,7 @@ interface TableContextProviderProps {
   tableRows: ITableRow[]
   children: React.ReactNode
   hasEditPermission: boolean
+  shareableLink?: string
 }
 
 export const TableContextProvider = ({
@@ -51,10 +53,13 @@ export const TableContextProvider = ({
   tableRows,
   children,
   hasEditPermission,
+  shareableLink,
 }: TableContextProviderProps) => {
   const flattenedData = useMemo(() => flattenRows(tableRows), [tableRows])
   const filteredDataRef = useRef<GenericRowData[]>([])
-  const [mode, setMode] = useState<EditMode>('view')
+  const [mode, setMode] = useState<EditMode>(
+    hasEditPermission ? 'edit' : 'view',
+  )
   return (
     <TableContext.Provider
       value={{
@@ -66,6 +71,7 @@ export const TableContextProvider = ({
         mode,
         setMode,
         hasEditPermission,
+        shareableLink,
       }}
     >
       {children}

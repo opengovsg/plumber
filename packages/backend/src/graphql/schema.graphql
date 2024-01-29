@@ -561,6 +561,7 @@ type TableMetadata {
   name: String!
   columns: [TableColumnMetadata!]
   lastAccessedAt: String!
+  viewOnlyKey: String
 }
 
 # End Tiles types

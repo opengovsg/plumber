@@ -3,6 +3,7 @@ import { Flex } from '@chakra-ui/react'
 import EditMode from './EditMode'
 import ExportCsvButton from './ExportCsvButton'
 import ImportCsvButton from './ImportCsvButton'
+import ShareButton from './ShareButton'
 
 const ImportExportToolbar = (): JSX.Element => {
   return (
@@ -10,6 +11,7 @@ const ImportExportToolbar = (): JSX.Element => {
       <EditMode />
       <ImportCsvButton />
       <ExportCsvButton />
+      <ShareButton />
     </Flex>
   )
 }
