@@ -1,4 +1,4 @@
-import Redlock, { ResourceLockedError } from 'redlock'
+import Redlock, { ExecutionError, ResourceLockedError } from 'redlock'
 
 import { type M365TenantInfo } from '@/config/app-env-vars/m365'
 import RetriableError from '@/errors/retriable-error'
@@ -71,14 +71,20 @@ export async function runWithLockElseRetryStep<T>(
       callback,
     )
   } catch (error) {
-    if (!(error instanceof ResourceLockedError)) {
-      throw error
+    const isRetriableError =
+      // Already locked by another server
+      error instanceof ResourceLockedError ||
+      // Redlock quorum failed; no harm retrying later.
+      error instanceof ExecutionError
+
+    if (isRetriableError) {
+      throw new RetriableError({
+        error: 'Unable to acquire excel session lock.',
+        delayInMs: LOCK_FAILURE_RETRY_DELAY_MS,
+      })
     }
 
-    throw new RetriableError({
-      error: 'Unable to acquire excel session lock.',
-      delayInMs: LOCK_FAILURE_RETRY_DELAY_MS,
-    })
+    throw error
   }
 }
 
