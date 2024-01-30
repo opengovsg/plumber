@@ -589,6 +589,7 @@ export interface ITableMetadata {
   name: string
   columns: ITableColumnMetadata[]
   lastAccessedAt: string
+  viewOnlyKey?: string
 }
 
 export interface ITableRow {
