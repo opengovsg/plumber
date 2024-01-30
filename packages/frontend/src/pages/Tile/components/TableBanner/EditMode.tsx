@@ -30,7 +30,7 @@ const MODES: ModeOption[] = [
 ]
 
 const EditMode = () => {
-  const { mode, setMode } = useTableContext()
+  const { mode, setMode, hasEditPermission } = useTableContext()
 
   const selectedModeOption = useMemo(
     () => MODES.find((m) => m.value === mode) ?? MODES[0],
@@ -43,19 +43,23 @@ const EditMode = () => {
         as={Button}
         variant="outline"
         size="xs"
+        border="none"
+        bg={`${selectedModeOption.colorScheme}.100`}
         colorScheme={selectedModeOption.colorScheme}
         leftIcon={selectedModeOption.icon}
-        rightIcon={<BiChevronDown />}
+        rightIcon={hasEditPermission ? <BiChevronDown /> : undefined}
       >
         {selectedModeOption.label}
       </MenuButton>
 
       <MenuList borderRadius="md">
-        {MODES.map(({ label, icon, value }) => (
+        {MODES.map(({ label, icon, value, colorScheme }) => (
           <MenuItem
             fontSize="sm"
             icon={icon}
             key={value}
+            color={`${colorScheme}.600`}
+            isDisabled={!hasEditPermission && value === 'edit'}
             onClick={() => setMode(value)}
           >
             {label}

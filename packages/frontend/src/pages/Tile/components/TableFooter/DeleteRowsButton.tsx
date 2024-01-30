@@ -11,6 +11,7 @@ import {
 } from '@chakra-ui/react'
 import { ROW_HEIGHT } from 'pages/Tile/constants'
 
+import { useTableContext } from '../../contexts/TableContext'
 import { useDeleteRows } from '../../hooks/useDeleteRows'
 
 interface DeleteRowsButtonProps {
@@ -22,6 +23,9 @@ export default function DeleteRowsButton({
   rowSelection,
   removeRows,
 }: DeleteRowsButtonProps) {
+  const { mode } = useTableContext()
+  const isViewMode = mode === 'view'
+
   const rowsSelected = Object.keys(rowSelection)
   const cancelRef = useRef(null)
   const { deleteRows, rowsDeleting } = useDeleteRows()
@@ -33,6 +37,10 @@ export default function DeleteRowsButton({
     removeRows(rowsSelected)
     setIsDialogOpen(false)
   }, [deleteRows, removeRows, rowsSelected])
+
+  if (isViewMode) {
+    return null
+  }
 
   return (
     <div

@@ -207,9 +207,9 @@ export default function Table(): JSX.Element {
         position="relative"
         // prevent active element from being hidden by footer
         scrollBehavior="smooth"
-        scrollPaddingBottom={
-          editingCell?.row.id === NEW_ROW_ID ? 0 : ROW_HEIGHT.FOOTER
-        }
+        // so that search bar results dont get blocked by header or footer
+        scrollPaddingTop={ROW_HEIGHT.HEADER + 'px'}
+        scrollPaddingBottom={ROW_HEIGHT.FOOTER + ROW_HEIGHT.DEFAULT + 'px'}
         // so highlighted element doesnt get blocked by checkbox column
         scrollPaddingLeft={60}
         onClick={onBlurClick}

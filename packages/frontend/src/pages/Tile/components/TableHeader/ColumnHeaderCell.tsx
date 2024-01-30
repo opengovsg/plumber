@@ -25,6 +25,7 @@ import {
   HEADER_COLOR,
   POPOVER_MOTION_PROPS,
 } from '../../constants'
+import { useTableContext } from '../../contexts/TableContext'
 import { GenericRowData } from '../../types'
 
 import { ColumnFilter } from './ColumnFilter'
@@ -48,6 +49,7 @@ function ColumnHeaderCell({
   sortDir,
   isFiltered,
 }: ColumnHeaderCellProps) {
+  const { mode } = useTableContext()
   const { id } = header
   const { isOpen, onClose, onOpen } = useDisclosure()
   const [isDeletionModalOpen, setIsDeletionModalOpen] = useState(false)
@@ -66,6 +68,8 @@ function ColumnHeaderCell({
     transform: CSS.Translate.toString(transform),
     transition,
   }
+
+  const isEditMode = mode === 'edit'
 
   return (
     <Flex
@@ -106,7 +110,7 @@ function ColumnHeaderCell({
               outline: 'none',
             }}
             {...attributes}
-            {...listeners}
+            {...(isEditMode ? listeners : {})}
           >
             <Text
               overflow="hidden"
@@ -159,30 +163,34 @@ function ColumnHeaderCell({
           motionProps={POPOVER_MOTION_PROPS}
         >
           <PopoverArrow />
-          <PopoverHeader px={4}>
-            <EditColumnName id={id} columnName={columnName} />
-          </PopoverHeader>
+          {isEditMode && (
+            <PopoverHeader px={4}>
+              <EditColumnName id={id} columnName={columnName} />
+            </PopoverHeader>
+          )}
           <PopoverBody px={4}>
             <ColumnSort column={column} />
             <ColumnFilter column={column} />
           </PopoverBody>
-          <PopoverFooter justifyContent="flex-start" display="flex" px={4}>
-            <Button
-              leftIcon={<BsTrash />}
-              variant="link"
-              py={2}
-              color="utility.feedback.critical"
-              _hover={{
-                color: 'red.400',
-              }}
-              onClick={() => setIsDeletionModalOpen(true)}
-            >
-              Delete column
-            </Button>
-          </PopoverFooter>
+          {isEditMode && (
+            <PopoverFooter justifyContent="flex-start" display={'flex'} px={4}>
+              <Button
+                leftIcon={<BsTrash />}
+                variant="link"
+                py={2}
+                color="utility.feedback.critical"
+                _hover={{
+                  color: 'red.400',
+                }}
+                onClick={() => setIsDeletionModalOpen(true)}
+              >
+                Delete column
+              </Button>
+            </PopoverFooter>
+          )}
         </PopoverContent>
       </Popover>
-      <ColumnResizer header={header} />
+      {isEditMode && <ColumnResizer header={header} />}
       {isDeletionModalOpen && (
         <DeletionModal
           columnId={column.id}

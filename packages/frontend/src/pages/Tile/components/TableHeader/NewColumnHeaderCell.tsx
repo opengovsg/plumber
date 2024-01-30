@@ -22,11 +22,15 @@ import { HeaderContext } from '@tanstack/react-table'
 import { GenericRowData } from 'pages/Tile/types'
 
 import { HEADER_COLOR, POPOVER_MOTION_PROPS } from '../../constants'
+import { useTableContext } from '../../contexts/TableContext'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 
 export default function NewColumnHeaderCell({
   column,
 }: HeaderContext<GenericRowData, unknown>) {
+  const { mode } = useTableContext()
+  const isViewMode = mode === 'view'
+
   const { isOpen, onClose, onOpen } = useDisclosure()
   const { createColumns, isCreatingColumns } = useUpdateTable()
   const [newColumnName, setNewColumnName] = useState('')
@@ -43,6 +47,10 @@ export default function NewColumnHeaderCell({
     },
     [createColumns, newColumnName, onClose],
   )
+
+  if (isViewMode) {
+    return null
+  }
 
   return (
     <Popover
