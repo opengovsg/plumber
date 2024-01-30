@@ -17,6 +17,10 @@ export const setCurrentUserContext = async ({
   res: Response
 }): Promise<UnauthenticatedContext> => {
   const context: UnauthenticatedContext = { req, res, currentUser: null }
+
+  // Get tiles view key from headers
+  context.tilesViewKey = req.headers['x-tiles-view-key'] as string | undefined
+
   const token = getAuthCookie(req)
   if (token == null) {
     return context
@@ -38,6 +42,12 @@ const isAuthenticated = rule()(
   },
 )
 
+const isAuthenticatedOrViewKey = rule()(
+  async (_parent, _args, ctx: UnauthenticatedContext) => {
+    return ctx.currentUser != null || ctx.tilesViewKey != null
+  },
+)
+
 const rateLimitRule = createRateLimitRule({
   identifyContext: (ctx: UnauthenticatedContext) => {
     // get ip address of request in this order: cf-connecting-ip -> remoteAddress
@@ -55,6 +65,8 @@ const authentication = shield(
   {
     Query: {
       '*': isAuthenticated,
+      getTable: isAuthenticatedOrViewKey,
+      getAllRows: isAuthenticatedOrViewKey,
       healthcheck: allow,
       getCurrentUser: allow,
     },
