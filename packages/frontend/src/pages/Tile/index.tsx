@@ -17,7 +17,12 @@ export default function Tile(): JSX.Element {
   const { flags, isLoading } = useContext(LaunchDarklyContext)
   const navigate = useNavigate()
 
-  const { tileId: tableId } = useParams<{ tileId: string }>()
+  const { tileId: tableId, viewOnlyKey: urlViewOnlyKey } = useParams<{
+    tileId: string
+    viewOnlyKey?: string
+  }>()
+
+  const isReadOnly = !!urlViewOnlyKey
 
   const { data: getTableData } = useQuery<{
     getTable: ITableMetadata
@@ -25,6 +30,11 @@ export default function Tile(): JSX.Element {
     variables: {
       tableId,
     },
+    context: isReadOnly
+      ? {
+          headers: { 'x-tiles-view-key': urlViewOnlyKey },
+        }
+      : undefined,
   })
 
   const { data: getAllRowsData } = useQuery<{
@@ -32,7 +42,13 @@ export default function Tile(): JSX.Element {
   }>(GET_ALL_ROWS, {
     variables: {
       tableId,
+      viewOnlyKey: urlViewOnlyKey,
     },
+    context: isReadOnly
+      ? {
+          headers: { 'x-tiles-view-key': urlViewOnlyKey },
+        }
+      : undefined,
     fetchPolicy: 'network-only',
   })
 
@@ -51,7 +67,7 @@ export default function Tile(): JSX.Element {
     )
   }
 
-  const { id, name, columns } = getTableData.getTable
+  const { id, name, columns, viewOnlyKey } = getTableData.getTable
   const rows = getAllRowsData.getAllRows
 
   return (
@@ -60,7 +76,8 @@ export default function Tile(): JSX.Element {
       tableId={id}
       tableColumns={columns}
       tableRows={rows}
-      hasEditPermission={true}
+      hasEditPermission={!isReadOnly}
+      viewOnlyKey={viewOnlyKey}
     >
       <Flex
         flexDir={{ base: 'column' }}

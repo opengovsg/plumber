@@ -12,6 +12,7 @@ import Flow from 'pages/Flow'
 import Flows from 'pages/Flows'
 import Login from 'pages/Login'
 import SgidCallback from 'pages/SgidCallback'
+import TileLayout from 'pages/Tile/layouts/TileLayout'
 import Tiles from 'pages/Tiles'
 
 const Landing = lazy(() => import('pages/Landing'))
@@ -95,6 +96,17 @@ export default createRoutesFromElements(
 
     <Route
       path={URLS.TILE_PATTERN}
+      element={
+        <TileLayout>
+          <Suspense fallback={<></>}>
+            <Tile />
+          </Suspense>
+        </TileLayout>
+      }
+    />
+
+    <Route
+      path={URLS.PUBLIC_TILE_PATTERN}
       element={
         <Suspense fallback={<></>}>
           <Tile />

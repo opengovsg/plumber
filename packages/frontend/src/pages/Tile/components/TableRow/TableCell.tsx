@@ -227,7 +227,7 @@ function TableCell({
 
   const hasMatchingSearch =
     tableMeta?.searchString !== '' &&
-    value?.toLowerCase().includes(tableMeta?.searchString)
+    value?.toString().toLowerCase().includes(tableMeta?.searchString)
 
   return (
     <div
