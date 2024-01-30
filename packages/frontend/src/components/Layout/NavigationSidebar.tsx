@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 import { Link, useMatch } from 'react-router-dom'
 import { Text } from '@chakra-ui/react'
 import {
@@ -6,7 +6,6 @@ import {
   SidebarContainer,
   SidebarItem,
 } from '@opengovsg/design-system-react'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { LayoutNavigationContext } from 'contexts/LayoutNavigation'
 
 import { DrawerLink } from '.'
@@ -20,14 +19,8 @@ function NavigationSidebarItem({
   link,
   closeDrawer,
 }: NavigationSidebarItemProps): JSX.Element {
-  const { flags } = useContext(LaunchDarklyContext)
-
   const { to, Icon: icon, text } = link
   const selected = useMatch({ path: to, end: true })
-
-  const isDisabled = useMemo(() => {
-    return link.ldFlagKey && !flags?.[link.ldFlagKey]
-  }, [flags, link.ldFlagKey])
 
   return (
     <SidebarItem
@@ -35,10 +28,7 @@ function NavigationSidebarItem({
       w={{ lg: '268px' }}
       icon={icon}
       as={Link}
-      // manipulating css since there's no isDisabled prop
-      pointerEvents={isDisabled ? 'none' : 'auto'}
-      to={isDisabled ? '' : to}
-      opacity={isDisabled ? 0.5 : 1}
+      to={to}
       onClick={closeDrawer}
       isActive={!!selected}
       color="base.content.default"

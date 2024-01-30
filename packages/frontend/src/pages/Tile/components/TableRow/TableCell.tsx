@@ -282,6 +282,7 @@ function TableCell({
             paddingRight: '1rem',
             wordBreak: 'break-word',
             fontSize: '0.875rem',
+            cursor: 'cell',
             backgroundColor: isHighlightingCell
               ? 'var(--chakra-colors-orange-200)'
               : hasMatchingSearch

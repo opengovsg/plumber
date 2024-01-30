@@ -7,7 +7,6 @@ import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import { PipeIcon } from 'components/Icons'
 import SiteWideBanner from 'components/SiteWideBanner'
-import { TILES_FEATURE_FLAG } from 'config/flags'
 import * as URLS from 'config/urls'
 import {
   LayoutNavigationProvider,
@@ -26,8 +25,6 @@ export type DrawerLink = {
   text: string
   to: string
   badge?: string
-  // Optional LaunchDarkly flag key to control visibility of link
-  ldFlagKey?: string
 }
 
 const drawerLinks = [
@@ -41,7 +38,6 @@ const drawerLinks = [
     text: 'Tiles',
     to: URLS.TILES,
     badge: '✨ Coming soon',
-    ldFlagKey: TILES_FEATURE_FLAG,
   },
   {
     Icon: BiSolidGrid,

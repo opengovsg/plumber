@@ -1,6 +1,6 @@
 import { ITableMetadata } from '@plumber/types'
 
-import { FormEvent, useCallback, useState } from 'react'
+import { FormEvent, useCallback, useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -13,15 +13,25 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import {
+  Badge,
   Button,
   FormLabel,
   Input,
   ModalCloseButton,
 } from '@opengovsg/design-system-react'
+import { TILES_FEATURE_FLAG } from 'config/flags'
 import * as URLS from 'config/urls'
+import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { CREATE_TABLE } from 'graphql/mutations/create-table'
 
 const CreateTileButton = (): JSX.Element => {
+  /**
+   * Check if feature flag is enabled, otherwise dont allow creation
+   * eventually, this should be removed
+   */
+  const { flags } = useContext(LaunchDarklyContext)
+  const isTilesEnabled = flags?.[TILES_FEATURE_FLAG]
+
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
 
@@ -49,7 +59,18 @@ const CreateTileButton = (): JSX.Element => {
 
   return (
     <>
-      <Button onClick={onOpen}>Create Tile</Button>
+      {isTilesEnabled ? (
+        <Button onClick={onOpen}>Create Tile</Button>
+      ) : (
+        <Badge
+          color="white"
+          p={2}
+          cursor="cell"
+          bgGradient="linear(to-r, primary.600, primary.500)"
+        >
+          ✨ Coming soon
+        </Badge>
+      )}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
