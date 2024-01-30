@@ -1,5 +1,6 @@
 import z from 'zod'
 
+import { hexEncodedRowRecordSchema } from '../../common/workbook-helpers/tables'
 import { parametersSchema as getTableRowParametersSchema } from '../get-table-row/schemas'
 
 export const parametersSchema = getTableRowParametersSchema.extend({
@@ -43,5 +44,11 @@ export const updateRowValuesResponseSchema = z
   })
   .transform((response) => response.values[0])
 
-// For now, our dataOut is exactly the same as getTableRow's dataOut.
-export { dataOutSchema } from '../get-table-row/schemas'
+export const dataOutSchema = z.discriminatedUnion('updatedRow', [
+  z.object({ updatedRow: z.literal(false) }),
+  z.object({
+    updatedRow: z.literal(true),
+    rowData: hexEncodedRowRecordSchema,
+    sheetRowNumber: z.number(),
+  }),
+])

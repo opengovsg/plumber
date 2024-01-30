@@ -3,4 +3,3 @@ export {
   convertRowToHexEncodedRowRecord,
   hexEncodedRowRecordSchema,
 } from './convert-row-to-hex-encoded-row-record'
-export { getTopNTableRows } from './get-top-n-table-rows'

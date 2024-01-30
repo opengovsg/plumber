@@ -8,9 +8,9 @@ import {
   constructMsGraphValuesArrayForRowWrite,
   convertRowToHexEncodedRowRecord,
 } from '../../common/workbook-helpers/tables'
-import { getTopNTableRows } from '../../common/workbook-helpers/tables/get-top-n-table-rows'
 import WorkbookSession from '../../common/workbook-session'
-import getTableRow from '../get-table-row'
+import getTableRowAction from '../get-table-row'
+import getTableRowImpl from '../get-table-row/implementation'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import {
@@ -21,16 +21,14 @@ import {
 
 type DataOut = Required<z.infer<typeof dataOutSchema>>
 
-const MAX_ROWS = 10000
-
 const action: IRawAction = {
   name: 'Update table row',
   key: 'updateTableRow',
   description: 'Updates a single row of data in your Excel table',
   arguments: [
-    // We're doing an update based on a lookup, so just re-use our lookup table
-    // action args.
-    ...getTableRow['arguments'],
+    // We're doing an update based on results of our getTableRow action, so just
+    // re-use its arguments.
+    ...getTableRowAction['arguments'],
     {
       key: 'columnsToUpdate' as const,
       label: 'Columns to update',
@@ -100,53 +98,33 @@ const action: IRawAction = {
     //
 
     const session = await WorkbookSession.acquire($, fileId)
-    const { columns, rows, headerRowSheetRowIndex } = await (async () => {
-      try {
-        return await getTopNTableRows(session, tableId, MAX_ROWS)
-      } catch (err) {
-        throw new StepError(
-          'There was a problem with the Excel table',
-          err.message,
-          $.step.position,
-          $.app.name,
-        )
-      }
-    })()
+    const findRowResults = await getTableRowImpl({
+      $,
+      session,
+      tableId,
+      lookupValue,
+      lookupColumn,
+    })
 
-    const columnIndex = columns.indexOf(lookupColumn)
-    if (columnIndex === -1) {
-      throw new StepError(
-        `Could not find column "${lookupColumn}" in the excel table`,
-        'Double-check that you have configured the step correctly.',
-        $.step.position,
-        $.app.name,
-      )
+    if (!findRowResults) {
+      $.setActionItem({
+        raw: {
+          updatedRow: false,
+        } satisfies DataOut,
+      })
     }
 
-    let rowToUpdateIndex: number | null = null
-    for (const [index, row] of rows.entries()) {
-      if (row[columnIndex] === lookupValue) {
-        rowToUpdateIndex = index
-        break
-      }
-    }
+    const { tableRowIndex, sheetRowNumber, columns } = findRowResults
 
     //
     // Perform update...
     //
-    if (rowToUpdateIndex === null) {
-      $.setActionItem({
-        raw: {
-          foundRow: false,
-        } satisfies DataOut,
-      })
-    }
 
     // Return updated row in case it has formulas.
     const updateRowValuesParseResult = updateRowValuesResponseSchema.safeParse(
       (
         await session.request(
-          `/tables/${tableId}/rows/itemAt(index=${rowToUpdateIndex})`,
+          `/tables/${tableId}/rows/itemAt(index=${tableRowIndex})`,
           'patch',
           {
             data: {
@@ -170,8 +148,8 @@ const action: IRawAction = {
 
     if (updateRowValuesParseResult.success === false) {
       throw new StepError(
-        'There was a problem with the updated row.',
-        updateRowValuesParseResult.error.issues[0].message,
+        `Received invalid row data after update: '${updateRowValuesParseResult.error.issues[0].message}'`,
+        'Double check your Excel file and retry the step if needed',
         $.step.position,
         $.app.name,
       )
@@ -180,12 +158,9 @@ const action: IRawAction = {
 
     $.setActionItem({
       raw: {
-        foundRow: true,
+        updatedRow: true,
         rowData: convertRowToHexEncodedRowRecord({ row: updatedRow, columns }),
-
-        // See comment block in createTableRow for what this means.
-        tableRowNumber: rowToUpdateIndex + 1,
-        sheetRowNumber: headerRowSheetRowIndex + rowToUpdateIndex + 2,
+        sheetRowNumber,
       } satisfies DataOut,
     })
   },

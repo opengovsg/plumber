@@ -1,6 +1,10 @@
+import { type IGlobalVariable } from '@plumber/types'
+
 import z from 'zod'
 
-import WorkbookSession from '../../workbook-session'
+import StepError from '@/errors/step'
+
+import WorkbookSession from '../../../common/workbook-session'
 
 const msGraphResponseSchema = z
   .object({
@@ -9,16 +13,19 @@ const msGraphResponseSchema = z
   })
   .transform((response) => ({
     values: response.values,
-    headerRowSheetRowIndex: response.rowIndex,
+    headerSheetRowIndex: response.rowIndex,
   }))
 
 interface GetTopNTableRowsResult {
   columns: string[]
   rows: string[][]
-  headerRowSheetRowIndex: number
+  headerSheetRowIndex: number
 }
 
-export async function getTopNTableRows(
+export default async function getTopNTableRows(
+  // Typically, we should avoid making $ viral though the codebase, but this is
+  // an exception because getTopNTableRows is not a common helper function.
+  $: IGlobalVariable,
   session: WorkbookSession,
   tableId: string,
   n: number,
@@ -44,25 +51,38 @@ export async function getTopNTableRows(
   )
 
   if (tableRowsParseResult.success === false) {
-    throw new Error(tableRowsParseResult.error.issues[0].message)
+    throw new StepError(
+      `Received invalid table data: '${tableRowsParseResult.error.issues[0].message}'.`,
+      'Retry the step.',
+      $.step.position,
+      $.app.name,
+    )
   }
 
   const tableRows = tableRowsParseResult.data
 
   if (tableRows.values.length === 0) {
-    throw new Error('Ensure that table has a header row.')
+    throw new StepError(
+      'Excel table is missing the header row',
+      'Ensure that your Excel table has a header row.',
+      $.step.position,
+      $.app.name,
+    )
   }
 
   // +1 for header row
   if (tableRows.values.length > n + 1) {
-    throw new Error(
-      `The table is too large; it has more than ${n} rows. Please reduce the table size.`,
+    throw new StepError(
+      'Excel table is too large',
+      `Your excel table has more than ${n} rows. Please reduce the table size.`,
+      $.step.position,
+      $.app.name,
     )
   }
 
   return {
     columns: tableRows.values[0],
     rows: tableRows.values.slice(1),
-    headerRowSheetRowIndex: tableRows.headerRowSheetRowIndex,
+    headerSheetRowIndex: tableRows.headerSheetRowIndex,
   }
 }

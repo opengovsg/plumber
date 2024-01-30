@@ -1,4 +1,61 @@
-import getTableRowGetDataOutMetadata from '../get-table-row/get-data-out-metadata'
+import type { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
-// For now, our data out is the same as that of getTableRow.
-export default getTableRowGetDataOutMetadata
+import { dataOutSchema } from './schemas'
+
+async function getDataOutMetadata(
+  executionStep: IExecutionStep,
+): Promise<IDataOutMetadata> {
+  const { dataOut: rawDataOut } = executionStep
+  if (!rawDataOut) {
+    return null
+  }
+
+  const dataOut = dataOutSchema.parse(rawDataOut)
+  const metadata: IDataOutMetadata = {
+    updatedRow: {
+      label: 'Updated Row',
+    },
+  }
+
+  if (!dataOut.updatedRow) {
+    return metadata
+  }
+
+  metadata.rowData = Object.create(null)
+  for (const [key, datum] of Object.entries(dataOut.rowData)) {
+    metadata.rowData[key] = {
+      value: {
+        type: 'text',
+        label: datum.columnName,
+      },
+      columnName: {
+        isHidden: true,
+      },
+    }
+  }
+
+  metadata.sheetRowNumber = {
+    type: 'text',
+    label: 'Sheet Row Number',
+  }
+
+  return metadata
+}
+
+export default getDataOutMetadata
+
+// Example dataOut:
+// {
+//   updatedRow: true,
+//   rowData: {
+//     '4974656D': {
+//       value: 'Chicken Biscuit',
+//       columnName: 'Item',
+//     },
+//     '556E6974205072696365': {
+//       columnName: 'Unit Price',
+//       value: '5',
+//     },
+//   },
+//   sheetRowNumber: 3
+// }

@@ -11,14 +11,17 @@ async function getDataOutMetadata(
   }
 
   const dataOut = dataOutSchema.parse(rawDataOut)
-  if (!dataOut.foundRow) {
-    return null
-  }
-
   const metadata: IDataOutMetadata = {
-    rowData: Object.create(null),
+    foundRow: {
+      label: 'Found Row',
+    },
   }
 
+  if (!dataOut.foundRow) {
+    return metadata
+  }
+
+  metadata.rowData = Object.create(null)
   for (const [key, datum] of Object.entries(dataOut.rowData)) {
     metadata.rowData[key] = {
       value: {
@@ -31,10 +34,6 @@ async function getDataOutMetadata(
     }
   }
 
-  metadata.tableRowNumber = {
-    type: 'text',
-    label: 'Table Row Number',
-  }
   metadata.sheetRowNumber = {
     type: 'text',
     label: 'Sheet Row Number',
@@ -47,7 +46,7 @@ export default getDataOutMetadata
 
 // Example dataOut:
 // {
-//   success: true,
+//   foundRow: true,
 //   rowData: {
 //     '4974656D': {
 //       value: 'Chicken Biscuit',
@@ -58,6 +57,5 @@ export default getDataOutMetadata
 //       value: '5',
 //     },
 //   },
-//   tableRowNumber: 2,
 //   sheetRowNumber: 3
 // }
