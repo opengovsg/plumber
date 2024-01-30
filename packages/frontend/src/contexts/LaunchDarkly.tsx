@@ -74,7 +74,7 @@ function LaunchDarklySetup({ children }: { children: ReactNode }) {
 function LaunchDarklyLDContextManager({ children }: { children: ReactNode }) {
   const [reactContextData, setReactContextData] =
     useState<LaunchDarklyContextData>({
-      isLoading: false,
+      isLoading: true,
       flags: null,
       error: null,
     })
@@ -87,11 +87,6 @@ function LaunchDarklyLDContextManager({ children }: { children: ReactNode }) {
       return
     }
 
-    setReactContextData({
-      isLoading: true,
-      flags: null,
-      error: null,
-    })
     ldClient.identify(getLDContext(currentUser), undefined, (error, flags) => {
       setReactContextData({
         isLoading: false,

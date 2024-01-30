@@ -57,7 +57,7 @@ const CreateTileButton = (): JSX.Element => {
             <ModalHeader>Tiles</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
-              <FormLabel isRequired>Enter a name for your new tiles.</FormLabel>
+              <FormLabel isRequired>Enter a name for your new tile</FormLabel>
               <Input
                 value={tableName}
                 onChange={(e) => setTableName(e.target.value)}

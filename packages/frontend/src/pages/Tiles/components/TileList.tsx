@@ -3,7 +3,7 @@ import { ITableMetadata } from '@plumber/types'
 import { MouseEvent, useCallback, useRef } from 'react'
 import { BsEyeFill, BsSuitDiamond, BsThreeDots, BsTrash } from 'react-icons/bs'
 import { Link, useNavigate } from 'react-router-dom'
-import { useMutation, useQuery } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -12,7 +12,6 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   Box,
-  Center,
   Divider,
   Flex,
   Icon,
@@ -20,7 +19,6 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
-  Spinner,
   Text,
   useDisclosure,
   VStack,
@@ -160,21 +158,14 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
   )
 }
 
-const TileList = (): JSX.Element => {
-  const { data, loading } = useQuery<{ getTables: ITableMetadata[] }>(
-    GET_TABLES,
-  )
-  if (!data?.getTables || loading) {
-    return (
-      <Center height="100vh">
-        <Spinner size="xl" thickness="4px" color="primary.500" margin="auto" />
-      </Center>
-    )
-  }
+interface TileListProps {
+  tiles: ITableMetadata[]
+}
 
+const TileList = ({ tiles }: TileListProps): JSX.Element => {
   return (
     <VStack alignItems="stretch" flexWrap="wrap" divider={<Divider />}>
-      {data.getTables.map((tile) => (
+      {tiles.map((tile) => (
         <TileListItem key={tile.id} table={tile} />
       ))}
     </VStack>
