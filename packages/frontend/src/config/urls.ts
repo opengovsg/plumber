@@ -67,6 +67,7 @@ export const TILES = '/tiles'
 export const TILE = (tableId: string): string => `/tiles/${tableId}`
 export const TILE_PATTERN = '/tiles/:tileId'
 export const PUBLIC_TILE_PATTERN = '/tiles/:tileId/:viewOnlyKey'
+export const UNAUTHORIZED_TILE = '/tiles/unauthorized'
 
 export const DASHBOARD = FLOWS
 
