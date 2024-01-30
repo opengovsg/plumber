@@ -1,5 +1,6 @@
-import { forwardRef } from 'react'
-import { BiCopy, BiRefresh, BiShareAlt } from 'react-icons/bi'
+import { forwardRef, useCallback, useState } from 'react'
+import { BiCopy, BiShareAlt } from 'react-icons/bi'
+import { useMutation } from '@apollo/client'
 import {
   Flex,
   FormControl,
@@ -19,16 +20,41 @@ import {
 import {
   Button,
   FormHelperText,
-  FormLabel,
   IconButton,
   Input,
 } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
+import * as URLS from 'config/urls'
+import { CREATE_SHAREABLE_TABLE_LINK } from 'graphql/mutations/create-shareable-link'
+import { GET_TABLE } from 'graphql/queries/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
 
 const ShareModal = ({ onClose }: { onClose: () => void }) => {
-  const { hasEditPermission, shareableLink } = useTableContext()
+  const { tableId, viewOnlyKey } = useTableContext()
+  const [isNewLink, setIsNewLink] = useState(false)
+
+  const shareableLink = viewOnlyKey
+    ? `${window.location.origin}${URLS.TILE(tableId)}/${viewOnlyKey}`
+    : ''
+
+  const [createNewLink, { loading }] = useMutation(
+    CREATE_SHAREABLE_TABLE_LINK,
+    {
+      variables: {
+        tableId,
+      },
+      refetchQueries: [GET_TABLE],
+    },
+  )
+
+  const onGenerate = useCallback(async () => {
+    await createNewLink()
+    setIsNewLink(true)
+    setTimeout(() => {
+      setIsNewLink(false)
+    }, 3000)
+  }, [createNewLink])
 
   return (
     <Modal isOpen={true} onClose={onClose} motionPreset="none">
@@ -47,37 +73,44 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
                 No login required.
               </Text>
               <Flex alignSelf="stretch" gap={2}>
-                {shareableLink && (
-                  <InputGroup borderColor="primary.200">
-                    <Input
-                      value={shareableLink}
-                      borderRightWidth={0}
-                      isReadOnly
-                      _focusVisible={{
-                        boxShadow: 'none',
-                      }}
+                <InputGroup borderColor="primary.200">
+                  <Input
+                    value={shareableLink}
+                    borderRightWidth={0}
+                    isReadOnly
+                    _focusVisible={{
+                      boxShadow: 'none',
+                    }}
+                    placeholder="Click 'Generate new link' to start sharing"
+                  />
+                  <InputRightAddon
+                    padding={0}
+                    background="white"
+                    borderColor="secondary.200"
+                  >
+                    <IconButton
+                      icon={<BiCopy />}
+                      colorScheme="secondary"
+                      variant="clear"
+                      isDisabled={!viewOnlyKey}
+                      aria-label={'Copy'}
+                      onClick={() => copy(shareableLink ?? '')}
                     />
-                    <InputRightAddon
-                      padding={0}
-                      background="white"
-                      borderColor="secondary.200"
-                    >
-                      <IconButton
-                        icon={<BiCopy />}
-                        colorScheme="secondary"
-                        variant="clear"
-                        isDisabled={!shareableLink}
-                        aria-label={'Copy'}
-                        onClick={() => copy(shareableLink ?? '')}
-                      />
-                    </InputRightAddon>
-                  </InputGroup>
-                )}
-                <Button variant="outline">Generate new link</Button>
+                  </InputRightAddon>
+                </InputGroup>
+                <Button
+                  variant="outline"
+                  isLoading={loading}
+                  onClick={onGenerate}
+                >
+                  Generate new link
+                </Button>
               </Flex>
-              {shareableLink && (
-                <FormHelperText>
-                  Generating a new link will invalidate the previous link.
+              {viewOnlyKey && (
+                <FormHelperText variant={isNewLink ? 'success' : undefined}>
+                  {isNewLink
+                    ? 'New link generated!'
+                    : 'Generating a new link will invalidate the previous link.'}
                 </FormHelperText>
               )}
             </VStack>
@@ -91,6 +124,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
 
 const ExportCsvButton = forwardRef<HTMLButtonElement>((_, ref) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
+
   return (
     <>
       <Button
