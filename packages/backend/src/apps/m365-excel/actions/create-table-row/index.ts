@@ -184,19 +184,6 @@ const action: IRawAction = {
 
     $.setActionItem({
       raw: {
-        // `tableRowNumber` exposes the row number of the created row _relative_
-        // to the first data row in the table (i.e. the table's header row is
-        // taken to be row 0, and the 1st data row - if it exists - is taken to
-        // be row 1).
-        //
-        // e.g. if I initially have an empty table with header row at row 10,
-        // and I create a row of data, that created row's tableRowNumber would
-        // be 1 (since it's the 1st row of data).
-        //
-        // createRowResponse.data.index actually contains this "relative row
-        // number", except that it's 0-indexed. So we add 1 before returning it.
-        tableRowNumber: createRowResponse.data.index + 1,
-
         // `sheetRowNumber` exposes the actual row number of the created row.
         //
         // e.g. if I initially have an empty table with header row at row 10,
@@ -211,7 +198,7 @@ const action: IRawAction = {
         //   tableHeaderInfoResponse.data.rowIndex + 1
         //   /* ...and add... */
         //   +
-        //   /* ... tableRowNumber (see above) to header's row number */
+        //   /* ... the new row's index from the header row (1-indexed) */
         //   createRowResponse.data.index + 1
         sheetRowNumber:
           tableHeaderInfoResponse.data.rowIndex +
