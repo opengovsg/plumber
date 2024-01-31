@@ -87,7 +87,12 @@ const action: IRawAction = {
     try {
       results = await sendTransactionalEmails($.http, recipients, {
         subject: result.data.subject,
-        body: result.data.body,
+        // this is to make sure there's at least some content for every new line
+        // so on the email client the new line will have some height and show up
+        body: result.data.body.replace(
+          /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
+          '<p style="margin: 0">&nbsp;</p>',
+        ),
         replyTo: result.data.replyTo,
         senderName: result.data.senderName,
         attachments: attachmentFiles,
