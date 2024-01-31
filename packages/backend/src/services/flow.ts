@@ -9,7 +9,10 @@ type ProcessFlowOptions = {
 }
 
 export const processFlow = async (options: ProcessFlowOptions) => {
-  const flow = await Flow.query().findById(options.flowId).throwIfNotFound()
+  const flow = await Flow.query()
+    .findById(options.flowId)
+    .withGraphJoined('user')
+    .throwIfNotFound()
 
   const triggerStep = await flow.getTriggerStep()
   const triggerCommand = await triggerStep.getTriggerCommand()

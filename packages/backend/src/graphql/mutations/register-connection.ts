@@ -28,7 +28,7 @@ async function makeGlobalVariableForPerStepRegistration(
     .$relatedQuery('steps')
     .withGraphFetched({
       connection: true,
-      flow: true,
+      flow: { user: true },
     })
     .findById(stepId)
     .throwIfNotFound()
