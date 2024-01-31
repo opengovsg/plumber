@@ -2,8 +2,8 @@ import type { IDynamicData } from '@plumber/types'
 
 import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 
-import { getRegisteredAuthData } from '../../common/auth-data'
-import { isFileTooSensitive } from '../../common/data-classification'
+import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
+import { validateCanAccessFile } from '../../common/file-privacy'
 
 const dynamicData: IDynamicData = {
   name: 'List Tables',
@@ -17,16 +17,15 @@ const dynamicData: IDynamicData = {
       }
     }
 
-    const authData = getRegisteredAuthData($)
-    const tenant = getM365TenantInfo(authData.tenantKey)
+    const authData = extractAuthDataWithPlumberFolder($)
 
     // Did not want to open a workbook session as user could just be casually
-    // browsing through files.
+    // browsing through files, so directly invoke access validation.
     // FIXME (ogp-weeloong): move to a central file metadata cache to remove
     // need for this check
-    if (await isFileTooSensitive(tenant, fileId as string, $.http)) {
-      throw new Error(`File is too sensitive!`)
-    }
+    await validateCanAccessFile(authData, fileId as string, $.http)
+
+    const tenant = getM365TenantInfo(authData.tenantKey)
 
     const results = await $.http.get<{
       value: Array<{ id: string; name: string }>
