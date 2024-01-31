@@ -6,6 +6,11 @@ import type WorkbookSession from '../../../common/workbook-session'
 
 import getTopNTableRows from './get-top-n-table-rows'
 
+// Grabbing ~50k rows takes ~5s. This is similar to our attachment download
+// latency from FormSG, so should be ok...
+//
+// Also note that MS (currently) has no data fetch limit, and pagination is not
+// required. So safe to fetch all these rows in a single go.
 export const MAX_ROWS = 50000
 
 interface GetTableRowImplParams {
