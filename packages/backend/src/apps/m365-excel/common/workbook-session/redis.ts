@@ -75,7 +75,13 @@ export async function runWithLockElseRetryStep<T>(
       // Already locked by another server
       error instanceof ResourceLockedError ||
       // Redlock quorum failed; no harm retrying later.
-      error instanceof ExecutionError
+      (error instanceof ExecutionError &&
+        // Matching on string isn't the most robust, but redlock doesn't have
+        // error codes. Mitigating factor is that redlock isn't going frequently
+        // updated, and it's not the end of the world if they change the
+        // message.
+        error.message ===
+          'The operation was unable to achieve a quorum during its retry window.')
 
     if (isRetriableError) {
       throw new RetriableError({

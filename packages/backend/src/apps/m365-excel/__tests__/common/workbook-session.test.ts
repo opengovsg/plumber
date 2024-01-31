@@ -18,21 +18,33 @@ const SAMPLE_M365_TENANT: M365TenantInfo = {
 
 describe('Excel workbook session', () => {
   describe('runWithLockElseRetryStep', () => {
-    it.each([ExecutionError, ResourceLockedError])(
-      'retries redlock failures',
-      async (RedlockError) => {
-        const testInvocation = async () =>
-          await runWithLockElseRetryStep(
-            SAMPLE_M365_TENANT,
-            'fake-file',
-            // Treat callback as a mock instead of mocking redlock (it feels like
-            // mocking redlock will make this test too fragile).
-            async () => {
-              throw new RedlockError('test error', [])
-            },
-          )
-        expect(testInvocation).rejects.toThrow(RetriableError)
-      },
-    )
+    it('retries lock failures', async () => {
+      const testInvocation = async () =>
+        await runWithLockElseRetryStep(
+          SAMPLE_M365_TENANT,
+          'fake-file',
+          // Treat callback as a mock instead of mocking redlock (it feels like
+          // mocking redlock will make this test too fragile).
+          async () => {
+            throw new ResourceLockedError('test error')
+          },
+        )
+      expect(testInvocation).rejects.toThrow(RetriableError)
+    })
+
+    it('retries quorum failures', async () => {
+      const testInvocation = async () =>
+        await runWithLockElseRetryStep(
+          SAMPLE_M365_TENANT,
+          'fake-file',
+          async () => {
+            throw new ExecutionError(
+              'The operation was unable to achieve a quorum during its retry window.',
+              [],
+            )
+          },
+        )
+      expect(testInvocation).rejects.toThrow(RetriableError)
+    })
   })
 })
