@@ -6,7 +6,7 @@ import type WorkbookSession from '../../../common/workbook-session'
 
 import getTopNTableRows from './get-top-n-table-rows'
 
-export const MAX_ROWS = 10000
+export const MAX_ROWS = 50000
 
 interface GetTableRowImplParams {
   $: IGlobalVariable
