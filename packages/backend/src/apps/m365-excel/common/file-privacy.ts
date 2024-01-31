@@ -9,37 +9,39 @@ import {
 
 import { AuthData } from './auth-data'
 
-const fileInfoResponseSchema = z.object({
-  sensitivityLabel: z.object({
-    id: z.string().toUpperCase(),
-  }),
-  parentReference: z.object({
-    id: z.string().toUpperCase(),
-  }),
-})
+const driveTypeEnum = z.enum(['documentLibrary', 'personal', 'business'])
 
-interface FilePrivacyInfo {
-  sensitivityLabelGuid: string
-  parentDirectoryId: string
-}
+const fileInfoResponseSchema = z
+  .object({
+    sensitivityLabel: z.object({
+      id: z.string().toUpperCase().nullish(),
+    }),
+    // https://learn.microsoft.com/en-us/graph/api/resources/itemreference?view=graph-rest-1.0
+    parentReference: z.object({
+      driveType: driveTypeEnum,
+      id: z.string().toUpperCase(),
+      siteId: z.string().toUpperCase().nullish(),
+    }),
+  })
+  .transform((response) => ({
+    sensitivityLabelGuid: response.sensitivityLabel.id ?? null,
+    parentDriveType: response.parentReference.driveType,
+    parentDirectoryId: response.parentReference.id,
+    siteId: response.parentReference.siteId ?? null,
+  }))
 
 async function queryFilePrivacyInfo(
   tenant: M365TenantInfo,
   fileId: string,
   http: IHttpClient,
-): Promise<FilePrivacyInfo> {
-  const fileInfo = fileInfoResponseSchema.parse(
+): Promise<z.infer<typeof fileInfoResponseSchema>> {
+  return fileInfoResponseSchema.parse(
     (
       await http.get(
         `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/?$select=sensitivityLabel,parentReference`,
       )
     ).data,
   )
-
-  return {
-    sensitivityLabelGuid: fileInfo.sensitivityLabel.id,
-    parentDirectoryId: fileInfo.parentReference.id,
-  }
 }
 
 export async function validateCanAccessFile(
@@ -50,10 +52,16 @@ export async function validateCanAccessFile(
   const tenant = getM365TenantInfo(authData.tenantKey)
   const plumberFolderId = authData.folderId
 
-  const { sensitivityLabelGuid, parentDirectoryId } =
+  const { parentDriveType, sensitivityLabelGuid, parentDirectoryId, siteId } =
     await queryFilePrivacyInfo(tenant, fileId, http)
 
-  if (plumberFolderId !== parentDirectoryId) {
+  if (
+    !(
+      parentDriveType === 'documentLibrary' &&
+      plumberFolderId === parentDirectoryId &&
+      siteId === tenant.sharePointSiteId
+    )
+  ) {
     throw new Error('File must be in your Plumber folder')
   }
 
