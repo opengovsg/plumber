@@ -169,7 +169,7 @@ export default class WorkbookSession {
     // or it has been moved. This guards against things likes delayed actions
     // working on files whose sensitivity has been upgraded during the delay
     // period.
-    await validateCanAccessFile(authData, fileId, $.http)
+    await validateCanAccessFile($.user?.email, authData, fileId, $.http)
 
     const tenant = getM365TenantInfo(authData.tenantKey)
     let sessionId = await getSessionIdFromRedis(tenant, fileId)

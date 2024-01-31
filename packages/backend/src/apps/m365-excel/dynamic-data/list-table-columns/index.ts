@@ -23,7 +23,12 @@ const dynamicData: IDynamicData = {
     // browsing through files, so directly invoke access validation.
     // FIXME (ogp-weeloong): move to a central file metadata cache to remove
     // need for this check
-    await validateCanAccessFile(authData, fileId as string, $.http)
+    await validateCanAccessFile(
+      $.user?.email,
+      authData,
+      fileId as string,
+      $.http,
+    )
 
     const tenant = getM365TenantInfo(authData.tenantKey)
 
