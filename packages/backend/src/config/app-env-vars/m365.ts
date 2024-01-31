@@ -66,12 +66,12 @@ function makeTenantInfo(opts: Partial<M365TenantInfo>): M365TenantInfo {
 
   return {
     label,
-    id,
-    sharePointSiteId,
+    id: id.toUpperCase(), // GUID, can upper-case
+    sharePointSiteId: sharePointSiteId.toUpperCase(), // GUID; can upper-case
     clientId,
     clientThumbprint,
     clientPrivateKey,
-    allowedSensitivityLabelGuids,
+    allowedSensitivityLabelGuids, // GUIDs; already upper-cased
   }
 }
 
