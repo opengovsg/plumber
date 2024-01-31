@@ -41,10 +41,10 @@ const action: IRawAction = {
       key: 'tableId',
       label: 'Table',
       required: true,
-      // The MAX_ROWS row limit is a hard limit, but the cell / column limit
-      // (50k cells implies 5 cols @ 10k rows) is a soft limit. The cell limit
-      // serves as messaging to tell users not to feed enormous tables.
-      description: `Tables should not have more than ${MAX_ROWS.toLocaleString()} rows or 50,000 cells.`,
+      // The MAX_ROWS row limit is a hard limit, but the cell limit is a soft
+      // limit. The cell limit serves as messaging to tell users not to feed
+      // enormous tables.
+      description: `Tables should not have more than ${MAX_ROWS.toLocaleString()} rows or 100,000 cells.`,
       type: 'dropdown' as const,
       showOptionValue: false,
       variables: false,
