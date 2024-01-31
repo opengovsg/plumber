@@ -12,7 +12,6 @@ import { Controller, useFormContext } from 'react-hook-form'
 import { ClickAwayListener, FormControl } from '@mui/material'
 import { FormLabel } from '@opengovsg/design-system-react'
 import Link from '@tiptap/extension-link'
-import Paragraph from '@tiptap/extension-paragraph'
 import Placeholder from '@tiptap/extension-placeholder'
 import Table from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
@@ -60,7 +59,11 @@ const Editor = ({
   }, [priorStepsWithExecutions])
 
   const extensions: Array<any> = [
-    StarterKit,
+    StarterKit.configure({
+      paragraph: {
+        HTMLAttributes: { style: 'margin: 0' },
+      },
+    }),
     Link.configure({
       HTMLAttributes: { rel: null, target: '_blank' },
     }),
@@ -86,11 +89,6 @@ const Editor = ({
       inline: true,
     }),
     StepVariable,
-    Paragraph.configure({
-      HTMLAttributes: {
-        style: 'margin: 0;min-height: 1em;',
-      },
-    }),
   ]
   let content = substituteOldTemplates(initialValue, varInfo) // back-ward compatibility with old values from PowerInput
 
@@ -101,8 +99,7 @@ const Editor = ({
     extensions,
     content,
     onUpdate: ({ editor }) => {
-      const content = editor.getHTML()
-      if (content === '<p></p>') {
+      if (editor.isEmpty) {
         // this is when content of the editor is empty
         // set controller value to empty string instead so the required rule can
         // work properly
@@ -110,7 +107,7 @@ const Editor = ({
         return
       }
 
-      onChange(content)
+      onChange(editor.getHTML())
     },
     editable,
   })
