@@ -32,8 +32,7 @@ const action: IRawAction = {
     {
       key: 'columnsToUpdate' as const,
       label: 'Columns to update',
-      description:
-        'Specify columns you want to update. We will update the first row whose Lookup Column matches the Lookup Value.',
+      description: 'Specify columns you want to update.',
       type: 'multirow' as const,
       required: true,
       subFields: [
