@@ -71,7 +71,7 @@ const action: IRawAction = {
       variables: false,
       label: 'Lookup Column',
       description:
-        'Specify a column we should look for cells which match the Lookup Value.',
+        'Specify a column to look up. Plumber will get the first row whose cell matches the Lookup Value.',
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
