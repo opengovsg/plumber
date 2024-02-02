@@ -123,29 +123,28 @@ const action: IRawAction = {
     //
 
     // Return updated row in case it has formulas.
+    const updateRowValuesResponse = await session.request(
+      `/tables/${tableId}/rows/itemAt(index=${tableRowIndex})`,
+      'patch',
+      {
+        data: {
+          values: [
+            constructMsGraphValuesArrayForRowWrite(
+              columns,
+              // FIXME: Map is not needed here, but zod infers all object props as
+              // optional due to our lack of strict mode. Remove this when we
+              // enable strict mode.
+              columnsToUpdate.map((col) => ({
+                columnName: col.columnName,
+                value: col.value,
+              })),
+            ),
+          ],
+        },
+      },
+    )
     const updateRowValuesParseResult = updateRowValuesResponseSchema.safeParse(
-      (
-        await session.request(
-          `/tables/${tableId}/rows/itemAt(index=${tableRowIndex})`,
-          'patch',
-          {
-            data: {
-              values: [
-                constructMsGraphValuesArrayForRowWrite(
-                  columns,
-                  // FIXME: Map is not needed here, but zod infers all object props as
-                  // optional due to our lack of strict mode. Remove this when we
-                  // enable strict mode.
-                  columnsToUpdate.map((col) => ({
-                    columnName: col.columnName,
-                    value: col.value,
-                  })),
-                ),
-              ],
-            },
-          },
-        )
-      ).data,
+      updateRowValuesResponse.data,
     )
 
     if (updateRowValuesParseResult.success === false) {
