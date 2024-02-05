@@ -4,16 +4,18 @@ import {
   Container,
   HStack,
   Image,
+  Skeleton,
   Text,
   useBreakpointValue,
   VStack,
 } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
-import PlumberLandingAnimation from 'assets/landing/PlumberLandingAnimation.json'
 import brandmarkLogo from 'assets/logo.svg'
 import mainLogo from 'assets/plumber-logo.svg'
-import LottieWebAnimation from 'components/NewsDrawer/LottieWebAnimation'
+import plumberLandingGif from 'assets/landing/PlumberLandingAnimation.gif'
 import * as URLS from 'config/urls'
+import { useQuery } from '@apollo/client'
+import { GET_PLUMBER_STATS } from 'graphql/queries/get-plumber-stats'
 
 const HeaderBar = () => {
   const navigate = useNavigate()
@@ -21,6 +23,7 @@ const HeaderBar = () => {
     base: brandmarkLogo,
     md: mainLogo,
   })
+
   return (
     <Container px={6}>
       <HStack justify="space-between">
@@ -56,8 +59,19 @@ const HeaderBar = () => {
   )
 }
 
+function estimateCountByHundreds(count: number): string {
+  return count < 100
+    ? count.toString()
+    : (Math.round(count / 100) * 100).toLocaleString() + '+'
+}
+
 export default function MainLanding() {
   const navigate = useNavigate()
+
+  const { loading, data } = useQuery(GET_PLUMBER_STATS)
+  const userCount = data?.getPlumberStats.userCount
+  const executionCount = data?.getPlumberStats.executionCount
+
   return (
     <>
       <HeaderBar />
@@ -78,13 +92,20 @@ export default function MainLanding() {
             >
               Automating
               <br />
-              300,000+ tasks
+              <Skeleton display="inline" isLoaded={!loading}>
+                {estimateCountByHundreds(executionCount)} tasks
+              </Skeleton>
               <br />
               for public service
             </Text>
+
             <Text textStyle="subhead-1">
-              1,900+ public officers have started automating their work
+              <Skeleton display="inline" isLoaded={!loading}>
+                {estimateCountByHundreds(userCount)}
+              </Skeleton>
+              {` public officers have started automating their work`}
             </Text>
+
             <Button
               onClick={() => navigate(URLS.LOGIN)}
               w={{ base: 'full', md: 'xs' }}
@@ -93,10 +114,12 @@ export default function MainLanding() {
               Start automating your work
             </Button>
           </VStack>
-          <LottieWebAnimation
-            title="right-landing"
-            animationData={PlumberLandingAnimation}
-          ></LottieWebAnimation>
+          <Image
+            src={plumberLandingGif}
+            alt="right-landing-gif"
+            h="auto"
+            w={{ base: '80vw', md: '40vw' }}
+          ></Image>
         </HStack>
       </Container>
     </>
