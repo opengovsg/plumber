@@ -1,5 +1,6 @@
 import { BiRightArrowAlt } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@apollo/client'
 import {
   Container,
   HStack,
@@ -10,11 +11,10 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
+import plumberLandingGif from 'assets/landing/PlumberLandingAnimation.gif'
 import brandmarkLogo from 'assets/logo.svg'
 import mainLogo from 'assets/plumber-logo.svg'
-import plumberLandingGif from 'assets/landing/PlumberLandingAnimation.gif'
 import * as URLS from 'config/urls'
-import { useQuery } from '@apollo/client'
 import { GET_PLUMBER_STATS } from 'graphql/queries/get-plumber-stats'
 
 const HeaderBar = () => {
