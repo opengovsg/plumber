@@ -123,6 +123,78 @@ function buildAnswerArrayMetadatum(
   }
 }
 
+function buildVerifiedSubmitterInfoMetadata(
+  data: IJSONObject,
+): IDataOutMetadata | null {
+  if (!data.verifiedSubmitterInfo) {
+    return null
+  }
+
+  const metadata: IDataOutMetadata = Object.create(null)
+
+  for (const key of Object.keys(data.verifiedSubmitterInfo)) {
+    switch (key) {
+      case 'uinFin':
+        metadata.uinFin = { label: 'NRIC/FIN (Verified)' }
+        break
+      case 'sgidUinFin':
+        metadata.sgidUinFin = { label: 'NRIC/FIN (Verified)' }
+        break
+      case 'cpUid':
+        metadata.cpUid = { label: 'CorpPass UID (Verified)' }
+        break
+      case 'cpUen':
+        metadata.cpUen = { label: 'CorpPass UEN (Verified)' }
+        break
+    }
+  }
+
+  return metadata
+}
+
+function buildPaymentContentMetadata(
+  data: IJSONObject,
+): IDataOutMetadata | null {
+  if (!data.paymentContent || Object.keys(data.paymentContent).length === 0) {
+    return null
+  }
+
+  // Note: not all fields are guaranteed to be available in dataOut, but we can
+  // still return metadata for the missing fields to keep code simple - they'll
+  // just not be picked up by the front end.
+
+  return {
+    type: {
+      label: 'FormSG Payments - Type',
+    },
+    status: {
+      label: 'FormSG Payments - Status',
+    },
+    payer: {
+      label: 'FormSG Payments - Payer Name',
+    },
+    url: {
+      label: 'FormSG Payments - URL',
+    },
+    paymentIntent: {
+      label: 'FormSG Payments - Payment Intent',
+    },
+    amount: {
+      label: 'FormSG Payments - Amount',
+    },
+    productService: {
+      type: 'text',
+      label: 'FormSG Payments - Product Service',
+    },
+    dateTime: {
+      label: 'FormSG Payments - Payment Time',
+    },
+    transactionFee: {
+      label: 'FormSG Payments - Transaction Fee',
+    },
+  }
+}
+
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
@@ -149,31 +221,11 @@ async function getDataOutMetadata(
     }
   }
 
-  const verifiedMetadata: IDataOutMetadata = Object.create(null)
-  if (data.verifiedSubmitterInfo) {
-    for (const key of Object.keys(data.verifiedSubmitterInfo)) {
-      switch (key) {
-        case 'uinFin':
-          verifiedMetadata.uinFin = { label: 'NRIC/FIN (Verified)' }
-          break
-        case 'sgidUinFin':
-          verifiedMetadata.sgidUinFin = { label: 'NRIC/FIN (Verified)' }
-          break
-        case 'cpUid':
-          verifiedMetadata.cpUid = { label: 'CorpPass UID (Verified)' }
-          break
-        case 'cpUen':
-          verifiedMetadata.cpUen = { label: 'CorpPass UEN (Verified)' }
-          break
-      }
-    }
-  }
+  const verifiedSubmitterInfo = buildVerifiedSubmitterInfoMetadata(data)
+  const paymentContent = buildPaymentContentMetadata(data)
 
-  return {
+  const result: IDataOutMetadata = {
     fields: fieldMetadata,
-    ...(data.verifiedSubmitterInfo && {
-      verifiedSubmitterInfo: verifiedMetadata,
-    }),
     submissionId: {
       type: 'text',
       label: 'Submission ID',
@@ -183,6 +235,14 @@ async function getDataOutMetadata(
       label: 'Submission Time',
     },
   }
+  if (verifiedSubmitterInfo) {
+    result.verifiedSubmitterInfo = verifiedSubmitterInfo
+  }
+  if (paymentContent) {
+    result.paymentContent = paymentContent
+  }
+
+  return result
 }
 
 export default getDataOutMetadata
@@ -221,11 +281,23 @@ export default getDataOutMetadata
 //   },
 //   # verifiedSubmitterInfo may not exist!
 //   verifiedSubmitterInfo: {
-//       uinFin: 'S1234567B',
-//       sgidUinFin: 'S1234567A',
-//       cpUid: 'U987654323PLUMBER',
-//       cpUen: 'S7654321Z',
-//     },
+//     uinFin: 'S1234567B',
+//     sgidUinFin: 'S1234567A',
+//     cpUid: 'U987654323PLUMBER',
+//     cpUen: 'S7654321Z',
+//   },
+//   # paymentContent will be an empty object for forms without payments.
+//   paymentContent: {
+//     type: 'payment_charge',
+//     status: 'succeeded',
+//     payer: 'ken@open.gov.sg',
+//     url: 'https://form.gov.sg/api/v3/payments/abcde/12345/invoice/download',
+//     paymentIntent: 'pi_3OfIXUC0kzPzcBpr1WOcsRKD',
+//     amount: '1.00',
+//     productService: '1 x 1',
+//     dateTime: '2024-02-02T08:56:08.000Z',
+//     transactionFee: '0.54'
+//   },
 //   submissionId: '649306c1ac8851001149af0a',
 //   submissionTime: '2023-07-06T18:26:27.505+08:00'
 // }

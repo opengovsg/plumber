@@ -195,6 +195,70 @@ describe('new submission trigger', () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
       expect(metadata).toEqual(null)
     })
+
+    describe('formsg payments', () => {
+      beforeEach(() => {
+        executionStep.dataOut.paymentContent = {
+          type: 'payment_charge',
+          status: 'succeeded',
+          payer: 'ken@open.gov.sg',
+          url: 'https://form.gov.sg/api/v3/payments/abcde/12345/invoice/download',
+          paymentIntent: 'pi_3OfIXUC0kzPzcBpr1WOcsRKD',
+          amount: '1.00',
+          productService: '1 x 1',
+          dateTime: '2024-02-02T08:56:08.000Z',
+          transactionFee: '0.54',
+        }
+      })
+
+      it('should set labels for payment data', async () => {
+        const metadata = await trigger.getDataOutMetadata(executionStep)
+
+        expect(metadata).toHaveProperty('paymentContent')
+        for (const key of Object.keys(executionStep.dataOut.paymentContent)) {
+          expect(metadata.paymentContent).toHaveProperty(key)
+          expect(metadata.paymentContent[key]).toHaveProperty('label')
+          expect(typeof metadata.paymentContent[key].label).toBe('string')
+          expect(metadata.paymentContent[key].label.length).toBeGreaterThan(0)
+        }
+      })
+
+      it('should not error out even if some payment fields are not provided', async () => {
+        delete (executionStep.dataOut.paymentContent as IJSONObject)
+          .productService
+        delete (executionStep.dataOut.paymentContent as IJSONObject).url
+
+        const metadata = await trigger.getDataOutMetadata(executionStep)
+
+        // Also check that metadata is still provided for the other fields.
+        for (const key of Object.keys(executionStep.dataOut.paymentContent)) {
+          expect(metadata.paymentContent[key].label.length).toBeGreaterThan(0)
+        }
+      })
+
+      it('should not error out if new payment fields are added', async () => {
+        const paymentContentObject = executionStep.dataOut
+          .paymentContent as IJSONObject
+        paymentContentObject.futureProp = 'sample data'
+
+        const metadata = await trigger.getDataOutMetadata(executionStep)
+
+        // Also check that metadata is still provided for the known fields
+        for (const key of Object.keys(executionStep.dataOut.paymentContent)) {
+          if (key === 'futureProp') {
+            continue
+          }
+          expect(metadata.paymentContent[key].label.length).toBeGreaterThan(0)
+        }
+      })
+
+      it('should not have payment metadata if there is no paymentContent in dataOut', async () => {
+        delete (executionStep.dataOut as IJSONObject).paymentContent
+
+        const metadata = await trigger.getDataOutMetadata(executionStep)
+        expect(metadata).not.toHaveProperty('paymentContent')
+      })
+    })
   })
 })
 
