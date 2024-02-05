@@ -121,7 +121,7 @@ const Editor = ({
         return
       }
 
-      onChange(editor.getHTML())
+      onChange(isRich ? editor.getHTML() : editor.getText())
     },
     editable,
   })
