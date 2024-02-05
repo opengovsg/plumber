@@ -1,6 +1,5 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import formsgSdk from '@opengovsg/formsg-sdk'
 import {
   DecryptedAttachments,
   DecryptedContent,
@@ -10,13 +9,10 @@ import { DateTime } from 'luxon'
 import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
 
+import { getSdk } from '../common/form-env'
 import { NricFilter } from '../triggers/new-submission/index'
 
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
-
-const formsg = formsgSdk({
-  mode: 'production',
-})
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -53,6 +49,8 @@ export async function decryptFormResponse(
     logger.error('No trigger item provided')
     return false
   }
+
+  const formsg = getSdk()
 
   const {
     headers,

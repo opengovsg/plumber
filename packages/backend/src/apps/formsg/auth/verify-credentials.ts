@@ -3,6 +3,8 @@ import { IGlobalVariable } from '@plumber/types'
 import formsgSdk from '@opengovsg/formsg-sdk'
 import get from 'lodash.get'
 
+import { getApiBaseUrl } from '../common/form-env'
+
 // ref: https://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data/475217#475217
 const BASE64_REGEX =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/
@@ -17,7 +19,9 @@ export const verifyFormCreds = async (
   let formTitle = ''
   let publicKey = ''
   try {
-    const { data } = await $.http.get(`/v3/forms/${formId}`)
+    const { data } = await $.http.get(`/v3/forms/${formId}`, {
+      baseURL: getApiBaseUrl().toString(),
+    })
     formTitle = get(data, 'form.title')
     publicKey = get(data, 'form.publicKey')
   } catch (error) {
@@ -57,6 +61,18 @@ export const parseSecretKeyFormat = ($: IGlobalVariable): string => {
   return $.auth.data.privateKey as string
 }
 
+function isValidFormUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url)
+    return (
+      parsedUrl.hostname === 'form.gov.sg' ||
+      parsedUrl.hostname.endsWith('.form.gov.sg')
+    )
+  } catch {
+    return false
+  }
+}
+
 export const parseFormIdFormat = ($: IGlobalVariable): string => {
   if (!$.auth.data?.formId || typeof $.auth.data.formId !== 'string') {
     throw new Error('No form id provided')
@@ -71,10 +87,7 @@ export const parseFormIdFormat = ($: IGlobalVariable): string => {
   // Example: https://form.gov.sg/<FORMID>
   // Example: https://form.gov.sg/admin/form/<FORMID>
   if (formId.length > FORM_ID_LENGTH) {
-    if (
-      !formId.startsWith('https://form.gov.sg/') &&
-      !formId.startsWith('https://www.form.gov.sg/')
-    ) {
+    if (!isValidFormUrl(formId)) {
       throw new Error('Invalid form url')
     }
     // remove trailing slash if any

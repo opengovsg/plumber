@@ -10,6 +10,8 @@ import logger from '@/helpers/logger'
 
 import { parseFormIdFormat } from '../auth/verify-credentials'
 
+import { getApiBaseUrl } from './form-env'
+
 export const FORMSG_WEBHOOK_VERIFICATION_MESSAGE = {
   VERIFIED: 'Your form is connected successfully.',
   ANOTHER_PIPE:
@@ -67,6 +69,7 @@ export async function registerWebhookUrl(
         userEmail,
       },
       {
+        baseURL: getApiBaseUrl().toString(),
         headers: {
           Authorization: 'Bearer ' + appConfig.formsgApiKey,
         },
@@ -105,6 +108,7 @@ export async function verifyWebhookUrl(
         userEmail,
       },
       {
+        baseURL: getApiBaseUrl().toString(),
         headers: {
           Authorization: 'Bearer ' + appConfig.formsgApiKey,
         },
