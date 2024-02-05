@@ -1,4 +1,4 @@
-import Redlock, { ResourceLockedError } from 'redlock'
+import Redlock, { ExecutionError, ResourceLockedError } from 'redlock'
 
 import { type M365TenantInfo } from '@/config/app-env-vars/m365'
 import RetriableError from '@/errors/retriable-error'
@@ -71,14 +71,26 @@ export async function runWithLockElseRetryStep<T>(
       callback,
     )
   } catch (error) {
-    if (!(error instanceof ResourceLockedError)) {
-      throw error
+    const isRetriableError =
+      // Already locked by another server
+      error instanceof ResourceLockedError ||
+      // Redlock quorum failed; no harm retrying later.
+      (error instanceof ExecutionError &&
+        // Matching on string isn't the most robust, but redlock doesn't have
+        // error codes. Mitigating factor is that redlock isn't going frequently
+        // updated, and it's not the end of the world if they change the
+        // message.
+        error.message ===
+          'The operation was unable to achieve a quorum during its retry window.')
+
+    if (isRetriableError) {
+      throw new RetriableError({
+        error: 'Unable to acquire excel session lock.',
+        delayInMs: LOCK_FAILURE_RETRY_DELAY_MS,
+      })
     }
 
-    throw new RetriableError({
-      error: 'Unable to acquire excel session lock.',
-      delayInMs: LOCK_FAILURE_RETRY_DELAY_MS,
-    })
+    throw error
   }
 }
 
