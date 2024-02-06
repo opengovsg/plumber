@@ -53,11 +53,24 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
 
   // On M365, we're guaranteed that SharePoint's login name ends with the
   // user's email. So this queries for permissions via a suffix filter on
-  // siteUser.loginName, which is a documented field.
+  // siteUser.loginName, which is a documented field (it's actually a SharePoint
+  // identity claim, which is '|' separated field. For M365, MS' docs suggests that
+  // the last segment will contain the user's UPN / email).
+  //
+  // To be exact, this query uses OData $filter to search for all permissions
+  // whose loginName ends with '|$userEmail'.
+  //
+  // NOTE: We should not have to worry about false positives due to suffix
+  // matching, because | is not allowed in M365 emails. Example:
+  //
+  //   User's email: |b@domain.com
+  //   Owner's email: a|b@domain.com
+  //   This will never happen as | is not a valid character in M365 UPNs.
   //
   // More info:
   // - siteUser.loginName format:
   //   https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/get-user-identity-and-properties-in-sharepoint#retrieve-current-website-user-identity-by-using-the-web-object
+  //   https://learn.microsoft.com/en-us/answers/questions/349797/understanding-login-name-format-of-sharepoint
   // - Schema:
   //   https://learn.microsoft.com/en-us/graph/api/resources/sharepointidentity?view=graph-rest-1.0
   const sharePointFilePermissionsResponse = await http.get(
