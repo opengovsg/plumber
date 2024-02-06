@@ -52,7 +52,7 @@ vi.mock('@/helpers/logger', () => ({
 vi.mock('@/models/flow', () => ({
   default: {
     query: vi.fn(() => ({
-      findById: vi.fn(() => mocks.flow),
+      findById: vi.fn(() => ({ withGraphJoined: () => mocks.flow })),
     })),
   },
 }))

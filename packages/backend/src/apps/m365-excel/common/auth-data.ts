@@ -1,16 +1,16 @@
-import type { IGlobalVariable, IJSONObject } from '@plumber/types'
+import type { IGlobalVariable } from '@plumber/types'
 
-export interface AuthData extends IJSONObject {
-  tenantKey: string
-  folderId?: string | null
-}
+import z from 'zod'
 
-export function getRegisteredAuthData($: IGlobalVariable): AuthData {
-  const authData = $.auth?.data as AuthData
+import { isM365TenantKey } from '@/config/app-env-vars/m365'
 
-  if (!authData || !authData.folderId || !authData.tenantKey) {
-    throw new Error('Invalid auth data; missing tenant or folder!')
-  }
+const authDataSchema = z.object({
+  tenantKey: z.string().refine(isM365TenantKey),
+  folderId: z.string().toUpperCase(),
+})
 
-  return authData
+export type AuthData = z.infer<typeof authDataSchema>
+
+export function extractAuthDataWithPlumberFolder($: IGlobalVariable): AuthData {
+  return authDataSchema.parse($.auth?.data)
 }

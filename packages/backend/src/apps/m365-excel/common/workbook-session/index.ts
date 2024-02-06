@@ -9,7 +9,8 @@ import {
 import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
-import { isFileTooSensitive } from '../data-classification'
+import { extractAuthDataWithPlumberFolder } from '../auth-data'
+import { validateCanAccessFile } from '../file-privacy'
 import { tryParseGraphApiError } from '../parse-graph-api-error'
 
 import {
@@ -162,15 +163,15 @@ export default class WorkbookSession {
     $: IGlobalVariable,
     fileId: string,
   ): Promise<WorkbookSession> {
-    const tenant = getM365TenantInfo($.auth.data?.tenantKey as string)
+    const authData = extractAuthDataWithPlumberFolder($)
 
-    // We _always_ check against the server in case file sensitivity has
-    // changed. This guards against things likes delayed actions working on
-    // files whose sensitivity has been upgraded during the delay period.
-    if (await isFileTooSensitive(tenant, fileId, $.http)) {
-      throw new Error(`File is too sensitive!`)
-    }
+    // We _always_ check against the server in case file sensitivity has changed
+    // or it has been moved. This guards against things likes delayed actions
+    // working on files whose sensitivity has been upgraded during the delay
+    // period.
+    await validateCanAccessFile($.user?.email, authData, fileId, $.http)
 
+    const tenant = getM365TenantInfo(authData.tenantKey)
     let sessionId = await getSessionIdFromRedis(tenant, fileId)
     if (!sessionId) {
       sessionId = await refreshSessionId(tenant, fileId, $)
