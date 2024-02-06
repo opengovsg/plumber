@@ -1,6 +1,6 @@
 import z from 'zod'
 
-import { CELL_A1_ADDRESS_REGEX } from '../../common/workbook-helpers'
+import { CELL_A1_ADDRESS_REGEX } from '../../common/workbook-helpers/cells'
 
 // TODO: We should probably store zod schemas in app / action / trigger
 // definitions.
