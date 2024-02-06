@@ -61,7 +61,7 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
   // - Schema:
   //   https://learn.microsoft.com/en-us/graph/api/resources/sharepointidentity?view=graph-rest-1.0
   const sharePointFilePermissionsResponse = await http.get(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/permissions?$filter=endsWith(grantedToV2/siteUser/loginName,'${userEmail}')&$select=grantedToV2,roles`,
+    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/permissions?$filter=endsWith(grantedToV2/siteUser/loginName,'|${userEmail}')&$select=grantedToV2,roles`,
   )
   const permissions = sharepointFilePermissionsSchema.parse(
     sharePointFilePermissionsResponse.data,
