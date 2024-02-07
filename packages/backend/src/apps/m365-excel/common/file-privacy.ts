@@ -19,6 +19,16 @@ const sharepointFilePermissionsSchema = z
     value: z.array(
       z.object({
         roles: sharePointRolesSchema,
+        // Guaranteed available since we filter for it
+        grantedToV2: z.object({
+          siteUser: z.object({
+            // Ends with email (see comment in userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPONLY)
+            loginName: z
+              .string()
+              // Lowercase since our pipe owner emails are also lowercase
+              .toLowerCase(),
+          }),
+        }),
       }),
     ),
   })
@@ -41,7 +51,7 @@ const sharepointFilePermissionsSchema = z
 async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPONLY(
   tenant: M365TenantInfo,
   fileId: string,
-  userEmail: string,
+  userEmailLowerCase: string,
   http: IHttpClient,
 ): Promise<boolean> {
   logger.error(
@@ -51,38 +61,42 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
     },
   )
 
-  // On M365, we're guaranteed that SharePoint's login name ends with the
-  // user's email. So this queries for permissions via a suffix filter on
-  // siteUser.loginName, which is a documented field (it's actually a SharePoint
-  // identity claim, which is '|' separated field. For M365, MS' docs suggests that
-  // the last segment will contain the user's UPN / email).
+  // https://learn.microsoft.com/en-us/graph/api/driveitem-list-permissions?view=graph-rest-1.0&tabs=http
+  // We query the above /permissions endpoint, which supports the
+  // grantedToV2.siteUser.loginName field. This contains the SharePoint identity
+  // claim: a `|`-separated field whose last segment contains the user's UPN /
+  // email (for M365, at least according to MS' docs).
   //
-  // To be exact, this query uses OData $filter to search for all permissions
-  // whose loginName ends with '|$userEmail'.
-  //
-  // NOTE: We should not have to worry about false positives due to suffix
-  // matching, because | is not allowed in M365 emails. Example:
-  //
-  //   User's email: |b@domain.com
-  //   Owner's email: a|b@domain.com
-  //   This will never happen as | is not a valid character in M365 UPNs.
-  //
-  // More info:
-  // - siteUser.loginName format:
-  //   https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/get-user-identity-and-properties-in-sharepoint#retrieve-current-website-user-identity-by-using-the-web-object
-  //   https://learn.microsoft.com/en-us/answers/questions/349797/understanding-login-name-format-of-sharepoint
-  // - Schema:
-  //   https://learn.microsoft.com/en-us/graph/api/resources/sharepointidentity?view=graph-rest-1.0
+  // More info on siteUser.loginName:
+  // - https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/get-user-identity-and-properties-in-sharepoint#retrieve-current-website-user-identity-by-using-the-web-object
+  // - https://learn.microsoft.com/en-us/answers/questions/349797/understanding-login-name-format-of-sharepoint
   const sharePointFilePermissionsResponse = await http.get(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/permissions?$filter=endsWith(grantedToV2/siteUser/loginName,'|${userEmail}')&$select=grantedToV2,roles`,
+    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
   )
   const permissions = sharepointFilePermissionsSchema.parse(
     sharePointFilePermissionsResponse.data,
   )
 
-  return permissions.some(
-    (p) => p.roles.includes('write') || p.roles.includes('owner'),
-  )
+  return permissions.some((permission) => {
+    // Ignore permissions that are not targeted at the pipe owner. We prefix `|`
+    // to ensure we don't match the wrong email suffix.
+    //
+    // NOTE: Although | is allowed in emails in general, it's not allowed in
+    // M365. Thus we should not need to worry about false positives like:
+    //   User's email: |b@domain.com
+    //   Owner's email: a|b@domain.com
+    const isRelevantPermission =
+      permission.grantedToV2.siteUser.loginName.endsWith(
+        `|${userEmailLowerCase}`,
+      )
+    if (!isRelevantPermission) {
+      return false
+    }
+
+    return (
+      permission.roles.includes('write') || permission.roles.includes('owner')
+    )
+  })
 }
 
 // https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0
@@ -92,7 +106,7 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
 const permissionUserSchema = z.object({
   user: z
     .object({
-      email: z.string().email().optional(),
+      email: z.string().email().toLowerCase().optional(),
     })
     .optional(),
 })
@@ -212,12 +226,13 @@ export async function validateCanAccessFile(
     throw new Error('File must be in your Plumber folder')
   }
 
+  const userEmailLowerCase = userEmail.toLowerCase()
   const userCanWriteToFile = usersWithWriteAccess
-    ? usersWithWriteAccess.has(userEmail)
+    ? usersWithWriteAccess.has(userEmailLowerCase)
     : await userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPONLY(
         tenant,
         fileId,
-        userEmail,
+        userEmailLowerCase,
         http,
       )
   if (!userCanWriteToFile) {
