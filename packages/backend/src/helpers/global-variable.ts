@@ -110,7 +110,7 @@ const globalVariable = async (
     setActionItem: (actionItem: IActionItem) => {
       $.actionOutput.data = actionItem
     },
-    user,
+    user: flow?.user ?? user,
   }
 
   if (request) {

@@ -30,7 +30,10 @@ export const processAction = async (options: ProcessActionOptions) => {
   } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
-  const flow = await Flow.query().findById(flowId).throwIfNotFound()
+  const flow = await Flow.query()
+    .findById(flowId)
+    .withGraphJoined('user')
+    .throwIfNotFound()
   const execution = await Execution.query()
     .findById(executionId)
     .throwIfNotFound()

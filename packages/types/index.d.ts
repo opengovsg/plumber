@@ -532,7 +532,16 @@ export type IGlobalVariable = {
   setActionItem?: (actionItem: IActionItem) => void
 
   /**
-   * Only available in GraphQL context.
+   * If this is non-null, it contains details of the pipe owner if this is
+   * accessed in a situation where there is a pipe (e.g. inside an action, or
+   * if someone is is editing a pipe on our front end).
+   *
+   * Otherwise, it contains details of the user who is currently using our
+   * front end (e.g. when they are testing connections).
+   *
+   * NOTE: If we implement collaborator functionality in the future, user may
+   * not imply pipe owner. But until we implement it, user === pipe owner
+   * always.
    */
   user?: IUser
 }

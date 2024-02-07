@@ -92,7 +92,7 @@ export const StepVariable = Node.create<VariableOptions>({
     ]
   },
   renderText({ node }) {
-    return node.attrs.id
+    return `{{${node.attrs.id}}}`
   },
   addNodeView() {
     return ReactNodeViewRenderer(VariableBadge, {

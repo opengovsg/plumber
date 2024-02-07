@@ -11,6 +11,7 @@ import {
 import { Controller, useFormContext } from 'react-hook-form'
 import { ClickAwayListener, FormControl } from '@mui/material'
 import { FormLabel } from '@opengovsg/design-system-react'
+import Hardbreak from '@tiptap/extension-hard-break'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import Table from '@tiptap/extension-table'
@@ -94,6 +95,19 @@ const Editor = ({
 
   // convert new line character into br elem so tiptap can load the content correctly
   content = content.replaceAll('\n', '<br>')
+  if (!isRich) {
+    // this extension is to have <br /> as new line instead of new paragraph
+    // as new paragraph will translate to a double \n\n instead of \n when getText
+    extensions.push(
+      Hardbreak.extend({
+        addKeyboardShortcuts() {
+          return {
+            Enter: () => this.editor.commands.setHardBreak(),
+          }
+        },
+      }),
+    )
+  }
 
   const editor = useEditor({
     extensions,
@@ -107,7 +121,7 @@ const Editor = ({
         return
       }
 
-      onChange(editor.getHTML())
+      onChange(isRich ? editor.getHTML() : editor.getText())
     },
     editable,
   })
@@ -169,6 +183,7 @@ interface RichTextEditorProps {
   disabled?: boolean
   placeholder?: string
   variablesEnabled?: boolean
+  isRich?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -179,6 +194,7 @@ const RichTextEditor = ({
   disabled,
   placeholder,
   variablesEnabled,
+  isRich,
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
   return (
@@ -201,7 +217,7 @@ const RichTextEditor = ({
             editable={!disabled}
             placeholder={placeholder}
             variablesEnabled={variablesEnabled}
-            isRich
+            isRich={isRich}
           />
         )}
       />

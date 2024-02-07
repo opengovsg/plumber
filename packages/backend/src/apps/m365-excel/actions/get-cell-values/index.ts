@@ -8,17 +8,17 @@ import type { DataOut } from './data-out'
 import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {
-  name: 'Get cell value',
+  name: 'Get cell values',
   key: 'getCellValues',
-  description:
-    'Gets the value of a specific cell in an Excel spreadsheet tbale',
+  description: 'Gets cell value(s) in your Excel spreadsheet',
   arguments: [
     {
       key: 'fileId',
       label: 'Excel File',
       required: true,
-      description: 'File to edit',
+      description: 'This should be a file in your Plumber folder.',
       type: 'dropdown' as const,
+      showOptionValue: false,
       variables: false,
       source: {
         type: 'query' as const,
@@ -35,8 +35,8 @@ const action: IRawAction = {
       key: 'worksheetId',
       label: 'Worksheet',
       required: true,
-      description: 'Worksheet to query',
       type: 'dropdown' as const,
+      showOptionValue: false,
       variables: false,
       source: {
         type: 'query' as const,

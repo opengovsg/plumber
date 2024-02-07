@@ -9,14 +9,15 @@ import { parametersSchema } from './parameters-schema'
 const action: IRawAction = {
   name: 'Write cell values',
   key: 'writeCellValues',
-  description: "Write values into a spreadsheet's cells",
+  description: "Write values into your Excel worksheet's cells",
   arguments: [
     {
       key: 'fileId',
       label: 'Excel File',
       required: true,
-      description: 'File to edit',
+      description: 'This should be a file in your Plumber folder.',
       type: 'dropdown' as const,
+      showOptionValue: false,
       variables: false,
       source: {
         type: 'query' as const,
@@ -35,6 +36,7 @@ const action: IRawAction = {
       required: true,
       description: 'Worksheet to edit',
       type: 'dropdown' as const,
+      showOptionValue: false,
       variables: false,
       source: {
         type: 'query' as const,

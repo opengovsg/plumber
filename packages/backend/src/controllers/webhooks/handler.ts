@@ -44,7 +44,7 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
-  const flow = await Flow.query().findById(flowId)
+  const flow = await Flow.query().findById(flowId).withGraphJoined('user')
 
   if (!flow) {
     logger.info(`Flow not found for webhook id ${flowId}}`)

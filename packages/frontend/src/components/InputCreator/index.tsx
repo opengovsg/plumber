@@ -5,7 +5,6 @@ import MuiTextField from '@mui/material/TextField'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
-import PowerInput from 'components/PowerInput'
 import RichTextEditor from 'components/RichTextEditor'
 import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
@@ -83,19 +82,22 @@ export default function InputCreator(
         disabled={disabled}
         placeholder={placeholder}
         variablesEnabled={variables}
+        isRich
       />
     )
   }
+
   if (type === 'string' || type === 'multiline') {
     if (variables) {
       return (
-        <PowerInput
-          label={label}
-          description={description}
+        <RichTextEditor
           name={computedName}
           required={required}
+          label={label}
+          description={description}
           disabled={disabled}
           placeholder={placeholder}
+          variablesEnabled
         />
       )
     }

@@ -21,7 +21,9 @@ const getDynamicData = async (
     .$relatedQuery('steps')
     .withGraphFetched({
       connection: true,
-      flow: true,
+      flow: {
+        user: true,
+      },
     })
     .findById(stepId)
 

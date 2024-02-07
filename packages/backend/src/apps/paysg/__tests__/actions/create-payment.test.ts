@@ -6,9 +6,44 @@ import app from '../..'
 import createPaymentAction from '../../actions/create-payment'
 import { getApiBaseUrl } from '../../common/api'
 
+const MOCK_RESPONSE = {
+  id: 'ZbzTvadjmP0wd7RRxhWtj',
+  due_date: null as null,
+  metadata: {
+    'product code': '123',
+  },
+  payout_id: null as null,
+  created_at: '2023-08-03T17:36:52.634+08:00',
+  creator_id: 'user_xxx',
+  payer_name: 'Andy Lau',
+  updated_at: '2023-08-03T17:36:52.634+08:00',
+  description: 'Payment for XXX',
+  payer_email: 'abc@gmail.com',
+  payment_url: 'http://pay.gov.sg/payments/ZbzTvadjmP0wd7RRxhWtj',
+  return_url: 'https://open.gov.sg',
+  reference_id: 'PAYMENT_001',
+  latest_status: 'unpaid',
+  payer_address: 'Blk 123, Yishun Avenue 2, #08-88, Singapore 123456',
+  refund_status: 'not_refunded',
+  payment_status: 'unpaid',
+  amount_in_cents: 1130,
+  payer_identifier: 'S1234567A',
+  paid_out_timestamp: null as null,
+  payment_service_id: 'payment_service_xxx',
+  email_delivery_status: 'unsent',
+  payment_sent_timestamp: null as null,
+  stripe_payment_intent_id: 'pi_xxx',
+  payment_cancelled_timestamp: null as null,
+  payment_succeeded_timestamp: null as null,
+  payment_fully_refunded_timestamp: null as null,
+  // this is not documented
+  payment_qr_code_url: 'https://test3.local',
+}
+
 const mocks = vi.hoisted(() => ({
   httpPost: vi.fn(() => ({
-    data: {},
+    // Mock data retrieved from PaySG Guide: https://guide.pay.gov.sg/api-resources/payments/create-a-payment
+    data: MOCK_RESPONSE,
   })),
 }))
 
@@ -45,15 +80,6 @@ describe('create payment', () => {
       setActionItem: vi.fn(),
       app,
     }
-
-    mocks.httpPost.mockResolvedValue({
-      data: {
-        id: 'payment-id',
-        payment_url: 'https://test2.local',
-        stripe_payment_intent_id: 'stripe-payment',
-        payment_qr_code_url: 'https://test3.local',
-      },
-    })
   })
 
   afterEach(() => {
@@ -111,5 +137,57 @@ describe('create payment', () => {
       },
       expect.anything(),
     )
+  })
+
+  it('parses the response correctly', async () => {
+    $.step.parameters.dueDate = '02 Jan 2023'
+    $.step.parameters.returnUrl = 'https://test.local'
+    $.step.parameters.metadata = [
+      { key: 'test-key-1', value: 'test-value-1' },
+      { key: 'test-key-2', value: 'test-value-2' },
+    ]
+
+    $.auth.data.apiKey = 'paysg_stag_abcd'
+    await createPaymentAction.run($)
+    expect($.setActionItem).toBeCalledWith({
+      raw: {
+        id: MOCK_RESPONSE.id,
+        paymentUrl: MOCK_RESPONSE.payment_url,
+        stripePaymentIntentId: MOCK_RESPONSE.stripe_payment_intent_id,
+        paymentQrCodeUrl: MOCK_RESPONSE.payment_qr_code_url,
+        amountInDollars: '11.30',
+        amountInCents: 1130,
+      },
+    })
+  })
+
+  it('parses the response amount in dollars correctly', async () => {
+    $.step.parameters.dueDate = '02 Jan 2023'
+    $.step.parameters.returnUrl = 'https://test.local'
+    $.step.parameters.metadata = [
+      { key: 'test-key-1', value: 'test-value-1' },
+      { key: 'test-key-2', value: 'test-value-2' },
+    ]
+
+    $.auth.data.apiKey = 'paysg_stag_abcd'
+
+    mocks.httpPost.mockReturnValueOnce({
+      data: {
+        ...MOCK_RESPONSE,
+        amount_in_cents: 31,
+      },
+    })
+
+    await createPaymentAction.run($)
+    expect($.setActionItem).toBeCalledWith({
+      raw: {
+        id: MOCK_RESPONSE.id,
+        paymentUrl: MOCK_RESPONSE.payment_url,
+        stripePaymentIntentId: MOCK_RESPONSE.stripe_payment_intent_id,
+        paymentQrCodeUrl: MOCK_RESPONSE.payment_qr_code_url,
+        amountInDollars: '0.31',
+        amountInCents: 31,
+      },
+    })
   })
 })
