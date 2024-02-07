@@ -137,9 +137,6 @@ export async function decryptFormResponse(
 
     $.request.body = {
       fields: parsedData,
-      ...(Object.keys(verifiedSubmitterInfo).length > 0 && {
-        verifiedSubmitterInfo,
-      }),
       submissionId: data.submissionId,
       // Forms gives us submission time as ISO 8601 UTC TZ, but our users
       // expect SGT time, so convert it to ISO 8601 SGT TZ (our Luxon is
@@ -147,6 +144,17 @@ export async function decryptFormResponse(
       // it internally does a TZ conversion).
       submissionTime: DateTime.fromISO(data.created).toISO(),
     }
+
+    if (Object.keys(verifiedSubmitterInfo).length > 0) {
+      $.request.body.verifiedSubmitterInfo = verifiedSubmitterInfo
+    }
+
+    // FormSG team has no plans to encrypt payment fields; they have told us to
+    // directly access the data in the body.
+    if (data.paymentContent && Object.keys(data.paymentContent).length > 0) {
+      $.request.body.paymentContent = data.paymentContent
+    }
+
     delete $.request.headers
     delete $.request.query
 
