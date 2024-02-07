@@ -165,6 +165,7 @@ export const responseSchema = z
     payment_url: z.string().nullish(),
     stripe_payment_intent_id: z.string().nullish(),
     payment_qr_code_url: z.string().nullish(),
+    amount_in_cents: z.number(),
 
     // Rest of fields are not as relevant for our end users, so skip exposing
     // them. We can expose them later if there is a use case.
@@ -174,4 +175,6 @@ export const responseSchema = z
     paymentUrl: data.payment_url,
     stripePaymentIntentId: data.stripe_payment_intent_id,
     paymentQrCodeUrl: data.payment_qr_code_url,
+    amountInDollars: (data.amount_in_cents / 100).toFixed(2),
+    amountInCents: data.amount_in_cents,
   }))
