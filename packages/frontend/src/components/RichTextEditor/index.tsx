@@ -198,7 +198,7 @@ const RichTextEditor = ({
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
   return (
-    <FormControl>
+    <FormControl style={{ flexGrow: 1 }}>
       {label && (
         <FormLabel isRequired={required} description={description}>
           {label}
