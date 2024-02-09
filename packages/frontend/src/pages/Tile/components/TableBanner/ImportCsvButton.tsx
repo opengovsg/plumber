@@ -1,6 +1,6 @@
 import { ITableColumnMetadata, ITableMetadata } from '@plumber/types'
 
-import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BiImport } from 'react-icons/bi'
 import { BsCheckCircle, BsPlusCircleFill } from 'react-icons/bs'
 import { useLazyQuery, useMutation } from '@apollo/client'
@@ -290,12 +290,11 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
   )
 }
 
-const ImportCsvButton = forwardRef<HTMLButtonElement>((_, ref) => {
+const ImportCsvButton = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   return (
     <>
       <Button
-        ref={ref}
         variant="clear"
         colorScheme="secondary"
         size="xs"
@@ -308,6 +307,6 @@ const ImportCsvButton = forwardRef<HTMLButtonElement>((_, ref) => {
       {isOpen && <ImportCsvModal onClose={onClose} />}
     </>
   )
-})
+}
 
 export default ImportCsvButton

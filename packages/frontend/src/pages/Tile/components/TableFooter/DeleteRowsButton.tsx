@@ -70,7 +70,7 @@ export default function DeleteRowsButton({
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Delete Column
+              Delete rows
             </AlertDialogHeader>
 
             <AlertDialogBody>

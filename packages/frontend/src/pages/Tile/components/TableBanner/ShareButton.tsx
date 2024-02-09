@@ -51,10 +51,9 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
   const onGenerate = useCallback(async () => {
     await createNewLink()
     setIsNewLink(true)
-    setTimeout(() => {
-      setIsNewLink(false)
-    }, 3000)
   }, [createNewLink])
+
+  const inputBorderColor = isNewLink ? 'green.400' : 'secondary.200'
 
   return (
     <Modal isOpen={true} onClose={onClose} motionPreset="none">
@@ -64,7 +63,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
           <Text textStyle="h6">Share tile</Text>
           <ModalCloseButton />
         </ModalHeader>
-        <ModalBody>
+        <ModalBody mt={2}>
           <FormControl>
             <VStack spacing={2} alignItems="flex-start">
               <Text textStyle="subhead-3">Public Access</Text>
@@ -73,31 +72,30 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
                 No login required.
               </Text>
               <Flex alignSelf="stretch" gap={2}>
-                <InputGroup borderColor="primary.200">
-                  <Input
-                    value={shareableLink}
-                    borderRightWidth={0}
-                    isReadOnly
-                    _focusVisible={{
-                      boxShadow: 'none',
-                    }}
-                    placeholder="Click 'Generate new link' to start sharing"
-                  />
-                  <InputRightAddon
-                    padding={0}
-                    background="white"
-                    borderColor="secondary.200"
-                  >
-                    <IconButton
-                      icon={<BiCopy />}
-                      colorScheme="secondary"
-                      variant="clear"
-                      isDisabled={!viewOnlyKey}
-                      aria-label={'Copy'}
-                      onClick={() => copy(shareableLink ?? '')}
+                {viewOnlyKey && (
+                  <InputGroup borderWidth={0}>
+                    <Input
+                      value={shareableLink}
+                      borderRightWidth={0}
+                      borderColor={inputBorderColor}
+                      _focusVisible={{ borderColor: inputBorderColor }}
+                      isReadOnly
                     />
-                  </InputRightAddon>
-                </InputGroup>
+                    <InputRightAddon
+                      padding={0}
+                      background="white"
+                      borderColor={inputBorderColor}
+                    >
+                      <IconButton
+                        icon={<BiCopy />}
+                        colorScheme="secondary"
+                        variant="clear"
+                        aria-label={'Copy'}
+                        onClick={() => copy(shareableLink ?? '')}
+                      />
+                    </InputRightAddon>
+                  </InputGroup>
+                )}
                 <Button
                   variant="outline"
                   isLoading={loading}

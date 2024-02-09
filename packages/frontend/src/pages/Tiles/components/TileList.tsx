@@ -1,7 +1,8 @@
 import { ITableMetadata } from '@plumber/types'
 
 import { MouseEvent, useCallback, useRef } from 'react'
-import { BsEyeFill, BsSuitDiamond, BsThreeDots, BsTrash } from 'react-icons/bs'
+import { BsThreeDots, BsTrash } from 'react-icons/bs'
+import { MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -14,7 +15,6 @@ import {
   Box,
   Divider,
   Flex,
-  Icon,
   Menu,
   MenuButton,
   MenuItem,
@@ -80,15 +80,12 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
           backgroundColor: 'primary.50',
         }}
       >
-        <Flex gap={8} alignItems="center">
-          <Icon as={BsSuitDiamond} w={6} h={6} transform="rotate(90deg)" />
-          <Box>
-            <Text textStyle="h6">{table.name}</Text>
-            <Text textStyle="body-2">
-              Last opened: {toPrettyDateString(+table.lastAccessedAt)}
-            </Text>
-          </Box>
-        </Flex>
+        <Box>
+          <Text textStyle="h6">{table.name}</Text>
+          <Text textStyle="body-2">
+            Last opened {toPrettyDateString(+table.lastAccessedAt)}
+          </Text>
+        </Box>
         <Menu onClose={onMenuClose} isOpen={isMenuOpen} gutter={0}>
           <MenuButton
             as={IconButton}
@@ -103,7 +100,7 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
           />
           <MenuList>
             <MenuItem
-              icon={<BsEyeFill />}
+              icon={<MdOutlineRemoveRedEye />}
               onClick={() => navigate(URLS.TILE(table.id))}
             >
               View

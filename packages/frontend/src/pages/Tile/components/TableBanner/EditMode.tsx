@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { BiChevronDown } from 'react-icons/bi'
 import { MdOutlineModeEdit, MdOutlineRemoveRedEye } from 'react-icons/md'
 import { MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
 import { Button, Menu } from '@opengovsg/design-system-react'
@@ -41,13 +40,22 @@ const EditMode = () => {
     <Menu gutter={0} colorScheme="secondary">
       <MenuButton
         as={Button}
+        /**
+         * Prevent the button from being clicked, as it is only used to display the current mode
+         * remove this prop to allow selection of view/edit mode
+         */
+        pointerEvents="none"
+        cursor="default"
         variant="outline"
         size="xs"
+        fontSize="xs"
+        py={2}
         border="none"
+        borderRadius="full"
         bg={`${selectedModeOption.colorScheme}.100`}
         colorScheme={selectedModeOption.colorScheme}
         leftIcon={selectedModeOption.icon}
-        rightIcon={hasEditPermission ? <BiChevronDown /> : undefined}
+        // rightIcon={hasEditPermission ? <BiChevronDown /> : undefined}
       >
         {selectedModeOption.label}
       </MenuButton>

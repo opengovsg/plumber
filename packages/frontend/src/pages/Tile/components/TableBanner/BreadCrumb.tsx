@@ -1,5 +1,6 @@
 import { KeyboardEvent, useCallback, useState } from 'react'
-import { FaCheck, FaChevronRight, FaPencilAlt, FaTimes } from 'react-icons/fa'
+import { FaCheck, FaChevronRight, FaTimes } from 'react-icons/fa'
+import { MdOutlineModeEdit } from 'react-icons/md'
 import { Link } from 'react-router-dom'
 import {
   Breadcrumb,
@@ -95,7 +96,7 @@ function BreadCrumb() {
           >
             {initialTableName}
             <IconButton
-              icon={<FaPencilAlt size={14} />}
+              icon={<MdOutlineModeEdit size={14} />}
               aria-label="Edit"
               size="xs"
               variant="clear"

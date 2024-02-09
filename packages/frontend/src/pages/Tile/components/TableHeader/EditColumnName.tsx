@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { MdCheck, MdEdit } from 'react-icons/md'
+import { MdCheck, MdOutlineModeEdit } from 'react-icons/md'
 import { Flex, Text } from '@chakra-ui/react'
 import { IconButton, Input } from '@opengovsg/design-system-react'
 
@@ -61,7 +61,7 @@ export default function EditColumnName({
             aria-label="edit"
             size="sm"
             variant="clear"
-            icon={<MdEdit />}
+            icon={<MdOutlineModeEdit />}
             onClick={() => setIsEditingColumnName(true)}
           />
         </>

@@ -1,24 +1,14 @@
-import { forwardRef, useCallback } from 'react'
-import { BiExport } from 'react-icons/bi'
-import {
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Text,
-  useDisclosure,
-} from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import { useCallback } from 'react'
+import { BiChevronDown, BiExport, BiHelpCircle } from 'react-icons/bi'
+import { Icon, MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
+import { Button, Menu, TouchableTooltip } from '@opengovsg/design-system-react'
 import { saveAs } from 'file-saver'
 import { dateString } from 'helpers/dateTime'
 import { unparse } from 'papaparse'
 
 import { useTableContext } from '../../contexts/TableContext'
 
-const ExportCsvModal = ({ onClose }: { onClose: () => void }) => {
+const ExportCsvButton = () => {
   const { flattenedData, filteredDataRef, tableColumns, tableName } =
     useTableContext()
 
@@ -56,53 +46,36 @@ const ExportCsvModal = ({ onClose }: { onClose: () => void }) => {
   )
 
   return (
-    <Modal isOpen={true} onClose={onClose} motionPreset="none">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <Text textStyle="h6">Export CSV</Text>
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <Text mb={2}>Export all data in this table</Text>
-          <Button onClick={() => onExport({ filtered: false })}>
-            Export all
-          </Button>
-          <Text mt={4} mb={2}>
-            Export rows based on current filter(s)
-          </Text>
-          <Button
-            variant="outline"
-            onClick={() => onExport({ filtered: true })}
-          >
-            Export filtered rows
-          </Button>
-        </ModalBody>
-
-        <ModalFooter></ModalFooter>
-      </ModalContent>
-    </Modal>
-  )
-}
-
-const ExportCsvButton = forwardRef<HTMLButtonElement>((_, ref) => {
-  const { isOpen, onOpen, onClose } = useDisclosure()
-  return (
-    <>
-      <Button
-        ref={ref}
+    <Menu gutter={0} colorScheme="secondary">
+      <MenuButton
+        as={Button}
         variant="clear"
         colorScheme="secondary"
         size="xs"
-        onClick={onOpen}
         leftIcon={<BiExport />}
+        rightIcon={<BiChevronDown />}
       >
         Export
-      </Button>
-      {/* unmount component when closed to reset all state */}
-      {isOpen && <ExportCsvModal onClose={onClose} />}
-    </>
+      </MenuButton>
+      <MenuList borderRadius="md">
+        <MenuItem fontSize="sm" onClick={() => onExport({ filtered: false })}>
+          Export all rows
+        </MenuItem>
+        <MenuItem fontSize="sm" onClick={() => onExport({ filtered: true })}>
+          Export filtered rows
+          <TouchableTooltip
+            label="Export only rows shown by current filters"
+            wrapperStyles={{
+              lineHeight: 1,
+            }}
+            textAlign="center"
+          >
+            <Icon as={BiHelpCircle} fontSize="md" ml={1} />
+          </TouchableTooltip>
+        </MenuItem>
+      </MenuList>
+    </Menu>
   )
-})
+}
 
 export default ExportCsvButton

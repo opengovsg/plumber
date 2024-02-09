@@ -4,6 +4,7 @@ import { TABLE_BANNER_HEIGHT } from '../../constants'
 import { useTableContext } from '../../contexts/TableContext'
 
 import BreadCrumb from './BreadCrumb'
+import EditMode from './EditMode'
 import ImportExportToolbar from './ImportExportToolbar'
 
 function TableBanner() {
@@ -18,11 +19,14 @@ function TableBanner() {
       overflow="hidden"
       zIndex={10}
     >
-      {hasEditPermission ? (
-        <BreadCrumb />
-      ) : (
-        <Text textStyle="subhead-1">{tableName}</Text>
-      )}
+      <Flex alignItems="center" gap={4}>
+        {hasEditPermission ? (
+          <BreadCrumb />
+        ) : (
+          <Text textStyle="subhead-1">{tableName}</Text>
+        )}
+        <EditMode />
+      </Flex>
       <ImportExportToolbar />
     </Flex>
   )
