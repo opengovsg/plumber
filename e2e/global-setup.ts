@@ -1,8 +1,8 @@
 import { expect } from '@playwright/test'
 import { chromium } from 'playwright'
 
-import { BASE_URL, MAILBOX } from './config'
-import { checkGmail } from './gmail-check'
+import { checkGmail } from './utils/gmail-check'
+import { BASE_URL, MAILBOX, MAILSENDER } from './config'
 
 export default async function globalSetup() {
   await exportOTPLoginState()
@@ -18,7 +18,7 @@ async function exportOTPLoginState() {
   await page.locator('button[type=submit]').click()
 
   const emails = await checkGmail({
-    from: 'donotreply@plumber.gov.sg',
+    from: MAILSENDER,
     to: MAILBOX,
   })
   const emailsWithOtp = emails.filter((email) =>
