@@ -51,7 +51,6 @@ const EditMode = () => {
         fontSize="xs"
         py={2}
         border="none"
-        borderRadius="full"
         bg={`${selectedModeOption.colorScheme}.100`}
         colorScheme={selectedModeOption.colorScheme}
         leftIcon={selectedModeOption.icon}

@@ -24,7 +24,7 @@
     "@mui/icons-material": "5.11.0",
     "@mui/lab": "^5.0.0-alpha.60",
     "@mui/material": "5.12.0",
-    "@opengovsg/design-system-react": "1.11.0",
+    "@opengovsg/design-system-react": "1.17.0",
     "@plumber/types": "file:../types",
     "@tiptap/extension-hard-break": "2.1.12",
     "@tanstack/react-table": "8.10.7",
