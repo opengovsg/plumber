@@ -16,7 +16,7 @@ import getDataOutMetadata from './get-data-out-metadata'
 const action: IRawAction = {
   name: 'Find single row',
   key: 'findSingleRow',
-  description: 'Finds a single row in Tile',
+  description: 'Gets data of a single row from your tile',
   arguments: [
     {
       label: 'Select Tile',
@@ -24,7 +24,6 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       required: true,
       variables: false,
-      description: 'Select the tile you want to create a row in.',
       showOptionValue: false,
       source: {
         type: 'query' as const,
@@ -40,10 +39,10 @@ const action: IRawAction = {
     {
       label: 'Lookup conditions',
       description:
-        'If lookup conditions satisfy multiple rows, the first row (oldest) will be returned.',
+        'If multiple rows meet the conditions, the oldest entry will be returned',
       key: 'filters',
       type: 'multirow' as const,
-      required: false,
+      required: true,
       subFields: [
         {
           placeholder: 'Column',
@@ -110,11 +109,12 @@ const action: IRawAction = {
       label: 'Return most recent row instead?',
       key: 'returnLastRow',
       type: 'dropdown' as const,
-      required: false,
+      required: true,
       variables: false,
+      value: false,
       options: [
         {
-          label: 'No (default)',
+          label: 'No',
           value: false,
         },
         {

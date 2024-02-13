@@ -66,7 +66,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
         <ModalBody mt={2}>
           <FormControl>
             <VStack spacing={2} alignItems="flex-start">
-              <Text textStyle="subhead-3">Public Access</Text>
+              <Text textStyle="subhead-3">General Access</Text>
               <Text textStyle="body-1">
                 Generate a shareable link to allow viewing and exporting only.
                 No login required.
@@ -108,7 +108,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
                 <FormHelperText variant={isNewLink ? 'success' : undefined}>
                   {isNewLink
                     ? 'New link generated!'
-                    : 'Generating a new link will invalidate the previous link.'}
+                    : 'By generating a new link, you previous link will not work anymore.'}
                 </FormHelperText>
               )}
             </VStack>

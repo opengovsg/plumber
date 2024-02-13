@@ -20,7 +20,6 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       required: true,
       variables: false,
-      description: 'Select the tile you want to create a row in.',
       showOptionValue: false,
       source: {
         type: 'query' as const,

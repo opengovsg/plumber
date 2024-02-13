@@ -12,7 +12,7 @@ import getDataOutMetadata from './get-data-out-metadata'
 const action: IRawAction = {
   name: 'Update single row',
   key: 'updateSingleRow',
-  description: 'Updates a single row by row ID',
+  description: 'Updates a single row in your tile',
   arguments: [
     {
       label: 'Select Tile',
@@ -20,7 +20,6 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       required: true,
       variables: false,
-      description: 'Select the tile you want to create a row in.',
       showOptionValue: false,
       source: {
         type: 'query' as const,
@@ -39,13 +38,13 @@ const action: IRawAction = {
       type: 'string' as const,
       required: true,
       variables: true,
-      description:
-        'Enter the row ID of the row to update. Use Find Single Row action to lookup the row ID.',
+      description: 'This can be retrieved from the Find Single Row action',
     },
     {
       label: 'Row data',
       key: 'rowData',
       type: 'multirow' as const,
+      description: 'Enter the data to update the row with',
       required: true,
       subFields: [
         {

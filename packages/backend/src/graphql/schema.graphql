@@ -114,6 +114,7 @@ type ActionSubstepArgument {
   placeholder: String
   showOptionValue: Boolean
   options: [ArgumentOption]
+  value: JSONObject
   source: ActionSubstepArgumentSource
   dependsOn: [String]
   hidden: Boolean
@@ -461,7 +462,7 @@ type TriggerSubstepArgument {
   dependsOn: [String]
   showOptionValue: Boolean
   options: [ArgumentOption]
-
+  value: JSONObject
   # Only for multirow
   subFields: [TriggerSubstepArgument]
 }
