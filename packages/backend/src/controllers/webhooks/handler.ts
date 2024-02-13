@@ -84,7 +84,8 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
-  if (triggerCommand.type !== 'webhook') {
+  // If trigger event is not selected, this should also return 404
+  if (triggerCommand?.type !== 'webhook') {
     return response.sendStatus(404)
   }
 

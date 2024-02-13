@@ -102,5 +102,5 @@
     "tsc-alias": "^1.8.6",
     "tsconfig-paths": "^4.2.0"
   },
-  "version": "1.9.1"
+  "version": "1.9.2"
 }
