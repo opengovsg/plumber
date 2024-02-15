@@ -179,25 +179,70 @@ describe('update table mutation', () => {
 
   describe('delete columns in table', () => {
     it('should delete columns', async () => {
+      // add more columns for deletion
       const updatedTable = await updateTable(
+        null,
+        {
+          input: {
+            id: dummyTable.id,
+            addedColumns: ['New Column 1', 'New Column 2'],
+            modifiedColumns: [],
+          },
+        },
+        context,
+      )
+
+      await updateTable(
         null,
         {
           input: {
             id: dummyTable.id,
             addedColumns: [],
             modifiedColumns: [],
-            deletedColumns: [dummyColumnId],
+            deletedColumns: [
+              updatedTable.columns[0].id,
+              updatedTable.columns[1].id,
+            ],
           },
         },
         context,
       )
-      const tableColumnCount = await updatedTable
+      const tableColumnCount = await dummyTable
         .$relatedQuery('columns')
         .resultSize()
-      expect(tableColumnCount).toBe(0)
+      expect(tableColumnCount).toBe(1)
+    })
+    it('should not delete last column', async () => {
+      await expect(() =>
+        updateTable(
+          null,
+          {
+            input: {
+              id: dummyTable.id,
+              addedColumns: [],
+              modifiedColumns: [],
+              deletedColumns: [dummyColumnId],
+            },
+          },
+          context,
+        ),
+      ).rejects.toThrowError()
     })
 
     it('should not be able to delete a column from a different table', async () => {
+      // add more columns for deletion
+      await updateTable(
+        null,
+        {
+          input: {
+            id: dummyTable.id,
+            addedColumns: ['New Column 1', 'New Column 2'],
+            modifiedColumns: [],
+          },
+        },
+        context,
+      )
+
       const dummyTable2 = await context.currentUser
         .$relatedQuery('tables')
         .insertGraph({

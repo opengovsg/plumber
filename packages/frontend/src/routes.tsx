@@ -109,7 +109,7 @@ export default createRoutesFromElements(
     <Route
       path={URLS.PUBLIC_TILE_PATTERN}
       element={
-        <TileLayout>
+        <TileLayout publicLayout>
           <Tile />
         </TileLayout>
       }
