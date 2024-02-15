@@ -114,11 +114,11 @@ const action: IRawAction = {
       value: false,
       options: [
         {
-          label: 'No',
+          label: 'No (Returns oldest row)',
           value: false,
         },
         {
-          label: 'Yes',
+          label: 'Yes (Returns most recent row)',
           value: true,
         },
       ],
@@ -149,8 +149,8 @@ const action: IRawAction = {
       return
     }
     const rowIdToUse = returnLastRow
-      ? result[0].rowId
-      : result[result.length - 1].rowId
+      ? result[result.length - 1].rowId
+      : result[0].rowId
     const rowToReturn = await getRawRowById({
       tableId,
       rowId: rowIdToUse,

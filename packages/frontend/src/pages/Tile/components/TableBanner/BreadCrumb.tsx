@@ -27,9 +27,14 @@ function BreadCrumb() {
   }, [initialTableName])
 
   const onSave = useCallback(async () => {
-    await updateTableName(tableName)
-    setIsEditingTableName(false)
-  }, [tableName, updateTableName])
+    const trimmedTableName = tableName.trim()
+    if (trimmedTableName.length < 0 || trimmedTableName.length > 64) {
+      resetField()
+    } else {
+      await updateTableName(tableName)
+      setIsEditingTableName(false)
+    }
+  }, [resetField, tableName, updateTableName])
 
   const onEnter = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {

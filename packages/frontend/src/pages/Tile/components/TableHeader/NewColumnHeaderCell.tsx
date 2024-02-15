@@ -83,7 +83,7 @@ export default function NewColumnHeaderCell({
       </PopoverTrigger>
       <PopoverContent color="secondary.900" motionProps={POPOVER_MOTION_PROPS}>
         <PopoverArrow />
-        <PopoverCloseButton top={0} right={1} />
+        <PopoverCloseButton top={1} right={1} />
         <PopoverHeader py={4} px={4}>
           <Text textStyle="subhead-2">Add new column</Text>
         </PopoverHeader>

@@ -5,6 +5,8 @@ export const EXECUTION = (executionId: string): string =>
   `/executions/${executionId}`
 export const ROOT = '/'
 
+export const FOUR_O_FOUR = '/404'
+
 export const LOGIN = '/login'
 export const LOGIN_SGID_REDIRECT = '/login/sgid/redirect'
 export const ADD_REDIRECT_TO_LOGIN = (redirectQueryParam: string): string =>

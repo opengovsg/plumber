@@ -49,7 +49,7 @@ function ColumnHeaderCell({
   sortDir,
   isFiltered,
 }: ColumnHeaderCellProps) {
-  const { mode } = useTableContext()
+  const { mode, tableColumns } = useTableContext()
   const { id } = header
   const { isOpen, onClose, onOpen } = useDisclosure()
   const [isDeletionModalOpen, setIsDeletionModalOpen] = useState(false)
@@ -172,7 +172,8 @@ function ColumnHeaderCell({
             <ColumnSort column={column} />
             <ColumnFilter column={column} />
           </PopoverBody>
-          {isEditMode && (
+          {/* Disallow deletion of last column */}
+          {isEditMode && tableColumns.length > 1 && (
             <PopoverFooter justifyContent="flex-start" display={'flex'} px={4}>
               <Button
                 leftIcon={<BsTrash />}

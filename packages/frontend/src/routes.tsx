@@ -101,9 +101,7 @@ export default createRoutesFromElements(
       path={URLS.TILE_PATTERN}
       element={
         <TileLayout>
-          <Suspense fallback={<></>}>
-            <Tile />
-          </Suspense>
+          <Tile />
         </TileLayout>
       }
     />
@@ -111,9 +109,9 @@ export default createRoutesFromElements(
     <Route
       path={URLS.PUBLIC_TILE_PATTERN}
       element={
-        <Suspense fallback={<></>}>
+        <TileLayout>
           <Tile />
-        </Suspense>
+        </TileLayout>
       }
     />
 

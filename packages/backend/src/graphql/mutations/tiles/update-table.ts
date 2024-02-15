@@ -105,10 +105,17 @@ const updateTable = async (
   }
 
   if (deletedColumns?.length) {
-    await table
-      .$relatedQuery('columns')
-      .hardDelete()
-      .whereIn('id', deletedColumns)
+    await TableColumnMetadata.transaction(async (trx) => {
+      const columns = await table.$relatedQuery('columns', trx)
+      // There needs to be at least one column left
+      if (columns.length <= deletedColumns.length) {
+        throw new Error('Cannot delete all columns')
+      }
+      await table
+        .$relatedQuery('columns')
+        .delete()
+        .whereIn('id', deletedColumns)
+    })
   }
 
   const updatedTable = await table.$fetchGraph('columns')
