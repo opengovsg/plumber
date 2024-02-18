@@ -12,7 +12,7 @@ import getDataOutMetadata from './get-data-out-metadata'
 const action: IRawAction = {
   name: 'Create row',
   key: 'createTileRow',
-  description: 'Creates a new row in Tile',
+  description: 'Creates a new row in your tile',
   arguments: [
     {
       label: 'Select Tile',

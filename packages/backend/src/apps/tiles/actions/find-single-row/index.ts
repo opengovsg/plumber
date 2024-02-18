@@ -67,7 +67,7 @@ const action: IRawAction = {
           },
         },
         {
-          placeholder: 'Operator',
+          placeholder: 'Condition',
           key: 'operator',
           type: 'dropdown' as const,
           required: true,

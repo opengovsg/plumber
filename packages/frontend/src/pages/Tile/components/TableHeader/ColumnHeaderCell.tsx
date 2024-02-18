@@ -117,7 +117,7 @@ function ColumnHeaderCell({
               whiteSpace="nowrap"
               textOverflow="ellipsis"
               maxW="100%"
-              fontWeight="medium"
+              textStyle="subhead-2"
               userSelect="none"
             >
               {columnName}

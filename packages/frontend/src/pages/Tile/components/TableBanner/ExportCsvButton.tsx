@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
-import { BiChevronDown, BiExport, BiHelpCircle } from 'react-icons/bi'
-import { Icon, MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
-import { Button, Menu, TouchableTooltip } from '@opengovsg/design-system-react'
+import { BiChevronDown, BiExport } from 'react-icons/bi'
+import { MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
+import { Button, Menu } from '@opengovsg/design-system-react'
 import { saveAs } from 'file-saver'
 import { dateString } from 'helpers/dateTime'
 import { unparse } from 'papaparse'
@@ -59,19 +59,10 @@ const ExportCsvButton = () => {
       </MenuButton>
       <MenuList borderRadius="md">
         <MenuItem fontSize="sm" onClick={() => onExport({ filtered: false })}>
-          Export all rows
+          All rows
         </MenuItem>
         <MenuItem fontSize="sm" onClick={() => onExport({ filtered: true })}>
-          Export filtered rows
-          <TouchableTooltip
-            label="Export only rows shown by current filters"
-            wrapperStyles={{
-              lineHeight: 1,
-            }}
-            textAlign="center"
-          >
-            <Icon as={BiHelpCircle} fontSize="md" ml={1} />
-          </TouchableTooltip>
+          Rows with filters applied
         </MenuItem>
       </MenuList>
     </Menu>

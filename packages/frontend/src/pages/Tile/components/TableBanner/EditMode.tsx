@@ -36,6 +36,10 @@ const EditMode = () => {
     [mode],
   )
 
+  if (mode === 'edit') {
+    return null
+  }
+
   return (
     <Menu gutter={0} colorScheme="secondary">
       <MenuButton
