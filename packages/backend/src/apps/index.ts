@@ -4,6 +4,7 @@ import customApiApp from './custom-api'
 import delayApp from './delay'
 import formsgApp from './formsg'
 import m365ExcelApp from './m365-excel'
+import pairApp from './pair'
 import paysgApp from './paysg'
 import postmanApp from './postman'
 import schedulerApp from './scheduler'
@@ -28,6 +29,7 @@ const apps: Record<string, IApp> = {
   [vaultWorkspaceApp.key]: vaultWorkspaceApp,
   [webhookApp.key]: webhookApp,
   [twilioApp.key]: twilioApp,
+  [pairApp.key]: pairApp,
 }
 
 export default apps

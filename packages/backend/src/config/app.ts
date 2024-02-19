@@ -44,6 +44,9 @@ type AppConfig = {
     privateKey: string
   }
   launchDarklySdkKey: string
+  pair: {
+    apiKey: string
+  }
 }
 
 const port = process.env.PORT || '3000'
@@ -102,6 +105,9 @@ const appConfig: AppConfig = {
     rateLimit: parseInt(process.env.POSTMAN_RATE_LIMIT) || 169,
   },
   launchDarklySdkKey: process.env.LAUNCH_DARKLY_SDK_KEY,
+  pair: {
+    apiKey: process.env.PAIR_API_KEY,
+  },
 }
 
 if (!appConfig.encryptionKey) {
