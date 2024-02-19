@@ -8,15 +8,20 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   Button,
+  Progress,
+  Text,
 } from '@chakra-ui/react'
+import { chunk } from 'lodash'
 import { ROW_HEIGHT } from 'pages/Tile/constants'
 
 import { useTableContext } from '../../contexts/TableContext'
 import { useDeleteRows } from '../../hooks/useDeleteRows'
 
+const CHUNK_SIZE = 100
+
 interface DeleteRowsButtonProps {
   rowSelection: Record<string, boolean>
-  removeRows: (rows: string[]) => void
+  removeRows: (rowIds: string[]) => void
 }
 
 export default function DeleteRowsButton({
@@ -29,14 +34,31 @@ export default function DeleteRowsButton({
   const rowsSelected = Object.keys(rowSelection)
   const cancelRef = useRef(null)
   const { deleteRows, rowsDeleting } = useDeleteRows()
+  const [numDeletedRows, setNumDeletedRows] = useState(0)
+  const [numRowsToDelete, setNumRowsToDelete] = useState(0)
+  const [isDeletingRows, setIsDeletingRows] = useState(false)
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const onDelete = useCallback(async () => {
-    await deleteRows(rowsSelected)
-    removeRows(rowsSelected)
-    setIsDialogOpen(false)
+    setIsDeletingRows(true)
+    const chunks = chunk(rowsSelected, CHUNK_SIZE)
+    for (const chunk of chunks) {
+      await deleteRows(chunk)
+      setNumDeletedRows((prev) => prev + chunk.length)
+      removeRows(chunk)
+    }
+    setTimeout(() => {
+      setIsDialogOpen(false)
+    }, 1000)
   }, [deleteRows, removeRows, rowsSelected])
+
+  const onOpen = useCallback(() => {
+    setIsDeletingRows(false)
+    setNumDeletedRows(0)
+    setNumRowsToDelete(rowsSelected.length)
+    setIsDialogOpen(true)
+  }, [rowsSelected.length])
 
   if (isViewMode) {
     return null
@@ -56,49 +78,71 @@ export default function DeleteRowsButton({
         size="xs"
         h="100%"
         leftIcon={<BsTrash />}
-        onClick={() => setIsDialogOpen(true)}
+        onClick={onOpen}
       >
         Delete
       </Button>
-      <AlertDialog
-        motionPreset="none"
-        isOpen={isDialogOpen}
-        leastDestructiveRef={cancelRef}
-        trapFocus={false}
-        onClose={() => setIsDialogOpen(false)}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Delete rows
-            </AlertDialogHeader>
+      {/* lazy load the dialog */}
+      {isDialogOpen && (
+        <AlertDialog
+          motionPreset="none"
+          isOpen={true}
+          leastDestructiveRef={cancelRef}
+          trapFocus={false}
+          closeOnOverlayClick={!isDeletingRows}
+          onClose={() => setIsDialogOpen(false)}
+        >
+          <AlertDialogOverlay>
+            <AlertDialogContent>
+              <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                Delete rows
+              </AlertDialogHeader>
 
-            <AlertDialogBody>
-              Are you sure you want to <b>{rowsSelected.length}</b> row
-              {rowsSelected.length > 1 ? 's' : ''}?
-            </AlertDialogBody>
+              <AlertDialogBody>
+                {isDeletingRows ? (
+                  <>
+                    <Text>
+                      Deleting rows ({numDeletedRows} / {numRowsToDelete})
+                    </Text>
+                    <Progress
+                      value={numDeletedRows}
+                      max={numRowsToDelete}
+                      mt={4}
+                    />
+                  </>
+                ) : (
+                  <Text>
+                    Are you sure you want to <b>{numRowsToDelete}</b> row
+                    {numRowsToDelete > 1 ? 's' : ''}?
+                  </Text>
+                )}
+              </AlertDialogBody>
 
-            <AlertDialogFooter>
-              <Button
-                colorScheme="secondary"
-                variant="clear"
-                ref={cancelRef}
-                onClick={() => setIsDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                colorScheme="red"
-                onClick={onDelete}
-                ml={3}
-                isLoading={!!rowsDeleting}
-              >
-                Delete
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+              <AlertDialogFooter>
+                {!isDeletingRows && (
+                  <Button
+                    colorScheme="secondary"
+                    variant="clear"
+                    ref={cancelRef}
+                    onClick={() => setIsDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                <Button
+                  colorScheme="red"
+                  onClick={onDelete}
+                  ml={3}
+                  isDisabled={isDeletingRows}
+                  isLoading={!!rowsDeleting}
+                >
+                  {isDeletingRows ? 'Done' : 'Delete'}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialogOverlay>
+        </AlertDialog>
+      )}
     </div>
   )
 }

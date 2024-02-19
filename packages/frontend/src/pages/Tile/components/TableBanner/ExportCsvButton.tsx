@@ -9,7 +9,7 @@ import { unparse } from 'papaparse'
 import { useTableContext } from '../../contexts/TableContext'
 
 const ExportCsvButton = () => {
-  const { flattenedData, filteredDataRef, tableColumns, tableName } =
+  const { allDataRef, filteredDataRef, tableColumns, tableName } =
     useTableContext()
 
   const onExport = useCallback(
@@ -17,7 +17,7 @@ const ExportCsvButton = () => {
       const dataToSave =
         filtered && filteredDataRef.current.length
           ? filteredDataRef.current
-          : flattenedData
+          : allDataRef.current
       const columnIdToNameMap: Record<string, string> = {}
       tableColumns.forEach((column) => {
         columnIdToNameMap[column.id] = column.name
@@ -42,7 +42,7 @@ const ExportCsvButton = () => {
       const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8' })
       saveAs(blob, filename)
     },
-    [filteredDataRef, flattenedData, tableColumns, tableName],
+    [filteredDataRef, allDataRef, tableColumns, tableName],
   )
 
   return (

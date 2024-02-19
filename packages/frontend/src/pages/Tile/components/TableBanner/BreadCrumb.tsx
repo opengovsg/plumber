@@ -28,7 +28,7 @@ function BreadCrumb() {
 
   const onSave = useCallback(async () => {
     const trimmedTableName = tableName.trim()
-    if (trimmedTableName.length < 0 || trimmedTableName.length > 64) {
+    if (!trimmedTableName.length || trimmedTableName.length > 64) {
       resetField()
     } else {
       await updateTableName(tableName)

@@ -108,7 +108,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
                 <FormHelperText variant={isNewLink ? 'success' : undefined}>
                   {isNewLink
                     ? 'New link generated!'
-                    : 'By generating a new link, you previous link will not work anymore.'}
+                    : 'By generating a new link, your previous link will not work anymore.'}
                 </FormHelperText>
               )}
             </VStack>

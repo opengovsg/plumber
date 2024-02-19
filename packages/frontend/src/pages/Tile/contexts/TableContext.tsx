@@ -18,6 +18,7 @@ interface TableContextProps {
   flattenedData: GenericRowData[]
   tableColumns: ITableColumnMetadata[]
   filteredDataRef: MutableRefObject<GenericRowData[]>
+  allDataRef: MutableRefObject<GenericRowData[]>
   mode: EditMode
   setMode: (mode: EditMode) => void
   hasEditPermission: boolean
@@ -57,6 +58,7 @@ export const TableContextProvider = ({
 }: TableContextProviderProps) => {
   const flattenedData = useMemo(() => flattenRows(tableRows), [tableRows])
   const filteredDataRef = useRef<GenericRowData[]>([])
+  const allDataRef = useRef<GenericRowData[]>(flattenedData)
   const [mode, setMode] = useState<EditMode>(
     hasEditPermission ? 'edit' : 'view',
   )
@@ -67,6 +69,7 @@ export const TableContextProvider = ({
         tableName,
         flattenedData,
         tableColumns,
+        allDataRef,
         filteredDataRef,
         mode,
         setMode,

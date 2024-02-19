@@ -42,7 +42,7 @@ import TableHeader from './TableHeader'
 import TableRow from './TableRow'
 
 export default function Table(): JSX.Element {
-  const { tableColumns, flattenedData, filteredDataRef, mode } =
+  const { tableColumns, flattenedData, allDataRef, filteredDataRef, mode } =
     useTableContext()
   const [data, setData] = useState<GenericRowData[]>(flattenedData)
   const parentRef = useRef<HTMLDivElement>(null)
@@ -180,10 +180,15 @@ export default function Table(): JSX.Element {
 
   const { rows } = table.getRowModel()
 
-  // this is for export csv
+  // this is for export filtered csv
   useEffect(() => {
     filteredDataRef.current = rows.map((row) => row.original)
   }, [rows, filteredDataRef])
+
+  // this is for export all rows csv
+  useEffect(() => {
+    allDataRef.current = data
+  }, [data, allDataRef])
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,

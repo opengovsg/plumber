@@ -36,6 +36,8 @@ export default function ColumnResizer({ header }: ColumnResizerProps) {
       w={2}
       h="100%"
       cursor="col-resize"
+      // this is necessary to prevent scrolling when resizing
+      userSelect={'none'}
       _hover={{
         bg: HEADER_COLOR.HOVER,
       }}
