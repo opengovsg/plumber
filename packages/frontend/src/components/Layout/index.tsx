@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BiHistory, BiSolidGrid } from 'react-icons/bi'
-import { HiOutlineSquare3Stack3D } from 'react-icons/hi2'
+import { BiHistory, BiLayer, BiSolidGrid } from 'react-icons/bi'
 import { Navigate } from 'react-router-dom'
 import { Box, Divider, Show } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
@@ -34,7 +33,7 @@ const drawerLinks = [
     to: URLS.FLOWS,
   },
   {
-    Icon: HiOutlineSquare3Stack3D,
+    Icon: BiLayer,
     text: 'Tiles',
     to: URLS.TILES,
     badge: '✨ Coming soon',
