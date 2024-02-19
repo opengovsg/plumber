@@ -93,7 +93,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                    * Note: we edge case the 1st sub-field to show our "remove
                    * row" icon
                    */}
-                  <Flex alignItems="center">
+                  <Flex alignItems="center" gap={2}>
                     <InputCreator
                       schema={subFields[0]}
                       namePrefix={namePrefix}

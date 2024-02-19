@@ -33,6 +33,11 @@ type Query {
     key: String!
     parameters: JSONObject
   ): JSONObject
+  # Tiles
+  getTable(tableId: String!): TableMetadata!
+  getTables: [TableMetadata!]!
+  # Tiles rows
+  getAllRows(tableId: String!): [TileRow!]!
   getCurrentUser: User
   healthcheck: AppHealth
 }
@@ -61,6 +66,16 @@ type Mutation {
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
+  # Tiles
+  createTable(input: CreateTableInput!): TableMetadata!
+  createShareableTableLink(tableId: ID!): String!
+  updateTable(input: UpdateTableInput!): TableMetadata!
+  deleteTable(input: DeleteTableInput!): Boolean!
+  # Tiles rows
+  createRow(input: CreateTableRowInput!): ID!
+  createRows(input: CreateTableRowsInput!): Boolean
+  updateRow(input: UpdateTableRowInput!): ID!
+  deleteRows(input: DeleteTableRowsInput!): [ID!]!
 }
 
 """
@@ -99,6 +114,7 @@ type ActionSubstepArgument {
   placeholder: String
   showOptionValue: Boolean
   options: [ArgumentOption]
+  value: JSONObject
   source: ActionSubstepArgumentSource
   dependsOn: [String]
   hidden: Boolean
@@ -446,7 +462,7 @@ type TriggerSubstepArgument {
   dependsOn: [String]
   showOptionValue: Boolean
   options: [ArgumentOption]
-
+  value: JSONObject
   # Only for multirow
   subFields: [TriggerSubstepArgument]
 }
@@ -502,6 +518,84 @@ type ExecutionStepConnection {
   edges: [ExecutionStepEdge]
   pageInfo: PageInfo
 }
+
+# Tiles types
+input CreateTableInput {
+  name: String!
+}
+
+input TableColumnConfigInput {
+  width: Int
+}
+
+input TableColumnMetadataInput {
+  id: ID!
+  name: String
+  position: Int
+  config: TableColumnConfigInput
+}
+
+input UpdateTableInput {
+  id: ID!
+  name: String
+  modifiedColumns: [TableColumnMetadataInput!]
+  addedColumns: [String!]
+  deletedColumns: [ID!]
+}
+
+input DeleteTableInput {
+  id: ID!
+}
+
+type TableColumnConfig {
+  width: Int
+}
+
+type TableColumnMetadata {
+  id: ID!
+  name: String!
+  position: Int!
+  config: TableColumnConfig!
+}
+
+type TableMetadata {
+  id: ID!
+  name: String!
+  columns: [TableColumnMetadata!]
+  lastAccessedAt: String!
+  viewOnlyKey: String
+}
+
+# End Tiles types
+
+# Start Tiles row types
+type TileRow {
+  rowId: ID!
+  data: JSONObject!
+}
+
+input CreateTableRowInput {
+  tableId: ID!
+  data: JSONObject!
+}
+
+input CreateTableRowsInput {
+  tableId: ID!
+  dataArray: [JSONObject!]!
+}
+
+input UpdateTableRowInput {
+  tableId: ID!
+  rowId: ID!
+  data: JSONObject!
+}
+
+input DeleteTableRowsInput {
+  tableId: ID!
+  rowIds: [ID!]!
+}
+
+# End Tiles row types
 
 type AppHealth {
   version: String

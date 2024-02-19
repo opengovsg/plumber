@@ -57,6 +57,7 @@ interface ControlledAutocompleteProps
   dependsOn?: string[]
   onRefresh?: () => void
   required?: boolean
+  placeholder?: string
 }
 
 const filter = createFilterOptions<IFieldDropdownOption>()
@@ -81,7 +82,7 @@ function ControlledAutocomplete(
   props: ControlledAutocompleteProps,
 ): React.ReactElement {
   const { control, watch, setValue, resetField } = useFormContext()
-
+  console.log(props)
   const {
     name,
     label,
@@ -95,6 +96,7 @@ function ControlledAutocomplete(
     onRefresh,
     loading,
     required,
+    placeholder,
     ...autocompleteProps
   } = props
 
@@ -118,7 +120,7 @@ function ControlledAutocomplete(
     <Controller
       rules={{ required }}
       name={name}
-      defaultValue={defaultValue || ''}
+      defaultValue={defaultValue ?? ''}
       control={control}
       shouldUnregister={shouldUnregister}
       render={({ field: { ref, onChange, onBlur, ...field }, fieldState }) => {
@@ -150,6 +152,7 @@ function ControlledAutocomplete(
                 renderInput={(params) => (
                   <TextField
                     {...params}
+                    placeholder={placeholder}
                     InputProps={{
                       ...params.InputProps,
                       endAdornment: (

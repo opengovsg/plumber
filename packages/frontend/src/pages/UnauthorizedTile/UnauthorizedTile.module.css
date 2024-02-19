@@ -1,0 +1,24 @@
+/* flicklering css animation */
+
+.flicker {
+  filter: grayscale(0%);
+  opacity: 1;
+  animation: flickerAnimation 1.4s infinite alternate-reverse;
+}
+
+@keyframes flickerAnimation {
+  60%,
+  70%,
+  79% {
+    opacity: 0.6;
+    filter: grayscale(100%);
+  }
+  59%,
+  65%,
+  67%,
+  76%,
+  78% {
+    filter: grayscale(0%);
+    opacity: 1;
+  }
+}

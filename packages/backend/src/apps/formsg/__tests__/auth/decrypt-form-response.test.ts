@@ -81,6 +81,7 @@ describe('decrypt form response', () => {
       },
       flow: {
         id: 'flowid',
+        userId: 'userid',
         hasFileProcessingActions: false,
       },
       app,

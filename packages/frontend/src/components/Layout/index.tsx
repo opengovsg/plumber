@@ -1,5 +1,5 @@
-import * as React from 'react'
-import { BiHistory, BiSolidGrid } from 'react-icons/bi'
+import { useMemo, useState } from 'react'
+import { BiHistory, BiLayer, BiSolidGrid } from 'react-icons/bi'
 import { Navigate } from 'react-router-dom'
 import { Box, Divider, Show } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
@@ -23,6 +23,7 @@ export type DrawerLink = {
   Icon: React.ElementType
   text: string
   to: string
+  badge?: string
 }
 
 const drawerLinks = [
@@ -30,6 +31,12 @@ const drawerLinks = [
     Icon: PipeIcon,
     text: 'Pipes',
     to: URLS.FLOWS,
+  },
+  {
+    Icon: BiLayer,
+    text: 'Tiles',
+    to: URLS.TILES,
+    badge: '✨ Coming soon',
   },
   {
     Icon: BiSolidGrid,
@@ -43,17 +50,15 @@ const drawerLinks = [
   },
 ]
 
-export default function Layout({
-  children,
-}: PublicLayoutProps): React.ReactElement {
+export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   const { currentUser } = useAuthentication()
 
-  const [isDrawerOpen, setDrawerOpen] = React.useState(false)
+  const [isDrawerOpen, setDrawerOpen] = useState(false)
 
   const openDrawer = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
 
-  const layoutNavigationProviderData = React.useMemo(() => {
+  const layoutNavigationProviderData = useMemo(() => {
     return {
       links: drawerLinks,
       isDrawerOpen,
@@ -89,8 +94,7 @@ export default function Layout({
               />
             </Box>
           </Show>
-
-          <Box sx={{ flex: 1 }}>{children}</Box>
+          <Box sx={{ flex: 1, overflowX: 'hidden' }}>{children}</Box>
         </Box>
       </LayoutNavigationProvider>
     </>

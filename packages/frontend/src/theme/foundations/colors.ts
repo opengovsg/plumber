@@ -67,6 +67,9 @@ const bbBearColors = {
         active: 'rgba(207, 26, 104, 0.12)',
       },
     },
+    'main-subtle': {
+      default: '#FFF0F7',
+    },
   },
 }
 
