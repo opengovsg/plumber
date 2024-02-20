@@ -1,31 +1,30 @@
-import { useContext } from 'react'
 import { Link, useMatch } from 'react-router-dom'
 import { Text } from '@chakra-ui/react'
-import {
-  Badge,
-  SidebarContainer,
-  SidebarItem,
-} from '@opengovsg/design-system-react'
-import { LayoutNavigationContext } from 'contexts/LayoutNavigation'
+import { SidebarContainer, SidebarItem } from '@opengovsg/design-system-react'
 
 import { DrawerLink } from '.'
 
-interface NavigationSidebarItemProps {
+interface EditorSidebarItemProps {
   link: DrawerLink
   closeDrawer: () => void
 }
 
-function NavigationSidebarItem({
+interface EditorSidebarProps {
+  links: DrawerLink[]
+  closeDrawer: () => void
+}
+
+function EditorSidebarItem({
   link,
   closeDrawer,
-}: NavigationSidebarItemProps): JSX.Element {
+}: EditorSidebarItemProps): JSX.Element {
   const { to, Icon: icon, text } = link
   const selected = useMatch({ path: to, end: true })
 
   return (
     <SidebarItem
-      mx={{ sm: '1rem' }}
-      w={{ lg: '16.75rem' }}
+      mx={{ md: '1rem' }}
+      w={{ md: '14.75rem' }}
       icon={icon}
       as={Link}
       to={to}
@@ -40,31 +39,24 @@ function NavigationSidebarItem({
         color: 'primary.600',
         bg: 'interaction.muted.main.active',
       }}
-      display="flex"
     >
-      <Text textStyle="subhead-1" ml={4} display={{ sm: 'none', lg: 'block' }}>
+      <Text textStyle="subhead-1" ml={4}>
         {text}
       </Text>
-      {link.badge && (
-        <Badge color="white" display={{ sm: 'none', lg: 'block' }}>
-          {link.badge}
-        </Badge>
-      )}
     </SidebarItem>
   )
 }
 
-export default function NavigationSidebar() {
-  const { links, closeDrawer } = useContext(LayoutNavigationContext)
-
+export default function EditorSidebar(props: EditorSidebarProps) {
+  const { links, closeDrawer } = props
   return (
     <SidebarContainer>
       {links.map((link, index) => (
-        <NavigationSidebarItem
+        <EditorSidebarItem
           key={index}
           link={link}
           closeDrawer={closeDrawer}
-        />
+        ></EditorSidebarItem>
       ))}
     </SidebarContainer>
   )

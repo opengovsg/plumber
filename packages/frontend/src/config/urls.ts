@@ -57,7 +57,6 @@ export const CREATE_FLOW_WITH_APP_AND_CONNECTION = (
 
   return `/editor/create?${searchParams}`
 }
-export const FLOW_EDITOR = (flowId: string): string => `/editor/${flowId}`
 
 export const FLOWS = '/flows'
 // TODO: revert this back to /flows/:flowId once we have a proper single flow page
@@ -70,6 +69,12 @@ export const TILE = (tableId: string): string => `/tiles/${tableId}`
 export const TILE_PATTERN = '/tiles/:tileId'
 export const PUBLIC_TILE_PATTERN = '/tiles/:tileId/:viewOnlyKey'
 export const UNAUTHORIZED_TILE = '/tiles/unauthorized'
+
+// flow editor: default to flows if flowid is undefined
+export const FLOW_EDITOR = (flowId: string | undefined): string =>
+  flowId ? `/editor/${flowId}` : FLOWS
+export const FLOW_EDITOR_NOTIFICATIONS = (flowId: string | undefined): string =>
+  flowId ? `/editor/${flowId}/notifications` : FLOWS
 
 export const DASHBOARD = FLOWS
 

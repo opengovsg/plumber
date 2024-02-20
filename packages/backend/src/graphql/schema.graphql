@@ -50,9 +50,11 @@ type Mutation {
   verifyConnection(input: VerifyConnectionInput): Connection
   deleteConnection(input: DeleteConnectionInput): Boolean
   registerConnection(input: RegisterConnectionInput): Boolean
+  # Flows
   createFlow(input: CreateFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
+  updateFlowConfig(input: UpdateFlowConfigInput): Flow
   executeFlow(input: ExecuteFlowInput): ExecuteFlowType
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
@@ -254,6 +256,15 @@ type Flow {
   steps: [Step]
   createdAt: String
   updatedAt: String
+  config: FlowConfig
+}
+
+type FlowConfig {
+  errorConfig: FlowErrorConfig
+}
+
+type FlowErrorConfig {
+  notificationFrequency: NotificationFrequency
 }
 
 type Execution {
@@ -309,6 +320,16 @@ input UpdateFlowInput {
 input UpdateFlowStatusInput {
   id: String!
   active: Boolean!
+}
+
+enum NotificationFrequency {
+  once
+  always
+}
+
+input UpdateFlowConfigInput {
+  id: String!
+  notificationFrequency: NotificationFrequency!
 }
 
 input ExecuteFlowInput {

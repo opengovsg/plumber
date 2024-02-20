@@ -1,11 +1,15 @@
 import type { IFlow } from '@plumber/types'
 
 import * as React from 'react'
-import { BiChevronLeft } from 'react-icons/bi'
-import { useParams } from 'react-router-dom'
+import { BiChevronLeft, BiCog } from 'react-icons/bi'
+import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import { Box, HStack, Icon, Text, VStack } from '@chakra-ui/react'
-import { Button, Link } from '@opengovsg/design-system-react'
+import {
+  Button,
+  IconButton,
+  TouchableTooltip,
+} from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
 import Editor from 'components/Editor'
@@ -75,18 +79,19 @@ export default function EditorLayout(): React.ReactElement {
           justifyContent="space-between"
           alignItems="center"
           py={2}
-          px={2}
+          px={8}
           borderBottom="1px solid"
           borderColor="base.divider.subtle"
+          spacing={4}
         >
           <Box display="flex" flex={1} alignItems="center">
-            <Link href={URLS.FLOWS}>
+            <Box as={Link} to={URLS.FLOWS} mt={1}>
               <Icon
                 boxSize={6}
                 color="interaction.support.disabled-content"
                 as={BiChevronLeft}
               ></Icon>
-            </Link>
+            </Box>
 
             {!loading && (
               <EditableTypography
@@ -102,23 +107,30 @@ export default function EditorLayout(): React.ReactElement {
 
           <Button
             as={Link}
-            href={URLS.GUIDE_LINK}
+            to={URLS.GUIDE_LINK}
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            pr={4}
             _hover={{ textDecoration: 'underline' }}
           >
             Guide
           </Button>
 
-          <Box pr={1}>
-            <Button size="md" onClick={() => onFlowStatusUpdate(!flow.active)}>
-              <Text textStyle="subhead-1">
-                {flow?.active ? 'Unpublish' : 'Publish'}
-              </Text>
-            </Button>
-          </Box>
+          <TouchableTooltip label="Settings" aria-label="settings tooltip">
+            <IconButton
+              as={Link}
+              to={URLS.FLOW_EDITOR_NOTIFICATIONS(flowId)}
+              variant="outline"
+              aria-label="settings"
+              icon={<BiCog />}
+            ></IconButton>
+          </TouchableTooltip>
+
+          <Button size="md" onClick={() => onFlowStatusUpdate(!flow.active)}>
+            <Text textStyle="subhead-1">
+              {flow?.active ? 'Unpublish' : 'Publish'}
+            </Text>
+          </Button>
         </HStack>
 
         <Container maxW={852} p={0}>

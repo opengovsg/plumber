@@ -84,7 +84,7 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
       <LayoutNavigationProvider value={layoutNavigationProviderData}>
         <Box display="flex" flex="1">
           <Show above="sm">
-            <Box mt={1}>
+            <Box mt={4}>
               <NavigationSidebar />
             </Box>
             <Box>

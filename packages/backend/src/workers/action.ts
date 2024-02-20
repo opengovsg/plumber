@@ -124,18 +124,25 @@ worker.on('failed', async (job, err) => {
       job: job.data,
     },
   )
+
+  const flow = await Flow.query()
+    .findById(job.data.flowId)
+    .withGraphFetched('user')
+    .throwIfNotFound()
+
+  let shouldAlwaysSendEmail = false
+  if (flow.config?.errorConfig?.notificationFrequency === 'always') {
+    shouldAlwaysSendEmail = true
+  }
+
   const isEmailSent = await checkErrorEmail(job.data.flowId)
-  if (isEmailSent) {
+  if (!shouldAlwaysSendEmail && isEmailSent) {
     return
   }
   if (
     err instanceof UnrecoverableError ||
     job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
   ) {
-    const flow = await Flow.query()
-      .findById(job.data.flowId)
-      .withGraphFetched('user')
-      .throwIfNotFound()
     const emailErrorDetails = await sendErrorEmail(flow)
     logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
       errorDetails: { ...emailErrorDetails, ...job.data },
