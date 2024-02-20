@@ -93,7 +93,7 @@ export default function EditorLayout(): React.ReactElement {
                 variant="body1"
                 onConfirm={onFlowNameUpdate}
                 noWrap
-                sx={{ display: 'flex', flex: 1, maxWidth: '50vw', ml: 1 }}
+                sx={{ display: 'flex', flex: 1, maxWidth: '30vw', ml: 1 }}
               >
                 {flow?.name}
               </EditableTypography>

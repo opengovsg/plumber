@@ -18,10 +18,16 @@
     "db:list": "npm run db -- migrate:list",
     "db:rollback": "npm run db -- migrate:rollback",
     "db:migrate": "npm run db -- migrate:latest",
+    "postsetup": "ts-node src/db/dynamodb_seeds/create_table.ts",
+    "readme:dynamodb:seed": "echo 'Seeds the specified table with 10k rows, use with -- <YOUR_TABLE_ID>'",
+    "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
+    "readme:dynamodb:setup": "echo 'Run this function to create the required tile table in dynamodb locally.'",
+    "dynamodb:setup": "ts-node src/db/dynamodb_seeds/create_table.ts",
     "copy-statics": "copyfiles -u 1 src/**/*.{graphql,json,svg} dist"
   },
   "dependencies": {
     "@apollo/server": "4.9.4",
+    "@aws-sdk/client-dynamodb": "3.460.0",
     "@aws-sdk/client-s3": "3.369.0",
     "@bull-board/express": "5.6.0",
     "@graphql-tools/schema": "10.0.0",
@@ -41,6 +47,7 @@
     "dd-trace": "4.17.0",
     "dedent": "1.5.1",
     "dotenv": "^10.0.0",
+    "electrodb": "2.12.0",
     "email-validator": "2.0.4",
     "express": "4.18.2",
     "express-basic-auth": "^1.2.1",
@@ -62,11 +69,13 @@
     "multer": "1.4.5-lts.1",
     "nanoid": "3.3.6",
     "objection": "^3.0.0",
+    "p-limit": "3.1.0",
     "pg": "^8.7.1",
     "rate-limiter-flexible": "2.4.1",
     "redlock": "5.0.0-beta.2",
     "remark-breaks": "3.0.3",
     "remark-gfm": "3.0.1",
+    "type-fest": "4.4.0",
     "typescript": "^4.6.3",
     "winston": "^3.7.1",
     "zod": "3.22.4",
@@ -93,5 +102,5 @@
     "tsc-alias": "^1.8.6",
     "tsconfig-paths": "^4.2.0"
   },
-  "version": "1.9.2"
+  "version": "1.10.0"
 }

@@ -5,6 +5,8 @@ export const EXECUTION = (executionId: string): string =>
   `/executions/${executionId}`
 export const ROOT = '/'
 
+export const FOUR_O_FOUR = '/404'
+
 export const LOGIN = '/login'
 export const LOGIN_SGID_REDIRECT = '/login/sgid/redirect'
 export const ADD_REDIRECT_TO_LOGIN = (redirectQueryParam: string): string =>
@@ -61,6 +63,13 @@ export const FLOWS = '/flows'
 // TODO: revert this back to /flows/:flowId once we have a proper single flow page
 export const FLOW = (flowId: string): string => `/editor/${flowId}`
 export const FLOW_PATTERN = '/flows/:flowId'
+
+// Tiles routes
+export const TILES = '/tiles'
+export const TILE = (tableId: string): string => `/tiles/${tableId}`
+export const TILE_PATTERN = '/tiles/:tileId'
+export const PUBLIC_TILE_PATTERN = '/tiles/:tileId/:viewOnlyKey'
+export const UNAUTHORIZED_TILE = '/tiles/unauthorized'
 
 export const DASHBOARD = FLOWS
 

@@ -22,11 +22,12 @@ export default function EditorSnackbar(props: EditorSnackbarProps) {
       borderRadius="0.25rem"
       boxShadow="0px 0px 10px 0px rgba(191, 191, 191, 0.50)"
       display={isOpen ? 'block' : 'none'}
+      minW="22rem"
     >
-      <Flex justifyContent="center" alignItems="center" gap={2}>
+      <Flex justifyContent="center" alignItems="center" gap={4}>
         <Text textStyle={{ sm: 'body-2', md: 'body-1' }}>{snackbarText}</Text>
         <Button
-          variant="clear"
+          variant="outline"
           colorScheme="inverse"
           onClick={handleUnpublish}
           size={{ sm: 'sm', md: 'md' }}

@@ -1,6 +1,7 @@
 import type { ApolloLink } from '@apollo/client'
 import { from, HttpLink } from '@apollo/client'
 import { onError } from '@apollo/client/link/error'
+import { INVALID_TILE_VIEW_KEY, NOT_AUTHORISED } from 'config/errors'
 import * as URLS from 'config/urls'
 
 type CreateLinkOptions = {
@@ -19,7 +20,6 @@ const createHttpLink = (
   return new HttpLink({ uri, headers })
 }
 
-const NOT_AUTHORISED = 'Not Authorised!'
 const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
   onError(({ graphQLErrors, networkError, operation }) => {
     const context = operation.getContext()
@@ -39,6 +39,9 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
         if (message === NOT_AUTHORISED) {
           // this form of navigation will refetch current user as well
           window.location.href = URLS.LOGIN
+        }
+        if (message === INVALID_TILE_VIEW_KEY) {
+          window.location.href = URLS.UNAUTHORIZED_TILE
         }
       })
     }

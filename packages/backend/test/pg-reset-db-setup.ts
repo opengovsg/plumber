@@ -17,7 +17,7 @@ beforeEach(async () => {
     const { seed } = await import(join(config.seeds.directory, seedFile))
     await seed(client)
   }
-  console.info(`PostgreSQL seeds run`)
+  console.info(`vite: PostgreSQL seeds run`)
 })
 
 afterEach(async () => {
@@ -30,5 +30,5 @@ afterEach(async () => {
   for (const table of tables) {
     await client.raw(`TRUNCATE TABLE "${table}" CASCADE`)
   }
-  console.info(`PostgreSQL tables truncated`)
+  console.info(`vite: PostgreSQL tables truncated`)
 })

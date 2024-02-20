@@ -1,7 +1,11 @@
 import { useContext } from 'react'
 import { Link, useMatch } from 'react-router-dom'
 import { Text } from '@chakra-ui/react'
-import { SidebarContainer, SidebarItem } from '@opengovsg/design-system-react'
+import {
+  Badge,
+  SidebarContainer,
+  SidebarItem,
+} from '@opengovsg/design-system-react'
 import { LayoutNavigationContext } from 'contexts/LayoutNavigation'
 
 import { DrawerLink } from '.'
@@ -36,10 +40,16 @@ function NavigationSidebarItem({
         color: 'primary.600',
         bg: 'interaction.muted.main.active',
       }}
+      display="flex"
     >
       <Text textStyle="subhead-1" ml={4} display={{ sm: 'none', lg: 'block' }}>
         {text}
       </Text>
+      {link.badge && (
+        <Badge color="white" display={{ sm: 'none', lg: 'block' }}>
+          {link.badge}
+        </Badge>
+      )}
     </SidebarItem>
   )
 }
@@ -54,7 +64,7 @@ export default function NavigationSidebar() {
           key={index}
           link={link}
           closeDrawer={closeDrawer}
-        ></NavigationSidebarItem>
+        />
       ))}
     </SidebarContainer>
   )

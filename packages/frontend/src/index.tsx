@@ -10,6 +10,7 @@ import ThemeProvider from 'components/ThemeProvider'
 import appConfig from 'config/app'
 import { AuthenticationProvider } from 'contexts/Authentication'
 import { LaunchDarklyProvider } from 'contexts/LaunchDarkly'
+import { MotionConfig } from 'framer-motion'
 
 const container = document.getElementById('root')
 
@@ -36,14 +37,16 @@ if (['prod', 'staging'].includes(appConfig.env)) {
 }
 root.render(
   <ThemeProvider>
-    <ApolloProvider>
-      <AuthenticationProvider>
-        <IntlProvider>
-          <LaunchDarklyProvider>
-            <RouterProvider router={router} />
-          </LaunchDarklyProvider>
-        </IntlProvider>
-      </AuthenticationProvider>
-    </ApolloProvider>
+    <MotionConfig reducedMotion="always">
+      <ApolloProvider>
+        <AuthenticationProvider>
+          <IntlProvider>
+            <LaunchDarklyProvider>
+              <RouterProvider router={router} />
+            </LaunchDarklyProvider>
+          </IntlProvider>
+        </AuthenticationProvider>
+      </ApolloProvider>
+    </MotionConfig>
   </ThemeProvider>,
 )

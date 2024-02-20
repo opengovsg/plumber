@@ -1,14 +1,16 @@
-import HttpError from '@/errors/http'
 import type {
   AxiosInstance,
   AxiosRequestConfig,
   InternalAxiosRequestConfig,
 } from 'axios'
 
+import HttpError from '@/errors/http'
+
 export type IHttpClient = AxiosInstance
 import type { Request } from 'express'
 
-export type IJSONValue = string | number | boolean | IJSONObject | IJSONArray
+export type IJSONPrimitive = string | number | boolean
+export type IJSONValue = IJSONPrimitive | IJSONObject | IJSONArray
 export type IJSONArray = Array<IJSONValue>
 export interface IJSONObject {
   [x: string]: IJSONValue
@@ -146,6 +148,7 @@ export interface IFlow {
 export interface IUser {
   id: string
   email: string
+  // TODO: remove these unused properties?
   connections?: IConnection[]
   flows?: IFlow[]
   steps?: IStep[]
@@ -506,6 +509,7 @@ export type IGlobalVariable = {
   flow?: {
     id: string
     hasFileProcessingActions: boolean
+    userId: string
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
   }
@@ -576,3 +580,30 @@ export interface IStepError {
   appName: string
   details?: IJSONObject
 }
+
+// Tiles
+export interface ITableColumnConfig {
+  width?: number
+}
+
+export interface ITableColumnMetadata {
+  id: string
+  name: string
+  position: number
+  config: ITableColumnConfig
+}
+
+export interface ITableMetadata {
+  id: string
+  name: string
+  columns: ITableColumnMetadata[]
+  lastAccessedAt: string
+  viewOnlyKey?: string
+}
+
+export interface ITableRow {
+  rowId: string
+  data: Record<string, IJSONPrimitive>
+}
+
+export type ITableCollabRole = 'owner' | 'editor' | 'viewer'

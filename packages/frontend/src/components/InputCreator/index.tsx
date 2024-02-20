@@ -68,6 +68,7 @@ export default function InputCreator(
         disabled={disabled}
         showOptionValue={schema.showOptionValue ?? true}
         label={label}
+        placeholder={placeholder}
       />
     )
   }
