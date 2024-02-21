@@ -82,7 +82,6 @@ function ControlledAutocomplete(
   props: ControlledAutocompleteProps,
 ): React.ReactElement {
   const { control, watch, setValue, resetField } = useFormContext()
-  console.log(props)
   const {
     name,
     label,
