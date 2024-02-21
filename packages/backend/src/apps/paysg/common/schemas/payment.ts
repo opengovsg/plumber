@@ -4,10 +4,12 @@ export const schema = z
   .object({
     id: z.string(),
     payment_url: z.string(),
-    stripe_payment_intent_id: z.string(),
     payment_qr_code_url: z.string(),
     amount_in_cents: z.number(),
     payment_status: z.string(),
+
+    // Null if user is not on stripe.
+    stripe_payment_intent_id: z.string().nullish(),
 
     // Rest of fields are not as relevant for our end users, so skip exposing
     // them. We can expose them later if there is a use case.
