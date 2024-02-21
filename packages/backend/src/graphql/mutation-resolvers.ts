@@ -21,6 +21,12 @@ import updateStep from './mutations/update-step'
 import verifyConnection from './mutations/verify-connection'
 import verifyOtp from './mutations/verify-otp'
 
+/**
+ * Important:
+ * When adding NEW mutations that involve sensitive data like api keys and private keys,
+ * be sure to redact it in the morgan middleware. See /backend/src/helpers/morgan.ts.
+ */
+
 const mutationResolvers = {
   createConnection,
   generateAuthUrl,
