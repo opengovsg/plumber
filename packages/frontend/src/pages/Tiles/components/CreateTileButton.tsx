@@ -1,6 +1,7 @@
 import { ITableMetadata } from '@plumber/types'
 
 import { FormEvent, useCallback, useContext, useState } from 'react'
+import { HiOutlineHandRaised } from 'react-icons/hi2'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -13,10 +14,10 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import {
-  Badge,
   Button,
   FormLabel,
   Input,
+  Link,
   ModalCloseButton,
 } from '@opengovsg/design-system-react'
 import { TILES_FEATURE_FLAG } from 'config/flags'
@@ -62,14 +63,17 @@ const CreateTileButton = (): JSX.Element => {
       {isTilesEnabled ? (
         <Button onClick={onOpen}>Create Tile</Button>
       ) : (
-        <Badge
-          color="white"
+        <Button
+          as={Button}
           p={2}
-          cursor="cell"
-          bgGradient="linear(to-r, primary.600, primary.500)"
+          px={4}
+          onClick={() =>
+            window.open(URLS.TILES_REQUEST_ACCCESS_FORM_LINK, '_blank')
+          }
+          leftIcon={<HiOutlineHandRaised size={20} />}
         >
-          ✨ Coming soon
-        </Badge>
+          Request access
+        </Button>
       )}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
