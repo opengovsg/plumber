@@ -17,7 +17,6 @@ import {
   Button,
   FormLabel,
   Input,
-  Link,
   ModalCloseButton,
 } from '@opengovsg/design-system-react'
 import { TILES_FEATURE_FLAG } from 'config/flags'
@@ -64,7 +63,6 @@ const CreateTileButton = (): JSX.Element => {
         <Button onClick={onOpen}>Create Tile</Button>
       ) : (
         <Button
-          as={Button}
           p={2}
           px={4}
           onClick={() =>
