@@ -205,18 +205,16 @@ test.describe.serial('Trigger FormSG', () => {
       includeAttachments: true,
     })
     const emailsWithSubmission = emails.filter((email) =>
-      email.subject.match(/End to End FormSG Trigger Submission/),
+      email.subject.match(
+        `End to End FormSG Trigger Submission ${formResponseId}`,
+      ),
     )
     const emailFrom = emailsWithSubmission[0].from as string
-    const emailSubject = emailsWithSubmission[0].subject as string
     const emailContent = emailsWithSubmission[0].body?.html as string
     const emailAttachmentName = (
       emailsWithSubmission[0].attachments as Attachment[]
     )[0].filename
     expect(emailFrom).toBe(`End to End Test <${MAILSENDER}>`)
-    expect(emailSubject).toBe(
-      `End to End FormSG Trigger Submission ${formResponseId}`,
-    )
     expect(emailContent).toBe(
       '<p style="margin:0;">Short Answer: <span>Actual short answer</span></p>',
     )
