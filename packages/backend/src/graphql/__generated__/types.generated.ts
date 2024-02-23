@@ -1,5 +1,6 @@
 import type { JsonObject } from 'type-fest';
 import type { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
+import type { ExecutionStepGraphQLType, TableMetadataGraphQLType } from './../schema.gql-to-typescript';
 export type Maybe<T> = T | null | undefined;
 export type InputMaybe<T> = T | null | undefined;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -7,6 +8,7 @@ export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: 
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
 export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type RequireFields<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]> };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
@@ -873,21 +875,21 @@ export type ResolverFn<TResult, TParent, TContext, TArgs> = (
   parent: TParent,
   args: TArgs,
   context: TContext,
-  info: GraphQLResolveInfo
+  info?: GraphQLResolveInfo
 ) => Promise<TResult> | TResult;
 
 export type SubscriptionSubscribeFn<TResult, TParent, TContext, TArgs> = (
   parent: TParent,
   args: TArgs,
   context: TContext,
-  info: GraphQLResolveInfo
+  info?: GraphQLResolveInfo
 ) => AsyncIterable<TResult> | Promise<AsyncIterable<TResult>>;
 
 export type SubscriptionResolveFn<TResult, TParent, TContext, TArgs> = (
   parent: TParent,
   args: TArgs,
   context: TContext,
-  info: GraphQLResolveInfo
+  info?: GraphQLResolveInfo
 ) => TResult | Promise<TResult>;
 
 export interface SubscriptionSubscriberObject<TResult, TKey extends string, TParent, TContext, TArgs> {
@@ -911,10 +913,10 @@ export type SubscriptionResolver<TResult, TKey extends string, TParent = {}, TCo
 export type TypeResolveFn<TTypes, TParent = {}, TContext = {}> = (
   parent: TParent,
   context: TContext,
-  info: GraphQLResolveInfo
+  info?: GraphQLResolveInfo
 ) => Maybe<TTypes> | Promise<Maybe<TTypes>>;
 
-export type IsTypeOfResolverFn<T = {}, TContext = {}> = (obj: T, context: TContext, info: GraphQLResolveInfo) => boolean | Promise<boolean>;
+export type IsTypeOfResolverFn<T = {}, TContext = {}> = (obj: T, context: TContext, info?: GraphQLResolveInfo) => boolean | Promise<boolean>;
 
 export type NextResolverFn<T> = () => Promise<T>;
 
@@ -923,7 +925,7 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
   parent: TParent,
   args: TArgs,
   context: TContext,
-  info: GraphQLResolveInfo
+  info?: GraphQLResolveInfo
 ) => TResult | Promise<TResult>;
 
 
@@ -962,17 +964,17 @@ export type ResolversTypes = {
   DeleteTableInput: DeleteTableInput;
   DeleteTableRowsInput: DeleteTableRowsInput;
   ExecuteFlowInput: ExecuteFlowInput;
-  ExecuteFlowType: ResolverTypeWrapper<ExecuteFlowType>;
-  Execution: ResolverTypeWrapper<Execution>;
-  ExecutionConnection: ResolverTypeWrapper<ExecutionConnection>;
-  ExecutionEdge: ResolverTypeWrapper<ExecutionEdge>;
-  ExecutionStep: ResolverTypeWrapper<ExecutionStep>;
-  ExecutionStepConnection: ResolverTypeWrapper<ExecutionStepConnection>;
-  ExecutionStepEdge: ResolverTypeWrapper<ExecutionStepEdge>;
+  ExecuteFlowType: ResolverTypeWrapper<Omit<ExecuteFlowType, 'step'> & { step?: Maybe<ResolversTypes['Step']> }>;
+  Execution: ResolverTypeWrapper<Omit<Execution, 'flow'> & { flow?: Maybe<ResolversTypes['Flow']> }>;
+  ExecutionConnection: ResolverTypeWrapper<Omit<ExecutionConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionEdge']>>> }>;
+  ExecutionEdge: ResolverTypeWrapper<Omit<ExecutionEdge, 'node'> & { node?: Maybe<ResolversTypes['Execution']> }>;
+  ExecutionStep: ResolverTypeWrapper<ExecutionStepGraphQLType>;
+  ExecutionStepConnection: ResolverTypeWrapper<Omit<ExecutionStepConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStepEdge']>>> }>;
+  ExecutionStepEdge: ResolverTypeWrapper<Omit<ExecutionStepEdge, 'node'> & { node?: Maybe<ResolversTypes['ExecutionStep']> }>;
   Field: ResolverTypeWrapper<Field>;
-  Flow: ResolverTypeWrapper<Flow>;
-  FlowConnection: ResolverTypeWrapper<FlowConnection>;
-  FlowEdge: ResolverTypeWrapper<FlowEdge>;
+  Flow: ResolverTypeWrapper<Omit<Flow, 'steps'> & { steps?: Maybe<ReadonlyArray<Maybe<ResolversTypes['Step']>>> }>;
+  FlowConnection: ResolverTypeWrapper<Omit<FlowConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversTypes['FlowEdge']>>> }>;
+  FlowEdge: ResolverTypeWrapper<Omit<FlowEdge, 'node'> & { node?: Maybe<ResolversTypes['Flow']> }>;
   GenerateAuthUrlInput: GenerateAuthUrlInput;
   JSONObject: ResolverTypeWrapper<Scalars['JSONObject']['output']>;
   LoginWithSelectedSgidInput: LoginWithSelectedSgidInput;
@@ -991,7 +993,7 @@ export type ResolversTypes = {
   ResetConnectionInput: ResetConnectionInput;
   RetryExecutionStepInput: RetryExecutionStepInput;
   SgidPublicOfficerEmployment: ResolverTypeWrapper<SgidPublicOfficerEmployment>;
-  Step: ResolverTypeWrapper<Step>;
+  Step: ResolverTypeWrapper<Omit<Step, 'executionSteps' | 'flow'> & { executionSteps?: Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStep']>>>, flow?: Maybe<ResolversTypes['Flow']> }>;
   StepConnectionInput: StepConnectionInput;
   StepEnumType: StepEnumType;
   StepFlowInput: StepFlowInput;
@@ -1000,7 +1002,7 @@ export type ResolversTypes = {
   TableColumnConfigInput: TableColumnConfigInput;
   TableColumnMetadata: ResolverTypeWrapper<TableColumnMetadata>;
   TableColumnMetadataInput: TableColumnMetadataInput;
-  TableMetadata: ResolverTypeWrapper<TableMetadata>;
+  TableMetadata: ResolverTypeWrapper<TableMetadataGraphQLType>;
   TestConnectionResult: ResolverTypeWrapper<TestConnectionResult>;
   TileRow: ResolverTypeWrapper<TileRow>;
   Trigger: ResolverTypeWrapper<Trigger>;
@@ -1053,17 +1055,17 @@ export type ResolversParentTypes = {
   DeleteTableInput: DeleteTableInput;
   DeleteTableRowsInput: DeleteTableRowsInput;
   ExecuteFlowInput: ExecuteFlowInput;
-  ExecuteFlowType: ExecuteFlowType;
-  Execution: Execution;
-  ExecutionConnection: ExecutionConnection;
-  ExecutionEdge: ExecutionEdge;
-  ExecutionStep: ExecutionStep;
-  ExecutionStepConnection: ExecutionStepConnection;
-  ExecutionStepEdge: ExecutionStepEdge;
+  ExecuteFlowType: Omit<ExecuteFlowType, 'step'> & { step?: Maybe<ResolversParentTypes['Step']> };
+  Execution: Omit<Execution, 'flow'> & { flow?: Maybe<ResolversParentTypes['Flow']> };
+  ExecutionConnection: Omit<ExecutionConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['ExecutionEdge']>>> };
+  ExecutionEdge: Omit<ExecutionEdge, 'node'> & { node?: Maybe<ResolversParentTypes['Execution']> };
+  ExecutionStep: ExecutionStepGraphQLType;
+  ExecutionStepConnection: Omit<ExecutionStepConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['ExecutionStepEdge']>>> };
+  ExecutionStepEdge: Omit<ExecutionStepEdge, 'node'> & { node?: Maybe<ResolversParentTypes['ExecutionStep']> };
   Field: Field;
-  Flow: Flow;
-  FlowConnection: FlowConnection;
-  FlowEdge: FlowEdge;
+  Flow: Omit<Flow, 'steps'> & { steps?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['Step']>>> };
+  FlowConnection: Omit<FlowConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['FlowEdge']>>> };
+  FlowEdge: Omit<FlowEdge, 'node'> & { node?: Maybe<ResolversParentTypes['Flow']> };
   GenerateAuthUrlInput: GenerateAuthUrlInput;
   JSONObject: Scalars['JSONObject']['output'];
   LoginWithSelectedSgidInput: LoginWithSelectedSgidInput;
@@ -1082,7 +1084,7 @@ export type ResolversParentTypes = {
   ResetConnectionInput: ResetConnectionInput;
   RetryExecutionStepInput: RetryExecutionStepInput;
   SgidPublicOfficerEmployment: SgidPublicOfficerEmployment;
-  Step: Step;
+  Step: Omit<Step, 'executionSteps' | 'flow'> & { executionSteps?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['ExecutionStep']>>>, flow?: Maybe<ResolversParentTypes['Flow']> };
   StepConnectionInput: StepConnectionInput;
   StepFlowInput: StepFlowInput;
   StepInput: StepInput;
@@ -1090,7 +1092,7 @@ export type ResolversParentTypes = {
   TableColumnConfigInput: TableColumnConfigInput;
   TableColumnMetadata: TableColumnMetadata;
   TableColumnMetadataInput: TableColumnMetadataInput;
-  TableMetadata: TableMetadata;
+  TableMetadata: TableMetadataGraphQLType;
   TestConnectionResult: TestConnectionResult;
   TileRow: TileRow;
   Trigger: Trigger;

@@ -53,6 +53,11 @@ const config: CodegenConfig = {
         strictScalars: true,
         useTypeImports: true,
         immutableTypes: true,
+
+        // Make resolvers' 4th `info` argument optional. This reduces
+        // boilerplate in our unit tests.
+        // See https://www.apollographql.com/docs/apollo-server/data/resolvers/#resolver-arguments
+        optionalInfoArgument: true,
       },
     }),
     //
