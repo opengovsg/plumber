@@ -603,8 +603,8 @@ type AppHealth {
 }
 
 type Stats {
-  userCount: Int
-  executionCount: Int
+  userCount: Int!
+  executionCount: Int!
 }
 
 type SgidPublicOfficerEmployment {

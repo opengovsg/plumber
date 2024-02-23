@@ -3,34 +3,33 @@ import { DateTime } from 'luxon'
 import { client } from '@/config/database'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 
-const redisClient = createRedisClient(REDIS_DB_INDEX.PLUMBER_DATA)
+const redisClient = createRedisClient(REDIS_DB_INDEX.GLOBAL_DATA)
+const REDIS_KEY = 'landing-stats'
 
 const getPlumberStats = async () => {
-  const redisKey = 'plumber-data'
-
-  if (await redisClient.exists(redisKey)) {
-    return {
-      userCount: await redisClient.hget(redisKey, 'userCount'),
-      executionCount: await redisClient.hget(redisKey, 'executionCount'),
-    }
+  if (await redisClient.exists(REDIS_KEY)) {
+    return await redisClient.hgetall(REDIS_KEY)
   }
 
-  const userCountQuery = await client.raw(
-    `SELECT reltuples AS estimate FROM pg_class WHERE relname = 'users';`,
-  )
+  const [userCountQuery, executionCountQuery] = await Promise.all([
+    client.raw(
+      `SELECT reltuples AS estimate FROM pg_class WHERE relname = 'users';`,
+    ),
+    client.raw(
+      `SELECT reltuples AS estimate FROM pg_class WHERE relname = 'executions';`,
+    ),
+  ])
+
   const userCount = userCountQuery.rows[0].estimate
-  const executionCountQuery = await client.raw(
-    `SELECT reltuples AS estimate FROM pg_class WHERE relname = 'executions';`,
-  )
   const executionCount = executionCountQuery.rows[0].estimate
 
   await redisClient
     .multi()
-    .hset(redisKey, {
+    .hset(REDIS_KEY, {
       userCount,
       executionCount,
     })
-    .pexpireat(redisKey, DateTime.now().endOf('day').toMillis())
+    .pexpireat(REDIS_KEY, DateTime.now().endOf('day').toMillis())
     .exec()
 
   return {

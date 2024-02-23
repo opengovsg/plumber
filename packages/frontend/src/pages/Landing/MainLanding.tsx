@@ -93,18 +93,21 @@ export default function MainLanding() {
               Automating
               <br />
               <Skeleton display="inline" isLoaded={!loading}>
-                {estimateCountByHundreds(executionCount)} tasks
+                {executionCount ? estimateCountByHundreds(executionCount) : ''}{' '}
+                tasks
               </Skeleton>
               <br />
               for public service
             </Text>
 
-            <Text textStyle="subhead-1">
-              <Skeleton display="inline" isLoaded={!loading}>
-                {estimateCountByHundreds(userCount)}
-              </Skeleton>
-              {` public officers have started automating their work`}
-            </Text>
+            <Skeleton display="inline" isLoaded={!loading}>
+              {userCount && (
+                <Text textStyle="subhead-1">
+                  {estimateCountByHundreds(userCount)}
+                  {` public officers have started automating their work`}
+                </Text>
+              )}
+            </Skeleton>
 
             <Button
               onClick={() => navigate(URLS.LOGIN)}
@@ -118,7 +121,7 @@ export default function MainLanding() {
             src={plumberLandingGif}
             alt="right-landing-gif"
             h="auto"
-            w={{ base: '80vw', md: '40vw' }}
+            w={{ base: '80vw', md: '50%' }}
           ></Image>
         </HStack>
       </Container>
