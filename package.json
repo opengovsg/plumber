@@ -8,9 +8,8 @@
     "dev:backend": "npm run -w backend dev",
     "dev:worker": "npm run -w backend worker",
     "dev": "npm run all --kill-others npm:dev:*",
-    "build:frontend": "npm run -w frontend build",
-    "build:backend": "npm run -w backend build",
-    "build": "npm run --workspaces --if-present build",
+    "graphql-codegen": "graphql-codegen --config gql-codegen.ts",
+    "build": "npm run graphql-codegen && npm run --workspaces --if-present build",
     "start": "npm run -w backend start",
     "start:worker": "npm run -w backend start:worker",
     "lint": "npm run --workspaces --if-present lint",
@@ -25,6 +24,8 @@
     ]
   },
   "devDependencies": {
+    "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
+    "@graphql-codegen/cli": "5.0.2",
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^5.9.1",
     "@typescript-eslint/parser": "^5.9.1",

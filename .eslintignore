@@ -12,3 +12,5 @@ jest.config.base.js
 lint-staged.config.js
 
 webpack.config.js
+
+__generated__
