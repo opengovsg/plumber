@@ -1,19 +1,12 @@
 import { raw } from 'objection'
 
 import paginate from '@/helpers/pagination'
-import Context from '@/types/express/context'
 
-type Params = {
-  executionId: string
-  limit: number
-  offset: number
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getExecutionSteps = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-) => {
+const getExecutionSteps: NonNullable<
+  QueryResolvers['getExecutionSteps']
+> = async (_parent, params, context) => {
   const execution = await context.currentUser
     .$relatedQuery('executions')
     .withSoftDeleted()

@@ -2,17 +2,12 @@ import { raw } from 'objection'
 
 import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
-import Context from '@/types/express/context'
 
-type Params = {
-  stepId: string
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getStepWithTestExecutions = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-) => {
+const getStepWithTestExecutions: NonNullable<
+  QueryResolvers['getStepWithTestExecutions']
+> = async (_parent, params, context) => {
   const step = await context.currentUser
     .$relatedQuery('steps')
     .findOne({ 'steps.id': params.stepId })

@@ -520,7 +520,7 @@ export type Query = {
   getApps?: Maybe<Array<Maybe<App>>>;
   getConnectedApps?: Maybe<Array<Maybe<App>>>;
   getCurrentUser?: Maybe<User>;
-  getDynamicData?: Maybe<Scalars['JSONObject']['output']>;
+  getDynamicData?: Maybe<Array<Maybe<Scalars['JSONObject']['output']>>>;
   getExecution?: Maybe<Execution>;
   getExecutionSteps?: Maybe<ExecutionStepConnection>;
   getExecutions?: Maybe<ExecutionConnection>;
@@ -1111,7 +1111,7 @@ export type GetDynamicDataQueryVariables = Exact<{
 }>;
 
 
-export type GetDynamicDataQuery = { __typename?: 'Query', getDynamicData?: JsonObject | null };
+export type GetDynamicDataQuery = { __typename?: 'Query', getDynamicData?: Array<JsonObject | null> | null };
 
 export type GetExecutionStepsQueryVariables = Exact<{
   executionId: Scalars['String']['input'];

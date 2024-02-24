@@ -1,13 +1,9 @@
-import Context from '@/types/express/context'
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-type Params = {
-  executionId: string
-}
-
-const getExecution = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const getExecution: NonNullable<QueryResolvers['getExecution']> = async (
+  _parent,
+  params,
+  context,
 ) => {
   const execution = await context.currentUser
     .$relatedQuery('executions')

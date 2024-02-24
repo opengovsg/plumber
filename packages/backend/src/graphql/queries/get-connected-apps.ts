@@ -1,17 +1,10 @@
-import { IConnection } from '@plumber/types'
-
 import App from '@/models/app'
-import Context from '@/types/express/context'
 
-type Params = {
-  name: string
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getConnectedApps = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-) => {
+const getConnectedApps: NonNullable<
+  QueryResolvers['getConnectedApps']
+> = async (_parent, params, context) => {
   let apps = await App.findAll(params.name)
 
   const connections = await context.currentUser
@@ -40,7 +33,7 @@ const getConnectedApps = async (
     })
     .map((app) => {
       const connection = connections.find(
-        (connection) => (connection as IConnection).key === app.key,
+        (connection) => connection.key === app.key,
       )
 
       app.connectionCount = connection?.count || 0

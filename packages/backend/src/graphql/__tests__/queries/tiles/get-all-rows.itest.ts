@@ -59,13 +59,22 @@ describe('get all rows query', () => {
       rowIdsInserted.push(rowId)
     }
 
-    const rows = await getAllRows(
+    // https://github.com/dotansimha/graphql-code-generator/issues/2124
+    //
+    // It turns out GraphQL resolvers are allowed to return a promise array. So
+    // even though we actually return the actual rows, graphql-codegen has
+    // typed our function as returning a promise array just-in-case (since it
+    // can't inspect the implementation).
+    //
+    // Since this is just a test, we'll just await once more.
+    const almostRows = await getAllRows(
       null,
       {
         tableId: dummyTable.id,
       },
       context,
     )
+    const rows = await Promise.all(almostRows)
 
     expect(rows.map((r) => r.rowId)).toEqual(rowIdsInserted)
   })
@@ -111,13 +120,14 @@ describe('get all rows query', () => {
 
     await createTableRow(rowToInsert)
 
-    const rows = await getAllRows(
+    const almostRows = await getAllRows(
       null,
       {
         tableId: dummyTable.id,
       },
       context,
     )
+    const rows = await Promise.all(almostRows)
 
     expect(Object.keys(rows[0].data).sort()).toEqual(dummyColumnIds.sort())
   })
