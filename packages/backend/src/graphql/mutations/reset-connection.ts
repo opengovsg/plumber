@@ -1,16 +1,8 @@
-import Context from '@/types/express/context'
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-type Params = {
-  input: {
-    id: string
-  }
-}
-
-const resetConnection = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-) => {
+const resetConnection: NonNullable<
+  MutationResolvers['resetConnection']
+> = async (_parent, params, context) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({

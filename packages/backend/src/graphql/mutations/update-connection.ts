@@ -1,21 +1,11 @@
-import { IJSONObject } from '@plumber/types'
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-import Context from '@/types/express/context'
+// Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive Data
+// Scanner
 
-// Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive Data Scanner
-
-type Params = {
-  input: {
-    id: string
-    formattedData: IJSONObject
-  }
-}
-
-const updateConnection = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-) => {
+const updateConnection: NonNullable<
+  MutationResolvers['updateConnection']
+> = async (_parent, params, context) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({

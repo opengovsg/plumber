@@ -1,16 +1,9 @@
-import Context from '@/types/express/context'
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-type Params = {
-  input: {
-    id: string
-    name: string
-  }
-}
-
-const updateFlow = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const updateFlow: NonNullable<MutationResolvers['updateFlow']> = async (
+  _parent,
+  params,
+  context,
 ) => {
   let flow = await context.currentUser
     .$relatedQuery('flows')

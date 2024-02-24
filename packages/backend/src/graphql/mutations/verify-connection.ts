@@ -4,19 +4,12 @@
 
 import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    id: string
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-const verifyConnection = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-) => {
+const verifyConnection: NonNullable<
+  MutationResolvers['verifyConnection']
+> = async (_parent, params, context) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({

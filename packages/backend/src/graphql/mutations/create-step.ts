@@ -1,29 +1,11 @@
-import { type IJSONObject } from '@plumber/types'
-
 import Step from '@/models/step'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    key: string
-    appKey: string
-    flow: {
-      id: string
-    }
-    connection: {
-      id: string
-    }
-    previousStep: {
-      id: string
-    }
-    parameters: IJSONObject
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createStep = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const createStep: NonNullable<MutationResolvers['createStep']> = async (
+  _parent,
+  params,
+  context,
 ) => {
   const { input } = params
 

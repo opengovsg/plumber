@@ -49,10 +49,14 @@ const config: CodegenConfig = {
         // Add some stricter type checking. See
         // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-resolvers
         // for more info.
+        //
+        // NOTE: immutableTypes is not enabled here as the libraries we use
+        // (e.g. objectionjs) have not marked their function params as
+        // readonly; enabling this will cause too much friction for not that
+        // much gain.
         defaultScalarType: 'unknown',
         strictScalars: true,
         useTypeImports: true,
-        immutableTypes: true,
 
         // In addition to normal functions, resolvers can also be objects with a
         //  `resolve` function. Due to this, the generated types for resolvers

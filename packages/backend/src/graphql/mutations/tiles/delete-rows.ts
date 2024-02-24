@@ -1,14 +1,11 @@
-import { DeleteRowsInput, deleteTableRows } from '@/models/dynamodb/table-row'
-import Context from '@/types/express/context'
+import { deleteTableRows } from '@/models/dynamodb/table-row'
 
-type Params = {
-  input: DeleteRowsInput
-}
+import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const deleteRows = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const deleteRows: NonNullable<MutationResolvers['deleteRows']> = async (
+  _parent,
+  params,
+  context,
 ) => {
   const { tableId, rowIds } = params.input
 

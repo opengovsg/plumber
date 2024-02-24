@@ -1,16 +1,8 @@
-import Context from '@/types/express/context'
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-type Params = {
-  input: {
-    id: string
-  }
-}
-
-const deleteConnection = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-) => {
+const deleteConnection: NonNullable<
+  MutationResolvers['deleteConnection']
+> = async (_parent, params, context) => {
   await context.currentUser
     .$relatedQuery('connections')
     .delete()
@@ -19,7 +11,7 @@ const deleteConnection = async (
     })
     .throwIfNotFound()
 
-  return
+  return true
 }
 
 export default deleteConnection

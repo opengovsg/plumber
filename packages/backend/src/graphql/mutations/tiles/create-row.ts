@@ -1,14 +1,11 @@
-import { CreateRowInput, createTableRow } from '@/models/dynamodb/table-row'
-import Context from '@/types/express/context'
+import { createTableRow } from '@/models/dynamodb/table-row'
 
-type Params = {
-  input: CreateRowInput
-}
+import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const createRow = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const createRow: NonNullable<MutationResolvers['createRow']> = async (
+  _parent,
+  params,
+  context,
 ): Promise<string> => {
   const { tableId, data } = params.input
   const table = await context.currentUser
