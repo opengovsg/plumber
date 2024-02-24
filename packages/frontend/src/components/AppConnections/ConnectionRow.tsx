@@ -1,6 +1,4 @@
-import type { IConnection } from '@plumber/types'
-
-import * as React from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useLazyQuery, useMutation } from '@apollo/client'
 import { Card } from '@chakra-ui/react'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -11,28 +9,42 @@ import CardActionArea from '@mui/material/CardActionArea'
 import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
 import { useToast } from '@opengovsg/design-system-react'
-import ConnectionContextMenu from 'components/AppConnectionContextMenu'
+
+import {
+  type FragmentType,
+  getFragmentData,
+  graphql,
+} from 'graphql/__generated__'
 import { DELETE_CONNECTION } from 'graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from 'graphql/queries/test-connection'
-import useFormatMessage from 'hooks/useFormatMessage'
 import { DateTime } from 'luxon'
+
+import ConnectionContextMenu from './ConnectionContextMenu'
 
 import { CardContent, Typography } from './style'
 
-type AppConnectionRowProps = {
-  connection: IConnection
+const AppConnections_ConnectionRow_ConnectionFragment = graphql(`
+  fragment AppConnections_ConnectionRow_ConnectionFragment on Connection {
+    id
+    key
+    formattedData {
+      screenName
+    }
+    verified
+    createdAt
+    flowCount
+  }
+`)
+
+type ConnectionRowProps = {
+  connection: FragmentType<
+    typeof AppConnections_ConnectionRow_ConnectionFragment
+  >
 }
 
-const countTranslation = (value: React.ReactNode) => (
-  <>
-    <Typography variant="body1">{value}</Typography>
-    <br />
-  </>
-)
-
-function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
+function ConnectionRow({ connection }: ConnectionRowProps): JSX.Element {
   const toast = useToast()
-  const [verificationVisible, setVerificationVisible] = React.useState(false)
+  const [verificationVisible, setVerificationVisible] = useState(false)
   const [testConnection, { called: testCalled, loading: testLoading }] =
     useLazyQuery(TEST_CONNECTION, {
       fetchPolicy: 'network-only',
@@ -45,19 +57,18 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
     })
   const [deleteConnection] = useMutation(DELETE_CONNECTION)
 
-  const formatMessage = useFormatMessage()
   const { id, key, formattedData, verified, createdAt, flowCount } =
-    props.connection
+    getFragmentData(AppConnections_ConnectionRow_ConnectionFragment, connection)
 
-  const contextButtonRef = React.useRef<SVGSVGElement | null>(null)
-  const [anchorEl, setAnchorEl] = React.useState<SVGSVGElement | null>(null)
+  const contextButtonRef = useRef<SVGSVGElement | null>(null)
+  const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null)
 
   const handleClose = () => {
     setAnchorEl(null)
   }
 
   const onContextMenuClick = () => setAnchorEl(contextButtonRef.current)
-  const onContextMenuAction = React.useCallback(
+  const onContextMenuAction = useCallback(
     async (
       _event: React.MouseEvent<Element, MouseEvent>,
       action: { [key: string]: string },
@@ -114,9 +125,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
               </Typography>
 
               <Typography variant="caption">
-                {formatMessage('connection.addedAt', {
-                  datetime: relativeCreatedAt,
-                })}
+                Added {relativeCreatedAt}
               </Typography>
             </Stack>
 
@@ -125,9 +134,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
                 {verificationVisible && testCalled && testLoading && (
                   <>
                     <CircularProgress size={16} />
-                    <Typography variant="caption">
-                      {formatMessage('connection.testing')}
-                    </Typography>
+                    <Typography variant="caption">Testing...</Typography>
                   </>
                 )}
                 {verificationVisible &&
@@ -136,9 +143,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
                   verified && (
                     <>
                       <CheckCircleIcon fontSize="small" color="success" />
-                      <Typography variant="caption">
-                        {formatMessage('connection.testSuccessful')}
-                      </Typography>
+                      <Typography variant="caption">Test successful</Typography>
                     </>
                   )}
                 {verificationVisible &&
@@ -147,9 +152,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
                   !verified && (
                     <>
                       <ErrorIcon fontSize="small" color="error" />
-                      <Typography variant="caption">
-                        {formatMessage('connection.testFailed')}
-                      </Typography>
+                      <Typography variant="caption">Test failed</Typography>
                     </>
                   )}
               </Stack>
@@ -161,9 +164,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
                 color="textSecondary"
                 sx={{ display: ['none', 'inline-block'] }}
               >
-                {formatMessage('connection.flowCount', {
-                  count: countTranslation(flowCount),
-                })}
+                <Typography variant="body1">{flowCount} pipes</Typography>
               </Typography>
             </Box>
 
@@ -187,4 +188,4 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   )
 }
 
-export default AppConnectionRow
+export default ConnectionRow
