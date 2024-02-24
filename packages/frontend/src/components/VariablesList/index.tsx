@@ -42,7 +42,7 @@ export default function VariablesList(props: VariablesListProps) {
   return (
     <List
       disablePadding
-      data-test="power-input-suggestion-group"
+      data-test="variable-suggestion-group"
       sx={{ maxHeight: listHeight, overflowY: 'auto' }}
     >
       {variables.map((variable) => {
@@ -51,7 +51,7 @@ export default function VariablesList(props: VariablesListProps) {
           <ListItemComponent
             sx={{ pl: 4 }}
             divider
-            data-test="power-input-suggestion-item"
+            data-test="variable-suggestion-item"
             key={`suggestion-${variable.name}`}
           >
             <ListItemText
