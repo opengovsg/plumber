@@ -70,19 +70,19 @@ export type ActionSubstepArgumentSourceArgument = {
 
 export type App = {
   __typename?: 'App';
-  actions?: Maybe<Array<Maybe<Action>>>;
+  actions?: Maybe<Array<Action>>;
   auth?: Maybe<AppAuth>;
-  authDocUrl?: Maybe<Scalars['String']['output']>;
+  authDocUrl: Scalars['String']['output'];
   connectionCount?: Maybe<Scalars['Int']['output']>;
-  connections?: Maybe<Array<Maybe<Connection>>>;
+  connections?: Maybe<Array<Connection>>;
   description?: Maybe<Scalars['String']['output']>;
   docUrl?: Maybe<Scalars['String']['output']>;
   flowCount?: Maybe<Scalars['Int']['output']>;
-  iconUrl?: Maybe<Scalars['String']['output']>;
-  key?: Maybe<Scalars['String']['output']>;
-  name?: Maybe<Scalars['String']['output']>;
-  primaryColor?: Maybe<Scalars['String']['output']>;
-  triggers?: Maybe<Array<Maybe<Trigger>>>;
+  iconUrl: Scalars['String']['output'];
+  key: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  primaryColor: Scalars['String']['output'];
+  triggers?: Maybe<Array<Trigger>>;
 };
 
 export type AppAuth = {
@@ -139,12 +139,12 @@ export type AuthenticationStepProperty = {
 export type Connection = {
   __typename?: 'Connection';
   app?: Maybe<App>;
-  createdAt?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['String']['output'];
   flowCount?: Maybe<Scalars['Int']['output']>;
   formattedData?: Maybe<ConnectionData>;
-  id?: Maybe<Scalars['String']['output']>;
-  key?: Maybe<Scalars['String']['output']>;
-  verified?: Maybe<Scalars['Boolean']['output']>;
+  id: Scalars['String']['output'];
+  key: Scalars['String']['output'];
+  verified: Scalars['Boolean']['output'];
 };
 
 export type ConnectionData = {
@@ -866,7 +866,7 @@ export type CreateConnectionMutationVariables = Exact<{
 }>;
 
 
-export type CreateConnectionMutation = { __typename?: 'Mutation', createConnection?: { __typename?: 'Connection', id?: string | null, key?: string | null, verified?: boolean | null, formattedData?: { __typename?: 'ConnectionData', screenName?: string | null } | null } | null };
+export type CreateConnectionMutation = { __typename?: 'Mutation', createConnection?: { __typename?: 'Connection', id: string, key: string, verified: boolean, formattedData?: { __typename?: 'ConnectionData', screenName?: string | null } | null } | null };
 
 export type CreateFlowMutationVariables = Exact<{
   input?: InputMaybe<CreateFlowInput>;
@@ -901,7 +901,7 @@ export type CreateStepMutationVariables = Exact<{
 }>;
 
 
-export type CreateStepMutation = { __typename?: 'Mutation', createStep?: { __typename?: 'Step', id?: string | null, type?: StepEnumType | null, key?: string | null, appKey?: string | null, parameters?: JsonObject | null, position?: number | null, status?: string | null, connection?: { __typename?: 'Connection', id?: string | null } | null } | null };
+export type CreateStepMutation = { __typename?: 'Mutation', createStep?: { __typename?: 'Step', id?: string | null, type?: StepEnumType | null, key?: string | null, appKey?: string | null, parameters?: JsonObject | null, position?: number | null, status?: string | null, connection?: { __typename?: 'Connection', id: string } | null } | null };
 
 export type CreateTableMutationVariables = Exact<{
   input: CreateTableInput;
@@ -997,7 +997,7 @@ export type ResetConnectionMutationVariables = Exact<{
 }>;
 
 
-export type ResetConnectionMutation = { __typename?: 'Mutation', resetConnection?: { __typename?: 'Connection', id?: string | null } | null };
+export type ResetConnectionMutation = { __typename?: 'Mutation', resetConnection?: { __typename?: 'Connection', id: string } | null };
 
 export type RetryExecutionStepMutationVariables = Exact<{
   input?: InputMaybe<RetryExecutionStepInput>;
@@ -1011,7 +1011,7 @@ export type UpdateConnectionMutationVariables = Exact<{
 }>;
 
 
-export type UpdateConnectionMutation = { __typename?: 'Mutation', updateConnection?: { __typename?: 'Connection', id?: string | null, key?: string | null, verified?: boolean | null, formattedData?: { __typename?: 'ConnectionData', screenName?: string | null } | null } | null };
+export type UpdateConnectionMutation = { __typename?: 'Mutation', updateConnection?: { __typename?: 'Connection', id: string, key: string, verified: boolean, formattedData?: { __typename?: 'ConnectionData', screenName?: string | null } | null } | null };
 
 export type UpdateFlowStatusMutationVariables = Exact<{
   input?: InputMaybe<UpdateFlowStatusInput>;
@@ -1039,7 +1039,7 @@ export type UpdateStepMutationVariables = Exact<{
 }>;
 
 
-export type UpdateStepMutation = { __typename?: 'Mutation', updateStep?: { __typename?: 'Step', id?: string | null, type?: StepEnumType | null, key?: string | null, appKey?: string | null, webhookUrl?: string | null, parameters?: JsonObject | null, status?: string | null, connection?: { __typename?: 'Connection', id?: string | null } | null } | null };
+export type UpdateStepMutation = { __typename?: 'Mutation', updateStep?: { __typename?: 'Step', id?: string | null, type?: StepEnumType | null, key?: string | null, appKey?: string | null, webhookUrl?: string | null, parameters?: JsonObject | null, status?: string | null, connection?: { __typename?: 'Connection', id: string } | null } | null };
 
 export type UpdateTableMutationVariables = Exact<{
   input: UpdateTableInput;
@@ -1053,7 +1053,7 @@ export type VerifyConnectionMutationVariables = Exact<{
 }>;
 
 
-export type VerifyConnectionMutation = { __typename?: 'Mutation', verifyConnection?: { __typename?: 'Connection', id?: string | null, key?: string | null, verified?: boolean | null, createdAt?: string | null, formattedData?: { __typename?: 'ConnectionData', screenName?: string | null } | null, app?: { __typename?: 'App', key?: string | null } | null } | null };
+export type VerifyConnectionMutation = { __typename?: 'Mutation', verifyConnection?: { __typename?: 'Connection', id: string, key: string, verified: boolean, createdAt: string, formattedData?: { __typename?: 'ConnectionData', screenName?: string | null } | null, app?: { __typename?: 'App', key: string } | null } | null };
 
 export type VerifyOtpMutationVariables = Exact<{
   input?: InputMaybe<VerifyOtpInput>;
@@ -1074,14 +1074,14 @@ export type GetAppConnectionsQueryVariables = Exact<{
 }>;
 
 
-export type GetAppConnectionsQuery = { __typename?: 'Query', getApp?: { __typename?: 'App', key?: string | null, connections?: Array<{ __typename?: 'Connection', id?: string | null, key?: string | null, verified?: boolean | null, flowCount?: number | null, createdAt?: string | null, formattedData?: { __typename?: 'ConnectionData', screenName?: string | null } | null } | null> | null } | null };
+export type GetAppConnectionsQuery = { __typename?: 'Query', getApp?: { __typename?: 'App', key: string, connections?: Array<{ __typename?: 'Connection', id: string, key: string, verified: boolean, flowCount?: number | null, createdAt: string, formattedData?: { __typename?: 'ConnectionData', screenName?: string | null } | null }> | null } | null };
 
 export type GetAppQueryVariables = Exact<{
   key: Scalars['String']['input'];
 }>;
 
 
-export type GetAppQuery = { __typename?: 'Query', getApp?: { __typename?: 'App', name?: string | null, key?: string | null, iconUrl?: string | null, docUrl?: string | null, authDocUrl?: string | null, primaryColor?: string | null, auth?: { __typename?: 'AppAuth', connectionType: string, connectionRegistrationType?: string | null, fields?: Array<{ __typename?: 'Field', key?: string | null, label?: string | null, type?: string | null, required?: boolean | null, readOnly?: boolean | null, value?: string | null, description?: string | null, docUrl?: string | null, allowArbitrary?: boolean | null, clickToCopy?: boolean | null, autoComplete?: string | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null } | null> | null, authenticationSteps?: Array<{ __typename?: 'AuthenticationStep', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'AuthenticationStepArgument', name?: string | null, value?: string | null, type?: ArgumentEnumType | null, properties?: Array<{ __typename?: 'AuthenticationStepProperty', name?: string | null, value?: string | null } | null> | null } | null> | null } | null> | null, reconnectionSteps?: Array<{ __typename?: 'ReconnectionStep', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ReconnectionStepArgument', name?: string | null, value?: string | null, type?: ArgumentEnumType | null, properties?: Array<{ __typename?: 'ReconnectionStepProperty', name?: string | null, value?: string | null } | null> | null } | null> | null } | null> | null } | null, connections?: Array<{ __typename?: 'Connection', id?: string | null } | null> | null, triggers?: Array<{ __typename?: 'Trigger', name?: string | null, key?: string | null, type?: string | null, pollInterval?: number | null, description?: string | null, substeps?: Array<{ __typename?: 'TriggerSubstep', name?: string | null } | null> | null } | null> | null, actions?: Array<{ __typename?: 'Action', name?: string | null, key?: string | null, description?: string | null, substeps?: Array<{ __typename?: 'ActionSubstep', name?: string | null } | null> | null } | null> | null } | null };
+export type GetAppQuery = { __typename?: 'Query', getApp?: { __typename?: 'App', name: string, key: string, iconUrl: string, docUrl?: string | null, authDocUrl: string, primaryColor: string, auth?: { __typename?: 'AppAuth', connectionType: string, connectionRegistrationType?: string | null, fields?: Array<{ __typename?: 'Field', key?: string | null, label?: string | null, type?: string | null, required?: boolean | null, readOnly?: boolean | null, value?: string | null, description?: string | null, docUrl?: string | null, allowArbitrary?: boolean | null, clickToCopy?: boolean | null, autoComplete?: string | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null } | null> | null, authenticationSteps?: Array<{ __typename?: 'AuthenticationStep', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'AuthenticationStepArgument', name?: string | null, value?: string | null, type?: ArgumentEnumType | null, properties?: Array<{ __typename?: 'AuthenticationStepProperty', name?: string | null, value?: string | null } | null> | null } | null> | null } | null> | null, reconnectionSteps?: Array<{ __typename?: 'ReconnectionStep', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ReconnectionStepArgument', name?: string | null, value?: string | null, type?: ArgumentEnumType | null, properties?: Array<{ __typename?: 'ReconnectionStepProperty', name?: string | null, value?: string | null } | null> | null } | null> | null } | null> | null } | null, connections?: Array<{ __typename?: 'Connection', id: string }> | null, triggers?: Array<{ __typename?: 'Trigger', name?: string | null, key?: string | null, type?: string | null, pollInterval?: number | null, description?: string | null, substeps?: Array<{ __typename?: 'TriggerSubstep', name?: string | null } | null> | null }> | null, actions?: Array<{ __typename?: 'Action', name?: string | null, key?: string | null, description?: string | null, substeps?: Array<{ __typename?: 'ActionSubstep', name?: string | null } | null> | null }> | null } | null };
 
 export type GetAppsQueryVariables = Exact<{
   name?: InputMaybe<Scalars['String']['input']>;
@@ -1090,14 +1090,14 @@ export type GetAppsQueryVariables = Exact<{
 }>;
 
 
-export type GetAppsQuery = { __typename?: 'Query', getApps?: Array<{ __typename?: 'App', name?: string | null, key?: string | null, iconUrl?: string | null, docUrl?: string | null, authDocUrl?: string | null, primaryColor?: string | null, connectionCount?: number | null, description?: string | null, auth?: { __typename?: 'AppAuth', connectionType: string, connectionRegistrationType?: string | null, fields?: Array<{ __typename?: 'Field', key?: string | null, label?: string | null, type?: string | null, required?: boolean | null, readOnly?: boolean | null, value?: string | null, placeholder?: string | null, description?: string | null, docUrl?: string | null, clickToCopy?: boolean | null, autoComplete?: string | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null } | null> | null, authenticationSteps?: Array<{ __typename?: 'AuthenticationStep', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'AuthenticationStepArgument', name?: string | null, value?: string | null, type?: ArgumentEnumType | null, properties?: Array<{ __typename?: 'AuthenticationStepProperty', name?: string | null, value?: string | null } | null> | null } | null> | null } | null> | null, reconnectionSteps?: Array<{ __typename?: 'ReconnectionStep', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ReconnectionStepArgument', name?: string | null, value?: string | null, type?: ArgumentEnumType | null, properties?: Array<{ __typename?: 'ReconnectionStepProperty', name?: string | null, value?: string | null } | null> | null } | null> | null } | null> | null } | null, triggers?: Array<{ __typename?: 'Trigger', name?: string | null, key?: string | null, type?: string | null, pollInterval?: number | null, description?: string | null, webhookTriggerInstructions?: { __typename?: 'TriggerInstructions', beforeUrlMsg?: string | null, afterUrlMsg?: string | null, errorMsg?: string | null, hideWebhookUrl?: boolean | null } | null, substeps?: Array<{ __typename?: 'TriggerSubstep', key?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'TriggerSubstepArgument', label?: string | null, key?: string | null, type?: string | null, required?: boolean | null, description?: string | null, placeholder?: string | null, variables?: boolean | null, variableTypes?: Array<string | null> | null, allowArbitrary?: boolean | null, dependsOn?: Array<string | null> | null, value?: JsonObject | null, showOptionValue?: boolean | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null, source?: { __typename?: 'TriggerSubstepArgumentSource', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'TriggerSubstepArgumentSourceArgument', name?: string | null, value?: string | null } | null> | null } | null, subFields?: Array<{ __typename?: 'TriggerSubstepArgument', label?: string | null, key?: string | null, type?: string | null, required?: boolean | null, description?: string | null, placeholder?: string | null, variables?: boolean | null, variableTypes?: Array<string | null> | null, allowArbitrary?: boolean | null, dependsOn?: Array<string | null> | null, showOptionValue?: boolean | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null, source?: { __typename?: 'TriggerSubstepArgumentSource', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'TriggerSubstepArgumentSourceArgument', name?: string | null, value?: string | null } | null> | null } | null } | null> | null } | null> | null } | null> | null } | null> | null, actions?: Array<{ __typename?: 'Action', name?: string | null, key?: string | null, description?: string | null, groupsLaterSteps?: boolean | null, substeps?: Array<{ __typename?: 'ActionSubstep', key?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ActionSubstepArgument', label?: string | null, key?: string | null, type?: string | null, required?: boolean | null, description?: string | null, placeholder?: string | null, variables?: boolean | null, variableTypes?: Array<string | null> | null, allowArbitrary?: boolean | null, dependsOn?: Array<string | null> | null, hidden?: boolean | null, showOptionValue?: boolean | null, value?: JsonObject | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null, source?: { __typename?: 'ActionSubstepArgumentSource', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ActionSubstepArgumentSourceArgument', name?: string | null, value?: string | null } | null> | null } | null, subFields?: Array<{ __typename?: 'ActionSubstepArgument', label?: string | null, key?: string | null, type?: string | null, required?: boolean | null, description?: string | null, placeholder?: string | null, variables?: boolean | null, variableTypes?: Array<string | null> | null, allowArbitrary?: boolean | null, dependsOn?: Array<string | null> | null, showOptionValue?: boolean | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null, source?: { __typename?: 'ActionSubstepArgumentSource', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ActionSubstepArgumentSourceArgument', name?: string | null, value?: string | null } | null> | null } | null } | null> | null } | null> | null } | null> | null } | null> | null } | null> | null };
+export type GetAppsQuery = { __typename?: 'Query', getApps?: Array<{ __typename?: 'App', name: string, key: string, iconUrl: string, docUrl?: string | null, authDocUrl: string, primaryColor: string, connectionCount?: number | null, description?: string | null, auth?: { __typename?: 'AppAuth', connectionType: string, connectionRegistrationType?: string | null, fields?: Array<{ __typename?: 'Field', key?: string | null, label?: string | null, type?: string | null, required?: boolean | null, readOnly?: boolean | null, value?: string | null, placeholder?: string | null, description?: string | null, docUrl?: string | null, clickToCopy?: boolean | null, autoComplete?: string | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null } | null> | null, authenticationSteps?: Array<{ __typename?: 'AuthenticationStep', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'AuthenticationStepArgument', name?: string | null, value?: string | null, type?: ArgumentEnumType | null, properties?: Array<{ __typename?: 'AuthenticationStepProperty', name?: string | null, value?: string | null } | null> | null } | null> | null } | null> | null, reconnectionSteps?: Array<{ __typename?: 'ReconnectionStep', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ReconnectionStepArgument', name?: string | null, value?: string | null, type?: ArgumentEnumType | null, properties?: Array<{ __typename?: 'ReconnectionStepProperty', name?: string | null, value?: string | null } | null> | null } | null> | null } | null> | null } | null, triggers?: Array<{ __typename?: 'Trigger', name?: string | null, key?: string | null, type?: string | null, pollInterval?: number | null, description?: string | null, webhookTriggerInstructions?: { __typename?: 'TriggerInstructions', beforeUrlMsg?: string | null, afterUrlMsg?: string | null, errorMsg?: string | null, hideWebhookUrl?: boolean | null } | null, substeps?: Array<{ __typename?: 'TriggerSubstep', key?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'TriggerSubstepArgument', label?: string | null, key?: string | null, type?: string | null, required?: boolean | null, description?: string | null, placeholder?: string | null, variables?: boolean | null, variableTypes?: Array<string | null> | null, allowArbitrary?: boolean | null, dependsOn?: Array<string | null> | null, value?: JsonObject | null, showOptionValue?: boolean | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null, source?: { __typename?: 'TriggerSubstepArgumentSource', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'TriggerSubstepArgumentSourceArgument', name?: string | null, value?: string | null } | null> | null } | null, subFields?: Array<{ __typename?: 'TriggerSubstepArgument', label?: string | null, key?: string | null, type?: string | null, required?: boolean | null, description?: string | null, placeholder?: string | null, variables?: boolean | null, variableTypes?: Array<string | null> | null, allowArbitrary?: boolean | null, dependsOn?: Array<string | null> | null, showOptionValue?: boolean | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null, source?: { __typename?: 'TriggerSubstepArgumentSource', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'TriggerSubstepArgumentSourceArgument', name?: string | null, value?: string | null } | null> | null } | null } | null> | null } | null> | null } | null> | null }> | null, actions?: Array<{ __typename?: 'Action', name?: string | null, key?: string | null, description?: string | null, groupsLaterSteps?: boolean | null, substeps?: Array<{ __typename?: 'ActionSubstep', key?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ActionSubstepArgument', label?: string | null, key?: string | null, type?: string | null, required?: boolean | null, description?: string | null, placeholder?: string | null, variables?: boolean | null, variableTypes?: Array<string | null> | null, allowArbitrary?: boolean | null, dependsOn?: Array<string | null> | null, hidden?: boolean | null, showOptionValue?: boolean | null, value?: JsonObject | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null, source?: { __typename?: 'ActionSubstepArgumentSource', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ActionSubstepArgumentSourceArgument', name?: string | null, value?: string | null } | null> | null } | null, subFields?: Array<{ __typename?: 'ActionSubstepArgument', label?: string | null, key?: string | null, type?: string | null, required?: boolean | null, description?: string | null, placeholder?: string | null, variables?: boolean | null, variableTypes?: Array<string | null> | null, allowArbitrary?: boolean | null, dependsOn?: Array<string | null> | null, showOptionValue?: boolean | null, options?: Array<{ __typename?: 'ArgumentOption', label?: string | null, value?: JsonObject | null } | null> | null, source?: { __typename?: 'ActionSubstepArgumentSource', type?: string | null, name?: string | null, arguments?: Array<{ __typename?: 'ActionSubstepArgumentSourceArgument', name?: string | null, value?: string | null } | null> | null } | null } | null> | null } | null> | null } | null> | null }> | null } | null> | null };
 
 export type GetConnectedAppsQueryVariables = Exact<{
   name?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type GetConnectedAppsQuery = { __typename?: 'Query', getConnectedApps?: Array<{ __typename?: 'App', key?: string | null, name?: string | null, iconUrl?: string | null, docUrl?: string | null, primaryColor?: string | null, connectionCount?: number | null, flowCount?: number | null, auth?: { __typename?: 'AppAuth', connectionType: string } | null } | null> | null };
+export type GetConnectedAppsQuery = { __typename?: 'Query', getConnectedApps?: Array<{ __typename?: 'App', key: string, name: string, iconUrl: string, docUrl?: string | null, primaryColor: string, connectionCount?: number | null, flowCount?: number | null, auth?: { __typename?: 'AppAuth', connectionType: string } | null } | null> | null };
 
 export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1144,7 +1144,7 @@ export type GetFlowQueryVariables = Exact<{
 }>;
 
 
-export type GetFlowQuery = { __typename?: 'Query', getFlow?: { __typename?: 'Flow', id?: string | null, name?: string | null, active?: boolean | null, steps?: Array<{ __typename?: 'Step', id?: string | null, type?: StepEnumType | null, key?: string | null, appKey?: string | null, iconUrl?: string | null, webhookUrl?: string | null, status?: string | null, position?: number | null, parameters?: JsonObject | null, connection?: { __typename?: 'Connection', id?: string | null, verified?: boolean | null, createdAt?: string | null } | null } | null> | null } | null };
+export type GetFlowQuery = { __typename?: 'Query', getFlow?: { __typename?: 'Flow', id?: string | null, name?: string | null, active?: boolean | null, steps?: Array<{ __typename?: 'Step', id?: string | null, type?: StepEnumType | null, key?: string | null, appKey?: string | null, iconUrl?: string | null, webhookUrl?: string | null, status?: string | null, position?: number | null, parameters?: JsonObject | null, connection?: { __typename?: 'Connection', id: string, verified: boolean, createdAt: string } | null } | null> | null } | null };
 
 export type GetFlowsQueryVariables = Exact<{
   limit: Scalars['Int']['input'];

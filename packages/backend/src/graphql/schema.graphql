@@ -134,19 +134,29 @@ type ActionSubstepArgumentSourceArgument {
   value: String
 }
 
+# Until we can deprecate @plumber/types, keep these GraphQL fields synced with
+# the props defined in IApp and any other queries / mutations that return this
+# GraphQL type (because queries / mutations can add GraphQL fields that are not
+# defined in IApp).
+#
+# i.e. Non-optional props should be non-optional GraphQL fields. We also don't
+# return nulls in arrays, so it's OK to mark GraphQL array elements as
+# non-optional (note that the array itself may be optional). Finally, it's OK
+# for the GraphQL type to contain a subset of IApp's props; don't expose
+# sensitive props (if any) to GraphQL!
 type App {
-  name: String
-  key: String
+  name: String!
+  key: String!
   connectionCount: Int
   flowCount: Int
-  iconUrl: String
+  iconUrl: String!
   docUrl: String
-  authDocUrl: String
-  primaryColor: String
+  authDocUrl: String!
+  primaryColor: String!
   auth: AppAuth
-  triggers: [Trigger]
-  actions: [Action]
-  connections: [Connection]
+  triggers: [Trigger!]
+  actions: [Action!]
+  connections: [Connection!]
   description: String
 }
 
@@ -186,14 +196,26 @@ type AuthLink {
   url: String
 }
 
+# Until we can deprecate @plumber/types, keep these GraphQL fields synced with
+# the props defined in IConnection and any other queries / mutations that
+# return this GraphQL type (because queries / mutations can add GraphQL fields
+# that are not defined in IConnection).
+#
+# i.e. Non-optional props should be non-optional GraphQL fields. We also don't
+# return nulls in arrays, so it's OK to mark GraphQL array elements as
+# non-optional (note that the array itself may be optional). Finally, it's OK
+# for the GraphQL type to contain a subset of IConnection's props; don't expose
+# sensitive props (if any) to GraphQL!
 type Connection {
-  id: String
-  key: String
+  id: String!
+  key: String!
   formattedData: ConnectionData
-  verified: Boolean
-  app: App
-  createdAt: String
+  verified: Boolean!
+  createdAt: String!
   flowCount: Int
+
+  # Not in IConnection, but returned only by the verifyConnection mutation.
+  app: App
 }
 
 type ConnectionData {
