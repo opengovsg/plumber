@@ -1,9 +1,9 @@
-import Context from '@/types/express/context'
+import type { QueryResolvers } from '../../__generated__/types.generated'
 
-const getTables = async (
-  _parent: unknown,
-  _params: unknown,
-  context: Context,
+const getTables: NonNullable<QueryResolvers['getTables']> = async (
+  _parent,
+  _params,
+  context,
 ) => {
   const tables = await context.currentUser
     .$relatedQuery('tables')

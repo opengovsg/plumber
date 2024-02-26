@@ -54,10 +54,27 @@ const config: CodegenConfig = {
         useTypeImports: true,
         immutableTypes: true,
 
+        // In addition to normal functions, resolvers can also be objects with a
+        //  `resolve` function. Due to this, the generated types for resolvers
+        // are not callable without further type refinement.
+        //
+        // This refinement adds a lot of boilerplate in our unit tests; since we
+        // exclusively use resolver functions, we'll disable resolver objects to
+        // omit the need for this boilerplate.
+        makeResolverTypeCallable: true,
+
         // Make resolvers' 4th `info` argument optional. This reduces
         // boilerplate in our unit tests.
         // See https://www.apollographql.com/docs/apollo-server/data/resolvers/#resolver-arguments
         optionalInfoArgument: true,
+
+        // Set up the default context for our resolvers / queries / mutations.
+        contextType: '@/graphql/schema.context#AuthenticatedGraphQLContext',
+
+        // Some resolvers / queries / mutations need different contexts
+        fieldContextTypes: [
+          'Query.getCurrentUser#@/graphql/schema.context#UnauthenticatedGraphQLContext',
+        ],
       },
     }),
     //

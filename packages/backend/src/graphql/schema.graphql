@@ -32,7 +32,7 @@ type Query {
     stepId: String!
     key: String!
     parameters: JSONObject
-  ): JSONObject
+  ): [JSONObject]
   # Tiles
   getTable(tableId: String!): TableMetadata!
   getTables: [TableMetadata!]!

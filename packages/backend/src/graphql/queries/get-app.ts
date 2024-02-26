@@ -1,11 +1,12 @@
 import App from '@/models/app'
-import Context from '@/types/express/context'
 
-type Params = {
-  key: string
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getApp = async (_parent: unknown, params: Params, context: Context) => {
+const getApp: NonNullable<QueryResolvers['getApp']> = async (
+  _parent,
+  params,
+  context,
+) => {
   const app = await App.findOneByKey(params.key)
 
   if (!context.currentUser) {

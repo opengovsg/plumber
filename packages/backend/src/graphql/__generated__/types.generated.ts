@@ -1,6 +1,7 @@
 import type { JsonObject } from 'type-fest';
 import type { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
-import type { ExecutionStepGraphQLType, TableMetadataGraphQLType } from './../schema.gql-to-typescript';
+import type { AppGraphQLType, ExecutionConnectionGraphQLType, ExecutionStepGraphQLType, ExecutionStepConnectionGraphQLType, FlowConnectionGraphQLType, TableMetadataGraphQLType } from './../schema.gql-to-typescript';
+import type { AuthenticatedGraphQLContext, UnauthenticatedGraphQLContext } from '@/graphql/schema.context';
 export type Maybe<T> = T | null | undefined;
 export type InputMaybe<T> = T | null | undefined;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -521,7 +522,7 @@ export type Query = {
   readonly getApps?: Maybe<ReadonlyArray<Maybe<App>>>;
   readonly getConnectedApps?: Maybe<ReadonlyArray<Maybe<App>>>;
   readonly getCurrentUser?: Maybe<User>;
-  readonly getDynamicData?: Maybe<Scalars['JSONObject']['output']>;
+  readonly getDynamicData?: Maybe<ReadonlyArray<Maybe<Scalars['JSONObject']['output']>>>;
   readonly getExecution?: Maybe<Execution>;
   readonly getExecutionSteps?: Maybe<ExecutionStepConnection>;
   readonly getExecutions?: Maybe<ExecutionConnection>;
@@ -865,11 +866,7 @@ export type VerifyOtpInput = {
 
 export type ResolverTypeWrapper<T> = Promise<T> | T;
 
-
-export type ResolverWithResolve<TResult, TParent, TContext, TArgs> = {
-  resolve: ResolverFn<TResult, TParent, TContext, TArgs>;
-};
-export type Resolver<TResult, TParent = {}, TContext = {}, TArgs = {}> = ResolverFn<TResult, TParent, TContext, TArgs> | ResolverWithResolve<TResult, TParent, TContext, TArgs>;
+export type Resolver<TResult, TParent = {}, TContext = {}, TArgs = {}> = ResolverFn<TResult, TParent, TContext, TArgs>;
 
 export type ResolverFn<TResult, TParent, TContext, TArgs> = (
   parent: TParent,
@@ -939,7 +936,7 @@ export type ResolversTypes = {
   ActionSubstepArgument: ResolverTypeWrapper<ActionSubstepArgument>;
   ActionSubstepArgumentSource: ResolverTypeWrapper<ActionSubstepArgumentSource>;
   ActionSubstepArgumentSourceArgument: ResolverTypeWrapper<ActionSubstepArgumentSourceArgument>;
-  App: ResolverTypeWrapper<App>;
+  App: ResolverTypeWrapper<AppGraphQLType>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   AppAuth: ResolverTypeWrapper<AppAuth>;
   AppHealth: ResolverTypeWrapper<AppHealth>;
@@ -949,7 +946,7 @@ export type ResolversTypes = {
   AuthenticationStep: ResolverTypeWrapper<AuthenticationStep>;
   AuthenticationStepArgument: ResolverTypeWrapper<AuthenticationStepArgument>;
   AuthenticationStepProperty: ResolverTypeWrapper<AuthenticationStepProperty>;
-  Connection: ResolverTypeWrapper<Connection>;
+  Connection: ResolverTypeWrapper<Omit<Connection, 'app'> & { app?: Maybe<ResolversTypes['App']> }>;
   ConnectionData: ResolverTypeWrapper<ConnectionData>;
   CreateConnectionInput: CreateConnectionInput;
   CreateFlowInput: CreateFlowInput;
@@ -966,14 +963,14 @@ export type ResolversTypes = {
   ExecuteFlowInput: ExecuteFlowInput;
   ExecuteFlowType: ResolverTypeWrapper<Omit<ExecuteFlowType, 'step'> & { step?: Maybe<ResolversTypes['Step']> }>;
   Execution: ResolverTypeWrapper<Omit<Execution, 'flow'> & { flow?: Maybe<ResolversTypes['Flow']> }>;
-  ExecutionConnection: ResolverTypeWrapper<Omit<ExecutionConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionEdge']>>> }>;
+  ExecutionConnection: ResolverTypeWrapper<ExecutionConnectionGraphQLType>;
   ExecutionEdge: ResolverTypeWrapper<Omit<ExecutionEdge, 'node'> & { node?: Maybe<ResolversTypes['Execution']> }>;
   ExecutionStep: ResolverTypeWrapper<ExecutionStepGraphQLType>;
-  ExecutionStepConnection: ResolverTypeWrapper<Omit<ExecutionStepConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStepEdge']>>> }>;
+  ExecutionStepConnection: ResolverTypeWrapper<ExecutionStepConnectionGraphQLType>;
   ExecutionStepEdge: ResolverTypeWrapper<Omit<ExecutionStepEdge, 'node'> & { node?: Maybe<ResolversTypes['ExecutionStep']> }>;
   Field: ResolverTypeWrapper<Field>;
   Flow: ResolverTypeWrapper<Omit<Flow, 'steps'> & { steps?: Maybe<ReadonlyArray<Maybe<ResolversTypes['Step']>>> }>;
-  FlowConnection: ResolverTypeWrapper<Omit<FlowConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversTypes['FlowEdge']>>> }>;
+  FlowConnection: ResolverTypeWrapper<FlowConnectionGraphQLType>;
   FlowEdge: ResolverTypeWrapper<Omit<FlowEdge, 'node'> & { node?: Maybe<ResolversTypes['Flow']> }>;
   GenerateAuthUrlInput: GenerateAuthUrlInput;
   JSONObject: ResolverTypeWrapper<Scalars['JSONObject']['output']>;
@@ -993,7 +990,7 @@ export type ResolversTypes = {
   ResetConnectionInput: ResetConnectionInput;
   RetryExecutionStepInput: RetryExecutionStepInput;
   SgidPublicOfficerEmployment: ResolverTypeWrapper<SgidPublicOfficerEmployment>;
-  Step: ResolverTypeWrapper<Omit<Step, 'executionSteps' | 'flow'> & { executionSteps?: Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStep']>>>, flow?: Maybe<ResolversTypes['Flow']> }>;
+  Step: ResolverTypeWrapper<Omit<Step, 'connection' | 'executionSteps' | 'flow'> & { connection?: Maybe<ResolversTypes['Connection']>, executionSteps?: Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStep']>>>, flow?: Maybe<ResolversTypes['Flow']> }>;
   StepConnectionInput: StepConnectionInput;
   StepEnumType: StepEnumType;
   StepFlowInput: StepFlowInput;
@@ -1031,7 +1028,7 @@ export type ResolversParentTypes = {
   ActionSubstepArgument: ActionSubstepArgument;
   ActionSubstepArgumentSource: ActionSubstepArgumentSource;
   ActionSubstepArgumentSourceArgument: ActionSubstepArgumentSourceArgument;
-  App: App;
+  App: AppGraphQLType;
   Int: Scalars['Int']['output'];
   AppAuth: AppAuth;
   AppHealth: AppHealth;
@@ -1040,7 +1037,7 @@ export type ResolversParentTypes = {
   AuthenticationStep: AuthenticationStep;
   AuthenticationStepArgument: AuthenticationStepArgument;
   AuthenticationStepProperty: AuthenticationStepProperty;
-  Connection: Connection;
+  Connection: Omit<Connection, 'app'> & { app?: Maybe<ResolversParentTypes['App']> };
   ConnectionData: ConnectionData;
   CreateConnectionInput: CreateConnectionInput;
   CreateFlowInput: CreateFlowInput;
@@ -1057,14 +1054,14 @@ export type ResolversParentTypes = {
   ExecuteFlowInput: ExecuteFlowInput;
   ExecuteFlowType: Omit<ExecuteFlowType, 'step'> & { step?: Maybe<ResolversParentTypes['Step']> };
   Execution: Omit<Execution, 'flow'> & { flow?: Maybe<ResolversParentTypes['Flow']> };
-  ExecutionConnection: Omit<ExecutionConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['ExecutionEdge']>>> };
+  ExecutionConnection: ExecutionConnectionGraphQLType;
   ExecutionEdge: Omit<ExecutionEdge, 'node'> & { node?: Maybe<ResolversParentTypes['Execution']> };
   ExecutionStep: ExecutionStepGraphQLType;
-  ExecutionStepConnection: Omit<ExecutionStepConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['ExecutionStepEdge']>>> };
+  ExecutionStepConnection: ExecutionStepConnectionGraphQLType;
   ExecutionStepEdge: Omit<ExecutionStepEdge, 'node'> & { node?: Maybe<ResolversParentTypes['ExecutionStep']> };
   Field: Field;
   Flow: Omit<Flow, 'steps'> & { steps?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['Step']>>> };
-  FlowConnection: Omit<FlowConnection, 'edges'> & { edges?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['FlowEdge']>>> };
+  FlowConnection: FlowConnectionGraphQLType;
   FlowEdge: Omit<FlowEdge, 'node'> & { node?: Maybe<ResolversParentTypes['Flow']> };
   GenerateAuthUrlInput: GenerateAuthUrlInput;
   JSONObject: Scalars['JSONObject']['output'];
@@ -1084,7 +1081,7 @@ export type ResolversParentTypes = {
   ResetConnectionInput: ResetConnectionInput;
   RetryExecutionStepInput: RetryExecutionStepInput;
   SgidPublicOfficerEmployment: SgidPublicOfficerEmployment;
-  Step: Omit<Step, 'executionSteps' | 'flow'> & { executionSteps?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['ExecutionStep']>>>, flow?: Maybe<ResolversParentTypes['Flow']> };
+  Step: Omit<Step, 'connection' | 'executionSteps' | 'flow'> & { connection?: Maybe<ResolversParentTypes['Connection']>, executionSteps?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['ExecutionStep']>>>, flow?: Maybe<ResolversParentTypes['Flow']> };
   StepConnectionInput: StepConnectionInput;
   StepFlowInput: StepFlowInput;
   StepInput: StepInput;
@@ -1112,7 +1109,7 @@ export type ResolversParentTypes = {
   VerifyOtpInput: VerifyOtpInput;
 };
 
-export type ActionResolvers<ContextType = any, ParentType extends ResolversParentTypes['Action'] = ResolversParentTypes['Action']> = {
+export type ActionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Action'] = ResolversParentTypes['Action']> = {
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   groupsLaterSteps?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1121,14 +1118,14 @@ export type ActionResolvers<ContextType = any, ParentType extends ResolversParen
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ActionSubstepResolvers<ContextType = any, ParentType extends ResolversParentTypes['ActionSubstep'] = ResolversParentTypes['ActionSubstep']> = {
+export type ActionSubstepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ActionSubstep'] = ResolversParentTypes['ActionSubstep']> = {
   arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ActionSubstepArgument']>>>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ActionSubstepArgumentResolvers<ContextType = any, ParentType extends ResolversParentTypes['ActionSubstepArgument'] = ResolversParentTypes['ActionSubstepArgument']> = {
+export type ActionSubstepArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ActionSubstepArgument'] = ResolversParentTypes['ActionSubstepArgument']> = {
   allowArbitrary?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   dependsOn?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1148,20 +1145,20 @@ export type ActionSubstepArgumentResolvers<ContextType = any, ParentType extends
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ActionSubstepArgumentSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['ActionSubstepArgumentSource'] = ResolversParentTypes['ActionSubstepArgumentSource']> = {
+export type ActionSubstepArgumentSourceResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ActionSubstepArgumentSource'] = ResolversParentTypes['ActionSubstepArgumentSource']> = {
   arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ActionSubstepArgumentSourceArgument']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ActionSubstepArgumentSourceArgumentResolvers<ContextType = any, ParentType extends ResolversParentTypes['ActionSubstepArgumentSourceArgument'] = ResolversParentTypes['ActionSubstepArgumentSourceArgument']> = {
+export type ActionSubstepArgumentSourceArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ActionSubstepArgumentSourceArgument'] = ResolversParentTypes['ActionSubstepArgumentSourceArgument']> = {
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type AppResolvers<ContextType = any, ParentType extends ResolversParentTypes['App'] = ResolversParentTypes['App']> = {
+export type AppResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['App'] = ResolversParentTypes['App']> = {
   actions?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['Action']>>>, ParentType, ContextType>;
   auth?: Resolver<Maybe<ResolversTypes['AppAuth']>, ParentType, ContextType>;
   authDocUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1178,7 +1175,7 @@ export type AppResolvers<ContextType = any, ParentType extends ResolversParentTy
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type AppAuthResolvers<ContextType = any, ParentType extends ResolversParentTypes['AppAuth'] = ResolversParentTypes['AppAuth']> = {
+export type AppAuthResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AppAuth'] = ResolversParentTypes['AppAuth']> = {
   authenticationSteps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['AuthenticationStep']>>>, ParentType, ContextType>;
   connectionRegistrationType?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   connectionType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -1187,30 +1184,30 @@ export type AppAuthResolvers<ContextType = any, ParentType extends ResolversPare
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type AppHealthResolvers<ContextType = any, ParentType extends ResolversParentTypes['AppHealth'] = ResolversParentTypes['AppHealth']> = {
+export type AppHealthResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AppHealth'] = ResolversParentTypes['AppHealth']> = {
   version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ArgumentOptionResolvers<ContextType = any, ParentType extends ResolversParentTypes['ArgumentOption'] = ResolversParentTypes['ArgumentOption']> = {
+export type ArgumentOptionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ArgumentOption'] = ResolversParentTypes['ArgumentOption']> = {
   label?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type AuthLinkResolvers<ContextType = any, ParentType extends ResolversParentTypes['AuthLink'] = ResolversParentTypes['AuthLink']> = {
+export type AuthLinkResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AuthLink'] = ResolversParentTypes['AuthLink']> = {
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type AuthenticationStepResolvers<ContextType = any, ParentType extends ResolversParentTypes['AuthenticationStep'] = ResolversParentTypes['AuthenticationStep']> = {
+export type AuthenticationStepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AuthenticationStep'] = ResolversParentTypes['AuthenticationStep']> = {
   arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['AuthenticationStepArgument']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type AuthenticationStepArgumentResolvers<ContextType = any, ParentType extends ResolversParentTypes['AuthenticationStepArgument'] = ResolversParentTypes['AuthenticationStepArgument']> = {
+export type AuthenticationStepArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AuthenticationStepArgument'] = ResolversParentTypes['AuthenticationStepArgument']> = {
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   properties?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['AuthenticationStepProperty']>>>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['ArgumentEnumType']>, ParentType, ContextType>;
@@ -1218,13 +1215,13 @@ export type AuthenticationStepArgumentResolvers<ContextType = any, ParentType ex
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type AuthenticationStepPropertyResolvers<ContextType = any, ParentType extends ResolversParentTypes['AuthenticationStepProperty'] = ResolversParentTypes['AuthenticationStepProperty']> = {
+export type AuthenticationStepPropertyResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AuthenticationStepProperty'] = ResolversParentTypes['AuthenticationStepProperty']> = {
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ConnectionResolvers<ContextType = any, ParentType extends ResolversParentTypes['Connection'] = ResolversParentTypes['Connection']> = {
+export type ConnectionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Connection'] = ResolversParentTypes['Connection']> = {
   app?: Resolver<Maybe<ResolversTypes['App']>, ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   flowCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
@@ -1235,18 +1232,18 @@ export type ConnectionResolvers<ContextType = any, ParentType extends ResolversP
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ConnectionDataResolvers<ContextType = any, ParentType extends ResolversParentTypes['ConnectionData'] = ResolversParentTypes['ConnectionData']> = {
+export type ConnectionDataResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ConnectionData'] = ResolversParentTypes['ConnectionData']> = {
   screenName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ExecuteFlowTypeResolvers<ContextType = any, ParentType extends ResolversParentTypes['ExecuteFlowType'] = ResolversParentTypes['ExecuteFlowType']> = {
+export type ExecuteFlowTypeResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ExecuteFlowType'] = ResolversParentTypes['ExecuteFlowType']> = {
   data?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
   step?: Resolver<Maybe<ResolversTypes['Step']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ExecutionResolvers<ContextType = any, ParentType extends ResolversParentTypes['Execution'] = ResolversParentTypes['Execution']> = {
+export type ExecutionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Execution'] = ResolversParentTypes['Execution']> = {
   createdAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   flow?: Resolver<Maybe<ResolversTypes['Flow']>, ParentType, ContextType>;
   id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1256,18 +1253,18 @@ export type ExecutionResolvers<ContextType = any, ParentType extends ResolversPa
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ExecutionConnectionResolvers<ContextType = any, ParentType extends ResolversParentTypes['ExecutionConnection'] = ResolversParentTypes['ExecutionConnection']> = {
+export type ExecutionConnectionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ExecutionConnection'] = ResolversParentTypes['ExecutionConnection']> = {
   edges?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionEdge']>>>, ParentType, ContextType>;
   pageInfo?: Resolver<Maybe<ResolversTypes['PageInfo']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ExecutionEdgeResolvers<ContextType = any, ParentType extends ResolversParentTypes['ExecutionEdge'] = ResolversParentTypes['ExecutionEdge']> = {
+export type ExecutionEdgeResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ExecutionEdge'] = ResolversParentTypes['ExecutionEdge']> = {
   node?: Resolver<Maybe<ResolversTypes['Execution']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ExecutionStepResolvers<ContextType = any, ParentType extends ResolversParentTypes['ExecutionStep'] = ResolversParentTypes['ExecutionStep']> = {
+export type ExecutionStepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ExecutionStep'] = ResolversParentTypes['ExecutionStep']> = {
   appKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   dataIn?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
@@ -1284,18 +1281,18 @@ export type ExecutionStepResolvers<ContextType = any, ParentType extends Resolve
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ExecutionStepConnectionResolvers<ContextType = any, ParentType extends ResolversParentTypes['ExecutionStepConnection'] = ResolversParentTypes['ExecutionStepConnection']> = {
+export type ExecutionStepConnectionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ExecutionStepConnection'] = ResolversParentTypes['ExecutionStepConnection']> = {
   edges?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStepEdge']>>>, ParentType, ContextType>;
   pageInfo?: Resolver<Maybe<ResolversTypes['PageInfo']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ExecutionStepEdgeResolvers<ContextType = any, ParentType extends ResolversParentTypes['ExecutionStepEdge'] = ResolversParentTypes['ExecutionStepEdge']> = {
+export type ExecutionStepEdgeResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ExecutionStepEdge'] = ResolversParentTypes['ExecutionStepEdge']> = {
   node?: Resolver<Maybe<ResolversTypes['ExecutionStep']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type FieldResolvers<ContextType = any, ParentType extends ResolversParentTypes['Field'] = ResolversParentTypes['Field']> = {
+export type FieldResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Field'] = ResolversParentTypes['Field']> = {
   allowArbitrary?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   autoComplete?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   clickToCopy?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
@@ -1313,7 +1310,7 @@ export type FieldResolvers<ContextType = any, ParentType extends ResolversParent
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type FlowResolvers<ContextType = any, ParentType extends ResolversParentTypes['Flow'] = ResolversParentTypes['Flow']> = {
+export type FlowResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Flow'] = ResolversParentTypes['Flow']> = {
   active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1323,13 +1320,13 @@ export type FlowResolvers<ContextType = any, ParentType extends ResolversParentT
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type FlowConnectionResolvers<ContextType = any, ParentType extends ResolversParentTypes['FlowConnection'] = ResolversParentTypes['FlowConnection']> = {
+export type FlowConnectionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['FlowConnection'] = ResolversParentTypes['FlowConnection']> = {
   edges?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['FlowEdge']>>>, ParentType, ContextType>;
   pageInfo?: Resolver<Maybe<ResolversTypes['PageInfo']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type FlowEdgeResolvers<ContextType = any, ParentType extends ResolversParentTypes['FlowEdge'] = ResolversParentTypes['FlowEdge']> = {
+export type FlowEdgeResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['FlowEdge'] = ResolversParentTypes['FlowEdge']> = {
   node?: Resolver<Maybe<ResolversTypes['Flow']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -1338,17 +1335,17 @@ export interface JSONObjectScalarConfig extends GraphQLScalarTypeConfig<Resolver
   name: 'JSONObject';
 }
 
-export type LoginWithSelectedSgidResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['LoginWithSelectedSgidResult'] = ResolversParentTypes['LoginWithSelectedSgidResult']> = {
+export type LoginWithSelectedSgidResultResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['LoginWithSelectedSgidResult'] = ResolversParentTypes['LoginWithSelectedSgidResult']> = {
   success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type LoginWithSgidResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['LoginWithSgidResult'] = ResolversParentTypes['LoginWithSgidResult']> = {
+export type LoginWithSgidResultResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['LoginWithSgidResult'] = ResolversParentTypes['LoginWithSgidResult']> = {
   publicOfficerEmployments?: Resolver<ReadonlyArray<ResolversTypes['SgidPublicOfficerEmployment']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
+export type MutationResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   createConnection?: Resolver<Maybe<ResolversTypes['Connection']>, ParentType, ContextType, Partial<MutationcreateConnectionArgs>>;
   createFlow?: Resolver<Maybe<ResolversTypes['Flow']>, ParentType, ContextType, Partial<MutationcreateFlowArgs>>;
   createRow?: Resolver<ResolversTypes['ID'], ParentType, ContextType, RequireFields<MutationcreateRowArgs, 'input'>>;
@@ -1380,19 +1377,19 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
   verifyOtp?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, Partial<MutationverifyOtpArgs>>;
 };
 
-export type PageInfoResolvers<ContextType = any, ParentType extends ResolversParentTypes['PageInfo'] = ResolversParentTypes['PageInfo']> = {
+export type PageInfoResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['PageInfo'] = ResolversParentTypes['PageInfo']> = {
   currentPage?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
+export type QueryResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   getAllRows?: Resolver<ReadonlyArray<ResolversTypes['TileRow']>, ParentType, ContextType, RequireFields<QuerygetAllRowsArgs, 'tableId'>>;
   getApp?: Resolver<Maybe<ResolversTypes['App']>, ParentType, ContextType, RequireFields<QuerygetAppArgs, 'key'>>;
   getApps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['App']>>>, ParentType, ContextType, Partial<QuerygetAppsArgs>>;
   getConnectedApps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['App']>>>, ParentType, ContextType, Partial<QuerygetConnectedAppsArgs>>;
-  getCurrentUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
-  getDynamicData?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType, RequireFields<QuerygetDynamicDataArgs, 'key' | 'stepId'>>;
+  getCurrentUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, UnauthenticatedGraphQLContext>;
+  getDynamicData?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['JSONObject']>>>, ParentType, ContextType, RequireFields<QuerygetDynamicDataArgs, 'key' | 'stepId'>>;
   getExecution?: Resolver<Maybe<ResolversTypes['Execution']>, ParentType, ContextType, RequireFields<QuerygetExecutionArgs, 'executionId'>>;
   getExecutionSteps?: Resolver<Maybe<ResolversTypes['ExecutionStepConnection']>, ParentType, ContextType, RequireFields<QuerygetExecutionStepsArgs, 'executionId' | 'limit' | 'offset'>>;
   getExecutions?: Resolver<Maybe<ResolversTypes['ExecutionConnection']>, ParentType, ContextType, RequireFields<QuerygetExecutionsArgs, 'limit' | 'offset'>>;
@@ -1405,14 +1402,14 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   testConnection?: Resolver<Maybe<ResolversTypes['TestConnectionResult']>, ParentType, ContextType, RequireFields<QuerytestConnectionArgs, 'connectionId'>>;
 };
 
-export type ReconnectionStepResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReconnectionStep'] = ResolversParentTypes['ReconnectionStep']> = {
+export type ReconnectionStepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ReconnectionStep'] = ResolversParentTypes['ReconnectionStep']> = {
   arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ReconnectionStepArgument']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ReconnectionStepArgumentResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReconnectionStepArgument'] = ResolversParentTypes['ReconnectionStepArgument']> = {
+export type ReconnectionStepArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ReconnectionStepArgument'] = ResolversParentTypes['ReconnectionStepArgument']> = {
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   properties?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ReconnectionStepProperty']>>>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['ArgumentEnumType']>, ParentType, ContextType>;
@@ -1420,13 +1417,13 @@ export type ReconnectionStepArgumentResolvers<ContextType = any, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ReconnectionStepPropertyResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReconnectionStepProperty'] = ResolversParentTypes['ReconnectionStepProperty']> = {
+export type ReconnectionStepPropertyResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ReconnectionStepProperty'] = ResolversParentTypes['ReconnectionStepProperty']> = {
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type SgidPublicOfficerEmploymentResolvers<ContextType = any, ParentType extends ResolversParentTypes['SgidPublicOfficerEmployment'] = ResolversParentTypes['SgidPublicOfficerEmployment']> = {
+export type SgidPublicOfficerEmploymentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['SgidPublicOfficerEmployment'] = ResolversParentTypes['SgidPublicOfficerEmployment']> = {
   agencyName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   departmentName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   employmentTitle?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1435,7 +1432,7 @@ export type SgidPublicOfficerEmploymentResolvers<ContextType = any, ParentType e
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type StepResolvers<ContextType = any, ParentType extends ResolversParentTypes['Step'] = ResolversParentTypes['Step']> = {
+export type StepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Step'] = ResolversParentTypes['Step']> = {
   appKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   connection?: Resolver<Maybe<ResolversTypes['Connection']>, ParentType, ContextType>;
   executionSteps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStep']>>>, ParentType, ContextType>;
@@ -1452,12 +1449,12 @@ export type StepResolvers<ContextType = any, ParentType extends ResolversParentT
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TableColumnConfigResolvers<ContextType = any, ParentType extends ResolversParentTypes['TableColumnConfig'] = ResolversParentTypes['TableColumnConfig']> = {
+export type TableColumnConfigResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TableColumnConfig'] = ResolversParentTypes['TableColumnConfig']> = {
   width?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TableColumnMetadataResolvers<ContextType = any, ParentType extends ResolversParentTypes['TableColumnMetadata'] = ResolversParentTypes['TableColumnMetadata']> = {
+export type TableColumnMetadataResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TableColumnMetadata'] = ResolversParentTypes['TableColumnMetadata']> = {
   config?: Resolver<ResolversTypes['TableColumnConfig'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -1465,7 +1462,7 @@ export type TableColumnMetadataResolvers<ContextType = any, ParentType extends R
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TableMetadataResolvers<ContextType = any, ParentType extends ResolversParentTypes['TableMetadata'] = ResolversParentTypes['TableMetadata']> = {
+export type TableMetadataResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TableMetadata'] = ResolversParentTypes['TableMetadata']> = {
   columns?: Resolver<Maybe<ReadonlyArray<ResolversTypes['TableColumnMetadata']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   lastAccessedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -1474,20 +1471,20 @@ export type TableMetadataResolvers<ContextType = any, ParentType extends Resolve
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TestConnectionResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['TestConnectionResult'] = ResolversParentTypes['TestConnectionResult']> = {
+export type TestConnectionResultResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TestConnectionResult'] = ResolversParentTypes['TestConnectionResult']> = {
   connectionVerified?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   registrationVerified?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TileRowResolvers<ContextType = any, ParentType extends ResolversParentTypes['TileRow'] = ResolversParentTypes['TileRow']> = {
+export type TileRowResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TileRow'] = ResolversParentTypes['TileRow']> = {
   data?: Resolver<ResolversTypes['JSONObject'], ParentType, ContextType>;
   rowId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TriggerResolvers<ContextType = any, ParentType extends ResolversParentTypes['Trigger'] = ResolversParentTypes['Trigger']> = {
+export type TriggerResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Trigger'] = ResolversParentTypes['Trigger']> = {
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1498,7 +1495,7 @@ export type TriggerResolvers<ContextType = any, ParentType extends ResolversPare
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TriggerInstructionsResolvers<ContextType = any, ParentType extends ResolversParentTypes['TriggerInstructions'] = ResolversParentTypes['TriggerInstructions']> = {
+export type TriggerInstructionsResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TriggerInstructions'] = ResolversParentTypes['TriggerInstructions']> = {
   afterUrlMsg?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   beforeUrlMsg?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   errorMsg?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1506,14 +1503,14 @@ export type TriggerInstructionsResolvers<ContextType = any, ParentType extends R
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TriggerSubstepResolvers<ContextType = any, ParentType extends ResolversParentTypes['TriggerSubstep'] = ResolversParentTypes['TriggerSubstep']> = {
+export type TriggerSubstepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TriggerSubstep'] = ResolversParentTypes['TriggerSubstep']> = {
   arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['TriggerSubstepArgument']>>>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TriggerSubstepArgumentResolvers<ContextType = any, ParentType extends ResolversParentTypes['TriggerSubstepArgument'] = ResolversParentTypes['TriggerSubstepArgument']> = {
+export type TriggerSubstepArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TriggerSubstepArgument'] = ResolversParentTypes['TriggerSubstepArgument']> = {
   allowArbitrary?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   dependsOn?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1532,20 +1529,20 @@ export type TriggerSubstepArgumentResolvers<ContextType = any, ParentType extend
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TriggerSubstepArgumentSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['TriggerSubstepArgumentSource'] = ResolversParentTypes['TriggerSubstepArgumentSource']> = {
+export type TriggerSubstepArgumentSourceResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TriggerSubstepArgumentSource'] = ResolversParentTypes['TriggerSubstepArgumentSource']> = {
   arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['TriggerSubstepArgumentSourceArgument']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type TriggerSubstepArgumentSourceArgumentResolvers<ContextType = any, ParentType extends ResolversParentTypes['TriggerSubstepArgumentSourceArgument'] = ResolversParentTypes['TriggerSubstepArgumentSourceArgument']> = {
+export type TriggerSubstepArgumentSourceArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TriggerSubstepArgumentSourceArgument'] = ResolversParentTypes['TriggerSubstepArgumentSourceArgument']> = {
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type UserResolvers<ContextType = any, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
+export type UserResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
   createdAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1553,7 +1550,7 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type Resolvers<ContextType = any> = {
+export type Resolvers<ContextType = AuthenticatedGraphQLContext> = {
   Action?: ActionResolvers<ContextType>;
   ActionSubstep?: ActionSubstepResolvers<ContextType>;
   ActionSubstepArgument?: ActionSubstepArgumentResolvers<ContextType>;

@@ -1,9 +1,9 @@
-import { Model } from 'objection'
+import type { Model } from 'objection'
 
 import ExtendedQueryBuilder from '@/models/query-builder'
 
-const paginate = async (
-  query: ExtendedQueryBuilder<Model, Model[]>,
+const paginate = async <TModel extends Model>(
+  query: ExtendedQueryBuilder<TModel, TModel[]>,
   limit: number,
   offset: number,
 ) => {
@@ -21,7 +21,7 @@ const paginate = async (
       currentPage: Math.ceil(offset / limit + 1),
       totalCount: count,
     },
-    edges: records.map((record: Model) => {
+    edges: records.map((record: TModel) => {
       return {
         node: record,
       }

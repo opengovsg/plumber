@@ -1,10 +1,10 @@
-import Context from '@/types/express/context'
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-type Params = {
-  id: string
-}
-
-const getFlow = async (_parent: unknown, params: Params, context: Context) => {
+const getFlow: NonNullable<QueryResolvers['getFlow']> = async (
+  _parent,
+  params,
+  context,
+) => {
   const flow = await context.currentUser
     .$relatedQuery('flows')
     .withGraphJoined('[steps.[connection]]')
