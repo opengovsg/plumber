@@ -27,9 +27,7 @@ const HeaderBar = () => {
   return (
     <Container px={6}>
       <HStack justify="space-between">
-        <HStack>
-          <Image h={10} src={imgSrc} alt="plumber-logo" />
-        </HStack>
+        <Image h={10} src={imgSrc} alt="plumber-logo" />
         <HStack spacing={8}>
           <Button
             as={Link}
