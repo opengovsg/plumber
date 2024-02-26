@@ -8,6 +8,9 @@ const FLOW_ID = 'xxx'
 const TRIGGER_STEP_ID = 'xxx'
 const ACTION_STEP_ID = 'xxx'
 
+const TRIGGER_APP_KEY = 'webhook'
+const ACTION_APP_KEY = 'telegram-bot'
+
 const NUMBER_OF_EXECUTIONS = 100
 
 const seedExecutions = async () => {
@@ -32,7 +35,7 @@ const seedExecutions = async () => {
       data_in:
         '{"url": "https://mock.codes/200", "data": "", "apiUrl": "https://mock.codes/200", "method": "GET", "headers": ""}',
       data_out: '{"data": {"statusCode": 200, "description": "OK"}}',
-      app_key: 'webhook',
+      app_key: TRIGGER_APP_KEY,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
@@ -44,8 +47,8 @@ const seedExecutions = async () => {
       status: 'success',
       data_in: '{}',
       data_out: '{}',
-      app_key: `{"timestamp": ${Date.now()}`,
-      created_at: new Date(),
+      app_key: ACTION_APP_KEY,
+      created_at: new Date(new Date().getTime() + 1),
       updated_at: new Date(),
       deleted_at: null,
     })
