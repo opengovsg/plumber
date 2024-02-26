@@ -40,6 +40,7 @@ type Query {
   getAllRows(tableId: String!): [TileRow!]!
   getCurrentUser: User
   healthcheck: AppHealth
+  getPlumberStats: Stats
 }
 
 type Mutation {
@@ -599,6 +600,11 @@ input DeleteTableRowsInput {
 
 type AppHealth {
   version: String
+}
+
+type Stats {
+  userCount: Int!
+  executionCount: Int!
 }
 
 type SgidPublicOfficerEmployment {
