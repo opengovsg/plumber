@@ -10,6 +10,13 @@ import { getApiBaseUrl } from '../../common/api'
 
 import { requestSchema, responseSchema } from './schema'
 
+// TBC
+type LettersApiErrorData = {
+  success: boolean
+  message: string
+  errors: Record<string, string>[]
+}
+
 const action: IRawAction = {
   name: 'Create Letter',
   key: 'createLetter',
@@ -18,26 +25,52 @@ const action: IRawAction = {
     {
       label: 'Template Id',
       key: 'templateId',
-      type: 'string' as const,
+      placeholder: 'Template',
+      type: 'dropdown' as const,
       required: true,
-      description:
-        'You can obtain the letter template id using the getTemplate action.',
-      variables: true,
+      description: 'Choose the template id you want for creating a letter.',
+      variables: false,
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [
+          {
+            name: 'key',
+            value: 'getTemplateIds',
+          },
+        ],
+      },
     },
     {
-      label: 'Parameters',
+      label: 'Letter Parameters',
       key: 'letterParams',
       type: 'multirow' as const,
       required: false,
       description:
-        'These are the field names and values for your letter template.',
+        'Specify every field name and values for your letter template.',
+
       subFields: [
         {
           placeholder: 'Field',
-          key: 'field',
-          type: 'string' as const,
+          key: 'field' as const,
+          type: 'dropdown' as const,
+          showOptionValue: false,
           required: true,
-          variables: true,
+          variables: false,
+          source: {
+            type: 'query' as const,
+            name: 'getDynamicData' as const,
+            arguments: [
+              {
+                name: 'key',
+                value: 'getTemplateFields',
+              },
+              {
+                name: 'parameters.templateId',
+                value: '{parameters.templateId}',
+              },
+            ],
+          },
         },
         {
           placeholder: 'Value',
@@ -62,7 +95,7 @@ const action: IRawAction = {
     const apiKey = $.auth.data.apiKey as string
     const baseUrl = getApiBaseUrl(apiKey)
 
-    // TODO (mal): check whether to support SMS also
+    // TODO (mal): check whether to support email/SMS
     try {
       const payload = requestSchema.parse($.step.parameters)
 
@@ -82,6 +115,16 @@ const action: IRawAction = {
         throw new StepError(
           `${firstError.message} at "${firstError.path}"`,
           VALIDATION_ERROR_SOLUTION,
+          $.step.position,
+          $.app.name,
+        )
+      }
+      // if not all fields are used
+      const lettersErrorData: LettersApiErrorData = error.response.data
+      if (lettersErrorData.message === 'Malformed bulk create object') {
+        throw new StepError(
+          'Missing fields for letter template',
+          'Click on set up action and check that you have used all the fields in the letter parameters.',
           $.step.position,
           $.app.name,
         )

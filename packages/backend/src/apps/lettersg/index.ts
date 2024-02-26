@@ -2,6 +2,7 @@ import type { IApp } from '@plumber/types'
 
 import actions from './actions'
 import auth from './auth'
+import dynamicData from './dynamic-data'
 
 const app: IApp = {
   name: 'LetterSG',
@@ -13,6 +14,7 @@ const app: IApp = {
   primaryColor: '000000',
   auth,
   actions,
+  dynamicData,
 }
 
 export default app
