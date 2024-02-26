@@ -73,19 +73,19 @@ export type ActionSubstepArgumentSourceArgument = {
 
 export type App = {
   __typename?: 'App';
-  actions?: Maybe<Array<Maybe<Action>>>;
+  actions?: Maybe<Array<Action>>;
   auth?: Maybe<AppAuth>;
-  authDocUrl?: Maybe<Scalars['String']['output']>;
+  authDocUrl: Scalars['String']['output'];
   connectionCount?: Maybe<Scalars['Int']['output']>;
-  connections?: Maybe<Array<Maybe<Connection>>>;
+  connections?: Maybe<Array<Connection>>;
   description?: Maybe<Scalars['String']['output']>;
   docUrl?: Maybe<Scalars['String']['output']>;
   flowCount?: Maybe<Scalars['Int']['output']>;
-  iconUrl?: Maybe<Scalars['String']['output']>;
-  key?: Maybe<Scalars['String']['output']>;
-  name?: Maybe<Scalars['String']['output']>;
-  primaryColor?: Maybe<Scalars['String']['output']>;
-  triggers?: Maybe<Array<Maybe<Trigger>>>;
+  iconUrl: Scalars['String']['output'];
+  key: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  primaryColor: Scalars['String']['output'];
+  triggers?: Maybe<Array<Trigger>>;
 };
 
 export type AppAuth = {
@@ -141,12 +141,12 @@ export type AuthenticationStepProperty = {
 export type Connection = {
   __typename?: 'Connection';
   app?: Maybe<App>;
-  createdAt?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['String']['output'];
   flowCount?: Maybe<Scalars['Int']['output']>;
   formattedData?: Maybe<ConnectionData>;
-  id?: Maybe<Scalars['String']['output']>;
-  key?: Maybe<Scalars['String']['output']>;
-  verified?: Maybe<Scalars['Boolean']['output']>;
+  id: Scalars['String']['output'];
+  key: Scalars['String']['output'];
+  verified: Scalars['Boolean']['output'];
 };
 
 export type ConnectionData = {
@@ -1159,19 +1159,19 @@ export type ActionSubstepArgumentSourceArgumentResolvers<ContextType = Authentic
 };
 
 export type AppResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['App'] = ResolversParentTypes['App']> = {
-  actions?: Resolver<Maybe<Array<Maybe<ResolversTypes['Action']>>>, ParentType, ContextType>;
+  actions?: Resolver<Maybe<Array<ResolversTypes['Action']>>, ParentType, ContextType>;
   auth?: Resolver<Maybe<ResolversTypes['AppAuth']>, ParentType, ContextType>;
-  authDocUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  authDocUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   connectionCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  connections?: Resolver<Maybe<Array<Maybe<ResolversTypes['Connection']>>>, ParentType, ContextType>;
+  connections?: Resolver<Maybe<Array<ResolversTypes['Connection']>>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   docUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   flowCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  iconUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  primaryColor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  triggers?: Resolver<Maybe<Array<Maybe<ResolversTypes['Trigger']>>>, ParentType, ContextType>;
+  iconUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  primaryColor?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  triggers?: Resolver<Maybe<Array<ResolversTypes['Trigger']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -1223,12 +1223,12 @@ export type AuthenticationStepPropertyResolvers<ContextType = AuthenticatedGraph
 
 export type ConnectionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Connection'] = ResolversParentTypes['Connection']> = {
   app?: Resolver<Maybe<ResolversTypes['App']>, ParentType, ContextType>;
-  createdAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   flowCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   formattedData?: Resolver<Maybe<ResolversTypes['ConnectionData']>, ParentType, ContextType>;
-  id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  verified?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  verified?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 

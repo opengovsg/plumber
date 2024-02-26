@@ -4,7 +4,10 @@ import type { CodegenConfig } from '@graphql-codegen/cli'
 const config: CodegenConfig = {
   overwrite: true,
   schema: 'packages/backend/src/graphql/**/schema.graphql',
-  documents: ['packages/frontend/src/graphql/**/*.ts'],
+  documents: [
+    'packages/frontend/src/graphql/**/*.ts',
+    'packages/frontend/src/components/**/*.tsx',
+  ],
   generates: {
     //
     // Backend
@@ -89,6 +92,13 @@ const config: CodegenConfig = {
     //
     'packages/frontend/src/graphql/__generated__/': {
       preset: 'client',
+      presetConfig: {
+        // Prevent fragment masking from colliding with React hooks
+        // https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#the-usefragment-helper
+        fragmentMasking: {
+          unmaskFunctionName: 'getFragmentData',
+        },
+      },
       config: {
         // Add some stricter type checking.
         defaultScalarType: 'unknown',

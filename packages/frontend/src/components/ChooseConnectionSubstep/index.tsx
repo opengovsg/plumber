@@ -57,7 +57,13 @@ function ChooseConnectionSubstep(
   const { connection, appKey } = step
   const editorContext = useContext(EditorContext)
   const { data, loading, refetch } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: appKey },
+    variables: {
+      key:
+        appKey ??
+        // FIXME: this branch is never taken but needed to satisfy typescript;
+        // will be fixed once we type the queries properly.
+        '',
+    },
   })
 
   const supportsConnectionRegistration =
