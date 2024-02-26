@@ -9,7 +9,6 @@ import CardActionArea from '@mui/material/CardActionArea'
 import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
 import { useToast } from '@opengovsg/design-system-react'
-
 import {
   type FragmentType,
   getFragmentData,
@@ -20,7 +19,6 @@ import { TEST_CONNECTION } from 'graphql/queries/test-connection'
 import { DateTime } from 'luxon'
 
 import ConnectionContextMenu from './ConnectionContextMenu'
-
 import { CardContent, Typography } from './style'
 
 const AppConnections_ConnectionRow_ConnectionFragment = graphql(`

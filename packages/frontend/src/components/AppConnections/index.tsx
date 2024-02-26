@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client'
 import NoResultFound from 'components/NoResultFound'
 import * as URLS from 'config/urls'
-import { graphql, getFragmentData } from 'graphql/__generated__'
+import { getFragmentData, graphql } from 'graphql/__generated__'
 import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
 
 import ConnectionRow from './ConnectionRow'

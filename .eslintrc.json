@@ -28,7 +28,14 @@
           {
             "selector": ["variable", "function"],
             "format": ["camelCase", "UPPER_CASE", "PascalCase"],
-            "leadingUnderscore": "allow"
+            "leadingUnderscore": "allow",
+            // Allow GraphQL fragments to follow relay's naming convention (e.g.
+            // ComponentName_SubComponentName_FragmentName). ESLint doesn't have relay
+            // naming convention support, so we just ignore them for now...
+            "filter": {
+              "regex": "^.*Fragment$",
+              "match": false
+            }
           }
         ],
         "@typescript-eslint/no-explicit-any": "off",
@@ -76,18 +83,6 @@
     "@typescript-eslint/no-unused-vars": [
       "warn",
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
-    ],
-    "@typescript-eslint/naming-convention": [
-      "error",
-      // Allow GraphQL fragments to follow relay's naming convention (e.g.
-      // ComponentName_SubComponentName_FragmentName)
-      {
-        "selector": "variable",
-        "filter": {
-          "regex": "^.*Fragment$",
-          "match": false
-        }
-      }
     ]
   }
 }
