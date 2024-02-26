@@ -6,7 +6,7 @@ export type TableRowItem = CreateEntityItem<typeof TableRow>
 export type CreateRowInput = Pick<TableRowItem, 'tableId' | 'data'>
 export type CreateRowsInput = {
   tableId: string
-  dataArray: Record<string, string>[]
+  dataArray: Array<TableRowItem['data']>
 }
 export type UpdateRowInput = Pick<TableRowItem, 'tableId' | 'data' | 'rowId'>
 export interface DeleteRowsInput {

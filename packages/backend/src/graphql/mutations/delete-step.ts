@@ -1,18 +1,13 @@
 import { raw } from 'objection'
 
 import Step from '@/models/step'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    ids: string[]
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteStep = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const deleteStep: NonNullable<MutationResolvers['deleteStep']> = async (
+  _parent,
+  params,
+  context,
 ) => {
   if (params.input.ids.length === 0) {
     throw new Error('Nothing to delete')

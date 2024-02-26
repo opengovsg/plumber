@@ -1,16 +1,10 @@
 import { randomUUID } from 'crypto'
 
-import Context from '@/types/express/context'
+import type { MutationResolvers } from '../../__generated__/types.generated'
 
-type Params = {
-  tableId: string
-}
-
-const createShareableTableLink = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-) => {
+const createShareableTableLink: NonNullable<
+  MutationResolvers['createShareableTableLink']
+> = async (_parent, params, context) => {
   const tableId = params.tableId
 
   // TODO: when implementing collaborators, only allow owner or editor

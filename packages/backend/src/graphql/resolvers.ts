@@ -1,11 +1,10 @@
+import type { Resolvers } from './__generated__/types.generated'
 import customResolvers from './custom-resolvers'
 import mutationResolvers from './mutation-resolvers'
 import queryResolvers from './query-resolvers'
 
-const resolvers = {
+export default {
   Query: queryResolvers,
   Mutation: mutationResolvers,
   ...customResolvers,
-}
-
-export default resolvers
+} satisfies Resolvers

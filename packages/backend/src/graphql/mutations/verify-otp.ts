@@ -4,23 +4,17 @@ import BaseError from '@/errors/base'
 import { setAuthCookie } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import User from '@/models/user'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    email: string
-    otp: string
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
 const MAX_OTP_ATTEMPTS = 5
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
-const verifyOtp = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const verifyOtp: NonNullable<MutationResolvers['verifyOtp']> = async (
+  _parent,
+  params,
+  context,
 ): Promise<boolean> => {
   const { otp, email: emailRaw } = params.input
   // validate email

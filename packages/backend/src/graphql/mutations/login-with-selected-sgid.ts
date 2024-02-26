@@ -8,7 +8,8 @@ import {
   type PublicOfficerEmployment,
   SGID_MULTI_HAT_COOKIE_NAME,
 } from '@/helpers/sgid'
-import type Context from '@/types/express/context'
+
+import type { MutationResolvers } from '../__generated__/types.generated'
 
 function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
   const token = req.cookies[SGID_MULTI_HAT_COOKIE_NAME]
@@ -27,19 +28,9 @@ function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
   }
 }
 
-interface LoginWithSelectedSgidParams {
-  input: { workEmail: string }
-}
-
-interface LoginWithSelectedSgidResult {
-  success: boolean
-}
-
-export default async function loginWithSelectedSgid(
-  _parent: unknown,
-  params: LoginWithSelectedSgidParams,
-  context: Context,
-): Promise<LoginWithSelectedSgidResult> {
+const loginWithSelectedSgid: NonNullable<
+  MutationResolvers['loginWithSelectedSgid']
+> = async (_parent, params, context) => {
   const employments = readEmploymentsFromCookie(context.req)
   context.res.clearCookie(SGID_MULTI_HAT_COOKIE_NAME)
 
@@ -60,3 +51,5 @@ export default async function loginWithSelectedSgid(
     success: true,
   }
 }
+
+export default loginWithSelectedSgid

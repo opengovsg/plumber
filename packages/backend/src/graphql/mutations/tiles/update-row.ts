@@ -1,14 +1,11 @@
-import { UpdateRowInput, updateTableRow } from '@/models/dynamodb/table-row'
-import Context from '@/types/express/context'
+import { updateTableRow } from '@/models/dynamodb/table-row'
 
-type Params = {
-  input: UpdateRowInput
-}
+import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const updateRow = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const updateRow: NonNullable<MutationResolvers['updateRow']> = async (
+  _parent,
+  params,
+  context,
 ) => {
   const { tableId, rowId, data } = params.input
 

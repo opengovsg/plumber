@@ -1,16 +1,11 @@
 import testRun from '@/services/test-run'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    stepId: string
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-const executeFlow = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const executeFlow: NonNullable<MutationResolvers['executeFlow']> = async (
+  _parent,
+  params,
+  context,
 ) => {
   const { stepId } = params.input
 

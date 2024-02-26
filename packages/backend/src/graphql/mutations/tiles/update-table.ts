@@ -1,25 +1,9 @@
-import { ITableColumnConfig } from '@plumber/types'
-
 import pLimit from 'p-limit'
 import { z } from 'zod'
 
 import TableColumnMetadata from '@/models/table-column-metadata'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    id: string
-    name?: string
-    addedColumns?: string[]
-    modifiedColumns?: {
-      id: string
-      name?: string
-      position?: number
-      config?: ITableColumnConfig
-    }[]
-    deletedColumns?: string[]
-  }
-}
+import type { MutationResolvers } from '../../__generated__/types.generated'
 
 export const updateTableSchema = z.object({
   id: z.string().uuid(),
@@ -42,10 +26,10 @@ export const updateTableSchema = z.object({
   deletedColumns: z.array(z.string().uuid()).optional(),
 })
 
-const updateTable = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const updateTable: NonNullable<MutationResolvers['updateTable']> = async (
+  _parent,
+  params,
+  context,
 ) => {
   const {
     id: tableId,
