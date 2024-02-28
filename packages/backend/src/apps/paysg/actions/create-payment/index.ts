@@ -3,8 +3,7 @@ import type { IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import { VALIDATION_ERROR_SOLUTION } from '@/apps/postman/common/constants'
-import StepError from '@/errors/step'
+import StepError, { GenericSolution } from '@/errors/step'
 
 import { getApiBaseUrl } from '../../common/api'
 
@@ -132,7 +131,7 @@ const action: IRawAction = {
 
         throw new StepError(
           `${firstError.message} at "${firstError.path}"`,
-          VALIDATION_ERROR_SOLUTION,
+          GenericSolution.ReconfigureInvalidField,
           $.step.position,
           $.app.name,
         )
