@@ -1,7 +1,5 @@
 import type { IRawAction } from '@plumber/types'
 
-import { HttpStatusCode } from 'axios'
-import { expect } from 'vitest'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -34,8 +32,10 @@ const action: IRawAction = {
     try {
       const { paymentId } = requestSchema.parse($.step.parameters)
 
-      const response = await $.http.post(
+      // Empty response body expected, so just set a placeholder.
+      await $.http.post(
         `/v1/payment-services/${paymentServiceId}/payments/${paymentId}/send-email`,
+        {}, // No need for request body.
         {
           baseURL: baseUrl,
           headers: {
@@ -43,8 +43,7 @@ const action: IRawAction = {
           },
         },
       )
-      expect(response.status).toEqual(HttpStatusCode.NoContent)
-      // empty response body expected
+      $.setActionItem({ raw: { success: true } })
     } catch (error) {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]

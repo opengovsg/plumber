@@ -53,6 +53,7 @@ describe('send payment email', () => {
 
       expect(mocks.httpPost).toHaveBeenCalledWith(
         '/v1/payment-services/sample-payment-service-id/payments/sample-payment-id/send-email',
+        {},
         expect.objectContaining({
           baseURL: expectedBaseUrl,
           headers: {
