@@ -9,12 +9,13 @@ const EmptyTileList = (): JSX.Element => {
       direction={{ base: 'column', md: 'row' }}
       maxW="1000px"
       margin="auto"
+      mt="10vh"
       gap={8}
       px={8}
       alignItems="center"
       justifyContent="center"
     >
-      <Image src={spreadsheetImg} alt="Spreadsheet" w="400px" maxW="50%" />
+      <Image src={spreadsheetImg} alt="Spreadsheet" w="400px" maxW="50vw" />
       <VStack alignItems={{ base: 'center', md: 'start' }} gap={8}>
         <Text
           textStyle="h4"

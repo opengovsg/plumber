@@ -69,6 +69,7 @@ const authentication = shield(
       getAllRows: isAuthenticatedOrViewKey,
       healthcheck: allow,
       getCurrentUser: allow,
+      getPlumberStats: allow,
     },
     Mutation: {
       '*': isAuthenticated,
