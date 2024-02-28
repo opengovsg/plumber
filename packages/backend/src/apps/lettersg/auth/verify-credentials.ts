@@ -2,6 +2,8 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import { getEnvironmentFromApiKey, LetterSgEnvironment } from '../common/api'
 
+import { verifyApiKey } from './verify-api-key'
+
 export default async function verifyCredentials(
   $: IGlobalVariable,
 ): Promise<void> {
@@ -21,6 +23,8 @@ export default async function verifyCredentials(
       labelSuffix = ' [STAGING]'
       break
   }
+
+  await verifyApiKey($)
   // update label
   await $.auth.set({
     screenName: !($.auth.data.screenName as string).endsWith(labelSuffix)
