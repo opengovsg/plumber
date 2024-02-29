@@ -143,6 +143,17 @@ worker.on('failed', async (job, err) => {
   }
 })
 
+worker.on('error', (err) => {
+  if (!err) {
+    logger.error('Worker undefined error')
+    return
+  }
+  // catch-all just in case any errors bubble up and potentially crash the worker task
+  logger.error(`Worker errored with ${err.message}`, {
+    err: err.stack,
+  })
+})
+
 process.on('SIGTERM', async () => {
   await worker.close()
 })
