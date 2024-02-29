@@ -1,10 +1,12 @@
 import type { IGlobalVariable } from '@plumber/types'
 
+import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import HttpError from '@/errors/http'
 
 import app from '../..'
 import createLetterAction from '../../actions/create-letter'
-import { getApiBaseUrl } from '../../common/api'
 
 const MOCK_RESPONSE = {
   publicId: '123',
@@ -36,6 +38,7 @@ describe('create letter from template', () => {
         position: 2,
         parameters: {
           templateId: '123',
+          letterParams: [],
         },
       },
       http: {
@@ -50,38 +53,14 @@ describe('create letter from template', () => {
     vi.restoreAllMocks()
   })
 
-  it.each(['test_v1_123', 'live_v1_321'])(
-    'invokes the correct URL based on the API key',
-    async (apiKey) => {
-      $.auth.data.apiKey = apiKey
-      const expectedBaseUrl = getApiBaseUrl($.auth.data.apiKey)
-
-      await createLetterAction.run($)
-
-      expect(mocks.httpPost).toHaveBeenCalledWith(
-        '/v1/letters',
-        expect.anything(),
-        expect.objectContaining({
-          baseURL: expectedBaseUrl,
-          headers: {
-            authorization: `Bearer ${apiKey}`,
-          },
-        }),
-      )
-    },
-  )
-
   it('builds the payload correctly without any letter params', async () => {
     $.auth.data.apiKey = 'test_v1_123456'
     await createLetterAction.run($)
 
-    expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/v1/letters',
-      {
-        templateId: 123,
-      },
-      expect.anything(),
-    )
+    expect(mocks.httpPost).toHaveBeenCalledWith('/v1/letters', {
+      templateId: 123,
+      letterParams: {},
+    })
   })
 
   it('builds the payload correctly with letter params', async () => {
@@ -93,44 +72,13 @@ describe('create letter from template', () => {
     $.auth.data.apiKey = 'test_v1_123456'
     await createLetterAction.run($)
 
-    expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/v1/letters',
-      {
-        templateId: 123,
-        letterParams: {
-          name: 'curry',
-          message: 'what is life?',
-        },
+    expect(mocks.httpPost).toHaveBeenCalledWith('/v1/letters', {
+      templateId: 123,
+      letterParams: {
+        name: 'curry',
+        message: 'what is life?',
       },
-      expect.anything(),
-    )
-  })
-
-  it('builds the payload correctly with letter params and email', async () => {
-    $.step.parameters.letterParams = [
-      { field: 'name', value: 'curry' },
-      { field: 'message', value: 'what is life?' },
-    ]
-    $.step.parameters.recipientEmail = 'test@open.gov.sg'
-
-    $.auth.data.apiKey = 'test_v1_123456'
-    await createLetterAction.run($)
-
-    expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/v1/letters',
-      {
-        templateId: 123,
-        letterParams: {
-          name: 'curry',
-          message: 'what is life?',
-        },
-        notificationParams: {
-          recipient: 'test@open.gov.sg',
-          notificationMethod: 'email',
-        },
-      },
-      expect.anything(),
-    )
+    })
   })
 
   it('parses the raw response correctly', async () => {
@@ -145,5 +93,49 @@ describe('create letter from template', () => {
         issuedLetter: MOCK_RESPONSE.issuedLetter,
       },
     })
+  })
+
+  it('should throw step error for invalid parameters (no field)', async () => {
+    $.step.parameters.letterParams = [{ value: 'test' }]
+    await expect(createLetterAction.run($)).rejects.toThrowError()
+  })
+
+  it('should throw step error for insufficient fields used', async () => {
+    $.step.parameters.letterParams = [{ field: 'field 1', value: 'test' }]
+    // simulate letters error
+    const error = {
+      response: {
+        data: {
+          message: 'Malformed bulk create object',
+        },
+        status: 400,
+        statusText: 'Bad Request',
+      },
+    } as AxiosError
+    const httpError = new HttpError(error)
+    mocks.httpPost.mockRejectedValueOnce(httpError)
+    // throw partial step error
+    await expect(createLetterAction.run($)).rejects.toThrowError(
+      'Missing fields for letter template',
+    )
+  })
+
+  it('should throw generic step error for unknown error', async () => {
+    // simulate unknown error
+    const error = {
+      response: {
+        data: {
+          message: 'Unknown error',
+        },
+        status: 400,
+        statusText: 'Bad Request',
+      },
+    } as AxiosError
+    const httpError = new HttpError(error)
+    mocks.httpPost.mockRejectedValueOnce(httpError)
+    // throw partial step error
+    await expect(createLetterAction.run($)).rejects.toThrowError(
+      'Please check that you have configured your step correctly',
+    )
   })
 })
