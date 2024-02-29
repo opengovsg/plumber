@@ -3,6 +3,8 @@ import { IJSONObject } from '@plumber/types'
 import App from '@/models/app'
 import Context from '@/types/express/context'
 
+// Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive Data Scanner
+
 type Params = {
   input: {
     key: string

@@ -21,6 +21,7 @@ const bbBearColors = {
       default: '#454953',
       strong: '#2C2E34',
       medium: '#666C7A',
+      brand: '#cf1a68',
     },
   },
   interaction: {
