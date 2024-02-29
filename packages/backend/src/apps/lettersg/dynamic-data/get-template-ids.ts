@@ -4,8 +4,6 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
-import { getApiBaseUrl } from '../common/api'
-
 import { Template } from './types'
 
 const dynamicData: IDynamicData = {
@@ -14,16 +12,8 @@ const dynamicData: IDynamicData = {
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     const templateIdsMap: { name: string; value: string }[] = []
 
-    const apiKey = $.auth.data.apiKey as string
-    const baseUrl = getApiBaseUrl(apiKey)
-
     try {
-      const { data } = await $.http.get('/v1/templates', {
-        baseURL: baseUrl,
-        headers: {
-          authorization: `Bearer ${$.auth.data.apiKey}`,
-        },
-      })
+      const { data } = await $.http.get('/v1/templates')
 
       if (!data.templates) {
         return {

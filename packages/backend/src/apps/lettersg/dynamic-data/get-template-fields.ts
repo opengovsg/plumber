@@ -4,8 +4,6 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
-import { getApiBaseUrl } from '../common/api'
-
 const dynamicData: IDynamicData = {
   key: 'getTemplateFields',
   name: 'Get Template Fields',
@@ -17,16 +15,8 @@ const dynamicData: IDynamicData = {
       }
     }
 
-    const apiKey = $.auth.data.apiKey as string
-    const baseUrl = getApiBaseUrl(apiKey)
-
     try {
-      const { data } = await $.http.get(`/v1/templates/${templateId}`, {
-        baseURL: baseUrl,
-        headers: {
-          authorization: `Bearer ${$.auth.data.apiKey}`,
-        },
-      })
+      const { data } = await $.http.get(`/v1/templates/${templateId}`)
 
       if (!data) {
         return {

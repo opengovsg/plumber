@@ -6,8 +6,6 @@ import { fromZodError } from 'zod-validation-error'
 import { VALIDATION_ERROR_SOLUTION } from '@/apps/postman/common/constants'
 import StepError from '@/errors/step'
 
-import { getApiBaseUrl } from '../../common/api'
-
 import { requestSchema, responseSchema } from './schema'
 
 // TBC
@@ -92,20 +90,12 @@ const action: IRawAction = {
   ],
 
   async run($) {
-    const apiKey = $.auth.data.apiKey as string
-    const baseUrl = getApiBaseUrl(apiKey)
-
     // TODO (mal): check whether to support email/SMS
     try {
       const payload = requestSchema.parse($.step.parameters)
 
       // post response
-      const rawResponse = await $.http.post('/v1/letters', payload, {
-        baseURL: baseUrl,
-        headers: {
-          authorization: `Bearer ${$.auth.data.apiKey}`,
-        },
-      })
+      const rawResponse = await $.http.post('/v1/letters', payload)
       const response = responseSchema.parse(rawResponse.data)
 
       $.setActionItem({ raw: response })

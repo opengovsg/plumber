@@ -1,6 +1,6 @@
 import type { IGlobalVariable } from '@plumber/types'
 
-import verifyCredentials from './verify-credentials'
+import { verifyApiKey } from './verify-api-key'
 
 export default async function isStillVerified(
   $: IGlobalVariable,
@@ -11,6 +11,6 @@ export default async function isStillVerified(
     throw new Error('Invalid LetterSG API key')
   }
 
-  await verifyCredentials($)
+  await verifyApiKey($)
   return true
 }
