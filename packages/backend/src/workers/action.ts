@@ -124,12 +124,13 @@ worker.on('failed', async (job, err) => {
       job: job.data,
     },
   )
-  const isEmailSent = await checkErrorEmail(job.data.flowId)
-  if (isEmailSent) {
-    return
-  }
 
   try {
+    const isEmailSent = await checkErrorEmail(job.data.flowId)
+    if (isEmailSent) {
+      return
+    }
+
     if (
       err instanceof UnrecoverableError ||
       job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
