@@ -124,21 +124,29 @@ worker.on('failed', async (job, err) => {
       job: job.data,
     },
   )
-  const isEmailSent = await checkErrorEmail(job.data.flowId)
-  if (isEmailSent) {
-    return
-  }
-  if (
-    err instanceof UnrecoverableError ||
-    job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
-  ) {
-    const flow = await Flow.query()
-      .findById(job.data.flowId)
-      .withGraphFetched('user')
-      .throwIfNotFound()
-    const emailErrorDetails = await sendErrorEmail(flow)
-    logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
-      errorDetails: { ...emailErrorDetails, ...job.data },
+
+  try {
+    const isEmailSent = await checkErrorEmail(job.data.flowId)
+    if (isEmailSent) {
+      return
+    }
+
+    if (
+      err instanceof UnrecoverableError ||
+      job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
+    ) {
+      const flow = await Flow.query()
+        .findById(job.data.flowId)
+        .withGraphFetched('user')
+        .throwIfNotFound()
+      const emailErrorDetails = await sendErrorEmail(flow)
+      logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
+        errorDetails: { ...emailErrorDetails, ...job.data },
+      })
+    }
+  } catch (err) {
+    logger.error(`Could not send error email for FLOW ID: ${job.data.flowId}`, {
+      errorDetails: { ...job.data, err: err.stack },
     })
   }
 })
