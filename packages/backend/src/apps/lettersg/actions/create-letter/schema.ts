@@ -20,22 +20,10 @@ export const requestSchema = z
         }, {} as Record<string, string>),
       )
       .nullish(),
-    recipientEmail: z.preprocess((value) => {
-      if (typeof value !== 'string') {
-        return value
-      }
-      return value.trim() === '' ? undefined : value.trim()
-    }, z.string().email('Please key in a valid email address').optional()),
   })
   .transform((data) => ({
     templateId: Number(data.templateId),
     letterParams: data.letterParams,
-    ...(data.recipientEmail && {
-      notificationParams: {
-        recipient: data.recipientEmail,
-        notificationMethod: 'email',
-      },
-    }),
   }))
 
 export const responseSchema = z

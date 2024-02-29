@@ -79,18 +79,9 @@ const action: IRawAction = {
         },
       ],
     },
-    {
-      label: 'Recipient Email',
-      key: 'recipientEmail',
-      type: 'string' as const,
-      required: false,
-      description: 'This is the email that will receive the letter link.',
-      variables: true,
-    },
   ],
 
   async run($) {
-    // TODO (mal): check whether to support email/SMS
     try {
       const payload = requestSchema.parse($.step.parameters)
 
