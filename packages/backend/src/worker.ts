@@ -15,7 +15,7 @@ process.on('uncaughtException', (err) => {
       return
     }
     // catch-all just in case any errors bubble up and potentially crash the worker task
-    logger.error(`Worker uncaught errored with ${err.message}`, {
+    logger.error(`Worker uncaught error with ${err.message}`, {
       err: err.stack,
     })
   } catch (e) {
