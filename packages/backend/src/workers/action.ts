@@ -124,30 +124,47 @@ worker.on('failed', async (job, err) => {
       job: job.data,
     },
   )
+  try {
+    const flow = await Flow.query()
+      .findById(job.data.flowId)
+      .withGraphFetched('user')
+      .throwIfNotFound()
 
-  const flow = await Flow.query()
-    .findById(job.data.flowId)
-    .withGraphFetched('user')
-    .throwIfNotFound()
+    let shouldAlwaysSendEmail = false
+    if (flow.config?.errorConfig?.notificationFrequency === 'always') {
+      shouldAlwaysSendEmail = true
+    }
 
-  let shouldAlwaysSendEmail = false
-  if (flow.config?.errorConfig?.notificationFrequency === 'always') {
-    shouldAlwaysSendEmail = true
-  }
+    const isEmailSent = await checkErrorEmail(job.data.flowId)
+    if (!shouldAlwaysSendEmail && isEmailSent) {
+      return
+    }
 
-  const isEmailSent = await checkErrorEmail(job.data.flowId)
-  if (!shouldAlwaysSendEmail && isEmailSent) {
-    return
-  }
-  if (
-    err instanceof UnrecoverableError ||
-    job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
-  ) {
-    const emailErrorDetails = await sendErrorEmail(flow)
-    logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
-      errorDetails: { ...emailErrorDetails, ...job.data },
+    if (
+      err instanceof UnrecoverableError ||
+      job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
+    ) {
+      const emailErrorDetails = await sendErrorEmail(flow)
+      logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
+        errorDetails: { ...emailErrorDetails, ...job.data },
+      })
+    }
+  } catch (err) {
+    logger.error(`Could not send error email for FLOW ID: ${job.data.flowId}`, {
+      errorDetails: { ...job.data, err: err.stack },
     })
   }
+})
+
+worker.on('error', (err) => {
+  if (!err) {
+    logger.error('Worker undefined error')
+    return
+  }
+  // catch-all just in case any errors bubble up and potentially crash the worker task
+  logger.error(`Worker errored with ${err.message}`, {
+    err: err.stack,
+  })
 })
 
 process.on('SIGTERM', async () => {

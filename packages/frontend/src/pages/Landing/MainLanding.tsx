@@ -1,33 +1,33 @@
+import { BiRightArrowAlt } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@apollo/client'
 import {
-  Center,
   Container,
   HStack,
   Image,
+  Skeleton,
   Text,
+  useBreakpointValue,
   VStack,
 } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
-import leftLandingImg from 'assets/landing/left-landing.svg'
-import rightLandingImg from 'assets/landing/right-landing.svg'
-import mainLogo from 'assets/logo.svg'
+import plumberLandingGif from 'assets/landing/PlumberLandingAnimation.gif'
+import brandmarkLogo from 'assets/logo.svg'
+import mainLogo from 'assets/plumber-logo.svg'
 import * as URLS from 'config/urls'
+import { GET_PLUMBER_STATS } from 'graphql/queries/get-plumber-stats'
 
 const HeaderBar = () => {
   const navigate = useNavigate()
+  const imgSrc = useBreakpointValue({
+    base: brandmarkLogo,
+    md: mainLogo,
+  })
+
   return (
-    <Container>
+    <Container px={6}>
       <HStack justify="space-between">
-        <HStack
-          userSelect="none"
-          cursor="pointer"
-          onClick={() => navigate(URLS.ROOT)}
-        >
-          <Image src={mainLogo} alt="plumber-logo" />
-          <Text textStyle="logo" display={{ base: 'none', md: 'block' }}>
-            plumber
-          </Text>
-        </HStack>
+        <Image h={10} src={imgSrc} alt="plumber-logo" />
         <HStack spacing={8}>
           <Button
             as={Link}
@@ -57,60 +57,70 @@ const HeaderBar = () => {
   )
 }
 
-export const MainLanding = () => {
+function estimateCountByHundreds(count: number): string {
+  return count < 100
+    ? count.toString()
+    : (Math.round(count / 100) * 100).toLocaleString() + '+'
+}
+
+export default function MainLanding() {
   const navigate = useNavigate()
+
+  const { loading, data } = useQuery(GET_PLUMBER_STATS)
+  const userCount = data?.getPlumberStats.userCount
+  const executionCount = data?.getPlumberStats.executionCount
+
   return (
     <>
       <HeaderBar />
-      <Container maxW="1600px" position="relative">
-        <Center>
+      <Container position="relative" py={0} px={6}>
+        <HStack
+          wrap={{ base: 'wrap', md: 'nowrap' }}
+          gap={{ base: '2rem', md: 0 }}
+        >
           <VStack
-            textAlign={{ base: 'left', md: 'center' }}
-            align={{ base: 'start', md: 'center' }}
+            align="start"
             py={{ base: '0vh', md: '10vh' }}
             w="100%"
             maxW={{ base: 'unset', lg: '35rem' }}
             spacing={8}
           >
-            <Text textStyle="heading">
-              Focus on more
+            <Text
+              textStyle={{ base: 'heading', md: 'subheading', lg: 'heading' }}
+            >
+              Automating
               <br />
-              important work
+              <Skeleton display="inline" isLoaded={!loading}>
+                {executionCount ? estimateCountByHundreds(executionCount) : ''}{' '}
+                tasks
+              </Skeleton>
+              <br />
+              for public service
             </Text>
-            <Text>
-              Let Plumber handle your manual and repetitive tasks so you can
-              deliver value in other areas.
-            </Text>
+
+            <Skeleton display="inline" isLoaded={!loading}>
+              {userCount && (
+                <Text textStyle="subhead-1">
+                  {estimateCountByHundreds(userCount)}
+                  {` public officers have started automating their work`}
+                </Text>
+              )}
+            </Skeleton>
+
             <Button
               onClick={() => navigate(URLS.LOGIN)}
               w={{ base: 'full', md: 'xs' }}
+              rightIcon={<BiRightArrowAlt fontSize="1.5rem" />}
             >
-              Get started
+              Start automating your work
             </Button>
           </VStack>
-        </Center>
-        <HStack
-          zIndex={-1}
-          position={{ base: 'relative', lg: 'absolute' }}
-          h={{ base: 'fit-content', lg: '100%' }}
-          w="100%"
-          margin="auto"
-          pt={{ base: 16, md: 0 }}
-          pr={2}
-          top={0}
-          left={0}
-          justify="space-between"
-        >
           <Image
-            src={leftLandingImg}
-            alt="left-landing"
-            w={{ base: '45vw', md: 'auto' }}
-          />
-          <Image
-            src={rightLandingImg}
-            alt="right-landing"
-            w={{ base: '35vw', md: 'auto' }}
-          />
+            src={plumberLandingGif}
+            alt="right-landing-gif"
+            h="auto"
+            w={{ base: '80vw', md: '50%' }}
+          ></Image>
         </HStack>
       </Container>
     </>

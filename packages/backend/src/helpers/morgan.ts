@@ -26,15 +26,28 @@ morgan.token('cf-connecting-ip', (req: Request) => {
   }
 })
 morgan.token('graphql-query', (req: Request) => {
-  if (req.body.query) {
+  if (typeof req.body.query === 'string') {
     return req.body.query
       .replace(/\s+/g, ' ')
       .replace(/\n/g, '')
       .replace(/"/g, "'")
   }
 })
+
+const SENSITIVE_MUTATIONS = ['createConnection', 'updateConnection']
+
 morgan.token('graphql-variables', (req: Request) => {
   if (req.body.variables) {
+    // redact sensitive graphql variables related to connections
+    if (typeof req.body.query === 'string') {
+      if (
+        SENSITIVE_MUTATIONS.some((mutation) =>
+          req.body.query.includes(mutation),
+        )
+      ) {
+        return '[redacted]'
+      }
+    }
     return JSON.stringify(req.body.variables).replace(/"/g, "'")
   }
 })
