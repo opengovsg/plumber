@@ -2,6 +2,7 @@ import type { ITestConnectionOutput } from '@plumber/types'
 
 import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
+import logger from '@/helpers/logger'
 import Context from '@/types/express/context'
 
 type Params = {
@@ -52,8 +53,15 @@ const testConnection = async (
   let isStillVerified
   try {
     isStillVerified = !!(await app.auth.isStillVerified($))
-  } catch {
+  } catch (err) {
     isStillVerified = false
+    logger.error(`Error verifying CONNECTION ID: ${params.connectionId}`, {
+      errorDetails: {
+        stepId: params.stepId,
+        errMessage: err.message,
+        errStack: err.stack,
+      },
+    })
   }
 
   connection = await connection.$query().patchAndFetch({

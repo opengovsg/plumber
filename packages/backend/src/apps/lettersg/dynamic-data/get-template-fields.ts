@@ -18,7 +18,7 @@ const dynamicData: IDynamicData = {
     try {
       const { data } = await $.http.get(`/v1/templates/${templateId}`)
 
-      if (!data) {
+      if (!data?.fields) {
         return {
           data: [],
         }

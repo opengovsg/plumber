@@ -8,8 +8,7 @@ export default async function verifyCredentials(
   $: IGlobalVariable,
 ): Promise<void> {
   const authData = $.auth.data
-
-  if (!authData || !authData.apiKey) {
+  if (!authData?.apiKey) {
     throw new Error('Missing LetterSG API key')
   }
 

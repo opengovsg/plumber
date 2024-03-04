@@ -9,8 +9,6 @@ export async function verifyApiKey($: IGlobalVariable): Promise<void> {
         'API key is invalid, please ensure you have copied the correct API key',
       )
     }
-    throw new Error(
-      'Unknown error, please contact support@plumber.gov.sg for more assistance.',
-    )
+    throw err
   }
 }
