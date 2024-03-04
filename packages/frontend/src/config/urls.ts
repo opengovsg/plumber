@@ -70,10 +70,10 @@ export const TILE_PATTERN = '/tiles/:tileId'
 export const PUBLIC_TILE_PATTERN = '/tiles/:tileId/:viewOnlyKey'
 export const UNAUTHORIZED_TILE = '/tiles/unauthorized'
 
-// flow editor: default to flows if flowid is undefined
-export const FLOW_EDITOR = (flowId: string | undefined): string =>
+// flow editor: default to flows if flowid is undefined from useParams
+export const FLOW_EDITOR = (flowId?: string): string =>
   flowId ? `/editor/${flowId}` : FLOWS
-export const FLOW_EDITOR_NOTIFICATIONS = (flowId: string | undefined): string =>
+export const FLOW_EDITOR_NOTIFICATIONS = (flowId?: string): string =>
   flowId ? `/editor/${flowId}/notifications` : FLOWS
 
 export const DASHBOARD = FLOWS

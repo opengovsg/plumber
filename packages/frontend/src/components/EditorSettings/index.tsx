@@ -1,6 +1,6 @@
 import { ElementType, ReactNode, useMemo, useState } from 'react'
 import { BiMailSend } from 'react-icons/bi'
-import { Navigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import {
   Box,
   Divider,
@@ -9,6 +9,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import * as URLS from 'config/urls'
+import { redirectToLogin } from 'helpers/redirect'
 import useAuthentication from 'hooks/useAuthentication'
 
 import EditorDrawer from './EditorDrawer'
@@ -35,18 +36,19 @@ export default function EditorSettingsLayout(
   const { flowId } = useParams()
   const [isDrawerOpen, setDrawerOpen] = useState(false)
 
-  const openDrawer = () => setDrawerOpen(true)
-  const closeDrawer = () => setDrawerOpen(false)
-
-  const drawerLinks = useMemo(
+  const [drawerLinks, openDrawer, closeDrawer] = useMemo(
     () => [
-      {
-        Icon: BiMailSend,
-        text: 'Email notifications',
-        to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
-      },
+      [
+        {
+          Icon: BiMailSend,
+          text: 'Email notifications',
+          to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
+        },
+      ],
+      () => setDrawerOpen(true),
+      () => setDrawerOpen(false),
     ],
-    [flowId],
+    [flowId, setDrawerOpen],
   )
 
   const drawerComponent = useBreakpointValue({
@@ -72,12 +74,7 @@ export default function EditorSettingsLayout(
   })
 
   if (!currentUser) {
-    const redirectQueryParam = window.location.pathname + window.location.search
-    return (
-      <Navigate
-        to={URLS.ADD_REDIRECT_TO_LOGIN(encodeURIComponent(redirectQueryParam))}
-      />
-    )
+    return redirectToLogin()
   }
 
   return (

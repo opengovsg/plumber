@@ -130,13 +130,11 @@ worker.on('failed', async (job, err) => {
       .withGraphFetched('user')
       .throwIfNotFound()
 
-    let shouldAlwaysSendEmail = false
-    if (flow.config?.errorConfig?.notificationFrequency === 'always') {
-      shouldAlwaysSendEmail = true
-    }
+    const shouldAlwaysSendEmail =
+      flow.config?.errorConfig?.notificationFrequency === 'always'
 
-    const isEmailSent = await checkErrorEmail(job.data.flowId)
-    if (!shouldAlwaysSendEmail && isEmailSent) {
+    // don't check redis if notification frequency is always
+    if (!shouldAlwaysSendEmail && (await checkErrorEmail(job.data.flowId))) {
       return
     }
 

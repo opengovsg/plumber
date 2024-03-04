@@ -9,7 +9,7 @@ import { UPDATE_FLOW_CONFIG } from 'graphql/mutations/update-flow-config'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 
 enum Frequency {
-  Once = 'once',
+  Once = 'once_per_day',
   Always = 'always',
 }
 

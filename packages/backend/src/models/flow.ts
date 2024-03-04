@@ -11,7 +11,6 @@ import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
 import User from './user'
 
-export type NotificationFrequency = 'once' | 'always'
 class Flow extends Base {
   id!: string
   name!: string

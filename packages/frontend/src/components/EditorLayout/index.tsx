@@ -4,7 +4,7 @@ import * as React from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
-import { Box, HStack, Icon, Text, VStack } from '@chakra-ui/react'
+import { Box, Flex, HStack, Icon, Text, VStack } from '@chakra-ui/react'
 import {
   Button,
   IconButton,
@@ -84,7 +84,7 @@ export default function EditorLayout(): React.ReactElement {
           borderColor="base.divider.subtle"
           spacing={4}
         >
-          <Box display="flex" flex={1} alignItems="center">
+          <Flex flex={1} alignItems="center">
             <Box as={Link} to={URLS.FLOWS} mt={1}>
               <Icon
                 boxSize={6}
@@ -103,7 +103,7 @@ export default function EditorLayout(): React.ReactElement {
                 {flow?.name}
               </EditableTypography>
             )}
-          </Box>
+          </Flex>
 
           <Button
             as={Link}

@@ -5,6 +5,7 @@ import { Spinner } from '@opengovsg/design-system-react'
 import { TILES_FEATURE_FLAG } from 'config/flags'
 import * as URLS from 'config/urls'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
+import { redirectToLogin } from 'helpers/redirect'
 import useAuthentication from 'hooks/useAuthentication'
 
 type TileLayoutProps = {
@@ -35,12 +36,7 @@ export default function TileLayout({
   }
 
   if (!publicLayout && !currentUser) {
-    const redirectQueryParam = window.location.pathname + window.location.search
-    return (
-      <Navigate
-        to={URLS.ADD_REDIRECT_TO_LOGIN(encodeURIComponent(redirectQueryParam))}
-      />
-    )
+    return redirectToLogin()
   }
 
   return <Suspense fallback={<></>}>{children}</Suspense>

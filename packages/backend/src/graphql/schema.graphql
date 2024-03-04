@@ -260,12 +260,13 @@ type Flow {
   config: FlowConfig
 }
 
+# Rate limiting config is omitted here e.g. maxQps
 type FlowConfig {
   errorConfig: FlowErrorConfig
 }
 
 type FlowErrorConfig {
-  notificationFrequency: NotificationFrequency
+  notificationFrequency: NotificationFrequency!
 }
 
 type Execution {
@@ -324,7 +325,7 @@ input UpdateFlowStatusInput {
 }
 
 enum NotificationFrequency {
-  once
+  once_per_day
   always
 }
 

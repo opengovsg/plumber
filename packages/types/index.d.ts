@@ -135,7 +135,7 @@ export interface IFlowConfig {
 }
 
 export interface IFlowErrorConfig {
-  notificationFrequency?: 'once' | 'always'
+  notificationFrequency: 'once_per_day' | 'always'
 }
 
 export interface IFlow {

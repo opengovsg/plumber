@@ -1,10 +1,11 @@
-import { type NotificationFrequency } from '@/models/flow'
+import { IFlowErrorConfig } from '@plumber/types'
+
 import Context from '@/types/express/context'
 
 type Params = {
   input: {
     id: string
-    notificationFrequency: NotificationFrequency
+    notificationFrequency: IFlowErrorConfig['notificationFrequency']
   }
 }
 
@@ -13,22 +14,21 @@ const updateFlowConfig = async (
   params: Params,
   context: Context,
 ) => {
-  let flow = await context.currentUser
+  const flow = await context.currentUser
     .$relatedQuery('flows')
     .findOne({
       id: params.input.id,
     })
     .throwIfNotFound()
 
-  flow = await flow.$query().patchAndFetch({
+  return await flow.$query().patchAndFetch({
     config: {
+      ...(flow.config ?? {}),
       errorConfig: {
         notificationFrequency: params.input.notificationFrequency,
       },
     },
   })
-
-  return flow
 }
 
 export default updateFlowConfig
