@@ -1,6 +1,6 @@
 import { IFlow } from '@plumber/types'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import { Flex, Skeleton, Stack, Text } from '@chakra-ui/react'
@@ -28,9 +28,10 @@ const defaultFrequency = Frequency.Once
 
 export default function Notifications() {
   const { flowId } = useParams()
-  const [frequency, setFrequency] = useState(defaultFrequency)
   const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
   const flow: IFlow = data?.getFlow
+  const frequency =
+    flow?.config?.errorConfig?.notificationFrequency ?? defaultFrequency
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const toast = useToast()
 
@@ -75,24 +76,11 @@ export default function Notifications() {
     (frequencyOption: Frequency) => {
       // only update flow config if a different option is selected
       if (frequencyOption !== frequency) {
-        setFrequency(frequencyOption)
         onFlowConfigUpdate(frequencyOption)
       }
     },
     [onFlowConfigUpdate, frequency],
   )
-
-  useEffect(() => {
-    // Retrieve frequency setting if config was set previously, else set default frequency in config
-    if (!flow) {
-      return
-    }
-    if (flow.config?.errorConfig?.notificationFrequency) {
-      setFrequency(flow.config.errorConfig.notificationFrequency as Frequency)
-    } else {
-      onFlowConfigUpdate(defaultFrequency)
-    }
-  }, [flow, onFlowConfigUpdate])
 
   const frequencyLabel = useMemo(
     () => frequencyOptions.find((option) => option.value === frequency)?.label,
