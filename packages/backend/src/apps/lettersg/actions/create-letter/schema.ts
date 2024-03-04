@@ -9,16 +9,40 @@ export const requestSchema = z
     letterParams: z
       .array(
         z.object({
-          field: z.string().min(1, 'Please do not leave the field empty'),
-          value: z.string().min(1, 'Please do not leave the value empty'),
+          field: z
+            .string()
+            .trim()
+            .min(1, 'Please do not leave the field empty')
+            .nullish(),
+          value: z
+            .string()
+            .trim()
+            .min(1, 'Please do not leave the value empty')
+            .nullish(),
         }),
       )
-      .transform((params) =>
-        params.reduce((acc, { field, value }) => {
-          acc[field] = value
-          return acc
-        }, {} as Record<string, string>),
-      )
+      .transform((params, context) => {
+        const result: Record<string, string> = Object.create(null)
+        for (const param of params) {
+          // no null fields or values are allowed
+          if (!param.field) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Please do not leave the field empty',
+            })
+            return z.NEVER
+          }
+          if (!param.value) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Please do not leave the value empty',
+            })
+            return z.NEVER
+          }
+          result[param.field] = param.value
+        }
+        return result
+      })
       .nullish(),
   })
   .transform((data) => ({

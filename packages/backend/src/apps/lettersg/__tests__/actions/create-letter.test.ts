@@ -116,7 +116,7 @@ describe('create letter from template', () => {
     mocks.httpPost.mockRejectedValueOnce(httpError)
     // throw partial step error
     await expect(createLetterAction.run($)).rejects.toThrowError(
-      'Missing fields for letter template',
+      'Missing pair of field/value for letter template',
     )
   })
 

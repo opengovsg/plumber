@@ -19,7 +19,7 @@ export function getEnvironmentFromApiKey(apiKey: string): LetterSgEnvironment {
     return LetterSgEnvironment.Staging
   }
 
-  throw new Error('LetterSG API key has unrecognized prefix!')
+  throw new Error('Invalid LetterSG API key format')
 }
 
 export function getApiBaseUrl(apiKey: string): string {

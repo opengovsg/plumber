@@ -22,7 +22,7 @@ describe('API helper functions', () => {
 
     it('throws error for invalid API key', () => {
       expect(() => getEnvironmentFromApiKey('random_api_key')).toThrowError(
-        'LetterSG API key has unrecognized prefix!',
+        'Invalid LetterSG API key format',
       )
     })
   })

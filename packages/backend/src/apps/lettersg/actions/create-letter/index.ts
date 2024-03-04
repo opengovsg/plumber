@@ -9,9 +9,9 @@ import { requestSchema, responseSchema } from './schema'
 
 // TBC
 type LettersApiErrorData = {
-  success: boolean
   message: string
-  errors: Record<string, string>[]
+  success?: boolean
+  errors?: Record<string, string>[]
 }
 
 const action: IRawAction = {
@@ -20,13 +20,15 @@ const action: IRawAction = {
   description: 'Create a new letter based on the template id input',
   arguments: [
     {
-      label: 'Template Id',
+      label: 'Template',
       key: 'templateId',
       placeholder: 'Template',
       type: 'dropdown' as const,
       required: true,
-      description: 'Choose the template id you want for creating a letter.',
+      description:
+        'Choose the template you want for creating a letter. You need to have an existing template in your Letters account first.',
       variables: false,
+      showOptionValue: false,
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
@@ -44,7 +46,7 @@ const action: IRawAction = {
       type: 'multirow' as const,
       required: false,
       description:
-        'Specify every field name and values for your letter template.',
+        'Specify letter values for each field name in your letter template.',
 
       subFields: [
         {
@@ -93,7 +95,7 @@ const action: IRawAction = {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
         throw new StepError(
-          `${firstError.message} at "${firstError.path}"`,
+          `${firstError.message} under set up action`,
           GenericSolution.ReconfigureInvalidField,
           $.step.position,
           $.app.name,
@@ -103,8 +105,8 @@ const action: IRawAction = {
       const lettersErrorData: LettersApiErrorData = error.response.data
       if (lettersErrorData.message === 'Malformed bulk create object') {
         throw new StepError(
-          'Missing fields for letter template',
-          'Click on set up action and check that you have used all the fields in the letter parameters.',
+          'Missing pair of field/value for letter template',
+          'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
           $.step.position,
           $.app.name,
         )

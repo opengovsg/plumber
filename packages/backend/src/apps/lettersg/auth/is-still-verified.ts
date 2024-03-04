@@ -7,7 +7,7 @@ export default async function isStillVerified(
 ): Promise<boolean> {
   const authData = $.auth.data
 
-  if (!authData || !authData.apiKey) {
+  if (!authData?.apiKey) {
     throw new Error('Invalid LetterSG API key')
   }
 
