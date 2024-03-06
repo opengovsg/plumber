@@ -99,10 +99,10 @@ export const worker = new Worker(
         !(e instanceof UnrecoverableError) &&
         job.attemptsMade < MAXIMUM_JOB_ATTEMPTS
 
+      span?.addTags({
+        willRetry: isRetriable ? 'true' : 'false',
+      })
       if (isRetriable) {
-        span?.addTags({
-          will_retry: 'true',
-        })
         logger.info(`Will retry flow: ${job.data.flowId}`, {
           job: job.data,
           error: e,
