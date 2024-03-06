@@ -2,6 +2,8 @@ import { IJSONObject } from '@plumber/types'
 
 import Context from '@/types/express/context'
 
+// Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive Data Scanner
+
 type Params = {
   input: {
     id: string

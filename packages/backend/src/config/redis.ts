@@ -8,6 +8,7 @@ export const REDIS_DB_INDEX = {
   RATE_LIMIT: 1,
   PIPE_ERRORS: 2,
   APP_DATA: 3,
+  GLOBAL_DATA: 4,
 }
 
 export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>

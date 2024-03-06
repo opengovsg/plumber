@@ -66,6 +66,7 @@ export default function FlowStepHeader(
       p={0}
       bg="white"
       boxShadow={collapsed ? undefined : 'base'}
+      data-test="flow-step" // adding to identify element for e2e testing
     >
       {/*
        * Top header

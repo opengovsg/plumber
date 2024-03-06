@@ -29,19 +29,21 @@ export default function Tiles(): JSX.Element {
   return (
     <Container py={7}>
       <Flex
-        flexDir={{ base: 'column' }}
+        flexDir="column"
         justifyContent="space-between"
         alignItems="stretch"
         gap={8}
       >
-        <Flex
-          pl={{ base: 0, sm: 8 }}
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <PageTitle title={TILES_TITLE} />
-          {!isEmpty && <CreateTileButton />}
-        </Flex>
+        {!isEmpty && (
+          <Flex
+            pl={{ base: 0, sm: 8 }}
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <PageTitle title={TILES_TITLE} />
+            <CreateTileButton />
+          </Flex>
+        )}
         {isEmpty ? <EmptyTileList /> : <TileList tiles={data.getTables} />}
       </Flex>
     </Container>
