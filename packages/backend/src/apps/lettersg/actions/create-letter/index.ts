@@ -44,6 +44,27 @@ const action: IRawAction = {
       },
     },
     {
+      label: 'Generate PDF',
+      key: 'shouldGeneratePdf',
+      type: 'dropdown' as const,
+      required: true,
+      description:
+        'Specify if a PDF should be generated, which can be sent as an attachment in the Email by Postman action. Note that this will increase the pipe execution duration.',
+      variables: false,
+      value: false,
+      showOptionValue: false,
+      options: [
+        {
+          label: 'No',
+          value: false,
+        },
+        {
+          label: 'Yes',
+          value: true,
+        },
+      ],
+    },
+    {
       label: 'Letter Parameters',
       key: 'letterParams',
       type: 'multirow' as const,
@@ -94,7 +115,10 @@ const action: IRawAction = {
       const rawResponse = await $.http.post('/v1/letters', payload)
       const response = responseSchema.parse(rawResponse.data)
 
-      if (!$.flow.hasFileProcessingActions) {
+      if (
+        !$.step.parameters.shouldGeneratePdf ||
+        !$.flow.hasFileProcessingActions
+      ) {
         $.setActionItem({
           raw: response,
         })

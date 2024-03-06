@@ -110,6 +110,7 @@ describe('create letter from template', () => {
 
   it('parses the raw response correctly with attachment', async () => {
     $.auth.data.apiKey = 'test_v1_123456'
+    $.step.parameters.shouldGeneratePdf = true
 
     await createLetterAction.run($)
     expect($.setActionItem).toBeCalledWith({
