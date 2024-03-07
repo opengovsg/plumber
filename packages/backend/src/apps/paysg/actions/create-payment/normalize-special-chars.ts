@@ -55,5 +55,5 @@ function replacer(inputChar: string): string {
 
 export function normalizeSpecialChars(input: string): string {
   // Process all non-latin characters.
-  return input.replaceAll(/[^\u0020-\u007F]/g, replacer)
+  return input.replaceAll(/[^\u{0020}-\u{007F}]/gu, replacer)
 }
