@@ -23,9 +23,9 @@ const UNICODE_TO_ASCII_MAP: Record<number, string> = {
   //
   0x201c: `"`, // General Punctuation
   0x201d: `"`,
-  0x301d: `"`, // CJK
+  0x3003: `"`, // CJK
+  0x301d: `"`,
   0x301e: `"`,
-  0x3003: `"`,
 
   //
   // Commas
