@@ -1,6 +1,11 @@
 //
 // Small, best effort mapping.
 //
+// If this gets too unwieldy, we can consider moving to something like
+// unidecode-plus. Decided not to use it for now due to weird licensing (hybrid
+// MIT and Perl), and that validating _all_ its replacements is too time
+// consuming.
+//
 const UNICODE_TO_ASCII_MAP: Record<number, string> = {
   //
   // Dashes
