@@ -91,7 +91,7 @@ const action: IRawAction = {
         raw: response.data,
       })
     } catch (err) {
-      throwSendMessageError(err, $.step.position, $.app.name)
+      await throwSendMessageError(err, $.step.position, $.app.name, $)
     }
   },
 }

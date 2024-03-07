@@ -1,13 +1,27 @@
+import { IGlobalVariable } from '@plumber/types'
+
 import get from 'lodash.get'
 
 import HttpError from '@/errors/http'
+import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import Step, { SHOULD_UPDATE_STEP_PARAMS } from '@/models/step'
 
-export function throwSendMessageError(
+/*
+Data format for errors
+data: { ok: false,
+      error_code: 400,
+      description: 'Bad Request: group chat was upgraded to a supergroup chat',
+      parameters: { migrate_to_chat_id: -1002056696481 }
+    },
+*/
+
+export async function throwSendMessageError(
   err: HttpError,
   position: number,
   appName: string,
-): never {
+  $: IGlobalVariable,
+): Promise<never> {
   // catch telegram errors with different error format for ETIMEDOUT and ECONNRESET: e.g. details: { error: 'connect ECONNREFUSED 127.0.0.1:3002' }
   const errorString = JSON.stringify(get(err, 'details.error', ''))
   if (errorString.includes('ECONNRESET') || errorString.includes('ETIMEDOUT')) {
@@ -35,6 +49,25 @@ export function throwSendMessageError(
           err,
         )
       } else if (errorString.includes('supergroup')) {
+        // SPECIAL CASE: fix chat id for user
+        const newChatId: string =
+          err.response.data.parameters['migrate_to_chat_id']
+        if (!$.execution.testRun) {
+          // only update for user if pipe is published
+          await Step.query()
+            .patchAndFetchById($.step.id, {
+              parameters: {
+                ...$.step.parameters,
+                chatId: newChatId,
+              },
+            })
+            .context({ [SHOULD_UPDATE_STEP_PARAMS]: true })
+          throw new RetriableError({
+            error: 'Upgrade chat id to supergroup chat id for retry',
+            delayInMs: 'default',
+          })
+        }
+        // for test runs, still throw back stepError
         throw new StepError(
           'Supergroup chat upgrade',
           'Please re-connect the chat ID because chat ID changes when your group gets upgraded to a supergroup chat.',

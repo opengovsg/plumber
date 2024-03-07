@@ -11,6 +11,7 @@ import Connection from './connection'
 import ExecutionStep from './execution-step'
 import Flow from './flow'
 
+export const SHOULD_UPDATE_STEP_PARAMS = 'shouldUpdateStepParams'
 class Step extends Base {
   id!: string
   flowId!: string
@@ -158,6 +159,11 @@ class Step extends Base {
 
   static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {
     await super.beforeUpdate(args)
+
+    // bypass check when step error can be rectified by just updating the step parameters
+    if (args.context[SHOULD_UPDATE_STEP_PARAMS] === true) {
+      return
+    }
 
     // We _have_ to use asFindQuery here instead of iterating through
     // args.inputItems (like in beforeInsert), because patch queries don't
