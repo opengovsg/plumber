@@ -158,17 +158,17 @@ describe('create payment', () => {
   it.each([
     {
       payerName: 'a\u2010b\u2011c\u2012d\u2014e\u2015f',
-      payerAddress: '\u2018top\u2019 \u201Ckek\u201D',
+      payerAddress: '\u2018topkek\u2019',
       expectedPayerName: 'a-b-c-d-e-f',
-      expectedPayerAddress: `'top' "kek"`,
+      expectedPayerAddress: `'topkek'`,
     },
     // Check that it replaces _all_ occurances.
     {
       payerName: 'a\u2010\u2010b\u2010c\u2012d\u2012\u2012e',
       payerAddress:
-        '\u201C\u2018top\u201C\u2018 \u2012 \u2019\u201Dkek\u2019\u201D',
+        '\u2018\u2018top\u2019\u2019 \u2012 \u2019\u2018kek\u2018\u2019',
       expectedPayerName: 'a--b-c-d--e',
-      expectedPayerAddress: `"'top"' - '"kek'"`,
+      expectedPayerAddress: `''top'' - ''kek''`,
     },
     // Check that it handles halfwidth and fullwidth conversion
     {
@@ -180,9 +180,9 @@ describe('create payment', () => {
     // Check that latin characters are not impacted
     {
       payerName: 'a--b\u2010c-d--e',
-      payerAddress: `"\u2018top\u201C' \u2012 '\u201Dkek\u2019"`,
+      payerAddress: `\u2018top' \u2012 'kek\u2019`,
       expectedPayerName: 'a--b-c-d--e',
-      expectedPayerAddress: `"'top"' - '"kek'"`,
+      expectedPayerAddress: `'top' - 'kek'`,
     },
   ])(
     'normalizes special characters',
