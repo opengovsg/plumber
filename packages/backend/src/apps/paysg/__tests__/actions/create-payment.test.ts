@@ -170,7 +170,14 @@ describe('create payment', () => {
       expectedPayerName: 'a--b-c-d--e',
       expectedPayerAddress: `"'top"' - '"kek'"`,
     },
-    // Check that normal dashes and quotes are not impacted
+    // Check that it handles halfwidth and fullwidth conversion
+    {
+      payerName: '\uff21\uff22\uff23\uff44\uff45\uff46',
+      payerAddress: '#\uff10\uff12\uff0d\uff18\uff15',
+      expectedPayerName: 'ABCdef',
+      expectedPayerAddress: `#02-85`,
+    },
+    // Check that latin characters are not impacted
     {
       payerName: 'a--b\u2010c-d--e',
       payerAddress: `"\u2018top\u201C' \u2012 '\u201Dkek\u2019"`,
