@@ -7,15 +7,6 @@ import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import Step, { SHOULD_UPDATE_STEP_PARAMS } from '@/models/step'
 
-/*
-Data format for errors
-data: { ok: false,
-      error_code: 400,
-      description: 'Bad Request: group chat was upgraded to a supergroup chat',
-      parameters: { migrate_to_chat_id: -1002056696481 }
-    },
-*/
-
 export async function throwSendMessageError(
   err: HttpError,
   position: number,
@@ -49,11 +40,11 @@ export async function throwSendMessageError(
           err,
         )
       } else if (errorString.includes('supergroup')) {
-        // SPECIAL CASE: fix chat id for user
-        const newChatId: string =
-          err.response.data.parameters['migrate_to_chat_id']
+        // SPECIAL CASE: fix chat id for user if pipe is published
         if (!$.execution.testRun) {
-          // only update for user if pipe is published
+          const oldChatId: string = $.step.parameters.chatId as string
+          const newChatId: string =
+            err.response.data.parameters['migrate_to_chat_id']
           await Step.query()
             .patchAndFetchById($.step.id, {
               parameters: {
@@ -63,7 +54,7 @@ export async function throwSendMessageError(
             })
             .context({ [SHOULD_UPDATE_STEP_PARAMS]: true })
           throw new RetriableError({
-            error: 'Upgrade chat id to supergroup chat id for retry',
+            error: `Upgrade from current chat id: ${oldChatId} to supergroup chat id: ${newChatId} and retry`,
             delayInMs: 'default',
           })
         }

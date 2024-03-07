@@ -4,13 +4,25 @@ import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
+import RetriableError from '@/errors/retriable-error'
 
-import app from '../..'
 import sendMessageAction from '../../actions/send-message'
 
 const mocks = vi.hoisted(() => ({
   httpPost: vi.fn(),
   setActionItem: vi.fn(),
+  updateStepParams: vi.fn(),
+}))
+
+vi.mock('@/models/step', () => ({
+  default: {
+    query: vi.fn(() => ({
+      patchAndFetchById: vi.fn(() => ({
+        context: mocks.updateStepParams,
+      })),
+    })),
+  },
+  SHOULD_UPDATE_STEP_PARAMS: 'shouldUpdateStepParams',
 }))
 
 describe('send message', () => {
@@ -32,8 +44,13 @@ describe('send message', () => {
         post: mocks.httpPost,
       } as unknown as IGlobalVariable['http'],
       setActionItem: mocks.setActionItem,
-      app,
-    }
+      app: {
+        key: 'telegram-bot',
+      },
+      execution: {
+        testRun: true,
+      },
+    } as unknown as IGlobalVariable
   })
 
   afterEach(() => {
@@ -141,6 +158,37 @@ describe('send message', () => {
       await expect(sendMessageAction.run($)).rejects.toThrowError(stepErrorName)
     },
   )
+
+  /*
+  Data format for supergroup chat error
+  data: { ok: false,
+        error_code: 400,
+        description: 'Bad Request: group chat was upgraded to a supergroup chat',
+        parameters: { migrate_to_chat_id: -123 }
+    },
+*/
+  it('should throw retriable error for supergroup if execution is not test run', async () => {
+    $.step.parameters.text = 'test message'
+    $.step.parameters.chatId = '123' // old chat id
+    $.step.parameters.disableNotification = null
+    $.execution.testRun = false
+
+    const error400 = {
+      response: {
+        data: {
+          description:
+            'Bad Request: group chat was upgraded to a supergroup chat',
+          parameters: { migrate_to_chat_id: -456 }, // new chat id
+        },
+        status: 400,
+        statusText: 'Bad request',
+      },
+    } as AxiosError
+    const httpError = new HttpError(error400)
+    mocks.httpPost.mockRejectedValueOnce(httpError)
+
+    await expect(sendMessageAction.run($)).rejects.toThrow(RetriableError)
+  })
 
   it.each([
     { errorStatusCode: 403, stepErrorName: 'Forbidden' },
