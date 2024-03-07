@@ -15,7 +15,7 @@ export default function Navbar() {
       py={5}
       px={6}
       borderBottom="1px solid"
-      borderColor="base.divider.subtle"
+      borderColor="base.divider.medium"
       gap={4}
     >
       <Button
