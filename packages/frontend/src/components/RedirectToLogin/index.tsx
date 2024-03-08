@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom'
 
-import * as URLS from '../config/urls'
+import * as URLS from '../../config/urls'
 
-export const redirectToLogin = (): JSX.Element => {
+export default function RedirectToLogin(): React.ReactElement {
   const redirectQueryParam = window.location.pathname + window.location.search
   return (
     <Navigate

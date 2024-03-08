@@ -25,6 +25,7 @@ const updateFlowConfig = async (
     config: {
       ...(flow.config ?? {}),
       errorConfig: {
+        ...(flow.config?.errorConfig ?? {}),
         notificationFrequency: params.input.notificationFrequency,
       },
     },

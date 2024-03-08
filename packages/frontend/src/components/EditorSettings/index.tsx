@@ -8,8 +8,8 @@ import {
   useBreakpointValue,
   VStack,
 } from '@chakra-ui/react'
+import RedirectToLogin from 'components/RedirectToLogin'
 import * as URLS from 'config/urls'
-import { redirectToLogin } from 'helpers/redirect'
 import useAuthentication from 'hooks/useAuthentication'
 
 import EditorDrawer from './EditorDrawer'
@@ -74,7 +74,7 @@ export default function EditorSettingsLayout(
   })
 
   if (!currentUser) {
-    return redirectToLogin()
+    return <RedirectToLogin />
   }
 
   return (

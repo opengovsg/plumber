@@ -4,13 +4,13 @@ import { Box, Divider, Show } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import { PipeIcon } from 'components/Icons'
+import RedirectToLogin from 'components/RedirectToLogin'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 import {
   LayoutNavigationProvider,
   LayoutNavigationProviderData,
 } from 'contexts/LayoutNavigation'
-import { redirectToLogin } from 'helpers/redirect'
 import useAuthentication from 'hooks/useAuthentication'
 
 import NavigationSidebar from './NavigationSidebar'
@@ -68,7 +68,7 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   }, [isDrawerOpen])
 
   if (!currentUser) {
-    return redirectToLogin()
+    return <RedirectToLogin />
   }
 
   return (

@@ -24,14 +24,14 @@ const frequencyOptions = [
   },
 ]
 
-const defaultFrequency = Frequency.Once
+const DEFAULT_FREQUENCY = Frequency.Once
 
 export default function Notifications() {
   const { flowId } = useParams()
   const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
   const flow: IFlow = data?.getFlow
   const frequency =
-    flow?.config?.errorConfig?.notificationFrequency ?? defaultFrequency
+    flow?.config?.errorConfig?.notificationFrequency ?? DEFAULT_FREQUENCY
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const toast = useToast()
 

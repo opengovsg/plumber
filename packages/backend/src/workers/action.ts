@@ -11,7 +11,10 @@ import {
   MAXIMUM_JOB_ATTEMPTS,
 } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
-import { checkErrorEmail, sendErrorEmail } from '@/helpers/generate-error-email'
+import {
+  isErrorEmailAlreadySent,
+  sendErrorEmail,
+} from '@/helpers/generate-error-email'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
@@ -155,7 +158,10 @@ worker.on('failed', async (job, err) => {
       flow.config?.errorConfig?.notificationFrequency === 'always'
 
     // don't check redis if notification frequency is always
-    if (!shouldAlwaysSendEmail && (await checkErrorEmail(job.data.flowId))) {
+    if (
+      !shouldAlwaysSendEmail &&
+      (await isErrorEmailAlreadySent(job.data.flowId))
+    ) {
       return
     }
 
