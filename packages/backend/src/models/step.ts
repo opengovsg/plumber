@@ -11,7 +11,10 @@ import Connection from './connection'
 import ExecutionStep from './execution-step'
 import Flow from './flow'
 
-export const SHOULD_UPDATE_STEP_PARAMS = 'shouldUpdateStepParams'
+export interface StepContext {
+  shouldBypassBeforeUpdateHook?: boolean
+}
+
 class Step extends Base {
   id!: string
   flowId!: string
@@ -161,7 +164,8 @@ class Step extends Base {
     await super.beforeUpdate(args)
 
     // bypass check when step error can be rectified by just updating the step parameters
-    if (args.context[SHOULD_UPDATE_STEP_PARAMS] === true) {
+    const queryContext = args.context as StepContext
+    if (queryContext.shouldBypassBeforeUpdateHook) {
       return
     }
 

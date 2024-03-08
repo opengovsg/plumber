@@ -5,7 +5,7 @@ import get from 'lodash.get'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
-import Step, { SHOULD_UPDATE_STEP_PARAMS } from '@/models/step'
+import Step, { StepContext } from '@/models/step'
 
 export async function throwSendMessageError(
   err: HttpError,
@@ -45,6 +45,10 @@ export async function throwSendMessageError(
           const oldChatId: string = $.step.parameters.chatId as string
           const newChatId: string =
             err.response.data.parameters['migrate_to_chat_id']
+          if (!newChatId) {
+            throw err // uncaught error
+          }
+
           await Step.query()
             .patchAndFetchById($.step.id, {
               parameters: {
@@ -52,7 +56,9 @@ export async function throwSendMessageError(
                 chatId: newChatId,
               },
             })
-            .context({ [SHOULD_UPDATE_STEP_PARAMS]: true })
+            .context({
+              shouldBypassBeforeUpdateHook: true,
+            } as StepContext)
           throw new RetriableError({
             error: `Upgrade from current chat id: ${oldChatId} to supergroup chat id: ${newChatId} and retry`,
             delayInMs: 'default',
