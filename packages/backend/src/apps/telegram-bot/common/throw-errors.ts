@@ -1,13 +1,19 @@
+import { IGlobalVariable } from '@plumber/types'
+
 import get from 'lodash.get'
 
 import HttpError from '@/errors/http'
+import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import Step, { StepContext } from '@/models/step'
 
-export function throwSendMessageError(
+export async function throwSendMessageError(
   err: HttpError,
-  position: number,
+  step: IGlobalVariable['step'],
   appName: string,
-): never {
+  testRun: boolean,
+): Promise<never> {
+  const position = step.position
   // catch telegram errors with different error format for ETIMEDOUT and ECONNRESET: e.g. details: { error: 'connect ECONNREFUSED 127.0.0.1:3002' }
   const errorString = JSON.stringify(get(err, 'details.error', ''))
   if (errorString.includes('ECONNRESET') || errorString.includes('ETIMEDOUT')) {
@@ -35,6 +41,31 @@ export function throwSendMessageError(
           err,
         )
       } else if (errorString.includes('supergroup')) {
+        // SPECIAL CASE: fix chat id for user if pipe is published
+        if (!testRun) {
+          const oldChatId: string = step.parameters.chatId as string
+          const newChatId: string =
+            err.response.data.parameters['migrate_to_chat_id']
+          if (!newChatId) {
+            throw err // uncaught error
+          }
+
+          await Step.query()
+            .patchAndFetchById(step.id, {
+              parameters: {
+                ...step.parameters,
+                chatId: newChatId,
+              },
+            })
+            .context({
+              shouldBypassBeforeUpdateHook: true,
+            } as StepContext)
+          throw new RetriableError({
+            error: `Upgrade from current chat id: ${oldChatId} to supergroup chat id: ${newChatId} and retry`,
+            delayInMs: 'default',
+          })
+        }
+        // for test runs, still throw back stepError
         throw new StepError(
           'Supergroup chat upgrade',
           'Please re-connect the chat ID because chat ID changes when your group gets upgraded to a supergroup chat.',
