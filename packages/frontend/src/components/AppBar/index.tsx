@@ -39,7 +39,7 @@ export default function AppBar(): React.ReactElement {
 
         <AvatarDropdownMenu />
       </Flex>
-      <Divider borderColor="base.divider.subtle" />
+      <Divider borderColor="base.divider.medium" />
     </Box>
   )
 }

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import Flow from '@/models/flow'
 
 import {
-  checkErrorEmail,
+  isErrorEmailAlreadySent,
   redisClient,
   sendErrorEmail,
 } from '../generate-error-email'
@@ -45,7 +45,7 @@ vi.mock('@/helpers/send-email', () => {
 describe('generate error email', () => {
   it('check if error email has been sent the first time', async () => {
     const randomFlowId = randomUUID()
-    const errorEmailExists = await checkErrorEmail(randomFlowId)
+    const errorEmailExists = await isErrorEmailAlreadySent(randomFlowId)
     expect(errorEmailExists).toBe(false)
   })
 
@@ -101,7 +101,7 @@ describe('generate error email', () => {
       timestamp: currTestTimestamp,
     }
     redisClient.hset(key, keyObject)
-    const errorEmailExists = await checkErrorEmail(randomFlowId)
+    const errorEmailExists = await isErrorEmailAlreadySent(randomFlowId)
     expect(errorEmailExists).toBe(true)
   })
 })
