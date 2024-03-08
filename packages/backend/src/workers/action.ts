@@ -11,7 +11,10 @@ import {
   MAXIMUM_JOB_ATTEMPTS,
 } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
-import { checkErrorEmail, sendErrorEmail } from '@/helpers/generate-error-email'
+import {
+  isErrorEmailAlreadySent,
+  sendErrorEmail,
+} from '@/helpers/generate-error-email'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
@@ -145,10 +148,20 @@ worker.on('failed', async (job, err) => {
       job: job.data,
     },
   )
-
   try {
-    const isEmailSent = await checkErrorEmail(job.data.flowId)
-    if (isEmailSent) {
+    const flow = await Flow.query()
+      .findById(job.data.flowId)
+      .withGraphFetched('user')
+      .throwIfNotFound()
+
+    const shouldAlwaysSendEmail =
+      flow.config?.errorConfig?.notificationFrequency === 'always'
+
+    // don't check redis if notification frequency is always
+    if (
+      !shouldAlwaysSendEmail &&
+      (await isErrorEmailAlreadySent(job.data.flowId))
+    ) {
       return
     }
 
@@ -156,10 +169,6 @@ worker.on('failed', async (job, err) => {
       err instanceof UnrecoverableError ||
       job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
     ) {
-      const flow = await Flow.query()
-        .findById(job.data.flowId)
-        .withGraphFetched('user')
-        .throwIfNotFound()
       const emailErrorDetails = await sendErrorEmail(flow)
       logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
         errorDetails: { ...emailErrorDetails, ...job.data },
