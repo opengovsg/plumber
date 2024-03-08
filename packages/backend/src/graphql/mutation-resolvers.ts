@@ -16,6 +16,7 @@ import retryExecutionStep from './mutations/retry-execution-step'
 import tilesMutationResolvers from './mutations/tiles'
 import updateConnection from './mutations/update-connection'
 import updateFlow from './mutations/update-flow'
+import updateFlowConfig from './mutations/update-flow-config'
 import updateFlowStatus from './mutations/update-flow-status'
 import updateStep from './mutations/update-step'
 import verifyConnection from './mutations/verify-connection'
@@ -38,6 +39,7 @@ const mutationResolvers = {
   createFlow,
   updateFlow,
   updateFlowStatus,
+  updateFlowConfig,
   executeFlow,
   deleteFlow,
   createStep,
