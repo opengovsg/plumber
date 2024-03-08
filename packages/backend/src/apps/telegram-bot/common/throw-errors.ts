@@ -9,10 +9,11 @@ import Step, { StepContext } from '@/models/step'
 
 export async function throwSendMessageError(
   err: HttpError,
-  position: number,
+  step: IGlobalVariable['step'],
   appName: string,
-  $: IGlobalVariable,
+  testRun: boolean,
 ): Promise<never> {
+  const position = step.position
   // catch telegram errors with different error format for ETIMEDOUT and ECONNRESET: e.g. details: { error: 'connect ECONNREFUSED 127.0.0.1:3002' }
   const errorString = JSON.stringify(get(err, 'details.error', ''))
   if (errorString.includes('ECONNRESET') || errorString.includes('ETIMEDOUT')) {
@@ -41,8 +42,8 @@ export async function throwSendMessageError(
         )
       } else if (errorString.includes('supergroup')) {
         // SPECIAL CASE: fix chat id for user if pipe is published
-        if (!$.execution.testRun) {
-          const oldChatId: string = $.step.parameters.chatId as string
+        if (!testRun) {
+          const oldChatId: string = step.parameters.chatId as string
           const newChatId: string =
             err.response.data.parameters['migrate_to_chat_id']
           if (!newChatId) {
@@ -50,9 +51,9 @@ export async function throwSendMessageError(
           }
 
           await Step.query()
-            .patchAndFetchById($.step.id, {
+            .patchAndFetchById(step.id, {
               parameters: {
-                ...$.step.parameters,
+                ...step.parameters,
                 chatId: newChatId,
               },
             })
