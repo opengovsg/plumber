@@ -3,6 +3,8 @@ import { z } from 'zod'
 
 import { zodParser as plumberDate } from '@/helpers/internal-date-format'
 
+import { normalizeSpecialChars } from './normalize-special-chars'
+
 export const requestSchema = z
   .object({
     referenceId: z
@@ -147,8 +149,8 @@ export const requestSchema = z
   // After parsing, convert to PaySG format.
   .transform((data) => ({
     reference_id: data.referenceId,
-    payer_name: data.payerName,
-    payer_address: data.payerAddress,
+    payer_name: normalizeSpecialChars(data.payerName),
+    payer_address: normalizeSpecialChars(data.payerAddress),
     payer_identifier: data.payerIdentifier,
     payer_email: data.payerEmail,
     description: data.description,
