@@ -22,7 +22,6 @@ vi.mock('@/models/step', () => ({
       })),
     })),
   },
-  SHOULD_UPDATE_STEP_PARAMS: 'shouldUpdateStepParams',
 }))
 
 describe('send message', () => {
