@@ -1,5 +1,6 @@
 import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
+import createFlowTransfer from './mutations/create-flow-transfer'
 import createStep from './mutations/create-step'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
@@ -51,6 +52,7 @@ const mutationResolvers = {
   logout,
   loginWithSgid,
   loginWithSelectedSgid,
+  createFlowTransfer,
   ...tilesMutationResolvers,
 }
 

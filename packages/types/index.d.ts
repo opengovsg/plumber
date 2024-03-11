@@ -613,3 +613,6 @@ export interface ITableRow {
 }
 
 export type ITableCollabRole = 'owner' | 'editor' | 'viewer'
+
+// Flow transfers
+export type IFlowTransferStatus = 'pending' | 'accepted' | 'rejected'
