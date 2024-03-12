@@ -3,6 +3,7 @@ import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 import isEmpty from 'lodash/isEmpty'
 
 import getDataOutMetadata from './get-data-out-metadata'
+import getMockData from './get-mock-data'
 
 export const NricFilter = {
   None: 'none',
@@ -65,6 +66,10 @@ const trigger: IRawTrigger = {
         },
       })
     }
+  },
+
+  async mockRun($: IGlobalVariable) {
+    return getMockData($)
   },
 }
 

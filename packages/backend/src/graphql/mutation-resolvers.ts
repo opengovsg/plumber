@@ -9,6 +9,7 @@ import generateAuthUrl from './mutations/generate-auth-url'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
 import logout from './mutations/logout'
+import mockExecuteFlow from './mutations/mock-execute-flow'
 import registerConnection from './mutations/register-connection'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
@@ -51,6 +52,7 @@ const mutationResolvers = {
   logout,
   loginWithSgid,
   loginWithSelectedSgid,
+  mockExecuteFlow,
   ...tilesMutationResolvers,
 }
 
