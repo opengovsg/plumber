@@ -6,6 +6,8 @@ import type {
 
 import HttpError from '@/errors/http'
 
+import ExecutionStep from '@/models/execution-step'
+
 export type IHttpClient = AxiosInstance
 import type { Request } from 'express'
 
@@ -392,6 +394,7 @@ export interface IBaseTrigger {
    * @param executionStep The execution step to get metadata for.
    */
   getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+  mockRun?($: IGlobalVariable): Promise<Record<string, any>>
 }
 
 export interface IRawTrigger extends IBaseTrigger {

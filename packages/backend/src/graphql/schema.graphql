@@ -57,6 +57,7 @@ type Mutation {
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
   executeFlow(input: ExecuteFlowInput): ExecuteFlowType
+  mockExecuteFlow(input: ExecuteFlowInput): ExecuteFlowType
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
