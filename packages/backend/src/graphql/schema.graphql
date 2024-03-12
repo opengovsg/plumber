@@ -260,6 +260,7 @@ type Flow {
   createdAt: String
   updatedAt: String
   config: FlowConfig
+  userId: String
 }
 
 # Rate limiting config is omitted here e.g. maxQps
@@ -663,7 +664,7 @@ type LoginWithSelectedSgidResult {
 # Start of flow transfers types
 input CreateFlowTransferInput {
   flowId: String!
-  newOwnerId: String!
+  newOwnerEmail: String!
 }
 
 schema {

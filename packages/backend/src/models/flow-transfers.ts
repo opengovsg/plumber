@@ -25,6 +25,7 @@ class FlowTransfer extends Base {
         enum: ['pending', 'accepted', 'rejected'],
         default: 'pending',
       },
+      deletedAt: { type: 'null' }, // disallow soft deletes
     },
   }
 
