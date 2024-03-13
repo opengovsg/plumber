@@ -56,11 +56,10 @@ const testConnection = async (
   } catch (err) {
     isStillVerified = false
     logger.error(`Error verifying CONNECTION ID: ${params.connectionId}`, {
-      errorDetails: {
-        stepId: params.stepId,
-        errMessage: err.message,
-        errStack: err.stack,
-      },
+      event: 'test-connection',
+      stepId: params.stepId,
+      errMessage: err.message,
+      errStack: err.stack,
     })
   }
 

@@ -4,7 +4,7 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
-import { Template } from './types'
+import { type Template } from './types'
 
 const dynamicData: IDynamicData = {
   key: 'getTemplateIds',

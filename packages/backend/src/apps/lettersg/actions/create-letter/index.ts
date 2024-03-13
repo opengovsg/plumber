@@ -7,7 +7,7 @@ import StepError, { GenericSolution } from '@/errors/step'
 
 import { requestSchema, responseSchema } from './schema'
 
-// TBC
+// TODO: update when letters provide a standard error format for all errors
 type LettersApiErrorData = {
   message: string
   success?: boolean
@@ -101,7 +101,7 @@ const action: IRawAction = {
           $.app.name,
         )
       }
-      // if not all fields are used
+      // TODO (mal): check which fields are not used and return
       const lettersErrorData: LettersApiErrorData = error.response.data
       if (lettersErrorData.message === 'Malformed bulk create object') {
         throw new StepError(
