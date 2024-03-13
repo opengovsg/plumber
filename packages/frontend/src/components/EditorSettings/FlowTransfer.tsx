@@ -71,11 +71,11 @@ export default function FlowTransfer() {
         )
       )}
 
-      {/* Connections appear if pipe is unpublished and no pending request exists */}
+      {/* Connections appear if pipe is unpublished */}
       {loading ? (
         <CustomSpinner />
       ) : (
-        !shouldDisableInput && <FlowTransferConnections flow={flow} />
+        !flow.active && <FlowTransferConnections flow={flow} />
       )}
 
       <Flex flexDir="column" gap={2}>

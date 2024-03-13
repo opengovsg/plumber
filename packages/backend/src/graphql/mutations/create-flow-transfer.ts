@@ -21,7 +21,8 @@ const createFlowTransfer = async (
       email: newOwnerEmail,
     })
     .throwIfNotFound({
-      message: 'User email does not exist on Plumber',
+      message:
+        'User email does not exist on Plumber, please type in an email account of a user who has logged in before!',
     })
 
   // don't allow transferring of pipe to oneself

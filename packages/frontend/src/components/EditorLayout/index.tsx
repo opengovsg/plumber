@@ -4,10 +4,19 @@ import * as React from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
-import { Box, Flex, HStack, Icon, Text, VStack } from '@chakra-ui/react'
+import {
+  Box,
+  Flex,
+  HStack,
+  Icon,
+  Skeleton,
+  Text,
+  VStack,
+} from '@chakra-ui/react'
 import {
   Button,
   IconButton,
+  Spinner,
   TouchableTooltip,
 } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
@@ -18,6 +27,7 @@ import { EditorProvider } from 'contexts/Editor'
 import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
 import { GET_FLOW } from 'graphql/queries/get-flow'
+import { GET_PENDING_FLOW_TRANSFER } from 'graphql/queries/get-pending-flow-transfer'
 
 import EditorSnackbar from './EditorSnackbar'
 
@@ -27,6 +37,14 @@ export default function EditorLayout(): React.ReactElement {
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
   const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
   const flow: IFlow = data?.getFlow
+
+  // phase 1: add check to prevent user from publishing pipe after submitting request
+  const { data: flowTransferData, loading: flowTransferLoading } = useQuery(
+    GET_PENDING_FLOW_TRANSFER,
+    { variables: { flowId } },
+  )
+  const flowTransfer = flowTransferData?.getPendingFlowTransfer
+  const requestedEmail = flowTransfer?.newOwner.email ?? ''
 
   const onFlowNameUpdate = React.useCallback(
     async (name: string) => {
@@ -126,11 +144,24 @@ export default function EditorLayout(): React.ReactElement {
             ></IconButton>
           </TouchableTooltip>
 
-          <Button size="md" onClick={() => onFlowStatusUpdate(!flow.active)}>
-            <Text textStyle="subhead-1">
-              {flow?.active ? 'Unpublish' : 'Publish'}
-            </Text>
-          </Button>
+          {/* Used a tooltip instead because the words take up too much space on mobile view */}
+          <TouchableTooltip
+            label={requestedEmail === '' ? '' : 'Transfer Requested'}
+          >
+            <Button
+              isDisabled={requestedEmail !== ''}
+              isLoading={flowTransferLoading}
+              spinner={<Spinner fontSize={24} />}
+              size="md"
+              onClick={() => onFlowStatusUpdate(!flow.active)}
+            >
+              <Skeleton isLoaded={!flowTransferLoading}>
+                <Text textStyle="subhead-1">
+                  {flow?.active ? 'Unpublish' : 'Publish'}
+                </Text>
+              </Skeleton>
+            </Button>
+          </TouchableTooltip>
         </HStack>
 
         <Container maxW={852} p={0}>
