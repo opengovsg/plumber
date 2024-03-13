@@ -44,11 +44,15 @@ import TableRow from './TableRow'
 export default function Table(): JSX.Element {
   const { tableColumns, flattenedData, allDataRef, filteredDataRef, mode } =
     useTableContext()
+  const isViewOnly = mode === 'view'
   const [data, setData] = useState<GenericRowData[]>(flattenedData)
   const parentRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const childRef = useRef<HTMLDivElement>(null)
-  const columns = useMemo(() => generateColumns(tableColumns), [tableColumns])
+  const columns = useMemo(
+    () => generateColumns(tableColumns, isViewOnly),
+    [isViewOnly, tableColumns],
+  )
   const [rowSelection, setRowSelection] = useState({})
   const [searchString, setSearchString] = useState('')
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
