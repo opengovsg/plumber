@@ -76,3 +76,11 @@ export const responseSchema = z
       'dd MMM yyyy', // format a time usable for other steps
     ),
   }))
+
+export const dataOutSchema = z.object({
+  publicId: z.string(),
+  letterLink: z.string(),
+  issuedLetter: z.string(),
+  createdAt: z.string(),
+  attachment: z.string().optional(),
+})

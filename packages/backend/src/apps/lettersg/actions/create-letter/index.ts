@@ -3,6 +3,7 @@ import type { IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
+import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
 import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
@@ -49,7 +50,7 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       required: true,
       description:
-        'Specify if a PDF should be generated, which can be sent as an attachment in the Email by Postman action. Note that this will increase the pipe execution duration.',
+        'You will need to add an Email by Postman action after this step to send out the generated PDF',
       variables: false,
       value: false,
       showOptionValue: false,
@@ -146,9 +147,9 @@ const action: IRawAction = {
         )
       }
       // TODO (mal): check specific fields to return
-      if (error.response.status === 400) {
+      if (error instanceof HttpError && error.response.status === 400) {
         const lettersErrorData: LettersApiFieldErrorData = error.response.data
-        if (lettersErrorData.message === 'Malformed bulk create object') {
+        if (lettersErrorData.message === 'Invalid letter params.') {
           throw new StepError(
             'Missing pair of field/value for letter template',
             'Click on set up action and check that you have entered all the fields and values in the letter parameters.',

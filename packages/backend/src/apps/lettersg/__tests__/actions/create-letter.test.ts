@@ -135,7 +135,7 @@ describe('create letter from template', () => {
     const error = {
       response: {
         data: {
-          message: 'Malformed bulk create object',
+          message: 'Invalid letter params.',
         },
         status: 400,
         statusText: 'Bad Request',

@@ -15,6 +15,13 @@ vi.mock('@/helpers/s3', () => ({
   parseS3Id: mocks.parseS3Id,
 }))
 
+const mockDataOut = {
+  publicId: '123',
+  createdAt: '13 Mar 2024',
+  letterLink: 'https://letters.gov.sg/123',
+  issuedLetter: '<h1>Goodbye</h1>',
+}
+
 describe('Test getDataOutMetadata', () => {
   it('empty data test', async () => {
     const testExecutionStep = {} as unknown as IExecutionStep
@@ -25,7 +32,8 @@ describe('Test getDataOutMetadata', () => {
   it('attachment key gets converted', async () => {
     const testExecutionStep = {
       dataOut: {
-        attachment: {},
+        ...mockDataOut,
+        attachment: 's3:test:123/letter.pdf',
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)
@@ -37,7 +45,7 @@ describe('Test getDataOutMetadata', () => {
   it('default keys remain untouched', async () => {
     const testExecutionStep = {
       dataOut: {
-        publicId: {},
+        ...mockDataOut,
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)

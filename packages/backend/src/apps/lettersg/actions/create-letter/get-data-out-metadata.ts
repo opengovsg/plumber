@@ -2,16 +2,18 @@ import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
 import { parseS3Id } from '@/helpers/s3'
 
+import { dataOutSchema } from './schema'
+
 async function getDataOutMetadata(
   step: IExecutionStep,
 ): Promise<IDataOutMetadata> {
-  const data = step.dataOut
-  if (!data) {
+  const { dataOut: rawDataOut } = step
+  if (!rawDataOut) {
     return null
   }
-
+  const dataOut = dataOutSchema.parse(rawDataOut)
   const metadata = Object.create(null)
-  for (const [key, value] of Object.entries(data)) {
+  for (const [key, value] of Object.entries(dataOut)) {
     if (key === 'attachment') {
       metadata[key] = {
         label: 'Attachment',
