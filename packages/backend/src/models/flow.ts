@@ -48,6 +48,14 @@ class Flow extends Base {
           rejectIfOverMaxQps: {
             type: 'boolean',
           },
+          errorConfig: {
+            type: 'object',
+            properties: {
+              notificationFrequency: {
+                type: 'string',
+              },
+            },
+          },
         },
       },
     },

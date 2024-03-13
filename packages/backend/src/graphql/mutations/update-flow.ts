@@ -12,18 +12,16 @@ const updateFlow = async (
   params: Params,
   context: Context,
 ) => {
-  let flow = await context.currentUser
+  const flow = await context.currentUser
     .$relatedQuery('flows')
     .findOne({
       id: params.input.id,
     })
     .throwIfNotFound()
 
-  flow = await flow.$query().patchAndFetch({
+  return await flow.$query().patchAndFetch({
     name: params.input.name,
   })
-
-  return flow
 }
 
 export default updateFlow

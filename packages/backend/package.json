@@ -77,6 +77,7 @@
     "remark-gfm": "3.0.1",
     "type-fest": "4.4.0",
     "typescript": "^4.6.3",
+    "urlcat": "3.1.0",
     "winston": "^3.7.1",
     "zod": "3.22.4",
     "zod-validation-error": "1.5.0"
@@ -102,5 +103,5 @@
     "tsc-alias": "^1.8.6",
     "tsconfig-paths": "^4.2.0"
   },
-  "version": "1.11.0"
+  "version": "1.12.0"
 }

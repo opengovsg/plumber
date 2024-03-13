@@ -27,6 +27,7 @@ export async function sendEmail({
         recipient,
         from: `Plumber <${appConfig.postman.fromAddress}>`,
         ...(replyTo && { reply_to: replyTo }),
+        disable_tracking: true,
       },
       {
         headers: {

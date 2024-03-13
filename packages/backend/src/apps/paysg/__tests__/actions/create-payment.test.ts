@@ -21,7 +21,7 @@ describe('create payment', () => {
       auth: {
         set: vi.fn(),
         data: {
-          apiKey: 'sample-api-key',
+          apiKey: 'paysg_stag_abcd',
           paymentServiceId: 'sample-payment-service-id',
         },
       },
@@ -81,7 +81,6 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    $.auth.data.apiKey = 'paysg_stag_abcd'
     await createPaymentAction.run($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
@@ -113,7 +112,6 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    $.auth.data.apiKey = 'paysg_stag_abcd'
     await createPaymentAction.run($)
     expect($.setActionItem).toBeCalledWith({
       raw: {
@@ -136,8 +134,6 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    $.auth.data.apiKey = 'paysg_stag_abcd'
-
     mocks.httpPost.mockReturnValueOnce({
       data: {
         ...MOCK_PAYMENT,
@@ -158,4 +154,56 @@ describe('create payment', () => {
       },
     })
   })
+
+  it.each([
+    {
+      payerName: 'a\u2010b\u2011c\u2012d\u2014e\u2015f',
+      payerAddress: '\u2018topkek\u2019',
+      expectedPayerName: 'a-b-c-d-e-f',
+      expectedPayerAddress: `'topkek'`,
+    },
+    // Check that it replaces _all_ occurances.
+    {
+      payerName: 'a\u2010\u2010b\u2010c\u2012d\u2012\u2012e',
+      payerAddress:
+        '\u2018\u2018top\u2019\u2019 \u2012 \u2019\u2018kek\u2018\u2019',
+      expectedPayerName: 'a--b-c-d--e',
+      expectedPayerAddress: `''top'' - ''kek''`,
+    },
+    // Check that it handles halfwidth and fullwidth conversion
+    {
+      payerName: '\uff21\uff22\uff23\uff44\uff45\uff46',
+      payerAddress: '#\uff10\uff12\uff0d\uff18\uff15',
+      expectedPayerName: 'ABCdef',
+      expectedPayerAddress: `#02-85`,
+    },
+    // Check that latin characters are not impacted
+    {
+      payerName: 'a--b\u2010c-d--e',
+      payerAddress: `\u2018top' \u2012 'kek\u2019`,
+      expectedPayerName: 'a--b-c-d--e',
+      expectedPayerAddress: `'top' - 'kek'`,
+    },
+  ])(
+    'normalizes special characters',
+    async ({
+      payerName,
+      payerAddress,
+      expectedPayerName,
+      expectedPayerAddress,
+    }) => {
+      $.step.parameters.payerName = payerName
+      $.step.parameters.payerAddress = payerAddress
+      await createPaymentAction.run($)
+
+      expect(mocks.httpPost).toBeCalledWith(
+        '/v1/payment-services/sample-payment-service-id/payments',
+        expect.objectContaining({
+          payer_name: expectedPayerName,
+          payer_address: expectedPayerAddress,
+        }),
+        expect.anything(),
+      )
+    },
+  )
 })
