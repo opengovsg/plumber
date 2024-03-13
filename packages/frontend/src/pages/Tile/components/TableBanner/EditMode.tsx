@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { MdOutlineModeEdit, MdOutlineRemoveRedEye } from 'react-icons/md'
-import { MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
-import { Button, Menu } from '@opengovsg/design-system-react'
+import { Flex, MenuButton, MenuItem, MenuList, Text } from '@chakra-ui/react'
+import { Badge, Menu } from '@opengovsg/design-system-react'
 
 import { useTableContext } from '../../contexts/TableContext'
 import { type EditMode } from '../../types'
@@ -43,24 +43,25 @@ const EditMode = () => {
   return (
     <Menu gutter={0} colorScheme="secondary">
       <MenuButton
-        as={Button}
+        as={Badge}
         /**
          * Prevent the button from being clicked, as it is only used to display the current mode
          * remove this prop to allow selection of view/edit mode
          */
         pointerEvents="none"
-        cursor="default"
-        variant="outline"
+        variant="subtle"
         size="xs"
         fontSize="xs"
-        py={2}
+        py={1}
         border="none"
-        bg={`${selectedModeOption.colorScheme}.100`}
         colorScheme={selectedModeOption.colorScheme}
-        leftIcon={selectedModeOption.icon}
-        // rightIcon={hasEditPermission ? <BiChevronDown /> : undefined}
       >
-        {selectedModeOption.label}
+        <Flex alignItems="center" gap={1}>
+          {selectedModeOption.icon}
+          <Text display={{ base: 'none', md: 'flex' }}>
+            {selectedModeOption.label}
+          </Text>
+        </Flex>
       </MenuButton>
 
       <MenuList borderRadius="md">
