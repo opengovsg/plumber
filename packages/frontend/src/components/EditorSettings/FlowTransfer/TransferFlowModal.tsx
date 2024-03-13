@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Modal,
@@ -13,21 +13,19 @@ import {
 } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
 import { CREATE_FLOW_TRANSFER } from 'graphql/mutations/create-flow-transfer'
+import { GET_PENDING_FLOW_TRANSFER } from 'graphql/queries/get-pending-flow-transfer'
 
-import * as URLS from '../../config/urls'
-
-interface FlowTransferModalProps {
+interface TransferFlowModalProps {
   onClose: () => void
-  flowId?: string
   newOwnerEmail: string
 }
 
-export default function FlowTransferModal(props: FlowTransferModalProps) {
-  const { onClose, flowId, newOwnerEmail } = props
+export default function TransferFlowModal(props: TransferFlowModalProps) {
+  const { onClose, newOwnerEmail } = props
+  const { flowId } = useParams()
 
   const [createFlowTransfer] = useMutation(CREATE_FLOW_TRANSFER)
   const toast = useToast()
-  const navigate = useNavigate()
 
   const onFlowTransferCreate = useCallback(async () => {
     onClose()
@@ -38,12 +36,11 @@ export default function FlowTransferModal(props: FlowTransferModalProps) {
           newOwnerEmail,
         },
       },
-
+      refetchQueries: [GET_PENDING_FLOW_TRANSFER],
       onCompleted: () => {
-        navigate(URLS.FLOWS)
         toast({
           title:
-            'Transfer has been initiated. Please get the new owner to login and approve!',
+            'Transfer has been requested. Please get the new owner to login and approve!',
           status: 'success',
           duration: 5000,
           isClosable: true,
@@ -51,7 +48,7 @@ export default function FlowTransferModal(props: FlowTransferModalProps) {
         })
       },
     })
-  }, [onClose, flowId, newOwnerEmail, createFlowTransfer, navigate, toast])
+  }, [onClose, flowId, newOwnerEmail, createFlowTransfer, toast])
 
   return (
     <Modal isOpen={true} onClose={onClose}>

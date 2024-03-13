@@ -41,6 +41,8 @@ type Query {
   getCurrentUser: User
   healthcheck: AppHealth
   getPlumberStats: Stats
+  # Flow transfers
+  getPendingFlowTransfer(flowId: String!): FlowTransfer
 }
 
 type Mutation {
@@ -81,6 +83,7 @@ type Mutation {
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): ID! # TODO (mal): check if need return transfer
+  updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
 }
 
 """
@@ -662,9 +665,33 @@ type LoginWithSelectedSgidResult {
 
 # End of SGID types
 # Start of flow transfers types
+
+type FlowTransfer {
+  id: ID!
+  flowId: ID!
+  oldOwnerId: ID!
+  newOwnerId: ID!
+  status: String!
+  oldOwner: User
+  newOwner: User
+  flow: Flow
+}
+
 input CreateFlowTransferInput {
   flowId: String!
   newOwnerEmail: String!
+}
+
+enum FlowTransferStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+input UpdateFlowTransferStatusInput {
+  id: String!
+  status: FlowTransferStatus!
 }
 
 schema {

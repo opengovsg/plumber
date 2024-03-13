@@ -24,6 +24,13 @@ const createFlowTransfer = async (
       message: 'User email does not exist on Plumber',
     })
 
+  // don't allow transferring of pipe to oneself
+  if (context.currentUser.id === newOwner.id) {
+    throw new Error(
+      'You cannot transfer the pipe to yourself, please type in another email',
+    )
+  }
+
   // check for existing pending transfer to avoid duplicates
   const existingTransfer: FlowTransfer = await FlowTransfer.query().findOne({
     flow_id: flowId,
