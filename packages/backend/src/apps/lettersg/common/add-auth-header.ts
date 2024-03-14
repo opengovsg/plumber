@@ -8,7 +8,6 @@ const addAuthHeader: TBeforeRequest = async ($, requestConfig) => {
   // request config has headers by default already
   requestConfig.headers['Authorization'] = `Bearer ${apiKey}`
   requestConfig.baseURL = baseUrl
-
   return requestConfig
 }
 

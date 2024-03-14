@@ -3,12 +3,16 @@ import type { IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
+import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
+import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
+
+import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema, responseSchema } from './schema'
 
-// TODO: update when letters provide a standard error format for all errors
-type LettersApiErrorData = {
+// TODO (mal): update when letters provide a standard error format for all errors
+type LettersApiFieldErrorData = {
   message: string
   success?: boolean
   errors?: Record<string, string>[]
@@ -39,6 +43,27 @@ const action: IRawAction = {
           },
         ],
       },
+    },
+    {
+      label: 'Generate PDF',
+      key: 'shouldGeneratePdf',
+      type: 'dropdown' as const,
+      required: true,
+      description:
+        'You will need to add an Email by Postman action after this step to send out the generated PDF',
+      variables: false,
+      value: false,
+      showOptionValue: false,
+      options: [
+        {
+          label: 'No',
+          value: false,
+        },
+        {
+          label: 'Yes',
+          value: true,
+        },
+      ],
     },
     {
       label: 'Letter Parameters',
@@ -81,16 +106,36 @@ const action: IRawAction = {
       ],
     },
   ],
+  getDataOutMetadata,
 
   async run($) {
     try {
       const payload = requestSchema.parse($.step.parameters)
 
-      // post response
+      // post response, TODO (mal): double try catch
       const rawResponse = await $.http.post('/v1/letters', payload)
       const response = responseSchema.parse(rawResponse.data)
 
-      $.setActionItem({ raw: response })
+      if (
+        !$.step.parameters.shouldGeneratePdf ||
+        !$.flow.hasFileProcessingActions
+      ) {
+        $.setActionItem({
+          raw: response,
+        })
+        return
+      }
+
+      const attachmentS3Key = await downloadAndStoreAttachmentInS3(
+        $,
+        response.publicId,
+      )
+      $.setActionItem({
+        raw: {
+          ...response,
+          attachment: attachmentS3Key,
+        },
+      })
     } catch (error) {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
@@ -101,15 +146,17 @@ const action: IRawAction = {
           $.app.name,
         )
       }
-      // TODO (mal): check which fields are not used and return
-      const lettersErrorData: LettersApiErrorData = error.response.data
-      if (lettersErrorData.message === 'Malformed bulk create object') {
-        throw new StepError(
-          'Missing pair of field/value for letter template',
-          'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
-          $.step.position,
-          $.app.name,
-        )
+      // TODO (mal): check specific fields to return
+      if (error instanceof HttpError && error.response.status === 400) {
+        const lettersErrorData: LettersApiFieldErrorData = error.response.data
+        if (lettersErrorData?.message === 'Invalid letter params.') {
+          throw new StepError(
+            'Missing pair of field/value for letter template',
+            'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
+            $.step.position,
+            $.app.name,
+          )
+        }
       }
 
       throw new StepError(

@@ -15,10 +15,18 @@ const MOCK_RESPONSE = {
   issuedLetter: '<h1>Hello World</h1>',
 }
 
+const MOCK_S3_ATTACHMENT_KEY =
+  's3:plumber-development-common-bucket:123/letter.pdf'
+
 const mocks = vi.hoisted(() => ({
   httpPost: vi.fn(() => ({
     data: MOCK_RESPONSE,
   })),
+  downloadAndStoreAttachmentInS3: vi.fn(() => MOCK_S3_ATTACHMENT_KEY),
+}))
+
+vi.mock('../../helpers/attachment', () => ({
+  downloadAndStoreAttachmentInS3: mocks.downloadAndStoreAttachmentInS3,
 }))
 
 describe('create letter from template', () => {
@@ -41,12 +49,16 @@ describe('create letter from template', () => {
           letterParams: [],
         },
       },
+      flow: {
+        id: 'flow-id-123',
+        hasFileProcessingActions: true,
+      },
       http: {
         post: mocks.httpPost,
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
       app,
-    }
+    } as unknown as IGlobalVariable
   })
 
   afterEach(() => {
@@ -81,8 +93,9 @@ describe('create letter from template', () => {
     })
   })
 
-  it('parses the raw response correctly', async () => {
+  it('parses the raw response correctly without attachment', async () => {
     $.auth.data.apiKey = 'test_v1_123456'
+    $.flow.hasFileProcessingActions = false
 
     await createLetterAction.run($)
     expect($.setActionItem).toBeCalledWith({
@@ -91,6 +104,22 @@ describe('create letter from template', () => {
         createdAt: '22 Mar 2024',
         letterLink: MOCK_RESPONSE.letterLink,
         issuedLetter: MOCK_RESPONSE.issuedLetter,
+      },
+    })
+  })
+
+  it('parses the raw response correctly with attachment', async () => {
+    $.auth.data.apiKey = 'test_v1_123456'
+    $.step.parameters.shouldGeneratePdf = true
+
+    await createLetterAction.run($)
+    expect($.setActionItem).toBeCalledWith({
+      raw: {
+        publicId: MOCK_RESPONSE.publicId,
+        createdAt: '22 Mar 2024',
+        letterLink: MOCK_RESPONSE.letterLink,
+        issuedLetter: MOCK_RESPONSE.issuedLetter,
+        attachment: MOCK_S3_ATTACHMENT_KEY,
       },
     })
   })
@@ -106,7 +135,7 @@ describe('create letter from template', () => {
     const error = {
       response: {
         data: {
-          message: 'Malformed bulk create object',
+          message: 'Invalid letter params.',
         },
         status: 400,
         statusText: 'Bad Request',
