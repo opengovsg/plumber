@@ -112,7 +112,7 @@ const action: IRawAction = {
     try {
       const payload = requestSchema.parse($.step.parameters)
 
-      // post response
+      // post response, TODO (mal): double try catch
       const rawResponse = await $.http.post('/v1/letters', payload)
       const response = responseSchema.parse(rawResponse.data)
 
@@ -149,7 +149,7 @@ const action: IRawAction = {
       // TODO (mal): check specific fields to return
       if (error instanceof HttpError && error.response.status === 400) {
         const lettersErrorData: LettersApiFieldErrorData = error.response.data
-        if (lettersErrorData.message === 'Invalid letter params.') {
+        if (lettersErrorData?.message === 'Invalid letter params.') {
           throw new StepError(
             'Missing pair of field/value for letter template',
             'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
