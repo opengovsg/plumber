@@ -29,6 +29,7 @@ const updateFlowOwner = async (
   // place both updates in a transaction to ensure everything succeeds
   return await Flow.transaction(async (trx) => {
     // phase 1: nullify all the connections in the flow
+    // TODO (mal): check if this needs to be logged for recovery purposes
     const nullifyConnections = flow.steps.map((step) =>
       Step.query(trx).findById(step.id).patch({
         connectionId: null,

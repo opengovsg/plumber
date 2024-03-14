@@ -14,6 +14,7 @@ import FlowTransferConnections from './FlowTransfer/FlowTransferConnections'
 import PublishedFlowInfobox from './FlowTransfer/PublishedFlowInfobox'
 import TransferFlowModal from './FlowTransfer/TransferFlowModal'
 
+// TODO (mal): refactor all the spinners
 export function CustomSpinner() {
   return (
     <Center>
