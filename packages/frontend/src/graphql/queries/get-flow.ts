@@ -19,6 +19,9 @@ export const GET_FLOW = gql`
           id
           verified
           createdAt
+          formattedData {
+            screenName
+          }
         }
         parameters
       }

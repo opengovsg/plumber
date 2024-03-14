@@ -1,5 +1,5 @@
 import { ElementType, ReactNode, useMemo, useState } from 'react'
-import { BiMailSend } from 'react-icons/bi'
+import { BiMailSend, BiTransfer } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import {
   Box,
@@ -43,6 +43,11 @@ export default function EditorSettingsLayout(
           Icon: BiMailSend,
           text: 'Email notifications',
           to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
+        },
+        {
+          Icon: BiTransfer,
+          text: 'Transfer Pipe',
+          to: URLS.FLOW_EDITOR_TRANSFERS(flowId),
         },
       ],
       () => setDrawerOpen(true),
