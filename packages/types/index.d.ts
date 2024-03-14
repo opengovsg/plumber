@@ -620,3 +620,14 @@ export type IFlowTransferStatus =
   | 'approved'
   | 'rejected'
   | 'cancelled'
+
+export interface IFlowTransfer {
+  id: string
+  flowId: string
+  oldOwnerId: string
+  newOwnerId: string
+  status: IFlowTransferStatus
+  oldOwner?: IUser
+  newOwner?: IUser
+  flow?: IFlow
+}

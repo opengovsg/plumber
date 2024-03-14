@@ -18,6 +18,7 @@ interface StepConnectionDetails {
   screenName: string
 }
 
+// TODO (mal): fix and display tiles connections as well...
 function StepConnectionDisplay(props: StepConnectionDetails) {
   const { appName, position, screenName } = props
   return (
@@ -60,6 +61,11 @@ export default function FlowTransferConnections(
 
   if (loading) {
     return <CustomSpinner />
+  }
+
+  // TODO (mal): Check whether to hide infobox if no connections exist
+  if (!loading && stepConnectionDetails.length === 0) {
+    return <></>
   }
 
   return (

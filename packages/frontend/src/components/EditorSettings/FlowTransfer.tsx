@@ -1,13 +1,14 @@
 import { IFlow } from '@plumber/types'
 
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex, Text, useDisclosure } from '@chakra-ui/react'
 import { Button, Input, Spinner } from '@opengovsg/design-system-react'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 import { GET_PENDING_FLOW_TRANSFER } from 'graphql/queries/get-pending-flow-transfer'
 
+import * as URLS from './../../config/urls'
 import DisallowRequestInfobox from './FlowTransfer/DisallowRequestInfobox'
 import FlowTransferConnections from './FlowTransfer/FlowTransferConnections'
 import PublishedFlowInfobox from './FlowTransfer/PublishedFlowInfobox'
@@ -42,6 +43,11 @@ export default function FlowTransfer() {
   const shouldDisableInput = flow?.active || requestedEmail !== ''
   const shouldDisableTransfer = shouldDisableInput || newOwnerEmail === ''
 
+  // need to navigate user to 404 page when flow is transferred
+  if (!loading && !flow) {
+    return <Navigate to={URLS.FOUR_O_FOUR} />
+  }
+
   return (
     <Flex
       py={{ base: '2rem', md: '3rem' }}
@@ -75,7 +81,7 @@ export default function FlowTransfer() {
       {loading ? (
         <CustomSpinner />
       ) : (
-        !flow.active && <FlowTransferConnections flow={flow} />
+        !flow?.active && <FlowTransferConnections flow={flow} />
       )}
 
       <Flex flexDir="column" gap={2}>

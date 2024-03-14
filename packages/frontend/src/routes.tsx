@@ -14,6 +14,8 @@ import Login from 'pages/Login'
 import SgidCallback from 'pages/SgidCallback'
 import TileLayout from 'pages/Tile/layouts/TileLayout'
 import Tiles from 'pages/Tiles'
+import Transfers from 'pages/Transfers'
+import TransfersLayout from 'pages/Transfers/layouts/TransfersLayout'
 import UnauthorizedTile from 'pages/UnauthorizedTile'
 
 const Landing = lazy(() => import('pages/Landing'))
@@ -112,6 +114,15 @@ export default createRoutesFromElements(
         <TileLayout publicLayout>
           <Tile />
         </TileLayout>
+      }
+    />
+
+    <Route
+      path={URLS.TRANSFERS}
+      element={
+        <TransfersLayout>
+          <Transfers />
+        </TransfersLayout>
       }
     />
 
