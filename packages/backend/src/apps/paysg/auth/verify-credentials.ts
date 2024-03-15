@@ -11,6 +11,28 @@ export default async function verifyCredentials(
     throw new Error('Invalid PaySG API key')
   }
 
+  const paymentServiceId = authData.paymentServiceId as string
+
+  if (!paymentServiceId || typeof paymentServiceId !== 'string') {
+    throw new Error('Payment Service ID must be set')
+  }
+
+  try {
+    await $.http.get(
+      '/v1/payment-services/:paymentServiceId/payments?limit=1',
+      {
+        urlPathParams: {
+          paymentServiceId,
+        },
+      },
+    )
+  } catch (e) {
+    if (e.response?.status === 401 || e.response?.status === 403) {
+      throw new Error('Invalid Payment Service ID')
+    }
+    throw new Error('Unable to validate payment service id and api key')
+  }
+
   const env = getEnvironmentFromApiKey($.auth.data?.apiKey as string)
   let labelSuffix: string | null = null
   switch (env) {
@@ -23,9 +45,9 @@ export default async function verifyCredentials(
   }
 
   await $.auth.set({
-    screenName: !($.auth.data.screenName as string).endsWith(labelSuffix)
+    screenName: !($.auth.data.screenName as string)?.endsWith(labelSuffix)
       ? `${authData.screenName}${labelSuffix}`
-      : undefined,
+      : authData.screenName,
     env,
   })
 }
