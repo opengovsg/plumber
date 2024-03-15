@@ -28,7 +28,7 @@ export default async function verifyCredentials(
     )
   } catch (e) {
     if (e.response?.status === 401 || e.response?.status === 403) {
-      throw new Error('Invalid Payment Service ID')
+      throw new Error('Invalid credentials')
     }
     throw new Error('Unable to validate payment service id and api key')
   }

@@ -48,7 +48,7 @@ describe('Add auth headers', async () => {
       },
     } as unknown as IGlobalVariable
 
-    await expect(() => addAuthHeader($, {} as any)).rejects.toThrowError(
+    await expect(addAuthHeader($, {} as any)).rejects.toThrowError(
       'Missing API key or payment service ID',
     )
   })
@@ -66,7 +66,7 @@ describe('Add auth headers', async () => {
       },
     } as unknown as IGlobalVariable
 
-    await expect(() => addAuthHeader($, {} as any)).rejects.toThrowError(
+    await expect(addAuthHeader($, {} as any)).rejects.toThrowError(
       'Missing API key or payment service ID',
     )
   })
@@ -91,7 +91,7 @@ describe('Add auth headers', async () => {
       },
     } as unknown as InternalAxiosRequestConfig<any> // cant be bothered casting
 
-    await expect(() => addAuthHeader($, requestConfig)).rejects.toThrowError(
+    await expect(addAuthHeader($, requestConfig)).rejects.toThrowError(
       'API key has unrecognized prefix!',
     )
   })
