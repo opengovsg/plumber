@@ -96,7 +96,7 @@ describe('M365 interceptors', () => {
   })
 
   describe('Request error handlers', () => {
-    it('throws a retriable error on 503 with default delay, if response does not have retry-after', async () => {
+    it('logs and throws a retriable error on 503 with default delay, if response does not have retry-after', async () => {
       mockAxiosAdapterToThrowOnce(503)
       await http
         .get('/test-url')
@@ -107,9 +107,13 @@ describe('M365 interceptors', () => {
           expect(error).toBeInstanceOf(RetriableError)
           expect(error.delayInMs).toEqual('default')
         })
+      expect(mocks.logError).toHaveBeenCalledWith(
+        expect.stringContaining('HTTP 503'),
+        expect.objectContaining({ event: 'm365-http-503' }),
+      )
     })
 
-    it('throws a retriable error on 503 with delay set to retry-after', async () => {
+    it('logs and throws a retriable error on 503 with delay set to retry-after', async () => {
       mockAxiosAdapterToThrowOnce(503, { 'retry-after': 123 })
       await http
         .get('/test-url')
@@ -120,22 +124,50 @@ describe('M365 interceptors', () => {
           expect(error).toBeInstanceOf(RetriableError)
           expect(error.delayInMs).toEqual(123000)
         })
+      expect(mocks.logError).toHaveBeenCalledWith(
+        expect.stringContaining('HTTP 503'),
+        expect.objectContaining({ event: 'm365-http-503' }),
+      )
     })
 
-    it('throws a normal error on 429', async () => {
+    it.each([0, null])(
+      'logs and throws a retriable error on 503 with default delay, if response has falsy retry-after',
+      async (retryAfter) => {
+        mockAxiosAdapterToThrowOnce(503, { 'retry-after': retryAfter })
+        await http
+          .get('/test-url')
+          .then(() => {
+            expect.unreachable()
+          })
+          .catch((error): void => {
+            expect(error).toBeInstanceOf(RetriableError)
+            expect(error.delayInMs).toEqual('default')
+          })
+        expect(mocks.logError).toHaveBeenCalledWith(
+          expect.stringContaining('HTTP 503'),
+          expect.objectContaining({ event: 'm365-http-503' }),
+        )
+      },
+    )
+
+    it('logs and throws a normal error on 429', async () => {
       mockAxiosAdapterToThrowOnce(429, { 'retry-after': 123 })
-      expect(http.get('/test-url')).rejects.toThrowError(
+      await expect(http.get('/test-url')).rejects.toThrowError(
         'Rate limited by Microsoft Graph',
+      )
+      expect(mocks.logError).toHaveBeenCalledWith(
+        expect.stringContaining('HTTP 429'),
+        expect.objectContaining({ event: 'm365-http-429' }),
       )
     })
 
     it('throws HTTP error on other non-successful codes', async () => {
       mockAxiosAdapterToThrowOnce(500, { 'retry-after': 123 })
-      expect(http.get('/test-url')).rejects.toThrow(HttpError)
+      await expect(http.get('/test-url')).rejects.toThrow(HttpError)
     })
 
     it('does not throw error if response is success', async () => {
-      expect(http.get('/test-url')).resolves.toEqual(
+      await expect(http.get('/test-url')).resolves.toEqual(
         expect.objectContaining({ data: 'test-data', status: 200 }),
       )
     })
