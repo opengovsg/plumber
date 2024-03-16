@@ -15,7 +15,7 @@ import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import createHttpClient, { type IHttpClient } from '@/helpers/http-client'
 
-import m365ExcelApp from '../'
+import m365ExcelApp from '../..'
 
 function mockAxiosAdapterToThrowOnce(
   status: AxiosResponse['status'],
@@ -46,6 +46,7 @@ const mocks = vi.hoisted(() => ({
       config,
     }),
   ),
+  logWarning: vi.fn(),
   logError: vi.fn(),
 }))
 
@@ -68,6 +69,7 @@ vi.mock('axios', async (importOriginal) => {
 
 vi.mock('@/helpers/logger', () => ({
   default: {
+    warn: mocks.logWarning,
     error: mocks.logError,
   },
 }))
@@ -96,7 +98,7 @@ describe('M365 interceptors', () => {
   })
 
   describe('Request error handlers', () => {
-    it('logs and throws a retriable error on 503 with default delay, if response does not have retry-after', async () => {
+    it('logs a warning and throws a retriable error on 503 with default delay, if response does not have retry-after', async () => {
       mockAxiosAdapterToThrowOnce(503)
       await http
         .get('/test-url')
@@ -107,13 +109,13 @@ describe('M365 interceptors', () => {
           expect(error).toBeInstanceOf(RetriableError)
           expect(error.delayInMs).toEqual('default')
         })
-      expect(mocks.logError).toHaveBeenCalledWith(
+      expect(mocks.logWarning).toHaveBeenCalledWith(
         expect.stringContaining('HTTP 503'),
         expect.objectContaining({ event: 'm365-http-503' }),
       )
     })
 
-    it('logs and throws a retriable error on 503 with delay set to retry-after', async () => {
+    it('logs a warning and throws a retriable error on 503 with delay set to retry-after', async () => {
       mockAxiosAdapterToThrowOnce(503, { 'retry-after': 123 })
       await http
         .get('/test-url')
@@ -124,40 +126,62 @@ describe('M365 interceptors', () => {
           expect(error).toBeInstanceOf(RetriableError)
           expect(error.delayInMs).toEqual(123000)
         })
-      expect(mocks.logError).toHaveBeenCalledWith(
+      expect(mocks.logWarning).toHaveBeenCalledWith(
         expect.stringContaining('HTTP 503'),
         expect.objectContaining({ event: 'm365-http-503' }),
       )
     })
 
-    it.each([0, null])(
-      'logs and throws a retriable error on 503 with default delay, if response has falsy retry-after',
-      async (retryAfter) => {
-        mockAxiosAdapterToThrowOnce(503, { 'retry-after': retryAfter })
-        await http
-          .get('/test-url')
-          .then(() => {
-            expect.unreachable()
-          })
-          .catch((error): void => {
-            expect(error).toBeInstanceOf(RetriableError)
-            expect(error.delayInMs).toEqual('default')
-          })
-        expect(mocks.logError).toHaveBeenCalledWith(
-          expect.stringContaining('HTTP 503'),
-          expect.objectContaining({ event: 'm365-http-503' }),
-        )
-      },
-    )
-
-    it('logs and throws a normal error on 429', async () => {
-      mockAxiosAdapterToThrowOnce(429, { 'retry-after': 123 })
-      await expect(http.get('/test-url')).rejects.toThrowError(
-        'Rate limited by Microsoft Graph',
+    it('logs a warning and still throws a retriable error on 503 with default delay, if response has invalid retry-after', async () => {
+      mockAxiosAdapterToThrowOnce(503, { 'retry-after': 'corruped' })
+      await http
+        .get('/test-url')
+        .then(() => {
+          expect.unreachable()
+        })
+        .catch((error): void => {
+          expect(error).toBeInstanceOf(RetriableError)
+          expect(error.delayInMs).toEqual('default')
+        })
+      expect(mocks.logWarning).toHaveBeenCalledWith(
+        expect.stringContaining('HTTP 503'),
+        expect.objectContaining({ event: 'm365-http-503' }),
       )
+    })
+
+    it('logs an error and throws a non-retriable error on 429', async () => {
+      mockAxiosAdapterToThrowOnce(429, { 'retry-after': 123 })
+      await http
+        .get('/test-url')
+        .then(() => {
+          expect.unreachable()
+        })
+        .catch((error): void => {
+          expect(error).toBeInstanceOf(Error)
+          expect(error).not.toBeInstanceOf(RetriableError)
+          expect(error.message).toEqual('Rate limited by Microsoft Graph.')
+        })
       expect(mocks.logError).toHaveBeenCalledWith(
         expect.stringContaining('HTTP 429'),
         expect.objectContaining({ event: 'm365-http-429' }),
+      )
+    })
+
+    it('logs an error and throws a non-retriable error on 509', async () => {
+      mockAxiosAdapterToThrowOnce(509)
+      await http
+        .get('/test-url')
+        .then(() => {
+          expect.unreachable()
+        })
+        .catch((error): void => {
+          expect(error).toBeInstanceOf(Error)
+          expect(error).not.toBeInstanceOf(RetriableError)
+          expect(error.message).toEqual('Bandwidth limited by Microsoft Graph.')
+        })
+      expect(mocks.logError).toHaveBeenCalledWith(
+        expect.stringContaining('HTTP 509'),
+        expect.objectContaining({ event: 'm365-http-509' }),
       )
     })
 
