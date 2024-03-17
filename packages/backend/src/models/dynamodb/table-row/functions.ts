@@ -88,9 +88,11 @@ const generateProjectionExpressions = ({
     'rowId',
     ...columnIds.map((_id, i) => `#data.#col${i}`),
   ].join(',')
+  // #pk has to be mapped since it's used by electrodb
+  // #data has to be mapped since it's a reserved word
   const ExpressionAttributeNames: Record<string, string> = {
     '#pk': 'tableId',
-    '#data': 'data',
+    ...(columnIds.length ? { '#data': 'data' } : {}),
   }
   if (indexUsed === 'byRowId') {
     ExpressionAttributeNames['#sk1'] = 'rowId'
@@ -307,7 +309,7 @@ export const getTableRows = async ({
 }
 
 /**
- * Column IDs are unmapped and includes delete columns
+ * Column IDs are unmapped
  */
 export const getRawRowById = async ({
   tableId,
@@ -321,16 +323,14 @@ export const getRawRowById = async ({
   try {
     const { ProjectionExpression, ExpressionAttributeNames } =
       generateProjectionExpressions({ columnIds, indexUsed: 'byRowId' })
-    const response = await TableRow.query
-      .byRowId({ tableId, rowId: rowId })
-      .go({
-        ignoreOwnership: true,
-        params: {
-          ProjectionExpression,
-          ExpressionAttributeNames,
-        },
-        data: 'raw',
-      })
+    const response = await TableRow.query.byRowId({ tableId, rowId }).go({
+      ignoreOwnership: true,
+      params: {
+        ProjectionExpression,
+        ExpressionAttributeNames,
+      },
+      data: 'raw',
+    })
 
     const { Items } = response.data as unknown as QueryCommandOutput & {
       Items: TableRowOutput[]
