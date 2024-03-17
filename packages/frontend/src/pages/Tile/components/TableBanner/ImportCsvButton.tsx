@@ -120,7 +120,8 @@ export const ImportCsvModalContent = ({
     }
     setIsParsing(true)
     Papa.parse(file, {
-      transformHeader: (header) => header.trim(),
+      // transform empty headers to '(empty)'
+      transformHeader: (header) => header.trim() || '(empty)',
       header: true,
       skipEmptyLines: true,
       complete: (parseResult) => {
@@ -309,7 +310,7 @@ export const ImportCsvModalContent = ({
           </Box>
         )
       case 'error':
-        return <Text color="red.500">`Error: ${errorMsg}`</Text>
+        return <Text color="red.500">Error: {errorMsg}</Text>
     }
   }, [
     columnsToCreate,
@@ -401,6 +402,7 @@ const ImportCsvButton = (props: ButtonProps) => {
           closeOnOverlayClick={false}
           closeOnEsc={false}
           motionPreset="none"
+          isCentered
         >
           <ModalOverlay />
           <ModalContent>
