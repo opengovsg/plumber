@@ -1,6 +1,6 @@
 import { ITableColumnMetadata, ITableMetadata } from '@plumber/types'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BiImport } from 'react-icons/bi'
 import { BsCheckCircle, BsPlusCircleFill } from 'react-icons/bs'
 import { useLazyQuery, useMutation } from '@apollo/client'
@@ -47,9 +47,19 @@ const MAX_FILE_SIZE = 2 * 1000 * 1000
 // Add row chunk size
 const CHUNK_SIZE = 100
 
-const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
+export const ImportCsvModalContent = ({
+  onClose,
+  onPreImport,
+  onPostImport,
+  onBack,
+}: {
+  onClose: () => void
+  // these optional args are used for new table creation via import
+  onPreImport?: () => Promise<ITableMetadata | undefined>
+  onPostImport?: () => void
+  onBack?: () => void
+}) => {
   const { tableId, tableColumns } = useTableContext()
-
   const { createColumns } = useUpdateTable()
   const [createRows] = useMutation(CREATE_ROWS)
   const [getTableData] = useLazyQuery<{
@@ -67,7 +77,7 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
 
   const [importStatus, setImportStatus] = useState<
     'ready' | 'creating columns' | 'importing' | 'completed' | 'error'
-  >('creating columns')
+  >('ready')
   const [rowsToImport, setRowsToImport] = useState(0)
   const [rowsImported, setRowsImported] = useState(0)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -75,6 +85,9 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
   const [result, setResult] = useState<ValidParseResult | null>(null)
   const [columnsToCreate, setColumnsToCreate] = useState<string[]>([])
   const [matchedColumns, setMatchedColumns] = useState<string[]>([])
+  // Used for new table creation via import
+  // This is used to check if the import has already started, so it doesnt run on every render
+  const importStartedRef = useRef(false)
 
   const [file, setFile] = useState<File>()
 
@@ -120,13 +133,13 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
   }, [columnNamesSet, file, isValidParseResult])
 
   const createNewColumns = useCallback(async () => {
-    await createColumns(columnsToCreate)
+    await createColumns(columnsToCreate, onPreImport === undefined)
     const { data: updatedTableData } = await getTableData()
     if (!updatedTableData) {
       throw new Error('Unable to fetch updated table data')
     }
     return updatedTableData.getTable.columns
-  }, [columnsToCreate, createColumns, getTableData])
+  }, [columnsToCreate, createColumns, getTableData, onPreImport])
 
   const mapDataToColumnIds = useCallback(
     (
@@ -177,12 +190,17 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
             },
           },
           refetchQueries:
-            i === chunkedData.length - 1 ? [GET_ALL_ROWS] : undefined,
+            i === chunkedData.length - 1 && !onPreImport
+              ? [GET_ALL_ROWS]
+              : undefined,
           awaitRefetchQueries: true,
         })
         setRowsImported((i + 1) * CHUNK_SIZE)
       }
       setImportStatus('completed')
+      if (onPostImport) {
+        setTimeout(() => onPostImport(), 1000)
+      }
     } catch (e) {
       setImportStatus('error')
       if (e instanceof Error) {
@@ -194,10 +212,24 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
     createNewColumns,
     createRows,
     mapDataToColumnIds,
+    onPostImport,
+    onPreImport,
     result,
     tableColumns,
     tableId,
   ])
+
+  /**
+   * This is for new table creation via import
+   * We do not call the onImport function directly since we want the tableId in the context to be updated first
+   * so we rely on the side effect of context change to trigger the onImport function
+   */
+  useEffect(() => {
+    if (onPreImport && !importStartedRef.current && tableId.length > 0) {
+      importStartedRef.current = true
+      onImport()
+    }
+  }, [onImport, onPreImport, tableId])
 
   const importStatusComponent = useMemo(() => {
     switch (importStatus) {
@@ -283,58 +315,59 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
   ])
 
   return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      closeOnOverlayClick={!importStatus}
-      motionPreset="none"
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <Text textStyle="h6">Import CSV</Text>
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <Attachment
-            maxSize={MAX_FILE_SIZE}
-            onChange={setFile}
-            title="Upload CSV"
-            name="file-upload"
-            colorScheme="primary"
-            showFileSize={true}
-            accept={['.csv']}
-            isReadOnly={importStatus !== 'ready' && importStatus !== 'error'}
-            value={file}
-          />
-          {file && (
-            <Card p={4} mt={2} shadow="none">
-              {isParsing ? (
-                <Flex>
-                  <Spinner mr={2} color="primary.600" />
-                  Parsing file...
-                </Flex>
-              ) : (
-                importStatusComponent
-              )}
-            </Card>
-          )}
-        </ModalBody>
+    <>
+      <ModalHeader>Import CSV</ModalHeader>
+      <ModalCloseButton />
+      <ModalBody>
+        <Attachment
+          maxSize={MAX_FILE_SIZE}
+          onChange={setFile}
+          title="Upload CSV"
+          name="file-upload"
+          colorScheme="primary"
+          showFileSize={true}
+          accept={['.csv']}
+          isReadOnly={importStatus !== 'ready' && importStatus !== 'error'}
+          value={file}
+        />
+        {file && (
+          <Card p={4} mt={2} shadow="none">
+            {isParsing ? (
+              <Flex>
+                <Spinner mr={2} color="primary.600" />
+                Parsing file...
+              </Flex>
+            ) : (
+              importStatusComponent
+            )}
+          </Card>
+        )}
+      </ModalBody>
 
-        <ModalFooter justifyContent="flex-end">
-          {result && (
-            <Button
-              isLoading={importStatus === 'importing'}
-              onClick={importStatus === 'completed' ? onClose : onImport}
-            >
-              {importStatus === 'completed'
-                ? 'Done'
-                : `Import ${result.data.length} rows`}
+      <ModalFooter>
+        <Flex w="100%">
+          {onBack && importStatus === 'ready' && (
+            <Button variant="outline" onClick={onBack}>
+              Back
             </Button>
           )}
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          {result && importStatus === 'completed' && (
+            <Button ml="auto" isDisabled={!!onPreImport} onClick={onClose}>
+              {onPreImport ? 'Redirecting...' : 'Done'}
+            </Button>
+          )}
+          {result && importStatus !== 'completed' && (
+            <Button
+              ml="auto"
+              isLoading={importStatus === 'importing'}
+              onClick={onPreImport ? onPreImport : onImport}
+            >
+              {`Import ${result.data.length} rows`}
+            </Button>
+          )}
+        </Flex>
+      </ModalFooter>
+    </>
   )
 }
 
@@ -353,7 +386,21 @@ const ImportCsvButton = (props: ButtonProps) => {
         Import
       </Button>
       {/* unmount component when closed to reset all state */}
-      {isOpen && <ImportCsvModal onClose={onClose} />}
+      {isOpen && (
+        <Modal
+          isOpen={true}
+          onClose={onClose}
+          // Prevent closing of modal when import is underway
+          closeOnOverlayClick={false}
+          closeOnEsc={false}
+          motionPreset="none"
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ImportCsvModalContent onClose={onClose} />
+          </ModalContent>
+        </Modal>
+      )}
     </>
   )
 }
