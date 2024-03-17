@@ -151,6 +151,11 @@ const action: IRawAction = {
     const rowIdToUse = returnLastRow
       ? result[result.length - 1].rowId
       : result[0].rowId
+
+    /**
+     * We use raw row data instead of mapped column names as we want them to
+     * be distinct in data_out
+     */
     const rowToReturn = await getRawRowById({
       tableId,
       rowId: rowIdToUse,
