@@ -4,7 +4,6 @@ import * as React from 'react'
 import type { LinkProps } from 'react-router-dom'
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Hide } from '@chakra-ui/react'
 import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -14,7 +13,6 @@ import AddNewAppConnection from 'components/AddNewAppConnection'
 import AppRow from 'components/AppRow'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import Container from 'components/Container'
-import NavigationDrawer from 'components/Layout/NavigationDrawer'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
 import SearchInput from 'components/SearchInput'
@@ -67,9 +65,6 @@ export default function Applications(): React.ReactElement {
           rowSpacing={3}
         >
           <Grid container item xs sm alignItems="center" order={{ xs: 0 }}>
-            <Hide above="sm">
-              <NavigationDrawer />
-            </Hide>
             <PageTitle title={APPS_TITLE} />
           </Grid>
 
