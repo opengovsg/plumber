@@ -24,7 +24,6 @@ import {
   HEADER_COLOR,
   NEW_ROW_ID,
   ROW_HEIGHT,
-  TABLE_BANNER_HEIGHT,
   TEMP_ROW_ID_PREFIX,
   Z_INDEX,
 } from '../constants'
@@ -37,6 +36,7 @@ import { useUpdateRow } from '../hooks/useUpdateRow'
 import { CellType, GenericRowData } from '../types'
 
 import SearchBar from './TableHeader/SearchBar'
+import styles from './Table.module.css'
 import TableFooter from './TableFooter'
 import TableHeader from './TableHeader'
 import TableRow from './TableRow'
@@ -210,18 +210,16 @@ export default function Table(): JSX.Element {
         overflow="auto"
         w="100%"
         ref={parentRef}
-        h={`calc(100vh - ${TABLE_BANNER_HEIGHT})`}
         minH="300px"
         flexDir="column"
         position="relative"
-        // prevent active element from being hidden by footer
-        scrollBehavior="smooth"
         // so that search bar results dont get blocked by header or footer
         scrollPaddingTop={ROW_HEIGHT.HEADER + 'px'}
         scrollPaddingBottom={ROW_HEIGHT.FOOTER + ROW_HEIGHT.DEFAULT + 'px'}
         // so highlighted element doesnt get blocked by checkbox column
         scrollPaddingLeft={60}
         onClick={onBlurClick}
+        className={styles.table}
       >
         <Flex
           flexDir="column"
