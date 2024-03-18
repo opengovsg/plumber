@@ -12,34 +12,17 @@ export const requestSchema = z
           field: z
             .string()
             .trim()
-            .min(1, 'Please do not leave the field empty')
-            .nullish(),
+            .min(1, 'Please do not leave the field empty'),
           value: z
             .string()
-            .trim()
-            .min(1, 'Please do not leave the value empty')
-            .nullish(),
+            // Not trimming as we need to support whitespace
+            .min(1, 'Please do not leave the value empty'),
         }),
       )
       .transform((params, context) => {
         const result: Record<string, string> = Object.create(null)
         const seenFields = new Set<string>()
         for (const { field, value } of params) {
-          // no null fields or values are allowed
-          if (!field) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'Please do not leave the field empty',
-            })
-            return z.NEVER
-          }
-          if (!value) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'Please do not leave the value empty',
-            })
-            return z.NEVER
-          }
           // catch duplicate fields
           if (seenFields.has(field)) {
             context.addIssue({

@@ -167,4 +167,34 @@ describe('create letter from template', () => {
       'Please check that you have configured your step correctly',
     )
   })
+
+  it.each(['', '    '])(
+    'disallows empty or falsy fields in letter params',
+    async (field) => {
+      $.step.parameters.letterParams = [{ field, value: 'curry' }]
+
+      $.auth.data.apiKey = 'test_v1_123456'
+      expect(createLetterAction.run($)).rejects.toThrow(/field empty/)
+    },
+  )
+
+  it('disallows empty values in letter params', async () => {
+    $.step.parameters.letterParams = [{ field: 'name', value: '' }]
+
+    $.auth.data.apiKey = 'test_v1_123456'
+    expect(createLetterAction.run($)).rejects.toThrow(/value empty/)
+  })
+
+  it('allows values with whitespace in letter params', async () => {
+    $.step.parameters.letterParams = [{ field: 'name', value: '  ' }]
+
+    $.auth.data.apiKey = 'test_v1_123456'
+    await createLetterAction.run($)
+    expect(mocks.httpPost).toHaveBeenCalledWith('/v1/letters', {
+      templateId: 123,
+      letterParams: {
+        name: '  ',
+      },
+    })
+  })
 })
