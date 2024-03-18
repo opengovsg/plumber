@@ -83,6 +83,8 @@ export const ImportCsvModalContent = ({
   )
 
   const [importStatus, setImportStatus] = useState<IMPORT_STATUS>('ready')
+  const isImporting =
+    importStatus === 'importing' || importStatus === 'creating columns'
   const [rowsToImport, setRowsToImport] = useState(0)
   const [rowsImported, setRowsImported] = useState(0)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -322,7 +324,7 @@ export const ImportCsvModalContent = ({
   return (
     <>
       <ModalHeader>Import CSV</ModalHeader>
-      <ModalCloseButton />
+      {!isImporting && <ModalCloseButton />}
       <ModalBody>
         <Attachment
           maxSize={MAX_FILE_SIZE}
@@ -364,7 +366,7 @@ export const ImportCsvModalContent = ({
           {result && importStatus !== 'completed' && (
             <Button
               ml="auto"
-              isLoading={importStatus === 'importing'}
+              isLoading={isImporting}
               onClick={onPreImport ? onPreImport : onImport}
             >
               {`Import ${result.data.length} rows`}
