@@ -1,6 +1,8 @@
 import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
 
+import logger from '@/helpers/logger'
+
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
 
 import { TableRow } from './model'
@@ -32,13 +34,13 @@ export const _batchDelete = async (
   })
   if (res.unprocessed.length) {
     if (attempts >= MAX_RETRIES) {
-      console.error(res.unprocessed)
+      logger.error(res.unprocessed)
       throw new Error('Max retries exceeded for batchDelete')
     }
     const delay = Math.pow(2, attempts) * EXPONENTIAL_BACKOFF_BASE_DELAY
     attempts++
     // eslint-disable-next-line no-console
-    console.log(
+    logger.warn(
       `Retrying batchDelete, attempt ${attempts} with ${res.unprocessed.length} unprocessed items}`,
     )
     await new Promise((resolve) => setTimeout(resolve, delay))
@@ -57,13 +59,13 @@ export const _batchCreate = async (
   })
   if (res.unprocessed.length) {
     if (attempts >= MAX_RETRIES) {
-      console.error(res.unprocessed)
+      logger.error(res.unprocessed)
       throw new Error('Max retries exceeded for batchCreate')
     }
     const delay = Math.pow(2, attempts) * EXPONENTIAL_BACKOFF_BASE_DELAY
     attempts++
     // eslint-disable-next-line no-console
-    console.log(
+    logger.warn(
       `Retrying batchCreate, attempt ${attempts} with ${res.unprocessed.length} unprocessed items}`,
     )
     await new Promise((resolve) => setTimeout(resolve, delay))
@@ -92,7 +94,8 @@ const generateProjectionExpressions = ({
   // #data has to be mapped since it's a reserved word
   const ExpressionAttributeNames: Record<string, string> = {
     '#pk': 'tableId',
-    ...(columnIds.length ? { '#data': 'data' } : {}),
+    // we only need to map #data if we're projecting nested attributes or filters
+    ...(columnIds.length || filters?.length ? { '#data': 'data' } : {}),
   }
   if (indexUsed === 'byRowId') {
     ExpressionAttributeNames['#sk1'] = 'rowId'
