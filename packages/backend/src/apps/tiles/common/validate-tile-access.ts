@@ -9,7 +9,7 @@ export async function validateTileAccess(
     user_id: userId,
   })
   if (!collaborator) {
-    throw new Error('User does not have access to tile')
+    throw new Error('You do not have access to this tile.')
   }
   return
 }

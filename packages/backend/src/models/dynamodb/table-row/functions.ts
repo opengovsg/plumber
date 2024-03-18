@@ -1,6 +1,8 @@
 import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
 
+import logger from '@/helpers/logger'
+
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
 
 import { TableRow } from './model'
@@ -32,13 +34,13 @@ export const _batchDelete = async (
   })
   if (res.unprocessed.length) {
     if (attempts >= MAX_RETRIES) {
-      console.error(res.unprocessed)
+      logger.error(res.unprocessed)
       throw new Error('Max retries exceeded for batchDelete')
     }
     const delay = Math.pow(2, attempts) * EXPONENTIAL_BACKOFF_BASE_DELAY
     attempts++
     // eslint-disable-next-line no-console
-    console.log(
+    logger.warn(
       `Retrying batchDelete, attempt ${attempts} with ${res.unprocessed.length} unprocessed items}`,
     )
     await new Promise((resolve) => setTimeout(resolve, delay))
@@ -57,13 +59,13 @@ export const _batchCreate = async (
   })
   if (res.unprocessed.length) {
     if (attempts >= MAX_RETRIES) {
-      console.error(res.unprocessed)
+      logger.error(res.unprocessed)
       throw new Error('Max retries exceeded for batchCreate')
     }
     const delay = Math.pow(2, attempts) * EXPONENTIAL_BACKOFF_BASE_DELAY
     attempts++
     // eslint-disable-next-line no-console
-    console.log(
+    logger.warn(
       `Retrying batchCreate, attempt ${attempts} with ${res.unprocessed.length} unprocessed items}`,
     )
     await new Promise((resolve) => setTimeout(resolve, delay))
@@ -88,9 +90,12 @@ const generateProjectionExpressions = ({
     'rowId',
     ...columnIds.map((_id, i) => `#data.#col${i}`),
   ].join(',')
+  // #pk has to be mapped since it's used by electrodb
+  // #data has to be mapped since it's a reserved word
   const ExpressionAttributeNames: Record<string, string> = {
     '#pk': 'tableId',
-    '#data': 'data',
+    // we only need to map #data if we're projecting nested attributes or filters
+    ...(columnIds.length || filters?.length ? { '#data': 'data' } : {}),
   }
   if (indexUsed === 'byRowId') {
     ExpressionAttributeNames['#sk1'] = 'rowId'
@@ -307,7 +312,7 @@ export const getTableRows = async ({
 }
 
 /**
- * Column IDs are unmapped and includes delete columns
+ * Column IDs are unmapped
  */
 export const getRawRowById = async ({
   tableId,
@@ -321,16 +326,14 @@ export const getRawRowById = async ({
   try {
     const { ProjectionExpression, ExpressionAttributeNames } =
       generateProjectionExpressions({ columnIds, indexUsed: 'byRowId' })
-    const response = await TableRow.query
-      .byRowId({ tableId, rowId: rowId })
-      .go({
-        ignoreOwnership: true,
-        params: {
-          ProjectionExpression,
-          ExpressionAttributeNames,
-        },
-        data: 'raw',
-      })
+    const response = await TableRow.query.byRowId({ tableId, rowId }).go({
+      ignoreOwnership: true,
+      params: {
+        ProjectionExpression,
+        ExpressionAttributeNames,
+      },
+      data: 'raw',
+    })
 
     const { Items } = response.data as unknown as QueryCommandOutput & {
       Items: TableRowOutput[]

@@ -1,5 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
+import StepError from '@/errors/step'
 import { stripInvalidKeys } from '@/models/dynamodb/helpers'
 import { getRawRowById, updateTableRow } from '@/models/dynamodb/table-row'
 import TableColumnMetadata from '@/models/table-column-metadata'
@@ -88,7 +89,39 @@ const action: IRawAction = {
       rowId: string
       rowData: { columnId: string; cellValue: string }[]
     }
-    await validateTileAccess($.flow?.userId, tableId as string)
+
+    if (!tableId) {
+      throw new StepError(
+        'Tile is required',
+        'Please select a tile to update a row in.',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
+    try {
+      await validateTileAccess($.flow?.userId, tableId as string)
+    } catch (e) {
+      throw new StepError(
+        'You do not have access to this tile',
+        'Ensure you have access to the tile you are trying to update a row in.',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
+    /**
+     * Row ID is empty, this could be because the previous get single row action
+     * could not find a row that satisfies the conditions. We do not fail the action.
+     */
+    if (!rowId) {
+      $.setActionItem({
+        raw: {
+          updated: false,
+        } satisfies UpdateRowOutput,
+      })
+      return
+    }
 
     const columns = await TableColumnMetadata.query()
       .where({
@@ -103,8 +136,20 @@ const action: IRawAction = {
       columnIds,
     })
 
+    /**
+     * Row ID does not correspond to a row, we short circuit the action but do not fail it.
+     */
+    if (!row) {
+      $.setActionItem({
+        raw: {
+          updated: false,
+        } satisfies UpdateRowOutput,
+      })
+      return
+    }
+
     const updatedData = {
-      ...row.data,
+      ...(row.data ?? {}),
       ...rowData.reduce((acc, { columnId, cellValue }) => {
         acc[columnId] = cellValue
         return acc
@@ -126,6 +171,7 @@ const action: IRawAction = {
       raw: {
         row: strippedUpdatedData,
         rowId,
+        updated: true,
       } satisfies UpdateRowOutput,
     })
   },
