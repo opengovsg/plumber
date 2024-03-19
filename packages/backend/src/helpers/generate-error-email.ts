@@ -53,7 +53,9 @@ export function createBodyErrorMessage(flowName: string): string {
   return bodyMessage
 }
 
-export async function checkErrorEmail(flowId: string): Promise<boolean> {
+export async function isErrorEmailAlreadySent(
+  flowId: string,
+): Promise<boolean> {
   const errorKey = `error-alert:${flowId}`
   return !!(await redisClient.exists(errorKey))
 }

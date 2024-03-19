@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { BiHistory, BiLayer, BiSolidGrid } from 'react-icons/bi'
-import { Navigate } from 'react-router-dom'
 import { Box, Divider, Show } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import { PipeIcon } from 'components/Icons'
+import RedirectToLogin from 'components/RedirectToLogin'
 import SiteWideBanner from 'components/SiteWideBanner'
 import * as URLS from 'config/urls'
 import {
@@ -68,12 +68,7 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   }, [isDrawerOpen])
 
   if (!currentUser) {
-    const redirectQueryParam = window.location.pathname + window.location.search
-    return (
-      <Navigate
-        to={URLS.ADD_REDIRECT_TO_LOGIN(encodeURIComponent(redirectQueryParam))}
-      />
-    )
+    return <RedirectToLogin />
   }
 
   return (
@@ -84,7 +79,7 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
       <LayoutNavigationProvider value={layoutNavigationProviderData}>
         <Box display="flex" flex="1">
           <Show above="sm">
-            <Box mt={1}>
+            <Box mt={4}>
               <NavigationSidebar />
             </Box>
             <Box>

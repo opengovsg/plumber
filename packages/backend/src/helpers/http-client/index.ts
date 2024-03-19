@@ -8,6 +8,8 @@ import { URL } from 'url'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 
+import { urlPathParamsInterceptor } from './url-path-params-interceptor'
+
 const removeBaseUrlForAbsoluteUrls = (
   requestConfig: InternalAxiosRequestConfig,
 ): InternalAxiosRequestConfig => {
@@ -32,6 +34,7 @@ export default function createHttpClient({
     baseURL,
   })
 
+  instance.interceptors.request.use(urlPathParamsInterceptor)
   instance.interceptors.request.use(
     async (
       requestConfig: InternalAxiosRequestConfig,

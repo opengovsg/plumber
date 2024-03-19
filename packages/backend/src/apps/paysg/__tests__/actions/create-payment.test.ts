@@ -4,46 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import createPaymentAction from '../../actions/create-payment'
-import { getApiBaseUrl } from '../../common/api'
-
-const MOCK_RESPONSE = {
-  id: 'ZbzTvadjmP0wd7RRxhWtj',
-  due_date: null as null,
-  metadata: {
-    'product code': '123',
-  },
-  payout_id: null as null,
-  created_at: '2023-08-03T17:36:52.634+08:00',
-  creator_id: 'user_xxx',
-  payer_name: 'Andy Lau',
-  updated_at: '2023-08-03T17:36:52.634+08:00',
-  description: 'Payment for XXX',
-  payer_email: 'abc@gmail.com',
-  payment_url: 'http://pay.gov.sg/payments/ZbzTvadjmP0wd7RRxhWtj',
-  return_url: 'https://open.gov.sg',
-  reference_id: 'PAYMENT_001',
-  latest_status: 'unpaid',
-  payer_address: 'Blk 123, Yishun Avenue 2, #08-88, Singapore 123456',
-  refund_status: 'not_refunded',
-  payment_status: 'unpaid',
-  amount_in_cents: 1130,
-  payer_identifier: 'S1234567A',
-  paid_out_timestamp: null as null,
-  payment_service_id: 'payment_service_xxx',
-  email_delivery_status: 'unsent',
-  payment_sent_timestamp: null as null,
-  stripe_payment_intent_id: 'pi_xxx',
-  payment_cancelled_timestamp: null as null,
-  payment_succeeded_timestamp: null as null,
-  payment_fully_refunded_timestamp: null as null,
-  // this is not documented
-  payment_qr_code_url: 'https://test3.local',
-}
+import { MOCK_PAYMENT } from '../utils'
 
 const mocks = vi.hoisted(() => ({
   httpPost: vi.fn(() => ({
-    // Mock data retrieved from PaySG Guide: https://guide.pay.gov.sg/api-resources/payments/create-a-payment
-    data: MOCK_RESPONSE,
+    data: MOCK_PAYMENT,
   })),
 }))
 
@@ -55,7 +20,7 @@ describe('create payment', () => {
       auth: {
         set: vi.fn(),
         data: {
-          apiKey: 'sample-api-key',
+          apiKey: 'paysg_stag_abcd',
           paymentServiceId: 'sample-payment-service-id',
         },
       },
@@ -86,23 +51,21 @@ describe('create payment', () => {
     vi.restoreAllMocks()
   })
 
-  it.each(['paysg_stag_abcd'])(
-    'invokes the correct URL based on the API key',
+  it.each(['paysg_stag_abcd, paysg_live_abcd'])(
+    'invokes the correct url with urlPathParams',
     async (apiKey) => {
       $.auth.data.apiKey = apiKey
-      const expectedBaseUrl = getApiBaseUrl($.auth.data.apiKey)
 
       await createPaymentAction.run($)
 
       expect(mocks.httpPost).toHaveBeenCalledWith(
-        '/v1/payment-services/sample-payment-service-id/payments',
+        '/v1/payment-services/:paymentServiceId/payments',
         expect.anything(),
-        expect.objectContaining({
-          baseURL: expectedBaseUrl,
-          headers: {
-            'x-api-key': $.auth.data.apiKey,
+        {
+          urlPathParams: {
+            paymentServiceId: 'sample-payment-service-id',
           },
-        }),
+        },
       )
     },
   )
@@ -115,11 +78,10 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    $.auth.data.apiKey = 'paysg_stag_abcd'
     await createPaymentAction.run($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/v1/payment-services/sample-payment-service-id/payments',
+      '/v1/payment-services/:paymentServiceId/payments',
       {
         reference_id: 'test-reference-id',
         payer_name: 'test-name',
@@ -135,7 +97,11 @@ describe('create payment', () => {
           'test-key-2': 'test-value-2',
         },
       },
-      expect.anything(),
+      {
+        urlPathParams: {
+          paymentServiceId: 'sample-payment-service-id',
+        },
+      },
     )
   })
 
@@ -147,16 +113,16 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    $.auth.data.apiKey = 'paysg_stag_abcd'
     await createPaymentAction.run($)
     expect($.setActionItem).toBeCalledWith({
       raw: {
-        id: MOCK_RESPONSE.id,
-        paymentUrl: MOCK_RESPONSE.payment_url,
-        stripePaymentIntentId: MOCK_RESPONSE.stripe_payment_intent_id,
-        paymentQrCodeUrl: MOCK_RESPONSE.payment_qr_code_url,
+        id: MOCK_PAYMENT.id,
+        paymentUrl: MOCK_PAYMENT.payment_url,
+        stripePaymentIntentId: MOCK_PAYMENT.stripe_payment_intent_id,
+        paymentQrCodeUrl: MOCK_PAYMENT.payment_qr_code_url,
         amountInDollars: '11.30',
         amountInCents: 1130,
+        paymentStatus: 'unpaid',
       },
     })
   })
@@ -169,11 +135,9 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    $.auth.data.apiKey = 'paysg_stag_abcd'
-
     mocks.httpPost.mockReturnValueOnce({
       data: {
-        ...MOCK_RESPONSE,
+        ...MOCK_PAYMENT,
         amount_in_cents: 31,
       },
     })
@@ -181,13 +145,70 @@ describe('create payment', () => {
     await createPaymentAction.run($)
     expect($.setActionItem).toBeCalledWith({
       raw: {
-        id: MOCK_RESPONSE.id,
-        paymentUrl: MOCK_RESPONSE.payment_url,
-        stripePaymentIntentId: MOCK_RESPONSE.stripe_payment_intent_id,
-        paymentQrCodeUrl: MOCK_RESPONSE.payment_qr_code_url,
+        id: MOCK_PAYMENT.id,
+        paymentUrl: MOCK_PAYMENT.payment_url,
+        stripePaymentIntentId: MOCK_PAYMENT.stripe_payment_intent_id,
+        paymentQrCodeUrl: MOCK_PAYMENT.payment_qr_code_url,
         amountInDollars: '0.31',
         amountInCents: 31,
+        paymentStatus: 'unpaid',
       },
     })
   })
+
+  it.each([
+    {
+      payerName: 'a\u2010b\u2011c\u2012d\u2014e\u2015f',
+      payerAddress: '\u2018topkek\u2019',
+      expectedPayerName: 'a-b-c-d-e-f',
+      expectedPayerAddress: `'topkek'`,
+    },
+    // Check that it replaces _all_ occurances.
+    {
+      payerName: 'a\u2010\u2010b\u2010c\u2012d\u2012\u2012e',
+      payerAddress:
+        '\u2018\u2018top\u2019\u2019 \u2012 \u2019\u2018kek\u2018\u2019',
+      expectedPayerName: 'a--b-c-d--e',
+      expectedPayerAddress: `''top'' - ''kek''`,
+    },
+    // Check that it handles halfwidth and fullwidth conversion
+    {
+      payerName: '\uff21\uff22\uff23\uff44\uff45\uff46',
+      payerAddress: '#\uff10\uff12\uff0d\uff18\uff15',
+      expectedPayerName: 'ABCdef',
+      expectedPayerAddress: `#02-85`,
+    },
+    // Check that latin characters are not impacted
+    {
+      payerName: 'a--b\u2010c-d--e',
+      payerAddress: `\u2018top' \u2012 'kek\u2019`,
+      expectedPayerName: 'a--b-c-d--e',
+      expectedPayerAddress: `'top' - 'kek'`,
+    },
+  ])(
+    'normalizes special characters',
+    async ({
+      payerName,
+      payerAddress,
+      expectedPayerName,
+      expectedPayerAddress,
+    }) => {
+      $.step.parameters.payerName = payerName
+      $.step.parameters.payerAddress = payerAddress
+      await createPaymentAction.run($)
+
+      expect(mocks.httpPost).toBeCalledWith(
+        '/v1/payment-services/:paymentServiceId/payments',
+        expect.objectContaining({
+          payer_name: expectedPayerName,
+          payer_address: expectedPayerAddress,
+        }),
+        {
+          urlPathParams: {
+            paymentServiceId: 'sample-payment-service-id',
+          },
+        },
+      )
+    },
+  )
 })

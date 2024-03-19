@@ -22,6 +22,11 @@ export const GET_FLOW = gql`
         }
         parameters
       }
+      config {
+        errorConfig {
+          notificationFrequency
+        }
+      }
     }
   }
 `

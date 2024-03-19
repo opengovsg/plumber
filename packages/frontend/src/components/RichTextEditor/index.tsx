@@ -198,7 +198,7 @@ const RichTextEditor = ({
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
   return (
-    <FormControl style={{ flexGrow: 1 }}>
+    <FormControl style={{ flexGrow: 1 }} data-test="text-input-group">
       {label && (
         <FormLabel isRequired={required} description={description}>
           {label}

@@ -2,6 +2,13 @@ import { IJSONObject, IStepError } from '@plumber/types'
 
 import HttpError from './http'
 
+//
+// Some generic solutions for common errors
+//
+export enum GenericSolution {
+  ReconfigureInvalidField = 'Click on set up action and reconfigure the invalid data field. Note that error could also result from the use of variables passed in the data field.',
+}
+
 export default class StepError extends Error {
   constructor(
     name: string,
