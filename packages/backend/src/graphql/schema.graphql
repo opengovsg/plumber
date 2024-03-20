@@ -110,6 +110,7 @@ type Action {
   description: String
   groupsLaterSteps: Boolean
   substeps: [ActionSubstep]
+  mockAvailable: Boolean
 }
 
 type ActionSubstep {
@@ -469,6 +470,7 @@ type Trigger {
   type: String
   webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
+  mockAvailable: Boolean
 }
 
 type TriggerInstructions {
