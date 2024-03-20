@@ -75,6 +75,10 @@ function addStaticSubsteps(
     computedStep.substeps.push(chooseConnectionStep)
   }
 
+  if (step.mockRun) {
+    computedStep.mockAvailable = true
+  }
+
   if (step.arguments) {
     computedStep.substeps.push({
       key: 'chooseTrigger',
