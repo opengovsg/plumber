@@ -403,6 +403,7 @@ export interface IRawTrigger extends IBaseTrigger {
 
 export interface ITrigger extends IBaseTrigger {
   substeps?: ISubstep[]
+  mockAvailable?: boolean
 }
 
 interface PostmanSendEmailMetadata {
@@ -446,6 +447,7 @@ export interface IBaseAction {
     $: IGlobalVariable,
     metadata?: NextStepMetadata,
   ): Promise<IActionRunResult | void>
+  mockRun?($: IGlobalVariable): Promise<Record<string, any>>
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.
@@ -486,6 +488,7 @@ export interface IRawAction extends IBaseAction {
 
 export interface IAction extends IBaseAction {
   substeps?: ISubstep[]
+  mockAvailable?: boolean
 }
 
 export interface IAuthentication {
