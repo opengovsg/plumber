@@ -65,7 +65,7 @@ describe('execution step', () => {
         isTrigger: true,
         isAction: false,
       })
-      const result = await resolver.dataOutMetadata(executionStep)
+      const result = await resolver.dataOutMetadata(executionStep, {}, null)
       expect(result).toEqual({ stringField: 'trigger1-metadata' })
     })
 
@@ -76,7 +76,7 @@ describe('execution step', () => {
         isTrigger: false,
         isAction: true,
       })
-      const result = await resolver.dataOutMetadata(executionStep)
+      const result = await resolver.dataOutMetadata(executionStep, {}, null)
       expect(result).toEqual({ stringField: 'action1-metadata' })
     })
 
@@ -105,7 +105,7 @@ describe('execution step', () => {
           isTrigger: isTrigger,
           isAction: !isTrigger,
         })
-        const result = await resolver.dataOutMetadata(executionStep)
+        const result = await resolver.dataOutMetadata(executionStep, {}, null)
         expect(result).toEqual({
           stringField: isTrigger ? 'trigger-metadata' : 'action-metadata',
         })
@@ -121,7 +121,7 @@ describe('execution step', () => {
           isTrigger: isTrigger,
           isAction: !isTrigger,
         })
-        const result = await resolver.dataOutMetadata(executionStep)
+        const result = await resolver.dataOutMetadata(executionStep, {}, null)
         expect(result).toBeNull()
       },
     )

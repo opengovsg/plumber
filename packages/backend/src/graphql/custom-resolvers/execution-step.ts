@@ -1,11 +1,12 @@
-import { IDataOutMetadata } from '@plumber/types'
-
 import App from '@/models/app'
-import ExecutionStep from '@/models/execution-step'
 
-async function dataOutMetadata(
-  parent: ExecutionStep,
-): Promise<IDataOutMetadata | null> {
+import type { Resolvers } from '../__generated__/types.generated'
+
+type ExecutionStepResolver = Resolvers['ExecutionStep']
+
+const dataOutMetadata: ExecutionStepResolver['dataOutMetadata'] = async (
+  parent,
+) => {
   const {
     appKey,
     key: stepKey,
@@ -33,4 +34,4 @@ async function dataOutMetadata(
 
 export default {
   dataOutMetadata,
-}
+} satisfies Resolvers['ExecutionStep']

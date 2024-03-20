@@ -4,19 +4,14 @@ import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/dis
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default'
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import { RequestHandler } from 'express'
-import { readFileSync } from 'fs'
 import { applyMiddleware } from 'graphql-middleware'
-import { join } from 'path'
 
 import appConfig from '@/config/app'
+import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
 import logger from '@/helpers/logger'
 import { UnauthenticatedContext } from '@/types/express/context'
-
-const typeDefs = readFileSync(join(__dirname, '../graphql/schema.graphql'), {
-  encoding: 'utf-8',
-})
 
 const schema = makeExecutableSchema({ typeDefs, resolvers })
 

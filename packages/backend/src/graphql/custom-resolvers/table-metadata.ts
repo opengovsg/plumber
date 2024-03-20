@@ -1,10 +1,8 @@
-import { ITableMetadata } from '@plumber/types'
+import type { Resolvers } from '../__generated__/types.generated'
 
-import TableMetadata from '@/models/table-metadata'
+type TableMetadataResolver = Resolvers['TableMetadata']
 
-async function columns(
-  parent: TableMetadata,
-): Promise<ITableMetadata['columns']> {
+const columns: TableMetadataResolver['columns'] = async (parent) => {
   const columns = await parent
     .$relatedQuery('columns')
     .orderBy('position', 'asc')
@@ -14,4 +12,4 @@ async function columns(
 
 export default {
   columns,
-}
+} satisfies TableMetadataResolver
