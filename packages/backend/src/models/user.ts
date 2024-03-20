@@ -7,6 +7,7 @@ import Base from './base'
 import Connection from './connection'
 import Execution from './execution'
 import Flow from './flow'
+import FlowTransfer from './flow-transfers'
 import Step from './step'
 import TableCollaborator from './table-collaborators'
 import TableMetadata from './table-metadata'
@@ -22,6 +23,8 @@ class User extends Base {
   steps?: Step[]
   executions?: Execution[]
   tables?: TableMetadata[]
+  sentFlowTransfers?: FlowTransfer[]
+  receivedFlowTransfers?: FlowTransfer[]
 
   // for typescript support when creating TableCollaborator row in insertGraph
   role?: ITableCollabRole
@@ -95,6 +98,22 @@ class User extends Base {
           },
         },
         to: `${TableMetadata.tableName}.id`,
+      },
+    },
+    sentFlowTransfers: {
+      relation: Base.HasManyRelation,
+      modelClass: FlowTransfer,
+      join: {
+        from: 'users.id',
+        to: 'flow_transfers.old_owner_id',
+      },
+    },
+    receivedFlowTransfers: {
+      relation: Base.HasManyRelation,
+      modelClass: FlowTransfer,
+      join: {
+        from: 'users.id',
+        to: 'flow_transfers.new_owner_id',
       },
     },
   })

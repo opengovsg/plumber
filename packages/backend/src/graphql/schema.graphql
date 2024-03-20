@@ -79,6 +79,8 @@ type Mutation {
   createRows(input: CreateTableRowsInput!): Boolean
   updateRow(input: UpdateTableRowInput!): ID!
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
+  # Flow transfers
+  createFlowTransfer(input: CreateFlowTransferInput!): ID! # TODO (mal): check if need return transfer
 }
 
 """
@@ -629,6 +631,8 @@ type Stats {
   executionCount: Int!
 }
 
+# Start of SGID types
+
 type SgidPublicOfficerEmployment {
   workEmail: String
   agencyName: String
@@ -653,6 +657,13 @@ input LoginWithSelectedSgidInput {
 
 type LoginWithSelectedSgidResult {
   success: Boolean!
+}
+
+# End of SGID types
+# Start of flow transfers types
+input CreateFlowTransferInput {
+  flowId: String!
+  newOwnerId: String!
 }
 
 schema {
