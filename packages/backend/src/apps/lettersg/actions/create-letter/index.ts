@@ -7,6 +7,7 @@ import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
 import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
+import { processMissingFields } from '../../helpers/process-missing-fields'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema, responseSchema } from './schema'
@@ -146,12 +147,14 @@ const action: IRawAction = {
           $.app.name,
         )
       }
-      // TODO (mal): check specific fields to return
       if (error instanceof HttpError && error.response.status === 400) {
+        const missingFields = await processMissingFields($)
         const lettersErrorData: LettersApiFieldErrorData = error.response.data
         if (lettersErrorData?.message === 'Invalid letter params.') {
           throw new StepError(
-            'Missing pair of field/value for letter template',
+            `Missing field(s) for letter template${
+              missingFields.length === 0 ? '' : `: ${missingFields}`
+            }`,
             'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
             $.step.position,
             $.app.name,

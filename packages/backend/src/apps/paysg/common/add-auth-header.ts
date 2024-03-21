@@ -9,7 +9,8 @@ const addAuthHeader: TBeforeRequest = async ($, requestConfig) => {
 
   if (typeof apiKey !== 'string' || typeof paymentServiceId !== 'string') {
     logger.error({
-      erorr: 'API key and payment service ID must be set',
+      event: 'auth-header-apikey-error',
+      error: 'PaySG: API key and payment service ID must be set',
       flowId: $.flow.id,
     })
     throw new Error('Missing API key or payment service ID')
@@ -19,7 +20,8 @@ const addAuthHeader: TBeforeRequest = async ($, requestConfig) => {
 
   if (!baseUrl) {
     logger.error({
-      error: 'No base URL obtained from API key',
+      event: 'auth-header-baseurl-error',
+      error: 'PaySG: No base URL obtained from API key',
       flowId: $.flow.id,
     })
     throw new Error('No base URL obtained from API key')
