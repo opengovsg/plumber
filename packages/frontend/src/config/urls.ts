@@ -78,6 +78,8 @@ export const FLOW_EDITOR_NOTIFICATIONS = (flowId?: string): string =>
 export const FLOW_EDITOR_TRANSFERS = (flowId?: string): string =>
   flowId ? `/editor/${flowId}/transfer` : FLOWS
 
+export const TRANSFERS = '/transfers'
+
 export const DASHBOARD = FLOWS
 
 export const APP_ICON_URL = (appKey: string): string =>

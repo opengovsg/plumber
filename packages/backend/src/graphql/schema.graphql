@@ -43,6 +43,7 @@ type Query {
   getPlumberStats: Stats
   # Flow transfers
   getPendingFlowTransfer(flowId: String!): FlowTransfer
+  getPendingFlowTransfers: [FlowTransfer!]!
 }
 
 type Mutation {
@@ -84,6 +85,7 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): ID! # TODO (mal): check if need return transfer
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
+  updateFlowOwner(input: UpdateFlowOwnerInput!): Flow!
 }
 
 """
@@ -693,6 +695,12 @@ input UpdateFlowTransferStatusInput {
   id: String!
   status: FlowTransferStatus!
 }
+
+input UpdateFlowOwnerInput {
+  id: String!
+}
+
+# End of flow transfers types
 
 schema {
   query: Query

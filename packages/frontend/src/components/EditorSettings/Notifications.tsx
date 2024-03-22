@@ -1,12 +1,14 @@
 import { IFlow } from '@plumber/types'
 
 import { useCallback, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import { Flex, Skeleton, Stack, Text } from '@chakra-ui/react'
 import { Menu, useToast } from '@opengovsg/design-system-react'
 import { UPDATE_FLOW_CONFIG } from 'graphql/mutations/update-flow-config'
 import { GET_FLOW } from 'graphql/queries/get-flow'
+
+import * as URLS from '../../config/urls'
 
 enum Frequency {
   Once = 'once_per_day',
@@ -86,6 +88,11 @@ export default function Notifications() {
     () => frequencyOptions.find((option) => option.value === frequency)?.label,
     [frequency],
   )
+
+  // need to navigate user to 404 page when flow is transferred
+  if (!loading && !flow) {
+    return <Navigate to={URLS.FOUR_O_FOUR} />
+  }
 
   return (
     <Flex

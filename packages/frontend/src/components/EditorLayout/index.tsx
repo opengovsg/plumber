@@ -2,7 +2,7 @@ import type { IFlow } from '@plumber/types'
 
 import * as React from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import {
   Box,
@@ -87,6 +87,11 @@ export default function EditorLayout(): React.ReactElement {
     },
     [flow?.id, flowId, updateFlowStatus],
   )
+
+  // need to navigate user to 404 page when flow is transferred
+  if (!loading && !flow) {
+    return <Navigate to={URLS.FOUR_O_FOUR} />
+  }
 
   return (
     <>

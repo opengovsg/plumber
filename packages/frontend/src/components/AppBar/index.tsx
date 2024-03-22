@@ -37,6 +37,16 @@ export default function AppBar(): React.ReactElement {
 
         <NewsDrawer />
 
+        {/* TODO (mal): check if this should be using navigate */}
+        <Button
+          as={Link}
+          href={URLS.TRANSFERS}
+          colorScheme="secondary"
+          variant="link"
+        >
+          <Text textStyle="subhead-1">Pipe Transfers</Text>
+        </Button>
+
         <AvatarDropdownMenu />
       </Flex>
       <Divider borderColor="base.divider.medium" />

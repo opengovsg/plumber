@@ -18,6 +18,7 @@ import tilesMutationResolvers from './mutations/tiles'
 import updateConnection from './mutations/update-connection'
 import updateFlow from './mutations/update-flow'
 import updateFlowConfig from './mutations/update-flow-config'
+import updateFlowOwner from './mutations/update-flow-owner'
 import updateFlowStatus from './mutations/update-flow-status'
 import updateFlowTransferStatus from './mutations/update-flow-transfer-status'
 import updateStep from './mutations/update-step'
@@ -55,6 +56,7 @@ const mutationResolvers = {
   loginWithSelectedSgid,
   createFlowTransfer,
   updateFlowTransferStatus,
+  updateFlowOwner,
   ...tilesMutationResolvers,
 }
 
