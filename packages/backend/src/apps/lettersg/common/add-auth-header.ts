@@ -10,10 +10,10 @@ const addAuthHeader: TBeforeRequest = async ($, requestConfig) => {
   if (typeof apiKey !== 'string') {
     logger.error({
       event: 'auth-header-apikey-error',
-      error: 'LetterSG: API key must be set',
+      error: `[LetterSG] Unexpected API key type: ${typeof apiKey}`,
       flowId: $.flow.id,
     })
-    throw new Error('Missing API key')
+    throw new Error('[LetterSG] Missing API key')
   }
 
   const baseUrl = getApiBaseUrl(apiKey)
@@ -21,10 +21,10 @@ const addAuthHeader: TBeforeRequest = async ($, requestConfig) => {
   if (!baseUrl) {
     logger.error({
       event: 'auth-header-baseurl-error',
-      error: 'LetterSG: No base URL obtained from API key',
+      error: '[LetterSG] No base URL obtained from API key',
       flowId: $.flow.id,
     })
-    throw new Error('No base URL obtained from API key')
+    throw new Error('[LetterSG] No base URL obtained from API key')
   }
 
   // request config has headers by default already
