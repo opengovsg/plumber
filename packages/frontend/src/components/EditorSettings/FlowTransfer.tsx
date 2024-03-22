@@ -89,7 +89,7 @@ export default function FlowTransfer() {
         <Text textStyle="subhead-1">Transfer Pipe Ownership</Text>
         <Input
           disabled={shouldDisableInput}
-          placeholder="Please type a valid account on Plumber e.g. me@example.gov.sg"
+          placeholder="To transfer pipe, please type a valid account on Plumber e.g. me@example.gov.sg"
           value={newOwnerEmail}
           onChange={(event) => setNewOwnerEmail(event.target.value)}
         />

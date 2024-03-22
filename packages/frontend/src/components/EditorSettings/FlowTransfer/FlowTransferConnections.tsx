@@ -1,10 +1,11 @@
-import { IApp, IFlow } from '@plumber/types'
+import { IApp, IFlow, ITableMetadata } from '@plumber/types'
 
 import { useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 import { Flex, Text } from '@chakra-ui/react'
 import { Badge, Infobox } from '@opengovsg/design-system-react'
 import { GET_APPS } from 'graphql/queries/get-apps'
+import { GET_TABLES } from 'graphql/queries/get-tables'
 
 import { CustomSpinner } from '../FlowTransfer'
 
@@ -15,10 +16,9 @@ interface FlowTransferConnectionsProps {
 interface StepConnectionDetails {
   appName: string
   position: number
-  screenName: string
+  screenName: string // tiles table name is used here too
 }
 
-// TODO (mal): fix and display tiles connections as well...
 function StepConnectionDisplay(props: StepConnectionDetails) {
   const { appName, position, screenName } = props
   return (
@@ -38,6 +38,10 @@ export default function FlowTransferConnections(
   const { data, loading } = useQuery(GET_APPS) // used for better UI display
   const apps: IApp[] = data?.getApps
 
+  const { data: getTablesData, loading: getTablesDataLoading } =
+    useQuery(GET_TABLES) // used for tiles connection display
+  const tables: ITableMetadata[] = getTablesData?.getTables
+
   // phase 1: just retrieve all connections to display
   // TODO (mal): move to backend query if necessary
   const stepConnectionDetails: StepConnectionDetails[] = useMemo(
@@ -54,12 +58,27 @@ export default function FlowTransferConnections(
             position: step.position,
           })
         }
+
+        // check for tiles connection
+        if (step.appKey === 'tiles' && tables) {
+          const tableName = tables.find(
+            (table) => table.id === step.parameters?.tableId,
+          )?.name
+          // only update the display if a table is connected to the step
+          if (tableName) {
+            res.push({
+              screenName: tableName,
+              appName: 'Tiles',
+              position: step.position,
+            })
+          }
+        }
         return res
       }, []),
-    [flow?.steps, apps],
+    [flow?.steps, apps, tables],
   )
 
-  if (loading) {
+  if (loading || getTablesDataLoading) {
     return <CustomSpinner />
   }
 
