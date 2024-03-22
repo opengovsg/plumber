@@ -7,6 +7,7 @@ import { doesActionProcessFiles } from '@/helpers/actions'
 
 import Base from './base'
 import Execution from './execution'
+import FlowTransfer from './flow-transfers'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
 import User from './user'
@@ -87,6 +88,17 @@ class Flow extends Base {
       join: {
         from: 'flows.user_id',
         to: 'users.id',
+      },
+    },
+    pendingTransfer: {
+      relation: Base.BelongsToOneRelation,
+      modelClass: FlowTransfer,
+      join: {
+        from: 'flows.id',
+        to: 'flow_transfers.flow_id',
+      },
+      filter(builder: ExtendedQueryBuilder<FlowTransfer>) {
+        builder.where('status', 'pending')
       },
     },
   })

@@ -21,6 +21,7 @@ export default function ContextMenu(
   const { flowId, onClose, anchorEl } = props
   const toast = useToast()
   const [deleteFlow] = useMutation(DELETE_FLOW)
+  // TODO (mal): add check to disable button when user tries to delete pipe with ongoing transfer request
   const formatMessage = useFormatMessage()
 
   const onFlowDelete = React.useCallback(async () => {

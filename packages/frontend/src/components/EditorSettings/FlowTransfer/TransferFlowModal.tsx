@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
 import { CREATE_FLOW_TRANSFER } from 'graphql/mutations/create-flow-transfer'
-import { GET_PENDING_FLOW_TRANSFER } from 'graphql/queries/get-pending-flow-transfer'
+import { GET_FLOW } from 'graphql/queries/get-flow'
 
 interface TransferFlowModalProps {
   onClose: () => void
@@ -28,7 +28,6 @@ export default function TransferFlowModal(props: TransferFlowModalProps) {
   const toast = useToast()
 
   const onFlowTransferCreate = useCallback(async () => {
-    onClose()
     await createFlowTransfer({
       variables: {
         input: {
@@ -36,11 +35,15 @@ export default function TransferFlowModal(props: TransferFlowModalProps) {
           newOwnerEmail,
         },
       },
-      refetchQueries: [GET_PENDING_FLOW_TRANSFER],
+      refetchQueries: [GET_FLOW],
+      onError: () => {
+        onClose()
+      },
       onCompleted: () => {
+        onClose()
         toast({
           title:
-            'Transfer has been requested. Please get the new owner to login and approve!',
+            'Transfer has been requested. Please get the new owner to login and approve.',
           status: 'success',
           duration: 5000,
           isClosable: true,

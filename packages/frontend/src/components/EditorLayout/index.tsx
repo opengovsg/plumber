@@ -27,7 +27,6 @@ import { EditorProvider } from 'contexts/Editor'
 import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
 import { GET_FLOW } from 'graphql/queries/get-flow'
-import { GET_PENDING_FLOW_TRANSFER } from 'graphql/queries/get-pending-flow-transfer'
 
 import EditorSnackbar from './EditorSnackbar'
 
@@ -39,12 +38,7 @@ export default function EditorLayout(): React.ReactElement {
   const flow: IFlow = data?.getFlow
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
-  const { data: flowTransferData, loading: flowTransferLoading } = useQuery(
-    GET_PENDING_FLOW_TRANSFER,
-    { variables: { flowId } },
-  )
-  const flowTransfer = flowTransferData?.getPendingFlowTransfer
-  const requestedEmail = flowTransfer?.newOwner.email ?? ''
+  const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
 
   const onFlowNameUpdate = React.useCallback(
     async (name: string) => {
@@ -155,12 +149,12 @@ export default function EditorLayout(): React.ReactElement {
           >
             <Button
               isDisabled={requestedEmail !== ''}
-              isLoading={flowTransferLoading}
+              isLoading={loading}
               spinner={<Spinner fontSize={24} />}
               size="md"
               onClick={() => onFlowStatusUpdate(!flow.active)}
             >
-              <Skeleton isLoaded={!flowTransferLoading}>
+              <Skeleton isLoaded={!loading}>
                 <Text textStyle="subhead-1">
                   {flow?.active ? 'Unpublish' : 'Publish'}
                 </Text>
