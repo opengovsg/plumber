@@ -124,9 +124,9 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
         <Flex py={6} px={8} alignItems="center" gap={8}>
           <Flex flexDir="column" gap={2} flex={1}>
             <Text textStyle="body-1">
-              {flowTransfer.oldOwner?.email} is transferring you
+              {flowTransfer.oldOwner.email} is transferring you
             </Text>
-            <Text textStyle="subhead-1">{flowTransfer.flow?.name}</Text>
+            <Text textStyle="subhead-1">{flowTransfer.flow.name}</Text>
           </Flex>
           <ActionButton
             ariaLabel="approve-request"

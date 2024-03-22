@@ -1,17 +1,20 @@
+import { IFlow } from '@plumber/types'
+
 import { useCallback } from 'react'
 import { useMutation } from '@apollo/client'
 import { Flex, Text } from '@chakra-ui/react'
 import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
 import { UPDATE_FLOW_TRANSFER_STATUS } from 'graphql/mutations/update-flow-transfer-status'
-import { GET_PENDING_FLOW_TRANSFER } from 'graphql/queries/get-pending-flow-transfer'
+import { GET_FLOW } from 'graphql/queries/get-flow'
 
 interface FlowTransferWarningProps {
-  flowTransferId: string
-  requestedEmail: string
+  flow: IFlow
 }
 
 export default function FlowTransferWarning(props: FlowTransferWarningProps) {
-  const { flowTransferId, requestedEmail } = props
+  const { flow } = props
+  const flowTransferId = flow.pendingTransfer?.id
+  const requestedEmail = flow.pendingTransfer?.newOwner.email
   const toast = useToast()
   const [updateFlowTransferStatus] = useMutation(UPDATE_FLOW_TRANSFER_STATUS)
 
@@ -23,11 +26,11 @@ export default function FlowTransferWarning(props: FlowTransferWarningProps) {
           status: 'cancelled',
         },
       },
-      refetchQueries: [GET_PENDING_FLOW_TRANSFER],
+      refetchQueries: [GET_FLOW],
       onCompleted: () => {
         toast({
           title:
-            'Transfer has been cancelled. You can now make another request!',
+            'Transfer has been cancelled. You can now make another request.',
           status: 'success',
           duration: 3000,
           isClosable: true,

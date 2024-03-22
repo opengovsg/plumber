@@ -149,6 +149,7 @@ export interface IFlow {
   remoteWebhookId: string
   lastInternalId: () => Promise<string>
   config: IFlowConfig | null
+  pendingTransfer?: IFlowTransfer
 }
 
 export interface IUser {
@@ -627,7 +628,7 @@ export interface IFlowTransfer {
   oldOwnerId: string
   newOwnerId: string
   status: IFlowTransferStatus
-  oldOwner?: IUser
-  newOwner?: IUser
-  flow?: IFlow
+  oldOwner: IUser
+  newOwner: IUser
+  flow: IFlow
 }

@@ -8,7 +8,6 @@ import getExecutionSteps from './queries/get-execution-steps'
 import getExecutions from './queries/get-executions'
 import getFlow from './queries/get-flow'
 import getFlows from './queries/get-flows'
-import getPendingFlowTransfer from './queries/get-pending-flow-transfer'
 import getPendingFlowTransfers from './queries/get-pending-flow-transfers'
 import getPlumberStats from './queries/get-plumber-stats'
 import getStepWithTestExecutions from './queries/get-step-with-test-executions'
@@ -32,7 +31,6 @@ const queryResolvers = {
   healthcheck,
   ...tilesQueryResolvers,
   getPlumberStats,
-  getPendingFlowTransfer,
   getPendingFlowTransfers,
 }
 
