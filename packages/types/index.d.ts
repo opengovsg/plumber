@@ -163,6 +163,16 @@ export interface IUser {
 // Subset of HTML autocomplete values.
 type AutoCompleteValue = 'off' | 'url' | 'email'
 
+export interface IFieldVisibilityCondition {
+  fieldKey: string
+  fieldValue: string
+
+  // Only `equals` for now, but can add more (e.g. startsWith, etc) later.
+  // This is synced with FieldVisibilityOp GraphQL enum.
+  op: 'equals'
+  not: boolean
+}
+
 export interface IBaseField {
   key: string
   label?: string
@@ -176,6 +186,21 @@ export interface IBaseField {
   variables?: boolean
   dependsOn?: string[]
   hidden?: boolean
+
+  /**
+   * Allows hiding a field if other fields' values don't fulfill some condition
+   * ---
+   * This currently only supports one condition for simplicity, but can be
+   * changed to support arbitrary length AND / OR conditionals using a 2-level
+   * nested array: top level represents OR, inner level represents AND (similar
+   * to if-then).
+   *
+   * NOTE: This currently only checks fields within the same object / "sibling"
+   * fields (e.g. for MultiRow, where fields are inside an array, `fieldKey`
+   * cannot reference fields outside the array. Nor can it refefence fields in
+   * other array elements).
+   */
+  hiddenIf?: IFieldVisibilityCondition
 }
 
 export interface IFieldDropdown extends IBaseField {
