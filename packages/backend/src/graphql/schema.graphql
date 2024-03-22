@@ -92,6 +92,7 @@ directive @specifiedBy(
 ) on SCALAR
 
 enum FieldVisibilityOp {
+  always_true
   equals
 }
 
@@ -131,7 +132,6 @@ type ActionSubstepArgument {
   value: JSONObject
   source: ActionSubstepArgumentSource
   dependsOn: [String]
-  hidden: Boolean
   hiddenIf: FieldVisibilityCondition
 
   # Only for multirow

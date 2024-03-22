@@ -167,9 +167,8 @@ export interface IFieldVisibilityCondition {
   fieldKey: string
   fieldValue: string
 
-  // Only `equals` for now, but can add more (e.g. startsWith, etc) later.
   // This is synced with FieldVisibilityOp GraphQL enum.
-  op: 'equals'
+  op: 'equals' | 'always_true'
   not: boolean
 }
 
@@ -185,7 +184,6 @@ export interface IBaseField {
   clickToCopy?: boolean
   variables?: boolean
   dependsOn?: string[]
-  hidden?: boolean
 
   /**
    * Allows hiding a field if other fields' values don't fulfill some condition

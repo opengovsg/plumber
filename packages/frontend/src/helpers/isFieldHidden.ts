@@ -19,6 +19,8 @@ export function isFieldHidden(
   let result = false
 
   switch (op) {
+    case 'always_true':
+      return true
     case 'equals':
       result = expectedFieldValue === get(siblingParams, fieldKey)
       break

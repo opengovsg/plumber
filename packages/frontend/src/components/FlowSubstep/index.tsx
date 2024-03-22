@@ -6,7 +6,7 @@ import type {
   ISubstep,
 } from '@plumber/types'
 
-import * as React from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import Button from '@mui/material/Button'
 import Collapse from '@mui/material/Collapse'
@@ -41,7 +41,6 @@ function validateSubstep(substep: ISubstep, step: IStep): boolean {
 
   return args.every((arg) => {
     if (
-      arg.hidden ||
       arg.required === false ||
       isFieldHidden(arg.hiddenIf, step.parameters)
     ) {
@@ -85,7 +84,7 @@ function validateSubstep(substep: ISubstep, step: IStep): boolean {
   })
 }
 
-function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
+function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const {
     substep,
     expanded = false,
@@ -97,13 +96,13 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
 
   const { name, arguments: args } = substep
 
-  const editorContext = React.useContext(EditorContext)
+  const editorContext = useContext(EditorContext)
   const formContext = useFormContext()
-  const [validationStatus, setValidationStatus] = React.useState<
-    boolean | null
-  >(validateSubstep(substep, formContext.getValues() as IStep))
+  const [validationStatus, setValidationStatus] = useState<boolean | null>(
+    validateSubstep(substep, formContext.getValues() as IStep),
+  )
 
-  React.useEffect(() => {
+  useEffect(() => {
     function validate(step: unknown) {
       const validationResult = validateSubstep(substep, step as IStep)
       setValidationStatus(validationResult)
@@ -116,7 +115,7 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
   const onToggle = expanded ? onCollapse : onExpand
 
   return (
-    <React.Fragment>
+    <>
       <FlowSubstepTitle
         expanded={expanded}
         onClick={onToggle}
@@ -133,17 +132,15 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
           }}
         >
           <Stack width="100%" spacing={2}>
-            {args
-              ?.filter((argument) => !argument.hidden)
-              ?.map((argument) => (
-                <InputCreator
-                  key={argument.key}
-                  schema={argument}
-                  namePrefix="parameters"
-                  stepId={step.id}
-                  disabled={editorContext.readOnly}
-                />
-              ))}
+            {args?.map((argument) => (
+              <InputCreator
+                key={argument.key}
+                schema={argument}
+                namePrefix="parameters"
+                stepId={step.id}
+                disabled={editorContext.readOnly}
+              />
+            ))}
           </Stack>
 
           <Button
@@ -159,7 +156,7 @@ function FlowSubstep(props: FlowSubstepProps): React.ReactElement {
           </Button>
         </ListItem>
       </Collapse>
-    </React.Fragment>
+    </>
   )
 }
 

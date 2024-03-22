@@ -166,7 +166,6 @@ export const GET_APPS = gql`
             variableTypes
             allowArbitrary
             dependsOn
-            hidden
             showOptionValue
             value
             options {
