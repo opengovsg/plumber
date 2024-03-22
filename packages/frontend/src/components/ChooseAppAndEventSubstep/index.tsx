@@ -281,7 +281,9 @@ function ChooseAppAndEventSubstep(
                       </Badge>
                     )}
                   </Flex>
-                  <Text fontSize="xs">{option.description}</Text>
+                  <Text textStyle="body-2" color="base.content.medium">
+                    {option.description}
+                  </Text>
                 </Flex>
               </li>
             )}

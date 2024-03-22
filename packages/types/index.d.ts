@@ -222,6 +222,7 @@ export interface IFieldDropdownSource {
 export interface IFieldDropdownOption {
   label: string
   value: boolean | string | number
+  description?: string
 }
 
 export interface IFieldText extends IBaseField {
