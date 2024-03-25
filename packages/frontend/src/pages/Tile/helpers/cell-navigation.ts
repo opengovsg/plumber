@@ -8,6 +8,7 @@ export function moveCell({
   rowIndex,
   columnIndex,
   direction,
+  isViewMode = false, // add new column is hidden for view mode
   allowCrossBoundaries = false,
 }: {
   table: Table<GenericRowData>
@@ -15,6 +16,7 @@ export function moveCell({
   rowIndex: number
   columnIndex: number
   direction: 'up' | 'down' | 'left' | 'right'
+  isViewMode?: boolean
   allowCrossBoundaries?: boolean
 }) {
   const columnIds = table.getState().columnOrder
@@ -52,7 +54,7 @@ export function moveCell({
     }
     case 'right': {
       const nextActiveCell = row.getVisibleCells()[
-        Math.min(columnIndex + 1, columnIds.length - 2)
+        Math.min(columnIndex + 1, columnIds.length - (isViewMode ? 1 : 2))
       ] as CellType
       tableMeta?.setActiveCell(nextActiveCell)
       break
