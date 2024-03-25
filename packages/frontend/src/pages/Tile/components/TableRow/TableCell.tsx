@@ -144,6 +144,7 @@ function TableCell({
             rowIndex,
             columnIndex,
             direction: 'up',
+            isViewMode,
           })
           break
         }
@@ -155,6 +156,7 @@ function TableCell({
             rowIndex,
             columnIndex,
             direction: 'down',
+            isViewMode,
           })
           break
         }
@@ -166,6 +168,7 @@ function TableCell({
             rowIndex,
             columnIndex,
             direction: 'left',
+            isViewMode,
           })
           break
         }
@@ -177,6 +180,7 @@ function TableCell({
             rowIndex,
             columnIndex,
             direction: 'right',
+            isViewMode,
           })
           break
         }

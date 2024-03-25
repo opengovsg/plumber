@@ -31,6 +31,11 @@ const createTable = async (
 ) => {
   const tableName = params.input.name
   const isBlankTable = params.input.isBlank
+
+  if (!tableName) {
+    throw new Error('Table name is required')
+  }
+
   const table = await context.currentUser.$relatedQuery('tables').insertGraph({
     name: tableName,
     role: 'owner',

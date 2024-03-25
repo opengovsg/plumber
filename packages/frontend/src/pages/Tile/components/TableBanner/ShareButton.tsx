@@ -60,10 +60,8 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
     <Modal isOpen={true} onClose={onClose} motionPreset="none">
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>
-          <Text textStyle="h6">Share tile</Text>
-          <ModalCloseButton />
-        </ModalHeader>
+        <ModalHeader>Share tile</ModalHeader>
+        <ModalCloseButton />
         <ModalBody mt={2}>
           <FormControl>
             <VStack spacing={2} alignItems="flex-start">
