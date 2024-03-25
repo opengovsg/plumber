@@ -72,10 +72,6 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
           duration: 3000,
           isClosable: true,
           position: 'top',
-          // TODO (mal): fix this because idk how to put the toast on top of the overlay
-          containerStyle: {
-            zIndex: 9000,
-          },
         })
       },
     })
