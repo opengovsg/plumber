@@ -18,6 +18,10 @@ function validateFieldKeys(
   ])
 
   for (const field of commonFields) {
+    if (field.hiddenIf) {
+      throw new Error(`Common field ${field.key} should not have hiddenIf.`)
+    }
+
     if (seenFieldKeys.has(field.key)) {
       throw new Error(
         `Found non-unique field key for common field: ${field.key}`,
@@ -28,6 +32,12 @@ function validateFieldKeys(
 
   for (const transform of transforms) {
     for (const field of transform.fields) {
+      if (field.hiddenIf) {
+        throw new Error(
+          `Top level transfom field ${field.key} should not have hiddenIf.`,
+        )
+      }
+
       if (seenFieldKeys.has(field.key)) {
         throw new Error(
           `Found non-unique field key in transform ${transform.id}: ${field.key}`,
@@ -59,7 +69,12 @@ function validateFieldKeys(
  *    - "Value to transform" input
  * 2. Exposes common fields (if any) needed by that action
  * 3. Configures the fields such that until the user chooses a transform from
- *    the dropdown in 1), no other fields are visible.
+ *    the dropdown in 1), no other fields (including the "value to transform"
+ *    field and the action's common fields) are visible.
+ *
+ * NOTE: This assumes that common fields and transforms' top level fields do
+ *       not have visibility conditions. This invariant is enforced by the
+ *       validator.
  */
 export function setUpActionFields({
   commonFields,
@@ -70,13 +85,21 @@ export function setUpActionFields({
 }): IField[] {
   validateFieldKeys(commonFields, transforms)
 
+  // Make common fields hidden until a transform is chosen, for nice UX.
+  for (const field of commonFields) {
+    field.hiddenIf = {
+      fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
+      op: 'is_empty',
+      fieldValue: '',
+    }
+  }
+
   // Make each transform's fields hidden unless they're the selected transform.
   for (const transform of transforms) {
     for (const field of transform.fields) {
       field.hiddenIf = {
         fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
-        not: true,
-        op: 'equals',
+        op: 'not_equals',
         fieldValue: transform.id,
       }
     }

@@ -10,23 +10,25 @@ export function isFieldHidden(
     return false
   }
 
-  const {
-    fieldKey,
-    fieldValue: expectedFieldValue,
-    op,
-    not,
-  } = hiddenIfCondition
-  let result = false
+  const { fieldKey, fieldValue: expectedFieldValue, op } = hiddenIfCondition
 
   switch (op) {
     case 'always_true':
       return true
     case 'equals':
-      result = expectedFieldValue === get(siblingParams, fieldKey)
-      break
-    default:
-      throw new Error(`Unknown conditional field visibility operation: ${op}`)
-  }
+      return expectedFieldValue === get(siblingParams, fieldKey)
+    case 'not_equals':
+      return expectedFieldValue !== get(siblingParams, fieldKey)
+    case 'is_empty': {
+      const fieldVal = get(siblingParams, fieldKey)
 
-  return not ? !result : result
+      return typeof fieldVal !== 'string'
+        ? // For non-strings, explicitly check for null or undefined, since the
+          // other falsy values are still... values.
+          fieldVal === null || fieldVal === undefined
+        : // Falsy strings are null/undefined and empty string, all of which
+          // are empty so we just negate directly.
+          !fieldVal
+    }
+  }
 }
