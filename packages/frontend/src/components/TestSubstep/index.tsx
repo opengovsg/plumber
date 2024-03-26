@@ -18,6 +18,7 @@ import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
+import { MOCK_EXECUTE_FLOW } from 'graphql/mutations/mock-execute-flow'
 import { extractVariables, filterVariables } from 'helpers/variables'
 
 import TestResult from './TestResult'
@@ -63,14 +64,37 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     selectedActionOrTrigger,
   } = props
 
+  const isMockable = selectedActionOrTrigger?.mockAvailable
+
   const editorContext = useContext(EditorContext)
 
-  const [executeFlow, { data, error, loading, called }] = useMutation(
-    EXECUTE_FLOW,
-    { context: { autoSnackbar: false } },
-  )
+  const [
+    executeFlow,
+    {
+      data: testData,
+      error: testError,
+      loading: testLoading,
+      called: testCalled,
+    },
+  ] = useMutation(EXECUTE_FLOW, { context: { autoSnackbar: false } })
 
-  const { data: response, step: executionStep } = data?.executeFlow ?? {}
+  const [
+    mockExecuteFlow,
+    {
+      data: mockData,
+      error: mockError,
+      loading: mockLoading,
+      called: mockCalled,
+    },
+  ] = useMutation(MOCK_EXECUTE_FLOW, { context: { autoSnackbar: false } })
+
+  const data = testData || mockData
+  const error = testError || mockError
+  const loading = testLoading || mockLoading
+  const called = testCalled || mockCalled
+
+  const { data: response, step: executionStep } =
+    data?.executeFlow ?? data?.mockExecuteFlow ?? {}
 
   const stepsWithVariables = useMemo(() => {
     if (!executionStep) {
@@ -97,6 +121,16 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
       },
     })
   }, [executeFlow, step.id])
+
+  const executeMockFlow = useCallback(() => {
+    mockExecuteFlow({
+      variables: {
+        input: {
+          stepId: step.id,
+        },
+      },
+    })
+  }, [mockExecuteFlow, step.id])
 
   const onContinueClick = useCallback(() => {
     if (onContinue) {
@@ -161,6 +195,20 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
           >
             {isCompleted ? 'Test again' : 'Test Step'}
           </LoadingButton>
+          {!isCompleted && isMockable && (
+            <LoadingButton
+              fullWidth
+              variant={isCompleted ? 'text' : 'contained'}
+              onClick={executeMockFlow}
+              sx={{ mt: 2 }}
+              loading={loading}
+              disabled={editorContext.readOnly}
+              color="primary"
+              data-test="flow-substep-continue-button"
+            >
+              Test With Mock Data
+            </LoadingButton>
+          )}
           {isCompleted && (
             <LoadingButton
               fullWidth

@@ -128,6 +128,7 @@ export interface IStep {
   appData?: IApp
   retryable?: boolean
   jobId?: string
+  mockAvailable?: boolean
 }
 
 export interface IFlowConfig {
