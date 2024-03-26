@@ -94,13 +94,13 @@ directive @specifiedBy(
 enum FieldVisibilityOp {
   always_true
   equals
+  not_equals
 }
 
 type FieldVisibilityCondition {
   fieldKey: String!
   fieldValue: String!
   op: FieldVisibilityOp!
-  not: Boolean!
 }
 
 type Action {

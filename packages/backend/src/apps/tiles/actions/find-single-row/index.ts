@@ -104,7 +104,6 @@ const action: IRawAction = {
           variables: true,
           hiddenIf: {
             fieldKey: 'operator',
-            not: false,
             op: 'equals',
             fieldValue: TableRowFilterOperator.IsEmpty,
           },
