@@ -168,7 +168,7 @@ export interface IFieldVisibilityCondition {
   fieldValue: string
 
   // This is synced with FieldVisibilityOp GraphQL enum.
-  op: 'equals' | 'not_equals' | 'always_true'
+  op: 'equals' | 'not_equals' | 'is_empty' | 'always_true'
 }
 
 export interface IBaseField {

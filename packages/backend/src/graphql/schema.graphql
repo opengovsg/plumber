@@ -95,6 +95,7 @@ enum FieldVisibilityOp {
   always_true
   equals
   not_equals
+  is_empty
 }
 
 type FieldVisibilityCondition {

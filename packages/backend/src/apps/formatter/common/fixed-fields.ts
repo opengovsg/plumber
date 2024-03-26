@@ -20,6 +20,11 @@ export const VALUE_TO_TRANSFORM_FIELD: IField = {
   type: 'string' as const,
   required: true,
   variables: true,
+  hiddenIf: {
+    fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
+    op: 'is_empty',
+    fieldValue: '',
+  },
 }
 
 export function createSelectTransformDropdown(

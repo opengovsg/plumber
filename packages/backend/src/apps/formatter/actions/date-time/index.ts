@@ -8,7 +8,15 @@ const action: IRawAction = {
   key: 'dateTime',
   description: 'Format date and time values',
   arguments: setUpActionFields({
-    commonFields: [],
+    commonFields: [
+      {
+        label: 'Common input',
+        key: 'commonInput',
+        type: 'string' as const,
+        required: true,
+        variables: true,
+      },
+    ],
     transforms: [
       // Example for now - see later PR for actual transforms.
       {
