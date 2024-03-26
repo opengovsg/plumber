@@ -75,8 +75,7 @@ export function setUpActionFields({
     for (const field of transform.fields) {
       field.hiddenIf = {
         fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
-        not: true,
-        op: 'equals',
+        op: 'not_equals',
         fieldValue: transform.id,
       }
     }
