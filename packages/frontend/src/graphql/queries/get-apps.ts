@@ -72,6 +72,7 @@ export const GET_APPS = gql`
         type
         pollInterval
         description
+        mockAvailable
         webhookTriggerInstructions {
           beforeUrlMsg
           afterUrlMsg
@@ -140,6 +141,7 @@ export const GET_APPS = gql`
         key
         description
         groupsLaterSteps
+        mockAvailable
         substeps {
           key
           name

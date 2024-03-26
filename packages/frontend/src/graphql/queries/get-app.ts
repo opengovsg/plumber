@@ -65,6 +65,7 @@ export const GET_APP = gql`
         type
         pollInterval
         description
+        mockAvailable
         substeps {
           name
         }
@@ -73,6 +74,7 @@ export const GET_APP = gql`
         name
         key
         description
+        mockAvailable
         substeps {
           name
         }
