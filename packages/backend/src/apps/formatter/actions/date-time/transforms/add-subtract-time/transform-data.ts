@@ -3,7 +3,6 @@ import z from 'zod'
 
 import type { TransformSpec } from '../../../../common/transform-spec'
 import {
-  dateTimeComponents,
   dateTimeToString,
   fieldSchema as dateTimeFormatSchema,
   parseDateTime,
@@ -54,7 +53,6 @@ export const transformData: TransformSpec['transformData'] = (
   $.setActionItem({
     raw: {
       result: dateTimeToString(dateTimeFormat, result),
-      ...dateTimeComponents(dateTimeFormat, result),
     },
   })
 }
