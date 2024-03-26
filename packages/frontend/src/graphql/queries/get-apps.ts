@@ -98,7 +98,6 @@ export const GET_APPS = gql`
               fieldKey
               fieldValue
               op
-              not
             }
             options {
               label
@@ -129,7 +128,6 @@ export const GET_APPS = gql`
                 fieldKey
                 fieldValue
                 op
-                not
               }
               options {
                 label
@@ -184,7 +182,6 @@ export const GET_APPS = gql`
               fieldKey
               fieldValue
               op
-              not
             }
             # Only for multi-row
             subFields {
@@ -203,7 +200,6 @@ export const GET_APPS = gql`
                 fieldKey
                 fieldValue
                 op
-                not
               }
               options {
                 label

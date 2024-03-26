@@ -83,7 +83,6 @@ const action: IRawAction = {
         fieldKey: '',
         fieldValue: '',
         op: 'always_true',
-        not: false,
       },
       required: false,
       variables: false,

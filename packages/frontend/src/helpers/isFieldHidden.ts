@@ -10,23 +10,14 @@ export function isFieldHidden(
     return false
   }
 
-  const {
-    fieldKey,
-    fieldValue: expectedFieldValue,
-    op,
-    not,
-  } = hiddenIfCondition
-  let result = false
+  const { fieldKey, fieldValue: expectedFieldValue, op } = hiddenIfCondition
 
   switch (op) {
     case 'always_true':
       return true
     case 'equals':
-      result = expectedFieldValue === get(siblingParams, fieldKey)
-      break
-    default:
-      throw new Error(`Unknown conditional field visibility operation: ${op}`)
+      return expectedFieldValue === get(siblingParams, fieldKey)
+    case 'not_equals':
+      return expectedFieldValue !== get(siblingParams, fieldKey)
   }
-
-  return not ? !result : result
 }
