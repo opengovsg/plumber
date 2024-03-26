@@ -59,7 +59,7 @@ export default function FlowTransferWarning(props: FlowTransferWarningProps) {
           variant="clear"
           colorScheme="secondary"
         >
-          Cancel Request
+          Cancel
         </Button>
       </Flex>
     </Infobox>

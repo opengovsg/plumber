@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useRef } from 'react'
 import { Box } from '@chakra-ui/react'
 import {
   THEME_ID,
@@ -16,10 +16,19 @@ type ThemeProviderProps = {
 const ThemeProvider = ({
   children,
 }: ThemeProviderProps): React.ReactElement => {
+  // This is a workaround to fix the issue of toasts appearing behind modal overlays
+  const ref = useRef<HTMLDivElement>(null)
   return (
-    <ChakraThemeProvider theme={chakraTheme}>
+    <ChakraThemeProvider
+      theme={chakraTheme}
+      toastOptions={{
+        portalProps: {
+          containerRef: ref,
+        },
+      }}
+    >
       <MaterialThemeProvider theme={{ [THEME_ID]: materialTheme }}>
-        <Box display="flex" flexDir="column" minH="100vh">
+        <Box display="flex" flexDir="column" minH="100vh" ref={ref}>
           {children}
         </Box>
       </MaterialThemeProvider>

@@ -29,8 +29,6 @@
   "flow.inactive": "OFF",
   "flowEditor.triggerEvent": "Trigger event",
   "flowEditor.actionEvent": "Action event",
-  "flow.view": "View",
-  "flow.delete": "Delete",
   "flowEditor.goBack": "Go back to pipes",
   "executions.noExecutions": "There is no execution data point to show.",
   "webhookUrlInfo.title": "Your webhook URL",

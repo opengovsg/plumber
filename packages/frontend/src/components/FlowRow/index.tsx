@@ -1,7 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import { MouseEvent, ReactElement, useRef, useState } from 'react'
-import { BiDotsHorizontalRounded } from 'react-icons/bi'
+import { ReactElement } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -13,30 +12,19 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { Badge, IconButton } from '@opengovsg/design-system-react'
+import { Badge } from '@opengovsg/design-system-react'
 import FlowAppIcons from 'components/FlowAppIcons'
-import FlowContextMenu from 'components/FlowContextMenu'
 import * as URLS from 'config/urls'
 import { DateTime } from 'luxon'
+
+import FlowContextMenu from './FlowContextMenu'
 
 type FlowRowProps = {
   flow: IFlow
 }
 
 export default function FlowRow(props: FlowRowProps): ReactElement {
-  const contextButtonRef = useRef<HTMLButtonElement | null>(null)
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
   const { flow } = props
-
-  const handleClose = () => {
-    setAnchorEl(null)
-  }
-  const onContextMenuClick = (event: MouseEvent) => {
-    event.preventDefault()
-    event.stopPropagation()
-    event.nativeEvent.stopImmediatePropagation()
-    setAnchorEl(contextButtonRef.current)
-  }
 
   const createdAt = DateTime.fromMillis(parseInt(flow.createdAt, 10))
   const updatedAt = DateTime.fromMillis(parseInt(flow.updatedAt, 10))
@@ -124,30 +112,12 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
                   <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
                 </Badge>
 
-                <IconButton
-                  aria-label="open context menu"
-                  icon={<BiDotsHorizontalRounded />}
-                  size="md"
-                  variant="clear"
-                  color="interaction.sub.default"
-                  ref={contextButtonRef}
-                  onClick={onContextMenuClick}
-                  border={0}
-                  colorScheme="neutral"
-                />
+                <FlowContextMenu flow={flow} />
               </Flex>
             </GridItem>
           </Grid>
         </CardBody>
       </Card>
-
-      {anchorEl && (
-        <FlowContextMenu
-          flowId={flow.id}
-          onClose={handleClose}
-          anchorEl={anchorEl}
-        />
-      )}
     </>
   )
 }
