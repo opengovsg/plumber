@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { BiChevronDown, BiExport } from 'react-icons/bi'
-import { MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
+import { ButtonProps, MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
 import { Button, Menu } from '@opengovsg/design-system-react'
 import { saveAs } from 'file-saver'
 import { dateString } from 'helpers/dateTime'
@@ -8,7 +8,7 @@ import { unparse } from 'papaparse'
 
 import { useTableContext } from '../../contexts/TableContext'
 
-const ExportCsvButton = () => {
+const ExportCsvButton = (props: ButtonProps) => {
   const { allDataRef, filteredDataRef, tableColumns, tableName } =
     useTableContext()
 
@@ -54,6 +54,7 @@ const ExportCsvButton = () => {
         size="xs"
         leftIcon={<BiExport />}
         rightIcon={<BiChevronDown />}
+        {...props}
       >
         Export
       </MenuButton>

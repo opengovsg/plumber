@@ -46,16 +46,24 @@ function TableFooter({
           size="xs"
           h="100%"
           onClick={() => scrollToTop(parentRef)}
+          px={{ base: 2, md: 4 }}
         >
-          Scroll to Top <Kbd bg="white">home</Kbd>
+          To top{' '}
+          <Kbd bg="white" display={{ base: 'none', md: 'flex' }}>
+            home
+          </Kbd>
         </Button>
         <Button
           variant="clear"
           size="xs"
           h="100%"
+          px={{ base: 2, md: 4 }}
           onClick={() => scrollToBottom(parentRef)}
         >
-          Scroll to bottom <Kbd bg="white">end</Kbd>
+          To bottom{' '}
+          <Kbd bg="white" display={{ base: 'none', md: 'flex' }}>
+            end
+          </Kbd>
         </Button>
       </Flex>
     </Flex>

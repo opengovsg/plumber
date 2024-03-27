@@ -60,7 +60,11 @@ function BreadCrumb() {
       </BreadcrumbItem>
       <BreadcrumbItem isCurrentPage>
         {isEditingTableName ? (
-          <Flex alignItems="center" maxW="100%">
+          <Flex
+            alignItems="center"
+            maxW={{ base: 'calc(100vw - 180px)', md: 'calc(100vw - 500px)' }}
+            flex={1}
+          >
             <Input
               autoFocus
               w="500px"

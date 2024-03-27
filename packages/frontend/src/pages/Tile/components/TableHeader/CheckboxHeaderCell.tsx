@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Flex } from '@chakra-ui/react'
 import { HeaderContext } from '@tanstack/react-table'
 
-import { BORDER_COLOR, Z_INDEX_CELL } from '../../constants'
+import { BORDER_COLOR, HEADER_COLOR, Z_INDEX_CELL } from '../../constants'
 import { GenericRowData } from '../../types'
 
 export default function CheckboxHeaderCell({
@@ -28,6 +28,10 @@ export default function CheckboxHeaderCell({
       cursor="pointer"
       position="sticky"
       left={0}
+      bgColor={HEADER_COLOR.DEFAULT}
+      _hover={{
+        bgColor: HEADER_COLOR.HOVER,
+      }}
       zIndex={Z_INDEX_CELL.CHECKBOX}
       borderRightWidth={'0.5px'}
       borderColor={BORDER_COLOR.DEFAULT}

@@ -15,6 +15,7 @@ const columnHelper = createColumnHelper<GenericRowData>()
 
 export function generateColumns(
   columns: ITableColumnMetadata[],
+  isViewOnly = false,
 ): ColumnDef<GenericRowData, any>[] {
   const accessorColumns = columns.map(({ id, name, config }) =>
     columnHelper.accessor(id, {
@@ -45,11 +46,17 @@ export function generateColumns(
     size: 60,
   })
 
-  const addNewColumn = columnHelper.display({
-    id: NEW_COLUMN_ID,
-    header: NewColumnHeaderCell,
-    cell: NoopCell,
-    size: 50,
-  })
-  return [selectColumn, ...accessorColumns, addNewColumn]
+  const generatedColumns = [selectColumn, ...accessorColumns]
+
+  if (!isViewOnly) {
+    const addNewColumn = columnHelper.display({
+      id: NEW_COLUMN_ID,
+      header: NewColumnHeaderCell,
+      cell: NoopCell,
+      size: 50,
+    })
+    generatedColumns.push(addNewColumn)
+  }
+
+  return generatedColumns
 }

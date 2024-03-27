@@ -22,7 +22,12 @@ import {
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
-import { Attachment, Button, Spinner } from '@opengovsg/design-system-react'
+import {
+  Attachment,
+  Button,
+  ButtonProps,
+  Spinner,
+} from '@opengovsg/design-system-react'
 import { CREATE_ROWS } from 'graphql/mutations/create-rows'
 import { GET_ALL_ROWS } from 'graphql/queries/get-all-rows'
 import { GET_TABLE } from 'graphql/queries/get-table'
@@ -333,7 +338,7 @@ const ImportCsvModal = ({ onClose }: { onClose: () => void }) => {
   )
 }
 
-const ImportCsvButton = () => {
+const ImportCsvButton = (props: ButtonProps) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   return (
     <>
@@ -343,6 +348,7 @@ const ImportCsvButton = () => {
         size="xs"
         onClick={onOpen}
         leftIcon={<BiImport />}
+        {...props}
       >
         Import
       </Button>
