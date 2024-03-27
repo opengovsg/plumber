@@ -4,6 +4,7 @@ import customApiApp from './custom-api'
 import delayApp from './delay'
 import formatterApp from './formatter'
 import formsgApp from './formsg'
+import javascriptApp from './javascript'
 import lettersgApp from './lettersg'
 import m365ExcelApp from './m365-excel'
 import paysgApp from './paysg'
@@ -22,6 +23,7 @@ const apps: Record<string, IApp> = {
   [delayApp.key]: delayApp,
   [formatterApp.key]: formatterApp,
   [formsgApp.key]: formsgApp,
+  [javascriptApp.key]: javascriptApp,
   [lettersgApp.key]: lettersgApp,
   [m365ExcelApp.key]: m365ExcelApp,
   [paysgApp.key]: paysgApp,
