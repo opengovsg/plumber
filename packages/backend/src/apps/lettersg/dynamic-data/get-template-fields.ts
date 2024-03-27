@@ -16,7 +16,11 @@ const dynamicData: IDynamicData = {
     }
 
     try {
-      const { data } = await $.http.get(`/v1/templates/${templateId}`)
+      const { data } = await $.http.get('/v1/templates/:templateId', {
+        urlPathParams: {
+          templateId,
+        },
+      })
 
       if (!data?.fields) {
         return {
