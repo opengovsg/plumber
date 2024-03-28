@@ -6,7 +6,6 @@ export enum LetterSgEnvironment {
 const STAGING_ENV_API_KEY_PREFIX = 'test_'
 const STAGING_ENV_BASE_URL = 'https://staging.letters.gov.sg/api'
 
-// TODO (mal): test this when prod api is out
 const PROD_ENV_API_KEY_PREFIX = 'live_'
 const PROD_ENV_BASE_URL = 'https://letters.gov.sg/api'
 

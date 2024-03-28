@@ -7,6 +7,7 @@ import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
 import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
+import { processMissingFields } from '../../helpers/process-missing-fields'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema, responseSchema } from './schema'
@@ -50,7 +51,7 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       required: true,
       description:
-        'You will need to add an Email by Postman action after this step to send out the generated PDF',
+        'You will need to add an Email by Postman action after this step to send out the generated PDF.',
       variables: false,
       value: false,
       showOptionValue: false,
@@ -66,12 +67,12 @@ const action: IRawAction = {
       ],
     },
     {
-      label: 'Letter Parameters',
+      label: 'Personalised fields',
       key: 'letterParams',
       type: 'multirow' as const,
       required: false,
       description:
-        'Specify letter values for each field name in your letter template.',
+        'Specify values for each personalised field in your template.',
 
       subFields: [
         {
@@ -146,12 +147,14 @@ const action: IRawAction = {
           $.app.name,
         )
       }
-      // TODO (mal): check specific fields to return
       if (error instanceof HttpError && error.response.status === 400) {
+        const missingFields = await processMissingFields($)
         const lettersErrorData: LettersApiFieldErrorData = error.response.data
         if (lettersErrorData?.message === 'Invalid letter params.') {
           throw new StepError(
-            'Missing pair of field/value for letter template',
+            `Personalised field(s) not specified${
+              missingFields.length === 0 ? '' : `: ${missingFields}`
+            }`,
             'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
             $.step.position,
             $.app.name,

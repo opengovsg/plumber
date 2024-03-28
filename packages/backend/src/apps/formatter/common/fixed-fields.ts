@@ -2,6 +2,8 @@ import type { IField } from '@plumber/types'
 
 import z from 'zod'
 
+import { ensureZodObjectKey } from '@/helpers/zod-utils'
+
 import type { TransformSpec } from './transform-spec'
 
 export const fixedFieldsSchema = z.object({
@@ -9,10 +11,14 @@ export const fixedFieldsSchema = z.object({
   valueToTransform: z.string(),
 })
 
-export const SELECT_TRANSFORM_DROPDOWN_FIELD_KEY =
-  fixedFieldsSchema.keyof().enum.transformId
-export const VALUE_TO_TRANSFORM_FIELD_KEY =
-  fixedFieldsSchema.keyof().enum.valueToTransform
+export const SELECT_TRANSFORM_DROPDOWN_FIELD_KEY = ensureZodObjectKey(
+  fixedFieldsSchema,
+  'transformId',
+)
+export const VALUE_TO_TRANSFORM_FIELD_KEY = ensureZodObjectKey(
+  fixedFieldsSchema,
+  'valueToTransform',
+)
 
 export const VALUE_TO_TRANSFORM_FIELD: IField = {
   label: 'Value to transform',
@@ -23,7 +29,6 @@ export const VALUE_TO_TRANSFORM_FIELD: IField = {
   hiddenIf: {
     fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
     op: 'is_empty',
-    fieldValue: '',
   },
 }
 
