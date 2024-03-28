@@ -5,6 +5,7 @@ import { setUpActionFields } from '../../common/set-up-action-fields'
 
 import { field as dateFormatField } from './common/date-time-format'
 import { spec as addSubtractDateTime } from './transforms/add-subtract-date-time'
+import { spec as convertDateTime } from './transforms/convert-date-time'
 
 const action: IRawAction = {
   name: 'Date / Time',
@@ -12,7 +13,7 @@ const action: IRawAction = {
   description: 'Format date and time values',
   arguments: setUpActionFields({
     commonFields: [dateFormatField],
-    transforms: [addSubtractDateTime],
+    transforms: [addSubtractDateTime, convertDateTime],
   }),
 
   async run($) {
@@ -23,6 +24,8 @@ const action: IRawAction = {
     switch (transformId) {
       case addSubtractDateTime.id:
         return addSubtractDateTime.transformData($, valueToTransform)
+      case convertDateTime.id:
+        return convertDateTime.transformData($, valueToTransform)
       default:
         throw new Error(`Unknown Date/Time transform: '${transformId}'`)
     }
