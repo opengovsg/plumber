@@ -80,8 +80,6 @@ const action: IRawAction = {
 
       // Always hidden
       hiddenIf: {
-        fieldKey: '',
-        fieldValue: '',
         op: 'always_true',
       },
       required: false,

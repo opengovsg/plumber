@@ -98,7 +98,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   const editorContext = useContext(EditorContext)
   const formContext = useFormContext()
-  const [validationStatus, setValidationStatus] = useState<boolean | null>(
+  const [validationStatus, setValidationStatus] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
   )
 

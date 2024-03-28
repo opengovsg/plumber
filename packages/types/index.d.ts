@@ -163,13 +163,39 @@ export interface IUser {
 // Subset of HTML autocomplete values.
 type AutoCompleteValue = 'off' | 'url' | 'email'
 
-export interface IFieldVisibilityCondition {
+/**
+ * Field Visibility
+ */
+
+// This is synced with FieldVisibilityOp GraphQL enum.
+// Using jank Extract for now until we get typed GraphQL.
+type FieldVisibilityOp = 'always_true' | 'is_empty' | 'equals' | 'not_equals'
+
+interface IFieldVacuousVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'always_true'>
+}
+
+interface IFieldKeyOnlyVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'is_empty'>
+
+  fieldKey: string
+}
+
+interface IFieldComparativeVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'equals' | 'not_equals'>
+
   fieldKey: string
   fieldValue: string
-
-  // This is synced with FieldVisibilityOp GraphQL enum.
-  op: 'equals' | 'not_equals' | 'is_empty' | 'always_true'
 }
+
+export type IFieldVisibilityCondition =
+  | IFieldComparativeVisibilityCondition
+  | IFieldKeyOnlyVisibilityCondition
+  | IFieldVacuousVisibilityCondition
+
+/**
+ * End field visibility
+ */
 
 export interface IBaseField {
   key: string

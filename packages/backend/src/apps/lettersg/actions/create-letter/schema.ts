@@ -9,16 +9,8 @@ export const requestSchema = z
     letterParams: z
       .array(
         z.object({
-          field: z
-            .string()
-            .trim()
-            .min(1, 'Please do not leave the field empty')
-            .nullish(),
-          value: z
-            .string()
-            .trim()
-            .min(1, 'Please do not leave the value empty')
-            .nullish(),
+          field: z.string().trim().min(1, 'Field empty').nullish(),
+          value: z.string().trim().min(1, 'Value empty').nullish(),
         }),
       )
       .transform((params, context) => {
@@ -29,14 +21,14 @@ export const requestSchema = z
           if (!field) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
-              message: 'Please do not leave the field empty',
+              message: 'Field empty',
             })
             return z.NEVER
           }
           if (!value) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
-              message: 'Please do not leave the value empty',
+              message: 'Value empty',
             })
             return z.NEVER
           }
@@ -44,7 +36,7 @@ export const requestSchema = z
           if (seenFields.has(field)) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
-              message: `Same field (${field}) is repeated. Double check your step configuration`,
+              message: `${field} field is repeated`,
               fatal: true,
             })
             return z.NEVER

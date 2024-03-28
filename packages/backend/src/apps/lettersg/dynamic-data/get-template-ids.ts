@@ -4,6 +4,7 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
+import { templateSchema } from './schema'
 import { type Template } from './types'
 
 const dynamicData: IDynamicData = {
@@ -21,10 +22,9 @@ const dynamicData: IDynamicData = {
 
       // map to dynamic data format which is { name: string; value: string }
       return {
-        data: data.templates.map((template: Template) => ({
-          name: template.name,
-          value: template.templateId.toString(),
-        })),
+        data: data.templates.map((template: Template) =>
+          templateSchema.parse(template),
+        ),
       }
     } catch (error) {
       return {

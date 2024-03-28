@@ -267,7 +267,7 @@ function ChooseAppAndEventSubstep(
                   flexDirection: 'row',
                 }}
               >
-                <Flex gap={2} flexDir="column">
+                <Flex py={1} flexDir="column">
                   <Flex gap={2} alignItems="center">
                     <Text>{option.label}</Text>
                     {option.description && (

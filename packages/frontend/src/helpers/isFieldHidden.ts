@@ -10,17 +10,22 @@ export function isFieldHidden(
     return false
   }
 
-  const { fieldKey, fieldValue: expectedFieldValue, op } = hiddenIfCondition
-
-  switch (op) {
+  // Not destructing before the switch as we're using discriminated unions.
+  switch (hiddenIfCondition.op) {
     case 'always_true':
       return true
     case 'equals':
-      return expectedFieldValue === get(siblingParams, fieldKey)
+      return (
+        get(siblingParams, hiddenIfCondition.fieldKey) ===
+        hiddenIfCondition.fieldValue
+      )
     case 'not_equals':
-      return expectedFieldValue !== get(siblingParams, fieldKey)
+      return (
+        get(siblingParams, hiddenIfCondition.fieldKey) !==
+        hiddenIfCondition.fieldValue
+      )
     case 'is_empty': {
-      const fieldVal = get(siblingParams, fieldKey)
+      const fieldVal = get(siblingParams, hiddenIfCondition.fieldKey)
 
       return typeof fieldVal !== 'string'
         ? // For non-strings, explicitly check for null or undefined, since the
