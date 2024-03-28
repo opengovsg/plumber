@@ -8,6 +8,7 @@ import MultiSelect from 'components/MultiSelect'
 import RichTextEditor from 'components/RichTextEditor'
 import TextField from 'components/TextField'
 import useDynamicData from 'hooks/useDynamicData'
+import JavaScriptEditor from 'components/JavaScriptEditor'
 
 export type InputCreatorProps = {
   schema: IField
@@ -42,7 +43,7 @@ export default function InputCreator(
     placeholder,
     dependsOn,
   } = schema
-
+  console.log('schema', schema)
   const { data, loading, refetch } = useDynamicData(stepId, schema)
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
 
@@ -86,6 +87,10 @@ export default function InputCreator(
         isRich
       />
     )
+  }
+
+  if (type === 'string' && name === 'code') {
+    return (<JavaScriptEditor />)
   }
 
   if (type === 'string' || type === 'multiline') {
