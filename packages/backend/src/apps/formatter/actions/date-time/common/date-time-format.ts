@@ -1,0 +1,114 @@
+import type { IField } from '@plumber/types'
+
+import { DateTime } from 'luxon'
+import z from 'zod'
+
+/**
+ * This file contains stuff to handle all the date formats we want to support:
+ * - Field and schema definitions
+ * - Parsing functions
+ */
+
+interface DateFormatConverter {
+  parse: (input: string) => DateTime
+  stringify: (dateTime: DateTime) => string
+
+  // Extracts out time components that are present for the particular format
+  // e.g ISO 8601 formats should have everything, but FormSG date fields should
+  // not have second/minute/hour.
+  components: (dateTime: DateTime) => {
+    second?: DateTime['second']
+    minute?: DateTime['minute']
+    hour?: DateTime['hour']
+    day?: DateTime['day']
+    month?: DateTime['month']
+    year?: DateTime['year']
+  }
+}
+
+const supportedFormats = z.enum(['formsgSubmissionTime', 'formsgDateField'])
+
+const formatConverters = {
+  formsgSubmissionTime: {
+    parse: (input: string): DateTime => DateTime.fromISO(input),
+    stringify: (dateTime: DateTime): string => dateTime.toISO(),
+    components: (dateTime: DateTime) => ({
+      second: dateTime.second,
+      minute: dateTime.minute,
+      hour: dateTime.hour,
+      day: dateTime.day,
+      month: dateTime.month,
+      year: dateTime.year,
+    }),
+  },
+  formsgDateField: {
+    parse: (input: string): DateTime =>
+      DateTime.fromFormat(input, 'dd MMM yyyy'),
+    stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
+    components: (dateTime: DateTime) => ({
+      day: dateTime.day,
+      month: dateTime.month,
+      year: dateTime.year,
+    }),
+  },
+} satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
+
+//
+// Field definitions and schema
+//
+
+export const fieldSchema = z.object({
+  // NOTE: Likely we will support arbitrary input in the future and this can no
+  // longer be an enum. If that happens we can use a type guard to simulate
+  // enum-like functionality for formats we explicitly support.
+  dateTimeFormat: supportedFormats,
+})
+
+export const field = {
+  label: 'What format is the value in?',
+  key: fieldSchema.keyof().enum.dateTimeFormat,
+  type: 'dropdown' as const,
+  required: true,
+  variables: false,
+  showOptionValue: false,
+  options: [
+    {
+      label: 'FormSG submission time - e.g. 2024-02-25T08:15:30.250+08:00',
+      description:
+        'Select this if you are transforming a FormSG submission time',
+      value: supportedFormats.enum.formsgSubmissionTime,
+    },
+    {
+      // FormSG UI is a bit misleading; although the field shows dd/mm/yyyy,
+      // date fields are sent as dd MMM yyyy over webhooks.
+      label: 'FormSG date field - e.g. 25 Mar 2024',
+      description: 'Select this if you are transforming a FormSG date field',
+      value: supportedFormats.enum.formsgDateField,
+    },
+  ],
+} satisfies IField
+
+//
+// Parsing and conversion functions
+//
+
+export function parseDateTime(
+  dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
+  valueToTransform: string,
+): DateTime {
+  return formatConverters[dateTimeFormat].parse(valueToTransform)
+}
+
+export function dateTimeToString(
+  dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
+  dateTime: DateTime,
+): string {
+  return formatConverters[dateTimeFormat].stringify(dateTime)
+}
+
+export function dateTimeComponents(
+  dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
+  dateTime: DateTime,
+): ReturnType<DateFormatConverter['components']> {
+  return formatConverters[dateTimeFormat].components(dateTime)
+}
