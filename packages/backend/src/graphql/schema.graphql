@@ -98,9 +98,9 @@ enum FieldVisibilityOp {
 }
 
 type FieldVisibilityCondition {
-  fieldKey: String!
-  fieldValue: String!
   op: FieldVisibilityOp!
+  fieldKey: String
+  fieldValue: String
 }
 
 type Action {

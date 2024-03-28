@@ -10,11 +10,15 @@ export function isFieldHidden(
     return false
   }
 
-  const { fieldKey, fieldValue: expectedFieldValue, op } = hiddenIfCondition
+  const { op } = hiddenIfCondition
 
+  // Edge case: vacuous conditions which do not have fieldKey and fieldValue
+  if (op === 'always_true') {
+    return true
+  }
+
+  const { fieldKey, fieldValue: expectedFieldValue } = hiddenIfCondition
   switch (op) {
-    case 'always_true':
-      return true
     case 'equals':
       return expectedFieldValue === get(siblingParams, fieldKey)
     case 'not_equals':
