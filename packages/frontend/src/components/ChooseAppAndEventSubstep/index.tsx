@@ -281,11 +281,9 @@ function ChooseAppAndEventSubstep(
                       </Badge>
                     )}
                   </Flex>
-                  {option.description && (
-                    <Text mt={1} fontSize="xs">
-                      {option.description}
-                    </Text>
-                  )}
+                  <Text textStyle="body-2" color="base.content.medium">
+                    {option.description}
+                  </Text>
                 </Flex>
               </li>
             )}

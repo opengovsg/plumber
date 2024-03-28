@@ -2,6 +2,7 @@ import { IApp } from '@plumber/types'
 
 import customApiApp from './custom-api'
 import delayApp from './delay'
+import formatterApp from './formatter'
 import formsgApp from './formsg'
 import lettersgApp from './lettersg'
 import m365ExcelApp from './m365-excel'
@@ -19,6 +20,7 @@ import webhookApp from './webhook'
 const apps: Record<string, IApp> = {
   [customApiApp.key]: customApiApp,
   [delayApp.key]: delayApp,
+  [formatterApp.key]: formatterApp,
   [formsgApp.key]: formsgApp,
   [lettersgApp.key]: lettersgApp,
   [m365ExcelApp.key]: m365ExcelApp,
