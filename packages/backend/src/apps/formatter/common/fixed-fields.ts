@@ -23,7 +23,6 @@ export const VALUE_TO_TRANSFORM_FIELD: IField = {
   hiddenIf: {
     fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
     op: 'is_empty',
-    fieldValue: '',
   },
 }
 

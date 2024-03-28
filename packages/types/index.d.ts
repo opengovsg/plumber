@@ -246,7 +246,19 @@ export interface IFieldDropdownSource {
 
 export interface IFieldDropdownOption {
   label: string
+
+  /**
+   * Set `showOptionValue` to false if you do not want this to be shown in the
+   * dropdown. The value will also not be rendered if `description` if
+   * specified.
+   */
   value: boolean | string | number
+
+  /**
+   * If this is specified, this will be rendered instead of `value`. Note that
+   * this is always rendered if specified, even if `showOptionValue` is set to
+   * false.
+   */
   description?: string
 }
 

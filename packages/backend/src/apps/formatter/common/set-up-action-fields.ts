@@ -12,6 +12,8 @@ function validateFieldKeys(
   commonFields: IField[],
   transforms: TransformSpec[],
 ): void {
+  const seenTransformIds = new Set<string>()
+
   const seenFieldKeys = new Set<string>([
     SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
     VALUE_TO_TRANSFORM_FIELD_KEY,
@@ -34,7 +36,7 @@ function validateFieldKeys(
     for (const field of transform.fields) {
       if (field.hiddenIf) {
         throw new Error(
-          `Top level transfom field ${field.key} should not have hiddenIf.`,
+          `Top level transform field ${field.key} should not have hiddenIf.`,
         )
       }
 
@@ -44,6 +46,11 @@ function validateFieldKeys(
         )
       }
       seenFieldKeys.add(field.key)
+
+      if (seenTransformIds.has(transform.id)) {
+        throw new Error(`Found non-unique transform ${transform.id}`)
+      }
+      seenTransformIds.add(transform.id)
     }
   }
 }
@@ -90,7 +97,6 @@ export function setUpActionFields({
     field.hiddenIf = {
       fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
       op: 'is_empty',
-      fieldValue: '',
     }
   }
 

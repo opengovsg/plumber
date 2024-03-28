@@ -11,7 +11,7 @@ const app: IApp = {
   apiBaseUrl: '',
   primaryColor: '000000',
   actions,
-  description: `Format your data`,
+  description: 'Format your data',
 }
 
 export default app
