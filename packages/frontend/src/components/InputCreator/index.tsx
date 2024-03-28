@@ -9,6 +9,7 @@ import RichTextEditor from 'components/RichTextEditor'
 import TextField from 'components/TextField'
 import { isFieldHidden } from 'helpers/isFieldHidden'
 import useDynamicData from 'hooks/useDynamicData'
+import JavaScriptEditor from 'components/JavaScriptEditor'
 
 export type InputCreatorProps = {
   schema: IField
@@ -50,7 +51,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     placeholder,
     dependsOn,
   } = schema
-
+  console.log('schema', schema)
   const { data, loading, refetch } = useDynamicData(stepId, schema)
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
 
@@ -101,6 +102,10 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         isRich
       />
     )
+  }
+
+  if (type === 'string' && name === 'code') {
+    return (<JavaScriptEditor />)
   }
 
   if (type === 'string' || type === 'multiline') {
