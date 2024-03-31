@@ -1,6 +1,7 @@
 import type { IConnection } from '@plumber/types'
 
 import * as React from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useLazyQuery, useMutation } from '@apollo/client'
 import { Card } from '@chakra-ui/react'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -32,7 +33,8 @@ const countTranslation = (value: React.ReactNode) => (
 
 function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const toast = useToast()
-  const [verificationVisible, setVerificationVisible] = React.useState(false)
+  const [verificationVisible, setVerificationVisible] = useState(false)
+  const [isVerified, setIsVerified] = useState(false)
   const [testConnection, { called: testCalled, loading: testLoading }] =
     useLazyQuery(TEST_CONNECTION, {
       fetchPolicy: 'network-only',
@@ -46,18 +48,17 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const [deleteConnection] = useMutation(DELETE_CONNECTION)
 
   const formatMessage = useFormatMessage()
-  const { id, key, formattedData, verified, createdAt, flowCount } =
-    props.connection
+  const { id, key, formattedData, createdAt, flowCount } = props.connection
 
-  const contextButtonRef = React.useRef<SVGSVGElement | null>(null)
-  const [anchorEl, setAnchorEl] = React.useState<SVGSVGElement | null>(null)
+  const contextButtonRef = useRef<SVGSVGElement | null>(null)
+  const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null)
 
   const handleClose = () => {
     setAnchorEl(null)
   }
 
   const onContextMenuClick = () => setAnchorEl(contextButtonRef.current)
-  const onContextMenuAction = React.useCallback(
+  const onContextMenuAction = useCallback(
     async (
       _event: React.MouseEvent<Element, MouseEvent>,
       action: { [key: string]: string },
@@ -86,7 +87,17 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         })
       } else if (action.type === 'test') {
         setVerificationVisible(true)
-        testConnection({ variables: { connectionId: id } })
+        const testResults = await testConnection({
+          variables: { connectionId: id },
+        })
+        if (
+          testResults.data?.testConnection?.connectionVerified === false ||
+          testResults.data?.testConnection?.registrationVerified === false
+        ) {
+          setIsVerified(false)
+        } else {
+          setIsVerified(true)
+        }
       }
     },
     [deleteConnection, id, testConnection, toast],
@@ -133,7 +144,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
                 {verificationVisible &&
                   testCalled &&
                   !testLoading &&
-                  verified && (
+                  isVerified && (
                     <>
                       <CheckCircleIcon fontSize="small" color="success" />
                       <Typography variant="caption">
@@ -144,7 +155,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
                 {verificationVisible &&
                   testCalled &&
                   !testLoading &&
-                  !verified && (
+                  !isVerified && (
                     <>
                       <ErrorIcon fontSize="small" color="error" />
                       <Typography variant="caption">

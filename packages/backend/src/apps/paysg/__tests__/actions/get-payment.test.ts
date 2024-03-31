@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import getPaymentAction from '../../actions/get-payment'
-import { getApiBaseUrl } from '../../common/api'
 import { MOCK_PAYMENT } from '../utils'
 
 const mocks = vi.hoisted(() => ({
@@ -50,18 +49,16 @@ describe('get payment', () => {
     'invokes the correct URL based on the API key and payment ID',
     async (apiKey) => {
       $.auth.data.apiKey = apiKey
-      const expectedBaseUrl = getApiBaseUrl($.auth.data.apiKey)
-
       await getPaymentAction.run($)
 
       expect(mocks.httpGet).toHaveBeenCalledWith(
-        '/v1/payment-services/sample-payment-service-id/payments/sample-payment-id',
-        expect.objectContaining({
-          baseURL: expectedBaseUrl,
-          headers: {
-            'x-api-key': $.auth.data.apiKey,
+        '/v1/payment-services/:paymentServiceId/payments/:paymentId',
+        {
+          urlPathParams: {
+            paymentServiceId: 'sample-payment-service-id',
+            paymentId: 'sample-payment-id',
           },
-        }),
+        },
       )
     },
   )
