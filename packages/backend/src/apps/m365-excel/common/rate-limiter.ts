@@ -62,11 +62,24 @@ const excelLimiter = new RateLimiterRedis({
   storeClient: redisClient,
 })
 
+// FIXME (ogp-weeloong): it turns out MS Graph cannot tolerate 10 QPS spikes
+// and will reply with HTTP 429 if we do that (even though it's technically
+// within rate limits). This is a workaround to stop spikes until we get
+// BullMQ pro in.
+const spikePreventer = new RateLimiterRedis({
+  // Analyzing logs over month of March, ~7 QPS is our error-free QPS.
+  points: 7,
+  duration: 1,
+  keyPrefix: 'm365-spike-preventer',
+  storeClient: redisClient,
+})
+
 const unifiedRateLimiter = new RateLimiterUnion(
   graphApiLimiter,
   sharePointPerMinuteLimiter,
   sharePointPerDayLimiter,
   excelLimiter,
+  spikePreventer,
 )
 
 type UnionRateLimiterRes = Record<
