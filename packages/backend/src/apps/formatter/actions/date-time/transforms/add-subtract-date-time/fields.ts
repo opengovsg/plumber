@@ -27,10 +27,10 @@ const opsSchema = z.object({
 
 export const fieldSchema = z
   .object({
-    addSubtractTimeOps: z.array(opsSchema).min(1),
+    addSubtractDateTimeOps: z.array(opsSchema).min(1),
   })
   .transform((params) => ({
-    ops: params.addSubtractTimeOps,
+    ops: params.addSubtractDateTimeOps,
   }))
 
 function sentenceCase(s: string): string {
@@ -40,7 +40,7 @@ function sentenceCase(s: string): string {
 export const fields: TransformSpec['fields'] = [
   {
     label: 'Specify the amount of time you want to add or subtract',
-    key: ensureZodObjectKey(fieldSchema.sourceType(), 'addSubtractTimeOps'),
+    key: ensureZodObjectKey(fieldSchema.sourceType(), 'addSubtractDateTimeOps'),
     type: 'multirow' as const,
     required: true,
     subFields: [
