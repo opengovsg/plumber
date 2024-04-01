@@ -91,6 +91,18 @@ directive @specifiedBy(
   url: String!
 ) on SCALAR
 
+enum FieldVisibilityOp {
+  always_true
+  equals
+  not_equals
+}
+
+type FieldVisibilityCondition {
+  op: FieldVisibilityOp!
+  fieldKey: String
+  fieldValue: String
+}
+
 type Action {
   name: String
   key: String
@@ -120,7 +132,7 @@ type ActionSubstepArgument {
   value: JSONObject
   source: ActionSubstepArgumentSource
   dependsOn: [String]
-  hidden: Boolean
+  hiddenIf: FieldVisibilityCondition
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
@@ -486,6 +498,8 @@ type TriggerSubstepArgument {
   showOptionValue: Boolean
   options: [ArgumentOption]
   value: JSONObject
+  hiddenIf: FieldVisibilityCondition
+
   # Only for multirow
   subFields: [TriggerSubstepArgument]
 }

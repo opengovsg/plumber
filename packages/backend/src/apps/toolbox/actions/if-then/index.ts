@@ -78,7 +78,10 @@ const action: IRawAction = {
       type: 'string' as const,
       label: 'FILE A BUG IF YOU SEE THIS',
 
-      hidden: true,
+      // Always hidden
+      hiddenIf: {
+        op: 'always_true',
+      },
       required: false,
       variables: false,
     },
