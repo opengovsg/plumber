@@ -1,5 +1,7 @@
 import { IApp } from '@plumber/types'
 
+import getTransferDetails from '@/helpers/get-basic-transfer-details'
+
 import addAuthHeader from './common/add-auth-header'
 import rateLimitHandler from './common/interceptor/rate-limit'
 import actions from './actions'
@@ -19,6 +21,7 @@ const app: IApp = {
   dynamicData,
   auth,
   actions,
+  getTransferDetails,
 }
 
 export default app

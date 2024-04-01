@@ -1,8 +1,4 @@
-import { IFlow } from '@plumber/types'
-
-import { useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
-import { useQuery } from '@apollo/client'
+import { useContext, useState } from 'react'
 import {
   Center,
   Flex,
@@ -18,9 +14,8 @@ import {
   Input,
   Spinner,
 } from '@opengovsg/design-system-react'
-import { GET_FLOW } from 'graphql/queries/get-flow'
+import { EditorSettingsContext } from 'contexts/EditorSettings'
 
-import * as URLS from './../../config/urls'
 import DisallowRequestInfobox from './FlowTransfer/DisallowRequestInfobox'
 import FlowTransferConnections from './FlowTransfer/FlowTransferConnections'
 import PublishedFlowInfobox from './FlowTransfer/PublishedFlowInfobox'
@@ -40,21 +35,16 @@ export default function FlowTransfer() {
     'Please enter a valid account on Plumber e.g. me@example.gov.sg'
   const { isOpen, onOpen, onClose } = useDisclosure()
 
-  const { flowId } = useParams()
   const [newOwnerEmail, setNewOwnerEmail] = useState<string>('')
-  const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
-  const flow: IFlow = data?.getFlow
 
-  const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
+  const { flow } = useContext(EditorSettingsContext)
+
+  const requestedEmail = flow.pendingTransfer?.newOwner.email ?? ''
 
   // boolean values to indicate whether infoboxes and button can be enabled
   const isInputEmpty = newOwnerEmail === ''
-  const shouldDisableInput = flow?.active || requestedEmail !== ''
-
-  // need to navigate user to 404 page when flow is transferred
-  if (!loading && !flow) {
-    return <Navigate to={URLS.FOUR_O_FOUR} />
-  }
+  const hasRequestedEmail = requestedEmail !== ''
+  const shouldDisableInput = flow.active || hasRequestedEmail
 
   return (
     <Flex
@@ -67,25 +57,12 @@ export default function FlowTransfer() {
     >
       <Text textStyle="h3-semibold">Transfer Pipe</Text>
 
-      {/* TODO: React suspense should fix all the loading */}
-      {loading ? (
-        <CustomSpinner />
-      ) : (
-        flow?.active && <PublishedFlowInfobox isActive={flow.active} />
-      )}
+      {flow.active && <PublishedFlowInfobox />}
 
-      {loading ? (
-        <CustomSpinner />
-      ) : (
-        !!requestedEmail && <DisallowRequestInfobox flow={flow} />
-      )}
+      {hasRequestedEmail && <DisallowRequestInfobox />}
 
       {/* Connections appear if pipe is unpublished */}
-      {loading ? (
-        <CustomSpinner />
-      ) : (
-        !flow?.active && <FlowTransferConnections flow={flow} />
-      )}
+      {!flow.active && <FlowTransferConnections />}
 
       <FormControl isInvalid={!shouldDisableInput && isInputEmpty}>
         <Flex flexDir="column" gap={2}>

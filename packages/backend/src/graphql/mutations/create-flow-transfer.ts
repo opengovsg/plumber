@@ -16,6 +16,12 @@ const createFlowTransfer = async (
 ) => {
   const { flowId, newOwnerEmail } = params.input
 
+  // check if flow belongs to the old owner first
+  await context.currentUser
+    .$relatedQuery('flows')
+    .where('id', flowId)
+    .throwIfNotFound('This pipe does not belong to you.')
+
   const newOwner = await User.query()
     .findOne({
       email: newOwnerEmail,

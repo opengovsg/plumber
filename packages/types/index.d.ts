@@ -339,6 +339,7 @@ export interface IApp {
    * with try / catch.
    */
   requestErrorHandler?: TRequestErrorHandler
+  getTransferDetails?($: IGlobalVariable): Promise<ITransferDetails> // TODO (mal): add null if necessary, check with Stacey
 }
 
 export type TBeforeRequest = (
@@ -412,6 +413,13 @@ export type ITriggerInstructions = Partial<{
   hideWebhookUrl: boolean
   errorMsg: string
 }>
+
+export type ITransferDetails = {
+  position: number
+  appName: string
+  connectionName: string
+  instructions?: string // TODO (mal): for phase 2
+}
 
 export interface IBaseTrigger {
   name: string

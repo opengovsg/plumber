@@ -43,6 +43,7 @@ type Query {
   getPlumberStats: Stats
   # Flow transfers
   getPendingFlowTransfers: [FlowTransfer!]!
+  getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
 }
 
 type Mutation {
@@ -84,7 +85,6 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
-  updateFlowOwner(input: UpdateFlowOwnerInput!): Flow!
 }
 
 """
@@ -485,6 +485,13 @@ type TriggerInstructions {
   errorMsg: String
 }
 
+type StepTransferDetails {
+  position: Int!
+  appName: String!
+  connectionName: String!
+  instructions: String
+}
+
 type TriggerSubstep {
   key: String
   name: String
@@ -708,10 +715,6 @@ enum FlowTransferStatus {
 input UpdateFlowTransferStatusInput {
   id: String!
   status: FlowTransferStatus!
-}
-
-input UpdateFlowOwnerInput {
-  id: String!
 }
 
 # End of flow transfers types

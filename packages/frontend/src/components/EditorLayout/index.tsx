@@ -2,8 +2,8 @@ import type { IFlow } from '@plumber/types'
 
 import * as React from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
-import { Link, Navigate, useParams } from 'react-router-dom'
-import { useMutation, useQuery } from '@apollo/client'
+import { Link, useParams } from 'react-router-dom'
+import { ApolloError, useMutation, useQuery } from '@apollo/client'
 import {
   Box,
   Flex,
@@ -27,6 +27,7 @@ import { EditorProvider } from 'contexts/Editor'
 import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
 import { GET_FLOW } from 'graphql/queries/get-flow'
+import InvalidEditorPage from 'pages/Editor/components/InvalidEditorPage'
 
 import EditorSnackbar from './EditorSnackbar'
 
@@ -34,7 +35,9 @@ export default function EditorLayout(): React.ReactElement {
   const { flowId } = useParams()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
-  const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
+  const { data, loading, error } = useQuery(GET_FLOW, {
+    variables: { id: flowId },
+  })
   const flow: IFlow = data?.getFlow
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
@@ -82,9 +85,12 @@ export default function EditorLayout(): React.ReactElement {
     [flow?.id, flowId, updateFlowStatus],
   )
 
-  // need to navigate user to 404 page when flow is transferred
-  if (!loading && !flow) {
-    return <Navigate to={URLS.FOUR_O_FOUR} />
+  // navigate user to not found page if flow does not belong to the user
+  if (
+    error instanceof ApolloError &&
+    error?.graphQLErrors?.find((e) => e.message === 'NotFoundError')
+  ) {
+    return <InvalidEditorPage />
   }
 
   return (
