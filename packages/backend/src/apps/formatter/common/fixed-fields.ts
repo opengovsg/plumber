@@ -1,4 +1,4 @@
-import type { IField } from '@plumber/types'
+import type { IFieldDropdown, IFieldText } from '@plumber/types'
 
 import z from 'zod'
 
@@ -20,7 +20,7 @@ export const VALUE_TO_TRANSFORM_FIELD_KEY = ensureZodObjectKey(
   'valueToTransform',
 )
 
-export const VALUE_TO_TRANSFORM_FIELD: IField = {
+export const VALUE_TO_TRANSFORM_FIELD = {
   label: 'Value to transform',
   key: VALUE_TO_TRANSFORM_FIELD_KEY,
   type: 'string' as const,
@@ -30,11 +30,11 @@ export const VALUE_TO_TRANSFORM_FIELD: IField = {
     fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
     op: 'is_empty',
   },
-}
+} satisfies IFieldText
 
 export function createSelectTransformDropdown(
   transforms: TransformSpec[],
-): IField {
+): IFieldDropdown {
   return {
     label: 'How do you want to transform your data?',
     key: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
