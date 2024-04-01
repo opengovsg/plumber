@@ -12,18 +12,6 @@ import z from 'zod'
 interface DateFormatConverter {
   parse: (input: string) => DateTime
   stringify: (dateTime: DateTime) => string
-
-  // Extracts out time components that are present for the particular format
-  // e.g ISO 8601 formats should have everything, but FormSG date fields should
-  // not have second/minute/hour.
-  components: (dateTime: DateTime) => {
-    second?: DateTime['second']
-    minute?: DateTime['minute']
-    hour?: DateTime['hour']
-    day?: DateTime['day']
-    month?: DateTime['month']
-    year?: DateTime['year']
-  }
 }
 
 const supportedFormats = z.enum(['formsgSubmissionTime', 'formsgDateField'])
@@ -32,24 +20,11 @@ const formatConverters = {
   formsgSubmissionTime: {
     parse: (input: string): DateTime => DateTime.fromISO(input),
     stringify: (dateTime: DateTime): string => dateTime.toISO(),
-    components: (dateTime: DateTime) => ({
-      second: dateTime.second,
-      minute: dateTime.minute,
-      hour: dateTime.hour,
-      day: dateTime.day,
-      month: dateTime.month,
-      year: dateTime.year,
-    }),
   },
   formsgDateField: {
     parse: (input: string): DateTime =>
       DateTime.fromFormat(input, 'dd MMM yyyy'),
     stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
-    components: (dateTime: DateTime) => ({
-      day: dateTime.day,
-      month: dateTime.month,
-      year: dateTime.year,
-    }),
   },
 } satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
 
@@ -104,11 +79,4 @@ export function dateTimeToString(
   dateTime: DateTime,
 ): string {
   return formatConverters[dateTimeFormat].stringify(dateTime)
-}
-
-export function dateTimeComponents(
-  dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
-  dateTime: DateTime,
-): ReturnType<DateFormatConverter['components']> {
-  return formatConverters[dateTimeFormat].components(dateTime)
 }
