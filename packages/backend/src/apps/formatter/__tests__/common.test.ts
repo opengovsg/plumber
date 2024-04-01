@@ -91,64 +91,81 @@ describe('Common utility functions', () => {
   })
 
   describe('set up action fields', () => {
-    it("result has fixed fields, common fields and each transform's fields", () => {
-      // Deep clone as setUpActionFields modifies the input object (since it should
-      // only be called once).
-      const actionFields = setUpActionFields(
-        cloneDeep({
-          commonFields: [SAMPLE_COMMON_FIELD],
-          transforms: [SAMPLE_TRANSFORM_ONE, SAMPLE_TRANSFORM_TWO],
-        }),
+    // Deep clone arguments as setUpActionFields modifies the input object.
+    let sampleArgs: Parameters<typeof setUpActionFields>[0]
+
+    beforeEach(() => {
+      sampleArgs = cloneDeep({
+        commonFields: [SAMPLE_COMMON_FIELD],
+        transforms: [SAMPLE_TRANSFORM_ONE, SAMPLE_TRANSFORM_TWO],
+      })
+    })
+
+    it("result has fixed fields, common fields and each transform's fields in the input order", () => {
+      const actionFields = setUpActionFields(sampleArgs)
+      const expectedSelectTransformDropdown = createSelectTransformDropdown(
+        sampleArgs.transforms,
       )
 
-      // Fixed fields
-      expect(actionFields).toEqual(
-        expect.arrayContaining(VALUE_TO_TRANSFORM_FIELD),
-      )
-      expect(actionFields).toContainEqual(
-        expect.objectContaining({ key: 'SELECT_TRANSFORM_DROPDOWN_FIELD_KEY' }),
-      )
+      // We use lots of objectContaing as the function inserts hiddenIf into the
+      // fields, and these will be tested in a sepearate unit test.
+      expect(actionFields).toEqual([
+        // Fixed fields
+        expect.objectContaining(expectedSelectTransformDropdown),
+        expect.objectContaining(VALUE_TO_TRANSFORM_FIELD),
 
-      // Common fields
-      expect(actionFields).toContainEqual(SAMPLE_COMMON_FIELD)
+        // Common fields
+        expect.objectContaining(SAMPLE_COMMON_FIELD),
 
-      // Transforms' fields
-      for (const field of SAMPLE_TRANSFORM_ONE.fields) {
-        expect(actionFields).toContainEqual(field)
-      }
-      for (const field of SAMPLE_TRANSFORM_TWO.fields) {
-        expect(actionFields).toContainEqual(field)
-      }
+        // Transforms' fields
+        ...SAMPLE_TRANSFORM_ONE.fields.map(expect.objectContaining),
+        ...SAMPLE_TRANSFORM_TWO.fields.map(expect.objectContaining),
+      ])
     })
 
     it("hides each transform's fields until they are chosen", () => {
-      const actionFields = setUpActionFields(
-        cloneDeep({
-          commonFields: [],
-          transforms: [SAMPLE_TRANSFORM_ONE, SAMPLE_TRANSFORM_TWO],
-        }),
-      )
+      const actionFields = setUpActionFields(sampleArgs)
 
-      for (const field of SAMPLE_TRANSFORM_ONE.fields) {
-        expect(actionFields).toContainEqual({
-          ...field,
-          hiddenIf: {
-            fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
-            op: 'not_equals',
-            fieldValue: SAMPLE_TRANSFORM_ONE.id,
+      expect(actionFields).toEqual(
+        expect.arrayContaining([
+          ...SAMPLE_TRANSFORM_ONE.fields.map((field) =>
+            expect.objectContaining({
+              ...field,
+              hiddenIf: {
+                fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
+                op: 'not_equals',
+                fieldValue: SAMPLE_TRANSFORM_ONE.id,
+              },
+            }),
+          ),
+          ...SAMPLE_TRANSFORM_TWO.fields.map((field) =>
+            expect.objectContaining({
+              ...field,
+              hiddenIf: {
+                fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
+                op: 'not_equals',
+                fieldValue: SAMPLE_TRANSFORM_TWO.id,
+              },
+            }),
+          ),
+        ]),
+      )
+    })
+
+    it('hides common fields until a transform is chosen', () => {
+      const actionFields = setUpActionFields(sampleArgs)
+
+      expect(actionFields).toEqual(
+        expect.arrayContaining([
+          {
+            ...SAMPLE_COMMON_FIELD,
+            hiddenIf: {
+              fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
+              op: 'is_empty',
+            },
           },
-        })
-      }
-      for (const field of SAMPLE_TRANSFORM_TWO.fields) {
-        expect(actionFields).toContainEqual({
-          ...field,
-          hiddenIf: {
-            fieldKey: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
-            op: 'not_equals',
-            fieldValue: SAMPLE_TRANSFORM_TWO.id,
-          },
-        })
-      }
+        ]),
+      )
     })
   })
 })

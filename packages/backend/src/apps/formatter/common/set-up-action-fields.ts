@@ -9,8 +9,8 @@ import {
 import type { TransformSpec } from './transform-spec'
 
 function validateFieldKeys(
-  commonFields: IField[],
-  transforms: TransformSpec[],
+  commonFields: ReadonlyArray<IField>,
+  transforms: ReadonlyArray<TransformSpec>,
 ): void {
   const seenTransformIds = new Set<string>()
 
@@ -79,9 +79,11 @@ function validateFieldKeys(
  *    the dropdown in 1), no other fields (including the "value to transform"
  *    field and the action's common fields) are visible.
  *
- * NOTE: This assumes that common fields and transforms' top level fields do
- *       not have visibility conditions. This invariant is enforced by the
- *       validator.
+ * NOTE 1: This assumes that common fields and transforms' top level fields do
+ *         not have visibility conditions. This invariant is enforced by the
+ *         validator.
+ * NOTE 2: The input arguments are modified, because it is not expected for this
+ *         to be invoked more than once per action.
  */
 export function setUpActionFields({
   commonFields,
