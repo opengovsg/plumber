@@ -9,7 +9,7 @@ const app: IApp = {
   name: 'LetterSG',
   key: 'lettersg',
   iconUrl: '{BASE_URL}/apps/lettersg/assets/favicon.svg',
-  authDocUrl: 'https://guide.letters.gov.sg/', // TODO (mal): change this to our own guide
+  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/lettersg',
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '000000',
