@@ -3,6 +3,7 @@ import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 import isEmpty from 'lodash/isEmpty'
 
 import getDataOutMetadata from './get-data-out-metadata'
+import getMockData from './get-mock-data'
 
 export const NricFilter = {
   None: 'none',
@@ -17,10 +18,7 @@ const trigger: IRawTrigger = {
   type: 'webhook',
   description: 'Triggers when a new form submission is received',
   webhookTriggerInstructions: {
-    beforeUrlMsg: `# Make a new submission to the form you connected. Then, click test step.`,
     hideWebhookUrl: true,
-    errorMsg:
-      'Make a new submission to the form you connected and test the step again.',
   },
   arguments: [
     {
@@ -57,14 +55,14 @@ const trigger: IRawTrigger = {
 
   async testRun($: IGlobalVariable) {
     const lastExecutionStep = await $.getLastExecutionStep()
-    if (!isEmpty(lastExecutionStep?.dataOut)) {
-      await $.pushTriggerItem({
-        raw: lastExecutionStep?.dataOut,
-        meta: {
-          internalId: '',
-        },
-      })
-    }
+    await $.pushTriggerItem({
+      raw: !isEmpty(lastExecutionStep?.dataOut)
+        ? lastExecutionStep?.dataOut
+        : await getMockData($),
+      meta: {
+        internalId: '',
+      },
+    })
   },
 }
 
