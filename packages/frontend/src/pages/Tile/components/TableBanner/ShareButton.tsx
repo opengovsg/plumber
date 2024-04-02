@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { BiCopy, BiShareAlt } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
@@ -19,6 +19,7 @@ import {
 } from '@chakra-ui/react'
 import {
   Button,
+  ButtonProps,
   FormHelperText,
   IconButton,
   Input,
@@ -59,10 +60,8 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
     <Modal isOpen={true} onClose={onClose} motionPreset="none">
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>
-          <Text textStyle="h6">Share tile</Text>
-          <ModalCloseButton />
-        </ModalHeader>
+        <ModalHeader>Share tile</ModalHeader>
+        <ModalCloseButton />
         <ModalBody mt={2}>
           <FormControl>
             <VStack spacing={2} alignItems="flex-start">
@@ -120,18 +119,18 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
   )
 }
 
-const ExportCsvButton = forwardRef<HTMLButtonElement>((_, ref) => {
+const ShareButton = (props: ButtonProps) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   return (
     <>
       <Button
-        ref={ref}
         variant="clear"
         colorScheme="secondary"
         size="xs"
         onClick={onOpen}
         leftIcon={<BiShareAlt />}
+        {...props}
       >
         Share
       </Button>
@@ -139,6 +138,6 @@ const ExportCsvButton = forwardRef<HTMLButtonElement>((_, ref) => {
       {isOpen && <ShareModal onClose={onClose} />}
     </>
   )
-})
+}
 
-export default ExportCsvButton
+export default ShareButton

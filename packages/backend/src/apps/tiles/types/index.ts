@@ -12,6 +12,7 @@ export interface CreateRowOutput extends IJSONObject {
 }
 
 export interface UpdateRowOutput extends IJSONObject {
-  rowId: string
-  row: Record<string, string | number>
+  rowId?: string
+  row?: Record<string, string | number>
+  updated: boolean
 }

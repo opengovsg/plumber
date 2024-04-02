@@ -34,16 +34,14 @@ export default function Tiles(): JSX.Element {
         alignItems="stretch"
         gap={8}
       >
-        {!isEmpty && (
-          <Flex
-            pl={{ base: 0, sm: 8 }}
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <PageTitle title={TILES_TITLE} />
-            <CreateTileButton />
-          </Flex>
-        )}
+        <Flex
+          pl={{ base: 0, sm: 8 }}
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <PageTitle title={TILES_TITLE} />
+          {!isEmpty && <CreateTileButton />}
+        </Flex>
         {isEmpty ? <EmptyTileList /> : <TileList tiles={data.getTables} />}
       </Flex>
     </Container>
