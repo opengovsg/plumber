@@ -15,7 +15,7 @@ export function getEmptyConnectionDetails(
   return {
     position,
     appName,
-    connectionName: 'No connection is selected',
+    instructions: 'No connection is selected',
   }
 }
 

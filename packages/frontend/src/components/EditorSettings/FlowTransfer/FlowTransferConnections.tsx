@@ -10,13 +10,16 @@ import { GET_FLOW_TRANSFER_DETAILS } from 'graphql/queries/get-flow-transfer-det
 import { CustomSpinner } from '../FlowTransfer'
 
 function StepConnectionDisplay(props: ITransferDetails) {
-  const { appName, position, connectionName } = props
+  const { appName, position, connectionName, instructions } = props
   return (
     <Flex flexDir="column" gap={2}>
       <Badge colorScheme="warning">
         Step {position}: {appName}
       </Badge>
       <Text textStyle="body-1">{connectionName}</Text>
+      <Text textStyle="body-1" color="base.content.medium">
+        {instructions}
+      </Text>
     </Flex>
   )
 }
@@ -49,12 +52,13 @@ export default function FlowTransferConnections() {
         </Text>
 
         {flowTransferDetails.map(
-          ({ appName, position, connectionName }, index) => (
+          ({ appName, position, connectionName, instructions }, index) => (
             <StepConnectionDisplay
               key={index}
               appName={appName}
               position={position}
               connectionName={connectionName}
+              instructions={instructions}
             />
           ),
         )}

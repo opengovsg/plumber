@@ -37,7 +37,7 @@ export default function FlowTransferWarning() {
   }, [flowTransferId, updateFlowTransferStatus, toast])
 
   return (
-    <Infobox variant="error">
+    <Infobox>
       <Flex
         flexDir={{ base: 'column', md: 'row' }}
         gap={2}

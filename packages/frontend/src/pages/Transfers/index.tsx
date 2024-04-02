@@ -1,7 +1,7 @@
 import { IFlowTransfer } from '@plumber/types'
 
 import { BiLeftArrowAlt } from 'react-icons/bi'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex, Icon, Text, useDisclosure } from '@chakra-ui/react'
 import { Button, Spinner } from '@opengovsg/design-system-react'
@@ -13,7 +13,6 @@ import TransferRequestRow from './components/TransferRequestRow'
 
 export default function Transfers() {
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const navigate = useNavigate()
 
   const { data, loading } = useQuery(GET_PENDING_FLOW_TRANSFERS)
   const flowTransfers: IFlowTransfer[] = data?.getPendingFlowTransfers
@@ -21,15 +20,23 @@ export default function Transfers() {
   return (
     <Container>
       <Flex flexDir="column">
-        <Flex mb={6} px={8} alignItems="center" justifyContent="space-between">
-          <Text textStyle="h4">Pipe Transfers</Text>
+        <Flex
+          flexDir="column"
+          mb={6}
+          px={8}
+          gap={11}
+          justifyContent="space-between"
+        >
           <Button
-            size="sm"
-            onClick={() => navigate(URLS.FLOWS)}
+            as={Link}
+            to={URLS.FLOWS}
             leftIcon={<Icon as={BiLeftArrowAlt} boxSize={5} />}
+            variant="link"
+            color="primary.600"
           >
-            Back to pipes
+            <Text textStyle="subhead-1">Back to dashboard</Text>
           </Button>
+          <Text textStyle="h4">Pipe Transfers</Text>
         </Flex>
         {loading ? (
           <Center>

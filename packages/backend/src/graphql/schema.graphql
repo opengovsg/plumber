@@ -488,7 +488,7 @@ type TriggerInstructions {
 type StepTransferDetails {
   position: Int!
   appName: String!
-  connectionName: String!
+  connectionName: String
   instructions: String
 }
 

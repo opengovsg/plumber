@@ -32,7 +32,7 @@ export function CustomSpinner() {
 
 export default function FlowTransfer() {
   const inputDescriptionText =
-    'Please enter a valid account on Plumber e.g. me@example.gov.sg'
+    'Please enter the email account you wish to transfer'
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const [newOwnerEmail, setNewOwnerEmail] = useState<string>('')
@@ -65,7 +65,7 @@ export default function FlowTransfer() {
       {!flow.active && <FlowTransferConnections />}
 
       <FormControl isInvalid={!shouldDisableInput && isInputEmpty}>
-        <Flex flexDir="column" gap={2}>
+        <Flex flexDir="column" gap={1}>
           <FormLabel isRequired={true}>Transfer Pipe Ownership</FormLabel>
           <Input
             disabled={shouldDisableInput}

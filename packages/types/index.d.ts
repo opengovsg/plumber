@@ -414,11 +414,12 @@ export type ITriggerInstructions = Partial<{
   errorMsg: string
 }>
 
+// TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2
 export type ITransferDetails = {
   position: number
   appName: string
-  connectionName: string
-  instructions?: string // TODO (mal): for phase 2
+  connectionName?: string // could be no connection
+  instructions?: string
 }
 
 export interface IBaseTrigger {

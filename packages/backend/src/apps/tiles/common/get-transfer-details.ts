@@ -5,12 +5,13 @@ import TableMetadata from '@/models/table-metadata'
 async function getTransferDetails(
   $: IGlobalVariable,
 ): Promise<ITransferDetails> {
+  // TODO (mal): check whether to not display tile if new owner has no access
   const tableId = $.step.parameters.tableId as string
   if (!tableId) {
     return {
       position: $.step.position,
       appName: $.app.name,
-      connectionName: 'No tile is selected',
+      instructions: 'No tile is selected',
     }
   }
 

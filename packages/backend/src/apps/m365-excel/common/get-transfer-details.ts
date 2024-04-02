@@ -17,7 +17,7 @@ async function getTransferDetails(
     return {
       position: $.step.position,
       appName: $.app.name,
-      connectionName: 'Invalid connection: Missing tenant',
+      instructions: 'Invalid connection: Missing tenant',
     }
   }
 
@@ -25,7 +25,7 @@ async function getTransferDetails(
     return {
       position: $.step.position,
       appName: $.app.name,
-      connectionName: 'Invalid connection: Missing folder',
+      instructions: 'Invalid connection: Missing folder',
     }
   }
 
@@ -35,7 +35,7 @@ async function getTransferDetails(
     return {
       position: $.step.position,
       appName: $.app.name,
-      connectionName: 'No M365 file is selected',
+      instructions: 'No M365 file is selected',
     }
   }
 
@@ -49,7 +49,7 @@ async function getTransferDetails(
     return {
       position: $.step.position,
       appName: $.app.name,
-      connectionName: 'No M365 file is found',
+      instructions: 'No M365 file is found',
     }
   }
 
