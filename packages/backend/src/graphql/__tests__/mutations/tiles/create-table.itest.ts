@@ -27,7 +27,7 @@ describe('create table mutation', () => {
     expect(rowCount).toBe(0)
   })
 
-  it('should create a table and with placeholder rows and colujmns', async () => {
+  it('should create a table and with placeholder rows and columns', async () => {
     const table = await createTable(
       null,
       { input: { name: 'Test Table', isBlank: false } },

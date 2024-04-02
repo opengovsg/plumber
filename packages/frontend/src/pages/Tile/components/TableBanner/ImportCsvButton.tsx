@@ -42,6 +42,13 @@ interface ValidParseResult extends ParseResult<Record<string, string>> {
   meta: SetRequired<ParseMeta, 'fields'>
 }
 
+type IMPORT_STATUS =
+  | 'ready'
+  | 'creating columns'
+  | 'importing'
+  | 'completed'
+  | 'error'
+
 // 2 MB in bytes
 const MAX_FILE_SIZE = 2 * 1000 * 1000
 // Add row chunk size
@@ -75,9 +82,7 @@ export const ImportCsvModalContent = ({
     [tableColumns],
   )
 
-  const [importStatus, setImportStatus] = useState<
-    'ready' | 'creating columns' | 'importing' | 'completed' | 'error'
-  >('ready')
+  const [importStatus, setImportStatus] = useState<IMPORT_STATUS>('ready')
   const [rowsToImport, setRowsToImport] = useState(0)
   const [rowsImported, setRowsImported] = useState(0)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
