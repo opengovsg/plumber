@@ -1,10 +1,15 @@
-import { DateTime } from 'luxon'
+import { DateTime, Settings as LuxonSettings } from 'luxon'
 import { describe, expect, it } from 'vitest'
 
 import {
   dateTimeToString,
   parseDateTime,
 } from '../actions/date-time/common/date-time-format'
+
+// TZ formatting replicated here (see appConfig) as tests don't load the app
+// config module.
+LuxonSettings.defaultZone = 'Asia/Singapore'
+LuxonSettings.defaultLocale = 'en-SG'
 
 describe('common date-time formatter functions', () => {
   describe('date-time formats', () => {
