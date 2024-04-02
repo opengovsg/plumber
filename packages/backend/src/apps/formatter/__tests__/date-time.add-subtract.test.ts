@@ -1,8 +1,14 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import { Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { transformData } from '../actions/date-time/transforms/add-subtract-date-time/transform-data'
+
+// TZ formatting replicated here (see appConfig) as tests don't load the app
+// config module.
+LuxonSettings.defaultZone = 'Asia/Singapore'
+LuxonSettings.defaultLocale = 'en-SG'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
