@@ -1,12 +1,12 @@
 import { ITableColumnMetadata, ITableMetadata } from '@plumber/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BiImport } from 'react-icons/bi'
-import { BsCheckCircle, BsPlusCircleFill } from 'react-icons/bs'
+import { BiCheck, BiChevronDown, BiChevronUp, BiImport } from 'react-icons/bi'
 import { useLazyQuery, useMutation } from '@apollo/client'
 import {
   Box,
   Card,
+  Collapse,
   Flex,
   List,
   ListIcon,
@@ -20,6 +20,7 @@ import {
   ModalOverlay,
   Progress,
   Text,
+  useBoolean,
   useDisclosure,
 } from '@chakra-ui/react'
 import {
@@ -54,6 +55,78 @@ const MAX_FILE_SIZE = 2 * 1000 * 1000
 // Add row chunk size
 const CHUNK_SIZE = 100
 
+const ImportStatus = ({
+  columnsToCreate,
+  errorMsg,
+  importStatus,
+  rowsImported,
+  rowsToImport,
+}: {
+  columnsToCreate: string[]
+  errorMsg: string | null
+  importStatus: IMPORT_STATUS
+  rowsImported: number
+  rowsToImport: number
+}) => {
+  const [isColumnDataExpanded, setIsColumnDataExpanded] = useBoolean(false)
+
+  switch (importStatus) {
+    case 'ready':
+      if (!columnsToCreate.length) {
+        return null
+      }
+      return (
+        <>
+          <Button
+            colorScheme="secondary"
+            variant="link"
+            onClick={setIsColumnDataExpanded.toggle}
+            rightIcon={
+              isColumnDataExpanded ? <BiChevronUp /> : <BiChevronDown />
+            }
+          >
+            {columnsToCreate.length} column(s) to create
+          </Button>
+          <Collapse in={isColumnDataExpanded}>
+            <List spacing={3} mt={4}>
+              {columnsToCreate.map((field, i) => {
+                return (
+                  <Flex key={i} alignItems="center">
+                    <ListIcon as={BiCheck} />
+                    <ListItem>{field}</ListItem>
+                  </Flex>
+                )
+              })}
+            </List>
+          </Collapse>
+        </>
+      )
+    case 'creating columns':
+      return (
+        <Box>
+          <Text>Creating Columns</Text>
+          <Progress mt={3} size="xs" isIndeterminate />
+        </Box>
+      )
+    case 'importing':
+      return (
+        <Box>
+          <Text>{`Importing rows ${rowsImported} of ${rowsToImport}`}</Text>
+          <Progress mt={3} size="xs" value={rowsImported} max={rowsToImport} />
+        </Box>
+      )
+    case 'completed':
+      return (
+        <Box>
+          <Text>{`${rowsToImport} rows imported`}</Text>
+          <Progress my={3} size="xs" value={100} />
+        </Box>
+      )
+    case 'error':
+      return <Text color="red.500">Error: {errorMsg}</Text>
+  }
+}
+
 export const ImportCsvModalContent = ({
   onClose,
   onPreImport,
@@ -83,13 +156,14 @@ export const ImportCsvModalContent = ({
   )
 
   const [importStatus, setImportStatus] = useState<IMPORT_STATUS>('ready')
+  const isImporting =
+    importStatus === 'importing' || importStatus === 'creating columns'
   const [rowsToImport, setRowsToImport] = useState(0)
   const [rowsImported, setRowsImported] = useState(0)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isParsing, setIsParsing] = useState(false)
   const [result, setResult] = useState<ValidParseResult | null>(null)
   const [columnsToCreate, setColumnsToCreate] = useState<string[]>([])
-  const [matchedColumns, setMatchedColumns] = useState<string[]>([])
   // Used for new table creation via import
   // This is used to check if the import has already started, so it doesnt run on every render
   const importStartedRef = useRef(false)
@@ -118,7 +192,8 @@ export const ImportCsvModalContent = ({
     }
     setIsParsing(true)
     Papa.parse(file, {
-      transformHeader: (header) => header.trim(),
+      // transform empty headers to '(empty)'
+      transformHeader: (header) => header.trim() || '(empty)',
       header: true,
       skipEmptyLines: true,
       complete: (parseResult) => {
@@ -128,9 +203,6 @@ export const ImportCsvModalContent = ({
           const columns = parseResult.meta.fields
           setColumnsToCreate(
             columns.filter((csvColumn) => !columnNamesSet.has(csvColumn)),
-          )
-          setMatchedColumns(
-            columns.filter((csvColumn) => columnNamesSet.has(csvColumn)),
           )
         }
       },
@@ -236,94 +308,15 @@ export const ImportCsvModalContent = ({
     }
   }, [onImport, onPreImport, tableId])
 
-  const importStatusComponent = useMemo(() => {
-    switch (importStatus) {
-      case 'ready':
-        if (!file) {
-          return null
-        }
-        return (
-          <>
-            {matchedColumns.length > 0 && (
-              <>
-                <Text color="green.600">
-                  {matchedColumns.length} columns matched
-                </Text>
-                <List spacing={3} my={2}>
-                  {matchedColumns.map((field, i) => {
-                    return (
-                      <Flex key={i} alignItems="center">
-                        <ListIcon as={BsCheckCircle} color={'green.500'} />
-                        <ListItem>{field}</ListItem>
-                      </Flex>
-                    )
-                  })}
-                </List>
-              </>
-            )}
-            {columnsToCreate.length > 0 && (
-              <>
-                <Text color="primary.600">
-                  {columnsToCreate.length} columns will be created
-                </Text>
-                <List spacing={3} my={2}>
-                  {columnsToCreate.map((field, i) => {
-                    return (
-                      <Flex key={i} alignItems="center">
-                        <ListIcon as={BsPlusCircleFill} color={'primary.500'} />
-                        <ListItem>{field}</ListItem>
-                      </Flex>
-                    )
-                  })}
-                </List>
-              </>
-            )}
-          </>
-        )
-      case 'creating columns':
-        return (
-          <Box>
-            <Text>Creating Columns</Text>
-            <Progress mt={3} size="xs" isIndeterminate />
-          </Box>
-        )
-      case 'importing':
-        return (
-          <Box>
-            <Text>{`Importing rows ${rowsImported} of ${rowsToImport}`}</Text>
-            <Progress
-              mt={3}
-              size="xs"
-              value={rowsImported}
-              max={rowsToImport}
-            />
-          </Box>
-        )
-      case 'completed':
-        return (
-          <Box>
-            <Text>{`${rowsToImport} rows imported`}</Text>
-            <Progress mt={3} size="xs" value={100} max={100} />
-          </Box>
-        )
-      case 'error':
-        return <Text color="red.500">`Error: ${errorMsg}`</Text>
-    }
-  }, [
-    columnsToCreate,
-    errorMsg,
-    file,
-    importStatus,
-    matchedColumns,
-    rowsImported,
-    rowsToImport,
-  ])
-
   return (
     <>
       <ModalHeader>Import CSV</ModalHeader>
-      <ModalCloseButton />
+      {!isImporting && <ModalCloseButton />}
       <ModalBody>
+        <Text my={4}>
+          Any imported data will be appended as new cells and will not overwrite
+          existing values.
+        </Text>
         <Attachment
           maxSize={MAX_FILE_SIZE}
           onChange={setFile}
@@ -343,31 +336,36 @@ export const ImportCsvModalContent = ({
                 Parsing file...
               </Flex>
             ) : (
-              importStatusComponent
+              <ImportStatus
+                columnsToCreate={columnsToCreate}
+                errorMsg={errorMsg}
+                importStatus={importStatus}
+                rowsImported={rowsImported}
+                rowsToImport={rowsToImport}
+              />
             )}
           </Card>
         )}
       </ModalBody>
 
       <ModalFooter>
-        <Flex w="100%">
+        <Flex gap={4}>
           {onBack && importStatus === 'ready' && (
-            <Button variant="outline" onClick={onBack}>
+            <Button variant="clear" colorScheme="secondary" onClick={onBack}>
               Back
             </Button>
           )}
-          {result && importStatus === 'completed' && (
-            <Button ml="auto" isDisabled={!!onPreImport} onClick={onClose}>
+          {importStatus === 'completed' && (
+            <Button isDisabled={!!onPreImport} onClick={onClose}>
               {onPreImport ? 'Redirecting...' : 'Done'}
             </Button>
           )}
-          {result && importStatus !== 'completed' && (
+          {importStatus !== 'completed' && (
             <Button
-              ml="auto"
-              isLoading={importStatus === 'importing'}
+              isLoading={isImporting}
               onClick={onPreImport ? onPreImport : onImport}
             >
-              {`Import ${result.data.length} rows`}
+              Import {result ? `${result?.data.length} rows` : ''}
             </Button>
           )}
         </Flex>

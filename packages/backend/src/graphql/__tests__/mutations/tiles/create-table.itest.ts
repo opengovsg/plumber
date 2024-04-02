@@ -55,4 +55,10 @@ describe('create table mutation', () => {
     expect(table.name).toBe('Test Table')
     expect(table2.name).toBe('Test Table')
   })
+
+  it('should throw an error when table name is empty', async () => {
+    await expect(
+      createTable(null, { input: { name: '', isBlank: false } }, context),
+    ).rejects.toThrow()
+  })
 })
