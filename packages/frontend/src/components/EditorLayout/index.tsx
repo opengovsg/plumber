@@ -42,6 +42,7 @@ export default function EditorLayout(): React.ReactElement {
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
+  const hasFlowTransfer = requestedEmail !== ''
 
   const onFlowNameUpdate = React.useCallback(
     async (name: string) => {
@@ -92,6 +93,8 @@ export default function EditorLayout(): React.ReactElement {
   ) {
     return <InvalidEditorPage />
   }
+
+  const isEditorReadOnly = hasFlowTransfer || flow?.active
 
   return (
     <>
@@ -150,11 +153,9 @@ export default function EditorLayout(): React.ReactElement {
           </TouchableTooltip>
 
           {/* Used a tooltip instead because the words take up too much space on mobile view */}
-          <TouchableTooltip
-            label={requestedEmail === '' ? '' : 'Transfer Requested'}
-          >
+          <TouchableTooltip label={hasFlowTransfer ? '' : 'Transfer Requested'}>
             <Button
-              isDisabled={requestedEmail !== ''}
+              isDisabled={hasFlowTransfer}
               isLoading={loading}
               spinner={<Spinner fontSize={24} />}
               size="md"
@@ -170,7 +171,7 @@ export default function EditorLayout(): React.ReactElement {
         </HStack>
 
         <Container maxW={852} p={0}>
-          <EditorProvider value={{ readOnly: !!flow?.active }}>
+          <EditorProvider value={{ readOnly: isEditorReadOnly }}>
             {!flow && !loading && 'not found'}
 
             {flow && <Editor flow={flow} steps={flow.steps} />}
