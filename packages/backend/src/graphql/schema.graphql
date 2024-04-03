@@ -715,7 +715,6 @@ enum FlowTransferStatus {
 input UpdateFlowTransferStatusInput {
   id: String!
   status: FlowTransferStatus!
-  newOwnerId: String
 }
 
 # End of flow transfers types

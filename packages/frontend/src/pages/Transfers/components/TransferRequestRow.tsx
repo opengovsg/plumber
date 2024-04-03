@@ -9,7 +9,6 @@ import { IconButton, useToast } from '@opengovsg/design-system-react'
 import client from 'graphql/client'
 import { UPDATE_FLOW_TRANSFER_STATUS } from 'graphql/mutations/update-flow-transfer-status'
 import { GET_PENDING_FLOW_TRANSFERS } from 'graphql/queries/get-pending-flow-transfers'
-import useAuthentication from 'hooks/useAuthentication'
 
 import ViewFlowModal from './ViewFlowModal'
 
@@ -52,8 +51,6 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
     UPDATE_FLOW_TRANSFER_STATUS,
   )
 
-  const { currentUser } = useAuthentication()
-
   const onApproveClose = useCallback(async () => {
     onClose()
     await client.refetchQueries({ include: [GET_PENDING_FLOW_TRANSFERS] }) // only refetch after the modal is clossed
@@ -66,7 +63,6 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
         input: {
           id: flowTransferId,
           status: 'approved',
-          newOwnerId: currentUser?.id,
         },
       },
       onCompleted: () => {
@@ -82,7 +78,7 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
         })
       },
     })
-  }, [flowTransferId, updateFlowTransferStatus, onOpen, toast, currentUser?.id])
+  }, [flowTransferId, updateFlowTransferStatus, onOpen, toast])
 
   // Reject mutation
   const onFlowTransferStatusReject = useCallback(async () => {
@@ -91,7 +87,6 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
         input: {
           id: flowTransferId,
           status: 'rejected',
-          newOwnerId: currentUser?.id,
         },
       },
       refetchQueries: [GET_PENDING_FLOW_TRANSFERS],
@@ -105,7 +100,7 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
         })
       },
     })
-  }, [flowTransferId, updateFlowTransferStatus, toast, currentUser?.id])
+  }, [flowTransferId, updateFlowTransferStatus, toast])
 
   return (
     <>
