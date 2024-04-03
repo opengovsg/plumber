@@ -21,7 +21,7 @@ export default function RowCount({ rowCount, rowSelection }: RowCountProps) {
       borderColor={BORDER_COLOR.DEFAULT}
       px={4}
     >
-      <Text textStyle="body-2">
+      <Text textStyle="body-2" whiteSpace="nowrap">
         {rowCountToShow}
         {' row' +
           (rowCountToShow > 1 ? 's' : '') +

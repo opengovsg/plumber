@@ -17,7 +17,6 @@ import {
   CircularProgress,
   Divider,
   Flex,
-  Hide,
   Icon,
   Input,
   InputGroup,
@@ -28,7 +27,6 @@ import { Pagination } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import ExecutionRow from 'components/ExecutionRow'
 import ExecutionStatusMenu, { StatusType } from 'components/ExecutionStatusMenu'
-import NavigationDrawer from 'components/Layout/NavigationDrawer'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
 import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
@@ -151,12 +149,7 @@ export default function Executions(): ReactElement {
           mb={8}
           pl={{ base: 0, sm: '1rem', md: '2rem' }}
         >
-          <Flex alignItems="center">
-            <Hide above="sm">
-              <NavigationDrawer />
-            </Hide>
-            <PageTitle title={EXECUTIONS_TITLE} />
-          </Flex>
+          <PageTitle title={EXECUTIONS_TITLE} />
           <InputGroup maxW="25rem">
             <InputLeftElement>
               <Icon as={BiSearch} boxSize={5} />
