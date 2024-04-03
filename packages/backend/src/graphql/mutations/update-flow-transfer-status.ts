@@ -10,6 +10,7 @@ type Params = {
   input: {
     id: string
     status: IFlowTransferStatus
+    newOwnerId: string
   }
 }
 
@@ -25,7 +26,7 @@ const updateFlowTransferStatus = async (
   context: Context,
 ) => {
   // TODO (mal): check if need to stop possible exploits
-  const { id, status } = params.input
+  const { id, status, newOwnerId } = params.input
 
   if (status === 'pending') {
     throw new Error('No updating of pipe transfer back to pending')
@@ -35,7 +36,26 @@ const updateFlowTransferStatus = async (
     .findOne({
       id,
     })
+    .withGraphFetched({
+      newOwner: true,
+    })
     .throwIfNotFound()
+
+  // To prevent possible exploits: for approved/rejected status: check if new owner matches
+  if (
+    (status === 'approved' || status === 'rejected') &&
+    flowTransfer.newOwnerId !== newOwnerId
+  ) {
+    throw new Error('Pipe transfer request does not belong to new owner')
+  }
+
+  // for cancelled status: check if old owner matches
+  if (
+    status === 'cancelled' &&
+    flowTransfer.oldOwnerId !== context.currentUser.id
+  ) {
+    throw new Error('Pipe transfer request does not belong to old owner')
+  }
 
   if (status === 'rejected' || status === 'cancelled') {
     return await flowTransfer.$query().patchAndFetch({
