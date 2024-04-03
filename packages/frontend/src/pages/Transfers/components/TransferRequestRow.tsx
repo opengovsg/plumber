@@ -53,7 +53,7 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
 
   const onApproveClose = useCallback(async () => {
     onClose()
-    await client.refetchQueries({ include: [GET_PENDING_FLOW_TRANSFERS] }) // only refetch after the modal is clossed
+    await client.refetchQueries({ include: [GET_PENDING_FLOW_TRANSFERS] }) // only refetch after the modal is closed
   }, [onClose])
 
   // Approve mutation: transfer pipe and nullify connections (phase 1)

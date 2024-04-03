@@ -6,7 +6,7 @@ import { EditorSettingsContext } from 'contexts/EditorSettings'
 import { UPDATE_FLOW_TRANSFER_STATUS } from 'graphql/mutations/update-flow-transfer-status'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 
-export default function FlowTransferWarning() {
+export default function DisallowRequestInfobox() {
   const { flow } = useContext(EditorSettingsContext)
   // definitely will have a pending transfer
   const flowTransferId = flow.pendingTransfer?.id
