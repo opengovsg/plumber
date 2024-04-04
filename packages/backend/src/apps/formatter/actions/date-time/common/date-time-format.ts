@@ -22,8 +22,14 @@ const formatConverters = {
     stringify: (dateTime: DateTime): string => dateTime.toISO(),
   },
   formsgDateField: {
-    parse: (input: string): DateTime =>
-      DateTime.fromFormat(input, 'dd MMM yyyy'),
+    parse: (input: string): DateTime => {
+      return DateTime.fromFormat(
+        // Edge case: FormSG sends us "Sep" instead of "Sept" but luxon only
+        // supports the latter, so we convert Sep to Sept if needed.
+        input.replace(' Sep ', ' Sept '),
+        'dd MMM yyyy',
+      )
+    },
     stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
   },
 } satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
@@ -71,12 +77,23 @@ export function parseDateTime(
   dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
   valueToTransform: string,
 ): DateTime {
-  return formatConverters[dateTimeFormat].parse(valueToTransform)
+  const result = formatConverters[dateTimeFormat].parse(valueToTransform)
+
+  if (!result.isValid) {
+    throw new Error(result.invalidExplanation)
+  }
+
+  return result
 }
 
 export function dateTimeToString(
   dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
   dateTime: DateTime,
 ): string {
+  // Sanity check
+  if (!dateTime.isValid) {
+    throw new Error(dateTime.invalidExplanation)
+  }
+
   return formatConverters[dateTimeFormat].stringify(dateTime)
 }
