@@ -40,7 +40,7 @@ function performDateMath(
   return result
 }
 
-export const transformData: TransformSpec['transformData'] = (
+export const transformData: TransformSpec['transformData'] = async (
   $,
   valueToTransform,
 ) => {

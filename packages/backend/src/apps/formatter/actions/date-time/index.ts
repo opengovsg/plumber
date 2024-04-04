@@ -22,7 +22,7 @@ const action: IRawAction = {
 
     switch (transformId) {
       case addSubtractDateTime.id:
-        return addSubtractDateTime.transformData($, valueToTransform)
+        return await addSubtractDateTime.transformData($, valueToTransform)
       default:
         throw new Error(`Unknown Date/Time transform: '${transformId}'`)
     }
