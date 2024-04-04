@@ -1,7 +1,5 @@
 import { IApp } from '@plumber/types'
 
-import getTransferDetails from '@/helpers/get-basic-transfer-details'
-
 import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
@@ -24,7 +22,6 @@ const app: IApp = {
   actions,
   // disabling triggers from vault workspace
   dynamicData,
-  getTransferDetails,
 }
 
 export default app

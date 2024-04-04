@@ -1,7 +1,5 @@
 import { IApp } from '@plumber/types'
 
-import getTransferDetails from '@/helpers/get-basic-transfer-details'
-
 import auth from './auth'
 import triggers from './triggers'
 
@@ -17,7 +15,6 @@ const app: IApp = {
   auth,
   triggers,
   actions: [],
-  getTransferDetails,
 }
 
 export default app

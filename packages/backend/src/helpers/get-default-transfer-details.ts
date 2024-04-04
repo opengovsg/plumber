@@ -19,11 +19,12 @@ export function getEmptyConnectionDetails(
   }
 }
 
-async function getTransferDetails(
+async function getDefaultTransferDetails(
   $: IGlobalVariable,
 ): Promise<ITransferDetails | null> {
   const screenName = $.auth.data?.screenName as string
-  if (!screenName) {
+  // either auth data could be empty or screenName does not exist
+  if (Object.keys($.auth.data ?? {}).length === 0 || !screenName) {
     return getEmptyConnectionDetails($.step.position, $.app.name)
   }
 
@@ -34,4 +35,4 @@ async function getTransferDetails(
   }
 }
 
-export default getTransferDetails
+export default getDefaultTransferDetails

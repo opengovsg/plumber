@@ -1,7 +1,7 @@
 import { IGlobalVariable, ITransferDetails } from '@plumber/types'
 
 import { getM365TenantInfo } from '@/config/app-env-vars/m365'
-import { getEmptyConnectionDetails } from '@/helpers/get-basic-transfer-details'
+import { getEmptyConnectionDetails } from '@/helpers/get-default-transfer-details'
 
 import { AuthData } from './auth-data'
 
@@ -39,7 +39,7 @@ async function getTransferDetails(
     }
   }
 
-  // query takes around 0.5s, is this worth?
+  // TODO (mal/WL): query takes around 0.5s, build cache if necessary
   const tenant = getM365TenantInfo(authData.tenantKey)
   const results = await $.http.get<{ name: string }>(
     `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}?$select=name`,

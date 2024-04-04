@@ -1,6 +1,8 @@
 import { ITransferDetails } from '@plumber/types'
 
-import { getEmptyConnectionDetails } from '@/helpers/get-basic-transfer-details'
+import getDefaultTransferDetails, {
+  getEmptyConnectionDetails,
+} from '@/helpers/get-default-transfer-details'
 import globalVariable from '@/helpers/global-variable'
 import Context from '@/types/express/context'
 
@@ -27,8 +29,8 @@ const getFlowTransferDetails = async (
 
   const getTransferDetailsPromises = flow.steps.map(async (step) => {
     const app = await step.getApp()
-    // no app is selected or app has no transfer details
-    if (!app || !app.getTransferDetails) {
+    // no app is selected or app has no auth and transfer details
+    if (!app || (!app.auth && !app.getTransferDetails)) {
       return null
     }
 
@@ -44,6 +46,11 @@ const getFlowTransferDetails = async (
       connection: step.connection,
       user: context.currentUser,
     })
+
+    // if app has auth and no transfer details, return default transfer details
+    if (!app.getTransferDetails) {
+      return getDefaultTransferDetails($)
+    }
 
     return await app.getTransferDetails($)
   })
