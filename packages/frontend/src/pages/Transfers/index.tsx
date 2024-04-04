@@ -44,11 +44,14 @@ export default function Transfers() {
           </Center>
         ) : flowTransfers.length === 0 ? (
           // TODO (mal): check if this needs to be beautified?
-          <Center py="11rem">
-            <Text textStyle="h4" color="base.content.medium">
+          <Flex flexDir="column" alignItems="center" gap={4} py="11rem">
+            <Text textStyle="h5" color="base.content.default">
               You have no pending pipe transfers
             </Text>
-          </Center>
+            <Text textStyle="body-1" color="base.content.default">
+              You can transfer pipes to another user from your pipe settings.
+            </Text>
+          </Flex>
         ) : (
           flowTransfers.map((flowTransfer: IFlowTransfer) => (
             <TransferRequestRow

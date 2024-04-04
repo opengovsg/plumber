@@ -68,17 +68,9 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
       onCompleted: () => {
         onOpen()
         setIsFlowTransferApproved((value) => !value)
-        toast({
-          title:
-            'Pipe has been transferred to your account. You will need to manually add the connections to your pipe for it to work.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-          position: 'top',
-        })
       },
     })
-  }, [flowTransferId, updateFlowTransferStatus, onOpen, toast])
+  }, [flowTransferId, updateFlowTransferStatus, onOpen])
 
   // Reject mutation
   const onFlowTransferStatusReject = useCallback(async () => {

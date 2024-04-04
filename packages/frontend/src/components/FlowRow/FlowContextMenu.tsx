@@ -110,7 +110,11 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
             View
           </MenuItem>
           <TouchableTooltip
-            label={flowTransfer ? 'Transfer Requested' : ''}
+            label={
+              flowTransfer
+                ? 'You cannot delete a pipe with a pending transfer'
+                : ''
+            }
             aria-label="Delete Flow Warning"
           >
             <MenuItem

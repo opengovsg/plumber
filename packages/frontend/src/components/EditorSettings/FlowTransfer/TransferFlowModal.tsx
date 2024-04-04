@@ -61,9 +61,9 @@ export default function TransferFlowModal(props: TransferFlowModalProps) {
         <ModalCloseButton />
         <ModalBody>
           <Text>
-            You are transferring this pipe to <strong>{newOwnerEmail}</strong>.
-            For the pipe to be successfully transferred, the new pipe owner has
-            to log in to Plumber to accept the transfer.
+            You are transferring this pipe to {newOwnerEmail}. For the pipe to
+            be successfully transferred, the new pipe owner has to log in to
+            Plumber to accept the transfer.
           </Text>
         </ModalBody>
 

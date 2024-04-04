@@ -4,7 +4,7 @@ export default function InvalidEditorPage() {
   // TODO (mal): check if this needs to be beautified
   return (
     <Infobox variant="error">
-      Pipe not found, have you transferred it away? 🤔
+      Pipe not found, you may have transferred it to someone else 🤔
     </Infobox>
   )
 }

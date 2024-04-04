@@ -22,14 +22,14 @@ export default function ApproveTransfersInfobox(
       mb={4}
     >
       <Flex justifyContent="space-between" alignItems="center" flex={1}>
-        <Text color="primary.600">{`${count} pipe transfer(s) to approve`}</Text>
+        <Text color="primary.600">{`${count} pipe transfer(s) to accept`}</Text>
         <Button
           variant="clear"
           size="sm"
           color="primary.600"
           onClick={() => navigate(URLS.TRANSFERS)}
         >
-          View and approve
+          View and accept
         </Button>
       </Flex>
     </Infobox>

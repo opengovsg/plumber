@@ -45,10 +45,10 @@ export default function DisallowRequestInfobox() {
         alignItems="center"
         flex={1}
       >
-        <Text>
-          <strong>{requestedEmail}</strong> has not accepted this pipe transfer
-          yet. You will not be able to transfer ownership to another user until
-          the request has been rejected.{' '}
+        <Text color="base.content.default">
+          {requestedEmail} has not accepted this pipe transfer yet. You will not
+          be able to transfer ownership to another user until the request has
+          been rejected.{' '}
         </Text>
         <Button
           onClick={onFlowTransferStatusUpdate}
