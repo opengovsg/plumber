@@ -1,5 +1,10 @@
+import type { IGlobalVariable } from '@plumber/types'
+
 import { DateTime, type DurationLikeObject } from 'luxon'
-import z from 'zod'
+import z, { ZodError } from 'zod'
+
+import StepError, { GenericSolution } from '@/errors/step'
+import { firstZodParseError } from '@/helpers/zod-utils'
 
 import type { TransformSpec } from '../../../../common/transform-spec'
 import {
@@ -22,7 +27,7 @@ function performDateMath(
   // This is to avoid scenarios like
   // https://moment.github.io/luxon/#/math?id=math-with-multiple-units.
   for (const op of ops) {
-    // op.timeUnit is designed to have same name as luxton's Duration keys.
+    // op.timeUnit is designed to have same name as luxon's Duration keys.
     const duration = {
       [op.timeUnit]: op.timeAmount,
     } satisfies DurationLikeObject
@@ -40,19 +45,50 @@ function performDateMath(
   return result
 }
 
+// Helper function to provide a nice StepError
+function getParams($: IGlobalVariable) /* inferred return type */ {
+  try {
+    const { dateTimeFormat } = dateTimeFormatSchema.parse($.step.parameters)
+    const { ops } = fieldSchema.parse($.step.parameters)
+    return { dateTimeFormat, ops }
+  } catch (error) {
+    if (!(error instanceof ZodError)) {
+      throw error
+    }
+
+    throw new StepError(
+      `Configuration problem: '${firstZodParseError(error)}'`,
+      GenericSolution.ReconfigureInvalidField,
+      $.step.position,
+      $.app.name,
+    )
+  }
+}
+
 export const transformData: TransformSpec['transformData'] = async (
   $,
   valueToTransform,
 ) => {
-  const { dateTimeFormat } = dateTimeFormatSchema.parse($.step.parameters)
-  const { ops } = fieldSchema.parse($.step.parameters)
+  try {
+    const { dateTimeFormat, ops } = getParams($)
+    const valueAsDateTime = parseDateTime(dateTimeFormat, valueToTransform)
+    const result = performDateMath(valueAsDateTime, ops)
 
-  const valueAsDateTime = parseDateTime(dateTimeFormat, valueToTransform)
-  const result = performDateMath(valueAsDateTime, ops)
+    $.setActionItem({
+      raw: {
+        result: dateTimeToString(dateTimeFormat, result),
+      },
+    })
+  } catch (error) {
+    if (error instanceof StepError) {
+      throw error
+    }
 
-  $.setActionItem({
-    raw: {
-      result: dateTimeToString(dateTimeFormat, result),
-    },
-  })
+    throw new StepError(
+      `Error processing dates: '${error.message}'`,
+      'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
+      $.step.position,
+      $.app.name,
+    )
+  }
 }
