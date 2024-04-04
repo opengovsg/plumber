@@ -220,7 +220,8 @@ function ControlledAutocomplete(
                       </Text>
                     )}
 
-                    {showOptionValue && (
+                    {/* Always hide value if description is availble. */}
+                    {!option.description && showOptionValue && (
                       <Text textStyle="body-2" color="base.content.medium">
                         {option.value}
                       </Text>

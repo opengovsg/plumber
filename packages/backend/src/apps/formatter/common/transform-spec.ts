@@ -8,7 +8,7 @@ import type {
 type TransformFunction = (
   $: IGlobalVariable,
   valueToTransform: string,
-) => Awaited<ReturnType<IRawAction['run']>> | ReturnType<IRawAction['run']>
+) => ReturnType<IRawAction['run']>
 
 /**
  * Helper object for transforms to describe themselves.

@@ -33,7 +33,7 @@ const action: IRawAction = {
             variables: true,
           },
         ],
-        transformData: () => {
+        transformData: async () => {
           return
         },
       },
