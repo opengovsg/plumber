@@ -762,8 +762,7 @@ copyfiles
 https://github.com/calvinmetcalf/copyfiles
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
-
+(The MIT License)
 
 -------------------------------------------------------------------------------
 
@@ -1057,7 +1056,7 @@ express-basic-auth
 https://github.com/LionC/express-basic-auth
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
+(The MIT License)
 
 
 -------------------------------------------------------------------------------
@@ -1069,7 +1068,7 @@ form-data
 https://github.com/form-data/form-data
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
+(The MIT License)
 
 
 -------------------------------------------------------------------------------
@@ -1638,7 +1637,7 @@ p-limit
 https://github.com/sindresorhus/p-limit
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
+(The MIT License)
 
 
 -------------------------------------------------------------------------------
@@ -1733,8 +1732,7 @@ remark-breaks
 https://github.com/remarkjs/remark-breaks
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
-
+(The MIT License)
 
 -------------------------------------------------------------------------------
 
@@ -1745,7 +1743,7 @@ remark-gfm
 https://github.com/remarkjs/remark-gfm
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
+(The MIT License)
 
 
 -------------------------------------------------------------------------------
@@ -1757,7 +1755,7 @@ type-fest
 https://github.com/sindresorhus/type-fest
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
+CC0: http://creativecommons.org/publicdomain/zero/1.0/
 
 
 -------------------------------------------------------------------------------
@@ -3358,7 +3356,7 @@ react-intl
 https://github.com/formatjs/formatjs
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
+The MIT License (MIT)
 
 
 -------------------------------------------------------------------------------
@@ -3402,7 +3400,7 @@ react-markdown
 https://github.com/remarkjs/react-markdown
 
 ### License
-There is no license specified in this repository. Please visit the source and contact the repository's owners to find out more.
+The MIT License (MIT)
 
 
 -------------------------------------------------------------------------------
