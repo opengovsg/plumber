@@ -12,7 +12,7 @@ function TableBanner() {
 
   return (
     <Flex
-      px={8}
+      px={{ base: 4, md: 8 }}
       h={TABLE_BANNER_HEIGHT}
       alignItems="center"
       justifyContent="space-between"

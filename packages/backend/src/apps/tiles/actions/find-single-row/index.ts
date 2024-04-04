@@ -1,5 +1,7 @@
 import { IRawAction } from '@plumber/types'
 
+import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import {
   getRawRowById,
   getTableRows,
@@ -8,6 +10,7 @@ import {
 } from '@/models/dynamodb/table-row'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
+import { validateFilters } from '../../common/validate-filters'
 import { validateTileAccess } from '../../common/validate-tile-access'
 import { FindSingleRowOutput } from '../../types'
 
@@ -143,7 +146,30 @@ const action: IRawAction = {
       table_id: tableId,
     })
 
-    const result = await getTableRows({ tableId, filters })
+    // Check that filters are valid
+    try {
+      validateFilters(filters, columns)
+    } catch (e) {
+      logger.error({
+        message: 'Invalid filters',
+        executionId: $.execution.id,
+        stepId: $.step.id,
+        app: $.app.name,
+        action: 'find-single-row',
+        error: e,
+      })
+      throw new StepError(
+        'Invalid filters',
+        'One or more filters are invalid. Please check that the columns in your filters still exist',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
+    const result = await getTableRows({
+      tableId,
+      filters,
+    })
 
     if (!result || !result.length) {
       $.setActionItem({
@@ -156,6 +182,11 @@ const action: IRawAction = {
     const rowIdToUse = returnLastRow
       ? result[result.length - 1].rowId
       : result[0].rowId
+
+    /**
+     * We use raw row data instead of mapped column names as we want them to
+     * be distinct in data_out
+     */
     const rowToReturn = await getRawRowById({
       tableId,
       rowId: rowIdToUse,

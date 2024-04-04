@@ -1,0 +1,6 @@
+/* 64px corresponds to TABLE_BANNER_HEIGHT */
+/* using .css to specify fallback url */
+.table {
+  height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
+}
