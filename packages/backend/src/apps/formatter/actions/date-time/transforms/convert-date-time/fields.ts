@@ -58,12 +58,12 @@ export const field = {
       value: ensureZodEnumValue(formatStringsEnum, 'hh:mm:ss a'),
     },
     {
-      label: 'DD MMMM YYYY HH:mm (am/pm)',
+      label: 'DD MMM YYYY HH:mm (am/pm)',
       description: '02 Jan 2006 12:04 pm',
       value: ensureZodEnumValue(formatStringsEnum, 'dd LLL yyyy hh:mm a'),
     },
     {
-      label: 'DD MMMM YYYY HH:mm:ss (am/pm)',
+      label: 'DD MMM YYYY HH:mm:ss (am/pm)',
       description: '02 Jan 2006 23:04:05 pm',
       value: ensureZodEnumValue(formatStringsEnum, 'dd LLL yyyy hh:mm:ss a'),
     },
