@@ -156,8 +156,8 @@ export default function EditorLayout(): React.ReactElement {
           <TouchableTooltip
             label={
               hasFlowTransfer
-                ? ''
-                : 'You cannot publish a pipe with a pending transfer'
+                ? 'You cannot publish a pipe with a pending transfer'
+                : ''
             }
           >
             <Button

@@ -24,7 +24,6 @@ const updateFlowTransferStatus = async (
   params: Params,
   context: Context,
 ) => {
-  // TODO (mal): check if need to stop possible exploits
   const { id, status } = params.input
 
   if (status === 'pending') {
@@ -93,14 +92,15 @@ const updateFlowTransferStatus = async (
 
     logger.info('Flow transfer details', {
       event: 'flow-transfer-request',
-      flowId: id,
+      flowTransferId: id,
+      flowId: flow.id,
       connectionIds,
       stepIds,
     })
 
-    // nullify connections: both the connection and connectionId references
+    // nullify connections: both the connection and connectionId references and set status to incomplete
     const numNullified = await Step.query(trx)
-      .patch({ connection: null, connectionId: null })
+      .patch({ connection: null, connectionId: null, status: 'incomplete' })
       .where('flow_id', flow.id)
       .whereNotNull('connection_id')
 
@@ -108,6 +108,19 @@ const updateFlowTransferStatus = async (
     if (numNullified !== connectionIds.length) {
       throw new Error(
         'Update query went wrong, please contact plumber@open.gov.sg for more support',
+      )
+    }
+
+    // additional update: set tiles actions to incomplete too
+    const numIncompleteForTiles = await Step.query(trx)
+      .patch({ status: 'incomplete' })
+      .where('flow_id', flow.id)
+      .andWhere('app_key', 'tiles')
+
+    // sanity check
+    if (numIncompleteForTiles > flow.steps.length) {
+      throw new Error(
+        'Update tiles status query went wrong, please contact plumber@open.gov.sg for more support',
       )
     }
 
