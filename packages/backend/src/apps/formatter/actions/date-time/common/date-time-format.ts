@@ -23,12 +23,26 @@ const formatConverters = {
   },
   formsgDateField: {
     parse: (input: string): DateTime => {
-      return DateTime.fromFormat(
-        // Edge case: FormSG sends us "Sep" instead of "Sept" but luxon only
-        // supports the latter, so we convert Sep to Sept if needed.
-        input.replace(' Sep ', ' Sept '),
-        'dd MMM yyyy',
-      )
+      // NOTE:
+      // ---
+      // FormSG actually formats date fields in the en-US locale. But we will
+      // also allow parsing this input as en-SG, since it's possible end users
+      // may mis-use this option to parse their own dates.
+      //
+      // At time of this comment, the only effective difference between en-US
+      // and en-SG is September - the former only accepts "Sep", and the latter
+      // only accepts "Sept"
+
+      const dateTime = DateTime.fromFormat(input, 'dd MMM yyyy', {
+        locale: 'en-US',
+      })
+
+      if (dateTime.isValid) {
+        return dateTime
+      }
+
+      // en-US parsing failed, fall back to en-SG.
+      return DateTime.fromFormat(input, 'dd MMM yyyy')
     },
     stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
   },
