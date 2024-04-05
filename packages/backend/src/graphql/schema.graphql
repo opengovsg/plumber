@@ -561,6 +561,7 @@ type ExecutionStepConnection {
 # Tiles types
 input CreateTableInput {
   name: String!
+  isBlank: Boolean!
 }
 
 input TableColumnConfigInput {

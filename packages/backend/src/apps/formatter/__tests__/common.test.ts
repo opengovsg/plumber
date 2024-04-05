@@ -35,7 +35,7 @@ const SAMPLE_TRANSFORM_ONE = {
       variables: true,
     },
   ],
-  transformData: () => {
+  transformData: async () => {
     return
   },
 } satisfies TransformSpec
@@ -55,7 +55,7 @@ const SAMPLE_TRANSFORM_TWO = {
       variables: true,
     },
   ],
-  transformData: () => {
+  transformData: async () => {
     return
   },
 } satisfies TransformSpec

@@ -22,8 +22,28 @@ const formatConverters = {
     stringify: (dateTime: DateTime): string => dateTime.toISO(),
   },
   formsgDateField: {
-    parse: (input: string): DateTime =>
-      DateTime.fromFormat(input, 'dd MMM yyyy'),
+    parse: (input: string): DateTime => {
+      // NOTE:
+      // ---
+      // FormSG actually formats date fields in the en-US locale. But we will
+      // also allow parsing this input as en-SG, since it's possible end users
+      // may mis-use this option to parse their own dates.
+      //
+      // At time of this comment, the only effective difference between en-US
+      // and en-SG is September - the former only accepts "Sep", and the latter
+      // only accepts "Sept"
+
+      const dateTime = DateTime.fromFormat(input, 'dd MMM yyyy', {
+        locale: 'en-US',
+      })
+
+      if (dateTime.isValid) {
+        return dateTime
+      }
+
+      // en-US parsing failed, fall back to en-SG.
+      return DateTime.fromFormat(input, 'dd MMM yyyy')
+    },
     stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
   },
 } satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
@@ -71,12 +91,23 @@ export function parseDateTime(
   dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
   valueToTransform: string,
 ): DateTime {
-  return formatConverters[dateTimeFormat].parse(valueToTransform)
+  const result = formatConverters[dateTimeFormat].parse(valueToTransform)
+
+  if (!result.isValid) {
+    throw new Error(result.invalidExplanation)
+  }
+
+  return result
 }
 
 export function dateTimeToString(
   dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
   dateTime: DateTime,
 ): string {
+  // Sanity check
+  if (!dateTime.isValid) {
+    throw new Error(dateTime.invalidExplanation)
+  }
+
   return formatConverters[dateTimeFormat].stringify(dateTime)
 }

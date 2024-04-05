@@ -16,7 +16,7 @@ export const spec = {
 
   fields: [field],
 
-  transformData: ($, valueToTransform) => {
+  transformData: async ($, valueToTransform) => {
     const { dateTimeFormat } = dateTimeFormatSchema.parse($.step.parameters)
     const { formatDateTimeToFormat: formatString } = fieldSchema.parse(
       $.step.parameters,

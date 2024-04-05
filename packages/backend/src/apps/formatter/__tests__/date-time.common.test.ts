@@ -13,6 +13,19 @@ LuxonSettings.defaultLocale = 'en-SG'
 
 describe('common date-time formatter functions', () => {
   describe('date-time formats', () => {
+    it('throws an error if it cannot parse a date time string', () => {
+      expect(() => parseDateTime('formsgSubmissionTime', 'derp')).toThrowError()
+    })
+
+    it('throws an error if trying to stringify an invalid date time', () => {
+      expect(() =>
+        dateTimeToString(
+          'formsgSubmissionTime',
+          DateTime.now().setZone('America/Blorp'),
+        ),
+      ).toThrowError()
+    })
+
     describe('formsg submission time', () => {
       it('supports parsing FormSG submission time / ISO 8601', () => {
         const dateTime = parseDateTime(
@@ -43,5 +56,13 @@ describe('common date-time formatter functions', () => {
         '01 Apr 2024',
       )
     })
+
+    it.each(['Sep', 'Sept'])(
+      'supports parsing all September MMM shortforms',
+      (mmm) => {
+        const dateTime = parseDateTime('formsgDateField', `28 ${mmm} 2024`)
+        expect(dateTime.toUnixInteger()).toEqual(1727452800)
+      },
+    )
   })
 })

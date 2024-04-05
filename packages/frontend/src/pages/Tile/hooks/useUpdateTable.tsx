@@ -62,7 +62,7 @@ export function useUpdateTable() {
   )
 
   const createColumns = useCallback(
-    (newColumnNames: string[]) => {
+    (newColumnNames: string[], shouldRefetchQueries = true) => {
       setIsCreatingColumns(true)
       return updateTable({
         variables: {
@@ -77,6 +77,7 @@ export function useUpdateTable() {
         onError: () => {
           setIsCreatingColumns(false)
         },
+        refetchQueries: shouldRefetchQueries ? undefined : [],
       })
     },
     [tableId, updateTable],
