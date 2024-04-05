@@ -12,6 +12,16 @@ export function ensureZodObjectKey<
 }
 
 /**
+ * Helper to ensure that `value` one of the values the `enum` Zod enum.
+ */
+export function ensureZodEnumValue<
+  TZodEnum extends z.ZodEnum<any>,
+  TValue extends z.infer<TZodEnum>,
+>(_enum: TZodEnum, value: TValue): TValue {
+  return value
+}
+
+/**
  * Helper to extract a message containing details about the 1st Zod parsing
  * error. If a path is available, it also puts the path in the error message.
  */
