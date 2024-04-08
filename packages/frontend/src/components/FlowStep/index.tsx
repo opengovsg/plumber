@@ -40,6 +40,7 @@ type FlowStepProps = {
   onContinue?: () => void
 }
 
+// FIXME (ogp-weeloong): remove this; not needed since we already do validation in FlowSubstep.
 function generateValidationSchema(substeps: ISubstep[]) {
   const fieldValidations = substeps?.reduce(
     (allValidations, { arguments: args }) => {
@@ -50,7 +51,7 @@ function generateValidationSchema(substeps: ISubstep[]) {
       const substepArgumentValidations: Record<string, BaseSchema> = {}
 
       for (const arg of args) {
-        const { key, required, dependsOn } = arg
+        const { key, required, dependsOn, hiddenIf } = arg
 
         // base validation for the field if not exists
         if (!substepArgumentValidations[key]) {
@@ -58,8 +59,9 @@ function generateValidationSchema(substeps: ISubstep[]) {
         }
 
         if (typeof substepArgumentValidations[key] === 'object') {
-          // if the field is required, add the required validation
-          if (required) {
+          // if the field is required and not conditionally hidden, add the
+          // required validation
+          if (required && !hiddenIf) {
             substepArgumentValidations[key] = substepArgumentValidations[
               key
             ].required(`${key} is required.`)
