@@ -19,16 +19,20 @@ router.use((req, res, next) => {
   uploadNone(req, res, (err) => {
     // file upload is not supported
     // handle error to prevent http 500 error
-    logger.error({
-      req,
-      err,
-      msg: 'Invalid request: multer error',
-    })
     if (err instanceof multer.MulterError) {
-      res.status(400).send('Invalid request, file upload is not supported.')
-    } else {
-      next(err)
+      logger.error({
+        req: {
+          body: req.body,
+          headers: req.headers,
+          url: req.url,
+        },
+        err,
+        msg: 'Invalid request: multer error',
+      })
+      res.status(415).send('Invalid request, file upload is not supported.')
+      return
     }
+    next(err)
   })
 })
 
