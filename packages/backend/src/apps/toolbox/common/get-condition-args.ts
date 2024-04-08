@@ -45,7 +45,7 @@ export default function getConditionArgs({
         { label: 'Less than', value: 'lt' },
         { label: 'Less than or equals to', value: 'lte' },
         { label: 'Contains', value: 'contains' },
-        { label: 'Is Empty', value: 'is_empty' },
+        { label: 'Empty', value: 'empty' },
       ],
     },
     {
@@ -57,7 +57,7 @@ export default function getConditionArgs({
       hiddenIf: {
         fieldKey: 'condition',
         op: 'equals',
-        fieldValue: 'is_empty',
+        fieldValue: 'empty',
       },
     },
   ]
