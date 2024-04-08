@@ -10,6 +10,9 @@ import z from 'zod'
  */
 
 interface DateFormatConverter {
+  // Human-friendly description of what this is parsing
+  description: string
+
   parse: (input: string) => DateTime
   stringify: (dateTime: DateTime) => string
 }
@@ -18,10 +21,12 @@ const supportedFormats = z.enum(['formsgSubmissionTime', 'formsgDateField'])
 
 const formatConverters = {
   formsgSubmissionTime: {
+    description: 'FormSG submission time',
     parse: (input: string): DateTime => DateTime.fromISO(input),
     stringify: (dateTime: DateTime): string => dateTime.toISO(),
   },
   formsgDateField: {
+    description: 'FormSG date field',
     parse: (input: string): DateTime => {
       // NOTE:
       // ---
@@ -94,7 +99,9 @@ export function parseDateTime(
   const result = formatConverters[dateTimeFormat].parse(valueToTransform)
 
   if (!result.isValid) {
-    throw new Error(result.invalidExplanation)
+    throw new Error(
+      `'${valueToTransform}' is not a valid ${formatConverters[dateTimeFormat].description}`,
+    )
   }
 
   return result
@@ -104,9 +111,9 @@ export function dateTimeToString(
   dateTimeFormat: z.infer<typeof fieldSchema>['dateTimeFormat'],
   dateTime: DateTime,
 ): string {
-  // Sanity check
+  // Sanity check - users should never see this.
   if (!dateTime.isValid) {
-    throw new Error(dateTime.invalidExplanation)
+    throw new Error('Stringifying invalid DateTime')
   }
 
   return formatConverters[dateTimeFormat].stringify(dateTime)
