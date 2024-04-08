@@ -24,6 +24,17 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
     case 'contains':
       result = field.toString().includes(value.toString())
       break
+    case 'empty':
+      // `field` and `value` are a bit of a misnomer. They're both form fields
+      // that the user inputs data into.  The "empty" condition is unary, so the
+      // `value` field is hidden from the user. Thus we only need to check
+      // `field` field.
+
+      // Strings are empty if they are falsey.
+      // All other types (e.g. 0, {}) are considered non-empty unless they are
+      // null or undefined
+      result = field === null || field === undefined || field === ''
+      break
     default:
       throw new Error(
         `Conditional logic block contains an unknown operator: ${condition}`,
