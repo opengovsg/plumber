@@ -20,9 +20,18 @@ const opsSchema = z.object({
   opType: opTypeEnum,
   timeUnit: timeUnitEnum,
   timeAmount: z
-    .string()
+    .string({
+      required_error: 'No value found',
+    })
+    .trim()
+    .min(1, { message: 'No value found' })
     .transform((amount) => Number(amount))
-    .pipe(z.number().int().positive()),
+    .pipe(
+      z
+        .number({ invalid_type_error: 'Enter a whole number' })
+        .int('Enter whole numbers without decimals')
+        .positive('Enter a positive number'),
+    ),
 })
 
 export const fieldSchema = z
