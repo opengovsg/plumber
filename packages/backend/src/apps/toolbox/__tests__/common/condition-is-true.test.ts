@@ -109,6 +109,25 @@ describe('Condition is true', () => {
     expect(result).toEqual(expectedResult)
   })
 
+  it.each([
+    { field: '', expectedResult: true },
+    { field: null, expectedResult: true },
+    { field: undefined, expectedResult: true },
+
+    // Non string values are always not-empty, even if they're falsey.
+    { field: 'hello', expectedResult: false },
+    { field: 0, expectedResult: false },
+    { field: {}, expectedResult: false },
+  ])('is_empty is $expectedResult for $field', ({ field, expectedResult }) => {
+    const result = conditionIsTrue({
+      field,
+      is: 'is',
+      condition: 'is_empty',
+      text: null,
+    })
+    expect(result).toEqual(expectedResult)
+  })
+
   it('throws an error for unsupported conditions', () => {
     expect(() =>
       conditionIsTrue({
