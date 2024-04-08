@@ -3,7 +3,7 @@ import { IApp } from '@plumber/types'
 import actions from './actions'
 
 const app: IApp = {
-  name: 'Formatter (Pilot)',
+  name: 'Formatter',
   key: 'formatter',
   iconUrl: '{BASE_URL}/apps/formatter/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/formatter',
