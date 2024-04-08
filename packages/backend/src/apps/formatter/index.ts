@@ -3,7 +3,7 @@ import { IApp } from '@plumber/types'
 import actions from './actions'
 
 const app: IApp = {
-  name: 'Formatter',
+  name: 'Formatter (Pilot)',
   key: 'formatter',
   iconUrl: '{BASE_URL}/apps/formatter/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/formatter',
@@ -11,7 +11,8 @@ const app: IApp = {
   apiBaseUrl: '',
   primaryColor: '000000',
   actions,
-  description: 'Format your data',
+  description:
+    'Manipulate your data, such as changing date formats or adding days to a date',
 }
 
 export default app
