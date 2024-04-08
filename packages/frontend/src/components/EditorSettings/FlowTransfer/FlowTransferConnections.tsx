@@ -16,7 +16,9 @@ function StepConnectionDisplay(props: ITransferDetails) {
       <Badge colorScheme="warning">
         Step {position}: {appName}
       </Badge>
-      <Text textStyle="body-1">{connectionName}</Text>
+      <Text textStyle="body-1" color="base.content.default">
+        {connectionName}
+      </Text>
       <Text textStyle="body-1" color="base.content.medium">
         {instructions}
       </Text>

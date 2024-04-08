@@ -153,7 +153,13 @@ export default function EditorLayout(): React.ReactElement {
           </TouchableTooltip>
 
           {/* Used a tooltip instead because the words take up too much space on mobile view */}
-          <TouchableTooltip label={hasFlowTransfer ? '' : 'Transfer Requested'}>
+          <TouchableTooltip
+            label={
+              hasFlowTransfer
+                ? 'You cannot publish a pipe with a pending transfer'
+                : ''
+            }
+          >
             <Button
               isDisabled={hasFlowTransfer}
               isLoading={loading}
