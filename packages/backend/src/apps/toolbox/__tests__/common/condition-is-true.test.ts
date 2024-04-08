@@ -115,8 +115,8 @@ describe('Condition is true', () => {
     { field: undefined, expectedResult: true },
 
     { field: '     ', expectedResult: false },
-    { field: '\n', expectedResult: false },
-    { field: '\t', expectedResult: false },
+    { field: `\n`, expectedResult: false },
+    { field: `\t`, expectedResult: false },
     { field: 'hello', expectedResult: false },
 
     // Non string values are always not-empty, even if they're falsey.

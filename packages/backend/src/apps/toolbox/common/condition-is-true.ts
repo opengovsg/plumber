@@ -29,14 +29,11 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
       // that the user inputs data into.  The "empty" condition is unary, so the
       // `value` field is hidden from the user. Thus we only need to check
       // `field` field.
-      if (typeof field === 'string') {
-        // Strings are empty if they are falsey.
-        result = !field
-      } else {
-        // All other types (e.g. 0, {}) are considered non-empty unless they are
-        // null or undefined
-        result = field === null || field === undefined
-      }
+
+      // Strings are empty if they are falsey.
+      // All other types (e.g. 0, {}) are considered non-empty unless they are
+      // null or undefined
+      result = field === null || field === undefined || field === ''
       break
     default:
       throw new Error(
