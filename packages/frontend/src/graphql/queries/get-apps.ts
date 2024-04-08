@@ -101,6 +101,7 @@ export const GET_APPS = gql`
             }
             options {
               label
+              description
               value
             }
             source {
@@ -131,6 +132,7 @@ export const GET_APPS = gql`
               }
               options {
                 label
+                description
                 value
               }
               source {
@@ -168,6 +170,7 @@ export const GET_APPS = gql`
             value
             options {
               label
+              description
               value
             }
             source {
@@ -203,6 +206,7 @@ export const GET_APPS = gql`
               }
               options {
                 label
+                description
                 value
               }
               source {

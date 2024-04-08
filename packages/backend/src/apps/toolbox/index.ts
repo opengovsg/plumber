@@ -11,7 +11,6 @@ const app: IApp = {
   apiBaseUrl: '',
   primaryColor: '000000',
   actions,
-  description: `Use Plumber's built in tools like If-then and Only continue if to add more functionality to your pipes`,
 }
 
 export default app
