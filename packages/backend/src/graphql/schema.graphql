@@ -99,6 +99,7 @@ directive @specifiedBy(
 
 enum FieldVisibilityOp {
   always_true
+  is_empty
   equals
   not_equals
 }
@@ -527,6 +528,7 @@ type TriggerSubstepArgumentSource {
 
 type ArgumentOption {
   label: String
+  description: String
   value: JSONObject
 }
 
@@ -574,6 +576,7 @@ type ExecutionStepConnection {
 # Tiles types
 input CreateTableInput {
   name: String!
+  isBlank: Boolean!
 }
 
 input TableColumnConfigInput {

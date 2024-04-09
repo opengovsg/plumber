@@ -4,13 +4,12 @@ import { useEffect, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { BiRefresh } from 'react-icons/bi'
 import Markdown from 'react-markdown'
-import { Flex, FormControl } from '@chakra-ui/react'
+import { Flex, FormControl, Text } from '@chakra-ui/react'
 import { Paper, PaperProps, TextField } from '@mui/material'
 import Autocomplete, {
   AutocompleteProps,
   createFilterOptions,
 } from '@mui/material/Autocomplete'
-import Typography from '@mui/material/Typography'
 import {
   Button,
   FormErrorMessage,
@@ -213,10 +212,19 @@ function ControlledAutocomplete(
                     key={option.value.toString()}
                     style={{ flexDirection: 'column', alignItems: 'start' }}
                   >
-                    <Typography>{option.label}</Typography>
+                    <Text textStyle="body-1">{option.label}</Text>
 
-                    {showOptionValue && (
-                      <Typography variant="caption">{option.value}</Typography>
+                    {option.description && (
+                      <Text textStyle="body-2" color="base.content.medium">
+                        {option.description}
+                      </Text>
+                    )}
+
+                    {/* Always hide value if description is availble. */}
+                    {!option.description && showOptionValue && (
+                      <Text textStyle="body-2" color="base.content.medium">
+                        {option.value}
+                      </Text>
                     )}
                   </li>
                 )}

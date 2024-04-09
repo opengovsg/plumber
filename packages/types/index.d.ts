@@ -170,10 +170,16 @@ type AutoCompleteValue = 'off' | 'url' | 'email'
 
 // This is synced with FieldVisibilityOp GraphQL enum.
 // Using jank Extract for now until we get typed GraphQL.
-type FieldVisibilityOp = 'always_true' | 'equals' | 'not_equals'
+type FieldVisibilityOp = 'always_true' | 'is_empty' | 'equals' | 'not_equals'
 
 interface IFieldVacuousVisibilityCondition {
   op: Extract<FieldVisibilityOp, 'always_true'>
+}
+
+interface IFieldKeyOnlyVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'is_empty'>
+
+  fieldKey: string
 }
 
 interface IFieldComparativeVisibilityCondition {
@@ -185,6 +191,7 @@ interface IFieldComparativeVisibilityCondition {
 
 export type IFieldVisibilityCondition =
   | IFieldComparativeVisibilityCondition
+  | IFieldKeyOnlyVisibilityCondition
   | IFieldVacuousVisibilityCondition
 
 /**
@@ -240,7 +247,20 @@ export interface IFieldDropdownSource {
 
 export interface IFieldDropdownOption {
   label: string
+
+  /**
+   * Set `showOptionValue` to false if you do not want this to be shown in the
+   * dropdown. The value will also not be rendered if `description` if
+   * specified.
+   */
   value: boolean | string | number
+
+  /**
+   * If this is specified, this will be rendered instead of `value`. Note that
+   * this is always rendered if specified, even if `showOptionValue` is set to
+   * false.
+   */
+  description?: string
 }
 
 export interface IFieldText extends IBaseField {
