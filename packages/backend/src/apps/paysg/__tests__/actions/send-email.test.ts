@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import sendEmailAction from '../../actions/send-email'
-import { getApiBaseUrl } from '../../common/api'
 
 const mocks = vi.hoisted(() => ({
   httpPost: vi.fn(() => ({})),
@@ -44,22 +43,21 @@ describe('send payment email', () => {
   })
 
   it.each(['paysg_stag_abcd, paysg_live_abcd'])(
-    'invokes the correct URL based on the API key and payment ID',
+    'invokes the correct URL with urlPathParams',
     async (apiKey) => {
       $.auth.data.apiKey = apiKey
-      const expectedBaseUrl = getApiBaseUrl($.auth.data.apiKey)
 
       await sendEmailAction.run($)
 
       expect(mocks.httpPost).toHaveBeenCalledWith(
-        '/v1/payment-services/sample-payment-service-id/payments/sample-payment-id/send-email',
+        '/v1/payment-services/:paymentServiceId/payments/:paymentId/send-email',
         {},
-        expect.objectContaining({
-          baseURL: expectedBaseUrl,
-          headers: {
-            'x-api-key': $.auth.data.apiKey,
+        {
+          urlPathParams: {
+            paymentServiceId: 'sample-payment-service-id',
+            paymentId: 'sample-payment-id',
           },
-        }),
+        },
       )
     },
   )

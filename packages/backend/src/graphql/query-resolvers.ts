@@ -7,6 +7,7 @@ import getExecution from './queries/get-execution'
 import getExecutionSteps from './queries/get-execution-steps'
 import getExecutions from './queries/get-executions'
 import getFlow from './queries/get-flow'
+import getFlowTransferDetails from './queries/get-flow-transfer-details'
 import getFlows from './queries/get-flows'
 import getPendingFlowTransfers from './queries/get-pending-flow-transfers'
 import getPlumberStats from './queries/get-plumber-stats'
@@ -32,6 +33,7 @@ const queryResolvers = {
   ...tilesQueryResolvers,
   getPlumberStats,
   getPendingFlowTransfers,
+  getFlowTransferDetails,
 }
 
 export default queryResolvers

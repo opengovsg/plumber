@@ -1,18 +1,14 @@
-import { IFlow } from '@plumber/types'
-
-import { useCallback } from 'react'
+import { useCallback, useContext } from 'react'
 import { useMutation } from '@apollo/client'
 import { Flex, Text } from '@chakra-ui/react'
 import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
+import { EditorSettingsContext } from 'contexts/EditorSettings'
 import { UPDATE_FLOW_TRANSFER_STATUS } from 'graphql/mutations/update-flow-transfer-status'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 
-interface FlowTransferWarningProps {
-  flow: IFlow
-}
-
-export default function FlowTransferWarning(props: FlowTransferWarningProps) {
-  const { flow } = props
+export default function DisallowRequestInfobox() {
+  const { flow } = useContext(EditorSettingsContext)
+  // definitely will have a pending transfer
   const flowTransferId = flow.pendingTransfer?.id
   const requestedEmail = flow.pendingTransfer?.newOwner.email
   const toast = useToast()
@@ -41,7 +37,7 @@ export default function FlowTransferWarning(props: FlowTransferWarningProps) {
   }, [flowTransferId, updateFlowTransferStatus, toast])
 
   return (
-    <Infobox variant="error">
+    <Infobox>
       <Flex
         flexDir={{ base: 'column', md: 'row' }}
         gap={2}
@@ -49,17 +45,17 @@ export default function FlowTransferWarning(props: FlowTransferWarningProps) {
         alignItems="center"
         flex={1}
       >
-        <Text>
-          <strong>{requestedEmail}</strong> has not accepted this pipe transfer
-          yet. You will not be able to transfer ownership to another user until
-          the request has been rejected.{' '}
+        <Text color="base.content.default">
+          {requestedEmail} has not accepted this pipe transfer yet. You will not
+          be able to transfer ownership to another user until the request has
+          been rejected.{' '}
         </Text>
         <Button
           onClick={onFlowTransferStatusUpdate}
           variant="clear"
           colorScheme="secondary"
         >
-          Cancel Request
+          Cancel
         </Button>
       </Flex>
     </Infobox>

@@ -7,7 +7,6 @@ import { useMutation } from '@apollo/client'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 import { IconButton, useToast } from '@opengovsg/design-system-react'
 import client from 'graphql/client'
-import { UPDATE_FLOW_OWNER } from 'graphql/mutations/update-flow-owner'
 import { UPDATE_FLOW_TRANSFER_STATUS } from 'graphql/mutations/update-flow-transfer-status'
 import { GET_PENDING_FLOW_TRANSFERS } from 'graphql/queries/get-pending-flow-transfers'
 
@@ -24,10 +23,11 @@ interface ActionButtonProps {
   ariaLabel: string
   icon: IconType
   onUpdateRequest: () => void
+  loading: boolean
 }
 
 function ActionButton(props: ActionButtonProps) {
-  const { ariaLabel, icon, onUpdateRequest } = props
+  const { ariaLabel, icon, onUpdateRequest, loading } = props
   return (
     <IconButton
       aria-label={ariaLabel}
@@ -35,6 +35,7 @@ function ActionButton(props: ActionButtonProps) {
       variant="clear"
       colorScheme="secondary"
       onClick={onUpdateRequest}
+      isLoading={loading}
     />
   )
 }
@@ -46,41 +47,16 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
     useState<boolean>(false)
 
   const toast = useToast()
-  const [updateFlowTransferStatus] = useMutation(UPDATE_FLOW_TRANSFER_STATUS)
-  const [updateFlowOwner] = useMutation(UPDATE_FLOW_OWNER)
+  const [updateFlowTransferStatus, { loading }] = useMutation(
+    UPDATE_FLOW_TRANSFER_STATUS,
+  )
 
   const onApproveClose = useCallback(async () => {
     onClose()
-    await client.refetchQueries({ include: [GET_PENDING_FLOW_TRANSFERS] }) // only refetch after the modal is clossed
+    await client.refetchQueries({ include: [GET_PENDING_FLOW_TRANSFERS] }) // only refetch after the modal is closed
   }, [onClose])
 
-  // Approve mutations
-  const onFlowOwnerUpdate = useCallback(async () => {
-    await updateFlowOwner({
-      variables: {
-        input: {
-          id: flowTransfer.flowId,
-        },
-      },
-      onCompleted: () => {
-        onOpen()
-        setIsFlowTransferApproved((value) => !value)
-        toast({
-          title:
-            'Pipe has been transferred to your account. You will need to manually add the connections to your pipe for it to work.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-          position: 'top',
-          // TODO (mal): fix this because idk how to put the toast on top of the overlay
-          containerStyle: {
-            zIndex: 9000,
-          },
-        })
-      },
-    })
-  }, [flowTransfer.flowId, updateFlowOwner, onOpen, toast])
-
+  // Approve mutation: transfer pipe and nullify connections (phase 1)
   const onFlowTransferStatusApprove = useCallback(async () => {
     await updateFlowTransferStatus({
       variables: {
@@ -89,12 +65,12 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
           status: 'approved',
         },
       },
-      onCompleted: async () => {
-        // phase 1: calls the transfer of pipe without duplicating connections
-        await onFlowOwnerUpdate()
+      onCompleted: () => {
+        onOpen()
+        setIsFlowTransferApproved((value) => !value)
       },
     })
-  }, [flowTransferId, updateFlowTransferStatus, onFlowOwnerUpdate])
+  }, [flowTransferId, updateFlowTransferStatus, onOpen])
 
   // Reject mutation
   const onFlowTransferStatusReject = useCallback(async () => {
@@ -132,11 +108,13 @@ export default function TransferRequestRow(props: TransferRequestRowProps) {
             ariaLabel="approve-request"
             icon={BiCheck}
             onUpdateRequest={onFlowTransferStatusApprove}
+            loading={loading}
           />
           <ActionButton
             ariaLabel="reject-request"
             icon={BiX}
             onUpdateRequest={onFlowTransferStatusReject}
+            loading={loading}
           />
         </Flex>
         <Divider borderColor="base.divider.medium" />

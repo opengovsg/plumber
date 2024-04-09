@@ -14,23 +14,34 @@ export async function createPlumberFolder(
 
   // Create folder
   const createFolderResult = await $.http.post<{ id: string }>(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/root/children`,
+    '/v1.0/sites/:sharePointSiteId/drive/root/children',
     {
       name: $.user.email,
       folder: {},
     },
+    {
+      urlPathParams: {
+        sharePointSiteId: tenant.sharePointSiteId,
+      },
+    },
   )
   const folderId = createFolderResult.data.id
 
-  // Allow user R/W access to folder.
+  // Make user the folder owner.
   await $.http.post(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${folderId}/invite`,
+    '/v1.0/sites/:sharePointSiteId/drive/items/:folderId/invite',
     {
       recipients: [{ email: $.user.email }],
       requireSignIn: true,
       sendInvitation: false,
-      roles: ['read', 'write'],
+      roles: ['sp.full control'],
       retainInheritedPermissions: false,
+    },
+    {
+      urlPathParams: {
+        sharePointSiteId: tenant.sharePointSiteId,
+        folderId,
+      },
     },
   )
 

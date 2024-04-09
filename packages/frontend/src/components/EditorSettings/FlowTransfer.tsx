@@ -1,8 +1,5 @@
-import { IFlow } from '@plumber/types'
-
-import { useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
-import { useQuery } from '@apollo/client'
+import { BaseSyntheticEvent, useCallback, useContext, useState } from 'react'
+import { FieldValues, useForm } from 'react-hook-form'
 import {
   Center,
   Flex,
@@ -10,17 +7,17 @@ import {
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
+import { yupResolver } from '@hookform/resolvers/yup'
 import {
   Button,
   FormErrorMessage,
-  FormHelperText,
   FormLabel,
   Input,
   Spinner,
 } from '@opengovsg/design-system-react'
-import { GET_FLOW } from 'graphql/queries/get-flow'
+import { EditorSettingsContext } from 'contexts/EditorSettings'
+import * as yup from 'yup'
 
-import * as URLS from './../../config/urls'
 import DisallowRequestInfobox from './FlowTransfer/DisallowRequestInfobox'
 import FlowTransferConnections from './FlowTransfer/FlowTransferConnections'
 import PublishedFlowInfobox from './FlowTransfer/PublishedFlowInfobox'
@@ -35,26 +32,46 @@ export function CustomSpinner() {
   )
 }
 
+const inputSchema = yup
+  .object({
+    email: yup
+      .string()
+      .email('Invalid email address')
+      .required('Email is required'),
+  })
+  .required()
+
 export default function FlowTransfer() {
   const inputDescriptionText =
-    'Please enter a valid account on Plumber e.g. me@example.gov.sg'
+    'Please enter the email account you wish to transfer'
   const { isOpen, onOpen, onClose } = useDisclosure()
 
-  const { flowId } = useParams()
   const [newOwnerEmail, setNewOwnerEmail] = useState<string>('')
-  const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
-  const flow: IFlow = data?.getFlow
 
-  const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
+  const {
+    register,
+    formState: { isDirty, isValid },
+    handleSubmit,
+  } = useForm({
+    resolver: yupResolver(inputSchema),
+  })
+  const onSubmit = useCallback(
+    (_: FieldValues, event?: BaseSyntheticEvent) => {
+      if (event) {
+        event.preventDefault()
+        onOpen()
+      }
+    },
+    [onOpen],
+  )
+
+  const { flow } = useContext(EditorSettingsContext)
+
+  const requestedEmail = flow.pendingTransfer?.newOwner.email ?? ''
 
   // boolean values to indicate whether infoboxes and button can be enabled
-  const isInputEmpty = newOwnerEmail === ''
-  const shouldDisableInput = flow?.active || requestedEmail !== ''
-
-  // need to navigate user to 404 page when flow is transferred
-  if (!loading && !flow) {
-    return <Navigate to={URLS.FOUR_O_FOUR} />
-  }
+  const hasRequestedEmail = requestedEmail !== ''
+  const shouldDisableInput = flow.active || hasRequestedEmail
 
   return (
     <Flex
@@ -67,65 +84,53 @@ export default function FlowTransfer() {
     >
       <Text textStyle="h3-semibold">Transfer Pipe</Text>
 
-      {/* TODO: React suspense should fix all the loading */}
-      {loading ? (
-        <CustomSpinner />
-      ) : (
-        flow?.active && <PublishedFlowInfobox isActive={flow.active} />
-      )}
+      {flow.active && <PublishedFlowInfobox />}
 
-      {loading ? (
-        <CustomSpinner />
-      ) : (
-        !!requestedEmail && <DisallowRequestInfobox flow={flow} />
-      )}
+      {hasRequestedEmail && <DisallowRequestInfobox />}
 
       {/* Connections appear if pipe is unpublished */}
-      {loading ? (
-        <CustomSpinner />
-      ) : (
-        !flow?.active && <FlowTransferConnections flow={flow} />
-      )}
+      {!flow.active && <FlowTransferConnections />}
 
-      <FormControl isInvalid={!shouldDisableInput && isInputEmpty}>
-        <Flex flexDir="column" gap={2}>
-          <FormLabel isRequired={true}>Transfer Pipe Ownership</FormLabel>
-          <Input
-            disabled={shouldDisableInput}
-            placeholder={inputDescriptionText}
-            value={newOwnerEmail}
-            onChange={(event) => setNewOwnerEmail(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                onOpen()
-              }
-            }}
-          />
-
-          {isInputEmpty ? (
-            <FormErrorMessage>Email is required.</FormErrorMessage>
-          ) : (
-            <FormHelperText>{inputDescriptionText}</FormHelperText>
-          )}
-
-          <Button
-            isDisabled={shouldDisableInput || isInputEmpty}
-            onClick={onOpen}
-            alignSelf="flex-end"
-            mt={8}
-          >
-            Transfer Pipe
-          </Button>
-
-          {isOpen && (
-            <TransferFlowModal
-              onClose={onClose}
-              newOwnerEmail={newOwnerEmail}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <FormControl isInvalid={!shouldDisableInput && !isValid}>
+          <Flex flexDir="column">
+            <FormLabel isRequired={true}>Transfer Pipe Ownership</FormLabel>
+            <Input
+              disabled={shouldDisableInput}
+              placeholder={inputDescriptionText}
+              value={newOwnerEmail}
+              autoFocus={true}
+              {...register('email', {
+                onChange: (event) => {
+                  setNewOwnerEmail(event.target.value)
+                },
+              })}
             />
-          )}
-        </Flex>
-      </FormControl>
+
+            {isDirty && !isValid && (
+              <FormErrorMessage>
+                Please enter a valid email address.
+              </FormErrorMessage>
+            )}
+
+            <Button
+              type="submit"
+              isDisabled={shouldDisableInput || !isValid}
+              alignSelf="flex-end"
+              mt={8}
+            >
+              Transfer Pipe
+            </Button>
+
+            {isOpen && (
+              <TransferFlowModal
+                onClose={onClose}
+                newOwnerEmail={newOwnerEmail}
+              />
+            )}
+          </Flex>
+        </FormControl>
+      </form>
     </Flex>
   )
 }

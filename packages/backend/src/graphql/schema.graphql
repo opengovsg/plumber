@@ -43,6 +43,7 @@ type Query {
   getPlumberStats: Stats
   # Flow transfers
   getPendingFlowTransfers: [FlowTransfer!]!
+  getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
 }
 
 type Mutation {
@@ -84,7 +85,6 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
-  updateFlowOwner(input: UpdateFlowOwnerInput!): Flow!
 }
 
 """
@@ -96,6 +96,18 @@ directive @specifiedBy(
   """
   url: String!
 ) on SCALAR
+
+enum FieldVisibilityOp {
+  always_true
+  equals
+  not_equals
+}
+
+type FieldVisibilityCondition {
+  op: FieldVisibilityOp!
+  fieldKey: String
+  fieldValue: String
+}
 
 type Action {
   name: String
@@ -126,7 +138,7 @@ type ActionSubstepArgument {
   value: JSONObject
   source: ActionSubstepArgumentSource
   dependsOn: [String]
-  hidden: Boolean
+  hiddenIf: FieldVisibilityCondition
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
@@ -473,6 +485,13 @@ type TriggerInstructions {
   errorMsg: String
 }
 
+type StepTransferDetails {
+  position: Int!
+  appName: String!
+  connectionName: String
+  instructions: String
+}
+
 type TriggerSubstep {
   key: String
   name: String
@@ -494,6 +513,8 @@ type TriggerSubstepArgument {
   showOptionValue: Boolean
   options: [ArgumentOption]
   value: JSONObject
+  hiddenIf: FieldVisibilityCondition
+
   # Only for multirow
   subFields: [TriggerSubstepArgument]
 }
@@ -694,10 +715,6 @@ enum FlowTransferStatus {
 input UpdateFlowTransferStatusInput {
   id: String!
   status: FlowTransferStatus!
-}
-
-input UpdateFlowOwnerInput {
-  id: String!
 }
 
 # End of flow transfers types

@@ -1,12 +1,13 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
-import * as React from 'react'
+import { useFormContext } from 'react-hook-form'
 import MuiTextField from '@mui/material/TextField'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
 import RichTextEditor from 'components/RichTextEditor'
 import TextField from 'components/TextField'
+import { isFieldHidden } from 'helpers/isFieldHidden'
 import useDynamicData from 'hooks/useDynamicData'
 
 export type InputCreatorProps = {
@@ -24,9 +25,16 @@ type RawOption = {
 const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
   options?.map(({ name, value }) => ({ label: name as string, value: value }))
 
-export default function InputCreator(
-  props: InputCreatorProps,
-): React.ReactElement {
+function useIsFieldHidden(
+  namePrefix: string | undefined | null,
+  field: IField,
+): boolean {
+  const { getValues } = useFormContext()
+  const siblingParams = namePrefix ? getValues(namePrefix) : getValues()
+  return isFieldHidden(field.hiddenIf, siblingParams)
+}
+
+export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const { schema, namePrefix, stepId, disabled } = props
 
   const {
@@ -45,6 +53,13 @@ export default function InputCreator(
 
   const { data, loading, refetch } = useDynamicData(stepId, schema)
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
+
+  // NOTE: we handle visibility in InputCreator instead of in FlowSubStep
+  // because MultiRow recursively renders InputCreator.
+  const isHidden = useIsFieldHidden(namePrefix, schema)
+  if (isHidden) {
+    return <></>
+  }
 
   if (type === 'dropdown') {
     const preparedOptions = schema.options || optionGenerator(data)
@@ -148,5 +163,5 @@ export default function InputCreator(
     )
   }
 
-  return <React.Fragment />
+  return <></>
 }
