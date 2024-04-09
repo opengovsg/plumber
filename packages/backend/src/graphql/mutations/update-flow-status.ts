@@ -3,22 +3,16 @@ import {
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
 import flowQueue from '@/queues/flow'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    id: string
-    active: boolean
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
 const JOB_NAME = 'flow'
 const EVERY_15_MINUTES_CRON = '*/15 * * * *'
 
-const updateFlowStatus = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   let flow = await context.currentUser
     .$relatedQuery('flows')

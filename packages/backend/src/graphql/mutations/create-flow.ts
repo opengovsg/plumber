@@ -1,16 +1,9 @@
-import Context from '@/types/express/context'
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-type Params = {
-  input: {
-    triggerAppKey: string
-    connectionId: string
-  }
-}
-
-const createFlow = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const createFlow: MutationResolvers['createFlow'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const connectionId = params?.input?.connectionId
   const appKey = params?.input?.triggerAppKey

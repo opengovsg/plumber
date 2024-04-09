@@ -1,16 +1,11 @@
 import TableMetadata from '@/models/table-metadata'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    id: string
-  }
-}
+import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const deleteTable = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const deleteTable: MutationResolvers['deleteTable'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   await TableMetadata.transaction(async (trx) => {
     const table = await context.currentUser

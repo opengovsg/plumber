@@ -23,83 +23,83 @@ export type Scalars = {
 };
 
 export type Action = {
-  readonly __typename?: 'Action';
-  readonly description?: Maybe<Scalars['String']['output']>;
-  readonly groupsLaterSteps?: Maybe<Scalars['Boolean']['output']>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly substeps?: Maybe<ReadonlyArray<Maybe<ActionSubstep>>>;
+  __typename?: 'Action';
+  description?: Maybe<Scalars['String']['output']>;
+  groupsLaterSteps?: Maybe<Scalars['Boolean']['output']>;
+  key?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  substeps?: Maybe<Array<Maybe<ActionSubstep>>>;
 };
 
 export type ActionSubstep = {
-  readonly __typename?: 'ActionSubstep';
-  readonly arguments?: Maybe<ReadonlyArray<Maybe<ActionSubstepArgument>>>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly name?: Maybe<Scalars['String']['output']>;
+  __typename?: 'ActionSubstep';
+  arguments?: Maybe<Array<Maybe<ActionSubstepArgument>>>;
+  key?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
 };
 
 export type ActionSubstepArgument = {
-  readonly __typename?: 'ActionSubstepArgument';
-  readonly allowArbitrary?: Maybe<Scalars['Boolean']['output']>;
-  readonly dependsOn?: Maybe<ReadonlyArray<Maybe<Scalars['String']['output']>>>;
-  readonly description?: Maybe<Scalars['String']['output']>;
-  readonly hidden?: Maybe<Scalars['Boolean']['output']>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly label?: Maybe<Scalars['String']['output']>;
-  readonly options?: Maybe<ReadonlyArray<Maybe<ArgumentOption>>>;
-  readonly placeholder?: Maybe<Scalars['String']['output']>;
-  readonly required?: Maybe<Scalars['Boolean']['output']>;
-  readonly showOptionValue?: Maybe<Scalars['Boolean']['output']>;
-  readonly source?: Maybe<ActionSubstepArgumentSource>;
-  readonly subFields?: Maybe<ReadonlyArray<Maybe<ActionSubstepArgument>>>;
-  readonly type?: Maybe<Scalars['String']['output']>;
-  readonly value?: Maybe<Scalars['JSONObject']['output']>;
-  readonly variableTypes?: Maybe<ReadonlyArray<Maybe<Scalars['String']['output']>>>;
-  readonly variables?: Maybe<Scalars['Boolean']['output']>;
+  __typename?: 'ActionSubstepArgument';
+  allowArbitrary?: Maybe<Scalars['Boolean']['output']>;
+  dependsOn?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  description?: Maybe<Scalars['String']['output']>;
+  hidden?: Maybe<Scalars['Boolean']['output']>;
+  key?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  options?: Maybe<Array<Maybe<ArgumentOption>>>;
+  placeholder?: Maybe<Scalars['String']['output']>;
+  required?: Maybe<Scalars['Boolean']['output']>;
+  showOptionValue?: Maybe<Scalars['Boolean']['output']>;
+  source?: Maybe<ActionSubstepArgumentSource>;
+  subFields?: Maybe<Array<Maybe<ActionSubstepArgument>>>;
+  type?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['JSONObject']['output']>;
+  variableTypes?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  variables?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type ActionSubstepArgumentSource = {
-  readonly __typename?: 'ActionSubstepArgumentSource';
-  readonly arguments?: Maybe<ReadonlyArray<Maybe<ActionSubstepArgumentSourceArgument>>>;
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly type?: Maybe<Scalars['String']['output']>;
+  __typename?: 'ActionSubstepArgumentSource';
+  arguments?: Maybe<Array<Maybe<ActionSubstepArgumentSourceArgument>>>;
+  name?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
 };
 
 export type ActionSubstepArgumentSourceArgument = {
-  readonly __typename?: 'ActionSubstepArgumentSourceArgument';
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly value?: Maybe<Scalars['String']['output']>;
+  __typename?: 'ActionSubstepArgumentSourceArgument';
+  name?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['String']['output']>;
 };
 
 export type App = {
-  readonly __typename?: 'App';
-  readonly actions?: Maybe<ReadonlyArray<Maybe<Action>>>;
-  readonly auth?: Maybe<AppAuth>;
-  readonly authDocUrl?: Maybe<Scalars['String']['output']>;
-  readonly connectionCount?: Maybe<Scalars['Int']['output']>;
-  readonly connections?: Maybe<ReadonlyArray<Maybe<Connection>>>;
-  readonly description?: Maybe<Scalars['String']['output']>;
-  readonly docUrl?: Maybe<Scalars['String']['output']>;
-  readonly flowCount?: Maybe<Scalars['Int']['output']>;
-  readonly iconUrl?: Maybe<Scalars['String']['output']>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly primaryColor?: Maybe<Scalars['String']['output']>;
-  readonly triggers?: Maybe<ReadonlyArray<Maybe<Trigger>>>;
+  __typename?: 'App';
+  actions?: Maybe<Array<Maybe<Action>>>;
+  auth?: Maybe<AppAuth>;
+  authDocUrl?: Maybe<Scalars['String']['output']>;
+  connectionCount?: Maybe<Scalars['Int']['output']>;
+  connections?: Maybe<Array<Maybe<Connection>>>;
+  description?: Maybe<Scalars['String']['output']>;
+  docUrl?: Maybe<Scalars['String']['output']>;
+  flowCount?: Maybe<Scalars['Int']['output']>;
+  iconUrl?: Maybe<Scalars['String']['output']>;
+  key?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  primaryColor?: Maybe<Scalars['String']['output']>;
+  triggers?: Maybe<Array<Maybe<Trigger>>>;
 };
 
 export type AppAuth = {
-  readonly __typename?: 'AppAuth';
-  readonly authenticationSteps?: Maybe<ReadonlyArray<Maybe<AuthenticationStep>>>;
-  readonly connectionRegistrationType?: Maybe<Scalars['String']['output']>;
-  readonly connectionType: Scalars['String']['output'];
-  readonly fields?: Maybe<ReadonlyArray<Maybe<Field>>>;
-  readonly reconnectionSteps?: Maybe<ReadonlyArray<Maybe<ReconnectionStep>>>;
+  __typename?: 'AppAuth';
+  authenticationSteps?: Maybe<Array<Maybe<AuthenticationStep>>>;
+  connectionRegistrationType?: Maybe<Scalars['String']['output']>;
+  connectionType: Scalars['String']['output'];
+  fields?: Maybe<Array<Maybe<Field>>>;
+  reconnectionSteps?: Maybe<Array<Maybe<ReconnectionStep>>>;
 };
 
 export type AppHealth = {
-  readonly __typename?: 'AppHealth';
-  readonly version?: Maybe<Scalars['String']['output']>;
+  __typename?: 'AppHealth';
+  version?: Maybe<Scalars['String']['output']>;
 };
 
 export type ArgumentEnumType =
@@ -107,262 +107,262 @@ export type ArgumentEnumType =
   | 'string';
 
 export type ArgumentOption = {
-  readonly __typename?: 'ArgumentOption';
-  readonly label?: Maybe<Scalars['String']['output']>;
-  readonly value?: Maybe<Scalars['JSONObject']['output']>;
+  __typename?: 'ArgumentOption';
+  label?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['JSONObject']['output']>;
 };
 
 export type AuthLink = {
-  readonly __typename?: 'AuthLink';
-  readonly url?: Maybe<Scalars['String']['output']>;
+  __typename?: 'AuthLink';
+  url?: Maybe<Scalars['String']['output']>;
 };
 
 export type AuthenticationStep = {
-  readonly __typename?: 'AuthenticationStep';
-  readonly arguments?: Maybe<ReadonlyArray<Maybe<AuthenticationStepArgument>>>;
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly type?: Maybe<Scalars['String']['output']>;
+  __typename?: 'AuthenticationStep';
+  arguments?: Maybe<Array<Maybe<AuthenticationStepArgument>>>;
+  name?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
 };
 
 export type AuthenticationStepArgument = {
-  readonly __typename?: 'AuthenticationStepArgument';
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly properties?: Maybe<ReadonlyArray<Maybe<AuthenticationStepProperty>>>;
-  readonly type?: Maybe<ArgumentEnumType>;
-  readonly value?: Maybe<Scalars['String']['output']>;
+  __typename?: 'AuthenticationStepArgument';
+  name?: Maybe<Scalars['String']['output']>;
+  properties?: Maybe<Array<Maybe<AuthenticationStepProperty>>>;
+  type?: Maybe<ArgumentEnumType>;
+  value?: Maybe<Scalars['String']['output']>;
 };
 
 export type AuthenticationStepProperty = {
-  readonly __typename?: 'AuthenticationStepProperty';
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly value?: Maybe<Scalars['String']['output']>;
+  __typename?: 'AuthenticationStepProperty';
+  name?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['String']['output']>;
 };
 
 export type Connection = {
-  readonly __typename?: 'Connection';
-  readonly app?: Maybe<App>;
-  readonly createdAt?: Maybe<Scalars['String']['output']>;
-  readonly flowCount?: Maybe<Scalars['Int']['output']>;
-  readonly formattedData?: Maybe<ConnectionData>;
-  readonly id?: Maybe<Scalars['String']['output']>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly verified?: Maybe<Scalars['Boolean']['output']>;
+  __typename?: 'Connection';
+  app?: Maybe<App>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  flowCount?: Maybe<Scalars['Int']['output']>;
+  formattedData?: Maybe<ConnectionData>;
+  id?: Maybe<Scalars['String']['output']>;
+  key?: Maybe<Scalars['String']['output']>;
+  verified?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type ConnectionData = {
-  readonly __typename?: 'ConnectionData';
-  readonly screenName?: Maybe<Scalars['String']['output']>;
+  __typename?: 'ConnectionData';
+  screenName?: Maybe<Scalars['String']['output']>;
 };
 
 export type CreateConnectionInput = {
-  readonly formattedData: Scalars['JSONObject']['input'];
-  readonly key: Scalars['String']['input'];
+  formattedData: Scalars['JSONObject']['input'];
+  key: Scalars['String']['input'];
 };
 
 export type CreateFlowInput = {
-  readonly connectionId?: InputMaybe<Scalars['String']['input']>;
-  readonly triggerAppKey?: InputMaybe<Scalars['String']['input']>;
+  connectionId?: InputMaybe<Scalars['String']['input']>;
+  triggerAppKey?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateStepInput = {
-  readonly appKey?: InputMaybe<Scalars['String']['input']>;
-  readonly connection?: InputMaybe<StepConnectionInput>;
-  readonly flow?: InputMaybe<StepFlowInput>;
-  readonly id?: InputMaybe<Scalars['String']['input']>;
-  readonly key?: InputMaybe<Scalars['String']['input']>;
-  readonly parameters?: InputMaybe<Scalars['JSONObject']['input']>;
-  readonly previousStep?: InputMaybe<PreviousStepInput>;
-  readonly previousStepId?: InputMaybe<Scalars['String']['input']>;
+  appKey?: InputMaybe<Scalars['String']['input']>;
+  connection?: InputMaybe<StepConnectionInput>;
+  flow?: InputMaybe<StepFlowInput>;
+  id?: InputMaybe<Scalars['String']['input']>;
+  key?: InputMaybe<Scalars['String']['input']>;
+  parameters?: InputMaybe<Scalars['JSONObject']['input']>;
+  previousStep?: InputMaybe<PreviousStepInput>;
+  previousStepId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateTableInput = {
-  readonly name: Scalars['String']['input'];
+  name: Scalars['String']['input'];
 };
 
 export type CreateTableRowInput = {
-  readonly data: Scalars['JSONObject']['input'];
-  readonly tableId: Scalars['ID']['input'];
+  data: Scalars['JSONObject']['input'];
+  tableId: Scalars['ID']['input'];
 };
 
 export type CreateTableRowsInput = {
-  readonly dataArray: ReadonlyArray<Scalars['JSONObject']['input']>;
-  readonly tableId: Scalars['ID']['input'];
+  dataArray: Array<Scalars['JSONObject']['input']>;
+  tableId: Scalars['ID']['input'];
 };
 
 export type DeleteConnectionInput = {
-  readonly id: Scalars['String']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type DeleteFlowInput = {
-  readonly id: Scalars['String']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type DeleteStepInput = {
-  readonly ids: ReadonlyArray<Scalars['String']['input']>;
+  ids: Array<Scalars['String']['input']>;
 };
 
 export type DeleteTableInput = {
-  readonly id: Scalars['ID']['input'];
+  id: Scalars['ID']['input'];
 };
 
 export type DeleteTableRowsInput = {
-  readonly rowIds: ReadonlyArray<Scalars['ID']['input']>;
-  readonly tableId: Scalars['ID']['input'];
+  rowIds: Array<Scalars['ID']['input']>;
+  tableId: Scalars['ID']['input'];
 };
 
 export type ExecuteFlowInput = {
-  readonly stepId: Scalars['String']['input'];
+  stepId: Scalars['String']['input'];
 };
 
 export type ExecuteFlowType = {
-  readonly __typename?: 'ExecuteFlowType';
-  readonly data?: Maybe<Scalars['JSONObject']['output']>;
-  readonly step?: Maybe<Step>;
+  __typename?: 'ExecuteFlowType';
+  data?: Maybe<Scalars['JSONObject']['output']>;
+  step?: Maybe<Step>;
 };
 
 export type Execution = {
-  readonly __typename?: 'Execution';
-  readonly createdAt?: Maybe<Scalars['String']['output']>;
-  readonly flow?: Maybe<Flow>;
-  readonly id?: Maybe<Scalars['String']['output']>;
-  readonly status?: Maybe<Scalars['String']['output']>;
-  readonly testRun?: Maybe<Scalars['Boolean']['output']>;
-  readonly updatedAt?: Maybe<Scalars['String']['output']>;
+  __typename?: 'Execution';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  flow?: Maybe<Flow>;
+  id?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
+  testRun?: Maybe<Scalars['Boolean']['output']>;
+  updatedAt?: Maybe<Scalars['String']['output']>;
 };
 
 export type ExecutionConnection = {
-  readonly __typename?: 'ExecutionConnection';
-  readonly edges?: Maybe<ReadonlyArray<Maybe<ExecutionEdge>>>;
-  readonly pageInfo?: Maybe<PageInfo>;
+  __typename?: 'ExecutionConnection';
+  edges?: Maybe<Array<Maybe<ExecutionEdge>>>;
+  pageInfo?: Maybe<PageInfo>;
 };
 
 export type ExecutionEdge = {
-  readonly __typename?: 'ExecutionEdge';
-  readonly node?: Maybe<Execution>;
+  __typename?: 'ExecutionEdge';
+  node?: Maybe<Execution>;
 };
 
 export type ExecutionStep = {
-  readonly __typename?: 'ExecutionStep';
-  readonly appKey?: Maybe<Scalars['String']['output']>;
-  readonly createdAt?: Maybe<Scalars['String']['output']>;
-  readonly dataIn?: Maybe<Scalars['JSONObject']['output']>;
-  readonly dataOut?: Maybe<Scalars['JSONObject']['output']>;
-  readonly dataOutMetadata?: Maybe<Scalars['JSONObject']['output']>;
-  readonly errorDetails?: Maybe<Scalars['JSONObject']['output']>;
-  readonly executionId?: Maybe<Scalars['String']['output']>;
-  readonly id?: Maybe<Scalars['String']['output']>;
-  readonly jobId?: Maybe<Scalars['String']['output']>;
-  readonly status?: Maybe<Scalars['String']['output']>;
-  readonly step?: Maybe<Step>;
-  readonly stepId?: Maybe<Scalars['String']['output']>;
-  readonly updatedAt?: Maybe<Scalars['String']['output']>;
+  __typename?: 'ExecutionStep';
+  appKey?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  dataIn?: Maybe<Scalars['JSONObject']['output']>;
+  dataOut?: Maybe<Scalars['JSONObject']['output']>;
+  dataOutMetadata?: Maybe<Scalars['JSONObject']['output']>;
+  errorDetails?: Maybe<Scalars['JSONObject']['output']>;
+  executionId?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  jobId?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
+  step?: Maybe<Step>;
+  stepId?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['String']['output']>;
 };
 
 export type ExecutionStepConnection = {
-  readonly __typename?: 'ExecutionStepConnection';
-  readonly edges?: Maybe<ReadonlyArray<Maybe<ExecutionStepEdge>>>;
-  readonly pageInfo?: Maybe<PageInfo>;
+  __typename?: 'ExecutionStepConnection';
+  edges?: Maybe<Array<Maybe<ExecutionStepEdge>>>;
+  pageInfo?: Maybe<PageInfo>;
 };
 
 export type ExecutionStepEdge = {
-  readonly __typename?: 'ExecutionStepEdge';
-  readonly node?: Maybe<ExecutionStep>;
+  __typename?: 'ExecutionStepEdge';
+  node?: Maybe<ExecutionStep>;
 };
 
 export type Field = {
-  readonly __typename?: 'Field';
-  readonly allowArbitrary?: Maybe<Scalars['Boolean']['output']>;
-  readonly autoComplete?: Maybe<Scalars['String']['output']>;
-  readonly clickToCopy?: Maybe<Scalars['Boolean']['output']>;
-  readonly description?: Maybe<Scalars['String']['output']>;
-  readonly docUrl?: Maybe<Scalars['String']['output']>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly label?: Maybe<Scalars['String']['output']>;
-  readonly options?: Maybe<ReadonlyArray<Maybe<ArgumentOption>>>;
-  readonly placeholder?: Maybe<Scalars['String']['output']>;
-  readonly readOnly?: Maybe<Scalars['Boolean']['output']>;
-  readonly required?: Maybe<Scalars['Boolean']['output']>;
-  readonly showOptionValue?: Maybe<Scalars['Boolean']['output']>;
-  readonly type?: Maybe<Scalars['String']['output']>;
-  readonly value?: Maybe<Scalars['String']['output']>;
+  __typename?: 'Field';
+  allowArbitrary?: Maybe<Scalars['Boolean']['output']>;
+  autoComplete?: Maybe<Scalars['String']['output']>;
+  clickToCopy?: Maybe<Scalars['Boolean']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  docUrl?: Maybe<Scalars['String']['output']>;
+  key?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  options?: Maybe<Array<Maybe<ArgumentOption>>>;
+  placeholder?: Maybe<Scalars['String']['output']>;
+  readOnly?: Maybe<Scalars['Boolean']['output']>;
+  required?: Maybe<Scalars['Boolean']['output']>;
+  showOptionValue?: Maybe<Scalars['Boolean']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['String']['output']>;
 };
 
 export type Flow = {
-  readonly __typename?: 'Flow';
-  readonly active?: Maybe<Scalars['Boolean']['output']>;
-  readonly createdAt?: Maybe<Scalars['String']['output']>;
-  readonly id?: Maybe<Scalars['String']['output']>;
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly steps?: Maybe<ReadonlyArray<Maybe<Step>>>;
-  readonly updatedAt?: Maybe<Scalars['String']['output']>;
+  __typename?: 'Flow';
+  active?: Maybe<Scalars['Boolean']['output']>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  steps?: Maybe<Array<Maybe<Step>>>;
+  updatedAt?: Maybe<Scalars['String']['output']>;
 };
 
 export type FlowConnection = {
-  readonly __typename?: 'FlowConnection';
-  readonly edges?: Maybe<ReadonlyArray<Maybe<FlowEdge>>>;
-  readonly pageInfo?: Maybe<PageInfo>;
+  __typename?: 'FlowConnection';
+  edges?: Maybe<Array<Maybe<FlowEdge>>>;
+  pageInfo?: Maybe<PageInfo>;
 };
 
 export type FlowEdge = {
-  readonly __typename?: 'FlowEdge';
-  readonly node?: Maybe<Flow>;
+  __typename?: 'FlowEdge';
+  node?: Maybe<Flow>;
 };
 
 export type GenerateAuthUrlInput = {
-  readonly id: Scalars['String']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type LoginWithSelectedSgidInput = {
-  readonly workEmail: Scalars['String']['input'];
+  workEmail: Scalars['String']['input'];
 };
 
 export type LoginWithSelectedSgidResult = {
-  readonly __typename?: 'LoginWithSelectedSgidResult';
-  readonly success: Scalars['Boolean']['output'];
+  __typename?: 'LoginWithSelectedSgidResult';
+  success: Scalars['Boolean']['output'];
 };
 
 export type LoginWithSgidInput = {
-  readonly authCode: Scalars['String']['input'];
-  readonly nonce: Scalars['String']['input'];
-  readonly verifier: Scalars['String']['input'];
+  authCode: Scalars['String']['input'];
+  nonce: Scalars['String']['input'];
+  verifier: Scalars['String']['input'];
 };
 
 export type LoginWithSgidResult = {
-  readonly __typename?: 'LoginWithSgidResult';
-  readonly publicOfficerEmployments: ReadonlyArray<SgidPublicOfficerEmployment>;
+  __typename?: 'LoginWithSgidResult';
+  publicOfficerEmployments: Array<SgidPublicOfficerEmployment>;
 };
 
 export type Mutation = {
-  readonly __typename?: 'Mutation';
-  readonly createConnection?: Maybe<Connection>;
-  readonly createFlow?: Maybe<Flow>;
-  readonly createRow: Scalars['ID']['output'];
-  readonly createRows?: Maybe<Scalars['Boolean']['output']>;
-  readonly createShareableTableLink: Scalars['String']['output'];
-  readonly createStep?: Maybe<Step>;
-  readonly createTable: TableMetadata;
-  readonly deleteConnection?: Maybe<Scalars['Boolean']['output']>;
-  readonly deleteFlow?: Maybe<Scalars['Boolean']['output']>;
-  readonly deleteRows: ReadonlyArray<Scalars['ID']['output']>;
-  readonly deleteStep?: Maybe<Flow>;
-  readonly deleteTable: Scalars['Boolean']['output'];
-  readonly executeFlow?: Maybe<ExecuteFlowType>;
-  readonly generateAuthUrl?: Maybe<AuthLink>;
-  readonly loginWithSelectedSgid: LoginWithSelectedSgidResult;
-  readonly loginWithSgid: LoginWithSgidResult;
-  readonly logout?: Maybe<Scalars['Boolean']['output']>;
-  readonly registerConnection?: Maybe<Scalars['Boolean']['output']>;
-  readonly requestOtp?: Maybe<Scalars['Boolean']['output']>;
-  readonly resetConnection?: Maybe<Connection>;
-  readonly retryExecutionStep?: Maybe<Scalars['Boolean']['output']>;
-  readonly updateConnection?: Maybe<Connection>;
-  readonly updateFlow?: Maybe<Flow>;
-  readonly updateFlowStatus?: Maybe<Flow>;
-  readonly updateRow: Scalars['ID']['output'];
-  readonly updateStep?: Maybe<Step>;
-  readonly updateTable: TableMetadata;
-  readonly verifyConnection?: Maybe<Connection>;
-  readonly verifyOtp?: Maybe<Scalars['Boolean']['output']>;
+  __typename?: 'Mutation';
+  createConnection?: Maybe<Connection>;
+  createFlow?: Maybe<Flow>;
+  createRow: Scalars['ID']['output'];
+  createRows?: Maybe<Scalars['Boolean']['output']>;
+  createShareableTableLink: Scalars['String']['output'];
+  createStep?: Maybe<Step>;
+  createTable: TableMetadata;
+  deleteConnection?: Maybe<Scalars['Boolean']['output']>;
+  deleteFlow?: Maybe<Scalars['Boolean']['output']>;
+  deleteRows: Array<Scalars['ID']['output']>;
+  deleteStep?: Maybe<Flow>;
+  deleteTable: Scalars['Boolean']['output'];
+  executeFlow?: Maybe<ExecuteFlowType>;
+  generateAuthUrl?: Maybe<AuthLink>;
+  loginWithSelectedSgid: LoginWithSelectedSgidResult;
+  loginWithSgid: LoginWithSgidResult;
+  logout?: Maybe<Scalars['Boolean']['output']>;
+  registerConnection?: Maybe<Scalars['Boolean']['output']>;
+  requestOtp?: Maybe<Scalars['Boolean']['output']>;
+  resetConnection?: Maybe<Connection>;
+  retryExecutionStep?: Maybe<Scalars['Boolean']['output']>;
+  updateConnection?: Maybe<Connection>;
+  updateFlow?: Maybe<Flow>;
+  updateFlowStatus?: Maybe<Flow>;
+  updateRow: Scalars['ID']['output'];
+  updateStep?: Maybe<Step>;
+  updateTable: TableMetadata;
+  verifyConnection?: Maybe<Connection>;
+  verifyOtp?: Maybe<Scalars['Boolean']['output']>;
 };
 
 
@@ -506,33 +506,33 @@ export type MutationverifyOtpArgs = {
 };
 
 export type PageInfo = {
-  readonly __typename?: 'PageInfo';
-  readonly currentPage: Scalars['Int']['output'];
-  readonly totalCount: Scalars['Int']['output'];
+  __typename?: 'PageInfo';
+  currentPage: Scalars['Int']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type PreviousStepInput = {
-  readonly id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type Query = {
-  readonly __typename?: 'Query';
-  readonly getAllRows: ReadonlyArray<TileRow>;
-  readonly getApp?: Maybe<App>;
-  readonly getApps?: Maybe<ReadonlyArray<Maybe<App>>>;
-  readonly getConnectedApps?: Maybe<ReadonlyArray<Maybe<App>>>;
-  readonly getCurrentUser?: Maybe<User>;
-  readonly getDynamicData?: Maybe<ReadonlyArray<Maybe<Scalars['JSONObject']['output']>>>;
-  readonly getExecution?: Maybe<Execution>;
-  readonly getExecutionSteps?: Maybe<ExecutionStepConnection>;
-  readonly getExecutions?: Maybe<ExecutionConnection>;
-  readonly getFlow?: Maybe<Flow>;
-  readonly getFlows?: Maybe<FlowConnection>;
-  readonly getStepWithTestExecutions?: Maybe<ReadonlyArray<Maybe<Step>>>;
-  readonly getTable: TableMetadata;
-  readonly getTables: ReadonlyArray<TableMetadata>;
-  readonly healthcheck?: Maybe<AppHealth>;
-  readonly testConnection?: Maybe<TestConnectionResult>;
+  __typename?: 'Query';
+  getAllRows: Array<TileRow>;
+  getApp?: Maybe<App>;
+  getApps?: Maybe<Array<Maybe<App>>>;
+  getConnectedApps?: Maybe<Array<Maybe<App>>>;
+  getCurrentUser?: Maybe<User>;
+  getDynamicData?: Maybe<Array<Maybe<Scalars['JSONObject']['output']>>>;
+  getExecution?: Maybe<Execution>;
+  getExecutionSteps?: Maybe<ExecutionStepConnection>;
+  getExecutions?: Maybe<ExecutionConnection>;
+  getFlow?: Maybe<Flow>;
+  getFlows?: Maybe<FlowConnection>;
+  getStepWithTestExecutions?: Maybe<Array<Maybe<Step>>>;
+  getTable: TableMetadata;
+  getTables: Array<TableMetadata>;
+  healthcheck?: Maybe<AppHealth>;
+  testConnection?: Maybe<TestConnectionResult>;
 };
 
 
@@ -615,71 +615,71 @@ export type QuerytestConnectionArgs = {
 };
 
 export type ReconnectionStep = {
-  readonly __typename?: 'ReconnectionStep';
-  readonly arguments?: Maybe<ReadonlyArray<Maybe<ReconnectionStepArgument>>>;
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly type?: Maybe<Scalars['String']['output']>;
+  __typename?: 'ReconnectionStep';
+  arguments?: Maybe<Array<Maybe<ReconnectionStepArgument>>>;
+  name?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
 };
 
 export type ReconnectionStepArgument = {
-  readonly __typename?: 'ReconnectionStepArgument';
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly properties?: Maybe<ReadonlyArray<Maybe<ReconnectionStepProperty>>>;
-  readonly type?: Maybe<ArgumentEnumType>;
-  readonly value?: Maybe<Scalars['String']['output']>;
+  __typename?: 'ReconnectionStepArgument';
+  name?: Maybe<Scalars['String']['output']>;
+  properties?: Maybe<Array<Maybe<ReconnectionStepProperty>>>;
+  type?: Maybe<ArgumentEnumType>;
+  value?: Maybe<Scalars['String']['output']>;
 };
 
 export type ReconnectionStepProperty = {
-  readonly __typename?: 'ReconnectionStepProperty';
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly value?: Maybe<Scalars['String']['output']>;
+  __typename?: 'ReconnectionStepProperty';
+  name?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['String']['output']>;
 };
 
 export type RegisterConnectionInput = {
-  readonly connectionId: Scalars['String']['input'];
-  readonly stepId?: InputMaybe<Scalars['String']['input']>;
+  connectionId: Scalars['String']['input'];
+  stepId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RequestOtpInput = {
-  readonly email: Scalars['String']['input'];
+  email: Scalars['String']['input'];
 };
 
 export type ResetConnectionInput = {
-  readonly id: Scalars['String']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type RetryExecutionStepInput = {
-  readonly executionStepId: Scalars['String']['input'];
+  executionStepId: Scalars['String']['input'];
 };
 
 export type SgidPublicOfficerEmployment = {
-  readonly __typename?: 'SgidPublicOfficerEmployment';
-  readonly agencyName?: Maybe<Scalars['String']['output']>;
-  readonly departmentName?: Maybe<Scalars['String']['output']>;
-  readonly employmentTitle?: Maybe<Scalars['String']['output']>;
-  readonly employmentType?: Maybe<Scalars['String']['output']>;
-  readonly workEmail?: Maybe<Scalars['String']['output']>;
+  __typename?: 'SgidPublicOfficerEmployment';
+  agencyName?: Maybe<Scalars['String']['output']>;
+  departmentName?: Maybe<Scalars['String']['output']>;
+  employmentTitle?: Maybe<Scalars['String']['output']>;
+  employmentType?: Maybe<Scalars['String']['output']>;
+  workEmail?: Maybe<Scalars['String']['output']>;
 };
 
 export type Step = {
-  readonly __typename?: 'Step';
-  readonly appKey?: Maybe<Scalars['String']['output']>;
-  readonly connection?: Maybe<Connection>;
-  readonly executionSteps?: Maybe<ReadonlyArray<Maybe<ExecutionStep>>>;
-  readonly flow?: Maybe<Flow>;
-  readonly iconUrl?: Maybe<Scalars['String']['output']>;
-  readonly id?: Maybe<Scalars['String']['output']>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly parameters?: Maybe<Scalars['JSONObject']['output']>;
-  readonly position?: Maybe<Scalars['Int']['output']>;
-  readonly previousStepId?: Maybe<Scalars['String']['output']>;
-  readonly status?: Maybe<Scalars['String']['output']>;
-  readonly type?: Maybe<StepEnumType>;
-  readonly webhookUrl?: Maybe<Scalars['String']['output']>;
+  __typename?: 'Step';
+  appKey?: Maybe<Scalars['String']['output']>;
+  connection?: Maybe<Connection>;
+  executionSteps?: Maybe<Array<Maybe<ExecutionStep>>>;
+  flow?: Maybe<Flow>;
+  iconUrl?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  key?: Maybe<Scalars['String']['output']>;
+  parameters?: Maybe<Scalars['JSONObject']['output']>;
+  position?: Maybe<Scalars['Int']['output']>;
+  previousStepId?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<StepEnumType>;
+  webhookUrl?: Maybe<Scalars['String']['output']>;
 };
 
 export type StepConnectionInput = {
-  readonly id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type StepEnumType =
@@ -687,179 +687,179 @@ export type StepEnumType =
   | 'trigger';
 
 export type StepFlowInput = {
-  readonly id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type StepInput = {
-  readonly appKey?: InputMaybe<Scalars['String']['input']>;
-  readonly connection?: InputMaybe<StepConnectionInput>;
-  readonly flow?: InputMaybe<StepFlowInput>;
-  readonly id?: InputMaybe<Scalars['String']['input']>;
-  readonly key?: InputMaybe<Scalars['String']['input']>;
-  readonly parameters?: InputMaybe<Scalars['JSONObject']['input']>;
-  readonly previousStep?: InputMaybe<PreviousStepInput>;
-  readonly previousStepId?: InputMaybe<Scalars['String']['input']>;
+  appKey?: InputMaybe<Scalars['String']['input']>;
+  connection?: InputMaybe<StepConnectionInput>;
+  flow?: InputMaybe<StepFlowInput>;
+  id?: InputMaybe<Scalars['String']['input']>;
+  key?: InputMaybe<Scalars['String']['input']>;
+  parameters?: InputMaybe<Scalars['JSONObject']['input']>;
+  previousStep?: InputMaybe<PreviousStepInput>;
+  previousStepId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type TableColumnConfig = {
-  readonly __typename?: 'TableColumnConfig';
-  readonly width?: Maybe<Scalars['Int']['output']>;
+  __typename?: 'TableColumnConfig';
+  width?: Maybe<Scalars['Int']['output']>;
 };
 
 export type TableColumnConfigInput = {
-  readonly width?: InputMaybe<Scalars['Int']['input']>;
+  width?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type TableColumnMetadata = {
-  readonly __typename?: 'TableColumnMetadata';
-  readonly config: TableColumnConfig;
-  readonly id: Scalars['ID']['output'];
-  readonly name: Scalars['String']['output'];
-  readonly position: Scalars['Int']['output'];
+  __typename?: 'TableColumnMetadata';
+  config: TableColumnConfig;
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  position: Scalars['Int']['output'];
 };
 
 export type TableColumnMetadataInput = {
-  readonly config?: InputMaybe<TableColumnConfigInput>;
-  readonly id: Scalars['ID']['input'];
-  readonly name?: InputMaybe<Scalars['String']['input']>;
-  readonly position?: InputMaybe<Scalars['Int']['input']>;
+  config?: InputMaybe<TableColumnConfigInput>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  position?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type TableMetadata = {
-  readonly __typename?: 'TableMetadata';
-  readonly columns?: Maybe<ReadonlyArray<TableColumnMetadata>>;
-  readonly id: Scalars['ID']['output'];
-  readonly lastAccessedAt: Scalars['String']['output'];
-  readonly name: Scalars['String']['output'];
-  readonly viewOnlyKey?: Maybe<Scalars['String']['output']>;
+  __typename?: 'TableMetadata';
+  columns?: Maybe<Array<TableColumnMetadata>>;
+  id: Scalars['ID']['output'];
+  lastAccessedAt: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  viewOnlyKey?: Maybe<Scalars['String']['output']>;
 };
 
 export type TestConnectionResult = {
-  readonly __typename?: 'TestConnectionResult';
-  readonly connectionVerified: Scalars['Boolean']['output'];
-  readonly message?: Maybe<Scalars['String']['output']>;
-  readonly registrationVerified?: Maybe<Scalars['Boolean']['output']>;
+  __typename?: 'TestConnectionResult';
+  connectionVerified: Scalars['Boolean']['output'];
+  message?: Maybe<Scalars['String']['output']>;
+  registrationVerified?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type TileRow = {
-  readonly __typename?: 'TileRow';
-  readonly data: Scalars['JSONObject']['output'];
-  readonly rowId: Scalars['ID']['output'];
+  __typename?: 'TileRow';
+  data: Scalars['JSONObject']['output'];
+  rowId: Scalars['ID']['output'];
 };
 
 export type Trigger = {
-  readonly __typename?: 'Trigger';
-  readonly description?: Maybe<Scalars['String']['output']>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly pollInterval?: Maybe<Scalars['Int']['output']>;
-  readonly substeps?: Maybe<ReadonlyArray<Maybe<TriggerSubstep>>>;
-  readonly type?: Maybe<Scalars['String']['output']>;
-  readonly webhookTriggerInstructions?: Maybe<TriggerInstructions>;
+  __typename?: 'Trigger';
+  description?: Maybe<Scalars['String']['output']>;
+  key?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  pollInterval?: Maybe<Scalars['Int']['output']>;
+  substeps?: Maybe<Array<Maybe<TriggerSubstep>>>;
+  type?: Maybe<Scalars['String']['output']>;
+  webhookTriggerInstructions?: Maybe<TriggerInstructions>;
 };
 
 export type TriggerInstructions = {
-  readonly __typename?: 'TriggerInstructions';
-  readonly afterUrlMsg?: Maybe<Scalars['String']['output']>;
-  readonly beforeUrlMsg?: Maybe<Scalars['String']['output']>;
-  readonly errorMsg?: Maybe<Scalars['String']['output']>;
-  readonly hideWebhookUrl?: Maybe<Scalars['Boolean']['output']>;
+  __typename?: 'TriggerInstructions';
+  afterUrlMsg?: Maybe<Scalars['String']['output']>;
+  beforeUrlMsg?: Maybe<Scalars['String']['output']>;
+  errorMsg?: Maybe<Scalars['String']['output']>;
+  hideWebhookUrl?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type TriggerSubstep = {
-  readonly __typename?: 'TriggerSubstep';
-  readonly arguments?: Maybe<ReadonlyArray<Maybe<TriggerSubstepArgument>>>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly name?: Maybe<Scalars['String']['output']>;
+  __typename?: 'TriggerSubstep';
+  arguments?: Maybe<Array<Maybe<TriggerSubstepArgument>>>;
+  key?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
 };
 
 export type TriggerSubstepArgument = {
-  readonly __typename?: 'TriggerSubstepArgument';
-  readonly allowArbitrary?: Maybe<Scalars['Boolean']['output']>;
-  readonly dependsOn?: Maybe<ReadonlyArray<Maybe<Scalars['String']['output']>>>;
-  readonly description?: Maybe<Scalars['String']['output']>;
-  readonly key?: Maybe<Scalars['String']['output']>;
-  readonly label?: Maybe<Scalars['String']['output']>;
-  readonly options?: Maybe<ReadonlyArray<Maybe<ArgumentOption>>>;
-  readonly placeholder?: Maybe<Scalars['String']['output']>;
-  readonly required?: Maybe<Scalars['Boolean']['output']>;
-  readonly showOptionValue?: Maybe<Scalars['Boolean']['output']>;
-  readonly source?: Maybe<TriggerSubstepArgumentSource>;
-  readonly subFields?: Maybe<ReadonlyArray<Maybe<TriggerSubstepArgument>>>;
-  readonly type?: Maybe<Scalars['String']['output']>;
-  readonly value?: Maybe<Scalars['JSONObject']['output']>;
-  readonly variableTypes?: Maybe<ReadonlyArray<Maybe<Scalars['String']['output']>>>;
-  readonly variables?: Maybe<Scalars['Boolean']['output']>;
+  __typename?: 'TriggerSubstepArgument';
+  allowArbitrary?: Maybe<Scalars['Boolean']['output']>;
+  dependsOn?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  description?: Maybe<Scalars['String']['output']>;
+  key?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  options?: Maybe<Array<Maybe<ArgumentOption>>>;
+  placeholder?: Maybe<Scalars['String']['output']>;
+  required?: Maybe<Scalars['Boolean']['output']>;
+  showOptionValue?: Maybe<Scalars['Boolean']['output']>;
+  source?: Maybe<TriggerSubstepArgumentSource>;
+  subFields?: Maybe<Array<Maybe<TriggerSubstepArgument>>>;
+  type?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['JSONObject']['output']>;
+  variableTypes?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  variables?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type TriggerSubstepArgumentSource = {
-  readonly __typename?: 'TriggerSubstepArgumentSource';
-  readonly arguments?: Maybe<ReadonlyArray<Maybe<TriggerSubstepArgumentSourceArgument>>>;
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly type?: Maybe<Scalars['String']['output']>;
+  __typename?: 'TriggerSubstepArgumentSource';
+  arguments?: Maybe<Array<Maybe<TriggerSubstepArgumentSourceArgument>>>;
+  name?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
 };
 
 export type TriggerSubstepArgumentSourceArgument = {
-  readonly __typename?: 'TriggerSubstepArgumentSourceArgument';
-  readonly name?: Maybe<Scalars['String']['output']>;
-  readonly value?: Maybe<Scalars['String']['output']>;
+  __typename?: 'TriggerSubstepArgumentSourceArgument';
+  name?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['String']['output']>;
 };
 
 export type UpdateConnectionInput = {
-  readonly formattedData: Scalars['JSONObject']['input'];
-  readonly id: Scalars['String']['input'];
+  formattedData: Scalars['JSONObject']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type UpdateFlowInput = {
-  readonly id: Scalars['String']['input'];
-  readonly name: Scalars['String']['input'];
+  id: Scalars['String']['input'];
+  name: Scalars['String']['input'];
 };
 
 export type UpdateFlowStatusInput = {
-  readonly active: Scalars['Boolean']['input'];
-  readonly id: Scalars['String']['input'];
+  active: Scalars['Boolean']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type UpdateStepInput = {
-  readonly appKey?: InputMaybe<Scalars['String']['input']>;
-  readonly connection?: InputMaybe<StepConnectionInput>;
-  readonly flow?: InputMaybe<StepFlowInput>;
-  readonly id?: InputMaybe<Scalars['String']['input']>;
-  readonly key?: InputMaybe<Scalars['String']['input']>;
-  readonly parameters?: InputMaybe<Scalars['JSONObject']['input']>;
-  readonly previousStep?: InputMaybe<PreviousStepInput>;
-  readonly previousStepId?: InputMaybe<Scalars['String']['input']>;
+  appKey?: InputMaybe<Scalars['String']['input']>;
+  connection?: InputMaybe<StepConnectionInput>;
+  flow?: InputMaybe<StepFlowInput>;
+  id?: InputMaybe<Scalars['String']['input']>;
+  key?: InputMaybe<Scalars['String']['input']>;
+  parameters?: InputMaybe<Scalars['JSONObject']['input']>;
+  previousStep?: InputMaybe<PreviousStepInput>;
+  previousStepId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateTableInput = {
-  readonly addedColumns?: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
-  readonly deletedColumns?: InputMaybe<ReadonlyArray<Scalars['ID']['input']>>;
-  readonly id: Scalars['ID']['input'];
-  readonly modifiedColumns?: InputMaybe<ReadonlyArray<TableColumnMetadataInput>>;
-  readonly name?: InputMaybe<Scalars['String']['input']>;
+  addedColumns?: InputMaybe<Array<Scalars['String']['input']>>;
+  deletedColumns?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id: Scalars['ID']['input'];
+  modifiedColumns?: InputMaybe<Array<TableColumnMetadataInput>>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateTableRowInput = {
-  readonly data: Scalars['JSONObject']['input'];
-  readonly rowId: Scalars['ID']['input'];
-  readonly tableId: Scalars['ID']['input'];
+  data: Scalars['JSONObject']['input'];
+  rowId: Scalars['ID']['input'];
+  tableId: Scalars['ID']['input'];
 };
 
 export type User = {
-  readonly __typename?: 'User';
-  readonly createdAt?: Maybe<Scalars['String']['output']>;
-  readonly email?: Maybe<Scalars['String']['output']>;
-  readonly id?: Maybe<Scalars['String']['output']>;
-  readonly updatedAt?: Maybe<Scalars['String']['output']>;
+  __typename?: 'User';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['String']['output']>;
 };
 
 export type VerifyConnectionInput = {
-  readonly id: Scalars['String']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type VerifyOtpInput = {
-  readonly email: Scalars['String']['input'];
-  readonly otp: Scalars['String']['input'];
+  email: Scalars['String']['input'];
+  otp: Scalars['String']['input'];
 };
 
 
@@ -969,7 +969,7 @@ export type ResolversTypes = {
   ExecutionStepConnection: ResolverTypeWrapper<ExecutionStepConnectionGraphQLType>;
   ExecutionStepEdge: ResolverTypeWrapper<Omit<ExecutionStepEdge, 'node'> & { node?: Maybe<ResolversTypes['ExecutionStep']> }>;
   Field: ResolverTypeWrapper<Field>;
-  Flow: ResolverTypeWrapper<Omit<Flow, 'steps'> & { steps?: Maybe<ReadonlyArray<Maybe<ResolversTypes['Step']>>> }>;
+  Flow: ResolverTypeWrapper<Omit<Flow, 'steps'> & { steps?: Maybe<Array<Maybe<ResolversTypes['Step']>>> }>;
   FlowConnection: ResolverTypeWrapper<FlowConnectionGraphQLType>;
   FlowEdge: ResolverTypeWrapper<Omit<FlowEdge, 'node'> & { node?: Maybe<ResolversTypes['Flow']> }>;
   GenerateAuthUrlInput: GenerateAuthUrlInput;
@@ -990,7 +990,7 @@ export type ResolversTypes = {
   ResetConnectionInput: ResetConnectionInput;
   RetryExecutionStepInput: RetryExecutionStepInput;
   SgidPublicOfficerEmployment: ResolverTypeWrapper<SgidPublicOfficerEmployment>;
-  Step: ResolverTypeWrapper<Omit<Step, 'connection' | 'executionSteps' | 'flow'> & { connection?: Maybe<ResolversTypes['Connection']>, executionSteps?: Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStep']>>>, flow?: Maybe<ResolversTypes['Flow']> }>;
+  Step: ResolverTypeWrapper<Omit<Step, 'connection' | 'executionSteps' | 'flow'> & { connection?: Maybe<ResolversTypes['Connection']>, executionSteps?: Maybe<Array<Maybe<ResolversTypes['ExecutionStep']>>>, flow?: Maybe<ResolversTypes['Flow']> }>;
   StepConnectionInput: StepConnectionInput;
   StepEnumType: StepEnumType;
   StepFlowInput: StepFlowInput;
@@ -1060,7 +1060,7 @@ export type ResolversParentTypes = {
   ExecutionStepConnection: ExecutionStepConnectionGraphQLType;
   ExecutionStepEdge: Omit<ExecutionStepEdge, 'node'> & { node?: Maybe<ResolversParentTypes['ExecutionStep']> };
   Field: Field;
-  Flow: Omit<Flow, 'steps'> & { steps?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['Step']>>> };
+  Flow: Omit<Flow, 'steps'> & { steps?: Maybe<Array<Maybe<ResolversParentTypes['Step']>>> };
   FlowConnection: FlowConnectionGraphQLType;
   FlowEdge: Omit<FlowEdge, 'node'> & { node?: Maybe<ResolversParentTypes['Flow']> };
   GenerateAuthUrlInput: GenerateAuthUrlInput;
@@ -1081,7 +1081,7 @@ export type ResolversParentTypes = {
   ResetConnectionInput: ResetConnectionInput;
   RetryExecutionStepInput: RetryExecutionStepInput;
   SgidPublicOfficerEmployment: SgidPublicOfficerEmployment;
-  Step: Omit<Step, 'connection' | 'executionSteps' | 'flow'> & { connection?: Maybe<ResolversParentTypes['Connection']>, executionSteps?: Maybe<ReadonlyArray<Maybe<ResolversParentTypes['ExecutionStep']>>>, flow?: Maybe<ResolversParentTypes['Flow']> };
+  Step: Omit<Step, 'connection' | 'executionSteps' | 'flow'> & { connection?: Maybe<ResolversParentTypes['Connection']>, executionSteps?: Maybe<Array<Maybe<ResolversParentTypes['ExecutionStep']>>>, flow?: Maybe<ResolversParentTypes['Flow']> };
   StepConnectionInput: StepConnectionInput;
   StepFlowInput: StepFlowInput;
   StepInput: StepInput;
@@ -1114,12 +1114,12 @@ export type ActionResolvers<ContextType = AuthenticatedGraphQLContext, ParentTyp
   groupsLaterSteps?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  substeps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ActionSubstep']>>>, ParentType, ContextType>;
+  substeps?: Resolver<Maybe<Array<Maybe<ResolversTypes['ActionSubstep']>>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type ActionSubstepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ActionSubstep'] = ResolversParentTypes['ActionSubstep']> = {
-  arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ActionSubstepArgument']>>>, ParentType, ContextType>;
+  arguments?: Resolver<Maybe<Array<Maybe<ResolversTypes['ActionSubstepArgument']>>>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1127,26 +1127,26 @@ export type ActionSubstepResolvers<ContextType = AuthenticatedGraphQLContext, Pa
 
 export type ActionSubstepArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ActionSubstepArgument'] = ResolversParentTypes['ActionSubstepArgument']> = {
   allowArbitrary?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  dependsOn?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
+  dependsOn?: Resolver<Maybe<Array<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hidden?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   label?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  options?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ArgumentOption']>>>, ParentType, ContextType>;
+  options?: Resolver<Maybe<Array<Maybe<ResolversTypes['ArgumentOption']>>>, ParentType, ContextType>;
   placeholder?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   required?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   showOptionValue?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   source?: Resolver<Maybe<ResolversTypes['ActionSubstepArgumentSource']>, ParentType, ContextType>;
-  subFields?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ActionSubstepArgument']>>>, ParentType, ContextType>;
+  subFields?: Resolver<Maybe<Array<Maybe<ResolversTypes['ActionSubstepArgument']>>>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
-  variableTypes?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
+  variableTypes?: Resolver<Maybe<Array<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
   variables?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type ActionSubstepArgumentSourceResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ActionSubstepArgumentSource'] = ResolversParentTypes['ActionSubstepArgumentSource']> = {
-  arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ActionSubstepArgumentSourceArgument']>>>, ParentType, ContextType>;
+  arguments?: Resolver<Maybe<Array<Maybe<ResolversTypes['ActionSubstepArgumentSourceArgument']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1159,11 +1159,11 @@ export type ActionSubstepArgumentSourceArgumentResolvers<ContextType = Authentic
 };
 
 export type AppResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['App'] = ResolversParentTypes['App']> = {
-  actions?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['Action']>>>, ParentType, ContextType>;
+  actions?: Resolver<Maybe<Array<Maybe<ResolversTypes['Action']>>>, ParentType, ContextType>;
   auth?: Resolver<Maybe<ResolversTypes['AppAuth']>, ParentType, ContextType>;
   authDocUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   connectionCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  connections?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['Connection']>>>, ParentType, ContextType>;
+  connections?: Resolver<Maybe<Array<Maybe<ResolversTypes['Connection']>>>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   docUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   flowCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
@@ -1171,16 +1171,16 @@ export type AppResolvers<ContextType = AuthenticatedGraphQLContext, ParentType e
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   primaryColor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  triggers?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['Trigger']>>>, ParentType, ContextType>;
+  triggers?: Resolver<Maybe<Array<Maybe<ResolversTypes['Trigger']>>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type AppAuthResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AppAuth'] = ResolversParentTypes['AppAuth']> = {
-  authenticationSteps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['AuthenticationStep']>>>, ParentType, ContextType>;
+  authenticationSteps?: Resolver<Maybe<Array<Maybe<ResolversTypes['AuthenticationStep']>>>, ParentType, ContextType>;
   connectionRegistrationType?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   connectionType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  fields?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['Field']>>>, ParentType, ContextType>;
-  reconnectionSteps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ReconnectionStep']>>>, ParentType, ContextType>;
+  fields?: Resolver<Maybe<Array<Maybe<ResolversTypes['Field']>>>, ParentType, ContextType>;
+  reconnectionSteps?: Resolver<Maybe<Array<Maybe<ResolversTypes['ReconnectionStep']>>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -1201,7 +1201,7 @@ export type AuthLinkResolvers<ContextType = AuthenticatedGraphQLContext, ParentT
 };
 
 export type AuthenticationStepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AuthenticationStep'] = ResolversParentTypes['AuthenticationStep']> = {
-  arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['AuthenticationStepArgument']>>>, ParentType, ContextType>;
+  arguments?: Resolver<Maybe<Array<Maybe<ResolversTypes['AuthenticationStepArgument']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1209,7 +1209,7 @@ export type AuthenticationStepResolvers<ContextType = AuthenticatedGraphQLContex
 
 export type AuthenticationStepArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['AuthenticationStepArgument'] = ResolversParentTypes['AuthenticationStepArgument']> = {
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  properties?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['AuthenticationStepProperty']>>>, ParentType, ContextType>;
+  properties?: Resolver<Maybe<Array<Maybe<ResolversTypes['AuthenticationStepProperty']>>>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['ArgumentEnumType']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1254,7 +1254,7 @@ export type ExecutionResolvers<ContextType = AuthenticatedGraphQLContext, Parent
 };
 
 export type ExecutionConnectionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ExecutionConnection'] = ResolversParentTypes['ExecutionConnection']> = {
-  edges?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionEdge']>>>, ParentType, ContextType>;
+  edges?: Resolver<Maybe<Array<Maybe<ResolversTypes['ExecutionEdge']>>>, ParentType, ContextType>;
   pageInfo?: Resolver<Maybe<ResolversTypes['PageInfo']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -1282,7 +1282,7 @@ export type ExecutionStepResolvers<ContextType = AuthenticatedGraphQLContext, Pa
 };
 
 export type ExecutionStepConnectionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ExecutionStepConnection'] = ResolversParentTypes['ExecutionStepConnection']> = {
-  edges?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStepEdge']>>>, ParentType, ContextType>;
+  edges?: Resolver<Maybe<Array<Maybe<ResolversTypes['ExecutionStepEdge']>>>, ParentType, ContextType>;
   pageInfo?: Resolver<Maybe<ResolversTypes['PageInfo']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -1300,7 +1300,7 @@ export type FieldResolvers<ContextType = AuthenticatedGraphQLContext, ParentType
   docUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   label?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  options?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ArgumentOption']>>>, ParentType, ContextType>;
+  options?: Resolver<Maybe<Array<Maybe<ResolversTypes['ArgumentOption']>>>, ParentType, ContextType>;
   placeholder?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   readOnly?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   required?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
@@ -1315,13 +1315,13 @@ export type FlowResolvers<ContextType = AuthenticatedGraphQLContext, ParentType 
   createdAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  steps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['Step']>>>, ParentType, ContextType>;
+  steps?: Resolver<Maybe<Array<Maybe<ResolversTypes['Step']>>>, ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type FlowConnectionResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['FlowConnection'] = ResolversParentTypes['FlowConnection']> = {
-  edges?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['FlowEdge']>>>, ParentType, ContextType>;
+  edges?: Resolver<Maybe<Array<Maybe<ResolversTypes['FlowEdge']>>>, ParentType, ContextType>;
   pageInfo?: Resolver<Maybe<ResolversTypes['PageInfo']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -1341,7 +1341,7 @@ export type LoginWithSelectedSgidResultResolvers<ContextType = AuthenticatedGrap
 };
 
 export type LoginWithSgidResultResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['LoginWithSgidResult'] = ResolversParentTypes['LoginWithSgidResult']> = {
-  publicOfficerEmployments?: Resolver<ReadonlyArray<ResolversTypes['SgidPublicOfficerEmployment']>, ParentType, ContextType>;
+  publicOfficerEmployments?: Resolver<Array<ResolversTypes['SgidPublicOfficerEmployment']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -1355,7 +1355,7 @@ export type MutationResolvers<ContextType = AuthenticatedGraphQLContext, ParentT
   createTable?: Resolver<ResolversTypes['TableMetadata'], ParentType, ContextType, RequireFields<MutationcreateTableArgs, 'input'>>;
   deleteConnection?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, Partial<MutationdeleteConnectionArgs>>;
   deleteFlow?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, Partial<MutationdeleteFlowArgs>>;
-  deleteRows?: Resolver<ReadonlyArray<ResolversTypes['ID']>, ParentType, ContextType, RequireFields<MutationdeleteRowsArgs, 'input'>>;
+  deleteRows?: Resolver<Array<ResolversTypes['ID']>, ParentType, ContextType, RequireFields<MutationdeleteRowsArgs, 'input'>>;
   deleteStep?: Resolver<Maybe<ResolversTypes['Flow']>, ParentType, ContextType, Partial<MutationdeleteStepArgs>>;
   deleteTable?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationdeleteTableArgs, 'input'>>;
   executeFlow?: Resolver<Maybe<ResolversTypes['ExecuteFlowType']>, ParentType, ContextType, Partial<MutationexecuteFlowArgs>>;
@@ -1384,26 +1384,26 @@ export type PageInfoResolvers<ContextType = AuthenticatedGraphQLContext, ParentT
 };
 
 export type QueryResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
-  getAllRows?: Resolver<ReadonlyArray<ResolversTypes['TileRow']>, ParentType, ContextType, RequireFields<QuerygetAllRowsArgs, 'tableId'>>;
+  getAllRows?: Resolver<Array<ResolversTypes['TileRow']>, ParentType, ContextType, RequireFields<QuerygetAllRowsArgs, 'tableId'>>;
   getApp?: Resolver<Maybe<ResolversTypes['App']>, ParentType, ContextType, RequireFields<QuerygetAppArgs, 'key'>>;
-  getApps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['App']>>>, ParentType, ContextType, Partial<QuerygetAppsArgs>>;
-  getConnectedApps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['App']>>>, ParentType, ContextType, Partial<QuerygetConnectedAppsArgs>>;
+  getApps?: Resolver<Maybe<Array<Maybe<ResolversTypes['App']>>>, ParentType, ContextType, Partial<QuerygetAppsArgs>>;
+  getConnectedApps?: Resolver<Maybe<Array<Maybe<ResolversTypes['App']>>>, ParentType, ContextType, Partial<QuerygetConnectedAppsArgs>>;
   getCurrentUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, UnauthenticatedGraphQLContext>;
-  getDynamicData?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['JSONObject']>>>, ParentType, ContextType, RequireFields<QuerygetDynamicDataArgs, 'key' | 'stepId'>>;
+  getDynamicData?: Resolver<Maybe<Array<Maybe<ResolversTypes['JSONObject']>>>, ParentType, ContextType, RequireFields<QuerygetDynamicDataArgs, 'key' | 'stepId'>>;
   getExecution?: Resolver<Maybe<ResolversTypes['Execution']>, ParentType, ContextType, RequireFields<QuerygetExecutionArgs, 'executionId'>>;
   getExecutionSteps?: Resolver<Maybe<ResolversTypes['ExecutionStepConnection']>, ParentType, ContextType, RequireFields<QuerygetExecutionStepsArgs, 'executionId' | 'limit' | 'offset'>>;
   getExecutions?: Resolver<Maybe<ResolversTypes['ExecutionConnection']>, ParentType, ContextType, RequireFields<QuerygetExecutionsArgs, 'limit' | 'offset'>>;
   getFlow?: Resolver<Maybe<ResolversTypes['Flow']>, ParentType, ContextType, RequireFields<QuerygetFlowArgs, 'id'>>;
   getFlows?: Resolver<Maybe<ResolversTypes['FlowConnection']>, ParentType, ContextType, RequireFields<QuerygetFlowsArgs, 'limit' | 'offset'>>;
-  getStepWithTestExecutions?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['Step']>>>, ParentType, ContextType, RequireFields<QuerygetStepWithTestExecutionsArgs, 'stepId'>>;
+  getStepWithTestExecutions?: Resolver<Maybe<Array<Maybe<ResolversTypes['Step']>>>, ParentType, ContextType, RequireFields<QuerygetStepWithTestExecutionsArgs, 'stepId'>>;
   getTable?: Resolver<ResolversTypes['TableMetadata'], ParentType, ContextType, RequireFields<QuerygetTableArgs, 'tableId'>>;
-  getTables?: Resolver<ReadonlyArray<ResolversTypes['TableMetadata']>, ParentType, ContextType>;
+  getTables?: Resolver<Array<ResolversTypes['TableMetadata']>, ParentType, ContextType>;
   healthcheck?: Resolver<Maybe<ResolversTypes['AppHealth']>, ParentType, ContextType>;
   testConnection?: Resolver<Maybe<ResolversTypes['TestConnectionResult']>, ParentType, ContextType, RequireFields<QuerytestConnectionArgs, 'connectionId'>>;
 };
 
 export type ReconnectionStepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ReconnectionStep'] = ResolversParentTypes['ReconnectionStep']> = {
-  arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ReconnectionStepArgument']>>>, ParentType, ContextType>;
+  arguments?: Resolver<Maybe<Array<Maybe<ResolversTypes['ReconnectionStepArgument']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1411,7 +1411,7 @@ export type ReconnectionStepResolvers<ContextType = AuthenticatedGraphQLContext,
 
 export type ReconnectionStepArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['ReconnectionStepArgument'] = ResolversParentTypes['ReconnectionStepArgument']> = {
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  properties?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ReconnectionStepProperty']>>>, ParentType, ContextType>;
+  properties?: Resolver<Maybe<Array<Maybe<ResolversTypes['ReconnectionStepProperty']>>>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['ArgumentEnumType']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1435,7 +1435,7 @@ export type SgidPublicOfficerEmploymentResolvers<ContextType = AuthenticatedGrap
 export type StepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['Step'] = ResolversParentTypes['Step']> = {
   appKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   connection?: Resolver<Maybe<ResolversTypes['Connection']>, ParentType, ContextType>;
-  executionSteps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ExecutionStep']>>>, ParentType, ContextType>;
+  executionSteps?: Resolver<Maybe<Array<Maybe<ResolversTypes['ExecutionStep']>>>, ParentType, ContextType>;
   flow?: Resolver<Maybe<ResolversTypes['Flow']>, ParentType, ContextType>;
   iconUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1463,7 +1463,7 @@ export type TableColumnMetadataResolvers<ContextType = AuthenticatedGraphQLConte
 };
 
 export type TableMetadataResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TableMetadata'] = ResolversParentTypes['TableMetadata']> = {
-  columns?: Resolver<Maybe<ReadonlyArray<ResolversTypes['TableColumnMetadata']>>, ParentType, ContextType>;
+  columns?: Resolver<Maybe<Array<ResolversTypes['TableColumnMetadata']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   lastAccessedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -1489,7 +1489,7 @@ export type TriggerResolvers<ContextType = AuthenticatedGraphQLContext, ParentTy
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   pollInterval?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  substeps?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['TriggerSubstep']>>>, ParentType, ContextType>;
+  substeps?: Resolver<Maybe<Array<Maybe<ResolversTypes['TriggerSubstep']>>>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   webhookTriggerInstructions?: Resolver<Maybe<ResolversTypes['TriggerInstructions']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1504,7 +1504,7 @@ export type TriggerInstructionsResolvers<ContextType = AuthenticatedGraphQLConte
 };
 
 export type TriggerSubstepResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TriggerSubstep'] = ResolversParentTypes['TriggerSubstep']> = {
-  arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['TriggerSubstepArgument']>>>, ParentType, ContextType>;
+  arguments?: Resolver<Maybe<Array<Maybe<ResolversTypes['TriggerSubstepArgument']>>>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1512,25 +1512,25 @@ export type TriggerSubstepResolvers<ContextType = AuthenticatedGraphQLContext, P
 
 export type TriggerSubstepArgumentResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TriggerSubstepArgument'] = ResolversParentTypes['TriggerSubstepArgument']> = {
   allowArbitrary?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  dependsOn?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
+  dependsOn?: Resolver<Maybe<Array<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   key?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   label?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  options?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['ArgumentOption']>>>, ParentType, ContextType>;
+  options?: Resolver<Maybe<Array<Maybe<ResolversTypes['ArgumentOption']>>>, ParentType, ContextType>;
   placeholder?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   required?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   showOptionValue?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   source?: Resolver<Maybe<ResolversTypes['TriggerSubstepArgumentSource']>, ParentType, ContextType>;
-  subFields?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['TriggerSubstepArgument']>>>, ParentType, ContextType>;
+  subFields?: Resolver<Maybe<Array<Maybe<ResolversTypes['TriggerSubstepArgument']>>>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   value?: Resolver<Maybe<ResolversTypes['JSONObject']>, ParentType, ContextType>;
-  variableTypes?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
+  variableTypes?: Resolver<Maybe<Array<Maybe<ResolversTypes['String']>>>, ParentType, ContextType>;
   variables?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type TriggerSubstepArgumentSourceResolvers<ContextType = AuthenticatedGraphQLContext, ParentType extends ResolversParentTypes['TriggerSubstepArgumentSource'] = ResolversParentTypes['TriggerSubstepArgumentSource']> = {
-  arguments?: Resolver<Maybe<ReadonlyArray<Maybe<ResolversTypes['TriggerSubstepArgumentSourceArgument']>>>, ParentType, ContextType>;
+  arguments?: Resolver<Maybe<Array<Maybe<ResolversTypes['TriggerSubstepArgumentSourceArgument']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;

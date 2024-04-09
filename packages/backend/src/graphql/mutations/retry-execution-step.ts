@@ -3,18 +3,13 @@ import { ref } from 'objection'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import actionQueue from '@/queues/action'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    executionStepId: string
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-const retryExecutionStep = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const executionStep = await ExecutionStep.query()
     .findById(params.input.executionStepId)
