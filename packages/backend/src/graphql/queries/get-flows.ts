@@ -19,6 +19,7 @@ const getFlows = async (_parent: unknown, params: Params, context: Context) => {
       steps: {
         connection: true,
       },
+      pendingTransfer: true,
     })
     .where((builder) => {
       if (params.connectionId) {

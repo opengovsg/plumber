@@ -1,6 +1,5 @@
-import { BiChat, BiLogOut, BiUser } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
-import { Icon, Text } from '@chakra-ui/react'
+import { Text } from '@chakra-ui/react'
 import {
   AvatarMenu,
   AvatarMenuDivider,
@@ -22,26 +21,25 @@ export default function AvatarDropdownMenu() {
 
   return (
     <AvatarMenu bg="primary.600" size="xs" name={currentUser?.email}>
-      <Menu.Item
-        style={{ pointerEvents: 'none' }}
-        icon={<Icon as={BiUser} boxSize={5} />}
-      >
-        <Text>{currentUser?.email}</Text>
+      <Menu.Item pointerEvents="none">
+        <Text color="base.content.medium" textStyle="subhead-3">
+          {currentUser?.email}
+        </Text>
       </Menu.Item>
 
       <AvatarMenuDivider />
 
-      <Menu.Item
-        icon={<Icon as={BiChat} boxSize={5} />}
-        onClick={() => window.open(URLS.FEEDBACK_FORM_LINK, '_blank')}
-      >
+      <Menu.Item onClick={() => navigate(URLS.TRANSFERS)}>
+        <Text>Pipe transfer requests</Text>
+      </Menu.Item>
+
+      <Menu.Item onClick={() => window.open(URLS.FEEDBACK_FORM_LINK, '_blank')}>
         <Text>Give feedback</Text>
       </Menu.Item>
 
-      <Menu.Item
-        icon={<Icon ml={-0.5} as={BiLogOut} boxSize={5} />}
-        onClick={onLogoutClick}
-      >
+      <AvatarMenuDivider />
+
+      <Menu.Item onClick={onLogoutClick}>
         <Text>Logout</Text>
       </Menu.Item>
     </AvatarMenu>

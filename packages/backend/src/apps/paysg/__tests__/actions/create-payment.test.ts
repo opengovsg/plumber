@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
 import createPaymentAction from '../../actions/create-payment'
-import { getApiBaseUrl } from '../../common/api'
 import { MOCK_PAYMENT } from '../utils'
 
 const mocks = vi.hoisted(() => ({
@@ -53,22 +52,20 @@ describe('create payment', () => {
   })
 
   it.each(['paysg_stag_abcd, paysg_live_abcd'])(
-    'invokes the correct URL based on the API key',
+    'invokes the correct url with urlPathParams',
     async (apiKey) => {
       $.auth.data.apiKey = apiKey
-      const expectedBaseUrl = getApiBaseUrl($.auth.data.apiKey)
 
       await createPaymentAction.run($)
 
       expect(mocks.httpPost).toHaveBeenCalledWith(
-        '/v1/payment-services/sample-payment-service-id/payments',
+        '/v1/payment-services/:paymentServiceId/payments',
         expect.anything(),
-        expect.objectContaining({
-          baseURL: expectedBaseUrl,
-          headers: {
-            'x-api-key': $.auth.data.apiKey,
+        {
+          urlPathParams: {
+            paymentServiceId: 'sample-payment-service-id',
           },
-        }),
+        },
       )
     },
   )
@@ -84,7 +81,7 @@ describe('create payment', () => {
     await createPaymentAction.run($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/v1/payment-services/sample-payment-service-id/payments',
+      '/v1/payment-services/:paymentServiceId/payments',
       {
         reference_id: 'test-reference-id',
         payer_name: 'test-name',
@@ -100,7 +97,11 @@ describe('create payment', () => {
           'test-key-2': 'test-value-2',
         },
       },
-      expect.anything(),
+      {
+        urlPathParams: {
+          paymentServiceId: 'sample-payment-service-id',
+        },
+      },
     )
   })
 
@@ -197,12 +198,16 @@ describe('create payment', () => {
       await createPaymentAction.run($)
 
       expect(mocks.httpPost).toBeCalledWith(
-        '/v1/payment-services/sample-payment-service-id/payments',
+        '/v1/payment-services/:paymentServiceId/payments',
         expect.objectContaining({
           payer_name: expectedPayerName,
           payer_address: expectedPayerAddress,
         }),
-        expect.anything(),
+        {
+          urlPathParams: {
+            paymentServiceId: 'sample-payment-service-id',
+          },
+        },
       )
     },
   )

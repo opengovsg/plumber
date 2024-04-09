@@ -1,5 +1,4 @@
-import { useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useContext } from 'react'
 import { useMutation } from '@apollo/client'
 import {
   Modal,
@@ -12,8 +11,9 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
+import { EditorSettingsContext } from 'contexts/EditorSettings'
 import { CREATE_FLOW_TRANSFER } from 'graphql/mutations/create-flow-transfer'
-import { GET_PENDING_FLOW_TRANSFER } from 'graphql/queries/get-pending-flow-transfer'
+import { GET_FLOW } from 'graphql/queries/get-flow'
 
 interface TransferFlowModalProps {
   onClose: () => void
@@ -22,25 +22,28 @@ interface TransferFlowModalProps {
 
 export default function TransferFlowModal(props: TransferFlowModalProps) {
   const { onClose, newOwnerEmail } = props
-  const { flowId } = useParams()
+  const { flow } = useContext(EditorSettingsContext)
 
   const [createFlowTransfer] = useMutation(CREATE_FLOW_TRANSFER)
   const toast = useToast()
 
   const onFlowTransferCreate = useCallback(async () => {
-    onClose()
     await createFlowTransfer({
       variables: {
         input: {
-          flowId,
+          flowId: flow.id,
           newOwnerEmail,
         },
       },
-      refetchQueries: [GET_PENDING_FLOW_TRANSFER],
+      refetchQueries: [GET_FLOW],
+      onError: () => {
+        onClose()
+      },
       onCompleted: () => {
+        onClose()
         toast({
           title:
-            'Transfer has been requested. Please get the new owner to login and approve!',
+            'Transfer has been requested. Please get the new owner to login and approve.',
           status: 'success',
           duration: 5000,
           isClosable: true,
@@ -48,7 +51,7 @@ export default function TransferFlowModal(props: TransferFlowModalProps) {
         })
       },
     })
-  }, [onClose, flowId, newOwnerEmail, createFlowTransfer, toast])
+  }, [onClose, flow.id, newOwnerEmail, createFlowTransfer, toast])
 
   return (
     <Modal isOpen={true} onClose={onClose}>
@@ -58,9 +61,9 @@ export default function TransferFlowModal(props: TransferFlowModalProps) {
         <ModalCloseButton />
         <ModalBody>
           <Text>
-            You are transferring this pipe to <strong>{newOwnerEmail}</strong>.
-            For the pipe to be successfully transferred, the new pipe owner has
-            to log in to Plumber to accept the transfer.
+            You are transferring this pipe to {newOwnerEmail}. For the pipe to
+            be successfully transferred, the new pipe owner has to log in to
+            Plumber to accept the transfer.
           </Text>
         </ModalBody>
 

@@ -9,6 +9,17 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2024-03-27',
+    tag: NEW_FEATURE_TAG,
+    title: 'LetterSG integration',
+    details: dedent`
+    You can now integrate LetterSG into your pipes! LetterSG allows you to send personalised e-letters to members of public for use cases such as sending fine letters, notices and certificates. Onboard your templates with the LetterSG team [here](https://go.gov.sg/lettersg-onboarding) and learn how to start using this in your workflow!
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/letters-graphic.png',
+    },
+  },
+  {
     date: '2023-11-30',
     tag: NEW_FEATURE_TAG,
     title: 'Rich text editor for email body',

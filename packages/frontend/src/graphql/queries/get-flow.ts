@@ -30,6 +30,13 @@ export const GET_FLOW = gql`
           notificationFrequency
         }
       }
+      pendingTransfer {
+        id
+        newOwner {
+          id
+          email
+        }
+      }
     }
   }
 `

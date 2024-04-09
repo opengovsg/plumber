@@ -5,8 +5,6 @@ import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
 
-import { getApiBaseUrl } from '../../common/api'
-
 import { requestSchema } from './schema'
 
 const action: IRawAction = {
@@ -25,8 +23,6 @@ const action: IRawAction = {
   ],
 
   async run($) {
-    const apiKey = $.auth.data.apiKey as string
-    const baseUrl = getApiBaseUrl(apiKey)
     const paymentServiceId = $.auth.data.paymentServiceId as string
 
     try {
@@ -34,12 +30,12 @@ const action: IRawAction = {
 
       // Empty response body expected, so just set a placeholder.
       await $.http.post(
-        `/v1/payment-services/${paymentServiceId}/payments/${paymentId}/send-email`,
+        `/v1/payment-services/:paymentServiceId/payments/:paymentId/send-email`,
         {}, // No need for request body.
         {
-          baseURL: baseUrl,
-          headers: {
-            'x-api-key': apiKey,
+          urlPathParams: {
+            paymentServiceId,
+            paymentId,
           },
         },
       )

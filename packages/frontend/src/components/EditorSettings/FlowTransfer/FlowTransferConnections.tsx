@@ -1,65 +1,48 @@
-import { IApp, IFlow } from '@plumber/types'
+import { ITransferDetails } from '@plumber/types'
 
-import { useMemo } from 'react'
+import { useContext } from 'react'
 import { useQuery } from '@apollo/client'
 import { Flex, Text } from '@chakra-ui/react'
 import { Badge, Infobox } from '@opengovsg/design-system-react'
-import { GET_APPS } from 'graphql/queries/get-apps'
+import { EditorSettingsContext } from 'contexts/EditorSettings'
+import { GET_FLOW_TRANSFER_DETAILS } from 'graphql/queries/get-flow-transfer-details'
 
 import { CustomSpinner } from '../FlowTransfer'
 
-interface FlowTransferConnectionsProps {
-  flow: IFlow
-}
-
-interface StepConnectionDetails {
-  appName: string
-  position: number
-  screenName: string
-}
-
-function StepConnectionDisplay(props: StepConnectionDetails) {
-  const { appName, position, screenName } = props
+function StepConnectionDisplay(props: ITransferDetails) {
+  const { appName, position, connectionName, instructions } = props
   return (
     <Flex flexDir="column" gap={2}>
       <Badge colorScheme="warning">
         Step {position}: {appName}
       </Badge>
-      <Text textStyle="body-1">{screenName}</Text>
+      <Text textStyle="body-1" color="base.content.default">
+        {connectionName}
+      </Text>
+      <Text textStyle="body-1" color="base.content.medium">
+        {instructions}
+      </Text>
     </Flex>
   )
 }
 
-export default function FlowTransferConnections(
-  props: FlowTransferConnectionsProps,
-) {
-  const { flow } = props
-  const { data, loading } = useQuery(GET_APPS) // used for better UI display
-  const apps: IApp[] = data?.getApps
-
-  // phase 1: just retrieve all connections to display
-  // TODO (mal): move to backend query if necessary
-  const stepConnectionDetails: StepConnectionDetails[] = useMemo(
-    () =>
-      flow?.steps.reduce((res: StepConnectionDetails[], step) => {
-        if (step?.connection) {
-          res.push({
-            screenName:
-              (step?.connection?.formattedData?.screenName as string) ??
-              'Unknown screen name',
-            appName:
-              apps?.find((app) => app.key === step.appKey)?.name ??
-              'Unknown app',
-            position: step.position,
-          })
-        }
-        return res
-      }, []),
-    [flow?.steps, apps],
-  )
+export default function FlowTransferConnections() {
+  const { flow } = useContext(EditorSettingsContext)
+  // phase 1: just retrieve all transfer details to display (without instructions)
+  const { data, loading } = useQuery(GET_FLOW_TRANSFER_DETAILS, {
+    variables: {
+      flowId: flow.id,
+    },
+  })
+  const flowTransferDetails: ITransferDetails[] = data?.getFlowTransferDetails
 
   if (loading) {
     return <CustomSpinner />
+  }
+
+  // hide infobox if no connections exist
+  if (!loading && flowTransferDetails.length === 0) {
+    return <></>
   }
 
   return (
@@ -70,13 +53,14 @@ export default function FlowTransferConnections(
           pipe owner&apos;s account for the pipe to continue working.
         </Text>
 
-        {stepConnectionDetails.map(
-          ({ appName, position, screenName }, index) => (
+        {flowTransferDetails.map(
+          ({ appName, position, connectionName, instructions }, index) => (
             <StepConnectionDisplay
               key={index}
               appName={appName}
               position={position}
-              screenName={screenName}
+              connectionName={connectionName}
+              instructions={instructions}
             />
           ),
         )}
