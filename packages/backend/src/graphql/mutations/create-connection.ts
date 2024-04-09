@@ -5,9 +5,11 @@ import type { MutationResolvers } from '../__generated__/types.generated'
 // Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive
 // Data Scanner
 
-const createConnection: NonNullable<
-  MutationResolvers['createConnection']
-> = async (_parent, params, context) => {
+const createConnection: MutationResolvers['createConnection'] = async (
+  _parent,
+  params,
+  context,
+) => {
   await App.findOneByKey(params.input.key)
 
   return await context.currentUser.$relatedQuery('connections').insert({

@@ -28,28 +28,27 @@ function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
   }
 }
 
-const loginWithSelectedSgid: NonNullable<
-  MutationResolvers['loginWithSelectedSgid']
-> = async (_parent, params, context) => {
-  const employments = readEmploymentsFromCookie(context.req)
-  context.res.clearCookie(SGID_MULTI_HAT_COOKIE_NAME)
+const loginWithSelectedSgid: MutationResolvers['loginWithSelectedSgid'] =
+  async (_parent, params, context) => {
+    const employments = readEmploymentsFromCookie(context.req)
+    context.res.clearCookie(SGID_MULTI_HAT_COOKIE_NAME)
 
-  const workEmail = params.input.workEmail
+    const workEmail = params.input.workEmail
 
-  const employment = employments.find(
-    (employment) => employment.workEmail === workEmail,
-  )
+    const employment = employments.find(
+      (employment) => employment.workEmail === workEmail,
+    )
 
-  if (!employment) {
-    throw new Error('Invalid work email')
+    if (!employment) {
+      throw new Error('Invalid work email')
+    }
+
+    const user = await getOrCreateUser(workEmail)
+    setAuthCookie(context.res, { userId: user.id })
+
+    return {
+      success: true,
+    }
   }
-
-  const user = await getOrCreateUser(workEmail)
-  setAuthCookie(context.res, { userId: user.id })
-
-  return {
-    success: true,
-  }
-}
 
 export default loginWithSelectedSgid

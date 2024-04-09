@@ -7,9 +7,11 @@ import App from '@/models/app'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const verifyConnection: NonNullable<
-  MutationResolvers['verifyConnection']
-> = async (_parent, params, context) => {
+const verifyConnection: MutationResolvers['verifyConnection'] = async (
+  _parent,
+  params,
+  context,
+) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({

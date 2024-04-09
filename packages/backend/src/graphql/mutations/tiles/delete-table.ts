@@ -2,7 +2,7 @@ import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const deleteTable: NonNullable<MutationResolvers['deleteTable']> = async (
+const deleteTable: MutationResolvers['deleteTable'] = async (
   _parent,
   params,
   context,

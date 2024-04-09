@@ -11,11 +11,11 @@ const MAX_OTP_ATTEMPTS = 5
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
-const verifyOtp: NonNullable<MutationResolvers['verifyOtp']> = async (
+const verifyOtp: MutationResolvers['verifyOtp'] = async (
   _parent,
   params,
   context,
-): Promise<boolean> => {
+) => {
   const { otp, email: emailRaw } = params.input
   // validate email
   const email = await validateAndParseEmail(emailRaw)

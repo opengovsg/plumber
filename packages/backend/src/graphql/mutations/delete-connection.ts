@@ -1,8 +1,10 @@
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteConnection: NonNullable<
-  MutationResolvers['deleteConnection']
-> = async (_parent, params, context) => {
+const deleteConnection: MutationResolvers['deleteConnection'] = async (
+  _parent,
+  params,
+  context,
+) => {
   await context.currentUser
     .$relatedQuery('connections')
     .delete()

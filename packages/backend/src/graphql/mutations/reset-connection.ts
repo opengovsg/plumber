@@ -1,8 +1,10 @@
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const resetConnection: NonNullable<
-  MutationResolvers['resetConnection']
-> = async (_parent, params, context) => {
+const resetConnection: MutationResolvers['resetConnection'] = async (
+  _parent,
+  params,
+  context,
+) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({

@@ -46,46 +46,49 @@ async function makeGlobalVariableForPerStepRegistration(
   })
 }
 
-const registerConnection: NonNullable<MutationResolvers['registerConnection']> =
-  async function (_parent, params, context): Promise<boolean> {
-    const { connectionId, stepId } = params.input
+const registerConnection: MutationResolvers['registerConnection'] = async (
+  _parent,
+  params,
+  context,
+) => {
+  const { connectionId, stepId } = params.input
 
-    const connection = await context.currentUser
-      .$relatedQuery('connections')
-      .findById(connectionId)
-      .throwIfNotFound()
+  const connection = await context.currentUser
+    .$relatedQuery('connections')
+    .findById(connectionId)
+    .throwIfNotFound()
 
-    const app = apps[connection.key]
-    if (!app) {
-      throw new Error('Invalid app')
-    }
-
-    const connectionRegistrationType = app.auth?.connectionRegistrationType
-    if (!connectionRegistrationType) {
-      throw new Error('App does not support connection registration.')
-    }
-
-    const $ =
-      connectionRegistrationType === 'global'
-        ? await makeGlobalVariableForGlobalRegistration(
-            context.currentUser,
-            app,
-            connection,
-          )
-        : await makeGlobalVariableForPerStepRegistration(
-            context.currentUser,
-            app,
-            connection,
-            stepId,
-          )
-
-    const connectionStillVerified = await app.auth.isStillVerified($)
-    if (!connectionStillVerified) {
-      throw new Error('Connection is not verified')
-    }
-
-    await app.auth.registerConnection($)
-    return true
+  const app = apps[connection.key]
+  if (!app) {
+    throw new Error('Invalid app')
   }
+
+  const connectionRegistrationType = app.auth?.connectionRegistrationType
+  if (!connectionRegistrationType) {
+    throw new Error('App does not support connection registration.')
+  }
+
+  const $ =
+    connectionRegistrationType === 'global'
+      ? await makeGlobalVariableForGlobalRegistration(
+          context.currentUser,
+          app,
+          connection,
+        )
+      : await makeGlobalVariableForPerStepRegistration(
+          context.currentUser,
+          app,
+          connection,
+          stepId,
+        )
+
+  const connectionStillVerified = await app.auth.isStillVerified($)
+  if (!connectionStillVerified) {
+    throw new Error('Connection is not verified')
+  }
+
+  await app.auth.registerConnection($)
+  return true
+}
 
 export default registerConnection

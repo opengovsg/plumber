@@ -9,9 +9,11 @@ import type { MutationResolvers } from '../__generated__/types.generated'
 const JOB_NAME = 'flow'
 const EVERY_15_MINUTES_CRON = '*/15 * * * *'
 
-const updateFlowStatus: NonNullable<
-  MutationResolvers['updateFlowStatus']
-> = async (_parent, params, context) => {
+const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
+  _parent,
+  params,
+  context,
+) => {
   let flow = await context.currentUser
     .$relatedQuery('flows')
     .findOne({

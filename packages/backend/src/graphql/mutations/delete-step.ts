@@ -4,7 +4,7 @@ import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteStep: NonNullable<MutationResolvers['deleteStep']> = async (
+const deleteStep: MutationResolvers['deleteStep'] = async (
   _parent,
   params,
   context,

@@ -1,6 +1,6 @@
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createFlow: NonNullable<MutationResolvers['createFlow']> = async (
+const createFlow: MutationResolvers['createFlow'] = async (
   _parent,
   params,
   context,

@@ -2,7 +2,7 @@ import testRun from '@/services/test-run'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const executeFlow: NonNullable<MutationResolvers['executeFlow']> = async (
+const executeFlow: MutationResolvers['executeFlow'] = async (
   _parent,
   params,
   context,

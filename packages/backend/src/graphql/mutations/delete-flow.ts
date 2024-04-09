@@ -3,7 +3,7 @@ import ExecutionStep from '@/models/execution-step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteFlow: NonNullable<MutationResolvers['deleteFlow']> = async (
+const deleteFlow: MutationResolvers['deleteFlow'] = async (
   _parent,
   params,
   context,

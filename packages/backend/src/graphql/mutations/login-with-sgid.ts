@@ -83,7 +83,7 @@ async function parsePocdexData(
  * - Length > 1: Multi-hat user; we need the user to select which work email
  *               to login.
  */
-const loginWithSgid: NonNullable<MutationResolvers['loginWithSgid']> = async (
+const loginWithSgid: MutationResolvers['loginWithSgid'] = async (
   _parent,
   params,
   context,

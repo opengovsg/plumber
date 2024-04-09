@@ -2,11 +2,11 @@ import { createTableRows } from '@/models/dynamodb/table-row'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const createRows: NonNullable<MutationResolvers['createRows']> = async (
+const createRows: MutationResolvers['createRows'] = async (
   _parent,
   params,
   context,
-): Promise<boolean> => {
+) => {
   const { tableId, dataArray } = params.input
   const table = await context.currentUser
     .$relatedQuery('tables')

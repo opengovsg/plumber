@@ -2,7 +2,7 @@ import { updateTableRow } from '@/models/dynamodb/table-row'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const updateRow: NonNullable<MutationResolvers['updateRow']> = async (
+const updateRow: MutationResolvers['updateRow'] = async (
   _parent,
   params,
   context,

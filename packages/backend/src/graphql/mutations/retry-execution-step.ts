@@ -6,9 +6,11 @@ import actionQueue from '@/queues/action'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const retryExecutionStep: NonNullable<
-  MutationResolvers['retryExecutionStep']
-> = async (_parent, params, context) => {
+const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
+  _parent,
+  params,
+  context,
+) => {
   const executionStep = await ExecutionStep.query()
     .findById(params.input.executionStepId)
     .whereNotNull('job_id')

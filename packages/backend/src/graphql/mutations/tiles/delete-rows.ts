@@ -2,7 +2,7 @@ import { deleteTableRows } from '@/models/dynamodb/table-row'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const deleteRows: NonNullable<MutationResolvers['deleteRows']> = async (
+const deleteRows: MutationResolvers['deleteRows'] = async (
   _parent,
   params,
   context,

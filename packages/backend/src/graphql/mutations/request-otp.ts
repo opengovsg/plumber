@@ -17,10 +17,7 @@ const OTP_RESEND_TIMEOUT_IN_MS = 1 * 30 * 1000
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
-const requestOtp: NonNullable<MutationResolvers['requestOtp']> = async (
-  _parent,
-  params,
-): Promise<boolean> => {
+const requestOtp: MutationResolvers['requestOtp'] = async (_parent, params) => {
   const email = await validateAndParseEmail(params.input.email)
   // validate email
   if (!email) {

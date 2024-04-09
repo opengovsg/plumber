@@ -2,7 +2,7 @@ import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
+const updateStep: MutationResolvers['updateStep'] = async (
   _parent,
   params,
   context,

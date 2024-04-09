@@ -26,7 +26,7 @@ export const updateTableSchema = z.object({
   deletedColumns: z.array(z.string().uuid()).optional(),
 })
 
-const updateTable: NonNullable<MutationResolvers['updateTable']> = async (
+const updateTable: MutationResolvers['updateTable'] = async (
   _parent,
   params,
   context,

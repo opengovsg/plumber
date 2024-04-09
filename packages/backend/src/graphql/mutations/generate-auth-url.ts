@@ -6,9 +6,11 @@ import App from '@/models/app'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const generateAuthUrl: NonNullable<
-  MutationResolvers['generateAuthUrl']
-> = async (_parent, params, context) => {
+const generateAuthUrl: MutationResolvers['generateAuthUrl'] = async (
+  _parent,
+  params,
+  context,
+) => {
   const connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({
