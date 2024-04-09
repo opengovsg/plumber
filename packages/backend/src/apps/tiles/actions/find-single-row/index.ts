@@ -91,7 +91,7 @@ const action: IRawAction = {
             { label: 'Begins with', value: TableRowFilterOperator.BeginsWith },
             { label: 'Contains', value: TableRowFilterOperator.Contains },
             {
-              label: 'Is empty (leave value blank)',
+              label: 'Is empty',
               value: TableRowFilterOperator.IsEmpty,
             },
           ],
@@ -100,8 +100,13 @@ const action: IRawAction = {
           placeholder: 'Value',
           key: 'value',
           type: 'string' as const,
-          required: false,
+          required: true,
           variables: true,
+          hiddenIf: {
+            fieldKey: 'operator',
+            op: 'equals',
+            fieldValue: TableRowFilterOperator.IsEmpty,
+          },
         },
       ],
     },

@@ -1,17 +1,12 @@
-import { useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useContext } from 'react'
 import { useMutation } from '@apollo/client'
 import { Flex, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
+import { EditorSettingsContext } from 'contexts/EditorSettings'
 import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
 
-interface PublishedFlowInfoboxProps {
-  isActive: boolean
-}
-
-export default function PublishedFlowInfobox(props: PublishedFlowInfoboxProps) {
-  const { isActive } = props
-  const { flowId } = useParams()
+export default function PublishedFlowInfobox() {
+  const { flow } = useContext(EditorSettingsContext)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
 
   const onFlowStatusUpdate = useCallback(
@@ -19,20 +14,20 @@ export default function PublishedFlowInfobox(props: PublishedFlowInfoboxProps) {
       await updateFlowStatus({
         variables: {
           input: {
-            id: flowId,
+            id: flow.id,
             active,
           },
         },
         optimisticResponse: {
           updateFlowStatus: {
             __typename: 'Flow',
-            id: flowId,
+            id: flow.id,
             active,
           },
         },
       })
     },
-    [flowId, updateFlowStatus],
+    [flow.id, updateFlowStatus],
   )
 
   return (
@@ -46,7 +41,7 @@ export default function PublishedFlowInfobox(props: PublishedFlowInfoboxProps) {
       >
         <Text>You will need to unpublish your pipe before you transfer it</Text>
         <Button
-          onClick={() => onFlowStatusUpdate(!isActive)}
+          onClick={() => onFlowStatusUpdate(!flow.active)}
           variant="clear"
           colorScheme="secondary"
         >

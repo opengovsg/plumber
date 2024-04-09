@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Modal,
   ModalBody,
@@ -20,7 +20,6 @@ interface ViewFlowModalProps {
 
 export default function ViewFlowModal(props: ViewFlowModalProps) {
   const { onClose, flowId } = props
-  const navigate = useNavigate()
   return (
     <Modal isOpen={true} onClose={onClose}>
       <ModalOverlay />
@@ -34,7 +33,7 @@ export default function ViewFlowModal(props: ViewFlowModalProps) {
           </Text>
         </ModalBody>
         <ModalFooter>
-          <Button onClick={() => navigate(URLS.FLOW_EDITOR(flowId))}>
+          <Button as={Link} to={URLS.FLOW_EDITOR(flowId)}>
             View Pipe
           </Button>
         </ModalFooter>
