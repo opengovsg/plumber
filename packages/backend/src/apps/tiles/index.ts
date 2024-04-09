@@ -1,5 +1,6 @@
 import { IApp } from '@plumber/types'
 
+import getTransferDetails from './common/get-transfer-details'
 import actions from './actions'
 import dynamicData from './dynamic-data'
 
@@ -15,6 +16,7 @@ const app: IApp = {
   primaryColor: '',
   actions,
   dynamicData,
+  getTransferDetails,
 }
 
 export default app

@@ -29,6 +29,9 @@ export const GET_FLOWS = gql`
           steps {
             iconUrl
           }
+          pendingTransfer {
+            id
+          }
         }
       }
     }

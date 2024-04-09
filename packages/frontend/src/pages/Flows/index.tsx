@@ -114,8 +114,14 @@ export default function Flows(): React.ReactElement {
     [],
   )
 
+  // TODO (mal): think of a way to make this less complicated
   if (!loading && !hasFlows && flowName === '' && page === 1) {
-    return <EmptyFlowsTemplate CreateFlowLink={CreateFlowLink} />
+    return (
+      <EmptyFlowsTemplate
+        CreateFlowLink={CreateFlowLink}
+        count={flowTransfersLoading ? 0 : flowTransfers.length}
+      />
+    )
   }
 
   return (

@@ -2,8 +2,9 @@ import { IUser } from '@plumber/types'
 
 import { createContext, useEffect } from 'react'
 import { FetchResult, useMutation, useQuery } from '@apollo/client'
-import { Center, Spinner } from '@chakra-ui/react'
+import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
+import { Spinner } from '@opengovsg/design-system-react'
 import { LOGOUT } from 'graphql/mutations/logout'
 import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
 
@@ -44,7 +45,7 @@ export const AuthenticationProvider = ({
   if (fetchingCurrentUser) {
     return (
       <Center height="100vh">
-        <Spinner size="xl" thickness="4px" color="primary.500" margin="auto" />
+        <Spinner fontSize="4xl" color="primary.600" />
       </Center>
     )
   }

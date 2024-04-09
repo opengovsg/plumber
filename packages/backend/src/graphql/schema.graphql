@@ -42,8 +42,8 @@ type Query {
   healthcheck: AppHealth
   getPlumberStats: Stats
   # Flow transfers
-  getPendingFlowTransfer(flowId: String!): FlowTransfer
   getPendingFlowTransfers: [FlowTransfer!]!
+  getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
 }
 
 type Mutation {
@@ -83,9 +83,8 @@ type Mutation {
   updateRow(input: UpdateTableRowInput!): ID!
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
   # Flow transfers
-  createFlowTransfer(input: CreateFlowTransferInput!): ID! # TODO (mal): check if need return transfer
+  createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
-  updateFlowOwner(input: UpdateFlowOwnerInput!): Flow!
 }
 
 """
@@ -97,6 +96,18 @@ directive @specifiedBy(
   """
   url: String!
 ) on SCALAR
+
+enum FieldVisibilityOp {
+  always_true
+  equals
+  not_equals
+}
+
+type FieldVisibilityCondition {
+  op: FieldVisibilityOp!
+  fieldKey: String
+  fieldValue: String
+}
 
 type Action {
   name: String
@@ -127,7 +138,7 @@ type ActionSubstepArgument {
   value: JSONObject
   source: ActionSubstepArgumentSource
   dependsOn: [String]
-  hidden: Boolean
+  hiddenIf: FieldVisibilityCondition
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
@@ -266,6 +277,7 @@ type Flow {
   updatedAt: String
   config: FlowConfig
   userId: String
+  pendingTransfer: FlowTransfer
 }
 
 # Rate limiting config is omitted here e.g. maxQps
@@ -473,6 +485,13 @@ type TriggerInstructions {
   errorMsg: String
 }
 
+type StepTransferDetails {
+  position: Int!
+  appName: String!
+  connectionName: String
+  instructions: String
+}
+
 type TriggerSubstep {
   key: String
   name: String
@@ -494,6 +513,8 @@ type TriggerSubstepArgument {
   showOptionValue: Boolean
   options: [ArgumentOption]
   value: JSONObject
+  hiddenIf: FieldVisibilityCondition
+
   # Only for multirow
   subFields: [TriggerSubstepArgument]
 }
@@ -674,9 +695,9 @@ type FlowTransfer {
   oldOwnerId: ID!
   newOwnerId: ID!
   status: String!
-  oldOwner: User
-  newOwner: User
-  flow: Flow
+  oldOwner: User!
+  newOwner: User!
+  flow: Flow!
 }
 
 input CreateFlowTransferInput {
@@ -694,10 +715,6 @@ enum FlowTransferStatus {
 input UpdateFlowTransferStatusInput {
   id: String!
   status: FlowTransferStatus!
-}
-
-input UpdateFlowOwnerInput {
-  id: String!
 }
 
 # End of flow transfers types
