@@ -1,10 +1,6 @@
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getFlow: NonNullable<QueryResolvers['getFlow']> = async (
-  _parent,
-  params,
-  context,
-) => {
+const getFlow: QueryResolvers['getFlow'] = async (_parent, params, context) => {
   const flow = await context.currentUser
     .$relatedQuery('flows')
     .withGraphJoined('[steps.[connection]]')

@@ -2,11 +2,7 @@ import App from '@/models/app'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getApp: NonNullable<QueryResolvers['getApp']> = async (
-  _parent,
-  params,
-  context,
-) => {
+const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
   const app = await App.findOneByKey(params.key)
 
   if (!context.currentUser) {

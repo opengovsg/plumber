@@ -2,7 +2,7 @@ import appConfig from '@/config/app'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const healthcheck: NonNullable<QueryResolvers['healthcheck']> = () => {
+const healthcheck: QueryResolvers['healthcheck'] = () => {
   return {
     version: appConfig.version,
   }

@@ -1,6 +1,6 @@
 import type { QueryResolvers } from '../../__generated__/types.generated'
 
-const getTables: NonNullable<QueryResolvers['getTables']> = async (
+const getTables: QueryResolvers['getTables'] = async (
   _parent,
   _params,
   context,

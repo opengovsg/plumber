@@ -13,7 +13,7 @@ import HttpError from '@/errors/http'
 export type IHttpClient = AxiosInstance
 import type { Request } from 'express'
 
-export type IJSONPrimitive = string | number | boolean | JsonPrimitive
+export type IJSONPrimitive = JsonPrimitive
 export type IJSONValue = IJSONPrimitive | IJSONObject | IJSONArray | JsonValue
 export type IJSONArray = Array<IJSONValue> | JsonArray
 export interface IJSONObject extends JsonObject {

@@ -54,14 +54,26 @@ const config: CodegenConfig = {
         useTypeImports: true,
         immutableTypes: true,
 
-        // In addition to normal functions, resolvers can also be objects with a
-        //  `resolve` function. Due to this, the generated types for resolvers
-        // are not callable without further type refinement.
+        // In addition to normal functions, resolvers (i.e. code that implements
+        // a GraphQL mutation / query / field) can also be objects with a
+        // `resolve` function. Due to this, the generated types for resolvers
+        // are not callable by default.
         //
-        // This refinement adds a lot of boilerplate in our unit tests; since we
-        // exclusively use resolver functions, we'll disable resolver objects to
-        // omit the need for this boilerplate.
+        // However, we only ever use resolver functions, and we directly call
+        // our resolvers in unit tests (e.g. `await getExecutions(...)`). This
+        // setting tells graphql-codegen to always type resolvers as functions so that
+        // we can continue calling our resolvers in unit tests.
         makeResolverTypeCallable: true,
+
+        // By default, graphql-codegen allows resolvers (for queries / mutations
+        // / fields) to return Promises (e.g. in getExecutions(...) => Promise<T>,
+        // T can technically be Promise itself).
+        //
+        // This complicates our unit tests because we have to add extra code to
+        // deal with possibility of nested Promises. Since we never actually
+        // return nested Promises, to avoid the extra code, we configure
+        // graphql-codegen to avoid typing nested Promises.
+        resolverTypeWrapperSignature: 'T',
 
         // Make resolvers' 4th `info` argument optional. This reduces
         // boilerplate in our unit tests.

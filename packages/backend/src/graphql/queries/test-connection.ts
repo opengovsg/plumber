@@ -3,7 +3,7 @@ import globalVariable from '@/helpers/global-variable'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const testConnection: NonNullable<QueryResolvers['testConnection']> = async (
+const testConnection: QueryResolvers['testConnection'] = async (
   _parent,
   params,
   context,

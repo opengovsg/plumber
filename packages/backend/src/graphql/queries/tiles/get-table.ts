@@ -5,11 +5,11 @@ import TableMetadata from '@/models/table-metadata'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
 
-const getTable: NonNullable<QueryResolvers['getTable']> = async (
+const getTable: QueryResolvers['getTable'] = async (
   _parent,
   params,
   context,
-): Promise<TableMetadata> => {
+) => {
   const { tableId } = params
 
   try {

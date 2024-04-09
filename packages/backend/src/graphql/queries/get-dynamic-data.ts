@@ -3,7 +3,7 @@ import globalVariable from '@/helpers/global-variable'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getDynamicData: NonNullable<QueryResolvers['getDynamicData']> = async (
+const getDynamicData: QueryResolvers['getDynamicData'] = async (
   _parent,
   params,
   context,

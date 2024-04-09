@@ -2,10 +2,7 @@ import App from '@/models/app'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getApps: NonNullable<QueryResolvers['getApps']> = async (
-  _parent,
-  params,
-) => {
+const getApps: QueryResolvers['getApps'] = async (_parent, params) => {
   const apps = await App.findAll(params.name)
 
   if (params.onlyWithTriggers) {

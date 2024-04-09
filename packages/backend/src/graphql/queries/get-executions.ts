@@ -4,7 +4,7 @@ import type ExtendedQueryBuilder from '@/models/query-builder'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getExecutions: NonNullable<QueryResolvers['getExecutions']> = async (
+const getExecutions: QueryResolvers['getExecutions'] = async (
   _parent,
   params,
   context,

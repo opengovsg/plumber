@@ -2,7 +2,7 @@ import paginate from '@/helpers/pagination'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getFlows: NonNullable<QueryResolvers['getFlows']> = async (
+const getFlows: QueryResolvers['getFlows'] = async (
   _parent,
   params,
   context,

@@ -864,7 +864,7 @@ export type VerifyOtpInput = {
 
 
 
-export type ResolverTypeWrapper<T> = Promise<T> | T;
+export type ResolverTypeWrapper<T> = T;
 
 export type Resolver<TResult, TParent = {}, TContext = {}, TArgs = {}> = ResolverFn<TResult, TParent, TContext, TArgs>;
 

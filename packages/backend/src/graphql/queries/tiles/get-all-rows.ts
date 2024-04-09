@@ -1,16 +1,16 @@
 import { NotFoundError } from 'objection'
 
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
-import { getTableRows, TableRowItem } from '@/models/dynamodb/table-row'
+import { getTableRows } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
 
-const getAllRows: NonNullable<QueryResolvers['getAllRows']> = async (
+const getAllRows: QueryResolvers['getAllRows'] = async (
   _parent,
   params,
   context,
-): Promise<Pick<TableRowItem, 'rowId' | 'data'>[]> => {
+) => {
   const { tableId } = params
 
   try {
