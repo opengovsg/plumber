@@ -6,11 +6,7 @@ import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import { sendEmail } from '@/helpers/send-email'
 
-type Params = {
-  input: {
-    email: string
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
 const OTP_LENGTH = 6
 const OTP_ALLOWED_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
@@ -21,10 +17,7 @@ const OTP_RESEND_TIMEOUT_IN_MS = 1 * 30 * 1000
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
-const requestOtp = async (
-  _parent: unknown,
-  params: Params,
-): Promise<boolean> => {
+const requestOtp: MutationResolvers['requestOtp'] = async (_parent, params) => {
   const email = await validateAndParseEmail(params.input.email)
   // validate email
   if (!email) {

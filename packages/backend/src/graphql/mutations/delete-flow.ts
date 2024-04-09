@@ -1,17 +1,12 @@
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    id: string
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteFlow = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const deleteFlow: MutationResolvers['deleteFlow'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const flow = await context.currentUser
     .$relatedQuery('flows')
@@ -30,7 +25,7 @@ const deleteFlow = async (
   await flow.$relatedQuery('steps').delete()
   await flow.$query().delete()
 
-  return
+  return true
 }
 
 export default deleteFlow

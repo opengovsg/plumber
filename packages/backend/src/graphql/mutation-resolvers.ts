@@ -1,3 +1,4 @@
+import type { MutationResolvers } from './__generated__/types.generated'
 import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
 import createStep from './mutations/create-step'
@@ -28,7 +29,7 @@ import verifyOtp from './mutations/verify-otp'
  * be sure to redact it in the morgan middleware. See /backend/src/helpers/morgan.ts.
  */
 
-const mutationResolvers = {
+export default {
   createConnection,
   generateAuthUrl,
   updateConnection,
@@ -52,6 +53,4 @@ const mutationResolvers = {
   loginWithSgid,
   loginWithSelectedSgid,
   ...tilesMutationResolvers,
-}
-
-export default mutationResolvers
+} satisfies MutationResolvers

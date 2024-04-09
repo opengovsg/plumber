@@ -1,22 +1,16 @@
-import { IApp } from '@plumber/types'
-
 import App from '@/models/app'
 
-type Params = {
-  name: string
-  onlyWithTriggers: boolean
-  onlyWithActions: boolean
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getApps = async (_parent: unknown, params: Params) => {
+const getApps: QueryResolvers['getApps'] = async (_parent, params) => {
   const apps = await App.findAll(params.name)
 
   if (params.onlyWithTriggers) {
-    return apps.filter((app: IApp) => app.triggers?.length)
+    return apps.filter((app) => app.triggers?.length)
   }
 
   if (params.onlyWithActions) {
-    return apps.filter((app: IApp) => app.actions?.length)
+    return apps.filter((app) => app.actions?.length)
   }
 
   return apps

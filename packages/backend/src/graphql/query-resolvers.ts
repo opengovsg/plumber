@@ -1,3 +1,4 @@
+import type { QueryResolvers } from './__generated__/types.generated'
 import getApp from './queries/get-app'
 import getApps from './queries/get-apps'
 import getConnectedApps from './queries/get-connected-apps'
@@ -14,7 +15,7 @@ import healthcheck from './queries/healthcheck'
 import testConnection from './queries/test-connection'
 import tilesQueryResolvers from './queries/tiles'
 
-const queryResolvers = {
+export default {
   getApps,
   getApp,
   getConnectedApps,
@@ -30,6 +31,4 @@ const queryResolvers = {
   healthcheck,
   ...tilesQueryResolvers,
   getPlumberStats,
-}
-
-export default queryResolvers
+} satisfies QueryResolvers

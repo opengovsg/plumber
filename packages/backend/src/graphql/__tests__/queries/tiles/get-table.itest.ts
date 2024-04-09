@@ -41,20 +41,7 @@ describe('get single table query', () => {
       name: dummyTable.name,
     })
 
-    // https://github.com/dotansimha/graphql-code-generator/issues/2124
-    //
-    // It turns out GraphQL resolvers are allowed to return a promise array. So
-    // even though we actually return the actual columns, graphql-codegen has
-    // typed our function as returning a promise array just-in-case (since it
-    // can't inspect the implementation).
-    //
-    // Since this is just a test, we'll just await once more.
-    const almostColumns = await TableMetadataResolver.columns(
-      dummyTable,
-      {},
-      null,
-    )
-    const columns = await Promise.all(almostColumns)
+    const columns = await TableMetadataResolver.columns(dummyTable, {}, null)
     expect(columns.map((c) => c.id)).toEqual(dummyColumnIds)
   })
 

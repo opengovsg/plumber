@@ -1,19 +1,13 @@
 import paginate from '@/helpers/pagination'
 import Execution from '@/models/execution'
-import ExtendedQueryBuilder from '@/models/query-builder'
-import Context from '@/types/express/context'
+import type ExtendedQueryBuilder from '@/models/query-builder'
 
-type Params = {
-  limit: number
-  offset: number
-  status?: string
-  searchInput?: string
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getExecutions = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const getExecutions: QueryResolvers['getExecutions'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const filterBuilder = (builder: ExtendedQueryBuilder<Execution>) => {
     builder.where('test_run', 'FALSE')

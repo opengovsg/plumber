@@ -4,7 +4,8 @@ import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
 import type Connection from '@/models/connection'
 import type User from '@/models/user'
-import type Context from '@/types/express/context'
+
+import type { MutationResolvers } from '../__generated__/types.generated'
 
 async function makeGlobalVariableForGlobalRegistration(
   currentUser: User,
@@ -45,18 +46,11 @@ async function makeGlobalVariableForPerStepRegistration(
   })
 }
 
-type Params = {
-  input: {
-    connectionId: string
-    stepId: string | null
-  }
-}
-
-const registerConnection = async function (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-): Promise<boolean> {
+const registerConnection: MutationResolvers['registerConnection'] = async (
+  _parent,
+  params,
+  context,
+) => {
   const { connectionId, stepId } = params.input
 
   const connection = await context.currentUser
