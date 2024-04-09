@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import NavigationDrawer from 'components/Layout/NavigationDrawer'
+import ApproveTransfersInfobox from 'pages/Flows/components/ApproveTransfersInfobox'
 
 import FlowTemplate, { FlowTemplateProps } from './FlowTemplate'
 
@@ -35,12 +36,19 @@ const flowTemplates: FlowTemplateProps[] = [
 
 interface EmptyFlowsProps {
   CreateFlowLink: As
+  count?: number
 }
 
 export default function EmptyFlows(props: EmptyFlowsProps) {
-  const { CreateFlowLink } = props
+  const { CreateFlowLink, count } = props
   return (
     <Box px="10vw" py="10vh">
+      {count === undefined || count === 0 ? (
+        <></>
+      ) : (
+        <ApproveTransfersInfobox count={count} />
+      )}
+
       <Flex>
         <Hide above="sm">
           <Box mt={-1.5}>

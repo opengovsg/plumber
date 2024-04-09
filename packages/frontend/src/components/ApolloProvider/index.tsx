@@ -17,7 +17,7 @@ const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
         status: 'error',
         duration: 3000,
         isClosable: true,
-        position: 'bottom-right',
+        position: 'top',
       })
     },
     [toast],

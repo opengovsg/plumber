@@ -18,7 +18,6 @@ const ThemeProvider = ({
 }: ThemeProviderProps): React.ReactElement => {
   // This is a workaround to fix the issue of toasts appearing behind modal overlays
   const ref = useRef<HTMLDivElement>(null)
-
   return (
     <ChakraThemeProvider
       theme={chakraTheme}

@@ -7,6 +7,11 @@ type Params = {
 const getFlow = async (_parent: unknown, params: Params, context: Context) => {
   const flow = await context.currentUser
     .$relatedQuery('flows')
+    .withGraphFetched({
+      pendingTransfer: {
+        newOwner: true,
+      },
+    })
     .withGraphJoined('[steps.[connection]]')
     .orderBy('steps.position', 'asc')
     .findOne({ 'flows.id': params.id })
