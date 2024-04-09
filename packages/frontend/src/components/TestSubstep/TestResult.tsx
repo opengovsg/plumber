@@ -94,8 +94,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     <Box w="100%">
       <Infobox variant="success">
         <Text>
-          Here is the test data we found. You can use these as variables in your
-          action steps below.
+          You can use the data below as variables in your action steps below.
         </Text>
       </Infobox>
       <Box maxH="25rem" overflowY="scroll" w="100%">
