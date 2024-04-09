@@ -24,7 +24,7 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
 
   return (
     <Infobox variant="error">
-      <Box>
+      <Box minW="0">
         {/* Actual executions will not need to show step position and app name */}
         {isTestRun && (
           <Badge
@@ -41,8 +41,10 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
         </Text>
 
         <Text textStyle="body-1">
-          <Markdown linkTarget="_blank">{solution}</Markdown>
-          {contactPlumberMessage}{' '}
+          <Markdown linkTarget="_blank">
+            {`${solution}
+              ${contactPlumberMessage}`}
+          </Markdown>
           {details && (
             <>
               <Button
@@ -50,6 +52,7 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
                 variant="link"
                 size="sm"
                 sx={{ textDecoration: 'underline' }}
+                mt={2}
               >
                 View http error details below.
               </Button>

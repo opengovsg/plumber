@@ -22,9 +22,10 @@ class FlowTransfer extends Base {
       newOwnerId: { type: 'string', format: 'uuid' },
       status: {
         type: 'string',
-        enum: ['pending', 'accepted', 'rejected'],
+        enum: ['pending', 'approved', 'rejected', 'cancelled'],
         default: 'pending',
       },
+      deletedAt: { type: 'null' }, // disallow soft deletes
     },
   }
 

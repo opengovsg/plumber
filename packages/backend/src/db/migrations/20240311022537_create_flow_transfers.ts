@@ -8,6 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('new_owner_id').references('id').inTable('users').notNullable()
     table.string('status').notNullable()
     table.timestamps(true, true)
+    table.timestamp('deleted_at').nullable()
   })
 }
 
