@@ -3,10 +3,7 @@ import type { IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import { VALIDATION_ERROR_SOLUTION } from '@/apps/postman/common/constants'
-import StepError from '@/errors/step'
-
-import { getApiBaseUrl } from '../../common/api'
+import StepError, { GenericSolution } from '@/errors/step'
 
 import { requestSchema, responseSchema } from './schema'
 
@@ -106,20 +103,17 @@ const action: IRawAction = {
   ],
 
   async run($) {
-    const apiKey = $.auth.data.apiKey as string
-    const baseUrl = getApiBaseUrl(apiKey)
     const paymentServiceId = $.auth.data.paymentServiceId as string
 
     try {
       const payload = requestSchema.parse($.step.parameters)
 
       const rawResponse = await $.http.post(
-        `/v1/payment-services/${paymentServiceId}/payments`,
+        `/v1/payment-services/:paymentServiceId/payments`,
         payload,
         {
-          baseURL: baseUrl,
-          headers: {
-            'x-api-key': apiKey,
+          urlPathParams: {
+            paymentServiceId,
           },
         },
       )
@@ -132,7 +126,7 @@ const action: IRawAction = {
 
         throw new StepError(
           `${firstError.message} at "${firstError.path}"`,
-          VALIDATION_ERROR_SOLUTION,
+          GenericSolution.ReconfigureInvalidField,
           $.step.position,
           $.app.name,
         )

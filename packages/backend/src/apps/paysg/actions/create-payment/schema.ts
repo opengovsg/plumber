@@ -3,6 +3,8 @@ import { z } from 'zod'
 
 import { zodParser as plumberDate } from '@/helpers/internal-date-format'
 
+import { normalizeSpecialChars } from './normalize-special-chars'
+
 export const requestSchema = z
   .object({
     referenceId: z
@@ -147,8 +149,8 @@ export const requestSchema = z
   // After parsing, convert to PaySG format.
   .transform((data) => ({
     reference_id: data.referenceId,
-    payer_name: data.payerName,
-    payer_address: data.payerAddress,
+    payer_name: normalizeSpecialChars(data.payerName),
+    payer_address: normalizeSpecialChars(data.payerAddress),
     payer_identifier: data.payerIdentifier,
     payer_email: data.payerEmail,
     description: data.description,
@@ -158,23 +160,4 @@ export const requestSchema = z
     return_url: data.returnUrl,
   }))
 
-export const responseSchema = z
-  .object({
-    // Allow nullish in case any part of the API changes...
-    id: z.string().nullish(),
-    payment_url: z.string().nullish(),
-    stripe_payment_intent_id: z.string().nullish(),
-    payment_qr_code_url: z.string().nullish(),
-    amount_in_cents: z.number(),
-
-    // Rest of fields are not as relevant for our end users, so skip exposing
-    // them. We can expose them later if there is a use case.
-  })
-  .transform((data) => ({
-    id: data.id,
-    paymentUrl: data.payment_url,
-    stripePaymentIntentId: data.stripe_payment_intent_id,
-    paymentQrCodeUrl: data.payment_qr_code_url,
-    amountInDollars: (data.amount_in_cents / 100).toFixed(2),
-    amountInCents: data.amount_in_cents,
-  }))
+export { schema as responseSchema } from '../../common/schemas/payment'

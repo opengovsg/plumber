@@ -2,6 +2,7 @@ import { Suspense, useContext } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Center } from '@chakra-ui/react'
 import { Spinner } from '@opengovsg/design-system-react'
+import RedirectToLogin from 'components/RedirectToLogin'
 import { TILES_FEATURE_FLAG } from 'config/flags'
 import * as URLS from 'config/urls'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
@@ -35,12 +36,7 @@ export default function TileLayout({
   }
 
   if (!publicLayout && !currentUser) {
-    const redirectQueryParam = window.location.pathname + window.location.search
-    return (
-      <Navigate
-        to={URLS.ADD_REDIRECT_TO_LOGIN(encodeURIComponent(redirectQueryParam))}
-      />
-    )
+    return <RedirectToLogin />
   }
 
   return <Suspense fallback={<></>}>{children}</Suspense>

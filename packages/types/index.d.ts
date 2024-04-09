@@ -135,6 +135,11 @@ export interface IStep {
 export interface IFlowConfig {
   maxQps?: number
   rejectIfOverMaxQps?: boolean
+  errorConfig?: IFlowErrorConfig
+}
+
+export interface IFlowErrorConfig {
+  notificationFrequency: 'once_per_day' | 'always'
 }
 
 export interface IFlow {
@@ -147,6 +152,7 @@ export interface IFlow {
   updatedAt: string
   remoteWebhookId: string
   lastInternalId: () => Promise<string>
+  config: IFlowConfig | null
 }
 
 export interface IUser {

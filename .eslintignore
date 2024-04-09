@@ -13,4 +13,4 @@ lint-staged.config.js
 
 webpack.config.js
 
-__generated__
+/**/graphql/__generated__

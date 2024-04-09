@@ -9,6 +9,7 @@ import getExecutionSteps from './queries/get-execution-steps'
 import getExecutions from './queries/get-executions'
 import getFlow from './queries/get-flow'
 import getFlows from './queries/get-flows'
+import getPlumberStats from './queries/get-plumber-stats'
 import getStepWithTestExecutions from './queries/get-step-with-test-executions'
 import healthcheck from './queries/healthcheck'
 import testConnection from './queries/test-connection'
@@ -29,4 +30,5 @@ export default {
   getCurrentUser,
   healthcheck,
   ...tilesQueryResolvers,
+  getPlumberStats,
 } satisfies QueryResolvers
