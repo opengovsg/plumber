@@ -10,7 +10,6 @@ export const BANNER_TEXT_FLAG = 'banner_display'
  * Feature flags
  */
 export const SGID_FEATURE_FLAG = 'sgid-login'
-export const TILES_FEATURE_FLAG = 'feature_tiles'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
 
 /**

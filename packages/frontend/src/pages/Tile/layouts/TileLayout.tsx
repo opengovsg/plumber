@@ -1,10 +1,7 @@
 import { Suspense, useContext } from 'react'
-import { Navigate } from 'react-router-dom'
 import { Center } from '@chakra-ui/react'
 import { Spinner } from '@opengovsg/design-system-react'
 import RedirectToLogin from 'components/RedirectToLogin'
-import { TILES_FEATURE_FLAG } from 'config/flags'
-import * as URLS from 'config/urls'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import useAuthentication from 'hooks/useAuthentication'
 
@@ -26,13 +23,6 @@ export default function TileLayout({
         <Spinner />
       </Center>
     )
-  }
-
-  /**
-   * For non public view, check if feature flag is enabled, otherwise redirect to 404
-   */
-  if (!publicLayout && !flags[TILES_FEATURE_FLAG]) {
-    return <Navigate to={URLS.FOUR_O_FOUR} />
   }
 
   if (!publicLayout && !currentUser) {
