@@ -4,16 +4,13 @@ import getDefaultTransferDetails, {
   getEmptyConnectionDetails,
 } from '@/helpers/get-default-transfer-details'
 import globalVariable from '@/helpers/global-variable'
-import Context from '@/types/express/context'
 
-type Params = {
-  flowId: string
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getFlowTransferDetails = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const getFlowTransferDetails: QueryResolvers['getFlowTransferDetails'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const flowTransferDetails: ITransferDetails[] = []
 
