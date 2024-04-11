@@ -118,6 +118,17 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
             alignItems: 'flex-start',
           }}
         >
+          {step.webhookUrl && (
+            <WebhookUrlInfo
+              webhookUrl={step.webhookUrl}
+              webhookTriggerInstructions={
+                (selectedActionOrTrigger as IBaseTrigger)
+                  .webhookTriggerInstructions || defaultTriggerInstructions
+              }
+              sx={{ mb: 2 }}
+            />
+          )}
+
           {!!error?.graphQLErrors?.length && (
             <Box w="100%">
               {serializeErrors(error.graphQLErrors).map(
@@ -130,16 +141,6 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
                 ),
               )}
             </Box>
-          )}
-          {step.webhookUrl && (
-            <WebhookUrlInfo
-              webhookUrl={step.webhookUrl}
-              webhookTriggerInstructions={
-                (selectedActionOrTrigger as IBaseTrigger)
-                  .webhookTriggerInstructions || defaultTriggerInstructions
-              }
-              sx={{ mb: 2 }}
-            />
           )}
 
           <TestResult
