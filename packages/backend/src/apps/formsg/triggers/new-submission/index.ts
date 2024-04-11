@@ -61,7 +61,7 @@ const trigger: IRawTrigger = {
     if (!$.auth.data) {
       throw new StepError(
         'Missing FormSG connection',
-        'Click on choose connection and connect your FormSG connection.',
+        'Click on choose connection and set up your form credentials.',
         $.step.position,
         $.app.name,
       )
