@@ -41,6 +41,9 @@ type Query {
   getCurrentUser: User
   healthcheck: AppHealth
   getPlumberStats: Stats
+  # Flow transfers
+  getPendingFlowTransfers: [FlowTransfer!]!
+  getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
 }
 
 type Mutation {
@@ -79,6 +82,9 @@ type Mutation {
   createRows(input: CreateTableRowsInput!): Boolean
   updateRow(input: UpdateTableRowInput!): ID!
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
+  # Flow transfers
+  createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
+  updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
 }
 
 """
@@ -90,6 +96,19 @@ directive @specifiedBy(
   """
   url: String!
 ) on SCALAR
+
+enum FieldVisibilityOp {
+  always_true
+  is_empty
+  equals
+  not_equals
+}
+
+type FieldVisibilityCondition {
+  op: FieldVisibilityOp!
+  fieldKey: String
+  fieldValue: String
+}
 
 type Action {
   name: String
@@ -120,7 +139,7 @@ type ActionSubstepArgument {
   value: JSONObject
   source: ActionSubstepArgumentSource
   dependsOn: [String]
-  hidden: Boolean
+  hiddenIf: FieldVisibilityCondition
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
@@ -258,6 +277,8 @@ type Flow {
   createdAt: String
   updatedAt: String
   config: FlowConfig
+  userId: String
+  pendingTransfer: FlowTransfer
 }
 
 # Rate limiting config is omitted here e.g. maxQps
@@ -465,6 +486,13 @@ type TriggerInstructions {
   errorMsg: String
 }
 
+type StepTransferDetails {
+  position: Int!
+  appName: String!
+  connectionName: String
+  instructions: String
+}
+
 type TriggerSubstep {
   key: String
   name: String
@@ -486,6 +514,8 @@ type TriggerSubstepArgument {
   showOptionValue: Boolean
   options: [ArgumentOption]
   value: JSONObject
+  hiddenIf: FieldVisibilityCondition
+
   # Only for multirow
   subFields: [TriggerSubstepArgument]
 }
@@ -498,6 +528,7 @@ type TriggerSubstepArgumentSource {
 
 type ArgumentOption {
   label: String
+  description: String
   value: JSONObject
 }
 
@@ -545,6 +576,7 @@ type ExecutionStepConnection {
 # Tiles types
 input CreateTableInput {
   name: String!
+  isBlank: Boolean!
 }
 
 input TableColumnConfigInput {
@@ -629,6 +661,8 @@ type Stats {
   executionCount: Int!
 }
 
+# Start of SGID types
+
 type SgidPublicOfficerEmployment {
   workEmail: String
   agencyName: String
@@ -654,6 +688,39 @@ input LoginWithSelectedSgidInput {
 type LoginWithSelectedSgidResult {
   success: Boolean!
 }
+
+# End of SGID types
+# Start of flow transfers types
+
+type FlowTransfer {
+  id: ID!
+  flowId: ID!
+  oldOwnerId: ID!
+  newOwnerId: ID!
+  status: String!
+  oldOwner: User!
+  newOwner: User!
+  flow: Flow!
+}
+
+input CreateFlowTransferInput {
+  flowId: String!
+  newOwnerEmail: String!
+}
+
+enum FlowTransferStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+input UpdateFlowTransferStatusInput {
+  id: String!
+  status: FlowTransferStatus!
+}
+
+# End of flow transfers types
 
 schema {
   query: Query

@@ -13,9 +13,28 @@ import webhookHandler from '@/controllers/webhooks/handler'
 import logger from '@/helpers/logger'
 
 const router = Router()
-const upload = multer()
+const uploadNone = multer().none()
 
-router.use(upload.none())
+router.use((req, res, next) => {
+  uploadNone(req, res, (err) => {
+    // file upload is not supported
+    // handle error to prevent http 500 error
+    if (err instanceof multer.MulterError) {
+      logger.error({
+        req: {
+          body: req.body,
+          headers: req.headers,
+          url: req.url,
+        },
+        err,
+        msg: 'Invalid request: multer error',
+      })
+      res.status(415).send('Invalid request, file upload is not supported.')
+      return
+    }
+    next(err)
+  })
+})
 
 router.use(
   express.text({

@@ -1,5 +1,6 @@
 import type { IApp } from '@plumber/types'
 
+import getTransferDetails from './common/get-transfer-details'
 import beforeRequest from './common/interceptors/before-request'
 import requestErrorHandler from './common/interceptors/request-error-handler'
 import actions from './actions'
@@ -19,6 +20,7 @@ const app: IApp = {
   beforeRequest,
   requestErrorHandler,
   dynamicData,
+  getTransferDetails,
 }
 
 export default app

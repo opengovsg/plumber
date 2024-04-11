@@ -1,27 +1,28 @@
-import type { IFlow } from '@plumber/types'
+import type { IFlow, IFlowTransfer } from '@plumber/types'
 
 import { forwardRef, useCallback, useMemo } from 'react'
 import type { LinkProps } from 'react-router-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Flex, Hide } from '@chakra-ui/react'
+import { Center, Flex } from '@chakra-ui/react'
 import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
-import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
-import { Pagination } from '@opengovsg/design-system-react'
+import { Pagination, Spinner } from '@opengovsg/design-system-react'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import Container from 'components/Container'
 import EmptyFlowsTemplate from 'components/EmptyFlows'
 import FlowRow from 'components/FlowRow'
-import NavigationDrawer from 'components/Layout/NavigationDrawer'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
 import SearchInput from 'components/SearchInput'
 import * as URLS from 'config/urls'
 import { GET_FLOWS } from 'graphql/queries/get-flows'
+import { GET_PENDING_FLOW_TRANSFERS } from 'graphql/queries/get-pending-flow-transfers'
 import debounce from 'lodash/debounce'
+
+import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
 
 const FLOW_PER_PAGE = 10
 const FLOWS_TITLE = 'Pipes'
@@ -40,6 +41,13 @@ export default function Flows(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
   const flowName = searchParams.get('input') || ''
+
+  // for flow transfers
+  const { data: flowTransfersData, loading: flowTransfersLoading } = useQuery(
+    GET_PENDING_FLOW_TRANSFERS,
+  )
+  const flowTransfers: IFlowTransfer[] =
+    flowTransfersData?.getPendingFlowTransfers
 
   // format search params for empty string input and first page
   const formatSearchParams = useCallback(
@@ -105,8 +113,14 @@ export default function Flows(): React.ReactElement {
     [],
   )
 
+  // TODO (mal): think of a way to make this less complicated
   if (!loading && !hasFlows && flowName === '' && page === 1) {
-    return <EmptyFlowsTemplate CreateFlowLink={CreateFlowLink} />
+    return (
+      <EmptyFlowsTemplate
+        CreateFlowLink={CreateFlowLink}
+        count={flowTransfersLoading ? 0 : flowTransfers.length}
+      />
+    )
   }
 
   return (
@@ -120,9 +134,6 @@ export default function Flows(): React.ReactElement {
           rowSpacing={3}
         >
           <Grid container item xs sm alignItems="center" order={{ xs: 0 }}>
-            <Hide above="sm">
-              <NavigationDrawer />
-            </Hide>
             <PageTitle title={FLOWS_TITLE} />
           </Grid>
 
@@ -155,8 +166,20 @@ export default function Flows(): React.ReactElement {
 
         <Divider sx={{ mt: [2, 0], mb: 2 }} />
 
+        {flowTransfersLoading ? (
+          <Center>
+            <Spinner fontSize="4xl" color="primary.600" />
+          </Center>
+        ) : flowTransfers.length === 0 ? (
+          <></>
+        ) : (
+          <ApproveTransfersInfobox count={flowTransfers.length} />
+        )}
+
         {loading && (
-          <CircularProgress sx={{ display: 'block', margin: '20px auto' }} />
+          <Center mt={8}>
+            <Spinner fontSize="4xl" color="primary.600" />
+          </Center>
         )}
 
         {!loading &&

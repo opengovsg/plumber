@@ -153,6 +153,7 @@ export interface IFlow {
   remoteWebhookId: string
   lastInternalId: () => Promise<string>
   config: IFlowConfig | null
+  pendingTransfer?: IFlowTransfer
 }
 
 export interface IUser {
@@ -167,6 +168,40 @@ export interface IUser {
 // Subset of HTML autocomplete values.
 type AutoCompleteValue = 'off' | 'url' | 'email'
 
+/**
+ * Field Visibility
+ */
+
+// This is synced with FieldVisibilityOp GraphQL enum.
+// Using jank Extract for now until we get typed GraphQL.
+type FieldVisibilityOp = 'always_true' | 'is_empty' | 'equals' | 'not_equals'
+
+interface IFieldVacuousVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'always_true'>
+}
+
+interface IFieldKeyOnlyVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'is_empty'>
+
+  fieldKey: string
+}
+
+interface IFieldComparativeVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'equals' | 'not_equals'>
+
+  fieldKey: string
+  fieldValue: string
+}
+
+export type IFieldVisibilityCondition =
+  | IFieldComparativeVisibilityCondition
+  | IFieldKeyOnlyVisibilityCondition
+  | IFieldVacuousVisibilityCondition
+
+/**
+ * End field visibility
+ */
+
 export interface IBaseField {
   key: string
   label?: string
@@ -179,7 +214,21 @@ export interface IBaseField {
   clickToCopy?: boolean
   variables?: boolean
   dependsOn?: string[]
-  hidden?: boolean
+
+  /**
+   * Allows hiding a field if other fields' values don't fulfill some condition
+   * ---
+   * This currently only supports one condition for simplicity, but can be
+   * changed to support arbitrary length AND / OR conditionals using a 2-level
+   * nested array: top level represents OR, inner level represents AND (similar
+   * to if-then).
+   *
+   * NOTE: This currently only checks fields within the same object / "sibling"
+   * fields (e.g. for MultiRow, where fields are inside an array, `fieldKey`
+   * cannot reference fields outside the array. Nor can it refefence fields in
+   * other array elements).
+   */
+  hiddenIf?: IFieldVisibilityCondition
 }
 
 export interface IFieldDropdown extends IBaseField {
@@ -202,7 +251,20 @@ export interface IFieldDropdownSource {
 
 export interface IFieldDropdownOption {
   label: string
+
+  /**
+   * Set `showOptionValue` to false if you do not want this to be shown in the
+   * dropdown. The value will also not be rendered if `description` if
+   * specified.
+   */
   value: boolean | string | number
+
+  /**
+   * If this is specified, this will be rendered instead of `value`. Note that
+   * this is always rendered if specified, even if `showOptionValue` is set to
+   * false.
+   */
+  description?: string
 }
 
 export interface IFieldText extends IBaseField {
@@ -301,6 +363,7 @@ export interface IApp {
    * with try / catch.
    */
   requestErrorHandler?: TRequestErrorHandler
+  getTransferDetails?($: IGlobalVariable): Promise<ITransferDetails> // TODO (mal): add null if necessary, check with Stacey
 }
 
 export type TBeforeRequest = (
@@ -374,6 +437,14 @@ export type ITriggerInstructions = Partial<{
   hideWebhookUrl: boolean
   errorMsg: string
 }>
+
+// TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2
+export type ITransferDetails = {
+  position: number
+  appName: string
+  connectionName?: string // could be no connection
+  instructions?: string
+}
 
 export interface IBaseTrigger {
   name: string
@@ -617,3 +688,21 @@ export interface ITableRow {
 }
 
 export type ITableCollabRole = 'owner' | 'editor' | 'viewer'
+
+// Flow transfers
+export type IFlowTransferStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled'
+
+export interface IFlowTransfer {
+  id: string
+  flowId: string
+  oldOwnerId: string
+  newOwnerId: string
+  status: IFlowTransferStatus
+  oldOwner: IUser
+  newOwner: IUser
+  flow: IFlow
+}

@@ -16,6 +16,7 @@ const getFlows: QueryResolvers['getFlows'] = async (
       steps: {
         connection: true,
       },
+      pendingTransfer: true,
     })
     .where((builder) => {
       if (params.connectionId) {

@@ -94,8 +94,14 @@ export const GET_APPS = gql`
             dependsOn
             value
             showOptionValue
+            hiddenIf {
+              fieldKey
+              fieldValue
+              op
+            }
             options {
               label
+              description
               value
             }
             source {
@@ -119,8 +125,14 @@ export const GET_APPS = gql`
               allowArbitrary
               dependsOn
               showOptionValue
+              hiddenIf {
+                fieldKey
+                fieldValue
+                op
+              }
               options {
                 label
+                description
                 value
               }
               source {
@@ -154,11 +166,11 @@ export const GET_APPS = gql`
             variableTypes
             allowArbitrary
             dependsOn
-            hidden
             showOptionValue
             value
             options {
               label
+              description
               value
             }
             source {
@@ -168,6 +180,11 @@ export const GET_APPS = gql`
                 name
                 value
               }
+            }
+            hiddenIf {
+              fieldKey
+              fieldValue
+              op
             }
             # Only for multi-row
             subFields {
@@ -182,8 +199,14 @@ export const GET_APPS = gql`
               allowArbitrary
               dependsOn
               showOptionValue
+              hiddenIf {
+                fieldKey
+                fieldValue
+                op
+              }
               options {
                 label
+                description
                 value
               }
               source {
