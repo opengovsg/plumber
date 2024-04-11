@@ -10,6 +10,7 @@
     "dev:worker": "npm run -w backend worker",
     "dev": "npm run all --kill-others npm:dev:*",
     "graphql-codegen": "graphql-codegen --config gql-codegen.ts",
+    "gqlc": "npm run graphql-codegen",
     "build": "npm run --workspaces --if-present build",
     "start": "npm run -w backend start",
     "start:worker": "npm run -w backend start:worker",
