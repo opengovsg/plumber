@@ -17,6 +17,14 @@ import healthcheck from './queries/healthcheck'
 import testConnection from './queries/test-connection'
 import tilesQueryResolvers from './queries/tiles'
 
+/**
+ * Want to create a new query? Add your query into graphql.schema, run
+ * `npm run graphql-codegen` and go!
+ *
+ * If your query returns a new model, you'll also need also update
+ * schema.gql-to-typescript.ts.
+ */
+
 export default {
   getApps,
   getApp,
@@ -31,8 +39,8 @@ export default {
   getDynamicData,
   getCurrentUser,
   healthcheck,
-  ...tilesQueryResolvers,
   getPlumberStats,
   getPendingFlowTransfers,
   getFlowTransferDetails,
+  ...tilesQueryResolvers,
 } satisfies QueryResolvers

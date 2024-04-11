@@ -26,7 +26,15 @@ import verifyConnection from './mutations/verify-connection'
 import verifyOtp from './mutations/verify-otp'
 
 /**
- * Important:
+ * Want to create a new mutation? Add your mutation into graphql.schema, run
+ * `npm run graphql-codegen` and go!
+ *
+ * If your mutation returns a new model, you'll also need to update
+ * schema.gql-to-typescript.ts.
+ */
+
+/**
+ * == ** IMPORTANT ** ==
  * When adding NEW mutations that involve sensitive data like api keys and private keys,
  * be sure to redact it in the morgan middleware. See /backend/src/helpers/morgan.ts.
  */
