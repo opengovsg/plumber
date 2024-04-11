@@ -1,12 +1,9 @@
-import { IFlow } from '@plumber/types'
-
-import { useCallback, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
-import { useMutation, useQuery } from '@apollo/client'
+import { useCallback, useContext, useMemo } from 'react'
+import { useMutation } from '@apollo/client'
 import { Flex, Skeleton, Stack, Text } from '@chakra-ui/react'
 import { Menu, useToast } from '@opengovsg/design-system-react'
+import { EditorSettingsContext } from 'contexts/EditorSettings'
 import { UPDATE_FLOW_CONFIG } from 'graphql/mutations/update-flow-config'
-import { GET_FLOW } from 'graphql/queries/get-flow'
 
 enum Frequency {
   Once = 'once_per_day',
@@ -27,9 +24,8 @@ const frequencyOptions = [
 const DEFAULT_FREQUENCY = Frequency.Once
 
 export default function Notifications() {
-  const { flowId } = useParams()
-  const { data, loading } = useQuery(GET_FLOW, { variables: { id: flowId } })
-  const flow: IFlow = data?.getFlow
+  const { flow } = useContext(EditorSettingsContext)
+
   const frequency =
     flow?.config?.errorConfig?.notificationFrequency ?? DEFAULT_FREQUENCY
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
@@ -40,14 +36,14 @@ export default function Notifications() {
       await updateFlowConfig({
         variables: {
           input: {
-            id: flowId,
+            id: flow.id,
             notificationFrequency: frequency,
           },
         },
         optimisticResponse: {
           updateFlowConfig: {
             __typename: 'Flow',
-            id: flow?.id,
+            id: flow.id,
             config: {
               errorConfig: {
                 notificationFrequency: frequency,
@@ -69,7 +65,7 @@ export default function Notifications() {
         position: 'top',
       })
     },
-    [flow?.id, flowId, updateFlowConfig, toast],
+    [flow.id, updateFlowConfig, toast],
   )
 
   const handleClick = useCallback(
@@ -108,7 +104,7 @@ export default function Notifications() {
         <Text textStyle="subhead-1">Frequency</Text>
         <Menu isStretch>
           <Menu.Button variant="outline" colorScheme="secondary">
-            <Skeleton isLoaded={!loading}>
+            <Skeleton isLoaded={!!flow}>
               <Text
                 textStyle="body-1"
                 color="base.content.default"

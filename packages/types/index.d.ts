@@ -149,6 +149,7 @@ export interface IFlow {
   remoteWebhookId: string
   lastInternalId: () => Promise<string>
   config: IFlowConfig | null
+  pendingTransfer?: IFlowTransfer
 }
 
 export interface IUser {
@@ -358,6 +359,7 @@ export interface IApp {
    * with try / catch.
    */
   requestErrorHandler?: TRequestErrorHandler
+  getTransferDetails?($: IGlobalVariable): Promise<ITransferDetails> // TODO (mal): add null if necessary, check with Stacey
 }
 
 export type TBeforeRequest = (
@@ -431,6 +433,14 @@ export type ITriggerInstructions = Partial<{
   hideWebhookUrl: boolean
   errorMsg: string
 }>
+
+// TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2
+export type ITransferDetails = {
+  position: number
+  appName: string
+  connectionName?: string // could be no connection
+  instructions?: string
+}
 
 export interface IBaseTrigger {
   name: string
@@ -674,3 +684,21 @@ export interface ITableRow {
 }
 
 export type ITableCollabRole = 'owner' | 'editor' | 'viewer'
+
+// Flow transfers
+export type IFlowTransferStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled'
+
+export interface IFlowTransfer {
+  id: string
+  flowId: string
+  oldOwnerId: string
+  newOwnerId: string
+  status: IFlowTransferStatus
+  oldOwner: IUser
+  newOwner: IUser
+  flow: IFlow
+}
