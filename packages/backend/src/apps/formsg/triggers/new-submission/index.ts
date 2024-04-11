@@ -2,6 +2,8 @@ import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
 import isEmpty from 'lodash/isEmpty'
 
+import StepError from '@/errors/step'
+
 import getDataOutMetadata from './get-data-out-metadata'
 
 export const NricFilter = {
@@ -56,6 +58,15 @@ const trigger: IRawTrigger = {
   getDataOutMetadata,
 
   async testRun($: IGlobalVariable) {
+    if (!$.auth.data) {
+      throw new StepError(
+        'Missing FormSG connection',
+        'Click on choose connection and connect your FormSG connection.',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
     const lastExecutionStep = await $.getLastExecutionStep()
     if (!isEmpty(lastExecutionStep?.dataOut)) {
       await $.pushTriggerItem({
