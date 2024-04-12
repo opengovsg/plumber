@@ -18,8 +18,11 @@ import testConnection from './queries/test-connection'
 import tilesQueryResolvers from './queries/tiles'
 
 /**
- * Want to create a new query? Add your query into graphql.schema, run
- * `npm run graphql-codegen` and go!
+ * Want to create a new query or modify an existing query?
+ * 1. Add/Change your query in graphql.schema
+ * 2. Run `npm run gqlc` to trigger codegen
+ * 3. Start implementing! You can reference the other query implementations to
+ *    see how to type your query function.
  *
  * If your query returns a new model, you'll also need also update
  * schema.gql-to-typescript.ts.

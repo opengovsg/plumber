@@ -26,8 +26,11 @@ import verifyConnection from './mutations/verify-connection'
 import verifyOtp from './mutations/verify-otp'
 
 /**
- * Want to create a new mutation? Add your mutation into graphql.schema, run
- * `npm run graphql-codegen` and go!
+ * Want to create a new mutation or modify an existing mutation?
+ * 1. Add/Change your mutation in graphql.schema.
+ * 2. Run `npm run gqlc` to trigger codegen.
+ * 3. Start implementing! You can reference the other mutation implementations
+ *    to see how to type your mutation function.
  *
  * If your mutation returns a new model, you'll also need to update
  * schema.gql-to-typescript.ts.
