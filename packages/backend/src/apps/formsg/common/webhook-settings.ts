@@ -70,7 +70,7 @@ async function validateFormIsNotMultiRespondent(
     },
   )
 
-  if (settings.data.responseMode === 'multirespondent') {
+  if (settings?.data?.responseMode === 'multirespondent') {
     throw new Error(
       'Multi-Respondent Forms cannot be connected to Plumber yet.',
     )
