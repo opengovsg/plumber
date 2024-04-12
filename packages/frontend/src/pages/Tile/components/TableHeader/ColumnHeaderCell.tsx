@@ -191,7 +191,7 @@ function ColumnHeaderCell({
           )}
         </PopoverContent>
       </Popover>
-      {isEditMode && <ColumnResizer header={header} />}
+      <ColumnResizer header={header} />
       {isDeletionModalOpen && (
         <DeletionModal
           columnId={column.id}

@@ -3,6 +3,7 @@ import { Box } from '@chakra-ui/react'
 import { Header } from '@tanstack/react-table'
 
 import { HEADER_COLOR } from '../../constants'
+import { useTableContext } from '../../contexts/TableContext'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 import { GenericRowData } from '../../types'
 
@@ -12,6 +13,8 @@ interface ColumnResizerProps {
 
 export default function ColumnResizer({ header }: ColumnResizerProps) {
   const { updateColumns } = useUpdateTable()
+  const { mode } = useTableContext()
+  const isEditMode = mode === 'edit'
 
   const onMouseUp = useCallback(() => {
     const newSize = header.getSize()
@@ -25,10 +28,12 @@ export default function ColumnResizer({ header }: ColumnResizerProps) {
   const onResizeStart = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
       // this is necessary because mouse up outside of the element will not be registered otherwise
-      document.addEventListener('mouseup', onMouseUp, { once: true })
+      if (isEditMode) {
+        document.addEventListener('mouseup', onMouseUp, { once: true })
+      }
       return resizeHandler(e)
     },
-    [onMouseUp, resizeHandler],
+    [isEditMode, onMouseUp, resizeHandler],
   )
 
   return (
