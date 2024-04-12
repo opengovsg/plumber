@@ -50,10 +50,50 @@ function getFormDetailsFromGlobalVariable($: IGlobalVariable) {
   }
 }
 
+async function validateFormIsNotMultiRespondent(
+  $: IGlobalVariable,
+  formId: string,
+  userEmail: string,
+): Promise<void> {
+  const settings = await $.http.post(
+    `/public/v1/admin/forms/:formId/settings`,
+    {
+      userEmail,
+    },
+    {
+      urlPathParams: {
+        formId,
+      },
+      headers: {
+        Authorization: 'Bearer ' + appConfig.formsgApiKey,
+      },
+    },
+  )
+
+  if (settings.data.responseMode === 'multirespondent') {
+    throw new Error(
+      'Multi-Respondent Forms cannot be connected to Plumber yet.',
+    )
+  }
+}
+
 export async function registerWebhookUrl(
   $: IGlobalVariable,
 ): ReturnType<IAuth['registerConnection']> {
   const { userEmail, webhookUrl, formId } = getFormDetailsFromGlobalVariable($)
+
+  // EDGE CASE: MRF does not support webhooks. We added a patch to block adding
+  // MRFs in our add connection modal, but a small number of users may have
+  // already added MRFs to their connection list before our patch. For them,
+  // let's error out with a nice message if they try to connect their form.
+  //
+  // Note that we validate in registerWebhookUrl instead of verifyWebhookUrl
+  // because in the latter, even if an error occurs, users can still click the
+  // connect button. We need to change a lot of code to block clicking, so meh.
+  // :/
+  //
+  // FIXME (ogp-weeloong): remove this when MRF supports webhooks.
+  await validateFormIsNotMultiRespondent($, formId, userEmail)
 
   try {
     // Set formsg bearer token here
