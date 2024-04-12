@@ -166,5 +166,24 @@ describe('verify credentials', () => {
         ),
       ).rejects.toThrowError('Invalid secret key')
     })
+
+    it('should throw an error if form is multirespondent', async () => {
+      $.http.get = vi.fn().mockResolvedValueOnce({
+        data: {
+          form: {
+            responseMode: 'multirespondent',
+          },
+        },
+      })
+      await expect(
+        verifyFormCreds(
+          $,
+          $.auth.data.formId as string,
+          $.auth.data.privateKey as string,
+        ),
+      ).rejects.toThrowError(
+        'Multi-Respondent Forms cannot be connected to Plumber yet.',
+      )
+    })
   })
 })
