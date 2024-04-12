@@ -1,21 +1,14 @@
-import type { ITestConnectionOutput } from '@plumber/types'
-
 import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
-import Context from '@/types/express/context'
 
-type Params = {
-  connectionId: string
-  // when this is supplied, we check that the verify that the webhook url is properly set as well
-  stepId?: string
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const testConnection = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-): Promise<ITestConnectionOutput> => {
+const testConnection: QueryResolvers['testConnection'] = async (
+  _parent,
+  params,
+  context,
+) => {
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({
@@ -28,6 +21,8 @@ const testConnection = async (
 
   let step
   if (params.stepId) {
+    // when stepId is supplied, we check that the verify that the webhook url is
+    // properly set as well
     step = await context.currentUser
       .$relatedQuery('steps')
       .withGraphFetched({

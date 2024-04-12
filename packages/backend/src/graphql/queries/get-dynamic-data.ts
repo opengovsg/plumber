@@ -1,19 +1,12 @@
-import { IDynamicData, IJSONObject } from '@plumber/types'
-
 import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
-import Context from '@/types/express/context'
 
-type Params = {
-  stepId: string
-  key: string
-  parameters: IJSONObject
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getDynamicData = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const getDynamicData: QueryResolvers['getDynamicData'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const { stepId, key: dynamicDataKey, parameters } = params
 
@@ -47,9 +40,7 @@ const getDynamicData = async (
     user: context.currentUser,
   })
 
-  const command = app.dynamicData.find(
-    (data: IDynamicData) => data.key === dynamicDataKey,
-  )
+  const command = app.dynamicData.find((data) => data.key === dynamicDataKey)
 
   for (const parameterKey in parameters) {
     const parameterValue = parameters[parameterKey]

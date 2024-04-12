@@ -1,15 +1,12 @@
 import paginate from '@/helpers/pagination'
-import Context from '@/types/express/context'
 
-type Params = {
-  appKey?: string
-  connectionId?: string
-  name?: string
-  limit: number
-  offset: number
-}
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getFlows = async (_parent: unknown, params: Params, context: Context) => {
+const getFlows: QueryResolvers['getFlows'] = async (
+  _parent,
+  params,
+  context,
+) => {
   const flowsQuery = context.currentUser
     .$relatedQuery('flows')
     .joinRelated({

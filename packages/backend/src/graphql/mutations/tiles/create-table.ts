@@ -1,12 +1,6 @@
 import { createTableRows } from '@/models/dynamodb/table-row'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    name: string
-    isBlank: boolean
-  }
-}
+import type { MutationResolvers } from '../../__generated__/types.generated'
 
 const PLACEHOLDER_COLUMNS = [
   {
@@ -24,10 +18,10 @@ const PLACEHOLDER_COLUMNS = [
 ]
 const PLACEHOLDER_ROWS = new Array(5).fill({})
 
-const createTable = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const createTable: MutationResolvers['createTable'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const { name: tableName, isBlank: isBlankTable } = params.input
 

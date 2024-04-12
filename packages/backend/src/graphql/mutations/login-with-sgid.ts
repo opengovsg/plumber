@@ -12,7 +12,8 @@ import {
   SGID_MULTI_HAT_COOKIE_TTL_SECONDS,
   sgidClient,
 } from '@/helpers/sgid'
-import type Context from '@/types/express/context'
+
+import type { MutationResolvers } from '../__generated__/types.generated'
 
 function setSignedCookie<T extends object>(res: Response, data: T): void {
   const token = signJwt(data, appConfig.sessionSecretKey)
@@ -74,26 +75,19 @@ async function parsePocdexData(
   return result.filter((_, index) => validResults[index])
 }
 
-interface LoginWithSgidParams {
-  input: { authCode: string; nonce: string; verifier: string }
-}
-
-interface LoginWithSgidResult {
-  /**
-   * Success or failure can be determined by the length of this array.
-   * - Length = 0: Login failed, we could not find any valid POCDEX data.
-   * - Length = 1: Login success, we will return the POCDEX entry used to login.
-   * - Length > 1: Multi-hat user; we need the user to select which work email
-   *               to login.
-   */
-  publicOfficerEmployments: PublicOfficerEmployment[]
-}
-
-export default async function loginWithSgid(
-  _parent: unknown,
-  params: LoginWithSgidParams,
-  context: Context,
-): Promise<LoginWithSgidResult> {
+/**
+ * Success or failure of the login can be determined by the length of the
+ * returned publicOfficerEmployments array.
+ * - Length = 0: Login failed, we could not find any valid POCDEX data.
+ * - Length = 1: Login success, we will return the POCDEX entry used to login.
+ * - Length > 1: Multi-hat user; we need the user to select which work email
+ *               to login.
+ */
+const loginWithSgid: MutationResolvers['loginWithSgid'] = async (
+  _parent,
+  params,
+  context,
+) => {
   const { authCode, nonce, verifier } = params.input
 
   let userInfo: SgidUserInfoReturn | null = null
@@ -148,3 +142,5 @@ export default async function loginWithSgid(
     publicOfficerEmployments,
   }
 }
+
+export default loginWithSgid

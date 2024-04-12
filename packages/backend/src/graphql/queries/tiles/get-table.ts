@@ -2,17 +2,14 @@ import { NotFoundError } from 'objection'
 
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import TableMetadata from '@/models/table-metadata'
-import Context from '@/types/express/context'
 
-type Params = {
-  tableId: string
-}
+import type { QueryResolvers } from '../../__generated__/types.generated'
 
-const getTable = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
-): Promise<TableMetadata> => {
+const getTable: QueryResolvers['getTable'] = async (
+  _parent,
+  params,
+  context,
+) => {
   const { tableId } = params
 
   try {

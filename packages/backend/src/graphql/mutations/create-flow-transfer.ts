@@ -1,18 +1,12 @@
 import FlowTransfer from '@/models/flow-transfers'
 import User from '@/models/user'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    flowId: string
-    newOwnerEmail: string
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createFlowTransfer = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const createFlowTransfer: MutationResolvers['createFlowTransfer'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const { flowId, newOwnerEmail } = params.input
 

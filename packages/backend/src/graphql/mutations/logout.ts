@@ -1,11 +1,12 @@
 import { deleteAuthCookie } from '@/helpers/auth'
-import Context from '@/types/express/context'
 
-const logout = async (
-  _parent: unknown,
-  _params: unknown,
-  context: Context,
-): Promise<boolean> => {
+import type { MutationResolvers } from '../__generated__/types.generated'
+
+const logout: MutationResolvers['logout'] = async (
+  _parent,
+  _params,
+  context,
+) => {
   deleteAuthCookie(context.res)
   return true
 }

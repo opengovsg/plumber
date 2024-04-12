@@ -1,20 +1,14 @@
-import { IJSONObject } from '@plumber/types'
-
 import App from '@/models/app'
-import Context from '@/types/express/context'
 
-// Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive Data Scanner
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-type Params = {
-  input: {
-    key: string
-    formattedData: IJSONObject
-  }
-}
-const createConnection = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+// Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive
+// Data Scanner
+
+const createConnection: MutationResolvers['createConnection'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   await App.findOneByKey(params.input.key)
 
