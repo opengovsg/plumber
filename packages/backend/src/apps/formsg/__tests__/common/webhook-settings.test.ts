@@ -185,5 +185,16 @@ describe('formsg webhook registration', () => {
         FORMSG_WEBHOOK_REGISTRATION_MESSAGE.UNAUTHORIZED,
       )
     })
+
+    it('should error if trying to connect to a multirespondent form', async () => {
+      $.http.post = vi.fn().mockResolvedValueOnce({
+        data: {
+          responseMode: 'multirespondent',
+        },
+      })
+      await expect(registerWebhookUrl($)).rejects.toThrowError(
+        'Multi-Respondent Forms cannot be connected to Plumber yet.',
+      )
+    })
   })
 })
