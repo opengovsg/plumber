@@ -8,7 +8,8 @@ import {
   type PublicOfficerEmployment,
   SGID_MULTI_HAT_COOKIE_NAME,
 } from '@/helpers/sgid'
-import type Context from '@/types/express/context'
+
+import type { MutationResolvers } from '../__generated__/types.generated'
 
 function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
   const token = req.cookies[SGID_MULTI_HAT_COOKIE_NAME]
@@ -27,36 +28,27 @@ function readEmploymentsFromCookie(req: Request): PublicOfficerEmployment[] {
   }
 }
 
-interface LoginWithSelectedSgidParams {
-  input: { workEmail: string }
-}
+const loginWithSelectedSgid: MutationResolvers['loginWithSelectedSgid'] =
+  async (_parent, params, context) => {
+    const employments = readEmploymentsFromCookie(context.req)
+    context.res.clearCookie(SGID_MULTI_HAT_COOKIE_NAME)
 
-interface LoginWithSelectedSgidResult {
-  success: boolean
-}
+    const workEmail = params.input.workEmail
 
-export default async function loginWithSelectedSgid(
-  _parent: unknown,
-  params: LoginWithSelectedSgidParams,
-  context: Context,
-): Promise<LoginWithSelectedSgidResult> {
-  const employments = readEmploymentsFromCookie(context.req)
-  context.res.clearCookie(SGID_MULTI_HAT_COOKIE_NAME)
+    const employment = employments.find(
+      (employment) => employment.workEmail === workEmail,
+    )
 
-  const workEmail = params.input.workEmail
+    if (!employment) {
+      throw new Error('Invalid work email')
+    }
 
-  const employment = employments.find(
-    (employment) => employment.workEmail === workEmail,
-  )
+    const user = await getOrCreateUser(workEmail)
+    setAuthCookie(context.res, { userId: user.id })
 
-  if (!employment) {
-    throw new Error('Invalid work email')
+    return {
+      success: true,
+    }
   }
 
-  const user = await getOrCreateUser(workEmail)
-  setAuthCookie(context.res, { userId: user.id })
-
-  return {
-    success: true,
-  }
-}
+export default loginWithSelectedSgid

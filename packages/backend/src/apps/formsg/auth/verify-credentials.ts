@@ -16,10 +16,12 @@ export const verifyFormCreds = async (
 ) => {
   let formTitle = ''
   let publicKey = ''
+  let responseMode = ''
   try {
     const { data } = await $.http.get(`/v3/forms/${formId}`)
     formTitle = get(data, 'form.title')
     publicKey = get(data, 'form.publicKey')
+    responseMode = get(data, 'form.responseMode')
   } catch (error) {
     if (error.response?.status === 404) {
       if (error.response.data?.isPageFound) {
@@ -28,6 +30,12 @@ export const verifyFormCreds = async (
       }
     }
     throw new Error('Form not found')
+  }
+
+  if (responseMode === 'multirespondent') {
+    throw new Error(
+      'Multi-Respondent Forms cannot be connected to Plumber yet.',
+    )
   }
 
   if (!formTitle) {

@@ -3,18 +3,13 @@ import axios from 'axios'
 import GenerateAuthUrlError from '@/errors/generate-auth-url'
 import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
-import Context from '@/types/express/context'
 
-type Params = {
-  input: {
-    id: string
-  }
-}
+import type { MutationResolvers } from '../__generated__/types.generated'
 
-const generateAuthUrl = async (
-  _parent: unknown,
-  params: Params,
-  context: Context,
+const generateAuthUrl: MutationResolvers['generateAuthUrl'] = async (
+  _parent,
+  params,
+  context,
 ) => {
   const connection = await context.currentUser
     .$relatedQuery('connections')

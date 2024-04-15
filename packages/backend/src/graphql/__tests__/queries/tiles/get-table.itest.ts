@@ -40,7 +40,8 @@ describe('get single table query', () => {
       id: dummyTable.id,
       name: dummyTable.name,
     })
-    const columns = await TableMetadataResolver.columns(dummyTable)
+
+    const columns = await TableMetadataResolver.columns(dummyTable, {}, null)
     expect(columns.map((c) => c.id)).toEqual(dummyColumnIds)
   })
 
@@ -55,7 +56,7 @@ describe('get single table query', () => {
       },
       context,
     )
-    const columns = await TableMetadataResolver.columns(table)
+    const columns = await TableMetadataResolver.columns(table, {}, null)
     expect(columns).toHaveLength(0)
   })
 

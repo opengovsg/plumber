@@ -135,3 +135,6 @@ dump.rdb
 # vs code config
 .vscode
 tmp/
+
+# Generated GraphQL
+/**/graphql/__generated__

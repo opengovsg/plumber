@@ -66,7 +66,6 @@ describe('get all rows query', () => {
       },
       context,
     )
-
     expect(rows.map((r) => r.rowId)).toEqual(rowIdsInserted)
   })
 
@@ -111,13 +110,14 @@ describe('get all rows query', () => {
 
     await createTableRow(rowToInsert)
 
-    const rows = await getAllRows(
+    const almostRows = await getAllRows(
       null,
       {
         tableId: dummyTable.id,
       },
       context,
     )
+    const rows = await Promise.all(almostRows)
 
     expect(Object.keys(rows[0].data).sort()).toEqual(dummyColumnIds.sort())
   })

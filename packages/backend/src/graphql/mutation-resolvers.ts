@@ -1,3 +1,4 @@
+import type { MutationResolvers } from './__generated__/types.generated'
 import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
 import createFlowTransfer from './mutations/create-flow-transfer'
@@ -25,12 +26,23 @@ import verifyConnection from './mutations/verify-connection'
 import verifyOtp from './mutations/verify-otp'
 
 /**
- * Important:
+ * Want to create a new mutation or modify an existing mutation?
+ * 1. Add/Change your mutation in graphql.schema.
+ * 2. Run `npm run gqlc` to trigger codegen.
+ * 3. Start implementing! You can reference the other mutation implementations
+ *    to see how to type your mutation function.
+ *
+ * If your mutation returns a new model, you'll also need to update
+ * schema.gql-to-typescript.ts.
+ */
+
+/**
+ * == ** IMPORTANT ** ==
  * When adding NEW mutations that involve sensitive data like api keys and private keys,
  * be sure to redact it in the morgan middleware. See /backend/src/helpers/morgan.ts.
  */
 
-const mutationResolvers = {
+export default {
   createConnection,
   generateAuthUrl,
   updateConnection,
@@ -56,6 +68,4 @@ const mutationResolvers = {
   createFlowTransfer,
   updateFlowTransferStatus,
   ...tilesMutationResolvers,
-}
-
-export default mutationResolvers
+} satisfies MutationResolvers

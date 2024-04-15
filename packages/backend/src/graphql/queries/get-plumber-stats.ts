@@ -3,12 +3,19 @@ import { DateTime } from 'luxon'
 import { client } from '@/config/database'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 
+import type { QueryResolvers } from '../__generated__/types.generated'
+
 const redisClient = createRedisClient(REDIS_DB_INDEX.GLOBAL_DATA)
 const REDIS_KEY = 'landing-stats'
 
-const getPlumberStats = async () => {
+const getPlumberStats: QueryResolvers['getPlumberStats'] = async () => {
   if (await redisClient.exists(REDIS_KEY)) {
-    return await redisClient.hgetall(REDIS_KEY)
+    const { userCount, executionCount } = await redisClient.hgetall(REDIS_KEY)
+
+    return {
+      userCount,
+      executionCount,
+    }
   }
 
   const [userCountQuery, executionCountQuery] = await Promise.all([
