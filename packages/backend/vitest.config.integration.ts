@@ -5,7 +5,7 @@
 
 import { config } from 'dotenv'
 import { resolve } from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 function getPath(relativePath: string): string {
   return resolve(__dirname, relativePath)
@@ -30,8 +30,13 @@ export default defineConfig({
       getPath('./test/ddb-global-setup.ts'),
       getPath('./test/redis-global-setup.ts'),
     ],
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
     include: ['src/**/*.itest.{js,ts}'],
-    singleThread: true,
     onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
       if (log.startsWith('vite:')) {
         return false
