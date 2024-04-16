@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { describe, expect, it } from 'vitest'
 
 import vaultWorkspace from '@/apps/vault-workspace'
@@ -5,12 +6,15 @@ import ExecutionStep from '@/models/execution-step'
 
 import computeParameters from '../compute-parameters'
 
+const randomStepID = randomUUID()
+
 const executionSteps = [
   {
-    stepId: 'some-step-id',
+    stepId: randomStepID,
     dataOut: {
       stringProp: 'string value',
       numberProp: 123,
+      'space separated prop': 'space separated value',
     },
   } as unknown as ExecutionStep,
 ]
@@ -20,20 +24,23 @@ describe('compute parameters', () => {
     {
       testDescription: 'strings',
       params: {
-        paramWithStringVar: 'herp! {{step.some-step-id.stringProp}}',
-        paramWithNumberVar: 'derp! {{step.some-step-id.numberProp}}',
+        paramWithStringVar: `herp! {{step.${randomStepID}.stringProp}}`,
+        paramWithNumberVar: `derp! {{step.${randomStepID}.numberProp}}`,
+        paramWithSpaceVar: `derp! {{step.${randomStepID}.space separated prop}}`,
       },
       expected: {
         paramWithStringVar: 'herp! string value',
         paramWithNumberVar: 'derp! 123',
+        paramWithSpaceVar: `derp! space separated value`,
       },
     },
     {
       testDescription: 'string arrays',
       params: {
         arrayParam: [
-          '{{step.some-step-id.stringProp}}',
-          '{{step.some-step-id.numberProp}}',
+          `{{step.${randomStepID}.stringProp}}`,
+          `{{step.${randomStepID}.numberProp}}`,
+          `{{step.${randomStepID}.space separated prop}}`,
         ],
       },
       expected: {
@@ -41,6 +48,7 @@ describe('compute parameters', () => {
           'string value',
           // this is expected to be string; we preserve the original type
           '123',
+          'space separated value',
         ],
       },
     },
@@ -48,14 +56,16 @@ describe('compute parameters', () => {
       testDescription: 'non-nested objects',
       params: {
         objectParam: {
-          key1: 'prefix {{step.some-step-id.stringProp}}',
-          key2: '{{step.some-step-id.numberProp}}',
+          key1: `prefix {{step.${randomStepID}.stringProp}}`,
+          key2: `{{step.${randomStepID}.numberProp}}`,
+          key3: `{{step.${randomStepID}.space separated prop}}`,
         },
       },
       expected: {
         objectParam: {
           key1: 'prefix string value',
           key2: '123',
+          key3: `space separated value`,
         },
       },
     },
@@ -64,17 +74,21 @@ describe('compute parameters', () => {
       params: {
         arrayParam: [
           {
-            key1: 'object 1 - {{step.some-step-id.stringProp}}',
+            key1: `object 1 - {{step.${randomStepID}.stringProp}}`,
           },
           {
-            key1: 'object 2 - {{step.some-step-id.stringProp}}',
+            key1: `object 2 - {{step.${randomStepID}.numberProp}}`,
+          },
+          {
+            key1: `object 3 - {{step.${randomStepID}.space separated prop}}`,
           },
         ],
       },
       expected: {
         arrayParam: [
           { key1: 'object 1 - string value' },
-          { key1: 'object 2 - string value' },
+          { key1: 'object 2 - 123' },
+          { key1: 'object 3 - space separated value' },
         ],
       },
     },
@@ -83,7 +97,7 @@ describe('compute parameters', () => {
       params: {
         objectParam: {
           subObject: {
-            key1: '{{step.some-step-id.numberProp}}',
+            key1: `{{step.${randomStepID}.numberProp}}`,
           },
         },
       },
@@ -100,14 +114,15 @@ describe('compute parameters', () => {
       params: {
         objectParam: {
           key1: [
-            '{{step.some-step-id.numberProp}}',
-            '{{step.some-step-id.stringProp}}',
+            `{{step.${randomStepID}.numberProp}}`,
+            `{{step.${randomStepID}.stringProp}}`,
+            `{{step.${randomStepID}.space separated prop}}`,
           ],
         },
       },
       expected: {
         objectParam: {
-          key1: ['123', 'string value'],
+          key1: ['123', 'string value', 'space separated value'],
         },
       },
     },
@@ -186,23 +201,28 @@ describe('compute parameters', () => {
           a: '1',
           b: '2',
           nestedMixedArray: [
-            { deepNest: '{{step.some-step-id.stringProp}} suffix' },
+            { deepNest: `{{step.${randomStepID}.stringProp}} suffix` },
             8000,
-            '{{step.some-step-id.stringProp}}',
+            `{{step.${randomStepID}.stringProp}}`,
           ],
         },
         mixedArrayParam: [
-          'herp! {{step.some-step-id.stringProp}}',
+          `herp! {{step.${randomStepID}.stringProp}}`,
           9000,
           {
-            key1: '{{step.some-step-id.stringProp}} suffix',
-            nestedArray: ['zzz', '', '{{step.some-step-id.stringProp}}', 8888],
+            key1: `{{step.${randomStepID}.stringProp}} suffix`,
+            nestedArray: [
+              'zzz',
+              '',
+              `{{step.${randomStepID}.stringProp}}`,
+              8888,
+            ],
             anotherObject: {
-              xyz: '{{step.some-step-id.numberProp}}',
+              xyz: `{{step.${randomStepID}.numberProp}}`,
               abc: 'kek',
             },
           },
-          '{{step.some-step-id.numberProp}}',
+          `{{step.${randomStepID}.numberProp}}`,
         ],
       },
       executionSteps,
@@ -237,7 +257,7 @@ describe('compute parameters', () => {
   it('can compute on  templates with non-hex-encoded param keys using new vault WS objects whose keys hex-encoded', () => {
     const vaultWSExecutionStep = [
       {
-        stepId: 'some-step-id',
+        stepId: randomStepID,
         appKey: vaultWorkspace.key,
         dataOut: {
           '4974732d612d6d65': 'Mario!', // key is hex-encoded `Its a me`
@@ -248,10 +268,52 @@ describe('compute parameters', () => {
       } as unknown as ExecutionStep,
     ]
     const params = {
-      toSubstitute: 'Its a me {{step.some-step-id.Its-a-me}}',
+      toSubstitute: `Its a me {{step.${randomStepID}.Its-a-me}}`,
     }
     const expected = {
       toSubstitute: 'Its a me Mario!',
+    }
+    const result = computeParameters(params, vaultWSExecutionStep)
+    expect(result).toEqual(expected)
+  })
+
+  it('should work with space separated keys', () => {
+    const vaultWSExecutionStep = [
+      {
+        stepId: randomStepID,
+        appKey: vaultWorkspace.key,
+        dataOut: {
+          '   weopfkweopf     ': 'Itsa me',
+          'weiofjwef wefwe fwe fwefwe f  ': 'Mario!',
+        },
+      } as unknown as ExecutionStep,
+    ]
+    const params = {
+      toSubstitute: `{{step.${randomStepID}.   weopfkweopf     }} {{step.${randomStepID}.weiofjwef wefwe fwe fwefwe f  }}`,
+    }
+    const expected = {
+      toSubstitute: 'Itsa me Mario!',
+    }
+    const result = computeParameters(params, vaultWSExecutionStep)
+    expect(result).toEqual(expected)
+  })
+
+  it('should not replace parameters with tabs or newlines', () => {
+    const vaultWSExecutionStep = [
+      {
+        stepId: randomStepID,
+        appKey: vaultWorkspace.key,
+        dataOut: {
+          '\tab tab\t': 'Itsa me',
+          'newlines\n': 'Mario!',
+        },
+      } as unknown as ExecutionStep,
+    ]
+    const params = {
+      toSubstitute: `{{step.${randomStepID}.\tab tab\t}} {{step.${randomStepID}.newlines\n}}`,
+    }
+    const expected = {
+      toSubstitute: `{{step.${randomStepID}.\tab tab\t}} {{step.${randomStepID}.newlines\n}}`,
     }
     const result = computeParameters(params, vaultWSExecutionStep)
     expect(result).toEqual(expected)
