@@ -30,8 +30,8 @@
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^5.9.1",
     "@typescript-eslint/parser": "^5.9.1",
-    "@vitest/coverage-v8": "^0.34.6",
-    "@vitest/ui": "^0.34.6",
+    "@vitest/coverage-v8": "^1.5.0",
+    "@vitest/ui": "^1.5.0",
     "concurrently": "^7.6.0",
     "eslint": "^8.13.0",
     "eslint-config-prettier": "^8.3.0",
@@ -41,6 +41,6 @@
     "prettier": "^2.5.1",
     "rimraf": "^4.4.1",
     "typescript": "^4.6.3",
-    "vitest": "^0.34.6"
+    "vitest": "^1.5.0"
   }
 }

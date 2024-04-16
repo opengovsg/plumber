@@ -4,7 +4,7 @@
 
 import { config } from 'dotenv'
 import path from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 config({
   // .env-example should be in the same directory as our config.
