@@ -1,7 +1,7 @@
 import type { IApp, IJSONObject } from '@plumber/types'
 
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import type { AxiosError } from 'axios'
-import { UnrecoverableError } from 'bullmq'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'

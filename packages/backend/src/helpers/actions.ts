@@ -1,6 +1,6 @@
 import type { IJSONObject } from '@plumber/types'
 
-import { UnrecoverableError } from 'bullmq'
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { get } from 'lodash'
 
 import apps from '@/apps'

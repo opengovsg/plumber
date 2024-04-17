@@ -1,4 +1,4 @@
-import { Queue } from 'bullmq'
+import { QueuePro } from '@taskforcesh/bullmq-pro'
 import process from 'process'
 
 import { createRedisClient } from '@/config/redis'
@@ -11,7 +11,7 @@ const redisConnection = {
   connection: createRedisClient(),
 }
 
-const flowQueue = new Queue('flow', redisConnection)
+const flowQueue = new QueuePro('flow', redisConnection)
 
 process.on('SIGTERM', async () => {
   await flowQueue.close()

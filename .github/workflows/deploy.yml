@@ -38,6 +38,9 @@ on:
         description: 'Version of release'
         required: true
         type: string
+    secrets:
+      NPM_TASKFORCESH_TOKEN:
+        required: true
 
 permissions:
   id-token: write
@@ -76,8 +79,9 @@ jobs:
         id: build-image
         env:
           DOCKER_BUILDKIT: 1
+          NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
         run: |
-          docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }}
+          docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }} --secret id=NPM_TASKFORCESH_TOKEN
           docker push ${{ steps.ecr-image-uri.outputs.image }}
 
   deploy:

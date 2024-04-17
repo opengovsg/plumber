@@ -1,6 +1,6 @@
 import { IJSONObject, ITriggerItem } from '@plumber/types'
 
-import { Worker } from 'bullmq'
+import { WorkerPro } from '@taskforcesh/bullmq-pro'
 
 import { createRedisClient } from '@/config/redis'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
@@ -16,7 +16,7 @@ type JobData = {
   error?: IJSONObject
 }
 
-export const worker = new Worker(
+export const worker = new WorkerPro(
   'trigger',
   async (job) => {
     const { flowId, executionId, stepId, executionStep } = await processTrigger(
@@ -50,7 +50,7 @@ worker.on('completed', (job) => {
 })
 
 worker.on('failed', (job, err) => {
-  logger.info(
+  logger.error(
     `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
   )
 })
