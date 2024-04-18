@@ -74,12 +74,25 @@ const spikePreventer = new RateLimiterRedis({
   storeClient: redisClient,
 })
 
+// FIXME (ogp-weeloong): we don't throttle test runs because this limit is too
+// low; at 5 queries per 3 seconds, users can't test pipes with more than 1
+// excel step. For publisehd pipes, it's not an issue because of auto-retry.
+export async function throttleSpikesForPublishedPipes(
+  $: IGlobalVariable,
+  tenantKey: M365TenantKey,
+): Promise<void> {
+  if ($.execution?.testRun) {
+    return
+  }
+
+  await spikePreventer.consume(tenantKey, 1)
+}
+
 const unifiedRateLimiter = new RateLimiterUnion(
   graphApiLimiter,
   sharePointPerMinuteLimiter,
   sharePointPerDayLimiter,
   excelLimiter,
-  spikePreventer,
 )
 
 type UnionRateLimiterRes = Record<
