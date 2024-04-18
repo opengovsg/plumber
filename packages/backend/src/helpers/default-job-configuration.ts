@@ -10,7 +10,7 @@ export const REMOVE_AFTER_7_DAYS_OR_50_JOBS = {
 }
 
 export const DEFAULT_JOB_DELAY_DURATION = 0
-export const MAXIMUM_JOB_ATTEMPTS = 6
+export const MAXIMUM_JOB_ATTEMPTS = 20 // FIXME (ogp-weeloong): high number to handle expected increased retries from M465. Revert back to 6 once BullMQ Pro is in.
 
 export const DEFAULT_JOB_OPTIONS: JobsOptions = {
   removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
