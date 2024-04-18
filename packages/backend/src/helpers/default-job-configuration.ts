@@ -15,13 +15,15 @@ export const DEFAULT_JOB_DELAY_DURATION = 0
 // M465. Revert back to 6 once BullMQ Pro is in.
 //
 // Number chosen as follows:
-// - Excel rate limit is 6 per 3 seconds
-// - Excel pipes tend to spike at ~100 submissions per 3 second window
-// - Each excel step takes 2 queries = ~3 excel steps progresses per window,
-//   others get retried. Under high concurrency, we may half this number as all
-//   steps share the same limiter.
-// - So in the worst case, a step may need to be retried 100 / 1.5 ~= 60 times.
-export const MAXIMUM_JOB_ATTEMPTS = 60
+// - Excel step limit is 1 per 3 seconds per file, with exponential backoff of
+//   6 seconds.
+// - Excel pipes tend to spike at ~100 submissions (i.e. ~100 steps) in a short
+//   instance, but never occur again for that day.
+// - Due to exponential backoff, between each retry, we can expect 2^attempts
+//   steps to make progress. So in the worst case, a step might be retried
+//   log2(100) times ~= 7.
+// - We round that up to 10 just in case.
+export const MAXIMUM_JOB_ATTEMPTS = 10
 
 export const DEFAULT_JOB_OPTIONS: JobsOptions = {
   removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
