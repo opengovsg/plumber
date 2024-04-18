@@ -183,6 +183,10 @@
   &:focus-visible {
     outline: none;
   }
+
+  .node-variable.ProseMirror-selectednode .chakra-badge {
+    box-shadow: 0 0 0 1px var(--chakra-colors-primary-600);
+  }
 }
 
 .editor {
