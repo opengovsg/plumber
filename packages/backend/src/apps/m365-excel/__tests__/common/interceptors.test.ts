@@ -149,7 +149,7 @@ describe('M365 interceptors', () => {
       )
     })
 
-    it('logs an error and throws a non-retriable error on 429', async () => {
+    it('logs an error and throws a non-retriable error on 429 from non-excel endpoint', async () => {
       mockAxiosAdapterToThrowOnce(429, { 'retry-after': 123 })
       await http
         .get('/test-url')
@@ -165,6 +165,20 @@ describe('M365 interceptors', () => {
         expect.stringContaining('HTTP 429'),
         expect.objectContaining({ event: 'm365-http-429' }),
       )
+    })
+
+    it('throws a retriable error on 429 from Excel endpoint', async () => {
+      mockAxiosAdapterToThrowOnce(429, { 'retry-after': 123 })
+      await http
+        .get("/test-url/workbook/cell(address='A1')")
+        .then(() => {
+          expect.unreachable()
+        })
+        .catch((error): void => {
+          expect(error).toBeInstanceOf(RetriableError)
+          expect(error.delayInMs).toEqual(123000)
+          expect(error.message).toEqual('Retrying HTTP 429 from Excel endpoint')
+        })
     })
 
     it('logs an error and throws a non-retriable error on 509', async () => {
