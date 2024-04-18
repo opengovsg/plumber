@@ -1,5 +1,7 @@
 import { IRawAction } from '@plumber/types'
 
+import { DateTime } from 'luxon'
+
 import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
@@ -46,6 +48,15 @@ const action: IRawAction = {
       throw new StepError(
         'Invalid timestamp entered',
         'Click on set up action and check that the date or time entered is of a valid format.',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
+    if (delayTimestamp < DateTime.now().toMillis()) {
+      throw new StepError(
+        'Delay until timestamp entered is in the past',
+        'Click on set up action and check that the date and time entered is not in the past.',
         $.step.position,
         $.app.name,
       )
