@@ -56,7 +56,7 @@ const action: IRawAction = {
     if (delayTimestamp < DateTime.now().toMillis()) {
       throw new StepError(
         'Delay until timestamp entered is in the past',
-        'Click on set up action and check that the date and time entered is of a future timestamp.',
+        'Click on set up action and check that the date and time entered is not in the past.',
         $.step.position,
         $.app.name,
       )
