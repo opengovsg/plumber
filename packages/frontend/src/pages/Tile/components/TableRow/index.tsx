@@ -50,15 +50,17 @@ export default function TableRow({
     [tableMeta.highlightedCell?.row.id, row.id],
   )
   const isRowSelected = row.getIsSelected()
+  const isEditingRow = tableMeta.activeCell?.row.id === row.id
 
   const backgroundColor = useMemo(() => {
     if (isRowSelected) {
       return ROW_COLOR.SELECTED
     }
+    if (isEditingRow) {
+      return ROW_COLOR.EDITING
+    }
     return (virtualRow?.index ?? 0) % 2 ? ROW_COLOR.EVEN : ROW_COLOR.ODD
-  }, [isRowSelected, virtualRow?.index])
-
-  const isEditingRow = tableMeta.activeCell?.row.id === row.id
+  }, [isEditingRow, isRowSelected, virtualRow?.index])
 
   return (
     <RowContextProvider
