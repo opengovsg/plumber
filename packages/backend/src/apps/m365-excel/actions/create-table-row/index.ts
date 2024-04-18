@@ -2,6 +2,7 @@ import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
+import { throttleStepsForPublishedPipes } from '../../common/rate-limiter'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 
@@ -133,6 +134,9 @@ const action: IRawAction = {
       })
       return
     }
+
+    // FIXME (ogp-weeloong): remove when bullMQ Pro lands
+    await throttleStepsForPublishedPipes($, fileId as string)
 
     // Sanity check user's config.
     const seenColumnNames = new Set<string>()

@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { throttleStepsForPublishedPipes } from '../../common/rate-limiter'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 
@@ -121,6 +122,9 @@ const action: IRawAction = {
 
     const { fileId, tableId, lookupColumn, lookupValue } =
       parametersParseResult.data
+
+    // FIXME (ogp-weeloong): remove when bullMQ Pro lands
+    await throttleStepsForPublishedPipes($, fileId as string)
 
     const session = await WorkbookSession.acquire($, fileId)
     const results = await getTableRowImpl({

@@ -8,10 +8,7 @@ import logger from '@/helpers/logger'
 
 import { MS_GRAPH_OAUTH_BASE_URL } from '../constants'
 import { getAccessToken } from '../oauth/token-cache'
-import {
-  consumeOrThrowLimiterWithLongestDelay,
-  throttleSpikesForPublishedPipes,
-} from '../rate-limiter'
+import { consumeOrThrowLimiterWithLongestDelay } from '../rate-limiter'
 
 // This explicitly overcounts - e.g we will log if the request times out, even
 // we can't confirm that it reached Microsoft. The intent is to assume the worst
@@ -66,9 +63,6 @@ const rateLimitCheck: TBeforeRequest = async function ($, requestConfig) {
   }
 
   try {
-    // FIXME (ogp-weeloong): throttle spiky published pipes only.
-    await throttleSpikesForPublishedPipes($, tenantKey)
-
     await consumeOrThrowLimiterWithLongestDelay($, tenantKey, 1)
   } catch (error) {
     if (!(error instanceof RateLimiterRes)) {
