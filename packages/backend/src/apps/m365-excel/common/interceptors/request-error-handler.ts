@@ -11,6 +11,26 @@ type ThrowingHandler = (
 // Handle MS rate limiting us
 //
 const handle429: ThrowingHandler = ($, error) => {
+  // Edge case: Thus far, _only_ 429s from the Excel endpoint are retriable
+  // because Microsoft applies dynamic rate limits for Excel, and we've verified
+  // with GovTech that these 429s have no impact on other M365 users.
+  //
+  // https://learn.microsoft.com/en-us/graph/workbook-best-practice?tabs=http#reduce-throttling-errors
+  //
+  // Excel endpoints are uniquely identified by the `/workbook/` url segment.
+  // It's safe to directly check for this substring in the URL because '/'s are
+  // escaped if they're from user input.
+  //
+  // FIXME (ogp-weeloong): eval if we can remove this and just retry _all_ 429s
+  // once we get bullmq pro in.
+  if (error.response.config.url.includes('/workbook/')) {
+    const retryAfterMs = Number(error.response?.headers?.['retry-after']) * 1000
+    throw new RetriableError({
+      error: 'Retrying HTTP 429 from Excel endpoint',
+      delayInMs: isNaN(retryAfterMs) ? 'default' : retryAfterMs,
+    })
+  }
+
   // A 429 response is considered a SEV-2+ incident for some tenants; log it
   // explicitly so that we can easily trigger incident creation from DD.
   logger.error('Received HTTP 429 from MS Graph', {
