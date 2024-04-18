@@ -67,8 +67,8 @@ const excelLimiter = new RateLimiterRedis({
 // within rate limits). This is a workaround to stop spikes until we get
 // BullMQ pro in.
 const spikePreventer = new RateLimiterRedis({
-  // Numbers obtained via trial and error from user reports.
-  points: 5,
+  // Numbers obtained via trial and error from user reports. We
+  points: 6,
   duration: 3,
   keyPrefix: 'm365-spike-preventer',
   storeClient: redisClient,
