@@ -2,10 +2,13 @@ import { type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import StepError from '@/errors/step'
+
 import delayUntilAction from '../actions/delay-until'
 import delayApp from '../index'
 
-const VALID_DATE = '2023-11-08'
+const PAST_DATE = '2023-11-08'
+const VALID_DATE = '2025-12-31' // long long time later
 const VALID_TIME = '12:00'
 const DEFAULT_TIME = '00:00'
 const INVALID_TIME = '25:00'
@@ -79,15 +82,23 @@ describe('Delay until action', () => {
     })
   })
 
+  it('throws step error if delay until has a past timestamp', async () => {
+    $.step.parameters = {
+      delayUntil: PAST_DATE,
+      delayUntilTime: DEFAULT_TIME,
+    }
+
+    // throw step error
+    await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
+  })
+
   it('throws step error if delay until has an invalid configuration', async () => {
     $.step.parameters = {
       delayUntil: VALID_DATE,
       delayUntilTime: INVALID_TIME,
     }
 
-    // throw partial step error message
-    await expect(delayUntilAction.run($)).rejects.toThrowError(
-      'Invalid timestamp entered',
-    )
+    // throw step error
+    await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
   })
 })

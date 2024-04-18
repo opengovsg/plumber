@@ -2,6 +2,8 @@ import { type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import StepError from '@/errors/step'
+
 import delayForAction from '../actions/delay-for'
 import delayApp from '../index'
 
@@ -59,8 +61,6 @@ describe('Delay for action', () => {
     }
 
     // throw partial step error message
-    await expect(delayForAction.run($)).rejects.toThrowError(
-      'Invalid delay for value entered',
-    )
+    await expect(delayForAction.run($)).rejects.toThrowError(StepError)
   })
 })
