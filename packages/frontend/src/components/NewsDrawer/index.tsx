@@ -62,8 +62,8 @@ export default function NewsDrawer() {
       <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="lg">
         <DrawerOverlay />
         <DrawerContent pl={2.5} pr={2.5}>
-          <DrawerCloseButton />
-          <DrawerHeader fontSize="2xl">
+          <DrawerCloseButton mt={4} />
+          <DrawerHeader fontSize="2xl" mt={8}>
             <Text textStyle="h4" color="base.content.default">
               {`What's new`}
             </Text>

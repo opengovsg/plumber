@@ -9,6 +9,29 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2024-04-24',
+    tag: NEW_FEATURE_TAG,
+    title: 'Introducing Tiles!',
+    details:
+      'Tiles is a a simple database to view, store and automate your data! With Tiles, you can seamlessly integrate your data without the hassle of connection setups, and also consolidate all your data and pipes in one platform.',
+    multimedia: {
+      url: 'https://file.go.gov.sg/tiles-whats-new.png',
+    },
+  },
+  {
+    date: '2024-04-24',
+    tag: NEW_FEATURE_TAG,
+    title: 'New action - Formatter',
+    details: dedent`
+      Struggling with date formats or needing to schedule reminders based on form submissions? Meet Formatter!
+      
+      Simplify data handling by formatting, manipulating, and converting it to your liking. Whether it's beautifying dates or performing time calculations, Formatter's got you covered. Stay tuned for even more features by Formatter!
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/formatter-whats-new.png',
+    },
+  },
+  {
     date: '2024-03-27',
     tag: NEW_FEATURE_TAG,
     title: 'LetterSG integration',
