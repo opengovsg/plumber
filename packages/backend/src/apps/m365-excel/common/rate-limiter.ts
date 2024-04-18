@@ -67,7 +67,9 @@ const excelLimiter = new RateLimiterRedis({
 // within rate limits). This is a workaround to stop spikes until we get
 // BullMQ pro in.
 const spikePreventer = new RateLimiterRedis({
-  // Numbers obtained via trial and error from user reports. We
+  // Numbers obtained via trial and error from user reports, plus some
+  // reasoning: we make ~2 queries per excel step, and we want to allow 3 steps
+  // to progress each time window,
   points: 6,
   duration: 3,
   keyPrefix: 'm365-spike-preventer',
@@ -75,7 +77,7 @@ const spikePreventer = new RateLimiterRedis({
 })
 
 // FIXME (ogp-weeloong): we don't throttle test runs because this limit is too
-// low; at 5 queries per 3 seconds, users can't test pipes with more than 1
+// low; at 6 queries per 3 seconds, users can't test pipes with more than 1
 // excel step. For publisehd pipes, it's not an issue because of auto-retry.
 export async function throttleSpikesForPublishedPipes(
   $: IGlobalVariable,
