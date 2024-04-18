@@ -18,8 +18,6 @@ const handle429: ThrowingHandler = ($, error) => {
   // https://learn.microsoft.com/en-us/graph/workbook-best-practice?tabs=http#reduce-throttling-errors
   //
   // Excel endpoints are uniquely identified by the `/workbook/` url segment.
-  // It's safe to directly check for this substring in the URL because '/'s are
-  // escaped if they're from user input.
   //
   // FIXME (ogp-weeloong): eval if we can remove this and just retry _all_ 429s
   // once we get bullmq pro in.

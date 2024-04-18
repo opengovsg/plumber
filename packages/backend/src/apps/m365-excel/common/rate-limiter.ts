@@ -101,7 +101,7 @@ export async function throttleStepsForPublishedPipes(
       error: 'Reached M365 step limit',
       // If we're rate limited, we're probably facing a spike of steps for that
       // file, so spread out retries over a wider time period (2x) to reduce the
-      // size of the retry thundering herd.
+      // size of the retry thundering herd at any point in time.
       delayInMs: P90_EXCEL_API_RTT_SECONDS * 1000 * 2,
     })
   }
