@@ -39,6 +39,7 @@ export const ROW_COLOR = {
   EVEN: 'var(--chakra-colors-secondary-50)',
   ODD: 'white',
   SELECTED: 'var(--chakra-colors-primary-50)',
+  EDITING: 'var(--chakra-colors-primary-100)',
 }
 
 export const HEADER_COLOR = {
@@ -49,6 +50,11 @@ export const HEADER_COLOR = {
 export const BORDER_COLOR = {
   DEFAULT: 'var(--chakra-colors-secondary-100)',
   ACTIVE: 'var(--chakra-colors-secondary-200)',
+}
+
+export const CELL_BOX_SHADOW = {
+  ACTIVE: '0 0 0 2px var(--chakra-colors-primary-400)',
+  HOVER: '0 0 0 1px var(--chakra-colors-primary-400)',
 }
 
 // to reduce transition effects
