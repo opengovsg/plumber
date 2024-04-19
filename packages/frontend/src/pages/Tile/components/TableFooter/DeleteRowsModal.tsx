@@ -86,7 +86,7 @@ export default function DeleteRowsModal({
               </>
             ) : (
               <Text>
-                Are you sure you want to <b>{numRowsToDelete}</b> row
+                Are you sure you want to delete <b>{numRowsToDelete}</b> row
                 {numRowsToDelete > 1 ? 's' : ''}?
               </Text>
             )}
