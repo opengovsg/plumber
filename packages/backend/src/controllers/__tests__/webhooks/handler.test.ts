@@ -70,21 +70,92 @@ vi.mock('rate-limiter-flexible', async () => ({
   },
 }))
 
+const FLOW_ID = 'fad50966-f810-43d0-a2c2-20759c611a82'
+const QUERY_PARAMS = {
+  hello: 'world',
+  fish: '123',
+  array: ['a', 'b'],
+}
+const BODY = {
+  fish: 'paste',
+}
+
 describe('webhook handler', () => {
   let request: IRequest
 
   beforeEach(() => {
     request = {
       params: {
-        flowId: 'fad50966-f810-43d0-a2c2-20759c611a82',
+        flowId: FLOW_ID,
       },
-      body: 'abc',
+      body: BODY,
       rawBody: Buffer.from('abc'),
     } as unknown as IRequest
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+  })
+
+  describe('webhook body and query param variables', () => {
+    it('should support body variables', async () => {
+      await webhookHandler(request, mocks.response)
+      expect(mocks.processTrigger).toBeCalledWith(
+        // PSA from weeloong, expect.objectContaining does not work for nested objects
+        expect.objectContaining({
+          triggerItem: expect.objectContaining({ raw: BODY }),
+        }),
+      )
+    })
+    it('should support query param variables', async () => {
+      request.query = QUERY_PARAMS
+      delete request.body
+
+      await webhookHandler(request, mocks.response)
+      expect(mocks.processTrigger).toBeCalledWith(
+        expect.objectContaining({
+          triggerItem: expect.objectContaining({
+            raw: {
+              _query: QUERY_PARAMS,
+            },
+          }),
+        }),
+      )
+    })
+
+    it('should support both query and body param variables', async () => {
+      request.query = QUERY_PARAMS
+      await webhookHandler(request, mocks.response)
+      expect(mocks.processTrigger).toBeCalledWith(
+        expect.objectContaining({
+          triggerItem: expect.objectContaining({
+            raw: {
+              ...BODY,
+              _query: QUERY_PARAMS,
+            },
+          }),
+        }),
+      )
+    })
+
+    it('should support both query and body param variables with body having precedence', async () => {
+      request.query = QUERY_PARAMS
+      request.body = {
+        _query: {
+          hello: 'this will override query params',
+        },
+      }
+      await webhookHandler(request, mocks.response)
+      expect(mocks.processTrigger).toBeCalledWith(
+        expect.objectContaining({
+          triggerItem: expect.objectContaining({
+            raw: {
+              _query: request.body._query,
+            },
+          }),
+        }),
+      )
+    })
   })
 
   describe('rate limits', () => {
