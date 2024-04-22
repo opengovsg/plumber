@@ -2,7 +2,7 @@ import { IRequest, ITriggerItem } from '@plumber/types'
 
 import { randomUUID } from 'crypto'
 import { Response } from 'express'
-import { memoize } from 'lodash'
+import { isEmpty, memoize } from 'lodash'
 import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible'
 import { z } from 'zod'
 
@@ -111,7 +111,7 @@ export default async (request: IRequest, response: Response) => {
   // in case it's our built-in generic webhook trigger
   if (isWebhookApp) {
     payload = {
-      ...(request.query ? { _query: request.query } : {}),
+      ...(!isEmpty(request.query) ? { _query: request.query } : {}),
       ...request.body,
     }
   }
