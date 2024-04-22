@@ -26,6 +26,11 @@ export default function Suggestions(props: SuggestionsProps) {
   const [current, setCurrent] = useState<number | null>(0)
   const [listLength, setListLength] = useState<number>(SHORT_LIST_LENGTH)
 
+  const isEmpty = data.reduce(
+    (acc, step) => acc && step.output.length === 0,
+    true,
+  )
+
   const expandList = () => {
     setListLength(Infinity)
   }
@@ -40,8 +45,8 @@ export default function Suggestions(props: SuggestionsProps) {
 
   return (
     <Paper elevation={5} sx={{ width: '100%' }}>
-      <Typography variant="subtitle2" sx={{ p: 2 }}>
-        Variables
+      <Typography variant="subtitle2" sx={{ p: 2, opacity: isEmpty ? 0.5 : 1 }}>
+        {isEmpty ? 'No variables available' : 'Variables'}
       </Typography>
       <List disablePadding>
         {data.map((option, index) => (

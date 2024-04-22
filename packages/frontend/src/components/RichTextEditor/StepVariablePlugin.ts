@@ -19,7 +19,7 @@ export const StepVariable = Node.create<VariableOptions>({
   },
   group: 'inline',
   inline: true,
-  selectable: false,
+  selectable: true,
   atom: true,
   addAttributes() {
     // attributes equivalent of

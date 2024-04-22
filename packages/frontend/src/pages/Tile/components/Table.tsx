@@ -27,6 +27,7 @@ import {
   TEMP_ROW_ID_PREFIX,
   Z_INDEX,
 } from '../constants'
+import { ContextMenuContextProvider } from '../contexts/ContextMenuContext'
 import { useTableContext } from '../contexts/TableContext'
 import { generateColumns } from '../helpers/columns-helper'
 import { scrollToBottom } from '../helpers/scroll-helper'
@@ -248,21 +249,29 @@ export default function Table(): JSX.Element {
               tableState={table.getState()}
             />
           </Flex>
-          <Box h={rowVirtualizer.getTotalSize()} ref={childRef}>
-            {virtualRows.map((virtualRow) => {
-              const row = rows[virtualRow.index] as Row<GenericRowData>
-              if (row) {
-                return (
-                  <TableRow
-                    key={row.id}
-                    row={row}
-                    tableMeta={table.options.meta as TableMeta<GenericRowData>}
-                    virtualRow={virtualRow}
-                  />
-                )
-              }
-            })}
-          </Box>
+          <ContextMenuContextProvider
+            removeRows={removeRows}
+            rowSelection={rowSelection}
+            clearRowSelection={() => setRowSelection({})}
+          >
+            <Box h={rowVirtualizer.getTotalSize()} ref={childRef}>
+              {virtualRows.map((virtualRow) => {
+                const row = rows[virtualRow.index] as Row<GenericRowData>
+                if (row) {
+                  return (
+                    <TableRow
+                      key={row.id}
+                      row={row}
+                      tableMeta={
+                        table.options.meta as TableMeta<GenericRowData>
+                      }
+                      virtualRow={virtualRow}
+                    />
+                  )
+                }
+              })}
+            </Box>
+          </ContextMenuContextProvider>
         </Flex>
         {mode === 'edit' && (
           <TableRow

@@ -10,17 +10,19 @@ import {
 } from 'react'
 import { Textarea } from '@chakra-ui/react'
 import { CellContext, Row, TableMeta } from '@tanstack/react-table'
-import { useTableContext } from 'pages/Tile/contexts/TableContext'
-import { moveCell } from 'pages/Tile/helpers/cell-navigation'
 
 import {
   BORDER_COLOR,
+  CELL_BOX_SHADOW,
   DELAY,
   NEW_ROW_ID,
   ROW_HEIGHT,
   Z_INDEX_CELL,
 } from '../../constants'
+import { useContextMenuContext } from '../../contexts/ContextMenuContext'
 import { useRowContext } from '../../contexts/RowContext'
+import { useTableContext } from '../../contexts/TableContext'
+import { moveCell } from '../../helpers/cell-navigation'
 import { shallowCompare } from '../../helpers/shallow-compare'
 import { CellType, GenericRowData } from '../../types'
 
@@ -34,6 +36,7 @@ function TableCell({
   cell,
 }: CellContext<GenericRowData, string>) {
   const { mode } = useTableContext()
+  const { onRightClick } = useContextMenuContext()
   const { sortedIndex: rowIndex, className, isEditingRow } = useRowContext()
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const cellContainerRef = useRef<HTMLDivElement>(null)
@@ -217,6 +220,15 @@ function TableCell({
     [column.id, tableMeta],
   )
 
+  const onContextMenu = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      startEditing(e)
+      onRightClick(row.id, [e.pageX, e.pageY])
+    },
+    [onRightClick, row.id, startEditing],
+  )
+
   useEffect(() => {
     if (isEditingCell) {
       textAreaRef.current?.focus()
@@ -249,6 +261,7 @@ function TableCell({
       ref={cellContainerRef}
       className={styles.cell}
       onClick={startEditing}
+      onContextMenu={onContextMenu}
     >
       {/* if editing new row, show text area for all cells in the row */}
       {isEditingCell ||
@@ -258,13 +271,17 @@ function TableCell({
           fontSize="0.875rem"
           h={ROW_HEIGHT.EXPANDED}
           background="white"
+          boxShadow={isEditingCell ? CELL_BOX_SHADOW.ACTIVE : 'none'}
           borderColor="transparent"
           outline="none"
           _hover={{
-            borderColor: 'primary.200',
+            boxShadow: isEditingCell ? 'unset' : CELL_BOX_SHADOW.HOVER,
           }}
           _focus={{
-            borderColor: 'primary.400',
+            boxShadow: CELL_BOX_SHADOW.ACTIVE,
+          }}
+          _focusVisible={{
+            boxShadow: CELL_BOX_SHADOW.ACTIVE,
           }}
           isReadOnly={isViewMode}
           defaultValue={value}

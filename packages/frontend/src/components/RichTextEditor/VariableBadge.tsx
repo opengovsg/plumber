@@ -5,7 +5,14 @@ import { NodeViewWrapper } from '@tiptap/react'
 export const VariableBadge = ({ node }: { node: Node }) => {
   return (
     <NodeViewWrapper>
-      <Badge maxW="full" variant="solid" bg="primary.100" borderRadius="50px">
+      <Badge
+        maxW="full"
+        variant="solid"
+        bg="primary.100"
+        borderRadius="50px"
+        mx={0.5}
+        cursor="default"
+      >
         <Text isTruncated color="base.content.strong" mr={1}>
           {node.attrs.label}
         </Text>

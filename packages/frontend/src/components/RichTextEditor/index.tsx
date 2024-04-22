@@ -11,13 +11,16 @@ import {
 import { Controller, useFormContext } from 'react-hook-form'
 import { ClickAwayListener, FormControl } from '@mui/material'
 import { FormLabel } from '@opengovsg/design-system-react'
+import Document from '@tiptap/extension-document'
 import Hardbreak from '@tiptap/extension-hard-break'
 import Link from '@tiptap/extension-link'
+import Paragraph from '@tiptap/extension-paragraph'
 import Placeholder from '@tiptap/extension-placeholder'
 import Table from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
+import Text from '@tiptap/extension-text'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -29,6 +32,35 @@ import ImageResize from './ResizableImageExtension'
 import { StepVariable } from './StepVariablePlugin'
 import { SuggestionsPopper } from './SuggestionPopper'
 import { genVariableInfoMap, substituteOldTemplates } from './utils'
+
+const RICH_TEXT_EXTENSIONS = [
+  StarterKit.configure({
+    paragraph: {
+      HTMLAttributes: { style: 'margin: 0' },
+    },
+  }),
+  Link.configure({
+    HTMLAttributes: { rel: null, target: '_blank' },
+  }),
+  Underline,
+  Table.configure({
+    resizable: false,
+    HTMLAttributes: {
+      style: 'border-collapse:collapse;',
+    },
+  }),
+  TableRow,
+  TableHeader,
+  TableCell.configure({
+    HTMLAttributes: {
+      style:
+        'border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;',
+    },
+  }),
+  ImageResize.configure({
+    inline: true,
+  }),
+]
 
 interface EditorProps {
   onChange: (...event: any[]) => void
@@ -60,34 +92,8 @@ const Editor = ({
   }, [priorStepsWithExecutions])
 
   const extensions: Array<any> = [
-    StarterKit.configure({
-      paragraph: {
-        HTMLAttributes: { style: 'margin: 0' },
-      },
-    }),
-    Link.configure({
-      HTMLAttributes: { rel: null, target: '_blank' },
-    }),
-    Underline,
-    Table.configure({
-      resizable: false,
-      HTMLAttributes: {
-        style: 'border-collapse:collapse;',
-      },
-    }),
-    TableRow,
-    TableHeader,
-    TableCell.configure({
-      HTMLAttributes: {
-        style:
-          'border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;',
-      },
-    }),
     Placeholder.configure({
       placeholder,
-    }),
-    ImageResize.configure({
-      inline: true,
     }),
     StepVariable,
   ]
@@ -95,10 +101,17 @@ const Editor = ({
 
   // convert new line character into br elem so tiptap can load the content correctly
   content = content.replaceAll('\n', '<br>')
-  if (!isRich) {
+  if (isRich) {
+    extensions.push(...RICH_TEXT_EXTENSIONS)
+  } else {
     // this extension is to have <br /> as new line instead of new paragraph
     // as new paragraph will translate to a double \n\n instead of \n when getText
     extensions.push(
+      Document,
+      Text,
+      Paragraph.configure({
+        HTMLAttributes: { style: 'margin: 0' },
+      }),
       Hardbreak.extend({
         addKeyboardShortcuts() {
           return {
@@ -157,7 +170,6 @@ const Editor = ({
           <EditorContent
             className="editor__content"
             editor={editor}
-            placeholder="Hello world"
             onFocus={() => setShowVarSuggestions(true)}
           />
           {variablesEnabled && (
