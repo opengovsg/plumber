@@ -9,17 +9,17 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
-    date: '2024-04-24',
+    date: '2024-04-23',
     tag: NEW_FEATURE_TAG,
     title: 'Introducing Tiles!',
     details:
-      'Tiles is a a simple database to view, store and automate your data! With Tiles, you can seamlessly integrate your data without the hassle of connection setups, and also consolidate all your data and pipes in one platform.',
+      'Tiles is a simple database to view, store and automate your data! With Tiles, you can seamlessly integrate your data without the hassle of connection setups, and also consolidate all your data and pipes in one platform.',
     multimedia: {
       url: 'https://file.go.gov.sg/tiles-whats-new.png',
     },
   },
   {
-    date: '2024-04-24',
+    date: '2024-04-23',
     tag: NEW_FEATURE_TAG,
     title: 'New action - Formatter',
     details: dedent`
