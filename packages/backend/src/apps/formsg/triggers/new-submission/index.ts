@@ -1,10 +1,11 @@
 import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
-import isEmpty from 'lodash/isEmpty'
-
 import StepError from '@/errors/step'
 
+import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
+
 import getDataOutMetadata from './get-data-out-metadata'
+import getMockData from './get-mock-data'
 
 export const NricFilter = {
   None: 'none',
@@ -67,15 +68,20 @@ const trigger: IRawTrigger = {
       )
     }
 
+    // data out should never be empty after test step is pressed once: either mock or actual data
+    const { formId } = getFormDetailsFromGlobalVariable($)
     const lastExecutionStep = await $.getLastExecutionStep()
-    if (!isEmpty(lastExecutionStep?.dataOut)) {
-      await $.pushTriggerItem({
-        raw: lastExecutionStep?.dataOut,
-        meta: {
-          internalId: '',
-        },
-      })
-    }
+
+    // if different or no form is detected, use mock data
+    await $.pushTriggerItem({
+      raw:
+        lastExecutionStep?.dataOut?.formId !== formId
+          ? await getMockData($)
+          : lastExecutionStep?.dataOut,
+      meta: {
+        internalId: '',
+      },
+    })
   },
 }
 

@@ -143,6 +143,7 @@ export async function decryptFormResponse(
       // configured for SGT - so although fromISO -> toISO looks like a no-op,
       // it internally does a TZ conversion).
       submissionTime: DateTime.fromISO(data.created).toISO(),
+      formId: data.formId, // this is used to check if a new form is connected to the formsg step
     }
 
     if (Object.keys(verifiedSubmitterInfo).length > 0) {
