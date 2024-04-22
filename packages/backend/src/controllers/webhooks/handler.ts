@@ -111,6 +111,7 @@ export default async (request: IRequest, response: Response) => {
   // in case it's our built-in generic webhook trigger
   if (isWebhookApp) {
     payload = {
+      ...(request.query ? { _query: request.query } : {}),
       ...request.body,
     }
   }
