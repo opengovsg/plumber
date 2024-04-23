@@ -1,7 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import ObjectID from 'bson-objectid'
 import { DateTime } from 'luxon'
+import { customAlphabet } from 'nanoid/async'
 
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
@@ -28,9 +28,15 @@ async function getMockData($: IGlobalVariable) {
         data.responses[formFields[i]._id].id = undefined
       }
     }
+
+    // generate bson-objectid using nanoid to avoid extra dependency
+    const hexAlphabets = '0123456789abcdef'
+    const idLength = 24
+    const generateIdAsync = customAlphabet(hexAlphabets, idLength)
+
     return {
       fields: data.responses,
-      submissionId: ObjectID().toHexString(),
+      submissionId: await generateIdAsync(),
       submissionTime: DateTime.now().toISO(),
       formId,
     }
