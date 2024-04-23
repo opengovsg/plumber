@@ -162,7 +162,7 @@ export const ImportCsvModalContent = ({
   const [rowsImported, setRowsImported] = useState(0)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isParsing, setIsParsing] = useState(false)
-  const [result, setResult] = useState<ValidParseResult | null>(null)
+  const [result, setResult] = useState<Record<string, string>[] | null>(null)
   const [columnsToCreate, setColumnsToCreate] = useState<string[]>([])
   // Used for new table creation via import
   // This is used to check if the import has already started, so it doesnt run on every render
@@ -172,11 +172,7 @@ export const ImportCsvModalContent = ({
 
   const isValidParseResult = useCallback(
     (parseResult: ParseResult<unknown>): parseResult is ValidParseResult => {
-      return (
-        !!parseResult.meta.fields &&
-        parseResult.meta.fields.length > 0 &&
-        parseResult.data.length > 0
-      )
+      return !!parseResult.meta.fields && parseResult.meta.fields.length > 0
     },
     [],
   )
@@ -199,7 +195,7 @@ export const ImportCsvModalContent = ({
       complete: (parseResult) => {
         setIsParsing(false)
         if (isValidParseResult(parseResult)) {
-          setResult(parseResult)
+          setResult(parseResult.data)
           const columns = parseResult.meta.fields
           setColumnsToCreate(
             columns.filter((csvColumn) => !columnNamesSet.has(csvColumn)),
@@ -243,36 +239,41 @@ export const ImportCsvModalContent = ({
   )
 
   const onImport = useCallback(async () => {
-    if (!result) {
+    // do not import if no rows or columns to create
+    if (!result?.length && !columnsToCreate.length) {
       return
     }
     try {
       setImportStatus('creating columns')
       let allColumns = tableColumns
-      if (columnsToCreate.length > 0) {
+      if (columnsToCreate.length) {
         allColumns = await createNewColumns()
       }
-      const mappedData = mapDataToColumnIds(allColumns, result.data)
-      setImportStatus('importing')
-      setRowsToImport(mappedData.length)
-      setRowsImported(0)
-      const chunkedData = chunk(mappedData, CHUNK_SIZE)
 
-      for (let i = 0; i < chunkedData.length; i++) {
-        await createRows({
-          variables: {
-            input: {
-              tableId,
-              dataArray: chunkedData[i],
+      // skip if no rows to import
+      if (result?.length) {
+        const mappedData = mapDataToColumnIds(allColumns, result)
+        setImportStatus('importing')
+        setRowsToImport(mappedData.length)
+        setRowsImported(0)
+        const chunkedData = chunk(mappedData, CHUNK_SIZE)
+
+        for (let i = 0; i < chunkedData.length; i++) {
+          await createRows({
+            variables: {
+              input: {
+                tableId,
+                dataArray: chunkedData[i],
+              },
             },
-          },
-          refetchQueries:
-            i === chunkedData.length - 1 && !onPreImport
-              ? [GET_ALL_ROWS]
-              : undefined,
-          awaitRefetchQueries: true,
-        })
-        setRowsImported((i + 1) * CHUNK_SIZE)
+            refetchQueries:
+              i === chunkedData.length - 1 && !onPreImport
+                ? [GET_ALL_ROWS]
+                : undefined,
+            awaitRefetchQueries: true,
+          })
+          setRowsImported((i + 1) * CHUNK_SIZE)
+        }
       }
       setImportStatus('completed')
       if (onPostImport) {
@@ -363,9 +364,10 @@ export const ImportCsvModalContent = ({
           {importStatus !== 'completed' && (
             <Button
               isLoading={isImporting}
+              isDisabled={!result?.length && !columnsToCreate.length}
               onClick={onPreImport ? onPreImport : onImport}
             >
-              Import {result ? `${result?.data.length} rows` : ''}
+              Import {result ? result?.length + ' rows' : ''}
             </Button>
           )}
         </Flex>
