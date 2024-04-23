@@ -246,12 +246,12 @@ export const ImportCsvModalContent = ({
     try {
       setImportStatus('creating columns')
       let allColumns = tableColumns
-      if (columnsToCreate.length > 0) {
+      if (columnsToCreate.length) {
         allColumns = await createNewColumns()
       }
 
-      // Allow 0 rows
-      if (result) {
+      // skip if no rows to import
+      if (result?.length) {
         const mappedData = mapDataToColumnIds(allColumns, result)
         setImportStatus('importing')
         setRowsToImport(mappedData.length)
