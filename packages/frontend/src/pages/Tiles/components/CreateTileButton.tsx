@@ -1,8 +1,7 @@
 import { ITableMetadata } from '@plumber/types'
 
-import { useCallback, useContext, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { BiSpreadsheet, BiTable } from 'react-icons/bi'
-import { HiOutlineHandRaised } from 'react-icons/hi2'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -23,9 +22,7 @@ import {
   ModalCloseButton,
   Tile,
 } from '@opengovsg/design-system-react'
-import { TILES_FEATURE_FLAG } from 'config/flags'
 import * as URLS from 'config/urls'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import { CREATE_TABLE } from 'graphql/mutations/create-table'
 import { ImportCsvModalContent } from 'pages/Tile/components/TableBanner/ImportCsvButton'
 import { TableContextProvider } from 'pages/Tile/contexts/TableContext'
@@ -185,31 +182,11 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
 }
 
 const CreateTileButton = (): JSX.Element => {
-  /**
-   * Check if feature flag is enabled, otherwise dont allow creation
-   * eventually, this should be removed
-   */
-  const { flags } = useContext(LaunchDarklyContext)
-  const isTilesEnabled = flags?.[TILES_FEATURE_FLAG]
-
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   return (
     <>
-      {isTilesEnabled ? (
-        <Button onClick={onOpen}>Create Tile</Button>
-      ) : (
-        <Button
-          p={2}
-          px={4}
-          onClick={() =>
-            window.open(URLS.TILES_REQUEST_ACCCESS_FORM_LINK, '_blank')
-          }
-          leftIcon={<HiOutlineHandRaised size={20} />}
-        >
-          Request access
-        </Button>
-      )}
+      <Button onClick={onOpen}>Create Tile</Button>
       {isOpen && <CreateTileModal onClose={onClose} />}
     </>
   )
