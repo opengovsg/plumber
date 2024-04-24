@@ -261,7 +261,7 @@ function TableCell({
       ref={cellContainerRef}
       className={styles.cell}
       onClick={startEditing}
-      onContextMenu={onContextMenu}
+      onContextMenu={!isViewMode ? onContextMenu : undefined}
     >
       {/* if editing new row, show text area for all cells in the row */}
       {isEditingCell ||
@@ -271,7 +271,7 @@ function TableCell({
           fontSize="0.875rem"
           h={ROW_HEIGHT.EXPANDED}
           background="white"
-          boxShadow={isEditingCell ? CELL_BOX_SHADOW.ACTIVE : 'none'}
+          boxShadow={CELL_BOX_SHADOW.ACTIVE}
           borderColor="transparent"
           outline="none"
           _hover={{
@@ -282,6 +282,9 @@ function TableCell({
           }}
           _focusVisible={{
             boxShadow: CELL_BOX_SHADOW.ACTIVE,
+          }}
+          _readOnly={{
+            boxShadow: CELL_BOX_SHADOW.DEFAULT,
           }}
           isReadOnly={isViewMode}
           defaultValue={value}
