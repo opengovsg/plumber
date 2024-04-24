@@ -3,7 +3,7 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { ExpressAdapter } from '@bull-board/express'
 
 import appConfig from '@/config/app'
-import actionQueue from '@/queues/action'
+import { appActionQueues, defaultActionQueue } from '@/queues/action'
 import flowQueue from '@/queues/flow'
 import triggerQueue from '@/queues/trigger'
 
@@ -22,7 +22,8 @@ const createBullBoardHandler = async (serverAdapter: ExpressAdapter) => {
     queues: [
       new BullMQAdapter(flowQueue),
       new BullMQAdapter(triggerQueue),
-      new BullMQAdapter(actionQueue),
+      new BullMQAdapter(defaultActionQueue),
+      ...[...appActionQueues.values()].map((queue) => new BullMQAdapter(queue)),
     ],
     serverAdapter: serverAdapter,
   })

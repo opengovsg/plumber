@@ -2,7 +2,7 @@ import { ref } from 'objection'
 
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
-import actionQueue from '@/queues/action'
+import { getJob } from '@/queues/action'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -26,8 +26,8 @@ const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
     throw new Error('Execution step not found')
   }
 
-  const { jobId } = executionStep
-  const job = await actionQueue.getJob(jobId)
+  const { jobId, appKey } = executionStep
+  const job = await getJob({ appKey, jobId })
   if (!job) {
     // if job cannot be found anymore, remove the job id from the execution step so it cannot be retried again
     await executionStep.$query().patch({ jobId: null })

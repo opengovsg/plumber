@@ -2,8 +2,8 @@ import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
-import actionQueue from '@/queues/action'
-import { worker as actionWorker } from '@/workers/action'
+import { defaultActionQueue, enqueueActionJob } from '@/queues/action'
+import { defaultActionWorker } from '@/workers/action'
 
 import {
   backupWorker,
@@ -66,16 +66,16 @@ describe('Action worker', () => {
   let originalWorkerState: WorkerState | null = null
 
   beforeAll(async () => {
-    originalWorkerState = await backupWorker(actionWorker)
-    await actionWorker.waitUntilReady()
+    originalWorkerState = await backupWorker(defaultActionWorker)
+    await defaultActionWorker.waitUntilReady()
   })
 
   afterEach(async () => {
-    await flushQueue(actionQueue, actionWorker)
+    await flushQueue(defaultActionQueue, defaultActionWorker)
 
     // Tests tend to clobber workers (e.g adding listeners), so restore
     // original state after each test
-    await restoreWorker(actionWorker, originalWorkerState)
+    await restoreWorker(defaultActionWorker, originalWorkerState)
 
     vi.restoreAllMocks()
   })
@@ -91,19 +91,20 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        actionWorker.on('completed', async (_) => {
+        defaultActionWorker.on('completed', async (_) => {
           resolve()
         })
       })
-      await actionQueue.add(
-        'test-job',
-        {
+      await enqueueActionJob({
+        appKey: null,
+        jobName: 'test-job',
+        jobData: {
           flowId: 'test-flow-id',
           executionId: 'test-exec-id',
           stepId: 'test-step-id',
         },
-        DEFAULT_JOB_OPTIONS,
-      )
+        jobOptions: DEFAULT_JOB_OPTIONS,
+      })
       await jobProcessed
 
       expect(mocks.exponentialBackoffWithJitter).not.toBeCalled()
@@ -121,24 +122,25 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        actionWorker.on('failed', async (job) => {
+        defaultActionWorker.on('failed', async (job) => {
           if (job.attemptsMade === maxAttempts) {
             resolve()
           }
         })
       })
-      await actionQueue.add(
-        'test-job',
-        {
+      await enqueueActionJob({
+        appKey: null,
+        jobName: 'test-job',
+        jobData: {
           flowId: 'test-flow-id',
           executionId: 'test-exec-id',
           stepId: 'test-step-id',
         },
-        {
+        jobOptions: {
           ...DEFAULT_JOB_OPTIONS,
           attempts: maxAttempts,
         },
-      )
+      })
       await jobProcessed
 
       expect(mocks.exponentialBackoffWithJitter).toBeCalled()
@@ -153,21 +155,22 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        actionWorker.on('failed', async (_job, err) => {
+        defaultActionWorker.on('failed', async (_job, err) => {
           if (err instanceof UnrecoverableError) {
             resolve()
           }
         })
       })
-      await actionQueue.add(
-        'test-job',
-        {
+      await enqueueActionJob({
+        appKey: null,
+        jobName: 'test-job',
+        jobData: {
           flowId: 'test-flow-id',
           executionId: 'test-exec-id',
           stepId: 'test-step-id',
         },
-        DEFAULT_JOB_OPTIONS,
-      )
+        jobOptions: DEFAULT_JOB_OPTIONS,
+      })
       await jobProcessed
 
       // Should not be called, since it was not retried.
@@ -182,11 +185,11 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        actionWorker.on('completed', async (_) => {
+        defaultActionWorker.on('completed', async (_) => {
           resolve()
         })
       })
-      const job = await actionQueue.add(
+      const job = await defaultActionQueue.add(
         'test-job',
         {
           flowId: 'test-flow-id',
@@ -198,11 +201,11 @@ describe('Action worker', () => {
       await jobProcessed
 
       expect(mocks.logInfo).toHaveBeenCalledWith(
-        `JOB ID: ${job.id} - FLOW ID: test-flow-id has started!`,
+        `[action] JOB ID: ${job.id} - FLOW ID: test-flow-id has started!`,
         expect.anything(),
       )
       expect(mocks.logInfo).toHaveBeenCalledWith(
-        `JOB ID: ${job.id} - FLOW ID: test-flow-id has completed!`,
+        `[action] JOB ID: ${job.id} - FLOW ID: test-flow-id has completed!`,
         expect.anything(),
       )
     })
@@ -216,11 +219,11 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        actionWorker.on('failed', async (_) => {
+        defaultActionWorker.on('failed', async (_) => {
           resolve()
         })
       })
-      const job = await actionQueue.add(
+      const job = await defaultActionQueue.add(
         'test-job',
         {
           flowId: 'test-flow-id',
@@ -232,13 +235,13 @@ describe('Action worker', () => {
       await jobProcessed
 
       expect(mocks.logError).toHaveBeenCalledWith(
-        `JOB ID: ${job.id} - FLOW ID: test-flow-id has failed to start with some error`,
+        `[action] JOB ID: ${job.id} - FLOW ID: test-flow-id has failed to start with some error`,
         expect.anything(),
       )
     })
 
     it('logs an error if an event callback itself throws an error', async () => {
-      actionWorker.on('completed', () => {
+      defaultActionWorker.on('completed', () => {
         throw new Error('callback error')
       })
 
@@ -246,23 +249,24 @@ describe('Action worker', () => {
         executionStep: { isFailed: false, nextStep: null },
       })
       const jobProcessed = new Promise<void>((resolve) => {
-        actionWorker.on('error', async (_) => {
+        defaultActionWorker.on('error', async (_) => {
           resolve()
         })
       })
-      await actionQueue.add(
-        'test-job',
-        {
+      await enqueueActionJob({
+        appKey: null,
+        jobName: 'test-job',
+        jobData: {
           flowId: 'test-flow-id',
           executionId: 'test-exec-id',
           stepId: 'test-step-id',
         },
-        DEFAULT_JOB_OPTIONS,
-      )
+        jobOptions: DEFAULT_JOB_OPTIONS,
+      })
       await jobProcessed
 
       expect(mocks.logError).toHaveBeenCalledWith(
-        'Worker errored with callback error',
+        '[action] Worker errored with callback error',
         expect.any(Object),
       )
     })

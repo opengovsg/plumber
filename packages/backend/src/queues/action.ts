@@ -1,27 +1,80 @@
-import { QueuePro } from '@taskforcesh/bullmq-pro'
-import process from 'process'
+import type { IActionJobData } from '@plumber/types'
 
-import { createRedisClient } from '@/config/redis'
-import logger from '@/helpers/logger'
+import {
+  type JobPro,
+  type JobsProOptions,
+  type QueuePro,
+} from '@taskforcesh/bullmq-pro'
 
-const CONNECTION_REFUSED = 'ECONNREFUSED'
+import apps from '@/apps'
+import { makeActionQueue } from '@/helpers/queues/make-action-queue'
 
-const redisConnection = {
-  prefix: '{actionQ}',
-  connection: createRedisClient(),
+//
+// Queue storage
+// ---
+// These should only be used for debugging and tests
+//
+
+// Default queue
+export const defaultActionQueue = makeActionQueue()
+
+// App-specific queues
+export const appActionQueues = new Map<
+  keyof typeof apps,
+  ReturnType<typeof makeActionQueue>
+>()
+for (const [appKey, app] of Object.entries(apps)) {
+  if (!app.queue) {
+    continue
+  }
+  appActionQueues.set(appKey, makeActionQueue({ appKey }))
 }
 
-const actionQueue = new QueuePro('action', redisConnection)
+//
+// Queue manipulation API
+// ---
+// Use these functions during actual operation.
+//
 
-process.on('SIGTERM', async () => {
-  await actionQueue.close()
-})
+interface EnqueueActionJobParams {
+  appKey: string | null
+  jobName: string
+  jobData: IActionJobData
+  jobOptions: Omit<JobsProOptions, 'group'>
+}
 
-actionQueue.on('error', (err) => {
-  if ((err as any).code === CONNECTION_REFUSED) {
-    logger.error('Make sure you have installed Redis and it is running.', err)
-    process.exit()
+export async function enqueueActionJob({
+  appKey,
+  jobName,
+  jobData,
+  jobOptions,
+}: EnqueueActionJobParams): Promise<JobPro<IActionJobData>> {
+  if (!appActionQueues.has(appKey)) {
+    return await defaultActionQueue.add(jobName, jobData, jobOptions)
   }
-})
 
-export default actionQueue
+  const appQueue = appActionQueues.get(appKey)
+  const groupConfig = await apps[appKey].queue.getGroupConfigForJob(jobData)
+
+  return await appQueue.add(jobName, jobData, {
+    ...jobOptions,
+    group: groupConfig,
+  })
+}
+
+interface GetJobParams {
+  appKey: string
+  jobId: string
+}
+
+export async function getJob({
+  appKey,
+  jobId,
+}: GetJobParams): Promise<ReturnType<QueuePro<IActionJobData>['getJob']>> {
+  if (!appActionQueues.has(appKey)) {
+    return await defaultActionQueue.getJob(jobId)
+  }
+
+  const appQueue = appActionQueues.get(appKey)
+  return await appQueue.getJob(jobId)
+}
