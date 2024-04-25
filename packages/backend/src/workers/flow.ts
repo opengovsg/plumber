@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq'
+import { WorkerPro } from '@taskforcesh/bullmq-pro'
 
 import { createRedisClient } from '@/config/redis'
 import {
@@ -10,7 +10,7 @@ import Flow from '@/models/flow'
 import triggerQueue from '@/queues/trigger'
 import { processFlow } from '@/services/flow'
 
-export const worker = new Worker(
+export const worker = new WorkerPro(
   'flow',
   async (job) => {
     const { flowId } = job.data
@@ -62,7 +62,7 @@ worker.on('completed', (job) => {
 })
 
 worker.on('failed', (job, err) => {
-  logger.info(
+  logger.error(
     `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
   )
 })

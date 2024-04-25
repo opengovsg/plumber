@@ -23,3 +23,5 @@ jobs:
       codedeploy-application: 'plumber-uat-ecs-app'
       codedeploy-deployment-group: 'plumber-uat-ecs-dg'
       release-version: ${{ github.sha }}
+    secrets:
+      NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}

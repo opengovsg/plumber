@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM node:18-alpine as build
 
 ARG APP_ENV=prod
@@ -5,7 +6,8 @@ ENV VITE_MODE=$APP_ENV
 
 WORKDIR /opt/plumber
 COPY . ./
-RUN npm ci
+RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
+  (export NPM_TASKFORCESH_TOKEN=$(cat /run/secrets/NPM_TASKFORCESH_TOKEN); npm ci)
 RUN npm run build
 RUN npm prune --production
 
