@@ -1,4 +1,4 @@
-import { type BackoffStrategy, type Job } from 'bullmq'
+import { type WorkerProOptions } from '@taskforcesh/bullmq-pro'
 
 import RetriableError from '@/errors/retriable-error'
 
@@ -21,11 +21,12 @@ function computeInitialDelay(err: Error): number {
       Math.max(INITIAL_DELAY_MS, err.delayInMs)
 }
 
+type BackoffStrategy = WorkerProOptions['settings']['backoffStrategy']
 export const exponentialBackoffWithJitter: BackoffStrategy = function (
-  attemptsMade: number,
-  _type: string,
-  err: Error,
-  job: Job,
+  attemptsMade,
+  _type,
+  err,
+  job,
 ): number {
   // This implements FullJitter-like jitter, with the following changes:
   //

@@ -1,6 +1,6 @@
 import { NextStepMetadata } from '@plumber/types'
 
-import { UnrecoverableError, Worker } from 'bullmq'
+import { UnrecoverableError, WorkerPro } from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
@@ -30,7 +30,7 @@ type JobData = {
   metadata?: NextStepMetadata
 }
 
-export const worker = new Worker(
+export const worker = new WorkerPro(
   'action',
   tracer.wrap('workers.action', async (job) => {
     const span = tracer.scope().active()
