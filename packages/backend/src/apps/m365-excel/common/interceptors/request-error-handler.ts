@@ -23,8 +23,10 @@ const handle429: ThrowingHandler = ($, error) => {
   // once we get bullmq pro in.
   if (error.response.config.url.includes('/workbook/')) {
     const retryAfterMs = Number(error.response?.headers?.['retry-after']) * 1000
+    // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
     throw new RetriableError({
       error: 'Retrying HTTP 429 from Excel endpoint',
+      delayType: 'step',
       delayInMs: isNaN(retryAfterMs) ? 'default' : retryAfterMs,
     })
   }
@@ -62,9 +64,12 @@ const handle503: ThrowingHandler = function ($, error) {
 
   // Microsoft _sometimes_ specifies a Retry-After when it returns 503.
   const retryAfterMs = Number(error.response?.headers?.['retry-after']) * 1000
+
+  // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
   throw new RetriableError({
     error: 'Encountered HTTP 503 from MS',
     delayInMs: isNaN(retryAfterMs) ? 'default' : retryAfterMs,
+    delayType: 'step',
   })
 }
 

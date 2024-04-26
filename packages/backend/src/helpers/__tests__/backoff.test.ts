@@ -32,6 +32,7 @@ describe('Backoff', () => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs,
+        delayType: 'step',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
@@ -61,6 +62,7 @@ describe('Backoff', () => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs,
+        delayType: 'step',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
 
@@ -83,6 +85,7 @@ describe('Backoff', () => {
     const err = new RetriableError({
       error: 'test error',
       delayInMs: 10,
+      delayType: 'step',
     })
     vi.spyOn(Math, 'random').mockReturnValue(0)
 

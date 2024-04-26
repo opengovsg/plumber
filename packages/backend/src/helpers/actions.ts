@@ -87,6 +87,7 @@ export function handleErrorAndThrow(
       throw new RetriableError({
         error: errorDetails,
         delayInMs: retryAfterMs,
+        delayType: 'step',
       })
     }
     throw new UnrecoverableError(`Retry-After (${retryAfterMs}ms) is too long!`)
@@ -97,6 +98,7 @@ export function handleErrorAndThrow(
     throw new RetriableError({
       error: errorDetails,
       delayInMs: 'default',
+      delayType: 'step',
     })
   }
 
@@ -107,6 +109,7 @@ export function handleErrorAndThrow(
       throw new RetriableError({
         error: errorDetails,
         delayInMs: 'default',
+        delayType: 'step',
       })
     }
   }

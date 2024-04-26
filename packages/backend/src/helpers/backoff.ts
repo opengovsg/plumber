@@ -14,6 +14,19 @@ function computeInitialDelay(err: Error): number {
     return INITIAL_DELAY_MS
   }
 
+  // Non-step delay types should be rate limited using BullMQ's rateLimitQueue
+  // or rateLimitGroup functions inside the job processor function. We should
+  // never have reached here.
+  if (err.delayType !== 'step') {
+    logger.error(
+      'Triggered BullMQ retry with RetriableError of the wrong delay type',
+      {
+        event: 'bullmq-retry-wrong-delay-type',
+        delayType: err.delayType,
+      },
+    )
+  }
+
   return err.delayInMs === 'default'
     ? INITIAL_DELAY_MS
     : // Take max to prevent stuff like 10ms delay causing effectively zero

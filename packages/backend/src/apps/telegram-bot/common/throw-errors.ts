@@ -60,9 +60,12 @@ export async function throwSendMessageError(
             .context({
               shouldBypassBeforeUpdateHook: true,
             } as StepContext)
+
+          // Refactoring Telegram in later PR. Keeping retry as status quo in this PR.
           throw new RetriableError({
             error: `Upgrade from current chat id: ${oldChatId} to supergroup chat id: ${newChatId} and retry`,
             delayInMs: 'default',
+            delayType: 'step',
           })
         }
         // for test runs, still throw back stepError

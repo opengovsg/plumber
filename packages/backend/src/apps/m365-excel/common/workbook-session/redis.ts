@@ -84,9 +84,11 @@ export async function runWithLockElseRetryStep<T>(
           'The operation was unable to achieve a quorum during its retry window.')
 
     if (isRetriableError) {
+      // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
       throw new RetriableError({
         error: 'Unable to acquire excel session lock.',
         delayInMs: LOCK_FAILURE_RETRY_DELAY_MS,
+        delayType: 'step',
       })
     }
 
