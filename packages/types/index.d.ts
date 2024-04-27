@@ -360,12 +360,8 @@ export interface IAppQueue {
         limit: WorkerProOptions['group']['limit']
       }
 
-  /**
-   * Set rate limit for the entire queue (applied before groups' limits)
-   *
-   * @see {@link WorkerProOptions.limiter}
-   */
-  queueRateLimit?: WorkerProOptions['limiter']
+  // Note: queueRateLimit is not configurable here yet due to a potential bug:
+  // https://github.com/taskforcesh/bullmq-pro-support/issues/73
 }
 
 export interface IApp {

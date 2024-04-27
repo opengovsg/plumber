@@ -147,28 +147,6 @@ describe('Queue helper functions', () => {
           },
         }),
       },
-      {
-        appQueueConfig: {
-          getGroupConfigForJob: vi.fn(),
-          groupLimits: {
-            type: 'concurrency' as const,
-            concurrency: 2,
-          },
-          queueRateLimit: {
-            max: 3,
-            duration: 1000,
-          },
-        },
-        expectedWorkerOptions: expect.objectContaining({
-          group: {
-            concurrency: 2,
-          },
-          limiter: {
-            max: 3,
-            duration: 1000,
-          },
-        }),
-      },
     ])(
       "sets up queue according to the app's queue config",
       ({ appQueueConfig, expectedWorkerOptions }) => {

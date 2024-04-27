@@ -64,10 +64,6 @@ function convertParamsToBullMqOptions(
     workerOptions.group = groupSettings
   }
 
-  if (config?.queueRateLimit) {
-    workerOptions.limiter = config.queueRateLimit
-  }
-
   return {
     queueName,
     workerOptions,
