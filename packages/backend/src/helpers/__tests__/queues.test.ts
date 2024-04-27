@@ -65,49 +65,48 @@ describe('Queue helper functions', () => {
   })
 
   describe('makeActionQueue', () => {
-    it('creates a queue with our default action queue name name if params is not provided', () => {
-      makeActionQueue()
-      expect(mocks.queueConstructor).toHaveBeenCalledWith('action', {
+    it('creates a queue with an configured queue name', () => {
+      makeActionQueue({ queueName: '{test-app-queue}' })
+      expect(mocks.queueConstructor).toHaveBeenCalledWith('{test-app-queue}', {
         connection: 'mock redis client',
-        prefix: `{actionQ}`,
       })
     })
 
-    it('creates a queue with an appropriate queue name if an appKey is specified', () => {
-      makeActionQueue({ appKey: 'test-app' })
-      expect(mocks.queueConstructor).toHaveBeenCalledWith(
-        '{app-actions-test-app}',
-        // Must not have prefix
-        {
-          connection: 'mock redis client',
-        },
-      )
+    it('supports specifying a redis connection prefix', () => {
+      makeActionQueue({
+        queueName: 'some-queue',
+        redisConnectionPrefix: '{test}',
+      })
+      expect(mocks.queueConstructor).toHaveBeenCalledWith('some-queue', {
+        connection: 'mock redis client',
+        prefix: `{test}`,
+      })
     })
   })
 
   describe('makeActionWorker', () => {
-    it('creates a worker for our default action queue if params is not provided', () => {
-      makeActionWorker()
+    it('creates a worker for the specified queue name', () => {
+      makeActionWorker({ queueName: '{test-app-queue}' })
       expect(mocks.workerConstructor).toHaveBeenCalledWith(
-        'action',
+        '{test-app-queue}',
         expect.anything(),
-        expect.objectContaining({
-          prefix: '{actionQ}',
+        // Must not have redis connection prefix
+        expect.not.objectContaining({
+          prefix: expect.any(String),
         }),
       )
     })
 
-    it("creates a worker for the appropriate app's action queue if appKey is specified", () => {
+    it('supports specifying a redis connection prefix', () => {
       makeActionWorker({
-        appKey: 'test-app',
-        config: { getGroupConfigForJob: vi.fn() },
+        queueName: 'some-queue',
+        redisConnectionPrefix: '{test}',
       })
       expect(mocks.workerConstructor).toHaveBeenCalledWith(
-        '{app-actions-test-app}',
+        'some-queue',
         expect.anything(),
-        // Must not have prefix
-        expect.not.objectContaining({
-          prefix: expect.any(String),
+        expect.objectContaining({
+          prefix: '{test}',
         }),
       )
     })
@@ -151,11 +150,11 @@ describe('Queue helper functions', () => {
       "sets up queue according to the app's queue config",
       ({ appQueueConfig, expectedWorkerOptions }) => {
         makeActionWorker({
-          appKey: 'test-app',
-          config: appQueueConfig,
+          queueName: '{test-app-queue}',
+          queueConfig: appQueueConfig,
         })
         expect(mocks.workerConstructor).toHaveBeenCalledWith(
-          '{app-actions-test-app}',
+          '{test-app-queue}',
           expect.anything(),
           expectedWorkerOptions,
         )

@@ -1,6 +1,9 @@
-import '@/queues/action'
-
 import { afterAll, describe, expect, it, vi } from 'vitest'
+
+import {
+  MAIN_ACTION_QUEUE_NAME,
+  MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+} from '@/queues/action'
 
 const mocks = vi.hoisted(() => ({
   makeActionQueue: vi.fn(),
@@ -32,25 +35,28 @@ describe('action queues', () => {
     vi.restoreAllMocks()
   })
 
-  it('creates the default action queue', () => {
-    expect(mocks.makeActionQueue).toHaveBeenCalledWith() // at least one no argument call.
+  it('creates the main action queue', () => {
+    expect(mocks.makeActionQueue).toHaveBeenCalledWith({
+      queueName: MAIN_ACTION_QUEUE_NAME,
+      redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+    })
   })
 
   it('creates a queue for each app that has a queue config', () => {
     expect(mocks.makeActionQueue).toHaveBeenCalledWith({
-      appKey: 'app-with-queue-1',
+      queueName: '{app-actions-app-with-queue-1}',
     })
     expect(mocks.makeActionQueue).toHaveBeenCalledWith({
-      appKey: 'app-with-queue-2',
+      queueName: '{app-actions-app-with-queue-2}',
     })
   })
 
   it('does not create action queues for apps that do not have a queue config', () => {
     expect(mocks.makeActionQueue).not.toHaveBeenCalledWith({
-      appKey: 'app-without-queue-1',
+      queueName: '{app-actions-app-without-queue-1}',
     })
     expect(mocks.makeActionQueue).not.toHaveBeenCalledWith({
-      appKey: 'app-without-queue-2',
+      queueName: '{app-actions-app-without-queue-2}',
     })
   })
 })

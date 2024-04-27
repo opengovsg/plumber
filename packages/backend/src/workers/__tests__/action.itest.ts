@@ -2,8 +2,8 @@ import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
-import { defaultActionQueue, enqueueActionJob } from '@/queues/action'
-import { defaultActionWorker } from '@/workers/action'
+import { enqueueActionJob, mainActionQueue } from '@/queues/action'
+import { mainActionWorker } from '@/workers/action'
 
 import {
   backupWorker,
@@ -66,16 +66,16 @@ describe('Action worker', () => {
   let originalWorkerState: WorkerState | null = null
 
   beforeAll(async () => {
-    originalWorkerState = await backupWorker(defaultActionWorker)
-    await defaultActionWorker.waitUntilReady()
+    originalWorkerState = await backupWorker(mainActionWorker)
+    await mainActionWorker.waitUntilReady()
   })
 
   afterEach(async () => {
-    await flushQueue(defaultActionQueue, defaultActionWorker)
+    await flushQueue(mainActionQueue, mainActionWorker)
 
     // Tests tend to clobber workers (e.g adding listeners), so restore
     // original state after each test
-    await restoreWorker(defaultActionWorker, originalWorkerState)
+    await restoreWorker(mainActionWorker, originalWorkerState)
 
     vi.restoreAllMocks()
   })
@@ -91,7 +91,7 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        defaultActionWorker.on('completed', async (_) => {
+        mainActionWorker.on('completed', async (_) => {
           resolve()
         })
       })
@@ -122,7 +122,7 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        defaultActionWorker.on('failed', async (job) => {
+        mainActionWorker.on('failed', async (job) => {
           if (job.attemptsMade === maxAttempts) {
             resolve()
           }
@@ -155,7 +155,7 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        defaultActionWorker.on('failed', async (_job, err) => {
+        mainActionWorker.on('failed', async (_job, err) => {
           if (err instanceof UnrecoverableError) {
             resolve()
           }
@@ -185,11 +185,11 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        defaultActionWorker.on('completed', async (_) => {
+        mainActionWorker.on('completed', async (_) => {
           resolve()
         })
       })
-      const job = await defaultActionQueue.add(
+      const job = await mainActionQueue.add(
         'test-job',
         {
           flowId: 'test-flow-id',
@@ -219,11 +219,11 @@ describe('Action worker', () => {
       })
 
       const jobProcessed = new Promise<void>((resolve) => {
-        defaultActionWorker.on('failed', async (_) => {
+        mainActionWorker.on('failed', async (_) => {
           resolve()
         })
       })
-      const job = await defaultActionQueue.add(
+      const job = await mainActionQueue.add(
         'test-job',
         {
           flowId: 'test-flow-id',
@@ -241,7 +241,7 @@ describe('Action worker', () => {
     })
 
     it('logs an error if an event callback itself throws an error', async () => {
-      defaultActionWorker.on('completed', () => {
+      mainActionWorker.on('completed', () => {
         throw new Error('callback error')
       })
 
@@ -249,7 +249,7 @@ describe('Action worker', () => {
         executionStep: { isFailed: false, nextStep: null },
       })
       const jobProcessed = new Promise<void>((resolve) => {
-        defaultActionWorker.on('error', async (_) => {
+        mainActionWorker.on('error', async (_) => {
           resolve()
         })
       })

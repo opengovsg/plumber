@@ -6,19 +6,17 @@ import process from 'process'
 import { createRedisClient } from '@/config/redis'
 import logger from '@/helpers/logger'
 
-import { getActionQueueDetails } from './get-action-queue-details'
-
 const CONNECTION_REFUSED = 'ECONNREFUSED'
 
 interface MakeActionQueueParams {
-  appKey: string
+  queueName: string
+  redisConnectionPrefix?: string
 }
 
 export function makeActionQueue(
-  params?: MakeActionQueueParams,
+  params: MakeActionQueueParams,
 ): QueuePro<IActionJobData> {
-  const { appKey = null } = params ?? {}
-  const { queueName, redisConnectionPrefix } = getActionQueueDetails(appKey)
+  const { queueName, redisConnectionPrefix } = params
 
   const queueOptions: QueueProOptions = { connection: createRedisClient() }
   if (redisConnectionPrefix) {

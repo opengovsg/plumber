@@ -1,18 +1,35 @@
 import apps from '@/apps'
 import { makeActionWorker } from '@/helpers/queues/make-action-worker'
+import {
+  appActionQueues,
+  MAIN_ACTION_QUEUE_NAME,
+  MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+} from '@/queues/action'
 
-// Default worker
-export const defaultActionWorker = makeActionWorker()
+//
+// Worker Storage
+// ---
+// These should only be referenced during setup, debugging and tests.
+//
 
-// App-specific workers
-export const appActionWorkers = new Map<
+// Worker for our main action queue
+export const mainActionWorker = makeActionWorker({
+  queueName: MAIN_ACTION_QUEUE_NAME,
+  redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+})
+
+// Workers for app-specific action queues
+export const appActionWorkers: Record<
   keyof typeof apps,
   ReturnType<typeof makeActionWorker>
->()
+> = Object.create(null)
 for (const [appKey, app] of Object.entries(apps)) {
   if (!app.queue) {
     continue
   }
 
-  appActionWorkers.set(appKey, makeActionWorker({ appKey, config: app.queue }))
+  appActionWorkers[appKey] = makeActionWorker({
+    queueName: appActionQueues[appKey].name,
+    queueConfig: app.queue,
+  })
 }

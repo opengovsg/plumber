@@ -27,13 +27,10 @@ import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 import { processAction } from '@/services/action'
 
-import { getActionQueueDetails } from './get-action-queue-details'
-
 function convertParamsToBullMqOptions(
-  params?: MakeActionWorkerParams,
+  params: MakeActionWorkerParams,
 ) /* inferred type */ {
-  const { appKey, config } = params ?? {}
-  const { queueName, redisConnectionPrefix } = getActionQueueDetails(appKey)
+  const { queueName, redisConnectionPrefix, queueConfig: config } = params
 
   const workerOptions: WorkerProOptions = {
     connection: createRedisClient(),
@@ -71,18 +68,19 @@ function convertParamsToBullMqOptions(
 }
 
 interface MakeActionWorkerParams {
-  appKey: string
-  config: IAppQueue
+  queueName: string
+  redisConnectionPrefix?: string
+  queueConfig?: IAppQueue
 }
 
 /**
- * Creates a app-specific action worker.
+ * Creates a worker for an action queue.
  *
- * To manage complexity, we enforce that all action workers use the same worker
- * processor (i.e. callback) - hence this function.
+ * To keep complexity managable, we enforce that all action queue workers use
+ * the same worker processor / callback - hence this function.
  */
 export function makeActionWorker(
-  params?: MakeActionWorkerParams,
+  params: MakeActionWorkerParams,
 ): WorkerPro<IActionJobData> {
   const { queueName, workerOptions } = convertParamsToBullMqOptions(params)
   const worker = new WorkerPro<IActionJobData>(

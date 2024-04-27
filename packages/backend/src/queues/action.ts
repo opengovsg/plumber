@@ -12,22 +12,31 @@ import { makeActionQueue } from '@/helpers/queues/make-action-queue'
 //
 // Queue storage
 // ---
-// These should only be used for debugging and tests
+// These should only be referenced during setup, debugging and tests.
 //
 
-// Default queue
-export const defaultActionQueue = makeActionQueue()
+// Main action queue
+// Note: Queue naming convention is a little different for legacy reasons.
+export const MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX = '{actionQ}'
+export const MAIN_ACTION_QUEUE_NAME = 'action'
 
-// App-specific queues
-export const appActionQueues = new Map<
+export const mainActionQueue = makeActionQueue({
+  queueName: MAIN_ACTION_QUEUE_NAME,
+  redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+})
+
+// App-specific action queues
+export const appActionQueues: Record<
   keyof typeof apps,
   ReturnType<typeof makeActionQueue>
->()
+> = Object.create(null)
 for (const [appKey, app] of Object.entries(apps)) {
   if (!app.queue) {
     continue
   }
-  appActionQueues.set(appKey, makeActionQueue({ appKey }))
+  appActionQueues[appKey] = makeActionQueue({
+    queueName: `{app-actions-${appKey}}`,
+  })
 }
 
 //
@@ -49,11 +58,11 @@ export async function enqueueActionJob({
   jobData,
   jobOptions,
 }: EnqueueActionJobParams): Promise<JobPro<IActionJobData>> {
-  if (!appActionQueues.has(appKey)) {
-    return await defaultActionQueue.add(jobName, jobData, jobOptions)
+  if (!(appKey in appActionQueues)) {
+    return await mainActionQueue.add(jobName, jobData, jobOptions)
   }
 
-  const appQueue = appActionQueues.get(appKey)
+  const appQueue = appActionQueues[appKey]
   const groupConfig = await apps[appKey].queue.getGroupConfigForJob(jobData)
 
   return await appQueue.add(jobName, jobData, {
@@ -71,10 +80,9 @@ export async function getJob({
   appKey,
   jobId,
 }: GetJobParams): Promise<ReturnType<QueuePro<IActionJobData>['getJob']>> {
-  if (!appActionQueues.has(appKey)) {
-    return await defaultActionQueue.getJob(jobId)
+  if (!(appKey in appActionQueues)) {
+    return await mainActionQueue.getJob(jobId)
   }
 
-  const appQueue = appActionQueues.get(appKey)
-  return await appQueue.getJob(jobId)
+  return await appActionQueues[appKey].getJob(jobId)
 }

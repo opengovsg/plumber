@@ -2,6 +2,11 @@ import '@/workers/action'
 
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
+import {
+  MAIN_ACTION_QUEUE_NAME,
+  MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+} from '@/queues/action'
+
 //
 // See integration test (action.itest.ts) for tests related to the worker
 // processor.
@@ -37,27 +42,34 @@ describe('action workers', () => {
     vi.restoreAllMocks()
   })
 
-  it('creates the default action worker', () => {
-    expect(mocks.makeActionWorker).toHaveBeenCalledWith() // at least one no argument call.
+  it('creates the main  action worker', () => {
+    expect(mocks.makeActionWorker).toHaveBeenCalledWith({
+      queueName: MAIN_ACTION_QUEUE_NAME,
+      redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+    })
   })
 
   it('creates a worker for each app that has their own action queue', () => {
     expect(mocks.makeActionWorker).toHaveBeenCalledWith({
-      appKey: 'app-with-queue-1',
-      config: { stubQueueConfig: 1 },
+      queueName: '{app-actions-app-with-queue-1}',
+      queueConfig: { stubQueueConfig: 1 },
     })
     expect(mocks.makeActionWorker).toHaveBeenCalledWith({
-      appKey: 'app-with-queue-2',
-      config: { stubQueueConfig: 2 },
+      queueName: '{app-actions-app-with-queue-2}',
+      queueConfig: { stubQueueConfig: 2 },
     })
   })
 
   it('does not create action workers for apps that do not have their own queue', () => {
     expect(mocks.makeActionWorker).not.toHaveBeenCalledWith(
-      expect.objectContaining({ appKey: 'app-without-queue-1' }),
+      expect.objectContaining({
+        queueName: '{app-actions-app-without-queue-1}',
+      }),
     )
     expect(mocks.makeActionWorker).not.toHaveBeenCalledWith(
-      expect.objectContaining({ appKey: 'app-without-queue-2' }),
+      expect.objectContaining({
+        queueName: '{app-actions-app-without-queue-2}',
+      }),
     )
   })
 })
