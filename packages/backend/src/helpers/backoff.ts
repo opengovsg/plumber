@@ -1,45 +1,15 @@
 import { type WorkerProOptions } from '@taskforcesh/bullmq-pro'
 
-import RetriableError from '@/errors/retriable-error'
+import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
 
 import logger from './logger'
-
-export const INITIAL_DELAY_MS = 3000
-
-function computeInitialDelay(err: Error): number {
-  if (!(err instanceof RetriableError)) {
-    logger.error('Triggered BullMQ retry without RetriableError', {
-      event: 'bullmq-retry-without-retriable-error',
-    })
-    return INITIAL_DELAY_MS
-  }
-
-  // Non-step delay types should be rate limited using BullMQ's rateLimitQueue
-  // or rateLimitGroup functions inside the job processor function. We should
-  // never have reached here.
-  if (err.delayType !== 'step') {
-    logger.error(
-      'Triggered BullMQ retry with RetriableError of the wrong delay type',
-      {
-        event: 'bullmq-retry-wrong-delay-type',
-        delayType: err.delayType,
-      },
-    )
-  }
-
-  return err.delayInMs === 'default'
-    ? INITIAL_DELAY_MS
-    : // Take max to prevent stuff like 10ms delay causing effectively zero
-      // backoff.
-      Math.max(INITIAL_DELAY_MS, err.delayInMs)
-}
 
 type BackoffStrategy = WorkerProOptions['settings']['backoffStrategy']
 export const exponentialBackoffWithJitter: BackoffStrategy = function (
   attemptsMade,
   _type,
   err,
-  job,
+  _job,
 ): number {
   // This implements FullJitter-like jitter, with the following changes:
   //
@@ -51,16 +21,23 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   // Reference:
   // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 
-  const initialDelay = computeInitialDelay(err)
+  // Sanity checks first...
+  if (!(err instanceof RetriableError)) {
+    logger.error('Triggered BullMQ retry without RetriableError', {
+      event: 'bullmq-retry-without-retriable-error',
+    })
+  } else if (err.delayType !== 'step') {
+    logger.error(
+      'Triggered BullMQ retry with RetriableError of the wrong delay type',
+      {
+        event: 'bullmq-retry-wrong-delay-type',
+        delayType: err.delayType,
+      },
+    )
+  }
 
+  const initialDelay =
+    err instanceof RetriableError ? err.delayInMs : DEFAULT_DELAY_MS
   const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay
-  const totalDelay = prevFullDelay + Math.round(Math.random() * prevFullDelay)
-  logger.info('Job delay calculation', {
-    flowId: job?.data?.flowId,
-    executionId: job?.data?.executionId,
-    stepId: job?.data?.stepId,
-    attemptsMade,
-    delay: totalDelay,
-  })
-  return totalDelay
+  return prevFullDelay + Math.round(Math.random() * prevFullDelay)
 }

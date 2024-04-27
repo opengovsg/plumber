@@ -16,6 +16,9 @@ import {
 export const mainActionWorker = makeActionWorker({
   queueName: MAIN_ACTION_QUEUE_NAME,
   redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+  queueConfig: {
+    isQueuePausable: false,
+  },
 })
 
 // Workers for app-specific action queues

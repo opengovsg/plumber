@@ -1,7 +1,12 @@
-import type { IApp, IJSONObject } from '@plumber/types'
+import type { IActionJobData, IApp, IJSONObject } from '@plumber/types'
 
-import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
+import {
+  type JobPro,
+  UnrecoverableError,
+  WorkerPro,
+} from '@taskforcesh/bullmq-pro'
 import type { AxiosError } from 'axios'
+import { type Span } from 'dd-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
@@ -9,7 +14,30 @@ import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import Step from '@/models/step'
 
-import { doesActionProcessFiles, handleErrorAndThrow } from '../actions'
+import { doesActionProcessFiles, handleFailedStepAndThrow } from '../actions'
+
+const mocks = vi.hoisted(() => ({
+  workerRateLimit: vi.fn(),
+  workerRateLimitGroup: vi.fn(),
+  setExecutionStatus: vi.fn(),
+  addSpanTags: vi.fn(),
+}))
+
+const MOCK_CONTEXT = {
+  isQueuePausable: false,
+  span: {
+    addTags: mocks.addSpanTags,
+  } as unknown as Span,
+  worker: {
+    rateLimit: mocks.workerRateLimit,
+    rateLimitGroup: mocks.workerRateLimitGroup,
+  } as unknown as WorkerPro<IActionJobData>,
+  job: {
+    attemptsMade: 1,
+  } as unknown as JobPro<IActionJobData>,
+} satisfies Parameters<typeof handleFailedStepAndThrow>[0]['context']
+
+const BULLMQ_RATE_LIMIT_ERROR = WorkerPro.RateLimitError()
 
 vi.mock('@/apps', () => ({
   default: {
@@ -27,46 +55,52 @@ vi.mock('@/apps', () => ({
   },
 }))
 
+vi.mock('@/models/execution', () => ({
+  default: {
+    setStatus: mocks.setExecutionStatus,
+  },
+}))
+
 describe('action helper functions', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
-  describe('file processing', () => {
-    it('returns true for actions that process files', async () => {
-      const result = await doesActionProcessFiles({
+  describe('doesActionProcessFiles', () => {
+    it('returns true for actions that process files', () => {
+      const result = doesActionProcessFiles({
         appKey: 'test-app',
         key: 'action1',
       } as Step)
       expect(result).toEqual(true)
     })
 
-    it('returns false for actions that do not process files', async () => {
-      const result = await doesActionProcessFiles({
+    it('returns false for actions that do not process files', () => {
+      const result = doesActionProcessFiles({
         appKey: 'test-app',
         key: 'action2',
       } as Step)
       expect(result).toEqual(false)
     })
 
-    it('assumes that action does not process files if flag is not specified', async () => {
-      const result = await doesActionProcessFiles({
+    it('assumes that action does not process files if flag is not specified', () => {
+      const result = doesActionProcessFiles({
         appKey: 'legacy-app',
         key: 'action1',
       } as Step)
       expect(result).toEqual(false)
     })
 
-    it('returns false for actions that do not exist', async () => {
-      const result = await doesActionProcessFiles({
+    it('returns false for actions that do not exist', () => {
+      const result = doesActionProcessFiles({
         appKey: 'test-app',
         key: 'herp',
       } as Step)
       expect(result).toEqual(false)
     })
 
-    it('returns false for apps that do not exist', async () => {
-      const result = await doesActionProcessFiles({
+    it('returns false for apps that do not exist', () => {
+      const result = doesActionProcessFiles({
         appKey: 'topkek',
         key: 'action1',
       } as Step)
@@ -74,7 +108,7 @@ describe('action helper functions', () => {
     })
   })
 
-  describe('error handling and retry', () => {
+  describe('handleFailedStepAndThrow', () => {
     const EMPTY_HTTP_ERROR = new HttpError({} as unknown as AxiosError)
 
     beforeEach(() => {
@@ -85,185 +119,408 @@ describe('action helper functions', () => {
       vi.useRealTimers()
     })
 
-    it.each([
-      { retryAfter: '31 Oct 2023 00:01:00 GMT', expectedResult: 60000 },
-      { retryAfter: '15', expectedResult: 15000 },
-    ])(
-      'retries if valid Retry-After ($retryAfter) is in headers',
-      ({ retryAfter, expectedResult }) => {
-        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+    describe('HTTPError handling', () => {
+      it.each([
+        { retryAfter: '31 Oct 2023 00:01:00 GMT', expectedResult: 60000 },
+        { retryAfter: '15', expectedResult: 15000 },
+      ])(
+        'retries if valid Retry-After ($retryAfter) is in headers',
+        async ({ retryAfter, expectedResult }) => {
+          vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
 
-        const error = new HttpError({
-          response: {
-            headers: {
-              'retry-after': retryAfter,
+          const error = new HttpError({
+            response: {
+              headers: {
+                'retry-after': retryAfter,
+              },
             },
-          },
-        } as unknown as AxiosError)
+          } as unknown as AxiosError)
 
-        try {
-          handleErrorAndThrow({}, error)
-        } catch (e) {
-          expect(e instanceof RetriableError).toEqual(true)
-          expect((e as RetriableError).delayInMs).toEqual(expectedResult)
-        }
-      },
-    )
+          try {
+            await handleFailedStepAndThrow({
+              executionId: 'test-exec-id',
+              errorDetails: {},
+              executionError: error,
+              context: MOCK_CONTEXT,
+            })
+          } catch (e) {
+            if (!(e instanceof RetriableError)) {
+              expect.unreachable()
+            }
+            expect(e.delayInMs).toEqual(expectedResult)
+          }
+        },
+      )
 
-    it.each([
-      { retryAfter: '31 Nov 2023 00:01:00 GMT' },
-      { retryAfter: '2000000' },
-    ])(
-      'does not retry Retry-After ($retryAfter) if wait is too long',
-      ({ retryAfter }) => {
-        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
-        const error = new HttpError({
-          response: {
-            headers: {
-              'retry-after': retryAfter,
+      it.each([
+        { retryAfter: '31 Nov 2023 00:01:00 GMT' },
+        { retryAfter: '2000000' },
+      ])(
+        'does not retry Retry-After ($retryAfter) if wait is too long',
+        async ({ retryAfter }) => {
+          vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+          const error = new HttpError({
+            response: {
+              headers: {
+                'retry-after': retryAfter,
+              },
             },
-          },
-        } as unknown as AxiosError)
+          } as unknown as AxiosError)
 
-        try {
-          handleErrorAndThrow({}, error)
-        } catch (e) {
-          expect(e instanceof UnrecoverableError).toEqual(true)
-          expect(
-            (e as UnrecoverableError).message.endsWith('is too long!'),
-          ).toEqual(true)
-        }
-      },
-    )
+          try {
+            await handleFailedStepAndThrow({
+              executionId: 'test-exec-id',
+              errorDetails: {},
+              executionError: error,
+              context: MOCK_CONTEXT,
+            })
+          } catch (e) {
+            if (!(e instanceof UnrecoverableError)) {
+              expect.unreachable()
+            }
+            expect(e.message.endsWith('is too long!')).toEqual(true)
+          }
+        },
+      )
 
-    it.each([
-      { retryAfter: '' },
-      { retryAfter: 'not a date string derp' },
-      { retryAfter: '-200' },
-    ])(
-      'does not retry Retry-After if value ("$retryAfter") is invalid',
-      ({ retryAfter }) => {
-        vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
-        const error = new HttpError({
-          response: {
-            headers: {
-              'retry-after': retryAfter,
+      it.each([
+        { retryAfter: '' },
+        { retryAfter: 'not a date string derp' },
+        { retryAfter: '-200' },
+      ])(
+        'does not retry Retry-After if value ("$retryAfter") is invalid',
+        async ({ retryAfter }) => {
+          vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
+          const error = new HttpError({
+            response: {
+              headers: {
+                'retry-after': retryAfter,
+              },
             },
-          },
-        } as unknown as AxiosError)
+          } as unknown as AxiosError)
 
-        expect(() => handleErrorAndThrow({}, error)).toThrowError(
-          UnrecoverableError,
-        )
-      },
-    )
+          await expect(
+            handleFailedStepAndThrow({
+              executionId: 'test-exec-id',
+              errorDetails: {},
+              executionError: error,
+              context: MOCK_CONTEXT,
+            }),
+          ).rejects.toThrowError(UnrecoverableError)
+        },
+      )
 
-    it.each([504, 429])('retries some http status codes (%d)', (code) => {
-      expect(() =>
-        handleErrorAndThrow(
-          {},
-          new HttpError({
+      it.each([504, 429])(
+        'retries some http status codes (%d)',
+        async (code) => {
+          const error = new HttpError({
             response: {
               status: code,
             },
-          } as unknown as AxiosError),
-        ),
-      ).toThrowError(RetriableError)
-    })
+          } as unknown as AxiosError)
+          await expect(
+            handleFailedStepAndThrow({
+              executionId: 'test-exec-id',
+              errorDetails: {},
+              executionError: error,
+              context: MOCK_CONTEXT,
+            }),
+          ).rejects.toThrowError(RetriableError)
+        },
+      )
 
-    it.each([
-      { details: { error: 'read ECONNRESET' } },
-      { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
-    ])(
-      'retries errors with retriable messages ($details.error)',
-      (errorDetails: IJSONObject) => {
-        expect(() =>
-          handleErrorAndThrow(errorDetails, EMPTY_HTTP_ERROR),
-        ).toThrowError(RetriableError)
-      },
-    )
-
-    it.each([
-      {
-        stepError: new StepError(
-          'http-step-error',
-          'test solution',
-          1,
-          'test-app',
-          new HttpError({
-            response: {
-              headers: {
-                'retry-after': '15',
-              },
-            },
-          } as unknown as AxiosError),
-        ),
-        isRetried: true,
-      },
-      {
-        stepError: new StepError(
-          'non-http-step-error',
-          'test solution',
-          1,
-          'test-app',
-        ),
-        isRetried: false,
-      },
-    ])('inspects the cause in StepError', ({ stepError, isRetried }) => {
-      const expectedErrorType = isRetried ? RetriableError : UnrecoverableError
-      expect(() => handleErrorAndThrow({}, stepError)).toThrowError(
-        expectedErrorType,
+      it.each([
+        { details: { error: 'read ECONNRESET' } },
+        { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
+      ])(
+        'retries errors with retriable messages ($details.error)',
+        async (errorDetails: IJSONObject) => {
+          await expect(
+            handleFailedStepAndThrow({
+              executionId: 'test-exec-id',
+              errorDetails: errorDetails,
+              executionError: EMPTY_HTTP_ERROR,
+              context: MOCK_CONTEXT,
+            }),
+          ).rejects.toThrowError(RetriableError)
+        },
       )
     })
 
-    it.each([
-      {
-        errorDetails: {
-          status: 500,
-          details: { description: 'Internal Server Error' },
+    describe('RetriableError handling', () => {
+      it('pauses the queue if delayType is queue and the queue is pausable', async () => {
+        try {
+          await handleFailedStepAndThrow({
+            executionId: 'test-exec-id',
+            errorDetails: {},
+            executionError: new RetriableError({
+              error: 'test error',
+              delayInMs: 100,
+              delayType: 'queue',
+            }),
+            context: {
+              ...MOCK_CONTEXT,
+              isQueuePausable: true,
+            },
+          })
+        } catch (e) {
+          expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
+          expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
+
+          expect(mocks.workerRateLimit).toBeCalledWith(100)
+          expect(mocks.workerRateLimitGroup).not.toBeCalled()
+        }
+      })
+
+      it('does not pause the queue if delayType is queue but queue is not pausable', async () => {
+        await expect(
+          handleFailedStepAndThrow({
+            executionId: 'test-exec-id',
+            errorDetails: {},
+            executionError: new RetriableError({
+              error: 'test error',
+              delayInMs: 100,
+              delayType: 'queue',
+            }),
+            context: MOCK_CONTEXT,
+          }),
+        ).rejects.toThrow(RetriableError)
+
+        expect(mocks.workerRateLimit).not.toBeCalled()
+        expect(mocks.workerRateLimitGroup).not.toBeCalled()
+      })
+
+      it("pauses the job's group if delayType is group", async () => {
+        const job = {
+          opts: {
+            group: {
+              id: 'test-group',
+            },
+          },
+        } as unknown as JobPro<IActionJobData>
+
+        try {
+          await handleFailedStepAndThrow({
+            executionId: 'test-exec-id',
+            errorDetails: {},
+            executionError: new RetriableError({
+              error: 'test error',
+              delayInMs: 100,
+              delayType: 'group',
+            }),
+            context: {
+              ...MOCK_CONTEXT,
+              job,
+            },
+          })
+        } catch (e) {
+          expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
+          expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
+
+          expect(mocks.workerRateLimitGroup).toBeCalledWith(job, 100)
+          expect(mocks.workerRateLimit).not.toBeCalled()
+        }
+      })
+
+      it('does not pause the group if delayType is group but job does not have a group', async () => {
+        await expect(
+          handleFailedStepAndThrow({
+            executionId: 'test-exec-id',
+            errorDetails: {},
+            executionError: new RetriableError({
+              error: 'test error',
+              delayInMs: 100,
+              delayType: 'group',
+            }),
+            context: MOCK_CONTEXT,
+          }),
+        ).rejects.toThrow(RetriableError)
+
+        expect(mocks.workerRateLimit).not.toBeCalled()
+        expect(mocks.workerRateLimitGroup).not.toBeCalled()
+      })
+
+      it('throws the original RetriableError if delayType is step', async () => {
+        const error = new RetriableError({
+          error: 'test error',
+          delayInMs: 100,
+          delayType: 'group',
+        })
+
+        await expect(
+          handleFailedStepAndThrow({
+            executionId: 'test-exec-id',
+            errorDetails: {},
+            executionError: error,
+            context: {
+              ...MOCK_CONTEXT,
+            },
+          }),
+        ).rejects.toThrow(error)
+      })
+    })
+
+    describe('other error type handling', () => {
+      it.each([
+        {
+          stepError: new StepError(
+            'http-step-error',
+            'test solution',
+            1,
+            'test-app',
+            new HttpError({
+              response: {
+                headers: {
+                  'retry-after': '15',
+                },
+              },
+            } as unknown as AxiosError),
+          ),
+          isRetried: true,
         },
-        executionError: EMPTY_HTTP_ERROR,
-      },
-      {
-        errorDetails: { error: 'connect ECONNREFUSED 1.2.3.4' },
-        executionError: EMPTY_HTTP_ERROR,
-      },
-      {
-        errorDetails: { error: 'no type for some reason' },
-        executionError: EMPTY_HTTP_ERROR,
-      },
-      // Edge case: empty error details
-      { errorDetails: {}, executionError: EMPTY_HTTP_ERROR },
-      // Edge cases: non-error-type execution error
-      {
-        errorDetails: { error: 'loong was here' },
-        executionError: 'some string',
-      },
-      {
-        errorDetails: { error: 'loong was here' },
-        executionError: 42,
-      },
-      {
-        errorDetails: { error: 'loong was here' },
-        executionError: null,
-      },
-      {
-        errorDetails: { error: 'loong was here' },
-        executionError: undefined,
-      },
-    ])(
-      'does not retry other types of errors',
-      ({
-        errorDetails,
-        executionError,
-      }: {
-        errorDetails: IJSONObject
-        executionError: unknown
-      }) => {
-        expect(() =>
-          handleErrorAndThrow(errorDetails, executionError),
-        ).toThrowError(UnrecoverableError)
-      },
-    )
+        {
+          stepError: new StepError(
+            'non-http-step-error',
+            'test solution',
+            1,
+            'test-app',
+          ),
+          isRetried: false,
+        },
+      ])(
+        'unpacks the original error if it gets a StepError',
+        async ({ stepError, isRetried }) => {
+          const expectedErrorType = isRetried
+            ? RetriableError
+            : UnrecoverableError
+          await expect(
+            handleFailedStepAndThrow({
+              executionId: 'test-exec-id',
+              errorDetails: {},
+              executionError: stepError,
+              context: MOCK_CONTEXT,
+            }),
+          ).rejects.toThrowError(expectedErrorType)
+        },
+      )
+
+      it.each([
+        {
+          errorDetails: {
+            status: 500,
+            details: { description: 'Internal Server Error' },
+          },
+          executionError: EMPTY_HTTP_ERROR,
+        },
+        {
+          errorDetails: { error: 'connect ECONNREFUSED 1.2.3.4' },
+          executionError: EMPTY_HTTP_ERROR,
+        },
+        {
+          errorDetails: { error: 'no type for some reason' },
+          executionError: EMPTY_HTTP_ERROR,
+        },
+        // Edge case: empty error details
+        { errorDetails: {}, executionError: EMPTY_HTTP_ERROR },
+        // Edge cases: non-error-type execution error
+        {
+          errorDetails: { error: 'loong was here' },
+          executionError: 'some string',
+        },
+        {
+          errorDetails: { error: 'loong was here' },
+          executionError: 42,
+        },
+        {
+          errorDetails: { error: 'loong was here' },
+          executionError: null,
+        },
+        {
+          errorDetails: { error: 'loong was here' },
+          executionError: undefined,
+        },
+      ])(
+        'does not retry other types of errors',
+        async ({
+          errorDetails,
+          executionError,
+        }: {
+          errorDetails: IJSONObject
+          executionError: unknown
+        }) => {
+          await expect(
+            handleFailedStepAndThrow({
+              executionId: 'test-exec-id',
+              errorDetails,
+              executionError,
+              context: MOCK_CONTEXT,
+            }),
+          ).rejects.toThrowError(UnrecoverableError)
+        },
+      )
+    })
+
+    describe('context updating', () => {
+      it.each([
+        {
+          executionError: new RetriableError({
+            error: 'test error',
+            delayInMs: 100,
+            delayType: 'step',
+          }),
+          expectedTagValue: 'true',
+        },
+        {
+          executionError: new UnrecoverableError('topkek'),
+          expectedTagValue: 'false',
+        },
+      ])(
+        'adds the appropriate willRetry tag to the span',
+        async ({ executionError, expectedTagValue }) => {
+          await expect(
+            handleFailedStepAndThrow({
+              executionId: 'test-exec-id',
+              errorDetails: {},
+              executionError,
+              context: MOCK_CONTEXT,
+            }),
+          ).rejects.toThrow()
+          expect(mocks.addSpanTags).toBeCalledWith({
+            willRetry: expectedTagValue,
+          })
+        },
+      )
+
+      it('sets execution status to failure if error is not retried', async () => {
+        await expect(
+          handleFailedStepAndThrow({
+            executionId: 'test-exec-id',
+            errorDetails: {},
+            executionError: new UnrecoverableError('herp derp'),
+            context: MOCK_CONTEXT,
+          }),
+        ).rejects.toThrow()
+        expect(mocks.setExecutionStatus).toBeCalledWith(
+          'test-exec-id',
+          'failure',
+        )
+      })
+
+      it('does not set execution status if error is retried', async () => {
+        await expect(
+          handleFailedStepAndThrow({
+            executionId: 'test-exec-id',
+            errorDetails: {},
+            executionError: new RetriableError({
+              error: 'test error',
+              delayInMs: 100,
+              delayType: 'step',
+            }),
+            context: MOCK_CONTEXT,
+          }),
+        ).rejects.toThrow()
+        expect(mocks.setExecutionStatus).not.toBeCalled()
+      })
+    })
   })
 })

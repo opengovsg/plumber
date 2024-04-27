@@ -1,5 +1,7 @@
 import BaseError from './base'
 
+export const DEFAULT_DELAY_MS = 3000
+
 interface RetriableErrorParams {
   error: ConstructorParameters<typeof BaseError>[0]
   delayInMs: number | 'default'
@@ -28,15 +30,16 @@ interface RetriableErrorParams {
  * This error is typically thrown in these 2 places:
  * 1. Explicitly thrown by action code in response to some app-specific event
  *    (e.g. rate limited by M365).
- * 2. Default action error handler (`handleErrorAndThrow`).
+ * 2. Default action error handler (`handleFailedStepAndThrow`).
  */
 export default class RetriableError extends BaseError {
-  delayInMs: RetriableErrorParams['delayInMs']
+  delayInMs: number
   delayType: RetriableErrorParams['delayType']
 
   constructor({ error, delayInMs, delayType }: RetriableErrorParams) {
     super(error)
-    this.delayInMs = delayInMs
+
+    this.delayInMs = delayInMs === 'default' ? DEFAULT_DELAY_MS : delayInMs
     this.delayType = delayType
   }
 }

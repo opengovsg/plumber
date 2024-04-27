@@ -42,10 +42,13 @@ describe('action workers', () => {
     vi.restoreAllMocks()
   })
 
-  it('creates the main  action worker', () => {
+  it('creates the worker for the main action queue and makes it unpausable', () => {
     expect(mocks.makeActionWorker).toHaveBeenCalledWith({
       queueName: MAIN_ACTION_QUEUE_NAME,
       redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
+      queueConfig: {
+        isQueuePausable: false,
+      },
     })
   })
 
