@@ -6,6 +6,8 @@ import { ZodError } from 'zod'
 import StepError, { GenericSolution } from '@/errors/step'
 import { firstZodParseError } from '@/helpers/zod-utils'
 
+import { formatBigJsErrorMessage } from '../../common/format-bigjs-error-message'
+
 import { fields, fieldSchema } from './fields'
 
 const action = {
@@ -46,9 +48,16 @@ const action = {
           $.step.position,
           $.app.name,
         )
+      } else if (error instanceof Error) {
+        throw new StepError(
+          `Error performing rounding: '${formatBigJsErrorMessage(error)}'`,
+          'Ensure that you have entered valid numbers.',
+          $.step.position,
+          $.app.name,
+        )
       } else {
         throw new StepError(
-          `Error performing rounding: '${error.message}'`,
+          `Error performing rounding`,
           'Ensure that you have entered valid numbers.',
           $.step.position,
           $.app.name,

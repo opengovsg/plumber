@@ -1,9 +1,12 @@
 import type { IRawAction } from '@plumber/types'
 
+import Big from 'big.js'
 import { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
 import { firstZodParseError } from '@/helpers/zod-utils'
+
+import { formatBigJsErrorMessage } from '../../common/format-bigjs-error-message'
 
 import { fields, fieldSchema } from './fields'
 
@@ -15,36 +18,30 @@ const action = {
 
   async run($) {
     try {
-      const { firstNumber, op, secondNumber } = fieldSchema.parse(
-        $.step.parameters,
-      )
+      const parsedParams = fieldSchema.parse($.step.parameters)
+      const firstNumber = new Big(parsedParams.firstNumber)
+      const op = parsedParams.op
+      const secondNumber = new Big(parsedParams.secondNumber)
 
-      let result = 0
+      let result = new Big(0)
       switch (op) {
         case 'add':
-          result = firstNumber + secondNumber
+          result = firstNumber.plus(secondNumber)
           break
         case 'subtract':
-          result = firstNumber - secondNumber
+          result = firstNumber.minus(secondNumber)
           break
         case 'multiply':
-          result = firstNumber * secondNumber
+          result = firstNumber.mul(secondNumber)
           break
         case 'divide':
-          result = firstNumber / secondNumber
+          result = firstNumber.div(secondNumber)
           break
-      }
-
-      if (isNaN(result) || !isFinite(result)) {
-        // e.g. division by 0
-        throw new Error(
-          `${firstNumber} ${op} ${secondNumber} did not yield a valid calculation`,
-        )
       }
 
       $.setActionItem({
         raw: {
-          result,
+          result: result.toString(),
         },
       })
     } catch (error) {
@@ -55,9 +52,16 @@ const action = {
           $.step.position,
           $.app.name,
         )
+      } else if (error instanceof Error) {
+        throw new StepError(
+          `Error performing calculation: '${formatBigJsErrorMessage(error)}'`,
+          'Ensure that you have entered valid numbers.',
+          $.step.position,
+          $.app.name,
+        )
       } else {
         throw new StepError(
-          `Error performing calculation: '${error.message}'`,
+          'Error performing calculation',
           'Ensure that you have entered valid numbers.',
           $.step.position,
           $.app.name,

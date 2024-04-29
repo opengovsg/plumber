@@ -33,19 +33,19 @@ describe('perform calculation', () => {
   it.each([
     {
       params: { firstNumber: '3.25', op: 'add', secondNumber: '5' },
-      expectedResult: 8.25,
+      expectedResult: '8.25',
     },
     {
       params: { firstNumber: '3.25', op: 'subtract', secondNumber: '5' },
-      expectedResult: -1.75,
+      expectedResult: '-1.75',
     },
     {
       params: { firstNumber: '3.25', op: 'multiply', secondNumber: '1.5' },
-      expectedResult: 4.875,
+      expectedResult: '4.875',
     },
     {
       params: { firstNumber: '-108.375', op: 'divide', secondNumber: '8.5' },
-      expectedResult: -12.75,
+      expectedResult: '-12.75',
     },
   ])(
     'can $params.op $params.firstNumber with $params.secondNumber',
@@ -96,7 +96,9 @@ describe('perform calculation', () => {
           expect.unreachable()
         } else {
           expect(err.message).toEqual(
-            expect.stringContaining('did not yield a valid calculation'),
+            expect.stringContaining(
+              "Error performing calculation: 'Division by zero'",
+            ),
           )
         }
       }
