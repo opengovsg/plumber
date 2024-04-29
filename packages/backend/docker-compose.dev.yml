@@ -38,13 +38,13 @@ services:
     volumes:
       - plumber-minio:/data
     healthcheck:
-      test: ["CMD", "curl", "-I", "http://minio:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-I', 'http://minio:9000/minio/health/live']
       interval: 1s
       retries: 5
   create-minio-buckets:
     image: bitnami/minio-client:latest
     volumes:
-      - ../frontend/src/assets/logo.svg:/assets/plumber-logo.svg
+      - ../frontend/src/assets/plumber-logo.jpg:/assets/plumber-logo.jpg
     depends_on:
       minio:
         condition: service_healthy
@@ -54,7 +54,7 @@ services:
       mc alias set local http://minio:9000 minio-username minio-password &&
       mc mb --ignore-existing plumber-minio/plumber-development-common-bucket &&
       echo 'bucket created' &&
-      mc put /assets/plumber-logo.svg local/plumber-development-common-bucket &&
+      mc put /assets/plumber-logo.jpg local/plumber-development-common-bucket &&
       echo 'logo uploaded to bucket'
       "
   dynamodb:
