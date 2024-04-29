@@ -93,6 +93,7 @@ export interface IExecutionStep {
   jobId?: string
   createdAt: string
   updatedAt: string
+  mockRun: boolean
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
@@ -429,6 +430,7 @@ export interface ITriggerItem {
   meta: {
     internalId: string
   }
+  mockRun?: boolean
 }
 
 export type ITriggerInstructions = Partial<{
@@ -436,6 +438,7 @@ export type ITriggerInstructions = Partial<{
   afterUrlMsg: string
   hideWebhookUrl: boolean
   errorMsg: string
+  mockDataMsg: string
 }>
 
 // TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2

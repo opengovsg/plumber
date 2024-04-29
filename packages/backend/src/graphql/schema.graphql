@@ -241,6 +241,7 @@ type ExecutionStep {
   errorDetails: JSONObject
   createdAt: String
   updatedAt: String
+  mockRun: Boolean
 }
 
 type Field {
@@ -484,6 +485,7 @@ type TriggerInstructions {
   afterUrlMsg: String
   hideWebhookUrl: Boolean
   errorMsg: String
+  mockDataMsg: String
 }
 
 type StepTransferDetails {

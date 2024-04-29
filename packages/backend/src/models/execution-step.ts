@@ -15,6 +15,7 @@ class ExecutionStep extends Base {
   appKey: string
   jobId: string
   step: Step
+  mockRun: boolean
 
   static tableName = 'execution_steps'
 

@@ -3,6 +3,8 @@ import { IGlobalVariable } from '@plumber/types'
 import { DateTime } from 'luxon'
 import { customAlphabet } from 'nanoid/async'
 
+import { COMMON_S3_BUCKET } from '@/helpers/s3'
+
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
 type FormField = {
@@ -11,6 +13,9 @@ type FormField = {
     _id: string
   }>
 }
+
+const MOCK_ATTACHMENT_FILE_PATH = `s3:${COMMON_S3_BUCKET}:submission_id/form_field_id/Logo.jpg`
+// const MOCK_ATTACHMENT_FILE_PATH = `s3:${COMMON_S3_BUCKET}:Logo.jpg`
 
 async function getMockData($: IGlobalVariable) {
   try {
@@ -24,6 +29,9 @@ async function getMockData($: IGlobalVariable) {
     const formFields = formDetails.form.form_fields as Array<FormField>
     for (let i = 0; i < formFields.length; i++) {
       if (data.responses[formFields[i]._id]) {
+        if (data.responses[formFields[i]._id].question === 'Attachment') {
+          data.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
+        }
         data.responses[formFields[i]._id].order = i + 1
         data.responses[formFields[i]._id].id = undefined
       }
