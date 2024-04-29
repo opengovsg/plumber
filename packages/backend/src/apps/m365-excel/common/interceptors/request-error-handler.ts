@@ -3,6 +3,8 @@ import type { IApp } from '@plumber/types'
 import RetriableError from '@/errors/retriable-error'
 import logger from '@/helpers/logger'
 
+import { getGraphApiType, GraphApiType } from '../graph-api-type'
+
 type ThrowingHandler = (
   ...args: Parameters<IApp['requestErrorHandler']>
 ) => never
@@ -17,21 +19,17 @@ const handle429: ThrowingHandler = ($, error) => {
   //
   // https://learn.microsoft.com/en-us/graph/workbook-best-practice?tabs=http#reduce-throttling-errors
   //
-  // Excel endpoints are uniquely identified by the `/workbook/` url segment.
-  //
-  // FIXME (ogp-weeloong): eval if we can remove this and just retry _all_ 429s
-  // once we get bullmq pro in.
-  if (error.response.config.url.includes('/workbook/')) {
+  // Since they apply per-file, we delay the group when retrying.
+  if (getGraphApiType(error.response.config.url) === GraphApiType.Excel) {
     const retryAfterMs = Number(error.response?.headers?.['retry-after']) * 1000
-    // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
     throw new RetriableError({
       error: 'Retrying HTTP 429 from Excel endpoint',
-      delayType: 'step',
+      delayType: 'group',
       delayInMs: isNaN(retryAfterMs) ? 'default' : retryAfterMs,
     })
   }
 
-  // A 429 response is considered a SEV-2+ incident for some tenants; log it
+  // A 429 response may be considered a SEV-2+ incident for some tenants; log it
   // explicitly so that we can easily trigger incident creation from DD.
   logger.error('Received HTTP 429 from MS Graph', {
     event: 'm365-http-429',
@@ -43,7 +41,8 @@ const handle429: ThrowingHandler = ($, error) => {
     executionId: $.execution?.id,
   })
 
-  // We don't want to retry 429s from M365, so convert it into a non-HttpError.
+  // We don't want to retry non-excel 429s from M365, so convert it into a
+  // non-HttpError.
   throw new Error('Rate limited by Microsoft Graph.')
 }
 
@@ -64,11 +63,11 @@ const handle503: ThrowingHandler = function ($, error) {
 
   // Microsoft _sometimes_ specifies a Retry-After when it returns 503.
   const retryAfterMs = Number(error.response?.headers?.['retry-after']) * 1000
-
-  // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
   throw new RetriableError({
     error: 'Encountered HTTP 503 from MS',
     delayInMs: isNaN(retryAfterMs) ? 'default' : retryAfterMs,
+    // From past data, 503s happen only for a single request, so we can just
+    // retry this individual step instead of jamming the group.
     delayType: 'step',
   })
 }

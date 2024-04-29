@@ -7,110 +7,61 @@ import {
   RateLimiterUnion,
 } from 'rate-limiter-flexible'
 
-import {
-  M365_STEPS_LIMIT_PER_SEC,
-  M365TenantKey,
-} from '@/config/app-env-vars/m365'
+import { M365TenantKey } from '@/config/app-env-vars/m365'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
-import RetriableError from '@/errors/retriable-error'
 import logger from '@/helpers/logger'
 
-// Based on agreement with Govtech team. For simplicity, we'll apply the same
-// rate limits to all other tenants.
-const M365_RATE_LIMITS = Object.freeze({
-  graphApi: {
-    points: 13000,
-    durationSeconds: 10,
-  },
-  sharePointPerMinute: {
-    points: 300,
-    durationSeconds: 60,
-  },
-  sharePointPerDay: {
-    points: 300000,
-    durationSeconds: 60 * 60 * 24,
-  },
-  excel: {
-    points: 150,
-    durationSeconds: 10,
-  },
-})
+import { getGraphApiType, GraphApiType } from './graph-api-type'
 
 const redisClient = createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)
 
-const graphApiLimiter = new RateLimiterRedis({
-  points: M365_RATE_LIMITS.graphApi.points,
-  duration: M365_RATE_LIMITS.graphApi.durationSeconds,
-  keyPrefix: 'm365-graph',
-  storeClient: redisClient,
+// Limits are based on agreement with Govtech team. For simplicity, we'll apply
+// the same rate limits to all other tenants.
+const M365_BASE_RATE_LIMITS = Object.freeze({
+  graphApi: new RateLimiterRedis({
+    points: 13000,
+    duration: 10,
+    keyPrefix: 'm365-graph',
+    storeClient: redisClient,
+  }),
+  sharePointPerMinute: new RateLimiterRedis({
+    points: 300,
+    duration: 60,
+    keyPrefix: 'm365-sharepoint-per-min',
+    storeClient: redisClient,
+  }),
+  sharePointPerDay: new RateLimiterRedis({
+    points: 300000,
+    duration: 60 * 60 * 24,
+    keyPrefix: 'm365-sharepoint-per-day',
+    storeClient: redisClient,
+  }),
+  excel: new RateLimiterRedis({
+    points: 150,
+    duration: 10,
+    keyPrefix: 'm365-excel',
+    storeClient: redisClient,
+  }),
 })
 
-const sharePointPerMinuteLimiter = new RateLimiterRedis({
-  points: M365_RATE_LIMITS.sharePointPerMinute.points,
-  duration: M365_RATE_LIMITS.sharePointPerMinute.durationSeconds,
-  keyPrefix: 'm365-sharepoint-per-min',
-  storeClient: redisClient,
-})
-
-const sharePointPerDayLimiter = new RateLimiterRedis({
-  points: M365_RATE_LIMITS.sharePointPerDay.points,
-  duration: M365_RATE_LIMITS.sharePointPerDay.durationSeconds,
-  keyPrefix: 'm365-sharepoint-per-min',
-  storeClient: redisClient,
-})
-
-const excelLimiter = new RateLimiterRedis({
-  points: M365_RATE_LIMITS.excel.points,
-  duration: M365_RATE_LIMITS.excel.durationSeconds,
-  keyPrefix: 'm365-excel',
-  storeClient: redisClient,
-})
-
-// FIXME (ogp-weeloong): it turns out MS Graph cannot tolerate 10 QPS spikes
-// and will reply with HTTP 429 if we do that (even though it's technically
-// within rate limits). This is a workaround to stop these spikes until we get
-// BullMQ pro in, by choking ourselves to at most 1 step per 1 second per
-// file (hypothesis is that Excel can't handle bursts to the same file)
-//
-// Note that we don't throttle test runs to enable users to test pipes with more
-// than 1 excel step. For published pipes, it's not an issue because of
-// auto-retry.
-const perFileStepLimiter = new RateLimiterRedis({
-  points: M365_STEPS_LIMIT_PER_SEC,
-  duration: 1,
-  keyPrefix: 'm365-per-file-step-limiter',
-  storeClient: redisClient,
-})
-export async function throttleStepsForPublishedPipes(
-  $: IGlobalVariable,
-  fileId: string,
-): Promise<void> {
-  if ($.execution?.testRun) {
-    return
-  }
-
-  try {
-    await perFileStepLimiter.consume(fileId, 1)
-  } catch (error) {
-    if (!(error instanceof RateLimiterRes)) {
-      throw error
-    }
-
-    // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
-    throw new RetriableError({
-      error: 'Reached M365 step limit',
-      delayInMs: 'default',
-      delayType: 'step',
-    })
-  }
-}
-
-const unifiedRateLimiter = new RateLimiterUnion(
-  graphApiLimiter,
-  sharePointPerMinuteLimiter,
-  sharePointPerDayLimiter,
-  excelLimiter,
+// SharePoint API calls go through Graph API and SharePoint services.
+const sharePointApiRateLimiter = new RateLimiterUnion(
+  M365_BASE_RATE_LIMITS.graphApi,
+  M365_BASE_RATE_LIMITS.sharePointPerDay,
+  M365_BASE_RATE_LIMITS.sharePointPerMinute,
 )
+
+// Excel API calls go through Graph API, SharePoint and Excel services.
+const excelApiRateLimiter = new RateLimiterUnion(
+  M365_BASE_RATE_LIMITS.graphApi,
+  M365_BASE_RATE_LIMITS.sharePointPerDay,
+  M365_BASE_RATE_LIMITS.sharePointPerMinute,
+  M365_BASE_RATE_LIMITS.excel,
+)
+
+// All other Graph API calls made by this Excel app only go through the Graph
+// API service.
+const graphApiRateLimiter = new RateLimiterUnion(M365_BASE_RATE_LIMITS.graphApi)
 
 type UnionRateLimiterRes = Record<
   IRateLimiterRedisOptions['keyPrefix'],
@@ -144,13 +95,27 @@ function isUnionRateLimiterRes(err: unknown): err is UnionRateLimiterRes {
  * To mitigate this, we expose a function which returns the RateLimiterRes with
  * the longest delay, which is usually what callers want anyway.
  */
-export async function consumeOrThrowLimiterWithLongestDelay(
+export async function checkGraphApiRateLimit(
   $: IGlobalVariable,
   tenantKey: M365TenantKey,
-  points: number,
+  url: string,
 ): Promise<void> {
   try {
-    await unifiedRateLimiter.consume(tenantKey, points)
+    let rateLimiter: RateLimiterUnion | null = null
+
+    switch (getGraphApiType(url)) {
+      case GraphApiType.Excel:
+        rateLimiter = excelApiRateLimiter
+        break
+      case GraphApiType.SharePoint:
+        rateLimiter = sharePointApiRateLimiter
+        break
+      case GraphApiType.Unknown:
+        rateLimiter = graphApiRateLimiter
+        break
+    }
+
+    await rateLimiter.consume(tenantKey, 1)
   } catch (error) {
     if (!isUnionRateLimiterRes(error)) {
       throw error

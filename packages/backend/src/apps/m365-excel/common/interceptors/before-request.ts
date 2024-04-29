@@ -8,7 +8,7 @@ import logger from '@/helpers/logger'
 
 import { MS_GRAPH_OAUTH_BASE_URL } from '../constants'
 import { getAccessToken } from '../oauth/token-cache'
-import { consumeOrThrowLimiterWithLongestDelay } from '../rate-limiter'
+import { checkGraphApiRateLimit } from '../rate-limiter'
 
 // This explicitly overcounts - e.g we will log if the request times out, even
 // we can't confirm that it reached Microsoft. The intent is to assume the worst
@@ -52,10 +52,10 @@ const addAuthToken: TBeforeRequest = async function ($, requestConfig) {
   return requestConfig
 }
 
-// This rate limiting request interceptor is slightly different from the planned
-// plumber-wide rate limiting system; we need to limit per request instead of
-// per action (that's also why this is placed in beforeRequest instead of in the
-// `run` function; an action may need multiple requests).
+// This rate limiting request interceptor is needed despite BullMQ Pro offering
+// rate limiting; we need to limit per request instead of per action (hence
+// placing this in beforeRequest instead of in the `run` function; a single
+// action may need multiple requests).
 const rateLimitCheck: TBeforeRequest = async function ($, requestConfig) {
   const tenantKey = $.auth.data?.tenantKey as string
   if (!isM365TenantKey(tenantKey)) {
@@ -63,17 +63,18 @@ const rateLimitCheck: TBeforeRequest = async function ($, requestConfig) {
   }
 
   try {
-    await consumeOrThrowLimiterWithLongestDelay($, tenantKey, 1)
+    await checkGraphApiRateLimit($, tenantKey, requestConfig.url)
   } catch (error) {
     if (!(error instanceof RateLimiterRes)) {
       return
     }
 
-    // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
+    // Our rate limiters applies app-wide limits, instead of per-file limits.
+    // Thus we need to pause our entire queue if we are rate-limited.
     throw new RetriableError({
       error: 'Reached M365 rate limit',
       delayInMs: error.msBeforeNext,
-      delayType: 'step',
+      delayType: 'queue',
     })
   }
 

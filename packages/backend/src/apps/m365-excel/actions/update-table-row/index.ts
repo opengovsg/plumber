@@ -4,7 +4,6 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
-import { throttleStepsForPublishedPipes } from '../../common/rate-limiter'
 import {
   constructMsGraphValuesArrayForRowWrite,
   convertRowToHexEncodedRowRecord,
@@ -90,9 +89,6 @@ const action: IRawAction = {
 
     const { fileId, tableId, lookupColumn, lookupValue, columnsToUpdate } =
       parametersParseResult.data
-
-    // FIXME (ogp-weeloong): remove when bullMQ Pro lands
-    await throttleStepsForPublishedPipes($, fileId as string)
 
     //
     // Find index of row to update

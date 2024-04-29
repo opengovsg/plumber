@@ -2,7 +2,6 @@ import type { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
-import { throttleStepsForPublishedPipes } from '../../common/rate-limiter'
 import WorkbookSession from '../../common/workbook-session'
 
 import type { DataOut } from './data-out'
@@ -78,9 +77,6 @@ const action: IRawAction = {
 
   async run($) {
     const { fileId, worksheetId, cells: rawCells } = $.step.parameters
-
-    // FIXME (ogp-weeloong): remove when bullMQ Pro lands
-    await throttleStepsForPublishedPipes($, fileId as string)
 
     const cells = (rawCells as Array<{ address: string }>).map((cell) => ({
       address: cell.address.trim(),
