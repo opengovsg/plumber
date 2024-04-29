@@ -4,12 +4,10 @@ import { type SyntheticEvent, useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 import { Flex, FormControl, Text } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
-import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
-import { Badge, FormLabel } from '@opengovsg/design-system-react'
+import { Badge, Button, FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from 'config/flags'
 import { EditorContext } from 'contexts/Editor'
@@ -322,7 +320,14 @@ function ChooseAppAndEventSubstep(
                         ...params.InputProps,
                         endAdornment: (
                           <>
-                            {isWebhook && <Chip label="Instant" />}
+                            {isWebhook && (
+                              <Badge
+                                bgColor="interaction.muted.neutral.active"
+                                color="secondary.600"
+                              >
+                                Instant
+                              </Badge>
+                            )}
 
                             {params.InputProps.endAdornment}
                           </>
@@ -355,7 +360,12 @@ function ChooseAppAndEventSubstep(
                     </Flex>
 
                     {option.type === 'webhook' && (
-                      <Chip label="Instant" sx={{ mr: 3 }} />
+                      <Badge
+                        bgColor="interaction.muted.neutral.active"
+                        color="secondary.600"
+                      >
+                        Instant
+                      </Badge>
                     )}
                   </li>
                 )}
@@ -386,11 +396,10 @@ function ChooseAppAndEventSubstep(
           )}
 
           <Button
-            fullWidth
-            variant="contained"
+            isFullWidth
             onClick={onSubmit}
-            sx={{ mt: 2 }}
-            disabled={!valid || editorContext.readOnly}
+            mt={4}
+            isDisabled={!valid || editorContext.readOnly}
             data-test="flow-substep-continue-button"
           >
             Continue
