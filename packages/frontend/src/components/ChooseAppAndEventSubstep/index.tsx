@@ -33,14 +33,11 @@ type ChooseAppAndEventSubstepProps = {
   isLastStep: boolean
 }
 
-const optionGenerator = (app: {
-  name: string
-  key: string
-  description?: string
-}): { label: string; value: string; description: string } => ({
+const optionGenerator = (app: IApp) /* inferred return type */ => ({
   label: app.name as string,
   value: app.key as string,
   description: app?.description as string,
+  isNewApp: !!app?.isNewApp,
 })
 
 const eventOptionGenerator = (app: {
@@ -85,7 +82,7 @@ function ChooseAppAndEventSubstep(
   )
 
   apps?.sort((a, b) => {
-    if (a.description) {
+    if (a.isNewApp) {
       return -1
     }
     return a.name.localeCompare(b.name)
@@ -270,7 +267,7 @@ function ChooseAppAndEventSubstep(
                 <Flex py={1} flexDir="column">
                   <Flex gap={2} alignItems="center">
                     <Text>{option.label}</Text>
-                    {option.description && (
+                    {option.isNewApp && (
                       <Badge
                         bgColor="interaction.muted.main.active"
                         color="primary.600"
@@ -298,6 +295,7 @@ function ChooseAppAndEventSubstep(
                 label: '',
                 value: '',
                 description: '',
+                isNewApp: false,
               }
             }
             onChange={onAppChange}
