@@ -29,7 +29,7 @@
     "@apollo/server": "4.9.4",
     "@aws-sdk/client-dynamodb": "3.460.0",
     "@aws-sdk/client-s3": "3.369.0",
-    "@bull-board/express": "5.6.0",
+    "@bull-board/express": "5.10.2",
     "@graphql-tools/schema": "10.0.0",
     "@launchdarkly/node-server-sdk": "9.0.4",
     "@opengovsg/formsg-sdk": "0.11.0",
