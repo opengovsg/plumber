@@ -36,7 +36,7 @@ const drawerLinks = [
     Icon: BiLayer,
     text: 'Tiles',
     to: URLS.TILES,
-    badge: '✨ Coming soon',
+    badge: 'New feature',
   },
   {
     Icon: BiSolidGrid,

@@ -54,6 +54,7 @@ export const BORDER_COLOR = {
 
 export const CELL_BOX_SHADOW = {
   ACTIVE: '0 0 0 2px var(--chakra-colors-primary-400)',
+  DEFAULT: '0 0 2px 1px var(--chakra-colors-secondary-400)',
   HOVER: '0 0 0 1px var(--chakra-colors-primary-400)',
 }
 

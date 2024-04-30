@@ -4,12 +4,10 @@ import { type SyntheticEvent, useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 import { Flex, FormControl, Text } from '@chakra-ui/react'
 import Autocomplete from '@mui/material/Autocomplete'
-import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import ListItem from '@mui/material/ListItem'
 import TextField from '@mui/material/TextField'
-import { Badge, FormLabel } from '@opengovsg/design-system-react'
+import { Badge, Button, FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from 'config/flags'
 import { EditorContext } from 'contexts/Editor'
@@ -33,14 +31,11 @@ type ChooseAppAndEventSubstepProps = {
   isLastStep: boolean
 }
 
-const optionGenerator = (app: {
-  name: string
-  key: string
-  description?: string
-}): { label: string; value: string; description: string } => ({
+const optionGenerator = (app: IApp) /* inferred return type */ => ({
   label: app.name as string,
   value: app.key as string,
   description: app?.description as string,
+  isNewApp: !!app?.isNewApp,
 })
 
 const eventOptionGenerator = (app: {
@@ -85,8 +80,14 @@ function ChooseAppAndEventSubstep(
   )
 
   apps?.sort((a, b) => {
-    if (a.description) {
+    if (a.isNewApp && b.isNewApp) {
+      return a.name.localeCompare(b.name)
+    }
+    if (a.isNewApp) {
       return -1
+    }
+    if (b.isNewApp) {
+      return 1
     }
     return a.name.localeCompare(b.name)
   })
@@ -270,7 +271,7 @@ function ChooseAppAndEventSubstep(
                 <Flex py={1} flexDir="column">
                   <Flex gap={2} alignItems="center">
                     <Text>{option.label}</Text>
-                    {option.description && (
+                    {option.isNewApp && (
                       <Badge
                         bgColor="interaction.muted.main.active"
                         color="primary.600"
@@ -298,6 +299,7 @@ function ChooseAppAndEventSubstep(
                 label: '',
                 value: '',
                 description: '',
+                isNewApp: false,
               }
             }
             onChange={onAppChange}
@@ -324,7 +326,14 @@ function ChooseAppAndEventSubstep(
                         ...params.InputProps,
                         endAdornment: (
                           <>
-                            {isWebhook && <Chip label="Instant" />}
+                            {isWebhook && (
+                              <Badge
+                                bgColor="interaction.muted.neutral.active"
+                                color="secondary.600"
+                              >
+                                Instant
+                              </Badge>
+                            )}
 
                             {params.InputProps.endAdornment}
                           </>
@@ -357,7 +366,12 @@ function ChooseAppAndEventSubstep(
                     </Flex>
 
                     {option.type === 'webhook' && (
-                      <Chip label="Instant" sx={{ mr: 3 }} />
+                      <Badge
+                        bgColor="interaction.muted.neutral.active"
+                        color="secondary.600"
+                      >
+                        Instant
+                      </Badge>
                     )}
                   </li>
                 )}
@@ -388,11 +402,10 @@ function ChooseAppAndEventSubstep(
           )}
 
           <Button
-            fullWidth
-            variant="contained"
+            isFullWidth
             onClick={onSubmit}
-            sx={{ mt: 2 }}
-            disabled={!valid || editorContext.readOnly}
+            mt={4}
+            isDisabled={!valid || editorContext.readOnly}
             data-test="flow-substep-continue-button"
           >
             Continue

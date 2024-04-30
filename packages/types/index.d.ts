@@ -354,6 +354,7 @@ export interface IApp {
   actions?: IAction[]
   connections?: IConnection[]
   description?: string
+  isNewApp?: boolean
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this

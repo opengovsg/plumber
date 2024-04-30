@@ -19,6 +19,7 @@ export const GET_APPS = gql`
       primaryColor
       connectionCount
       description
+      isNewApp
       auth {
         connectionType
         connectionRegistrationType

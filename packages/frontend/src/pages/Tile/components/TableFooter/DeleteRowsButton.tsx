@@ -40,6 +40,7 @@ export default function DeleteRowsButton({
         variant="clear"
         size="xs"
         h="100%"
+        color="red.500"
         leftIcon={<BsTrash />}
         onClick={() => setIsDialogOpen(true)}
       >

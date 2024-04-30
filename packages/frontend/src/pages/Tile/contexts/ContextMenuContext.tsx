@@ -85,7 +85,7 @@ export const ContextMenuContextProvider = ({
             />
             <MenuList m={0}>
               <MenuItem
-                icon={<BsTrash />}
+                icon={<BsTrash size={16} />}
                 color="red.500"
                 onClick={() => setIsDeleteModalOpen(true)}
               >

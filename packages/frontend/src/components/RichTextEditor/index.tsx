@@ -36,7 +36,7 @@ import { genVariableInfoMap, substituteOldTemplates } from './utils'
 const RICH_TEXT_EXTENSIONS = [
   StarterKit.configure({
     paragraph: {
-      HTMLAttributes: { style: 'margin: 0px' },
+      HTMLAttributes: { style: 'margin: 0' },
     },
   }),
   Link.configure({
@@ -110,7 +110,7 @@ const Editor = ({
       Document,
       Text,
       Paragraph.configure({
-        HTMLAttributes: { style: 'margin: 0px' },
+        HTMLAttributes: { style: 'margin: 0' },
       }),
       Hardbreak.extend({
         addKeyboardShortcuts() {
