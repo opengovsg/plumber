@@ -170,6 +170,7 @@ type App {
   actions: [Action]
   connections: [Connection]
   description: String
+  isNewApp: Boolean
 }
 
 type AppAuth {

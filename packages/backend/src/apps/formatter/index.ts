@@ -13,6 +13,7 @@ const app: IApp = {
   actions,
   description:
     'Manipulate your data, such as changing date formats or adding days to a date',
+  isNewApp: true,
 }
 
 export default app

@@ -1,5 +1,6 @@
-import { IApp } from '@plumber/types'
+import type { IApp } from '@plumber/types'
 
+import calculatorApp from './calculator'
 import customApiApp from './custom-api'
 import delayApp from './delay'
 import formatterApp from './formatter'
@@ -18,6 +19,7 @@ import vaultWorkspaceApp from './vault-workspace'
 import webhookApp from './webhook'
 
 const apps: Record<string, IApp> = {
+  [calculatorApp.key]: calculatorApp,
   [customApiApp.key]: customApiApp,
   [delayApp.key]: delayApp,
   [formatterApp.key]: formatterApp,
