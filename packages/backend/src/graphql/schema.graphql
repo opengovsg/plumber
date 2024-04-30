@@ -242,7 +242,7 @@ type ExecutionStep {
   errorDetails: JSONObject
   createdAt: String
   updatedAt: String
-  metadata: ExecutionStepMetadata
+  metadata: ExecutionStepMetadata!
 }
 
 type ExecutionStepMetadata {

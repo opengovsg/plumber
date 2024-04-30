@@ -100,7 +100,7 @@ export interface IExecutionStep {
 }
 
 export interface IExecutionStepMetadata {
-  isMock: boolean
+  isMock?: boolean
 }
 
 export interface IExecution {

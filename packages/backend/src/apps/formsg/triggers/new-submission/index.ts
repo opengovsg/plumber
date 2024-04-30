@@ -84,7 +84,8 @@ const trigger: IRawTrigger = {
       meta: {
         internalId: '',
       },
-      isMock: hasNoPastSubmission || lastExecutionStep.metadata.isMock, // use previous mock run status from metadata by default
+      isMock:
+        hasNoPastSubmission || (lastExecutionStep.metadata?.isMock ?? false), // use previous mock run status from metadata by default
     })
   },
 }

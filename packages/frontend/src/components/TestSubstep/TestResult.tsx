@@ -41,7 +41,7 @@ interface TestResultsProps {
   selectedActionOrTrigger: ITrigger | IAction | undefined
   stepsWithVariables: StepWithVariables[]
   isExecuted: boolean
-  isMock: boolean
+  isMock?: boolean
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
@@ -50,7 +50,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     selectedActionOrTrigger,
     stepsWithVariables,
     isExecuted,
-    isMock,
+    isMock = false,
   } = props
 
   // No data only happens if user hasn't executed yet, or step returned null.
