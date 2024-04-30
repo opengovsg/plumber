@@ -41,7 +41,7 @@ interface TestResultsProps {
   selectedActionOrTrigger: ITrigger | IAction | undefined
   stepsWithVariables: StepWithVariables[]
   isExecuted: boolean
-  isMockRun: boolean
+  isMock: boolean
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
@@ -50,7 +50,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     selectedActionOrTrigger,
     stepsWithVariables,
     isExecuted,
-    isMockRun,
+    isMock,
   } = props
 
   // No data only happens if user hasn't executed yet, or step returned null.
@@ -116,7 +116,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     <Box w="100%">
       <Infobox variant="success">
         <Text>
-          {isMockRun && getMockDataMessage(selectedActionOrTrigger)}
+          {isMock && getMockDataMessage(selectedActionOrTrigger)}
           You can use the data below as variables in your action steps below.
         </Text>
       </Infobox>

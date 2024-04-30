@@ -241,7 +241,11 @@ type ExecutionStep {
   errorDetails: JSONObject
   createdAt: String
   updatedAt: String
-  mockRun: Boolean
+  metadata: ExecutionStepMetadata
+}
+
+type ExecutionStepMetadata {
+  isMock: Boolean
 }
 
 type Field {

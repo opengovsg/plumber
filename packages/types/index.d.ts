@@ -93,10 +93,14 @@ export interface IExecutionStep {
   jobId?: string
   createdAt: string
   updatedAt: string
-  mockRun: boolean
+  metadata: IExecutionStepMetadata
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
+}
+
+export interface IExecutionStepMetadata {
+  isMock: boolean
 }
 
 export interface IExecution {
@@ -430,7 +434,7 @@ export interface ITriggerItem {
   meta: {
     internalId: string
   }
-  mockRun?: boolean
+  isMock?: boolean
 }
 
 export type ITriggerInstructions = Partial<{

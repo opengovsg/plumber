@@ -14,7 +14,9 @@ export const EXECUTE_FLOW = gql`
           status
           dataOut
           dataOutMetadata
-          mockRun
+          metadata {
+            isMock
+          }
         }
       }
       data

@@ -32,7 +32,7 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
       dataOut: !error ? triggerItem?.raw : null,
       errorDetails: error,
       appKey: step.appKey,
-      mockRun: triggerItem?.mockRun ?? false,
+      metadata: { isMock: triggerItem?.isMock ?? false },
     })
 
   return { flowId, stepId, executionId: execution.id, executionStep }

@@ -149,7 +149,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
             selectedActionOrTrigger={selectedActionOrTrigger}
             stepsWithVariables={stepsWithVariables}
             isExecuted={isExecuted}
-            isMockRun={executionStep?.executionSteps[0].mockRun}
+            isMock={executionStep?.executionSteps[0].metadata.isMock}
           />
 
           <LoadingButton
