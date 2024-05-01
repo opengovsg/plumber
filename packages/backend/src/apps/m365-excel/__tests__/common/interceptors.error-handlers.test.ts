@@ -151,7 +151,7 @@ describe('M365 request error handlers', () => {
     )
   })
 
-  it('logs an error and throws a non-retriable error on 429 from non-excel endpoint', async () => {
+  it('logs an error and jams the entire queue on 429 from non-excel endpoint', async () => {
     mockAxiosAdapterToThrowOnce(429, { 'retry-after': 123 })
     await http
       .get('/test-url')
@@ -159,8 +159,8 @@ describe('M365 request error handlers', () => {
         expect.unreachable()
       })
       .catch((error): void => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error).not.toBeInstanceOf(RetriableError)
+        expect(error).toBeInstanceOf(RetriableError)
+        expect(error.delayType).toEqual('queue')
         expect(error.message).toEqual('Rate limited by Microsoft Graph.')
       })
     expect(mocks.logError).toHaveBeenCalledWith(
@@ -184,7 +184,7 @@ describe('M365 request error handlers', () => {
       })
   })
 
-  it('logs an error and throws a non-retriable error on 509', async () => {
+  it('logs an error and jams the entire queue on 509', async () => {
     mockAxiosAdapterToThrowOnce(509)
     await http
       .get('/test-url')
@@ -192,8 +192,8 @@ describe('M365 request error handlers', () => {
         expect.unreachable()
       })
       .catch((error): void => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error).not.toBeInstanceOf(RetriableError)
+        expect(error).toBeInstanceOf(RetriableError)
+        expect(error.delayType).toEqual('queue')
         expect(error.message).toEqual('Bandwidth limited by Microsoft Graph.')
       })
     expect(mocks.logError).toHaveBeenCalledWith(

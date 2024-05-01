@@ -2,8 +2,10 @@ import type { IApp } from '@plumber/types'
 
 import RetriableError from '@/errors/retriable-error'
 import logger from '@/helpers/logger'
+import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
 
 import { getGraphApiType, GraphApiType } from '../graph-api-type'
+import { tryParseGraphApiError } from '../parse-graph-api-error'
 
 type ThrowingHandler = (
   ...args: Parameters<IApp['requestErrorHandler']>
@@ -13,19 +15,21 @@ type ThrowingHandler = (
 // Handle MS rate limiting us
 //
 const handle429: ThrowingHandler = ($, error) => {
+  const retryAfterMs =
+    parseRetryAfterToMs(error.response?.headers?.['retry-after']) ?? 'default'
+
   // Edge case: Thus far, _only_ 429s from the Excel endpoint are retriable
   // because Microsoft applies dynamic rate limits for Excel, and we've verified
   // with GovTech that these 429s have no impact on other M365 users.
   //
   // https://learn.microsoft.com/en-us/graph/workbook-best-practice?tabs=http#reduce-throttling-errors
   //
-  // Since they apply per-file, we delay the group when retrying.
+  // Since they apply per-file, we delay only the group when retrying.
   if (getGraphApiType(error.response.config.url) === GraphApiType.Excel) {
-    const retryAfterMs = Number(error.response?.headers?.['retry-after']) * 1000
     throw new RetriableError({
       error: 'Retrying HTTP 429 from Excel endpoint',
       delayType: 'group',
-      delayInMs: isNaN(retryAfterMs) ? 'default' : retryAfterMs,
+      delayInMs: retryAfterMs,
     })
   }
 
@@ -39,11 +43,15 @@ const handle429: ThrowingHandler = ($, error) => {
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
+    graphApiError: tryParseGraphApiError(error),
   })
 
-  // We don't want to retry non-excel 429s from M365, so convert it into a
-  // non-HttpError.
-  throw new Error('Rate limited by Microsoft Graph.')
+  // We jam the whole queue to enable recovery.
+  throw new RetriableError({
+    error: 'Rate limited by Microsoft Graph.',
+    delayType: 'queue',
+    delayInMs: retryAfterMs,
+  })
 }
 
 //
@@ -62,10 +70,11 @@ const handle503: ThrowingHandler = function ($, error) {
   })
 
   // Microsoft _sometimes_ specifies a Retry-After when it returns 503.
-  const retryAfterMs = Number(error.response?.headers?.['retry-after']) * 1000
+  const retryAfterMs =
+    parseRetryAfterToMs(error.response?.headers?.['retry-after']) ?? 'default'
   throw new RetriableError({
     error: 'Encountered HTTP 503 from MS',
-    delayInMs: isNaN(retryAfterMs) ? 'default' : retryAfterMs,
+    delayInMs: retryAfterMs,
     // From past data, 503s happen only for a single request, so we can just
     // retry this individual step instead of jamming the group.
     delayType: 'step',
@@ -84,10 +93,17 @@ const handle509: ThrowingHandler = function ($, error) {
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
+    graphApiError: tryParseGraphApiError(error),
   })
 
-  // We don't want to retry 509s from M365, so convert it into a non-HttpError.
-  throw new Error('Bandwidth limited by Microsoft Graph.')
+  // We jam the entire queue to enable recovery.
+  const retryAfterMs =
+    parseRetryAfterToMs(error.response?.headers?.['retry-after']) ?? 'default'
+  throw new RetriableError({
+    error: 'Bandwidth limited by Microsoft Graph.',
+    delayType: 'queue',
+    delayInMs: retryAfterMs,
+  })
 }
 
 const errorHandler: IApp['requestErrorHandler'] = async function ($, error) {
