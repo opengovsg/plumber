@@ -30,7 +30,8 @@ import { processAction } from '@/services/action'
 function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
 ) /* inferred type */ {
-  const { queueName, redisConnectionPrefix, queueConfig: config } = params
+  const { queueName, redisConnectionPrefix, queueConfig } = params
+  const { queueRateLimit } = queueConfig
 
   const workerOptions: WorkerProOptions = {
     connection: createRedisClient(),
@@ -44,9 +45,13 @@ function convertParamsToBullMqOptions(
     workerOptions.prefix = redisConnectionPrefix
   }
 
+  if (queueRateLimit) {
+    workerOptions.limiter = queueRateLimit
+  }
+
   let groupSettings: WorkerProOptions['group'] | null = null
-  if (config?.groupLimits) {
-    const { groupLimits } = config
+  if (queueConfig?.groupLimits) {
+    const { groupLimits } = queueConfig
 
     switch (groupLimits.type) {
       case 'concurrency':
