@@ -1,14 +1,9 @@
 import type { TBeforeRequest } from '@plumber/types'
 
-import { RateLimiterRes } from 'rate-limiter-flexible'
-
-import { isM365TenantKey } from '@/config/app-env-vars/m365'
-import RetriableError from '@/errors/retriable-error'
 import logger from '@/helpers/logger'
 
 import { MS_GRAPH_OAUTH_BASE_URL } from '../constants'
 import { getAccessToken } from '../oauth/token-cache'
-import { checkGraphApiRateLimit } from '../rate-limiter'
 
 // This explicitly overcounts - e.g we will log if the request times out, even
 // we can't confirm that it reached Microsoft. The intent is to assume the worst
@@ -52,35 +47,4 @@ const addAuthToken: TBeforeRequest = async function ($, requestConfig) {
   return requestConfig
 }
 
-// This rate limiting request interceptor is needed despite BullMQ Pro offering
-// rate limiting; we need to limit per request instead of per action (hence
-// placing this in beforeRequest instead of in the `run` function; a single
-// action may need multiple requests).
-const rateLimitCheck: TBeforeRequest = async function ($, requestConfig) {
-  const tenantKey = $.auth.data?.tenantKey as string
-  if (!isM365TenantKey(tenantKey)) {
-    throw new Error(`'${tenantKey}' is not a valid M365 tenant.`)
-  }
-
-  try {
-    await checkGraphApiRateLimit($, tenantKey, requestConfig.url)
-  } catch (error) {
-    if (!(error instanceof RateLimiterRes)) {
-      return
-    }
-
-    // Our rate limiters applies app-wide limits, instead of per-file limits.
-    // Thus we need to pause our entire queue if we are rate-limited.
-    throw new RetriableError({
-      error: 'Reached M365 rate limit',
-      delayInMs: error.msBeforeNext,
-      delayType: 'queue',
-    })
-  }
-
-  return requestConfig
-}
-
-// rateLimitCheck are explicitly the earliest interceptors so that the others
-// are not called if it throws an error.
-export default [rateLimitCheck, usageTracker, addAuthToken]
+export default [usageTracker, addAuthToken]

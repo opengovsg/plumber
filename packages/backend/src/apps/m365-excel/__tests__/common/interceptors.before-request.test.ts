@@ -14,7 +14,6 @@ import { MS_GRAPH_OAUTH_BASE_URL } from '../../common/constants'
 const mocks = vi.hoisted(() => ({
   axiosRequestConfigSpy: vi.fn(),
   getAccessToken: vi.fn(() => 'test-access-token'),
-  checkGraphApiRateLimit: vi.fn(),
   logInfo: vi.fn(),
 }))
 
@@ -56,10 +55,6 @@ vi.mock('@/config/app-env-vars/m365', () => ({
 
 vi.mock('../../common/oauth/token-cache', () => ({
   getAccessToken: mocks.getAccessToken,
-}))
-
-vi.mock('../../common/rate-limiter', () => ({
-  checkGraphApiRateLimit: mocks.checkGraphApiRateLimit,
 }))
 
 describe('M365 before request interceptors', () => {
@@ -124,19 +119,4 @@ describe('M365 before request interceptors', () => {
     await http.get('/re-auth', { baseURL: MS_GRAPH_OAUTH_BASE_URL })
     expect(mocks.getAccessToken).not.toBeCalled()
   })
-
-  it.each([
-    { url: '/test-url' },
-    { url: '/reauth', config: { baseURL: MS_GRAPH_OAUTH_BASE_URL } },
-  ])(
-    'checks against the rate limiter for that tenant for every request',
-    async ({ url, config }) => {
-      await http.get(url, config)
-      expect(mocks.checkGraphApiRateLimit).toBeCalledWith(
-        expect.anything(),
-        'test-tenant',
-        url,
-      )
-    },
-  )
 })
