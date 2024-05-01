@@ -31,7 +31,7 @@ function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
 ) /* inferred type */ {
   const { queueName, redisConnectionPrefix, queueConfig } = params
-  const { queueRateLimit } = queueConfig
+  const { queueRateLimit } = queueConfig ?? {}
 
   const workerOptions: WorkerProOptions = {
     connection: createRedisClient(),
