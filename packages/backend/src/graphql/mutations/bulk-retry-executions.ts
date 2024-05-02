@@ -4,12 +4,47 @@ import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
+import ExtendedQueryBuilder from '@/models/query-builder'
 import actionQueue from '@/queues/action'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000
 const CHUNK_SIZE = 100
+
+// Fetch failed executions along with their latest execution step. Since we
+// run steps serially, latest execution step in a failed execution has to be
+// the one that failed.
+async function getAllFailedExecutionSteps(
+  root: ExtendedQueryBuilder<Execution, Execution[]>,
+  flowId: string,
+) {
+  const failedExecutions = await root
+    .where('executions.flow_id', flowId)
+    .where('executions.test_run', false)
+    .where((builder) =>
+      builder
+        .where('executions.status', 'failure')
+        .orWhereNull('executions.status'),
+    )
+    .where(
+      'executions.created_at',
+      '>=',
+      new Date(Date.now() - SEVEN_DAYS_IN_MS).toISOString(),
+    )
+    .select('executions.id')
+  return await ExecutionStep.query()
+    .whereIn(
+      'execution_id',
+      failedExecutions.map((e) => e.id),
+    )
+    .orderBy([
+      { column: 'execution_id' },
+      { column: 'created_at', order: 'desc' },
+    ])
+    .distinctOn('execution_id')
+    .select('id', 'execution_id', 'status', 'job_id')
+}
 
 const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   _parent,
@@ -18,50 +53,29 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
 ) => {
   let latestFailedExecutionSteps: ExecutionStep[] = []
   // Admin usage only
-  if (
-    context.currentUser.email === 'plumber@open.gov.sg' &&
-    params.input.executionId
-  ) {
-    latestFailedExecutionSteps.push(
-      await ExecutionStep.query()
-        .findById(params.input.executionId)
-        .orderBy([
-          { column: 'execution_id' },
-          { column: 'created_at', order: 'desc' },
-        ])
-        .distinctOn('execution_id')
-        .select('id', 'execution_id', 'status', 'job_id'),
-    )
+  if (context.currentUser.email === 'plumber@open.gov.sg') {
+    if (params.input.executionId) {
+      latestFailedExecutionSteps.push(
+        await ExecutionStep.query()
+          .findById(params.input.executionId)
+          .orderBy([
+            { column: 'execution_id' },
+            { column: 'created_at', order: 'desc' },
+          ])
+          .distinctOn('execution_id')
+          .select('id', 'execution_id', 'status', 'job_id'),
+      )
+    } else if (params.input.flowId) {
+      latestFailedExecutionSteps = await getAllFailedExecutionSteps(
+        Execution.query(),
+        params.input.flowId,
+      )
+    }
   } else {
-    // Fetch failed executions along with their latest execution step. Since we
-    // run steps serially, latest execution step in a failed execution has to be
-    // the one that failed.
-    const failedExecutions = await context.currentUser
-      .$relatedQuery('executions')
-      .where('executions.flow_id', params.input.flowId)
-      .where('executions.test_run', false)
-      .where((builder) =>
-        builder
-          .where('executions.status', 'failure')
-          .orWhereNull('executions.status'),
-      )
-      .where(
-        'executions.created_at',
-        '>=',
-        new Date(Date.now() - SEVEN_DAYS_IN_MS).toISOString(),
-      )
-      .select('executions.id')
-    latestFailedExecutionSteps = await ExecutionStep.query()
-      .whereIn(
-        'execution_id',
-        failedExecutions.map((e) => e.id),
-      )
-      .orderBy([
-        { column: 'execution_id' },
-        { column: 'created_at', order: 'desc' },
-      ])
-      .distinctOn('execution_id')
-      .select('id', 'execution_id', 'status', 'job_id')
+    latestFailedExecutionSteps = await getAllFailedExecutionSteps(
+      context.currentUser.$relatedQuery('executions'),
+      params.input.flowId,
+    )
   }
 
   // Double check that latest steps for each failed execution is a failure and
