@@ -6,6 +6,7 @@ import createStep from './mutations/create-step'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
 import deleteStep from './mutations/delete-step'
+import duplicateFlow from './mutations/duplicate-flow'
 import executeFlow from './mutations/execute-flow'
 import generateAuthUrl from './mutations/generate-auth-url'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
@@ -67,5 +68,6 @@ export default {
   loginWithSelectedSgid,
   createFlowTransfer,
   updateFlowTransferStatus,
+  duplicateFlow,
   ...tilesMutationResolvers,
 } satisfies MutationResolvers

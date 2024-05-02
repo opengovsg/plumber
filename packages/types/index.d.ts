@@ -136,6 +136,7 @@ export interface IFlowConfig {
   maxQps?: number
   rejectIfOverMaxQps?: boolean
   errorConfig?: IFlowErrorConfig
+  duplicateCount?: number
 }
 
 export interface IFlowErrorConfig {

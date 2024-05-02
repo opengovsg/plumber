@@ -72,6 +72,7 @@ type Mutation {
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
+  duplicateFlow(input: DuplicateFlowInput): Flow
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
@@ -284,6 +285,7 @@ type Flow {
 # Rate limiting config is omitted here e.g. maxQps
 type FlowConfig {
   errorConfig: FlowErrorConfig
+  duplicateCount: Int
 }
 
 type FlowErrorConfig {
@@ -360,6 +362,10 @@ input ExecuteFlowInput {
 }
 
 input DeleteFlowInput {
+  id: String!
+}
+
+input DuplicateFlowInput {
   id: String!
 }
 
