@@ -51,33 +51,18 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   params,
   context,
 ) => {
-  let latestFailedExecutionSteps: ExecutionStep[] = []
-  // Admin usage only
-  if (context.currentUser.email === 'plumber@open.gov.sg') {
-    if (params.input.executionIds) {
-      latestFailedExecutionSteps = await ExecutionStep.query()
-        .findByIds(params.input.executionIds)
-        .orderBy([
-          { column: 'execution_id' },
-          { column: 'created_at', order: 'desc' },
-        ])
-        .distinctOn('execution_id')
-        .select('id', 'execution_id', 'status', 'job_id')
-    } else if (params.input.flowId) {
-      latestFailedExecutionSteps = await getAllFailedExecutionSteps(
-        Execution.query(),
-        params.input.flowId,
-      )
-    }
-  } else {
-    latestFailedExecutionSteps = await getAllFailedExecutionSteps(
-      context.currentUser.$relatedQuery('executions'),
-      params.input.flowId,
-    )
-  }
+  let latestFailedExecutionSteps = await getAllFailedExecutionSteps(
+    context.currentUser.email === 'plumber@open.gov.sg'
+      ? Execution.query()
+      : context.currentUser.$relatedQuery('executions'),
+    params.input.flowId,
+  )
 
   // Double check that latest steps for each failed execution is a failure and
   // has a valid job ID.
+  const executionIdSet = params.input.executionIds
+    ? new Set(params.input.executionIds)
+    : null
   latestFailedExecutionSteps = latestFailedExecutionSteps.filter(
     (executionStep) => {
       const { id: executionStepId, executionId, status, jobId } = executionStep
@@ -101,6 +86,11 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
         })
         return false
       }
+
+      if (executionIdSet && !executionIdSet.has(executionId)) {
+        return false
+      }
+
       return true
     },
   )
