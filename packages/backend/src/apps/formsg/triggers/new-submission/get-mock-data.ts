@@ -16,6 +16,7 @@ type FormField = {
 }
 
 const MOCK_ATTACHMENT_FILE_PATH = `s3:${COMMON_S3_BUCKET}:plumber-logo.jpg`
+const MOCK_NRIC = 'S1234568B'
 
 async function getMockData($: IGlobalVariable) {
   try {
@@ -55,6 +56,9 @@ async function getMockData($: IGlobalVariable) {
       submissionId: await generateIdAsync(),
       submissionTime: DateTime.now().toISO(),
       formId,
+      ...(formDetails.form.authType !== 'NIL' && {
+        'NRIC/FIN (Verified)': filterNric($, MOCK_NRIC),
+      }),
     }
   } catch (e) {
     throw new Error(
