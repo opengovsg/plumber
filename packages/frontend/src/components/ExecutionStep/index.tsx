@@ -65,7 +65,7 @@ export default function ExecutionStep({
   }
 
   const isStepSuccessful = executionStep.status === 'success'
-  const hasExecutionFailed = execution.status !== 'success' // Account for NULL execution status.
+  const hasExecutionFailed = execution.status === 'failure'
 
   const hasError = !!executionStep.errorDetails
 
