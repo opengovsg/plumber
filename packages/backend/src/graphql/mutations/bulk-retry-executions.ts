@@ -118,6 +118,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
           event: 'bulk-retry-step-job-getstate-error',
           oldJobData: job.data,
           oldJobId: job.id,
+          error,
         })
 
         throw error
