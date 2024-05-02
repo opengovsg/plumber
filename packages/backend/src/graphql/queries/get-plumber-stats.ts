@@ -22,13 +22,11 @@ const getPlumberStats: QueryResolvers['getPlumberStats'] = async () => {
     client.raw(
       `SELECT reltuples AS estimate FROM pg_class WHERE relname = 'users';`,
     ),
-    client.raw(
-      `SELECT reltuples AS estimate FROM pg_class WHERE relname = 'executions';`,
-    ),
+    client.raw(`select count(*) from executions where test_run = false;`),
   ])
 
   const userCount = userCountQuery.rows[0].estimate
-  const executionCount = executionCountQuery.rows[0].estimate
+  const executionCount = executionCountQuery.rows[0].count
 
   await redisClient
     .multi()
