@@ -1,3 +1,5 @@
+import { chunk } from 'lodash'
+
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
@@ -7,6 +9,7 @@ import actionQueue from '@/queues/action'
 import type { MutationResolvers } from '../__generated__/types.generated'
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000
+const CHUNK_SIZE = 100
 
 const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   _parent,
@@ -37,7 +40,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
       { column: 'created_at', order: 'desc' },
     ])
     .distinctOn('execution_id')
-    .select('execution_id', 'step_id', 'status', 'job_id')
+    .select('execution_id', 'status', 'job_id')
 
   // Double check that latest steps for each failed execution is a failure and
   // has a valid job ID.
@@ -77,60 +80,85 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   }
 
   // For each failed execution, retry the latest step.
-  const promises = latestFailedExecutionSteps.map(async (executionStep) => {
-    const { id: executionStepId, executionId, jobId, stepId } = executionStep
+  const retryAttempts: PromiseSettledResult<void>[] = []
+  const chunkedSteps = chunk(latestFailedExecutionSteps, CHUNK_SIZE)
+  for (const currChunk of chunkedSteps) {
+    const promises = currChunk.map(async (executionStep) => {
+      const { id: executionStepId, executionId, jobId } = executionStep
 
-    const job = await actionQueue.getJob(jobId)
-    if (!job) {
-      // if job cannot be found anymore, remove the job id from the execution step so it cannot be retried again
-      await executionStep.$query().patch({ jobId: null })
-      throw new Error(
-        `Job for ${executionId}-${executionStepId} not found or has expired`,
-      )
-    }
+      const job = await actionQueue.getJob(jobId)
+      if (!job) {
+        // if job cannot be found anymore, remove the job id from the execution step so it cannot be retried again
+        await executionStep.$query().patch({ jobId: null })
+        logger.error('Bulk retrying execution step - no job', {
+          event: 'bulk-retry-step-no-job',
+          oldJobId: jobId,
+        })
+        throw new Error(
+          `Job for ${executionId}-${executionStepId} not found or has expired`,
+        )
+      }
 
-    const jobState = await job.getState()
-    if (jobState !== 'failed') {
-      logger.warn('Bulk retrying execution step - job not failed', {
-        event: 'bulk-retry-step-job-not-failed',
-        executionId: executionId,
-        executionStepId: executionStepId,
-        jobId: jobId,
-        jobState,
+      try {
+        const jobState = await job.getState()
+        if (jobState !== 'failed') {
+          logger.warn('Bulk retrying execution step - job not failed', {
+            event: 'bulk-retry-step-job-not-failed',
+            executionId: executionId,
+            executionStepId: executionStepId,
+            jobId: jobId,
+            jobState,
+          })
+          throw new Error(
+            `Job for ${executionId}-${executionStepId} (JOB: ${jobId}) is not in a failed state`,
+          )
+        }
+      } catch (error) {
+        logger.error('Bulk retrying execution step - job get state error', {
+          event: 'bulk-retry-step-job-getstate-error',
+          oldJobData: job.data,
+          oldJobId: job.id,
+        })
+
+        throw error
+      }
+
+      logger.info('Bulk retrying execution step - start', {
+        event: 'bulk-retry-step-start',
+        oldJobData: job.data,
+        oldJobId: job.id,
       })
-      throw new Error(
-        `Job for ${executionId}-${executionStepId} (JOB: ${jobId}) is not in a failed state`,
-      )
-    }
 
-    logger.info('Bulk retrying execution step - start', {
-      event: 'bulk-retry-step-start',
-      executionId: executionId,
-      executionStepId: executionStepId,
-      oldJobId: jobId,
+      try {
+        const newJob = await actionQueue.add(
+          job.name,
+          job.data,
+          DEFAULT_JOB_OPTIONS,
+        )
+        await job.remove()
+        await Execution.query().findById(executionId).patch({ status: null })
+        await executionStep.$query().patch({ jobId: newJob.id })
+
+        logger.info('Bulk retrying execution step - done', {
+          event: 'bulk-retry-step-done',
+          oldJobData: job.data,
+          oldJobId: job.id,
+          newJobId: newJob.id,
+        })
+      } catch (error) {
+        logger.error('Bulk retrying execution step - ERROR', {
+          event: 'bulk-retry-step-failed',
+          oldJobData: job.data,
+          oldJobId: job.id,
+          error,
+        })
+
+        throw error
+      }
     })
-
-    await job.remove()
-    const newJob = await actionQueue.add(
-      `${executionId}-${stepId}`,
-      {
-        flowId: params.input.flowId,
-        executionId,
-        stepId,
-      },
-      DEFAULT_JOB_OPTIONS,
-    )
-    await Execution.query().findById(executionId).patch({ status: null })
-
-    logger.info('Bulk retrying execution step - done', {
-      event: 'bulk-retry-step-done',
-      executionId: executionId,
-      executionStepId: executionStepId,
-      oldJobId: jobId,
-      newJobId: newJob.id,
-    })
-  })
-  const retryAttempts = await Promise.allSettled(promises)
+    const currRetryAttempts = await Promise.allSettled(promises)
+    retryAttempts.push(...currRetryAttempts)
+  }
 
   const allSuccessfullyRetried = !retryAttempts.find(
     (attempt) => attempt.status === 'rejected',
