@@ -29,11 +29,11 @@ async function getMockData($: IGlobalVariable) {
     const formFields = formDetails.form.form_fields as Array<FormField>
     for (let i = 0; i < formFields.length; i++) {
       if (data.responses[formFields[i]._id]) {
-        if (data.responses[formFields[i]._id].question === 'Attachment') {
+        if (data.responses[formFields[i]._id].fieldType === 'attachment') {
           data.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
         }
 
-        if (data.responses[formFields[i]._id].question === 'NRIC/FIN') {
+        if (data.responses[formFields[i]._id].fieldType === 'nric') {
           data.responses[formFields[i]._id].answer = filterNric(
             $,
             data.responses[formFields[i]._id].answer,
