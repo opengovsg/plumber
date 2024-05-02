@@ -28,7 +28,7 @@ const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
  *   * Appropriately transformed NRIC if an NRIC filter was configured.
  *   * Uppercased NRIC otherwise.
  */
-function filterNric($: IGlobalVariable, value: string): string | null {
+export function filterNric($: IGlobalVariable, value: string): string | null {
   const filterSetting = $.step.parameters.nricFilter
 
   value = value.toUpperCase()

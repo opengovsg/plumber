@@ -5,6 +5,7 @@ import { customAlphabet } from 'nanoid/async'
 
 import { COMMON_S3_BUCKET } from '@/helpers/s3'
 
+import { filterNric } from '../../auth/decrypt-form-response'
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
 type FormField = {
@@ -31,6 +32,14 @@ async function getMockData($: IGlobalVariable) {
         if (data.responses[formFields[i]._id].question === 'Attachment') {
           data.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
         }
+
+        if (data.responses[formFields[i]._id].question === 'NRIC/FIN') {
+          data.responses[formFields[i]._id].answer = filterNric(
+            $,
+            data.responses[formFields[i]._id].answer,
+          )
+        }
+
         data.responses[formFields[i]._id].order = i + 1
         data.responses[formFields[i]._id].id = undefined
       }
