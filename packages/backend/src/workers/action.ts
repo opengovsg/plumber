@@ -71,13 +71,18 @@ export const worker = new WorkerPro(
       if (executionStep.isFailed) {
         // Properly fixed in https://github.com/opengovsg/plumber/pull/548
         try {
+          await Execution.setStatus(executionId, 'failure')
           return handleErrorAndThrow(executionStep.errorDetails, executionError)
         } catch (e) {
           const isRetriable =
             !(e instanceof UnrecoverableError) &&
-            job.attemptsMade < MAXIMUM_JOB_ATTEMPTS
+            job.attemptsMade < MAXIMUM_JOB_ATTEMPTS - 1
 
           if (!isRetriable) {
+            logger.info('Failing execution due to non-retriable error.', {
+              event: 'failing-non-retriable-execution',
+              ...jobData,
+            })
             await Execution.setStatus(executionId, 'failure')
           }
           throw e
@@ -111,7 +116,7 @@ export const worker = new WorkerPro(
     } catch (e) {
       const isRetriable =
         !(e instanceof UnrecoverableError) &&
-        job.attemptsMade < MAXIMUM_JOB_ATTEMPTS
+        job.attemptsMade < MAXIMUM_JOB_ATTEMPTS - 1
 
       span?.addTags({
         willRetry: isRetriable ? 'true' : 'false',

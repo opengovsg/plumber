@@ -1,3 +1,7 @@
+import { RateLimiterRedis } from 'rate-limiter-flexible'
+
+import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
+import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
@@ -7,11 +11,22 @@ import type { MutationResolvers } from '../__generated__/types.generated'
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000
 
+const redisRateLimitClient = createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)
+const rateLimiter = new RateLimiterRedis({
+  points: 1,
+  duration: 10,
+
+  keyPrefix: 'bulk-retry-executions',
+  storeClient: redisRateLimitClient,
+})
+
 const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   _parent,
   params,
   context,
 ) => {
+  await rateLimiter.consume(params.input.flowId)
+
   // Fetch failed executions along with their latest execution step. Since we
   // run steps serially, latest execution step in a failed execution has to be
   // the one that failed.
@@ -19,7 +34,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
     .$relatedQuery('executions')
     .where('executions.flow_id', params.input.flowId)
     .where('executions.test_run', false)
-    .where('executions.status', 'failure')
+    .where('executions.status', '<>', 'success')
     .where(
       'executions.created_at',
       '>=',
@@ -36,7 +51,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
       { column: 'created_at', order: 'desc' },
     ])
     .distinctOn('execution_id')
-    .select('execution_id', 'status', 'job_id')
+    .select('execution_id', 'step_id', 'status', 'job_id')
 
   // Double check that latest steps for each failed execution is a failure and
   // has a valid job ID.
@@ -77,13 +92,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
 
   // For each failed execution, retry the latest step.
   const promises = latestFailedExecutionSteps.map(async (executionStep) => {
-    const { id: executionStepId, executionId, jobId } = executionStep
-
-    logger.info('Bulk retrying execution step', {
-      event: 'bulk-retry-step-start',
-      executionId: executionId,
-      executionStepId: executionStepId,
-    })
+    const { id: executionStepId, executionId, jobId, stepId } = executionStep
 
     const job = await actionQueue.getJob(jobId)
     if (!job) {
@@ -94,8 +103,32 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
       )
     }
 
-    await job.retry()
+    logger.info('Bulk retrying execution step - start', {
+      event: 'bulk-retry-step-start',
+      executionId: executionId,
+      executionStepId: executionStepId,
+      oldJobId: jobId,
+    })
+
+    await job.remove()
+    const newJob = await actionQueue.add(
+      `${executionId}-${stepId}`,
+      {
+        flowId: params.input.flowId,
+        executionId,
+        stepId,
+      },
+      DEFAULT_JOB_OPTIONS,
+    )
     await Execution.query().findById(executionId).patch({ status: null })
+
+    logger.info('Bulk retrying execution step - end', {
+      event: 'bulk-retry-step-success',
+      executionId: executionId,
+      executionStepId: executionStepId,
+      oldJobId: jobId,
+      newJobId: newJob.id,
+    })
   })
   const retryAttempts = await Promise.allSettled(promises)
 
