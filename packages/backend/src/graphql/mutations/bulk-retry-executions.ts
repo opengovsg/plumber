@@ -23,7 +23,11 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
     .$relatedQuery('executions')
     .where('executions.flow_id', params.input.flowId)
     .where('executions.test_run', false)
-    .where('executions.status', '<>', 'success')
+    .where((builder) =>
+      builder
+        .where('executions.status', 'failure')
+        .orWhereNull('executions.status'),
+    )
     .where(
       'executions.created_at',
       '>=',
@@ -40,7 +44,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
       { column: 'created_at', order: 'desc' },
     ])
     .distinctOn('execution_id')
-    .select('execution_id', 'status', 'job_id')
+    .select('id', 'execution_id', 'status', 'job_id')
 
   // Double check that latest steps for each failed execution is a failure and
   // has a valid job ID.
@@ -131,12 +135,12 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
       })
 
       try {
+        await job.remove()
         const newJob = await actionQueue.add(
           job.name,
           job.data,
           DEFAULT_JOB_OPTIONS,
         )
-        await job.remove()
         await Execution.query().findById(executionId).patch({ status: null })
         await executionStep.$query().patch({ jobId: newJob.id })
 
