@@ -1,6 +1,3 @@
-import { RateLimiterRedis } from 'rate-limiter-flexible'
-
-import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
@@ -11,22 +8,11 @@ import type { MutationResolvers } from '../__generated__/types.generated'
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000
 
-const redisRateLimitClient = createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)
-const rateLimiter = new RateLimiterRedis({
-  points: 1,
-  duration: 10,
-
-  keyPrefix: 'bulk-retry-executions',
-  storeClient: redisRateLimitClient,
-})
-
 const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   _parent,
   params,
   context,
 ) => {
-  await rateLimiter.consume(params.input.flowId)
-
   // Fetch failed executions along with their latest execution step. Since we
   // run steps serially, latest execution step in a failed execution has to be
   // the one that failed.
@@ -103,6 +89,20 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
       )
     }
 
+    const jobState = await job.getState()
+    if (jobState !== 'failed') {
+      logger.warn('Bulk retrying execution step - job not failed', {
+        event: 'bulk-retry-step-job-not-failed',
+        executionId: executionId,
+        executionStepId: executionStepId,
+        jobId: jobId,
+        jobState,
+      })
+      throw new Error(
+        `Job for ${executionId}-${executionStepId} (JOB: ${jobId}) is not in a failed state`,
+      )
+    }
+
     logger.info('Bulk retrying execution step - start', {
       event: 'bulk-retry-step-start',
       executionId: executionId,
@@ -122,8 +122,8 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
     )
     await Execution.query().findById(executionId).patch({ status: null })
 
-    logger.info('Bulk retrying execution step - end', {
-      event: 'bulk-retry-step-success',
+    logger.info('Bulk retrying execution step - done', {
+      event: 'bulk-retry-step-done',
       executionId: executionId,
       executionStepId: executionStepId,
       oldJobId: jobId,
