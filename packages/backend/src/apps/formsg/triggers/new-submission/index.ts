@@ -24,7 +24,7 @@ const trigger: IRawTrigger = {
     errorMsg:
       'Make a new submission to the form you connected and test the step again.',
     mockDataMsg:
-      'The data below is mocked based on your form. Make a FormSG submission to modify the data. ',
+      'The data below is mocked based on your form. Make a FormSG submission to modify the data.',
   },
   arguments: [
     {

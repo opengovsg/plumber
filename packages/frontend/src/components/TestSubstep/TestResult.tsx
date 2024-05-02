@@ -117,7 +117,9 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
       <Infobox variant="success">
         <Text>
           {isMock && getMockDataMessage(selectedActionOrTrigger)}
-          You can use the data below as variables in your action steps below.
+          {
+            ' You can use the data below as variables in your action steps below.'
+          }
         </Text>
       </Infobox>
       <Box maxH="25rem" overflowY="scroll" w="100%">
