@@ -54,17 +54,15 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   let latestFailedExecutionSteps: ExecutionStep[] = []
   // Admin usage only
   if (context.currentUser.email === 'plumber@open.gov.sg') {
-    if (params.input.executionId) {
-      latestFailedExecutionSteps.push(
-        await ExecutionStep.query()
-          .findById(params.input.executionId)
-          .orderBy([
-            { column: 'execution_id' },
-            { column: 'created_at', order: 'desc' },
-          ])
-          .distinctOn('execution_id')
-          .select('id', 'execution_id', 'status', 'job_id'),
-      )
+    if (params.input.executionIds) {
+      latestFailedExecutionSteps = await ExecutionStep.query()
+        .findByIds(params.input.executionIds)
+        .orderBy([
+          { column: 'execution_id' },
+          { column: 'created_at', order: 'desc' },
+        ])
+        .distinctOn('execution_id')
+        .select('id', 'execution_id', 'status', 'job_id')
     } else if (params.input.flowId) {
       latestFailedExecutionSteps = await getAllFailedExecutionSteps(
         Execution.query(),

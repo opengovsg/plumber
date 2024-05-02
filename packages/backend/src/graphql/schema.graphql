@@ -413,7 +413,7 @@ input RetryExecutionStepInput {
 
 input BulkRetryExecutionsInput {
   flowId: String
-  executionId: String
+  executionIds: [String!]
 }
 
 """
