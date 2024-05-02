@@ -19,6 +19,10 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
   const { beforeUrlMsg, afterUrlMsg, hideWebhookUrl } =
     webhookTriggerInstructions
 
+  if (!beforeUrlMsg && hideWebhookUrl && !afterUrlMsg) {
+    return <></>
+  }
+
   return (
     <Alert icon={false} color="info" {...alertProps}>
       {beforeUrlMsg && <ReactMarkdown>{beforeUrlMsg}</ReactMarkdown>}

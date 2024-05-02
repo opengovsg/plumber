@@ -78,6 +78,7 @@ export const GET_APPS = gql`
           afterUrlMsg
           errorMsg
           hideWebhookUrl
+          mockDataMsg
         }
         substeps {
           key
