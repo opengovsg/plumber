@@ -75,11 +75,16 @@ export const worker = new WorkerPro(
         } catch (e) {
           const isRetriable =
             !(e instanceof UnrecoverableError) &&
-            job.attemptsMade < MAXIMUM_JOB_ATTEMPTS
+            job.attemptsMade < MAXIMUM_JOB_ATTEMPTS - 1
 
+          logger.info('Failed execution', {
+            event: 'failed-execution-job-info',
+            ...jobData,
+          })
           if (!isRetriable) {
             await Execution.setStatus(executionId, 'failure')
           }
+
           throw e
         }
       }
@@ -111,7 +116,7 @@ export const worker = new WorkerPro(
     } catch (e) {
       const isRetriable =
         !(e instanceof UnrecoverableError) &&
-        job.attemptsMade < MAXIMUM_JOB_ATTEMPTS
+        job.attemptsMade < MAXIMUM_JOB_ATTEMPTS - 1
 
       span?.addTags({
         willRetry: isRetriable ? 'true' : 'false',
