@@ -15,7 +15,7 @@ type FormField = {
   }>
 }
 
-const MOCK_ATTACHMENT_FILE_PATH = `s3:${COMMON_S3_BUCKET}:plumber-logo.jpg`
+const MOCK_ATTACHMENT_FILE_PATH = `s3:${COMMON_S3_BUCKET}:mock/plumber-logo.jpg`
 const MOCK_NRIC = 'S1234568B'
 
 async function getMockData($: IGlobalVariable) {
