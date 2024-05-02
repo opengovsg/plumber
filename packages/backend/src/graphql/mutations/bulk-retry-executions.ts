@@ -1,4 +1,6 @@
 import logger from '@/helpers/logger'
+import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
 import actionQueue from '@/queues/action'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -13,70 +15,93 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   // the one that failed.
   const failedExecutions = await context.currentUser
     .$relatedQuery('executions')
-    .where('flow_id', params.input.flowId)
-    .where('test_run', false)
+    .where('executions.flow_id', params.input.flowId)
+    .where('executions.test_run', false)
     .where('executions.status', 'failure')
-    .withGraphJoined({ executionSteps: true })
+    .select('executions.id')
+    .limit(500)
+  let latestFailedExecutionSteps = await ExecutionStep.query()
+    .whereIn(
+      'execution_id',
+      failedExecutions.map((e) => e.id),
+    )
     .orderBy([
-      { column: 'executions.id' },
-      { column: 'executionSteps:created_at', order: 'desc' },
+      { column: 'execution_id' },
+      { column: 'created_at', order: 'desc' },
     ])
-    .distinctOn('executions.id')
+    .distinctOn('execution_id')
+    .select('execution_id', 'status', 'job_id')
 
-  // For each failed execution, retry the latest step (if its a failure).
-  const promises = failedExecutions.map(async (execution) => {
-    const executionStep = execution.executionSteps[0]
-    const { jobId, status } = executionStep
+  // Double check that latest steps for each failed execution is a failure.
+  latestFailedExecutionSteps = latestFailedExecutionSteps.filter(
+    (executionStep) => {
+      const { id: executionStepId, executionId, status } = executionStep
+      if (status !== 'failure') {
+        logger.error(
+          'Latest execution step is not failed for a failed execution',
+          {
+            event: 'bulk-retry-step-status-mismatch',
+            executionId: executionId,
+            executionStepId: executionStepId,
+          },
+        )
+        return false
+      }
+      return true
+    },
+  )
 
-    // Sanity check
-    if (status !== 'failure') {
-      logger.error(
-        'Latest execution step is not failed for a failed execution',
-        {
-          event: 'bulk-retry-step-status-mismatch',
-          executionId: execution.id,
-          executionStepId: executionStep.id,
-        },
-      )
-
-      return null
-    } else {
-      logger.info('Bulk retrying execution step', {
-        event: 'bulk-retry-step-start',
-        executionId: execution.id,
-        executionStepId: executionStep.id,
-      })
+  // Nothing to do if no steps to retry
+  if (latestFailedExecutionSteps.length === 0) {
+    return {
+      numFailedExecutions: 0,
+      allSuccessfullyRetried: true,
     }
+  }
+
+  // For each failed execution, retry the latest step.
+  const promises = latestFailedExecutionSteps.map(async (executionStep) => {
+    const { id: executionStepId, executionId, jobId } = executionStep
+
+    logger.info('Bulk retrying execution step', {
+      event: 'bulk-retry-step-start',
+      executionId: executionId,
+      executionStepId: executionStepId,
+    })
 
     const job = await actionQueue.getJob(jobId)
     if (!job) {
       // if job cannot be found anymore, remove the job id from the execution step so it cannot be retried again
       await executionStep.$query().patch({ jobId: null })
       throw new Error(
-        `Job for ${execution.id}-${executionStep.id} not found or has expired`,
+        `Job for ${executionId}-${executionStepId} not found or has expired`,
       )
     }
 
     await job.retry()
-    await execution.$query().patch({ status: null })
+    await Execution.query().findById(executionId).patch({ status: null })
   })
-
   const retryAttempts = await Promise.allSettled(promises)
 
   const allSuccessfullyRetried = !retryAttempts.find(
     (attempt) => attempt.status === 'rejected',
   )
-
-  // Actually we can do some more processing to see which IDs failed but nvm.
   if (!allSuccessfullyRetried) {
+    // Actually we can do some more processing to see which IDs failed but nvm.
     logger.warn('Some attempts in bulk execution retry failed', {
       event: 'bulk-retry-some-attempts-failed',
       flowId: params.input.flowId,
     })
+  } else {
+    logger.info('Bulk execution retry succeeded', {
+      event: 'bulk-retry-success',
+      flowId: params.input.flowId,
+      numRetried: latestFailedExecutionSteps.length,
+    })
   }
 
   return {
-    numFailedExecutions: failedExecutions.length,
+    numFailedExecutions: latestFailedExecutionSteps.length,
     allSuccessfullyRetried,
   }
 }
