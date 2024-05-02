@@ -12,6 +12,7 @@ export const GET_EXECUTION = gql`
         name
         active
       }
+      status
     }
   }
 `

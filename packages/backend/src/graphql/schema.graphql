@@ -67,6 +67,9 @@ type Mutation {
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
+  bulkRetryExecutions(
+    input: BulkRetryExecutionsInput
+  ): BulkRetryExecutionsResult!
   logout: Boolean
   loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
   loginWithSelectedSgid(
@@ -300,6 +303,11 @@ type Execution {
   flow: Flow
 }
 
+type BulkRetryExecutionsResult {
+  numFailedExecutions: Int!
+  allSuccessfullyRetried: Boolean!
+}
+
 input CreateConnectionInput {
   key: String!
   formattedData: JSONObject!
@@ -401,6 +409,10 @@ input VerifyOtpInput {
 
 input RetryExecutionStepInput {
   executionStepId: String!
+}
+
+input BulkRetryExecutionsInput {
+  flowId: String!
 }
 
 """

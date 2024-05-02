@@ -69,8 +69,19 @@ export const worker = new WorkerPro(
       )
 
       if (executionStep.isFailed) {
-        await Execution.setStatus(executionId, 'failure')
-        return handleErrorAndThrow(executionStep.errorDetails, executionError)
+        // Properly fixed in https://github.com/opengovsg/plumber/pull/548
+        try {
+          return handleErrorAndThrow(executionStep.errorDetails, executionError)
+        } catch (e) {
+          const isRetriable =
+            !(e instanceof UnrecoverableError) &&
+            job.attemptsMade < MAXIMUM_JOB_ATTEMPTS
+
+          if (!isRetriable) {
+            await Execution.setStatus(executionId, 'failure')
+          }
+          throw e
+        }
       }
 
       if (!nextStep) {

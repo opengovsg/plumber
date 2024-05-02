@@ -1,6 +1,5 @@
-import type { IApp, IExecutionStep } from '@plumber/types'
+import type { IApp, IExecution, IExecutionStep } from '@plumber/types'
 
-import * as React from 'react'
 import { BiSolidCheckCircle, BiSolidErrorCircle } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
 import {
@@ -21,11 +20,13 @@ import JSONViewer from 'components/JSONViewer'
 import { GET_APP } from 'graphql/queries/get-app'
 import { EXECUTION_STEP_PER_PAGE } from 'pages/Execution'
 
+import { RetryAllButton } from './RetryAllButton'
 import RetryButton from './RetryButton'
 
 type ExecutionStepProps = {
   index: number
   page: number
+  execution: IExecution
   executionStep: IExecutionStep
 }
 
@@ -50,6 +51,7 @@ const getStepPosition = (page: number, index: number) => {
 export default function ExecutionStep({
   index,
   page,
+  execution,
   executionStep,
 }: ExecutionStepProps): React.ReactElement | null {
   const { data } = useQuery(GET_APP, {
@@ -63,10 +65,12 @@ export default function ExecutionStep({
   }
 
   const isStepSuccessful = executionStep.status === 'success'
+  const hasExecutionFailed = execution.status === 'failure'
 
   const hasError = !!executionStep.errorDetails
 
-  const canRetry = !isStepSuccessful && !!executionStep.jobId
+  const canRetry =
+    !isStepSuccessful && !!executionStep.jobId && hasExecutionFailed
 
   return (
     <Card boxShadow="none" border="1px solid" borderColor="base.divider.medium">
@@ -105,7 +109,10 @@ export default function ExecutionStep({
               </Text>
             </Box>
           </HStack>
-          {canRetry && <RetryButton executionStepId={executionStep.id} />}
+          <HStack>
+            {canRetry && <RetryAllButton execution={execution} />}
+            {canRetry && <RetryButton executionStepId={executionStep.id} />}
+          </HStack>
         </HStack>
 
         {/* bottom half: data in, data out and error */}
