@@ -103,7 +103,7 @@ export interface IExecution {
   flowId: string
   flow: IFlow
   testRun: boolean
-  status: 'success' | 'failure'
+  status: 'success' | 'failure' | null
   executionSteps: IExecutionStep[]
   updatedAt: string
   createdAt: string
