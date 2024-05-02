@@ -16,35 +16,53 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   params,
   context,
 ) => {
-  // Fetch failed executions along with their latest execution step. Since we
-  // run steps serially, latest execution step in a failed execution has to be
-  // the one that failed.
-  const failedExecutions = await context.currentUser
-    .$relatedQuery('executions')
-    .where('executions.flow_id', params.input.flowId)
-    .where('executions.test_run', false)
-    .where((builder) =>
-      builder
-        .where('executions.status', 'failure')
-        .orWhereNull('executions.status'),
+  let latestFailedExecutionSteps: ExecutionStep[] = []
+  // Admin usage only
+  if (
+    context.currentUser.email === 'plumber@open.gov.sg' &&
+    params.input.executionId
+  ) {
+    latestFailedExecutionSteps.push(
+      await ExecutionStep.query()
+        .findById(params.input.executionId)
+        .orderBy([
+          { column: 'execution_id' },
+          { column: 'created_at', order: 'desc' },
+        ])
+        .distinctOn('execution_id')
+        .select('id', 'execution_id', 'status', 'job_id'),
     )
-    .where(
-      'executions.created_at',
-      '>=',
-      new Date(Date.now() - SEVEN_DAYS_IN_MS).toISOString(),
-    )
-    .select('executions.id')
-  let latestFailedExecutionSteps = await ExecutionStep.query()
-    .whereIn(
-      'execution_id',
-      failedExecutions.map((e) => e.id),
-    )
-    .orderBy([
-      { column: 'execution_id' },
-      { column: 'created_at', order: 'desc' },
-    ])
-    .distinctOn('execution_id')
-    .select('id', 'execution_id', 'status', 'job_id')
+  } else {
+    // Fetch failed executions along with their latest execution step. Since we
+    // run steps serially, latest execution step in a failed execution has to be
+    // the one that failed.
+    const failedExecutions = await context.currentUser
+      .$relatedQuery('executions')
+      .where('executions.flow_id', params.input.flowId)
+      .where('executions.test_run', false)
+      .where((builder) =>
+        builder
+          .where('executions.status', 'failure')
+          .orWhereNull('executions.status'),
+      )
+      .where(
+        'executions.created_at',
+        '>=',
+        new Date(Date.now() - SEVEN_DAYS_IN_MS).toISOString(),
+      )
+      .select('executions.id')
+    latestFailedExecutionSteps = await ExecutionStep.query()
+      .whereIn(
+        'execution_id',
+        failedExecutions.map((e) => e.id),
+      )
+      .orderBy([
+        { column: 'execution_id' },
+        { column: 'created_at', order: 'desc' },
+      ])
+      .distinctOn('execution_id')
+      .select('id', 'execution_id', 'status', 'job_id')
+  }
 
   // Double check that latest steps for each failed execution is a failure and
   // has a valid job ID.
