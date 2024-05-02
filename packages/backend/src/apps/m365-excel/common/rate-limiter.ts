@@ -7,7 +7,10 @@ import {
   RateLimiterUnion,
 } from 'rate-limiter-flexible'
 
-import { M365TenantKey } from '@/config/app-env-vars/m365'
+import {
+  M365_STEPS_LIMIT_PER_SEC,
+  M365TenantKey,
+} from '@/config/app-env-vars/m365'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import RetriableError from '@/errors/retriable-error'
 import logger from '@/helpers/logger'
@@ -73,7 +76,7 @@ const excelLimiter = new RateLimiterRedis({
 // than 1 excel step. For published pipes, it's not an issue because of
 // auto-retry.
 const perFileStepLimiter = new RateLimiterRedis({
-  points: 1,
+  points: M365_STEPS_LIMIT_PER_SEC,
   duration: 1,
   keyPrefix: 'm365-per-file-step-limiter',
   storeClient: redisClient,
