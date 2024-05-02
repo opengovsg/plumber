@@ -2,6 +2,10 @@ import z from 'zod'
 
 import appConfig from '../app'
 
+export const M365_STEPS_LIMIT_PER_SEC = Number(
+  process.env.M365_STEPS_LIMIT_PER_SEC ?? 1,
+)
+
 if (!appConfig) {
   throw new Error('Cyclic import of appConfig from app-env-vars')
 }
