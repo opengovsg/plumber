@@ -24,7 +24,7 @@ const trigger: IRawTrigger = {
     errorMsg:
       'Make a new submission to the form you connected and test the step again.',
     mockDataMsg:
-      'The data below is mocked based on your form. Make a FormSG submission to modify the data.',
+      'The data below is mocked based on your form. Make a FormSG submission to modify the data. ',
   },
   arguments: [
     {
@@ -73,8 +73,10 @@ const trigger: IRawTrigger = {
     const { formId } = getFormDetailsFromGlobalVariable($)
     const lastExecutionStep = await $.getLastExecutionStep()
 
-    // If no past submission (no form) or the form is changed, it is a mock run (pull mock data)
-    const hasNoPastSubmission = lastExecutionStep?.dataOut?.formId !== formId
+    // If no past submission (no form) or the form is changed, it is a mock run (re-pull mock data)
+    const hasNoPastSubmission =
+      lastExecutionStep?.dataOut?.formId !== formId ||
+      lastExecutionStep.metadata.isMock
 
     // if different or no form is detected, use mock data
     await $.pushTriggerItem({
