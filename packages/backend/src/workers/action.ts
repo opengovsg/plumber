@@ -71,7 +71,6 @@ export const worker = new WorkerPro(
       if (executionStep.isFailed) {
         // Properly fixed in https://github.com/opengovsg/plumber/pull/548
         try {
-          await Execution.setStatus(executionId, 'failure')
           return handleErrorAndThrow(executionStep.errorDetails, executionError)
         } catch (e) {
           const isRetriable =
