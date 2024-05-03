@@ -70,6 +70,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     { context: { autoSnackbar: false } },
   )
 
+  // executionStep contains executionSteps because it is a step
   const { data: response, step: executionStep } = data?.executeFlow ?? {}
 
   const stepsWithVariables = useMemo(() => {
@@ -148,6 +149,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
             selectedActionOrTrigger={selectedActionOrTrigger}
             stepsWithVariables={stepsWithVariables}
             isExecuted={isExecuted}
+            isMock={executionStep?.executionSteps[0].metadata?.isMock}
           />
 
           <LoadingButton

@@ -20,16 +20,38 @@ function getNoOutputMessage(
   return selectedActionOrTrigger?.webhookTriggerInstructions?.errorMsg ?? null
 }
 
+function getMockDataMessage(
+  selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
+): string | null {
+  // Type guard for ITrigger
+  if (
+    !selectedActionOrTrigger ||
+    !('webhookTriggerInstructions' in selectedActionOrTrigger)
+  ) {
+    return null
+  }
+
+  return (
+    selectedActionOrTrigger?.webhookTriggerInstructions?.mockDataMsg ?? null
+  )
+}
+
 interface TestResultsProps {
   step: IStep
   selectedActionOrTrigger: ITrigger | IAction | undefined
   stepsWithVariables: StepWithVariables[]
   isExecuted: boolean
+  isMock?: boolean
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
-  const { step, selectedActionOrTrigger, stepsWithVariables, isExecuted } =
-    props
+  const {
+    step,
+    selectedActionOrTrigger,
+    stepsWithVariables,
+    isExecuted,
+    isMock = false,
+  } = props
 
   // No data only happens if user hasn't executed yet, or step returned null.
   if (stepsWithVariables.length == 0) {
@@ -94,8 +116,10 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     <Box w="100%">
       <Infobox variant="success">
         <Text>
-          Here is the test data we found. You can use these as variables in your
-          action steps below.
+          {isMock && getMockDataMessage(selectedActionOrTrigger)}
+          {
+            ' You can use the data below as variables in your action steps below.'
+          }
         </Text>
       </Infobox>
       <Box maxH="25rem" overflowY="scroll" w="100%">

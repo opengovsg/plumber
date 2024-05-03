@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   postgres:
     image: postgres:14-alpine
@@ -39,14 +37,25 @@ services:
       - MINIO_SITE_REGION=ap-southeast-1
     volumes:
       - plumber-minio:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-I', 'http://minio:9000/minio/health/live']
+      interval: 1s
+      retries: 5
   create-minio-buckets:
     image: bitnami/minio-client:latest
+    volumes:
+      - ../frontend/src/assets/plumber-logo.jpg:/assets/plumber-logo.jpg
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/bash -c "
-      /usr/bin/env mc config host add plumber-minio http://minio:9000 minio-username minio-password &&
-      /usr/bin/env mc mb --ignore-existing plumber-minio/plumber-development-common-bucket 
+      mc config host add plumber-minio http://minio:9000 minio-username minio-password &&
+      mc alias set local http://minio:9000 minio-username minio-password &&
+      mc mb --ignore-existing plumber-minio/plumber-development-common-bucket &&
+      echo 'bucket created' &&
+      mc put /assets/plumber-logo.jpg local/plumber-development-common-bucket/mock/plumber-logo.jpg &&
+      echo 'logo uploaded to bucket'
       "
   dynamodb:
     image: amazon/dynamodb-local
