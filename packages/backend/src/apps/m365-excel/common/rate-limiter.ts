@@ -7,7 +7,10 @@ import {
   RateLimiterUnion,
 } from 'rate-limiter-flexible'
 
-import { M365TenantKey } from '@/config/app-env-vars/m365'
+import {
+  M365_STEPS_LIMIT_PER_SEC,
+  M365TenantKey,
+} from '@/config/app-env-vars/m365'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import RetriableError from '@/errors/retriable-error'
 import logger from '@/helpers/logger'
@@ -66,19 +69,15 @@ const excelLimiter = new RateLimiterRedis({
 // FIXME (ogp-weeloong): it turns out MS Graph cannot tolerate 10 QPS spikes
 // and will reply with HTTP 429 if we do that (even though it's technically
 // within rate limits). This is a workaround to stop these spikes until we get
-// BullMQ pro in, by choking ourselves to at most 1 step per 3 seconds per
+// BullMQ pro in, by choking ourselves to at most 1 step per 1 second per
 // file (hypothesis is that Excel can't handle bursts to the same file)
-//
-// 3 seconds was chosen as that was the P90 of excel API calls over past 2
-// weeks.
 //
 // Note that we don't throttle test runs to enable users to test pipes with more
 // than 1 excel step. For published pipes, it's not an issue because of
 // auto-retry.
-const P90_EXCEL_API_RTT_SECONDS = 3
 const perFileStepLimiter = new RateLimiterRedis({
-  points: 1,
-  duration: P90_EXCEL_API_RTT_SECONDS,
+  points: M365_STEPS_LIMIT_PER_SEC,
+  duration: 1,
   keyPrefix: 'm365-per-file-step-limiter',
   storeClient: redisClient,
 })
@@ -99,10 +98,7 @@ export async function throttleStepsForPublishedPipes(
 
     throw new RetriableError({
       error: 'Reached M365 step limit',
-      // If we're rate limited, we're probably facing a spike of steps for that
-      // file, so spread out retries over a wider time period (2x) to reduce the
-      // size of the retry thundering herd at any point in time.
-      delayInMs: P90_EXCEL_API_RTT_SECONDS * 1000 * 2,
+      delayInMs: 'default',
     })
   }
 }

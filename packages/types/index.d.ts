@@ -95,9 +95,14 @@ export interface IExecutionStep {
   jobId?: string
   createdAt: string
   updatedAt: string
+  metadata: IExecutionStepMetadata
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
+}
+
+export interface IExecutionStepMetadata {
+  isMock?: boolean
 }
 
 export interface IExecution {
@@ -105,7 +110,7 @@ export interface IExecution {
   flowId: string
   flow: IFlow
   testRun: boolean
-  status: 'success' | 'failure'
+  status: 'success' | 'failure' | null
   executionSteps: IExecutionStep[]
   updatedAt: string
   createdAt: string
@@ -471,6 +476,7 @@ export interface ITriggerItem {
   meta: {
     internalId: string
   }
+  isMock?: boolean
 }
 
 export type ITriggerInstructions = Partial<{
@@ -478,6 +484,7 @@ export type ITriggerInstructions = Partial<{
   afterUrlMsg: string
   hideWebhookUrl: boolean
   errorMsg: string
+  mockDataMsg: string
 }>
 
 // TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2

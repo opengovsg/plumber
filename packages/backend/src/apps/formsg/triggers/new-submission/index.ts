@@ -1,10 +1,11 @@
 import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
-import isEmpty from 'lodash/isEmpty'
-
 import StepError from '@/errors/step'
 
+import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
+
 import getDataOutMetadata from './get-data-out-metadata'
+import getMockData from './get-mock-data'
 
 export const NricFilter = {
   None: 'none',
@@ -19,10 +20,11 @@ const trigger: IRawTrigger = {
   type: 'webhook',
   description: 'Triggers when a new form submission is received',
   webhookTriggerInstructions: {
-    beforeUrlMsg: `# Make a new submission to the form you connected. Then, click test step.`,
     hideWebhookUrl: true,
     errorMsg:
       'Make a new submission to the form you connected and test the step again.',
+    mockDataMsg:
+      'The data below is mocked based on your form. Make a FormSG submission to modify the data.',
   },
   arguments: [
     {
@@ -67,15 +69,26 @@ const trigger: IRawTrigger = {
       )
     }
 
+    // data out should never be empty after test step is pressed once: either mock or actual data
+    const { formId } = getFormDetailsFromGlobalVariable($)
     const lastExecutionStep = await $.getLastExecutionStep()
-    if (!isEmpty(lastExecutionStep?.dataOut)) {
-      await $.pushTriggerItem({
-        raw: lastExecutionStep?.dataOut,
-        meta: {
-          internalId: '',
-        },
-      })
-    }
+
+    // If no past submission (no form) or the form is changed, it is a mock run (re-pull mock data)
+    const hasNoPastSubmission =
+      lastExecutionStep?.dataOut?.formId !== formId ||
+      lastExecutionStep.metadata.isMock
+
+    // if different or no form is detected, use mock data
+    await $.pushTriggerItem({
+      raw: hasNoPastSubmission
+        ? await getMockData($)
+        : lastExecutionStep?.dataOut,
+      meta: {
+        internalId: '',
+      },
+      isMock:
+        hasNoPastSubmission || (lastExecutionStep.metadata?.isMock ?? false), // use previous mock run status from metadata by default
+    })
   },
 }
 
