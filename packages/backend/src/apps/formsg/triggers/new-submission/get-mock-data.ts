@@ -57,7 +57,9 @@ async function getMockData($: IGlobalVariable) {
       submissionTime: DateTime.now().toISO(),
       formId,
       ...(formDetails.form.authType !== 'NIL' && {
-        'NRIC/FIN (Verified)': filterNric($, MOCK_NRIC),
+        verifiedSubmitterInfo: {
+          sgidUinFin: filterNric($, MOCK_NRIC),
+        },
       }),
     }
   } catch (e) {
