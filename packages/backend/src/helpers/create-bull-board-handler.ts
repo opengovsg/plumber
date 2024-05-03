@@ -10,11 +10,7 @@ import triggerQueue from '@/queues/trigger'
 const serverAdapter = new ExpressAdapter()
 
 const createBullBoardHandler = async (serverAdapter: ExpressAdapter) => {
-  if (
-    !appConfig.enableBullMQDashboard ||
-    !appConfig.bullMQDashboardUsername ||
-    !appConfig.bullMQDashboardPassword
-  ) {
+  if (!appConfig.enableBullMQDashboard || !appConfig.adminUserEmail) {
     return
   }
 

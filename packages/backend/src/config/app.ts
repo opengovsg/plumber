@@ -27,8 +27,7 @@ type AppConfig = {
   redisTls: boolean
   redisClusterMode: boolean
   enableBullMQDashboard: boolean
-  bullMQDashboardUsername: string
-  bullMQDashboardPassword: string
+  adminUserEmail?: string
   requestBodySizeLimit: string
   formsgApiKey: string
   postman: {
@@ -78,9 +77,8 @@ const appConfig: AppConfig = {
   redisPassword: process.env.REDIS_PASSWORD,
   redisTls: process.env.REDIS_TLS === 'true',
   redisClusterMode: process.env.REDIS_CLUSTER_MODE === 'true',
+  adminUserEmail: process.env.ADMIN_USER_EMAIL,
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
-  bullMQDashboardUsername: process.env.BULLMQ_DASHBOARD_USERNAME,
-  bullMQDashboardPassword: process.env.BULLMQ_DASHBOARD_PASSWORD,
   baseUrl: process.env.BASE_URL,
   webAppUrl,
   webhookUrl,
