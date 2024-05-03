@@ -1,4 +1,4 @@
-import { IJSONObject } from '@plumber/types'
+import { IExecutionStepMetadata, IJSONObject } from '@plumber/types'
 
 import Base from './base'
 import Execution from './execution'
@@ -15,6 +15,7 @@ class ExecutionStep extends Base {
   appKey: string
   jobId: string
   step: Step
+  metadata: IExecutionStepMetadata
 
   static tableName = 'execution_steps'
 
@@ -31,6 +32,14 @@ class ExecutionStep extends Base {
       errorDetails: { type: ['object', 'null'] },
       appKey: { type: ['string', 'null'] },
       jobId: { type: ['string', 'null'] },
+      metadata: {
+        type: 'object',
+        properties: {
+          isMock: {
+            type: 'boolean',
+          },
+        },
+      },
     },
   }
 
