@@ -18,6 +18,30 @@ type FormField = {
 const MOCK_ATTACHMENT_FILE_PATH = `s3:${COMMON_S3_BUCKET}:mock/plumber-logo.jpg`
 const MOCK_NRIC = 'S1234568B'
 
+function generateVerifiedSubmitterInfoData(
+  authType: string,
+  $: IGlobalVariable,
+): Record<string, Record<string, string>> {
+  const filteredNric = filterNric($, MOCK_NRIC)
+  switch (authType) {
+    case 'SGID':
+    case 'SGID_MyInfo':
+      return {
+        verifiedSubmitterInfo: {
+          sgidUinFin: filteredNric,
+        },
+      }
+    case 'SP':
+    case 'MyInfo':
+      return {
+        verifiedSubmitterInfo: {
+          uinFin: filteredNric,
+        },
+      }
+  }
+  return {}
+}
+
 async function getMockData($: IGlobalVariable) {
   try {
     const { formId } = getFormDetailsFromGlobalVariable($)
@@ -56,9 +80,7 @@ async function getMockData($: IGlobalVariable) {
       submissionId: await generateIdAsync(),
       submissionTime: DateTime.now().toISO(),
       formId,
-      ...(formDetails.form.authType !== 'NIL' && {
-        'NRIC/FIN (Verified)': filterNric($, MOCK_NRIC),
-      }),
+      ...generateVerifiedSubmitterInfoData(formDetails.form.authType, $),
     }
   } catch (e) {
     throw new Error(
