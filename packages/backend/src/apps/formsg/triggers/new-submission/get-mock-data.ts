@@ -84,7 +84,7 @@ async function getMockData($: IGlobalVariable) {
     }
   } catch (e) {
     throw new Error(
-      'Unable to fetch form fields. Form might be deleted or not public.',
+      'Unable to generate mock form data. Please make an actual submission to proceed.',
     )
   }
 }
