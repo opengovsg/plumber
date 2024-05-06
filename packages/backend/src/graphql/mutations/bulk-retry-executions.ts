@@ -1,11 +1,12 @@
 import { chunk } from 'lodash'
 
+import appConfig from '@/config/app'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import ExtendedQueryBuilder from '@/models/query-builder'
-import actionQueue from '@/queues/action'
+import { enqueueActionJob, getActionJob } from '@/queues/action'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -52,7 +53,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   context,
 ) => {
   let latestFailedExecutionSteps = await getAllFailedExecutionSteps(
-    context.currentUser.email === 'plumber@open.gov.sg'
+    context.currentUser.email === appConfig.adminUserEmail
       ? Execution.query()
       : context.currentUser.$relatedQuery('executions'),
     params.input.flowId,
@@ -108,9 +109,9 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   const chunkedSteps = chunk(latestFailedExecutionSteps, CHUNK_SIZE)
   for (const currChunk of chunkedSteps) {
     const promises = currChunk.map(async (executionStep) => {
-      const { id: executionStepId, executionId, jobId } = executionStep
+      const { id: executionStepId, executionId, jobId, appKey } = executionStep
 
-      const job = await actionQueue.getJob(jobId)
+      const job = await getActionJob(jobId)
       if (!job) {
         // if job cannot be found anymore, remove the job id from the execution step so it cannot be retried again
         await executionStep.$query().patch({ jobId: null })
@@ -156,11 +157,12 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
 
       try {
         await job.remove()
-        const newJob = await actionQueue.add(
-          job.name,
-          job.data,
-          DEFAULT_JOB_OPTIONS,
-        )
+        const newJob = await enqueueActionJob({
+          appKey: appKey,
+          jobName: job.name,
+          jobData: job.data,
+          jobOptions: DEFAULT_JOB_OPTIONS,
+        })
         await Execution.query().findById(executionId).patch({ status: null })
         await executionStep.$query().patch({ jobId: newJob.id })
 

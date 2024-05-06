@@ -12,7 +12,7 @@ import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Flow from '@/models/flow'
-import actionQueue from '@/queues/action'
+import { enqueueActionJob } from '@/queues/action'
 import { processTrigger } from '@/services/trigger'
 
 const DEFAULT_MAX_QPS = 10
@@ -145,13 +145,18 @@ export default async (request: IRequest, response: Response) => {
   const nextStep = await triggerStep.getNextStep()
   const jobName = `${executionId}-${nextStep.id}`
 
-  const jobPayload = {
+  const jobData = {
     flowId,
     executionId,
     stepId: nextStep.id,
   }
 
-  await actionQueue.add(jobName, jobPayload, DEFAULT_JOB_OPTIONS)
+  await enqueueActionJob({
+    appKey: nextStep.appKey,
+    jobName,
+    jobData,
+    jobOptions: DEFAULT_JOB_OPTIONS,
+  })
 
   return response.sendStatus(200)
 }

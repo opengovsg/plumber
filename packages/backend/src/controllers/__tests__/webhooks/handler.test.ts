@@ -30,9 +30,7 @@ const mocks = vi.hoisted(() => {
       })),
     },
     processTrigger: vi.fn(() => ({ executionId: 'execution-id' })),
-    actionQueue: {
-      add: vi.fn(),
-    },
+    enqueueActionJob: vi.fn(),
   }
 })
 
@@ -60,7 +58,7 @@ vi.mock('@/services/trigger', () => ({
   processTrigger: mocks.processTrigger,
 }))
 vi.mock('@/queues/action', () => ({
-  default: mocks.actionQueue,
+  enqueueActionJob: mocks.enqueueActionJob,
 }))
 vi.mock('rate-limiter-flexible', async () => ({
   RateLimiterRes: mocks.rateLimiterRes,
@@ -166,7 +164,7 @@ describe('webhook handler', () => {
         await webhookHandler(request, mocks.response)
         expect(mocks.processTrigger).toHaveBeenCalledOnce()
         if (isActiveFlow) {
-          expect(mocks.actionQueue.add).toHaveBeenCalledOnce()
+          expect(mocks.enqueueActionJob).toHaveBeenCalledOnce()
         }
         expect(mocks.response.sendStatus).toHaveReturnedWith(200)
       },
@@ -181,7 +179,7 @@ describe('webhook handler', () => {
         })
         await webhookHandler(request, mocks.response)
         expect(mocks.processTrigger).not.toHaveBeenCalled()
-        expect(mocks.actionQueue.add).not.toHaveBeenCalled()
+        expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
         expect(mocks.response.sendStatus).toHaveReturnedWith(429)
       },
     )
@@ -197,7 +195,7 @@ describe('webhook handler', () => {
         await webhookHandler(request, mocks.response)
         expect(mocks.processTrigger).toHaveBeenCalledOnce()
         if (isActiveFlow) {
-          expect(mocks.actionQueue.add).toHaveBeenCalledOnce()
+          expect(mocks.enqueueActionJob).toHaveBeenCalledOnce()
         }
         expect(mocks.response.sendStatus).toHaveReturnedWith(200)
       },

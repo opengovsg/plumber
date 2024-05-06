@@ -3,18 +3,14 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { ExpressAdapter } from '@bull-board/express'
 
 import appConfig from '@/config/app'
-import actionQueue from '@/queues/action'
+import { appActionQueues, mainActionQueue } from '@/queues/action'
 import flowQueue from '@/queues/flow'
 import triggerQueue from '@/queues/trigger'
 
 const serverAdapter = new ExpressAdapter()
 
 const createBullBoardHandler = async (serverAdapter: ExpressAdapter) => {
-  if (
-    !appConfig.enableBullMQDashboard ||
-    !appConfig.bullMQDashboardUsername ||
-    !appConfig.bullMQDashboardPassword
-  ) {
+  if (!appConfig.enableBullMQDashboard) {
     return
   }
 
@@ -22,9 +18,25 @@ const createBullBoardHandler = async (serverAdapter: ExpressAdapter) => {
     queues: [
       new BullMQAdapter(flowQueue),
       new BullMQAdapter(triggerQueue),
-      new BullMQAdapter(actionQueue),
+      new BullMQAdapter(mainActionQueue),
+      ...Object.values(appActionQueues).map(
+        (queue) => new BullMQAdapter(queue),
+      ),
     ],
     serverAdapter: serverAdapter,
+    options: {
+      uiConfig: {
+        favIcon: {
+          default: `${appConfig.webAppUrl}/favicon.svg`,
+          alternative: 'https://file.go.gov.sg/plumber-logo.png',
+        },
+        boardLogo: {
+          path: 'https://file.go.gov.sg/plumber-logo-full.png',
+          height: 70,
+        },
+        boardTitle: '',
+      },
+    },
   })
 }
 
