@@ -1,18 +1,28 @@
 import { ExpressAdapter } from '@bull-board/express'
-import { Application } from 'express'
-import basicAuth from 'express-basic-auth'
+import { Application, NextFunction, Request, Response } from 'express'
 
 import appConfig from '@/config/app'
+
+import { getLoggedInUser } from './auth'
+
+export const verifyIsAdminMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const user = await getLoggedInUser(req)
+  if (user?.email !== appConfig.adminUserEmail) {
+    res.sendStatus(401)
+    return
+  }
+  next()
+}
 
 const injectBullBoardHandler = async (
   app: Application,
   serverAdapter: ExpressAdapter,
 ) => {
-  if (
-    !appConfig.enableBullMQDashboard ||
-    !appConfig.bullMQDashboardUsername ||
-    !appConfig.bullMQDashboardPassword
-  ) {
+  if (!appConfig.enableBullMQDashboard) {
     return
   }
 
@@ -21,12 +31,7 @@ const injectBullBoardHandler = async (
 
   app.use(
     queueDashboardBasePath,
-    basicAuth({
-      users: {
-        [appConfig.bullMQDashboardUsername]: appConfig.bullMQDashboardPassword,
-      },
-      challenge: true,
-    }),
+    verifyIsAdminMiddleware,
     serverAdapter.getRouter(),
   )
 }

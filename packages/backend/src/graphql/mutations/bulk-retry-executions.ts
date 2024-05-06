@@ -1,5 +1,6 @@
 import { chunk } from 'lodash'
 
+import appConfig from '@/config/app'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
@@ -52,7 +53,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   context,
 ) => {
   let latestFailedExecutionSteps = await getAllFailedExecutionSteps(
-    context.currentUser.email === 'plumber@open.gov.sg'
+    context.currentUser.email === appConfig.adminUserEmail
       ? Execution.query()
       : context.currentUser.$relatedQuery('executions'),
     params.input.flowId,
