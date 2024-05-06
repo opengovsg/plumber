@@ -11,6 +11,16 @@ export const REDIS_DB_INDEX = {
   GLOBAL_DATA: 4,
 }
 
+function reconnectOnError(err: Error) {
+  const targetError = 'READONLY'
+  if (err.message.includes(targetError)) {
+    // Only reconnect when the error contains "READONLY"
+    // during node failover, this is thrown: 149: -READONLY You can't write against a read only replica.
+    return true
+  }
+  return false
+}
+
 export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
   appConfig.redisClusterMode
     ? new ioRedis.Cluster(
@@ -27,6 +37,7 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
             username: appConfig.redisUsername,
             password: appConfig.redisPassword,
             db,
+            reconnectOnError,
           },
         },
       )
@@ -39,12 +50,5 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
         enableReadyCheck: false,
         maxRetriesPerRequest: null, // commands wait forever until the connection is alive again.
         db,
-        reconnectOnError(err) {
-          const targetError = 'READONLY'
-          if (err.message.includes(targetError)) {
-            // Only reconnect when the error contains "READONLY"
-            // during node failover, this is thrown: 149: -READONLY You can't write against a read only replica.
-            return true
-          }
-        },
+        reconnectOnError,
       })

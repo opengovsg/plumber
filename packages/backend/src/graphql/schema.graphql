@@ -67,6 +67,9 @@ type Mutation {
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
+  bulkRetryExecutions(
+    input: BulkRetryExecutionsInput
+  ): BulkRetryExecutionsResult!
   logout: Boolean
   loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
   loginWithSelectedSgid(
@@ -242,6 +245,11 @@ type ExecutionStep {
   errorDetails: JSONObject
   createdAt: String
   updatedAt: String
+  metadata: ExecutionStepMetadata!
+}
+
+type ExecutionStepMetadata {
+  isMock: Boolean
 }
 
 type Field {
@@ -298,6 +306,11 @@ type Execution {
   updatedAt: String
   status: String
   flow: Flow
+}
+
+type BulkRetryExecutionsResult {
+  numFailedExecutions: Int!
+  allSuccessfullyRetried: Boolean!
 }
 
 input CreateConnectionInput {
@@ -403,6 +416,11 @@ input RetryExecutionStepInput {
   executionStepId: String!
 }
 
+input BulkRetryExecutionsInput {
+  flowId: String!
+  executionIds: [String!]
+}
+
 """
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
@@ -485,6 +503,7 @@ type TriggerInstructions {
   afterUrlMsg: String
   hideWebhookUrl: Boolean
   errorMsg: String
+  mockDataMsg: String
 }
 
 type StepTransferDetails {

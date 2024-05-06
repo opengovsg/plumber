@@ -8,6 +8,7 @@ import {
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
+import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import {
   DEFAULT_JOB_OPTIONS,
@@ -23,10 +24,8 @@ import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
-import { enqueueActionJob } from '@/queues/action'
+import { enqueueActionJob, makeActionJobId } from '@/queues/action'
 import { processAction } from '@/services/action'
-
-import { handleFailedStepAndThrow } from '../actions'
 
 function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
@@ -91,7 +90,6 @@ export function makeActionWorker(
 ): WorkerPro<IActionJobData> {
   const { queueName, workerOptions, isQueuePausable } =
     convertParamsToBullMqOptions(params)
-
   const worker: WorkerPro<IActionJobData> = new WorkerPro<IActionJobData>(
     queueName,
     tracer.wrap(
@@ -100,11 +98,14 @@ export function makeActionWorker(
       'workers.action',
       async (job) => {
         const span = tracer.scope().active()
-        const jobData = job.data
 
-        // the reason why we dont add .throwIfNotFound() here is to prevent job retries
-        // delegating the error throwing and handling to processAction where it also queries for Step
-        const step: Step = await Step.query().findById(jobData.stepId)
+        const jobData = job.data
+        const jobId = makeActionJobId(queueName, job.id)
+
+        // The reason why we dont add .throwIfNotFound() here is to prevent job
+        // retries delegating the error throwing and handling to processAction
+        // where it also queries for Step.
+        const step = await Step.query().findById(jobData.stepId)
 
         span?.addTags({
           queueName,
@@ -113,6 +114,7 @@ export function makeActionWorker(
           stepId: jobData.stepId,
           actionKey: step?.key,
           appKey: step?.appKey,
+          jobId,
         })
 
         const {
@@ -122,16 +124,14 @@ export function makeActionWorker(
           executionStep,
           nextStepMetadata,
           executionError,
-        } = await processAction({ ...jobData, jobId: job.id }).catch(
-          async (err) => {
-            // this happens when the prerequisite steps for the action fails (e.g. db error, missing execution, flow, step, etc...)
-            // in such cases, we do not want to retry
-            await Execution.setStatus(jobData.executionId, 'failure')
-            throw new UnrecoverableError(
-              err.message || 'Action failed to execute',
-            )
-          },
-        )
+        } = await processAction({ ...jobData, jobId }).catch(async (err) => {
+          // This happens when the prerequisite steps for the action fails (e.g.
+          // db error, missing execution, flow, step, etc...) in such cases, we
+          // do not want to retry
+          throw new UnrecoverableError(
+            err.message || 'Action failed to execute',
+          )
+        })
 
         if (executionStep.isFailed) {
           return await handleFailedStepAndThrow({
@@ -140,8 +140,8 @@ export function makeActionWorker(
             executionError,
             context: {
               isQueuePausable,
-              span,
               worker,
+              span,
               job,
             },
           })
@@ -208,8 +208,11 @@ export function makeActionWorker(
         err,
         queueName,
         job: job.data,
+        attemptsMade: job.attemptsMade,
+        attemptsStarted: job.attemptsStarted,
       },
     )
+
     try {
       const flow = await Flow.query()
         .findById(job.data.flowId)

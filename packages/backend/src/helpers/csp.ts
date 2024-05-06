@@ -48,7 +48,7 @@ const helmetOptions: HelmetOptions = {
         !appConfig.isDev && 'https://*.apollographql.com',
       ].filter(Boolean),
       upgradeInsecureRequests: [],
-      workerSrc: ['blob:'],
+      workerSrc: ['blob:', "'self'"],
     },
   },
   crossOriginOpenerPolicy: {

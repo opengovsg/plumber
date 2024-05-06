@@ -26,8 +26,24 @@ export function setAuthCookie(
   return
 }
 
-export function getAuthCookie(req: Request) {
+function getAuthCookie(req: Request) {
   return req.cookies[AUTH_COOKIE_NAME]
+}
+
+export async function getLoggedInUser(req: Request): Promise<User | null> {
+  const token = getAuthCookie(req)
+  if (!token) {
+    return null
+  }
+
+  try {
+    const { userId } = jwt.verify(token, appConfig.sessionSecretKey) as {
+      userId: string
+    }
+    return User.query().findById(userId)
+  } catch (err) {
+    return null
+  }
 }
 
 export function deleteAuthCookie(res: Response) {

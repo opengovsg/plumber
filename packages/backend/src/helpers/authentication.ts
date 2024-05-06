@@ -1,12 +1,9 @@
 import { Request, Response } from 'express'
 import { createRateLimitRule, RedisStore } from 'graphql-rate-limit'
 import { allow, rule, shield } from 'graphql-shield'
-import jwt from 'jsonwebtoken'
 
-import appConfig from '@/config/app'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
-import { getAuthCookie } from '@/helpers/auth'
-import User from '@/models/user'
+import { getLoggedInUser } from '@/helpers/auth'
 import { UnauthenticatedContext } from '@/types/express/context'
 
 export const setCurrentUserContext = async ({
@@ -21,18 +18,7 @@ export const setCurrentUserContext = async ({
   // Get tiles view key from headers
   context.tilesViewKey = req.headers['x-tiles-view-key'] as string | undefined
 
-  const token = getAuthCookie(req)
-  if (token == null) {
-    return context
-  }
-  try {
-    const { userId } = jwt.verify(token, appConfig.sessionSecretKey) as {
-      userId: string
-    }
-    context.currentUser = await User.query().findById(userId)
-  } catch (_) {
-    context.currentUser = null
-  }
+  context.currentUser = await getLoggedInUser(req)
   return context
 }
 
