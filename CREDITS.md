@@ -1112,18 +1112,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -------------------------------------------------------------------------------
 
 ## Project
-express-basic-auth
-
-### Source
-https://github.com/LionC/express-basic-auth
-
-### License
-(The MIT License)
-
-
--------------------------------------------------------------------------------
-
-## Project
 form-data
 
 ### Source
