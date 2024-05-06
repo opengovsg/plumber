@@ -27,7 +27,7 @@ type AppConfig = {
   redisTls: boolean
   redisClusterMode: boolean
   enableBullMQDashboard: boolean
-  adminUserEmail?: string
+  adminUserEmail: string
   requestBodySizeLimit: string
   formsgApiKey: string
   postman: {
