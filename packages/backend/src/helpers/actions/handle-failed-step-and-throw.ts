@@ -148,7 +148,7 @@ interface HandleFailedStepAndThrowParams {
 
 export function handleFailedStepAndThrow(
   params: HandleFailedStepAndThrowParams,
-): Promise<never> {
+): never {
   let { executionError } = params
   const { errorDetails, context } = params
   const { span, job } = context
