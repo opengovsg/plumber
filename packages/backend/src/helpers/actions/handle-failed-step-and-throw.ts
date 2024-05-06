@@ -8,7 +8,6 @@ import get from 'lodash.get'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
-import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
@@ -134,7 +133,6 @@ function handleHttpError(
 }
 
 interface HandleFailedStepAndThrowParams {
-  executionId: Execution['id']
   errorDetails: ExecutionStep['errorDetails']
 
   // This is thrown from app.run, which _in theory_ can be anything.
@@ -148,11 +146,11 @@ interface HandleFailedStepAndThrowParams {
   }
 }
 
-export async function handleFailedStepAndThrow(
+export function handleFailedStepAndThrow(
   params: HandleFailedStepAndThrowParams,
 ): Promise<never> {
   let { executionError } = params
-  const { executionId, errorDetails, context } = params
+  const { errorDetails, context } = params
   const { span, job } = context
 
   // Edge case as some actions throw StepError now, but others don't.
@@ -188,7 +186,6 @@ export async function handleFailedStepAndThrow(
       span?.addTags({
         willRetry: 'false',
       })
-      await Execution.setStatus(executionId, 'failure')
     }
 
     throw finalError

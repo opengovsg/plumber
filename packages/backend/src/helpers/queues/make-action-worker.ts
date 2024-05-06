@@ -134,8 +134,7 @@ export function makeActionWorker(
         })
 
         if (executionStep.isFailed) {
-          return await handleFailedStepAndThrow({
-            executionId,
+          return handleFailedStepAndThrow({
             errorDetails: executionStep.errorDetails,
             executionError,
             context: {
@@ -202,8 +201,10 @@ export function makeActionWorker(
   })
 
   worker.on('failed', async (job, err) => {
+    const { flowId, executionId } = job.data
+
     logger.error(
-      `[${queueName}] JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
+      `[${queueName}] JOB ID: ${job.id} - FLOW ID: ${flowId} has failed to start with ${err.message}`,
       {
         err,
         queueName,
@@ -213,7 +214,18 @@ export function makeActionWorker(
       },
     )
 
+    const willRetryJob = !(
+      err instanceof UnrecoverableError ||
+      job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
+    )
+    if (willRetryJob) {
+      // No further post-processing needed if we're retrying.
+      return
+    }
+
     try {
+      await Execution.setStatus(executionId, 'failure')
+
       const flow = await Flow.query()
         .findById(job.data.flowId)
         .withGraphFetched('user')
@@ -222,28 +234,22 @@ export function makeActionWorker(
       const shouldAlwaysSendEmail =
         flow.config?.errorConfig?.notificationFrequency === 'always'
 
-      // don't check redis if notification frequency is always
-      if (
-        !shouldAlwaysSendEmail &&
-        (await isErrorEmailAlreadySent(job.data.flowId))
-      ) {
+      // Don't check redis if notification frequency is always
+      if (!shouldAlwaysSendEmail && (await isErrorEmailAlreadySent(flowId))) {
         return
       }
 
-      if (
-        err instanceof UnrecoverableError ||
-        job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
-      ) {
-        const emailErrorDetails = await sendErrorEmail(flow)
-        logger.info(`Sent error email for FLOW ID: ${job.data.flowId}`, {
-          errorDetails: { ...emailErrorDetails, ...job.data },
-        })
-      }
+      const emailErrorDetails = await sendErrorEmail(flow)
+      logger.info(`Sent error email for execution ID: ${executionId}`, {
+        errorDetails: { ...emailErrorDetails, ...job.data },
+      })
     } catch (err) {
       logger.error(
-        `Could not send error email for FLOW ID: ${job.data.flowId}`,
+        `Error while running onFailed callback for execution ID ${executionId}`,
         {
-          errorDetails: { ...job.data, err: err.stack },
+          event: 'onfailed-callback-failed',
+          err,
+          jobData: job.data,
         },
       )
     }

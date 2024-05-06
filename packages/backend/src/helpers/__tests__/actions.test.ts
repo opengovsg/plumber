@@ -125,7 +125,7 @@ describe('action helper functions', () => {
         { retryAfter: '15', expectedResult: 15000 },
       ])(
         'retries if valid Retry-After ($retryAfter) is in headers',
-        async ({ retryAfter, expectedResult }) => {
+        ({ retryAfter, expectedResult }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
 
           const error = new HttpError({
@@ -137,8 +137,7 @@ describe('action helper functions', () => {
           } as unknown as AxiosError)
 
           try {
-            await handleFailedStepAndThrow({
-              executionId: 'test-exec-id',
+            handleFailedStepAndThrow({
               errorDetails: {},
               executionError: error,
               context: MOCK_CONTEXT,
@@ -157,7 +156,7 @@ describe('action helper functions', () => {
         { retryAfter: '2000000' },
       ])(
         'does not retry Retry-After ($retryAfter) if wait is too long',
-        async ({ retryAfter }) => {
+        ({ retryAfter }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
           const error = new HttpError({
             response: {
@@ -168,8 +167,7 @@ describe('action helper functions', () => {
           } as unknown as AxiosError)
 
           try {
-            await handleFailedStepAndThrow({
-              executionId: 'test-exec-id',
+            handleFailedStepAndThrow({
               errorDetails: {},
               executionError: error,
               context: MOCK_CONTEXT,
@@ -189,7 +187,7 @@ describe('action helper functions', () => {
         { retryAfter: '-200' },
       ])(
         'does not retry Retry-After if value ("$retryAfter") is invalid',
-        async ({ retryAfter }) => {
+        ({ retryAfter }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
           const error = new HttpError({
             response: {
@@ -199,59 +197,52 @@ describe('action helper functions', () => {
             },
           } as unknown as AxiosError)
 
-          await expect(
+          expect(() =>
             handleFailedStepAndThrow({
-              executionId: 'test-exec-id',
               errorDetails: {},
               executionError: error,
               context: MOCK_CONTEXT,
             }),
-          ).rejects.toThrowError(UnrecoverableError)
+          ).toThrowError(UnrecoverableError)
         },
       )
 
-      it.each([504, 429])(
-        'retries some http status codes (%d)',
-        async (code) => {
-          const error = new HttpError({
-            response: {
-              status: code,
-            },
-          } as unknown as AxiosError)
-          await expect(
-            handleFailedStepAndThrow({
-              executionId: 'test-exec-id',
-              errorDetails: {},
-              executionError: error,
-              context: MOCK_CONTEXT,
-            }),
-          ).rejects.toThrowError(RetriableError)
-        },
-      )
+      it.each([504, 429])('retries some http status codes (%d)', (code) => {
+        const error = new HttpError({
+          response: {
+            status: code,
+          },
+        } as unknown as AxiosError)
+        expect(() =>
+          handleFailedStepAndThrow({
+            errorDetails: {},
+            executionError: error,
+            context: MOCK_CONTEXT,
+          }),
+        ).toThrowError(RetriableError)
+      })
 
       it.each([
         { details: { error: 'read ECONNRESET' } },
         { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
       ])(
         'retries errors with retriable messages ($details.error)',
-        async (errorDetails: IJSONObject) => {
-          await expect(
+        (errorDetails: IJSONObject) => {
+          expect(() =>
             handleFailedStepAndThrow({
-              executionId: 'test-exec-id',
               errorDetails: errorDetails,
               executionError: EMPTY_HTTP_ERROR,
               context: MOCK_CONTEXT,
             }),
-          ).rejects.toThrowError(RetriableError)
+          ).toThrowError(RetriableError)
         },
       )
     })
 
     describe('RetriableError handling', () => {
-      it('pauses the queue if delayType is queue and the queue is pausable', async () => {
+      it('pauses the queue if delayType is queue and the queue is pausable', () => {
         try {
-          await handleFailedStepAndThrow({
-            executionId: 'test-exec-id',
+          handleFailedStepAndThrow({
             errorDetails: {},
             executionError: new RetriableError({
               error: 'test error',
@@ -272,10 +263,9 @@ describe('action helper functions', () => {
         }
       })
 
-      it('does not pause the queue if delayType is queue but queue is not pausable', async () => {
-        await expect(
+      it('does not pause the queue if delayType is queue but queue is not pausable', () => {
+        expect(() =>
           handleFailedStepAndThrow({
-            executionId: 'test-exec-id',
             errorDetails: {},
             executionError: new RetriableError({
               error: 'test error',
@@ -284,13 +274,13 @@ describe('action helper functions', () => {
             }),
             context: MOCK_CONTEXT,
           }),
-        ).rejects.toThrow(RetriableError)
+        ).toThrow(RetriableError)
 
         expect(mocks.workerRateLimit).not.toBeCalled()
         expect(mocks.workerRateLimitGroup).not.toBeCalled()
       })
 
-      it("pauses the job's group if delayType is group", async () => {
+      it("pauses the job's group if delayType is group", () => {
         const job = {
           opts: {
             group: {
@@ -300,8 +290,7 @@ describe('action helper functions', () => {
         } as unknown as JobPro<IActionJobData>
 
         try {
-          await handleFailedStepAndThrow({
-            executionId: 'test-exec-id',
+          handleFailedStepAndThrow({
             errorDetails: {},
             executionError: new RetriableError({
               error: 'test error',
@@ -322,10 +311,9 @@ describe('action helper functions', () => {
         }
       })
 
-      it('does not pause the group if delayType is group but job does not have a group', async () => {
-        await expect(
+      it('does not pause the group if delayType is group but job does not have a group', () => {
+        expect(() =>
           handleFailedStepAndThrow({
-            executionId: 'test-exec-id',
             errorDetails: {},
             executionError: new RetriableError({
               error: 'test error',
@@ -334,29 +322,28 @@ describe('action helper functions', () => {
             }),
             context: MOCK_CONTEXT,
           }),
-        ).rejects.toThrow(RetriableError)
+        ).toThrow(RetriableError)
 
         expect(mocks.workerRateLimit).not.toBeCalled()
         expect(mocks.workerRateLimitGroup).not.toBeCalled()
       })
 
-      it('throws the original RetriableError if delayType is step', async () => {
+      it('throws the original RetriableError if delayType is step', () => {
         const error = new RetriableError({
           error: 'test error',
           delayInMs: 100,
           delayType: 'group',
         })
 
-        await expect(
+        expect(() =>
           handleFailedStepAndThrow({
-            executionId: 'test-exec-id',
             errorDetails: {},
             executionError: error,
             context: {
               ...MOCK_CONTEXT,
             },
           }),
-        ).rejects.toThrow(error)
+        ).toThrow(error)
       })
     })
 
@@ -389,18 +376,17 @@ describe('action helper functions', () => {
         },
       ])(
         'unpacks the original error if it gets a StepError',
-        async ({ stepError, isRetried }) => {
+        ({ stepError, isRetried }) => {
           const expectedErrorType = isRetried
             ? RetriableError
             : UnrecoverableError
-          await expect(
+          expect(() =>
             handleFailedStepAndThrow({
-              executionId: 'test-exec-id',
               errorDetails: {},
               executionError: stepError,
               context: MOCK_CONTEXT,
             }),
-          ).rejects.toThrowError(expectedErrorType)
+          ).toThrowError(expectedErrorType)
         },
       )
 
@@ -441,21 +427,20 @@ describe('action helper functions', () => {
         },
       ])(
         'does not retry other types of errors',
-        async ({
+        ({
           errorDetails,
           executionError,
         }: {
           errorDetails: IJSONObject
           executionError: unknown
         }) => {
-          await expect(
+          expect(() =>
             handleFailedStepAndThrow({
-              executionId: 'test-exec-id',
               errorDetails,
               executionError,
               context: MOCK_CONTEXT,
             }),
-          ).rejects.toThrowError(UnrecoverableError)
+          ).toThrowError(UnrecoverableError)
         },
       )
     })
@@ -476,51 +461,19 @@ describe('action helper functions', () => {
         },
       ])(
         'adds the appropriate willRetry tag to the span',
-        async ({ executionError, expectedTagValue }) => {
-          await expect(
+        ({ executionError, expectedTagValue }) => {
+          expect(() =>
             handleFailedStepAndThrow({
-              executionId: 'test-exec-id',
               errorDetails: {},
               executionError,
               context: MOCK_CONTEXT,
             }),
-          ).rejects.toThrow()
+          ).toThrow()
           expect(mocks.addSpanTags).toBeCalledWith({
             willRetry: expectedTagValue,
           })
         },
       )
-
-      it('sets execution status to failure if error is not retried', async () => {
-        await expect(
-          handleFailedStepAndThrow({
-            executionId: 'test-exec-id',
-            errorDetails: {},
-            executionError: new UnrecoverableError('herp derp'),
-            context: MOCK_CONTEXT,
-          }),
-        ).rejects.toThrow()
-        expect(mocks.setExecutionStatus).toBeCalledWith(
-          'test-exec-id',
-          'failure',
-        )
-      })
-
-      it('does not set execution status if error is retried', async () => {
-        await expect(
-          handleFailedStepAndThrow({
-            executionId: 'test-exec-id',
-            errorDetails: {},
-            executionError: new RetriableError({
-              error: 'test error',
-              delayInMs: 100,
-              delayType: 'step',
-            }),
-            context: MOCK_CONTEXT,
-          }),
-        ).rejects.toThrow()
-        expect(mocks.setExecutionStatus).not.toBeCalled()
-      })
     })
   })
 })
