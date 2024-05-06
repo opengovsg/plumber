@@ -1,6 +1,8 @@
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 import {
+  actionQueuesByName,
+  appActionQueues,
   MAIN_ACTION_QUEUE_NAME,
   MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
 } from '@/queues/action'
@@ -58,5 +60,20 @@ describe('action queues', () => {
     expect(mocks.makeActionQueue).not.toHaveBeenCalledWith({
       queueName: '{app-actions-app-without-queue-2}',
     })
+  })
+
+  it('stores app-specific queues in the appActionQueues record', () => {
+    expect(Object.keys(appActionQueues)).toMatchObject([
+      'app-with-queue-1',
+      'app-with-queue-2',
+    ])
+  })
+
+  it('stores all created queues in actionQueuesByName map', () => {
+    expect(Object.keys(actionQueuesByName)).toMatchObject([
+      MAIN_ACTION_QUEUE_NAME,
+      '{app-actions-app-with-queue-1}',
+      '{app-actions-app-with-queue-2}',
+    ])
   })
 })

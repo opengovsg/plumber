@@ -15,6 +15,12 @@ import { makeActionQueue } from '@/helpers/queues/make-action-queue'
 // These should only be referenced during setup, debugging and tests.
 //
 
+// Allow quickly looking up a queue by its name (e.g. when getting jobs)
+export const actionQueuesByName: Record<
+  string,
+  ReturnType<typeof makeActionQueue>
+> = Object.create(null)
+
 // Main action queue
 // Note: Queue naming convention is a little different for legacy reasons.
 export const MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX = '{actionQ}'
@@ -24,19 +30,26 @@ export const mainActionQueue = makeActionQueue({
   queueName: MAIN_ACTION_QUEUE_NAME,
   redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
 })
+actionQueuesByName[MAIN_ACTION_QUEUE_NAME] = mainActionQueue
 
 // App-specific action queues
 export const appActionQueues: Record<
   keyof typeof apps,
   ReturnType<typeof makeActionQueue>
 > = Object.create(null)
+
 for (const [appKey, app] of Object.entries(apps)) {
   if (!app.queue) {
     continue
   }
-  appActionQueues[appKey] = makeActionQueue({
-    queueName: `{app-actions-${appKey}}`,
+
+  const queueName = `{app-actions-${appKey}}`
+  const queue = makeActionQueue({
+    queueName,
   })
+
+  actionQueuesByName[queueName] = queue
+  appActionQueues[appKey] = queue
 }
 
 //
@@ -71,18 +84,52 @@ export async function enqueueActionJob({
   })
 }
 
-interface GetJobParams {
-  appKey: string
-  jobId: string
-}
-
-export async function getJob({
-  appKey,
-  jobId,
-}: GetJobParams): Promise<ReturnType<QueuePro<IActionJobData>['getJob']>> {
-  if (!(appKey in appActionQueues)) {
-    return await mainActionQueue.getJob(jobId)
+/**
+ * This is stored in the "jobId" column in our ExecutionStep table - it
+ * identifies exactly which queue and the job came from.
+ */
+export function makeActionJobId(
+  queueName: string,
+  bullMqJobId: string,
+): string {
+  // By legacy convention, job IDs in the main queue should just be the BullMQ job ID.
+  if (queueName === MAIN_ACTION_QUEUE_NAME) {
+    return bullMqJobId
   }
 
-  return await appActionQueues[appKey].getJob(jobId)
+  return `${queueName}:${bullMqJobId}`
+}
+
+function parseActionJobId(actionJobId: string): {
+  queueName: string
+  bullMqJobId: string
+} {
+  // Legacy convention - jobs in the main action queue do not have ":"
+  if (!actionJobId.includes(':')) {
+    return {
+      queueName: MAIN_ACTION_QUEUE_NAME,
+      bullMqJobId: actionJobId,
+    }
+  }
+
+  const [queueName, bullMqJobId] = actionJobId.split(':')
+  return {
+    queueName,
+    bullMqJobId,
+  }
+}
+
+/**
+ * Gets the BullMQ job associated with an actionJobId. This is _NOT_ the bullMQ
+ * job ID - it's the ID that's returned by makeActionJobId. This ID is also
+ * stored in the jobId column in our ExecutionStep table
+ *
+ * @param actionJobId The ID constructed by makeActionJobId (usually stored in
+ * the jobId column in the ExecutionStep table).
+ */
+export async function getActionJob(
+  actionJobId: string,
+): Promise<ReturnType<QueuePro<IActionJobData>['getJob']>> {
+  const { queueName, bullMqJobId } = parseActionJobId(actionJobId)
+  return await actionQueuesByName[queueName].getJob(bullMqJobId)
 }

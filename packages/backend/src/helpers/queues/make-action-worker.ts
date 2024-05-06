@@ -24,7 +24,7 @@ import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
-import { enqueueActionJob } from '@/queues/action'
+import { enqueueActionJob, makeActionJobId } from '@/queues/action'
 import { processAction } from '@/services/action'
 
 function convertParamsToBullMqOptions(
@@ -104,6 +104,9 @@ export function makeActionWorker(
           // delegating the error throwing and handling to processAction where it also queries for Step
           const step: Step = await Step.query().findById(jobData.stepId)
 
+          // Make job
+          const jobId = makeActionJobId(queueName, job.id)
+
           span?.addTags({
             queueName,
             flowId: jobData.flowId,
@@ -111,6 +114,7 @@ export function makeActionWorker(
             stepId: jobData.stepId,
             actionKey: step?.key,
             appKey: step?.appKey,
+            jobId,
           })
 
           const {
@@ -120,16 +124,14 @@ export function makeActionWorker(
             executionStep,
             nextStepMetadata,
             executionError,
-          } = await processAction({ ...jobData, jobId: job.id }).catch(
-            async (err) => {
-              // this happens when the prerequisite steps for the action fails (e.g. db error, missing execution, flow, step, etc...)
-              // in such cases, we do not want to retry
-              await Execution.setStatus(jobData.executionId, 'failure')
-              throw new UnrecoverableError(
-                err.message || 'Action failed to execute',
-              )
-            },
-          )
+          } = await processAction({ ...jobData, jobId }).catch(async (err) => {
+            // this happens when the prerequisite steps for the action fails (e.g. db error, missing execution, flow, step, etc...)
+            // in such cases, we do not want to retry
+            await Execution.setStatus(jobData.executionId, 'failure')
+            throw new UnrecoverableError(
+              err.message || 'Action failed to execute',
+            )
+          })
 
           if (executionStep.isFailed) {
             await Execution.setStatus(executionId, 'failure')
