@@ -21,6 +21,19 @@ const createBullBoardHandler = async (serverAdapter: ExpressAdapter) => {
       new BullMQAdapter(actionQueue),
     ],
     serverAdapter: serverAdapter,
+    options: {
+      uiConfig: {
+        favIcon: {
+          default: `${appConfig.webAppUrl}/favicon.svg`,
+          alternative: 'https://file.go.gov.sg/plumber-logo.png',
+        },
+        boardLogo: {
+          path: 'https://file.go.gov.sg/plumber-logo-full.png',
+          height: 70,
+        },
+        boardTitle: '',
+      },
+    },
   })
 }
 
