@@ -8,6 +8,8 @@ import type {
 // types to type-fest.
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
 
+import type { JobsProOptions, WorkerProOptions } from '@taskforcesh/bullmq-pro'
+
 import HttpError from '@/errors/http'
 
 export type IHttpClient = AxiosInstance
@@ -336,6 +338,39 @@ export interface IDynamicData {
   run($: IGlobalVariable): Promise<DynamicDataOutput>
 }
 
+export interface IAppQueue {
+  /**
+   * Obtains the group config for a job that is about to be enqueued to this
+   * app's queue.
+   *
+   * @see {@link JobsProOptions.group}
+   */
+  getGroupConfigForJob(
+    jobData: IActionJobData,
+  ): Promise<JobsProOptions['group']>
+
+  /**
+   * Set per-group concurrency or rate limits. This is mutually exclusive
+   * because BullMQ Pro does not support using both together.
+   *
+   * @see {@link WorkerProOptions.group}
+   */
+  groupLimits?:
+    | {
+        type: 'concurrency'
+        concurrency: WorkerProOptions['group']['concurrency']
+      }
+    | {
+        type: 'rate-limit'
+        limit: WorkerProOptions['group']['limit']
+      }
+
+  /**
+   * Set rate limit for the entire queue (applied before groups' limits)
+   */
+  queueRateLimit?: WorkerProOptions['limiter']
+}
+
 export interface IApp {
   name: string
   key: string
@@ -369,7 +404,13 @@ export interface IApp {
    * with try / catch.
    */
   requestErrorHandler?: TRequestErrorHandler
+
   getTransferDetails?($: IGlobalVariable): Promise<ITransferDetails> // TODO (mal): add null if necessary, check with Stacey
+
+  /**
+   * Apps specify this if they need their own dedicated action queue.
+   */
+  queue?: IAppQueue
 }
 
 export type TBeforeRequest = (
@@ -491,6 +532,13 @@ interface PostmanSendEmailMetadata {
 }
 // Can add more type in this union later for different action types
 export type NextStepMetadata = PostmanSendEmailMetadata
+
+export interface IActionJobData {
+  flowId: string
+  executionId: string
+  stepId: string
+  metadata?: NextStepMetadata
+}
 export interface IActionRunResult {
   /**
    * This enables actions to control pipe execution flow. This is for actions
