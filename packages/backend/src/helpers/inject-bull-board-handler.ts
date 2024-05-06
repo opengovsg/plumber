@@ -13,6 +13,7 @@ export const verifyIsAdminMiddleware = async (
   const user = await getLoggedInUser(req)
   if (user?.email !== appConfig.adminUserEmail) {
     res.sendStatus(401)
+    return
   }
   next()
 }
