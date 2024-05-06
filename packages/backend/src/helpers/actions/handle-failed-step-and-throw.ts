@@ -175,7 +175,10 @@ export async function handleFailedStepAndThrow(
     // Update span and execution status as necessary.
     const isRetriable =
       !(finalError instanceof UnrecoverableError) &&
-      job.attemptsMade < MAXIMUM_JOB_ATTEMPTS
+      // -1 is needed because BullMQ only increments attemptsMade _after_ the
+      // job processor finishes, but we're currently still inside the job
+      // processor.
+      job.attemptsMade < MAXIMUM_JOB_ATTEMPTS - 1
 
     if (isRetriable) {
       span?.addTags({
