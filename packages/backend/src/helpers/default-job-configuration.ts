@@ -1,5 +1,7 @@
 import { type JobsProOptions } from '@taskforcesh/bullmq-pro'
 
+import appConfig from '@/config/app'
+
 export const REMOVE_AFTER_30_DAYS = {
   age: 30 * 24 * 3600,
 }
@@ -23,7 +25,7 @@ export const DEFAULT_JOB_DELAY_DURATION = 0
 //   steps to make progress. So in the worst case, a step might be retried
 //   log2(100) times ~= 7.
 // - We round that up to 10 just in case.
-export const MAXIMUM_JOB_ATTEMPTS = 10
+export const MAXIMUM_JOB_ATTEMPTS = appConfig.maxJobAttempts
 
 export const DEFAULT_JOB_OPTIONS: JobsProOptions = {
   removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,

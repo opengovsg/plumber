@@ -43,6 +43,7 @@ type AppConfig = {
     privateKey: string
   }
   launchDarklySdkKey: string
+  maxJobAttempts: number
 }
 
 const port = process.env.PORT || '3000'
@@ -100,6 +101,7 @@ const appConfig: AppConfig = {
     rateLimit: parseInt(process.env.POSTMAN_RATE_LIMIT) || 169,
   },
   launchDarklySdkKey: process.env.LAUNCH_DARKLY_SDK_KEY,
+  maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
 }
 
 if (!appConfig.encryptionKey) {
@@ -125,6 +127,15 @@ if (
 
 if (!appConfig.launchDarklySdkKey) {
   throw new Error('LAUNCH_DARKLY_SDK_KEY environment variable needs to be set!')
+}
+
+if (
+  isNaN(appConfig.maxJobAttempts) ||
+  !Number.isInteger(appConfig.maxJobAttempts)
+) {
+  throw new Error(
+    'MAX_JOB_ATTEMPTS environment variable is not a valid integer!',
+  )
 }
 
 // Force SGT date-time formatting no matter what
