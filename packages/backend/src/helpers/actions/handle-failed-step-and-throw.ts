@@ -178,15 +178,9 @@ export function handleFailedStepAndThrow(
       // processor.
       job.attemptsMade < MAXIMUM_JOB_ATTEMPTS - 1
 
-    if (isRetriable) {
-      span?.addTags({
-        willRetry: 'true',
-      })
-    } else {
-      span?.addTags({
-        willRetry: 'false',
-      })
-    }
+    span?.addTags({
+      willRetry: isRetriable ? 'true' : 'false',
+    })
 
     throw finalError
   }

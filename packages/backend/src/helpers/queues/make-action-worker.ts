@@ -115,6 +115,7 @@ export function makeActionWorker(
           actionKey: step?.key,
           appKey: step?.appKey,
           jobId,
+          workerVersion: appConfig.version,
         })
 
         const {
@@ -186,6 +187,7 @@ export function makeActionWorker(
       {
         queueName,
         job: job.data,
+        workerVersion: appConfig.version,
       },
     )
   })
@@ -196,6 +198,7 @@ export function makeActionWorker(
       {
         queueName,
         job: job.data,
+        workerVersion: appConfig.version,
       },
     )
   })
@@ -211,6 +214,7 @@ export function makeActionWorker(
         job: job.data,
         attemptsMade: job.attemptsMade,
         attemptsStarted: job.attemptsStarted,
+        workerVersion: appConfig.version,
       },
     )
 
