@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import RetriableError from '@/errors/retriable-error'
+import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
 
-import { exponentialBackoffWithJitter, INITIAL_DELAY_MS } from '../backoff'
+import { exponentialBackoffWithJitter } from '../backoff'
 
 const mocks = vi.hoisted(() => ({
   logError: vi.fn(),
@@ -23,28 +23,34 @@ describe('Backoff', () => {
   it.each([
     {
       delayInMs: 'default' as const,
-      expectedBaseDelay: INITIAL_DELAY_MS,
+      expectedBaseDelay: DEFAULT_DELAY_MS,
     },
     { delayInMs: 5000, expectedBaseDelay: 5000 },
+    { delayInMs: 1, expectedBaseDelay: 1 },
   ])(
     'applies jitter (delayInMs = $delayInMs)',
     ({ delayInMs, expectedBaseDelay }) => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs,
+        delayType: 'step',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
       expect(exponentialBackoffWithJitter(1, null, err)).toEqual(
-        expectedBaseDelay + expectedBaseDelay / 2,
+        Math.round(expectedBaseDelay + expectedBaseDelay / 2),
       )
       expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
-        expectedBaseDelay * 2 /* Full delay for 1st retry */ +
-          expectedBaseDelay /* 50% of full delay*/,
+        Math.round(
+          expectedBaseDelay * 2 /* Full delay for 1st retry */ +
+            expectedBaseDelay /* 50% of full delay*/,
+        ),
       )
       expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
-        expectedBaseDelay * 4 /* Full delay for 2nd retry */ +
-          expectedBaseDelay * 2 /* 50% of full delay*/,
+        Math.round(
+          expectedBaseDelay * 4 /* Full delay for 2nd retry */ +
+            expectedBaseDelay * 2 /* 50% of full delay*/,
+        ),
       )
     },
   )
@@ -52,15 +58,17 @@ describe('Backoff', () => {
   it.each([
     {
       delayInMs: 'default' as const,
-      expectedBaseDelay: INITIAL_DELAY_MS,
+      expectedBaseDelay: DEFAULT_DELAY_MS,
     },
     { delayInMs: 5000, expectedBaseDelay: 5000 },
+    { delayInMs: 1, expectedBaseDelay: 1 },
   ])(
     'will wait at least the full duration of the previous default delay',
     ({ delayInMs, expectedBaseDelay }) => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs,
+        delayType: 'step',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
 
@@ -79,33 +87,32 @@ describe('Backoff', () => {
     },
   )
 
-  it('reverts to default delay if specified delay is too small', () => {
-    const err = new RetriableError({
-      error: 'test error',
-      delayInMs: 10,
-    })
-    vi.spyOn(Math, 'random').mockReturnValue(0)
-
-    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(INITIAL_DELAY_MS)
-    expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
-      INITIAL_DELAY_MS * 2,
-    )
-    expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
-      INITIAL_DELAY_MS * 4,
-    )
-  })
-
-  it('reverts to default delay and logs if error is not RetriableError', () => {
+  it("uses RetriableError's default delay and logs if error is not RetriableError", () => {
     const err = new Error('test error')
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
-    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(INITIAL_DELAY_MS)
-    expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
-      INITIAL_DELAY_MS * 2,
+    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(DEFAULT_DELAY_MS)
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Triggered BullMQ retry without RetriableError',
+      { event: 'bullmq-retry-without-retriable-error' },
     )
-    expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
-      INITIAL_DELAY_MS * 4,
+  })
+
+  it('logs if error is RetriableError with non-step delayType', () => {
+    const err = new RetriableError({
+      error: 'test error',
+      delayInMs: 10,
+      delayType: 'queue',
+    })
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(10)
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Triggered BullMQ retry with RetriableError of the wrong delay type',
+      {
+        event: 'bullmq-retry-wrong-delay-type',
+        delayType: 'queue',
+      },
     )
-    expect(mocks.logError).toBeCalled()
   })
 })

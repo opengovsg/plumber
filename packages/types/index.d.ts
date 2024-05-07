@@ -345,7 +345,7 @@ export interface IAppQueue {
    *
    * @see {@link JobsProOptions.group}
    */
-  getGroupConfigForJob(
+  getGroupConfigForJob?(
     jobData: IActionJobData,
   ): Promise<JobsProOptions['group']>
 
@@ -369,6 +369,23 @@ export interface IAppQueue {
    * Set rate limit for the entire queue (applied before groups' limits)
    */
   queueRateLimit?: WorkerProOptions['limiter']
+
+  /**
+   * Configures if we are allowed to delay or rate limit the entire queue.
+   *
+   * Concretely speaking, if this is true, RetriableErrors with delayType set
+   * to `queue` will pause the entire queue for the delay period via a call to
+   * `worker.rateLimit()`.
+   *
+   * This is a safety mechanism to ensure that we don't accidentally delay
+   * queues if reused code / helper functions throw RetriableErrors with
+   * `delayType` == `queue`.
+   *
+   * Note that BullMQ allows delaying the entire queue only if a queue rate
+   * limit is set. Thus, if you configure this to true, you must also configure
+   * the queueRateLimit.
+   */
+  isQueueDelayable: boolean
 }
 
 export interface IApp {
