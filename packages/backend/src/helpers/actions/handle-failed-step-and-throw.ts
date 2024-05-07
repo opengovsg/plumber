@@ -17,11 +17,11 @@ function handleRetriableError(
   context: HandleFailedStepAndThrowParams['context'],
 ): never {
   const { delayType, delayInMs } = executionError
-  const { worker, job, isQueuePausable } = context
+  const { worker, job, isQueueDelayable } = context
 
   switch (delayType) {
     case 'queue':
-      if (isQueuePausable) {
+      if (isQueueDelayable) {
         worker.rateLimit(delayInMs)
         throw WorkerPro.RateLimitError()
       }
@@ -139,7 +139,7 @@ interface HandleFailedStepAndThrowParams {
   executionError: unknown
 
   context: {
-    isQueuePausable: boolean
+    isQueueDelayable: boolean
     span: Span
     worker: WorkerPro<IActionJobData>
     job: JobPro<IActionJobData>

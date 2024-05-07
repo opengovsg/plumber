@@ -371,13 +371,21 @@ export interface IAppQueue {
   queueRateLimit?: WorkerProOptions['limiter']
 
   /**
-   * Configures if we are allowed to pause or rate limit the queue.
+   * Configures if we are allowed to delay or rate limit the entire queue.
    *
    * Concretely speaking, if this is true, RetriableErrors with delayType set
    * to `queue` will pause the entire queue for the delay period via a call to
    * `worker.rateLimit()`.
+   *
+   * This is a safety mechanism to ensure that we don't accidentally delay
+   * queues if reused code / helper functions throw RetriableErrors with
+   * `delayType` == `queue`.
+   *
+   * Note that BullMQ allows delaying the entire queue only if a queue rate
+   * limit is set. Thus, if you configure this to true, you must also configure
+   * the queueRateLimit.
    */
-  isQueuePausable: boolean
+  isQueueDelayable: boolean
 }
 
 export interface IApp {

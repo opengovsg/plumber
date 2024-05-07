@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 const MOCK_CONTEXT = {
-  isQueuePausable: false,
+  isQueueDelayable: false,
   span: {
     addTags: mocks.addSpanTags,
   } as unknown as Span,
@@ -240,7 +240,7 @@ describe('action helper functions', () => {
     })
 
     describe('RetriableError handling', () => {
-      it('pauses the queue if delayType is queue and the queue is pausable', () => {
+      it('delays the queue if delayType is queue and the queue is delayable', () => {
         try {
           handleFailedStepAndThrow({
             errorDetails: {},
@@ -251,7 +251,7 @@ describe('action helper functions', () => {
             }),
             context: {
               ...MOCK_CONTEXT,
-              isQueuePausable: true,
+              isQueueDelayable: true,
             },
           })
         } catch (e) {
@@ -263,7 +263,7 @@ describe('action helper functions', () => {
         }
       })
 
-      it('does not pause the queue if delayType is queue but queue is not pausable', () => {
+      it('does not delay the queue if delayType is queue but queue is not delayable', () => {
         expect(() =>
           handleFailedStepAndThrow({
             errorDetails: {},
@@ -280,7 +280,7 @@ describe('action helper functions', () => {
         expect(mocks.workerRateLimitGroup).not.toBeCalled()
       })
 
-      it("pauses the job's group if delayType is group", () => {
+      it("delays the job's group if delayType is group", () => {
         const job = {
           opts: {
             group: {
@@ -311,7 +311,7 @@ describe('action helper functions', () => {
         }
       })
 
-      it('does not pause the group if delayType is group but job does not have a group', () => {
+      it('does not delay the group if delayType is group but job does not have a group', () => {
         expect(() =>
           handleFailedStepAndThrow({
             errorDetails: {},

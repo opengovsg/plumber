@@ -31,7 +31,7 @@ function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
 ) /* inferred type */ {
   const { queueName, redisConnectionPrefix, queueConfig } = params
-  const { isQueuePausable, queueRateLimit } = queueConfig
+  const { isQueueDelayable, queueRateLimit } = queueConfig
 
   const workerOptions: WorkerProOptions = {
     connection: createRedisClient(),
@@ -69,7 +69,7 @@ function convertParamsToBullMqOptions(
   return {
     queueName,
     workerOptions,
-    isQueuePausable,
+    isQueueDelayable,
   }
 }
 
@@ -88,7 +88,7 @@ interface MakeActionWorkerParams {
 export function makeActionWorker(
   params: MakeActionWorkerParams,
 ): WorkerPro<IActionJobData> {
-  const { queueName, workerOptions, isQueuePausable } =
+  const { queueName, workerOptions, isQueueDelayable } =
     convertParamsToBullMqOptions(params)
   const worker: WorkerPro<IActionJobData> = new WorkerPro<IActionJobData>(
     queueName,
@@ -138,7 +138,7 @@ export function makeActionWorker(
             errorDetails: executionStep.errorDetails,
             executionError,
             context: {
-              isQueuePausable,
+              isQueueDelayable,
               worker,
               span,
               job,

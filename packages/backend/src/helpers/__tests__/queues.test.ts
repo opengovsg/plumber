@@ -88,7 +88,7 @@ describe('Queue helper functions', () => {
     it('creates a worker for the specified queue name', () => {
       makeActionWorker({
         queueName: '{test-app-queue}',
-        queueConfig: { isQueuePausable: false },
+        queueConfig: { isQueueDelayable: false },
       })
       expect(mocks.workerConstructor).toHaveBeenCalledWith(
         '{test-app-queue}',
@@ -104,7 +104,7 @@ describe('Queue helper functions', () => {
       makeActionWorker({
         queueName: 'some-queue',
         redisConnectionPrefix: '{test}',
-        queueConfig: { isQueuePausable: false },
+        queueConfig: { isQueueDelayable: false },
       })
       expect(mocks.workerConstructor).toHaveBeenCalledWith(
         'some-queue',
@@ -119,7 +119,7 @@ describe('Queue helper functions', () => {
       {
         appQueueConfig: {
           getGroupConfigForJob: vi.fn(),
-          isQueuePausable: false,
+          isQueueDelayable: false,
           groupLimits: {
             type: 'concurrency' as const,
             concurrency: 2,
@@ -134,7 +134,7 @@ describe('Queue helper functions', () => {
       {
         appQueueConfig: {
           getGroupConfigForJob: vi.fn(),
-          isQueuePausable: true,
+          isQueueDelayable: true,
           groupLimits: {
             type: 'rate-limit' as const,
             limit: {
@@ -155,7 +155,7 @@ describe('Queue helper functions', () => {
       {
         appQueueConfig: {
           getGroupConfigForJob: vi.fn(),
-          isQueuePausable: true,
+          isQueueDelayable: true,
           groupLimits: {
             type: 'concurrency' as const,
             concurrency: 2,
@@ -177,7 +177,7 @@ describe('Queue helper functions', () => {
       },
       {
         appQueueConfig: {
-          isQueuePausable: false,
+          isQueueDelayable: false,
           queueRateLimit: {
             max: 1,
             duration: 5000,
