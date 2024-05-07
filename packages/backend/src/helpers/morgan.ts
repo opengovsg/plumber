@@ -34,7 +34,12 @@ morgan.token('graphql-query', (req: Request) => {
   }
 })
 
-const SENSITIVE_MUTATIONS = ['createConnection', 'updateConnection']
+const SENSITIVE_MUTATIONS = [
+  'createConnection',
+  'updateConnection',
+  'createRows',
+  'deleteRows',
+]
 
 morgan.token('graphql-variables', (req: Request) => {
   if (req.body.variables) {
