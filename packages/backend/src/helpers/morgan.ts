@@ -38,6 +38,7 @@ const SENSITIVE_MUTATIONS = [
   'createConnection',
   'updateConnection',
   'createRows',
+  'logRows',
   'deleteRows',
 ]
 

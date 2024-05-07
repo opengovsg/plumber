@@ -30,7 +30,6 @@ import {
   Spinner,
 } from '@opengovsg/design-system-react'
 import { CREATE_ROWS } from 'graphql/mutations/create-rows'
-import { LOG_ROWS } from 'graphql/mutations/log-rows'
 import { GET_ALL_ROWS } from 'graphql/queries/get-all-rows'
 import { GET_TABLE } from 'graphql/queries/get-table'
 import { chunk } from 'lodash'
@@ -143,7 +142,6 @@ export const ImportCsvModalContent = ({
   const { tableId, tableColumns } = useTableContext()
   const { createColumns } = useUpdateTable()
   const [createRows] = useMutation(CREATE_ROWS)
-  const [logRows] = useMutation(LOG_ROWS)
   const [getTableData] = useLazyQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
@@ -241,7 +239,7 @@ export const ImportCsvModalContent = ({
   )
 
   const onImport = useCallback(
-    async (log?: boolean, chunkSize = CHUNK_SIZE) => {
+    async (chunkSize = CHUNK_SIZE) => {
       // do not import if no rows or columns to create
       if (!result?.length && !columnsToCreate.length) {
         return
@@ -262,7 +260,7 @@ export const ImportCsvModalContent = ({
           const chunkedData = chunk(mappedData, chunkSize)
 
           for (let i = 0; i < chunkedData.length; i++) {
-            await (log ? logRows : createRows)({
+            await createRows({
               variables: {
                 input: {
                   tableId,
@@ -293,7 +291,6 @@ export const ImportCsvModalContent = ({
       columnsToCreate.length,
       createNewColumns,
       createRows,
-      logRows,
       mapDataToColumnIds,
       onPostImport,
       onPreImport,
@@ -380,18 +377,18 @@ export const ImportCsvModalContent = ({
             <Button
               isLoading={isImporting}
               isDisabled={!result?.length && !columnsToCreate.length}
-              onClick={onPreImport ? onPreImport : () => onImport(true)}
+              onClick={onPreImport ? onPreImport : () => onImport(500)}
             >
-              Log {result ? result?.length + ' rows' : ''}
+              500 Import {result ? result?.length + ' rows' : ''}
             </Button>
           )}
           {importStatus !== 'completed' && (
             <Button
               isLoading={isImporting}
               isDisabled={!result?.length && !columnsToCreate.length}
-              onClick={onPreImport ? onPreImport : () => onImport(false, 500)}
+              onClick={onPreImport ? onPreImport : () => onImport(1000)}
             >
-              Big Import {result ? result?.length + ' rows' : ''}
+              1K Import {result ? result?.length + ' rows' : ''}
             </Button>
           )}
         </Flex>

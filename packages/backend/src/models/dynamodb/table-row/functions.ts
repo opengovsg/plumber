@@ -1,10 +1,12 @@
 import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
+import { marshall } from '@aws-sdk/util-dynamodb'
 import { randomUUID } from 'crypto'
 
 import logger from '@/helpers/logger'
 
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
 
+import { _batchCreate as _rawBatchCreate } from './batchCreate'
 import { TableRow } from './model'
 import {
   CreateRowInput,
@@ -191,10 +193,33 @@ export const createTableRows = async ({
       rowId: randomUUID(),
       data,
       // manually bumping the createdAt timestamp to ensure that row order is preserved
+      updatedAt: Date.now() + i,
       createdAt: Date.now() + i,
     }))
     await _batchCreate(rows)
     return rows.map((row) => row.rowId)
+  } catch (e: unknown) {
+    handleDynamoDBError(e)
+  }
+}
+
+export const createRawTableRows = async ({
+  tableId,
+  dataArray,
+}: CreateRowsInput): Promise<string[]> => {
+  try {
+    const rows = dataArray.map((data, i) =>
+      marshall({
+        tableId,
+        rowId: randomUUID(),
+        data,
+        // manually bumping the createdAt timestamp to ensure that row order is preserved
+        updatedAt: Date.now() + i,
+        createdAt: Date.now() + i,
+      }),
+    )
+    await _rawBatchCreate(rows)
+    return rows.map((row) => row.rowId.S)
   } catch (e: unknown) {
     handleDynamoDBError(e)
   }
