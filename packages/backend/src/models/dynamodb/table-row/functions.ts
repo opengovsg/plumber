@@ -31,6 +31,7 @@ export const _batchDelete = async (
 ): Promise<void> => {
   const res = await TableRow.delete(rows).go({
     ignoreOwnership: true,
+    concurrency: 5,
   })
   if (res.unprocessed.length) {
     if (attempts >= MAX_RETRIES) {
@@ -55,8 +56,10 @@ export const _batchCreate = async (
 ): Promise<void> => {
   const res = await TableRow.put(rows).go({
     ignoreOwnership: true,
-    preserveBatchOrder: true,
+    preserveBatchOrder: false,
+    concurrency: 10,
   })
+
   if (res.unprocessed.length) {
     if (attempts >= MAX_RETRIES) {
       logger.error(res.unprocessed)
