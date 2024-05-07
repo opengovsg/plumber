@@ -69,9 +69,11 @@ const rateLimitCheck: TBeforeRequest = async function ($, requestConfig) {
       return
     }
 
+    // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
     throw new RetriableError({
       error: 'Reached M365 rate limit',
       delayInMs: error.msBeforeNext,
+      delayType: 'step',
     })
   }
 

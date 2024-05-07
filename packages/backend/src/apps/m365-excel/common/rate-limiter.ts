@@ -96,9 +96,11 @@ export async function throttleStepsForPublishedPipes(
       throw error
     }
 
+    // Refactoring M365 in later PR. Keeping retry as status quo in this PR.
     throw new RetriableError({
       error: 'Reached M365 step limit',
       delayInMs: 'default',
+      delayType: 'step',
     })
   }
 }

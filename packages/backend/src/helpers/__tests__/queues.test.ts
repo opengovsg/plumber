@@ -86,7 +86,10 @@ describe('Queue helper functions', () => {
 
   describe('makeActionWorker', () => {
     it('creates a worker for the specified queue name', () => {
-      makeActionWorker({ queueName: '{test-app-queue}' })
+      makeActionWorker({
+        queueName: '{test-app-queue}',
+        queueConfig: { isQueueDelayable: false },
+      })
       expect(mocks.workerConstructor).toHaveBeenCalledWith(
         '{test-app-queue}',
         expect.anything(),
@@ -101,6 +104,7 @@ describe('Queue helper functions', () => {
       makeActionWorker({
         queueName: 'some-queue',
         redisConnectionPrefix: '{test}',
+        queueConfig: { isQueueDelayable: false },
       })
       expect(mocks.workerConstructor).toHaveBeenCalledWith(
         'some-queue',
@@ -115,6 +119,7 @@ describe('Queue helper functions', () => {
       {
         appQueueConfig: {
           getGroupConfigForJob: vi.fn(),
+          isQueueDelayable: false,
           groupLimits: {
             type: 'concurrency' as const,
             concurrency: 2,
@@ -129,6 +134,7 @@ describe('Queue helper functions', () => {
       {
         appQueueConfig: {
           getGroupConfigForJob: vi.fn(),
+          isQueueDelayable: true,
           groupLimits: {
             type: 'rate-limit' as const,
             limit: {
@@ -149,6 +155,7 @@ describe('Queue helper functions', () => {
       {
         appQueueConfig: {
           getGroupConfigForJob: vi.fn(),
+          isQueueDelayable: true,
           groupLimits: {
             type: 'concurrency' as const,
             concurrency: 2,
@@ -162,6 +169,21 @@ describe('Queue helper functions', () => {
           group: {
             concurrency: 2,
           },
+          limiter: {
+            max: 1,
+            duration: 5000,
+          },
+        }),
+      },
+      {
+        appQueueConfig: {
+          isQueueDelayable: false,
+          queueRateLimit: {
+            max: 1,
+            duration: 5000,
+          },
+        },
+        expectedWorkerOptions: expect.objectContaining({
           limiter: {
             max: 1,
             duration: 5000,

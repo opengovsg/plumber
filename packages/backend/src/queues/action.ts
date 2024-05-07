@@ -76,11 +76,11 @@ export async function enqueueActionJob({
   }
 
   const appQueue = appActionQueues[appKey]
-  const groupConfig = await apps[appKey].queue.getGroupConfigForJob(jobData)
+  const groupConfig = await apps[appKey].queue.getGroupConfigForJob?.(jobData)
 
   return await appQueue.add(jobName, jobData, {
     ...jobOptions,
-    group: groupConfig,
+    ...(groupConfig ? { group: groupConfig } : {}),
   })
 }
 

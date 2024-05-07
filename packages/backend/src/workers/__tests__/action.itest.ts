@@ -1,6 +1,7 @@
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import RetriableError from '@/errors/retriable-error'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import { enqueueActionJob, mainActionQueue } from '@/queues/action'
 import { mainActionWorker } from '@/workers/action'
@@ -15,7 +16,7 @@ import {
 const mocks = vi.hoisted(() => ({
   processAction: vi.fn(async () => ({})),
   exponentialBackoffWithJitter: vi.fn(() => 1),
-  handleErrorAndThrow: vi.fn(),
+  handleFailedStepAndThrow: vi.fn(),
   logInfo: vi.fn(),
   logError: vi.fn(),
 }))
@@ -55,7 +56,7 @@ vi.mock('@/services/action', () => ({
 }))
 
 vi.mock('@/helpers/actions', () => ({
-  handleErrorAndThrow: mocks.handleErrorAndThrow,
+  handleFailedStepAndThrow: mocks.handleFailedStepAndThrow,
 }))
 
 vi.mock('@/helpers/backoff', () => ({
@@ -107,19 +108,24 @@ describe('Action worker', () => {
       })
       await jobProcessed
 
+      expect(mocks.handleFailedStepAndThrow).not.toBeCalled()
       expect(mocks.exponentialBackoffWithJitter).not.toBeCalled()
     })
 
     it('retries retriable executions using our custom backoff strategy', async () => {
       // Override max attempts to reduce test running time.
-      const maxAttempts = 2
+      const maxAttempts = 3
 
       mocks.processAction.mockResolvedValue({
         executionStep: { isFailed: true },
       })
-      mocks.handleErrorAndThrow.mockImplementation(() => {
-        throw new Error('retriable error')
-      })
+      mocks.handleFailedStepAndThrow.mockRejectedValue(
+        new RetriableError({
+          error: 'test retriable error',
+          delayInMs: 10,
+          delayType: 'step',
+        }),
+      )
 
       const jobProcessed = new Promise<void>((resolve) => {
         mainActionWorker.on('failed', async (job) => {
@@ -150,9 +156,9 @@ describe('Action worker', () => {
       mocks.processAction.mockResolvedValueOnce({
         executionStep: { isFailed: true },
       })
-      mocks.handleErrorAndThrow.mockImplementationOnce(() => {
-        throw new UnrecoverableError('not retriable error')
-      })
+      mocks.handleFailedStepAndThrow.mockRejectedValue(
+        new UnrecoverableError('not retriable error'),
+      )
 
       const jobProcessed = new Promise<void>((resolve) => {
         mainActionWorker.on('failed', async (_job, err) => {
@@ -214,9 +220,9 @@ describe('Action worker', () => {
       mocks.processAction.mockResolvedValueOnce({
         executionStep: { isFailed: true },
       })
-      mocks.handleErrorAndThrow.mockImplementationOnce(() => {
-        throw new UnrecoverableError('some error')
-      })
+      mocks.handleFailedStepAndThrow.mockRejectedValue(
+        new UnrecoverableError('some error'),
+      )
 
       const jobProcessed = new Promise<void>((resolve) => {
         mainActionWorker.on('failed', async (_) => {

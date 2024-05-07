@@ -12,7 +12,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
-import RetriableError from '@/errors/retriable-error'
+import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
 import createHttpClient, { type IHttpClient } from '@/helpers/http-client'
 
 import m365ExcelApp from '../..'
@@ -107,7 +107,7 @@ describe('M365 interceptors', () => {
         })
         .catch((error): void => {
           expect(error).toBeInstanceOf(RetriableError)
-          expect(error.delayInMs).toEqual('default')
+          expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
         })
       expect(mocks.logWarning).toHaveBeenCalledWith(
         expect.stringContaining('HTTP 503'),
@@ -141,7 +141,7 @@ describe('M365 interceptors', () => {
         })
         .catch((error): void => {
           expect(error).toBeInstanceOf(RetriableError)
-          expect(error.delayInMs).toEqual('default')
+          expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
         })
       expect(mocks.logWarning).toHaveBeenCalledWith(
         expect.stringContaining('HTTP 503'),
