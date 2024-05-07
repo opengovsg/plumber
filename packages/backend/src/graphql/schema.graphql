@@ -83,6 +83,7 @@ type Mutation {
   # Tiles rows
   createRow(input: CreateTableRowInput!): ID!
   createRows(input: CreateTableRowsInput!): Boolean
+  logRows(input: CreateTableRowsInput!): Boolean
   updateRow(input: UpdateTableRowInput!): ID!
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
   # Flow transfers

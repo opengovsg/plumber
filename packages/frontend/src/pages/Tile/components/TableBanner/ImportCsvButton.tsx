@@ -30,6 +30,7 @@ import {
   Spinner,
 } from '@opengovsg/design-system-react'
 import { CREATE_ROWS } from 'graphql/mutations/create-rows'
+import { LOG_ROWS } from 'graphql/mutations/log-rows'
 import { GET_ALL_ROWS } from 'graphql/queries/get-all-rows'
 import { GET_TABLE } from 'graphql/queries/get-table'
 import { chunk } from 'lodash'
@@ -142,6 +143,7 @@ export const ImportCsvModalContent = ({
   const { tableId, tableColumns } = useTableContext()
   const { createColumns } = useUpdateTable()
   const [createRows] = useMutation(CREATE_ROWS)
+  const [logRows] = useMutation(LOG_ROWS)
   const [getTableData] = useLazyQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
@@ -238,64 +240,68 @@ export const ImportCsvModalContent = ({
     [],
   )
 
-  const onImport = useCallback(async () => {
-    // do not import if no rows or columns to create
-    if (!result?.length && !columnsToCreate.length) {
-      return
-    }
-    try {
-      setImportStatus('creating columns')
-      let allColumns = tableColumns
-      if (columnsToCreate.length) {
-        allColumns = await createNewColumns()
+  const onImport = useCallback(
+    async (log?: boolean, chunkSize = CHUNK_SIZE) => {
+      // do not import if no rows or columns to create
+      if (!result?.length && !columnsToCreate.length) {
+        return
       }
+      try {
+        setImportStatus('creating columns')
+        let allColumns = tableColumns
+        if (columnsToCreate.length) {
+          allColumns = await createNewColumns()
+        }
 
-      // skip if no rows to import
-      if (result?.length) {
-        const mappedData = mapDataToColumnIds(allColumns, result)
-        setImportStatus('importing')
-        setRowsToImport(mappedData.length)
-        setRowsImported(0)
-        const chunkedData = chunk(mappedData, CHUNK_SIZE)
+        // skip if no rows to import
+        if (result?.length) {
+          const mappedData = mapDataToColumnIds(allColumns, result)
+          setImportStatus('importing')
+          setRowsToImport(mappedData.length)
+          setRowsImported(0)
+          const chunkedData = chunk(mappedData, chunkSize)
 
-        for (let i = 0; i < chunkedData.length; i++) {
-          await createRows({
-            variables: {
-              input: {
-                tableId,
-                dataArray: chunkedData[i],
+          for (let i = 0; i < chunkedData.length; i++) {
+            await (log ? logRows : createRows)({
+              variables: {
+                input: {
+                  tableId,
+                  dataArray: chunkedData[i],
+                },
               },
-            },
-            refetchQueries:
-              i === chunkedData.length - 1 && !onPreImport
-                ? [GET_ALL_ROWS]
-                : undefined,
-            awaitRefetchQueries: true,
-          })
-          setRowsImported((i + 1) * CHUNK_SIZE)
+              refetchQueries:
+                i === chunkedData.length - 1 && !onPreImport
+                  ? [GET_ALL_ROWS]
+                  : undefined,
+              awaitRefetchQueries: true,
+            })
+            setRowsImported((i + 1) * chunkSize)
+          }
+        }
+        setImportStatus('completed')
+        if (onPostImport) {
+          setTimeout(() => onPostImport(), 1000)
+        }
+      } catch (e) {
+        setImportStatus('error')
+        if (e instanceof Error) {
+          setErrorMsg(e.message)
         }
       }
-      setImportStatus('completed')
-      if (onPostImport) {
-        setTimeout(() => onPostImport(), 1000)
-      }
-    } catch (e) {
-      setImportStatus('error')
-      if (e instanceof Error) {
-        setErrorMsg(e.message)
-      }
-    }
-  }, [
-    columnsToCreate.length,
-    createNewColumns,
-    createRows,
-    mapDataToColumnIds,
-    onPostImport,
-    onPreImport,
-    result,
-    tableColumns,
-    tableId,
-  ])
+    },
+    [
+      columnsToCreate.length,
+      createNewColumns,
+      createRows,
+      logRows,
+      mapDataToColumnIds,
+      onPostImport,
+      onPreImport,
+      result,
+      tableColumns,
+      tableId,
+    ],
+  )
 
   /**
    * This is for new table creation via import
@@ -365,9 +371,27 @@ export const ImportCsvModalContent = ({
             <Button
               isLoading={isImporting}
               isDisabled={!result?.length && !columnsToCreate.length}
-              onClick={onPreImport ? onPreImport : onImport}
+              onClick={onPreImport ? onPreImport : () => onImport()}
             >
               Import {result ? result?.length + ' rows' : ''}
+            </Button>
+          )}
+          {importStatus !== 'completed' && (
+            <Button
+              isLoading={isImporting}
+              isDisabled={!result?.length && !columnsToCreate.length}
+              onClick={onPreImport ? onPreImport : () => onImport(true)}
+            >
+              Log {result ? result?.length + ' rows' : ''}
+            </Button>
+          )}
+          {importStatus !== 'completed' && (
+            <Button
+              isLoading={isImporting}
+              isDisabled={!result?.length && !columnsToCreate.length}
+              onClick={onPreImport ? onPreImport : () => onImport(false, 500)}
+            >
+              Big Import {result ? result?.length + ' rows' : ''}
             </Button>
           )}
         </Flex>
