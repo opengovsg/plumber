@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   makeActionQueue: vi.fn(),
 }))
 
-vi.mock('@/helpers/queues/make-action-queue', () => ({
+vi.mock('@/queues/helpers/make-action-queue', () => ({
   makeActionQueue: mocks.makeActionQueue,
 }))
 
