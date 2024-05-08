@@ -24,8 +24,8 @@ describe('Queue config', () => {
     vi.restoreAllMocks()
   })
 
-  it('configures a pausable queue', () => {
-    expect(m365ExcelApp.queue.isQueuePausable).toEqual(true)
+  it('configures a delayable queue', () => {
+    expect(m365ExcelApp.queue.isQueueDelayable).toEqual(true)
   })
 
   it('sets group ID to the file ID', async () => {

@@ -1,5 +1,6 @@
 import type { IAppQueue } from '@plumber/types'
 
+import { M365_EXCEL_STEPS_DRIP_PERIOD_MS } from '@/config/app-env-vars/m365'
 import Step from '@/models/step'
 
 //
@@ -7,17 +8,8 @@ import Step from '@/models/step'
 // per guidelines from Microsoft.
 // https://learn.microsoft.com/en-us/graph/workbook-best-practice?tabs=http#throttling-and-concurrency
 //
-// It also configures the queue to hit ~1 action per 0.576 seconds using a leaky
-// bucket approach, because that satifies the rate limits we're subject to:
-//
-// - Microsoft Graph limit: 13000 queries per 10s
-// - SharePoint limit 1: 300 per min (60s)
-// - [** MINIMUM **] SharePoint limit 2: 300k per day (86400s)
-// - Excel limit: 150 per 10s
-//
-// We average around 2 queries per Excel action (check file sensitivity + the
-// actual Excel operation), so we target around (300k / 2) / 86400 actions per
-// second, which is 1 action per ~0.576 seconds.
+// It also configures the queue to dispense actions using a leaky bucket
+// approach, at a rate that will satisfy the rate limits imposed on us.
 //
 
 const getGroupConfigForJob: IAppQueue['getGroupConfigForJob'] = async (
@@ -52,10 +44,10 @@ const queueSettings = {
     type: 'concurrency',
     concurrency: 1,
   },
-  isQueuePausable: true,
+  isQueueDelayable: true,
   queueRateLimit: {
     max: 1,
-    duration: 576,
+    duration: M365_EXCEL_STEPS_DRIP_PERIOD_MS,
   },
 } satisfies IAppQueue
 

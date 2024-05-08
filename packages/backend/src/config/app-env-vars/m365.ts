@@ -2,8 +2,14 @@ import z from 'zod'
 
 import appConfig from '../app'
 
+// TODO: remove this once all stable
 export const M365_STEPS_LIMIT_PER_SEC = Number(
   process.env.M365_STEPS_LIMIT_PER_SEC ?? 1,
+)
+
+// Default to 1 step per second.
+export const M365_EXCEL_STEPS_DRIP_PERIOD_MS = Number(
+  process.env.M365_EXCEL_STEPS_DRIP_PERIOD_MS ?? 1000,
 )
 
 if (!appConfig) {
