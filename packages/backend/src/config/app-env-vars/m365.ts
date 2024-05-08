@@ -7,13 +7,22 @@ export const M365_STEPS_LIMIT_PER_SEC = Number(
   process.env.M365_STEPS_LIMIT_PER_SEC ?? 1,
 )
 
-// Default to 1 action per second.
-export const M365_EXCEL_DELAY_BETWEEN_ACTIONS_MS = Number(
-  process.env.M365_EXCEL_DELAY_BETWEEN_ACTIONS_MS ?? 1000,
-)
-
 if (!appConfig) {
   throw new Error('Cyclic import of appConfig from app-env-vars')
+}
+
+// Default to 1 action per second.
+export const M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS = Number(
+  process.env.M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS ?? '1000',
+)
+
+if (
+  isNaN(M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS) ||
+  !Number.isInteger(M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS)
+) {
+  throw new Error(
+    'M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS environment variable is not a valid integer!',
+  )
 }
 
 const sensitivityLabelGuidsSchema = z
