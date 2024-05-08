@@ -1,10 +1,10 @@
 import apps from '@/apps'
-import { makeActionWorker } from '@/helpers/queues/make-action-worker'
 import {
   appActionQueues,
   MAIN_ACTION_QUEUE_NAME,
   MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
 } from '@/queues/action'
+import { makeActionWorker } from '@/workers/helpers/make-action-worker'
 
 //
 // Worker Storage

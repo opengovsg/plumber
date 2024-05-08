@@ -6,6 +6,7 @@ import requestErrorHandler from './common/interceptors/request-error-handler'
 import actions from './actions'
 import auth from './auth'
 import dynamicData from './dynamic-data'
+import queue from './queue'
 
 const app: IApp = {
   name: 'M365 Excel (Pilot)',
@@ -21,6 +22,7 @@ const app: IApp = {
   requestErrorHandler,
   dynamicData,
   getTransferDetails,
+  queue,
 }
 
 export default app
