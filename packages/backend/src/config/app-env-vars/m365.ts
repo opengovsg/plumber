@@ -108,18 +108,6 @@ export const m365TenantInfo = Object.freeze({
   }),
   ...(!appConfig.isProd
     ? {
-        'govtech-staging': makeTenantInfo({
-          label: 'GovTech Staging SharePoint',
-          id: process.env.M365_GOVTECH_STAGING_TENANT_ID,
-          sharePointSiteId: process.env.M365_GOVTECH_STAGING_SHAREPOINT_SITE_ID,
-          clientId: process.env.M365_GOVTECH_STAGING_CLIENT_ID,
-          clientThumbprint: process.env.M365_GOVTECH_STAGING_CLIENT_THUMBPRINT,
-          clientPrivateKey: process.env.M365_GOVTECH_STAGING_CLIENT_PRIVATE_KEY,
-          allowedSensitivityLabelGuids: sensitivityLabelGuidsSchema.parse(
-            process.env
-              .M365_GOVTECH_STAGING_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
-          ),
-        }),
         'local-dev': makeTenantInfo({
           label: 'Local Development SharePoint',
           id: process.env.M365_LOCAL_DEV_TENANT_ID,

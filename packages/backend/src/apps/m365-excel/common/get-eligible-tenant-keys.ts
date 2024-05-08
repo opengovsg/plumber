@@ -25,9 +25,8 @@ export default async function getEligibleTenantKeys(
     result.add(tenant.key)
   }
 
-  if (appConfig.isDev) {
+  if (!appConfig.isProd) {
     result.add('local-dev')
-    result.add('govtech-staging')
   }
 
   return result
