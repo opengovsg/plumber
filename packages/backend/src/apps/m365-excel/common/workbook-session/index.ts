@@ -115,6 +115,9 @@ export default class WorkbookSession {
       // or broken.
       //
       // https://learn.microsoft.com/en-us/graph/workbook-error-handling#required-second-level-error-codes
+      //
+      // Since we serialize writes to the same file, we can safely retry all
+      // session-related errors.
 
       const graphApiInnerError = tryParseGraphApiError(err)?.innerError?.code
       if (
@@ -124,28 +127,21 @@ export default class WorkbookSession {
         throw err
       }
 
+      logger.warn('M365 Excel session was invalidated.', {
+        event: 'm365-excel-session-invalidated',
+        error: graphApiInnerError,
+        flowId: this.$.flow?.id,
+        stepId: this.$.step?.id,
+        executionId: this.$.execution?.id,
+      })
+
       await clearSessionIdFromRedis(this.tenant, this.fileId)
 
-      if (graphApiInnerError === 'invalidSessionReCreatable') {
-        // This specific error code means that we can safely retry.
-        throw new RetriableError({
-          error: 'Excel session needs re-creating',
-          delayInMs: 'default',
-          delayType: 'step',
-        })
-      } else {
-        // Otherwise, our session was unexpectedly killed by excel servers, so
-        // auto-retry should not be done.
-        logger.warn('M365 Excel session was unexpectedly invalidated.', {
-          event: 'm365-excel-session-invalidated',
-          error: graphApiInnerError,
-          flowId: this.$.flow?.id,
-          stepId: this.$.step?.id,
-          executionId: this.$.execution?.id,
-        })
-
-        throw err
-      }
+      throw new RetriableError({
+        error: 'Excel session was invalidated',
+        delayInMs: 'default',
+        delayType: 'step',
+      })
     }
   }
 }
