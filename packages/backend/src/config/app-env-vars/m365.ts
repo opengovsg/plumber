@@ -7,9 +7,9 @@ export const M365_STEPS_LIMIT_PER_SEC = Number(
   process.env.M365_STEPS_LIMIT_PER_SEC ?? 1,
 )
 
-// Default to 1 step per second.
-export const M365_EXCEL_STEPS_DRIP_PERIOD_MS = Number(
-  process.env.M365_EXCEL_STEPS_DRIP_PERIOD_MS ?? 1000,
+// Default to 1 action per second.
+export const M365_EXCEL_DELAY_BETWEEN_ACTIONS_MS = Number(
+  process.env.M365_EXCEL_DELAY_BETWEEN_ACTIONS_MS ?? 1000,
 )
 
 if (!appConfig) {

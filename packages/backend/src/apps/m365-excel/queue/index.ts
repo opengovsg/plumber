@@ -1,6 +1,6 @@
 import type { IAppQueue } from '@plumber/types'
 
-import { M365_EXCEL_STEPS_DRIP_PERIOD_MS } from '@/config/app-env-vars/m365'
+import { M365_EXCEL_DELAY_BETWEEN_ACTIONS_MS } from '@/config/app-env-vars/m365'
 import Step from '@/models/step'
 
 //
@@ -47,7 +47,7 @@ const queueSettings = {
   isQueueDelayable: true,
   queueRateLimit: {
     max: 1,
-    duration: M365_EXCEL_STEPS_DRIP_PERIOD_MS,
+    duration: M365_EXCEL_DELAY_BETWEEN_ACTIONS_MS,
   },
 } satisfies IAppQueue
 
