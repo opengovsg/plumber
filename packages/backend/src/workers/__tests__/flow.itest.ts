@@ -8,7 +8,7 @@ import {
   flushQueue,
   restoreWorker,
   type WorkerState,
-} from './helpers'
+} from './test-helpers'
 
 const mocks = vi.hoisted(() => ({
   processFlow: vi.fn(async () => ({

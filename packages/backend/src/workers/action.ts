@@ -1,5 +1,5 @@
 import apps from '@/apps'
-import { makeActionWorker } from '@/helpers/queues/make-action-worker'
+import { makeActionWorker } from '@/workers/helpers/make-action-worker'
 import {
   appActionQueues,
   MAIN_ACTION_QUEUE_NAME,

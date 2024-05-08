@@ -106,7 +106,7 @@ export const m365TenantInfo = Object.freeze({
       process.env.M365_SG_GOVT_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
     ),
   }),
-  ...(appConfig.isDev
+  ...(!appConfig.isProd
     ? {
         'govtech-staging': makeTenantInfo({
           label: 'GovTech Staging SharePoint',

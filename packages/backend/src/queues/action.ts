@@ -7,7 +7,7 @@ import {
 } from '@taskforcesh/bullmq-pro'
 
 import apps from '@/apps'
-import { makeActionQueue } from '@/helpers/queues/make-action-queue'
+import { makeActionQueue } from '@/queues/helpers/make-action-queue'
 
 //
 // Queue storage
