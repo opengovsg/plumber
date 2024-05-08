@@ -1,3 +1,4 @@
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import triggerQueue from '@/queues/trigger'
@@ -164,36 +165,30 @@ describe('Trigger worker', () => {
       )
     })
 
-    // it('throws an unrecoverable error if job enqueue failed', async () => {
-    //   mocks.processTrigger.mockResolvedValueOnce({
-    //     executionStep: { isFailed: false, stepId: 'curr-step-id' },
-    //   })
-    //   mocks.getNextStep.mockResolvedValueOnce({
-    //     id: 'next-step-id',
-    //     appKey: 'next-step-app',
-    //   })
-    //   mocks.enqueueActionJob.mockRejectedValueOnce(new Error('test-error'))
+    it('throws an unrecoverable error if job enqueue failed', async () => {
+      mocks.processTrigger.mockResolvedValueOnce({
+        executionStep: { isFailed: false, stepId: 'curr-step-id' },
+      })
+      mocks.getNextStep.mockResolvedValueOnce({
+        id: 'next-step-id',
+        appKey: 'next-step-app',
+      })
+      mocks.enqueueActionJob.mockRejectedValueOnce(new Error('test-error'))
 
-    //   const jobProcessed = new Promise<void>((resolve) => {
-    //     triggerWorker.on('failed', async (_job, err) => {
-    //       if (
-    //         err instanceof UnrecoverableError &&
-    //         err.message === 'test-error'
-    //       ) {
-    //         resolve()
-    //       }
-    //     })
-    //   })
-    //   await triggerQueue.add('test-job', {
-    //     flowId: 'test-flow-id',
-    //   })
-    //   await jobProcessed
-
-    //   expect(mocks.enqueueActionJob).toBeCalledWith(
-    //     expect.objectContaining({
-    //       appKey: 'next-step-app',
-    //     }),
-    //   )
-    // })
+      const jobProcessed = new Promise<void>((resolve) => {
+        triggerWorker.on('failed', async (_job, err) => {
+          if (
+            err instanceof UnrecoverableError &&
+            err.message === 'test-error'
+          ) {
+            resolve()
+          }
+        })
+      })
+      await triggerQueue.add('test-job', {
+        flowId: 'test-flow-id',
+      })
+      await jobProcessed
+    })
   })
 })
