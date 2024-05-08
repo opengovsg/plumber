@@ -50,6 +50,7 @@ vi.mock('@/helpers/logger', () => ({
 }))
 
 vi.mock('@/config/app-env-vars/m365', () => ({
+  M365_EXCEL_STEPS_DRIP_PERIOD_MS: 1000,
   isM365TenantKey: vi.fn(() => true),
 }))
 
