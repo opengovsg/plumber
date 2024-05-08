@@ -170,12 +170,18 @@ export function makeActionWorker(
           }
         }
 
-        await enqueueActionJob({
-          appKey: nextStep.appKey,
-          jobName,
-          jobData: jobPayload,
-          jobOptions,
-        })
+        try {
+          await enqueueActionJob({
+            appKey: nextStep.appKey,
+            jobName,
+            jobData: jobPayload,
+            jobOptions,
+          })
+        } catch (error) {
+          // Don't retry if we failed to enqueue the next step (e.g. if
+          // getGroupConfigForJob throws an error)
+          throw new UnrecoverableError(error.message)
+        }
       },
     ),
     workerOptions,
