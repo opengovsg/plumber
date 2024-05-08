@@ -2,12 +2,27 @@ import z from 'zod'
 
 import appConfig from '../app'
 
+// TODO: remove this once all stable
 export const M365_STEPS_LIMIT_PER_SEC = Number(
   process.env.M365_STEPS_LIMIT_PER_SEC ?? 1,
 )
 
 if (!appConfig) {
   throw new Error('Cyclic import of appConfig from app-env-vars')
+}
+
+// Default to 1 action per second.
+export const M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS = Number(
+  process.env.M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS ?? '1000',
+)
+
+if (
+  isNaN(M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS) ||
+  !Number.isInteger(M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS)
+) {
+  throw new Error(
+    'M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS environment variable is not a valid integer!',
+  )
 }
 
 const sensitivityLabelGuidsSchema = z
@@ -91,20 +106,8 @@ export const m365TenantInfo = Object.freeze({
       process.env.M365_SG_GOVT_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
     ),
   }),
-  ...(appConfig.isDev
+  ...(!appConfig.isProd
     ? {
-        'govtech-staging': makeTenantInfo({
-          label: 'GovTech Staging SharePoint',
-          id: process.env.M365_GOVTECH_STAGING_TENANT_ID,
-          sharePointSiteId: process.env.M365_GOVTECH_STAGING_SHAREPOINT_SITE_ID,
-          clientId: process.env.M365_GOVTECH_STAGING_CLIENT_ID,
-          clientThumbprint: process.env.M365_GOVTECH_STAGING_CLIENT_THUMBPRINT,
-          clientPrivateKey: process.env.M365_GOVTECH_STAGING_CLIENT_PRIVATE_KEY,
-          allowedSensitivityLabelGuids: sensitivityLabelGuidsSchema.parse(
-            process.env
-              .M365_GOVTECH_STAGING_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
-          ),
-        }),
         'local-dev': makeTenantInfo({
           label: 'Local Development SharePoint',
           id: process.env.M365_LOCAL_DEV_TENANT_ID,

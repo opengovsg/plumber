@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   makeActionWorker: vi.fn(),
 }))
 
-vi.mock('@/helpers/queues/make-action-worker', () => ({
+vi.mock('@/workers/helpers/make-action-worker', () => ({
   makeActionWorker: mocks.makeActionWorker,
 }))
 

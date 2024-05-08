@@ -105,15 +105,15 @@ export function makeActionWorker(
         // The reason why we dont add .throwIfNotFound() here is to prevent job
         // retries delegating the error throwing and handling to processAction
         // where it also queries for Step.
-        const step = await Step.query().findById(jobData.stepId)
+        const currStep = await Step.query().findById(jobData.stepId)
 
         span?.addTags({
           queueName,
           flowId: jobData.flowId,
           executionId: jobData.executionId,
           stepId: jobData.stepId,
-          actionKey: step?.key,
-          appKey: step?.appKey,
+          actionKey: currStep?.key,
+          appKey: currStep?.appKey,
           jobId,
           workerVersion: appConfig.version,
         })
@@ -163,19 +163,25 @@ export function makeActionWorker(
 
         let jobOptions = DEFAULT_JOB_OPTIONS
 
-        if (step.appKey === 'delay') {
+        if (currStep.appKey === 'delay') {
           jobOptions = {
             ...DEFAULT_JOB_OPTIONS,
-            delay: delayAsMilliseconds(step.key, executionStep.dataOut),
+            delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
           }
         }
 
-        await enqueueActionJob({
-          appKey: step.appKey,
-          jobName,
-          jobData: jobPayload,
-          jobOptions,
-        })
+        try {
+          await enqueueActionJob({
+            appKey: nextStep.appKey,
+            jobName,
+            jobData: jobPayload,
+            jobOptions,
+          })
+        } catch (error) {
+          // Don't retry if we failed to enqueue the next step (e.g. if
+          // getGroupConfigForJob throws an error)
+          throw new UnrecoverableError(error.message)
+        }
       },
     ),
     workerOptions,
