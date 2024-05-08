@@ -4,7 +4,7 @@ import RetriableError from '@/errors/retriable-error'
 import logger from '@/helpers/logger'
 import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
 
-import { getGraphApiType, GraphApiType } from '../graph-api-type'
+import { getLastHitGraphApiType, GraphApiType } from '../graph-api-type'
 import { tryParseGraphApiError } from '../parse-graph-api-error'
 
 type ThrowingHandler = (
@@ -25,7 +25,9 @@ const handle429: ThrowingHandler = ($, error) => {
   // https://learn.microsoft.com/en-us/graph/workbook-best-practice?tabs=http#reduce-throttling-errors
   //
   // Since they apply per-file, we delay only the group when retrying.
-  if (getGraphApiType(error.response.config.url) === GraphApiType.Excel) {
+  if (
+    getLastHitGraphApiType(error.response.config.url) === GraphApiType.Excel
+  ) {
     throw new RetriableError({
       error: 'Retrying HTTP 429 from Excel endpoint',
       delayType: 'group',

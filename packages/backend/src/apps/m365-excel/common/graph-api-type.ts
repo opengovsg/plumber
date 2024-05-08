@@ -1,23 +1,24 @@
 export enum GraphApiType {
-  Unknown,
+  Others,
   SharePoint,
   Excel,
 }
 
 /**
- * A helper function to identify which Graph API we're calling.
- *
- * Used for things like determining which rate limits we should use, or whether
- * we should retry.
+ * A helper function to identify which Graph API endpoint we're calling.
  *
  * NOTE:
  * In Graph API, the endpoints we hit is determined by the URL path segments
  * (e.g. /a/b/c/ means we're hitting service a, b, and c, in that order).
  *
- * This function only returns the leaf API (i.e. for the above example, it
- * returns c).
+ * This function only returns the type of the last hit service (i.e. for the
+ * above example, it returns c).
+ *
+ * NOTE 2:
+ * This function is _not_ generic; it only works for the URLs used in this Excel
+ * integration.
  */
-export function getGraphApiType(url: string): GraphApiType {
+export function getLastHitGraphApiType(url: string): GraphApiType {
   // For now, we don't have user-controlled data in our URL paths, so we can
   // just check for the presence of path segments, since our code guarantees
   // that segments are unique.
@@ -40,7 +41,7 @@ export function getGraphApiType(url: string): GraphApiType {
   }
 
   // This is OK - we might get here due to making queries to OAuth endpoints,
-  // etc. We group such these calls into an "unknown" because they are largely
-  // uninteresting: they are only limited by the base Graph API rate limit.
-  return GraphApiType.Unknown
+  // etc. We group such these calls into an "others" category because they are
+  // largely uninteresting.
+  return GraphApiType.Others
 }
