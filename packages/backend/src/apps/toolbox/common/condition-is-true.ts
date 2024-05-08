@@ -1,4 +1,29 @@
-import type { IJSONObject } from '@plumber/types'
+import type { IJSONObject, IJSONValue } from '@plumber/types'
+
+function compareNumbers(
+  field: IJSONValue,
+  condition: IJSONValue,
+  value: IJSONValue,
+): boolean {
+  // WARNING: can only compare safely up till Number.MAX_SAFE_INTEGER but BigInt cannot compare floats...
+  if (isNaN(Number(field)) || isNaN(Number(value))) {
+    throw new Error('Non-number used in field or value for comparison')
+  }
+  switch (condition) {
+    case 'gte':
+      return Number(field) >= Number(value)
+    case 'gt':
+      return Number(field) > Number(value)
+    case 'lte':
+      return Number(field) <= Number(value)
+    case 'lt':
+      return Number(field) < Number(value)
+    default:
+      throw new Error(
+        `Conditional logic block contains an unknown operator: ${condition}`,
+      )
+  }
+}
 
 export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
   // `value` is named `text` for legacy reasons.
@@ -8,18 +33,6 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
   switch (condition) {
     case 'equals':
       result = field === value
-      break
-    case 'gte':
-      result = Number(field) >= Number(value)
-      break
-    case 'gt':
-      result = Number(field) > Number(value)
-      break
-    case 'lte':
-      result = Number(field) <= Number(value)
-      break
-    case 'lt':
-      result = Number(field) < Number(value)
       break
     case 'contains':
       result = field.toString().includes(value.toString())
@@ -36,9 +49,7 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
       result = field === null || field === undefined || field === ''
       break
     default:
-      throw new Error(
-        `Conditional logic block contains an unknown operator: ${condition}`,
-      )
+      result = compareNumbers(field, condition, value)
   }
 
   if (is === 'not') {
