@@ -19,7 +19,7 @@ interface SuggestionsProps {
 
 export default function Suggestions(props: SuggestionsProps) {
   const { data, onSuggestionClick = () => null } = props
-  const [current, setCurrent] = useState<number | null>(0)
+  const [current, setCurrent] = useState<number>(0)
 
   const isEmpty = data.reduce(
     (acc, step) => acc && step.output.length === 0,
@@ -49,7 +49,7 @@ export default function Suggestions(props: SuggestionsProps) {
           Use data from...
         </Text>
         <Divider borderColor="base.divider.medium" />
-        <Box maxH="256px" overflowY="auto">
+        <Box h="256px" overflowY="auto">
           {data.map((option, index) => (
             <div key={`primary-suggestion-${option.name}`}>
               <Text
@@ -57,18 +57,14 @@ export default function Suggestions(props: SuggestionsProps) {
                 py={3}
                 bg={
                   !!option.output?.length && current === index
-                    ? '#E9EAEE'
+                    ? 'secondary.100'
                     : undefined
                 }
                 textStyle="subhead-1"
                 color="base.content.strong"
-                onClick={() =>
-                  setCurrent((currentIndex) =>
-                    currentIndex === index ? null : index,
-                  )
-                }
+                onClick={() => setCurrent(index)}
                 _hover={{
-                  backgroundColor: '#F8F9FA',
+                  backgroundColor: 'secondary.50',
                   cursor: 'pointer',
                 }}
               >
@@ -84,7 +80,7 @@ export default function Suggestions(props: SuggestionsProps) {
       </Box>
 
       {/* Variables List */}
-      <Box flexGrow={1} maxW="50%">
+      <Box flexGrow={1} w="50%">
         <Text
           pt={4}
           px={4}
@@ -120,16 +116,21 @@ interface SuggestionsPopperProps {
 export const SuggestionsPopper = (props: SuggestionsPopperProps) => {
   const { open, editorRef, data, onSuggestionClick } = props
 
+  const offsetVerticalMargin = editorRef?.current?.offsetHeight ?? 0
+
   return (
-    <Popover isOpen={open} initialFocusRef={editorRef}>
+    <Popover
+      isOpen={open}
+      initialFocusRef={editorRef}
+      offset={[0, offsetVerticalMargin]}
+    >
       <PopoverTrigger>
         <div />
       </PopoverTrigger>
       {/* To account for window position when scrolling */}
       <PopoverContent
         width={editorRef?.current?.offsetWidth}
-        marginBottom={`calc(${editorRef?.current?.offsetHeight}px - 10px)`}
-        marginTop="-10px"
+        marginTop={`-${offsetVerticalMargin}px`}
       >
         <Suggestions data={data} onSuggestionClick={onSuggestionClick} />
       </PopoverContent>

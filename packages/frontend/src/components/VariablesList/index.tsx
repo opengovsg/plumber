@@ -9,11 +9,12 @@ function makeVariableComponent(
     <Box
       key={`suggestion-${variable.name}`}
       data-test="variable-suggestion-item"
-      padding="0.5rem 1rem"
+      padding={onClick ? '0.5rem 1rem' : '1rem'}
+      borderBottom={onClick ? undefined : '1px solid #EDEDED'}
       _hover={
         onClick
           ? {
-              backgroundColor: '#FEF8FB',
+              backgroundColor: 'secondary.50',
               cursor: 'pointer',
             }
           : undefined
@@ -21,7 +22,7 @@ function makeVariableComponent(
       _active={
         onClick
           ? {
-              backgroundColor: '#CF1A681F',
+              backgroundColor: 'secondary.100',
               cursor: 'pointer',
             }
           : undefined
@@ -60,7 +61,7 @@ export default function VariablesList(props: VariablesListProps) {
   return (
     <Box
       data-test="variable-suggestion-group"
-      maxH="256px"
+      h="256px"
       overflowY="auto"
       p={onClick ? undefined : '1rem'}
     >
