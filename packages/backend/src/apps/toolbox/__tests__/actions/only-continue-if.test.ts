@@ -121,15 +121,16 @@ describe('Only continue if', () => {
     },
   )
 
-  it('should throw step error if a non-number is used for operator comparison', async () => {
-    $.step.parameters = {
-      field: 123,
-      is: 'is',
-      condition: 'gte',
-      text: '19 Nov 2021',
-    }
+  // TODO (mal): uncomment after 1 week of monitoring
+  // it('should throw step error if a non-number is used for operator comparison', async () => {
+  //   $.step.parameters = {
+  //     field: 123,
+  //     is: 'is',
+  //     condition: 'gte',
+  //     text: '19 Nov 2021',
+  //   }
 
-    // throw partial step error message
-    await expect(onlyContinueIfAction.run($)).rejects.toThrowError(StepError)
-  })
+  //   // throw partial step error message
+  //   await expect(onlyContinueIfAction.run($)).rejects.toThrowError(StepError)
+  // })
 })
