@@ -2,7 +2,7 @@ import type { IJSONObject, IJSONValue } from '@plumber/types'
 
 function compareNumbers(
   field: IJSONValue,
-  condition: IJSONValue,
+  condition: 'gte' | 'gt' | 'lte' | 'lt',
   value: IJSONValue,
 ): boolean {
   // WARNING: can only compare safely up till Number.MAX_SAFE_INTEGER but BigInt cannot compare floats...
@@ -18,10 +18,6 @@ function compareNumbers(
       return Number(field) <= Number(value)
     case 'lt':
       return Number(field) < Number(value)
-    default:
-      throw new Error(
-        `Conditional logic block contains an unknown operator: ${condition}`,
-      )
   }
 }
 
@@ -33,6 +29,12 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
   switch (condition) {
     case 'equals':
       result = field === value
+      break
+    case 'gte':
+    case 'gt':
+    case 'lte':
+    case 'lt':
+      result = compareNumbers(field, condition, value)
       break
     case 'contains':
       result = field.toString().includes(value.toString())
@@ -49,7 +51,9 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
       result = field === null || field === undefined || field === ''
       break
     default:
-      result = compareNumbers(field, condition, value)
+      throw new Error(
+        `Conditional logic block contains an unknown operator: ${condition}`,
+      )
   }
 
   if (is === 'not') {
