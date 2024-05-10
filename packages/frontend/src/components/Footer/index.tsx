@@ -1,6 +1,11 @@
 import { RestrictedFooter } from '@opengovsg/design-system-react'
 import appConfig from 'config/app'
-import { FEEDBACK_FORM_LINK, GUIDE_LINK } from 'config/urls'
+import {
+  FEEDBACK_FORM_LINK,
+  GUIDE_LINK,
+  PRIVACY_STATEMENT_LINK,
+  TERMS_OF_USE_LINK,
+} from 'config/urls'
 
 export const Footer = () => (
   <RestrictedFooter
@@ -17,11 +22,11 @@ export const Footer = () => (
       },
       {
         label: 'Privacy',
-        href: 'https://hack.gov.sg/2023/HFPGprivacy',
+        href: PRIVACY_STATEMENT_LINK,
       },
       {
         label: 'Terms of Use',
-        href: 'https://hack.gov.sg/2023/HFPGTC/',
+        href: TERMS_OF_USE_LINK,
       },
       {
         label: 'Report Vulnerability',
