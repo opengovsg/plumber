@@ -2,8 +2,6 @@ import { type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import StepError from '@/errors/step'
-
 import onlyContinueIfAction from '../../actions/only-continue-if'
 
 const mocks = vi.hoisted(() => ({
