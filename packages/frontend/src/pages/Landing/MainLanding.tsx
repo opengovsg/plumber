@@ -11,11 +11,12 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
-import plumberLandingGif from 'assets/landing/PlumberLandingAnimation.gif'
 import brandmarkLogo from 'assets/logo.svg'
 import mainLogo from 'assets/plumber-logo.svg'
 import * as URLS from 'config/urls'
 import { GET_PLUMBER_STATS } from 'graphql/queries/get-plumber-stats'
+
+import { LandingAnimation } from './components/LandingAnimation'
 
 const HeaderBar = () => {
   const navigate = useNavigate()
@@ -115,12 +116,7 @@ export default function MainLanding() {
               Start automating your work
             </Button>
           </VStack>
-          <Image
-            src={plumberLandingGif}
-            alt="right-landing-gif"
-            h="auto"
-            w={{ base: '80vw', md: '50%' }}
-          ></Image>
+          <LandingAnimation />
         </HStack>
       </Container>
     </>

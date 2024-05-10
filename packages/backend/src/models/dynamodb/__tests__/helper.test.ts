@@ -14,8 +14,13 @@ describe('dynamodb helpers', () => {
       const rawValue = {
         text: 'abc',
         int: '123',
+        negativeInt: '-123',
         float: '12.444',
+        negativeFloat: '-12.444',
         invalidFloat: '12.444.444',
+        invalidNegativeFloat: '--12.444',
+        numberExceedingMaxSafe: '9007199254740992',
+        numberUnderMinSafe: '-9007199254740992',
         exponential: '1e+3',
         mixed: '123abc',
       }
@@ -23,8 +28,13 @@ describe('dynamodb helpers', () => {
       expect(autoMarshallDataObj(rawValue)).toEqual({
         text: 'abc',
         int: 123,
+        negativeInt: -123,
         float: 12.444,
+        negativeFloat: -12.444,
         invalidFloat: '12.444.444',
+        invalidNegativeFloat: '--12.444',
+        numberExceedingMaxSafe: '9007199254740992',
+        numberUnderMinSafe: '-9007199254740992',
         exponential: '1e+3',
         mixed: '123abc',
       })

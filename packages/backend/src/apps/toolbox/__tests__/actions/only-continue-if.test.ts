@@ -53,7 +53,7 @@ describe('Only continue if', () => {
     $.step.parameters = {
       field: 1,
       is: 'is',
-      condition: 'equals',
+      condition: 'contains',
       text: 0,
     }
 
@@ -80,4 +80,55 @@ describe('Only continue if', () => {
       `Conditional logic block contains an unknown operator: ${invalidCondition}`,
     )
   })
+
+  it('returns void if field is empty', async () => {
+    $.step.parameters = {
+      field: '',
+      is: 'is',
+      condition: 'empty',
+    }
+
+    const result = await onlyContinueIfAction.run($)
+    expect(result).toBeFalsy()
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { result: true },
+    })
+  })
+
+  it.each([
+    { field: 123, is: 'is', condition: 'gte', text: 123 },
+    { field: 123, is: 'is', condition: 'gt', text: 122 },
+    { field: 123, is: 'is', condition: 'lte', text: 123 },
+    { field: 123, is: 'is', condition: 'lt', text: 124 },
+    { field: 123, is: 'not', condition: 'lt', text: 123 },
+  ])(
+    'returns void if numbers are used for operator comparison',
+    async ({ field, is, condition, text }) => {
+      $.step.parameters = {
+        field,
+        is,
+        condition,
+        text,
+      }
+
+      const result = await onlyContinueIfAction.run($)
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { result: true },
+      })
+    },
+  )
+
+  // TODO (mal): uncomment after 1 week of monitoring
+  // it('should throw step error if a non-number is used for operator comparison', async () => {
+  //   $.step.parameters = {
+  //     field: 123,
+  //     is: 'is',
+  //     condition: 'gte',
+  //     text: '19 Nov 2021',
+  //   }
+
+  //   // throw partial step error message
+  //   await expect(onlyContinueIfAction.run($)).rejects.toThrowError(StepError)
+  // })
 })

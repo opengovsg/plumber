@@ -9,6 +9,18 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2024-05-09',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: `Improvements we made`,
+    details: dedent`
+      ⚙️ Pipe settings — transfer pipes and customise the frequency of error notifications. You can find this in each pipe.
+
+      🧪 FormSG mock data — we’ve also improved one-click testing to check if your step is working correctly, without needing to submit a form.      
+
+      ❓ If empty (for toolbox actions) — we now check for empty data values and prevent errors.
+    `,
+  },
+  {
     date: '2024-04-23',
     tag: NEW_FEATURE_TAG,
     title: 'Introducing Tiles!',
