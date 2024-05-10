@@ -34,10 +34,15 @@ export function autoMarshallNumberStrings(value: string): string | number {
   // only accepts string that contains only numbers and a single decimal point
   if (
     typeof value === 'string' &&
-    /^\d+(\.\d+)?$/.test(value) &&
+    /^-{0,1}\d+(\.\d+)?$/.test(value) &&
     !isNaN(+value)
   ) {
-    return +value
+    if (
+      +value <= Number.MAX_SAFE_INTEGER &&
+      +value >= Number.MIN_SAFE_INTEGER
+    ) {
+      return +value
+    }
   }
   return value
 }
