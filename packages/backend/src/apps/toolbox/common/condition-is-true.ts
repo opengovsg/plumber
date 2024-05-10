@@ -1,4 +1,34 @@
-import type { IJSONObject } from '@plumber/types'
+import type { IJSONObject, IJSONValue } from '@plumber/types'
+
+import logger from '@/helpers/logger'
+
+function compareNumbers(
+  field: IJSONValue,
+  condition: 'gte' | 'gt' | 'lte' | 'lt',
+  value: IJSONValue,
+): boolean {
+  // WARNING: can only compare safely up till Number.MAX_SAFE_INTEGER but BigInt cannot compare floats...
+  if (isNaN(Number(field)) || isNaN(Number(value))) {
+    logger.info('Non-number comparison occurred', {
+      event: 'non-number-comparison',
+      field,
+      condition,
+      value,
+    })
+    // TODO (mal): uncomment after 1 week of monitoring
+    // throw new Error('Non-number used in field or value for comparison')
+  }
+  switch (condition) {
+    case 'gte':
+      return Number(field) >= Number(value)
+    case 'gt':
+      return Number(field) > Number(value)
+    case 'lte':
+      return Number(field) <= Number(value)
+    case 'lt':
+      return Number(field) < Number(value)
+  }
+}
 
 export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
   // `value` is named `text` for legacy reasons.
@@ -10,16 +40,10 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
       result = field === value
       break
     case 'gte':
-      result = Number(field) >= Number(value)
-      break
     case 'gt':
-      result = Number(field) > Number(value)
-      break
     case 'lte':
-      result = Number(field) <= Number(value)
-      break
     case 'lt':
-      result = Number(field) < Number(value)
+      result = compareNumbers(field, condition, value)
       break
     case 'contains':
       result = field.toString().includes(value.toString())
