@@ -31,10 +31,10 @@ export const CUSTOM_APPS: AppIntegrationProps[] = [
       'Conditional logic for your pipes. If-then lets your apps take different actions based on conditions you choose.',
   },
   {
-    iconName: 'toolbox',
-    name: 'Only continue if',
+    iconName: 'tiles',
+    name: 'Tiles',
     description:
-      'Only allow a Pipe to proceed when a certain condition is met.',
+      'A simple database to view, store and automate your data — all in one place.',
   },
 ]
 
@@ -50,9 +50,9 @@ export const COMMON_APPS: AppIntegrationProps[] = [
     description: 'Reach out to citizens in minutes',
   },
   {
-    iconName: 'vault-workspace',
-    name: 'Vault workspace',
-    description: 'Store and share data securely',
+    iconName: 'm365-excel',
+    name: 'Excel',
+    description: 'Read and store data into your Excel spreadsheets',
   },
   {
     iconName: 'paysg',
