@@ -88,6 +88,10 @@ export const APP_ICON_URL = (appKey: string): string =>
 // external links
 export const OGP_HOMEPAGE = 'https://open.gov.sg'
 export const GUIDE_LINK = 'https://guide.plumber.gov.sg'
+export const PRIVACY_STATEMENT_LINK =
+  'https://guide.plumber.gov.sg/legal/government-agency-privacy-statement'
+export const TERMS_OF_USE_LINK =
+  'https://guide.plumber.gov.sg/legal/terms-of-use'
 export const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'
 export const STATUS_LINK = 'https://status.plumber.gov.sg/'
 export const SGID_CHECK_ELIGIBILITY_URL =
