@@ -640,12 +640,18 @@ type TableColumnMetadata {
   config: TableColumnConfig!
 }
 
+type TableCollaborator {
+  email: String!
+  role: String!
+}
+
 type TableMetadata {
   id: ID!
   name: String!
   columns: [TableColumnMetadata!]
   lastAccessedAt: String!
   viewOnlyKey: String
+  collaborators: [TableCollaborator!]
 }
 
 # End Tiles types
