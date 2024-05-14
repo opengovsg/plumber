@@ -54,7 +54,8 @@ export default function Tile(): JSX.Element {
     )
   }
 
-  const { id, name, columns, viewOnlyKey } = getTableData.getTable
+  const { id, name, columns, viewOnlyKey, collaborators } =
+    getTableData.getTable
   const rows = getAllRowsData.getAllRows
 
   return (
@@ -65,6 +66,7 @@ export default function Tile(): JSX.Element {
       tableRows={rows}
       hasEditPermission={!isReadOnly}
       viewOnlyKey={viewOnlyKey}
+      collaborators={collaborators}
     >
       <Flex
         flexDir={{ base: 'column' }}

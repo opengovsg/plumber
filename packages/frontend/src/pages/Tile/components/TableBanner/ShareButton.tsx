@@ -31,6 +31,8 @@ import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
 
+import TableCollaborators from './TableCollaborators'
+
 const ShareModal = ({ onClose }: { onClose: () => void }) => {
   const { tableId, viewOnlyKey } = useTableContext()
   const [isNewLink, setIsNewLink] = useState(false)
@@ -111,6 +113,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
                 </FormHelperText>
               )}
             </VStack>
+            <TableCollaborators />
           </FormControl>
         </ModalBody>
         <ModalFooter></ModalFooter>
