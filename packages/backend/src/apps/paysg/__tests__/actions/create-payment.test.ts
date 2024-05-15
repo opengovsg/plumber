@@ -156,6 +156,42 @@ describe('create payment', () => {
     })
   })
 
+  it('allows optional address, email and payer identifier correctly', async () => {
+    $.step.parameters.payerAddress = undefined
+    $.step.parameters.payerEmail = undefined
+    $.step.parameters.payerIdentifier = undefined
+    $.step.parameters.dueDate = '02 Jan 2023'
+    $.step.parameters.returnUrl = 'https://test.local'
+    $.step.parameters.metadata = [
+      { key: 'test-key-1', value: 'test-value-1' },
+      { key: 'test-key-2', value: 'test-value-2' },
+    ]
+
+    expect(mocks.httpPost).toHaveBeenCalledWith(
+      '/v1/payment-services/:paymentServiceId/payments',
+      {
+        reference_id: 'test-reference-id',
+        payer_name: 'test-name',
+        payer_address: undefined,
+        payer_identifier: undefined,
+        payer_email: undefined,
+        description: 'test-description',
+        amount_in_cents: 12345, // Converted to number
+        due_date: '02-JAN-2023',
+        return_url: 'https://test.local',
+        metadata: {
+          'test-key-1': 'test-value-1',
+          'test-key-2': 'test-value-2',
+        },
+      },
+      {
+        urlPathParams: {
+          paymentServiceId: 'sample-payment-service-id',
+        },
+      },
+    )
+  })
+
   it.each([
     {
       payerName: 'a\u2010b\u2011c\u2012d\u2014e\u2015f',

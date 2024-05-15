@@ -30,7 +30,7 @@ const action: IRawAction = {
       label: 'Payer Address',
       key: 'payerAddress',
       type: 'string' as const,
-      required: true,
+      required: false,
       variables: true,
     },
     {
@@ -38,14 +38,14 @@ const action: IRawAction = {
       description: 'e.g. NRIC',
       key: 'payerIdentifier',
       type: 'string' as const,
-      required: true,
+      required: false,
       variables: true,
     },
     {
       label: 'Payer Email',
       key: 'payerEmail',
       type: 'string' as const,
-      required: true,
+      required: false,
       variables: true,
     },
     {
