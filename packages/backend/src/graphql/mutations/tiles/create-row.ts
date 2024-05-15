@@ -1,4 +1,6 @@
 import { createTableRow } from '@/models/dynamodb/table-row'
+import TableCollaborator from '@/models/table-collaborators'
+import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -8,10 +10,10 @@ const createRow: MutationResolvers['createRow'] = async (
   context,
 ) => {
   const { tableId, data } = params.input
-  const table = await context.currentUser
-    .$relatedQuery('tables')
-    .findById(tableId)
-    .throwIfNotFound()
+
+  await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
+
+  const table = await TableMetadata.query().findById(tableId)
 
   if (!(await table.validateRows([data]))) {
     throw new Error('Invalid column id')

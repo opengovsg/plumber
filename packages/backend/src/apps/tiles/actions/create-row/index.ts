@@ -2,9 +2,9 @@ import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 import { createTableRow } from '@/models/dynamodb/table-row/functions'
+import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 
-import { validateTileAccess } from '../../common/validate-tile-access'
 import { CreateRowOutput } from '../../types'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -78,7 +78,17 @@ const action: IRawAction = {
       tableId: string
       rowData: { columnId: string; cellValue: string }[]
     }
-    await validateTileAccess($.flow?.userId, tableId as string)
+
+    try {
+      await TableCollaborator.hasAccess($.flow?.userId, tableId, 'editor')
+    } catch (e) {
+      throw new StepError(
+        'You do not have access to this tile',
+        'Ensure you have access to the tile you are trying to update a row in.',
+        $.step.position,
+        $.app.name,
+      )
+    }
 
     const table = await TableMetadata.query().findById(tableId)
 

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import getAllRows from '@/graphql/queries/tiles/get-all-rows'
 import { createTableRow } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -110,15 +111,43 @@ describe('get all rows query', () => {
 
     await createTableRow(rowToInsert)
 
-    const almostRows = await getAllRows(
+    const returnedRows = await getAllRows(
       null,
       {
         tableId: dummyTable.id,
       },
       context,
     )
-    const rows = await Promise.all(almostRows)
+    const rows = await Promise.all(returnedRows)
 
     expect(Object.keys(rows[0].data).sort()).toEqual(dummyColumnIds.sort())
+  })
+
+  it('should allow all collaborators to call this function', async () => {
+    context.currentUser = await User.query().findOne({
+      email: 'editor@open.gov.sg',
+    })
+    await expect(
+      getAllRows(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
+
+    context.currentUser = await User.query().findOne({
+      email: 'viewer@open.gov.sg',
+    })
+    await expect(
+      getAllRows(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
   })
 })

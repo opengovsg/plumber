@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import deleteRows from '@/graphql/mutations/tiles/delete-rows'
 import { createTableRows, getTableRowCount } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -71,5 +72,33 @@ describe('delete rows mutation', () => {
         context,
       ),
     ).resolves.toEqual(invalidRowIds)
+  })
+
+  it('should allow collaborators with edit rights to call this function', async () => {
+    context.currentUser = await User.query().findOne({
+      email: 'editor@open.gov.sg',
+    })
+    const slicedRows = rowIds.slice(0, 5)
+    await expect(
+      deleteRows(
+        null,
+        { input: { tableId: dummyTable.id, rowIds: slicedRows } },
+        context,
+      ),
+    ).resolves.toEqual(slicedRows)
+  })
+
+  it('should throw an error if user does not have edit access', async () => {
+    context.currentUser = await User.query().findOne({
+      email: 'viewer@open.gov.sg',
+    })
+    const slicedRows = rowIds.slice(0, 5)
+    await expect(
+      deleteRows(
+        null,
+        { input: { tableId: dummyTable.id, rowIds: slicedRows } },
+        context,
+      ),
+    ).rejects.toThrow('You do not have access to this tile')
   })
 })

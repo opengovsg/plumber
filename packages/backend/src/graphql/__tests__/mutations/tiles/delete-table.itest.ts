@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import deleteTable from '@/graphql/mutations/tiles/delete-table'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -52,5 +53,21 @@ describe('delete table mutation', () => {
     )
 
     await expect(deleteTableAction).rejects.toThrow()
+  })
+
+  it('should throw an error if user is not the owner', async () => {
+    context.currentUser = await User.query().findOne({
+      email: 'viewer@open.gov.sg',
+    })
+    await expect(
+      deleteTable(null, { input: { id: dummyTable.id } }, context),
+    ).rejects.toThrow('You do not have access to this tile')
+
+    context.currentUser = await User.query().findOne({
+      email: 'editor@open.gov.sg',
+    })
+    await expect(
+      deleteTable(null, { input: { id: dummyTable.id } }, context),
+    ).rejects.toThrow('You do not have access to this tile')
   })
 })

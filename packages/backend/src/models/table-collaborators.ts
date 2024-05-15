@@ -50,6 +50,25 @@ class TableCollaborator extends Base {
       },
     },
   })
+
+  static hasAccess = async (
+    userId: string,
+    tableId: string,
+    role: ITableCollabRole,
+  ): Promise<void | never> => {
+    const permissionLevels = ['viewer', 'editor', 'owner']
+    const collaborator = await this.query().findOne({
+      user_id: userId,
+      table_id: tableId,
+    })
+    if (
+      !collaborator ||
+      permissionLevels.indexOf(collaborator.role) <
+        permissionLevels.indexOf(role)
+    ) {
+      throw new Error('You do not have access to this tile.')
+    }
+  }
 }
 
 export default TableCollaborator

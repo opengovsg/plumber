@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import updateTable from '@/graphql/mutations/tiles/update-table'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -270,5 +271,47 @@ describe('update table mutation', () => {
         .resultSize()
       expect(tableColumnCount).toBe(1)
     })
+  })
+
+  it('should allow collaborators with edit rights to call this function', async () => {
+    context.currentUser = await User.query().findOne({
+      email: 'editor@open.gov.sg',
+    })
+    await expect(
+      updateTable(
+        null,
+        {
+          input: {
+            id: dummyTable.id,
+            name: 'editor changed name',
+            addedColumns: [],
+            modifiedColumns: [],
+            deletedColumns: [],
+          },
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
+  })
+
+  it('should throw an error if user does not have edit access', async () => {
+    context.currentUser = await User.query().findOne({
+      email: 'viewer@open.gov.sg',
+    })
+    await expect(
+      updateTable(
+        null,
+        {
+          input: {
+            id: dummyTable.id,
+            name: 'viewer changed name',
+            addedColumns: [],
+            modifiedColumns: [],
+            deletedColumns: [],
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow('You do not have access to this tile')
   })
 })

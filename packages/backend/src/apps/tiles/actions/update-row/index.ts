@@ -3,9 +3,9 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 import { stripInvalidKeys } from '@/models/dynamodb/helpers'
 import { getRawRowById, updateTableRow } from '@/models/dynamodb/table-row'
+import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
-import { validateTileAccess } from '../../common/validate-tile-access'
 import { UpdateRowOutput } from '../../types'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -100,7 +100,7 @@ const action: IRawAction = {
     }
 
     try {
-      await validateTileAccess($.flow?.userId, tableId as string)
+      await TableCollaborator.hasAccess($.flow?.userId, tableId, 'editor')
     } catch (e) {
       throw new StepError(
         'You do not have access to this tile',

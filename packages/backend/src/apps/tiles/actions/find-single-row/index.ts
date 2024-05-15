@@ -8,10 +8,10 @@ import {
   TableRowFilter,
   TableRowFilterOperator,
 } from '@/models/dynamodb/table-row'
+import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
 import { validateFilters } from '../../common/validate-filters'
-import { validateTileAccess } from '../../common/validate-tile-access'
 import { FindSingleRowOutput } from '../../types'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -140,7 +140,17 @@ const action: IRawAction = {
       filters: TableRowFilter[]
       returnLastRow: boolean | undefined
     }
-    await validateTileAccess($.flow?.userId, tableId as string)
+
+    try {
+      await TableCollaborator.hasAccess($.flow?.userId, tableId, 'editor')
+    } catch (e) {
+      throw new StepError(
+        'You do not have access to this tile',
+        'Ensure you have access to the tile you are trying to update a row in.',
+        $.step.position,
+        $.app.name,
+      )
+    }
 
     const columns = await TableColumnMetadata.query().where({
       table_id: tableId,

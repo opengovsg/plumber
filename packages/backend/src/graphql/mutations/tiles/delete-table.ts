@@ -1,3 +1,4 @@
+import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
@@ -8,12 +9,13 @@ const deleteTable: MutationResolvers['deleteTable'] = async (
   context,
 ) => {
   await TableMetadata.transaction(async (trx) => {
-    const table = await context.currentUser
-      .$relatedQuery('tables', trx)
-      .findOne({
-        id: params.input.id,
-      })
-      .throwIfNotFound()
+    await TableCollaborator.hasAccess(
+      context.currentUser.id,
+      params.input.id,
+      'owner',
+    )
+
+    const table = await TableMetadata.query().findById(params.input.id)
 
     await table.$relatedQuery('columns', trx).delete()
     await table.$query(trx).delete()

@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 
+import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
@@ -19,10 +20,23 @@ export async function generateMockTable({
   userId: string
 }): Promise<TableMetadata> {
   const currentUser = await User.query().findById(userId)
-  return currentUser.$relatedQuery('tables').insert({
+  const table = await currentUser.$relatedQuery('tables').insert({
     name: 'Test Table',
     role: 'owner',
   })
+  await TableCollaborator.query().insert([
+    {
+      userId: (await User.query().findOne({ email: 'editor@open.gov.sg' })).id,
+      tableId: table.id,
+      role: 'editor',
+    },
+    {
+      userId: (await User.query().findOne({ email: 'viewer@open.gov.sg' })).id,
+      tableId: table.id,
+      role: 'viewer',
+    },
+  ])
+  return table
 }
 
 export async function generateMockTableColumns({

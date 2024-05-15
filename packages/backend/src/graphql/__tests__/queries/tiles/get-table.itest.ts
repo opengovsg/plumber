@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import TableMetadataResolver from '@/graphql/custom-resolvers/table-metadata'
 import getTable from '@/graphql/queries/tiles/get-table'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -70,5 +71,33 @@ describe('get single table query', () => {
         context,
       ),
     ).rejects.toThrow('Table not found')
+  })
+
+  it('should allow all collaborators to call this function', async () => {
+    context.currentUser = await User.query().findOne({
+      email: 'editor@open.gov.sg',
+    })
+    await expect(
+      getTable(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
+
+    context.currentUser = await User.query().findOne({
+      email: 'viewer@open.gov.sg',
+    })
+    await expect(
+      getTable(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
   })
 })
