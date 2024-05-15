@@ -26,7 +26,7 @@ import {
 } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
 import * as URLS from 'config/urls'
-import { CREATE_SHAREABLE_TABLE_LINK } from 'graphql/mutations/create-shareable-link'
+import { CREATE_SHAREABLE_TABLE_LINK } from 'graphql/mutations/tiles/create-shareable-link'
 import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
