@@ -2,8 +2,12 @@
   "containerDefinitions": [
     {
       "name": "server",
-      "cpu": 512,
+      "cpu": 1024,
       "command": ["npm", "run", "start"],
+      "environment": [{
+        "name": "NODE_OPTIONS",
+        "value": "--max-old-space-size=3072"
+      }],
       "portMappings": [
         {
           "containerPort": 8080,
@@ -102,5 +106,5 @@
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "2048",
-  "memory": "4096"
+  "memory": "5120"
 }
