@@ -16,27 +16,42 @@ export const requestSchema = z
       .string()
       .trim()
       .min(1, { message: 'Empty payer name' })
-      .max(255, { message: 'Payer name cannot be more than 255 characters' }),
+      .max(255, { message: 'Payer name cannot be more than 255 characters' })
+      .transform((value) => normalizeSpecialChars(value)),
     payerAddress: z
       .string()
       .trim()
-      .min(1, { message: 'Empty payer address' })
       .max(255, {
         message: 'Payer address cannot be more than 255 characters',
-      }),
+      })
+      .transform((value) => {
+        if (!value || value.length === 0) {
+          return undefined
+        }
+        return normalizeSpecialChars(value)
+      })
+      .optional(),
     payerIdentifier: z
       .string()
       .trim()
-      .min(1, { message: 'Empty payer identifier' })
       .max(10, {
         message: 'Payer identifier cannot be more than 10 characters',
-      }),
+      })
+      .transform((value) => {
+        if (!value || value.length === 0) {
+          return undefined
+        }
+        return value
+      })
+      .nullish(),
     payerEmail: z
       .string()
       .trim()
-      .min(1, { message: 'Empty payer email' })
       .max(255, { message: 'Payer email cannot be more than 255 characters' })
       .transform((value, context) => {
+        if (!value || value.length === 0) {
+          return undefined
+        }
         if (!emailValidator.validate(value)) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
@@ -46,7 +61,8 @@ export const requestSchema = z
         }
 
         return value
-      }),
+      })
+      .nullish(),
     description: z
       .string()
       .trim()
@@ -126,7 +142,7 @@ export const requestSchema = z
         z
           .string()
           .length(0)
-          .transform((_val) => null),
+          .transform((_val) => undefined),
       ])
       .nullish(),
     returnUrl: z
@@ -142,15 +158,15 @@ export const requestSchema = z
         z
           .string()
           .length(0)
-          .transform((_val) => null),
+          .transform((_val) => undefined),
       ])
       .nullish(),
   })
   // After parsing, convert to PaySG format.
   .transform((data) => ({
     reference_id: data.referenceId,
-    payer_name: normalizeSpecialChars(data.payerName),
-    payer_address: normalizeSpecialChars(data.payerAddress),
+    payer_name: data.payerName,
+    payer_address: data.payerAddress,
     payer_identifier: data.payerIdentifier,
     payer_email: data.payerEmail,
     description: data.description,
