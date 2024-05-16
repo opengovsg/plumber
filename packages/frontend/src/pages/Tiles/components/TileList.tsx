@@ -25,8 +25,8 @@ import {
 } from '@chakra-ui/react'
 import { Button, IconButton } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
-import { DELETE_TABLE } from 'graphql/mutations/delete-table'
-import { GET_TABLES } from 'graphql/queries/get-tables'
+import { DELETE_TABLE } from 'graphql/mutations/tiles/delete-table'
+import { GET_TABLES } from 'graphql/queries/tiles/get-tables'
 import { toPrettyDateString } from 'helpers/dateTime'
 
 const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
