@@ -2,7 +2,7 @@
   "containerDefinitions": [
     {
       "name": "server",
-      "cpu": 512,
+      "cpu": 1024,
       "command": ["npm", "run", "start"],
       "environment": [{
         "name": "NODE_OPTIONS",
