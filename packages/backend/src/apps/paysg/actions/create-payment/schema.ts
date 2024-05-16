@@ -30,7 +30,7 @@ export const requestSchema = z
         }
         return normalizeSpecialChars(value)
       })
-      .optional(),
+      .nullish(),
     payerIdentifier: z
       .string()
       .trim()
