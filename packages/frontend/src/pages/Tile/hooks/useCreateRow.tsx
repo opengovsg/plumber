@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { CREATE_ROW } from 'graphql/mutations/create-row'
+import { CREATE_ROW } from 'graphql/mutations/tiles/create-row'
 
 import { NEW_ROW_ID, TEMP_ROW_ID_PREFIX } from '../constants'
 import { useTableContext } from '../contexts/TableContext'

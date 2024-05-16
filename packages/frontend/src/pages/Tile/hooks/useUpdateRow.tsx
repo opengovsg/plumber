@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { UPDATE_ROW } from 'graphql/mutations/update-row'
+import { UPDATE_ROW } from 'graphql/mutations/tiles/update-row'
 
 import { useTableContext } from '../contexts/TableContext'
 import { GenericRowData } from '../types'
