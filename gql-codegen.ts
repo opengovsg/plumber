@@ -43,6 +43,12 @@ const config: CodegenConfig = {
             output: 'type-fest#JsonValue',
           },
         },
+        Any: {
+          type: {
+            input: 'any',
+            output: 'any',
+          },
+        },
       },
 
       typesPluginsConfig: {
@@ -112,6 +118,7 @@ const config: CodegenConfig = {
           // Use type-fest's JSON types in generated code, as they're nice.
           JSONObject: 'type-fest#JsonObject',
           JSON: 'type-fest#JsonValue',
+          Any: 'any',
         },
       },
     },
