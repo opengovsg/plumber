@@ -18,16 +18,17 @@ const trigger: IRawTrigger = {
       type: 'dropdown' as const,
       description: 'Should this flow trigger on Saturday and Sunday?',
       required: true,
-      value: true,
+      value: 'yes',
+      showOptionValue: false,
       variables: false,
       options: [
         {
           label: 'Yes',
-          value: true,
+          value: 'yes',
         },
         {
           label: 'No',
-          value: false,
+          value: 'no',
         },
       ],
     },

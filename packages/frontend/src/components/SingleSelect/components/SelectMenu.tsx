@@ -1,7 +1,10 @@
+import { BiRefresh } from 'react-icons/bi'
 import { Virtuoso } from 'react-virtuoso'
 import { List, ListItem, Portal } from '@chakra-ui/react'
+import { Button, Spinner } from '@opengovsg/design-system-react'
 
 import { useSelectContext } from '../SelectContext'
+import type { ComboboxItem } from '../types'
 import { itemToValue } from '../utils/itemUtils'
 
 import { DropdownItem } from './DropdownItem'
@@ -16,6 +19,10 @@ export const SelectMenu = (): JSX.Element => {
     styles,
     virtualListRef,
     virtualListHeight,
+    onRefresh,
+    isRefreshLoading,
+    inputValue,
+    freeSolo,
   } = useSelectContext()
 
   const { floatingRef, floatingStyles } = useSelectPopover()
@@ -50,11 +57,45 @@ export const SelectMenu = (): JSX.Element => {
             }}
           />
         )}
+        {/* Freesolo enabled and non-empty input --> show new dropdown option
+         *  Freesolo disabled and no filtered input --> show nothing found label
+         */}
         {isOpen && items.length === 0 ? (
-          <ListItem role="option" sx={styles.emptyItem}>
-            {nothingFoundLabel}
-          </ListItem>
+          freeSolo ? (
+            inputValue !== '' ? (
+              <DropdownItem
+                item={
+                  {
+                    label: inputValue,
+                    value: inputValue,
+                    description: inputValue,
+                  } as ComboboxItem
+                }
+                index={items.length}
+              />
+            ) : null
+          ) : (
+            <ListItem role="option" sx={styles.emptyItem}>
+              {nothingFoundLabel}
+            </ListItem>
+          )
         ) : null}
+        {/* Allow reload of dynamic data fields */}
+        {isOpen && onRefresh && (
+          <Button
+            leftIcon={<BiRefresh />}
+            w="100%"
+            variant="clear"
+            onMouseDown={(e) => {
+              e.preventDefault()
+            }}
+            spinner={<Spinner fontSize={24} color="primary.600" />}
+            onClick={onRefresh}
+            isLoading={isRefreshLoading}
+          >
+            Refresh items
+          </Button>
+        )}
       </List>
     </Portal>
   )

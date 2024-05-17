@@ -1,54 +1,17 @@
 import type { IFieldDropdownOption } from '@plumber/types'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import { BiRefresh } from 'react-icons/bi'
 import Markdown from 'react-markdown'
-import { Flex, FormControl, Text } from '@chakra-ui/react'
-import { Paper, PaperProps, TextField } from '@mui/material'
-import Autocomplete, {
-  AutocompleteProps,
-  createFilterOptions,
-} from '@mui/material/Autocomplete'
-import {
-  Button,
-  FormErrorMessage,
-  FormLabel,
-  Spinner,
-} from '@opengovsg/design-system-react'
+import { Box, Flex, FormControl } from '@chakra-ui/react'
+import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
+import { ComboboxItem, SingleSelect } from 'components/SingleSelect'
 
-interface PaperWithRefreshProps extends PaperProps {
-  onRefresh?: () => void
-  loading?: boolean
-}
-
-function PaperWithRefresh(props: PaperWithRefreshProps): JSX.Element {
-  const { onRefresh, loading, children, ...paperProps } = props
-  return (
-    <Paper {...paperProps}>
-      {children}
-      {onRefresh && (
-        <Button
-          leftIcon={<BiRefresh />}
-          w="100%"
-          variant="clear"
-          onMouseDown={(e) => {
-            e.preventDefault()
-          }}
-          spinner={<Spinner fontSize={24} color="primary.600" />}
-          onClick={onRefresh}
-          isLoading={loading}
-        >
-          Refresh items
-        </Button>
-      )}
-    </Paper>
-  )
-}
-
-interface ControlledAutocompleteProps
-  extends AutocompleteProps<IFieldDropdownOption, boolean, boolean, boolean> {
-  shouldUnregister?: boolean
+interface ControlledAutocompleteProps {
+  options: IFieldDropdownOption[]
+  defaultValue?: string
+  loading: boolean
+  freeSolo?: boolean
   name: string
   label?: string
   showOptionValue?: boolean
@@ -59,22 +22,36 @@ interface ControlledAutocompleteProps
   placeholder?: string
 }
 
-const filter = createFilterOptions<IFieldDropdownOption>()
+const formComboboxOptions = (
+  options: readonly IFieldDropdownOption[],
+  showOptionValue?: boolean,
+) => {
+  const result: ComboboxItem[] = []
+  for (const option of options) {
+    const item = {
+      value: option['value'],
+      // Display value if label does not exist
+      label: option['label'] ?? (option.value?.toString() || ''),
+      // Always hide value if description is availble.
+      description:
+        option['description'] ?? (showOptionValue ? option['value'] : ''),
+    } as ComboboxItem
+    result.push(item)
+  }
+  return result
+}
 
-const getOption = (
+const getSingleSelectOption = (
   options: readonly IFieldDropdownOption[],
   value: string,
   freeSolo?: boolean,
-) => {
+): string => {
   const foundOption = options.find((option) => option.value === value)
-  if (foundOption) {
-    return foundOption
-  }
   // If allowArbitrary is true, return the value as the option
   if (freeSolo) {
     return value
   }
-  return null
+  return foundOption?.value.toString() ?? ''
 }
 
 function ControlledAutocomplete(
@@ -85,7 +62,6 @@ function ControlledAutocomplete(
     name,
     label,
     defaultValue,
-    shouldUnregister,
     description,
     options = [],
     dependsOn = [],
@@ -95,13 +71,15 @@ function ControlledAutocomplete(
     loading,
     required,
     placeholder,
-    ...autocompleteProps
   } = props
 
   const dependsOnValues: unknown[] = useMemo(
     () => (dependsOn?.length ? watch(dependsOn) : []),
     [dependsOn, watch],
   )
+
+  // This is added to add custom dropdown options when freeSolo is enabled
+  const [sessionOptions, setSessionOptions] = useState(options)
 
   useEffect(() => {
     const hasDependencies = dependsOnValues.length
@@ -112,7 +90,27 @@ function ControlledAutocomplete(
       setValue(name, null)
       resetField(name)
     }
-  }, [dependsOnValues, name, resetField, setValue])
+
+    if (freeSolo) {
+      // allow for custom fields to be added temporarily when allowArbitrary is set to true
+      if (sessionOptions.length === 0) {
+        setSessionOptions(options)
+      }
+    } else {
+      // dynamically update and refresh the next set of fields
+      if (sessionOptions !== options) {
+        setSessionOptions(options)
+      }
+    }
+  }, [
+    dependsOnValues,
+    name,
+    resetField,
+    setValue,
+    options,
+    sessionOptions,
+    freeSolo,
+  ])
 
   return (
     <Controller
@@ -120,8 +118,7 @@ function ControlledAutocomplete(
       name={name}
       defaultValue={defaultValue ?? ''}
       control={control}
-      shouldUnregister={shouldUnregister}
-      render={({ field: { ref, onChange, onBlur, ...field }, fieldState }) => {
+      render={({ field: { ref, onChange, ...field }, fieldState }) => {
         const isError = Boolean(fieldState.isTouched && fieldState.error)
 
         return (
@@ -138,104 +135,38 @@ function ControlledAutocomplete(
                 {label}
               </FormLabel>
             )}
-            {/* encapsulated with an element such as div to vertical spacing delegated from parent */}
-            <Flex alignItems="center" gap={2}>
-              <Autocomplete
-                {...autocompleteProps}
-                {...field}
-                disableClearable={required}
-                freeSolo={freeSolo}
-                options={options}
-                value={getOption(options, field.value, freeSolo)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder={placeholder}
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loading && (
-                            <Spinner fontSize={24} color="primary.600" />
-                          )}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                onChange={(_event, selectedOption) => {
-                  const typedSelectedOption =
-                    selectedOption as IFieldDropdownOption
-                  if (
-                    typedSelectedOption !== null &&
-                    Object.prototype.hasOwnProperty.call(
-                      typedSelectedOption,
-                      'value',
-                    )
-                  ) {
-                    onChange(typedSelectedOption.value)
-                    return
-                  }
-                  // manual input
-                  onChange(typedSelectedOption)
-                }}
-                onBlur={onBlur}
-                clearOnBlur
-                filterOptions={(options, params) => {
-                  const filtered = filter(options, params)
-
-                  if (freeSolo && params.inputValue !== '') {
-                    filtered.push({
-                      value: params.inputValue,
-                      label: `Use: ${params.inputValue}`,
-                    })
-                  }
-
-                  return filtered
-                }}
-                ref={ref}
-                data-test={`${name}-autocomplete`}
-                getOptionLabel={(option) => {
-                  // manual input
-                  if (typeof option === 'string') {
-                    return option
-                  }
-                  if (option.label) {
-                    return option.label
-                  }
-                  return option.value?.toString() || ''
-                }}
-                renderOption={(optionProps, option) => (
-                  <li
-                    {...optionProps}
-                    key={option.value.toString()}
-                    style={{ flexDirection: 'column', alignItems: 'start' }}
-                  >
-                    <Text textStyle="body-1">{option.label}</Text>
-
-                    {option.description && (
-                      <Text textStyle="body-2" color="base.content.medium">
-                        {option.description}
-                      </Text>
-                    )}
-
-                    {/* Always hide value if description is availble. */}
-                    {!option.description && showOptionValue && (
-                      <Text textStyle="body-2" color="base.content.medium">
-                        {option.value}
-                      </Text>
-                    )}
-                  </li>
-                )}
-                PaperComponent={(props) => (
-                  <PaperWithRefresh
-                    {...props}
-                    onRefresh={onRefresh}
-                    loading={loading}
-                  />
-                )}
-              />
+            {/* Dropdown row option content */}
+            <Flex>
+              <Box flexGrow={1}>
+                <SingleSelect
+                  name="choose-dropdown-option"
+                  colorScheme="secondary"
+                  isClearable={!required}
+                  items={formComboboxOptions(sessionOptions, showOptionValue)}
+                  onChange={(selectedOption) => onChange(selectedOption)}
+                  value={getSingleSelectOption(
+                    sessionOptions,
+                    field.value,
+                    freeSolo,
+                  )}
+                  placeholder={placeholder}
+                  ref={ref}
+                  data-test={`${name}-autocomplete`}
+                  onRefresh={onRefresh}
+                  isRefreshLoading={loading}
+                  freeSolo={freeSolo}
+                  addCustomOption={(selectedOption) => {
+                    setSessionOptions([
+                      ...sessionOptions,
+                      {
+                        label: selectedOption,
+                        value: selectedOption,
+                        description: selectedOption,
+                      },
+                    ])
+                  }}
+                />
+              </Box>
             </Flex>
             {isError && (
               <FormErrorMessage>{fieldState.error?.message}</FormErrorMessage>

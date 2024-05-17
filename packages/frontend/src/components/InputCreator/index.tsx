@@ -1,7 +1,6 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
 import { useFormContext } from 'react-hook-form'
-import MuiTextField from '@mui/material/TextField'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
@@ -67,20 +66,14 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
       <ControlledAutocomplete
         name={computedName}
         dependsOn={dependsOn}
-        fullWidth
-        disablePortal
         required={required}
         freeSolo={schema.allowArbitrary}
         options={preparedOptions}
-        renderInput={(params) => (
-          <MuiTextField placeholder={placeholder} {...params} />
-        )}
         defaultValue={value as string}
         description={description}
         loading={loading}
         // if schema source is defined, dynamic data is supported
         onRefresh={schema.source ? () => refetch() : undefined}
-        disabled={disabled}
         showOptionValue={schema.showOptionValue ?? true}
         label={label}
         placeholder={placeholder}

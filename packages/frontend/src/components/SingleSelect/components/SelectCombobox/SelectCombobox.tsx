@@ -34,6 +34,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
       inputRef,
       isClearable,
       size,
+      value,
     } = useSelectContext()
 
     const mergedInputRef = useMergeRefs(inputRef, ref)
@@ -80,7 +81,10 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
                 aria-disabled={isDisabled}
               />
             ) : null}
-            <Text noOfLines={1}>{selectedItemMeta.label}</Text>
+            {/* To display custom value if it exists when freeSolo is enabled */}
+            <Text noOfLines={1}>
+              {selectedItemMeta.label !== '' ? selectedItemMeta.label : value}
+            </Text>
           </Stack>
           <Input
             isReadOnly={!isSearchable || isReadOnly}

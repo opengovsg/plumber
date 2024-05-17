@@ -1,11 +1,12 @@
-import { useMemo } from 'react'
-import { Flex, Icon, ListItem, Stack, Text } from '@chakra-ui/react'
+import { useMemo, useState } from 'react'
+import { Flex, Icon, ListItem, Text } from '@chakra-ui/react'
 import { dataAttr } from '@chakra-ui/utils'
 
 import { useSelectContext } from '../../SelectContext'
 import { ComboboxItem } from '../../types'
 import {
   isItemDisabled,
+  itemToBadge,
   itemToDescriptionString,
   itemToIcon,
   itemToLabelString,
@@ -25,9 +26,20 @@ export const DropdownItem = ({
   const { getItemProps, isItemSelected, inputValue, styles } =
     useSelectContext()
 
-  const { icon, label, description, isDisabled, isActive } = useMemo(
+  // add this for hover detection
+  const [isHovered, setIsHovered] = useState(false)
+  const handleMouseEnter = () => {
+    setIsHovered(true)
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+  }
+
+  const { icon, badge, label, description, isDisabled, isActive } = useMemo(
     () => ({
       icon: itemToIcon(item),
+      badge: itemToBadge(item),
       label: itemToLabelString(item),
       description: itemToDescriptionString(item),
       isDisabled: isItemDisabled(item),
@@ -45,9 +57,24 @@ export const DropdownItem = ({
         index,
         disabled: isDisabled,
       })}
+      style={
+        isHovered
+          ? {
+              backgroundColor: '#f8f9fa',
+              cursor: 'pointer',
+            }
+          : isActive
+          ? {
+              backgroundColor: '#e9eaee',
+              cursor: 'pointer',
+            }
+          : undefined
+      }
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <Flex flexDir="column">
-        <Stack direction="row" align="center" spacing="1rem">
+        <Flex gap={1.5}>
           {icon ? <Icon as={icon} sx={styles.icon} /> : null}
           <Text
             minWidth={0}
@@ -60,7 +87,8 @@ export const DropdownItem = ({
               textToHighlight={label}
             />
           </Text>
-        </Stack>
+          {badge}
+        </Flex>
         {description && (
           <Text sx={styles.itemDescription}>
             <DropdownItemTextHighlighter

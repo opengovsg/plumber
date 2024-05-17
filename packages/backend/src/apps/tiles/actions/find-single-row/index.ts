@@ -119,15 +119,16 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       required: true,
       variables: false,
-      value: false,
+      value: 'no',
+      showOptionValue: false,
       options: [
         {
           label: 'No (Returns oldest row)',
-          value: false,
+          value: 'no',
         },
         {
           label: 'Yes (Returns most recent row)',
-          value: true,
+          value: 'yes',
         },
       ],
     },

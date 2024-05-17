@@ -53,16 +53,16 @@ const action: IRawAction = {
       description:
         'You will need to add an Email by Postman action after this step to send out the generated PDF.',
       variables: false,
-      value: false,
+      value: 'no',
       showOptionValue: false,
       options: [
         {
           label: 'No',
-          value: false,
+          value: 'no',
         },
         {
           label: 'Yes',
-          value: true,
+          value: 'yes',
         },
       ],
     },

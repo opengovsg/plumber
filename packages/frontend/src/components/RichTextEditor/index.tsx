@@ -171,6 +171,9 @@ const Editor = ({
             className="editor__content"
             editor={editor}
             onFocus={() => setShowVarSuggestions(true)}
+            style={{
+              minHeight: isRich ? '9rem' : '2.625rem', // to simulate textarea and coordinate with dropdown input size
+            }}
           />
           {variablesEnabled && (
             <SuggestionsPopper

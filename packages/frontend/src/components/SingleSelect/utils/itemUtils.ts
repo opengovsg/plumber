@@ -35,6 +35,13 @@ export const itemToIcon = <Item extends ComboboxItem>(item?: Item) => {
   return item.icon
 }
 
+export const itemToBadge = <Item extends ComboboxItem>(item?: Item) => {
+  if (!item || !itemIsObject(item)) {
+    return undefined
+  }
+  return item.badge
+}
+
 export const isItemDisabled = <Item extends ComboboxItem>(
   item: Item,
 ): boolean => {
