@@ -37,7 +37,7 @@ type Query {
   getTable(tableId: String!): TableMetadata!
   getTables: [TableMetadata!]!
   # Tiles rows
-  getAllRows(tableId: String!): [TileRow!]!
+  getAllRows(tableId: String!): [JSONObject!]!
   getCurrentUser: User
   healthcheck: AppHealth
   getPlumberStats: Stats
@@ -644,11 +644,6 @@ type TableMetadata {
 # End Tiles types
 
 # Start Tiles row types
-type TileRow {
-  rowId: ID!
-  data: JSONObject!
-}
-
 input CreateTableRowInput {
   tableId: ID!
   data: JSONObject!
@@ -669,7 +664,6 @@ input DeleteTableRowsInput {
   tableId: ID!
   rowIds: [ID!]!
 }
-
 # End Tiles row types
 
 type AppHealth {
