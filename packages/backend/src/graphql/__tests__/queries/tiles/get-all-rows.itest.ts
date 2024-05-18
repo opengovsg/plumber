@@ -1,3 +1,5 @@
+import { ITableRow } from '@plumber/types'
+
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -66,7 +68,7 @@ describe('get all rows query', () => {
       },
       context,
     )
-    expect(rows.map((r) => r.rowId)).toEqual(rowIdsInserted)
+    expect(rows.map((r: ITableRow) => r.rowId)).toEqual(rowIdsInserted)
   })
 
   it('should fetch all rows even if more than 1MB', async () => {
