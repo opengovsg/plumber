@@ -139,7 +139,6 @@ function ChooseAppAndEventSubstep(
           : app.description,
         type: app.type, // webhook or polling
         disabled: isDisabled,
-        isEventInstant: app.type === 'webhook',
       }
     },
     [step.appKey, isIfThenSelectable],
