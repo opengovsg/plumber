@@ -2,8 +2,9 @@ import { IApp } from '@plumber/types'
 
 import { useCallback, useState } from 'react'
 import { FormControl } from '@chakra-ui/react'
-import { BxPlus, FormLabel, SingleSelect } from '@opengovsg/design-system-react'
+import { BxPlus, FormLabel } from '@opengovsg/design-system-react'
 import AddAppConnection from 'components/AddAppConnection'
+import { SingleSelect } from 'components/SingleSelect'
 
 type ConnectionDropdownOption = {
   label: string
@@ -69,6 +70,7 @@ function ChooseConnectionDropdown({
         <FormLabel isRequired>Choose connection</FormLabel>
         <SingleSelect
           name="choose-connection"
+          colorScheme="secondary"
           isRequired={true}
           isClearable={false}
           isDisabled={isDisabled}
