@@ -20,12 +20,18 @@ describe('get all rows query', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnIds: string[] = []
+  let editor: User
+  let viewer: User
 
-  // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({ userId: context.currentUser.id })
+    const mockTable = await generateMockTable({
+      userId: context.currentUser.id,
+    })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
@@ -124,9 +130,7 @@ describe('get all rows query', () => {
   })
 
   it('should allow all collaborators to call this function', async () => {
-    context.currentUser = await User.query().findOne({
-      email: 'editor@open.gov.sg',
-    })
+    context.currentUser = editor
     await expect(
       getAllRows(
         null,
@@ -137,9 +141,7 @@ describe('get all rows query', () => {
       ),
     ).resolves.toBeDefined()
 
-    context.currentUser = await User.query().findOne({
-      email: 'viewer@open.gov.sg',
-    })
+    context.currentUser = viewer
     await expect(
       getAllRows(
         null,

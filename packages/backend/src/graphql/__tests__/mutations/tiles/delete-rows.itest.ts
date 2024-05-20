@@ -18,13 +18,18 @@ describe('delete rows mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
   let rowIds: string[] = []
-  // cant use before all here since the data is re-seeded each time
+  let editor: User
+  let viewer: User
+
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({
+    const mockTable = await generateMockTable({
       userId: context.currentUser.id,
     })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
 
     const columnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
@@ -75,9 +80,7 @@ describe('delete rows mutation', () => {
   })
 
   it('should allow collaborators with edit rights to call this function', async () => {
-    context.currentUser = await User.query().findOne({
-      email: 'editor@open.gov.sg',
-    })
+    context.currentUser = editor
     const slicedRows = rowIds.slice(0, 5)
     await expect(
       deleteRows(
@@ -89,9 +92,7 @@ describe('delete rows mutation', () => {
   })
 
   it('should throw an error if user does not have edit access', async () => {
-    context.currentUser = await User.query().findOne({
-      email: 'viewer@open.gov.sg',
-    })
+    context.currentUser = viewer
     const slicedRows = rowIds.slice(0, 5)
     await expect(
       deleteRows(

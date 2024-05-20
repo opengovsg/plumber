@@ -18,8 +18,15 @@ export async function generateMockTable({
   userId,
 }: {
   userId: string
-}): Promise<TableMetadata> {
+}): Promise<{
+  table: TableMetadata
+  owner: User
+  editor: User
+  viewer: User
+}> {
   const currentUser = await User.query().findById(userId)
+  const editor = await User.query().findOne({ email: 'editor@open.gov.sg' })
+  const viewer = await User.query().findOne({ email: 'viewer@open.gov.sg' })
   const table = await currentUser.$relatedQuery('tables').insert({
     name: 'Test Table',
     role: 'owner',
@@ -36,7 +43,12 @@ export async function generateMockTable({
       role: 'viewer',
     },
   ])
-  return table
+  return {
+    table,
+    owner: currentUser,
+    editor,
+    viewer,
+  }
 }
 
 export async function generateMockTableColumns({

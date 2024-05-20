@@ -15,13 +15,18 @@ import {
 describe('delete table mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
-  // cant use before all here since the data is re-seeded each time
+  let editor: User
+  let viewer: User
+
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({
+    const mockTable = await generateMockTable({
       userId: context.currentUser.id,
     })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
 
     await generateMockTableColumns({
       tableId: dummyTable.id,
@@ -56,16 +61,12 @@ describe('delete table mutation', () => {
   })
 
   it('should throw an error if user is not the owner', async () => {
-    context.currentUser = await User.query().findOne({
-      email: 'viewer@open.gov.sg',
-    })
+    context.currentUser = editor
     await expect(
       deleteTable(null, { input: { id: dummyTable.id } }, context),
     ).rejects.toThrow('You do not have access to this tile')
 
-    context.currentUser = await User.query().findOne({
-      email: 'editor@open.gov.sg',
-    })
+    context.currentUser = viewer
     await expect(
       deleteTable(null, { input: { id: dummyTable.id } }, context),
     ).rejects.toThrow('You do not have access to this tile')

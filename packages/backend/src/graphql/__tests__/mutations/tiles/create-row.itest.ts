@@ -16,12 +16,19 @@ describe('create row mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnIds: string[]
+  let editor: User
+  let viewer: User
 
   // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({ userId: context.currentUser.id })
+    const mockTable = await generateMockTable({
+      userId: context.currentUser.id,
+    })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
@@ -77,9 +84,7 @@ describe('create row mutation', () => {
   })
 
   it('should allow collaborators with edit rights to call this function', async () => {
-    context.currentUser = await User.query().findOne({
-      email: 'editor@open.gov.sg',
-    })
+    context.currentUser = editor
     await expect(
       createRow(
         null,
@@ -95,9 +100,7 @@ describe('create row mutation', () => {
   })
 
   it('should throw an error if user does not have edit access', async () => {
-    context.currentUser = await User.query().findOne({
-      email: 'viewer@open.gov.sg',
-    })
+    context.currentUser = viewer
     await expect(
       createRow(
         null,
