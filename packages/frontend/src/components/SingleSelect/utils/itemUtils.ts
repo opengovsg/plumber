@@ -35,13 +35,6 @@ export const itemToIcon = <Item extends ComboboxItem>(item?: Item) => {
   return item.icon
 }
 
-export const itemToBadge = <Item extends ComboboxItem>(item?: Item) => {
-  if (!item || !itemIsObject(item)) {
-    return undefined
-  }
-  return item.badge
-}
-
 export const isItemDisabled = <Item extends ComboboxItem>(
   item: Item,
 ): boolean => {
@@ -52,4 +45,14 @@ export const itemToDescriptionString = <Item extends ComboboxItem>(
   item: Item,
 ): string | undefined => {
   return itemIsObject(item) ? item.description : undefined
+}
+
+export const isItemNew = <Item extends ComboboxItem>(item: Item): boolean => {
+  return itemIsObject(item) && !!item.isAppNew
+}
+
+export const isItemInstant = <Item extends ComboboxItem>(
+  item: Item,
+): boolean => {
+  return itemIsObject(item) && !!item.isEventInstant
 }
