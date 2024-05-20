@@ -15,7 +15,9 @@ const deleteTable: MutationResolvers['deleteTable'] = async (
       'owner',
     )
 
-    const table = await TableMetadata.query().findById(params.input.id)
+    const table = await TableMetadata.query()
+      .findById(params.input.id)
+      .throwIfNotFound()
 
     await table.$relatedQuery('columns', trx).delete()
     await table.$query(trx).delete()

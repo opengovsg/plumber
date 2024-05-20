@@ -13,7 +13,7 @@ const createRows: MutationResolvers['createRows'] = async (
 
   await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
-  const table = await TableMetadata.query().findById(tableId)
+  const table = await TableMetadata.query().findById(tableId).throwIfNotFound()
 
   if (!(await table.validateRows(dataArray))) {
     throw new Error('Invalid column id')

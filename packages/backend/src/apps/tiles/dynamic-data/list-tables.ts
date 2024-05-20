@@ -19,6 +19,7 @@ const dynamicData: IDynamicData = {
       const currentUser = await User.query().findById($.user.id)
       const tiles = await currentUser
         .$relatedQuery('tables')
+        .where('role', 'owner')
         .orderBy('created_at', 'desc')
 
       return {

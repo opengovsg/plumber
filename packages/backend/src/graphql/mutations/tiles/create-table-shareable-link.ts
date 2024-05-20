@@ -15,7 +15,9 @@ const createShareableTableLink: MutationResolvers['createShareableTableLink'] =
       'editor',
     )
 
-    const table = await TableMetadata.query().findById(tableId)
+    const table = await TableMetadata.query()
+      .findById(tableId)
+      .throwIfNotFound()
 
     const newViewOnlyKey = randomUUID()
 

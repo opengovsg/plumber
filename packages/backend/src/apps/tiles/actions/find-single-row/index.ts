@@ -141,16 +141,7 @@ const action: IRawAction = {
       returnLastRow: boolean | undefined
     }
 
-    try {
-      await TableCollaborator.hasAccess($.flow?.userId, tableId, 'editor')
-    } catch (e) {
-      throw new StepError(
-        'You do not have access to this tile',
-        'Ensure you have access to the tile you are trying to update a row in.',
-        $.step.position,
-        $.app.name,
-      )
-    }
+    await TableCollaborator.hasAccess($.user?.id, tableId, 'owner', $)
 
     const columns = await TableColumnMetadata.query().where({
       table_id: tableId,
