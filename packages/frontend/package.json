@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.18.6",
+  "version": "1.19.0",
   "scripts": {
     "dev": "vite --host --force",
     "build": "tsc && vite build --mode=${VITE_MODE:-prod}",
