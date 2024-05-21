@@ -88,7 +88,7 @@ export default function Suggestions(props: SuggestionsProps) {
           textStyle="subhead-1"
           color="base.content.medium"
         >
-          Choose Data
+          Choose data
         </Text>
         <Divider borderColor="base.divider.medium" />
         {data.map((option, index) => (
@@ -118,11 +118,15 @@ export const SuggestionsPopper = (props: SuggestionsPopperProps) => {
 
   const offsetVerticalMargin = editorRef?.current?.offsetHeight ?? 0
 
+  if (!open) {
+    return null
+  }
+
   return (
     <Popover
-      isOpen={open}
+      isOpen
       initialFocusRef={editorRef}
-      offset={[0, offsetVerticalMargin]}
+      offset={[0, offsetVerticalMargin + 1]} // this is adjusted based on DS input
     >
       <PopoverTrigger>
         <div />
