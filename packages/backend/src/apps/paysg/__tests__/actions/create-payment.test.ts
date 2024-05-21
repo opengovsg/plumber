@@ -211,4 +211,35 @@ describe('create payment', () => {
       )
     },
   )
+
+  it('allows for optional fields, handles empty strings and nullish values', async () => {
+    $.step.parameters.payerAddress = ''
+    $.step.parameters.payerIdentifier = undefined
+    $.step.parameters.payerEmail = ' '
+    $.step.parameters.dueDate = null
+    $.step.parameters.returnUrl = ''
+
+    await createPaymentAction.run($)
+
+    expect(mocks.httpPost).toHaveBeenCalledWith(
+      '/v1/payment-services/:paymentServiceId/payments',
+      {
+        reference_id: 'test-reference-id',
+        payer_name: 'test-name',
+        payer_address: undefined,
+        payer_identifier: undefined,
+        payer_email: undefined,
+        description: 'test-description',
+        amount_in_cents: 12345, // Converted to number
+        due_date: undefined,
+        return_url: undefined,
+        metadata: {},
+      },
+      {
+        urlPathParams: {
+          paymentServiceId: 'sample-payment-service-id',
+        },
+      },
+    )
+  })
 })

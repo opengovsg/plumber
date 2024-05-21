@@ -37,7 +37,7 @@ type Query {
   getTable(tableId: String!): TableMetadata!
   getTables: [TableMetadata!]!
   # Tiles rows
-  getAllRows(tableId: String!): [TileRow!]!
+  getAllRows(tableId: String!): Any!
   getCurrentUser: User
   healthcheck: AppHealth
   getPlumberStats: Stats
@@ -67,6 +67,9 @@ type Mutation {
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
+  bulkRetryExecutions(
+    input: BulkRetryExecutionsInput
+  ): BulkRetryExecutionsResult!
   logout: Boolean
   loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
   loginWithSelectedSgid(
@@ -171,6 +174,7 @@ type App {
   actions: [Action]
   connections: [Connection]
   description: String
+  isNewApp: Boolean
 }
 
 type AppAuth {
@@ -242,6 +246,11 @@ type ExecutionStep {
   errorDetails: JSONObject
   createdAt: String
   updatedAt: String
+  metadata: ExecutionStepMetadata!
+}
+
+type ExecutionStepMetadata {
+  isMock: Boolean
 }
 
 type Field {
@@ -299,6 +308,11 @@ type Execution {
   updatedAt: String
   status: String
   flow: Flow
+}
+
+type BulkRetryExecutionsResult {
+  numFailedExecutions: Int!
+  allSuccessfullyRetried: Boolean!
 }
 
 input CreateConnectionInput {
@@ -408,10 +422,16 @@ input RetryExecutionStepInput {
   executionStepId: String!
 }
 
+input BulkRetryExecutionsInput {
+  flowId: String!
+  executionIds: [String!]
+}
+
 """
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSONObject
+scalar Any
 
 input PreviousStepInput {
   id: String
@@ -490,6 +510,7 @@ type TriggerInstructions {
   afterUrlMsg: String
   hideWebhookUrl: Boolean
   errorMsg: String
+  mockDataMsg: String
 }
 
 type StepTransferDetails {
@@ -630,11 +651,6 @@ type TableMetadata {
 # End Tiles types
 
 # Start Tiles row types
-type TileRow {
-  rowId: ID!
-  data: JSONObject!
-}
-
 input CreateTableRowInput {
   tableId: ID!
   data: JSONObject!
@@ -642,7 +658,7 @@ input CreateTableRowInput {
 
 input CreateTableRowsInput {
   tableId: ID!
-  dataArray: [JSONObject!]!
+  dataArray: Any!
 }
 
 input UpdateTableRowInput {
@@ -655,7 +671,6 @@ input DeleteTableRowsInput {
   tableId: ID!
   rowIds: [ID!]!
 }
-
 # End Tiles row types
 
 type AppHealth {

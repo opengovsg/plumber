@@ -27,7 +27,7 @@ export const FORMSG_WEBHOOK_REGISTRATION_MESSAGE = {
   ERROR: "We couldn't connect your form. Please try again later.",
 }
 
-function getFormDetailsFromGlobalVariable($: IGlobalVariable) {
+export function getFormDetailsFromGlobalVariable($: IGlobalVariable) {
   const userEmail = $.user?.email
   if (!userEmail) {
     throw new Error('Missing User Email')

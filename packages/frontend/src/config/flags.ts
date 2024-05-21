@@ -9,6 +9,7 @@ export const BANNER_TEXT_FLAG = 'banner_display'
 /**
  * Feature flags
  */
+export const BULK_RETRY_EXECUTIONS_FLAG = 'bulk-retry-failed-executions-v1'
 export const SGID_FEATURE_FLAG = 'sgid-login'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
 

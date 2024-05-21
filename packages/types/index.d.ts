@@ -8,6 +8,8 @@ import type {
 // types to type-fest.
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
 
+import type { JobsProOptions, WorkerProOptions } from '@taskforcesh/bullmq-pro'
+
 import HttpError from '@/errors/http'
 
 export type IHttpClient = AxiosInstance
@@ -93,9 +95,14 @@ export interface IExecutionStep {
   jobId?: string
   createdAt: string
   updatedAt: string
+  metadata: IExecutionStepMetadata
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
+}
+
+export interface IExecutionStepMetadata {
+  isMock?: boolean
 }
 
 export interface IExecution {
@@ -103,7 +110,7 @@ export interface IExecution {
   flowId: string
   flow: IFlow
   testRun: boolean
-  status: 'success' | 'failure'
+  status: 'success' | 'failure' | null
   executionSteps: IExecutionStep[]
   updatedAt: string
   createdAt: string
@@ -332,6 +339,56 @@ export interface IDynamicData {
   run($: IGlobalVariable): Promise<DynamicDataOutput>
 }
 
+export interface IAppQueue {
+  /**
+   * Obtains the group config for a job that is about to be enqueued to this
+   * app's queue.
+   *
+   * @see {@link JobsProOptions.group}
+   */
+  getGroupConfigForJob?(
+    jobData: IActionJobData,
+  ): Promise<JobsProOptions['group']>
+
+  /**
+   * Set per-group concurrency or rate limits. This is mutually exclusive
+   * because BullMQ Pro does not support using both together.
+   *
+   * @see {@link WorkerProOptions.group}
+   */
+  groupLimits?:
+    | {
+        type: 'concurrency'
+        concurrency: WorkerProOptions['group']['concurrency']
+      }
+    | {
+        type: 'rate-limit'
+        limit: WorkerProOptions['group']['limit']
+      }
+
+  /**
+   * Set rate limit for the entire queue (applied before groups' limits)
+   */
+  queueRateLimit?: WorkerProOptions['limiter']
+
+  /**
+   * Configures if we are allowed to delay or rate limit the entire queue.
+   *
+   * Concretely speaking, if this is true, RetriableErrors with delayType set
+   * to `queue` will pause the entire queue for the delay period via a call to
+   * `worker.rateLimit()`.
+   *
+   * This is a safety mechanism to ensure that we don't accidentally delay
+   * queues if reused code / helper functions throw RetriableErrors with
+   * `delayType` == `queue`.
+   *
+   * Note that BullMQ allows delaying the entire queue only if a queue rate
+   * limit is set. Thus, if you configure this to true, you must also configure
+   * the queueRateLimit.
+   */
+  isQueueDelayable: boolean
+}
+
 export interface IApp {
   name: string
   key: string
@@ -350,6 +407,7 @@ export interface IApp {
   actions?: IAction[]
   connections?: IConnection[]
   description?: string
+  isNewApp?: boolean
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this
@@ -364,7 +422,13 @@ export interface IApp {
    * with try / catch.
    */
   requestErrorHandler?: TRequestErrorHandler
+
   getTransferDetails?($: IGlobalVariable): Promise<ITransferDetails> // TODO (mal): add null if necessary, check with Stacey
+
+  /**
+   * Apps specify this if they need their own dedicated action queue.
+   */
+  queue?: IAppQueue
 }
 
 export type TBeforeRequest = (
@@ -430,6 +494,7 @@ export interface ITriggerItem {
   meta: {
     internalId: string
   }
+  isMock?: boolean
 }
 
 export type ITriggerInstructions = Partial<{
@@ -437,6 +502,7 @@ export type ITriggerInstructions = Partial<{
   afterUrlMsg: string
   hideWebhookUrl: boolean
   errorMsg: string
+  mockDataMsg: string
 }>
 
 // TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2
@@ -484,6 +550,13 @@ interface PostmanSendEmailMetadata {
 }
 // Can add more type in this union later for different action types
 export type NextStepMetadata = PostmanSendEmailMetadata
+
+export interface IActionJobData {
+  flowId: string
+  executionId: string
+  stepId: string
+  metadata?: NextStepMetadata
+}
 export interface IActionRunResult {
   /**
    * This enables actions to control pipe execution flow. This is for actions

@@ -1,7 +1,4 @@
-import Redlock, { ExecutionError, ResourceLockedError } from 'redlock'
-
 import { type M365TenantInfo } from '@/config/app-env-vars/m365'
-import RetriableError from '@/errors/retriable-error'
 import {
   makeRedisAppDataKey,
   redisAppDataClient,
@@ -20,78 +17,6 @@ import { APP_KEY } from '../constants'
 //
 function makeRedisKeyPrefix(tenant: M365TenantInfo, fileId: string): string {
   return makeRedisAppDataKey(APP_KEY, `${tenant.id}:${fileId}:`)
-}
-
-//
-// Locking stuff
-//
-
-// This is the lock used as a write lock for session IDs
-//
-// Note that it allows for retrying a little bit, instead of failing
-// immediately if it fails to acquire the lock. Although retries will increase
-// our worker latency, it reduces full action re-queues (since the default is to
-// throw a retry-step error), and also makes front-end UX better (retry-step
-// errors surface as real errors in the pipe editor, instead of being retried).
-//
-// Session manipulation should be pretty fast plus this should be quite rare, so
-// we _should_ be OK to take the occasional latency hit.
-const redlock = new Redlock([redisAppDataClient], {
-  retryCount: 2,
-  retryDelay: 500,
-  retryJitter: 100,
-})
-
-// Redlock has a timeout to guard against lock holder crashes.
-//
-// This timeout is arbitrarily set to 150s - a little bit more default timeout
-// for 1 HTTP request. The idea is that a lock holder should release the lock if
-// its HTTP request has failed; otherwise, it should be able to extend the lock
-// before continuing.
-const DEAD_LOCK_HOLDER_PREVENTION_TIMEOUT_MS = 150 * 1000
-
-// This is the delay to retry if a worker is unable to acquire a lock (e.g. due
-// to some other worker acquiring it and starting a new workbook session).
-//
-// I chose 5 seconds as that seems to be a reasonable-ish value where p90 (from
-// personal experience...) of Graph API requests will complete.
-const LOCK_FAILURE_RETRY_DELAY_MS = 5 * 1000
-
-export async function runWithLockElseRetryStep<T>(
-  tenant: M365TenantInfo,
-  fileId: string,
-  callback: Parameters<typeof redlock.using<T>>[2],
-): Promise<T> {
-  const lockKey = `${makeRedisKeyPrefix(tenant, fileId)}session:lock`
-
-  try {
-    return await redlock.using(
-      [lockKey],
-      DEAD_LOCK_HOLDER_PREVENTION_TIMEOUT_MS,
-      callback,
-    )
-  } catch (error) {
-    const isRetriableError =
-      // Already locked by another server
-      error instanceof ResourceLockedError ||
-      // Redlock quorum failed; no harm retrying later.
-      (error instanceof ExecutionError &&
-        // Matching on string isn't the most robust, but redlock doesn't have
-        // error codes. Mitigating factor is that redlock isn't going frequently
-        // updated, and it's not the end of the world if they change the
-        // message.
-        error.message ===
-          'The operation was unable to achieve a quorum during its retry window.')
-
-    if (isRetriableError) {
-      throw new RetriableError({
-        error: 'Unable to acquire excel session lock.',
-        delayInMs: LOCK_FAILURE_RETRY_DELAY_MS,
-      })
-    }
-
-    throw error
-  }
 }
 
 //

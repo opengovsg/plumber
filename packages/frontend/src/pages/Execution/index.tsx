@@ -1,10 +1,9 @@
 import type { IExecutionStep } from '@plumber/types'
 
-import * as React from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Flex, Grid, Text } from '@chakra-ui/react'
-import { Infobox, Pagination } from '@opengovsg/design-system-react'
+import { Infobox, Pagination, Spinner } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
 import ExecutionHeader from 'components/ExecutionHeader'
 import ExecutionStep from 'components/ExecutionStep'
@@ -22,11 +21,11 @@ const getLimitAndOffset = (page: number) => ({
   offset: (page - 1) * EXECUTION_STEP_PER_PAGE,
 })
 
-export default function Execution(): React.ReactElement {
+export default function Execution() {
   const { executionId } = useParams() as ExecutionParams
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
-  const { data: execution } = useQuery(GET_EXECUTION, {
+  const { data: executionData } = useQuery(GET_EXECUTION, {
     variables: { executionId },
   })
   const { data, loading } = useQuery(GET_EXECUTION_STEPS, {
@@ -38,9 +37,15 @@ export default function Execution(): React.ReactElement {
     (edge: { node: IExecutionStep }) => edge.node,
   )
 
+  const execution = executionData?.getExecution
+
+  if (!execution) {
+    return <Spinner fontSize={36} margin="auto" />
+  }
+
   return (
     <Container sx={{ py: 3 }}>
-      <ExecutionHeader execution={execution?.getExecution} />
+      <ExecutionHeader execution={execution} />
 
       <Grid mt={4} mb={{ base: '16px', sm: '40px' }} rowGap={6}>
         {!loading && !executionSteps?.length && (
@@ -62,6 +67,7 @@ export default function Execution(): React.ReactElement {
         {executionSteps?.map((executionStep, i) => (
           <ExecutionStep
             key={executionStep.id}
+            execution={execution}
             executionStep={executionStep}
             index={i}
             page={page}

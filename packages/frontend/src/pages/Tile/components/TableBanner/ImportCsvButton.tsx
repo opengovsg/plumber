@@ -29,9 +29,9 @@ import {
   ButtonProps,
   Spinner,
 } from '@opengovsg/design-system-react'
-import { CREATE_ROWS } from 'graphql/mutations/create-rows'
-import { GET_ALL_ROWS } from 'graphql/queries/get-all-rows'
-import { GET_TABLE } from 'graphql/queries/get-table'
+import { CREATE_ROWS } from 'graphql/mutations/tiles/create-rows'
+import { GET_ALL_ROWS } from 'graphql/queries/tiles/get-all-rows'
+import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 import { chunk } from 'lodash'
 import Papa, { ParseMeta, ParseResult } from 'papaparse'
 import { SetRequired } from 'type-fest'

@@ -1,9 +1,12 @@
+import { ElectroError } from 'electrodb'
 import { describe, expect, it } from 'vitest'
 
+import RetriableError from '@/errors/retriable-error'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
 import {
   autoMarshallDataObj,
+  handleDynamoDBError,
   mapColumnIdsToNames,
   stripInvalidKeys,
 } from '../helpers'
@@ -14,8 +17,13 @@ describe('dynamodb helpers', () => {
       const rawValue = {
         text: 'abc',
         int: '123',
+        negativeInt: '-123',
         float: '12.444',
+        negativeFloat: '-12.444',
         invalidFloat: '12.444.444',
+        invalidNegativeFloat: '--12.444',
+        numberExceedingMaxSafe: '9007199254740992',
+        numberUnderMinSafe: '-9007199254740992',
         exponential: '1e+3',
         mixed: '123abc',
       }
@@ -23,8 +31,13 @@ describe('dynamodb helpers', () => {
       expect(autoMarshallDataObj(rawValue)).toEqual({
         text: 'abc',
         int: 123,
+        negativeInt: -123,
         float: 12.444,
+        negativeFloat: -12.444,
         invalidFloat: '12.444.444',
+        invalidNegativeFloat: '--12.444',
+        numberExceedingMaxSafe: '9007199254740992',
+        numberUnderMinSafe: '-9007199254740992',
         exponential: '1e+3',
         mixed: '123abc',
       })
@@ -89,6 +102,44 @@ describe('dynamodb helpers', () => {
         '1': 'value1',
         '3': 'value3',
       })
+    })
+  })
+
+  describe('error handling', () => {
+    it('should handle retriable errors', () => {
+      const errMsg =
+        'Throughput exceeds the current capacity of your table or index. DynamoDB is automatically scaling your table or index so please try again shortly. If exceptions persist, check if you have a hot key: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-design.html'
+      const throughputExceededError = Object.setPrototypeOf(
+        {
+          message: errMsg,
+          code: 4001,
+          cause: {
+            message: errMsg,
+          },
+        },
+        ElectroError.prototype,
+      )
+      expect(() => handleDynamoDBError(throughputExceededError)).toThrow(
+        RetriableError,
+      )
+    })
+
+    it('should handle non-retriable errors', () => {
+      const errMsg =
+        'Number 202203297227616030000 is greater than Number.MAX_SAFE_INTEGER. Use BigInt.'
+      const dataTypeError = Object.setPrototypeOf(
+        {
+          message: errMsg,
+          code: 4001,
+          cause: {
+            message: errMsg,
+          },
+        },
+        ElectroError.prototype,
+      )
+      expect(() => handleDynamoDBError(dataTypeError)).not.toThrow(
+        RetriableError,
+      )
     })
   })
 })

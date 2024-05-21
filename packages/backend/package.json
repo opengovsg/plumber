@@ -29,16 +29,17 @@
     "@apollo/server": "4.9.4",
     "@aws-sdk/client-dynamodb": "3.460.0",
     "@aws-sdk/client-s3": "3.369.0",
-    "@bull-board/express": "5.6.0",
+    "@bull-board/express": "5.17.0",
     "@graphql-tools/schema": "10.0.0",
     "@launchdarkly/node-server-sdk": "9.0.4",
     "@opengovsg/formsg-sdk": "0.11.0",
     "@opengovsg/sgid-client": "2.1.0",
     "@plumber/types": "file:../types",
-    "@taskforcesh/bullmq-pro": "7.6.0",
+    "@taskforcesh/bullmq-pro": "7.7.1",
     "ajv-formats": "^2.1.1",
     "async-mutex": "0.4.0",
     "axios": "1.6.2",
+    "big.js": "6.2.1",
     "cookie-parser": "1.4.6",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
@@ -50,7 +51,6 @@
     "electrodb": "2.12.0",
     "email-validator": "2.0.4",
     "express": "4.19.2",
-    "express-basic-auth": "^1.2.1",
     "form-data": "4.0.0",
     "graphql": "16.8.1",
     "graphql-middleware": "6.1.35",
@@ -72,7 +72,6 @@
     "p-limit": "3.1.0",
     "pg": "^8.7.1",
     "rate-limiter-flexible": "2.4.1",
-    "redlock": "5.0.0-beta.2",
     "remark-breaks": "3.0.3",
     "remark-gfm": "3.0.1",
     "typescript": "^4.6.3",
@@ -84,6 +83,7 @@
   "devDependencies": {
     "@testcontainers/postgresql": "^10.2.1",
     "@types/bcrypt": "^5.0.0",
+    "@types/big.js": "6.2.2",
     "@types/bull": "^3.15.8",
     "@types/cookie-parser": "^1.4.3",
     "@types/cors": "^2.8.12",
@@ -103,5 +103,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.17.1"
+  "version": "1.18.6"
 }

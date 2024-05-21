@@ -2,7 +2,6 @@ import type { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
-import { throttleStepsForPublishedPipes } from '../../common/rate-limiter'
 import WorkbookSession from '../../common/workbook-session'
 
 import { parametersSchema } from './parameters-schema'
@@ -95,9 +94,6 @@ const action: IRawAction = {
     }
 
     const { fileId, worksheetId, cells } = parametersParseResult.data
-
-    // FIXME (ogp-weeloong): remove when bullMQ Pro lands
-    await throttleStepsForPublishedPipes($, fileId as string)
 
     const session = await WorkbookSession.acquire($, fileId)
 

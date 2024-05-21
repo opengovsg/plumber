@@ -8,6 +8,7 @@ type AppConfig = {
   webAppUrl: string
   webhookUrl: string
   appEnv: string
+  isProd: boolean
   isDev: boolean
   postgresDatabase: string
   postgresPort: number
@@ -27,8 +28,7 @@ type AppConfig = {
   redisTls: boolean
   redisClusterMode: boolean
   enableBullMQDashboard: boolean
-  bullMQDashboardUsername: string
-  bullMQDashboardPassword: string
+  adminUserEmail: string
   requestBodySizeLimit: string
   formsgApiKey: string
   postman: {
@@ -44,6 +44,7 @@ type AppConfig = {
     privateKey: string
   }
   launchDarklySdkKey: string
+  maxJobAttempts: number
 }
 
 const port = process.env.PORT || '3000'
@@ -61,6 +62,7 @@ const appEnv = process.env.APP_ENV || 'development'
 const appConfig: AppConfig = {
   port,
   appEnv: appEnv,
+  isProd: appEnv === 'prod',
   isDev: appEnv === 'development',
   version: process.env.npm_package_version,
   postgresDatabase: process.env.POSTGRES_DATABASE || 'plumber_dev',
@@ -78,9 +80,8 @@ const appConfig: AppConfig = {
   redisPassword: process.env.REDIS_PASSWORD,
   redisTls: process.env.REDIS_TLS === 'true',
   redisClusterMode: process.env.REDIS_CLUSTER_MODE === 'true',
+  adminUserEmail: process.env.ADMIN_USER_EMAIL,
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
-  bullMQDashboardUsername: process.env.BULLMQ_DASHBOARD_USERNAME,
-  bullMQDashboardPassword: process.env.BULLMQ_DASHBOARD_PASSWORD,
   baseUrl: process.env.BASE_URL,
   webAppUrl,
   webhookUrl,
@@ -102,6 +103,7 @@ const appConfig: AppConfig = {
     rateLimit: parseInt(process.env.POSTMAN_RATE_LIMIT) || 169,
   },
   launchDarklySdkKey: process.env.LAUNCH_DARKLY_SDK_KEY,
+  maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
 }
 
 if (!appConfig.encryptionKey) {
@@ -127,6 +129,15 @@ if (
 
 if (!appConfig.launchDarklySdkKey) {
   throw new Error('LAUNCH_DARKLY_SDK_KEY environment variable needs to be set!')
+}
+
+if (
+  isNaN(appConfig.maxJobAttempts) ||
+  !Number.isInteger(appConfig.maxJobAttempts)
+) {
+  throw new Error(
+    'MAX_JOB_ATTEMPTS environment variable is not a valid integer!',
+  )
 }
 
 // Force SGT date-time formatting no matter what

@@ -39,13 +39,15 @@ function substituteTemplateStringWithSpan(
   const searchRegex = /({{[^{}]+}})/
   const nodes = s.split(searchRegex)
   for (const i in nodes) {
-    if (!searchRegex.test(nodes[i])) {
+    const node = nodes[i]
+    if (!searchRegex.test(node)) {
       continue
     }
-    const id = nodes[i].replace('{{', '').replace('}}', '')
+    const id = node.replace('{{', '').replace('}}', '')
     const idComponents = id.split('.')
-    const label = idComponents[idComponents.length - 1]
-    const value = varInfo.get(nodes[i])?.testRunValue || ''
+    const varInfoForNode = varInfo.get(node)
+    const value = varInfoForNode?.testRunValue || ''
+    const label = varInfoForNode?.label || idComponents[idComponents.length - 1]
     nodes[
       i
     ] = `<span data-type="variable" data-id="${id}" data-label="${label}" data-value="${value}">${nodes[i]}</span>`

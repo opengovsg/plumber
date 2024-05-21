@@ -1,12 +1,12 @@
 import { IJSONObject, ITriggerItem } from '@plumber/types'
 
-import { WorkerPro } from '@taskforcesh/bullmq-pro'
+import { UnrecoverableError, WorkerPro } from '@taskforcesh/bullmq-pro'
 
 import { createRedisClient } from '@/config/redis'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
-import actionQueue from '@/queues/action'
+import { enqueueActionJob } from '@/queues/action'
 import { processTrigger } from '@/services/trigger'
 
 type JobData = {
@@ -31,13 +31,24 @@ export const worker = new WorkerPro(
     const nextStep = await step.getNextStep()
     const jobName = `${executionId}-${nextStep.id}`
 
-    const jobPayload = {
+    const jobData = {
       flowId,
       executionId,
       stepId: nextStep.id,
     }
 
-    await actionQueue.add(jobName, jobPayload, DEFAULT_JOB_OPTIONS)
+    try {
+      await enqueueActionJob({
+        appKey: nextStep.appKey,
+        jobName,
+        jobData,
+        jobOptions: DEFAULT_JOB_OPTIONS,
+      })
+    } catch (error) {
+      // Don't retry if we failed to enqueue the next step (e.g. if
+      // getGroupConfigForJob throws an error)
+      throw new UnrecoverableError(error.message)
+    }
   },
   {
     prefix: '{triggerQ}',
