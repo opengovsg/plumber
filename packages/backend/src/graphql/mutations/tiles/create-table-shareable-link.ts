@@ -9,11 +9,7 @@ const createShareableTableLink: MutationResolvers['createShareableTableLink'] =
   async (_parent, params, context) => {
     const tableId = params.tableId
 
-    await TableCollaborator.hasAccess(
-      context.currentUser.email,
-      tableId,
-      'editor',
-    )
+    await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
     const table = await TableMetadata.query()
       .findById(tableId)
