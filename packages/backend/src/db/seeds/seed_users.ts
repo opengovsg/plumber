@@ -12,13 +12,13 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       id: randomUUID(),
-      email: 'tester2@open.gov.sg',
+      email: 'editor@open.gov.sg',
       created_at: new Date(),
       updated_at: new Date(),
     },
     {
       id: randomUUID(),
-      email: 'tester3@open.gov.sg',
+      email: 'viewer@open.gov.sg',
       created_at: new Date(),
       updated_at: new Date(),
     },

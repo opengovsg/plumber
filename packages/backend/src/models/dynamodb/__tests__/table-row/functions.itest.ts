@@ -26,7 +26,11 @@ describe('dynamodb table row functions', () => {
 
   beforeEach(async () => {
     context = await generateMockContext()
-    dummyTable = await generateMockTable({ userId: context.currentUser.id })
+
+    const mockTable = await generateMockTable({
+      userId: context.currentUser.id,
+    })
+    dummyTable = mockTable.table
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,

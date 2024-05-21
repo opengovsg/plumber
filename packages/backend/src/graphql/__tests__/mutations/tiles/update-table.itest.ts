@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import updateTable from '@/graphql/mutations/tiles/update-table'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -15,13 +16,18 @@ describe('update table mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnId: string
+  let editor: User
+  let viewer: User
 
-  // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({ userId: context.currentUser.id })
-
+    const mockTable = await generateMockTable({
+      userId: context.currentUser.id,
+    })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
     dummyColumnId = (
       await generateMockTableColumns({
         tableId: dummyTable.id,
@@ -270,5 +276,43 @@ describe('update table mutation', () => {
         .resultSize()
       expect(tableColumnCount).toBe(1)
     })
+  })
+
+  it('should allow collaborators with edit rights to call this function', async () => {
+    context.currentUser = editor
+    await expect(
+      updateTable(
+        null,
+        {
+          input: {
+            id: dummyTable.id,
+            name: 'editor changed name',
+            addedColumns: [],
+            modifiedColumns: [],
+            deletedColumns: [],
+          },
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
+  })
+
+  it('should throw an error if user does not have edit access', async () => {
+    context.currentUser = viewer
+    await expect(
+      updateTable(
+        null,
+        {
+          input: {
+            id: dummyTable.id,
+            name: 'viewer changed name',
+            addedColumns: [],
+            modifiedColumns: [],
+            deletedColumns: [],
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow('You do not have access to this tile')
   })
 })

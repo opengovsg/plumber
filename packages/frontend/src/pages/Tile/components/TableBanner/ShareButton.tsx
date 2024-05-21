@@ -57,7 +57,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
   const inputBorderColor = isNewLink ? 'green.400' : 'secondary.200'
 
   return (
-    <Modal isOpen={true} onClose={onClose} motionPreset="none">
+    <Modal isOpen={true} onClose={onClose} motionPreset="none" isCentered>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Share tile</ModalHeader>

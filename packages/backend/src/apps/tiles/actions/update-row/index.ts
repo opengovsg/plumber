@@ -3,9 +3,9 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 import { stripInvalidKeys } from '@/models/dynamodb/helpers'
 import { getRawRowById, updateTableRow } from '@/models/dynamodb/table-row'
+import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
-import { validateTileAccess } from '../../common/validate-tile-access'
 import { UpdateRowOutput } from '../../types'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -99,16 +99,7 @@ const action: IRawAction = {
       )
     }
 
-    try {
-      await validateTileAccess($.flow?.userId, tableId as string)
-    } catch (e) {
-      throw new StepError(
-        'You do not have access to this tile',
-        'Ensure you have access to the tile you are trying to update a row in.',
-        $.step.position,
-        $.app.name,
-      )
-    }
+    await TableCollaborator.hasAccess($.user?.id, tableId, 'owner', $)
 
     /**
      * Row ID is empty, this could be because the previous get single row action
