@@ -1,4 +1,5 @@
 import { deleteTableRows } from '@/models/dynamodb/table-row'
+import TableCollaborator from '@/models/table-collaborators'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -9,10 +10,7 @@ const deleteRows: MutationResolvers['deleteRows'] = async (
 ) => {
   const { tableId, rowIds } = params.input
 
-  await context.currentUser
-    .$relatedQuery('tables')
-    .findById(tableId)
-    .throwIfNotFound()
+  await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
   await deleteTableRows({ tableId, rowIds })
 

@@ -1,18 +1,12 @@
 import { IFlow } from '@plumber/types'
 
-import { MouseEvent, useCallback, useRef } from 'react'
-import { BiDotsHorizontalRounded } from 'react-icons/bi'
+import { MouseEvent, useCallback, useRef, useState } from 'react'
+import { BiCopy, BiDotsHorizontalRounded } from 'react-icons/bi'
 import { BsTrash } from 'react-icons/bs'
 import { MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Link } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
   Menu,
   MenuButton,
   MenuItem,
@@ -20,13 +14,15 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import {
-  Button,
   IconButton,
   TouchableTooltip,
   useToast,
 } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 import { DELETE_FLOW } from 'graphql/mutations/delete-flow'
+import { DUPLICATE_FLOW } from 'graphql/mutations/duplicate-flow'
+
+import MenuAlertDialog, { AlertDialogType } from './MenuAlertDialog'
 
 interface FlowContextMenuProps {
   flow: IFlow
@@ -41,6 +37,7 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
     onOpen: onDialogOpen,
     onClose: onDialogClose,
   } = useDisclosure()
+  const [dialogType, setDialogType] = useState<AlertDialogType>('delete') // delete by default
 
   // menu control
   const {
@@ -54,6 +51,14 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
   const [deleteFlow, { loading: isDeletingFlow }] = useMutation(DELETE_FLOW)
   const flowTransfer = flow?.pendingTransfer
 
+  const [duplicateFlow, { loading: isDuplicatingFlow }] = useMutation(
+    DUPLICATE_FLOW,
+    {
+      refetchQueries: ['GetFlows'],
+    },
+  )
+
+  // for deleting pipe
   const onFlowDelete = useCallback(async () => {
     await deleteFlow({
       variables: { input: { id: flow.id } },
@@ -83,6 +88,32 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
   const onDeleteButtonClick = useCallback(
     (event: MouseEvent) => {
       event.preventDefault()
+      setDialogType('delete')
+      onDialogOpen()
+    },
+    [onDialogOpen],
+  )
+
+  // for duplicating pipe
+  const onFlowDuplicate = useCallback(async () => {
+    await duplicateFlow({
+      variables: { input: { id: flow.id } },
+      onCompleted: () => {
+        toast({
+          title: 'The pipe has been successfully duplicated.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+          position: 'top',
+        })
+      },
+    })
+  }, [duplicateFlow, flow.id, toast])
+
+  const onDuplicateButtonClick = useCallback(
+    (event: MouseEvent) => {
+      event.preventDefault()
+      setDialogType('duplicate')
       onDialogOpen()
     },
     [onDialogOpen],
@@ -109,6 +140,9 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           >
             View
           </MenuItem>
+          <MenuItem onClick={onDuplicateButtonClick} icon={<BiCopy />}>
+            Duplicate
+          </MenuItem>
           <TouchableTooltip
             label={
               flowTransfer
@@ -128,39 +162,14 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           </TouchableTooltip>
         </MenuList>
       </Menu>
-      <AlertDialog
-        isOpen={isDialogOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={onDialogClose}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Delete Pipe
-            </AlertDialogHeader>
-
-            <AlertDialogBody>
-              {
-                "Are you sure you want to delete this pipe? You can't undo this action afterwards."
-              }
-            </AlertDialogBody>
-
-            <AlertDialogFooter>
-              <Button
-                variant="clear"
-                colorScheme="secondary"
-                ref={cancelRef}
-                onClick={onDialogClose}
-              >
-                Cancel
-              </Button>
-              <Button onClick={onFlowDelete} ml={3} isLoading={isDeletingFlow}>
-                Delete
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+      <MenuAlertDialog
+        isDialogOpen={isDialogOpen}
+        cancelRef={cancelRef}
+        onDialogClose={onDialogClose}
+        type={dialogType}
+        onClick={dialogType === 'delete' ? onFlowDelete : onFlowDuplicate}
+        isLoading={dialogType === 'delete' ? isDeletingFlow : isDuplicatingFlow}
+      />
     </>
   )
 }

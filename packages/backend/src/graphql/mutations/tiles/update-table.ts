@@ -1,7 +1,9 @@
 import pLimit from 'p-limit'
 import { z } from 'zod'
 
+import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
+import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -39,12 +41,9 @@ const updateTable: MutationResolvers['updateTable'] = async (
     deletedColumns,
   } = updateTableSchema.parse(params.input)
 
-  const table = await context.currentUser
-    .$relatedQuery('tables')
-    .findOne({
-      id: tableId,
-    })
-    .throwIfNotFound()
+  await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
+
+  const table = await TableMetadata.query().findById(tableId)
 
   if (tableName) {
     await table.$query().patch({

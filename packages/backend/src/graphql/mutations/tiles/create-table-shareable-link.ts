@@ -1,14 +1,21 @@
 import { randomUUID } from 'crypto'
 
+import TableCollaborator from '@/models/table-collaborators'
+import TableMetadata from '@/models/table-metadata'
+
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
 const createShareableTableLink: MutationResolvers['createShareableTableLink'] =
   async (_parent, params, context) => {
     const tableId = params.tableId
 
-    // TODO: when implementing collaborators, only allow owner or editor
-    const table = await await context.currentUser
-      .$relatedQuery('tables')
+    await TableCollaborator.hasAccess(
+      context.currentUser.email,
+      tableId,
+      'editor',
+    )
+
+    const table = await TableMetadata.query()
       .findById(tableId)
       .throwIfNotFound()
 

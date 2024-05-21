@@ -1,7 +1,5 @@
 import type { IJSONObject, IJSONValue } from '@plumber/types'
 
-import logger from '@/helpers/logger'
-
 function compareNumbers(
   field: IJSONValue,
   condition: 'gte' | 'gt' | 'lte' | 'lt',
@@ -9,14 +7,7 @@ function compareNumbers(
 ): boolean {
   // WARNING: can only compare safely up till Number.MAX_SAFE_INTEGER but BigInt cannot compare floats...
   if (isNaN(Number(field)) || isNaN(Number(value))) {
-    logger.info('Non-number comparison occurred', {
-      event: 'non-number-comparison',
-      field,
-      condition,
-      value,
-    })
-    // TODO (mal): uncomment after 1 week of monitoring
-    // throw new Error('Non-number used in field or value for comparison')
+    throw new Error('Non-number used in field or value for comparison')
   }
   switch (condition) {
     case 'gte':

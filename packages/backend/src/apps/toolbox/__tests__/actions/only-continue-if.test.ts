@@ -2,6 +2,8 @@ import { type IGlobalVariable } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import StepError from '@/errors/step'
+
 import onlyContinueIfAction from '../../actions/only-continue-if'
 
 const mocks = vi.hoisted(() => ({
@@ -119,16 +121,14 @@ describe('Only continue if', () => {
     },
   )
 
-  // TODO (mal): uncomment after 1 week of monitoring
-  // it('should throw step error if a non-number is used for operator comparison', async () => {
-  //   $.step.parameters = {
-  //     field: 123,
-  //     is: 'is',
-  //     condition: 'gte',
-  //     text: '19 Nov 2021',
-  //   }
+  it('should throw step error if a non-number is used for operator comparison', async () => {
+    $.step.parameters = {
+      field: 123,
+      is: 'is',
+      condition: 'gte',
+      text: '19 Nov 2021',
+    }
 
-  //   // throw partial step error message
-  //   await expect(onlyContinueIfAction.run($)).rejects.toThrowError(StepError)
-  // })
+    await expect(onlyContinueIfAction.run($)).rejects.toThrowError(StepError)
+  })
 })

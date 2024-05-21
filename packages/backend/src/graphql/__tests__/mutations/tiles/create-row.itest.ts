@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import createRow from '@/graphql/mutations/tiles/create-row'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -15,12 +16,19 @@ describe('create row mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnIds: string[]
+  let editor: User
+  let viewer: User
 
   // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({ userId: context.currentUser.id })
+    const mockTable = await generateMockTable({
+      userId: context.currentUser.id,
+    })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
@@ -73,5 +81,37 @@ describe('create row mutation', () => {
         context,
       ),
     ).rejects.toThrow()
+  })
+
+  it('should allow collaborators with edit rights to call this function', async () => {
+    context.currentUser = editor
+    await expect(
+      createRow(
+        null,
+        {
+          input: {
+            tableId: dummyTable.id,
+            data: {},
+          },
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
+  })
+
+  it('should throw an error if user does not have edit access', async () => {
+    context.currentUser = viewer
+    await expect(
+      createRow(
+        null,
+        {
+          input: {
+            tableId: dummyTable.id,
+            data: {},
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow('You do not have access to this tile')
   })
 })
