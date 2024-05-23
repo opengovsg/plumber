@@ -23,7 +23,7 @@ import {
   Tile,
 } from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
-import { CREATE_TABLE } from 'graphql/mutations/create-table'
+import { CREATE_TABLE } from 'graphql/mutations/tiles/create-table'
 import { ImportCsvModalContent } from 'pages/Tile/components/TableBanner/ImportCsvButton'
 import { TableContextProvider } from 'pages/Tile/contexts/TableContext'
 

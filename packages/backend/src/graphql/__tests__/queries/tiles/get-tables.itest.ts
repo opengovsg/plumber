@@ -15,7 +15,7 @@ describe('get tables query', () => {
   beforeEach(async () => {
     context = await generateMockContext()
   })
-  it('should return array of tables belonging to suers', async () => {
+  it('should return array of tables belonging to users', async () => {
     const numTables = 5
     for (let i = 0; i < numTables; i++) {
       await generateMockTable({ userId: context.currentUser.id })

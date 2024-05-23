@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import TableMetadataResolver from '@/graphql/custom-resolvers/table-metadata'
 import getTable from '@/graphql/queries/tiles/get-table'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -16,12 +17,18 @@ describe('get single table query', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnIds: string[] = []
+  let editor: User
+  let viewer: User
 
-  // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({ userId: context.currentUser.id })
+    const mockTable = await generateMockTable({
+      userId: context.currentUser.id,
+    })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
@@ -46,7 +53,7 @@ describe('get single table query', () => {
   })
 
   it('should return empty array of columns if no columns exist', async () => {
-    const insertedTable = await generateMockTable({
+    const { table: insertedTable } = await generateMockTable({
       userId: context.currentUser.id,
     })
     const table = await getTable(
@@ -70,5 +77,29 @@ describe('get single table query', () => {
         context,
       ),
     ).rejects.toThrow('Table not found')
+  })
+
+  it('should allow all collaborators to call this function', async () => {
+    context.currentUser = editor
+    await expect(
+      getTable(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
+
+    context.currentUser = viewer
+    await expect(
+      getTable(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
   })
 })

@@ -26,8 +26,8 @@ import {
 } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
 import * as URLS from 'config/urls'
-import { CREATE_SHAREABLE_TABLE_LINK } from 'graphql/mutations/create-shareable-link'
-import { GET_TABLE } from 'graphql/queries/get-table'
+import { CREATE_SHAREABLE_TABLE_LINK } from 'graphql/mutations/tiles/create-shareable-link'
+import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
 
@@ -57,7 +57,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
   const inputBorderColor = isNewLink ? 'green.400' : 'secondary.200'
 
   return (
-    <Modal isOpen={true} onClose={onClose} motionPreset="none">
+    <Modal isOpen={true} onClose={onClose} motionPreset="none" isCentered>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Share tile</ModalHeader>

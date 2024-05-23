@@ -8,10 +8,10 @@ import {
   TableRowFilter,
   TableRowFilterOperator,
 } from '@/models/dynamodb/table-row'
+import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
 import { validateFilters } from '../../common/validate-filters'
-import { validateTileAccess } from '../../common/validate-tile-access'
 import { FindSingleRowOutput } from '../../types'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -140,7 +140,8 @@ const action: IRawAction = {
       filters: TableRowFilter[]
       returnLastRow: boolean | undefined
     }
-    await validateTileAccess($.flow?.userId, tableId as string)
+
+    await TableCollaborator.hasAccess($.user?.id, tableId, 'owner', $)
 
     const columns = await TableColumnMetadata.query().where({
       table_id: tableId,

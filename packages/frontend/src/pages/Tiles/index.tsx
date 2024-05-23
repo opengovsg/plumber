@@ -4,7 +4,7 @@ import { useQuery } from '@apollo/client'
 import { Center, Flex, Spinner } from '@chakra-ui/react'
 import Container from 'components/Container'
 import PageTitle from 'components/PageTitle'
-import { GET_TABLES } from 'graphql/queries/get-tables'
+import { GET_TABLES } from 'graphql/queries/tiles/get-tables'
 
 import CreateTileButton from './components/CreateTileButton'
 import EmptyTileList from './components/EmptyTileList'

@@ -1,5 +1,7 @@
 import { ElectroError } from 'electrodb'
 
+import RetriableError from '@/errors/retriable-error'
+
 import TableColumnMetadata from '../table-column-metadata'
 
 export function handleDynamoDBError(error: unknown): never {
@@ -17,6 +19,14 @@ export function handleDynamoDBError(error: unknown): never {
       throw new Error('DynamoDB Validation Error: ' + message)
     }
     if (error.code < 5000) {
+      if (message.includes('Throughput exceeds the current capacity')) {
+        // retry on throughput exceeded
+        throw new RetriableError({
+          error: message,
+          delayInMs: 'default',
+          delayType: 'step',
+        })
+      }
       throw new Error('DynamoDB Internal Error: ' + message)
     }
     if (error.code < 6000) {
