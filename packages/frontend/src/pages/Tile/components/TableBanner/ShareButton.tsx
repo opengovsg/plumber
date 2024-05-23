@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { BiCopy, BiShareAlt } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
+  Divider,
   Flex,
   FormControl,
   InputGroup,
@@ -113,6 +114,7 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
                 </FormHelperText>
               )}
             </VStack>
+            <Divider my={6} />
             <TableCollaborators />
           </FormControl>
         </ModalBody>

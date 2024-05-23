@@ -79,7 +79,7 @@ const AddNewCollaborator = () => {
     >
       <FormControl>
         <VStack spacing={2} alignItems="flex-start">
-          <Text textStyle="subhead-3">People with access</Text>
+          <Text textStyle="subhead-3">Collaborators</Text>
           <Flex alignSelf="stretch" gap={2}>
             <Input
               type="email"
@@ -122,20 +122,23 @@ const CollaboratorListRow = ({
   return (
     <Flex alignItems="center" w="100%" py={1} px={4}>
       <Text flex={1}>{collaborator.email}</Text>
-      <TableCollabRoleSelect
-        value={collaborator.role}
-        onChange={onRoleChange}
-        variant="clear"
-        isEditable={isEditable}
-      />
-      <IconButton
-        colorScheme="red"
-        isDisabled={!isEditable}
-        onClick={onDelete}
-        aria-label={'remove collaborator'}
-        variant="clear"
-        icon={<BiTrash />}
-      />
+      <Flex w={44}>
+        <TableCollabRoleSelect
+          value={collaborator.role}
+          onChange={onRoleChange}
+          variant="clear"
+          isEditable={isEditable}
+        />
+        {isEditable && (
+          <IconButton
+            colorScheme="red"
+            onClick={onDelete}
+            aria-label={'remove collaborator'}
+            variant="clear"
+            icon={<BiTrash />}
+          />
+        )}
+      </Flex>
     </Flex>
   )
 }
@@ -147,7 +150,7 @@ const TableCollaborators = () => {
     return null
   }
   return (
-    <VStack mt={5} gap={2}>
+    <VStack gap={2}>
       <AddNewCollaborator />
       <VStack w="100%" divider={<Divider />}>
         {collaborators.map((collab) => (
