@@ -9,10 +9,8 @@ import type {
 
 import { useCallback, useContext, useMemo } from 'react'
 import { useMutation } from '@apollo/client'
-import { Box } from '@chakra-ui/react'
-import LoadingButton from '@mui/lab/LoadingButton'
-import Collapse from '@mui/material/Collapse'
-import ListItem from '@mui/material/ListItem'
+import { Box, Collapse } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 import ErrorResult from 'components/ErrorResult'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
@@ -110,15 +108,8 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
   return (
     <>
       <FlowSubstepTitle expanded={expanded} onClick={onToggle} title={name} />
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
-        <ListItem
-          sx={{
-            pt: 2,
-            pb: 3,
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-          }}
-        >
+      <Collapse in={expanded} unmountOnExit>
+        <Box p="1rem 1rem 1.5rem">
           {step.webhookUrl && (
             <WebhookUrlInfo
               webhookUrl={step.webhookUrl}
@@ -152,33 +143,31 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
             isMock={executionStep?.executionSteps[0].metadata?.isMock}
           />
 
-          <LoadingButton
-            fullWidth
-            variant={isCompleted ? 'text' : 'contained'}
+          <Button
+            isFullWidth
+            variant={isCompleted ? 'clear' : 'solid'}
             onClick={executeTestFlow}
-            sx={{ mt: 2 }}
-            loading={loading}
-            disabled={editorContext.readOnly}
-            color="primary"
+            mt={2}
+            isLoading={loading}
+            isDisabled={editorContext.readOnly}
             data-test="flow-substep-continue-button"
           >
             {isCompleted ? 'Test again' : 'Test Step'}
-          </LoadingButton>
+          </Button>
+
           {isCompleted && (
-            <LoadingButton
-              fullWidth
-              variant={'contained'}
+            <Button
+              isFullWidth
               onClick={onContinueClick}
-              sx={{ mt: 2 }}
-              loading={loading}
-              disabled={editorContext.readOnly}
-              color="primary"
+              mt={2}
+              isLoading={loading}
+              isDisabled={editorContext.readOnly}
               data-test="flow-substep-continue-button"
             >
               Continue
-            </LoadingButton>
+            </Button>
           )}
-        </ListItem>
+        </Box>
       </Collapse>
     </>
   )

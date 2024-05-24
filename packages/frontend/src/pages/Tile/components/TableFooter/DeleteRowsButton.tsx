@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BsTrash } from 'react-icons/bs'
+import { BiTrash } from 'react-icons/bi'
 import { Button } from '@chakra-ui/react'
 import { ROW_HEIGHT } from 'pages/Tile/constants'
 
@@ -40,8 +40,8 @@ export default function DeleteRowsButton({
         variant="clear"
         size="xs"
         h="100%"
-        color="red.500"
-        leftIcon={<BsTrash />}
+        color="interaction.critical.default"
+        leftIcon={<BiTrash />}
         onClick={() => setIsDialogOpen(true)}
       >
         Delete

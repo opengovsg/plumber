@@ -65,7 +65,7 @@ export default function FlowStepHeader(
       borderRadius="lg"
       p={0}
       bg="white"
-      boxShadow={collapsed ? undefined : 'base'}
+      boxShadow={collapsed ? undefined : 'sm'}
       data-test="flow-step" // adding to identify element for e2e testing
     >
       {/*
@@ -74,8 +74,16 @@ export default function FlowStepHeader(
       <Flex
         p={4}
         alignItems="center"
-        _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
-        _active={{ bg: 'interaction.muted.neutral.active' }}
+        borderRadius="inherit"
+        _hover={{
+          bg: 'interaction.muted.neutral.hover',
+          cursor: 'pointer',
+          borderBottomRadius: collapsed ? 'inherit' : 'none',
+        }}
+        _active={{
+          bg: 'interaction.muted.neutral.active',
+          borderBottomRadius: collapsed ? 'inherit' : 'none',
+        }}
         w="full"
         onClick={handleClick}
       >
@@ -85,7 +93,6 @@ export default function FlowStepHeader(
           mr={4}
           borderWidth={1}
           borderColor="base.divider.strong"
-          borderRadius="base"
           justifyContent="center"
           alignItems="center"
         >
