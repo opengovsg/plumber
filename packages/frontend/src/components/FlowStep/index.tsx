@@ -218,10 +218,14 @@ export default function FlowStep(
       iconUrl={app?.iconUrl}
       caption={
         displayOverrides?.caption ??
-        (app?.name ? `${step.position}. ${app.name}` : 'Choose an app')
+        (app?.name
+          ? `${step.position}. ${app.name}`
+          : isTrigger
+          ? 'This step starts your pipe'
+          : 'This step happens after your pipe starts')
       }
       hintAboveCaption={
-        displayOverrides?.hintAboveCaption ?? (isTrigger ? 'Trigger' : 'Action')
+        displayOverrides?.hintAboveCaption ?? (isTrigger ? 'When' : 'Then')
       }
       isCompleted={step.status === 'completed'}
       onDelete={isDeletable ? onDelete : undefined}
