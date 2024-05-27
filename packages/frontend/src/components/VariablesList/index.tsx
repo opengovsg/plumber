@@ -61,7 +61,7 @@ export default function VariablesList(props: VariablesListProps) {
   return (
     <Box
       data-test="variable-suggestion-group"
-      h="256px"
+      maxH={64}
       overflowY="auto"
       p={onClick ? undefined : '1rem'}
     >
