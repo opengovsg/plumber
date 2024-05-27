@@ -102,4 +102,24 @@ describe('get single table query', () => {
       ),
     ).resolves.toBeDefined()
   })
+
+  it('should return all collaborators ordered by roles', async () => {
+    const table = await getTable(
+      null,
+      {
+        tableId: dummyTable.id,
+      },
+      context,
+    )
+    const collaborators = await TableMetadataResolver.collaborators(
+      table,
+      {},
+      null,
+    )
+    expect(collaborators).toEqual([
+      { email: context.currentUser.email, role: 'owner' },
+      { email: editor.email, role: 'editor' },
+      { email: viewer.email, role: 'viewer' },
+    ])
+  })
 })
