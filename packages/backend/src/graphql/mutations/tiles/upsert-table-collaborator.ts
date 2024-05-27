@@ -18,8 +18,11 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
 
     await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
-    const validatedEmail = await validateAndParseEmail(email)
+    if (role === 'owner') {
+      throw new BadUserInputError('Cannot set collaborator role as owner')
+    }
 
+    const validatedEmail = await validateAndParseEmail(email)
     if (!validatedEmail) {
       throw new BadUserInputError('Invalid collaborator email')
     }
@@ -27,16 +30,34 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
     const collaboratorUser = await getOrCreateUser(validatedEmail)
 
     try {
-      await TableCollaborator.query()
-        .insert({
-          tableId,
-          userId: collaboratorUser.id,
-          role,
-        })
-        .onConflict(['tableId', 'userId'])
-        .update({
-          role,
-        })
+      /**
+       * We check if a table collaborator has been added before (could have been soft deleted)
+       * If it exists, we update the role and undelete it (if it was soft deleted)
+       * If it doesn't exist, we insert a new record
+       */
+      await TableCollaborator.transaction(async (trx) => {
+        const existingCollaborator = await TableCollaborator.query(trx)
+          .findOne({
+            table_id: tableId,
+            user_id: collaboratorUser.id,
+          })
+          .withSoftDeleted()
+        if (existingCollaborator) {
+          await existingCollaborator
+            .$query(trx)
+            .patchAndFetch({
+              role,
+              deletedAt: null,
+            })
+            .withSoftDeleted()
+        } else {
+          await TableCollaborator.query(trx).insert({
+            tableId,
+            userId: collaboratorUser.id,
+            role,
+          })
+        }
+      })
     } catch (e) {
       logger.error({
         message: 'Failed to upsert collaborator',
@@ -46,6 +67,7 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
           role,
         },
         userId: context.currentUser.id,
+        error: e,
       })
       throw new Error('Failed to upsert collaborator')
     }

@@ -648,13 +648,13 @@ type TableCollaborator {
   role: String!
 }
 
-type TableCollaboratorInput {
+input TableCollaboratorInput {
   tableId: ID!
   email: String!
   role: String!
 }
 
-type DeleteTableCollaboratorInput {
+input DeleteTableCollaboratorInput {
   tableId: ID!
   email: String!
 }

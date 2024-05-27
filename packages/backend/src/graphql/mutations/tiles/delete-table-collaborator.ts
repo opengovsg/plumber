@@ -20,12 +20,10 @@ const deleteTableCollaborator: MutationResolvers['deleteTableCollaborator'] =
       .throwIfNotFound()
 
     try {
-      await TableCollaborator.query()
-        .where({
-          tableId,
-          userId: collaboratorUser.id,
-        })
-        .delete()
+      await TableCollaborator.query().delete().where({
+        table_id: tableId,
+        user_id: collaboratorUser.id,
+      })
     } catch (e) {
       logger.error({
         message: 'Failed to delete collaborator',
@@ -34,6 +32,7 @@ const deleteTableCollaborator: MutationResolvers['deleteTableCollaborator'] =
           email,
         },
         userId: context.currentUser.id,
+        error: e,
       })
       throw new Error('Failed to delete collaborator')
     }
