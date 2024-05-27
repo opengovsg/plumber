@@ -86,6 +86,9 @@ type Mutation {
   createRows(input: CreateTableRowsInput!): Boolean
   updateRow(input: UpdateTableRowInput!): ID!
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
+  # Tiles collaborators
+  upsertTableCollaborator(input: TableCollaboratorInput!): Boolean!
+  deleteTableCollaborator(input: DeleteTableCollaboratorInput!): Boolean!
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
@@ -643,6 +646,17 @@ type TableColumnMetadata {
 type TableCollaborator {
   email: String!
   role: String!
+}
+
+type TableCollaboratorInput {
+  tableId: ID!
+  email: String!
+  role: String!
+}
+
+type DeleteTableCollaboratorInput {
+  tableId: ID!
+  email: String!
 }
 
 type TableMetadata {
