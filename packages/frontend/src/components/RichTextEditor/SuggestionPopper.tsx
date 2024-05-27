@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react'
-import { ExpandLess, ExpandMore } from '@mui/icons-material'
+import { useState } from 'react'
 import {
-  Button,
+  Box,
   Collapse,
-  List,
-  ListItemButton,
-  ListItemText,
-  Paper,
-  Popper,
-  Typography,
-} from '@mui/material'
+  Divider,
+  Flex,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+} from '@chakra-ui/react'
 import VariablesList from 'components/VariablesList'
 import { StepWithVariables, Variable } from 'helpers/variables'
 
@@ -18,112 +17,128 @@ interface SuggestionsProps {
   onSuggestionClick: (variable: Variable) => void
 }
 
-const SHORT_LIST_LENGTH = 4
-const LIST_HEIGHT = 256
-
 export default function Suggestions(props: SuggestionsProps) {
   const { data, onSuggestionClick = () => null } = props
-  const [current, setCurrent] = useState<number | null>(0)
-  const [listLength, setListLength] = useState<number>(SHORT_LIST_LENGTH)
+  const [current, setCurrent] = useState<number>(0)
 
   const isEmpty = data.reduce(
     (acc, step) => acc && step.output.length === 0,
     true,
   )
 
-  const expandList = () => {
-    setListLength(Infinity)
+  if (isEmpty) {
+    return (
+      <Text p={4} opacity={0.5} textStyle="body-1" color="base.content.medium">
+        No variables available
+      </Text>
+    )
   }
-
-  const collapseList = () => {
-    setListLength(SHORT_LIST_LENGTH)
-  }
-
-  useEffect(() => {
-    setListLength(SHORT_LIST_LENGTH)
-  }, [current])
 
   return (
-    <Paper elevation={5} sx={{ width: '100%' }}>
-      <Typography variant="subtitle2" sx={{ p: 2, opacity: isEmpty ? 0.5 : 1 }}>
-        {isEmpty ? 'No variables available' : 'Variables'}
-      </Typography>
-      <List disablePadding>
-        {data.map((option, index) => (
-          <div key={`primary-suggestion-${option.name}`}>
-            <ListItemButton
-              divider
-              onClick={() =>
-                setCurrent((currentIndex) =>
-                  currentIndex === index ? null : index,
-                )
+    // max height = 256px (variable list) + 48px (from choose data)
+    <Flex w="100%" boxShadow="sm">
+      {/* Select step to find variable list */}
+      <Box flexGrow={1}>
+        <Text
+          pt={4}
+          px={4}
+          pb={2}
+          textStyle="subhead-1"
+          color="base.content.medium"
+        >
+          Use data from...
+        </Text>
+        <Divider borderColor="base.divider.medium" />
+        <Box h={64} overflowY="auto">
+          {data.map((option, index) => (
+            <Text
+              key={`primary-suggestion-${option.name}`}
+              pl={4}
+              py={3}
+              bg={
+                !!option.output?.length && current === index
+                  ? 'secondary.100'
+                  : undefined
               }
-              sx={{ py: 0.5 }}
+              textStyle="subhead-1"
+              color="base.content.strong"
+              onClick={() => setCurrent(index)}
+              _hover={{
+                backgroundColor: 'secondary.50',
+                cursor: 'pointer',
+              }}
             >
-              <ListItemText primary={option.name} />
-              {!!option.output?.length &&
-                (current === index ? <ExpandLess /> : <ExpandMore />)}
-            </ListItemButton>
+              {option.name}
+            </Text>
+          ))}
+        </Box>
+      </Box>
 
-            <Collapse in={current === index} timeout="auto" unmountOnExit>
-              <VariablesList
-                variables={(option.output ?? []).slice(0, listLength)}
-                onClick={onSuggestionClick}
-                listHeight={LIST_HEIGHT}
-              />
+      <Box>
+        <Divider orientation="vertical" borderColor="base.divider.medium" />
+      </Box>
 
-              {(option.output?.length || 0) > listLength && (
-                <Button fullWidth onClick={expandList}>
-                  Show all
-                </Button>
-              )}
-
-              {listLength === Infinity && (
-                <Button fullWidth onClick={collapseList}>
-                  Show less
-                </Button>
-              )}
-            </Collapse>
-          </div>
+      {/* Variables List */}
+      <Box flexGrow={1} w="50%">
+        <Text
+          pt={4}
+          px={4}
+          pb={2}
+          textStyle="subhead-1"
+          color="base.content.medium"
+        >
+          Choose data
+        </Text>
+        <Divider borderColor="base.divider.medium" />
+        {data.map((option, index) => (
+          <Collapse
+            key={`primary-suggestion-${option.name}-variables`}
+            in={current === index}
+            unmountOnExit
+          >
+            <VariablesList
+              variables={option.output ?? []}
+              onClick={onSuggestionClick}
+            />
+          </Collapse>
         ))}
-      </List>
-    </Paper>
+      </Box>
+    </Flex>
   )
 }
 
 interface SuggestionsPopperProps {
   open: boolean
-  anchorEl: HTMLDivElement | null
+  editorRef: React.MutableRefObject<HTMLDivElement | null>
   data: StepWithVariables[]
   onSuggestionClick: (variable: Variable) => void
 }
 
 export const SuggestionsPopper = (props: SuggestionsPopperProps) => {
-  const { open, anchorEl, data, onSuggestionClick } = props
+  const { open, editorRef, data, onSuggestionClick } = props
+
+  const offsetVerticalMargin = editorRef?.current?.offsetHeight ?? 0
+
+  if (!open) {
+    return null
+  }
 
   return (
-    <Popper
-      open={open}
-      anchorEl={anchorEl}
-      // Allow (ugly) scrolling in nested modals for small viewports; modals
-      // can't account for popper overflow if it is portalled to body.
-      disablePortal
-      style={{
-        width: anchorEl?.clientWidth,
-        // FIXME (ogp-weeloong): HACKY, temporary workaround. Needed to render
-        // sugestions within nested editors, since Chakra renders modals at 40
-        // z-index. Will migrate to chakra Popover in separate PR if team is
-        // agreeable to flip change.
-        zIndex: 40,
-      }}
-      modifiers={[
-        {
-          name: 'flip',
-          enabled: true,
-        },
-      ]}
+    <Popover
+      isOpen
+      initialFocusRef={editorRef}
+      offset={[0, offsetVerticalMargin + 1]} // this is adjusted based on DS input
     >
-      <Suggestions data={data} onSuggestionClick={onSuggestionClick} />
-    </Popper>
+      <PopoverTrigger>
+        <div />
+      </PopoverTrigger>
+      {/* To account for window position when scrolling */}
+      <PopoverContent
+        width={editorRef?.current?.offsetWidth}
+        marginTop={`-${offsetVerticalMargin}px`}
+      >
+        <Suggestions data={data} onSuggestionClick={onSuggestionClick} />
+      </PopoverContent>
+    </Popover>
   )
 }

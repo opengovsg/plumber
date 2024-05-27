@@ -175,7 +175,7 @@ const Editor = ({
           {variablesEnabled && (
             <SuggestionsPopper
               open={showVarSuggestions}
-              anchorEl={editorRef.current}
+              editorRef={editorRef}
               data={stepsWithVariables}
               onSuggestionClick={handleVariableClick}
             />
