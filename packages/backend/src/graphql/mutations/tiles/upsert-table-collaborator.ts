@@ -16,16 +16,20 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
       role: ITableCollabRole
     }
 
-    await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
+    const validatedEmail = await validateAndParseEmail(email)
+    if (!validatedEmail) {
+      throw new BadUserInputError('Invalid collaborator email')
+    }
+
+    if (context.currentUser.email === validatedEmail) {
+      throw new BadUserInputError('Cannot change own role')
+    }
 
     if (role === 'owner') {
       throw new BadUserInputError('Cannot set collaborator role as owner')
     }
 
-    const validatedEmail = await validateAndParseEmail(email)
-    if (!validatedEmail) {
-      throw new BadUserInputError('Invalid collaborator email')
-    }
+    await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
     const collaboratorUser = await getOrCreateUser(validatedEmail)
 
@@ -43,6 +47,9 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
           })
           .withSoftDeleted()
         if (existingCollaborator) {
+          if (existingCollaborator.role === 'owner') {
+            throw new BadUserInputError('Cannot change owner role')
+          }
           await existingCollaborator
             .$query(trx)
             .patchAndFetch({
