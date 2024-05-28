@@ -19,6 +19,7 @@ const collaborators: TableMetadataResolver['collaborators'] = async (
     .$relatedQuery('collaborators')
     .select('email', 'role')
     .orderBy('role', 'desc')
+    .where('table_collaborators.deleted_at', null)
   return sortBy(
     collaborators,
     [

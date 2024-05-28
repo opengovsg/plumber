@@ -1,3 +1,5 @@
+import { BadUserInputError } from '@/errors/graphql-errors'
+import { validateAndParseEmail } from '@/helpers/email-validator'
 import logger from '@/helpers/logger'
 import TableCollaborator from '@/models/table-collaborators'
 import User from '@/models/user'
@@ -13,17 +15,30 @@ const deleteTableCollaborator: MutationResolvers['deleteTableCollaborator'] =
 
     await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
+    const validatedEmail = await validateAndParseEmail(email)
+    if (!validatedEmail) {
+      throw new BadUserInputError('Invalid collaborator email')
+    }
+
+    if (validatedEmail === context.currentUser.email) {
+      throw new BadUserInputError('Cannot remove yourself')
+    }
+
     const collaboratorUser = await User.query()
       .findOne({
-        email,
+        email: validatedEmail,
       })
       .throwIfNotFound()
 
     try {
-      await TableCollaborator.query().delete().where({
-        table_id: tableId,
-        user_id: collaboratorUser.id,
-      })
+      await TableCollaborator.query()
+        .delete()
+        .where({
+          table_id: tableId,
+          user_id: collaboratorUser.id,
+        })
+        // it should not delete owner
+        .andWhereNot('role', 'owner')
     } catch (e) {
       logger.error({
         message: 'Failed to delete collaborator',

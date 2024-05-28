@@ -39,7 +39,9 @@ describe('update table collaborators', () => {
       },
       context,
     )
-    const collaborators = await dummyTable.$relatedQuery('collaborators')
+    const collaborators = await dummyTable
+      .$relatedQuery('collaborators')
+      .where('table_collaborators.deleted_at', null)
     expect(collaborators).toHaveLength(4)
     const addedCollaborator = collaborators.find(
       (col) => col.email === 'viewer2@open.gov.sg',
@@ -59,7 +61,9 @@ describe('update table collaborators', () => {
       },
       context,
     )
-    const collaborators = await dummyTable.$relatedQuery('collaborators')
+    const collaborators = await dummyTable
+      .$relatedQuery('collaborators')
+      .where('table_collaborators.deleted_at', null)
     expect(collaborators).toHaveLength(4)
     const addedCollaborator = collaborators.find(
       (col) => col.email === 'editor2@open.gov.sg',
@@ -79,7 +83,9 @@ describe('update table collaborators', () => {
       },
       context,
     )
-    const collaborators = await dummyTable.$relatedQuery('collaborators')
+    const collaborators = await dummyTable
+      .$relatedQuery('collaborators')
+      .where('table_collaborators.deleted_at', null)
     expect(collaborators).toHaveLength(3)
     const addedCollaborator = collaborators.find(
       (col) => col.email === 'editor@open.gov.sg',
