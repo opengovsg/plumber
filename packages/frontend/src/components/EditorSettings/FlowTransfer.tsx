@@ -102,7 +102,7 @@ export default function FlowTransfer() {
               autoFocus={true}
               {...register('email', {
                 onChange: (event) => {
-                  setNewOwnerEmail(event.target.value)
+                  setNewOwnerEmail(event.target.value.toLowerCase())
                 },
               })}
             />
