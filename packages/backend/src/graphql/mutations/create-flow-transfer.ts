@@ -1,5 +1,6 @@
+import { getOrCreateUser } from '@/helpers/auth'
+import { validateAndParseEmail } from '@/helpers/email-validator'
 import FlowTransfer from '@/models/flow-transfers'
-import User from '@/models/user'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -16,21 +17,19 @@ const createFlowTransfer: MutationResolvers['createFlowTransfer'] = async (
     .where('id', flowId)
     .throwIfNotFound('This pipe does not belong to you.')
 
-  const newOwner = await User.query()
-    .findOne({
-      email: newOwnerEmail,
-    })
-    .throwIfNotFound({
-      message:
-        'User email does not exist on Plumber, please type in an email account of a user who has logged in before.',
-    })
+  const validatedEmail = await validateAndParseEmail(newOwnerEmail)
+  if (!validatedEmail) {
+    throw new Error('Invalid user email.')
+  }
 
   // don't allow transferring of pipe to oneself
-  if (context.currentUser.id === newOwner.id) {
+  if (context.currentUser.email === validatedEmail) {
     throw new Error(
       'You cannot transfer the pipe to yourself, please type in another email.',
     )
   }
+
+  const newOwner = await getOrCreateUser(validatedEmail) // allow new user to be created if not logged in
 
   // Sanity check for existing pending transfer to avoid duplicates
   const hasExistingTransfer: boolean =
