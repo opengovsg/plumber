@@ -7,14 +7,10 @@ import {
   Text,
   useMergeRefs,
 } from '@chakra-ui/react'
-import { Badge, Input } from '@opengovsg/design-system-react'
+import { Input } from '@opengovsg/design-system-react'
 
 import { useSelectContext } from '../../SelectContext'
-import {
-  isItemInstant,
-  itemToIcon,
-  itemToLabelString,
-} from '../../utils/itemUtils'
+import { itemToIcon, itemToLabelString } from '../../utils/itemUtils'
 
 import { ComboboxClearButton } from './ComboboxClearButton'
 import { ToggleChevron } from './ToggleChevron'
@@ -90,14 +86,6 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
               <Text noOfLines={1}>
                 {selectedItemMeta.label !== '' ? selectedItemMeta.label : value}
               </Text>
-              {isItemInstant(selectedItem) && (
-                <Badge
-                  bgColor="interaction.muted.main.active"
-                  color="primary.600"
-                >
-                  Instant
-                </Badge>
-              )}
             </Flex>
           </Stack>
           <Input

@@ -1,14 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Flex, Icon, ListItem, Text } from '@chakra-ui/react'
 import { dataAttr } from '@chakra-ui/utils'
-import { Badge } from '@opengovsg/design-system-react'
 
 import { useSelectContext } from '../../SelectContext'
 import { ComboboxItem } from '../../types'
 import {
   isItemDisabled,
-  isItemInstant,
-  isItemNew,
+  itemToBadge,
   itemToDescriptionString,
   itemToIcon,
   itemToLabelString,
@@ -21,12 +19,6 @@ export interface DropdownItemProps {
   index: number
 }
 
-/**
- * Note: This is customised just for Plumber.
- * A new badge is to indicate that the app is new.
- * An instant badge is to indicate that the event is a webhook trigger.
- */
-
 export const DropdownItem = ({
   item,
   index,
@@ -34,33 +26,14 @@ export const DropdownItem = ({
   const { getItemProps, isItemSelected, inputValue, styles } =
     useSelectContext()
 
-  // add this for hover detection
-  const [isHovered, setIsHovered] = useState(false)
-  const handleMouseEnter = () => {
-    setIsHovered(true)
-  }
-
-  const handleMouseLeave = () => {
-    setIsHovered(false)
-  }
-
-  const {
-    icon,
-    label,
-    description,
-    isDisabled,
-    isActive,
-    isAppNew,
-    isEventInstant,
-  } = useMemo(
+  const { icon, label, description, isDisabled, isActive, badge } = useMemo(
     () => ({
       icon: itemToIcon(item),
       label: itemToLabelString(item),
       description: itemToDescriptionString(item),
       isDisabled: isItemDisabled(item),
       isActive: isItemSelected(item),
-      isAppNew: isItemNew(item),
-      isEventInstant: isItemInstant(item),
+      badge: itemToBadge(item),
     }),
     [isItemSelected, item],
   )
@@ -74,21 +47,6 @@ export const DropdownItem = ({
         index,
         disabled: isDisabled,
       })}
-      style={
-        isHovered
-          ? {
-              backgroundColor: '#f8f9fa',
-              cursor: isDisabled ? 'not-allowed' : 'pointer',
-            }
-          : isActive
-          ? {
-              backgroundColor: '#e9eaee',
-              cursor: 'pointer',
-            }
-          : undefined
-      }
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <Flex justifyContent="space-between" alignItems="center">
         <Flex flexDir="column">
@@ -105,14 +63,7 @@ export const DropdownItem = ({
                 textToHighlight={label}
               />
             </Text>
-            {isAppNew && (
-              <Badge
-                bgColor="interaction.muted.main.active"
-                color="primary.600"
-              >
-                New
-              </Badge>
-            )}
+            {badge}
           </Flex>
           {description && (
             <Text
@@ -128,11 +79,6 @@ export const DropdownItem = ({
             </Text>
           )}
         </Flex>
-        {isEventInstant && (
-          <Badge bgColor="interaction.muted.main.active" color="primary.600">
-            Instant
-          </Badge>
-        )}
       </Flex>
     </ListItem>
   )

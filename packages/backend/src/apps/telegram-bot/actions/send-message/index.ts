@@ -1,6 +1,7 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
+import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
 
 import { escapeMarkdown, sanitizeMarkdown } from '../../common/markdown-v1'
 import { throwSendMessageError } from '../../common/throw-errors'
@@ -83,7 +84,9 @@ const action: IRawAction = {
     const payload = {
       chat_id: $.step.parameters.chatId,
       text: sanitizedMarkdown,
-      disable_notification: $.step.parameters.disableNotification,
+      disable_notification: convertBinaryDropdown(
+        $.step.parameters.disableNotification,
+      ),
       parse_mode: 'markdown', // legacy markdown to allow only a small set of modifiers
     }
     try {

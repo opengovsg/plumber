@@ -11,7 +11,6 @@ const action: IRawAction = {
       label: 'Channel',
       key: 'channel',
       type: 'dropdown' as const,
-      allowArbitrary: true,
       required: true,
       description: 'Pick a channel to send the message to.',
       variables: false,

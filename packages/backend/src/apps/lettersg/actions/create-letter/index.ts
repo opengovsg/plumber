@@ -5,6 +5,7 @@ import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
+import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
 
 import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
 import { processMissingFields } from '../../helpers/process-missing-fields'
@@ -118,7 +119,7 @@ const action: IRawAction = {
       const response = responseSchema.parse(rawResponse.data)
 
       if (
-        !$.step.parameters.shouldGeneratePdf ||
+        !convertBinaryDropdown($.step.parameters.shouldGeneratePdf) ||
         !$.flow.hasFileProcessingActions
       ) {
         $.setActionItem({

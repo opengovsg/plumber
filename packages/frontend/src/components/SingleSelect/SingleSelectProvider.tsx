@@ -208,6 +208,7 @@ export const SingleSelectProvider = ({
             selectedItem: state.selectedItem,
           }
         }
+        case useCombobox.stateChangeTypes.FunctionSelectItem:
         case useCombobox.stateChangeTypes.InputKeyDownEnter:
         case useCombobox.stateChangeTypes.InputBlur:
         case useCombobox.stateChangeTypes.ItemClick: {

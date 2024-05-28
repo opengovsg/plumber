@@ -2,6 +2,8 @@ import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
 import { DateTime } from 'luxon'
 
+import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
+
 import cronTimes from '../../common/cron-times'
 import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
@@ -143,7 +145,7 @@ const trigger: IRawTrigger = {
   getDataOutMetadata,
 
   getInterval(parameters: IGlobalVariable['step']['parameters']) {
-    if (parameters.triggersOnWeekend as boolean) {
+    if (convertBinaryDropdown(parameters.triggersOnWeekend)) {
       return cronTimes.everyDayAt(parameters.hour as number)
     }
 

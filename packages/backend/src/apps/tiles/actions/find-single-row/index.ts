@@ -1,6 +1,7 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
+import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
 import logger from '@/helpers/logger'
 import {
   getRawRowById,
@@ -139,7 +140,7 @@ const action: IRawAction = {
     const { tableId, filters, returnLastRow } = $.step.parameters as {
       tableId: string
       filters: TableRowFilter[]
-      returnLastRow: boolean | undefined
+      returnLastRow: boolean | string | undefined
     }
     await validateTileAccess($.flow?.userId, tableId as string)
 
@@ -180,7 +181,7 @@ const action: IRawAction = {
       })
       return
     }
-    const rowIdToUse = returnLastRow
+    const rowIdToUse = convertBinaryDropdown(returnLastRow)
       ? result[result.length - 1].rowId
       : result[0].rowId
 
