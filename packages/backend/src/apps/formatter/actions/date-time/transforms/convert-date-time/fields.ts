@@ -55,7 +55,7 @@ export const field = {
       value: ensureZodEnumValue(formatStringsEnum, 'yy/LL/dd'),
     },
     {
-      label: 'YYYY/MM/dd',
+      label: 'YYYY/MM/DD',
       description: '2024/01/22',
       value: ensureZodEnumValue(formatStringsEnum, 'yyyy/LL/dd'),
     },
