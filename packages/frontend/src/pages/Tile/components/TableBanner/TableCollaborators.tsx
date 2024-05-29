@@ -73,7 +73,7 @@ const AddNewCollaborator = ({
   const onSubmit: FormEventHandler<HTMLFormElement> = useCallback(
     async (e) => {
       try {
-        e.preventDefault()
+        e.stopPropagation()
         setIsAdding(true)
         await onAdd(email, role)
         setEmail('')
@@ -97,6 +97,7 @@ const AddNewCollaborator = ({
             <Input
               type="email"
               value={email}
+              isRequired
               onChange={(e) => setEmail(e.target.value)}
             />
             <TableCollabRoleSelect
