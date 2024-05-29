@@ -16,7 +16,7 @@ import { useTableContext } from '../../contexts/TableContext'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 
 function BreadCrumb() {
-  const { tableName: initialTableName } = useTableContext()
+  const { tableName: initialTableName, hasEditPermission } = useTableContext()
   const [isEditingTableName, setIsEditingTableName] = useState(false)
   const [tableName, setTableName] = useState(initialTableName)
   const { updateTableName, isUpdatingTableName } = useUpdateTable()
@@ -96,6 +96,7 @@ function BreadCrumb() {
         ) : (
           <BreadcrumbLink
             onClick={() => setIsEditingTableName(true)}
+            pointerEvents={hasEditPermission ? 'auto' : 'none'}
             gap={3}
             overflow="hidden"
             alignItems="center"
@@ -104,16 +105,18 @@ function BreadCrumb() {
             role="group"
           >
             {initialTableName}
-            <IconButton
-              icon={<MdOutlineModeEdit size={14} />}
-              aria-label="Edit"
-              size="xs"
-              variant="clear"
-              display="none"
-              _groupHover={{
-                display: 'flex',
-              }}
-            />
+            {hasEditPermission && (
+              <IconButton
+                icon={<MdOutlineModeEdit size={14} />}
+                aria-label="Edit"
+                size="xs"
+                variant="clear"
+                display="none"
+                _groupHover={{
+                  display: 'flex',
+                }}
+              />
+            )}
           </BreadcrumbLink>
         )}
       </BreadcrumbItem>

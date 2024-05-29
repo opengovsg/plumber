@@ -35,7 +35,7 @@ import { useTableContext } from '../../contexts/TableContext'
 import TableCollaborators from './TableCollaborators'
 
 const ShareModal = ({ onClose }: { onClose: () => void }) => {
-  const { tableId, viewOnlyKey } = useTableContext()
+  const { tableId, viewOnlyKey, hasEditPermission } = useTableContext()
   const [isNewLink, setIsNewLink] = useState(false)
 
   const shareableLink = viewOnlyKey
@@ -98,15 +98,17 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
                     </InputRightAddon>
                   </InputGroup>
                 )}
-                <Button
-                  variant="outline"
-                  isLoading={loading}
-                  onClick={onGenerate}
-                >
-                  Generate new link
-                </Button>
+                {hasEditPermission && (
+                  <Button
+                    variant="outline"
+                    isLoading={loading}
+                    onClick={onGenerate}
+                  >
+                    Generate new link
+                  </Button>
+                )}
               </Flex>
-              {viewOnlyKey && (
+              {viewOnlyKey && hasEditPermission && (
                 <FormHelperText variant={isNewLink ? 'success' : undefined}>
                   {isNewLink
                     ? 'New link generated!'

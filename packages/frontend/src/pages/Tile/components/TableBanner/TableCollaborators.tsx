@@ -93,7 +93,6 @@ const AddNewCollaborator = ({
     >
       <FormControl>
         <VStack spacing={2} alignItems="flex-start">
-          <Text textStyle="subhead-3">Collaborators</Text>
           <Flex alignSelf="stretch" gap={2}>
             <Input
               type="email"
@@ -119,15 +118,17 @@ const CollaboratorListRow = ({
   collaborator,
   onRoleChange,
   onDelete,
+  isEditable,
 }: {
   collaborator: ITableCollaborator
   onRoleChange: (role: ITableCollabRole) => void
   onDelete: () => void
+  isEditable: boolean
 }) => {
   const { currentUser } = useContext(AuthenticationContext)
   const [isDeleting, setIsDeleting] = useState(false)
-  const isEditable =
-    collaborator.role !== 'owner' && collaborator.email !== currentUser?.email
+  const isOwnerOrSelf =
+    collaborator.role === 'owner' || collaborator.email === currentUser?.email
 
   const onDeleteHandler = useCallback(async () => {
     setIsDeleting(true)
@@ -143,9 +144,9 @@ const CollaboratorListRow = ({
           value={collaborator.role}
           onChange={onRoleChange}
           variant="clear"
-          isEditable={isEditable}
+          isEditable={!isOwnerOrSelf && isEditable}
         />
-        {isEditable && (
+        {!isOwnerOrSelf && isEditable && (
           <IconButton
             colorScheme="critical"
             onClick={onDeleteHandler}
@@ -161,7 +162,7 @@ const CollaboratorListRow = ({
 }
 
 const TableCollaborators = () => {
-  const { collaborators, tableId } = useTableContext()
+  const { collaborators, tableId, hasEditPermission } = useTableContext()
   const toast = useToast({
     status: 'success',
     duration: 3000,
@@ -222,8 +223,11 @@ const TableCollaborators = () => {
   }
 
   return (
-    <VStack gap={2}>
-      <AddNewCollaborator onAdd={upsertCollaboratorHandler} />
+    <VStack gap={2} alignItems="flex-start">
+      <Text textStyle="subhead-3">Collaborators</Text>
+      {hasEditPermission && (
+        <AddNewCollaborator onAdd={upsertCollaboratorHandler} />
+      )}
       <VStack w="100%" divider={<Divider />}>
         {collaborators.map((collab) => (
           <CollaboratorListRow
@@ -233,6 +237,7 @@ const TableCollaborators = () => {
               upsertCollaboratorHandler(collab.email, role, true)
             }
             onDelete={() => deleteCollaboratorHandler(collab.email)}
+            isEditable={hasEditPermission}
           />
         ))}
       </VStack>

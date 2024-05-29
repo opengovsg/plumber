@@ -8,7 +8,7 @@ import EditMode from './EditMode'
 import ImportExportToolbar from './ImportExportToolbar'
 
 function TableBanner() {
-  const { tableName, hasEditPermission } = useTableContext()
+  const { tableName, role } = useTableContext()
 
   return (
     <Flex
@@ -20,11 +20,7 @@ function TableBanner() {
       zIndex={10}
     >
       <Flex alignItems="center" gap={4}>
-        {hasEditPermission ? (
-          <BreadCrumb />
-        ) : (
-          <Text textStyle="subhead-1">{tableName}</Text>
-        )}
+        {role ? <BreadCrumb /> : <Text textStyle="subhead-1">{tableName}</Text>}
         <EditMode />
       </Flex>
       <ImportExportToolbar />
