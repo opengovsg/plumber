@@ -53,6 +53,17 @@ describe('get single table query', () => {
     expect(columns.map((c) => c.id)).toEqual(dummyColumnIds)
   })
 
+  it('should return table metadata with role', async () => {
+    const table = await getTable(
+      null,
+      {
+        tableId: dummyTable.id,
+      },
+      context,
+    )
+    expect(table.role).toBe('owner')
+  })
+
   it('should return empty array of columns if no columns exist', async () => {
     const { table: insertedTable } = await generateMockTable({
       userId: context.currentUser.id,

@@ -45,4 +45,14 @@ describe('get tables query', () => {
       numTables - 1,
     )
   })
+  it('should return the corresponding roles of each user', async () => {
+    const numTables = 5
+    for (let i = 0; i < numTables; i++) {
+      await generateMockTable({ userId: context.currentUser.id })
+    }
+    const tables = await getTables(null, null, context)
+    for (const table of tables) {
+      expect(table.role).toBe('owner')
+    }
+  })
 })
