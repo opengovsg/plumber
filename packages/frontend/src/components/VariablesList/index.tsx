@@ -1,79 +1,71 @@
-import type { ComponentType } from 'react'
-import List from '@mui/material/List'
-import ListItem, { ListItemProps } from '@mui/material/ListItem'
-import ListItemButton, {
-  ListItemButtonProps,
-} from '@mui/material/ListItemButton'
-import ListItemText from '@mui/material/ListItemText'
+import { Box, Text } from '@chakra-ui/react'
 import { type Variable } from 'helpers/variables'
 
-function makeListItemComponent(
+function makeVariableComponent(
   variable: Variable,
   onClick?: (variable: Variable) => void,
-): ComponentType<ListItemButtonProps> | ComponentType<ListItemProps> {
-  if (onClick) {
-    return (props: ListItemButtonProps) => (
-      <ListItemButton
-        {...props}
-        // onClick doesn't work sometimes due to latency between mousedown and immediate mouseup event after
-        onMouseDown={() => {
-          onClick(variable)
-        }}
-      />
-    )
-  }
-
-  return (props: ListItemProps) => <ListItem {...props} />
+): JSX.Element {
+  return (
+    <Box
+      key={`suggestion-${variable.name}`}
+      data-test="variable-suggestion-item"
+      padding={onClick ? '0.5rem 1rem' : '1rem'}
+      borderBottom={onClick ? undefined : '1px solid #EDEDED'}
+      _hover={
+        onClick
+          ? {
+              backgroundColor: 'secondary.50',
+              cursor: 'pointer',
+            }
+          : undefined
+      }
+      _active={
+        onClick
+          ? {
+              backgroundColor: 'secondary.100',
+              cursor: 'pointer',
+            }
+          : undefined
+      }
+      // onClick doesn't work sometimes due to latency between mousedown and immediate mouseup event after
+      onMouseDown={
+        onClick
+          ? () => {
+              onClick(variable)
+            }
+          : undefined
+      }
+    >
+      <Text textStyle="body-1" color="base.content.strong">
+        {variable.label ?? variable.name}
+      </Text>
+      <Text textStyle="body-2" color="base.content.medium">
+        {variable.displayedValue ?? variable.value?.toString() ?? ''}
+      </Text>
+    </Box>
+  )
 }
 
 interface VariablesListProps {
   variables: Variable[]
   onClick?: (variable: Variable) => void
-  listHeight?: number
 }
 
 export default function VariablesList(props: VariablesListProps) {
-  const { variables, onClick, listHeight } = props
+  const { variables, onClick } = props
 
   if (!variables || variables.length === 0) {
     return <></>
   }
 
   return (
-    <List
-      disablePadding
+    <Box
       data-test="variable-suggestion-group"
-      sx={{ maxHeight: listHeight, overflowY: 'auto' }}
+      maxH={64}
+      overflowY="auto"
+      p={onClick ? undefined : '1rem'}
     >
-      {variables.map((variable) => {
-        const ListItemComponent = makeListItemComponent(variable, onClick)
-        return (
-          <ListItemComponent
-            sx={{ pl: 4 }}
-            divider
-            data-test="variable-suggestion-item"
-            key={`suggestion-${variable.name}`}
-          >
-            <ListItemText
-              primary={variable.label ?? variable.name}
-              primaryTypographyProps={{
-                variant: 'subtitle1',
-                title: 'Property name',
-                sx: { fontWeight: 700 },
-              }}
-              secondary={
-                <>
-                  {variable.displayedValue ?? variable.value?.toString() ?? ''}
-                </>
-              }
-              secondaryTypographyProps={{
-                variant: 'subtitle2',
-                title: 'Sample value',
-              }}
-            />
-          </ListItemComponent>
-        )
-      })}
-    </List>
+      {variables.map((variable) => makeVariableComponent(variable, onClick))}
+    </Box>
   )
 }

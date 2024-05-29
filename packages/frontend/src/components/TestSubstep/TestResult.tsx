@@ -122,9 +122,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
           }
         </Text>
       </Infobox>
-      <Box maxH="25rem" overflowY="scroll" w="100%">
-        <VariablesList variables={stepsWithVariables[0].output} />
-      </Box>
+      <VariablesList variables={stepsWithVariables[0].output} />
     </Box>
   )
 }

@@ -9,6 +9,8 @@ const formatStringsEnum = z.enum([
   'dd/LL/yyyy',
   'dd LLL yyyy',
   'dd LLLL yyyy',
+  'yy/LL/dd',
+  'yyyy/LL/dd',
   'hh:mm a',
   'hh:mm:ss a',
   'dd LLL yyyy hh:mm a',
@@ -46,6 +48,16 @@ export const field = {
       label: 'DD MMMM YYYY',
       description: '02 January 2006',
       value: ensureZodEnumValue(formatStringsEnum, 'dd LLLL yyyy'),
+    },
+    {
+      label: 'YY/MM/DD',
+      description: '24/01/22',
+      value: ensureZodEnumValue(formatStringsEnum, 'yy/LL/dd'),
+    },
+    {
+      label: 'YYYY/MM/DD',
+      description: '2024/01/22',
+      value: ensureZodEnumValue(formatStringsEnum, 'yyyy/LL/dd'),
     },
     {
       label: 'HH:mm (am/pm)',
