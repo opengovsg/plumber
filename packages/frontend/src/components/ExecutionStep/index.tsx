@@ -101,7 +101,7 @@ export default function ExecutionStep({
 
             <Box>
               <Text textStyle="body-2">
-                {index === 0 && page === 1 ? 'Trigger' : 'Action'}
+                {index === 0 && page === 1 ? 'When' : 'Then'}
               </Text>
 
               <Text textStyle="h5">

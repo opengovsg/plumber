@@ -207,6 +207,18 @@ export default function FlowStep(
     [deleteStep, step.id],
   )
 
+  // define caption description based on app and step
+  let caption = ''
+  if (app?.name) {
+    caption = `${step.position}. ${app.name}`
+  } else if (isTrigger) {
+    caption = 'This step starts your pipe'
+  } else if (step.position === 2) {
+    caption = 'This step happens after your pipe starts'
+  } else {
+    caption = 'This step happens after the previous step'
+  }
+
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
   }
@@ -216,12 +228,9 @@ export default function FlowStep(
   return (
     <FlowStepHeader
       iconUrl={app?.iconUrl}
-      caption={
-        displayOverrides?.caption ??
-        (app?.name ? `${step.position}. ${app.name}` : 'Choose an app')
-      }
+      caption={displayOverrides?.caption ?? caption}
       hintAboveCaption={
-        displayOverrides?.hintAboveCaption ?? (isTrigger ? 'Trigger' : 'Action')
+        displayOverrides?.hintAboveCaption ?? (isTrigger ? 'When' : 'Then')
       }
       isCompleted={step.status === 'completed'}
       onDelete={isDeletable ? onDelete : undefined}
