@@ -35,6 +35,8 @@ describe('convert date time', () => {
     { toFormat: 'dd/LL/yyyy', expectedResult: '01/04/2024' },
     { toFormat: 'dd LLL yyyy', expectedResult: '01 Apr 2024' },
     { toFormat: 'dd LLLL yyyy', expectedResult: '01 April 2024' },
+    { toFormat: 'yy/LL/dd', expectedResult: '24/04/01' },
+    { toFormat: 'yyyy/LL/dd', expectedResult: '2024/04/01' },
     { toFormat: 'hh:mm a', expectedResult: '12:05 pm' },
     { toFormat: 'hh:mm:ss a', expectedResult: '12:05:10 pm' },
     { toFormat: 'dd LLL yyyy hh:mm a', expectedResult: '01 Apr 2024 12:05 pm' },
