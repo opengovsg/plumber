@@ -1,4 +1,8 @@
-import { ITableColumnMetadata, ITableRow } from '@plumber/types'
+import type {
+  ITableCollaborator,
+  ITableColumnMetadata,
+  ITableRow,
+} from '@plumber/types'
 
 import React, {
   createContext,
@@ -23,6 +27,7 @@ interface TableContextProps {
   setMode: (mode: EditMode) => void
   hasEditPermission: boolean
   viewOnlyKey?: string
+  collaborators?: ITableCollaborator[]
 }
 
 const TableContext = createContext<TableContextProps | undefined>(undefined)
@@ -45,6 +50,7 @@ interface TableContextProviderProps {
   children: React.ReactNode
   hasEditPermission: boolean
   viewOnlyKey?: string
+  collaborators?: ITableCollaborator[]
 }
 
 export const TableContextProvider = ({
@@ -55,6 +61,7 @@ export const TableContextProvider = ({
   children,
   hasEditPermission,
   viewOnlyKey,
+  collaborators,
 }: TableContextProviderProps) => {
   const flattenedData = useMemo(() => flattenRows(tableRows), [tableRows])
   const filteredDataRef = useRef<GenericRowData[]>([])
@@ -75,6 +82,7 @@ export const TableContextProvider = ({
         setMode,
         hasEditPermission,
         viewOnlyKey,
+        collaborators,
       }}
     >
       {children}

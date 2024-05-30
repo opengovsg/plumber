@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { BiCopy, BiShareAlt } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
+  Divider,
   Flex,
   FormControl,
   InputGroup,
@@ -30,6 +31,8 @@ import { CREATE_SHAREABLE_TABLE_LINK } from 'graphql/mutations/tiles/create-shar
 import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
+
+import TableCollaborators from './TableCollaborators'
 
 const ShareModal = ({ onClose }: { onClose: () => void }) => {
   const { tableId, viewOnlyKey } = useTableContext()
@@ -111,6 +114,8 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
                 </FormHelperText>
               )}
             </VStack>
+            <Divider my={6} />
+            <TableCollaborators />
           </FormControl>
         </ModalBody>
         <ModalFooter></ModalFooter>
