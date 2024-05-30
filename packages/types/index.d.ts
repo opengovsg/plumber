@@ -755,6 +755,7 @@ export interface ITableMetadata {
   lastAccessedAt: string
   viewOnlyKey?: string
   collaborators?: ITableCollaborator[]
+  role?: ITableCollabRole
 }
 
 export interface ITableCollaborator {

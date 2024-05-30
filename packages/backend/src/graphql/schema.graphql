@@ -666,6 +666,7 @@ type TableMetadata {
   lastAccessedAt: String!
   viewOnlyKey: String
   collaborators: [TableCollaborator!]
+  role: String
 }
 
 # End Tiles types

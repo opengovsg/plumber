@@ -18,6 +18,7 @@ export const GET_TABLE = gql`
         email
         role
       }
+      role
     }
   }
 `
