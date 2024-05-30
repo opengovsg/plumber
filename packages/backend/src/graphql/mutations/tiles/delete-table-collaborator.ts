@@ -13,8 +13,6 @@ const deleteTableCollaborator: MutationResolvers['deleteTableCollaborator'] =
       email: string
     }
 
-    await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
-
     const validatedEmail = await validateAndParseEmail(email)
     if (!validatedEmail) {
       throw new BadUserInputError('Invalid collaborator email')
@@ -23,6 +21,8 @@ const deleteTableCollaborator: MutationResolvers['deleteTableCollaborator'] =
     if (validatedEmail === context.currentUser.email) {
       throw new BadUserInputError('Cannot remove yourself')
     }
+
+    await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
     const user = await User.query()
       .findOne({
