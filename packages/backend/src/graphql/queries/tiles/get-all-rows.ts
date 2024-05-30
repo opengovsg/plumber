@@ -1,6 +1,7 @@
 import { NotFoundError } from 'objection'
 
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
+import logger from '@/helpers/logger'
 import { getTableRows } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
 
@@ -25,6 +26,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
       : await context.currentUser
           .$relatedQuery('tables')
           .withGraphFetched('columns')
+          .whereNull('table_collaborators.deleted_at')
           .findById(tableId)
           .throwIfNotFound()
 
@@ -38,6 +40,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
     const columnIds = table.columns.map((column) => column.id)
     return getTableRows({ tableId, columnIds })
   } catch (e) {
+    logger.error(e)
     if (e instanceof NotFoundError) {
       if (context.tilesViewKey) {
         throw new InvalidTileViewKeyError(tableId, context.tilesViewKey)

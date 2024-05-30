@@ -24,21 +24,25 @@ const deleteTableCollaborator: MutationResolvers['deleteTableCollaborator'] =
       throw new BadUserInputError('Cannot remove yourself')
     }
 
-    const collaboratorUser = await User.query()
+    const user = await User.query()
       .findOne({
         email: validatedEmail,
       })
-      .throwIfNotFound()
+      .throwIfNotFound('No such user found')
+
+    const collaboratorUser = await TableCollaborator.query()
+      .findOne({
+        table_id: tableId,
+        user_id: user.id,
+      })
+      .throwIfNotFound('No such collaborator found')
+
+    if (collaboratorUser.role === 'owner') {
+      throw new BadUserInputError('Cannot remove owner')
+    }
 
     try {
-      await TableCollaborator.query()
-        .delete()
-        .where({
-          table_id: tableId,
-          user_id: collaboratorUser.id,
-        })
-        // it should not delete owner
-        .andWhereNot('role', 'owner')
+      await collaboratorUser.$query().delete()
     } catch (e) {
       logger.error({
         message: 'Failed to delete collaborator',

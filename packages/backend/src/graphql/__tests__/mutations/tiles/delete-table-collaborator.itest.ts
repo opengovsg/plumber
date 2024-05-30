@@ -1,5 +1,7 @@
+import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -49,37 +51,60 @@ describe('delete table collaborators', () => {
     expect(addedCollaborator).toBeUndefined()
   })
 
-  it('should throw an error if collaborator is not found', async () => {
+  it('should throw an error if user is not found', async () => {
     await expect(
       deleteTableCollaborator(
         null,
         {
           input: {
             tableId: dummyTable.id,
-            email: 'viewer2@open.gov.sg',
+            email: 'viewer332@open.gov.sg',
           },
         },
         context,
       ),
-    ).rejects.toThrow()
+    ).rejects.toThrow(NotFoundError)
   })
 
-  it('should not delete owner role', async () => {
-    context.currentUser = editor
+  it('should throw an error if collaborator is not found', async () => {
     await deleteTableCollaborator(
       null,
       {
         input: {
           tableId: dummyTable.id,
-          email: owner.email,
+          email: 'viewer@open.gov.sg',
         },
       },
       context,
     )
-    const collaborators = await dummyTable
-      .$relatedQuery('collaborators')
-      .where('table_collaborators.deleted_at', null)
-    expect(collaborators).toHaveLength(3)
+    await expect(
+      deleteTableCollaborator(
+        null,
+        {
+          input: {
+            tableId: dummyTable.id,
+            email: 'viewer@open.gov.sg',
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow(NotFoundError)
+  })
+
+  it('should throw an error when attempting to delete owner role', async () => {
+    context.currentUser = editor
+    await expect(
+      deleteTableCollaborator(
+        null,
+        {
+          input: {
+            tableId: dummyTable.id,
+            email: owner.email,
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow(BadUserInputError)
   })
 
   it('should not allow deleting of oneself', async () => {
@@ -95,6 +120,6 @@ describe('delete table collaborators', () => {
         },
         context,
       ),
-    ).rejects.toThrow()
+    ).rejects.toThrow(BadUserInputError)
   })
 })
