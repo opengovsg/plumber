@@ -206,9 +206,11 @@ const TableCollaborators = () => {
         onCompleted: () =>
           toast({
             title: `Collaborator ${update ? 'updated' : 'added'}`,
-            description: `${email} ${
-              update ? `updated to` : 'added as'
-            } ${role.toUpperCase()}`,
+            description: (
+              <Text>
+                {email} {update ? `role updated to` : 'added as'} <b>{role}</b>
+              </Text>
+            ),
           }),
       })
     },
