@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import TableMetadataResolver from '@/graphql/custom-resolvers/table-metadata'
 import getTable from '@/graphql/queries/tiles/get-table'
+import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -73,6 +74,23 @@ describe('get single table query', () => {
         null,
         {
           tableId: randomUUID(),
+        },
+        context,
+      ),
+    ).rejects.toThrow('Table not found')
+  })
+
+  it('should throw an error if collaborator does not exist or is soft deleted', async () => {
+    context.currentUser = editor
+    await TableCollaborator.query()
+      .delete()
+      .where('table_id', dummyTable.id)
+      .andWhere('user_id', editor.id)
+    await expect(
+      getTable(
+        null,
+        {
+          tableId: dummyTable.id,
         },
         context,
       ),

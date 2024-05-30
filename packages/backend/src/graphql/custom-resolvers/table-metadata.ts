@@ -18,7 +18,7 @@ const collaborators: TableMetadataResolver['collaborators'] = async (
   const collaborators = await parent
     .$relatedQuery('collaborators')
     .select('email', 'role')
-    .orderBy('role', 'desc')
+    .where('table_collaborators.deleted_at', null)
   return sortBy(
     collaborators,
     [

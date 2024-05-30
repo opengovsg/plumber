@@ -23,7 +23,6 @@ class TableCollaborator extends Base {
       tableId: { type: 'string', format: 'uuid' },
       name: { type: 'string', format: 'uuid' },
       role: { type: 'string', enum: ['owner', 'editor', 'viewer'] },
-      deletedAt: { type: 'null' }, // disallow soft deletes
       lastAccessedAt: { type: 'string', format: 'date-time' },
     },
   }
