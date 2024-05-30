@@ -26,7 +26,6 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
       : await context.currentUser
           .$relatedQuery('tables')
           .withGraphFetched('columns')
-          .whereNull('table_collaborators.deleted_at')
           .findById(tableId)
           .throwIfNotFound()
 
