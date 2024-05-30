@@ -8,7 +8,7 @@ import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
 const trigger: IRawTrigger = {
-  name: 'Daily',
+  name: 'Schedule daily',
   key: 'everyDay',
   description: 'Triggers every day, choose a specific hour',
   arguments: [

@@ -8,7 +8,7 @@ import { spec as addSubtractDateTime } from './transforms/add-subtract-date-time
 import { spec as convertDateTime } from './transforms/convert-date-time'
 
 const action: IRawAction = {
-  name: 'Date / Time',
+  name: 'Format date / time',
   key: 'dateTime',
   description: 'Format date and time values',
   arguments: setUpActionFields({

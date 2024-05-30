@@ -10,6 +10,7 @@ const action: IRawAction = {
   name: 'Write cell values',
   key: 'writeCellValues',
   description: "Write values into your Excel worksheet's cells",
+  settingsStepLabel: 'Set up cell(s) to update',
   arguments: [
     {
       key: 'fileId',

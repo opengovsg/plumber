@@ -40,16 +40,16 @@ const getApp = (appKey: string, stripFuncs = true) => {
   return appData
 }
 
-const chooseConnectionStep = {
-  key: 'chooseConnection',
-  name: 'Choose connection',
+const chooseConnectionStep = (connectionStepLabel?: string) => {
+  return {
+    key: 'chooseConnection',
+    name: connectionStepLabel ?? 'Choose connection',
+  }
 }
 
-const testStep = (stepType: 'trigger' | 'action') => {
-  return {
-    key: 'testStep',
-    name: stepType === 'trigger' ? 'Test trigger' : 'Test action',
-  }
+const testStep = {
+  key: 'testStep',
+  name: 'Test step',
 }
 
 function addStaticSubsteps(
@@ -72,18 +72,20 @@ function addStaticSubsteps(
   computedStep.substeps = []
 
   if (appData.auth) {
-    computedStep.substeps.push(chooseConnectionStep)
+    computedStep.substeps.push(
+      chooseConnectionStep(appData?.connectionStepLabel),
+    )
   }
 
   if (step.arguments) {
     computedStep.substeps.push({
-      key: 'chooseTrigger',
-      name: stepType === 'trigger' ? 'Set up a trigger' : 'Set up action',
+      key: stepType === 'trigger' ? 'setUpTrigger' : 'setUpAction',
+      name: appData.settingsStepLabel ?? 'Set up step',
       arguments: step.arguments,
     })
   }
 
-  computedStep.substeps.push(testStep(stepType))
+  computedStep.substeps.push(testStep)
 
   return computedStep
 }

@@ -25,6 +25,7 @@ const action: IRawAction = {
   name: 'Update table row',
   key: 'updateTableRow',
   description: 'Updates a single row of data in your Excel table',
+  settingsStepLabel: 'Set up row to update',
   arguments: [
     // We're doing an update based on results of our getTableRow action, so just
     // re-use its arguments.

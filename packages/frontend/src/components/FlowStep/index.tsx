@@ -209,7 +209,9 @@ export default function FlowStep(
 
   // define caption description based on app and step
   let caption = ''
-  if (app?.name) {
+  if (selectedActionOrTrigger?.name) {
+    caption = `${step.position}. ${selectedActionOrTrigger?.name}`
+  } else if (app?.name) {
     caption = `${step.position}. ${app.name}`
   } else if (isTrigger) {
     caption = 'This step starts your pipe'
@@ -301,6 +303,7 @@ export default function FlowStep(
                       onSubmit={expandNextStep}
                       onChange={handleChange}
                       step={step}
+                      settingsLabel={selectedActionOrTrigger?.settingsStepLabel}
                     />
                   )}
               </Fragment>

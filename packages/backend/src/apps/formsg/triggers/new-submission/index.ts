@@ -15,10 +15,10 @@ export const NricFilter = {
 }
 
 const trigger: IRawTrigger = {
-  name: 'New form submission',
+  name: 'New form response',
   key: 'newSubmission',
   type: 'webhook',
-  description: 'Triggers when a new form submission is received',
+  description: 'Triggers when a new form response is received',
   webhookTriggerInstructions: {
     hideWebhookUrl: true,
     errorMsg:
