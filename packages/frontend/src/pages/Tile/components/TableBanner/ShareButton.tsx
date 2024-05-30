@@ -67,56 +67,63 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
         <ModalCloseButton />
         <ModalBody mt={2}>
           <FormControl>
-            <VStack spacing={2} alignItems="flex-start">
-              <Text textStyle="subhead-3">General Access</Text>
-              <Text textStyle="body-1">
-                Generate a shareable link to allow viewing and exporting only.
-                No login required.
-              </Text>
-              <Flex alignSelf="stretch" gap={2}>
-                {viewOnlyKey && (
-                  <InputGroup borderWidth={0}>
-                    <Input
-                      value={shareableLink}
-                      borderRightWidth={0}
-                      borderColor={inputBorderColor}
-                      _focusVisible={{ borderColor: inputBorderColor }}
-                      isReadOnly
-                    />
-                    <InputRightAddon
-                      padding={0}
-                      background="white"
-                      borderColor={inputBorderColor}
-                    >
-                      <IconButton
-                        icon={<BiCopy />}
-                        colorScheme="secondary"
-                        variant="clear"
-                        aria-label={'Copy'}
-                        onClick={() => copy(shareableLink ?? '')}
-                      />
-                    </InputRightAddon>
-                  </InputGroup>
-                )}
-                {hasEditPermission && (
-                  <Button
-                    variant="outline"
-                    isLoading={loading}
-                    onClick={onGenerate}
-                  >
-                    Generate new link
-                  </Button>
-                )}
-              </Flex>
-              {viewOnlyKey && hasEditPermission && (
-                <FormHelperText variant={isNewLink ? 'success' : undefined}>
-                  {isNewLink
-                    ? 'New link generated!'
-                    : 'By generating a new link, your previous link will not work anymore.'}
-                </FormHelperText>
-              )}
-            </VStack>
-            <Divider my={6} />
+            {(viewOnlyKey || hasEditPermission) && (
+              <>
+                <VStack spacing={2} alignItems="flex-start">
+                  <Text textStyle="subhead-3">General Access</Text>
+                  <Text textStyle="body-1">
+                    {hasEditPermission
+                      ? 'Generate a shareable link to allow'
+                      : 'This shareable link allows'}{' '}
+                    viewing and exporting only. No login required.
+                  </Text>
+                  <Flex alignSelf="stretch" gap={2}>
+                    {viewOnlyKey && (
+                      <InputGroup borderWidth={0}>
+                        <Input
+                          value={shareableLink}
+                          borderRightWidth={0}
+                          paddingRight={0}
+                          borderColor={inputBorderColor}
+                          _focusVisible={{ borderColor: inputBorderColor }}
+                          isReadOnly
+                        />
+                        <InputRightAddon
+                          padding={0}
+                          background="white"
+                          borderColor={inputBorderColor}
+                        >
+                          <IconButton
+                            icon={<BiCopy />}
+                            colorScheme="secondary"
+                            variant="clear"
+                            aria-label={'Copy'}
+                            onClick={() => copy(shareableLink ?? '')}
+                          />
+                        </InputRightAddon>
+                      </InputGroup>
+                    )}
+                    {hasEditPermission && (
+                      <Button
+                        variant="outline"
+                        isLoading={loading}
+                        onClick={onGenerate}
+                      >
+                        Generate new link
+                      </Button>
+                    )}
+                  </Flex>
+                  {viewOnlyKey && hasEditPermission && (
+                    <FormHelperText variant={isNewLink ? 'success' : undefined}>
+                      {isNewLink
+                        ? 'New link generated!'
+                        : 'By generating a new link, your previous link will not work anymore.'}
+                    </FormHelperText>
+                  )}
+                </VStack>
+                <Divider my={6} />
+              </>
+            )}
             <TableCollaborators />
           </FormControl>
         </ModalBody>
