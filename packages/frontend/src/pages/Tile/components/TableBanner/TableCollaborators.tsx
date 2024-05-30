@@ -1,7 +1,8 @@
 import { ITableCollaborator, ITableCollabRole } from '@plumber/types'
 
-import { FormEventHandler, useContext, useState } from 'react'
+import { FormEventHandler, useCallback, useContext, useState } from 'react'
 import { BiChevronDown, BiTrash } from 'react-icons/bi'
+import { useMutation } from '@apollo/client'
 import {
   Divider,
   Flex,
@@ -18,8 +19,12 @@ import {
   IconButton,
   Input,
   Menu,
+  useToast,
 } from '@opengovsg/design-system-react'
 import { AuthenticationContext } from 'contexts/Authentication'
+import { DELETE_TABLE_COLLABORATOR } from 'graphql/mutations/tiles/delete-table-collaborator'
+import { UPSERT_TABLE_COLLABORATOR } from 'graphql/mutations/tiles/upsert-table-collaborator'
+import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 import { useTableContext } from 'pages/Tile/contexts/TableContext'
 
 const TableCollabRoleSelect = ({
@@ -56,26 +61,35 @@ const TableCollabRoleSelect = ({
   )
 }
 
-const AddNewCollaborator = () => {
+const AddNewCollaborator = ({
+  onAdd,
+}: {
+  onAdd: (email: string, role: string) => Promise<void>
+}) => {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<ITableCollabRole>('editor')
   const [isAdding, setIsAdding] = useState(false)
 
-  const onAdd: FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault()
-    setIsAdding(true)
-    console.log('Adding collaborator', email, role)
-    setIsAdding(false)
-    setEmail('')
-    setRole('editor')
-  }
+  const onSubmit: FormEventHandler<HTMLFormElement> = useCallback(
+    async (e) => {
+      try {
+        e.preventDefault()
+        setIsAdding(true)
+        await onAdd(email, role)
+        setEmail('')
+      } finally {
+        setIsAdding(false)
+      }
+    },
+    [email, onAdd, role],
+  )
 
   return (
     <form
       style={{
         width: '100%',
       }}
-      onSubmit={onAdd}
+      onSubmit={onSubmit}
     >
       <FormControl>
         <VStack spacing={2} alignItems="flex-start">
@@ -111,8 +125,15 @@ const CollaboratorListRow = ({
   onDelete: () => void
 }) => {
   const { currentUser } = useContext(AuthenticationContext)
+  const [isDeleting, setIsDeleting] = useState(false)
   const isEditable =
     collaborator.role !== 'owner' && collaborator.email !== currentUser?.email
+
+  const onDeleteHandler = useCallback(async () => {
+    setIsDeleting(true)
+    await onDelete()
+    setIsDeleting(false)
+  }, [onDelete])
 
   return (
     <Flex alignItems="center" w="100%" py={1} px={4}>
@@ -127,9 +148,10 @@ const CollaboratorListRow = ({
         {isEditable && (
           <IconButton
             colorScheme="critical"
-            onClick={onDelete}
+            onClick={onDeleteHandler}
             aria-label={'remove collaborator'}
             variant="clear"
+            isLoading={isDeleting}
             icon={<BiTrash />}
           />
         )}
@@ -139,21 +161,78 @@ const CollaboratorListRow = ({
 }
 
 const TableCollaborators = () => {
-  const { collaborators } = useTableContext()
+  const { collaborators, tableId } = useTableContext()
+  const toast = useToast({
+    status: 'success',
+    duration: 3000,
+    isClosable: true,
+  })
+  const [upsertCollaborator] = useMutation(UPSERT_TABLE_COLLABORATOR)
+  const [deleteCollaborator] = useMutation(DELETE_TABLE_COLLABORATOR)
+
+  const deleteCollaboratorHandler = useCallback(
+    async (email: string) => {
+      await deleteCollaborator({
+        variables: {
+          input: {
+            tableId,
+            email,
+          },
+        },
+        refetchQueries: [GET_TABLE],
+        awaitRefetchQueries: false,
+        onCompleted: () =>
+          toast({
+            title: 'Collaborator deleted',
+            description: `Access for ${email} has been removed`,
+          }),
+      })
+    },
+    [deleteCollaborator, tableId, toast],
+  )
+
+  const upsertCollaboratorHandler = useCallback(
+    async (email: string, role: string, update?: boolean) => {
+      await upsertCollaborator({
+        variables: {
+          input: {
+            tableId,
+            email,
+            role,
+          },
+        },
+        refetchQueries: [GET_TABLE],
+        awaitRefetchQueries: false,
+        onCompleted: () =>
+          toast({
+            title: `Collaborator ${update ? 'updated' : 'added'}`,
+            description: (
+              <Text>
+                {email} {update ? `role updated to` : 'added as'} <b>{role}</b>
+              </Text>
+            ),
+          }),
+      })
+    },
+    [tableId, toast, upsertCollaborator],
+  )
 
   if (!collaborators) {
     return null
   }
+
   return (
     <VStack gap={2}>
-      <AddNewCollaborator />
+      <AddNewCollaborator onAdd={upsertCollaboratorHandler} />
       <VStack w="100%" divider={<Divider />}>
         {collaborators.map((collab) => (
           <CollaboratorListRow
             key={collab.email}
             collaborator={collab}
-            onRoleChange={() => null}
-            onDelete={() => null}
+            onRoleChange={(role) =>
+              upsertCollaboratorHandler(collab.email, role, true)
+            }
+            onDelete={() => deleteCollaboratorHandler(collab.email)}
           />
         ))}
       </VStack>
