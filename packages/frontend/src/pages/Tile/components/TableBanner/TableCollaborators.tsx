@@ -92,12 +92,7 @@ const AddNewCollaborator = () => {
               isEditable={true}
             />
           </Flex>
-          <Button
-            colorScheme="primary"
-            variant="outline"
-            type="submit"
-            isLoading={isAdding}
-          >
+          <Button variant="outline" type="submit" isLoading={isAdding}>
             Add collaborator
           </Button>
         </VStack>
@@ -131,7 +126,7 @@ const CollaboratorListRow = ({
         />
         {isEditable && (
           <IconButton
-            colorScheme="red"
+            colorScheme="critical"
             onClick={onDelete}
             aria-label={'remove collaborator'}
             variant="clear"
