@@ -117,12 +117,23 @@ type FieldVisibilityCondition {
   fieldValue: String
 }
 
+enum SetupMessageVariant {
+  info
+  warning
+}
+
+type SetupMessage {
+  variant: SetupMessageVariant!
+  messageBody: String!
+}
+
 type Action {
   name: String
   key: String
   description: String
   settingsStepLabel: String
   groupsLaterSteps: Boolean
+  setupMessage: SetupMessage
   substeps: [ActionSubstep]
 }
 
@@ -180,6 +191,7 @@ type App {
   description: String
   isNewApp: Boolean
   substepLabels: StepLabel
+  setupMessage: SetupMessage
 }
 
 type StepLabel {
@@ -512,6 +524,7 @@ type Trigger {
   description: String
   pollInterval: Int
   type: String
+  setupMessage: SetupMessage
   webhookTriggerInstructions: TriggerInstructions
   settingsStepLabel: String
   substeps: [TriggerSubstep]

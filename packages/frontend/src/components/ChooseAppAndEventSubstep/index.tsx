@@ -2,9 +2,16 @@ import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
-import { Box, Collapse, Flex, FormControl } from '@chakra-ui/react'
-import { Badge, Button, FormLabel } from '@opengovsg/design-system-react'
+import { Box, chakra, Collapse, Flex, FormControl } from '@chakra-ui/react'
+import {
+  Badge,
+  Button,
+  FormLabel,
+  Infobox,
+  Link,
+} from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
+import MarkdownRenderer from 'components/MarkdownRenderer'
 import { ComboboxItem, SingleSelect } from 'components/SingleSelect'
 import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from 'config/flags'
 import { EditorContext } from 'contexts/Editor'
@@ -235,6 +242,14 @@ function ChooseAppAndEventSubstep(
     [step, onChange],
   )
 
+  const setupMessage = useMemo(() => {
+    const selectedEvent = actionsOrTriggers.find(
+      (actionOrTrigger: IAction | ITrigger) =>
+        actionOrTrigger.key === step?.key,
+    )
+    return selectedEvent?.setupMessage ?? app?.setupMessage ?? null
+  }, [actionsOrTriggers, app, step?.key])
+
   const onToggle = expanded ? onCollapse : onExpand
 
   const isLoading = launchDarkly.isLoading || isInitializingIfThen
@@ -297,6 +312,28 @@ function ChooseAppAndEventSubstep(
                 </Box>
               </FormControl>
             </Flex>
+          )}
+
+          {setupMessage && (
+            <Infobox mt={4} width="full" variant={setupMessage.variant}>
+              <MarkdownRenderer
+                source={setupMessage.messageBody}
+                components={{
+                  // Force all links in our message to be opened in a new tab.
+                  a: ({ ...props }) => (
+                    <Link
+                      isExternal
+                      color="interaction.links.neutral-default"
+                      _hover={{ color: 'interaction.links.neutral-hover' }}
+                      {...props}
+                    />
+                  ),
+                  // react-markdown wraps everything in a <Text> by default,
+                  // which mucks up styling for infoboxes with variants.
+                  p: ({ ...props }) => <chakra.p {...props} />,
+                }}
+              />
+            </Infobox>
           )}
 
           <Button
