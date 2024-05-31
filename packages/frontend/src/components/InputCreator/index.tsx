@@ -9,6 +9,8 @@ import TextField from 'components/TextField'
 import { isFieldHidden } from 'helpers/isFieldHidden'
 import useDynamicData from 'hooks/useDynamicData'
 
+import BooleanRadio from './BooleanRadio'
+
 export type InputCreatorProps = {
   schema: IField
   namePrefix?: string
@@ -58,6 +60,19 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const isHidden = useIsFieldHidden(namePrefix, schema)
   if (isHidden) {
     return <></>
+  }
+
+  if (type === 'boolean-radio') {
+    return (
+      <BooleanRadio
+        name={computedName}
+        label={label}
+        description={description}
+        required={required}
+        defaultValue={value as boolean}
+        options={schema?.options}
+      />
+    )
   }
 
   if (type === 'dropdown') {

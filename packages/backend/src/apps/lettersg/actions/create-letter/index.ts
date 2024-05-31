@@ -5,7 +5,6 @@ import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
-import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
 
 import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
 import { processMissingFields } from '../../helpers/process-missing-fields'
@@ -49,23 +48,11 @@ const action: IRawAction = {
     {
       label: 'Generate PDF',
       key: 'shouldGeneratePdf',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: true,
       description:
         'You will need to add an Email by Postman action after this step to send out the generated PDF.',
-      variables: false,
-      value: 'no',
-      showOptionValue: false,
-      options: [
-        {
-          label: 'No',
-          value: 'no',
-        },
-        {
-          label: 'Yes',
-          value: 'yes',
-        },
-      ],
+      value: false,
     },
     {
       label: 'Personalised fields',
@@ -119,7 +106,7 @@ const action: IRawAction = {
       const response = responseSchema.parse(rawResponse.data)
 
       if (
-        !convertBinaryDropdown($.step.parameters.shouldGeneratePdf) ||
+        !$.step.parameters.shouldGeneratePdf ||
         !$.flow.hasFileProcessingActions
       ) {
         $.setActionItem({

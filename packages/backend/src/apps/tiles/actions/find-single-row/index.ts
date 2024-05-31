@@ -1,7 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
-import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
 import logger from '@/helpers/logger'
 import {
   getRawRowById,
@@ -117,19 +116,17 @@ const action: IRawAction = {
     {
       label: 'Return most recent row instead?',
       key: 'returnLastRow',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: true,
-      variables: false,
-      value: 'no',
-      showOptionValue: false,
+      value: false,
       options: [
         {
           label: 'No (Returns oldest row)',
-          value: 'no',
+          value: false,
         },
         {
           label: 'Yes (Returns most recent row)',
-          value: 'yes',
+          value: true,
         },
       ],
     },
@@ -140,7 +137,7 @@ const action: IRawAction = {
     const { tableId, filters, returnLastRow } = $.step.parameters as {
       tableId: string
       filters: TableRowFilter[]
-      returnLastRow: boolean | string | undefined
+      returnLastRow: boolean | undefined
     }
     await validateTileAccess($.flow?.userId, tableId as string)
 
@@ -181,7 +178,7 @@ const action: IRawAction = {
       })
       return
     }
-    const rowIdToUse = convertBinaryDropdown(returnLastRow)
+    const rowIdToUse = returnLastRow
       ? result[result.length - 1].rowId
       : result[0].rowId
 

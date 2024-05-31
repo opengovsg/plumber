@@ -1,7 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
-import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
 
 import { escapeMarkdown, sanitizeMarkdown } from '../../common/markdown-v1'
 import { throwSendMessageError } from '../../common/throw-errors'
@@ -42,23 +41,11 @@ const action: IRawAction = {
     {
       label: 'Disable notification?',
       key: 'disableNotification',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: false,
-      value: 'no',
-      showOptionValue: false,
+      value: false,
       description:
         'Sends the message silently. Users will receive a notification with no sound.',
-      variables: false,
-      options: [
-        {
-          label: 'Yes',
-          value: 'yes',
-        },
-        {
-          label: 'No',
-          value: 'no',
-        },
-      ],
     },
   ],
 
@@ -84,9 +71,7 @@ const action: IRawAction = {
     const payload = {
       chat_id: $.step.parameters.chatId,
       text: sanitizedMarkdown,
-      disable_notification: convertBinaryDropdown(
-        $.step.parameters.disableNotification,
-      ),
+      disable_notification: $.step.parameters.disableNotification,
       parse_mode: 'markdown', // legacy markdown to allow only a small set of modifiers
     }
     try {

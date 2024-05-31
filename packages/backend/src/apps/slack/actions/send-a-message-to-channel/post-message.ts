@@ -2,8 +2,6 @@ import { IGlobalVariable } from '@plumber/types'
 
 import { URL } from 'url'
 
-import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
-
 type TData = {
   channel: string
   text: string
@@ -16,7 +14,7 @@ const postMessage = async ($: IGlobalVariable) => {
   const { parameters } = $.step
   const channelId = parameters.channel as string
   const text = parameters.message as string
-  const sendAsBot = convertBinaryDropdown(parameters.sendAsBot)
+  const sendAsBot = parameters.sendAsBot as boolean
   const botName = parameters.botName as string
   const botIcon = parameters.botIcon as string
 

@@ -2,8 +2,6 @@ import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
 import { DateTime } from 'luxon'
 
-import { convertBinaryDropdown } from '@/helpers/convert-binary-dropdown'
-
 import cronTimes from '../../common/cron-times'
 import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
@@ -17,20 +15,18 @@ const trigger: IRawTrigger = {
     {
       label: 'Trigger on weekends?',
       key: 'triggersOnWeekend',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       description: 'Should this flow trigger on Saturday and Sunday?',
       required: true,
-      value: 'yes',
-      showOptionValue: false,
-      variables: false,
+      // flip the order of the default options
       options: [
         {
           label: 'Yes',
-          value: 'yes',
+          value: true,
         },
         {
           label: 'No',
-          value: 'no',
+          value: false,
         },
       ],
     },
@@ -145,7 +141,7 @@ const trigger: IRawTrigger = {
   getDataOutMetadata,
 
   getInterval(parameters: IGlobalVariable['step']['parameters']) {
-    if (convertBinaryDropdown(parameters.triggersOnWeekend)) {
+    if (parameters.triggersOnWeekend as boolean) {
       return cronTimes.everyDayAt(parameters.hour as number)
     }
 
