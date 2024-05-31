@@ -9,6 +9,7 @@ import lettersgApp from './lettersg'
 import m365ExcelApp from './m365-excel'
 import paysgApp from './paysg'
 import postmanApp from './postman'
+import postmanSmsApp from './postman-sms'
 import schedulerApp from './scheduler'
 import slackApp from './slack'
 import telegramBotApp from './telegram-bot'
@@ -28,6 +29,7 @@ const apps: Record<string, IApp> = {
   [m365ExcelApp.key]: m365ExcelApp,
   [paysgApp.key]: paysgApp,
   [postmanApp.key]: postmanApp,
+  [postmanSmsApp.key]: postmanSmsApp,
   [schedulerApp.key]: schedulerApp,
   [slackApp.key]: slackApp,
   [telegramBotApp.key]: telegramBotApp,
