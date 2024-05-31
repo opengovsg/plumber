@@ -16,20 +16,19 @@ export default function Tile(): JSX.Element {
     viewOnlyKey?: string
   }>()
 
-  const isReadOnly = !!urlViewOnlyKey
-
   const { data: getTableData } = useQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
     variables: {
       tableId,
     },
-    context: isReadOnly
+    context: urlViewOnlyKey
       ? {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
         }
       : undefined,
   })
+  const ownRole = getTableData?.getTable?.role
 
   const { data: getAllRowsData } = useQuery<{
     getAllRows: ITableRow[]
@@ -38,7 +37,7 @@ export default function Tile(): JSX.Element {
       tableId,
       viewOnlyKey: urlViewOnlyKey,
     },
-    context: isReadOnly
+    context: urlViewOnlyKey
       ? {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
         }
@@ -64,9 +63,9 @@ export default function Tile(): JSX.Element {
       tableId={id}
       tableColumns={columns}
       tableRows={rows}
-      hasEditPermission={!isReadOnly}
       viewOnlyKey={viewOnlyKey}
       collaborators={collaborators}
+      role={ownRole}
     >
       <Flex
         flexDir={{ base: 'column' }}
