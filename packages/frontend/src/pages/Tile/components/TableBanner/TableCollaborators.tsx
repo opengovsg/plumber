@@ -73,7 +73,7 @@ const AddNewCollaborator = ({
   const onSubmit: FormEventHandler<HTMLFormElement> = useCallback(
     async (e) => {
       try {
-        e.stopPropagation()
+        e.preventDefault()
         setIsAdding(true)
         await onAdd(email, role)
         setEmail('')
