@@ -1,9 +1,5 @@
-import type { Axios } from 'axios'
+import type { InternalAxiosRequestConfig } from 'axios'
 import { type ParamMap as UrlPathParams, subst } from 'urlcat'
-
-type AxiosRequestInterceptor = Parameters<
-  Axios['interceptors']['request']['use']
->[0]
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -12,9 +8,9 @@ declare module 'axios' {
 }
 
 /**
- * An interceptor to enable safe URL path building
+ * A function to enable safe URL path building
  * -----
- * This interceptor provides "SQL prepared statements"-esque functionality to
+ * This provides "SQL prepared statements"-esque functionality to
  * construct URL paths.
  *
  * With this, instead of using JS template literals:
@@ -50,7 +46,9 @@ declare module 'axios' {
  * ```
  * will yield a GET request to `/1/durian%20pics/details`.
  */
-export const urlPathParamsInterceptor: AxiosRequestInterceptor = (config) => {
+export function processUrlPathParams<T>(
+  config: InternalAxiosRequestConfig<T>,
+): InternalAxiosRequestConfig<T> {
   const { url, urlPathParams } = config
   if (!urlPathParams) {
     return config

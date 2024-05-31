@@ -8,7 +8,7 @@ import { URL } from 'url'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 
-import { urlPathParamsInterceptor } from './url-path-params-interceptor'
+import { processUrlPathParams } from './process-url-path-params'
 
 const removeBaseUrlForAbsoluteUrls = (
   requestConfig: InternalAxiosRequestConfig,
@@ -34,12 +34,15 @@ export default function createHttpClient({
     baseURL,
   })
 
-  instance.interceptors.request.use(urlPathParamsInterceptor)
+  // Edge case: unlike response interceptors, axios request interceptors are
+  // currently processed in a LIFO order. To prevent confusion, we'll only use 1
+  // request interceptor.
   instance.interceptors.request.use(
     async (
       requestConfig: InternalAxiosRequestConfig,
     ): Promise<InternalAxiosRequestConfig> => {
-      let newRequestConfig = removeBaseUrlForAbsoluteUrls(requestConfig)
+      let newRequestConfig = processUrlPathParams(requestConfig)
+      newRequestConfig = removeBaseUrlForAbsoluteUrls(newRequestConfig)
 
       // Intentionally serial as each callback works on result of previous one.
       for (const callback of beforeRequest) {

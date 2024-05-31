@@ -47,7 +47,7 @@ describe('Http client', () => {
     vi.restoreAllMocks()
   })
 
-  describe('URL path params interceptor', () => {
+  describe('Processes URL path params', () => {
     let http: IHttpClient
     beforeEach(() => {
       http = createHttpClient({
@@ -94,9 +94,32 @@ describe('Http client', () => {
     })
 
     it('errors out if there are missing parameters', async () => {
-      expect(
+      await expect(
         http.get('/drive/:userId/:folderName', { urlPathParams: {} }),
       ).rejects.toThrow(/Missing value for path parameter .+/)
+    })
+
+    it('replaces URL path params before the "beforeRequest" callbacks are invoked', async () => {
+      const beforeRequestCallback = vi.fn((_, requestConfig) => requestConfig)
+
+      http = createHttpClient({
+        $,
+        baseURL: 'http://localhost',
+        beforeRequest: [beforeRequestCallback],
+        requestErrorHandler: null,
+      })
+
+      await http.get('/drive/:userId/:folderName', {
+        urlPathParams: {
+          userId: 1234,
+          folderName: 'test folder name',
+        },
+      })
+
+      expect(beforeRequestCallback).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ url: '/drive/1234/test%20folder%20name' }),
+      )
     })
   })
 })
