@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "1.20.0",
   "scripts": {
-    "dev": "vite --host --force",
+    "dev": "wait-on tcp:3000 && vite --host --force",
     "build": "tsc && vite build --mode=${VITE_MODE:-prod}",
     "prebuild": "rimraf ./build",
     "lint": "eslint . --ignore-path ../../.eslintignore",
