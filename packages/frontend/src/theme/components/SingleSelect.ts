@@ -21,7 +21,7 @@ const itemBaseStyle = defineStyle((props) => {
       bg: `${c}.50`,
     },
     _active: {
-      bg: `${c}.100`,
+      bg: `${c}.100 !important`, // to override the hover state
     },
   }
 })
