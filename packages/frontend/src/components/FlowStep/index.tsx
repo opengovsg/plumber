@@ -303,7 +303,10 @@ export default function FlowStep(
                       onSubmit={expandNextStep}
                       onChange={handleChange}
                       step={step}
-                      settingsLabel={selectedActionOrTrigger?.settingsStepLabel}
+                      settingsLabel={
+                        selectedActionOrTrigger?.settingsStepLabel ??
+                        app?.settingsStepLabel
+                      }
                     />
                   )}
               </Fragment>
