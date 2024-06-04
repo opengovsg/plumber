@@ -7,14 +7,16 @@ import StepError from '@/errors/step'
 import { getObjectFromS3Id } from '@/helpers/s3'
 import Step from '@/models/step'
 
-import { sendTransactionalEmails } from '../../common/email-helper'
+import {
+  sendTransactionalEmails,
+  type SendTrasactionEmailDataOut,
+} from '../../common/email-helper'
 import {
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
 import { getDefaultReplyTo } from '../../common/parameters-helper'
-import { getRatelimitedRecipientList } from '../../common/rate-limit'
-import { throwSendEmailError } from '../../common/throw-errors'
+import { throwPostmanStepError } from '../../common/throw-errors'
 
 const action: IRawAction = {
   name: 'Send email',
@@ -28,11 +30,7 @@ const action: IRawAction = {
     )
   },
 
-  async run($, metadata) {
-    let progress = 0
-    if (metadata?.type === 'postman-send-email') {
-      progress = metadata.progress
-    }
+  async run($) {
     const {
       subject,
       body,
@@ -71,6 +69,9 @@ const action: IRawAction = {
       )
     }
 
+    /**
+     * TODO: properly handle attachment saving
+     */
     const attachmentFiles = await Promise.all(
       result.data.attachments?.map(async (attachment) => {
         const obj = await getObjectFromS3Id(attachment)
@@ -78,14 +79,30 @@ const action: IRawAction = {
       }),
     )
 
-    const { recipients, newProgress } = await getRatelimitedRecipientList(
-      result.data.destinationEmail,
-      +progress,
-    )
+    let recipientsToSend = result.data.destinationEmail
+    /**
+     * Logic to handle retries here:
+     * We dont want to send the email to the same recipient again if it has been sent before
+     */
+    const lastExecutionStep = await $.getLastExecutionStep({
+      sameExecution: true,
+    })
+    const isPartialRetry =
+      lastExecutionStep &&
+      lastExecutionStep.status === 'success' &&
+      lastExecutionStep.errorDetails
 
-    let results
-    try {
-      results = await sendTransactionalEmails($.http, recipients, {
+    const oldDataOut =
+      lastExecutionStep?.dataOut as unknown as SendTrasactionEmailDataOut
+    if (isPartialRetry) {
+      const { status, recipient } = oldDataOut
+      recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
+    }
+
+    const { dataOut, error, errorStatus } = await sendTransactionalEmails(
+      $.http,
+      recipientsToSend,
+      {
         subject: result.data.subject,
         // this is to make sure there's at least some content for every new line
         // so on the email client the new line will have some height and show up
@@ -96,35 +113,56 @@ const action: IRawAction = {
         replyTo: result.data.replyTo,
         senderName: result.data.senderName,
         attachments: attachmentFiles,
+      },
+    )
+
+    /**
+     * Patch the status of the recipients that were sent in the previous execution
+     */
+    if (isPartialRetry) {
+      const updatedStatus = oldDataOut.status.map((oldStatus, i) => {
+        const correspondingRecipient = oldDataOut.recipient[i]
+        if (recipientsToSend.includes(correspondingRecipient)) {
+          return dataOut.status[
+            recipientsToSend.indexOf(correspondingRecipient)
+          ]
+        }
+        return oldStatus
       })
-    } catch (err) {
-      throwSendEmailError(err, $.step.position, $.app.name)
+      dataOut.status = updatedStatus
+      dataOut.recipient = oldDataOut.recipient
     }
 
-    const recipientListUptilNow = result.data.destinationEmail.slice(
-      0,
-      newProgress,
+    /**
+     * If at least one succeeds, we will allow the execution step to succeed and execution to continue.
+     */
+    const hasAtLeastOneSuccess = dataOut.status.some(
+      (status) => status === 'ACCEPTED',
     )
-    $.setActionItem({
-      raw: {
-        // if not accepted, the whole action would have already failed hence we
-        // can safely hardcode this here
-        status: recipientListUptilNow.map(() => 'ACCEPTED'),
-        recipient: result.data.destinationEmail.slice(0, newProgress),
-        ...results[0]?.params,
-      },
-    })
-    if (newProgress < result.data.destinationEmail.length) {
-      return {
-        nextStep: {
-          command: 'jump-to-step',
-          stepId: $.step.id,
+    if (hasAtLeastOneSuccess) {
+      $.setActionItem({
+        raw: {
+          ...dataOut,
         },
-        nextStepMetadata: {
-          type: 'postman-send-email',
-          progress: newProgress,
-        },
-      }
+      })
+    }
+
+    const blacklistedRecipients = dataOut.recipient.filter(
+      (_, i) => dataOut.status[i] === 'BLACKLISTED',
+    )
+    /**
+     * If there's any rate-limit error, we will throw the rate-limit error
+     * else we just throw the first error we encounter
+     */
+    if (error && errorStatus) {
+      throwPostmanStepError({
+        status: errorStatus,
+        position: $.step.position,
+        appName: $.app.name,
+        error,
+        isPartialSuccess: hasAtLeastOneSuccess,
+        blacklistedRecipients,
+      })
     }
   },
 }
