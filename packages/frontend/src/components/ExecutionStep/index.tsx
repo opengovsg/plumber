@@ -1,5 +1,6 @@
 import type { IApp, IExecution, IExecutionStep } from '@plumber/types'
 
+import { useMemo } from 'react'
 import { BiSolidCheckCircle, BiSolidErrorCircle } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
 import {
@@ -30,20 +31,29 @@ type ExecutionStepProps = {
   executionStep: IExecutionStep
 }
 
-const validIcon = (
+const successIcon = (
   <Icon
     boxSize={6}
     as={BiSolidCheckCircle}
     color="interaction.success.default"
   />
 )
-const errorIcon = (
+const failureIcon = (
   <Icon
     boxSize={6}
     as={BiSolidErrorCircle}
     color="interaction.critical.default"
   />
 )
+
+const partialIcon = (
+  <Icon
+    boxSize={6}
+    as={BiSolidErrorCircle}
+    color="interaction.warning.default"
+  />
+)
+
 const getStepPosition = (page: number, index: number) => {
   return (page - 1) * EXECUTION_STEP_PER_PAGE + index + 1
 }
@@ -58,19 +68,29 @@ export default function ExecutionStep({
     variables: { key: executionStep.appKey },
   })
 
-  const app: IApp = data?.getApp
-
-  if (!app) {
-    return null
-  }
+  const hasError = !!executionStep.errorDetails
 
   const isStepSuccessful = executionStep.status === 'success'
   const hasExecutionFailed = execution.status === 'failure'
 
-  const hasError = !!executionStep.errorDetails
-
+  const isPartialSuccess = executionStep.status === 'success' && hasError
   const canRetry =
     !isStepSuccessful && !!executionStep.jobId && hasExecutionFailed
+
+  const statusIcon = useMemo(() => {
+    if (isPartialSuccess) {
+      return partialIcon
+    }
+    if (isStepSuccessful) {
+      return successIcon
+    }
+    return failureIcon
+  }, [isPartialSuccess, isStepSuccessful])
+
+  const app: IApp = data?.getApp
+  if (!app) {
+    return null
+  }
 
   return (
     <Card boxShadow="none" border="1px solid" borderColor="base.divider.medium">
@@ -79,7 +99,7 @@ export default function ExecutionStep({
         <HStack p={4} alignItems="center" justifyContent="space-between">
           <HStack gap={2}>
             <Box position="relative">
-              <AppIcon url={app?.iconUrl} name={app?.name} />
+              <AppIcon url={app.iconUrl} name={app.name} />
               <Box
                 position="absolute"
                 right="0"
@@ -95,7 +115,7 @@ export default function ExecutionStep({
                   },
                 }}
               >
-                {isStepSuccessful ? validIcon : errorIcon}
+                {statusIcon}
               </Box>
             </Box>
 
@@ -105,7 +125,7 @@ export default function ExecutionStep({
               </Text>
 
               <Text textStyle="h5">
-                {getStepPosition(page, index)}. {app?.name}
+                {getStepPosition(page, index)}. {app.name}
               </Text>
             </Box>
           </HStack>
@@ -117,7 +137,7 @@ export default function ExecutionStep({
 
         {/* bottom half: data in, data out and error */}
         <Box borderTop="1px solid" borderTopColor="base.divider.strong" p={4}>
-          <Tabs>
+          <Tabs defaultIndex={isPartialSuccess ? 2 : 0}>
             <TabList
               borderBottom="1px solid"
               borderBottomColor="base.divider.medium"
@@ -125,7 +145,21 @@ export default function ExecutionStep({
             >
               <Tab>Data In</Tab>
               <Tab>Data Out</Tab>
-              {hasError && <Tab>Error</Tab>}
+              {hasError && (
+                <Tab position="relative">
+                  Error
+                  {isPartialSuccess && (
+                    <Box
+                      borderRadius="50%"
+                      bg="primary.600"
+                      boxSize={1.5}
+                      top={1}
+                      right={-2}
+                      position="absolute"
+                    />
+                  )}
+                </Tab>
+              )}
             </TabList>
             <TabPanels>
               <TabPanel>

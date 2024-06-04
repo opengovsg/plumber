@@ -179,9 +179,9 @@ function ColumnHeaderCell({
                 leftIcon={<BsTrash />}
                 variant="link"
                 py={2}
-                color="utility.feedback.critical"
+                color="interaction.critical.default"
                 _hover={{
-                  color: 'red.400',
+                  color: 'interaction.critical.hover',
                 }}
                 onClick={() => setIsDeletionModalOpen(true)}
               >
