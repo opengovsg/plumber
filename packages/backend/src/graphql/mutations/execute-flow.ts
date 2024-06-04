@@ -22,11 +22,9 @@ const executeFlow: MutationResolvers['executeFlow'] = async (
     throw new Error(JSON.stringify(executionStep.errorDetails))
   }
 
-  if (executionStep.dataOut) {
-    await untilStep.$query().patch({
-      status: 'completed',
-    })
-  }
+  await untilStep.$query().patch({
+    status: 'completed',
+  })
 
   return { data: executionStep.dataOut, step: untilStep }
 }
