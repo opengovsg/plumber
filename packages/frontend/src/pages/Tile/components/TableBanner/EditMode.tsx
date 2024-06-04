@@ -36,14 +36,14 @@ const EditMode = () => {
     [mode],
   )
 
-  if (mode === 'edit') {
+  if (hasEditPermission) {
     return null
   }
 
   return (
     <Menu gutter={0} colorScheme="secondary">
-      <MenuButton
-        as={Badge}
+      <Badge
+        as={MenuButton}
         /**
          * Prevent the button from being clicked, as it is only used to display the current mode
          * remove this prop to allow selection of view/edit mode
@@ -62,7 +62,7 @@ const EditMode = () => {
             {selectedModeOption.label}
           </Text>
         </Flex>
-      </MenuButton>
+      </Badge>
 
       <MenuList borderRadius="md">
         {MODES.map(({ label, icon, value, colorScheme }) => (

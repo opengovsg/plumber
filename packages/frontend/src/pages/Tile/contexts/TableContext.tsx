@@ -1,4 +1,8 @@
-import { ITableColumnMetadata, ITableRow } from '@plumber/types'
+import type {
+  ITableCollaborator,
+  ITableColumnMetadata,
+  ITableRow,
+} from '@plumber/types'
 
 import React, {
   createContext,
@@ -23,6 +27,8 @@ interface TableContextProps {
   setMode: (mode: EditMode) => void
   hasEditPermission: boolean
   viewOnlyKey?: string
+  collaborators?: ITableCollaborator[]
+  role?: string
 }
 
 const TableContext = createContext<TableContextProps | undefined>(undefined)
@@ -43,8 +49,10 @@ interface TableContextProviderProps {
   tableColumns: ITableColumnMetadata[]
   tableRows: ITableRow[]
   children: React.ReactNode
-  hasEditPermission: boolean
   viewOnlyKey?: string
+  collaborators?: ITableCollaborator[]
+  // If null, the tile is accessed by a shareable link
+  role?: string
 }
 
 export const TableContextProvider = ({
@@ -53,12 +61,14 @@ export const TableContextProvider = ({
   tableColumns,
   tableRows,
   children,
-  hasEditPermission,
   viewOnlyKey,
+  collaborators,
+  role,
 }: TableContextProviderProps) => {
   const flattenedData = useMemo(() => flattenRows(tableRows), [tableRows])
   const filteredDataRef = useRef<GenericRowData[]>([])
   const allDataRef = useRef<GenericRowData[]>(flattenedData)
+  const hasEditPermission = role === 'editor' || role === 'owner'
   const [mode, setMode] = useState<EditMode>(
     hasEditPermission ? 'edit' : 'view',
   )
@@ -75,6 +85,8 @@ export const TableContextProvider = ({
         setMode,
         hasEditPermission,
         viewOnlyKey,
+        collaborators,
+        role,
       }}
     >
       {children}

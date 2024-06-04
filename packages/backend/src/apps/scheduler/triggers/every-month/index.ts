@@ -8,7 +8,7 @@ import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
 const trigger: IRawTrigger = {
-  name: 'Monthly',
+  name: 'Schedule monthly',
   key: 'everyMonth',
   description:
     'Triggers every month, choose a specific day and hour of the month',

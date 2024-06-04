@@ -20,6 +20,7 @@ const action: IRawAction = {
   name: 'Find single row',
   key: 'findSingleRow',
   description: 'Gets data of a single row from your tile',
+  settingsStepLabel: 'Set up row to find',
   arguments: [
     {
       label: 'Select Tile',

@@ -3,7 +3,7 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 
 const action: IRawAction = {
-  name: 'Delay For',
+  name: 'Delay for',
   key: 'delayFor',
   description:
     'Delays the execution of the next action by a specified amount of time',

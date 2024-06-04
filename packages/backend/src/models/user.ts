@@ -1,7 +1,7 @@
 import { ITableCollabRole } from '@plumber/types'
 
 import crypto from 'crypto'
-import { ModelOptions, QueryContext } from 'objection'
+import { AnyQueryBuilder, ModelOptions, QueryContext } from 'objection'
 
 import Base from './base'
 import Connection from './connection'
@@ -99,6 +99,8 @@ class User extends Base {
         },
         to: `${TableMetadata.tableName}.id`,
       },
+      filter: (query: AnyQueryBuilder) =>
+        query.whereNull(`${TableCollaborator.tableName}.deleted_at`),
     },
     sentFlowTransfers: {
       relation: Base.HasManyRelation,

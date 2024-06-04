@@ -86,6 +86,9 @@ type Mutation {
   createRows(input: CreateTableRowsInput!): Boolean
   updateRow(input: UpdateTableRowInput!): ID!
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
+  # Tiles collaborators
+  upsertTableCollaborator(input: TableCollaboratorInput!): Boolean!
+  deleteTableCollaborator(input: DeleteTableCollaboratorInput!): Boolean!
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
@@ -118,6 +121,7 @@ type Action {
   name: String
   key: String
   description: String
+  settingsStepLabel: String
   groupsLaterSteps: Boolean
   substeps: [ActionSubstep]
 }
@@ -175,6 +179,13 @@ type App {
   connections: [Connection]
   description: String
   isNewApp: Boolean
+  substepLabels: StepLabel
+}
+
+type StepLabel {
+  connectionStepLabel: String
+  settingsStepLabel: String
+  addConnectionLabel: String
 }
 
 type AppAuth {
@@ -502,6 +513,7 @@ type Trigger {
   pollInterval: Int
   type: String
   webhookTriggerInstructions: TriggerInstructions
+  settingsStepLabel: String
   substeps: [TriggerSubstep]
 }
 
@@ -640,12 +652,30 @@ type TableColumnMetadata {
   config: TableColumnConfig!
 }
 
+type TableCollaborator {
+  email: String!
+  role: String!
+}
+
+input TableCollaboratorInput {
+  tableId: ID!
+  email: String!
+  role: String!
+}
+
+input DeleteTableCollaboratorInput {
+  tableId: ID!
+  email: String!
+}
+
 type TableMetadata {
   id: ID!
   name: String!
   columns: [TableColumnMetadata!]
   lastAccessedAt: String!
   viewOnlyKey: String
+  collaborators: [TableCollaborator!]
+  role: String
 }
 
 # End Tiles types

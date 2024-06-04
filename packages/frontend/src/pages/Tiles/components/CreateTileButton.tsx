@@ -158,7 +158,6 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
             tableId={tableData ? tableData.id : ''}
             tableColumns={[]}
             tableRows={[]}
-            hasEditPermission={true}
           >
             <ImportCsvModalContent
               onPreImport={() => createTable({ isBlank: true })}
