@@ -152,6 +152,11 @@ export interface IStep {
   jobId?: string
 }
 
+export type AppEventKeyPair = {
+  appKey: string
+  eventKey: string
+}
+
 export interface IFlowConfig {
   maxQps?: number
   rejectIfOverMaxQps?: boolean
