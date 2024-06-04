@@ -20,8 +20,11 @@ export const GET_APPS = gql`
       connectionCount
       description
       isNewApp
-      connectionStepLabel
-      settingsStepLabel
+      substepLabels {
+        connectionStepLabel
+        settingsStepLabel
+        addConnectionLabel
+      }
       auth {
         connectionType
         connectionRegistrationType

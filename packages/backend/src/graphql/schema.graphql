@@ -179,8 +179,13 @@ type App {
   connections: [Connection]
   description: String
   isNewApp: Boolean
+  substepLabels: StepLabel
+}
+
+type StepLabel {
   connectionStepLabel: String
   settingsStepLabel: String
+  addConnectionLabel: String
 }
 
 type AppAuth {
