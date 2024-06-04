@@ -15,6 +15,8 @@ const app: IApp = {
   auth,
   triggers,
   actions: [],
+  connectionStepLabel: 'Connect your form',
+  settingsStepLabel: 'Other settings',
 }
 
 export default app

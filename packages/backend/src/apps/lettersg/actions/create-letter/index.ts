@@ -20,7 +20,7 @@ type LettersApiFieldErrorData = {
 }
 
 const action: IRawAction = {
-  name: 'Create Letter',
+  name: 'Create letter',
   key: 'createLetter',
   description: 'Create a new letter based on the template id input',
   arguments: [

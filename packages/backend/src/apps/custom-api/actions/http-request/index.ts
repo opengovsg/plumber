@@ -9,7 +9,7 @@ import { isUrlAllowed } from '../../common/ip-resolver'
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
 const action: IRawAction = {
-  name: 'Make a HTTP Request',
+  name: 'Make a HTTP request',
   key: 'httpRequest',
   description: 'Makes a custom HTTP request of any method and body',
   arguments: [

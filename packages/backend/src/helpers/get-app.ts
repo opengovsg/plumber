@@ -45,11 +45,9 @@ const chooseConnectionStep = {
   name: 'Choose connection',
 }
 
-const testStep = (stepType: 'trigger' | 'action') => {
-  return {
-    key: 'testStep',
-    name: stepType === 'trigger' ? 'Test trigger' : 'Test action',
-  }
+const testStep = {
+  key: 'testStep',
+  name: 'Test step',
 }
 
 function addStaticSubsteps(
@@ -77,13 +75,13 @@ function addStaticSubsteps(
 
   if (step.arguments) {
     computedStep.substeps.push({
-      key: 'chooseTrigger',
-      name: stepType === 'trigger' ? 'Set up a trigger' : 'Set up action',
+      key: stepType === 'trigger' ? 'setUpTrigger' : 'setUpAction',
+      name: 'Set up step',
       arguments: step.arguments,
     })
   }
 
-  computedStep.substeps.push(testStep(stepType))
+  computedStep.substeps.push(testStep)
 
   return computedStep
 }

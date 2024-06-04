@@ -121,6 +121,7 @@ type Action {
   name: String
   key: String
   description: String
+  settingsStepLabel: String
   groupsLaterSteps: Boolean
   substeps: [ActionSubstep]
 }
@@ -178,6 +179,8 @@ type App {
   connections: [Connection]
   description: String
   isNewApp: Boolean
+  connectionStepLabel: String
+  settingsStepLabel: String
 }
 
 type AppAuth {
@@ -505,6 +508,7 @@ type Trigger {
   pollInterval: Int
   type: String
   webhookTriggerInstructions: TriggerInstructions
+  settingsStepLabel: String
   substeps: [TriggerSubstep]
 }
 

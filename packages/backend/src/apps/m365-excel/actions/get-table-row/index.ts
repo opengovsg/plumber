@@ -17,6 +17,7 @@ const action: IRawAction = {
   name: 'Get table row',
   key: 'getTableRow',
   description: 'Gets a single row of data from your Excel table.',
+  settingsStepLabel: 'Set up row to get',
   arguments: [
     {
       key: 'fileId',

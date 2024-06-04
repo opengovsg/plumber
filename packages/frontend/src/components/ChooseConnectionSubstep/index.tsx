@@ -151,7 +151,7 @@ function ChooseConnectionSubstep(
       <FlowSubstepTitle
         expanded={expanded}
         onClick={onToggle}
-        title={name}
+        title={application?.connectionStepLabel ?? name}
         valid={isTestStepValid}
       />
       <Collapse in={expanded} timeout="auto" unmountOnExit>
