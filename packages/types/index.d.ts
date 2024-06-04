@@ -408,8 +408,11 @@ export interface IApp {
   connections?: IConnection[]
   description?: string
   isNewApp?: boolean
-  connectionStepLabel?: string // for step accordion label
-  settingsStepLabel?: string // for step accordion label: app level
+  substepLabels?: {
+    connectionStepLabel?: string // for step accordion label
+    settingsStepLabel?: string // for step accordion label: app level
+    addConnectionLabel?: string // for adding connection in choose connection dropdown
+  }
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this

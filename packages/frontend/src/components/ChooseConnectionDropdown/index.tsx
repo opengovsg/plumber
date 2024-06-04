@@ -19,10 +19,14 @@ interface ChooseConnectionDropdownProps {
 }
 
 const ADD_CONNECTION_VALUE = 'ADD_CONNECTION'
-const ADD_NEW_CONNECTION_OPTION: ConnectionDropdownOption = {
-  label: 'Add new connection',
-  icon: BxPlus,
-  value: ADD_CONNECTION_VALUE,
+const ADD_NEW_CONNECTION_OPTION = (
+  label?: string,
+): ConnectionDropdownOption => {
+  return {
+    label: label ?? 'Add new connection',
+    icon: BxPlus,
+    value: ADD_CONNECTION_VALUE,
+  }
 }
 
 function ChooseConnectionDropdown({
@@ -60,7 +64,9 @@ function ChooseConnectionDropdown({
 
   const items = [...connectionOptions]
   if (application?.auth?.connectionType === 'user-added') {
-    items.push(ADD_NEW_CONNECTION_OPTION)
+    items.unshift(
+      ADD_NEW_CONNECTION_OPTION(application?.substepLabels?.addConnectionLabel),
+    )
   }
 
   return (

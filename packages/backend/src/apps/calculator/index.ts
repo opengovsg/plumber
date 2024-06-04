@@ -13,7 +13,9 @@ const app: IApp = {
   actions,
   description: 'Perform calculations on numbers in your data',
   isNewApp: true,
-  settingsStepLabel: 'Set up calculator',
+  substepLabels: {
+    settingsStepLabel: 'Set up calculator',
+  },
 }
 
 export default app
