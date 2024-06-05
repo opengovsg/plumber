@@ -162,10 +162,17 @@ export interface IFlowConfig {
   rejectIfOverMaxQps?: boolean
   errorConfig?: IFlowErrorConfig
   duplicateCount?: number
+  demoConfig?: IFlowDemoConfig
 }
 
 export interface IFlowErrorConfig {
   notificationFrequency: 'once_per_day' | 'always'
+}
+
+export interface IFlowDemoConfig {
+  onFirstLoad: boolean
+  isPreCreated: boolean
+  videoId: string
 }
 
 export interface IFlow {

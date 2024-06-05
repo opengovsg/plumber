@@ -412,7 +412,8 @@ enum NotificationFrequency {
 
 input UpdateFlowConfigInput {
   id: String!
-  notificationFrequency: NotificationFrequency!
+  notificationFrequency: NotificationFrequency
+  onFirstLoad: Boolean
 }
 
 input ExecuteFlowInput {
