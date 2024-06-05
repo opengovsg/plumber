@@ -1,6 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import * as React from 'react'
+import { ReactElement, useCallback } from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
 import { Link, useParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
@@ -11,6 +11,7 @@ import {
   Icon,
   Skeleton,
   Text,
+  useDisclosure,
   VStack,
 } from '@chakra-ui/react'
 import {
@@ -22,16 +23,18 @@ import {
 import Container from 'components/Container'
 import EditableTypography from 'components/EditableTypography'
 import Editor from 'components/Editor'
+import DemoFlowModal from 'components/FlowRow/DemoFlowModal'
 import * as URLS from 'config/urls'
 import { EditorProvider } from 'contexts/Editor'
 import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
+import { UPDATE_FLOW_CONFIG } from 'graphql/mutations/update-flow-config'
 import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
 import { GET_FLOW } from 'graphql/queries/get-flow'
 import InvalidEditorPage from 'pages/Editor/components/InvalidEditorPage'
 
 import EditorSnackbar from './EditorSnackbar'
 
-export default function EditorLayout(): React.ReactElement {
+export default function EditorLayout(): ReactElement {
   const { flowId } = useParams()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
@@ -40,11 +43,43 @@ export default function EditorLayout(): React.ReactElement {
   })
   const flow: IFlow = data?.getFlow
 
+  // for loading demo modal
+  const onFirstLoad = flow?.config?.demoConfig?.onFirstLoad
+  const { onClose } = useDisclosure()
+
+  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
+  const onFlowConfigUpdate = useCallback(async () => {
+    await updateFlowConfig({
+      variables: {
+        input: {
+          id: flow?.id,
+          onFirstLoad: false, // this is to not load demo modal and show tooltip anymore
+        },
+        optimisticResponse: {
+          updateFlowConfig: {
+            __typename: 'Flow',
+            id: flow?.id,
+            config: {
+              demoConfig: {
+                onFirstLoad: false,
+              },
+            },
+          },
+        },
+      },
+    })
+  }, [flow?.id, updateFlowConfig])
+
+  const handleClose = useCallback(() => {
+    onClose()
+    onFlowConfigUpdate()
+  }, [onClose, onFlowConfigUpdate])
+
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
   const hasFlowTransfer = requestedEmail !== ''
 
-  const onFlowNameUpdate = React.useCallback(
+  const onFlowNameUpdate = useCallback(
     async (name: string) => {
       await updateFlow({
         variables: {
@@ -65,7 +100,7 @@ export default function EditorLayout(): React.ReactElement {
     [flow?.id, flowId, updateFlow],
   )
 
-  const onFlowStatusUpdate = React.useCallback(
+  const onFlowStatusUpdate = useCallback(
     async (active: boolean) => {
       await updateFlowStatus({
         variables: {
@@ -188,6 +223,8 @@ export default function EditorLayout(): React.ReactElement {
         isOpen={!!flow?.active}
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       ></EditorSnackbar>
+
+      {onFirstLoad && <DemoFlowModal onClose={handleClose} />}
     </>
   )
 }

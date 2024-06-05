@@ -75,21 +75,28 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     .throwIfNotFound()
 
   return await Flow.transaction(async (trx) => {
+    const prevConfig = { ...flow.config }
+    delete prevConfig['duplicateCount']
+    // TODO (mal): check whether to remove DemoConfig upon duplication
+
     // update duplicate count for the original flow
     await flow.$query(trx).patch({
       config: {
-        ...(flow.config ?? {}),
+        ...prevConfig,
         duplicateCount: flow.config?.duplicateCount
           ? flow.config.duplicateCount + 1
           : 1,
       },
     })
 
+    // duplicate the flow with the previous config
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
       .insert({
         name: `[COPY] ${flow.name}`,
         active: false,
+        config:
+          Object.keys(prevConfig).length > 0 ? { ...prevConfig } : undefined,
       })
 
     // duplicate the steps and the variables
