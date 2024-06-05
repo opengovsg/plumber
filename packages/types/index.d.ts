@@ -455,6 +455,10 @@ export interface IApp {
     settingsStepLabel?: string // for step accordion label: app level
     addConnectionLabel?: string // for adding connection in choose connection dropdown
   }
+  demoVideoDetails?: {
+    url: string
+    title: string
+  }
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this
