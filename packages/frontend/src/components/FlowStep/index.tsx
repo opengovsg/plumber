@@ -239,6 +239,8 @@ export default function FlowStep(
       onOpen={onOpen}
       onClose={onClose}
       collapsed={collapsed ?? false}
+      demoVideoUrl={app?.demoVideoDetails?.url}
+      demoVideoTitle={app?.demoVideoDetails?.title}
     >
       <StepExecutionsProvider value={stepExecutions}>
         <Form
