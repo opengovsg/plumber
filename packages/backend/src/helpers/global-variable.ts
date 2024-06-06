@@ -66,6 +66,7 @@ const globalVariable = async (
     app: app,
     flow: {
       id: flow?.id,
+      name: flow?.name,
       userId: flow?.userId,
       hasFileProcessingActions:
         (await flow?.containsFileProcessingActions()) ?? false,

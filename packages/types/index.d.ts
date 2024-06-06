@@ -723,6 +723,7 @@ export type IGlobalVariable = {
   request?: IRequest
   flow?: {
     id: string
+    name: string,
     hasFileProcessingActions: boolean
     userId: string
     remoteWebhookId?: string

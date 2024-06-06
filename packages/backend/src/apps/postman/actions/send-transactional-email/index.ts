@@ -4,6 +4,7 @@ import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import { getObjectFromS3Id } from '@/helpers/s3'
 import Step from '@/models/step'
 
@@ -14,6 +15,7 @@ import {
   transactionalEmailSchema,
 } from '../../common/parameters'
 import { getDefaultReplyTo } from '../../common/parameters-helper'
+import { sendBlacklistEmail } from '../../common/send-blacklist-email'
 import { throwPostmanStepError } from '../../common/throw-errors'
 
 const action: IRawAction = {
@@ -152,6 +154,29 @@ const action: IRawAction = {
     const blacklistedRecipients = dataOut.recipient.filter(
       (_, i) => dataOut.status[i] === 'BLACKLISTED',
     )
+
+    /**
+     * Send blacklist notification email if any
+     */
+    if (blacklistedRecipients.length > 0 && !$.execution.testRun) {
+      try {
+        await sendBlacklistEmail({
+          flowId: $.flow.id,
+          flowName: $.flow.name,
+          userEmail: $.user.email,
+          executionId: $.execution.id,
+          blacklistedRecipients,
+        })
+      } catch (e) {
+        logger.error({
+          message: 'Error sending blacklist email',
+          flowId: $.flow.id,
+          executionId: $.execution.id,
+          blacklistedRecipients,
+          error: e,
+        })
+      }
+    }
     /**
      * If there's any rate-limit error, we will throw the rate-limit error
      * else we just throw the first error we encounter
