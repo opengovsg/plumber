@@ -242,7 +242,7 @@ export interface IFieldDropdown extends IBaseField {
   type: 'dropdown'
   showOptionValue?: boolean
   allowArbitrary?: boolean
-  value?: string | boolean
+  value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
 }
@@ -264,7 +264,7 @@ export interface IFieldDropdownOption {
    * dropdown. The value will also not be rendered if `description` if
    * specified.
    */
-  value: boolean | string | number
+  value: string | number
 
   /**
    * If this is specified, this will be rendered instead of `value`. Note that
