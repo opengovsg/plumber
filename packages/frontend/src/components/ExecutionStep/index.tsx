@@ -137,7 +137,7 @@ export default function ExecutionStep({
 
         {/* bottom half: data in, data out and error */}
         <Box borderTop="1px solid" borderTopColor="base.divider.strong" p={4}>
-          <Tabs defaultIndex={isPartialSuccess ? 2 : 0}>
+          <Tabs defaultIndex={hasError ? 2 : 0}>
             <TabList
               borderBottom="1px solid"
               borderBottomColor="base.divider.medium"
