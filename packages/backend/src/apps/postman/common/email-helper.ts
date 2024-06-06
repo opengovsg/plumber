@@ -131,13 +131,13 @@ export async function sendTransactionalEmails(
           from,
           reply_to,
         },
-      } as PostmanPromiseFulfilled
+      } satisfies PostmanPromiseFulfilled
     } catch (e) {
       throw {
         status: getPostmanErrorStatus(e),
         recipient: recipientEmail,
         error: e,
-      } as PostmanPromiseRejected
+      } satisfies PostmanPromiseRejected
     }
   })
 
@@ -180,7 +180,7 @@ export async function sendTransactionalEmails(
     status,
     recipient,
     ...params,
-  } as SendTrasactionEmailDataOut
+  } satisfies SendTrasactionEmailDataOut
   return {
     dataOut,
     error: sortedErrors.length ? sortedErrors[0].error : undefined,
