@@ -43,7 +43,11 @@ export default function EditorLayout(): ReactElement {
   const flow: IFlow = data?.getFlow
 
   // for loading demo modal
-  const hasLoadedOnce = flow?.config?.demoConfig?.hasLoadedOnce ?? true // to avoid flicker
+  const {
+    hasLoadedOnce = true,
+    isPreCreated,
+    videoId: demoVideoId,
+  } = flow?.config?.demoConfig || {}
 
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG, {
     variables: {
@@ -208,7 +212,13 @@ export default function EditorLayout(): ReactElement {
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       ></EditorSnackbar>
 
-      {!hasLoadedOnce && <DemoFlowModal onClose={handleClose} />}
+      {!hasLoadedOnce && (
+        <DemoFlowModal
+          onClose={handleClose}
+          isPreCreated={isPreCreated}
+          demoVideoId={demoVideoId}
+        />
+      )}
     </>
   )
 }

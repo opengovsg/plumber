@@ -31,6 +31,8 @@ export const GET_FLOW = gql`
         }
         demoConfig {
           hasLoadedOnce
+          isPreCreated
+          videoId
         }
       }
       pendingTransfer {
