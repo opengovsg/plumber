@@ -2,17 +2,12 @@ import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import StepError from '@/errors/step'
 
+import { PostmanEmailSendStatus } from './data-out-validator'
+
 type PostmanApiErrorData = {
   code: string
   message: string
 }
-
-export type PostmanEmailSendStatus =
-  | 'ACCEPTED'
-  | 'BLACKLISTED'
-  | 'RATE-LIMITED'
-  | 'INVALID-ATTACHMENT'
-  | 'ERROR'
 
 export function getPostmanErrorStatus(
   error: HttpError,

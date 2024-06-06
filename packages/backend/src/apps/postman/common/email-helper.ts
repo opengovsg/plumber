@@ -7,9 +7,10 @@ import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
 
 import {
-  getPostmanErrorStatus,
-  type PostmanEmailSendStatus,
-} from './throw-errors'
+  PostmanEmailDataOut,
+  PostmanEmailSendStatus,
+} from './data-out-validator'
+import { getPostmanErrorStatus } from './throw-errors'
 
 const ENDPOINT = '/v1/transactional/email/send'
 
@@ -56,19 +57,10 @@ interface Email {
   replyTo?: string
 }
 
-export interface SendTrasactionEmailDataOut {
-  status: PostmanEmailSendStatus[]
-  recipient: string[]
-  body?: string
-  subject?: string
-  from?: string
-  reply_to?: string
-}
-
 interface PostmanPromiseFulfilled {
   status: 'ACCEPTED'
   recipient: string
-  params: Omit<SendTrasactionEmailDataOut, 'status' | 'recipient'>
+  params: Omit<PostmanEmailDataOut, 'status' | 'recipient'>
 }
 
 interface PostmanPromiseRejected {
@@ -82,7 +74,7 @@ export async function sendTransactionalEmails(
   recipients: string[],
   email: Email,
 ): Promise<{
-  dataOut: SendTrasactionEmailDataOut
+  dataOut: PostmanEmailDataOut
   errorStatus?: PostmanEmailSendStatus
   error?: HttpError
 }> {
@@ -144,7 +136,7 @@ export async function sendTransactionalEmails(
   const results = await Promise.allSettled(promises)
   const status: PostmanEmailSendStatus[] = []
   const recipient: string[] = []
-  let params: Omit<SendTrasactionEmailDataOut, 'status' | 'recipient'>
+  let params: Omit<PostmanEmailDataOut, 'status' | 'recipient'>
   const errors: PostmanPromiseRejected[] = []
 
   results.forEach((result) => {
@@ -180,7 +172,7 @@ export async function sendTransactionalEmails(
     status,
     recipient,
     ...params,
-  } satisfies SendTrasactionEmailDataOut
+  } satisfies PostmanEmailDataOut
   return {
     dataOut,
     error: sortedErrors.length ? sortedErrors[0].error : undefined,

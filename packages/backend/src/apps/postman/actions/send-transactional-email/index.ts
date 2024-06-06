@@ -7,10 +7,8 @@ import StepError from '@/errors/step'
 import { getObjectFromS3Id } from '@/helpers/s3'
 import Step from '@/models/step'
 
-import {
-  sendTransactionalEmails,
-  type SendTrasactionEmailDataOut,
-} from '../../common/email-helper'
+import { dataOutSchema } from '../../common/data-out-validator'
+import { sendTransactionalEmails } from '../../common/email-helper'
 import {
   transactionalEmailFields,
   transactionalEmailSchema,
@@ -87,15 +85,18 @@ const action: IRawAction = {
     const lastExecutionStep = await $.getLastExecutionStep({
       sameExecution: true,
     })
-    const isPartialRetry =
-      lastExecutionStep &&
-      lastExecutionStep.status === 'success' &&
-      lastExecutionStep.errorDetails
 
-    const oldDataOut =
-      lastExecutionStep?.dataOut as unknown as SendTrasactionEmailDataOut
+    /**
+     * If dataOut is set and valid, it means the last step was at least successful for one recipient
+     */
+    const prevDataOutParseResult = dataOutSchema.safeParse(
+      lastExecutionStep?.dataOut,
+    )
+    const isPartialRetry =
+      prevDataOutParseResult.success && lastExecutionStep.errorDetails
+
     if (isPartialRetry) {
-      const { status, recipient } = oldDataOut
+      const { status, recipient } = prevDataOutParseResult.data
       recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
     }
 
@@ -120,8 +121,9 @@ const action: IRawAction = {
      * Patch the status of the recipients that were sent in the previous execution
      */
     if (isPartialRetry) {
-      const updatedStatus = oldDataOut.status.map((oldStatus, i) => {
-        const correspondingRecipient = oldDataOut.recipient[i]
+      const prevDataOut = prevDataOutParseResult.data
+      const updatedStatus = prevDataOut.status.map((oldStatus, i) => {
+        const correspondingRecipient = prevDataOut.recipient[i]
         if (recipientsToSend.includes(correspondingRecipient)) {
           return dataOut.status[
             recipientsToSend.indexOf(correspondingRecipient)
@@ -130,7 +132,7 @@ const action: IRawAction = {
         return oldStatus
       })
       dataOut.status = updatedStatus
-      dataOut.recipient = oldDataOut.recipient
+      dataOut.recipient = prevDataOut.recipient
     }
 
     /**
