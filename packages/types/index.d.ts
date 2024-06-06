@@ -312,8 +312,13 @@ export interface IFieldRichText extends IBaseField {
 export interface IFieldBooleanRadio extends IBaseField {
   type: 'boolean-radio'
   value?: boolean // will default to null if not provided
-  options?: IFieldBooleanRadioOption[] // only can provide 2 OPTIONS if label is not yes/no
+  options?: IFieldBooleanRadioOptions // only can provide 2 OPTIONS if label is not yes/no
 }
+
+export type IFieldBooleanRadioOptions = [
+  IFieldBooleanRadioOption,
+  IFieldBooleanRadioOption,
+]
 
 export interface IFieldBooleanRadioOption {
   label: string

@@ -1,4 +1,4 @@
-import { IFieldBooleanRadioOption } from '@plumber/types'
+import type { IFieldBooleanRadioOptions } from '@plumber/types'
 
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
@@ -15,7 +15,7 @@ interface BooleanRadioProps {
   description?: string
   required?: boolean
   defaultValue?: boolean
-  options?: IFieldBooleanRadioOption[]
+  options?: IFieldBooleanRadioOptions
 }
 
 function convertBooleanToString(value: boolean | null): string {
@@ -33,7 +33,7 @@ function convertStringToBoolean(value: string): boolean | null {
 }
 
 // show no then yes by default
-const defaultLabelOptions: IFieldBooleanRadioOption[] = [
+const defaultLabelOptions: IFieldBooleanRadioOptions = [
   {
     label: 'No',
     value: false,

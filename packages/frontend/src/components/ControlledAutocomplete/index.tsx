@@ -29,7 +29,10 @@ const formComboboxOptions = (
   const result: ComboboxItem[] = []
   for (const option of options) {
     const item = {
-      value: option['value'],
+      value:
+        typeof option['value'] === 'number'
+          ? JSON.stringify(option['value']) // Only stringify numbers
+          : option['value'],
       // Display value if label does not exist
       label: option['label'] ?? (option.value?.toString() || ''),
       // Always hide value if description is availble.
@@ -143,7 +146,16 @@ function ControlledAutocomplete(
                   colorScheme="secondary"
                   isClearable={!required}
                   items={formComboboxOptions(sessionOptions, showOptionValue)}
-                  onChange={(selectedOption) => onChange(selectedOption)}
+                  onChange={(selectedOption) => {
+                    if (
+                      selectedOption === '' ||
+                      isNaN(Number(selectedOption))
+                    ) {
+                      onChange(selectedOption) // don't parse string or empty option
+                    } else {
+                      onChange(JSON.parse(selectedOption)) // parse number
+                    }
+                  }}
                   value={getSingleSelectOption(
                     sessionOptions,
                     field.value,
