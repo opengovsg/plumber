@@ -147,13 +147,15 @@ function ControlledAutocomplete(
                   isClearable={!required}
                   items={formComboboxOptions(sessionOptions, showOptionValue)}
                   onChange={(selectedOption) => {
+                    // SingleSelect requires the value to be a string so only parse "numbers" into a string
                     if (
+                      freeSolo ||
                       selectedOption === '' ||
                       isNaN(Number(selectedOption))
                     ) {
-                      onChange(selectedOption) // don't parse string or empty option
+                      onChange(selectedOption)
                     } else {
-                      onChange(JSON.parse(selectedOption)) // parse number
+                      onChange(JSON.parse(selectedOption))
                     }
                   }}
                   value={getSingleSelectOption(

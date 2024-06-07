@@ -4,6 +4,7 @@ import { FormLabel } from './FormLabel'
 import { Infobox } from './Infobox'
 import { Link } from './Link'
 import { Modal } from './Modal'
+import { Radio } from './Radio'
 import { SingleSelect } from './SingleSelect'
 import { Text } from './Text'
 
@@ -16,4 +17,5 @@ export const components = {
   Infobox,
   Text,
   SingleSelect,
+  Radio,
 }

@@ -216,7 +216,8 @@ export const SingleSelectProvider = ({
 
           // UPDATE: to add custom dropdown options
           if (freeSolo) {
-            if (inputValue !== '' && getItemByValue(inputValue) === null) {
+            // Note: only create custom dropdown item if no filtered item exists
+            if (inputValue !== '' && filteredItems.length === 0) {
               // Sanity check: if freeSolo is enabled, the addCustomOption function must come together
               if (addCustomOption) {
                 addCustomOption(inputValue) // To update the items array to be re-rendered

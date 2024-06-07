@@ -54,6 +54,7 @@ export default function BooleanRadio(props: BooleanRadioProps) {
     options,
   } = props
   const { control } = useFormContext()
+  const [firstOption, secondOption] = options ?? defaultLabelOptions
 
   return (
     <Controller
@@ -91,19 +92,19 @@ export default function BooleanRadio(props: BooleanRadioProps) {
               value={value === '' ? value : convertBooleanToString(value)}
               colorScheme="secondary"
             >
-              <Stack>
-                {(options ?? defaultLabelOptions).map((radioOption) => {
-                  const optionStr = convertBooleanToString(radioOption.value)
-                  return (
-                    <Radio
-                      key={optionStr}
-                      allowDeselect={!required}
-                      value={optionStr}
-                    >
-                      {radioOption.label}
-                    </Radio>
-                  )
-                })}
+              <Stack spacing={0}>
+                <Radio
+                  allowDeselect={!required}
+                  value={convertBooleanToString(firstOption.value)}
+                >
+                  {firstOption.label}
+                </Radio>
+                <Radio
+                  allowDeselect={!required}
+                  value={convertBooleanToString(secondOption.value)}
+                >
+                  {secondOption.label}
+                </Radio>
               </Stack>
             </RadioGroup>
 
