@@ -1,6 +1,5 @@
 import { DateTime } from 'luxon'
 
-import appConfig from '@/config/app'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { sendEmail } from '@/helpers/send-email'
 
@@ -47,10 +46,7 @@ function createRequestBlacklistFormLink({
 }
 
 function createBodyErrorMessage(props: BlacklistEmailProps): string {
-  const { flowName, executionId, blacklistedRecipients } = props
-  const appPrefixUrl = appConfig.isDev ? appConfig.webAppUrl : appConfig.baseUrl
-  const redirectUrl = `/executions/${executionId}`
-  const formattedUrl = `${appPrefixUrl}${redirectUrl}`
+  const { flowName, blacklistedRecipients } = props
 
   const formLink = createRequestBlacklistFormLink(props)
 
@@ -58,7 +54,7 @@ function createBodyErrorMessage(props: BlacklistEmailProps): string {
     Dear fellow plumber,
     <br>
     <br>
-    We have detected that your pipe: <strong>${flowName}</strong> has attempted to send an email to one or more blacklisted email addresses:
+    We have detected that your pipe <strong>${flowName}</strong> has attempted to send an email to one or more blacklisted email addresses:
     <ul>
       ${blacklistedRecipients.map((email) => `<li>${email}</li>`).join('\n')}
     </ul>
@@ -67,11 +63,11 @@ function createBodyErrorMessage(props: BlacklistEmailProps): string {
       <li>The email address is invalid.</li>
       <li>The email address was temporarily deactivated (e.g. due to personnel movement across agencies).</li>
     </ul>
-    <p>What should you do if you have verified that the email addresses are valid?</p>
+    <p>What should you do?</p>
     <ol>
-      <li>Submit this form to request for the email addresses to be removed from the blacklist: <a href="${formLink}">Request to remove email from blacklist</a></li>
-      <li>Wait for confirmation from us that the email adddress(es) have been removed from the blacklist successfully</li>
-      <li>Retry sending the emails by clicking on <strong>Resend to blacklisted recipients</strong> on the failed execution page: ${formattedUrl}</li>
+      <li>Verify that the emails are valid by checking with the recipient.</li>
+      <li>Submit <a href="${formLink}">this form</a> to request for the email addresses to be removed from the blacklist.</li>
+      <li>Wait for an email confirmation from us (1-2 working days) for further instructions.</li>
     </ol>
     <br>
     Regards,
