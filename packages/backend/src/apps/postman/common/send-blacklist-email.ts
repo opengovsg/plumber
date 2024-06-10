@@ -84,8 +84,16 @@ async function filterNotifiedEmails(
   emails: string[],
 ): Promise<string[]> {
   const blacklistKeys = emails.map((email) => blacklistRedisKey(flowId, email))
-  const isNotified = await redisClient.mget(blacklistKeys)
-  return emails.filter((_, i) => isNotified[i] !== '1')
+  /**
+   * We cant use mget here to fetch multiple keys because our redis client has cluster mode enabled.
+   * That means we cannot fetch keys from different slots in a single command. We can use braces to
+   * set the hash key but for simplicity, we are fetching each key individually.
+   * ref: https://repost.aws/knowledge-center/elasticache-crossslot-keys-error-redis
+   */
+  const isNotified = await Promise.all(
+    blacklistKeys.map((key) => redisClient.exists(key)),
+  )
+  return emails.filter((_, i) => !isNotified[i])
 }
 
 async function addBlacklistedEmailToRedis(
