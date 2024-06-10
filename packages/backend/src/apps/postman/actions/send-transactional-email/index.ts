@@ -168,6 +168,7 @@ const action: IRawAction = {
           blacklistedRecipients,
         })
       } catch (e) {
+        logger.error(e)
         logger.error({
           message: 'Error sending blacklist email',
           flowId: $.flow.id,
@@ -183,9 +184,8 @@ const action: IRawAction = {
      */
     if (error && errorStatus) {
       throwPostmanStepError({
+        $,
         status: errorStatus,
-        position: $.step.position,
-        appName: $.app.name,
         error,
         isPartialSuccess: hasAtLeastOneSuccess,
         blacklistedRecipients,

@@ -23,6 +23,8 @@ interface BlacklistEmailProps {
   blacklistedRecipients: string[]
 }
 
+type BlacklistEmailFormProps = Omit<BlacklistEmailProps, 'flowName'>
+
 const blacklistRedisKey = (flowId: string, email: string) =>
   `blacklist-alert:${flowId}:${email}`
 
@@ -32,11 +34,11 @@ function truncateFlowName(flowName: string) {
     : flowName
 }
 
-function createRequestBlacklistFormLink({
+export function createRequestBlacklistFormLink({
   userEmail,
   executionId,
   blacklistedRecipients,
-}: BlacklistEmailProps) {
+}: BlacklistEmailFormProps) {
   const queryParams = new URLSearchParams({
     '666190bbfdd7e4abe8973b76': blacklistedRecipients.join(','),
     '666190371ace7810ab47cf65': executionId,
