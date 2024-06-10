@@ -29,7 +29,7 @@ export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
   // fallback to default demo video to display for GGWP v1
   const { url, title } = DEMO_VIDEOS_MAP[demoVideoId ?? FORMSG_POSTMAN_TEMPLATE]
 
-  const [showVideoModal, setShowVideoModal] = useState(false)
+  const [showVideoModal, setShowVideoModal] = useState(!isAutoCreated ?? false)
 
   return (
     <Modal
@@ -38,14 +38,15 @@ export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
       size={showVideoModal ? '5xl' : '3xl'}
       motionPreset="none"
       closeOnEsc={false}
+      isCentered
     >
       <ModalOverlay bg="base.canvas.overlay" />
-      <ModalContent my={12} p={4}>
+      <ModalContent p={showVideoModal ? '1rem' : '2rem'} borderRadius={8}>
         {/* Demo created by user should immediately load demo video */}
         {!isAutoCreated || showVideoModal ? (
           <DemoVideoModalContent src={url} title={title} />
         ) : (
-          <Flex flexDir="column" gap={8} p={8}>
+          <Flex flexDir="column" gap={8}>
             <Image src={demoModalImg} alt="demo-modal-illustration" />
 
             <Flex flexDir="column" gap={4}>

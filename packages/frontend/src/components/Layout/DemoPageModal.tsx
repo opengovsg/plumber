@@ -54,10 +54,11 @@ export default function DemoPageModal(props: DemoPageModalProps) {
       size="3xl"
       motionPreset="none"
       closeOnEsc={false}
+      isCentered
     >
       <ModalOverlay bg="base.canvas.overlay" />
-      <ModalContent my={12} p={4}>
-        <Flex flexDir="column" gap={8} p={8}>
+      <ModalContent p={8} borderRadius={8}>
+        <Flex flexDir="column" gap={8}>
           <Image src={demoModalImg} alt="demo-modal-illustration" />
 
           <Flex flexDir="column" gap={4}>

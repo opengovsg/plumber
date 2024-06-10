@@ -193,7 +193,7 @@ export default function FlowStepHeader(
               {hintAboveCaption}
             </Text>
 
-            <Flex alignItems="center" gap={4}>
+            <Flex alignItems="center" gap={2}>
               <Text textStyle="subhead-1" color="base.content.default">
                 {caption}
               </Text>
@@ -202,8 +202,9 @@ export default function FlowStepHeader(
                   label="Learn how to set this up"
                   placement="top-start"
                   openDelay={300}
+                  gutter={0}
                 >
-                  <Box boxSize={5}>
+                  <Box boxSize="18px">
                     <Icon
                       as={BiHelpCircle}
                       boxSize="inherit"
@@ -251,9 +252,9 @@ export default function FlowStepHeader(
       </Box>
 
       {isModalOpen && hasDemoVideo && (
-        <Modal isOpen={true} onClose={onModalClose} size="3xl">
+        <Modal isCentered isOpen={true} onClose={onModalClose} size="5xl">
           <ModalOverlay bg="base.canvas.overlay" />
-          <ModalContent p={4}>
+          <ModalContent p={4} borderRadius={8}>
             <DemoVideoModalContent src={demoVideoUrl} title={demoVideoTitle} />
           </ModalContent>
         </Modal>
