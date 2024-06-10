@@ -47,18 +47,6 @@ export const useItems = <Item extends ComboboxItem = ComboboxItem>({
     }, initialStore)
   }, [rawItems])
 
-  // UPDATE: used only if custom dropdown options are to be added
-  const addCustomItem = useCallback(
-    (newValue: string) => {
-      rawItems.push({
-        label: newValue,
-        value: newValue,
-        description: newValue,
-      } as Item)
-    },
-    [rawItems],
-  )
-
   const getItemByValue = useCallback(
     (value: string): ItemWithIndex<Item> | null => {
       return normalizedItems.byValue[value] ?? null
@@ -69,6 +57,5 @@ export const useItems = <Item extends ComboboxItem = ComboboxItem>({
   return {
     items: rawItems,
     getItemByValue,
-    addCustomItem,
   }
 }

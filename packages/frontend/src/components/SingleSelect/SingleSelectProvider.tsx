@@ -18,7 +18,15 @@ import {
 } from './utils/itemUtils'
 import { VIRTUAL_LIST_ITEM_HEIGHT } from './constants'
 import { SelectContext, SharedSelectContextReturnProps } from './SelectContext'
-import { ComboboxItem } from './types'
+import type { ComboboxItem } from './types'
+
+function getFreeSoloItem(freeSoloValue: string) {
+  return {
+    value: freeSoloValue,
+    label: freeSoloValue,
+    description: 'Use this custom value',
+  }
+}
 
 export interface SingleSelectProviderProps<
   Item extends ComboboxItem = ComboboxItem,
@@ -43,14 +51,8 @@ export interface SingleSelectProviderProps<
   /** Color scheme of component */
   colorScheme?: ThemingProps<'SingleSelect'>['colorScheme']
   fixedItemHeight?: number
-  /** SPECIAL CASE for Plumber:
-   * Allow dropdown options to reload upon clicking refresh */
-  onRefresh?: () => void
-  isRefreshLoading?: boolean
-  /** Allow custom dropdown option if freeSolo is enabled */
-  freeSolo?: boolean
-  addCustomOption?: (newValue: string) => void
 }
+
 export const SingleSelectProvider = ({
   items: rawItems,
   value,
@@ -73,10 +75,9 @@ export const SingleSelectProvider = ({
   size: _size,
   comboboxProps = {},
   fixedItemHeight,
-  onRefresh,
-  isRefreshLoading,
-  freeSolo,
-  addCustomOption,
+  onRefresh = null,
+  isRefreshLoading = false,
+  freeSolo = false,
 }: SingleSelectProviderProps): JSX.Element => {
   const theme = useTheme()
   // Required in case size is set in theme, we should respect the one set in theme.
@@ -90,7 +91,12 @@ export const SingleSelectProvider = ({
     [_size, theme?.components?.SingleSelect?.defaultProps?.size],
   )
 
-  const { items, getItemByValue, addCustomItem } = useItems({ rawItems })
+  const { items, getItemByValue } = useItems({ rawItems })
+  const [freeSoloValue, setFreeSoloValue] = useState<string | null>(
+    // On init, if freeSolo is enabled and value is not found in the main items
+    // list, then it must be a freeSolo custom value from an earlier run.
+    freeSolo && !getItemByValue(value) ? value : null,
+  )
   const [isFocused, setIsFocused] = useState(false)
 
   const { isInvalid, isDisabled, isReadOnly, isRequired } = useFormControlProps(
@@ -121,16 +127,55 @@ export const SingleSelectProvider = ({
   )
 
   const memoizedSelectedItem = useMemo(() => {
-    return getItemByValue(value)?.item ?? null
-  }, [getItemByValue, value])
+    const fromItems = getItemByValue(value)
+
+    if (fromItems) {
+      return fromItems.item
+    }
+
+    return freeSolo && value ? getFreeSoloItem(value) : null
+  }, [getItemByValue, freeSolo, value])
 
   const resetItems = useCallback(
-    () => setFilteredItems(getFilteredItems()),
-    [getFilteredItems],
+    () => setFilteredItems(items),
+    [items, setFilteredItems],
   )
 
   const virtualListRef = useRef<VirtuosoHandle>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleInputChange = useCallback(
+    (inputValue: string | undefined) => {
+      const filteredItems = getFilteredItems(inputValue)
+      setFilteredItems(filteredItems)
+
+      //
+      // If free solo is enabled, add a "use your custom input" option.
+      //
+
+      if (!freeSolo || !inputValue) {
+        return
+      }
+
+      // If the user's input is the same as an existing row, don't show the "use
+      // your custom input" option.
+      if (getItemByValue(inputValue)) {
+        setFreeSoloValue(null)
+        return
+      }
+
+      setFreeSoloValue(inputValue)
+    },
+    [freeSolo, getFilteredItems, getItemByValue],
+  )
+
+  const augmentedItems = useMemo(
+    () =>
+      freeSoloValue
+        ? [...filteredItems, getFreeSoloItem(freeSoloValue)]
+        : filteredItems,
+    [filteredItems, freeSoloValue],
+  )
 
   const {
     toggleMenu,
@@ -151,7 +196,7 @@ export const SingleSelectProvider = ({
     inputId: name,
     defaultInputValue: '',
     defaultHighlightedIndex: 0,
-    items: filteredItems,
+    items: augmentedItems,
     initialIsOpen,
     selectedItem: memoizedSelectedItem,
     itemToString: itemToValue,
@@ -177,7 +222,7 @@ export const SingleSelectProvider = ({
       switch (type) {
         case useCombobox.stateChangeTypes.FunctionSetInputValue:
         case useCombobox.stateChangeTypes.InputChange:
-          setFilteredItems(getFilteredItems(inputValue))
+          handleInputChange(inputValue)
           break
         default:
           return
@@ -214,19 +259,6 @@ export const SingleSelectProvider = ({
         case useCombobox.stateChangeTypes.ItemClick: {
           resetItems()
 
-          // UPDATE: to add custom dropdown options
-          if (freeSolo) {
-            // Note: only create custom dropdown item if no filtered item exists
-            if (inputValue !== '' && filteredItems.length === 0) {
-              // Sanity check: if freeSolo is enabled, the addCustomOption function must come together
-              if (addCustomOption) {
-                addCustomOption(inputValue) // To update the items array to be re-rendered
-                // To render the option immediately
-                addCustomItem(inputValue)
-                selectItem(items[items.length - 1])
-              }
-            }
-          }
           return {
             ...changes,
             // Clear inputValue on item selection
@@ -272,20 +304,20 @@ export const SingleSelectProvider = ({
   })
 
   const virtualListHeight = useMemo(() => {
-    // UPDATE: allow proper rendering of dropdown with both label and description
-    let updatedSize = size
-    for (const item of filteredItems) {
-      if (itemToDescriptionString(item)) {
-        updatedSize = 'lg'
-        break
-      }
-    }
+    // Size needs to be larger if we have items with descriptions
+    const itemsHaveDescription =
+      !!freeSoloValue ||
+      filteredItems.some((item) => itemToDescriptionString(item))
+    const itemHeight =
+      fixedItemHeight ??
+      VIRTUAL_LIST_ITEM_HEIGHT[itemsHaveDescription ? 'lg' : size]
 
-    const itemHeight = fixedItemHeight ?? VIRTUAL_LIST_ITEM_HEIGHT[updatedSize]
     // If the total height is less than the max height, just return the total height.
     // Otherwise, return the max height.
-    return Math.min(filteredItems.length, 4) * itemHeight
-  }, [filteredItems, fixedItemHeight, size])
+    return !freeSoloValue
+      ? Math.min(filteredItems.length, 4) * itemHeight
+      : (Math.min(filteredItems.length, 4) + 1) * itemHeight
+  }, [filteredItems, freeSoloValue, fixedItemHeight, size])
 
   return (
     <SelectContext.Provider
@@ -303,7 +335,7 @@ export const SingleSelectProvider = ({
         getToggleButtonProps,
         selectItem,
         highlightedIndex,
-        items: filteredItems,
+        items: augmentedItems,
         nothingFoundLabel,
         inputValue,
         isSearchable,
@@ -326,7 +358,6 @@ export const SingleSelectProvider = ({
         onRefresh,
         isRefreshLoading,
         freeSolo,
-        value,
       }}
     >
       {children}

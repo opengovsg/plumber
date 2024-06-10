@@ -1,6 +1,6 @@
 import type { IFieldDropdownOption } from '@plumber/types'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { Box, Flex, FormControl } from '@chakra-ui/react'
@@ -29,32 +29,17 @@ const formComboboxOptions = (
   const result: ComboboxItem[] = []
   for (const option of options) {
     const item = {
-      value:
-        typeof option['value'] === 'number'
-          ? JSON.stringify(option['value']) // Only stringify numbers
-          : option['value'],
+      value: option['value']?.toString(),
       // Display value if label does not exist
       label: option['label'] ?? (option.value?.toString() || ''),
       // Always hide value if description is availble.
       description:
-        option['description'] ?? (showOptionValue ? option['value'] : ''),
-    } as ComboboxItem
+        option['description'] ??
+        (showOptionValue ? option['value'].toString() : ''),
+    } satisfies ComboboxItem
     result.push(item)
   }
   return result
-}
-
-const getSingleSelectOption = (
-  options: readonly IFieldDropdownOption[],
-  value: string,
-  freeSolo?: boolean,
-): string => {
-  const foundOption = options.find((option) => option.value === value)
-  // If allowArbitrary is true, return the value as the option
-  if (freeSolo) {
-    return value
-  }
-  return foundOption?.value.toString() ?? ''
 }
 
 function ControlledAutocomplete(
@@ -69,7 +54,7 @@ function ControlledAutocomplete(
     options = [],
     dependsOn = [],
     showOptionValue,
-    freeSolo,
+    freeSolo: rawFreeSolo,
     onRefresh,
     loading,
     required,
@@ -80,10 +65,6 @@ function ControlledAutocomplete(
     () => (dependsOn?.length ? watch(dependsOn) : []),
     [dependsOn, watch],
   )
-
-  // This is added to add custom dropdown options when freeSolo is enabled
-  const [sessionOptions, setSessionOptions] = useState(options)
-
   useEffect(() => {
     const hasDependencies = dependsOnValues.length
     const allDepsSatisfied = dependsOnValues.every(Boolean)
@@ -93,27 +74,21 @@ function ControlledAutocomplete(
       setValue(name, null)
       resetField(name)
     }
+  }, [dependsOnValues, name, resetField, setValue, options])
 
-    if (freeSolo) {
-      // allow for custom fields to be added temporarily when allowArbitrary is set to true
-      if (sessionOptions.length === 0) {
-        setSessionOptions(options)
-      }
-    } else {
-      // dynamically update and refresh the next set of fields
-      if (sessionOptions !== options) {
-        setSessionOptions(options)
-      }
+  const items = useMemo(
+    () => formComboboxOptions(options, showOptionValue),
+    [options, showOptionValue],
+  )
+
+  // Do not support freeSolo if there are numerical options. Since no use case
+  // for it yet and it makes things more complex.
+  const freeSolo = useMemo(() => {
+    if (options.every((option) => typeof option.value !== 'string')) {
+      return false
     }
-  }, [
-    dependsOnValues,
-    name,
-    resetField,
-    setValue,
-    options,
-    sessionOptions,
-    freeSolo,
-  ])
+    return rawFreeSolo
+  }, [options, rawFreeSolo])
 
   return (
     <Controller
@@ -121,7 +96,7 @@ function ControlledAutocomplete(
       name={name}
       defaultValue={defaultValue ?? ''}
       control={control}
-      render={({ field: { ref, onChange, ...field }, fieldState }) => {
+      render={({ field: { ref, onChange, value: fieldValue }, fieldState }) => {
         const isError = Boolean(fieldState.isTouched && fieldState.error)
 
         return (
@@ -145,40 +120,20 @@ function ControlledAutocomplete(
                   name="choose-dropdown-option"
                   colorScheme="secondary"
                   isClearable={!required}
-                  items={formComboboxOptions(sessionOptions, showOptionValue)}
+                  items={items}
                   onChange={(selectedOption) => {
-                    // SingleSelect requires the value to be a string so only parse "numbers" into a string
-                    if (
-                      freeSolo ||
-                      selectedOption === '' ||
-                      isNaN(Number(selectedOption))
-                    ) {
-                      onChange(selectedOption)
-                    } else {
-                      onChange(JSON.parse(selectedOption))
+                    if (!selectedOption) {
+                      return
                     }
+                    onChange(selectedOption)
                   }}
-                  value={getSingleSelectOption(
-                    sessionOptions,
-                    field.value,
-                    freeSolo,
-                  )}
+                  value={fieldValue}
                   placeholder={placeholder}
                   ref={ref}
                   data-test={`${name}-autocomplete`}
                   onRefresh={onRefresh}
                   isRefreshLoading={loading}
-                  freeSolo={freeSolo}
-                  addCustomOption={(selectedOption) => {
-                    setSessionOptions([
-                      ...sessionOptions,
-                      {
-                        label: selectedOption,
-                        value: selectedOption,
-                        description: selectedOption,
-                      },
-                    ])
-                  }}
+                  freeSolo={freeSolo ?? false}
                 />
               </Box>
             </Flex>
