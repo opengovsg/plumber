@@ -3,10 +3,11 @@ import type { IRawAction } from '@plumber/types'
 import { DateTime } from 'luxon'
 import { ZodError } from 'zod'
 
-import { postmanSmsConfig } from '@/config/app-env-vars/postman-sms'
 import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 import { ensureZodObjectKey, firstZodParseError } from '@/helpers/zod-utils'
+
+import { getCampaignForUser } from '../../common/get-campaign-for-user'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { fieldSchema, MAX_SMS_CHARS, postmanMessageSchema } from './schema'
@@ -51,6 +52,11 @@ const action = {
   async run($) {
     try {
       const parsedParams = fieldSchema.parse($.step.parameters)
+      const { campaignId = null } = await getCampaignForUser($.user.email)
+
+      if (!campaignId) {
+        throw new Error('Your agency is not onboarded to Postman SMS yet.')
+      }
 
       const response = await $.http.post(
         '/campaigns/:campaignId/messages',
@@ -63,7 +69,7 @@ const action = {
         },
         {
           urlPathParams: {
-            campaignId: postmanSmsConfig.defaultCampaignId,
+            campaignId,
           },
         },
       )

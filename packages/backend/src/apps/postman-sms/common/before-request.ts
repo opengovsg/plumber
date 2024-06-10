@@ -1,7 +1,8 @@
 import type { TBeforeRequest } from '@plumber/types'
 
 import appConfig from '@/config/app'
-import { postmanSmsConfig } from '@/config/app-env-vars/postman-sms'
+
+import { getCampaignForUser } from './get-campaign-for-user'
 
 const POSTMAN_PROD_ENV_API_URL = 'https://postman.gov.sg/api/v2'
 const POSTMAN_TEST_ENV_API_URL = 'https://test.postman.gov.sg/api/v2'
@@ -22,10 +23,8 @@ const addApiBaseUrl: TBeforeRequest = async ($, requestConfig) => {
 }
 
 const addAuthHeader: TBeforeRequest = async ($, requestConfig) => {
-  requestConfig.headers.set(
-    'Authorization',
-    `Bearer ${postmanSmsConfig.defaultApiKey}`,
-  )
+  const { apiKey } = await getCampaignForUser($.user.email)
+  requestConfig.headers.set('Authorization', `Bearer ${apiKey}`)
   return requestConfig
 }
 

@@ -34,6 +34,10 @@ const mocks = vi.hoisted(() => ({
       config: requestConfig,
     }),
   ),
+  getCampaignForUser: vi.fn(() => ({
+    campaignId: 'test-campaign-id',
+    apiKey: 'test-api-key',
+  })),
   setActionItem: vi.fn(),
   logError: vi.fn(),
 }))
@@ -60,12 +64,8 @@ vi.mock('axios', async (importOriginal) => {
   }
 })
 
-vi.mock('@/config/app-env-vars/postman-sms', () => ({
-  postmanSmsConfig: {
-    defaultCampaignId: 'test-campaign-id',
-    defaultApiKey: 'test-key',
-    qpsLimitPerCampaign: 3,
-  },
+vi.mock('../common/get-campaign-for-user', () => ({
+  getCampaignForUser: mocks.getCampaignForUser,
 }))
 
 describe('Send SMS Action', () => {
@@ -89,6 +89,9 @@ describe('Send SMS Action', () => {
           message: 'test',
         },
       },
+      user: {
+        email: 'test@test.local',
+      },
       http,
       setActionItem: mocks.setActionItem,
     } as unknown as IGlobalVariable
@@ -104,12 +107,17 @@ describe('Send SMS Action', () => {
     vi.restoreAllMocks()
   })
 
-  it('uses the campaign ID from our env var', async () => {
+  it('uses the campaign ID given by getCampaignForUser', async () => {
+    mocks.getCampaignForUser.mockResolvedValueOnce({
+      campaignId: 'my-campaign-id',
+      apiKey: 'my-api-key',
+    })
+
     await sendSmsAction.run($)
 
     expect(mocks.axiosRequestAdapter).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: '/campaigns/test-campaign-id/messages',
+        url: '/campaigns/my-campaign-id/messages',
       }),
     )
   })

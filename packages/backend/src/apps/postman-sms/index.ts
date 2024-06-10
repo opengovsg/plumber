@@ -1,13 +1,14 @@
 import { IApp } from '@plumber/types'
 
 import beforeRequest from './common/before-request'
+import { APP_KEY } from './common/constants'
 import requestErrorHandler from './common/request-error-handler'
 import actions from './actions'
 import queue from './queue'
 
 const app: IApp = {
   name: 'SMS by Postman',
-  key: 'postman-sms',
+  key: APP_KEY,
   iconUrl: '{BASE_URL}/apps/postman-sms/assets/favicon.svg',
   beforeRequest,
   requestErrorHandler,

@@ -1,4 +1,4 @@
-import type { IGlobalVariable } from '@plumber/types'
+import type { IActionJobData, IGlobalVariable } from '@plumber/types'
 
 import type { AxiosPromise } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,6 +7,14 @@ import RetriableError from '@/errors/retriable-error'
 import globalVariable from '@/helpers/global-variable'
 
 import postmanSmsApp from '../'
+
+const MOCK_FLOW = {
+  id: 'test-flow-id',
+  user: {
+    email: 'test-user@test.local',
+  },
+  containsFileProcessingActions: vi.fn(),
+}
 
 const mocks = vi.hoisted(() => ({
   axiosRequestAdapter: vi.fn(
@@ -24,17 +32,25 @@ const mocks = vi.hoisted(() => ({
   appConfig: {
     isProd: false,
   },
+  getCampaignForUser: vi.fn(() => ({
+    campaignId: 'test-campaign-id',
+    apiKey: 'test-api-key',
+  })),
+}))
+
+vi.mock('@/models/flow', () => ({
+  default: {
+    query: vi.fn(() => ({
+      findById: vi.fn(() => ({
+        withGraphJoined: vi.fn(() => ({
+          throwIfNotFound: vi.fn(() => MOCK_FLOW),
+        })),
+      })),
+    })),
+  },
 }))
 
 vi.mock('@/config/app', () => ({ default: mocks.appConfig }))
-
-vi.mock('@/config/app-env-vars/postman-sms', () => ({
-  postmanSmsConfig: {
-    defaultCampaignId: 'test-campaign-id',
-    defaultApiKey: 'test-key',
-    qpsLimitPerCampaign: 3,
-  },
-}))
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
@@ -52,6 +68,10 @@ vi.mock('axios', async (importOriginal) => {
   }
 })
 
+vi.mock('../common/get-campaign-for-user', () => ({
+  getCampaignForUser: mocks.getCampaignForUser,
+}))
+
 describe('Postman SMS app', () => {
   let $: IGlobalVariable
 
@@ -59,6 +79,7 @@ describe('Postman SMS app', () => {
     $ = await globalVariable({
       connection: null,
       app: postmanSmsApp,
+      flow: MOCK_FLOW as unknown as any,
     })
   })
 
@@ -80,16 +101,34 @@ describe('Postman SMS app', () => {
     )
   })
 
-  it('adds our default postman API key for outgoing requests', async () => {
+  it('adds the API key given by getCampaignForUser for outgoing requests', async () => {
+    mocks.getCampaignForUser.mockResolvedValueOnce({
+      campaignId: 'my-campaign-id',
+      apiKey: 'my-api-key',
+    })
+
     await $.http.get('localhost')
 
     expect(mocks.axiosRequestAdapter).toHaveBeenLastCalledWith(
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization: 'Bearer test-key',
+          Authorization: 'Bearer my-api-key',
         }),
       }),
     )
+  })
+
+  it('sets the job group to the campaign ID given by getCampaignForUser ', async () => {
+    mocks.getCampaignForUser.mockResolvedValueOnce({
+      campaignId: 'my-campaign-id',
+      apiKey: 'my-api-key',
+    })
+
+    const { id: groupId } = await postmanSmsApp.queue.getGroupConfigForJob({
+      flowId: MOCK_FLOW.id,
+    } as unknown as IActionJobData)
+
+    expect(groupId).toEqual('my-campaign-id')
   })
 
   it('Throws a group delayed RetriableError if any Postman call responds with a HTTP 429', async () => {
