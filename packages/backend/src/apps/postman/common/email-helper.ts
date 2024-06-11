@@ -158,12 +158,12 @@ export async function sendTransactionalEmails(
   /**
    * Since we can only return one error per postman step, we have to select in terms of priority
    * 1. RATE-LIMITED (so we can auto-retry)
-   * 2. BLACKLISTED (so they can manual-retry)
-   * 3. INVALID-ATTACHMENT (probably all recipients should fail)
-   * 4. ERROR (same as above, probably all recipients should fail)
+   * 2. INVALID-ATTACHMENT (probably all recipients should fail)
+   * 3. ERROR (same as above, probably all recipients should fail)
+   * 4. BLACKLISTED (blacklisted errors are returned even if there are other errors like invalid attachment)
    */
   const sortedErrors = sortBy(errors, (error) =>
-    ['RATE-LIMITED', 'BLACKLISTED', 'INVALID-ATTACHMENT', 'ERROR'].indexOf(
+    ['RATE-LIMITED', 'INVALID-ATTACHMENT', 'ERROR', 'BLACKLISTED'].indexOf(
       error.status,
     ),
   )
