@@ -32,6 +32,7 @@ vi.mock('../../common/parameters-helper', () => ({
 
 vi.mock('../../common/send-blacklist-email', () => ({
   sendBlacklistEmail: mocks.sendBlacklistEmail,
+  createRequestBlacklistFormLink: vi.fn(),
 }))
 
 describe('send transactional email', () => {
