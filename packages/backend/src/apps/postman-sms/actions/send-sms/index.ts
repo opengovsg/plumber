@@ -3,10 +3,12 @@ import type { IRawAction } from '@plumber/types'
 import { DateTime } from 'luxon'
 import { ZodError } from 'zod'
 
-import { postmanSmsConfig } from '@/config/app-env-vars/postman-sms'
+import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 import { ensureZodObjectKey, firstZodParseError } from '@/helpers/zod-utils'
+
+import { authDataSchema } from '../../auth/schema'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { fieldSchema, MAX_SMS_CHARS, postmanMessageSchema } from './schema'
@@ -17,15 +19,20 @@ const action = {
   description: 'Sends an SMS under Gov.SG sender ID',
 
   /**
-   * CAVEAT
+   * FEATURE NOTE
    * ---
-   * THIS IS VERY LIKELY TO CHANGE! We currently only allow sending to the only
-   * template in Plumber's SMS campaign, using our API key.
+   * This is a simplified feature where we don't enable users to specify
+   * template variables (e.g. via a multi-row)
    *
-   * But in the future, we want to allow users to provide their own API key and
-   * specify their own campaigns and templates. We can't do this right now
-   * because Postman does not provide an API to query templates / template
-   * variables.
+   * This is because Postman does not provide an API to query template
+   * variables, nor template contents (which we can parse). It's more than
+   * likely that users will just get confused if we present them with a
+   * "Template Variables" multi-select.
+   *
+   * Instead, for this action, we will instruct users to set up a campaign whose
+   * template is just a {{body}} variable. We will provide a more advanced "Send
+   * SMS with Variables" action later on, for users who are comfortable working
+   * with template variables.
    */
   arguments: [
     {
@@ -37,8 +44,8 @@ const action = {
       variables: true,
     },
     {
-      label: 'Message',
-      description: `Max ${MAX_SMS_CHARS.toLocaleString()} characters`,
+      label: 'Message Body',
+      description: `This corresponds to {{body}} in your campaign template. Max ${MAX_SMS_CHARS.toLocaleString()} characters`,
       key: ensureZodObjectKey(fieldSchema, 'message'),
       type: 'string' as const,
       required: true,
@@ -51,6 +58,7 @@ const action = {
   async run($) {
     try {
       const parsedParams = fieldSchema.parse($.step.parameters)
+      const authData = authDataSchema.parse($.auth.data)
 
       const response = await $.http.post(
         '/campaigns/:campaignId/messages',
@@ -63,7 +71,7 @@ const action = {
         },
         {
           urlPathParams: {
-            campaignId: postmanSmsConfig.defaultCampaignId,
+            campaignId: authData.campaignId,
           },
         },
       )
@@ -105,6 +113,20 @@ const action = {
         throw new StepError(
           `Configuration problem: '${firstZodParseError(error)}'`,
           GenericSolution.ReconfigureInvalidField,
+          $.step.position,
+          $.app.name,
+        )
+      }
+
+      // This happens if user did not create a template in the format we expect.
+      if (
+        error instanceof HttpError &&
+        error.response.status === 400 &&
+        error.response.data.error?.code === 'parameter_invalid'
+      ) {
+        throw new StepError(
+          'Campaign template was not set up correctly',
+          'Ensure that you have followed the instructions in our guide to set up your campaign template.',
           $.step.position,
           $.app.name,
         )

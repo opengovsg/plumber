@@ -36,6 +36,17 @@ const mocks = vi.hoisted(() => ({
   ),
   setActionItem: vi.fn(),
   logError: vi.fn(),
+  authDataParseResult: vi.fn(() => ({
+    env: 'test',
+    campaignId: 'test-campaign',
+    apiKey: 'test-api-key',
+  })),
+}))
+
+vi.mock('../auth/schema', () => ({
+  authDataSchema: {
+    parse: mocks.authDataParseResult,
+  },
 }))
 
 vi.mock('@/helpers/logger', () => ({
@@ -60,14 +71,6 @@ vi.mock('axios', async (importOriginal) => {
   }
 })
 
-vi.mock('@/config/app-env-vars/postman-sms', () => ({
-  postmanSmsConfig: {
-    defaultCampaignId: 'test-campaign-id',
-    defaultApiKey: 'test-key',
-    qpsLimitPerCampaign: 3,
-  },
-}))
-
 describe('Send SMS Action', () => {
   let $: IGlobalVariable
 
@@ -89,6 +92,9 @@ describe('Send SMS Action', () => {
           message: 'test',
         },
       },
+      auth: {
+        data: {},
+      },
       http,
       setActionItem: mocks.setActionItem,
     } as unknown as IGlobalVariable
@@ -104,12 +110,17 @@ describe('Send SMS Action', () => {
     vi.restoreAllMocks()
   })
 
-  it('uses the campaign ID from our env var', async () => {
+  it('uses the campaign ID in auth data', async () => {
+    mocks.authDataParseResult.mockReturnValue({
+      env: 'test',
+      campaignId: 'my-campaign-id',
+      apiKey: 'test-key',
+    })
     await sendSmsAction.run($)
 
     expect(mocks.axiosRequestAdapter).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: '/campaigns/test-campaign-id/messages',
+        url: '/campaigns/my-campaign-id/messages',
       }),
     )
   })

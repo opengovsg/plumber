@@ -1,4 +1,4 @@
-import type { IGlobalVariable } from '@plumber/types'
+import type { IActionJobData, IGlobalVariable } from '@plumber/types'
 
 import type { AxiosPromise } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -6,7 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import RetriableError from '@/errors/retriable-error'
 import globalVariable from '@/helpers/global-variable'
 
+import { PostmanEnv } from '../common/constants'
 import postmanSmsApp from '../'
+
+const MOCK_STEP = {
+  id: 'test-flow-id',
+  connectionId: 'test-connection-id',
+}
 
 const mocks = vi.hoisted(() => ({
   axiosRequestAdapter: vi.fn(
@@ -21,18 +27,29 @@ const mocks = vi.hoisted(() => ({
       config: requestConfig,
     }),
   ),
-  appConfig: {
-    isProd: false,
+  getPostmanEnv: vi.fn(() => PostmanEnv.Test),
+  authDataParseResult: vi.fn(() => ({
+    apiKey: 'test-api-key',
+  })),
+}))
+
+vi.mock('../auth/schema', () => ({
+  authDataSchema: {
+    parse: mocks.authDataParseResult,
   },
 }))
 
-vi.mock('@/config/app', () => ({ default: mocks.appConfig }))
+vi.mock('../common/get-postman-env', () => ({
+  default: mocks.getPostmanEnv,
+}))
 
-vi.mock('@/config/app-env-vars/postman-sms', () => ({
-  postmanSmsConfig: {
-    defaultCampaignId: 'test-campaign-id',
-    defaultApiKey: 'test-key',
-    qpsLimitPerCampaign: 3,
+vi.mock('@/models/step', () => ({
+  default: {
+    query: vi.fn(() => ({
+      findById: vi.fn(() => ({
+        throwIfNotFound: vi.fn(() => MOCK_STEP),
+      })),
+    })),
   },
 }))
 
@@ -67,10 +84,17 @@ describe('Postman SMS app', () => {
   })
 
   it.each([
-    { isProd: false, expectedBaseUrl: 'https://test.postman.gov.sg/api/v2' },
-    { isProd: true, expectedBaseUrl: 'https://postman.gov.sg/api/v2' },
-  ])('uses the correct API URL', async ({ isProd, expectedBaseUrl }) => {
-    mocks.appConfig.isProd = isProd
+    {
+      env: PostmanEnv.Test,
+      expectedBaseUrl: 'https://test.postman.gov.sg/api/v2',
+    },
+    {
+      env: PostmanEnv.Prod,
+      expectedBaseUrl: 'https://postman.gov.sg/api/v2',
+    },
+  ])('uses the correct API URL', async ({ env, expectedBaseUrl }) => {
+    mocks.getPostmanEnv.mockReturnValue(env)
+
     await $.http.get('localhost')
 
     expect(mocks.axiosRequestAdapter).toHaveBeenLastCalledWith(
@@ -80,16 +104,28 @@ describe('Postman SMS app', () => {
     )
   })
 
-  it('adds our default postman API key for outgoing requests', async () => {
+  it('adds the API key within the connection for outgoing requests', async () => {
+    mocks.authDataParseResult.mockReturnValue({
+      apiKey: 'my-api-key',
+    })
+
     await $.http.get('localhost')
 
     expect(mocks.axiosRequestAdapter).toHaveBeenLastCalledWith(
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization: 'Bearer test-key',
+          Authorization: 'Bearer my-api-key',
         }),
       }),
     )
+  })
+
+  it('sets the job group to the connection ID', async () => {
+    const { id: groupId } = await postmanSmsApp.queue.getGroupConfigForJob({
+      stepID: MOCK_STEP.id,
+    } as unknown as IActionJobData)
+
+    expect(groupId).toEqual(MOCK_STEP.connectionId)
   })
 
   it('Throws a group delayed RetriableError if any Postman call responds with a HTTP 429', async () => {
