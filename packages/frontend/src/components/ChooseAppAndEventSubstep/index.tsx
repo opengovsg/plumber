@@ -258,6 +258,7 @@ function ChooseAppAndEventSubstep(
                   name="choose-app-option"
                   colorScheme="secondary"
                   isClearable={false}
+                  isRefreshLoading={isLoading}
                   isDisabled={isLoading || editorContext.readOnly}
                   // Don't display options until we can check feature flags!
                   items={isLoading ? [] : appOptions}

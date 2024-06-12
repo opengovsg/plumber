@@ -9,7 +9,7 @@ import {
 } from '@chakra-ui/react'
 import { useCombobox, UseComboboxProps } from 'downshift'
 
-import { useItems } from './hooks/useItems'
+import { useLookupItems } from './hooks/useLookupItems'
 import { defaultFilter } from './utils/defaultFilter'
 import {
   isItemDisabled,
@@ -54,13 +54,13 @@ export interface SingleSelectProviderProps<
 }
 
 export const SingleSelectProvider = ({
-  items: rawItems,
+  items: allItems,
   value,
   onChange,
   name,
   filter = defaultFilter,
   nothingFoundLabel = 'No matching results',
-  placeholder: placeholderProp,
+  placeholder = 'Select an option',
   clearButtonLabel = 'Clear selection',
   isClearable = true,
   isSearchable = true,
@@ -91,12 +91,8 @@ export const SingleSelectProvider = ({
     [_size, theme?.components?.SingleSelect?.defaultProps?.size],
   )
 
-  const { items, getItemByValue } = useItems({ rawItems })
-  const [freeSoloValue, setFreeSoloValue] = useState<string | null>(
-    // On init, if freeSolo is enabled and value is not found in the main items
-    // list, then it must be a freeSolo custom value from an earlier run.
-    freeSolo && !getItemByValue(value) ? value : null,
-  )
+  const { getItemByValue } = useLookupItems({ rawItems: allItems })
+
   const [isFocused, setIsFocused] = useState(false)
 
   const { isInvalid, isDisabled, isReadOnly, isRequired } = useFormControlProps(
@@ -108,23 +104,12 @@ export const SingleSelectProvider = ({
     },
   )
 
-  const placeholder = useMemo(() => {
-    if (placeholderProp === null) {
-      return ''
-    }
-    return placeholderProp ?? 'Select an option'
-  }, [placeholderProp])
-
   const getFilteredItems = useCallback(
     (filterValue?: string) =>
-      filterValue ? filter(items, filterValue) : items,
-    [filter, items],
+      filterValue != null ? filter(allItems, filterValue) : allItems,
+    [filter, allItems],
   )
-  const [filteredItems, setFilteredItems] = useState(
-    getFilteredItems(
-      comboboxProps.initialInputValue ?? comboboxProps.inputValue,
-    ),
-  )
+  const [filteredItems, setFilteredItems] = useState(allItems)
 
   const memoizedSelectedItem = useMemo(() => {
     const fromItems = getItemByValue(value)
@@ -136,45 +121,29 @@ export const SingleSelectProvider = ({
     return freeSolo && value ? getFreeSoloItem(value) : null
   }, [getItemByValue, freeSolo, value])
 
-  const resetItems = useCallback(
-    () => setFilteredItems(items),
-    [items, setFilteredItems],
-  )
+  useEffect(() => {
+    setFilteredItems(allItems)
+  }, [allItems])
 
   const virtualListRef = useRef<VirtuosoHandle>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const addFreeSoloItem = useCallback(
+    (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
+      if (inputValue != null && !getItemByValue(inputValue)) {
+        filteredItems.push(getFreeSoloItem(inputValue))
+      }
+    },
+    [getItemByValue],
+  )
+
   const handleInputChange = useCallback(
     (inputValue: string | undefined) => {
       const filteredItems = getFilteredItems(inputValue)
+      addFreeSoloItem(filteredItems, inputValue)
       setFilteredItems(filteredItems)
-
-      //
-      // If free solo is enabled, add a "use your custom input" option.
-      //
-
-      if (!freeSolo || !inputValue) {
-        return
-      }
-
-      // If the user's input is the same as an existing row, don't show the "use
-      // your custom input" option.
-      if (getItemByValue(inputValue)) {
-        setFreeSoloValue(null)
-        return
-      }
-
-      setFreeSoloValue(inputValue)
     },
-    [freeSolo, getFilteredItems, getItemByValue],
-  )
-
-  const augmentedItems = useMemo(
-    () =>
-      freeSoloValue
-        ? [...filteredItems, getFreeSoloItem(freeSoloValue)]
-        : filteredItems,
-    [filteredItems, freeSoloValue],
+    [addFreeSoloItem, getFilteredItems],
   )
 
   const {
@@ -196,17 +165,15 @@ export const SingleSelectProvider = ({
     inputId: name,
     defaultInputValue: '',
     defaultHighlightedIndex: 0,
-    items: augmentedItems,
+    items: filteredItems,
     initialIsOpen,
     selectedItem: memoizedSelectedItem,
     itemToString: itemToValue,
-    onSelectedItemChange: ({ selectedItem }) => {
-      if (!selectedItem || !isItemDisabled(selectedItem)) {
-        onChange(itemToValue(selectedItem))
+    onIsOpenChange: ({ isOpen }) => {
+      if (!isOpen) {
+        reset()
       }
     },
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    scrollIntoView: () => {},
     onHighlightedIndexChange: ({ highlightedIndex }) => {
       if (
         highlightedIndex !== undefined &&
@@ -257,8 +224,9 @@ export const SingleSelectProvider = ({
         case useCombobox.stateChangeTypes.InputKeyDownEnter:
         case useCombobox.stateChangeTypes.InputBlur:
         case useCombobox.stateChangeTypes.ItemClick: {
-          resetItems()
-
+          if (changes.selectedItem && !isItemDisabled(changes.selectedItem)) {
+            onChange(itemToValue(changes.selectedItem))
+          }
           return {
             ...changes,
             // Clear inputValue on item selection
@@ -283,11 +251,6 @@ export const SingleSelectProvider = ({
     ...comboboxProps,
   })
 
-  /** Effect to update filtered items whenever items prop changes. */
-  useEffect(() => {
-    setFilteredItems(getFilteredItems(inputValue))
-  }, [getFilteredItems, inputValue, items])
-
   const isItemSelected = useCallback(
     (item: ComboboxItem) => {
       return !!selectedItem && itemToValue(selectedItem) === itemToValue(item)
@@ -295,7 +258,10 @@ export const SingleSelectProvider = ({
     [selectedItem],
   )
 
-  const resetInputValue = useCallback(() => setInputValue(''), [setInputValue])
+  const reset = useCallback(() => {
+    setFilteredItems(allItems)
+    setInputValue('')
+  }, [allItems, setInputValue])
 
   const styles = useMultiStyleConfig('SingleSelect', {
     size,
@@ -305,19 +271,17 @@ export const SingleSelectProvider = ({
 
   const virtualListHeight = useMemo(() => {
     // Size needs to be larger if we have items with descriptions
-    const itemsHaveDescription =
-      !!freeSoloValue ||
-      filteredItems.some((item) => itemToDescriptionString(item))
+    const itemsHaveDescription = filteredItems.some((item) =>
+      itemToDescriptionString(item),
+    )
     const itemHeight =
       fixedItemHeight ??
       VIRTUAL_LIST_ITEM_HEIGHT[itemsHaveDescription ? 'lg' : size]
 
     // If the total height is less than the max height, just return the total height.
     // Otherwise, return the max height.
-    return !freeSoloValue
-      ? Math.min(filteredItems.length, 4) * itemHeight
-      : (Math.min(filteredItems.length, 4) + 1) * itemHeight
-  }, [filteredItems, freeSoloValue, fixedItemHeight, size])
+    return Math.min(filteredItems.length, 4) * itemHeight
+  }, [filteredItems, fixedItemHeight, size])
 
   return (
     <SelectContext.Provider
@@ -335,7 +299,7 @@ export const SingleSelectProvider = ({
         getToggleButtonProps,
         selectItem,
         highlightedIndex,
-        items: augmentedItems,
+        items: filteredItems,
         nothingFoundLabel,
         inputValue,
         isSearchable,
@@ -350,7 +314,7 @@ export const SingleSelectProvider = ({
         styles,
         isFocused,
         setIsFocused,
-        resetInputValue,
+        resetInputValue: reset,
         inputAria,
         inputRef,
         virtualListRef,

@@ -84,7 +84,10 @@ function ControlledAutocomplete(
   // Do not support freeSolo if there are numerical options. Since no use case
   // for it yet and it makes things more complex.
   const freeSolo = useMemo(() => {
-    if (options.every((option) => typeof option.value !== 'string')) {
+    if (
+      !options.length ||
+      options.every((option) => typeof option.value !== 'string')
+    ) {
       return false
     }
     return rawFreeSolo
@@ -121,19 +124,14 @@ function ControlledAutocomplete(
                   colorScheme="secondary"
                   isClearable={!required}
                   items={items}
-                  onChange={(selectedOption) => {
-                    if (!selectedOption) {
-                      return
-                    }
-                    onChange(selectedOption)
-                  }}
+                  onChange={onChange}
                   value={fieldValue}
                   placeholder={placeholder}
                   ref={ref}
                   data-test={`${name}-autocomplete`}
                   onRefresh={onRefresh}
                   isRefreshLoading={loading}
-                  freeSolo={freeSolo ?? false}
+                  freeSolo={freeSolo}
                 />
               </Box>
             </Flex>
