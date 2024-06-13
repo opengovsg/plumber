@@ -15,20 +15,18 @@ const trigger: IRawTrigger = {
     {
       label: 'Trigger on weekends?',
       key: 'triggersOnWeekend',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       description: 'Should this flow trigger on Saturday and Sunday?',
       required: true,
-      value: 'yes',
-      showOptionValue: false,
-      variables: false,
+      // flip the order of the default options
       options: [
         {
           label: 'Yes',
-          value: 'yes',
+          value: true,
         },
         {
           label: 'No',
-          value: 'no',
+          value: false,
         },
       ],
     },
@@ -36,7 +34,7 @@ const trigger: IRawTrigger = {
   getDataOutMetadata,
 
   getInterval(parameters: IGlobalVariable['step']['parameters']) {
-    if (parameters.triggersOnWeekend) {
+    if (parameters.triggersOnWeekend as boolean) {
       return cronTimes.everyHour
     }
 

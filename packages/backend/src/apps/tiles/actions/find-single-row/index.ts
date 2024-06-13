@@ -116,19 +116,17 @@ const action: IRawAction = {
     {
       label: 'Return most recent row instead?',
       key: 'returnLastRow',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: true,
-      variables: false,
-      value: 'no',
-      showOptionValue: false,
+      value: false,
       options: [
         {
           label: 'No (Returns oldest row)',
-          value: 'no',
+          value: false,
         },
         {
           label: 'Yes (Returns most recent row)',
-          value: 'yes',
+          value: true,
         },
       ],
     },

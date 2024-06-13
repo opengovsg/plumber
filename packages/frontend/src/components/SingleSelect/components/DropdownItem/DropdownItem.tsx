@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Flex, Icon, ListItem, Text } from '@chakra-ui/react'
 import { dataAttr } from '@chakra-ui/utils'
 
@@ -26,24 +26,14 @@ export const DropdownItem = ({
   const { getItemProps, isItemSelected, inputValue, styles } =
     useSelectContext()
 
-  // add this for hover detection
-  const [isHovered, setIsHovered] = useState(false)
-  const handleMouseEnter = () => {
-    setIsHovered(true)
-  }
-
-  const handleMouseLeave = () => {
-    setIsHovered(false)
-  }
-
-  const { icon, badge, label, description, isDisabled, isActive } = useMemo(
+  const { icon, label, description, isDisabled, isActive, badge } = useMemo(
     () => ({
       icon: itemToIcon(item),
-      badge: itemToBadge(item),
       label: itemToLabelString(item),
       description: itemToDescriptionString(item),
       isDisabled: isItemDisabled(item),
       isActive: isItemSelected(item),
+      badge: itemToBadge(item),
     }),
     [isItemSelected, item],
   )
@@ -57,46 +47,38 @@ export const DropdownItem = ({
         index,
         disabled: isDisabled,
       })}
-      style={
-        isHovered
-          ? {
-              backgroundColor: '#f8f9fa',
-              cursor: 'pointer',
-            }
-          : isActive
-          ? {
-              backgroundColor: '#e9eaee',
-              cursor: 'pointer',
-            }
-          : undefined
-      }
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
-      <Flex flexDir="column">
-        <Flex gap={1.5}>
-          {icon ? <Icon as={icon} sx={styles.icon} /> : null}
-          <Text
-            minWidth={0}
-            textOverflow="ellipsis"
-            whiteSpace="nowrap"
-            overflowX="hidden"
-          >
-            <DropdownItemTextHighlighter
-              inputValue={inputValue ?? ''}
-              textToHighlight={label}
-            />
-          </Text>
-          {badge}
+      <Flex justifyContent="space-between" alignItems="center">
+        <Flex flexDir="column">
+          <Flex gap={1.5}>
+            {icon ? <Icon as={icon} sx={styles.icon} /> : null}
+            <Text
+              minWidth={0}
+              textOverflow="ellipsis"
+              whiteSpace="nowrap"
+              overflowX="hidden"
+            >
+              <DropdownItemTextHighlighter
+                inputValue={inputValue ?? ''}
+                textToHighlight={label}
+              />
+            </Text>
+            {badge}
+          </Flex>
+          {description && (
+            <Text
+              sx={{
+                ...styles.itemDescription,
+                ...(isDisabled ? { color: 'red.500' } : {}),
+              }}
+            >
+              <DropdownItemTextHighlighter
+                inputValue={inputValue ?? ''}
+                textToHighlight={description}
+              />
+            </Text>
+          )}
         </Flex>
-        {description && (
-          <Text sx={styles.itemDescription}>
-            <DropdownItemTextHighlighter
-              inputValue={inputValue ?? ''}
-              textToHighlight={description}
-            />
-          </Text>
-        )}
       </Flex>
     </ListItem>
   )

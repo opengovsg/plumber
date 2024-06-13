@@ -131,7 +131,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
             alignItems: 'flex-start',
           }}
         >
-          <Stack width="100%" spacing={2}>
+          <Stack width="100%" spacing={3}>
             {args?.map((argument) => (
               <InputCreator
                 key={argument.key}

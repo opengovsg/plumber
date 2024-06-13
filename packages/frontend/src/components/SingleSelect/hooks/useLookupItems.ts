@@ -5,22 +5,20 @@ import { useCallback, useMemo } from 'react'
 import { ComboboxItem } from '../types'
 import { itemToValue } from '../utils/itemUtils'
 
-export type ItemWithIndex<Item extends ComboboxItem = ComboboxItem> = {
+type ItemWithIndex<Item extends ComboboxItem = ComboboxItem> = {
   item: Item
   index: number
 }
 
-export type UseItemsReturn<Item extends ComboboxItem = ComboboxItem> = {
+type UseItemsReturn<Item extends ComboboxItem = ComboboxItem> = {
   byValue: Record<string, ItemWithIndex<Item>>
 }
 
-interface UseItemProps<Item extends ComboboxItem = ComboboxItem> {
-  rawItems: Item[]
-}
-
-export const useItems = <Item extends ComboboxItem = ComboboxItem>({
+export const useLookupItems = <Item extends ComboboxItem = ComboboxItem>({
   rawItems,
-}: UseItemProps<Item>) => {
+}: {
+  rawItems: Item[]
+}) => {
   const normalizedItems = useMemo(() => {
     const initialStore: UseItemsReturn<Item> = {
       // Normalized store for filtering and retrieval of state
@@ -47,18 +45,6 @@ export const useItems = <Item extends ComboboxItem = ComboboxItem>({
     }, initialStore)
   }, [rawItems])
 
-  // UPDATE: used only if custom dropdown options are to be added
-  const addCustomItem = useCallback(
-    (newValue: string) => {
-      rawItems.push({
-        label: newValue,
-        value: newValue,
-        description: newValue,
-      } as Item)
-    },
-    [rawItems],
-  )
-
   const getItemByValue = useCallback(
     (value: string): ItemWithIndex<Item> | null => {
       return normalizedItems.byValue[value] ?? null
@@ -67,8 +53,6 @@ export const useItems = <Item extends ComboboxItem = ComboboxItem>({
   )
 
   return {
-    items: rawItems,
     getItemByValue,
-    addCustomItem,
   }
 }

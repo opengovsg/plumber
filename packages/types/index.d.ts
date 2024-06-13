@@ -309,6 +309,22 @@ export interface IFieldRichText extends IBaseField {
   value?: string
 }
 
+export interface IFieldBooleanRadio extends IBaseField {
+  type: 'boolean-radio'
+  value?: boolean // will default to null if not provided
+  options?: IFieldBooleanRadioOptions // only can provide 2 OPTIONS if label is not yes/no
+}
+
+export type IFieldBooleanRadioOptions = [
+  IFieldBooleanRadioOption,
+  IFieldBooleanRadioOption,
+]
+
+export interface IFieldBooleanRadioOption {
+  label: string
+  value: boolean
+}
+
 export type IField =
   | IFieldDropdown
   | IFieldText
@@ -316,6 +332,7 @@ export type IField =
   | IFieldMultiSelect
   | IFieldMultiRow
   | IFieldRichText
+  | IFieldBooleanRadio
 
 export interface IAuthenticationStepField {
   name: string
