@@ -67,7 +67,7 @@ type Mutation {
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
   retryExecutionStep(input: RetryExecutionStepInput): Boolean
-  retryPartialStep(input: RetryPartialStepInput): Boolean
+  retryPartialStep(input: RetryPartialStepInput!): Boolean
   bulkRetryExecutions(
     input: BulkRetryExecutionsInput
   ): BulkRetryExecutionsResult!
