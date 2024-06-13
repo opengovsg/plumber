@@ -110,8 +110,11 @@ export const SingleSelectProvider = ({
   )
 
   const getFilteredItems = useCallback(
-    (filterValue?: string) =>
-      filterValue != null ? filter(allItems, filterValue) : allItems,
+    (filterValue?: string) => {
+      const filtered =
+        filterValue != null ? filter(allItems, filterValue) : allItems
+      return [...filtered]
+    },
     [filter, allItems],
   )
   const [filteredItems, setFilteredItems] = useState(allItems)
@@ -135,8 +138,9 @@ export const SingleSelectProvider = ({
 
   const addFreeSoloItem = useCallback(
     (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
-      if (inputValue != null && !getItemByValue(inputValue)) {
-        filteredItems.push(getFreeSoloItem(inputValue))
+      // freeSolo inputValue cannot be null or undefined or blank
+      if (inputValue?.trim() && !getItemByValue(inputValue)) {
+        return filteredItems.push(getFreeSoloItem(inputValue))
       }
     },
     [getItemByValue],
