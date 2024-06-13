@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useMemo } from 'react'
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Flex,
   Icon,
@@ -7,14 +7,10 @@ import {
   Text,
   useMergeRefs,
 } from '@chakra-ui/react'
-import { Badge, Input } from '@opengovsg/design-system-react'
+import { Input } from '@opengovsg/design-system-react'
 
 import { useSelectContext } from '../../SelectContext'
-import {
-  isItemInstant,
-  itemToIcon,
-  itemToLabelString,
-} from '../../utils/itemUtils'
+import { itemToIcon, itemToLabelString } from '../../utils/itemUtils'
 
 import { ComboboxClearButton } from './ComboboxClearButton'
 import { ToggleChevron } from './ToggleChevron'
@@ -33,15 +29,24 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
       inputValue,
       isRequired,
       placeholder,
+      isRefreshLoading,
       isOpen,
       resetInputValue,
       inputRef,
       isClearable,
       size,
-      value,
     } = useSelectContext()
 
     const mergedInputRef = useMergeRefs(inputRef, ref)
+
+    const [hasOptionsLoadedOnce, setHasOptionsLoadedOnce] = useState(false)
+    const isInitialLoading = !hasOptionsLoadedOnce && isRefreshLoading
+
+    useEffect(() => {
+      if (!isRefreshLoading) {
+        setHasOptionsLoadedOnce(true)
+      }
+    }, [isRefreshLoading])
 
     const selectedItemMeta = useMemo(
       () => ({
@@ -71,7 +76,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
           gridTemplateColumns="1fr"
         >
           <Stack
-            visibility={inputValue ? 'hidden' : 'initial'}
+            visibility={inputValue || isInitialLoading ? 'hidden' : 'initial'}
             direction="row"
             spacing="1rem"
             aria-disabled={isDisabled}
@@ -85,26 +90,19 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
                 aria-disabled={isDisabled}
               />
             ) : null}
-            {/* To display custom value if it exists when freeSolo is enabled */}
-            <Flex w="100%" justifyContent="space-between">
-              <Text noOfLines={1}>
-                {selectedItemMeta.label !== '' ? selectedItemMeta.label : value}
-              </Text>
-              {isItemInstant(selectedItem) && (
-                <Badge
-                  bgColor="interaction.muted.main.active"
-                  color="primary.600"
-                >
-                  Instant
-                </Badge>
-              )}
-            </Flex>
+            <Text noOfLines={1}>{selectedItemMeta.label}</Text>
           </Stack>
           <Input
             isReadOnly={!isSearchable || isReadOnly}
             isInvalid={isInvalid}
             isDisabled={isDisabled}
-            placeholder={selectedItem ? undefined : placeholder}
+            placeholder={
+              isInitialLoading
+                ? 'Fetching options...'
+                : selectedItem
+                ? undefined
+                : placeholder
+            }
             sx={styles.field}
             {...getInputProps({
               onClick: handleToggleMenu,
