@@ -8,7 +8,7 @@ import StepError, { GenericSolution } from '@/errors/step'
 import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
-  name: 'Get Payment',
+  name: 'Get payment',
   key: 'getPayment',
   description: 'Get details of a payment that has previously been created',
   arguments: [

@@ -143,6 +143,7 @@ export interface IFlowConfig {
   maxQps?: number
   rejectIfOverMaxQps?: boolean
   errorConfig?: IFlowErrorConfig
+  duplicateCount?: number
 }
 
 export interface IFlowErrorConfig {
@@ -424,6 +425,11 @@ export interface IApp {
   connections?: IConnection[]
   description?: string
   isNewApp?: boolean
+  substepLabels?: {
+    connectionStepLabel?: string // for step accordion label
+    settingsStepLabel?: string // for step accordion label: app level
+    addConnectionLabel?: string // for adding connection in choose connection dropdown
+  }
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this
@@ -536,6 +542,7 @@ export interface IBaseTrigger {
   pollInterval?: number
   description: string
   webhookTriggerInstructions?: ITriggerInstructions
+  settingsStepLabel?: string // for step accordion label: event level
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
@@ -600,6 +607,7 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
+  settingsStepLabel?: string // for step accordion label: event level
   run?(
     $: IGlobalVariable,
     metadata?: NextStepMetadata,
@@ -770,6 +778,13 @@ export interface ITableMetadata {
   columns: ITableColumnMetadata[]
   lastAccessedAt: string
   viewOnlyKey?: string
+  collaborators?: ITableCollaborator[]
+  role?: ITableCollabRole
+}
+
+export interface ITableCollaborator {
+  email: string
+  role: ITableCollabRole
 }
 
 export interface ITableRow {

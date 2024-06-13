@@ -23,10 +23,16 @@ import {
   useDisclosure,
   VStack,
 } from '@chakra-ui/react'
-import { Button, IconButton } from '@opengovsg/design-system-react'
+import {
+  Button,
+  IconButton,
+  Tag,
+  TagLabel,
+  TagLeftIcon,
+} from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
-import { DELETE_TABLE } from 'graphql/mutations/delete-table'
-import { GET_TABLES } from 'graphql/queries/get-tables'
+import { DELETE_TABLE } from 'graphql/mutations/tiles/delete-table'
+import { GET_TABLES } from 'graphql/queries/tiles/get-tables'
 import { toPrettyDateString } from 'helpers/dateTime'
 
 const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
@@ -86,34 +92,51 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
             Last opened {toPrettyDateString(+table.lastAccessedAt)}
           </Text>
         </Box>
-        <Menu onClose={onMenuClose} isOpen={isMenuOpen} gutter={0}>
-          <MenuButton
-            as={IconButton}
-            colorScheme="secondary"
-            variant="clear"
-            icon={<BsThreeDots />}
-            aria-label="options"
-            onClick={(event) => {
-              event.preventDefault()
-              onMenuToggle()
-            }}
-          />
-          <MenuList>
-            <MenuItem
-              icon={<MdOutlineRemoveRedEye />}
-              onClick={() => navigate(URLS.TILE(table.id))}
+        <Flex alignItems="center" gap={4}>
+          {table.role === 'viewer' && (
+            <Tag
+              colorScheme="secondary"
+              size="xs"
+              variant="subtle"
+              py={2}
+              gap={1}
+              pointerEvents="none"
             >
-              View
-            </MenuItem>
-            <MenuItem
-              icon={<BsTrash />}
-              color="red.500"
-              onClick={onDeleteButtonClick}
-            >
-              Delete
-            </MenuItem>
-          </MenuList>
-        </Menu>
+              <TagLeftIcon as={MdOutlineRemoveRedEye} />
+              <TagLabel>View only</TagLabel>
+            </Tag>
+          )}
+          <Menu onClose={onMenuClose} isOpen={isMenuOpen} gutter={0}>
+            <MenuButton
+              as={IconButton}
+              colorScheme="secondary"
+              variant="clear"
+              icon={<BsThreeDots />}
+              aria-label="options"
+              onClick={(event) => {
+                event.preventDefault()
+                onMenuToggle()
+              }}
+            />
+            <MenuList>
+              <MenuItem
+                icon={<MdOutlineRemoveRedEye />}
+                onClick={() => navigate(URLS.TILE(table.id))}
+              >
+                View
+              </MenuItem>
+              {table.role === 'owner' && (
+                <MenuItem
+                  icon={<BsTrash />}
+                  color="red.500"
+                  onClick={onDeleteButtonClick}
+                >
+                  Delete
+                </MenuItem>
+              )}
+            </MenuList>
+          </Menu>
+        </Flex>
       </Flex>
       <AlertDialog
         isOpen={isDialogOpen}

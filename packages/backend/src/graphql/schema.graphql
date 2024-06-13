@@ -37,7 +37,7 @@ type Query {
   getTable(tableId: String!): TableMetadata!
   getTables: [TableMetadata!]!
   # Tiles rows
-  getAllRows(tableId: String!): [TileRow!]!
+  getAllRows(tableId: String!): Any!
   getCurrentUser: User
   healthcheck: AppHealth
   getPlumberStats: Stats
@@ -75,6 +75,7 @@ type Mutation {
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
+  duplicateFlow(input: DuplicateFlowInput): Flow
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
@@ -85,6 +86,9 @@ type Mutation {
   createRows(input: CreateTableRowsInput!): Boolean
   updateRow(input: UpdateTableRowInput!): ID!
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
+  # Tiles collaborators
+  upsertTableCollaborator(input: TableCollaboratorInput!): Boolean!
+  deleteTableCollaborator(input: DeleteTableCollaboratorInput!): Boolean!
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
@@ -117,6 +121,7 @@ type Action {
   name: String
   key: String
   description: String
+  settingsStepLabel: String
   groupsLaterSteps: Boolean
   substeps: [ActionSubstep]
 }
@@ -174,6 +179,13 @@ type App {
   connections: [Connection]
   description: String
   isNewApp: Boolean
+  substepLabels: StepLabel
+}
+
+type StepLabel {
+  connectionStepLabel: String
+  settingsStepLabel: String
+  addConnectionLabel: String
 }
 
 type AppAuth {
@@ -293,6 +305,7 @@ type Flow {
 # Rate limiting config is omitted here e.g. maxQps
 type FlowConfig {
   errorConfig: FlowErrorConfig
+  duplicateCount: Int
 }
 
 type FlowErrorConfig {
@@ -377,6 +390,10 @@ input DeleteFlowInput {
   id: String!
 }
 
+input DuplicateFlowInput {
+  id: String!
+}
+
 input CreateStepInput {
   id: String
   previousStepId: String
@@ -425,6 +442,7 @@ input BulkRetryExecutionsInput {
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSONObject
+scalar Any
 
 input PreviousStepInput {
   id: String
@@ -495,6 +513,7 @@ type Trigger {
   pollInterval: Int
   type: String
   webhookTriggerInstructions: TriggerInstructions
+  settingsStepLabel: String
   substeps: [TriggerSubstep]
 }
 
@@ -633,22 +652,35 @@ type TableColumnMetadata {
   config: TableColumnConfig!
 }
 
+type TableCollaborator {
+  email: String!
+  role: String!
+}
+
+input TableCollaboratorInput {
+  tableId: ID!
+  email: String!
+  role: String!
+}
+
+input DeleteTableCollaboratorInput {
+  tableId: ID!
+  email: String!
+}
+
 type TableMetadata {
   id: ID!
   name: String!
   columns: [TableColumnMetadata!]
   lastAccessedAt: String!
   viewOnlyKey: String
+  collaborators: [TableCollaborator!]
+  role: String
 }
 
 # End Tiles types
 
 # Start Tiles row types
-type TileRow {
-  rowId: ID!
-  data: JSONObject!
-}
-
 input CreateTableRowInput {
   tableId: ID!
   data: JSONObject!
@@ -656,7 +688,7 @@ input CreateTableRowInput {
 
 input CreateTableRowsInput {
   tableId: ID!
-  dataArray: [JSONObject!]!
+  dataArray: Any!
 }
 
 input UpdateTableRowInput {
@@ -669,7 +701,6 @@ input DeleteTableRowsInput {
   tableId: ID!
   rowIds: [ID!]!
 }
-
 # End Tiles row types
 
 type AppHealth {

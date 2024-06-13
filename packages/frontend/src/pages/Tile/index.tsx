@@ -3,8 +3,8 @@ import { ITableMetadata, ITableRow } from '@plumber/types'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex, Spinner } from '@chakra-ui/react'
-import { GET_ALL_ROWS } from 'graphql/queries/get-all-rows'
-import { GET_TABLE } from 'graphql/queries/get-table'
+import { GET_ALL_ROWS } from 'graphql/queries/tiles/get-all-rows'
+import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 
 import Table from './components/Table'
 import TableBanner from './components/TableBanner'
@@ -16,20 +16,19 @@ export default function Tile(): JSX.Element {
     viewOnlyKey?: string
   }>()
 
-  const isReadOnly = !!urlViewOnlyKey
-
   const { data: getTableData } = useQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
     variables: {
       tableId,
     },
-    context: isReadOnly
+    context: urlViewOnlyKey
       ? {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
         }
       : undefined,
   })
+  const ownRole = getTableData?.getTable?.role
 
   const { data: getAllRowsData } = useQuery<{
     getAllRows: ITableRow[]
@@ -38,7 +37,7 @@ export default function Tile(): JSX.Element {
       tableId,
       viewOnlyKey: urlViewOnlyKey,
     },
-    context: isReadOnly
+    context: urlViewOnlyKey
       ? {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
         }
@@ -54,7 +53,8 @@ export default function Tile(): JSX.Element {
     )
   }
 
-  const { id, name, columns, viewOnlyKey } = getTableData.getTable
+  const { id, name, columns, viewOnlyKey, collaborators } =
+    getTableData.getTable
   const rows = getAllRowsData.getAllRows
 
   return (
@@ -63,8 +63,9 @@ export default function Tile(): JSX.Element {
       tableId={id}
       tableColumns={columns}
       tableRows={rows}
-      hasEditPermission={!isReadOnly}
       viewOnlyKey={viewOnlyKey}
+      collaborators={collaborators}
+      role={ownRole}
     >
       <Flex
         flexDir={{ base: 'column' }}

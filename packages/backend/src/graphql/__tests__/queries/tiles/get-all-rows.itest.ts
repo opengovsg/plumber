@@ -1,9 +1,13 @@
+import { ITableRow } from '@plumber/types'
+
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import getAllRows from '@/graphql/queries/tiles/get-all-rows'
 import { createTableRow } from '@/models/dynamodb/table-row'
+import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -19,12 +23,18 @@ describe('get all rows query', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnIds: string[] = []
+  let editor: User
+  let viewer: User
 
-  // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({ userId: context.currentUser.id })
+    const mockTable = await generateMockTable({
+      userId: context.currentUser.id,
+    })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
@@ -66,7 +76,7 @@ describe('get all rows query', () => {
       },
       context,
     )
-    expect(rows.map((r) => r.rowId)).toEqual(rowIdsInserted)
+    expect(rows.map((r: ITableRow) => r.rowId)).toEqual(rowIdsInserted)
   })
 
   it('should fetch all rows even if more than 1MB', async () => {
@@ -110,15 +120,56 @@ describe('get all rows query', () => {
 
     await createTableRow(rowToInsert)
 
-    const almostRows = await getAllRows(
+    const returnedRows = await getAllRows(
       null,
       {
         tableId: dummyTable.id,
       },
       context,
     )
-    const rows = await Promise.all(almostRows)
+    const rows = await Promise.all(returnedRows)
 
     expect(Object.keys(rows[0].data).sort()).toEqual(dummyColumnIds.sort())
+  })
+
+  it('should allow all collaborators to call this function', async () => {
+    context.currentUser = editor
+    await expect(
+      getAllRows(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
+
+    context.currentUser = viewer
+    await expect(
+      getAllRows(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).resolves.toBeDefined()
+  })
+
+  it('should throw an error if collaborator does not exist or is soft deleted', async () => {
+    context.currentUser = editor
+    await TableCollaborator.query()
+      .delete()
+      .where('table_id', dummyTable.id)
+      .andWhere('user_id', editor.id)
+    await expect(
+      getAllRows(
+        null,
+        {
+          tableId: dummyTable.id,
+        },
+        context,
+      ),
+    ).rejects.toThrow('Table not found')
   })
 })

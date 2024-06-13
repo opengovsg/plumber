@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { BiCopy, BiShareAlt } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
+  Divider,
   Flex,
   FormControl,
   InputGroup,
@@ -26,13 +27,15 @@ import {
 } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
 import * as URLS from 'config/urls'
-import { CREATE_SHAREABLE_TABLE_LINK } from 'graphql/mutations/create-shareable-link'
-import { GET_TABLE } from 'graphql/queries/get-table'
+import { CREATE_SHAREABLE_TABLE_LINK } from 'graphql/mutations/tiles/create-shareable-link'
+import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
 
+import TableCollaborators from './TableCollaborators'
+
 const ShareModal = ({ onClose }: { onClose: () => void }) => {
-  const { tableId, viewOnlyKey } = useTableContext()
+  const { tableId, viewOnlyKey, hasEditPermission } = useTableContext()
   const [isNewLink, setIsNewLink] = useState(false)
 
   const shareableLink = viewOnlyKey
@@ -57,60 +60,71 @@ const ShareModal = ({ onClose }: { onClose: () => void }) => {
   const inputBorderColor = isNewLink ? 'green.400' : 'secondary.200'
 
   return (
-    <Modal isOpen={true} onClose={onClose} motionPreset="none">
+    <Modal isOpen={true} onClose={onClose} motionPreset="none" isCentered>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Share tile</ModalHeader>
         <ModalCloseButton />
         <ModalBody mt={2}>
           <FormControl>
-            <VStack spacing={2} alignItems="flex-start">
-              <Text textStyle="subhead-3">General Access</Text>
-              <Text textStyle="body-1">
-                Generate a shareable link to allow viewing and exporting only.
-                No login required.
-              </Text>
-              <Flex alignSelf="stretch" gap={2}>
-                {viewOnlyKey && (
-                  <InputGroup borderWidth={0}>
-                    <Input
-                      value={shareableLink}
-                      borderRightWidth={0}
-                      borderColor={inputBorderColor}
-                      _focusVisible={{ borderColor: inputBorderColor }}
-                      isReadOnly
-                    />
-                    <InputRightAddon
-                      padding={0}
-                      background="white"
-                      borderColor={inputBorderColor}
-                    >
-                      <IconButton
-                        icon={<BiCopy />}
-                        colorScheme="secondary"
-                        variant="clear"
-                        aria-label={'Copy'}
-                        onClick={() => copy(shareableLink ?? '')}
-                      />
-                    </InputRightAddon>
-                  </InputGroup>
-                )}
-                <Button
-                  variant="outline"
-                  isLoading={loading}
-                  onClick={onGenerate}
-                >
-                  Generate new link
-                </Button>
-              </Flex>
-              {viewOnlyKey && (
-                <FormHelperText variant={isNewLink ? 'success' : undefined}>
-                  {isNewLink
-                    ? 'New link generated!'
-                    : 'By generating a new link, your previous link will not work anymore.'}
-                </FormHelperText>
-              )}
-            </VStack>
+            {(viewOnlyKey || hasEditPermission) && (
+              <>
+                <VStack spacing={2} alignItems="flex-start">
+                  <Text textStyle="subhead-3">General Access</Text>
+                  <Text textStyle="body-1">
+                    {hasEditPermission
+                      ? 'Generate a shareable link to allow'
+                      : 'This shareable link allows'}{' '}
+                    viewing and exporting only. No login required.
+                  </Text>
+                  <Flex alignSelf="stretch" gap={2}>
+                    {viewOnlyKey && (
+                      <InputGroup borderWidth={0}>
+                        <Input
+                          value={shareableLink}
+                          borderRightWidth={0}
+                          paddingRight={0}
+                          borderColor={inputBorderColor}
+                          _focusVisible={{ borderColor: inputBorderColor }}
+                          isReadOnly
+                        />
+                        <InputRightAddon
+                          padding={0}
+                          background="white"
+                          borderColor={inputBorderColor}
+                        >
+                          <IconButton
+                            icon={<BiCopy />}
+                            colorScheme="secondary"
+                            variant="clear"
+                            aria-label={'Copy'}
+                            onClick={() => copy(shareableLink ?? '')}
+                          />
+                        </InputRightAddon>
+                      </InputGroup>
+                    )}
+                    {hasEditPermission && (
+                      <Button
+                        variant="outline"
+                        isLoading={loading}
+                        onClick={onGenerate}
+                      >
+                        Generate new link
+                      </Button>
+                    )}
+                  </Flex>
+                  {viewOnlyKey && hasEditPermission && (
+                    <FormHelperText variant={isNewLink ? 'success' : undefined}>
+                      {isNewLink
+                        ? 'New link generated!'
+                        : 'By generating a new link, your previous link will not work anymore.'}
+                    </FormHelperText>
+                  )}
+                </VStack>
+                <Divider my={6} />
+              </>
+            )}
+            <TableCollaborators />
           </FormControl>
         </ModalBody>
         <ModalFooter></ModalFooter>

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import updateRow from '@/graphql/mutations/tiles/update-row'
 import { createTableRow, TableRow } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import {
@@ -16,12 +17,19 @@ describe('update row mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnIds: string[] = []
+  let editor: User
+  let viewer: User
 
   // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
     context = await generateMockContext()
 
-    dummyTable = await generateMockTable({ userId: context.currentUser.id })
+    const mockTable = await generateMockTable({
+      userId: context.currentUser.id,
+    })
+    dummyTable = mockTable.table
+    editor = mockTable.editor
+    viewer = mockTable.viewer
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
@@ -129,5 +137,54 @@ describe('update row mutation', () => {
         context,
       ),
     ).rejects.toThrow()
+  })
+
+  it('should allow collaborators with edit rights to call this function', async () => {
+    context.currentUser = editor
+    const originalData = generateMockTableRowData({ columnIds: dummyColumnIds })
+    const rowToUpdate = await createTableRow({
+      tableId: dummyTable.id,
+      data: originalData,
+    })
+    const newData = generateMockTableRowData({ columnIds: dummyColumnIds })
+
+    await expect(
+      updateRow(
+        null,
+        {
+          input: {
+            tableId: dummyTable.id,
+            rowId: rowToUpdate.rowId,
+            data: newData,
+          },
+        },
+        context,
+      ),
+    ).resolves.toEqual(rowToUpdate.rowId)
+  })
+
+  it('should throw an error if user does not have edit access', async () => {
+    context.currentUser = viewer
+    const originalData = generateMockTableRowData({ columnIds: dummyColumnIds })
+    const rowToUpdate = await createTableRow({
+      tableId: dummyTable.id,
+      data: originalData,
+    })
+
+    const newData = generateMockTableRowData({ columnIds: dummyColumnIds })
+
+    await expect(
+      updateRow(
+        null,
+        {
+          input: {
+            tableId: dummyTable.id,
+            rowId: rowToUpdate.rowId,
+            data: newData,
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow('You do not have access to this tile')
   })
 })

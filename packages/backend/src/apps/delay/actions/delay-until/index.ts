@@ -7,7 +7,7 @@ import StepError from '@/errors/step'
 import generateTimestamp from '../../helpers/generate-timestamp'
 
 const action: IRawAction = {
-  name: 'Delay Until',
+  name: 'Delay until',
   key: 'delayUntil',
   description: 'Delays the execution of the next action until a specified date',
   arguments: [
