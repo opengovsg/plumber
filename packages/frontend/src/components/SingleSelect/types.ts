@@ -12,9 +12,8 @@ export type ComboboxItem<T = string> =
       disabled?: boolean
       /** Icon to display in input field when item is selected, if available */
       icon?: As
-      /** Badges to display for Plumber apps and events, if available */
-      isAppNew?: boolean // new apps
-      isEventInstant?: boolean // webhook events
+      /** Badge to display on the right of the label, if available */
+      badge?: JSX.Element
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       [key: string]: any
     }

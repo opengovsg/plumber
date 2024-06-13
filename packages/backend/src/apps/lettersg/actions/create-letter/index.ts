@@ -48,23 +48,11 @@ const action: IRawAction = {
     {
       label: 'Generate PDF',
       key: 'shouldGeneratePdf',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: true,
       description:
         'You will need to add an Email by Postman action after this step to send out the generated PDF.',
-      variables: false,
-      value: 'no',
-      showOptionValue: false,
-      options: [
-        {
-          label: 'No',
-          value: 'no',
-        },
-        {
-          label: 'Yes',
-          value: 'yes',
-        },
-      ],
+      value: false,
     },
     {
       label: 'Personalised fields',

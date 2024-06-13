@@ -3,7 +3,7 @@ import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 import { useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 import { Box, Collapse, Flex, FormControl } from '@chakra-ui/react'
-import { Button, FormLabel } from '@opengovsg/design-system-react'
+import { Badge, Button, FormLabel } from '@opengovsg/design-system-react'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import { ComboboxItem, SingleSelect } from 'components/SingleSelect'
 import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from 'config/flags'
@@ -32,7 +32,15 @@ const formAppComboboxOption = (app: IApp): ComboboxItem => ({
   label: app.name as string,
   value: app.key as string,
   description: app?.description as string,
-  isAppNew: !!app?.isNewApp,
+  ...(app?.isNewApp
+    ? {
+        badge: (
+          <Badge bgColor="interaction.muted.main.active" color="primary.600">
+            New
+          </Badge>
+        ),
+      }
+    : {}),
 })
 
 const getSelectedOption = (
@@ -250,6 +258,7 @@ function ChooseAppAndEventSubstep(
                   name="choose-app-option"
                   colorScheme="secondary"
                   isClearable={false}
+                  isRefreshLoading={isLoading}
                   isDisabled={isLoading || editorContext.readOnly}
                   // Don't display options until we can check feature flags!
                   items={isLoading ? [] : appOptions}

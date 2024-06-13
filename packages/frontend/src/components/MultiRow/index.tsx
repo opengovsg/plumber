@@ -140,7 +140,6 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               onClick={handleAddRow}
               isDisabled={isEditorReadOnly}
               maxW="fit-content"
-              mb={4}
             >
               And
             </Button>
