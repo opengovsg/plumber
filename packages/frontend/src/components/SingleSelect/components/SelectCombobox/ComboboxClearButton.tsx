@@ -20,11 +20,9 @@ export const ComboboxClearButton = (): JSX.Element | null => {
 
   const [announceClearedInput, setAnnounceClearedInput] = useState(false)
   const handleClearSelection = useCallback(() => {
-    // Need to focus before selecting null. I have no idea why, but it works
-    inputRef?.current?.focus()
     selectItem(null)
     setAnnounceClearedInput(true)
-  }, [inputRef, selectItem])
+  }, [selectItem])
 
   useEffect(() => {
     if (selectedItem) {

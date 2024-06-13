@@ -34,6 +34,9 @@ import { SuggestionsPopper } from './SuggestionPopper'
 import { genVariableInfoMap, substituteOldTemplates } from './utils'
 
 const RICH_TEXT_EXTENSIONS = [
+  Document.configure({
+    HTMLAttributes: { style: 'min-height: 9rem' },
+  }),
   StarterKit.configure({
     paragraph: {
       HTMLAttributes: { style: 'margin: 0' },
@@ -137,6 +140,11 @@ const Editor = ({
       onChange(isRich ? editor.getHTML() : editor.getText())
     },
     editable,
+    // To simulate textarea and coordinate with dropdown input size
+    onCreate: ({ editor }) => {
+      const editorElement = editor.view.dom as HTMLElement
+      editorElement.style.minHeight = isRich ? '9rem' : '2.625rem' // Set initial minHeight directly
+    },
   })
   useEffect(() => {
     // have to listen to editable as this element might not re-render upon
