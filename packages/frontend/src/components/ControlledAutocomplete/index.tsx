@@ -85,7 +85,7 @@ function ControlledAutocomplete(
   // for it yet and it makes things more complex.
   const freeSolo = useMemo(() => {
     if (
-      !options.length ||
+      options.length &&
       options.every((option) => typeof option.value !== 'string')
     ) {
       return false

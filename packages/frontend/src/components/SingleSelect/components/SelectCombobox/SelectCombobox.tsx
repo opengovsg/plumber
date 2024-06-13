@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useMemo } from 'react'
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Flex,
   Icon,
@@ -39,6 +39,15 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
 
     const mergedInputRef = useMergeRefs(inputRef, ref)
 
+    const [hasOptionsLoadedOnce, setHasOptionsLoadedOnce] = useState(false)
+    const isInitialLoading = !hasOptionsLoadedOnce && isRefreshLoading
+
+    useEffect(() => {
+      if (!isRefreshLoading) {
+        setHasOptionsLoadedOnce(true)
+      }
+    }, [isRefreshLoading])
+
     const selectedItemMeta = useMemo(
       () => ({
         icon: itemToIcon(selectedItem),
@@ -67,7 +76,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
           gridTemplateColumns="1fr"
         >
           <Stack
-            visibility={inputValue ? 'hidden' : 'initial'}
+            visibility={inputValue || isInitialLoading ? 'hidden' : 'initial'}
             direction="row"
             spacing="1rem"
             aria-disabled={isDisabled}
@@ -88,10 +97,10 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
             isInvalid={isInvalid}
             isDisabled={isDisabled}
             placeholder={
-              selectedItem
-                ? undefined
-                : isRefreshLoading
+              isInitialLoading
                 ? 'Fetching options...'
+                : selectedItem
+                ? undefined
                 : placeholder
             }
             sx={styles.field}

@@ -7,7 +7,12 @@ import {
   useMultiStyleConfig,
   useTheme,
 } from '@chakra-ui/react'
-import { useCombobox, UseComboboxProps } from 'downshift'
+import {
+  useCombobox,
+  UseComboboxProps,
+  type UseComboboxState,
+  type UseComboboxStateChangeOptions,
+} from 'downshift'
 
 import { useLookupItems } from './hooks/useLookupItems'
 import { defaultFilter } from './utils/defaultFilter'
@@ -113,12 +118,12 @@ export const SingleSelectProvider = ({
 
   const memoizedSelectedItem = useMemo(() => {
     const fromItems = getItemByValue(value)
-
     if (fromItems) {
       return fromItems.item
     }
 
-    return freeSolo && value ? getFreeSoloItem(value) : null
+    const selectedItem = freeSolo && value ? getFreeSoloItem(value) : null
+    return selectedItem
   }, [getItemByValue, freeSolo, value])
 
   useEffect(() => {
@@ -140,10 +145,64 @@ export const SingleSelectProvider = ({
   const handleInputChange = useCallback(
     (inputValue: string | undefined) => {
       const filteredItems = getFilteredItems(inputValue)
-      addFreeSoloItem(filteredItems, inputValue)
+      if (freeSolo) {
+        addFreeSoloItem(filteredItems, inputValue)
+      }
       setFilteredItems(filteredItems)
     },
-    [addFreeSoloItem, getFilteredItems],
+    [addFreeSoloItem, freeSolo, getFilteredItems],
+  )
+
+  const stateReducer = useCallback(
+    (
+      state: UseComboboxState<ComboboxItem>,
+      { changes, type }: UseComboboxStateChangeOptions<ComboboxItem>,
+    ) => {
+      switch (type) {
+        // Handle controlled `value` prop changes.
+        case useCombobox.stateChangeTypes.ControlledPropUpdatedSelectedItem:
+          // Do nothing if selectedItem is null but yet previous state has inputValue.
+          // This suggests that there is some initial input state that we want to keep.
+          // This can only happen on first mount, since inputValue will be empty string
+          // on future actions.
+          if (state.inputValue && !changes.selectedItem) {
+            return { ...changes, inputValue: state.inputValue }
+          }
+          return {
+            ...changes,
+            // Clear inputValue on item selection
+            inputValue: '',
+          }
+        case useCombobox.stateChangeTypes.InputKeyDownEscape: {
+          if (isClearable) {
+            return changes
+          }
+          return {
+            ...changes,
+            selectedItem: state.selectedItem,
+          }
+        }
+        case useCombobox.stateChangeTypes.FunctionSelectItem:
+        case useCombobox.stateChangeTypes.InputKeyDownEnter:
+        case useCombobox.stateChangeTypes.InputBlur:
+        case useCombobox.stateChangeTypes.ItemClick: {
+          return {
+            ...changes,
+            // Clear inputValue on item selection
+            inputValue: '',
+            isOpen: false,
+          }
+        }
+        case useCombobox.stateChangeTypes.InputFocus:
+          return {
+            ...changes,
+            isOpen: false, // keep the menu closed when input gets focused.
+          }
+        default:
+          return changes
+      }
+    },
+    [isClearable],
   )
 
   const {
@@ -185,6 +244,13 @@ export const SingleSelectProvider = ({
         })
       }
     },
+    onSelectedItemChange: ({ selectedItem }) => {
+      if (!selectedItem) {
+        onChange('')
+      } else if (!isItemDisabled(selectedItem)) {
+        onChange(itemToValue(selectedItem))
+      }
+    },
     onStateChange: ({ inputValue, type }) => {
       switch (type) {
         case useCombobox.stateChangeTypes.FunctionSetInputValue:
@@ -195,59 +261,7 @@ export const SingleSelectProvider = ({
           return
       }
     },
-    stateReducer: (state, { changes, type }) => {
-      switch (type) {
-        // Handle controlled `value` prop changes.
-        case useCombobox.stateChangeTypes.ControlledPropUpdatedSelectedItem:
-          // Do nothing if selectedItem is null but yet previous state has inputValue.
-          // This suggests that there is some initial input state that we want to keep.
-          // This can only happen on first mount, since inputValue will be empty string
-          // on future actions.
-          if (state.inputValue && !changes.selectedItem) {
-            return { ...changes, inputValue: state.inputValue }
-          }
-          return {
-            ...changes,
-            // Clear inputValue on item selection
-            inputValue: '',
-          }
-        case useCombobox.stateChangeTypes.InputKeyDownEscape: {
-          if (isClearable) {
-            return changes
-          }
-          return {
-            ...changes,
-            selectedItem: state.selectedItem,
-          }
-        }
-        case useCombobox.stateChangeTypes.FunctionSelectItem:
-        case useCombobox.stateChangeTypes.InputKeyDownEnter:
-        case useCombobox.stateChangeTypes.InputBlur:
-        case useCombobox.stateChangeTypes.ItemClick: {
-          if (changes.selectedItem && !isItemDisabled(changes.selectedItem)) {
-            onChange(itemToValue(changes.selectedItem))
-          }
-          return {
-            ...changes,
-            // Clear inputValue on item selection
-            inputValue: '',
-            isOpen: false,
-          }
-        }
-        case useCombobox.stateChangeTypes.InputFocus:
-          return {
-            ...changes,
-            isOpen: false, // keep the menu closed when input gets focused.
-          }
-        case useCombobox.stateChangeTypes.ToggleButtonClick:
-          return {
-            ...changes,
-            isOpen: !state.isOpen,
-          }
-        default:
-          return changes
-      }
-    },
+    stateReducer,
     ...comboboxProps,
   })
 
