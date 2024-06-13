@@ -1,1 +1,1 @@
-export * from './useItems'
+export * from './useLookupItems'

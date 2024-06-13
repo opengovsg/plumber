@@ -7,9 +7,14 @@ import {
   useMultiStyleConfig,
   useTheme,
 } from '@chakra-ui/react'
-import { useCombobox, UseComboboxProps } from 'downshift'
+import {
+  useCombobox,
+  UseComboboxProps,
+  type UseComboboxState,
+  type UseComboboxStateChangeOptions,
+} from 'downshift'
 
-import { useItems } from './hooks/useItems'
+import { useLookupItems } from './hooks/useLookupItems'
 import { defaultFilter } from './utils/defaultFilter'
 import {
   isItemDisabled,
@@ -18,7 +23,15 @@ import {
 } from './utils/itemUtils'
 import { VIRTUAL_LIST_ITEM_HEIGHT } from './constants'
 import { SelectContext, SharedSelectContextReturnProps } from './SelectContext'
-import { ComboboxItem } from './types'
+import type { ComboboxItem } from './types'
+
+function getFreeSoloItem(freeSoloValue: string) {
+  return {
+    value: freeSoloValue,
+    label: freeSoloValue,
+    description: 'Use this custom value',
+  }
+}
 
 export interface SingleSelectProviderProps<
   Item extends ComboboxItem = ComboboxItem,
@@ -43,22 +56,16 @@ export interface SingleSelectProviderProps<
   /** Color scheme of component */
   colorScheme?: ThemingProps<'SingleSelect'>['colorScheme']
   fixedItemHeight?: number
-  /** SPECIAL CASE for Plumber:
-   * Allow dropdown options to reload upon clicking refresh */
-  onRefresh?: () => void
-  isRefreshLoading?: boolean
-  /** Allow custom dropdown option if freeSolo is enabled */
-  freeSolo?: boolean
-  addCustomOption?: (newValue: string) => void
 }
+
 export const SingleSelectProvider = ({
-  items: rawItems,
+  items: allItems,
   value,
   onChange,
   name,
   filter = defaultFilter,
   nothingFoundLabel = 'No matching results',
-  placeholder: placeholderProp,
+  placeholder = 'Select an option',
   clearButtonLabel = 'Clear selection',
   isClearable = true,
   isSearchable = true,
@@ -73,10 +80,9 @@ export const SingleSelectProvider = ({
   size: _size,
   comboboxProps = {},
   fixedItemHeight,
-  onRefresh,
-  isRefreshLoading,
-  freeSolo,
-  addCustomOption,
+  onRefresh = null,
+  isRefreshLoading = false,
+  freeSolo = false,
 }: SingleSelectProviderProps): JSX.Element => {
   const theme = useTheme()
   // Required in case size is set in theme, we should respect the one set in theme.
@@ -90,7 +96,8 @@ export const SingleSelectProvider = ({
     [_size, theme?.components?.SingleSelect?.defaultProps?.size],
   )
 
-  const { items, getItemByValue, addCustomItem } = useItems({ rawItems })
+  const { getItemByValue } = useLookupItems({ rawItems: allItems })
+
   const [isFocused, setIsFocused] = useState(false)
 
   const { isInvalid, isDisabled, isReadOnly, isRequired } = useFormControlProps(
@@ -102,88 +109,59 @@ export const SingleSelectProvider = ({
     },
   )
 
-  const placeholder = useMemo(() => {
-    if (placeholderProp === null) {
-      return ''
-    }
-    return placeholderProp ?? 'Select an option'
-  }, [placeholderProp])
-
   const getFilteredItems = useCallback(
-    (filterValue?: string) =>
-      filterValue ? filter(items, filterValue) : items,
-    [filter, items],
+    (filterValue?: string) => {
+      const filtered =
+        filterValue != null ? filter(allItems, filterValue) : allItems
+      return [...filtered]
+    },
+    [filter, allItems],
   )
-  const [filteredItems, setFilteredItems] = useState(
-    getFilteredItems(
-      comboboxProps.initialInputValue ?? comboboxProps.inputValue,
-    ),
-  )
+  const [filteredItems, setFilteredItems] = useState(allItems)
 
   const memoizedSelectedItem = useMemo(() => {
-    return getItemByValue(value)?.item ?? null
-  }, [getItemByValue, value])
+    const fromItems = getItemByValue(value)
+    if (fromItems) {
+      return fromItems.item
+    }
 
-  const resetItems = useCallback(
-    () => setFilteredItems(getFilteredItems()),
-    [getFilteredItems],
-  )
+    const selectedItem = freeSolo && value ? getFreeSoloItem(value) : null
+    return selectedItem
+  }, [getItemByValue, freeSolo, value])
+
+  useEffect(() => {
+    setFilteredItems(allItems)
+  }, [allItems])
 
   const virtualListRef = useRef<VirtuosoHandle>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const {
-    toggleMenu,
-    closeMenu,
-    isOpen,
-    getLabelProps,
-    getMenuProps,
-    getInputProps,
-    getItemProps,
-    getToggleButtonProps,
-    highlightedIndex,
-    selectItem,
-    selectedItem,
-    inputValue,
-    setInputValue,
-  } = useCombobox({
-    labelId: `${name}-label`,
-    inputId: name,
-    defaultInputValue: '',
-    defaultHighlightedIndex: 0,
-    items: filteredItems,
-    initialIsOpen,
-    selectedItem: memoizedSelectedItem,
-    itemToString: itemToValue,
-    onSelectedItemChange: ({ selectedItem }) => {
-      if (!selectedItem || !isItemDisabled(selectedItem)) {
-        onChange(itemToValue(selectedItem))
+  const addFreeSoloItem = useCallback(
+    (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
+      // freeSolo inputValue cannot be null or undefined or blank
+      if (inputValue?.trim() && !getItemByValue(inputValue)) {
+        return filteredItems.push(getFreeSoloItem(inputValue))
       }
     },
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    scrollIntoView: () => {},
-    onHighlightedIndexChange: ({ highlightedIndex }) => {
-      if (
-        highlightedIndex !== undefined &&
-        highlightedIndex >= 0 &&
-        virtualListRef.current
-      ) {
-        virtualListRef.current.scrollIntoView({
-          index: highlightedIndex,
-        })
+    [getItemByValue],
+  )
+
+  const handleInputChange = useCallback(
+    (inputValue: string | undefined) => {
+      const filteredItems = getFilteredItems(inputValue)
+      if (freeSolo) {
+        addFreeSoloItem(filteredItems, inputValue)
       }
+      setFilteredItems(filteredItems)
     },
-    onStateChange: ({ inputValue, type }) => {
-      switch (type) {
-        case useCombobox.stateChangeTypes.FunctionSetInputValue:
-        case useCombobox.stateChangeTypes.InputChange:
-          setFilteredItems(getFilteredItems(inputValue))
-          break
-        default:
-          return
-      }
-    },
-    stateReducer: (state, { changes, type }) => {
+    [addFreeSoloItem, freeSolo, getFilteredItems],
+  )
+
+  const stateReducer = useCallback(
+    (
+      state: UseComboboxState<ComboboxItem>,
+      { changes, type }: UseComboboxStateChangeOptions<ComboboxItem>,
+    ) => {
       switch (type) {
         // Handle controlled `value` prop changes.
         case useCombobox.stateChangeTypes.ControlledPropUpdatedSelectedItem:
@@ -212,21 +190,6 @@ export const SingleSelectProvider = ({
         case useCombobox.stateChangeTypes.InputKeyDownEnter:
         case useCombobox.stateChangeTypes.InputBlur:
         case useCombobox.stateChangeTypes.ItemClick: {
-          resetItems()
-
-          // UPDATE: to add custom dropdown options
-          if (freeSolo) {
-            // Note: only create custom dropdown item if no filtered item exists
-            if (inputValue !== '' && filteredItems.length === 0) {
-              // Sanity check: if freeSolo is enabled, the addCustomOption function must come together
-              if (addCustomOption) {
-                addCustomOption(inputValue) // To update the items array to be re-rendered
-                // To render the option immediately
-                addCustomItem(inputValue)
-                selectItem(items[items.length - 1])
-              }
-            }
-          }
           return {
             ...changes,
             // Clear inputValue on item selection
@@ -239,22 +202,72 @@ export const SingleSelectProvider = ({
             ...changes,
             isOpen: false, // keep the menu closed when input gets focused.
           }
-        case useCombobox.stateChangeTypes.ToggleButtonClick:
-          return {
-            ...changes,
-            isOpen: !state.isOpen,
-          }
         default:
           return changes
       }
     },
+    [isClearable],
+  )
+
+  const {
+    toggleMenu,
+    closeMenu,
+    isOpen,
+    getLabelProps,
+    getMenuProps,
+    getInputProps,
+    getItemProps,
+    getToggleButtonProps,
+    highlightedIndex,
+    selectItem,
+    selectedItem,
+    inputValue,
+    setInputValue,
+  } = useCombobox({
+    labelId: `${name}-label`,
+    inputId: name,
+    defaultInputValue: '',
+    defaultHighlightedIndex: 0,
+    items: filteredItems,
+    initialIsOpen,
+    selectedItem: memoizedSelectedItem,
+    itemToString: itemToValue,
+    onIsOpenChange: ({ isOpen }) => {
+      if (!isOpen) {
+        reset()
+      }
+    },
+    onHighlightedIndexChange: ({ highlightedIndex }) => {
+      if (
+        highlightedIndex !== undefined &&
+        highlightedIndex >= 0 &&
+        virtualListRef.current
+      ) {
+        virtualListRef.current.scrollIntoView({
+          index: highlightedIndex,
+        })
+      }
+    },
+    onSelectedItemChange: ({ selectedItem }) => {
+      if (!selectedItem) {
+        onChange('')
+      } else if (!isItemDisabled(selectedItem)) {
+        onChange(itemToValue(selectedItem))
+      }
+    },
+    onStateChange: ({ inputValue, type }) => {
+      switch (type) {
+        case useCombobox.stateChangeTypes.FunctionSetInputValue:
+        case useCombobox.stateChangeTypes.InputChange:
+          handleInputChange(inputValue)
+          break
+        default:
+          return
+      }
+    },
+    stateReducer,
     ...comboboxProps,
   })
-
-  /** Effect to update filtered items whenever items prop changes. */
-  useEffect(() => {
-    setFilteredItems(getFilteredItems(inputValue))
-  }, [getFilteredItems, inputValue, items])
 
   const isItemSelected = useCallback(
     (item: ComboboxItem) => {
@@ -263,7 +276,10 @@ export const SingleSelectProvider = ({
     [selectedItem],
   )
 
-  const resetInputValue = useCallback(() => setInputValue(''), [setInputValue])
+  const reset = useCallback(() => {
+    setFilteredItems(allItems)
+    setInputValue('')
+  }, [allItems, setInputValue])
 
   const styles = useMultiStyleConfig('SingleSelect', {
     size,
@@ -272,16 +288,14 @@ export const SingleSelectProvider = ({
   })
 
   const virtualListHeight = useMemo(() => {
-    // UPDATE: allow proper rendering of dropdown with both label and description
-    let updatedSize = size
-    for (const item of filteredItems) {
-      if (itemToDescriptionString(item)) {
-        updatedSize = 'lg'
-        break
-      }
-    }
+    // Size needs to be larger if we have items with descriptions
+    const itemsHaveDescription = filteredItems.some((item) =>
+      itemToDescriptionString(item),
+    )
+    const itemHeight =
+      fixedItemHeight ??
+      VIRTUAL_LIST_ITEM_HEIGHT[itemsHaveDescription ? 'lg' : size]
 
-    const itemHeight = fixedItemHeight ?? VIRTUAL_LIST_ITEM_HEIGHT[updatedSize]
     // If the total height is less than the max height, just return the total height.
     // Otherwise, return the max height.
     return Math.min(filteredItems.length, 4) * itemHeight
@@ -318,7 +332,7 @@ export const SingleSelectProvider = ({
         styles,
         isFocused,
         setIsFocused,
-        resetInputValue,
+        resetInputValue: reset,
         inputAria,
         inputRef,
         virtualListRef,
@@ -326,7 +340,6 @@ export const SingleSelectProvider = ({
         onRefresh,
         isRefreshLoading,
         freeSolo,
-        value,
       }}
     >
       {children}

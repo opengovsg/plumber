@@ -27,6 +27,14 @@ export interface SharedSelectContextReturnProps<
   /** Item data used to render items in dropdown */
   items: Item[]
   size?: 'xs' | 'sm' | 'md' | 'lg'
+  /*
+   * SPECIAL CASES for Plumber
+   */
+  /** Allow dropdown options to reload upon clicking refresh. Defaults to false */
+  onRefresh?: (() => void) | null
+  isRefreshLoading?: boolean
+  /** Controls if user can add one arbitrary item of their choosing. */
+  freeSolo?: boolean
 }
 
 interface SelectContextReturn<Item extends ComboboxItem = ComboboxItem>
@@ -52,14 +60,6 @@ interface SelectContextReturn<Item extends ComboboxItem = ComboboxItem>
   virtualListRef: RefObject<VirtuosoHandle>
   /** Height to assign to virtual list */
   virtualListHeight: number
-  /** SPECIAL CASE for Plumber:
-   * Allow dropdown options to reload upon clicking refresh */
-  onRefresh?: () => void
-  isRefreshLoading?: boolean
-  /** Allow custom dropdown option if freeSolo is enabled */
-  freeSolo?: boolean
-  /** Controlled selected value */
-  value: string
 }
 
 export const SelectContext = createContext<SelectContextReturn | undefined>(
