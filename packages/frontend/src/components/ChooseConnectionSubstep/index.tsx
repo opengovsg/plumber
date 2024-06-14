@@ -8,8 +8,7 @@ import type {
 
 import { useCallback, useContext, useMemo } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
-import Collapse from '@mui/material/Collapse'
-import ListItem from '@mui/material/ListItem'
+import { Collapse, Flex } from '@chakra-ui/react'
 import ChooseConnectionDropdown from 'components/ChooseConnectionDropdown'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import SetConnectionButton from 'components/SetConnectionButton'
@@ -154,16 +153,8 @@ function ChooseConnectionSubstep(
         title={application?.substepLabels?.connectionStepLabel ?? name}
         valid={isTestStepValid}
       />
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
-        <ListItem
-          sx={{
-            pt: 2,
-            pb: 3,
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            gap: 2,
-          }}
-        >
+      <Collapse in={expanded} unmountOnExit>
+        <Flex w="100%" p="1rem 1rem 1.5rem" flexDir="column" gap={4}>
           <ChooseConnectionDropdown
             isDisabled={editorContext.readOnly || loading}
             connectionOptions={connectionOptions}
@@ -180,7 +171,7 @@ function ChooseConnectionSubstep(
             testResultLoading={testResultLoading}
             registerConnectionLoading={registerConnectionLoading}
           />
-        </ListItem>
+        </Flex>
       </Collapse>
     </>
   )

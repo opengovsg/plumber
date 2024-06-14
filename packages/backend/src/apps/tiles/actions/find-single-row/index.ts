@@ -117,9 +117,8 @@ const action: IRawAction = {
     {
       label: 'Return most recent row instead?',
       key: 'returnLastRow',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: true,
-      variables: false,
       value: false,
       options: [
         {

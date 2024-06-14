@@ -15,11 +15,10 @@ const trigger: IRawTrigger = {
     {
       label: 'Trigger on weekends?',
       key: 'triggersOnWeekend',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       description: 'Should this flow trigger on Saturday and Sunday?',
       required: true,
-      value: true,
-      variables: false,
+      // flip the order of the default options
       options: [
         {
           label: 'Yes',

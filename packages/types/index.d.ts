@@ -22,6 +22,19 @@ export interface IJSONObject extends JsonObject {
   [x: string]: IJSONValue
 }
 
+export interface SetupMessage {
+  /**
+   * Synced with SetupMessageVariant GraphQL enum. Loosely based off Design
+   * System's InfoBox variants
+   */
+  variant: 'info' | 'warning'
+
+  /**
+   * Supports markdown
+   */
+  messageBody: string
+}
+
 export interface IConnection {
   id: string
   key: string
@@ -243,7 +256,7 @@ export interface IFieldDropdown extends IBaseField {
   type: 'dropdown'
   showOptionValue?: boolean
   allowArbitrary?: boolean
-  value?: string | boolean
+  value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
 }
@@ -265,7 +278,7 @@ export interface IFieldDropdownOption {
    * dropdown. The value will also not be rendered if `description` if
    * specified.
    */
-  value: boolean | string | number
+  value: string | number
 
   /**
    * If this is specified, this will be rendered instead of `value`. Note that
@@ -310,6 +323,22 @@ export interface IFieldRichText extends IBaseField {
   value?: string
 }
 
+export interface IFieldBooleanRadio extends IBaseField {
+  type: 'boolean-radio'
+  value?: boolean // will default to null if not provided
+  options?: IFieldBooleanRadioOptions // only can provide 2 OPTIONS if label is not yes/no
+}
+
+export type IFieldBooleanRadioOptions = [
+  IFieldBooleanRadioOption,
+  IFieldBooleanRadioOption,
+]
+
+export interface IFieldBooleanRadioOption {
+  label: string
+  value: boolean
+}
+
 export type IField =
   | IFieldDropdown
   | IFieldText
@@ -317,6 +346,7 @@ export type IField =
   | IFieldMultiSelect
   | IFieldMultiRow
   | IFieldRichText
+  | IFieldBooleanRadio
 
 export interface IAuthenticationStepField {
   name: string
@@ -434,6 +464,17 @@ export interface IApp {
    * Apps specify this if they need their own dedicated action queue.
    */
   queue?: IAppQueue
+
+  /**
+   * Apps specify this if they want to display an additional informative
+   * message to the user during pipe setup / config, when the user selects the
+   * app in the "choose app and event" substep.
+   *
+   * Note that the apps' own triggers / actions may also specify their own
+   * setupMessage. In this case, the triggers' / actions' info message takes
+   * precedence.
+   */
+  setupMessage?: SetupMessage
 }
 
 export type TBeforeRequest = (
@@ -540,6 +581,12 @@ export interface IBaseTrigger {
    * @param executionStep The execution step to get metadata for.
    */
   getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+
+  /**
+   * Triggers specify this if they want to display an additional informative
+   * message to the user during pipe setup / config.
+   */
+  setupMessage?: SetupMessage
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -631,6 +678,12 @@ export interface IBaseAction {
    * action.
    */
   groupsLaterSteps?: boolean
+
+  /**
+   * Actions specify this if they want to display an additional informative
+   * message to the user during pipe setup / config.
+   */
+  setupMessage?: SetupMessage
 }
 
 export interface IRawAction extends IBaseAction {

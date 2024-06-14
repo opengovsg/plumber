@@ -41,22 +41,11 @@ const action: IRawAction = {
     {
       label: 'Disable notification?',
       key: 'disableNotification',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: false,
       value: false,
       description:
         'Sends the message silently. Users will receive a notification with no sound.',
-      variables: false,
-      options: [
-        {
-          label: 'Yes',
-          value: true,
-        },
-        {
-          label: 'No',
-          value: false,
-        },
-      ],
     },
   ],
 
