@@ -2,7 +2,6 @@ import type { AppEventKeyPair } from '@plumber/types'
 
 import type {
   CreateFlowTemplateInput,
-  DemoVideoDetails,
   FlowConfig,
 } from '@/graphql/__generated__/types.generated'
 import Flow from '@/models/flow'
@@ -22,19 +21,16 @@ export const DEFAULT_FLOW_TEMPLATE: CreateFlowTemplateInput = {
       eventKey: 'sendTransactionalEmail',
     },
   ],
-  demoVideoDetails: {
-    url: 'https://demo.arcade.software/FzpL1zCmibw0oXR6HUJi?embed&show_copy_link=true',
-    title: 'Send notifications',
-  },
+  demoVideoId: 'formsg-postman',
 }
 
-async function makeFlowTemplate(
+async function createFlowFromTemplate(
   flowName: string,
   trigger: AppEventKeyPair,
   actions: AppEventKeyPair[],
   user: User,
   isPreCreated: boolean,
-  demoVideoDetails: DemoVideoDetails,
+  demoVideoId: string,
 ): Promise<Flow> {
   const { appKey: triggerAppKey, eventKey: triggerEventKey } = trigger
 
@@ -44,7 +40,7 @@ async function makeFlowTemplate(
       demoConfig: {
         onFirstLoad: true,
         isPreCreated,
-        videoDetails: demoVideoDetails,
+        videoId: demoVideoId,
       },
     }
     // insert flow
@@ -85,4 +81,4 @@ async function makeFlowTemplate(
   })
 }
 
-export default makeFlowTemplate
+export default createFlowFromTemplate

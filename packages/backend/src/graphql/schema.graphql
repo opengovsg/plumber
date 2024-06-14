@@ -335,7 +335,7 @@ type FlowErrorConfig {
 type FlowDemoConfig {
   onFirstLoad: Boolean!
   isPreCreated: Boolean!
-  videoDetails: DemoVideoDetails!
+  videoId: String!
 }
 
 type Execution {
@@ -392,7 +392,7 @@ input CreateFlowTemplateInput {
   flowName: String!
   trigger: AppEventKeyPair!
   actions: [AppEventKeyPair!]!
-  demoVideoDetails: DemoVideoDetailsInput!
+  demoVideoId: String!
 }
 
 input UpdateFlowInput {
@@ -522,11 +522,6 @@ type Step {
 input AppEventKeyPair {
   appKey: String!
   eventKey: String!
-}
-
-input DemoVideoDetailsInput {
-  url: String!
-  title: String!
 }
 
 input StepConnectionInput {
