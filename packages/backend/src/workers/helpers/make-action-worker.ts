@@ -115,6 +115,8 @@ export function makeActionWorker(
           actionKey: currStep?.key,
           appKey: currStep?.appKey,
           jobId,
+          jobCreationTime: job.timestamp,
+          timeInJobQueue: Date.now() - job.timestamp,
           workerVersion: appConfig.version,
         })
 
