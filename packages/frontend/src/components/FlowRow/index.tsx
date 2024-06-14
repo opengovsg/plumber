@@ -46,7 +46,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
         <Tooltip
           label={
             flow?.config?.demoConfig?.onFirstLoad
-              ? 'Click for a demo of how to send an email notification when there is a new form response.'
+              ? 'Click for a demo of how to send an email notification to a respondent when they submit your form.'
               : ''
           }
           aria-label="demo flow tooltip"

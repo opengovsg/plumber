@@ -49,16 +49,17 @@ export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
               </Badge>
               <Text textStyle="h3-semibold">Send notifications</Text>
               <Text textStyle="body-1">
-                This demo shows you how to send out a customised email
-                notification with each new form response. Common use cases
-                include notifications, or acknowledgments and follow up
-                instructions.
+                You will learn how to set up a workflow that will send out a
+                customised email notification to a respondent whenever they
+                submit your form. Common use cases include sending
+                acknowledgments or providing follow up instructions to form
+                respondents.
               </Text>
             </Flex>
 
             <ModalFooter p={0} gap={4}>
               <Button onClick={onClose} variant="clear" color="primary.600">
-                Build your own workflow
+                Skip demo and build now
               </Button>
               <Button onClick={() => setShowVideoModal(true)}>
                 Start demo
