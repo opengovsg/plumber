@@ -22,6 +22,19 @@ export interface IJSONObject extends JsonObject {
   [x: string]: IJSONValue
 }
 
+export interface SetupMessage {
+  /**
+   * Synced with SetupMessageVariant GraphQL enum. Loosely based off Design
+   * System's InfoBox variants
+   */
+  variant: 'info' | 'warning'
+
+  /**
+   * Supports markdown
+   */
+  messageBody: string
+}
+
 export interface IConnection {
   id: string
   key: string
@@ -451,6 +464,17 @@ export interface IApp {
    * Apps specify this if they need their own dedicated action queue.
    */
   queue?: IAppQueue
+
+  /**
+   * Apps specify this if they want to display an additional informative
+   * message to the user during pipe setup / config, when the user selects the
+   * app in the "choose app and event" substep.
+   *
+   * Note that the apps' own triggers / actions may also specify their own
+   * setupMessage. In this case, the triggers' / actions' info message takes
+   * precedence.
+   */
+  setupMessage?: SetupMessage
 }
 
 export type TBeforeRequest = (
@@ -557,6 +581,12 @@ export interface IBaseTrigger {
    * @param executionStep The execution step to get metadata for.
    */
   getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+
+  /**
+   * Triggers specify this if they want to display an additional informative
+   * message to the user during pipe setup / config.
+   */
+  setupMessage?: SetupMessage
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -648,6 +678,12 @@ export interface IBaseAction {
    * action.
    */
   groupsLaterSteps?: boolean
+
+  /**
+   * Actions specify this if they want to display an additional informative
+   * message to the user during pipe setup / config.
+   */
+  setupMessage?: SetupMessage
 }
 
 export interface IRawAction extends IBaseAction {

@@ -18,6 +18,11 @@ const app: IApp = {
   actions,
   queue,
   isNewApp: true,
+  setupMessage: {
+    variant: 'info',
+    messageBody:
+      'This service is free until **May 2025**. Find out more [here](https://guide.plumber.gov.sg/user-guides/actions/postman-sms).',
+  },
 }
 
 export default app

@@ -25,6 +25,10 @@ export const GET_APPS = gql`
         settingsStepLabel
         addConnectionLabel
       }
+      setupMessage {
+        variant
+        messageBody
+      }
       auth {
         connectionType
         connectionRegistrationType
@@ -79,6 +83,10 @@ export const GET_APPS = gql`
         pollInterval
         description
         settingsStepLabel
+        setupMessage {
+          variant
+          messageBody
+        }
         webhookTriggerInstructions {
           beforeUrlMsg
           afterUrlMsg
@@ -160,6 +168,10 @@ export const GET_APPS = gql`
         key
         description
         settingsStepLabel
+        setupMessage {
+          variant
+          messageBody
+        }
         groupsLaterSteps
         substeps {
           key
