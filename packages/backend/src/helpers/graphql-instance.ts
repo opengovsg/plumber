@@ -12,9 +12,8 @@ import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
-import AuthenticatedContext, {
-  UnauthenticatedContext,
-} from '@/types/express/context'
+import type { UnauthenticatedContext } from '@/types/express/context'
+import type AuthenticatedContext from '@/types/express/context'
 
 // Adds the logged in user's email (if available) as a span tag to each query.
 function ApolloServerPluginUserTracer(): ApolloServerPlugin<AuthenticatedContext> {
