@@ -18,18 +18,15 @@ import type AuthenticatedContext from '@/types/express/context'
 // Adds the logged in user's email (if available) as a span tag to each query.
 function ApolloServerPluginUserTracer(): ApolloServerPlugin<AuthenticatedContext> {
   return {
-    async requestDidStart() {
-      return {
-        // Add the tag right before we reply the user.
-        // https://www.apollographql.com/docs/apollo-server/integrations/plugins#request-lifecycle-event-flow
-        async willSendResponse(requestContext) {
-          const span = tracer.scope().active()
-          span?.addTags({
-            user:
-              requestContext.contextValue?.currentUser?.email ??
-              'unauthenticated',
-          })
-        },
+    async requestDidStart(requestContext) {
+      // Add the tag right before we reply the user.
+      // https://www.apollographql.com/docs/apollo-server/integrations/plugins#request-lifecycle-event-flow
+      const currentUser = requestContext.contextValue?.currentUser
+      if (currentUser) {
+        tracer.setUser({
+          id: currentUser.id,
+          email: currentUser.email,
+        })
       }
     },
   }
