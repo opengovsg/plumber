@@ -3,11 +3,13 @@ import { IApp } from '@plumber/types'
 import beforeRequest from './common/before-request'
 import requestErrorHandler from './common/request-error-handler'
 import actions from './actions'
+import auth from './auth'
 import queue from './queue'
 
 const app: IApp = {
   name: 'SMS by Postman',
   key: 'postman-sms',
+  description: "Send SMSes using your agency's Postman v2 account",
   iconUrl: '{BASE_URL}/apps/postman-sms/assets/favicon.svg',
   beforeRequest,
   requestErrorHandler,
@@ -15,14 +17,10 @@ const app: IApp = {
   baseUrl: '',
   apiBaseUrl: '', // Populated in beforeRequest
   primaryColor: '000000',
+  auth,
   actions,
   queue,
   isNewApp: true,
-  setupMessage: {
-    variant: 'info',
-    messageBody:
-      'This service is free until **May 2025**. Find out more [here](https://guide.plumber.gov.sg/user-guides/actions/postman-sms).',
-  },
 }
 
 export default app
