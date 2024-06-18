@@ -236,20 +236,18 @@ export async function validateCanAccessFile(
         http,
       )
   if (!userCanWriteToFile) {
-    throw new Error(
-      'You do not have write access and cannot operate on this file.',
-    )
+    throw new Error('You need write access to use this file in your pipe.')
   }
 
   if (!sensitivityLabelGuid) {
-    throw new Error('File does not have a sensitivity label')
+    throw new Error('Your file needs a sensitivity label.')
   }
 
   const isAllowedSensitivity =
     tenant.allowedSensitivityLabelGuids.has(sensitivityLabelGuid)
   if (!isAllowedSensitivity) {
     throw new Error(
-      'File is too sensitive; Plumber is only cleared to handle data up to Restricted and Sensitive-Normal.',
+      'File sensitivity should be up to Restricted and Sensitive-Normal.',
     )
   }
 }

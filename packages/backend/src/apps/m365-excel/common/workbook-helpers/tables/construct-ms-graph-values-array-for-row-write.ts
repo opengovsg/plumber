@@ -33,7 +33,7 @@ export function constructMsGraphValuesArrayForRowWrite(
 
     if (index === undefined) {
       throw new Error(
-        `Column "${columnToWrite.columnName}" is not in the table. Please make sure your step is configured correctly.`,
+        `Column "${columnToWrite.columnName}" does not exist in your table. Remove this column from 'Row Data' section to proceed.`,
       )
     }
 

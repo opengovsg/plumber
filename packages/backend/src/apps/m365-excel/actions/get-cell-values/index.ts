@@ -7,6 +7,10 @@ import WorkbookSession from '../../common/workbook-session'
 import type { DataOut } from './data-out'
 import getDataOutMetadata from './get-data-out-metadata'
 
+/**
+ * NOTE: This action has been deprecated for GA to reduce app complexity. We are
+ * leaving this in for the few pilot users who are still using this.
+ */
 const action: IRawAction = {
   name: 'Get cell values',
   key: 'getCellValues',

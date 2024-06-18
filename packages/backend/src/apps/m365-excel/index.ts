@@ -9,7 +9,7 @@ import dynamicData from './dynamic-data'
 import queue from './queue'
 
 const app: IApp = {
-  name: 'M365 Excel (Pilot)',
+  name: 'M365 Excel',
   key: 'm365-excel',
   iconUrl: '{BASE_URL}/apps/m365-excel/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
@@ -25,6 +25,11 @@ const app: IApp = {
   queue,
   substepLabels: {
     connectionStepLabel: 'Connect to M365 Excel',
+  },
+  setupMessage: {
+    variant: 'warning',
+    messageBody:
+      'There is a cap on total M365 Excel actions across all Plumber users. To prevent disruption to your workflow, contact us if you need more than 100 Excel actions per hour.\n\nRead [our guide](https://guide.plumber.gov.sg/user-guides/actions/m365-excel) for more information.',
   },
 }
 

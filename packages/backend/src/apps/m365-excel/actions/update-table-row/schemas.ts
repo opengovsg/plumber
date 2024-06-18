@@ -24,7 +24,7 @@ export const parametersSchema = getTableRowParametersSchema.extend({
         if (seenColumnNames.has(columnToUpdate.columnName)) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `Cannot update the same column (${columnToUpdate.columnName}) twice. Double check your step configuration.`,
+            message: `Column '${columnToUpdate.columnName}' can only be updated once. Remove duplicate '${columnToUpdate.columnName}' columns from the 'Set up row to update' section.`,
             fatal: true,
           })
           return z.NEVER

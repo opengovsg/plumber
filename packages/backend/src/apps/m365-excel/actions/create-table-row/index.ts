@@ -5,6 +5,8 @@ import StepError from '@/errors/step'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 
+import getDataOutMetadata from './get-data-out-metadata'
+
 // Small wrapper around constructMsGraphValuesArrayForRowWrite which throws
 // StepError. As StepError requires $, this helps avoid $ becoming viral through
 // our codebase.
@@ -33,7 +35,7 @@ interface TableHeaderInfo {
 }
 
 const action: IRawAction = {
-  name: 'Create row',
+  name: 'Create table row',
   key: 'createTableRow',
   description: 'Creates a new row in your Excel table',
   settingsStepLabel: 'Set up row to create',
@@ -42,7 +44,7 @@ const action: IRawAction = {
       key: 'fileId',
       label: 'Excel File',
       required: true,
-      description: 'This should be a file in your Plumber folder.',
+      description: 'This should be an Excel file in the folder created for you',
       type: 'dropdown' as const,
       showOptionValue: false,
       variables: false,
@@ -80,11 +82,10 @@ const action: IRawAction = {
       },
     },
     {
-      label: 'Values',
+      label: 'New row data',
       key: 'columnValues',
       type: 'multirow' as const,
       required: true,
-      description: 'Specify values you want to insert in the new row',
       subFields: [
         {
           key: 'columnName' as const,
@@ -123,6 +124,8 @@ const action: IRawAction = {
     },
   ],
 
+  getDataOutMetadata,
+
   async run($) {
     const { fileId, tableId } = $.step.parameters
     const columnValues = ($.step.parameters.columnValues as IJSONObject[]) ?? []
@@ -142,8 +145,8 @@ const action: IRawAction = {
 
       if (seenColumnNames.has(currColumnName)) {
         throw new StepError(
-          `Cannot write 2 different values to the same column (${currColumnName})`,
-          `Click on set up action and make sure '${currColumnName}' only appears once.`,
+          `Column '${currColumnName}' can only be written once.`,
+          `Remove duplicate '${currColumnName}' columns from the 'New row data' section.`,
           $.step?.position,
           $.app.name,
         )

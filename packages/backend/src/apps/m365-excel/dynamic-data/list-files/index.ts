@@ -15,7 +15,7 @@ const dynamicData: IDynamicData = {
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     const authData = $.auth?.data as AuthData
     if (!authData || !authData.folderId || !authData.tenantKey) {
-      throw new Error('Invalid connection; missing tenant or folder!')
+      throw new Error('Connect to M365 in the "Choose connection" step.')
     }
 
     const tenant = getM365TenantInfo(authData.tenantKey)

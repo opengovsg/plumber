@@ -10,14 +10,13 @@ const verifyConnectionRegistration: NonNullable<
   if (authData.folderId) {
     return {
       registrationVerified: true,
-      message: 'Place files in your Plumber folder to begin.',
+      message: `A folder titled ${$.user.email} has been created for you. Place your Excel files inside this folder to use them in your pipe.`,
     }
   }
 
   return {
     registrationVerified: false,
-    message:
-      'Press "Connect" to set up Plumber integration with this M365 server',
+    message: null,
   }
 }
 

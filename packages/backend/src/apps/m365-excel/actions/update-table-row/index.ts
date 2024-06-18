@@ -32,8 +32,9 @@ const action: IRawAction = {
     ...getTableRowAction['arguments'],
     {
       key: 'columnsToUpdate' as const,
-      label: 'Columns to update',
-      description: 'Specify columns you want to update.',
+      label: 'Row data',
+      description:
+        'Enter the data to update the row with. Columns not specified will not be updated',
       type: 'multirow' as const,
       required: true,
       subFields: [
