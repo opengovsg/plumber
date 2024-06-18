@@ -19,7 +19,7 @@ export default function Login(): ReactElement {
       >
         <Flex flexDir="column" gap={2} pl={11}>
           <Text textStyle="heavy" maxW="60%">
-            Automate your manual and repititive tasks
+            Automate your manual and repetitive tasks
           </Text>
           <Text textStyle="body-1" maxW="80%">
             A no-code tool that connects multiple applications together to
