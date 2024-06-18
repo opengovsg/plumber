@@ -11,7 +11,6 @@ import {
   Icon,
   Skeleton,
   Text,
-  useDisclosure,
   VStack,
 } from '@chakra-ui/react'
 import {
@@ -45,35 +44,20 @@ export default function EditorLayout(): ReactElement {
 
   // for loading demo modal
   const onFirstLoad = flow?.config?.demoConfig?.onFirstLoad
-  const { onClose } = useDisclosure()
 
-  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
-  const onFlowConfigUpdate = useCallback(async () => {
-    await updateFlowConfig({
-      variables: {
-        input: {
-          id: flow?.id,
-          onFirstLoad: false, // this is to not load demo modal and show tooltip anymore
-        },
-        optimisticResponse: {
-          updateFlowConfig: {
-            __typename: 'Flow',
-            id: flow?.id,
-            config: {
-              demoConfig: {
-                onFirstLoad: false,
-              },
-            },
-          },
-        },
+  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG, {
+    variables: {
+      input: {
+        id: flowId,
+        onFirstLoad: false, // this is to not load demo modal and show tooltip anymore
       },
-    })
-  }, [flow?.id, updateFlowConfig])
+    },
+    refetchQueries: [GET_FLOW],
+  })
 
-  const handleClose = useCallback(() => {
-    onClose()
-    onFlowConfigUpdate()
-  }, [onClose, onFlowConfigUpdate])
+  const handleClose = useCallback(async () => {
+    await updateFlowConfig()
+  }, [updateFlowConfig])
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
