@@ -597,12 +597,8 @@ export interface ITrigger extends IBaseTrigger {
   substeps?: ISubstep[]
 }
 
-interface PostmanSendEmailMetadata {
-  type: 'postman-send-email'
-  progress?: number
-}
 // Can add more type in this union later for different action types
-export type NextStepMetadata = PostmanSendEmailMetadata
+export type NextStepMetadata = Record<string, any>
 
 export interface IActionJobData {
   flowId: string

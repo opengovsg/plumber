@@ -17,6 +17,7 @@ import registerConnection from './mutations/register-connection'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
 import retryExecutionStep from './mutations/retry-execution-step'
+import retryPartialStep from './mutations/retry-partial-step'
 import tilesMutationResolvers from './mutations/tiles'
 import updateConnection from './mutations/update-connection'
 import updateFlow from './mutations/update-flow'
@@ -65,6 +66,7 @@ export default {
   requestOtp,
   verifyOtp,
   retryExecutionStep,
+  retryPartialStep,
   logout,
   loginWithSgid,
   loginWithSelectedSgid,

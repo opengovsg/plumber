@@ -171,6 +171,7 @@ export default function ExecutionStep({
               {hasError && (
                 <TabPanel>
                   <ErrorResult
+                    executionStepId={executionStep.id}
                     errorDetails={executionStep.errorDetails}
                     isTestRun={false}
                   />

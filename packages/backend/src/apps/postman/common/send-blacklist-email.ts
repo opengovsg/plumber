@@ -1,12 +1,11 @@
 import { DateTime } from 'luxon'
 
-import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
+import { redisClient as pipeErrorRedisClient } from '@/helpers/generate-error-email'
 import { sendEmail } from '@/helpers/send-email'
 
 const MAX_LENGTH = 80
 const BLACKLIST_REQUEST_FORM_URL =
   'https://form.gov.sg/6661900c502545e6788fa3c4'
-const redisClient = createRedisClient(REDIS_DB_INDEX.PIPE_ERRORS)
 
 interface SendBlacklistEmailProps {
   flowName: string
@@ -91,7 +90,7 @@ async function filterNotifiedEmails(
    * ref: https://repost.aws/knowledge-center/elasticache-crossslot-keys-error-redis
    */
   const isNotified = await Promise.all(
-    blacklistKeys.map((key) => redisClient.exists(key)),
+    blacklistKeys.map((key) => pipeErrorRedisClient.exists(key)),
   )
   return emails.filter((_, i) => !isNotified[i])
 }
@@ -103,7 +102,7 @@ async function addBlacklistedEmailToRedis(
   await Promise.all(
     emails.map(async (email) => {
       const errorKey = blacklistRedisKey(flowId, email)
-      await redisClient
+      await pipeErrorRedisClient
         .multi()
         .set(errorKey, '1')
         .pexpireat(errorKey, DateTime.now().endOf('week').toMillis())
@@ -130,8 +129,6 @@ export async function sendBlacklistEmail({
     return
   }
 
-  await addBlacklistedEmailToRedis(flowId, filteredBlacklist)
-
   await sendEmail({
     subject: `Plumber: Blacklisted email detected on ${truncatedFlowName}`,
     body: createBodyErrorMessage({
@@ -143,4 +140,6 @@ export async function sendBlacklistEmail({
     recipient: userEmail,
     replyTo: 'support@plumber.gov.sg',
   })
+
+  await addBlacklistedEmailToRedis(flowId, filteredBlacklist)
 }
