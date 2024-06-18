@@ -16,7 +16,8 @@ const contactPlumberMessage =
 
 export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   const { errorDetails, isTestRun } = props
-  const { name, solution, position, appName, details } = errorDetails
+  const { name, solution, position, appName, details, partialRetry } =
+    errorDetails
   const [isOpen, setIsOpen] = useState(false)
   const toggleDropdown = useCallback(() => {
     setIsOpen((value) => !value)
@@ -42,8 +43,7 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
 
         <Text textStyle="body-1">
           <Markdown linkTarget="_blank">
-            {`${solution}
-              ${contactPlumberMessage}`}
+            {solution + '\n' + contactPlumberMessage}
           </Markdown>
           {details && (
             <>
@@ -63,6 +63,12 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
                 </Collapse>
               </Box>
             </>
+          )}
+
+          {!isTestRun && partialRetry && (
+            <Button variant="link" textDecoration="underline" mt={4}>
+              {partialRetry.buttonMessage}
+            </Button>
           )}
         </Text>
       </Box>
