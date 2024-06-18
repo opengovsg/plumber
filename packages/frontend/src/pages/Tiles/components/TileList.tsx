@@ -2,6 +2,7 @@ import { ITableMetadata } from '@plumber/types'
 
 import { MouseEvent, useCallback, useRef } from 'react'
 import { BiDotsHorizontalRounded, BiShow, BiTrash } from 'react-icons/bi'
+import { MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -95,34 +96,51 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
             Last opened {toPrettyDateString(+table.lastAccessedAt)}
           </Text>
         </Box>
-        <Menu onClose={onMenuClose} isOpen={isMenuOpen} gutter={0}>
-          <MenuButton
-            as={IconButton}
-            colorScheme="secondary"
-            variant="clear"
-            icon={<BiDotsHorizontalRounded />}
-            aria-label="options"
-            onClick={(event) => {
-              event.preventDefault()
-              onMenuToggle()
-            }}
-          />
-          <MenuList w={144}>
-            <MenuItem
-              icon={<Icon as={BiShow} boxSize={5} />}
-              onClick={() => navigate(URLS.TILE(table.id))}
+        <Flex alignItems="center" gap={4}>
+          {table.role === 'viewer' && (
+            <Tag
+              colorScheme="secondary"
+              size="xs"
+              variant="subtle"
+              py={2}
+              gap={1}
+              pointerEvents="none"
             >
-              View
-            </MenuItem>
-            <MenuItem
-              icon={<Icon as={BiTrash} boxSize={5} />}
-              color="interaction.critical.default"
-              onClick={onDeleteButtonClick}
-            >
-              Delete
-            </MenuItem>
-          </MenuList>
-        </Menu>
+              <TagLeftIcon as={MdOutlineRemoveRedEye} />
+              <TagLabel>View only</TagLabel>
+            </Tag>
+          )}
+          <Menu onClose={onMenuClose} isOpen={isMenuOpen} gutter={0}>
+            <MenuButton
+              as={IconButton}
+              colorScheme="secondary"
+              variant="clear"
+              icon={<BiDotsHorizontalRounded />}
+              aria-label="options"
+              onClick={(event) => {
+                event.preventDefault()
+                onMenuToggle()
+              }}
+            />
+            <MenuList w={144}>
+              <MenuItem
+                icon={<Icon as={BiShow} boxSize={5} />}
+                onClick={() => navigate(URLS.TILE(table.id))}
+              >
+                View
+              </MenuItem>
+              {table.role === 'owner' && (
+                <MenuItem
+                  icon={<Icon as={BiTrash} boxSize={5} />}
+                  color="interaction.critical.default"
+                  onClick={onDeleteButtonClick}
+                >
+                  Delete
+                </MenuItem>
+              )}
+            </MenuList>
+          </Menu>
+        </Flex>
       </Flex>
       <AlertDialog
         isOpen={isDialogOpen}
