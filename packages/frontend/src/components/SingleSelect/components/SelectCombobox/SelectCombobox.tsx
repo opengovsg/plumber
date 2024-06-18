@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useMemo } from 'react'
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Flex,
   Icon,
@@ -29,6 +29,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
       inputValue,
       isRequired,
       placeholder,
+      isRefreshLoading,
       isOpen,
       resetInputValue,
       inputRef,
@@ -37,6 +38,15 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
     } = useSelectContext()
 
     const mergedInputRef = useMergeRefs(inputRef, ref)
+
+    const [hasOptionsLoadedOnce, setHasOptionsLoadedOnce] = useState(false)
+    const isInitialLoading = !hasOptionsLoadedOnce && isRefreshLoading
+
+    useEffect(() => {
+      if (!isRefreshLoading) {
+        setHasOptionsLoadedOnce(true)
+      }
+    }, [isRefreshLoading])
 
     const selectedItemMeta = useMemo(
       () => ({
@@ -66,7 +76,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
           gridTemplateColumns="1fr"
         >
           <Stack
-            visibility={inputValue ? 'hidden' : 'initial'}
+            visibility={inputValue || isInitialLoading ? 'hidden' : 'initial'}
             direction="row"
             spacing="1rem"
             aria-disabled={isDisabled}
@@ -86,7 +96,13 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
             isReadOnly={!isSearchable || isReadOnly}
             isInvalid={isInvalid}
             isDisabled={isDisabled}
-            placeholder={selectedItem ? undefined : placeholder}
+            placeholder={
+              isInitialLoading
+                ? 'Fetching options...'
+                : selectedItem
+                ? undefined
+                : placeholder
+            }
             sx={styles.field}
             {...getInputProps({
               onClick: handleToggleMenu,
