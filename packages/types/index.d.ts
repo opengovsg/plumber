@@ -103,7 +103,7 @@ export interface IExecutionStep {
   dataIn: IJSONObject
   dataOut: IJSONObject
   errorDetails: IJSONObject
-  status: string
+  status: 'success' | 'failure'
   appKey: string
   jobId?: string
   createdAt: string
@@ -739,7 +739,7 @@ export type IGlobalVariable = {
     appKey: string
     parameters: IJSONObject
   }
-  getLastExecutionStep?: () => Promise<IExecutionStep | undefined>
+  getLastExecutionStep?: (options?: {sameExecution?: boolean}) => Promise<IExecutionStep | undefined>
   execution?: {
     id: string
     testRun: boolean
@@ -794,6 +794,9 @@ export interface IStepError {
   position: number
   appName: string
   details?: IJSONObject
+  partialRetry?: {
+    buttonMessage: string
+  }
 }
 
 // Tiles

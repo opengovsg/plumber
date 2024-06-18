@@ -119,11 +119,16 @@ class Step extends Base {
     return apps[this.appKey]
   }
 
-  async getLastExecutionStep() {
-    const lastExecutionStep = await this.$relatedQuery('executionSteps')
+  async getLastExecutionStep(executionId?: string) {
+    const query = this.$relatedQuery('executionSteps')
       .orderBy('created_at', 'desc')
       .limit(1)
       .first()
+
+    if (executionId) {
+      query.where('execution_id', executionId)
+    }
+    const lastExecutionStep = await query
     if (lastExecutionStep?.appKey !== this.appKey) {
       return undefined
     }
