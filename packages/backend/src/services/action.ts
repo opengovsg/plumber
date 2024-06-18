@@ -1,6 +1,7 @@
 import { type IActionRunResult, NextStepMetadata } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import PartialStepError from '@/errors/partial-error'
 import StepError from '@/errors/step'
 import computeParameters from '@/helpers/compute-parameters'
 import globalVariable from '@/helpers/global-variable'
@@ -97,14 +98,23 @@ export const processAction = async (options: ProcessActionOptions) => {
     }
   }
 
+  /**
+   * During non-test runs and the error is a PartialStepError, we want to mark the step as successful
+   * so it continues to the next step
+   */
+  const status: ExecutionStep['status'] =
+    !executionError || (!testRun && executionError instanceof PartialStepError)
+      ? 'success'
+      : 'failure'
+
   const executionStep = await execution
     .$relatedQuery('executionSteps')
     .insertAndFetch({
       stepId: $.step.id,
-      status: $.actionOutput.error ? 'failure' : 'success',
+      status,
       dataIn: computedParameters,
-      dataOut: $.actionOutput.error ? null : $.actionOutput.data?.raw,
-      errorDetails: $.actionOutput.error ? $.actionOutput.error : null,
+      dataOut: $.actionOutput.data?.raw ?? null,
+      errorDetails: $.actionOutput.error ?? null,
       appKey: $.app.key,
       jobId,
     })
