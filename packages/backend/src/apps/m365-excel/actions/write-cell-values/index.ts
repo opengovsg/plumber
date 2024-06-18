@@ -6,6 +6,10 @@ import WorkbookSession from '../../common/workbook-session'
 
 import { parametersSchema } from './parameters-schema'
 
+/**
+ * NOTE: This action has been deprecated for GA to reduce app complexity. We are
+ * leaving this in for the few pilot users who are still using this.
+ */
 const action: IRawAction = {
   name: 'Write cell values',
   key: 'writeCellValues',

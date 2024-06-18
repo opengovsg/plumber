@@ -13,7 +13,7 @@ async function getDataOutMetadata(
   const dataOut = dataOutSchema.parse(rawDataOut)
   const metadata: IDataOutMetadata = {
     updatedRow: {
-      label: 'Updated Row',
+      label: 'Is row updated?',
     },
   }
 
@@ -36,7 +36,7 @@ async function getDataOutMetadata(
 
   metadata.sheetRowNumber = {
     type: 'text',
-    label: 'Sheet Row Number',
+    label: 'Sheet row number',
   }
 
   return metadata
