@@ -1,6 +1,7 @@
 import { NotFoundError } from 'objection'
 
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
+import logger from '@/helpers/logger'
 import TableMetadata from '@/models/table-metadata'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
@@ -27,6 +28,7 @@ const getTable: QueryResolvers['getTable'] = async (
 
     return table
   } catch (e) {
+    logger.error(e)
     if (e instanceof NotFoundError) {
       if (context.tilesViewKey) {
         throw new InvalidTileViewKeyError(tableId, context.tilesViewKey)

@@ -20,6 +20,7 @@ const action: IRawAction = {
   name: 'Find single row',
   key: 'findSingleRow',
   description: 'Gets data of a single row from your tile',
+  settingsStepLabel: 'Set up row to find',
   arguments: [
     {
       label: 'Select Tile',
@@ -116,9 +117,8 @@ const action: IRawAction = {
     {
       label: 'Return most recent row instead?',
       key: 'returnLastRow',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: true,
-      variables: false,
       value: false,
       options: [
         {

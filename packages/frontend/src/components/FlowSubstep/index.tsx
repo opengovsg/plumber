@@ -23,6 +23,7 @@ type FlowSubstepProps = {
   onChange: ({ step }: { step: IStep }) => void
   onSubmit: () => void
   step: IStep
+  settingsLabel?: string
 }
 
 function isValidArgValue(value: IJSONValue): boolean {
@@ -90,6 +91,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     onCollapse,
     onSubmit,
     step,
+    settingsLabel,
   } = props
 
   const { name, arguments: args } = substep
@@ -117,7 +119,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       <FlowSubstepTitle
         expanded={expanded}
         onClick={onToggle}
-        title={name}
+        title={settingsLabel ?? name}
         valid={validationStatus}
       />
       <Collapse in={expanded} unmountOnExit>

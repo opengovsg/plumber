@@ -6,6 +6,7 @@ export const GET_TABLES = gql`
       id
       name
       lastAccessedAt
+      role
     }
   }
 `

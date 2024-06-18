@@ -11,6 +11,9 @@ const app: IApp = {
   apiBaseUrl: 'https://api.postman.gov.sg',
   primaryColor: '000000',
   actions,
+  substepLabels: {
+    settingsStepLabel: 'Set up email',
+  },
 }
 
 export default app

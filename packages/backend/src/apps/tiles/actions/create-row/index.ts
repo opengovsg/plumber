@@ -13,6 +13,7 @@ const action: IRawAction = {
   name: 'Create row',
   key: 'createTileRow',
   description: 'Creates a new row in your tile',
+  settingsStepLabel: 'Set up row to create',
   arguments: [
     {
       label: 'Select Tile',

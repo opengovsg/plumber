@@ -14,6 +14,9 @@ const app: IApp = {
   description:
     'Manipulate your data, such as changing date formats or adding days to a date',
   isNewApp: true,
+  substepLabels: {
+    settingsStepLabel: 'Set up formatter',
+  },
 }
 
 export default app

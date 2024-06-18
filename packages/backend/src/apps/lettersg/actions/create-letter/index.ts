@@ -20,7 +20,7 @@ type LettersApiFieldErrorData = {
 }
 
 const action: IRawAction = {
-  name: 'Create Letter',
+  name: 'Create letter',
   key: 'createLetter',
   description: 'Create a new letter based on the template id input',
   arguments: [
@@ -48,23 +48,11 @@ const action: IRawAction = {
     {
       label: 'Generate PDF',
       key: 'shouldGeneratePdf',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: true,
       description:
         'You will need to add an Email by Postman action after this step to send out the generated PDF.',
-      variables: false,
       value: false,
-      showOptionValue: false,
-      options: [
-        {
-          label: 'No',
-          value: false,
-        },
-        {
-          label: 'Yes',
-          value: true,
-        },
-      ],
     },
     {
       label: 'Personalised fields',

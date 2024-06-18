@@ -86,6 +86,9 @@ type Mutation {
   createRows(input: CreateTableRowsInput!): Boolean
   updateRow(input: UpdateTableRowInput!): ID!
   deleteRows(input: DeleteTableRowsInput!): [ID!]!
+  # Tiles collaborators
+  upsertTableCollaborator(input: TableCollaboratorInput!): Boolean!
+  deleteTableCollaborator(input: DeleteTableCollaboratorInput!): Boolean!
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
@@ -114,11 +117,23 @@ type FieldVisibilityCondition {
   fieldValue: String
 }
 
+enum SetupMessageVariant {
+  info
+  warning
+}
+
+type SetupMessage {
+  variant: SetupMessageVariant!
+  messageBody: String!
+}
+
 type Action {
   name: String
   key: String
   description: String
+  settingsStepLabel: String
   groupsLaterSteps: Boolean
+  setupMessage: SetupMessage
   substeps: [ActionSubstep]
 }
 
@@ -175,6 +190,14 @@ type App {
   connections: [Connection]
   description: String
   isNewApp: Boolean
+  substepLabels: StepLabel
+  setupMessage: SetupMessage
+}
+
+type StepLabel {
+  connectionStepLabel: String
+  settingsStepLabel: String
+  addConnectionLabel: String
 }
 
 type AppAuth {
@@ -501,7 +524,9 @@ type Trigger {
   description: String
   pollInterval: Int
   type: String
+  setupMessage: SetupMessage
   webhookTriggerInstructions: TriggerInstructions
+  settingsStepLabel: String
   substeps: [TriggerSubstep]
 }
 
@@ -640,12 +665,30 @@ type TableColumnMetadata {
   config: TableColumnConfig!
 }
 
+type TableCollaborator {
+  email: String!
+  role: String!
+}
+
+input TableCollaboratorInput {
+  tableId: ID!
+  email: String!
+  role: String!
+}
+
+input DeleteTableCollaboratorInput {
+  tableId: ID!
+  email: String!
+}
+
 type TableMetadata {
   id: ID!
   name: String!
   columns: [TableColumnMetadata!]
   lastAccessedAt: String!
   viewOnlyKey: String
+  collaborators: [TableCollaborator!]
+  role: String
 }
 
 # End Tiles types

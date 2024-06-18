@@ -14,6 +14,11 @@ export const GET_TABLE = gql`
           width
         }
       }
+      collaborators {
+        email
+        role
+      }
+      role
     }
   }
 `

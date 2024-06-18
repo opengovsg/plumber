@@ -8,18 +8,17 @@ import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
 const trigger: IRawTrigger = {
-  name: 'Daily',
+  name: 'Schedule daily',
   key: 'everyDay',
   description: 'Triggers every day, choose a specific hour',
   arguments: [
     {
       label: 'Trigger on weekends?',
       key: 'triggersOnWeekend',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       description: 'Should this flow trigger on Saturday and Sunday?',
       required: true,
-      value: true,
-      variables: false,
+      // flip the order of the default options
       options: [
         {
           label: 'Yes',

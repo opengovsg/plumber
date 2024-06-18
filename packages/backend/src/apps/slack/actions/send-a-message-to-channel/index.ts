@@ -37,22 +37,11 @@ const action: IRawAction = {
     {
       label: 'Send as a bot?',
       key: 'sendAsBot',
-      type: 'dropdown' as const,
+      type: 'boolean-radio' as const,
       required: false,
       value: false,
       description:
         'If you choose no, this message will appear to come from you. Direct messages are always sent by bots.',
-      variables: false,
-      options: [
-        {
-          label: 'Yes',
-          value: true,
-        },
-        {
-          label: 'No',
-          value: false,
-        },
-      ],
     },
     {
       label: 'Bot name',

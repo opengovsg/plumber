@@ -27,7 +27,7 @@ interface MarkdownRendererProps {
 }
 
 export default function MarkdownRenderer(props: MarkdownRendererProps) {
-  const { allowMultilineBreaks = true, source } = props
+  const { allowMultilineBreaks = true, source, components = {} } = props
   const processedSource = useMemo(() => {
     if (allowMultilineBreaks) {
       return source.replace(/\n/gi, '&nbsp; \n')
@@ -109,7 +109,10 @@ export default function MarkdownRenderer(props: MarkdownRendererProps) {
   return (
     <Box>
       <ReactMarkdown
-        components={mdComponents}
+        components={{
+          ...mdComponents,
+          ...components,
+        }}
         remarkPlugins={[remarkBreaks, remarkGfm]}
       >
         {processedSource}

@@ -1,7 +1,6 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
 import { useFormContext } from 'react-hook-form'
-import MuiTextField from '@mui/material/TextField'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
@@ -9,6 +8,8 @@ import RichTextEditor from 'components/RichTextEditor'
 import TextField from 'components/TextField'
 import { isFieldHidden } from 'helpers/isFieldHidden'
 import useDynamicData from 'hooks/useDynamicData'
+
+import BooleanRadio from './BooleanRadio'
 
 export type InputCreatorProps = {
   schema: IField
@@ -61,26 +62,33 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     return <></>
   }
 
+  if (type === 'boolean-radio') {
+    return (
+      <BooleanRadio
+        name={computedName}
+        label={label}
+        description={description}
+        required={required}
+        defaultValue={value as boolean}
+        options={schema?.options}
+      />
+    )
+  }
+
   if (type === 'dropdown') {
     const preparedOptions = schema.options || optionGenerator(data)
     return (
       <ControlledAutocomplete
         name={computedName}
         dependsOn={dependsOn}
-        fullWidth
-        disablePortal
         required={required}
         freeSolo={schema.allowArbitrary}
         options={preparedOptions}
-        renderInput={(params) => (
-          <MuiTextField placeholder={placeholder} {...params} />
-        )}
         defaultValue={value as string}
         description={description}
         loading={loading}
         // if schema source is defined, dynamic data is supported
         onRefresh={schema.source ? () => refetch() : undefined}
-        disabled={disabled}
         showOptionValue={schema.showOptionValue ?? true}
         label={label}
         placeholder={placeholder}

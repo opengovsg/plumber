@@ -23,7 +23,13 @@ import {
   useDisclosure,
   VStack,
 } from '@chakra-ui/react'
-import { Button, IconButton } from '@opengovsg/design-system-react'
+import {
+  Button,
+  IconButton,
+  Tag,
+  TagLabel,
+  TagLeftIcon,
+} from '@opengovsg/design-system-react'
 import * as URLS from 'config/urls'
 import { DELETE_TABLE } from 'graphql/mutations/tiles/delete-table'
 import { GET_TABLES } from 'graphql/queries/tiles/get-tables'

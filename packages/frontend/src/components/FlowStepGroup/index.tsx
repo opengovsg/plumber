@@ -20,7 +20,7 @@ function getStepContent(steps: IStep[]): {
   if (isIfThenStep(mainStep)) {
     return {
       StepContent: IfThen,
-      hintAboveCaption: 'Action',
+      hintAboveCaption: 'Then',
       caption: 'If-then',
       isStepGroupCompleted: areAllIfThenBranchesCompleted(steps, 0),
     }

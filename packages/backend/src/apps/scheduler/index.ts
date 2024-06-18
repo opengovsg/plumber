@@ -12,6 +12,9 @@ const app: IApp = {
   apiBaseUrl: '',
   primaryColor: '0059F7',
   triggers,
+  substepLabels: {
+    settingsStepLabel: 'Set up scheduler',
+  },
 }
 
 export default app

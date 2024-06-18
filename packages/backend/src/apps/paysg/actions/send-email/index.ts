@@ -8,7 +8,7 @@ import StepError, { GenericSolution } from '@/errors/step'
 import { requestSchema } from './schema'
 
 const action: IRawAction = {
-  name: 'Send Payment Email',
+  name: 'Send payment email',
   key: 'sendEmail',
   description:
     'Send email to payee for a payment that has previously been created',

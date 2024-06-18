@@ -23,7 +23,7 @@ const ImportExportToolbar = (): JSX.Element => {
         <Flex justifyContent="center" alignItems="center">
           {hasEditPermission && <ImportCsvButton />}
           <ExportCsvButton />
-          {hasEditPermission && <ShareButton />}
+          <ShareButton />
         </Flex>
       </Show>
       <Hide above="md">
@@ -37,7 +37,7 @@ const ImportExportToolbar = (): JSX.Element => {
           <MenuList display="flex" flexDir="column" borderRadius="md">
             {hasEditPermission && <ImportCsvButton {...MENU_ITEM_PROPS} />}
             <ExportCsvButton {...MENU_ITEM_PROPS} />
-            {hasEditPermission && <ShareButton {...MENU_ITEM_PROPS} />}
+            <ShareButton {...MENU_ITEM_PROPS} />
           </MenuList>
         </Menu>
       </Hide>

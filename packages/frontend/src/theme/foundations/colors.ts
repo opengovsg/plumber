@@ -52,6 +52,11 @@ const bbBearColors = {
       hover: '#E2B73E',
       active: '#C4992A',
     },
+    'warning-subtle': {
+      default: '#fffae1',
+      hover: '#FFDA68',
+      active: '#E2B73E',
+    },
     critical: {
       default: '#c03434',
       hover: '#992a2a',
@@ -70,6 +75,12 @@ const bbBearColors = {
     },
     'main-subtle': {
       default: '#FFF0F7',
+    },
+    links: {
+      default: '#cf1a68',
+      hover: '#aa004b',
+      'neutral-default': '#454953',
+      'neutral-hover': '#2C2E34',
     },
   },
 }

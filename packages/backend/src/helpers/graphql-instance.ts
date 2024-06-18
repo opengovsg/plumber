@@ -1,4 +1,4 @@
-import { ApolloServer } from '@apollo/server'
+import { ApolloServer, type ApolloServerPlugin } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled'
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default'
@@ -11,7 +11,26 @@ import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
 import logger from '@/helpers/logger'
-import { UnauthenticatedContext } from '@/types/express/context'
+import tracer from '@/helpers/tracer'
+import type { UnauthenticatedContext } from '@/types/express/context'
+import type AuthenticatedContext from '@/types/express/context'
+
+// Adds the logged in user's email (if available) as a span tag to each query.
+function ApolloServerPluginUserTracer(): ApolloServerPlugin<AuthenticatedContext> {
+  return {
+    async requestDidStart(requestContext) {
+      // Add the tag right before we reply the user.
+      // https://www.apollographql.com/docs/apollo-server/integrations/plugins#request-lifecycle-event-flow
+      const currentUser = requestContext.contextValue?.currentUser
+      if (currentUser) {
+        tracer.setUser({
+          id: currentUser.id,
+          email: currentUser.email,
+        })
+      }
+    },
+  }
+}
 
 const schema = makeExecutableSchema({ typeDefs, resolvers })
 
@@ -27,6 +46,7 @@ const server = new ApolloServer<UnauthenticatedContext>({
     appConfig.isDev
       ? ApolloServerPluginLandingPageLocalDefault()
       : ApolloServerPluginLandingPageDisabled(),
+    ApolloServerPluginUserTracer(),
   ],
   formatError: (error) => {
     logger.error(error)

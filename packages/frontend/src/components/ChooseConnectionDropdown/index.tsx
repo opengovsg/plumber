@@ -2,8 +2,9 @@ import { IApp } from '@plumber/types'
 
 import { useCallback, useState } from 'react'
 import { FormControl } from '@chakra-ui/react'
-import { BxPlus, FormLabel, SingleSelect } from '@opengovsg/design-system-react'
+import { BxPlus, FormLabel } from '@opengovsg/design-system-react'
 import AddAppConnection from 'components/AddAppConnection'
+import { SingleSelect } from 'components/SingleSelect'
 
 type ConnectionDropdownOption = {
   label: string
@@ -19,10 +20,14 @@ interface ChooseConnectionDropdownProps {
 }
 
 const ADD_CONNECTION_VALUE = 'ADD_CONNECTION'
-const ADD_NEW_CONNECTION_OPTION: ConnectionDropdownOption = {
-  label: 'Add new connection',
-  icon: BxPlus,
-  value: ADD_CONNECTION_VALUE,
+const ADD_NEW_CONNECTION_OPTION = (
+  label?: string,
+): ConnectionDropdownOption => {
+  return {
+    label: label ?? 'Add new connection',
+    icon: BxPlus,
+    value: ADD_CONNECTION_VALUE,
+  }
 }
 
 function ChooseConnectionDropdown({
@@ -60,7 +65,9 @@ function ChooseConnectionDropdown({
 
   const items = [...connectionOptions]
   if (application?.auth?.connectionType === 'user-added') {
-    items.push(ADD_NEW_CONNECTION_OPTION)
+    items.unshift(
+      ADD_NEW_CONNECTION_OPTION(application?.substepLabels?.addConnectionLabel),
+    )
   }
 
   return (
@@ -69,6 +76,7 @@ function ChooseConnectionDropdown({
         <FormLabel isRequired>Choose connection</FormLabel>
         <SingleSelect
           name="choose-connection"
+          colorScheme="secondary"
           isRequired={true}
           isClearable={false}
           isDisabled={isDisabled}
