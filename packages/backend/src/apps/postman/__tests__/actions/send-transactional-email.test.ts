@@ -12,6 +12,7 @@ import sendTransactionalEmail from '../../actions/send-transactional-email'
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
   getDefaultReplyTo: vi.fn(() => 'replyTo@open.gov.sg'),
+  sendBlacklistEmail: vi.fn(),
 }))
 
 vi.mock('@/helpers/s3', async () => {
@@ -27,6 +28,11 @@ vi.mock('@/helpers/s3', async () => {
 
 vi.mock('../../common/parameters-helper', () => ({
   getDefaultReplyTo: mocks.getDefaultReplyTo,
+}))
+
+vi.mock('../../common/send-blacklist-email', () => ({
+  sendBlacklistEmail: mocks.sendBlacklistEmail,
+  createRequestBlacklistFormLink: vi.fn(),
 }))
 
 describe('send transactional email', () => {
@@ -65,6 +71,13 @@ describe('send transactional email', () => {
       },
       flow: {
         id: '123',
+        name: 'Test Flow',
+      },
+      execution: {
+        testRun: false,
+      },
+      user: {
+        email: 'tester@open.gov.sg',
       },
       getLastExecutionStep: vi.fn(),
     } as unknown as IGlobalVariable
@@ -251,6 +264,13 @@ describe('send transactional email', () => {
         reply_to: 'replyTo@open.gov.sg',
       },
     })
+    expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
+      flowName: $.flow.name,
+      flowId: $.flow.id,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+      blacklistedRecipients: [recipients[1]],
+    })
   })
 
   it('should fail as long as rate limit error is thrown', async () => {
@@ -307,9 +327,17 @@ describe('send transactional email', () => {
         reply_to: 'replyTo@open.gov.sg',
       },
     })
+
+    expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
+      flowName: $.flow.name,
+      flowId: $.flow.id,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+      blacklistedRecipients: [recipients[1]],
+    })
   })
 
-  it('should fail as long as rate limit error is thrown', async () => {
+  it('should only retry to non-accepted emails', async () => {
     const recipients = [
       'recipient1@open.gov.sg',
       'recipient2@open.gov.sg',
@@ -337,5 +365,6 @@ describe('send transactional email', () => {
         reply_to: 'replyTo@open.gov.sg',
       },
     })
+    expect(mocks.sendBlacklistEmail).not.toHaveBeenCalled()
   })
 })

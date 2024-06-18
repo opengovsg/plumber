@@ -1,8 +1,11 @@
+import { IGlobalVariable } from '@plumber/types'
+
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import StepError from '@/errors/step'
 
 import { PostmanEmailSendStatus } from './data-out-validator'
+import { createRequestBlacklistFormLink } from './send-blacklist-email'
 
 type PostmanApiErrorData = {
   code: string
@@ -34,28 +37,34 @@ export function getPostmanErrorStatus(
 }
 
 export function throwPostmanStepError({
+  $,
   status,
-  position,
-  appName,
   error,
   isPartialSuccess,
   blacklistedRecipients,
 }: {
+  $: IGlobalVariable
   status: PostmanEmailSendStatus
-  position: number
-  appName: string
   error: HttpError
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
 }) {
+  const position = $.step.position
+  const appName = $.app.name
+
   switch (status) {
     case 'BLACKLISTED': {
       const name = 'Blacklisted recipient email'
+      const formLink = createRequestBlacklistFormLink({
+        userEmail: $.user.email,
+        executionId: $.execution.id,
+        blacklistedRecipients,
+      })
       const solution = `The following email addresses have been blacklisted by Postman:
          \n${blacklistedRecipients
            .map((recipient) => `**${recipient}**`)
            .join('\n\n')}
-         \nIf you believe that they are valid and active, please [contact the Postman team](https://go.gov.sg/postman-contact-us) to remove them from the blacklist and try again.
+         \nIf you believe that they are valid and active, please [use this form](${formLink}) to request for removal from blacklist and try again.
         `
       if (isPartialSuccess) {
         throw new PartialStepError({
