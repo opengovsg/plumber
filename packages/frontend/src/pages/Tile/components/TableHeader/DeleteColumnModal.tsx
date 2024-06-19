@@ -39,7 +39,9 @@ export default function DeleteColumnModal({
     >
       <AlertDialogOverlay>
         <AlertDialogContent>
-          <AlertDialogHeader>Delete Column</AlertDialogHeader>
+          <AlertDialogHeader fontSize="lg" fontWeight="bold">
+            Delete Column
+          </AlertDialogHeader>
 
           <AlertDialogBody>
             Are you sure you want to delete column: <b>{columnName}</b>?
@@ -55,7 +57,7 @@ export default function DeleteColumnModal({
               Cancel
             </Button>
             <Button
-              colorScheme="critical"
+              colorScheme="red"
               onClick={onDelete}
               ml={3}
               isLoading={isDeletingColumns}

@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { BiTrash } from 'react-icons/bi'
+import { BsTrash } from 'react-icons/bs'
 import { GoChevronDown, GoFilter } from 'react-icons/go'
 import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
 import {
@@ -176,7 +176,7 @@ function ColumnHeaderCell({
           {isEditMode && tableColumns.length > 1 && (
             <PopoverFooter justifyContent="flex-start" display={'flex'} px={4}>
               <Button
-                leftIcon={<Icon as={BiTrash} boxSize={4} />}
+                leftIcon={<BsTrash />}
                 variant="link"
                 py={2}
                 color="interaction.critical.default"

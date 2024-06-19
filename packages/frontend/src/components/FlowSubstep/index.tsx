@@ -8,8 +8,10 @@ import type {
 
 import { useContext, useEffect, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
-import { Box, Collapse, Stack } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import Button from '@mui/material/Button'
+import Collapse from '@mui/material/Collapse'
+import ListItem from '@mui/material/ListItem'
+import Stack from '@mui/material/Stack'
 import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import InputCreator from 'components/InputCreator'
 import { EditorContext } from 'contexts/Editor'
@@ -122,9 +124,16 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         title={settingsLabel ?? name}
         valid={validationStatus}
       />
-      <Collapse in={expanded} unmountOnExit>
-        <Box p="1rem 1rem 1.5rem">
-          <Stack w="100%" spacing={2}>
+      <Collapse in={expanded} timeout="auto" unmountOnExit>
+        <ListItem
+          sx={{
+            pt: 2,
+            pb: 3,
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+          }}
+        >
+          <Stack width="100%" spacing={3}>
             {args?.map((argument) => (
               <InputCreator
                 key={argument.key}
@@ -137,16 +146,17 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
           </Stack>
 
           <Button
-            isFullWidth
+            fullWidth
+            variant="contained"
             onClick={onSubmit}
-            mt={4}
+            sx={{ mt: 2 }}
             disabled={!validationStatus || editorContext.readOnly}
             type="submit"
             data-test="flow-substep-continue-button"
           >
             Continue
           </Button>
-        </Box>
+        </ListItem>
       </Collapse>
     </>
   )

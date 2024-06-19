@@ -72,7 +72,9 @@ export default function DeleteRowsModal({
     >
       <AlertDialogOverlay>
         <AlertDialogContent>
-          <AlertDialogHeader>Delete rows</AlertDialogHeader>
+          <AlertDialogHeader fontSize="lg" fontWeight="bold">
+            Delete rows
+          </AlertDialogHeader>
 
           <AlertDialogBody>
             {isDeletingRows ? (
@@ -102,7 +104,7 @@ export default function DeleteRowsModal({
               </Button>
             )}
             <Button
-              colorScheme="critical"
+              colorScheme="red"
               onClick={onDelete}
               ml={3}
               isDisabled={isDeletingRows}

@@ -5,15 +5,8 @@ import {
   useContext,
   useState,
 } from 'react'
-import { BiTrash } from 'react-icons/bi'
-import {
-  Icon,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
-  Portal,
-} from '@chakra-ui/react'
+import { BsTrash } from 'react-icons/bs'
+import { Menu, MenuButton, MenuItem, MenuList, Portal } from '@chakra-ui/react'
 
 import DeleteRowsModal from '../components/TableFooter/DeleteRowsModal'
 
@@ -92,8 +85,8 @@ export const ContextMenuContextProvider = ({
             />
             <MenuList m={0}>
               <MenuItem
-                icon={<Icon as={BiTrash} boxSize={5} />}
-                color="interaction.critical.default"
+                icon={<BsTrash size={16} />}
+                color="red.500"
                 onClick={() => setIsDeleteModalOpen(true)}
               >
                 {rowsSelected.length ? 'Delete selected rows' : 'Delete row'}
