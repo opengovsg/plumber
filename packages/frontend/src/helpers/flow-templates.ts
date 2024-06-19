@@ -1,5 +1,5 @@
 import type {
-  CreateFlowTemplateInput,
+  CreateTemplatedFlowInput,
   DemoVideoDetails,
 } from 'graphql/__generated__/graphql'
 
@@ -14,7 +14,7 @@ export const DEMO_VIDEOS_MAP: Record<string, DemoVideoDetails> = {
   },
 }
 
-export const FLOW_TEMPLATES_MAP: Record<string, CreateFlowTemplateInput> = {
+export const FLOW_TEMPLATES_MAP: Record<string, CreateTemplatedFlowInput> = {
   [FORMSG_POSTMAN_TEMPLATE]: {
     flowName: 'Send notifications',
     trigger: {
