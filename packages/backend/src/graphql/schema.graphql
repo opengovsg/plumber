@@ -56,7 +56,7 @@ type Mutation {
   registerConnection(input: RegisterConnectionInput): Boolean
   # Flows
   createFlow(input: CreateFlowInput): Flow
-  createFlowTemplate(input: CreateFlowTemplateInput): Flow
+  createTemplatedFlow(input: CreateTemplatedFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
@@ -388,7 +388,7 @@ input CreateFlowInput {
   connectionId: String
 }
 
-input CreateFlowTemplateInput {
+input CreateTemplatedFlowInput {
   flowName: String!
   trigger: AppEventKeyPair!
   actions: [AppEventKeyPair!]!

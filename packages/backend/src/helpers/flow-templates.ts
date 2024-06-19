@@ -1,7 +1,7 @@
 import type { AppEventKeyPair } from '@plumber/types'
 
 import type {
-  CreateFlowTemplateInput,
+  CreateTemplatedFlowInput,
   FlowConfig,
 } from '@/graphql/__generated__/types.generated'
 import Flow from '@/models/flow'
@@ -9,7 +9,7 @@ import User from '@/models/user'
 
 import logger from './logger'
 
-export const DEFAULT_FLOW_TEMPLATE: CreateFlowTemplateInput = {
+export const DEFAULT_FLOW_TEMPLATE: CreateTemplatedFlowInput = {
   flowName: 'Send notifications',
   trigger: {
     appKey: 'formsg',

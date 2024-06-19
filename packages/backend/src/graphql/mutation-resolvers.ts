@@ -2,9 +2,9 @@ import type { MutationResolvers } from './__generated__/types.generated'
 import bulkRetryExecutions from './mutations/bulk-retry-executions'
 import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
-import createFlowTemplate from './mutations/create-flow-template'
 import createFlowTransfer from './mutations/create-flow-transfer'
 import createStep from './mutations/create-step'
+import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
 import deleteStep from './mutations/delete-step'
@@ -56,7 +56,7 @@ export default {
   deleteConnection,
   registerConnection,
   createFlow,
-  createFlowTemplate,
+  createTemplatedFlow,
   updateFlow,
   updateFlowStatus,
   updateFlowConfig,

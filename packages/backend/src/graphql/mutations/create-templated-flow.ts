@@ -2,7 +2,7 @@ import createFlowFromTemplate from '@/helpers/flow-templates'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createFlowTemplate: MutationResolvers['createFlowTemplate'] = async (
+const createTemplatedFlow: MutationResolvers['createTemplatedFlow'] = async (
   _parent,
   params,
   context,
@@ -18,4 +18,4 @@ const createFlowTemplate: MutationResolvers['createFlowTemplate'] = async (
   )
 }
 
-export default createFlowTemplate
+export default createTemplatedFlow
