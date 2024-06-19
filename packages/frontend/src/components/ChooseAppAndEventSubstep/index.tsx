@@ -266,7 +266,7 @@ function ChooseAppAndEventSubstep(
       <Collapse in={expanded} unmountOnExit>
         <Box w="100%" p="1rem 1rem 1.5rem">
           <Flex width="full" flexDir="column">
-            <FormControl>
+            <FormControl data-test="choose-app-autocomplete">
               <FormLabel isRequired>Choose an app</FormLabel>
               <Box>
                 <SingleSelect
@@ -281,7 +281,6 @@ function ChooseAppAndEventSubstep(
                     onAppChange(option)
                   }}
                   value={getSelectedOption(appOptions, step.appKey)}
-                  data-test="choose-app-autocomplete"
                 />
               </Box>
             </FormControl>
@@ -289,7 +288,7 @@ function ChooseAppAndEventSubstep(
 
           {step.appKey && (
             <Flex width="full" pt={4} flexDir="column">
-              <FormControl>
+              <FormControl data-test="choose-event-autocomplete">
                 <FormLabel isRequired>Choose an event</FormLabel>
                 <Box>
                   <SingleSelect
@@ -307,7 +306,6 @@ function ChooseAppAndEventSubstep(
                       onEventChange(option)
                     }}
                     value={getSelectedOption(actionOrTriggerOptions, step.key)}
-                    data-test="choose-event-autocomplete"
                   />
                 </Box>
               </FormControl>
