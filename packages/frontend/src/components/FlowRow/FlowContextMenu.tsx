@@ -1,12 +1,16 @@
 import { IFlow } from '@plumber/types'
 
 import { MouseEvent, useCallback, useRef, useState } from 'react'
-import { BiCopy, BiDotsHorizontalRounded } from 'react-icons/bi'
-import { BsTrash } from 'react-icons/bs'
-import { MdOutlineRemoveRedEye } from 'react-icons/md'
+import {
+  BiDotsHorizontalRounded,
+  BiDuplicate,
+  BiShow,
+  BiTrash,
+} from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
+  Icon,
   Menu,
   MenuButton,
   MenuItem,
@@ -121,10 +125,16 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
 
   return (
     <>
-      <Menu onClose={onMenuClose} isOpen={isMenuOpen} placement="bottom-end">
+      <Menu
+        onClose={onMenuClose}
+        isOpen={isMenuOpen}
+        placement="bottom-end"
+        gutter={0}
+      >
         <MenuButton
           as={IconButton}
           aria-label="Flow Row Menu Options"
+          colorScheme="secondary"
           icon={<BiDotsHorizontalRounded />}
           variant="clear"
           onClick={(event) => {
@@ -132,15 +142,18 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
             onMenuToggle()
           }}
         />
-        <MenuList>
+        <MenuList w="12.5rem">
           <MenuItem
             as={Link}
             to={URLS.FLOW(flow.id)}
-            icon={<MdOutlineRemoveRedEye />}
+            icon={<Icon as={BiShow} boxSize={5} />}
           >
             View
           </MenuItem>
-          <MenuItem onClick={onDuplicateButtonClick} icon={<BiCopy />}>
+          <MenuItem
+            onClick={onDuplicateButtonClick}
+            icon={<Icon as={BiDuplicate} boxSize={5} />}
+          >
             Duplicate
           </MenuItem>
           <TouchableTooltip
@@ -154,8 +167,8 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
             <MenuItem
               isDisabled={!!flowTransfer}
               onClick={onDeleteButtonClick}
-              icon={<BsTrash />}
-              color="red.500"
+              icon={<Icon as={BiTrash} boxSize={5} />}
+              color="interaction.critical.default"
             >
               Delete
             </MenuItem>

@@ -55,9 +55,7 @@ export default function MenuAlertDialog(props: MenuAlertDialogProps) {
     >
       <AlertDialogOverlay>
         <AlertDialogContent>
-          <AlertDialogHeader fontSize="lg" fontWeight="bold">
-            {header}
-          </AlertDialogHeader>
+          <AlertDialogHeader>{header}</AlertDialogHeader>
 
           <AlertDialogBody>{body}</AlertDialogBody>
 
@@ -70,7 +68,12 @@ export default function MenuAlertDialog(props: MenuAlertDialogProps) {
             >
               Cancel
             </Button>
-            <Button onClick={onClick} ml={3} isLoading={isLoading}>
+            <Button
+              colorScheme="critical"
+              onClick={onClick}
+              ml={3}
+              isLoading={isLoading}
+            >
               {buttonText}
             </Button>
           </AlertDialogFooter>

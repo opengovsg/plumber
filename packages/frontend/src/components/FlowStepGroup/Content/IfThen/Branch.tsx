@@ -148,7 +148,7 @@ export default function Branch(props: BranchProps): JSX.Element {
               >
                 Cancel
               </Button>
-              <Button colorScheme="red" onClick={deleteBranch} ml={3}>
+              <Button colorScheme="critical" onClick={deleteBranch} ml={3}>
                 Yes, delete branch
               </Button>
             </AlertDialogFooter>
