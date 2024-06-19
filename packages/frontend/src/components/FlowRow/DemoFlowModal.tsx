@@ -20,16 +20,14 @@ import DemoVideoModalContent from './DemoVideoModalContent'
 
 interface DemoFlowModalProps {
   onClose: () => void
-  isPreCreated?: boolean
+  isAutoCreated?: boolean
   demoVideoId?: string
 }
 
 export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
-  const { onClose, isPreCreated, demoVideoId } = props
+  const { onClose, isAutoCreated, demoVideoId } = props
   // fallback to default demo video to display for GGWP v1
-  const { url, title } = demoVideoId
-    ? DEMO_VIDEOS_MAP[demoVideoId]
-    : DEMO_VIDEOS_MAP[FORMSG_POSTMAN_TEMPLATE]
+  const { url, title } = DEMO_VIDEOS_MAP[demoVideoId ?? FORMSG_POSTMAN_TEMPLATE]
 
   const [showVideoModal, setShowVideoModal] = useState(false)
 
@@ -44,7 +42,7 @@ export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
       <ModalOverlay bg="base.canvas.overlay" />
       <ModalContent my={12} p={4}>
         {/* Demo created by user should immediately load demo video */}
-        {!isPreCreated || showVideoModal ? (
+        {!isAutoCreated || showVideoModal ? (
           <DemoVideoModalContent src={url} title={title} />
         ) : (
           <Flex flexDir="column" gap={8} p={8}>

@@ -31,7 +31,7 @@ export const GET_FLOW = gql`
         }
         demoConfig {
           hasLoadedOnce
-          isPreCreated
+          isAutoCreated
           videoId
         }
       }

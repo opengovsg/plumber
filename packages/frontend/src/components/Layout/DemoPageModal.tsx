@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { BiBulb } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
@@ -14,7 +14,7 @@ import {
 import { Badge, BadgeLeftIcon, Button } from '@opengovsg/design-system-react'
 import demoModalImg from 'assets/demo-modal.png'
 import * as URLS from 'config/urls'
-import { CREATE_FLOW_TEMPLATE } from 'graphql/mutations/create-flow-template'
+import { CREATE_TEMPLATED_FLOW } from 'graphql/mutations/create-templated-flow'
 import {
   FLOW_TEMPLATES_MAP,
   FORMSG_POSTMAN_TEMPLATE,
@@ -31,11 +31,10 @@ const { flowName, trigger, actions, demoVideoId } =
 export default function DemoPageModal(props: DemoPageModalProps) {
   const { onClose } = props
   const navigate = useNavigate()
-  const [flowId, setFlowId] = useState('')
 
-  const [createFlowTemplate, { loading }] = useMutation(CREATE_FLOW_TEMPLATE)
-  const onCreateFlowTemplate = useCallback(async () => {
-    const response = await createFlowTemplate({
+  const [createTemplatedFlow, { loading }] = useMutation(CREATE_TEMPLATED_FLOW)
+  const onCreateTemplatedFlow = useCallback(async () => {
+    const response = await createTemplatedFlow({
       variables: {
         input: {
           flowName,
@@ -45,14 +44,8 @@ export default function DemoPageModal(props: DemoPageModalProps) {
         },
       },
     })
-    setFlowId(response.data?.createFlowTemplate?.id)
-  }, [createFlowTemplate])
-
-  useEffect(() => {
-    if (flowId) {
-      navigate(URLS.FLOW(flowId))
-    }
-  }, [navigate, flowId])
+    navigate(URLS.FLOW(response.data?.createTemplatedFlow?.id))
+  }, [createTemplatedFlow, navigate])
 
   return (
     <Modal
@@ -84,7 +77,7 @@ export default function DemoPageModal(props: DemoPageModalProps) {
             <Button onClick={onClose} variant="clear" color="primary.600">
               Try demo later
             </Button>
-            <Button onClick={onCreateFlowTemplate} isLoading={loading}>
+            <Button onClick={onCreateTemplatedFlow} isLoading={loading}>
               Start demo
             </Button>
           </ModalFooter>

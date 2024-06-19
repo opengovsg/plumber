@@ -45,7 +45,7 @@ export default function EditorLayout(): ReactElement {
   // for loading demo modal
   const {
     hasLoadedOnce = true,
-    isPreCreated,
+    isAutoCreated,
     videoId: demoVideoId,
   } = flow?.config?.demoConfig || {}
 
@@ -215,7 +215,7 @@ export default function EditorLayout(): ReactElement {
       {!hasLoadedOnce && (
         <DemoFlowModal
           onClose={handleClose}
-          isPreCreated={isPreCreated}
+          isAutoCreated={isAutoCreated}
           demoVideoId={demoVideoId}
         />
       )}

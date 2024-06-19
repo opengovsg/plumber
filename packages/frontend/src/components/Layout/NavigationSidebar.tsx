@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 import { BiBulb } from 'react-icons/bi'
 import { Link, useMatch } from 'react-router-dom'
 import { Box, Text, useDisclosure } from '@chakra-ui/react'
@@ -56,13 +56,11 @@ function NavigationSidebarItem({
   )
 }
 
-export default function NavigationSidebar() {
-  const { links, closeDrawer } = useContext(LayoutNavigationContext)
+const DemoSidebarItem = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
-  // TODO (mal): I will make a discriminated union and combine with the drawer links if more than 1 "sidebar modal item" exists
-  const demoSidebarItem = useMemo(
-    () => (
+  return (
+    <>
       <SidebarItem
         mx={{ sm: '1rem' }}
         w={{ lg: '16.75rem' }}
@@ -94,10 +92,15 @@ export default function NavigationSidebar() {
           New
         </Badge>
       </SidebarItem>
-    ),
-    [onOpen],
+      {isOpen && <DemoPageModal onClose={onClose} />}
+    </>
   )
+}
 
+export default function NavigationSidebar() {
+  const { links, closeDrawer } = useContext(LayoutNavigationContext)
+
+  // TODO (mal): I will make a discriminated union and combine with the drawer links if more than 1 "sidebar modal item" exists
   return (
     <>
       <SidebarContainer>
@@ -110,11 +113,9 @@ export default function NavigationSidebar() {
         ))}
 
         <Box pos="fixed" bottom={0}>
-          {demoSidebarItem}
+          <DemoSidebarItem />
         </Box>
       </SidebarContainer>
-
-      {isOpen && <DemoPageModal onClose={onClose} />}
     </>
   )
 }
