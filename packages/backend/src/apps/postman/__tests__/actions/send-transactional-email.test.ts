@@ -4,17 +4,15 @@ import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
+import PartialStepError from '@/errors/partial-error'
+import StepError from '@/errors/step'
 
 import sendTransactionalEmail from '../../actions/send-transactional-email'
 
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
-  sendTransactionalEmails: vi.fn(() => []),
-  getRatelimitedRecipientList: vi.fn((recipients: string[], progress) => ({
-    recipients,
-    newProgress: progress + recipients.length,
-  })),
   getDefaultReplyTo: vi.fn(() => 'replyTo@open.gov.sg'),
+  sendBlacklistEmail: vi.fn(),
 }))
 
 vi.mock('@/helpers/s3', async () => {
@@ -28,16 +26,13 @@ vi.mock('@/helpers/s3', async () => {
   }
 })
 
-vi.mock('../../common/email-helper', () => ({
-  sendTransactionalEmails: mocks.sendTransactionalEmails,
-}))
-
-vi.mock('../../common/rate-limit', () => ({
-  getRatelimitedRecipientList: mocks.getRatelimitedRecipientList,
-}))
-
 vi.mock('../../common/parameters-helper', () => ({
   getDefaultReplyTo: mocks.getDefaultReplyTo,
+}))
+
+vi.mock('../../common/send-blacklist-email', () => ({
+  sendBlacklistEmail: mocks.sendBlacklistEmail,
+  createRequestBlacklistFormLink: vi.fn(),
 }))
 
 describe('send transactional email', () => {
@@ -46,7 +41,18 @@ describe('send transactional email', () => {
   beforeEach(() => {
     $ = {
       setActionItem: vi.fn(),
-      http: vi.fn(),
+      http: {
+        post: vi.fn().mockResolvedValue({
+          data: {
+            params: {
+              body: 'test body',
+              subject: 'test subject',
+              from: 'jack',
+              reply_to: 'replyTo@open.gov.sg',
+            },
+          },
+        }),
+      },
       step: {
         parameters: {
           destinationEmail: 'test@ogp.gov.sg',
@@ -65,7 +71,15 @@ describe('send transactional email', () => {
       },
       flow: {
         id: '123',
+        name: 'Test Flow',
       },
+      execution: {
+        testRun: false,
+      },
+      user: {
+        email: 'tester@open.gov.sg',
+      },
+      getLastExecutionStep: vi.fn(),
     } as unknown as IGlobalVariable
 
     mocks.getObjectFromS3Id
@@ -84,27 +98,17 @@ describe('send transactional email', () => {
   })
 
   it("invokes Postman's API to send transactional email", async () => {
-    await sendTransactionalEmail.run($)
-    expect(mocks.sendTransactionalEmails).toHaveBeenLastCalledWith(
-      $.http,
-      ['test@ogp.gov.sg'],
-      {
+    await expect(sendTransactionalEmail.run($)).to.resolves.not.toThrow()
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED'],
+        recipient: ['test@ogp.gov.sg'],
         subject: 'test subject',
         body: 'test body',
-        replyTo: 'replyTo@open.gov.sg',
-        senderName: 'jack',
-        attachments: [
-          {
-            fileName: 'file 1.txt',
-            data: '0000',
-          },
-          {
-            fileName: 'file-2.png',
-            data: '1111',
-          },
-        ],
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
       },
-    )
+    })
   })
 
   it('should throw step error for invalid parameters', async () => {
@@ -144,15 +148,6 @@ describe('send transactional email', () => {
       errorStatusText: 'Bad Request',
       stepErrorName: 'Too many requests',
     },
-    {
-      postmanResponseData: {
-        code: 'service_unavailable',
-        message: 'Service is temporarily unavailable. Please try again later.',
-      },
-      errorStatusCode: 503,
-      errorStatusText: 'Service Temporarily Unavailable',
-      stepErrorName: 'Twilio service is currently unavailable',
-    },
   ])(
     'should throw step error for different postman errors',
     async ({
@@ -170,8 +165,7 @@ describe('send transactional email', () => {
         },
       } as AxiosError
       const httpError = new HttpError(error)
-      mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
-      // throw partial step error message
+      $.http.post = vi.fn().mockRejectedValueOnce(httpError)
       await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
         stepErrorName,
       )
@@ -207,11 +201,170 @@ describe('send transactional email', () => {
         },
       } as AxiosError
       const httpError = new HttpError(errorUnknown)
-      mocks.sendTransactionalEmails.mockRejectedValueOnce(httpError)
-      // throw partial http error message
+      $.http.post = vi.fn().mockRejectedValueOnce(httpError)
       await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
         postmanResponseData.code,
       )
     },
   )
+
+  it('should return a list of status and recipients', async () => {
+    const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
+    $.step.parameters.destinationEmail = recipients.join(',')
+    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'ACCEPTED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+  })
+
+  it('should throw partial step error if one succeeds while the rest are blacklists', async () => {
+    const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.http.post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          params: {
+            body: 'test body',
+            subject: 'test subject',
+            from: 'jack',
+            reply_to: 'replyTo@open.gov.sg',
+          },
+        },
+      })
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: {
+              code: 'invalid_template',
+              message: 'Recipient email is blacklisted',
+            },
+            status: 400,
+            statusText: 'Bad Request',
+          },
+        } as AxiosError),
+      )
+    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      PartialStepError,
+    )
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'BLACKLISTED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+    expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
+      flowName: $.flow.name,
+      flowId: $.flow.id,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+      blacklistedRecipients: [recipients[1]],
+    })
+  })
+
+  it('should fail as long as rate limit error is thrown', async () => {
+    const recipients = [
+      'recipient1@open.gov.sg',
+      'recipient2@open.gov.sg',
+      'recipient3@open.gov.sg',
+    ]
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.http.post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          params: {
+            body: 'test body',
+            subject: 'test subject',
+            from: 'jack',
+            reply_to: 'replyTo@open.gov.sg',
+          },
+        },
+      })
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: {
+              code: 'invalid_template',
+              message: 'Recipient email is blacklisted',
+            },
+            status: 400,
+            statusText: 'Bad Request',
+          },
+        } as AxiosError),
+      )
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: {
+              code: 'rate_limit',
+              message: 'Too many requests. Please try again later.',
+            },
+            status: 429,
+            statusText: 'Too Many Requests',
+          },
+        } as AxiosError),
+      )
+    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(StepError)
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'BLACKLISTED', 'RATE-LIMITED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+
+    expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
+      flowName: $.flow.name,
+      flowId: $.flow.id,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+      blacklistedRecipients: [recipients[1]],
+    })
+  })
+
+  it('should only retry to non-accepted emails', async () => {
+    const recipients = [
+      'recipient1@open.gov.sg',
+      'recipient2@open.gov.sg',
+      'recipient3@open.gov.sg',
+      'recipient4@open.gov.sg',
+    ]
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+      status: 'success',
+      errorDetails: 'error error',
+      dataOut: {
+        status: ['BLACKLISTED', 'ACCEPTED', 'RATE-LIMITED', 'ACCEPTED'],
+        recipient: recipients,
+      },
+    })
+    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    expect($.http.post).toBeCalledTimes(2)
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+    expect(mocks.sendBlacklistEmail).not.toHaveBeenCalled()
+  })
 })

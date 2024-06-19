@@ -16,6 +16,7 @@ class ExecutionStep extends Base {
   jobId: string
   step: Step
   metadata: IExecutionStepMetadata
+  execution?: Execution
 
   static tableName = 'execution_steps'
 

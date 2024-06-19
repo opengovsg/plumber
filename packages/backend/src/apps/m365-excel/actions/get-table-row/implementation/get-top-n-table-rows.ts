@@ -52,8 +52,8 @@ export default async function getTopNTableRows(
 
   if (tableRowsParseResult.success === false) {
     throw new StepError(
-      `Received invalid table data: '${tableRowsParseResult.error.issues[0].message}'.`,
-      'Retry the step.',
+      'Received invalid table data',
+      'Double check your Excel file and retry the step if needed',
       $.step.position,
       $.app.name,
     )
@@ -64,7 +64,7 @@ export default async function getTopNTableRows(
   if (tableRows.values.length === 0) {
     throw new StepError(
       'Excel table is missing the header row',
-      'Ensure that your Excel table has a header row.',
+      'Ensure that your Excel table has a header row',
       $.step.position,
       $.app.name,
     )
@@ -73,8 +73,8 @@ export default async function getTopNTableRows(
   // +1 for header row
   if (tableRows.values.length > n + 1) {
     throw new StepError(
-      'Excel table is too large',
-      `Your excel table has more than ${n} rows. Please reduce the table size.`,
+      `Your Excel table has more than ${n.toLocaleString()} rows.`,
+      `Reduce the number of rows and try again.`,
       $.step.position,
       $.app.name,
     )

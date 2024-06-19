@@ -1,15 +1,18 @@
 import { IField } from '@plumber/types'
 
 import validator from 'email-validator'
+import { uniq } from 'lodash'
 import { z } from 'zod'
 
 import { parseS3Id } from '@/helpers/s3'
 
 function recipientStringToArray(value: string) {
-  return value
+  const recipientArray = value
     .split(',')
     .map((e) => e.trim())
     .filter((e) => e?.length > 0)
+  // dedupe the array
+  return uniq(recipientArray)
 }
 
 export const transactionalEmailFields: IField[] = [

@@ -13,7 +13,7 @@ const app: IApp = {
   iconUrl: '{BASE_URL}/apps/postman-sms/assets/favicon.svg',
   beforeRequest,
   requestErrorHandler,
-  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/postman-sms',
+  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/sms-by-postman',
   baseUrl: '',
   apiBaseUrl: '', // Populated in beforeRequest
   primaryColor: '000000',

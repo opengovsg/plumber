@@ -6,10 +6,8 @@ export const Button = {
     link: {
       color: 'secondary.800',
       textDecoration: 'none',
-      textDecorationLine: 'none',
       _hover: {
         color: 'primary.600',
-        textDecorationLine: 'none',
       },
     },
   },

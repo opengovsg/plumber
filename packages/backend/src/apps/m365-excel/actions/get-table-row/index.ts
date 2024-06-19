@@ -14,16 +14,16 @@ import { dataOutSchema, parametersSchema } from './schemas'
 type DataOut = Required<z.infer<typeof dataOutSchema>>
 
 const action: IRawAction = {
-  name: 'Get table row',
+  name: 'Find table row',
   key: 'getTableRow',
-  description: 'Gets a single row of data from your Excel table.',
+  description: 'Gets a single row of data from your Excel table',
   settingsStepLabel: 'Set up row to get',
   arguments: [
     {
       key: 'fileId',
       label: 'Excel File',
       required: true,
-      description: 'This should be a file in your Plumber folder.',
+      description: 'This should be an Excel file in the folder created for you',
       type: 'dropdown' as const,
       showOptionValue: false,
       variables: false,
@@ -45,7 +45,7 @@ const action: IRawAction = {
       // The MAX_ROWS row limit is a hard limit, but the cell limit is a soft
       // limit. The cell limit serves as messaging to tell users not to feed
       // enormous tables.
-      description: `Tables should not have more than ${MAX_ROWS.toLocaleString()} rows or 100,000 cells.`,
+      description: `Tables should not have more than ${MAX_ROWS.toLocaleString()} rows or 100,000 cells`,
       type: 'dropdown' as const,
       showOptionValue: false,
       variables: false,
@@ -70,9 +70,9 @@ const action: IRawAction = {
       showOptionValue: false,
       required: true,
       variables: false,
-      label: 'Lookup Column',
+      label: 'Lookup column',
       description:
-        'Specify a column to look up. We will use the first row whose column matches the Lookup Value.',
+        'If multiple rows meet your condition, the topmost entry will be returned',
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
@@ -99,7 +99,7 @@ const action: IRawAction = {
       // weird (e.g. currency cells have a trailing space), and will lead to too
       // much user confusion.
       description:
-        "Value is case sensitive and should not include units e.g. if Excel shows '$5.20', enter '5.2'.",
+        'Case sensitive and should not include units. E.g. $5.20 → 5.2',
       type: 'string' as const,
       required: true,
       variables: true,

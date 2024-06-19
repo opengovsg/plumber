@@ -137,7 +137,6 @@ export default function EditorLayout(): React.ReactElement {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            _hover={{ textDecoration: 'underline' }}
           >
             Guide
           </Button>

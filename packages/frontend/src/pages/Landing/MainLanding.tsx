@@ -36,7 +36,6 @@ const HeaderBar = () => {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            _hover={{ textDecoration: 'underline' }}
           >
             Status
           </Button>
@@ -47,7 +46,6 @@ const HeaderBar = () => {
             colorScheme="secondary"
             target="_blank"
             variant="link"
-            _hover={{ textDecoration: 'underline' }}
           >
             Guide
           </Button>

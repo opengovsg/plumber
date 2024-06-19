@@ -18,12 +18,17 @@ const isStepError = (value: IStepError | IJSONObject): value is IStepError => {
 interface ErrorResultProps {
   errorDetails: IStepError | IJSONObject
   isTestRun: boolean
+  executionStepId?: string
 }
 
 export default function ErrorResult(props: ErrorResultProps) {
-  const { errorDetails, isTestRun } = props
+  const { errorDetails, isTestRun, executionStepId } = props
   return isStepError(errorDetails) ? (
-    <SpecificErrorResult errorDetails={errorDetails} isTestRun={isTestRun} />
+    <SpecificErrorResult
+      executionStepId={executionStepId}
+      errorDetails={errorDetails}
+      isTestRun={isTestRun}
+    />
   ) : (
     <GenericErrorResult errorDetails={errorDetails} isTestRun={isTestRun} />
   )
