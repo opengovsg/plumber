@@ -125,7 +125,12 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
 
   return (
     <>
-      <Menu onClose={onMenuClose} isOpen={isMenuOpen} placement="bottom-end">
+      <Menu
+        onClose={onMenuClose}
+        isOpen={isMenuOpen}
+        placement="bottom-end"
+        gutter={0}
+      >
         <MenuButton
           as={IconButton}
           aria-label="Flow Row Menu Options"
@@ -137,7 +142,7 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
             onMenuToggle()
           }}
         />
-        <MenuList w="12.6875rem">
+        <MenuList w="12.5rem">
           <MenuItem
             as={Link}
             to={URLS.FLOW(flow.id)}
