@@ -48,7 +48,7 @@ interface FlowStepHeaderProps {
   demoVideoTitle?: string
 }
 
-const LOCAL_STORAGE_HAS_SEEN_DEMO_KEY = 'has-seen-demo-feature'
+const LOCAL_STORAGE_DEMO_TOOLTIP_KEY = 'demo-tooltip-clicked'
 
 export default function FlowStepHeader(
   props: FlowStepHeaderProps,
@@ -85,16 +85,16 @@ export default function FlowStepHeader(
   const hasDemoVideo = !!demoVideoUrl && !!demoVideoTitle
 
   // check whether user has opened the demo tooltip previously
-  const [hasSeenDemo, setHasSeenDemo] = useState<string | null>(
-    localStorage.getItem(LOCAL_STORAGE_HAS_SEEN_DEMO_KEY),
+  const [hasSeenDemo, setHasSeenDemo] = useState<boolean>(
+    localStorage.getItem(LOCAL_STORAGE_DEMO_TOOLTIP_KEY) === 'true',
   )
 
   const handleDemoClick = useCallback(
     (event: MouseEvent) => {
       event.stopPropagation()
       onModalOpen()
-      localStorage.setItem(LOCAL_STORAGE_HAS_SEEN_DEMO_KEY, 'true')
-      setHasSeenDemo('true')
+      localStorage.setItem(LOCAL_STORAGE_DEMO_TOOLTIP_KEY, 'true')
+      setHasSeenDemo(true)
     },
     [onModalOpen],
   )
@@ -199,7 +199,7 @@ export default function FlowStepHeader(
               </Text>
               {hasDemoVideo && (
                 <Tooltip
-                  label="Demo video"
+                  label="Learn how to set this up"
                   placement="top-start"
                   openDelay={300}
                 >
@@ -209,10 +209,9 @@ export default function FlowStepHeader(
                       boxSize="inherit"
                       sx={{
                         borderRadius: '50%',
-                        animation:
-                          hasSeenDemo !== 'true'
-                            ? 'pulse 2s infinite'
-                            : undefined,
+                        animation: hasSeenDemo
+                          ? undefined
+                          : 'pulse 2s infinite',
                       }}
                       onClick={handleDemoClick}
                     />
