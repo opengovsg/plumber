@@ -59,7 +59,14 @@ export async function getOrCreateUser(email: string): Promise<User> {
   if (!user) {
     user = await User.query().insertAndFetch({ email })
     const { flowName, trigger, actions, demoVideoId } = DEFAULT_FLOW_TEMPLATE
-    createFlowFromTemplate(flowName, trigger, actions, user, true, demoVideoId)
+    await createFlowFromTemplate(
+      flowName,
+      trigger,
+      actions,
+      user,
+      true,
+      demoVideoId,
+    )
   }
 
   return user
