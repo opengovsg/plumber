@@ -333,8 +333,8 @@ type FlowErrorConfig {
 }
 
 type FlowDemoConfig {
-  onFirstLoad: Boolean!
-  isPreCreated: Boolean!
+  hasLoadedOnce: Boolean!
+  isAutoCreated: Boolean!
   videoId: String!
 }
 
@@ -413,7 +413,7 @@ enum NotificationFrequency {
 input UpdateFlowConfigInput {
   id: String!
   notificationFrequency: NotificationFrequency
-  onFirstLoad: Boolean
+  hasLoadedOnce: Boolean
 }
 
 input ExecuteFlowInput {

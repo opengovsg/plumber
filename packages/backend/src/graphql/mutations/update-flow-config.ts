@@ -10,7 +10,7 @@ type Params = {
   input: {
     id: string
     notificationFrequency: IFlowErrorConfig['notificationFrequency']
-    onFirstLoad: IFlowDemoConfig['onFirstLoad']
+    hasLoadedOnce: IFlowDemoConfig['hasLoadedOnce']
   }
 }
 
@@ -37,10 +37,10 @@ const updateFlowConfig = async (
     }
   }
 
-  if (params.input.onFirstLoad !== undefined) {
+  if (params.input.hasLoadedOnce !== undefined) {
     newConfig.demoConfig = {
       ...newConfig.demoConfig, // If ever undefined (should never be), it gets set to an empty object first
-      onFirstLoad: params.input.onFirstLoad,
+      hasLoadedOnce: params.input.hasLoadedOnce,
     }
   }
 

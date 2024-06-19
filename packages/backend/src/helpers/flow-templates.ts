@@ -29,7 +29,7 @@ async function createFlowFromTemplate(
   trigger: AppEventKeyPair,
   actions: AppEventKeyPair[],
   user: User,
-  isPreCreated: boolean,
+  isAutoCreated: boolean,
   demoVideoId: string,
 ): Promise<Flow> {
   const { appKey: triggerAppKey, eventKey: triggerEventKey } = trigger
@@ -38,8 +38,8 @@ async function createFlowFromTemplate(
   return await Flow.transaction(async (trx) => {
     const flowConfig: FlowConfig = {
       demoConfig: {
-        onFirstLoad: true,
-        isPreCreated,
+        hasLoadedOnce: false,
+        isAutoCreated,
         videoId: demoVideoId,
       },
     }
@@ -74,7 +74,7 @@ async function createFlowFromTemplate(
       flowName: flow.name,
       trigger,
       actions,
-      isPreCreated,
+      isAutoCreated,
     })
 
     return flow

@@ -170,8 +170,8 @@ export interface IFlowErrorConfig {
 }
 
 export interface IFlowDemoConfig {
-  onFirstLoad: boolean
-  isPreCreated: boolean
+  hasLoadedOnce: boolean
+  isAutoCreated: boolean
   videoId: string
 }
 
@@ -731,7 +731,7 @@ export type IGlobalVariable = {
   request?: IRequest
   flow?: {
     id: string
-    name: string,
+    name: string
     hasFileProcessingActions: boolean
     userId: string
     remoteWebhookId?: string
@@ -748,7 +748,9 @@ export type IGlobalVariable = {
     appKey: string
     parameters: IJSONObject
   }
-  getLastExecutionStep?: (options?: {sameExecution?: boolean}) => Promise<IExecutionStep | undefined>
+  getLastExecutionStep?: (options?: {
+    sameExecution?: boolean
+  }) => Promise<IExecutionStep | undefined>
   execution?: {
     id: string
     testRun: boolean
