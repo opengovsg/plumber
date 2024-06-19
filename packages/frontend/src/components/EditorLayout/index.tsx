@@ -43,13 +43,13 @@ export default function EditorLayout(): ReactElement {
   const flow: IFlow = data?.getFlow
 
   // for loading demo modal
-  const onFirstLoad = flow?.config?.demoConfig?.onFirstLoad
+  const hasLoadedOnce = flow?.config?.demoConfig?.hasLoadedOnce ?? true // to avoid flicker
 
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG, {
     variables: {
       input: {
         id: flowId,
-        onFirstLoad: false, // this is to not load demo modal and show tooltip anymore
+        hasLoadedOnce: true, // this is to not load demo modal and show tooltip anymore
       },
     },
     refetchQueries: [GET_FLOW],
@@ -208,7 +208,7 @@ export default function EditorLayout(): ReactElement {
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       ></EditorSnackbar>
 
-      {onFirstLoad && <DemoFlowModal onClose={handleClose} />}
+      {!hasLoadedOnce && <DemoFlowModal onClose={handleClose} />}
     </>
   )
 }

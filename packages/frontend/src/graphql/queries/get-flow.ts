@@ -30,7 +30,7 @@ export const GET_FLOW = gql`
           notificationFrequency
         }
         demoConfig {
-          onFirstLoad
+          hasLoadedOnce
         }
       }
       pendingTransfer {

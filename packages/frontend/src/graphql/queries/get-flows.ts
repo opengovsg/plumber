@@ -28,7 +28,7 @@ export const GET_FLOWS = gql`
           active
           config {
             demoConfig {
-              onFirstLoad
+              hasLoadedOnce
             }
           }
           steps {
