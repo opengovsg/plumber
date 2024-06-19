@@ -27,6 +27,7 @@ type FlowRowProps = {
 export default function FlowRow(props: FlowRowProps): ReactElement {
   const { flow } = props
 
+  const hasLoadedOnce = flow?.config?.demoConfig?.hasLoadedOnce ?? true
   const createdAt = DateTime.fromMillis(parseInt(flow.createdAt, 10))
   const updatedAt = DateTime.fromMillis(parseInt(flow.updatedAt, 10))
   const isUpdated = updatedAt > createdAt
@@ -45,7 +46,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
       >
         <Tooltip
           label={
-            flow?.config?.demoConfig?.hasLoadedOnce
+            hasLoadedOnce
               ? ''
               : 'Click for a demo of how to send an email notification to a respondent when they submit your form.'
           }
