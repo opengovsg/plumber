@@ -1,7 +1,7 @@
-import { gql } from '@apollo/client'
+import { graphql } from 'graphql/__generated__'
 
-export const VERIFY_OTP = gql`
+export const VERIFY_OTP = graphql(`
   mutation VerifyOtp($input: VerifyOtpInput) {
     verifyOtp(input: $input)
   }
-`
+`)
