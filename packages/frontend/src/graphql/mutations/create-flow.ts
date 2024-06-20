@@ -1,10 +1,10 @@
-import { gql } from '@apollo/client'
+import { graphql } from 'graphql/__generated__'
 
-export const CREATE_FLOW = gql`
-  mutation CreateFlow($input: CreateFlowInput) {
+export const CREATE_FLOW = graphql(`
+  mutation CreateFlow($input: CreateFlowInput!) {
     createFlow(input: $input) {
       id
       name
     }
   }
-`
+`)

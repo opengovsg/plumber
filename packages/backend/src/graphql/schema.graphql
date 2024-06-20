@@ -55,7 +55,7 @@ type Mutation {
   deleteConnection(input: DeleteConnectionInput): Boolean
   registerConnection(input: RegisterConnectionInput): Boolean
   # Flows
-  createFlow(input: CreateFlowInput): Flow
+  createFlow(input: CreateFlowInput!): Flow!
   createTemplatedFlow(input: CreateTemplatedFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
@@ -316,7 +316,7 @@ type FlowEdge {
 }
 
 type Flow {
-  id: String
+  id: String!
   name: String
   active: Boolean
   steps: [Step]
