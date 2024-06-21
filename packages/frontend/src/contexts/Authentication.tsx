@@ -1,22 +1,31 @@
-import { IUser } from '@plumber/types'
-
 import { createContext, useEffect } from 'react'
-import { FetchResult, useMutation, useQuery } from '@apollo/client'
+import type { MutationFunction } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
 import { Spinner } from '@opengovsg/design-system-react'
+import type {
+  LogoutMutation,
+  LogoutMutationVariables,
+  User,
+} from 'graphql/__generated__/graphql'
 import { LOGOUT } from 'graphql/mutations/logout'
 import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
 
-type CurrentUser = Pick<IUser, 'id' | 'email'> | null
-
 export type AuthenticationContextParams = {
-  currentUser: CurrentUser
-  logout: () => Promise<FetchResult<void>>
+  currentUser?: User | null
+  logout:
+    | MutationFunction<LogoutMutation, LogoutMutationVariables>
+    | (() => void) // no-op logout if currentUser is nullish
 }
 
-export const AuthenticationContext = createContext(
-  {} as AuthenticationContextParams,
+export const AuthenticationContext = createContext<AuthenticationContextParams>(
+  {
+    logout: () => {
+      // Default to a no-op logout
+      return
+    },
+  },
 )
 
 type AuthenticationProviderProps = {
@@ -26,9 +35,7 @@ type AuthenticationProviderProps = {
 export const AuthenticationProvider = ({
   children,
 }: AuthenticationProviderProps) => {
-  const { data, loading: fetchingCurrentUser } = useQuery<{
-    getCurrentUser: CurrentUser
-  }>(GET_CURRENT_USER, {
+  const { data, loading: fetchingCurrentUser } = useQuery(GET_CURRENT_USER, {
     fetchPolicy: 'no-cache',
   })
   const currentUser = data?.getCurrentUser
@@ -38,7 +45,10 @@ export const AuthenticationProvider = ({
   })
   useEffect(() => {
     if (currentUser) {
-      datadogRum.setUser(currentUser)
+      datadogRum.setUser({
+        id: currentUser.id,
+        email: currentUser.email,
+      })
     }
   }, [currentUser])
 
@@ -53,7 +63,7 @@ export const AuthenticationProvider = ({
   return (
     <AuthenticationContext.Provider
       value={{
-        currentUser: currentUser ?? null,
+        currentUser,
         logout,
       }}
     >

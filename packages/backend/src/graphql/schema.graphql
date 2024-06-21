@@ -633,10 +633,10 @@ type TestConnectionResult {
 }
 
 type User {
-  id: String
-  email: String
-  createdAt: String
-  updatedAt: String
+  id: String!
+  email: String!
+  createdAt: String!
+  updatedAt: String!
 }
 
 type PageInfo {
