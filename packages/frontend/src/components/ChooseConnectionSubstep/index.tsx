@@ -56,7 +56,12 @@ function ChooseConnectionSubstep(
   const { connection, appKey } = step
   const editorContext = useContext(EditorContext)
   const { data, loading, refetch } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: appKey },
+    variables: {
+      key:
+        appKey ??
+        // FIXING THIS IN STEP-RELATED GRAPHQL PRS
+        '',
+    },
   })
 
   const supportsConnectionRegistration =

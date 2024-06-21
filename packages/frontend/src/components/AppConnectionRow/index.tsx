@@ -1,5 +1,3 @@
-import type { IConnection } from '@plumber/types'
-
 import * as React from 'react'
 import { useCallback, useRef, useState } from 'react'
 import { useLazyQuery, useMutation } from '@apollo/client'
@@ -13,6 +11,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
 import { useToast } from '@opengovsg/design-system-react'
 import ConnectionContextMenu from 'components/AppConnectionContextMenu'
+import type { Connection } from 'graphql/__generated__/graphql'
 import { DELETE_CONNECTION } from 'graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from 'graphql/queries/test-connection'
 import useFormatMessage from 'hooks/useFormatMessage'
@@ -21,7 +20,7 @@ import { DateTime } from 'luxon'
 import { CardContent, Typography } from './style'
 
 type AppConnectionRowProps = {
-  connection: IConnection
+  connection: Connection
 }
 
 const countTranslation = (value: React.ReactNode) => (

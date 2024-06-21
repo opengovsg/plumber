@@ -1,13 +1,11 @@
-import type { IApp } from '@plumber/types'
+import { IApp } from '@plumber/types'
 
-import * as React from 'react'
+import { forwardRef, useCallback, useMemo, useState } from 'react'
+import { BiPlus } from 'react-icons/bi'
 import type { LinkProps } from 'react-router-dom'
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import AddIcon from '@mui/icons-material/Add'
-import Box from '@mui/material/Box'
-import CircularProgress from '@mui/material/CircularProgress'
-import Divider from '@mui/material/Divider'
+import { Box, CircularProgress, Divider } from '@chakra-ui/react'
 import Grid from '@mui/material/Grid'
 import AddNewAppConnection from 'components/AddNewAppConnection'
 import AppRow from 'components/AppRow'
@@ -18,44 +16,43 @@ import PageTitle from 'components/PageTitle'
 import SearchInput from 'components/SearchInput'
 import * as URLS from 'config/urls'
 import { GET_CONNECTED_APPS } from 'graphql/queries/get-connected-apps'
-import useFormatMessage from 'hooks/useFormatMessage'
 
 const APPS_TITLE = 'Apps'
 
-export default function Applications(): React.ReactElement {
+export default function Applications() {
   const navigate = useNavigate()
-  const formatMessage = useFormatMessage()
-  const [appName, setAppName] = React.useState<string>()
+  const [appName, setAppName] = useState<string>()
   const { data, loading } = useQuery(GET_CONNECTED_APPS, {
     variables: { name: appName },
   })
 
-  const apps: IApp[] = data?.getConnectedApps
+  const apps = data?.getConnectedApps
   const hasApps = apps?.length
 
-  const onSearchChange = React.useCallback(
+  const onSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setAppName(event.target.value)
     },
     [],
   )
 
-  const goToApps = React.useCallback(() => {
+  const goToApps = useCallback(() => {
     navigate(URLS.APPS)
   }, [navigate])
 
-  const NewAppConnectionLink = React.useMemo(
+  const NewAppConnectionLink = useMemo(
     () =>
-      React.forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(
-        function InlineLink(linkProps, ref) {
-          return <Link ref={ref} to={URLS.NEW_APP_CONNECTION} {...linkProps} />
-        },
-      ),
+      forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(function InlineLink(
+        linkProps,
+        ref,
+      ) {
+        return <Link ref={ref} to={URLS.NEW_APP_CONNECTION} {...linkProps} />
+      }),
     [],
   )
 
   return (
-    <Box sx={{ py: 3 }}>
+    <Box py={3}>
       <Container variant="page">
         <Grid
           container
@@ -84,15 +81,15 @@ export default function Applications(): React.ReactElement {
               type="submit"
               size="lg"
               component={NewAppConnectionLink}
-              icon={<AddIcon />}
+              icon={<BiPlus />}
               data-test="add-connection-button"
             >
-              {formatMessage('apps.addConnection')}
+              Add connection
             </ConditionalIconButton>
           </Grid>
         </Grid>
 
-        <Divider sx={{ mt: [2, 0], mb: 2 }} />
+        <Divider mt={[2, 0]} mb={2} />
 
         {loading && (
           <CircularProgress
@@ -103,13 +100,21 @@ export default function Applications(): React.ReactElement {
 
         {!loading && !hasApps && (
           <NoResultFound
-            text={formatMessage('apps.noConnections')}
+            text="You don't have any connections yet."
             to={URLS.NEW_APP_CONNECTION}
           />
         )}
 
         {!loading &&
-          apps?.map((app: IApp) => <AppRow key={app.name} application={app} />)}
+          apps?.map((app) => (
+            <AppRow
+              key={app.name}
+              application={
+                // TEMPORARY - FIXING THIS IN NEXT PR
+                app as IApp
+              }
+            />
+          ))}
 
         <Routes>
           <Route

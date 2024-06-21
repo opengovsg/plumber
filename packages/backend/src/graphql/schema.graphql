@@ -5,7 +5,7 @@ type Query {
     onlyWithActions: Boolean
   ): [App]
   getApp(key: String!): App
-  getConnectedApps(name: String): [App]
+  getConnectedApps(name: String): [App!]!
   testConnection(connectionId: String!, stepId: String): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(
@@ -189,7 +189,7 @@ type App {
   auth: AppAuth
   triggers: [Trigger]
   actions: [Action]
-  connections: [Connection]
+  connections: [Connection!]
   description: String
   isNewApp: Boolean
   substepLabels: StepLabel
@@ -250,12 +250,12 @@ type AuthLink {
 }
 
 type Connection {
-  id: String
-  key: String
+  id: String!
+  key: String!
   formattedData: ConnectionData
   verified: Boolean
   app: App
-  createdAt: String
+  createdAt: String!
   flowCount: Int
 }
 

@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client'
+import { graphql } from '../__generated__/gql'
 
-export const GET_CONNECTED_APPS = gql`
+export const GET_CONNECTED_APPS = graphql(`
   query GetConnectedApps($name: String) {
     getConnectedApps(name: $name) {
       key
@@ -15,4 +15,4 @@ export const GET_CONNECTED_APPS = gql`
       }
     }
   }
-`
+`)
