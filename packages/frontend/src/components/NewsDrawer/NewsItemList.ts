@@ -10,7 +10,7 @@ const IF_THEN_EXTERNAL_LINK =
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
     date: '2024-06-24',
-    tag: NEW_ENHANCEMENT_TAG,
+    tag: NEW_FEATURE_TAG,
     title: `New integration - M365 Excel`,
     details: `We heard you! Now you can create, find and update rows in your Excel spreadsheets! This integration is only available for public officers who have access to SG Government Sharepoint. Read [our guide](https://guide.plumber.gov.sg/user-guides/actions/m365-excel) on how to set this up!`,
     multimedia: {
