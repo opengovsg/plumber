@@ -9,6 +9,7 @@ import {
   convertRowToHexEncodedRowRecord,
 } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
+import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
 import getTableRowAction from '../get-table-row'
 import getTableRowImpl from '../get-table-row/implementation'
 
@@ -78,6 +79,11 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
+    if ($.execution.testRun) {
+      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024()
+    }
+
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)
 
     if (parametersParseResult.success === false) {

@@ -4,6 +4,7 @@ import StepError from '@/errors/step'
 
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
+import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
 
 import getDataOutMetadata from './get-data-out-metadata'
 
@@ -127,6 +128,11 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if ($.execution.testRun) {
+      // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
+      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024()
+    }
+
     const { fileId, tableId } = $.step.parameters
     const columnValues = ($.step.parameters.columnValues as IJSONObject[]) ?? []
     if (columnValues.length === 0) {
