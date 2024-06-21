@@ -130,7 +130,7 @@ const action: IRawAction = {
   async run($) {
     if ($.execution.testRun) {
       // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
-      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024()
+      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
     }
 
     const { fileId, tableId } = $.step.parameters

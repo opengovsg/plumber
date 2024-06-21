@@ -14,7 +14,7 @@ const registerConnection: NonNullable<IAuth['registerConnection']> =
     }
 
     // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
-    await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024()
+    await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email)
 
     const folderId = await createPlumberFolder(authData.tenantKey, $)
     $.auth.set({
