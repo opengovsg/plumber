@@ -194,6 +194,12 @@ type App {
   isNewApp: Boolean
   substepLabels: StepLabel
   setupMessage: SetupMessage
+  demoVideoDetails: DemoVideoDetails
+}
+
+type DemoVideoDetails {
+  url: String!
+  title: String!
 }
 
 type DemoVideoDetails {

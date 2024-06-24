@@ -1,6 +1,13 @@
-import { type MouseEventHandler, type ReactNode, useCallback } from 'react'
+import {
+  type MouseEvent,
+  type MouseEventHandler,
+  type ReactNode,
+  useCallback,
+  useState,
+} from 'react'
 import {
   BiArrowFromRight,
+  BiHelpCircle,
   BiSolidCheckCircle,
   BiSolidErrorCircle,
   BiTrashAlt,
@@ -12,9 +19,15 @@ import {
   Flex,
   Icon,
   Image,
+  Modal,
+  ModalContent,
+  ModalOverlay,
   Text,
+  Tooltip,
+  useDisclosure,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import DemoVideoModalContent from 'components/FlowRow/DemoVideoModalContent'
 
 // Chakra's `Collapse` sets `overflow: hidden` by default, which causes dropdown
 // menu items to be hidden. We override overflow by making `Collapse` a Chakra
@@ -31,7 +44,11 @@ interface FlowStepHeaderProps {
   onClose: () => void
   collapsed: boolean
   children: ReactNode
+  demoVideoUrl?: string
+  demoVideoTitle?: string
 }
+
+const LOCAL_STORAGE_DEMO_TOOLTIP_KEY = 'demo-tooltip-clicked'
 
 export default function FlowStepHeader(
   props: FlowStepHeaderProps,
@@ -46,6 +63,8 @@ export default function FlowStepHeader(
     onClose,
     collapsed,
     children,
+    demoVideoUrl,
+    demoVideoTitle,
   } = props
 
   const handleClick = useCallback(() => {
@@ -57,122 +76,189 @@ export default function FlowStepHeader(
     }
   }, [collapsed, onOpen, onClose])
 
+  // for loading demo modal
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+  } = useDisclosure()
+  const hasDemoVideo = !!demoVideoUrl && !!demoVideoTitle
+
+  // check whether user has opened the demo tooltip previously
+  const [hasSeenDemo, setHasSeenDemo] = useState<boolean>(
+    localStorage.getItem(LOCAL_STORAGE_DEMO_TOOLTIP_KEY) === 'true',
+  )
+
+  const handleDemoClick = useCallback(
+    (event: MouseEvent) => {
+      event.stopPropagation()
+      onModalOpen()
+      localStorage.setItem(LOCAL_STORAGE_DEMO_TOOLTIP_KEY, 'true')
+      setHasSeenDemo(true)
+    },
+    [onModalOpen],
+  )
+
   return (
-    <Box
-      w="full"
-      borderWidth="1px"
-      borderColor="base.divider.medium"
-      borderRadius="lg"
-      p={0}
-      bg="white"
-      boxShadow={collapsed ? undefined : 'base'}
-      data-test="flow-step" // adding to identify element for e2e testing
-    >
-      {/*
-       * Top header
-       */}
-      <Flex
-        p={4}
-        alignItems="center"
-        _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
-        _active={{ bg: 'interaction.muted.neutral.active' }}
+    <>
+      <Box
         w="full"
-        onClick={handleClick}
+        borderWidth="1px"
+        borderColor="base.divider.medium"
+        borderRadius="lg"
+        p={0}
+        bg="white"
+        boxShadow={collapsed ? undefined : 'sm'}
+        data-test="flow-step" // adding to identify element for e2e testing
       >
+        {/*
+         * Top header
+         */}
         <Flex
-          position="relative"
-          boxSize={16}
-          mr={4}
-          borderWidth={1}
-          borderColor="base.divider.strong"
-          borderRadius="base"
-          justifyContent="center"
+          p={4}
           alignItems="center"
+          borderRadius="inherit"
+          _hover={{
+            bg: 'interaction.muted.neutral.hover',
+            cursor: 'pointer',
+            borderBottomRadius: collapsed ? 'inherit' : 'none',
+          }}
+          _active={{
+            bg: 'interaction.muted.neutral.active',
+            borderBottomRadius: collapsed ? 'inherit' : 'none',
+          }}
+          w="full"
+          onClick={handleClick}
         >
-          {/*
-           * App icon
-           */}
-          <Image
-            src={iconUrl}
-            boxSize={8}
-            borderStyle="solid"
-            fit="contain"
-            fallback={
-              <Icon
+          <Flex
+            position="relative"
+            boxSize={16}
+            mr={4}
+            borderWidth={1}
+            borderColor="base.divider.strong"
+            borderRadius="base"
+            justifyContent="center"
+            alignItems="center"
+          >
+            {/*
+             * App icon
+             */}
+            <Image
+              src={iconUrl}
+              boxSize={8}
+              borderStyle="solid"
+              fit="contain"
+              fallback={
+                <Icon
+                  boxSize={6}
+                  as={BiArrowFromRight}
+                  color="base.content.default"
+                />
+              }
+            />
+            {/*
+             * Step completion status badge
+             */}
+            {isCompleted !== undefined && (
+              <Flex
+                position="absolute"
+                top={0}
+                insetEnd={0}
                 boxSize={6}
-                as={BiArrowFromRight}
-                color="base.content.default"
-              />
-            }
-          />
+                transform="translate(0.5rem, -0.5rem)"
+                borderRadius="full"
+                bg="white"
+              >
+                {isCompleted ? (
+                  <Icon
+                    boxSize="full"
+                    color="interaction.success.default"
+                    as={BiSolidCheckCircle}
+                  />
+                ) : (
+                  <Icon
+                    boxSize="full"
+                    color="yellow.200"
+                    as={BiSolidErrorCircle}
+                  />
+                )}
+              </Flex>
+            )}
+          </Flex>
           {/*
-           * Step completion status badge
+           * Captions
            */}
-          {isCompleted !== undefined && (
-            <Flex
-              position="absolute"
-              top={0}
-              insetEnd={0}
-              boxSize={6}
-              transform="translate(0.5rem, -0.5rem)"
-              borderRadius="full"
-              bg="white"
-            >
-              {isCompleted ? (
-                <Icon
-                  boxSize="full"
-                  color="interaction.success.default"
-                  as={BiSolidCheckCircle}
-                />
-              ) : (
-                <Icon
-                  boxSize="full"
-                  color="yellow.200"
-                  as={BiSolidErrorCircle}
-                />
+          <Flex direction="column" align="start">
+            <Text textStyle="body-2" color="base.content.medium" p={0} mb={1.5}>
+              {hintAboveCaption}
+            </Text>
+
+            <Flex alignItems="center" gap={2}>
+              <Text textStyle="subhead-1" color="base.content.default">
+                {caption}
+              </Text>
+              {hasDemoVideo && (
+                <Tooltip
+                  label="Learn how to set this up"
+                  placement="top-start"
+                  openDelay={300}
+                  gutter={0}
+                >
+                  <Box boxSize="18px">
+                    <Icon
+                      as={BiHelpCircle}
+                      boxSize="inherit"
+                      sx={{
+                        borderRadius: '50%',
+                        animation: hasSeenDemo
+                          ? undefined
+                          : 'pulse 2s infinite',
+                      }}
+                      onClick={handleDemoClick}
+                    />
+                  </Box>
+                </Tooltip>
               )}
+            </Flex>
+          </Flex>
+
+          {/*
+           * Delete step button
+           */}
+          {onDelete && (
+            <Flex ml="auto">
+              <IconButton
+                onClick={onDelete}
+                variant="clear"
+                aria-label="Delete Step"
+                icon={<BiTrashAlt />}
+              />
             </Flex>
           )}
         </Flex>
-        {/*
-         * Captions
-         */}
-        <Flex direction="column" align="start">
-          <Text textStyle="body-2" color="base.content.medium" p={0} mb={1.5}>
-            {hintAboveCaption}
-          </Text>
-          <Text textStyle="subhead-1" color="base.content.default">
-            {caption}
-          </Text>
-        </Flex>
 
         {/*
-         * Delete step button
+         * Step contents
          */}
-        {onDelete && (
-          <Flex ml="auto">
-            <IconButton
-              onClick={onDelete}
-              variant="clear"
-              aria-label="Delete Step"
-              icon={<BiTrashAlt />}
-            />
-          </Flex>
-        )}
-      </Flex>
+        <Collapse
+          in={!collapsed}
+          unmountOnExit
+          overflow={collapsed ? 'hidden' : 'initial !important'}
+        >
+          <Box borderTopWidth={1} p={0}>
+            {children}
+          </Box>
+        </Collapse>
+      </Box>
 
-      {/*
-       * Step contents
-       */}
-      <Collapse
-        in={!collapsed}
-        unmountOnExit
-        overflow={collapsed ? 'hidden' : 'initial !important'}
-      >
-        <Box borderTopWidth={1} p={0}>
-          {children}
-        </Box>
-      </Collapse>
-    </Box>
+      {isModalOpen && hasDemoVideo && (
+        <Modal isCentered isOpen={true} onClose={onModalClose} size="5xl">
+          <ModalOverlay bg="base.canvas.overlay" />
+          <ModalContent p={4} borderRadius={8}>
+            <DemoVideoModalContent src={demoVideoUrl} title={demoVideoTitle} />
+          </ModalContent>
+        </Modal>
+      )}
+    </>
   )
 }
