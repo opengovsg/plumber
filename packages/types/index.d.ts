@@ -152,15 +152,27 @@ export interface IStep {
   jobId?: string
 }
 
+export type AppEventKeyPair = {
+  appKey: string
+  eventKey: string
+}
+
 export interface IFlowConfig {
   maxQps?: number
   rejectIfOverMaxQps?: boolean
   errorConfig?: IFlowErrorConfig
   duplicateCount?: number
+  demoConfig?: IFlowDemoConfig
 }
 
 export interface IFlowErrorConfig {
   notificationFrequency: 'once_per_day' | 'always'
+}
+
+export interface IFlowDemoConfig {
+  hasLoadedOnce: boolean
+  isAutoCreated: boolean
+  videoId: string
 }
 
 export interface IFlow {
@@ -443,6 +455,10 @@ export interface IApp {
     settingsStepLabel?: string // for step accordion label: app level
     addConnectionLabel?: string // for adding connection in choose connection dropdown
   }
+  demoVideoDetails?: {
+    url: string
+    title: string
+  }
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this
@@ -719,7 +735,7 @@ export type IGlobalVariable = {
   request?: IRequest
   flow?: {
     id: string
-    name: string,
+    name: string
     hasFileProcessingActions: boolean
     userId: string
     remoteWebhookId?: string
@@ -736,7 +752,9 @@ export type IGlobalVariable = {
     appKey: string
     parameters: IJSONObject
   }
-  getLastExecutionStep?: (options?: {sameExecution?: boolean}) => Promise<IExecutionStep | undefined>
+  getLastExecutionStep?: (options?: {
+    sameExecution?: boolean
+  }) => Promise<IExecutionStep | undefined>
   execution?: {
     id: string
     testRun: boolean
