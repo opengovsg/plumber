@@ -56,6 +56,7 @@ type Mutation {
   registerConnection(input: RegisterConnectionInput): Boolean
   # Flows
   createFlow(input: CreateFlowInput): Flow
+  createTemplatedFlow(input: CreateTemplatedFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
@@ -195,6 +196,11 @@ type App {
   setupMessage: SetupMessage
 }
 
+type DemoVideoDetails {
+  url: String!
+  title: String!
+}
+
 type StepLabel {
   connectionStepLabel: String
   settingsStepLabel: String
@@ -319,10 +325,17 @@ type Flow {
 type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
+  demoConfig: FlowDemoConfig
 }
 
 type FlowErrorConfig {
   notificationFrequency: NotificationFrequency!
+}
+
+type FlowDemoConfig {
+  onFirstLoad: Boolean!
+  isPreCreated: Boolean!
+  videoId: String!
 }
 
 type Execution {
@@ -373,6 +386,13 @@ input RegisterConnectionInput {
 input CreateFlowInput {
   triggerAppKey: String
   connectionId: String
+}
+
+input CreateTemplatedFlowInput {
+  flowName: String!
+  trigger: AppEventKeyPair!
+  actions: [AppEventKeyPair!]!
+  demoVideoId: String!
 }
 
 input UpdateFlowInput {
@@ -497,6 +517,11 @@ type Step {
   position: Int
   status: String
   executionSteps: [ExecutionStep]
+}
+
+input AppEventKeyPair {
+  appKey: String!
+  eventKey: String!
 }
 
 input StepConnectionInput {
