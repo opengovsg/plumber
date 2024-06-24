@@ -22,6 +22,7 @@ const helmetOptions: HelmetOptions = {
       frameAncestors: ["'none'"],
       frameSrc: [
         "'self'",
+        'https://demo.arcade.software',
         appConfig.isDev && 'https://*.apollographql.com',
       ].filter(Boolean),
       imgSrc: [

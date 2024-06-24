@@ -29,6 +29,10 @@ export const GET_APPS = gql`
         variant
         messageBody
       }
+      demoVideoDetails {
+        url
+        title
+      }
       auth {
         connectionType
         connectionRegistrationType

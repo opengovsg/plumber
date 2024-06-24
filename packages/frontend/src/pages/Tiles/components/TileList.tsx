@@ -1,7 +1,7 @@
 import { ITableMetadata } from '@plumber/types'
 
 import { MouseEvent, useCallback, useRef } from 'react'
-import { BsThreeDots, BsTrash } from 'react-icons/bs'
+import { BiDotsHorizontalRounded, BiShow, BiTrash } from 'react-icons/bi'
 import { MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
@@ -15,6 +15,7 @@ import {
   Box,
   Divider,
   Flex,
+  Icon,
   Menu,
   MenuButton,
   MenuItem,
@@ -78,12 +79,15 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
     <Link to={URLS.TILE(table.id)}>
       <Flex
         px={8}
-        py={4}
+        py={6}
         w="100%"
         justifyContent="space-between"
         alignItems="center"
         _hover={{
-          backgroundColor: 'primary.50',
+          bg: 'interaction.muted.neutral.hover',
+        }}
+        _active={{
+          bg: 'interaction.muted.neutral.active',
         }}
       >
         <Box>
@@ -111,24 +115,24 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
               as={IconButton}
               colorScheme="secondary"
               variant="clear"
-              icon={<BsThreeDots />}
+              icon={<BiDotsHorizontalRounded />}
               aria-label="options"
               onClick={(event) => {
                 event.preventDefault()
                 onMenuToggle()
               }}
             />
-            <MenuList>
+            <MenuList w={144}>
               <MenuItem
-                icon={<MdOutlineRemoveRedEye />}
+                icon={<Icon as={BiShow} boxSize={5} />}
                 onClick={() => navigate(URLS.TILE(table.id))}
               >
                 View
               </MenuItem>
               {table.role === 'owner' && (
                 <MenuItem
-                  icon={<BsTrash />}
-                  color="red.500"
+                  icon={<Icon as={BiTrash} boxSize={5} />}
+                  color="interaction.critical.default"
                   onClick={onDeleteButtonClick}
                 >
                   Delete
@@ -145,9 +149,7 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
       >
         <AlertDialogOverlay>
           <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Delete Tile
-            </AlertDialogHeader>
+            <AlertDialogHeader>Delete Tile</AlertDialogHeader>
 
             <AlertDialogBody>
               {"Are you sure? You can't undo this action afterwards."}
@@ -163,7 +165,7 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
                 Cancel
               </Button>
               <Button
-                colorScheme="red"
+                colorScheme="critical"
                 onClick={deleteTile}
                 ml={3}
                 isLoading={isDeletingTable}
@@ -184,7 +186,12 @@ interface TileListProps {
 
 const TileList = ({ tiles }: TileListProps): JSX.Element => {
   return (
-    <VStack alignItems="stretch" flexWrap="wrap" divider={<Divider />}>
+    <VStack
+      alignItems="stretch"
+      flexWrap="wrap"
+      divider={<Divider />}
+      spacing={0}
+    >
       {tiles.map((tile) => (
         <TileListItem key={tile.id} table={tile} />
       ))}

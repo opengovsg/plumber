@@ -56,6 +56,7 @@ type Mutation {
   registerConnection(input: RegisterConnectionInput): Boolean
   # Flows
   createFlow(input: CreateFlowInput): Flow
+  createTemplatedFlow(input: CreateTemplatedFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
@@ -193,6 +194,17 @@ type App {
   isNewApp: Boolean
   substepLabels: StepLabel
   setupMessage: SetupMessage
+  demoVideoDetails: DemoVideoDetails
+}
+
+type DemoVideoDetails {
+  url: String!
+  title: String!
+}
+
+type DemoVideoDetails {
+  url: String!
+  title: String!
 }
 
 type StepLabel {
@@ -319,10 +331,17 @@ type Flow {
 type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
+  demoConfig: FlowDemoConfig
 }
 
 type FlowErrorConfig {
   notificationFrequency: NotificationFrequency!
+}
+
+type FlowDemoConfig {
+  hasLoadedOnce: Boolean!
+  isAutoCreated: Boolean!
+  videoId: String!
 }
 
 type Execution {
@@ -375,6 +394,13 @@ input CreateFlowInput {
   connectionId: String
 }
 
+input CreateTemplatedFlowInput {
+  flowName: String!
+  trigger: AppEventKeyPair!
+  actions: [AppEventKeyPair!]!
+  demoVideoId: String!
+}
+
 input UpdateFlowInput {
   id: String!
   name: String!
@@ -392,7 +418,8 @@ enum NotificationFrequency {
 
 input UpdateFlowConfigInput {
   id: String!
-  notificationFrequency: NotificationFrequency!
+  notificationFrequency: NotificationFrequency
+  hasLoadedOnce: Boolean
 }
 
 input ExecuteFlowInput {
@@ -497,6 +524,11 @@ type Step {
   position: Int
   status: String
   executionSteps: [ExecutionStep]
+}
+
+input AppEventKeyPair {
+  appKey: String!
+  eventKey: String!
 }
 
 input StepConnectionInput {
