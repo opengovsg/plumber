@@ -1,14 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import {
-  Box,
-  Collapse,
-  Divider,
-  Flex,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-} from '@chakra-ui/react'
+import { useState } from 'react'
+import { Box, Collapse, Divider, Flex, Text } from '@chakra-ui/react'
 import VariablesList from 'components/VariablesList'
 import { StepWithVariables, Variable } from 'helpers/variables'
 
@@ -104,84 +95,5 @@ export default function Suggestions(props: SuggestionsProps) {
         ))}
       </Box>
     </Flex>
-  )
-}
-
-interface SuggestionsPopperProps {
-  open: boolean
-  editorRef: React.MutableRefObject<HTMLDivElement | null>
-  data: StepWithVariables[]
-  onSuggestionClick: (variable: Variable) => void
-}
-
-export const SuggestionsPopper = (props: SuggestionsPopperProps) => {
-  const { open, editorRef, data, onSuggestionClick } = props
-
-  const isEmpty = data.reduce(
-    (acc, step) => acc && step.output.length === 0,
-    true,
-  )
-
-  const offsetVerticalMargin = editorRef?.current?.offsetHeight ?? 0
-
-  // fix issue for empty variables: only when popover placement is on top, no negative margin is needed
-  const [placement, setPlacement] = useState('bottom') // default to bottom
-  const triggerRef = useRef<HTMLDivElement>(null)
-  const popoverRef = useRef<HTMLDivElement>(null)
-
-  const updatePlacement = () => {
-    if (triggerRef.current && popoverRef.current) {
-      const triggerRect = triggerRef.current.getBoundingClientRect()
-      const popoverRect = popoverRef.current.getBoundingClientRect()
-
-      // Deduce placement
-      if (popoverRect.top <= triggerRect.top) {
-        setPlacement('top')
-      } else {
-        setPlacement('bottom')
-      }
-    }
-  }
-
-  useEffect(() => {
-    window.addEventListener('click', updatePlacement)
-    window.addEventListener('resize', updatePlacement)
-    window.addEventListener('scroll', updatePlacement)
-
-    // Clean up
-    return () => {
-      window.removeEventListener('click', updatePlacement)
-      window.removeEventListener('resize', updatePlacement)
-      window.removeEventListener('scroll', updatePlacement)
-    }
-  }, [])
-
-  if (!open) {
-    return null
-  }
-
-  return (
-    <Popover
-      isOpen
-      initialFocusRef={editorRef}
-      gutter={0}
-      offset={[0, offsetVerticalMargin + 1]} // this is adjusted based on DS input
-    >
-      <PopoverTrigger>
-        <div ref={triggerRef} />
-      </PopoverTrigger>
-      {/* To account for window position when scrolling */}
-      <PopoverContent
-        width={editorRef?.current?.offsetWidth}
-        ref={popoverRef}
-        marginTop={
-          isEmpty && placement === 'top'
-            ? undefined
-            : `-${offsetVerticalMargin}px`
-        }
-      >
-        <Suggestions data={data} onSuggestionClick={onSuggestionClick} />
-      </PopoverContent>
-    </Popover>
   )
 }
