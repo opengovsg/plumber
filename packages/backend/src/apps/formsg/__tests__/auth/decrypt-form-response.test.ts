@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => {
     cryptoDecrypt: vi.fn(),
     cryptoDecryptWithAttachments: vi.fn(),
     consoleError: vi.fn(),
+    consoleWarn: vi.fn(),
   }
 })
 
@@ -41,6 +42,7 @@ vi.mock('@opengovsg/formsg-sdk', () => {
 vi.mock('@/helpers/logger', () => ({
   default: {
     error: mocks.consoleError,
+    warn: mocks.consoleWarn,
   },
 }))
 
@@ -84,6 +86,10 @@ describe('decrypt form response', () => {
         userId: 'userid',
         hasFileProcessingActions: false,
         name: 'test flow',
+      },
+      user: {
+        id: 'userid',
+        email: 'test-email@open.gov.sg',
       },
       app,
     }
@@ -129,6 +135,20 @@ describe('decrypt form response', () => {
       expect(mocks.webhooksAuthenticate).toHaveBeenCalledTimes(1)
       expect(mocks.consoleError).toHaveBeenCalledWith(
         'Unable to verify formsg signature',
+      )
+    })
+
+    it('should fail and give warning if no connection exists', async () => {
+      delete $.auth.data
+      await expect(decryptFormResponse($)).resolves.toEqual(false)
+      expect(mocks.consoleWarn).toHaveBeenCalledWith(
+        'Form is not connected to any pipe after pipe is transferred',
+        {
+          event: 'formsg-missing-connection',
+          flowId: $.flow.id,
+          stepId: $.step.id,
+          userId: $.user.id,
+        },
       )
     })
 

@@ -69,6 +69,17 @@ export async function decryptFormResponse(
     return false
   }
 
+  // Note: this could occur due to pipe transfer since connection becomes null
+  if (!$.auth.data) {
+    logger.warn('Form is not connected to any pipe after pipe is transferred', {
+      event: 'formsg-missing-connection',
+      flowId: $.flow.id,
+      stepId: $.step.id,
+      userId: $.user.id,
+    })
+    return false
+  }
+
   const formSecretKey = $.auth.data.privateKey as string
 
   const shouldStoreAttachments = $.flow.hasFileProcessingActions
