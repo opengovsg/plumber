@@ -29,6 +29,9 @@ export const GET_FLOW = gql`
         errorConfig {
           notificationFrequency
         }
+        demoConfig {
+          hasLoadedOnce
+        }
       }
       pendingTransfer {
         id
