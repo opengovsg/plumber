@@ -4,6 +4,7 @@ import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
 import createFlowTransfer from './mutations/create-flow-transfer'
 import createStep from './mutations/create-step'
+import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
 import deleteStep from './mutations/delete-step'
@@ -17,6 +18,7 @@ import registerConnection from './mutations/register-connection'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
 import retryExecutionStep from './mutations/retry-execution-step'
+import retryPartialStep from './mutations/retry-partial-step'
 import tilesMutationResolvers from './mutations/tiles'
 import updateConnection from './mutations/update-connection'
 import updateFlow from './mutations/update-flow'
@@ -54,6 +56,7 @@ export default {
   deleteConnection,
   registerConnection,
   createFlow,
+  createTemplatedFlow,
   updateFlow,
   updateFlowStatus,
   updateFlowConfig,
@@ -65,6 +68,7 @@ export default {
   requestOtp,
   verifyOtp,
   retryExecutionStep,
+  retryPartialStep,
   logout,
   loginWithSgid,
   loginWithSelectedSgid,

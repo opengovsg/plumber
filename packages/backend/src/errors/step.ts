@@ -16,6 +16,7 @@ export default class StepError extends Error {
     position: number,
     appName: string,
     error?: HttpError,
+    extraProperties?: Record<string, unknown>,
   ) {
     const stepError: IStepError = {
       name,
@@ -23,6 +24,7 @@ export default class StepError extends Error {
       position,
       appName,
       details: error?.details as IJSONObject,
+      ...extraProperties,
     }
     const computedMessage = JSON.stringify(stepError)
     super(computedMessage, { cause: error })

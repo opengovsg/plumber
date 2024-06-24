@@ -81,6 +81,7 @@ const ImportStatus = ({
             colorScheme="secondary"
             variant="link"
             onClick={setIsColumnDataExpanded.toggle}
+            _hover={{ textDecoration: 'none', color: 'primary.600' }}
             rightIcon={
               isColumnDataExpanded ? <BiChevronUp /> : <BiChevronDown />
             }

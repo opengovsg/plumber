@@ -66,6 +66,7 @@ const globalVariable = async (
     app: app,
     flow: {
       id: flow?.id,
+      name: flow?.name,
       userId: flow?.userId,
       hasFileProcessingActions:
         (await flow?.containsFileProcessingActions()) ?? false,
@@ -85,8 +86,21 @@ const globalVariable = async (
       id: execution?.id,
       testRun,
     },
-    getLastExecutionStep: async () =>
-      (await step?.getLastExecutionStep())?.toJSON(),
+    /**
+     * This function is mainly used in testRuns for triggers
+     * specify sameExection as true, if you want to get the last execution step of the SAME execution
+     * (e.g. for retries that require the context from the last execution step)
+     */
+    getLastExecutionStep: async (options) => {
+      if (options?.sameExecution && !execution?.id) {
+        throw new Error('Execution ID is required to get last execution step')
+      }
+      return (
+        await step?.getLastExecutionStep(
+          options?.sameExecution ? execution.id : undefined,
+        )
+      )?.toJSON()
+    },
     triggerOutput: {
       data: [],
     },

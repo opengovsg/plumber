@@ -20,7 +20,11 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
     .$relatedQuery('executionSteps')
     .with('latest_steps', (builder) => {
       builder
-        .select('step_id', raw('max(created_at) as max_created_at'))
+        .select(
+          'step_id',
+          raw('max(created_at) as max_created_at'),
+          raw('min(created_at) as min_created_at'),
+        )
         .from('execution_steps')
         .groupBy('step_id')
         .where('execution_id', '=', execution.id)
@@ -30,8 +34,9 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
         .on('execution_steps.step_id', '=', 'latest_steps.step_id')
         .andOn('execution_steps.created_at', '=', 'latest_steps.max_created_at')
     })
+    .select('execution_steps.*', 'min_created_at')
     .withSoftDeleted()
-    .orderBy('created_at', 'asc')
+    .orderBy('min_created_at', 'asc')
 
   return paginate(executionSteps, params.limit, params.offset)
 }

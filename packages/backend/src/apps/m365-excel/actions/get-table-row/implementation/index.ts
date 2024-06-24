@@ -84,8 +84,8 @@ export default async function getTableRowImpl(
   const columnIndex = columns.indexOf(lookupColumn)
   if (columnIndex === -1) {
     throw new StepError(
-      'Lookup Column not found',
-      `Ensure that your Excel table contains the "${lookupColumn}" column.`,
+      `Column "${lookupColumn}" does not exist in your table.`,
+      `Check that your Excel table contains the "${lookupColumn}" column.`,
       $.step.position,
       $.app.name,
     )

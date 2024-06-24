@@ -19,7 +19,6 @@ export default function AppBar(): React.ReactElement {
           colorScheme="secondary"
           target="_blank"
           variant="link"
-          _hover={{ textDecoration: 'underline' }}
         >
           <Text textStyle="subhead-1">Status</Text>
         </Button>
@@ -30,7 +29,6 @@ export default function AppBar(): React.ReactElement {
           colorScheme="secondary"
           target="_blank"
           variant="link"
-          _hover={{ textDecoration: 'underline' }}
         >
           <Text textStyle="subhead-1">Guide</Text>
         </Button>

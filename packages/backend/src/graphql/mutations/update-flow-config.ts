@@ -1,4 +1,8 @@
-import { IFlowErrorConfig } from '@plumber/types'
+import type {
+  IFlowConfig,
+  IFlowDemoConfig,
+  IFlowErrorConfig,
+} from '@plumber/types'
 
 import Context from '@/types/express/context'
 
@@ -6,6 +10,7 @@ type Params = {
   input: {
     id: string
     notificationFrequency: IFlowErrorConfig['notificationFrequency']
+    hasLoadedOnce: IFlowDemoConfig['hasLoadedOnce']
   }
 }
 
@@ -21,14 +26,26 @@ const updateFlowConfig = async (
     })
     .throwIfNotFound()
 
+  const newConfig: IFlowConfig = {
+    ...flow.config,
+  }
+
+  if (params.input.notificationFrequency !== undefined) {
+    newConfig.errorConfig = {
+      ...newConfig.errorConfig, // If ever undefined (should never be), it gets set to an empty object first
+      notificationFrequency: params.input.notificationFrequency,
+    }
+  }
+
+  if (params.input.hasLoadedOnce !== undefined) {
+    newConfig.demoConfig = {
+      ...newConfig.demoConfig, // If ever undefined (should never be), it gets set to an empty object first
+      hasLoadedOnce: params.input.hasLoadedOnce,
+    }
+  }
+
   return await flow.$query().patchAndFetch({
-    config: {
-      ...(flow.config ?? {}),
-      errorConfig: {
-        ...(flow.config?.errorConfig ?? {}),
-        notificationFrequency: params.input.notificationFrequency,
-      },
-    },
+    config: newConfig,
   })
 }
 

@@ -9,6 +9,7 @@ const bbBearColors = {
     canvas: {
       'brand-subtle': '#fef8fb',
       inverse: '#3A3E46',
+      overlay: 'rgba(58, 62, 70, 0.8)',
     },
     divider: {
       subtle: '#F8F9F9',

@@ -26,6 +26,11 @@ export const GET_FLOWS = gql`
           createdAt
           updatedAt
           active
+          config {
+            demoConfig {
+              hasLoadedOnce
+            }
+          }
           steps {
             iconUrl
           }

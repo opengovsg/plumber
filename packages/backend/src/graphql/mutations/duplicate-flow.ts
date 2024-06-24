@@ -1,5 +1,7 @@
 import type { IJSONObject } from '@plumber/types'
 
+import { isEmpty } from 'lodash'
+
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
@@ -75,21 +77,26 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     .throwIfNotFound()
 
   return await Flow.transaction(async (trx) => {
+    const prevConfig = { ...flow.config }
     // update duplicate count for the original flow
     await flow.$query(trx).patch({
       config: {
-        ...(flow.config ?? {}),
+        ...prevConfig,
         duplicateCount: flow.config?.duplicateCount
           ? flow.config.duplicateCount + 1
           : 1,
       },
     })
 
+    // duplicate the flow with the previous config (only keep notification frequency)
+    delete prevConfig['duplicateCount']
+    delete prevConfig['demoConfig']
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
       .insert({
         name: `[COPY] ${flow.name}`,
         active: false,
+        config: !isEmpty(prevConfig) ? prevConfig : undefined,
       })
 
     // duplicate the steps and the variables
