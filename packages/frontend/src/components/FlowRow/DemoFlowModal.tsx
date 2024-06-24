@@ -11,16 +11,25 @@ import {
 } from '@chakra-ui/react'
 import { Badge, BadgeLeftIcon, Button } from '@opengovsg/design-system-react'
 import demoModalImg from 'assets/demo-modal.png'
+import {
+  DEMO_VIDEOS_MAP,
+  FORMSG_POSTMAN_TEMPLATE,
+} from 'helpers/flow-templates'
 
 import DemoVideoModalContent from './DemoVideoModalContent'
 
 interface DemoFlowModalProps {
   onClose: () => void
+  isAutoCreated?: boolean
+  demoVideoId?: string
 }
 
 export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
-  const { onClose } = props
-  const [showVideoModal, setShowVideoModal] = useState(false)
+  const { onClose, isAutoCreated, demoVideoId } = props
+  // fallback to default demo video to display for GGWP v1
+  const { url, title } = DEMO_VIDEOS_MAP[demoVideoId ?? FORMSG_POSTMAN_TEMPLATE]
+
+  const [showVideoModal, setShowVideoModal] = useState(!isAutoCreated)
 
   return (
     <Modal
@@ -29,17 +38,15 @@ export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
       size={showVideoModal ? '5xl' : '3xl'}
       motionPreset="none"
       closeOnEsc={false}
+      isCentered
     >
       <ModalOverlay bg="base.canvas.overlay" />
-      <ModalContent my={12}>
+      <ModalContent p={showVideoModal ? '1rem' : '2rem'} borderRadius={8}>
+        {/* Demo created by user should immediately load demo video */}
         {showVideoModal ? (
-          // TODO (mal): to update this when there are more demo links in the future
-          <DemoVideoModalContent
-            src="https://demo.arcade.software/FzpL1zCmibw0oXR6HUJi?embed&show_copy_link=true"
-            title={`Forms -&gt; Postman (GGWP)`}
-          />
+          <DemoVideoModalContent src={url} title={title} />
         ) : (
-          <Flex flexDir="column" gap={8} p={8}>
+          <Flex flexDir="column" gap={8}>
             <Image src={demoModalImg} alt="demo-modal-illustration" />
 
             <Flex flexDir="column" gap={4}>
