@@ -1,6 +1,6 @@
 import type { IFieldDropdownOption } from '@plumber/types'
 
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { Box, Flex, FormControl } from '@chakra-ui/react'
@@ -16,7 +16,6 @@ interface ControlledAutocompleteProps {
   label?: string
   showOptionValue?: boolean
   description?: string
-  dependsOn?: string[]
   onRefresh?: () => void
   required?: boolean
   placeholder?: string
@@ -45,14 +44,13 @@ const formComboboxOptions = (
 function ControlledAutocomplete(
   props: ControlledAutocompleteProps,
 ): React.ReactElement {
-  const { control, watch, setValue, resetField } = useFormContext()
+  const { control } = useFormContext()
   const {
     name,
     label,
     defaultValue,
     description,
     options = [],
-    dependsOn = [],
     showOptionValue,
     freeSolo: rawFreeSolo,
     onRefresh,
@@ -60,21 +58,6 @@ function ControlledAutocomplete(
     required,
     placeholder,
   } = props
-
-  const dependsOnValues: unknown[] = useMemo(
-    () => (dependsOn?.length ? watch(dependsOn) : []),
-    [dependsOn, watch],
-  )
-  useEffect(() => {
-    const hasDependencies = dependsOnValues.length
-    const allDepsSatisfied = dependsOnValues.every(Boolean)
-
-    if (hasDependencies && !allDepsSatisfied) {
-      // Reset the field if any dependency is not satisfied
-      setValue(name, null)
-      resetField(name)
-    }
-  }, [dependsOnValues, name, resetField, setValue, options])
 
   const items = useMemo(
     () => formComboboxOptions(options, showOptionValue),

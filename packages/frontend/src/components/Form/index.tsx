@@ -41,7 +41,7 @@ export default function Form(props: FormProps): React.ReactElement {
   const form = useWatch({ control: methods.control })
 
   /**
-   * For fields having `dependsOn` fields, we need to re-validate the form.
+   * For fields having `hiddenIf` fields, we need to re-validate the form.
    */
   React.useEffect(() => {
     methods.trigger()

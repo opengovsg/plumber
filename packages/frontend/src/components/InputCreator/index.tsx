@@ -49,7 +49,6 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     variables,
     type,
     placeholder,
-    dependsOn,
   } = schema
 
   const { data, loading, refetch } = useDynamicData(stepId, schema)
@@ -80,7 +79,6 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     return (
       <ControlledAutocomplete
         name={computedName}
-        dependsOn={dependsOn}
         required={required}
         freeSolo={schema.allowArbitrary}
         options={preparedOptions}
