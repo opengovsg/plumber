@@ -14,6 +14,10 @@ const app: IApp = {
   substepLabels: {
     settingsStepLabel: 'Set up email',
   },
+  demoVideoDetails: {
+    url: 'https://demo.arcade.software/VppMAbGKfFXFEsKxnKiw?embed&show_copy_link=true',
+    title: 'Setting up Email by Postman',
+  },
 }
 
 export default app
