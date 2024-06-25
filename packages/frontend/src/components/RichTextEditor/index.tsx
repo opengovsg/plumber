@@ -24,8 +24,9 @@ import Text from '@tiptap/extension-text'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import { VariableClickCallback } from 'components/VariablesList'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
-import { extractVariables, filterVariables, Variable } from 'helpers/variables'
+import { extractVariables, filterVariables } from 'helpers/variables'
 
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
@@ -150,8 +151,12 @@ const Editor = ({
     editor?.setOptions({ editable })
   }, [editable, editor])
 
-  const handleVariableClick = useCallback(
-    (variable: Variable) => {
+  const handleVariableClick = useCallback<VariableClickCallback>(
+    (variable, mouseEvent) => {
+      // Prevent default here to let focus stay in the editor instead of going
+      // to the popper when clicking.
+      mouseEvent.preventDefault()
+
       editor?.commands.insertContent({
         type: StepVariable.name,
         attrs: {
@@ -164,7 +169,6 @@ const Editor = ({
     },
     [editor],
   )
-
   const {
     isOpen: isSuggestionsOpen,
     onOpen: openSuggestions,
@@ -173,24 +177,24 @@ const Editor = ({
 
   return (
     <Popover
-      autoFocus={false}
       gutter={0}
       matchWidth={true}
       isOpen={isSuggestionsOpen}
+      autoFocus={false}
     >
       <div
         className="editor"
         onClick={openSuggestions}
-        onBlur={(e) => {
+        onFocus={openSuggestions}
+        onBlur={(event) => {
           // Focus might shift to menu bar or other children, where we do _not_
           // want to close our popper.
-          if (e.currentTarget.contains(e.relatedTarget)) {
+          if (event.currentTarget.contains(event.relatedTarget)) {
             return
           }
 
           closeSuggestions()
         }}
-        onFocus={openSuggestions}
       >
         <PopoverTrigger>
           <Box>

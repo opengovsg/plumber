@@ -1,9 +1,15 @@
+import type { MouseEvent } from 'react'
 import { Box, Text } from '@chakra-ui/react'
 import { type Variable } from 'helpers/variables'
 
+export type VariableClickCallback = (
+  variable: Variable,
+  mouseEvent: MouseEvent<HTMLDivElement>,
+) => void
+
 function makeVariableComponent(
   variable: Variable,
-  onClick?: (variable: Variable) => void,
+  onClick?: VariableClickCallback,
 ): JSX.Element {
   return (
     <Box
@@ -30,8 +36,8 @@ function makeVariableComponent(
       // onClick doesn't work sometimes due to latency between mousedown and immediate mouseup event after
       onMouseDown={
         onClick
-          ? () => {
-              onClick(variable)
+          ? (event) => {
+              onClick(variable, event)
             }
           : undefined
       }
@@ -48,7 +54,7 @@ function makeVariableComponent(
 
 interface VariablesListProps {
   variables: Variable[]
-  onClick?: (variable: Variable) => void
+  onClick?: VariableClickCallback
 }
 
 export default function VariablesList(props: VariablesListProps) {

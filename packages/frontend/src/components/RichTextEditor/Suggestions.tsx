@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { Box, Collapse, Divider, Flex, Text } from '@chakra-ui/react'
+import type { VariableClickCallback } from 'components/VariablesList'
 import VariablesList from 'components/VariablesList'
-import { StepWithVariables, Variable } from 'helpers/variables'
+import type { StepWithVariables } from 'helpers/variables'
 
 interface SuggestionsProps {
   data: StepWithVariables[]
-  onSuggestionClick: (variable: Variable) => void
+  onSuggestionClick?: VariableClickCallback
 }
 
 export default function Suggestions(props: SuggestionsProps) {
-  const { data, onSuggestionClick = () => null } = props
+  const { data, onSuggestionClick } = props
   const [current, setCurrent] = useState<number>(0)
 
   const isEmpty = data.reduce(
