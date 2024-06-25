@@ -1,6 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import { ReactElement, useCallback } from 'react'
+import { ReactElement, useCallback, useMemo } from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
 import { Link, useParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
@@ -109,6 +109,12 @@ export default function EditorLayout(): ReactElement {
     [flow?.id, flowId, updateFlowStatus],
   )
 
+  // disallow user from publishing pipe if any step is incomplete
+  const isFlowIncomplete = useMemo(
+    () => flow?.steps.some((step) => step.status === 'incomplete'),
+    [flow?.steps],
+  )
+
   // navigate user to not found page if flow does not belong to the user
   if (
     error instanceof ApolloError &&
@@ -177,13 +183,15 @@ export default function EditorLayout(): ReactElement {
           {/* Used a tooltip instead because the words take up too much space on mobile view */}
           <TouchableTooltip
             label={
-              hasFlowTransfer
+              isFlowIncomplete
+                ? 'Set up for all steps must be completed before you can publish your pipe'
+                : hasFlowTransfer
                 ? 'You cannot publish a pipe with a pending transfer'
                 : ''
             }
           >
             <Button
-              isDisabled={hasFlowTransfer}
+              isDisabled={isFlowIncomplete || hasFlowTransfer}
               isLoading={loading}
               spinner={<Spinner fontSize={24} />}
               size="md"
