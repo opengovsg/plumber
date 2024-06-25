@@ -2,6 +2,13 @@
 // distro size.
 // Imported from BbBear generated on Fri, 23 Jun 2023 09:14:33 GMT
 const bbBearTextStyles = {
+  heavy: {
+    fontWeight: 600,
+    lineHeight: '2.5rem',
+    fontSize: '2rem',
+    letterSpacing: '-0.022em',
+    fontFamily: 'body',
+  },
   'subhead-1': {
     fontWeight: 500,
     lineHeight: '1.5rem',
