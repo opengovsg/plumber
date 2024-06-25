@@ -8,6 +8,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  useDisclosure,
 } from '@chakra-ui/react'
 import { FormLabel } from '@opengovsg/design-system-react'
 import Document from '@tiptap/extension-document'
@@ -164,9 +165,33 @@ const Editor = ({
     [editor],
   )
 
+  const {
+    isOpen: isSuggestionsOpen,
+    onOpen: openSuggestions,
+    onClose: closeSuggestions,
+  } = useDisclosure()
+
   return (
-    <Popover gutter={0} matchWidth={true}>
-      <div className="editor">
+    <Popover
+      autoFocus={false}
+      gutter={0}
+      matchWidth={true}
+      isOpen={isSuggestionsOpen}
+    >
+      <div
+        className="editor"
+        onClick={openSuggestions}
+        onBlur={(e) => {
+          // Focus might shift to menu bar or other children, where we do _not_
+          // want to close our popper.
+          if (e.currentTarget.contains(e.relatedTarget)) {
+            return
+          }
+
+          closeSuggestions()
+        }}
+        onFocus={openSuggestions}
+      >
         <PopoverTrigger>
           <Box>
             {isRich && <MenuBar editor={editor} />}
