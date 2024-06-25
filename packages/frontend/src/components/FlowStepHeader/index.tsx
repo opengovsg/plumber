@@ -136,7 +136,6 @@ export default function FlowStepHeader(
             mr={4}
             borderWidth={1}
             borderColor="base.divider.strong"
-            borderRadius="base"
             justifyContent="center"
             alignItems="center"
           >
