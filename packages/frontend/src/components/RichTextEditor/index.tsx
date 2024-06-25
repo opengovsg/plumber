@@ -197,7 +197,15 @@ const Editor = ({
             {isRich && <MenuBar editor={editor} />}
             <EditorContent className="editor__content" editor={editor} />
             {variablesEnabled && (
-              <PopoverContent w="100%">
+              <PopoverContent
+                w="100%"
+                onFocus={(e) => {
+                  // Go back to previous focus when clicking on suggestions to resume typing
+                  if (e.relatedTarget instanceof HTMLElement) {
+                    e.relatedTarget?.focus()
+                  }
+                }}
+              >
                 <Suggestions
                   data={stepsWithVariables}
                   onSuggestionClick={handleVariableClick}
