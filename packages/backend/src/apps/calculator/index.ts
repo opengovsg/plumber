@@ -12,7 +12,6 @@ const app: IApp = {
   primaryColor: '000000',
   actions,
   description: 'Perform calculations on numbers in your data',
-  isNewApp: true,
   substepLabels: {
     settingsStepLabel: 'Set up calculator',
   },
