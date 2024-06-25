@@ -57,21 +57,3 @@ export const CELL_BOX_SHADOW = {
   DEFAULT: '0 0 2px 1px var(--chakra-colors-secondary-400)',
   HOVER: '0 0 0 1px var(--chakra-colors-primary-400)',
 }
-
-// to reduce transition effects
-export const POPOVER_MOTION_PROPS = {
-  variants: {
-    exit: {
-      opacity: 0,
-      transition: {
-        duration: 0,
-      },
-    },
-    enter: {
-      opacity: 1,
-      transition: {
-        duration: 0,
-      },
-    },
-  },
-}
