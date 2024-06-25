@@ -1,5 +1,4 @@
 import { Box } from '@chakra-ui/react'
-import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import RedirectToLogin from 'components/RedirectToLogin'
 import SiteWideBanner from 'components/SiteWideBanner'
@@ -20,7 +19,6 @@ export default function TransfersLayout(props: TransfersLayoutProps) {
   return (
     <>
       <SiteWideBanner />
-      <RestrictedGovtMasthead />
       <AppBar />
       <Box>{children}</Box>
     </>

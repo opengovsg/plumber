@@ -5,7 +5,6 @@ import { BiMailSend, BiTransfer } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
 import {
-  Box,
   Center,
   Divider,
   Flex,
@@ -83,10 +82,12 @@ export default function EditorSettingsLayout(
     ),
     md: (
       <>
-        <Box mt={4}>
-          <EditorSidebar links={drawerLinks} closeDrawer={closeDrawer} />
-        </Box>
-        <Divider orientation="vertical" borderColor="base.divider.medium" />
+        <EditorSidebar links={drawerLinks} closeDrawer={closeDrawer} />
+        <Divider
+          orientation="vertical"
+          borderColor="base.divider.medium"
+          height="auto"
+        />
       </>
     ),
   })
@@ -115,9 +116,9 @@ export default function EditorSettingsLayout(
 
   return (
     <EditorSettingsProvider value={{ flow }}>
-      <VStack h="100%" spacing={0}>
+      <VStack spacing={0} minH="100vh">
         <Navbar />
-        <Flex w="full" h="100vh" flexDir={{ base: 'column', md: 'row' }}>
+        <Flex w="full" flex={1} flexDir={{ base: 'column', md: 'row' }}>
           {drawerComponent}
           {children}
         </Flex>
