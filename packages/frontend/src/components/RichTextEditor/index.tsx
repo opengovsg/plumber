@@ -165,7 +165,7 @@ const Editor = ({
   )
 
   return (
-    <Popover placement="bottom-start" gutter={0} matchWidth={true}>
+    <Popover gutter={0} matchWidth={true}>
       <div className="editor">
         <PopoverTrigger>
           <Box>
