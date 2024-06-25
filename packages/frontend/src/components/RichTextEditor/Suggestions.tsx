@@ -1,14 +1,5 @@
 import { useState } from 'react'
-import {
-  Box,
-  Collapse,
-  Divider,
-  Flex,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-} from '@chakra-ui/react'
+import { Box, Collapse, Divider, Flex, Text } from '@chakra-ui/react'
 import VariablesList from 'components/VariablesList'
 import { StepWithVariables, Variable } from 'helpers/variables'
 
@@ -104,41 +95,5 @@ export default function Suggestions(props: SuggestionsProps) {
         ))}
       </Box>
     </Flex>
-  )
-}
-
-interface SuggestionsPopperProps {
-  open: boolean
-  editorRef: React.MutableRefObject<HTMLDivElement | null>
-  data: StepWithVariables[]
-  onSuggestionClick: (variable: Variable) => void
-}
-
-export const SuggestionsPopper = (props: SuggestionsPopperProps) => {
-  const { open, editorRef, data, onSuggestionClick } = props
-
-  const offsetVerticalMargin = editorRef?.current?.offsetHeight ?? 0
-
-  if (!open) {
-    return null
-  }
-
-  return (
-    <Popover
-      isOpen
-      initialFocusRef={editorRef}
-      offset={[0, offsetVerticalMargin + 1]} // this is adjusted based on DS input
-    >
-      <PopoverTrigger>
-        <div />
-      </PopoverTrigger>
-      {/* To account for window position when scrolling */}
-      <PopoverContent
-        width={editorRef?.current?.offsetWidth}
-        marginTop={`-${offsetVerticalMargin}px`}
-      >
-        <Suggestions data={data} onSuggestionClick={onSuggestionClick} />
-      </PopoverContent>
-    </Popover>
   )
 }
