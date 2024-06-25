@@ -26,6 +26,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { StepExecutionsContext } from 'contexts/StepExecutions'
 import { extractVariables, filterVariables, Variable } from 'helpers/variables'
+import { POPOVER_MOTION_PROPS } from 'theme/constants'
 
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
@@ -199,6 +200,7 @@ const Editor = ({
             {variablesEnabled && (
               <PopoverContent
                 w="100%"
+                motionProps={POPOVER_MOTION_PROPS}
                 onFocus={(e) => {
                   // Go back to previous focus when clicking on suggestions to resume typing
                   if (e.relatedTarget instanceof HTMLElement) {
