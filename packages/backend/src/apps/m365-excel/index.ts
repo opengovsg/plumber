@@ -23,6 +23,7 @@ const app: IApp = {
   dynamicData,
   getTransferDetails,
   queue,
+  isNewApp: true,
   substepLabels: {
     connectionStepLabel: 'Connect to M365 Excel',
   },
