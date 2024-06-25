@@ -32,6 +32,7 @@ export default function Login(): ReactElement {
             <Image
               src={landingImg}
               w={{ base: '80%', lg: '60%', '2xl': '65%' }}
+              maxW="26rem"
             />
           </Center>
         </Show>
