@@ -1,7 +1,7 @@
 import { useContext } from 'react'
 import { BiBulb } from 'react-icons/bi'
 import { Link, useMatch } from 'react-router-dom'
-import { Box, Text, useDisclosure } from '@chakra-ui/react'
+import { Text, useDisclosure } from '@chakra-ui/react'
 import {
   Badge,
   SidebarContainer,
@@ -76,6 +76,9 @@ const DemoSidebarItem = () => {
           bg: 'interaction.muted.main.active',
         }}
         display="flex"
+        position="fixed"
+        bottom={2}
+        bg="white"
       >
         <Text
           textStyle="subhead-1"
@@ -102,20 +105,15 @@ export default function NavigationSidebar() {
 
   // TODO (mal): I will make a discriminated union and combine with the drawer links if more than 1 "sidebar modal item" exists
   return (
-    <>
-      <SidebarContainer>
-        {links.map((link, index) => (
-          <NavigationSidebarItem
-            key={index}
-            link={link}
-            closeDrawer={closeDrawer}
-          />
-        ))}
-
-        <Box pos="fixed" bottom={0}>
-          <DemoSidebarItem />
-        </Box>
-      </SidebarContainer>
-    </>
+    <SidebarContainer variant="sticky">
+      {links.map((link, index) => (
+        <NavigationSidebarItem
+          key={index}
+          link={link}
+          closeDrawer={closeDrawer}
+        />
+      ))}
+      <DemoSidebarItem />
+    </SidebarContainer>
   )
 }
