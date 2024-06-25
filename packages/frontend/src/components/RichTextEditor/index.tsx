@@ -1,15 +1,14 @@
 import './RichTextEditor.scss'
 
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import { ClickAwayListener, FormControl } from '@mui/material'
+import {
+  Box,
+  FormControl,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@chakra-ui/react'
 import { FormLabel } from '@opengovsg/design-system-react'
 import Document from '@tiptap/extension-document'
 import Hardbreak from '@tiptap/extension-hard-break'
@@ -30,7 +29,7 @@ import { extractVariables, filterVariables, Variable } from 'helpers/variables'
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
 import { StepVariable } from './StepVariablePlugin'
-import { SuggestionsPopper } from './SuggestionPopper'
+import Suggestions from './Suggestions'
 import { genVariableInfoMap, substituteOldTemplates } from './utils'
 
 const RICH_TEXT_EXTENSIONS = [
@@ -82,8 +81,6 @@ const Editor = ({
   isRich,
 }: EditorProps) => {
   const priorStepsWithExecutions = useContext(StepExecutionsContext)
-  const [showVarSuggestions, setShowVarSuggestions] = useState(false)
-  const editorRef = useRef<HTMLDivElement | null>(null)
 
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
@@ -168,29 +165,24 @@ const Editor = ({
   )
 
   return (
-    <div className="editor">
-      <ClickAwayListener
-        mouseEvent="onMouseDown"
-        onClickAway={() => setShowVarSuggestions(false)}
-      >
-        <div ref={editorRef}>
-          {isRich && <MenuBar editor={editor} />}
-          <EditorContent
-            className="editor__content"
-            editor={editor}
-            onFocus={() => setShowVarSuggestions(true)}
-          />
-          {variablesEnabled && (
-            <SuggestionsPopper
-              open={showVarSuggestions}
-              editorRef={editorRef}
-              data={stepsWithVariables}
-              onSuggestionClick={handleVariableClick}
-            />
-          )}
-        </div>
-      </ClickAwayListener>
-    </div>
+    <Popover gutter={0} matchWidth={true}>
+      <div className="editor">
+        <PopoverTrigger>
+          <Box>
+            {isRich && <MenuBar editor={editor} />}
+            <EditorContent className="editor__content" editor={editor} />
+            {variablesEnabled && (
+              <PopoverContent w="100%">
+                <Suggestions
+                  data={stepsWithVariables}
+                  onSuggestionClick={handleVariableClick}
+                />
+              </PopoverContent>
+            )}
+          </Box>
+        </PopoverTrigger>
+      </div>
+    </Popover>
   )
 }
 
@@ -218,7 +210,7 @@ const RichTextEditor = ({
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
   return (
-    <FormControl style={{ flexGrow: 1 }} data-test="text-input-group">
+    <FormControl flex={1} data-test="text-input-group">
       {label && (
         <FormLabel isRequired={required} description={description}>
           {label}

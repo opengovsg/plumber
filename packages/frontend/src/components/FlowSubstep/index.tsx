@@ -124,7 +124,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       />
       <Collapse in={expanded} unmountOnExit style={{ overflow: 'initial' }}>
         <Box p="1rem 1rem 1.5rem">
-          <Stack w="100%" spacing={2}>
+          <Stack w="100%" spacing={4}>
             {args?.map((argument) => (
               <InputCreator
                 key={argument.key}

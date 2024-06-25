@@ -23,13 +23,14 @@ const app: IApp = {
   dynamicData,
   getTransferDetails,
   queue,
+  isNewApp: true,
   substepLabels: {
     connectionStepLabel: 'Connect to M365 Excel',
   },
   setupMessage: {
     variant: 'warning',
     messageBody:
-      'There is a cap on total M365 Excel actions across all Plumber users. To prevent disruption to your workflow, contact us if you need more than 100 Excel actions per hour.\n\nRead [our guide](https://guide.plumber.gov.sg/user-guides/actions/m365-excel) for more information.',
+      'There is a cap on total disk space and Excel actions across all Plumber users. To prevent disruption to your workflow, contact us if you have large files or need more than 100 Excel actions per hour.\n\nRead [our guide](https://guide.plumber.gov.sg/user-guides/actions/m365-excel) for more information.',
   },
 }
 

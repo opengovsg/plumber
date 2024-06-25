@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { BiHistory, BiLayer, BiSolidGrid } from 'react-icons/bi'
 import { Box, Divider, Show } from '@chakra-ui/react'
-import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 import AppBar from 'components/AppBar'
 import { PipeIcon } from 'components/Icons'
 import RedirectToLogin from 'components/RedirectToLogin'
@@ -36,7 +35,6 @@ const drawerLinks = [
     Icon: BiLayer,
     text: 'Tiles',
     to: URLS.TILES,
-    badge: 'New feature',
   },
   {
     Icon: BiSolidGrid,
@@ -74,14 +72,11 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   return (
     <>
       <SiteWideBanner />
-      <RestrictedGovtMasthead />
       <AppBar />
       <LayoutNavigationProvider value={layoutNavigationProviderData}>
         <Box display="flex" flex="1">
           <Show above="sm">
-            <Box mt={4}>
-              <NavigationSidebar />
-            </Box>
+            <NavigationSidebar />
             <Box>
               <Divider
                 orientation="vertical"

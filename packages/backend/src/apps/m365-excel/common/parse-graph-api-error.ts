@@ -4,13 +4,13 @@ import type HttpError from '@/errors/http'
 
 const graphApiErrorSchema = z.object({
   code: z.string().trim(),
-  message: z.string().trim(),
+  message: z.string().trim().optional(),
   innerError: z
     .object({
-      code: z.string().trim(),
-      message: z.string().trim(),
+      code: z.string().trim().optional(),
+      message: z.string().trim().optional(),
     })
-    .nullish(),
+    .optional(),
 })
 
 /**
