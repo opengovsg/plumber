@@ -38,6 +38,10 @@ const action: IRawAction = {
       key: 'rowData',
       type: 'multirow' as const,
       required: true,
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
       subFields: [
         {
           placeholder: 'Column',

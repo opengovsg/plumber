@@ -47,6 +47,10 @@ const action: IRawAction = {
       key: 'filters',
       type: 'multirow' as const,
       required: true,
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
       subFields: [
         {
           placeholder: 'Column',
@@ -120,6 +124,10 @@ const action: IRawAction = {
       type: 'boolean-radio' as const,
       required: true,
       value: false,
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
       options: [
         {
           label: 'No (Returns oldest row)',
