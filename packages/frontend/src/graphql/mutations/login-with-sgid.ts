@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client'
+import { graphql } from 'graphql/__generated__'
 
-export const LOGIN_WITH_SGID = gql`
+export const LOGIN_WITH_SGID = graphql(`
   mutation LoginWithSgid($input: LoginWithSgidInput!) {
     loginWithSgid(input: $input) {
       publicOfficerEmployments {
@@ -11,4 +11,4 @@ export const LOGIN_WITH_SGID = gql`
       }
     }
   }
-`
+`)

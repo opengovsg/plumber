@@ -1,7 +1,7 @@
-import { gql } from '@apollo/client'
+import { graphql } from '../__generated__/gql'
 
-export const REGISTER_CONNECTION = gql`
+export const REGISTER_CONNECTION = graphql(`
   mutation RegisterConnection($input: RegisterConnectionInput) {
     registerConnection(input: $input)
   }
-`
+`)

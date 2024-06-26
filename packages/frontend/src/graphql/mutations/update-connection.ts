@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client'
+import { graphql } from '../__generated__/gql'
 
-export const UPDATE_CONNECTION = gql`
+export const UPDATE_CONNECTION = graphql(`
   mutation UpdateConnection($input: UpdateConnectionInput) {
     updateConnection(input: $input) {
       id
@@ -11,4 +11,4 @@ export const UPDATE_CONNECTION = gql`
       }
     }
   }
-`
+`)
