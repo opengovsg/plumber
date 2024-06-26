@@ -92,7 +92,7 @@ function ChooseAppAndEventSubstep(
 
   apps?.sort((a, b) => {
     if (a.isNewApp && b.isNewApp) {
-      return a.name.localeCompare(b.name)
+      return a.priority - b.priority
     }
     if (a.isNewApp) {
       return -1
@@ -100,7 +100,7 @@ function ChooseAppAndEventSubstep(
     if (b.isNewApp) {
       return 1
     }
-    return a.name.localeCompare(b.name)
+    return a.priority - b.priority
   })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 

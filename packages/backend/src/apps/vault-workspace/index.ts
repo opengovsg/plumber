@@ -22,6 +22,7 @@ const app: IApp = {
   actions,
   // disabling triggers from vault workspace
   dynamicData,
+  priority: 14,
 }
 
 export default app

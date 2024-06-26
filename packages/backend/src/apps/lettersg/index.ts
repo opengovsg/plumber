@@ -17,6 +17,7 @@ const app: IApp = {
   auth,
   actions,
   dynamicData,
+  priority: 9,
 }
 
 export default app

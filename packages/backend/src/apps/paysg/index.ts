@@ -15,6 +15,7 @@ const app: IApp = {
   beforeRequest: [addAuthHeader],
   auth,
   actions,
+  priority: 8,
 }
 
 export default app

@@ -33,6 +33,7 @@ export const GET_APPS = gql`
         url
         title
       }
+      priority
       auth {
         connectionType
         connectionRegistrationType

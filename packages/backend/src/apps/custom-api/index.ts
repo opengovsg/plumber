@@ -15,6 +15,7 @@ const app: IApp = {
   apiBaseUrl: '',
   primaryColor: '0059F7',
   actions,
+  priority: 13,
 }
 
 export default app

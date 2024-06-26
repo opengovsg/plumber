@@ -13,6 +13,7 @@ const app: IApp = {
   actions,
   description:
     "Use Plumber's built in tools like If-then and Only continue if to add more functionality to your pipes",
+  priority: 4,
 }
 
 export default app

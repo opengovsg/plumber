@@ -195,6 +195,7 @@ type App {
   substepLabels: StepLabel
   setupMessage: SetupMessage
   demoVideoDetails: DemoVideoDetails
+  priority: Int
 }
 
 type DemoVideoDetails {

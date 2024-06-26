@@ -18,6 +18,7 @@ const app: IApp = {
     url: 'https://demo.arcade.software/VppMAbGKfFXFEsKxnKiw?embed&show_copy_link=true',
     title: 'Setting up Email by Postman',
   },
+  priority: 1,
 }
 
 export default app

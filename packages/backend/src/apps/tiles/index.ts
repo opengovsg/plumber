@@ -17,6 +17,7 @@ const app: IApp = {
   actions,
   dynamicData,
   getTransferDetails,
+  priority: 2,
 }
 
 export default app

@@ -16,6 +16,7 @@ const app: IApp = {
   substepLabels: {
     settingsStepLabel: 'Set up formatter',
   },
+  priority: 5,
 }
 
 export default app

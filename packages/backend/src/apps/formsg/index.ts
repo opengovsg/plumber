@@ -24,6 +24,7 @@ const app: IApp = {
     url: 'https://demo.arcade.software/6cWULLTHkTH4XsSB1rs1?embed&show_copy_link=true',
     title: 'Setting up FormSG',
   },
+  priority: 1,
 }
 
 export default app

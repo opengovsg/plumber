@@ -459,6 +459,14 @@ export interface IApp {
     url: string
     title: string
   }
+  /**
+   * to determine which app dropdown option appears first
+   * Note that triggers and actions have separate rankings
+   * Triggers: formsg, scheduler, webhook
+   * Actions: email by postman, tiles, m365, toolbox, formatter, calculator, delay,
+   * paysg, lettersg, sms by postman, telegram, slack, custom-api, vault, twilio
+   */
+  priority: number
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this

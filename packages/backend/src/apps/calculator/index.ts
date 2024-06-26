@@ -15,6 +15,7 @@ const app: IApp = {
   substepLabels: {
     settingsStepLabel: 'Set up calculator',
   },
+  priority: 6,
 }
 
 export default app

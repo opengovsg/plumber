@@ -15,6 +15,7 @@ const app: IApp = {
   substepLabels: {
     settingsStepLabel: 'Set up scheduler',
   },
+  priority: 2,
 }
 
 export default app

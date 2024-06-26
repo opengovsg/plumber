@@ -21,6 +21,7 @@ const app: IApp = {
   actions,
   queue,
   isNewApp: true,
+  priority: 10,
 }
 
 export default app
