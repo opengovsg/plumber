@@ -208,6 +208,11 @@ export const GET_APPS = gql`
               fieldValue
               op
             }
+            addNewOption {
+              id
+              label
+              type
+            }
             # Only for multi-row
             subFields {
               label
@@ -224,6 +229,11 @@ export const GET_APPS = gql`
                 fieldKey
                 fieldValue
                 op
+              }
+              addNewOption {
+                id
+                label
+                type
               }
               options {
                 label

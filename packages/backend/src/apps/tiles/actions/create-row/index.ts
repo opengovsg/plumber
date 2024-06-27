@@ -22,6 +22,11 @@ const action: IRawAction = {
       required: true,
       variables: false,
       showOptionValue: false,
+      addNewOption: {
+        id: 'tiles-createTileRow-tableId',
+        type: 'modal',
+        label: 'Create a new tile',
+      },
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
@@ -50,6 +55,11 @@ const action: IRawAction = {
           required: true,
           variables: false,
           showOptionValue: false,
+          addNewOption: {
+            id: 'tiles-createTileRow-columnId',
+            type: 'inline',
+            label: 'Create a new column',
+          },
           source: {
             type: 'query' as const,
             name: 'getDynamicData' as const,

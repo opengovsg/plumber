@@ -145,6 +145,17 @@ type ActionSubstep {
   arguments: [ActionSubstepArgument]
 }
 
+enum DropdownAddNewOptionType {
+  modal
+  inline
+}
+
+type DropdownAddNewOption {
+  id: String!
+  type: DropdownAddNewOptionType!
+  label: String!
+}
+
 type ActionSubstepArgument {
   label: String
   key: String
@@ -160,6 +171,9 @@ type ActionSubstepArgument {
   value: JSONObject
   source: ActionSubstepArgumentSource
   hiddenIf: FieldVisibilityCondition
+
+  # Only for dropdown
+  addNewOption: DropdownAddNewOption
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
