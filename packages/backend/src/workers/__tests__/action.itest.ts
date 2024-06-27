@@ -340,7 +340,7 @@ describe('Action worker', () => {
       )
     })
 
-    it.only.each([
+    it.each([
       {
         delay: 500,
       },
