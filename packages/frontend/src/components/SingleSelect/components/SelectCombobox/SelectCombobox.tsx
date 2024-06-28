@@ -30,6 +30,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
       isRequired,
       placeholder,
       isRefreshLoading,
+      isCreatingNewOption,
       isOpen,
       resetInputValue,
       inputRef,
@@ -63,6 +64,24 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
       return toggleMenu()
     }, [isDisabled, isReadOnly, toggleMenu])
 
+    const textToDisplay = useMemo(() => {
+      if (isInitialLoading) {
+        return 'Fetching options...'
+      }
+      if (isCreatingNewOption) {
+        return 'Creating...'
+      }
+      if (selectedItem) {
+        return selectedItemMeta.label
+      }
+      return ''
+    }, [
+      isCreatingNewOption,
+      isInitialLoading,
+      selectedItem,
+      selectedItemMeta.label,
+    ])
+
     return (
       <Flex>
         <InputGroup
@@ -90,19 +109,13 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
                 aria-disabled={isDisabled}
               />
             ) : null}
-            <Text noOfLines={1}>{selectedItemMeta.label}</Text>
+            <Text noOfLines={1}>{textToDisplay}</Text>
           </Stack>
           <Input
             isReadOnly={!isSearchable || isReadOnly}
             isInvalid={isInvalid}
             isDisabled={isDisabled}
-            placeholder={
-              isInitialLoading
-                ? 'Fetching options...'
-                : selectedItem
-                ? undefined
-                : placeholder
-            }
+            placeholder={textToDisplay ? '' : placeholder}
             sx={styles.field}
             {...getInputProps({
               onClick: handleToggleMenu,

@@ -4,14 +4,10 @@ import { useCallback, useMemo } from 'react'
 import { useController, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
-import {
-  BxPlus,
-  FormErrorMessage,
-  FormLabel,
-} from '@opengovsg/design-system-react'
+import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 import { ComboboxItem, SingleSelect } from 'components/SingleSelect'
 
-import AddNewOptionModal from './AddNewOptionModal'
+import AddNewOptionModal, { useCreateNewOption } from './AddNewOptionModal'
 
 export interface ControlledAutocompleteProps {
   options: IFieldDropdownOption[]
@@ -28,21 +24,11 @@ export interface ControlledAutocompleteProps {
   addNewOption?: IFieldDropdown['addNewOption']
 }
 
-const ADD_NEW_MODAL_VALUE = 'ADD_NEW_MODAL_VALUE'
-
 const formComboboxOptions = (
   options: readonly IFieldDropdownOption[],
   showOptionValue?: boolean,
-  addNewLabel?: string,
 ) => {
   const result: ComboboxItem[] = []
-  if (addNewLabel) {
-    result.push({
-      value: ADD_NEW_MODAL_VALUE,
-      label: addNewLabel,
-      icon: BxPlus,
-    })
-  }
   for (const option of options) {
     const item = {
       value: option['value']?.toString(),
@@ -78,13 +64,8 @@ function ControlledAutocomplete(
   } = props
 
   const items = useMemo(
-    () =>
-      formComboboxOptions(
-        options,
-        showOptionValue,
-        addNewOption?.type === 'modal' ? addNewOption?.label : undefined,
-      ),
-    [addNewOption, options, showOptionValue],
+    () => formComboboxOptions(options, showOptionValue),
+    [options, showOptionValue],
   )
 
   // Do not support freeSolo if there are numerical options. Since no use case
@@ -101,7 +82,7 @@ function ControlledAutocomplete(
 
   /**
    * useController is used here instead of the Controller component
-   * so that we could wrap the onChange handler
+   * so that we could call the onChange handler
    */
   const {
     field: { value: fieldValue, onChange: fieldOnChange, ref },
@@ -122,15 +103,15 @@ function ControlledAutocomplete(
     isOpen: isNewOptionModalOpen,
   } = useDisclosure()
 
-  const onChange = useCallback(
-    (newValue?: string) => {
-      if (addNewOption && newValue === ADD_NEW_MODAL_VALUE) {
-        onNewOptionModalOpen()
-        return
-      }
-      fieldOnChange(newValue)
+  const { createNewOption, isCreatingNewOption } =
+    useCreateNewOption(fieldOnChange)
+
+  const onNewOptionModalSubmit = useCallback(
+    (inputValue: string) => {
+      onNewOptionModalClose()
+      createNewOption({ inputValue, addNewId: addNewOption?.id })
     },
-    [addNewOption, fieldOnChange, onNewOptionModalOpen],
+    [addNewOption?.id, createNewOption, onNewOptionModalClose],
   )
 
   return (
@@ -155,7 +136,7 @@ function ControlledAutocomplete(
             colorScheme="secondary"
             isClearable={!required}
             items={items}
-            onChange={onChange}
+            onChange={fieldOnChange}
             value={fieldValue}
             placeholder={placeholder}
             ref={ref}
@@ -163,15 +144,25 @@ function ControlledAutocomplete(
             onRefresh={onRefresh}
             isRefreshLoading={loading}
             freeSolo={freeSolo}
+            addNew={
+              addNewOption
+                ? {
+                    type: addNewOption.type,
+                    label: addNewOption.label,
+                    onSelected: onNewOptionModalOpen,
+                    isCreating: isCreatingNewOption,
+                  }
+                : undefined
+            }
           />
         </Box>
       </Flex>
       {isError && <FormErrorMessage>{error?.message}</FormErrorMessage>}
       {addNewOption?.type === 'modal' && isNewOptionModalOpen && (
         <AddNewOptionModal
-          addNewOption={addNewOption}
+          modalHeader={addNewOption.label}
           onClose={onNewOptionModalClose}
-          onSubmit={fieldOnChange}
+          onSubmit={onNewOptionModalSubmit}
         />
       )}
     </FormControl>

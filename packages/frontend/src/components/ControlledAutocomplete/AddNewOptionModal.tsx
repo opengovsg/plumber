@@ -1,5 +1,3 @@
-import { IFieldDropdown } from '@plumber/types'
-
 import { FormEvent, useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import {
@@ -17,36 +15,33 @@ import { CREATE_TABLE } from 'graphql/mutations/tiles/create-table'
 import { GET_DYNAMIC_DATA } from 'graphql/queries/get-dynamic-data'
 
 interface AddNewOptionalModalProps {
-  addNewOption: NonNullable<IFieldDropdown['addNewOption']>
+  modalHeader: string
   onSubmit: (newValue: string) => void
   onClose: () => void
 }
 
-function AddNewOptionalModal({
-  addNewOption: { id: addNewId, label },
-  onClose,
-  onSubmit,
-}: AddNewOptionalModalProps) {
-  const [createTable] = useMutation(CREATE_TABLE)
-  const [isMutatingLoading, setIsMutationLoading] = useState(false)
-  const [inputValue, setInputValue] = useState('')
-  const trimmedInputValue = inputValue.trim()
+interface UseCreateNewOptionProps {
+  inputValue: string
+  addNewId?: string
+}
 
-  const onFormSubmit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault()
-      if (!trimmedInputValue) {
+export function useCreateNewOption(setValue: (newValue: string) => void) {
+  const [createTable] = useMutation(CREATE_TABLE)
+  const [isCreatingNewOption, setIsCreatingNewOption] = useState(false)
+  const createNewOption = useCallback(
+    async ({ inputValue, addNewId }: UseCreateNewOptionProps) => {
+      if (!inputValue.trim() || !addNewId) {
         return
       }
-      setIsMutationLoading(true)
+      let newValue: string | undefined
+      setIsCreatingNewOption(true)
       try {
-        let newValue: string | undefined
         switch (addNewId) {
           case 'tiles-createTileRow-tableId': {
             const { data } = await createTable({
               variables: {
                 input: {
-                  name: trimmedInputValue,
+                  name: inputValue.trim(),
                   isBlank: true,
                 },
               },
@@ -59,14 +54,34 @@ function AddNewOptionalModal({
         }
         await client.refetchQueries({ include: [GET_DYNAMIC_DATA] })
         if (newValue) {
-          onSubmit(newValue)
+          setValue(newValue)
         }
-        onClose()
       } finally {
-        setIsMutationLoading(false)
+        setIsCreatingNewOption(false)
       }
     },
-    [addNewId, createTable, onClose, onSubmit, trimmedInputValue],
+    [createTable, setValue],
+  )
+  return { createNewOption, isCreatingNewOption }
+}
+
+function AddNewOptionalModal({
+  modalHeader,
+  onClose,
+  onSubmit,
+}: AddNewOptionalModalProps) {
+  const [inputValue, setInputValue] = useState('')
+  const trimmedInputValue = inputValue.trim()
+
+  const onFormSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault()
+      if (!trimmedInputValue) {
+        return
+      }
+      onSubmit(trimmedInputValue)
+    },
+    [onSubmit, trimmedInputValue],
   )
 
   return (
@@ -80,22 +95,21 @@ function AddNewOptionalModal({
       <ModalOverlay />
       <ModalContent>
         <form onSubmit={onFormSubmit}>
-          <ModalHeader>{label}</ModalHeader>
+          <ModalHeader>{modalHeader}</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={8}>
             <FormControl display="flex" flexDir="column" gap={2}>
+              {/* This is hardcoded for now, will change when there are more of such actions */}
               <FormLabel isRequired>Name your tile</FormLabel>
               <Input
                 autoFocus
                 onChange={(e) => setInputValue(e.target.value)}
                 value={inputValue}
-                isDisabled={isMutatingLoading}
               />
               <Button
                 mt={2}
                 type="submit"
                 isDisabled={!trimmedInputValue}
-                isLoading={isMutatingLoading}
                 alignSelf="flex-end"
               >
                 Create
