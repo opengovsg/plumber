@@ -248,7 +248,10 @@ export const SingleSelectProvider = ({
         })
       }
     },
-    onSelectedItemChange: ({ selectedItem }) => {
+    onSelectedItemChange: ({ selectedItem, type }) => {
+      if (type === useCombobox.stateChangeTypes.InputBlur) {
+        return
+      }
       if (!selectedItem) {
         onChange('')
       } else if (!isItemDisabled(selectedItem)) {
