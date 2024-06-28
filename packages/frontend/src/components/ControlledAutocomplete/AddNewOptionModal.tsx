@@ -1,4 +1,6 @@
-import { FormEvent, useCallback, useState } from 'react'
+import type { DropdownAddNewId, ITableColumnMetadata } from '@plumber/types'
+
+import { type FormEvent, useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import {
   FormControl,
@@ -12,6 +14,7 @@ import {
 import { Button, FormLabel, Input } from '@opengovsg/design-system-react'
 import client from 'graphql/client'
 import { CREATE_TABLE } from 'graphql/mutations/tiles/create-table'
+import { UPDATE_TABLE } from 'graphql/mutations/tiles/update-table'
 import { GET_DYNAMIC_DATA } from 'graphql/queries/get-dynamic-data'
 
 interface AddNewOptionalModalProps {
@@ -20,16 +23,18 @@ interface AddNewOptionalModalProps {
   onClose: () => void
 }
 
-interface UseCreateNewOptionProps {
+interface CreateNewOptionProps {
   inputValue: string
-  addNewId?: string
+  parameters: Record<string, unknown>
+  addNewId?: DropdownAddNewId
 }
 
 export function useCreateNewOption(setValue: (newValue: string) => void) {
   const [createTable] = useMutation(CREATE_TABLE)
+  const [updateTable] = useMutation(UPDATE_TABLE)
   const [isCreatingNewOption, setIsCreatingNewOption] = useState(false)
   const createNewOption = useCallback(
-    async ({ inputValue, addNewId }: UseCreateNewOptionProps) => {
+    async ({ inputValue, addNewId, parameters }: CreateNewOptionProps) => {
       if (!inputValue.trim() || !addNewId) {
         return
       }
@@ -49,6 +54,25 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
             newValue = data?.createTable.id
             break
           }
+          case 'tiles-createTileRow-columnId': {
+            const tableId = parameters?.tableId
+            if (!tableId) {
+              return
+            }
+            const { data } = await updateTable({
+              variables: {
+                input: {
+                  id: tableId,
+                  addedColumns: [inputValue],
+                },
+              },
+            })
+            const newColumns = data?.updateTable?.columns
+            newValue = newColumns.find(
+              (column: ITableColumnMetadata) => column.name === inputValue,
+            )?.id
+            break
+          }
           default:
             break
         }
@@ -60,7 +84,7 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
         setIsCreatingNewOption(false)
       }
     },
-    [createTable, setValue],
+    [createTable, setValue, updateTable],
   )
   return { createNewOption, isCreatingNewOption }
 }
