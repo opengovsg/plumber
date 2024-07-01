@@ -49,7 +49,7 @@ const action: IRawAction = {
       },
       subFields: [
         {
-          placeholder: 'Column',
+          placeholder: 'Select a column or type to create one',
           key: 'columnId',
           type: 'dropdown' as const,
           required: true,
