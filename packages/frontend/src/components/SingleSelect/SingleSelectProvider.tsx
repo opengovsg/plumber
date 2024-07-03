@@ -30,7 +30,7 @@ import {
   SelectContext,
   type SharedSelectContextReturnProps,
 } from './SelectContext'
-import type { ComboboxItem } from './types'
+import { ADD_NEW_PLACEHOLDER_VALUE, type ComboboxItem } from './types'
 
 export interface SingleSelectProviderProps<
   Item extends ComboboxItem = ComboboxItem,
@@ -118,7 +118,7 @@ export const SingleSelectProvider = ({
   const allItemsWithAddNewOption = useMemo(() => {
     if (addNew?.type === 'modal') {
       const addNewByModalItem = {
-        value: '__ADD_NEW_PLACEHOLDER_VALUE__', // this is not referenced anywhere else
+        value: ADD_NEW_PLACEHOLDER_VALUE, // this is not referenced anywhere else
         label: addNew.label,
         isAddNew: true,
         icon: BxPlus,
@@ -184,7 +184,7 @@ export const SingleSelectProvider = ({
     (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
       if (inputValue?.trim() && !getItemByValue(inputValue)) {
         filteredItems.push({
-          value: '__ADD_NEW_PLACEHOLDER_VALUE__', // this is not referenced anywhere else
+          value: ADD_NEW_PLACEHOLDER_VALUE, // this is not referenced anywhere else
           label: inputValue,
           description: addNew?.label ?? 'Create new',
           isAddNew: true,

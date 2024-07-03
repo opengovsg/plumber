@@ -159,6 +159,7 @@ function ControlledAutocomplete(
             onRefresh={onRefresh}
             isRefreshLoading={loading}
             freeSolo={freeSolo}
+            isReadOnly={isCreatingNewOption}
             addNew={
               addNewOption
                 ? {
@@ -176,6 +177,7 @@ function ControlledAutocomplete(
         </Box>
       </Flex>
       {isError && <FormErrorMessage>{error?.message}</FormErrorMessage>}
+      {/* the input state in the modal is reset on unmount */}
       {addNewOption?.type === 'modal' && isNewOptionModalOpen && (
         <AddNewOptionModal
           modalHeader={addNewOption.label}

@@ -56,7 +56,7 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
           }
           case 'tiles-createTileRow-columnId': {
             const tableId = parameters?.tableId
-            if (!tableId) {
+            if (!tableId || typeof tableId !== 'string') {
               return
             }
             const { data } = await updateTable({
@@ -67,9 +67,10 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
                 },
               },
             })
-            const newColumns = data?.updateTable?.columns
+            const newColumns = (data?.updateTable?.columns ??
+              []) as ITableColumnMetadata[]
             newValue = newColumns.find(
-              (column: ITableColumnMetadata) => column.name === inputValue,
+              (column) => column.name === inputValue,
             )?.id
             break
           }
