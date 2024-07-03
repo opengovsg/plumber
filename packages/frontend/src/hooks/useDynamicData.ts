@@ -55,9 +55,14 @@ function getWatchedFormFieldValues(
  *
  * @param stepId - the id of the step
  * @param schema - the field that needs the dynamic data
+ * @
  */
-function useDynamicData(stepId: string | undefined, schema: IField) {
-  const { getValues, watch } = useFormContext()
+function useDynamicData(
+  stepId: string | undefined,
+  schema: IField,
+  fieldName: string,
+) {
+  const { getValues, watch, setValue } = useFormContext()
   const { nonFormFieldArgs, watchedFormFields } = useMemo(() => {
     if (schema.type !== 'dropdown' || !schema.source) {
       return {
@@ -108,6 +113,10 @@ function useDynamicData(stepId: string | undefined, schema: IField) {
           return
         }
 
+        // we set the field to null if the parameter(s) to dynamic data query have changed
+        // resetField function resets it to the last saved value which is wrong
+        setValue(fieldName, null)
+
         refetch({
           ...getWatchedFormFieldValues(watchedFormFields, newFieldValues),
         })
@@ -115,7 +124,7 @@ function useDynamicData(stepId: string | undefined, schema: IField) {
     )
 
     return () => watchSubscription.unsubscribe()
-  }, [refetch, watch, watchedFormFields])
+  }, [fieldName, refetch, setValue, watch, watchedFormFields])
 
   return {
     called,
