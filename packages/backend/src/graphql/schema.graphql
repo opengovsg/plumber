@@ -159,7 +159,6 @@ type ActionSubstepArgument {
   options: [ArgumentOption]
   value: JSONObject
   source: ActionSubstepArgumentSource
-  dependsOn: [String]
   hiddenIf: FieldVisibilityCondition
 
   # Only for multirow
@@ -599,7 +598,6 @@ type TriggerSubstepArgument {
   allowArbitrary: Boolean
   placeholder: String
   source: TriggerSubstepArgumentSource
-  dependsOn: [String]
   showOptionValue: Boolean
   options: [ArgumentOption]
   value: JSONObject

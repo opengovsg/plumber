@@ -111,7 +111,6 @@ export const GET_APPS = gql`
             variables
             variableTypes
             allowArbitrary
-            dependsOn
             value
             showOptionValue
             hiddenIf {
@@ -143,7 +142,6 @@ export const GET_APPS = gql`
               variables
               variableTypes
               allowArbitrary
-              dependsOn
               showOptionValue
               hiddenIf {
                 fieldKey
@@ -190,7 +188,6 @@ export const GET_APPS = gql`
             variables
             variableTypes
             allowArbitrary
-            dependsOn
             showOptionValue
             value
             options {
@@ -222,7 +219,6 @@ export const GET_APPS = gql`
               variables
               variableTypes
               allowArbitrary
-              dependsOn
               showOptionValue
               hiddenIf {
                 fieldKey

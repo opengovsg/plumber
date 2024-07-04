@@ -246,7 +246,6 @@ export interface IBaseField {
   docUrl?: string
   clickToCopy?: boolean
   variables?: boolean
-  dependsOn?: string[]
 
   /**
    * Allows hiding a field if other fields' values don't fulfill some condition
