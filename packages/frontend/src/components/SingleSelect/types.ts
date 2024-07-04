@@ -14,6 +14,8 @@ export type ComboboxItem<T = string> =
       icon?: As
       /** Badge to display on the right of the label, if available */
       badge?: JSX.Element
+      /** Whether this is an option to add new */
+      isAddNew?: boolean
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       [key: string]: any
     }
