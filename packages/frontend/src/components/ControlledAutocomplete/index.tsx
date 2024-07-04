@@ -47,7 +47,7 @@ const formComboboxOptions = (
 function ControlledAutocomplete(
   props: ControlledAutocompleteProps,
 ): React.ReactElement {
-  const { control } = useFormContext()
+  const { control, getValues } = useFormContext()
   const {
     name,
     label,
@@ -109,9 +109,24 @@ function ControlledAutocomplete(
   const onNewOptionModalSubmit = useCallback(
     (inputValue: string) => {
       onNewOptionModalClose()
-      createNewOption({ inputValue, addNewId: addNewOption?.id })
+      createNewOption({
+        inputValue,
+        addNewId: addNewOption?.id,
+        parameters: getValues('parameters'),
+      })
     },
-    [addNewOption?.id, createNewOption, onNewOptionModalClose],
+    [addNewOption?.id, createNewOption, getValues, onNewOptionModalClose],
+  )
+
+  const onNewOptionInlineSelected = useCallback(
+    (inputValue: string) => {
+      createNewOption({
+        inputValue,
+        addNewId: addNewOption?.id,
+        parameters: getValues('parameters'),
+      })
+    },
+    [createNewOption, getValues, addNewOption?.id],
   )
 
   return (
@@ -144,12 +159,16 @@ function ControlledAutocomplete(
             onRefresh={onRefresh}
             isRefreshLoading={loading}
             freeSolo={freeSolo}
+            isReadOnly={isCreatingNewOption}
             addNew={
               addNewOption
                 ? {
                     type: addNewOption.type,
                     label: addNewOption.label,
-                    onSelected: onNewOptionModalOpen,
+                    onSelected:
+                      addNewOption?.type === 'modal'
+                        ? onNewOptionModalOpen
+                        : onNewOptionInlineSelected,
                     isCreating: isCreatingNewOption,
                   }
                 : undefined
@@ -158,6 +177,7 @@ function ControlledAutocomplete(
         </Box>
       </Flex>
       {isError && <FormErrorMessage>{error?.message}</FormErrorMessage>}
+      {/* the input state in the modal is reset on unmount */}
       {addNewOption?.type === 'modal' && isNewOptionModalOpen && (
         <AddNewOptionModal
           modalHeader={addNewOption.label}

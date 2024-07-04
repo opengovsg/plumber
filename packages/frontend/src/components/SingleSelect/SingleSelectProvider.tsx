@@ -1,4 +1,4 @@
-import { DropdownAddNewType } from '@plumber/types'
+import type { DropdownAddNewType } from '@plumber/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { VirtuosoHandle } from 'react-virtuoso'
@@ -12,7 +12,7 @@ import {
 import { BxPlus } from '@opengovsg/design-system-react'
 import {
   useCombobox,
-  UseComboboxProps,
+  type UseComboboxProps,
   type UseComboboxState,
   type UseComboboxStateChangeOptions,
 } from 'downshift'
@@ -26,8 +26,11 @@ import {
   itemToValue,
 } from './utils/itemUtils'
 import { VIRTUAL_LIST_ITEM_HEIGHT } from './constants'
-import { SelectContext, SharedSelectContextReturnProps } from './SelectContext'
-import type { ComboboxItem } from './types'
+import {
+  SelectContext,
+  type SharedSelectContextReturnProps,
+} from './SelectContext'
+import { ADD_NEW_PLACEHOLDER_VALUE, type ComboboxItem } from './types'
 
 export interface SingleSelectProviderProps<
   Item extends ComboboxItem = ComboboxItem,
@@ -55,7 +58,7 @@ export interface SingleSelectProviderProps<
   addNew?: {
     label: string
     type: DropdownAddNewType
-    onSelected: (value?: string) => void
+    onSelected: (value: string) => void
     isCreating: boolean
   }
 }
@@ -115,7 +118,7 @@ export const SingleSelectProvider = ({
   const allItemsWithAddNewOption = useMemo(() => {
     if (addNew?.type === 'modal') {
       const addNewByModalItem = {
-        value: '__ADD_NEW_PLACEHOLDER_VALUE__', // this is not referenced anywhere else
+        value: ADD_NEW_PLACEHOLDER_VALUE, // this is not referenced anywhere else
         label: addNew.label,
         isAddNew: true,
         icon: BxPlus,
@@ -171,10 +174,25 @@ export const SingleSelectProvider = ({
     (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
       // freeSolo inputValue cannot be null or undefined or blank
       if (inputValue?.trim() && !getItemByValue(inputValue)) {
-        return filteredItems.push(constructFreeSoloItem(inputValue))
+        filteredItems.push(constructFreeSoloItem(inputValue))
       }
     },
     [getItemByValue],
+  )
+
+  const addInlineNewOption = useCallback(
+    (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
+      if (inputValue?.trim() && !getItemByValue(inputValue)) {
+        filteredItems.push({
+          value: ADD_NEW_PLACEHOLDER_VALUE, // this is not referenced anywhere else
+          label: inputValue,
+          description: addNew?.label ?? 'Create new',
+          isAddNew: true,
+          icon: BxPlus,
+        })
+      }
+    },
+    [addNew?.label, getItemByValue],
   )
 
   const handleInputChange = useCallback(
@@ -183,9 +201,18 @@ export const SingleSelectProvider = ({
       if (freeSolo) {
         addFreeSoloItem(filteredItems, inputValue)
       }
+      if (addNew?.type === 'inline') {
+        addInlineNewOption(filteredItems, inputValue)
+      }
       setFilteredItems(filteredItems)
     },
-    [addFreeSoloItem, freeSolo, getFilteredItems],
+    [
+      addFreeSoloItem,
+      addInlineNewOption,
+      addNew?.type,
+      freeSolo,
+      getFilteredItems,
+    ],
   )
 
   const stateReducer = useCallback(
