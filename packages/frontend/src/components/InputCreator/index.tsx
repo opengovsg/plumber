@@ -41,8 +41,12 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     placeholder,
   } = schema
 
-  const { data, loading, refetch } = useDynamicData(stepId, schema)
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
+  const { data, loading, refetch } = useDynamicData(
+    stepId,
+    schema,
+    computedName,
+  )
 
   // NOTE: we handle visibility in InputCreator instead of in FlowSubStep
   // because MultiRow recursively renders InputCreator.
