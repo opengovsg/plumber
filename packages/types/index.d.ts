@@ -263,14 +263,23 @@ export interface IBaseField {
   hiddenIf?: IFieldVisibilityCondition
 }
 
+export type DropdownAddNewType = 'modal' | 'inline'
+
 export interface IFieldDropdown extends IBaseField {
   type: 'dropdown'
   showOptionValue?: boolean
   allowArbitrary?: boolean
+  addNewOption?: {
+    id: DropdownAddNewId // identifier when add new option is selected
+    type: DropdownAddNewType
+    label: string
+  }
   value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
 }
+
+export type DropdownAddNewId = 'tiles-createTileRow-tableId' | 'tiles-createTileRow-columnId'
 
 export interface IFieldDropdownSource {
   type: string
