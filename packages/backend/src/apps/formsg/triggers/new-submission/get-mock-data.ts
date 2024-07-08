@@ -13,6 +13,9 @@ type FormField = {
   columns?: Array<{
     _id: string
   }>
+  fieldType: string
+  fieldOptions?: string[]
+  othersRadioButton?: boolean
 }
 
 const MOCK_ATTACHMENT_FILE_PATH = `s3:${COMMON_S3_BUCKET}:mock/plumber-logo.jpg`
@@ -54,6 +57,18 @@ async function getMockData($: IGlobalVariable) {
     const formFields = formDetails.form.form_fields as Array<FormField>
     for (let i = 0; i < formFields.length; i++) {
       if (data.responses[formFields[i]._id]) {
+        // forcefully include all checkbox options in the correct order
+        if (data.responses[formFields[i]._id].fieldType === 'checkbox') {
+          data.responses[formFields[i]._id].answerArray =
+            formFields[i].fieldOptions
+          // include the others option if available
+          if (formFields[i].othersRadioButton) {
+            data.responses[formFields[i]._id].answerArray.push(
+              'Others: Sample Input',
+            )
+          }
+        }
+
         if (data.responses[formFields[i]._id].fieldType === 'attachment') {
           data.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
         }
