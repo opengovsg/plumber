@@ -50,8 +50,7 @@ export async function decryptFormResponse(
     return false
   }
 
-  const formEnv = parseFormEnv($)
-  const formSgSdk = getSdk(formEnv)
+  const formSgSdk = getSdk(parseFormEnv($))
 
   const {
     headers,

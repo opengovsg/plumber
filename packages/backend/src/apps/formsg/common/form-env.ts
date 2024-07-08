@@ -3,7 +3,6 @@ import type { IGlobalVariable } from '@plumber/types'
 import formsgSdk from '@opengovsg/formsg-sdk'
 
 import { FORM_ID_LENGTH } from './constants'
-import parseFormIdAsUrl from './parse-form-id-as-url'
 
 const STAGING_SDK = formsgSdk({
   mode: 'staging',
@@ -15,6 +14,21 @@ const PRODUCTION_SDK = formsgSdk({
 // TODO: add UAT env
 export const SUPPORTED_FORM_ENVS = ['prod', 'staging'] as const
 export type FormEnv = (typeof SUPPORTED_FORM_ENVS)[number]
+
+export function parseFormIdAsUrl(rawUrl: string): URL | null {
+  try {
+    const url = new URL(
+      rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`,
+    )
+
+    return url.hostname === 'form.gov.sg' ||
+      url.hostname.endsWith('.form.gov.sg')
+      ? url
+      : null
+  } catch {
+    return null
+  }
+}
 
 function isSupportedFormEnv(rawEnv: string): rawEnv is FormEnv {
   // Widen type to satisfy typescript
@@ -39,7 +53,7 @@ export function parseFormEnv($: IGlobalVariable): FormEnv {
       throw new Error('The FormSG URL is invalid')
     }
 
-    if (url.hostname === 'form.gov.sg' || url.hostname === 'form.gov.sg') {
+    if (url.hostname === 'form.gov.sg' || url.hostname === 'www.form.gov.sg') {
       return 'prod'
     }
 

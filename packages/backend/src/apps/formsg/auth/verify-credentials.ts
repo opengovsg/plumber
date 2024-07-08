@@ -3,8 +3,12 @@ import { IGlobalVariable } from '@plumber/types'
 import get from 'lodash.get'
 
 import { FORM_ID_LENGTH } from '../common/constants'
-import { FormEnv, getSdk, parseFormEnv } from '../common/form-env'
-import parseFormIdAsUrl from '../common/parse-form-id-as-url'
+import {
+  FormEnv,
+  getSdk,
+  parseFormEnv,
+  parseFormIdAsUrl,
+} from '../common/form-env'
 
 // ref: https://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data/475217#475217
 const BASE64_REGEX =
