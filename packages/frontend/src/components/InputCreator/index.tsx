@@ -1,12 +1,11 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
-import { useFormContext } from 'react-hook-form'
 import ControlledAutocomplete from 'components/ControlledAutocomplete'
 import MultiRow from 'components/MultiRow'
 import MultiSelect from 'components/MultiSelect'
 import RichTextEditor from 'components/RichTextEditor'
 import TextField from 'components/TextField'
-import { isFieldHidden } from 'helpers/isFieldHidden'
+import { useIsFieldHidden } from 'helpers/isFieldHidden'
 import useDynamicData from 'hooks/useDynamicData'
 
 import BooleanRadio from './BooleanRadio'
@@ -26,15 +25,6 @@ type RawOption = {
 const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
   options?.map(({ name, value }) => ({ label: name as string, value: value }))
 
-function useIsFieldHidden(
-  namePrefix: string | undefined | null,
-  field: IField,
-): boolean {
-  const { getValues } = useFormContext()
-  const siblingParams = namePrefix ? getValues(namePrefix) : getValues()
-  return isFieldHidden(field.hiddenIf, siblingParams)
-}
-
 export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const { schema, namePrefix, stepId, disabled } = props
 
@@ -49,11 +39,14 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     variables,
     type,
     placeholder,
-    dependsOn,
   } = schema
 
-  const { data, loading, refetch } = useDynamicData(stepId, schema)
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
+  const { data, loading, refetch } = useDynamicData(
+    stepId,
+    schema,
+    computedName,
+  )
 
   // NOTE: we handle visibility in InputCreator instead of in FlowSubStep
   // because MultiRow recursively renders InputCreator.
@@ -80,7 +73,6 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     return (
       <ControlledAutocomplete
         name={computedName}
-        dependsOn={dependsOn}
         required={required}
         freeSolo={schema.allowArbitrary}
         options={preparedOptions}
@@ -90,6 +82,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         // if schema source is defined, dynamic data is supported
         onRefresh={schema.source ? () => refetch() : undefined}
         showOptionValue={schema.showOptionValue ?? true}
+        addNewOption={schema.addNewOption}
         label={label}
         placeholder={placeholder}
       />

@@ -16,6 +16,12 @@ export const itemToValue = <Item extends ComboboxItem>(item?: Item): string => {
   return item.value
 }
 
+export const isItemAddNew = <Item extends ComboboxItem>(
+  item: Item,
+): boolean => {
+  return itemIsObject(item) && !!item.isAddNew
+}
+
 export const itemToLabelString = <Item extends ComboboxItem>(
   item?: Item,
 ): string => {

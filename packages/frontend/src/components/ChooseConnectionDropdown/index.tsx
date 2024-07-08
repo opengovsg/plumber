@@ -2,7 +2,7 @@ import { IApp } from '@plumber/types'
 
 import { useCallback, useState } from 'react'
 import { FormControl } from '@chakra-ui/react'
-import { BxPlus, FormLabel } from '@opengovsg/design-system-react'
+import { FormLabel } from '@opengovsg/design-system-react'
 import AddAppConnection from 'components/AddAppConnection'
 import { SingleSelect } from 'components/SingleSelect'
 
@@ -19,17 +19,6 @@ interface ChooseConnectionDropdownProps {
   application: IApp
 }
 
-const ADD_CONNECTION_VALUE = 'ADD_CONNECTION'
-const ADD_NEW_CONNECTION_OPTION = (
-  label?: string,
-): ConnectionDropdownOption => {
-  return {
-    label: label ?? 'Add new connection',
-    icon: BxPlus,
-    value: ADD_CONNECTION_VALUE,
-  }
-}
-
 function ChooseConnectionDropdown({
   isDisabled,
   connectionOptions,
@@ -41,10 +30,6 @@ function ChooseConnectionDropdown({
 
   const onSelectionChange = useCallback(
     (value: string) => {
-      if (value === ADD_CONNECTION_VALUE) {
-        setShowAddConnectionDialog(true)
-        return
-      }
       onChange(value, false)
     },
     [onChange],
@@ -64,11 +49,6 @@ function ChooseConnectionDropdown({
   )
 
   const items = [...connectionOptions]
-  if (application?.auth?.connectionType === 'user-added') {
-    items.unshift(
-      ADD_NEW_CONNECTION_OPTION(application?.substepLabels?.addConnectionLabel),
-    )
-  }
 
   return (
     <>
@@ -83,6 +63,16 @@ function ChooseConnectionDropdown({
           items={items}
           value={value || ''}
           onChange={onSelectionChange}
+          addNew={
+            application?.auth?.connectionType === 'user-added'
+              ? {
+                  type: 'modal',
+                  label: 'Add new connection',
+                  onSelected: () => setShowAddConnectionDialog(true),
+                  isCreating: false,
+                }
+              : undefined
+          }
         />
       </FormControl>
       {application && showAddConnectionDialog && (

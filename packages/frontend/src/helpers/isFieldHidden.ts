@@ -1,5 +1,6 @@
 import type { IField, IJSONObject } from '@plumber/types'
 
+import { useFormContext } from 'react-hook-form'
 import get from 'lodash.get'
 
 export function isFieldHidden(
@@ -36,4 +37,13 @@ export function isFieldHidden(
           !fieldVal
     }
   }
+}
+
+export function useIsFieldHidden(
+  namePrefix: string | undefined | null,
+  field: IField,
+): boolean {
+  const { getValues } = useFormContext()
+  const siblingParams = namePrefix ? getValues(namePrefix) : getValues()
+  return isFieldHidden(field.hiddenIf, siblingParams)
 }

@@ -1,3 +1,5 @@
+import type { DropdownAddNewType } from '@plumber/types'
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { VirtuosoHandle } from 'react-virtuoso'
 import {
@@ -7,9 +9,10 @@ import {
   useMultiStyleConfig,
   useTheme,
 } from '@chakra-ui/react'
+import { BxPlus } from '@opengovsg/design-system-react'
 import {
   useCombobox,
-  UseComboboxProps,
+  type UseComboboxProps,
   type UseComboboxState,
   type UseComboboxStateChangeOptions,
 } from 'downshift'
@@ -17,21 +20,17 @@ import {
 import { useLookupItems } from './hooks/useLookupItems'
 import { defaultFilter } from './utils/defaultFilter'
 import {
+  isItemAddNew,
   isItemDisabled,
   itemToDescriptionString,
   itemToValue,
 } from './utils/itemUtils'
 import { VIRTUAL_LIST_ITEM_HEIGHT } from './constants'
-import { SelectContext, SharedSelectContextReturnProps } from './SelectContext'
-import type { ComboboxItem } from './types'
-
-function getFreeSoloItem(freeSoloValue: string) {
-  return {
-    value: freeSoloValue,
-    label: freeSoloValue,
-    description: 'Use this custom value',
-  }
-}
+import {
+  SelectContext,
+  type SharedSelectContextReturnProps,
+} from './SelectContext'
+import { ADD_NEW_PLACEHOLDER_VALUE, type ComboboxItem } from './types'
 
 export interface SingleSelectProviderProps<
   Item extends ComboboxItem = ComboboxItem,
@@ -56,6 +55,20 @@ export interface SingleSelectProviderProps<
   /** Color scheme of component */
   colorScheme?: ThemingProps<'SingleSelect'>['colorScheme']
   fixedItemHeight?: number
+  addNew?: {
+    label: string
+    type: DropdownAddNewType
+    onSelected: (value: string) => void
+    isCreating: boolean
+  }
+}
+
+function constructFreeSoloItem(freeSoloValue: string) {
+  return {
+    value: freeSoloValue,
+    label: freeSoloValue,
+    description: 'Use this custom value',
+  }
 }
 
 export const SingleSelectProvider = ({
@@ -83,6 +96,7 @@ export const SingleSelectProvider = ({
   onRefresh = null,
   isRefreshLoading = false,
   freeSolo = false,
+  addNew,
 }: SingleSelectProviderProps): JSX.Element => {
   const theme = useTheme()
   // Required in case size is set in theme, we should respect the one set in theme.
@@ -98,6 +112,22 @@ export const SingleSelectProvider = ({
 
   const { getItemByValue } = useLookupItems({ rawItems: allItems })
 
+  /**
+   * This create the + Add new option at the top
+   */
+  const allItemsWithAddNewOption = useMemo(() => {
+    if (addNew?.type === 'modal') {
+      const addNewByModalItem = {
+        value: ADD_NEW_PLACEHOLDER_VALUE, // this is not referenced anywhere else
+        label: addNew.label,
+        isAddNew: true,
+        icon: BxPlus,
+      }
+      return [addNewByModalItem, ...allItems]
+    }
+    return allItems
+  }, [addNew, allItems])
+
   const [isFocused, setIsFocused] = useState(false)
 
   const { isInvalid, isDisabled, isReadOnly, isRequired } = useFormControlProps(
@@ -111,13 +141,17 @@ export const SingleSelectProvider = ({
 
   const getFilteredItems = useCallback(
     (filterValue?: string) => {
-      const filtered =
-        filterValue != null ? filter(allItems, filterValue) : allItems
+      /**
+       * If filter string is not empty, we do not show the add new option
+       */
+      const filtered = filterValue
+        ? filter(allItems, filterValue)
+        : allItemsWithAddNewOption
       return [...filtered]
     },
-    [filter, allItems],
+    [filter, allItems, allItemsWithAddNewOption],
   )
-  const [filteredItems, setFilteredItems] = useState(allItems)
+  const [filteredItems, setFilteredItems] = useState(allItemsWithAddNewOption)
 
   const memoizedSelectedItem = useMemo(() => {
     const fromItems = getItemByValue(value)
@@ -125,13 +159,13 @@ export const SingleSelectProvider = ({
       return fromItems.item
     }
 
-    const selectedItem = freeSolo && value ? getFreeSoloItem(value) : null
+    const selectedItem = freeSolo && value ? constructFreeSoloItem(value) : null
     return selectedItem
-  }, [getItemByValue, freeSolo, value])
+  }, [getItemByValue, value, freeSolo])
 
   useEffect(() => {
-    setFilteredItems(allItems)
-  }, [allItems])
+    setFilteredItems(allItemsWithAddNewOption)
+  }, [allItems, allItemsWithAddNewOption])
 
   const virtualListRef = useRef<VirtuosoHandle>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -140,10 +174,25 @@ export const SingleSelectProvider = ({
     (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
       // freeSolo inputValue cannot be null or undefined or blank
       if (inputValue?.trim() && !getItemByValue(inputValue)) {
-        return filteredItems.push(getFreeSoloItem(inputValue))
+        filteredItems.push(constructFreeSoloItem(inputValue))
       }
     },
     [getItemByValue],
+  )
+
+  const addInlineNewOption = useCallback(
+    (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
+      if (inputValue?.trim() && !getItemByValue(inputValue)) {
+        filteredItems.push({
+          value: ADD_NEW_PLACEHOLDER_VALUE, // this is not referenced anywhere else
+          label: inputValue,
+          description: addNew?.label ?? 'Create new',
+          isAddNew: true,
+          icon: BxPlus,
+        })
+      }
+    },
+    [addNew?.label, getItemByValue],
   )
 
   const handleInputChange = useCallback(
@@ -152,9 +201,18 @@ export const SingleSelectProvider = ({
       if (freeSolo) {
         addFreeSoloItem(filteredItems, inputValue)
       }
+      if (addNew?.type === 'inline') {
+        addInlineNewOption(filteredItems, inputValue)
+      }
       setFilteredItems(filteredItems)
     },
-    [addFreeSoloItem, freeSolo, getFilteredItems],
+    [
+      addFreeSoloItem,
+      addInlineNewOption,
+      addNew?.type,
+      freeSolo,
+      getFilteredItems,
+    ],
   )
 
   const stateReducer = useCallback(
@@ -248,11 +306,20 @@ export const SingleSelectProvider = ({
         })
       }
     },
-    onSelectedItemChange: ({ selectedItem }) => {
+    onSelectedItemChange: ({ selectedItem, type }) => {
+      // Prevents bringing up addNew modal when tabbing
+      if (type === useCombobox.stateChangeTypes.InputBlur) {
+        return
+      }
       if (!selectedItem) {
         onChange('')
       } else if (!isItemDisabled(selectedItem)) {
-        onChange(itemToValue(selectedItem))
+        const selectItemValue = itemToValue(selectedItem)
+        if (isItemAddNew(selectedItem)) {
+          addNew?.onSelected(inputValue)
+          return
+        }
+        onChange(selectItemValue)
       }
     },
     onStateChange: ({ inputValue, type }) => {
@@ -277,9 +344,9 @@ export const SingleSelectProvider = ({
   )
 
   const reset = useCallback(() => {
-    setFilteredItems(allItems)
+    setFilteredItems(allItemsWithAddNewOption)
     setInputValue('')
-  }, [allItems, setInputValue])
+  }, [allItemsWithAddNewOption, setInputValue])
 
   const styles = useMultiStyleConfig('SingleSelect', {
     size,
@@ -340,6 +407,7 @@ export const SingleSelectProvider = ({
         onRefresh,
         isRefreshLoading,
         freeSolo,
+        isCreatingNewOption: addNew?.isCreating,
       }}
     >
       {children}
