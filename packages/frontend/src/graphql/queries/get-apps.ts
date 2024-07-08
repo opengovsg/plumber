@@ -111,7 +111,6 @@ export const GET_APPS = gql`
             variables
             variableTypes
             allowArbitrary
-            dependsOn
             value
             showOptionValue
             hiddenIf {
@@ -143,7 +142,6 @@ export const GET_APPS = gql`
               variables
               variableTypes
               allowArbitrary
-              dependsOn
               showOptionValue
               hiddenIf {
                 fieldKey
@@ -190,7 +188,6 @@ export const GET_APPS = gql`
             variables
             variableTypes
             allowArbitrary
-            dependsOn
             showOptionValue
             value
             options {
@@ -211,6 +208,11 @@ export const GET_APPS = gql`
               fieldValue
               op
             }
+            addNewOption {
+              id
+              label
+              type
+            }
             # Only for multi-row
             subFields {
               label
@@ -222,12 +224,16 @@ export const GET_APPS = gql`
               variables
               variableTypes
               allowArbitrary
-              dependsOn
               showOptionValue
               hiddenIf {
                 fieldKey
                 fieldValue
                 op
+              }
+              addNewOption {
+                id
+                label
+                type
               }
               options {
                 label

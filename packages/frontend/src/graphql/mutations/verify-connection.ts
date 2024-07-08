@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client'
+import { graphql } from 'graphql/__generated__'
 
-export const VERIFY_CONNECTION = gql`
+export const VERIFY_CONNECTION = graphql(`
   mutation VerifyConnection($input: VerifyConnectionInput) {
     verifyConnection(input: $input) {
       id
@@ -15,4 +15,4 @@ export const VERIFY_CONNECTION = gql`
       }
     }
   }
-`
+`)

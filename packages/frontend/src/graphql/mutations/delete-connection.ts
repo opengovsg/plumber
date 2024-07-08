@@ -1,7 +1,7 @@
-import { gql } from '@apollo/client'
+import { graphql } from 'graphql/__generated__'
 
-export const DELETE_CONNECTION = gql`
+export const DELETE_CONNECTION = graphql(`
   mutation DeleteConnection($input: DeleteConnectionInput) {
     deleteConnection(input: $input)
   }
-`
+`)

@@ -1,13 +1,15 @@
-import type { IFieldDropdownOption } from '@plumber/types'
+import type { IFieldDropdown, IFieldDropdownOption } from '@plumber/types'
 
-import { useEffect, useMemo } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
+import { useCallback, useMemo } from 'react'
+import { useController, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
-import { Box, Flex, FormControl } from '@chakra-ui/react'
+import { Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 import { ComboboxItem, SingleSelect } from 'components/SingleSelect'
 
-interface ControlledAutocompleteProps {
+import AddNewOptionModal, { useCreateNewOption } from './AddNewOptionModal'
+
+export interface ControlledAutocompleteProps {
   options: IFieldDropdownOption[]
   defaultValue?: string
   loading: boolean
@@ -16,10 +18,10 @@ interface ControlledAutocompleteProps {
   label?: string
   showOptionValue?: boolean
   description?: string
-  dependsOn?: string[]
   onRefresh?: () => void
   required?: boolean
   placeholder?: string
+  addNewOption?: IFieldDropdown['addNewOption']
 }
 
 const formComboboxOptions = (
@@ -45,36 +47,21 @@ const formComboboxOptions = (
 function ControlledAutocomplete(
   props: ControlledAutocompleteProps,
 ): React.ReactElement {
-  const { control, watch, setValue, resetField } = useFormContext()
+  const { control, getValues } = useFormContext()
   const {
     name,
     label,
     defaultValue,
     description,
     options = [],
-    dependsOn = [],
     showOptionValue,
     freeSolo: rawFreeSolo,
     onRefresh,
     loading,
     required,
     placeholder,
+    addNewOption,
   } = props
-
-  const dependsOnValues: unknown[] = useMemo(
-    () => (dependsOn?.length ? watch(dependsOn) : []),
-    [dependsOn, watch],
-  )
-  useEffect(() => {
-    const hasDependencies = dependsOnValues.length
-    const allDepsSatisfied = dependsOnValues.every(Boolean)
-
-    if (hasDependencies && !allDepsSatisfied) {
-      // Reset the field if any dependency is not satisfied
-      setValue(name, null)
-      resetField(name)
-    }
-  }, [dependsOnValues, name, resetField, setValue, options])
 
   const items = useMemo(
     () => formComboboxOptions(options, showOptionValue),
@@ -93,55 +80,112 @@ function ControlledAutocomplete(
     return rawFreeSolo
   }, [options, rawFreeSolo])
 
-  return (
-    <Controller
-      rules={{ required }}
-      name={name}
-      defaultValue={defaultValue ?? ''}
-      control={control}
-      render={({ field: { ref, onChange, value: fieldValue }, fieldState }) => {
-        const isError = Boolean(fieldState.isTouched && fieldState.error)
+  /**
+   * useController is used here instead of the Controller component
+   * so that we could call the onChange handler
+   */
+  const {
+    field: { value: fieldValue, onChange: fieldOnChange, ref },
+    fieldState: { isTouched, error },
+  } = useController({
+    name,
+    control,
+    rules: { required },
+    defaultValue: defaultValue ?? '',
+  })
 
-        return (
-          <FormControl isInvalid={isError}>
-            {label && (
-              <FormLabel
-                isRequired={required}
-                description={
-                  description && (
-                    <Markdown linkTarget="_blank">{description}</Markdown>
-                  )
-                }
-              >
-                {label}
-              </FormLabel>
-            )}
-            {/* Dropdown row option content */}
-            <Flex>
-              <Box flexGrow={1}>
-                <SingleSelect
-                  name="choose-dropdown-option"
-                  colorScheme="secondary"
-                  isClearable={!required}
-                  items={items}
-                  onChange={onChange}
-                  value={fieldValue}
-                  placeholder={placeholder}
-                  ref={ref}
-                  data-test={`${name}-autocomplete`}
-                  onRefresh={onRefresh}
-                  isRefreshLoading={loading}
-                  freeSolo={freeSolo}
-                />
-              </Box>
-            </Flex>
-            {isError && (
-              <FormErrorMessage>{fieldState.error?.message}</FormErrorMessage>
-            )}
-          </FormControl>
-        )
-      }}
-    />
+  const isError = Boolean(isTouched && error)
+
+  // Control add new option modal
+  const {
+    onClose: onNewOptionModalClose,
+    onOpen: onNewOptionModalOpen,
+    isOpen: isNewOptionModalOpen,
+  } = useDisclosure()
+
+  const { createNewOption, isCreatingNewOption } =
+    useCreateNewOption(fieldOnChange)
+
+  const onNewOptionModalSubmit = useCallback(
+    (inputValue: string) => {
+      onNewOptionModalClose()
+      createNewOption({
+        inputValue,
+        addNewId: addNewOption?.id,
+        parameters: getValues('parameters'),
+      })
+    },
+    [addNewOption?.id, createNewOption, getValues, onNewOptionModalClose],
+  )
+
+  const onNewOptionInlineSelected = useCallback(
+    (inputValue: string) => {
+      createNewOption({
+        inputValue,
+        addNewId: addNewOption?.id,
+        parameters: getValues('parameters'),
+      })
+    },
+    [createNewOption, getValues, addNewOption?.id],
+  )
+
+  return (
+    <FormControl isInvalid={isError}>
+      {label && (
+        <FormLabel
+          isRequired={required}
+          description={
+            description && (
+              <Markdown linkTarget="_blank">{description}</Markdown>
+            )
+          }
+        >
+          {label}
+        </FormLabel>
+      )}
+      {/* Dropdown row option content */}
+      <Flex>
+        <Box flexGrow={1}>
+          <SingleSelect
+            name="choose-dropdown-option"
+            colorScheme="secondary"
+            isClearable={!required}
+            items={items}
+            onChange={fieldOnChange}
+            value={fieldValue}
+            placeholder={placeholder}
+            ref={ref}
+            data-test={`${name}-autocomplete`}
+            onRefresh={onRefresh}
+            isRefreshLoading={loading}
+            freeSolo={freeSolo}
+            isReadOnly={isCreatingNewOption}
+            addNew={
+              addNewOption
+                ? {
+                    type: addNewOption.type,
+                    label: addNewOption.label,
+                    onSelected:
+                      addNewOption?.type === 'modal'
+                        ? onNewOptionModalOpen
+                        : onNewOptionInlineSelected,
+                    isCreating: isCreatingNewOption,
+                  }
+                : undefined
+            }
+          />
+        </Box>
+      </Flex>
+      {isError && <FormErrorMessage>{error?.message}</FormErrorMessage>}
+      {/* the input state in the modal is reset on unmount */}
+      {addNewOption?.type === 'modal' && isNewOptionModalOpen && (
+        <AddNewOptionModal
+          modalHeader={addNewOption.label}
+          onClose={onNewOptionModalClose}
+          onSubmit={onNewOptionModalSubmit}
+        />
+      )}
+    </FormControl>
   )
 }
 

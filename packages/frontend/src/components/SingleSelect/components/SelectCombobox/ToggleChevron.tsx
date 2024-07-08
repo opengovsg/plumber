@@ -1,11 +1,22 @@
 import { Icon, InputRightElement } from '@chakra-ui/react'
-import { BxsChevronDown, BxsChevronUp } from '@opengovsg/design-system-react'
+import {
+  BxsChevronDown,
+  BxsChevronUp,
+  Spinner,
+} from '@opengovsg/design-system-react'
 
 import { useSelectContext } from '../../SelectContext'
 
 export const ToggleChevron = (): JSX.Element => {
-  const { isOpen, getToggleButtonProps, isDisabled, isReadOnly, styles } =
-    useSelectContext()
+  const {
+    isOpen,
+    getToggleButtonProps,
+    isDisabled,
+    isReadOnly,
+    styles,
+    isRefreshLoading,
+    isCreatingNewOption,
+  } = useSelectContext()
 
   return (
     <InputRightElement
@@ -22,11 +33,15 @@ export const ToggleChevron = (): JSX.Element => {
         tabIndex: 0,
       })}
     >
-      <Icon
-        sx={styles.icon}
-        as={isOpen ? BxsChevronUp : BxsChevronDown}
-        aria-disabled={isDisabled || isReadOnly}
-      />
+      {isRefreshLoading || isCreatingNewOption ? (
+        <Spinner color="primary.600" />
+      ) : (
+        <Icon
+          sx={styles.icon}
+          as={isOpen ? BxsChevronUp : BxsChevronDown}
+          aria-disabled={isDisabled || isReadOnly}
+        />
+      )}
     </InputRightElement>
   )
 }

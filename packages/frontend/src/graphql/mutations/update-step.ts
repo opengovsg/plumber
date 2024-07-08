@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client'
+import { graphql } from 'graphql/__generated__'
 
-export const UPDATE_STEP = gql`
+export const UPDATE_STEP = graphql(`
   mutation UpdateStep($input: UpdateStepInput) {
     updateStep(input: $input) {
       id
@@ -15,4 +15,4 @@ export const UPDATE_STEP = gql`
       }
     }
   }
-`
+`)

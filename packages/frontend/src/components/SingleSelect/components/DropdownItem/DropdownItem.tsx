@@ -50,7 +50,7 @@ export const DropdownItem = ({
     >
       <Flex justifyContent="space-between" alignItems="center">
         <Flex flexDir="column">
-          <Flex gap={1.5}>
+          <Flex gap={1.5} alignItems="center">
             {icon ? <Icon as={icon} sx={styles.icon} /> : null}
             <Text
               minWidth={0}

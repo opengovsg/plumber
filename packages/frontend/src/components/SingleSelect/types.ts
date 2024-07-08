@@ -1,8 +1,13 @@
 import type { As } from '@chakra-ui/react'
 
+export const ADD_NEW_PLACEHOLDER_VALUE = '__ADD_NEW_PLACEHOLDER_VALUE__'
+
 export type ComboboxItem<T = string> =
   | {
-      /** Value to be passed to onChange */
+      /**
+       * Value to be passed to onChange
+       * Do not use `__ADD_NEW_PLACEHOLDER_VALUE__` as a value since it is reserved for add new
+       */
       value: T
       /** Label to render on input when selected. `value` will be used if this is not provided */
       label?: string
@@ -14,6 +19,8 @@ export type ComboboxItem<T = string> =
       icon?: As
       /** Badge to display on the right of the label, if available */
       badge?: JSX.Element
+      /** Whether this is an option to add new */
+      isAddNew?: boolean
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       [key: string]: any
     }

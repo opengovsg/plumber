@@ -51,7 +51,7 @@ function generateValidationSchema(substeps: ISubstep[]) {
       const substepArgumentValidations: Record<string, BaseSchema> = {}
 
       for (const arg of args) {
-        const { key, required, dependsOn, hiddenIf } = arg
+        const { key, required, hiddenIf } = arg
 
         // base validation for the field if not exists
         if (!substepArgumentValidations[key]) {
@@ -65,25 +65,6 @@ function generateValidationSchema(substeps: ISubstep[]) {
             substepArgumentValidations[key] = substepArgumentValidations[
               key
             ].required(`${key} is required.`)
-          }
-
-          // if the field depends on another field, add the dependsOn required validation
-          if (Array.isArray(dependsOn) && dependsOn.length > 0) {
-            for (const dependsOnKey of dependsOn) {
-              const missingDependencyValueMessage = `We're having trouble loading '${key}' data as required field '${dependsOnKey}' is missing.`
-
-              // TODO: make `dependsOnKey` agnostic to the field. However, nested validation schema is not supported.
-              // So the fields under the `parameters` key are subject to their siblings only and thus, `parameters.` is removed.
-              substepArgumentValidations[key] = substepArgumentValidations[
-                key
-              ].when(`${dependsOnKey.replace('parameters.', '')}`, {
-                is: (value: string) => Boolean(value) === false,
-                then: (schema) =>
-                  schema
-                    .notOneOf([''], missingDependencyValueMessage)
-                    .required(missingDependencyValueMessage),
-              })
-            }
           }
         }
       }

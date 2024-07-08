@@ -1,5 +1,13 @@
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
@@ -19,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   handleFailedStepAndThrow: vi.fn(),
   logInfo: vi.fn(),
   logError: vi.fn(),
+  addSpanTags: vi.fn(),
 }))
 
 vi.mock('@/helpers/logger', () => ({
@@ -31,7 +40,9 @@ vi.mock('@/helpers/logger', () => ({
 vi.mock('@/helpers/tracer', () => ({
   default: {
     scope: vi.fn(() => ({
-      active: vi.fn(),
+      active: vi.fn(() => ({
+        addTags: mocks.addSpanTags,
+      })),
     })),
     wrap: vi.fn((_, callback) => callback),
   },
@@ -276,5 +287,108 @@ describe('Action worker', () => {
         expect.any(Object),
       )
     })
+  })
+
+  describe('Job timing metrics', () => {
+    const MOCK_TIME_IN_QUEUE_MS = 300
+    let startTime: number
+
+    beforeEach(() => {
+      startTime = Date.now()
+      vi.useFakeTimers()
+      vi.setSystemTime(startTime)
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('correctly records job enqueue time, delay and time in job queue for non-delayed jobs', async () => {
+      mocks.processAction.mockResolvedValueOnce({
+        executionStep: { isFailed: false, nextStep: null },
+      })
+
+      const jobProcessed = new Promise<void>((resolve) => {
+        mainActionWorker.on('completed', async (_) => {
+          resolve()
+        })
+      })
+
+      mainActionWorker.on('active', async (_) => {
+        // Advance clock by mocked queue waiting time
+        vi.setSystemTime(startTime + MOCK_TIME_IN_QUEUE_MS)
+      })
+
+      await enqueueActionJob({
+        appKey: null,
+        jobName: 'test-job',
+        jobData: {
+          flowId: 'test-flow-id',
+          executionId: 'test-exec-id',
+          stepId: 'test-step-id',
+        },
+        jobOptions: DEFAULT_JOB_OPTIONS,
+      })
+      await jobProcessed
+
+      expect(mocks.addSpanTags).toBeCalledWith(
+        expect.objectContaining({
+          jobEnqueueTime: startTime,
+          jobDelay: 0,
+          timeInJobQueue: MOCK_TIME_IN_QUEUE_MS,
+        }),
+      )
+    })
+
+    it.each([
+      {
+        delay: 500,
+      },
+      {
+        delay: 0,
+      },
+    ])(
+      'correctly records job enqueue time, delay and time in job queue for delayed jobs',
+      async ({ delay }) => {
+        mocks.processAction.mockResolvedValueOnce({
+          executionStep: { isFailed: false, nextStep: null },
+        })
+
+        const jobProcessed = new Promise<void>((resolve) => {
+          mainActionWorker.on('completed', async (_) => {
+            resolve()
+          })
+        })
+
+        mainActionWorker.on('active', async (_) => {
+          // Advance clock by mocked queue waiting time and configured delay
+          vi.setSystemTime(startTime + MOCK_TIME_IN_QUEUE_MS + delay)
+        })
+
+        await enqueueActionJob({
+          appKey: null,
+          jobName: 'test-job',
+          jobData: {
+            flowId: 'test-flow-id',
+            executionId: 'test-exec-id',
+            stepId: 'test-step-id',
+          },
+          jobOptions: {
+            ...DEFAULT_JOB_OPTIONS,
+            delay,
+          },
+        })
+        await vi.advanceTimersByTimeAsync(delay)
+        await jobProcessed
+
+        expect(mocks.addSpanTags).toBeCalledWith(
+          expect.objectContaining({
+            jobEnqueueTime: startTime,
+            jobDelay: delay,
+            timeInJobQueue: MOCK_TIME_IN_QUEUE_MS,
+          }),
+        )
+      },
+    )
   })
 })

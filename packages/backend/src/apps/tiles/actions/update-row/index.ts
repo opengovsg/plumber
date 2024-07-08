@@ -41,6 +41,10 @@ const action: IRawAction = {
       required: true,
       variables: true,
       description: 'This can be retrieved from the Find Single Row action',
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
     },
     {
       label: 'Row data',
@@ -49,6 +53,10 @@ const action: IRawAction = {
       description:
         'Enter the data to update the row with. Columns not specified will not be updated.',
       required: true,
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
       subFields: [
         {
           placeholder: 'Column',
