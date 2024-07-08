@@ -63,7 +63,9 @@ async function getMockData($: IGlobalVariable) {
             formFields[i].fieldOptions
           // include the others option if available
           if (formFields[i].othersRadioButton) {
-            data.responses[formFields[i]._id].answerArray.push('Others')
+            data.responses[formFields[i]._id].answerArray.push(
+              'Others: Sample Input',
+            )
           }
         }
 
