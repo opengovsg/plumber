@@ -30,7 +30,6 @@ type AppConfig = {
   enableBullMQDashboard: boolean
   adminUserEmail: string
   requestBodySizeLimit: string
-  formsgApiKey: string
   postman: {
     apiKey: string
     fromAddress: string
@@ -86,7 +85,6 @@ const appConfig: AppConfig = {
   webAppUrl,
   webhookUrl,
   requestBodySizeLimit: '1mb',
-  formsgApiKey: process.env.FORMSG_API_KEY,
   isWorker: /worker\.(ts|js)$/.test(require.main?.filename),
   workerActionConcurrency: parseInt(
     process.env.WORKER_ACTION_CONCURRENCY || '10',

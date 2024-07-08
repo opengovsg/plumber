@@ -4,11 +4,13 @@ import type {
   IVerifyConnectionRegistrationOutput,
 } from '@plumber/types'
 
-import appConfig from '@/config/app'
+import { formSgConfig } from '@/config/app-env-vars/formsg'
 import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
 import { parseFormIdFormat } from '../auth/verify-credentials'
+
+import { parseFormEnv } from './form-env'
 
 export const FORMSG_WEBHOOK_VERIFICATION_MESSAGE = {
   VERIFIED: 'Your form is connected successfully.',
@@ -47,6 +49,7 @@ export function getFormDetailsFromGlobalVariable($: IGlobalVariable) {
     userEmail,
     webhookUrl,
     formId,
+    env: parseFormEnv($),
   }
 }
 
@@ -55,6 +58,8 @@ async function validateFormIsNotMultiRespondent(
   formId: string,
   userEmail: string,
 ): Promise<void> {
+  const env = parseFormEnv($)
+
   const settings = await $.http.post(
     `/public/v1/admin/forms/:formId/settings`,
     {
@@ -65,7 +70,7 @@ async function validateFormIsNotMultiRespondent(
         formId,
       },
       headers: {
-        Authorization: 'Bearer ' + appConfig.formsgApiKey,
+        Authorization: 'Bearer ' + formSgConfig.apiKeys[env],
       },
     },
   )
@@ -80,7 +85,8 @@ async function validateFormIsNotMultiRespondent(
 export async function registerWebhookUrl(
   $: IGlobalVariable,
 ): ReturnType<IAuth['registerConnection']> {
-  const { userEmail, webhookUrl, formId } = getFormDetailsFromGlobalVariable($)
+  const { userEmail, webhookUrl, formId, env } =
+    getFormDetailsFromGlobalVariable($)
 
   // EDGE CASE: MRF does not support webhooks. We added a patch to block adding
   // MRFs in our add connection modal, but a small number of users may have
@@ -108,7 +114,7 @@ export async function registerWebhookUrl(
       },
       {
         headers: {
-          Authorization: 'Bearer ' + appConfig.formsgApiKey,
+          Authorization: 'Bearer ' + formSgConfig.apiKeys[env],
         },
       },
     )
@@ -136,7 +142,8 @@ export async function registerWebhookUrl(
 export async function verifyWebhookUrl(
   $: IGlobalVariable,
 ): Promise<IVerifyConnectionRegistrationOutput> {
-  const { userEmail, webhookUrl, formId } = getFormDetailsFromGlobalVariable($)
+  const { userEmail, webhookUrl, formId, env } =
+    getFormDetailsFromGlobalVariable($)
 
   try {
     const settings = await $.http.post(
@@ -146,7 +153,7 @@ export async function verifyWebhookUrl(
       },
       {
         headers: {
-          Authorization: 'Bearer ' + appConfig.formsgApiKey,
+          Authorization: 'Bearer ' + formSgConfig.apiKeys[env],
         },
       },
     )

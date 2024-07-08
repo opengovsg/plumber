@@ -1,18 +1,20 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import formsgSdk from '@opengovsg/formsg-sdk'
 import get from 'lodash.get'
+
+import { FORM_ID_LENGTH } from '../common/constants'
+import { FormEnv, getSdk, parseFormEnv } from '../common/form-env'
+import parseFormIdAsUrl from '../common/parse-form-id-as-url'
 
 // ref: https://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data/475217#475217
 const BASE64_REGEX =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/
 
-const FORM_ID_LENGTH = 24
-
 export const verifyFormCreds = async (
   $: IGlobalVariable,
   formId: string,
   secretKey: string,
+  env: FormEnv,
 ) => {
   let formTitle = ''
   let publicKey = ''
@@ -46,12 +48,15 @@ export const verifyFormCreds = async (
     throw new Error('Form is not a storage mode form')
   }
 
-  if (!formsgSdk().crypto.valid(publicKey, secretKey)) {
+  const formSdk = getSdk(env)
+  if (!formSdk.crypto.valid(publicKey, secretKey)) {
     throw new Error('Invalid secret key')
   }
 
+  // Prefix label with "[$env]" for non-prod environments
+  const prefix = env !== 'prod' ? `[${env.toUpperCase()}] ` : ''
   await $.auth.set({
-    screenName: `${formId} - ${formTitle}`,
+    screenName: `${prefix}${formId} - ${formTitle}`,
   })
 }
 
@@ -75,16 +80,15 @@ export const parseFormIdFormat = ($: IGlobalVariable): string => {
   if (formId.length < FORM_ID_LENGTH) {
     throw new Error('Invalid form id')
   }
+
   // Extract form id (24 characters) from form url or form admin url
   // Example: https://form.gov.sg/<FORMID>
   // Example: https://form.gov.sg/admin/form/<FORMID>
   if (formId.length > FORM_ID_LENGTH) {
-    if (
-      !formId.startsWith('https://form.gov.sg/') &&
-      !formId.startsWith('https://www.form.gov.sg/')
-    ) {
+    if (!parseFormIdAsUrl(formId)) {
       throw new Error('Invalid form url')
     }
+
     // remove trailing slash if any
     formId = formId.replace(/\/$/, '')
     // extract last 24 characters
@@ -97,7 +101,8 @@ export const parseFormIdFormat = ($: IGlobalVariable): string => {
 const verifyCredentials = async ($: IGlobalVariable) => {
   const secretKey = parseSecretKeyFormat($)
   const formId = parseFormIdFormat($)
-  await verifyFormCreds($, formId, secretKey)
+  const env = parseFormEnv($)
+  await verifyFormCreds($, formId, secretKey, env)
 }
 
 export default verifyCredentials

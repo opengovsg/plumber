@@ -1,6 +1,5 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import formsgSdk from '@opengovsg/formsg-sdk'
 import {
   DecryptedAttachments,
   DecryptedContent,
@@ -10,13 +9,10 @@ import { DateTime } from 'luxon'
 import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
 
+import { getSdk, parseFormEnv } from '../common/form-env'
 import { NricFilter } from '../triggers/new-submission/index'
 
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
-
-const formsg = formsgSdk({
-  mode: 'production',
-})
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -54,13 +50,16 @@ export async function decryptFormResponse(
     return false
   }
 
+  const formEnv = parseFormEnv($)
+  const formSgSdk = getSdk(formEnv)
+
   const {
     headers,
     body: { data },
   } = $.request
 
   try {
-    formsg.webhooks.authenticate(
+    formSgSdk.webhooks.authenticate(
       headers['x-formsg-signature'] as string,
       $.webhookUrl,
     )
@@ -87,14 +86,14 @@ export async function decryptFormResponse(
   let attachments: DecryptedAttachments | null = null
 
   if (shouldStoreAttachments) {
-    const decryptedResponse = await formsg.crypto.decryptWithAttachments(
+    const decryptedResponse = await formSgSdk.crypto.decryptWithAttachments(
       formSecretKey,
       data,
     )
     submission = decryptedResponse?.content
     attachments = decryptedResponse?.attachments
   } else {
-    submission = formsg.crypto.decrypt(formSecretKey, data)
+    submission = formSgSdk.crypto.decrypt(formSecretKey, data)
   }
 
   // If the decryption failed, submission will be `null`.

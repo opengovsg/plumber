@@ -76,12 +76,23 @@ describe('verify credentials', () => {
       expect(parseFormIdFormat($)).toBe($.auth.data.formId)
     })
 
-    it('should accept a valid form url', () => {
+    it.each([
+      'https://form.gov.sg/',
+      'https://www.form.gov.sg/',
+      'https://staging.form.gov.sg/',
+      'form.gov.sg/',
+      'www.form.gov.sg/',
+      'staging.form.gov.sg/admin/',
+    ])('should accept a valid form url (%s)', (url) => {
       const formId = $.auth.data.formId
-      $.auth.data.formId = 'https://form.gov.sg/' + formId
+      $.auth.data.formId = url + formId
       expect(parseFormIdFormat($)).toBe(formId)
-      $.auth.data.formId = 'https://www.form.gov.sg/' + formId
-      expect(parseFormIdFormat($)).toBe(formId)
+    })
+
+    it('should throw an error if invalid form url', () => {
+      const formId = $.auth.data.formId
+      $.auth.data.formId = 'https://firm.gov.sg/' + formId
+      expect(() => parseFormIdFormat($)).toThrowError('Invalid form url')
     })
 
     it('should throw an error if invalid form url', () => {
@@ -99,6 +110,7 @@ describe('verify credentials', () => {
           $,
           $.auth.data.formId as string,
           $.auth.data.privateKey as string,
+          'prod',
         ),
       ).resolves.toBeUndefined()
       expect($.auth.set).toHaveBeenCalledWith({
@@ -120,6 +132,7 @@ describe('verify credentials', () => {
           $,
           $.auth.data.formId as string,
           $.auth.data.privateKey as string,
+          'prod',
         ),
       ).rejects.toThrowError('Ensure form is public')
     })
@@ -135,6 +148,7 @@ describe('verify credentials', () => {
           $,
           $.auth.data.formId as string,
           $.auth.data.privateKey as string,
+          'prod',
         ),
       ).rejects.toThrowError('Form not found')
     })
@@ -152,6 +166,7 @@ describe('verify credentials', () => {
           $,
           $.auth.data.formId as string,
           $.auth.data.privateKey as string,
+          'prod',
         ),
       ).rejects.toThrowError('Form is not a storage mode form')
     })
@@ -163,6 +178,7 @@ describe('verify credentials', () => {
           $,
           $.auth.data.formId as string,
           $.auth.data.privateKey as string,
+          'prod',
         ),
       ).rejects.toThrowError('Invalid secret key')
     })
@@ -180,6 +196,7 @@ describe('verify credentials', () => {
           $,
           $.auth.data.formId as string,
           $.auth.data.privateKey as string,
+          'prod',
         ),
       ).rejects.toThrowError(
         'Multi-Respondent Forms cannot be connected to Plumber yet.',
