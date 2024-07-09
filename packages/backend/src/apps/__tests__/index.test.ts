@@ -3,6 +3,10 @@ import { join } from 'path'
 import { describe, expect, it } from 'vitest'
 
 import exportedApps from '@/apps'
+import {
+  ACTION_APPS_RANKING_MAP,
+  TRIGGER_APPS_RANKING_MAP,
+} from '@/graphql/queries/get-apps'
 
 describe('index.ts', () => {
   it('should export all apps keys that also match their folder names', () => {
@@ -18,5 +22,16 @@ describe('index.ts', () => {
     // Set comparison
     expect(exportedAppNames.length).toEqual(appFolderNames.length)
     expect(exportedAppNames.sort()).toEqual(appFolderNames.sort())
+  })
+})
+
+describe('get-apps query', () => {
+  it('number of apps in ranking maps should match with the number of apps we have', () => {
+    const exportedAppNamesSet = new Set(Object.keys(exportedApps))
+    const rankingMapAppsSet = new Set([
+      ...Object.keys(TRIGGER_APPS_RANKING_MAP),
+      ...Object.keys(ACTION_APPS_RANKING_MAP),
+    ])
+    expect(exportedAppNamesSet).toEqual(rankingMapAppsSet)
   })
 })
