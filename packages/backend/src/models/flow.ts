@@ -21,6 +21,7 @@ class Flow extends Base {
   publishedAt: string
   remoteWebhookId: string
   executions?: Execution[]
+  testExecution?: Execution
   user: User
 
   /**
@@ -40,6 +41,7 @@ class Flow extends Base {
       userId: { type: 'string', format: 'uuid' },
       remoteWebhookId: { type: 'string' },
       active: { type: 'boolean' },
+
       config: {
         type: 'object',
         properties: {
@@ -78,27 +80,35 @@ class Flow extends Base {
       relation: Base.HasManyRelation,
       modelClass: Execution,
       join: {
-        from: 'flows.id',
-        to: 'executions.flow_id',
+        from: `${this.tableName}.id`,
+        to: `${Execution.tableName}.flow_id`,
       },
     },
     user: {
       relation: Base.BelongsToOneRelation,
       modelClass: User,
       join: {
-        from: 'flows.user_id',
-        to: 'users.id',
+        from: `${this.tableName}.user_id`,
+        to: `${User.tableName}.id`,
       },
     },
     pendingTransfer: {
       relation: Base.BelongsToOneRelation,
       modelClass: FlowTransfer,
       join: {
-        from: 'flows.id',
-        to: 'flow_transfers.flow_id',
+        from: `${this.tableName}.id`,
+        to: `${FlowTransfer.tableName}.flow_id`,
       },
       filter(builder: ExtendedQueryBuilder<FlowTransfer>) {
         builder.where('status', 'pending')
+      },
+    },
+    testExecution: {
+      relation: Base.BelongsToOneRelation,
+      modelClass: Execution,
+      join: {
+        from: `${this.tableName}.test_execution`,
+        to: `${Execution.tableName}.id`,
       },
     },
   })
