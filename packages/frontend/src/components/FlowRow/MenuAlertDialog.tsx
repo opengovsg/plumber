@@ -36,7 +36,7 @@ function getAlertDialogContent(type: AlertDialogType): AlertDialogContent {
     case 'duplicate':
       return {
         header: 'Duplicate Pipe',
-        body: `You'll need to test all your steps before publishing.`,
+        body: `You'll need to replace the data in every step and test each step in your duplicated pipe before publishing it.`,
         buttonText: 'Duplicate',
       }
   }
