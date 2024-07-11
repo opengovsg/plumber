@@ -104,6 +104,11 @@ export async function decryptFormResponse(
     for (const [index, formField] of submission.responses.entries()) {
       const { _id, ...rest } = formField
 
+      // for checkbox: keep answerArray for backward compatibility
+      if (rest.fieldType === 'checkbox') {
+        rest.answer = rest.answerArray.join(', ')
+      }
+
       if (rest.fieldType === 'nric' && !!rest.answer) {
         const filteredAnswer = filterNric($, rest.answer)
         if (!filteredAnswer) {

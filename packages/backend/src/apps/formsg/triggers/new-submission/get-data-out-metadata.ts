@@ -73,6 +73,7 @@ function buildAnswerArrayForCheckbox(
         ? `Response ${fieldData.order}, Selected Option ${i + 1}`
         : null,
       order: fieldData.order ? (fieldData.order as number) : null,
+      isHidden: true,
     })
   }
   return answerArray

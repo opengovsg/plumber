@@ -403,6 +403,37 @@ describe('decrypt form response', () => {
         }),
       )
     })
+
+    describe('checkbox', () => {
+      beforeEach(() => {
+        mockDecryptedSubmission({
+          responses: [
+            {
+              _id: 'question1',
+              fieldType: 'checkbox',
+              question: 'Have you had your meals?',
+              answerArray: ['Breakfast', 'Lunch', 'Dinner', 'Supper'],
+            },
+          ],
+        })
+      })
+      it('checkbox question should include one additional combined answer response', async () => {
+        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        expect($.request.body).toEqual(
+          expect.objectContaining({
+            fields: {
+              question1: {
+                order: 1,
+                fieldType: 'checkbox',
+                question: 'Have you had your meals?',
+                answerArray: ['Breakfast', 'Lunch', 'Dinner', 'Supper'],
+                answer: 'Breakfast, Lunch, Dinner, Supper',
+              },
+            },
+          }),
+        )
+      })
+    })
   })
 
   describe('attachments', () => {
