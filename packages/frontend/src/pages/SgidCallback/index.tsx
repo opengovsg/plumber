@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { BsArrowRight } from 'react-icons/bs'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Flex, Icon, Image, Spinner, VStack } from '@chakra-ui/react'
+import { Flex, Icon, Image, VStack } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 import mainLogo from 'assets/logo.svg'
 import sgidLogo from 'assets/sgid-logo.svg'
+import PrimarySpinner from 'components/PrimarySpinner'
 import * as URLS from 'config/urls'
 import { LOGIN_WITH_SGID } from 'graphql/mutations/login-with-sgid'
 import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
@@ -96,14 +97,14 @@ export default function SgidCallback(): JSX.Element {
     <VStack flex={1} alignItems="center" justifyContent="center" gap={8}>
       <Flex alignItems="center" justifyContent="center" gap={8}>
         <Image src={sgidLogo} alt="plumber-logo" w={24} />
-        <Icon as={BsArrowRight} boxSize={8} color="primary.600" />
+        <Icon as={BsArrowRight} boxSize={8} color="primary.500" />
         <Image src={mainLogo} alt="plumber-logo" w={12} mr={12} />
       </Flex>
 
       {employments ? (
         <SgidAccountSelect employments={employments} setFailed={setFailed} />
       ) : (
-        <Spinner size="xl" thickness="4px" color="primary.500" margin="auto" />
+        <PrimarySpinner size="xl" thickness="4px" margin="auto" />
       )}
     </VStack>
   )

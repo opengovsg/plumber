@@ -9,13 +9,14 @@ import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
-import { Pagination, Spinner } from '@opengovsg/design-system-react'
+import { Pagination } from '@opengovsg/design-system-react'
 import ConditionalIconButton from 'components/ConditionalIconButton'
 import Container from 'components/Container'
 import EmptyFlowsTemplate from 'components/EmptyFlows'
 import FlowRow from 'components/FlowRow'
 import NoResultFound from 'components/NoResultFound'
 import PageTitle from 'components/PageTitle'
+import PrimarySpinner from 'components/PrimarySpinner'
 import SearchInput from 'components/SearchInput'
 import * as URLS from 'config/urls'
 import { GET_FLOWS } from 'graphql/queries/get-flows'
@@ -168,7 +169,7 @@ export default function Flows(): React.ReactElement {
 
         {flowTransfersLoading ? (
           <Center>
-            <Spinner fontSize="4xl" color="primary.600" />
+            <PrimarySpinner fontSize="4xl" />
           </Center>
         ) : flowTransfers.length === 0 ? (
           <></>
@@ -178,7 +179,7 @@ export default function Flows(): React.ReactElement {
 
         {loading && (
           <Center mt={8}>
-            <Spinner fontSize="4xl" color="primary.600" />
+            <PrimarySpinner fontSize="4xl" />
           </Center>
         )}
 

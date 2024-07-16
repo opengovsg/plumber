@@ -1,7 +1,8 @@
 import { BiRefresh } from 'react-icons/bi'
 import { Virtuoso } from 'react-virtuoso'
 import { List, ListItem, Portal } from '@chakra-ui/react'
-import { Button, Spinner } from '@opengovsg/design-system-react'
+import { Button } from '@opengovsg/design-system-react'
+import PrimarySpinner from 'components/PrimarySpinner'
 
 import { useSelectContext } from '../SelectContext'
 import { itemToValue } from '../utils/itemUtils'
@@ -69,7 +70,7 @@ export const SelectMenu = (): JSX.Element => {
             onMouseDown={(e) => {
               e.preventDefault()
             }}
-            spinner={<Spinner fontSize={24} color="primary.600" />}
+            spinner={<PrimarySpinner fontSize={24} />}
             onClick={onRefresh}
             isLoading={isRefreshLoading}
           >

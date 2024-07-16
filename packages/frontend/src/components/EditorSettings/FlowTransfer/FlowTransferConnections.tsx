@@ -2,12 +2,11 @@ import { ITransferDetails } from '@plumber/types'
 
 import { useContext } from 'react'
 import { useQuery } from '@apollo/client'
-import { Flex, Text } from '@chakra-ui/react'
+import { Center, Flex, Text } from '@chakra-ui/react'
 import { Badge, Infobox } from '@opengovsg/design-system-react'
+import PrimarySpinner from 'components/PrimarySpinner'
 import { EditorSettingsContext } from 'contexts/EditorSettings'
 import { GET_FLOW_TRANSFER_DETAILS } from 'graphql/queries/get-flow-transfer-details'
-
-import { CustomSpinner } from '../FlowTransfer'
 
 function StepConnectionDisplay(props: ITransferDetails) {
   const { appName, position, connectionName, instructions } = props
@@ -37,7 +36,11 @@ export default function FlowTransferConnections() {
   const flowTransferDetails: ITransferDetails[] = data?.getFlowTransferDetails
 
   if (loading) {
-    return <CustomSpinner />
+    return (
+      <Center>
+        <PrimarySpinner margin="auto" fontSize="4xl" />
+      </Center>
+    )
   }
 
   // hide infobox if no connections exist

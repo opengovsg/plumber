@@ -13,7 +13,7 @@ export default function Login(): ReactElement {
         flexDir="column"
         display={{ base: 'none', md: 'flex' }}
         bg="primary.50"
-        color="primary.600"
+        color="primary.500"
         pt="3.75rem"
         gap={{ base: '3rem', lg: '4.5rem' }}
       >

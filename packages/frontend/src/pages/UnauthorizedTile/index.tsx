@@ -29,7 +29,7 @@ function UnauthorizedTile(): JSX.Element {
         >
           Your{' '}
           <Text
-            bgGradient="linear(to-r, primary.400, primary.600)"
+            bgGradient="linear(to-r, primary.400, primary.500)"
             backgroundClip="text"
             as="span"
             className={styles.flicker}

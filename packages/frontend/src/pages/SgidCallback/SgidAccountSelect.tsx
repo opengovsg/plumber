@@ -91,7 +91,7 @@ export default function SgidAccountSelect(
               as={BiChevronRight}
               boxSize={6}
               ml="auto"
-              color="primary.600"
+              color="primary.500"
             />
           </Flex>
           {index < employments.length - 1 && (

@@ -151,7 +151,7 @@ export default function ExecutionStep({
                   {isPartialSuccess && (
                     <Box
                       borderRadius="50%"
-                      bg="primary.600"
+                      bg="primary.500"
                       boxSize={1.5}
                       top={1}
                       right={-2}
