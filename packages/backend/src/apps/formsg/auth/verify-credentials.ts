@@ -52,8 +52,8 @@ export const verifyFormCreds = async (
     throw new Error('Form is not a storage mode form')
   }
 
-  const formSdk = getSdk(env)
-  if (!formSdk.crypto.valid(publicKey, secretKey)) {
+  const formsgSdk = getSdk(env)
+  if (!formsgSdk.crypto.valid(publicKey, secretKey)) {
     throw new Error('Invalid secret key')
   }
 

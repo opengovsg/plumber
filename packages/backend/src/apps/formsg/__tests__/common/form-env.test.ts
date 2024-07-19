@@ -55,6 +55,10 @@ describe('Form environment handling', () => {
         formId: 'https://staging.form.gov.sg/95967305e41b75001293e70c',
         expectedEnv: 'staging',
       },
+      {
+        formId: 'https://uat.form.gov.sg/95967305e41b75001293e70c',
+        expectedEnv: 'uat',
+      },
     ])(
       'returns the appropriate form env when given a valid form ID ($formId = $expectedEnv)',
       ({ formId, expectedEnv }) => {
@@ -104,8 +108,8 @@ describe('Form environment handling', () => {
       expect(sdkMode).toEqual('production')
     })
 
-    it.each(['staging'] as const)(
-      'returns prod sdk if the input environment is prod',
+    it.each(['staging', 'uat'] as const)(
+      'returns staging sdk if the input environment is not prod',
       (env) => {
         const sdkMode = getSdk(env) as unknown as string
         expect(sdkMode).toEqual('staging')

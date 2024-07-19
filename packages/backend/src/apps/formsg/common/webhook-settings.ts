@@ -4,7 +4,7 @@ import type {
   IVerifyConnectionRegistrationOutput,
 } from '@plumber/types'
 
-import { formSgConfig } from '@/config/app-env-vars/formsg'
+import { formsgConfig } from '@/config/app-env-vars/formsg'
 import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
@@ -70,7 +70,7 @@ async function validateFormIsNotMultiRespondent(
         formId,
       },
       headers: {
-        Authorization: 'Bearer ' + formSgConfig.apiKeys[env],
+        Authorization: 'Bearer ' + formsgConfig.apiKeys[env],
       },
     },
   )
@@ -114,7 +114,7 @@ export async function registerWebhookUrl(
       },
       {
         headers: {
-          Authorization: 'Bearer ' + formSgConfig.apiKeys[env],
+          Authorization: 'Bearer ' + formsgConfig.apiKeys[env],
         },
       },
     )
@@ -153,7 +153,7 @@ export async function verifyWebhookUrl(
       },
       {
         headers: {
-          Authorization: 'Bearer ' + formSgConfig.apiKeys[env],
+          Authorization: 'Bearer ' + formsgConfig.apiKeys[env],
         },
       },
     )

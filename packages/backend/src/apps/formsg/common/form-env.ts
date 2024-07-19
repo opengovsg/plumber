@@ -11,8 +11,7 @@ const PRODUCTION_SDK = formsgSdk({
   mode: 'production',
 })
 
-// TODO: add UAT env
-export const SUPPORTED_FORM_ENVS = ['prod', 'staging'] as const
+export const SUPPORTED_FORM_ENVS = ['prod', 'staging', 'uat'] as const
 export type FormEnv = (typeof SUPPORTED_FORM_ENVS)[number]
 
 export function parseFormIdAsUrl(rawUrl: string): URL | null {
