@@ -23,7 +23,7 @@ export default function Navbar() {
         to={URLS.FLOW_EDITOR(flowId)}
         variant="link"
         leftIcon={<Icon as={BiLeftArrowAlt} boxSize={5} />}
-        color="primary.600"
+        color="primary.500"
       >
         <Text textStyle="subhead-1">Back to pipe</Text>
       </Button>

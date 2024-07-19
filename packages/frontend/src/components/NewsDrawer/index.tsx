@@ -50,7 +50,7 @@ export default function NewsDrawer() {
         {localLatestTimestamp !== latestNewsTimestamp && (
           <Box
             borderRadius="50%"
-            bg="primary.600"
+            bg="primary.500"
             boxSize={1.5}
             top={0.5}
             right={-2}

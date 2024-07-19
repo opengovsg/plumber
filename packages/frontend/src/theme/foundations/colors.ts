@@ -89,15 +89,15 @@ const bbBearColors = {
 const colors = {
   ...bbBearColors,
   primary: {
-    '50': '#FEF8FB',
-    '100': '#FFF0F7',
-    '200': '#F9DDE9',
-    '300': '#F0B0CA',
-    '400': '#E886AE',
-    '500': '#DF588F',
-    '600': '#CF1A68',
-    '700': '#AA004B',
-    '800': '#80002C',
+    '50': '#fef8fb',
+    '100': '#F9DDE9',
+    '200': '#f0b0ca',
+    '300': '#e886ae',
+    '400': '#df588f',
+    '500': '#cf1a68',
+    '600': '#aa004b',
+    '700': '#95003b',
+    '800': '#80002c',
     '900': '#630019',
   },
   secondary: {
@@ -119,9 +119,9 @@ const colors = {
 
 colors.utility = {
   focus: {
-    default: colors.primary['600'],
+    default: colors.primary['500'],
   },
-  'focus-default': colors.primary['600'],
+  'focus-default': colors.primary['500'],
 }
 
 export { colors }

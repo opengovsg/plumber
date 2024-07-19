@@ -62,7 +62,7 @@ export default function DemoPageModal(props: DemoPageModalProps) {
           <Image src={demoModalImg} alt="demo-modal-illustration" />
 
           <Flex flexDir="column" gap={4}>
-            <Badge variant="subtle" color="primary.600">
+            <Badge variant="subtle">
               <BadgeLeftIcon as={BiBulb} />
               Demo
             </Badge>
@@ -75,7 +75,7 @@ export default function DemoPageModal(props: DemoPageModalProps) {
           </Flex>
 
           <ModalFooter p={0} gap={4}>
-            <Button onClick={onClose} variant="clear" color="primary.600">
+            <Button onClick={onClose} variant="clear">
               Try demo later
             </Button>
             <Button onClick={onCreateTemplatedFlow} isLoading={loading}>

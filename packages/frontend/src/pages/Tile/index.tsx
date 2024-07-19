@@ -2,7 +2,8 @@ import { ITableMetadata, ITableRow } from '@plumber/types'
 
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Center, Flex, Spinner } from '@chakra-ui/react'
+import { Center, Flex } from '@chakra-ui/react'
+import PrimarySpinner from 'components/PrimarySpinner'
 import { GET_ALL_ROWS } from 'graphql/queries/tiles/get-all-rows'
 import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 
@@ -48,7 +49,7 @@ export default function Tile(): JSX.Element {
   if (!getTableData?.getTable || !getAllRowsData?.getAllRows) {
     return (
       <Center height="100vh">
-        <Spinner size="xl" thickness="4px" color="primary.500" margin="auto" />
+        <PrimarySpinner fontSize="6xl" thickness="4px" margin="auto" />
       </Center>
     )
   }

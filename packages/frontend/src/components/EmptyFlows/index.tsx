@@ -60,7 +60,7 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
           <Icon
             as={BiWinkSmile}
             verticalAlign="middle"
-            color="primary.600"
+            color="primary.500"
             boxSize={8}
           />
         </Text>

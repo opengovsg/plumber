@@ -42,7 +42,7 @@ const formAppComboboxOption = (app: IApp): ComboboxItem => ({
   ...(app?.isNewApp
     ? {
         badge: (
-          <Badge bgColor="interaction.muted.main.active" color="primary.600">
+          <Badge bgColor="interaction.muted.main.active" color="primary.500">
             New
           </Badge>
         ),

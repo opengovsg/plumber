@@ -1,9 +1,6 @@
 import { Icon, InputRightElement } from '@chakra-ui/react'
-import {
-  BxsChevronDown,
-  BxsChevronUp,
-  Spinner,
-} from '@opengovsg/design-system-react'
+import { BxsChevronDown, BxsChevronUp } from '@opengovsg/design-system-react'
+import PrimarySpinner from 'components/PrimarySpinner'
 
 import { useSelectContext } from '../../SelectContext'
 
@@ -34,7 +31,7 @@ export const ToggleChevron = (): JSX.Element => {
       })}
     >
       {isRefreshLoading || isCreatingNewOption ? (
-        <Spinner color="primary.600" />
+        <PrimarySpinner fontSize="xl" />
       ) : (
         <Icon
           sx={styles.icon}

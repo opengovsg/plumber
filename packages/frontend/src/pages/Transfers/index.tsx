@@ -4,8 +4,9 @@ import { BiLeftArrowAlt } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex, Icon, Text, useDisclosure } from '@chakra-ui/react'
-import { Button, Spinner } from '@opengovsg/design-system-react'
+import { Button } from '@opengovsg/design-system-react'
 import Container from 'components/Container'
+import PrimarySpinner from 'components/PrimarySpinner'
 import { GET_PENDING_FLOW_TRANSFERS } from 'graphql/queries/get-pending-flow-transfers'
 
 import * as URLS from './../../config/urls'
@@ -32,7 +33,7 @@ export default function Transfers() {
             to={URLS.FLOWS}
             leftIcon={<Icon as={BiLeftArrowAlt} boxSize={5} />}
             variant="link"
-            color="primary.600"
+            color="primary.500"
           >
             <Text textStyle="subhead-1">Back to dashboard</Text>
           </Button>
@@ -40,7 +41,7 @@ export default function Transfers() {
         </Flex>
         {loading ? (
           <Center>
-            <Spinner fontSize="4xl" color="primary.600" />
+            <PrimarySpinner fontSize="4xl" />
           </Center>
         ) : flowTransfers.length === 0 ? (
           // TODO (mal): check if this needs to be beautified?

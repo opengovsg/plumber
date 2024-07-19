@@ -1,9 +1,10 @@
 import { ITableMetadata } from '@plumber/types'
 
 import { useQuery } from '@apollo/client'
-import { Center, Flex, Spinner } from '@chakra-ui/react'
+import { Center, Flex } from '@chakra-ui/react'
 import Container from 'components/Container'
 import PageTitle from 'components/PageTitle'
+import PrimarySpinner from 'components/PrimarySpinner'
 import { GET_TABLES } from 'graphql/queries/tiles/get-tables'
 
 import CreateTileButton from './components/CreateTileButton'
@@ -20,7 +21,7 @@ export default function Tiles(): JSX.Element {
   if (!data?.getTables || isTileListLoading) {
     return (
       <Center h="100%">
-        <Spinner size="xl" thickness="4px" color="primary.500" margin="auto" />
+        <PrimarySpinner fontSize="4xl" thickness="4px" margin="auto" />
       </Center>
     )
   }

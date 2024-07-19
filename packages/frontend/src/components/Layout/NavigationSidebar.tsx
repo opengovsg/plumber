@@ -35,11 +35,11 @@ function NavigationSidebarItem({
       isActive={!!selected}
       color="base.content.default"
       _hover={{
-        color: 'primary.600',
+        color: 'primary.500',
         bg: 'interaction.muted.main.hover',
       }}
       _active={{
-        color: 'primary.600',
+        color: 'primary.500',
         bg: 'interaction.muted.main.active',
       }}
       display="flex"
@@ -68,11 +68,11 @@ const DemoSidebarItem = () => {
         onClick={onOpen}
         color="base.content.default"
         _hover={{
-          color: 'primary.600',
+          color: 'primary.500',
           bg: 'interaction.muted.main.hover',
         }}
         _active={{
-          color: 'primary.600',
+          color: 'primary.500',
           bg: 'interaction.muted.main.active',
         }}
         display="flex"
@@ -89,7 +89,7 @@ const DemoSidebarItem = () => {
         </Text>
         <Badge
           bgColor="interaction.muted.main.active"
-          color="primary.600"
+          color="primary.500"
           display={{ sm: 'none', lg: 'block' }}
         >
           New
