@@ -1,6 +1,6 @@
 import { ReactElement } from 'react'
 import { Box, Center, Flex, Image, Show, Text } from '@chakra-ui/react'
-import landingImg from 'assets/plumber-landing.svg'
+import landingImg from 'assets/plumber-landing.png'
 import mainLogo from 'assets/plumber-logo.svg'
 import LoginForm from 'components/LoginForm'
 
