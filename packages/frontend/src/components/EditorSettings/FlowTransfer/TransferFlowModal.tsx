@@ -11,9 +11,10 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
-import { EditorSettingsContext } from 'contexts/EditorSettings'
-import { CREATE_FLOW_TRANSFER } from 'graphql/mutations/create-flow-transfer'
-import { GET_FLOW } from 'graphql/queries/get-flow'
+
+import { EditorSettingsContext } from '@/contexts/EditorSettings'
+import { CREATE_FLOW_TRANSFER } from '@/graphql/mutations/create-flow-transfer'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
 
 interface TransferFlowModalProps {
   onClose: () => void

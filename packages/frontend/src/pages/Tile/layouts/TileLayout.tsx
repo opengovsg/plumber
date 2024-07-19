@@ -1,9 +1,10 @@
 import { Suspense, useContext } from 'react'
 import { Center } from '@chakra-ui/react'
-import PrimarySpinner from 'components/PrimarySpinner'
-import RedirectToLogin from 'components/RedirectToLogin'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
-import useAuthentication from 'hooks/useAuthentication'
+
+import PrimarySpinner from '@/components/PrimarySpinner'
+import RedirectToLogin from '@/components/RedirectToLogin'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import useAuthentication from '@/hooks/useAuthentication'
 
 type TileLayoutProps = {
   publicLayout?: boolean

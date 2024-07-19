@@ -1,5 +1,6 @@
 import { Box, Flex, Image, Text } from '@chakra-ui/react'
-import { APP_ICON_URL } from 'config/urls'
+
+import { APP_ICON_URL } from '@/config/urls'
 
 export interface AppIntegrationProps {
   iconName: string

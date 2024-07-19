@@ -27,7 +27,8 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
-import DemoVideoModalContent from 'components/FlowRow/DemoVideoModalContent'
+
+import DemoVideoModalContent from '@/components/FlowRow/DemoVideoModalContent'
 
 // Chakra's `Collapse` sets `overflow: hidden` by default, which causes dropdown
 // menu items to be hidden. We override overflow by making `Collapse` a Chakra

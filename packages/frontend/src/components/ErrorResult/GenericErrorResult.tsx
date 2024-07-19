@@ -3,7 +3,8 @@ import { IJSONObject } from '@plumber/types'
 import { useCallback, useState } from 'react'
 import { Box, Collapse, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
-import JSONViewer from 'components/JSONViewer'
+
+import JSONViewer from '@/components/JSONViewer'
 
 interface GenericErrorResultProps {
   errorDetails: IJSONObject

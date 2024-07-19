@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Flex, Hide, Text } from '@chakra-ui/react'
-import NavigationDrawer from 'components/Layout/NavigationDrawer'
+
+import NavigationDrawer from '@/components/Layout/NavigationDrawer'
 
 interface PageTitleProps {
   title: string

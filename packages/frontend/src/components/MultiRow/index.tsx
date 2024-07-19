@@ -6,8 +6,9 @@ import { BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
 import { Divider, Flex, Text } from '@chakra-ui/react'
 import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
-import InputCreator, { InputCreatorProps } from 'components/InputCreator'
-import { EditorContext } from 'contexts/Editor'
+
+import InputCreator, { InputCreatorProps } from '@/components/InputCreator'
+import { EditorContext } from '@/contexts/Editor'
 
 export type MultiRowProps = {
   name: string

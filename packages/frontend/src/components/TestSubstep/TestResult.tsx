@@ -2,9 +2,10 @@ import type { IAction, IStep, ITrigger } from '@plumber/types'
 
 import { Box, Link, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
-import VariablesList from 'components/VariablesList'
-import { isIfThenStep } from 'helpers/toolbox'
-import { type StepWithVariables } from 'helpers/variables'
+
+import VariablesList from '@/components/VariablesList'
+import { isIfThenStep } from '@/helpers/toolbox'
+import { type StepWithVariables } from '@/helpers/variables'
 
 function getNoOutputMessage(
   selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],

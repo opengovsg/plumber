@@ -1,10 +1,11 @@
+import type { InMemoryCacheConfig } from '@apollo/client'
 import { InMemoryCache } from '@apollo/client'
 
 interface IRef {
   __ref: string
 }
 
-const cache = new InMemoryCache({
+export const cacheConfig = {
   typePolicies: {
     App: {
       keyFields: ['key'],
@@ -47,6 +48,8 @@ const cache = new InMemoryCache({
       },
     },
   },
-})
+} satisfies InMemoryCacheConfig
+
+const cache = new InMemoryCache(cacheConfig)
 
 export default cache

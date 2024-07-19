@@ -5,7 +5,8 @@ import {
   ThemeProvider as MaterialThemeProvider,
 } from '@mui/material/styles'
 import { ThemeProvider as ChakraThemeProvider } from '@opengovsg/design-system-react'
-import materialTheme from 'styles/theme'
+
+import materialTheme from '@/styles/theme'
 
 import { theme as chakraTheme } from '../../theme'
 

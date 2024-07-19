@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { BiTrash } from 'react-icons/bi'
 import { Button } from '@chakra-ui/react'
-import { ROW_HEIGHT } from 'pages/Tile/constants'
+
+import { ROW_HEIGHT } from '@/pages/Tile/constants'
 
 import { useTableContext } from '../../contexts/TableContext'
 

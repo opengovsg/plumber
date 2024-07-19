@@ -3,14 +3,15 @@ import { BiPlus } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Divider, Flex } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import { EditorContext } from 'contexts/Editor'
-import { CREATE_STEP } from 'graphql/mutations/create-step'
-import { GET_FLOW } from 'graphql/queries/get-flow'
+
+import { EditorContext } from '@/contexts/Editor'
+import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
 import {
   extractBranchesWithSteps,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
-} from 'helpers/toolbox'
+} from '@/helpers/toolbox'
 
 import { ContentProps } from '../types'
 

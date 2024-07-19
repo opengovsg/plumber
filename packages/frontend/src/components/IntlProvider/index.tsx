@@ -1,6 +1,7 @@
 import { IntlProvider as BaseIntlProvider } from 'react-intl'
-import englishMessages from 'locales/en.json'
 import { Settings as LuxonSettings } from 'luxon'
+
+import englishMessages from '@/locales/en.json'
 
 type IntlProviderProps = {
   children: React.ReactNode

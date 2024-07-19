@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react'
 import { Box, Image, Text } from '@chakra-ui/react'
-import MarkdownRenderer from 'components/MarkdownRenderer'
 import { AnimationConfigWithData } from 'lottie-web'
 import { DateTime } from 'luxon'
 import { RequireExactlyOne } from 'type-fest'
+
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 import LottieWebAnimation from './LottieWebAnimation'
 import NewsItemTag from './NewsItemTag'

@@ -24,14 +24,15 @@ import Text from '@tiptap/extension-text'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { StepExecutionsContext } from 'contexts/StepExecutions'
+
+import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import {
   extractVariables,
   filterVariables,
   Variable,
   VISIBLE_VARIABLE_TYPES,
-} from 'helpers/variables'
-import { POPOVER_MOTION_PROPS } from 'theme/constants'
+} from '@/helpers/variables'
+import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'

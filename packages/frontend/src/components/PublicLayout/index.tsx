@@ -2,9 +2,10 @@ import { Navigate } from 'react-router-dom'
 import { Flex } from '@chakra-ui/react'
 import { Box } from '@mui/material'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
-import SiteWideBanner from 'components/SiteWideBanner'
-import * as URLS from 'config/urls'
-import useAuthentication from 'hooks/useAuthentication'
+
+import SiteWideBanner from '@/components/SiteWideBanner'
+import * as URLS from '@/config/urls'
+import useAuthentication from '@/hooks/useAuthentication'
 
 type LayoutProps = {
   children: React.ReactNode

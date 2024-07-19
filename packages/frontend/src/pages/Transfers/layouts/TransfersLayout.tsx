@@ -1,8 +1,9 @@
 import { Box } from '@chakra-ui/react'
-import AppBar from 'components/AppBar'
-import RedirectToLogin from 'components/RedirectToLogin'
-import SiteWideBanner from 'components/SiteWideBanner'
-import useAuthentication from 'hooks/useAuthentication'
+
+import AppBar from '@/components/AppBar'
+import RedirectToLogin from '@/components/RedirectToLogin'
+import SiteWideBanner from '@/components/SiteWideBanner'
+import useAuthentication from '@/hooks/useAuthentication'
 
 interface TransfersLayoutProps {
   children: React.ReactNode

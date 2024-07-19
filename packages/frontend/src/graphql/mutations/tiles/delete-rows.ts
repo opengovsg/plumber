@@ -1,4 +1,4 @@
-import { graphql } from 'graphql/__generated__'
+import { graphql } from '@/graphql/__generated__'
 
 export const DELETE_ROWS = graphql(`
   mutation DeleteRows($input: DeleteTableRowsInput!) {

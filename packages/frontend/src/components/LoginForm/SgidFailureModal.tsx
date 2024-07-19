@@ -13,7 +13,8 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import { SGID_CHECK_ELIGIBILITY_URL } from 'config/urls'
+
+import { SGID_CHECK_ELIGIBILITY_URL } from '@/config/urls'
 
 export default function SgidFailureModal(): JSX.Element {
   // One off modal, so store state directly.

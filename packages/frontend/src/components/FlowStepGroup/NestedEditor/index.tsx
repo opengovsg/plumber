@@ -9,7 +9,8 @@ import {
   ModalOverlay,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import Editor from 'components/Editor'
+
+import Editor from '@/components/Editor'
 
 interface NestedEditorProps {
   flow: IFlow

@@ -10,7 +10,8 @@ import {
   Icon,
 } from '@chakra-ui/react'
 import { IconButton, Input } from '@opengovsg/design-system-react'
-import * as URLS from 'config/urls'
+
+import * as URLS from '@/config/urls'
 
 import { useTableContext } from '../../contexts/TableContext'
 import { useUpdateTable } from '../../hooks/useUpdateTable'

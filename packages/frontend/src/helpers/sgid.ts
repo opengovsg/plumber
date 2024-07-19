@@ -1,5 +1,5 @@
-import appConfig from 'config/app'
-import * as URLS from 'config/urls'
+import appConfig from '@/config/app'
+import * as URLS from '@/config/urls'
 
 const SCOPE = 'openid pocdex.public_officer_details'
 const REDIRECT_URL = `${window.location.origin}${URLS.LOGIN_SGID_REDIRECT}`

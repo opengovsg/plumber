@@ -1,11 +1,12 @@
 import { RestrictedFooter } from '@opengovsg/design-system-react'
-import appConfig from 'config/app'
+
+import appConfig from '@/config/app'
 import {
   FEEDBACK_FORM_LINK,
   GUIDE_LINK,
   PRIVACY_STATEMENT_LINK,
   TERMS_OF_USE_LINK,
-} from 'config/urls'
+} from '@/config/urls'
 
 export const Footer = () => (
   <RestrictedFooter

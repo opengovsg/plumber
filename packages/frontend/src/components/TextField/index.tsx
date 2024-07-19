@@ -9,7 +9,8 @@ import MuiTextField, {
   TextFieldProps as MuiTextFieldProps,
 } from '@mui/material/TextField'
 import { FormLabel } from '@opengovsg/design-system-react'
-import copyInputValue from 'helpers/copyInputValue'
+
+import copyInputValue from '@/helpers/copyInputValue'
 
 type TextFieldProps = {
   shouldUnregister?: boolean

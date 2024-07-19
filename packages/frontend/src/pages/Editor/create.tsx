@@ -4,9 +4,10 @@ import { useMutation } from '@apollo/client'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
-import * as URLS from 'config/urls'
-import { CREATE_FLOW } from 'graphql/mutations/create-flow'
-import useFormatMessage from 'hooks/useFormatMessage'
+
+import * as URLS from '@/config/urls'
+import { CREATE_FLOW } from '@/graphql/mutations/create-flow'
+import useFormatMessage from '@/hooks/useFormatMessage'
 
 export default function CreateFlow(): React.ReactElement {
   const [searchParams] = useSearchParams()

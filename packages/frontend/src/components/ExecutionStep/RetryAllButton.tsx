@@ -5,9 +5,10 @@ import { TbArrowForwardUpDouble } from 'react-icons/tb'
 import { useMutation } from '@apollo/client'
 import { Icon } from '@chakra-ui/react'
 import { Button, Spinner, useToast } from '@opengovsg/design-system-react'
-import { BULK_RETRY_EXECUTIONS_FLAG } from 'config/flags'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
-import { BULK_RETRY_EXECUTIONS } from 'graphql/mutations/bulk-retry-executions'
+
+import { BULK_RETRY_EXECUTIONS_FLAG } from '@/config/flags'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import { BULK_RETRY_EXECUTIONS } from '@/graphql/mutations/bulk-retry-executions'
 
 interface RetryAllButtonProps {
   execution: IExecution

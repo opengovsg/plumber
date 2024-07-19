@@ -10,19 +10,20 @@ import {
   Infobox,
   Link,
 } from '@opengovsg/design-system-react'
-import FlowSubstepTitle from 'components/FlowSubstepTitle'
-import MarkdownRenderer from 'components/MarkdownRenderer'
-import { ComboboxItem, SingleSelect } from 'components/SingleSelect'
-import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from 'config/flags'
-import { EditorContext } from 'contexts/Editor'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
-import { GET_APPS } from 'graphql/queries/get-apps'
+
+import FlowSubstepTitle from '@/components/FlowSubstepTitle'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
+import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
+import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from '@/config/flags'
+import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import { GET_APPS } from '@/graphql/queries/get-apps'
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
   useIfThenInitializer,
   useIsIfThenSelectable,
-} from 'helpers/toolbox'
+} from '@/helpers/toolbox'
 
 type ChooseAppAndEventSubstepProps = {
   substep: ISubstep

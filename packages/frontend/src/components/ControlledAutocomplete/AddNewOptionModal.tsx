@@ -12,10 +12,11 @@ import {
   ModalOverlay,
 } from '@chakra-ui/react'
 import { Button, FormLabel, Input } from '@opengovsg/design-system-react'
-import client from 'graphql/client'
-import { CREATE_TABLE } from 'graphql/mutations/tiles/create-table'
-import { UPDATE_TABLE } from 'graphql/mutations/tiles/update-table'
-import { GET_DYNAMIC_DATA } from 'graphql/queries/get-dynamic-data'
+
+import client from '@/graphql/client'
+import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
+import { UPDATE_TABLE } from '@/graphql/mutations/tiles/update-table'
+import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
 
 interface AddNewOptionalModalProps {
   modalHeader: string

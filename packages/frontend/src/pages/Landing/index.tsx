@@ -1,5 +1,6 @@
 import { LightMode } from '@chakra-ui/react'
-import { Footer } from 'components/Footer'
+
+import { Footer } from '@/components/Footer'
 
 import Agencies from './Agencies'
 import AutomationLanding from './AutomationLanding'

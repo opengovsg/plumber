@@ -1,9 +1,10 @@
 import { Box, Divider, Flex, Image, Text } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
-import mainLogo from 'assets/logo.svg'
-import AvatarDropdownMenu from 'components/AvatarDropdownMenu'
-import NewsDrawer from 'components/NewsDrawer'
-import * as URLS from 'config/urls'
+
+import mainLogo from '@/assets/logo.svg'
+import AvatarDropdownMenu from '@/components/AvatarDropdownMenu'
+import NewsDrawer from '@/components/NewsDrawer'
+import * as URLS from '@/config/urls'
 
 export default function AppBar(): React.ReactElement {
   return (

@@ -1,5 +1,6 @@
 import { createContext, ReactNode } from 'react'
-import { DrawerLink } from 'components/Layout'
+
+import { DrawerLink } from '@/components/Layout'
 
 export type LayoutNavigationProviderData = {
   links: DrawerLink[]

@@ -12,8 +12,9 @@ import {
   Spacer,
   Text,
 } from '@chakra-ui/react'
-import AppIcon from 'components/AppIcon'
-import * as URLS from 'config/urls'
+
+import AppIcon from '@/components/AppIcon'
+import * as URLS from '@/config/urls'
 
 type AppRowProps = {
   application: IApp

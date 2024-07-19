@@ -5,7 +5,8 @@ import { useController, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
-import { ComboboxItem, SingleSelect } from 'components/SingleSelect'
+
+import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
 
 import AddNewOptionModal, { useCreateNewOption } from './AddNewOptionModal'
 

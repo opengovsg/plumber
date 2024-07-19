@@ -8,8 +8,9 @@ import {
   FormLabel,
   Input,
 } from '@opengovsg/design-system-react'
-import { EditorSettingsContext } from 'contexts/EditorSettings'
 import * as yup from 'yup'
+
+import { EditorSettingsContext } from '@/contexts/EditorSettings'
 
 import DisallowRequestInfobox from './FlowTransfer/DisallowRequestInfobox'
 import FlowTransferConnections from './FlowTransfer/FlowTransferConnections'

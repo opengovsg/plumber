@@ -15,11 +15,12 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Tab, Tabs } from '@opengovsg/design-system-react'
-import AppIcon from 'components/AppIcon'
-import ErrorResult from 'components/ErrorResult'
-import JSONViewer from 'components/JSONViewer'
-import { GET_APP } from 'graphql/queries/get-app'
-import { EXECUTION_STEP_PER_PAGE } from 'pages/Execution'
+
+import AppIcon from '@/components/AppIcon'
+import ErrorResult from '@/components/ErrorResult'
+import JSONViewer from '@/components/JSONViewer'
+import { GET_APP } from '@/graphql/queries/get-app'
+import { EXECUTION_STEP_PER_PAGE } from '@/pages/Execution'
 
 import { RetryAllButton } from './RetryAllButton'
 import RetryButton from './RetryButton'

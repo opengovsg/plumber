@@ -9,13 +9,14 @@ import type {
 import { useCallback, useContext, useMemo } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
 import { Collapse, Flex } from '@chakra-ui/react'
-import ChooseConnectionDropdown from 'components/ChooseConnectionDropdown'
-import FlowSubstepTitle from 'components/FlowSubstepTitle'
-import SetConnectionButton from 'components/SetConnectionButton'
-import { EditorContext } from 'contexts/Editor'
-import { REGISTER_CONNECTION } from 'graphql/mutations/register-connection'
-import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
-import { TEST_CONNECTION } from 'graphql/queries/test-connection'
+
+import ChooseConnectionDropdown from '@/components/ChooseConnectionDropdown'
+import FlowSubstepTitle from '@/components/FlowSubstepTitle'
+import SetConnectionButton from '@/components/SetConnectionButton'
+import { EditorContext } from '@/contexts/Editor'
+import { REGISTER_CONNECTION } from '@/graphql/mutations/register-connection'
+import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
+import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
 type ChooseConnectionSubstepProps = {
   application: IApp

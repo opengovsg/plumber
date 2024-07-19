@@ -2,9 +2,10 @@ import { ITableColumnMetadata } from '@plumber/types'
 
 import { useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { UPDATE_TABLE } from 'graphql/mutations/tiles/update-table'
-import { GET_TABLE } from 'graphql/queries/tiles/get-table'
 import { type SetOptional } from 'type-fest'
+
+import { UPDATE_TABLE } from '@/graphql/mutations/tiles/update-table'
+import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../contexts/TableContext'
 
