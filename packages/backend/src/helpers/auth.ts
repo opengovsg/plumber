@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import jwt from 'jsonwebtoken'
+import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import User from '@/models/user'
@@ -70,4 +70,40 @@ export async function getOrCreateUser(email: string): Promise<User> {
   }
 
   return user
+}
+
+// Admin tokens are more sensitive so we set a low max age of 5 min
+const ADMIN_TOKEN_MAX_AGE_SEC = 5 * 60
+
+export interface AdminToken {
+  userEmail?: string | null
+}
+
+export function parseAdminToken(token: string): AdminToken | null {
+  try {
+    // NOTE: we use a different key to prevent a vuln where an end user can send
+    // their auth cookie in the `x-plumber-admin-token` header value to gain
+    // admin access.
+    return jwt.verify(token, appConfig.adminJwtSecretKey, {
+      maxAge: ADMIN_TOKEN_MAX_AGE_SEC,
+    }) as AdminToken
+  } catch (err) {
+    if (!(err instanceof JsonWebTokenError)) {
+      throw err
+    }
+
+    return null
+  }
+}
+
+export async function getAdminTokenUser({
+  userEmail,
+}: AdminToken): Promise<User | null> {
+  // Some admin operations may be run in user-less context so userEmail can be
+  // null.
+  if (!userEmail) {
+    return null
+  }
+
+  return User.query().where('email', userEmail).first().throwIfNotFound()
 }

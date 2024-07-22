@@ -20,6 +20,7 @@ type AppConfig = {
   baseUrl: string
   encryptionKey: string
   sessionSecretKey: string
+  adminJwtSecretKey: string
   serveWebAppSeparately: boolean
   redisHost: string
   redisPort: number
@@ -72,6 +73,7 @@ const appConfig: AppConfig = {
   postgresEnableSsl: process.env.POSTGRES_ENABLE_SSL === 'true',
   encryptionKey: process.env.ENCRYPTION_KEY || '',
   sessionSecretKey: process.env.SESSION_SECRET_KEY || '',
+  adminJwtSecretKey: process.env.ADMIN_JWT_SECRET_KEY || '',
   serveWebAppSeparately: process.env.SERVE_WEB_APP_SEPARATELY === 'true',
   redisHost: process.env.REDIS_HOST || '127.0.0.1',
   redisPort: parseInt(process.env.REDIS_PORT || '6379'),
@@ -110,6 +112,10 @@ if (!appConfig.encryptionKey) {
 
 if (!appConfig.sessionSecretKey) {
   throw new Error('SESSION_SECRET_KEY environment variable needs to be set!')
+}
+
+if (!appConfig.adminJwtSecretKey) {
+  throw new Error('ADMIN_JWT_SECRET_KEY environment variable needs to be set!')
 }
 
 if (!appConfig.postman.apiKey) {

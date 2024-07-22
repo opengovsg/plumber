@@ -21,11 +21,21 @@ function ApolloServerPluginUserTracer(): ApolloServerPlugin<AuthenticatedContext
     async requestDidStart(requestContext) {
       // Add the tag right before we reply the user.
       // https://www.apollographql.com/docs/apollo-server/integrations/plugins#request-lifecycle-event-flow
+      const isAdminOperation = requestContext.contextValue?.isAdminOperation
+        ? 'true'
+        : 'false'
+      tracer.scope().active()?.addTags({
+        isAdminOperation,
+      })
+
       const currentUser = requestContext.contextValue?.currentUser
       if (currentUser) {
         tracer.setUser({
           id: currentUser.id,
           email: currentUser.email,
+
+          // For convenience
+          isAdminOperation,
         })
       }
     },

@@ -11,6 +11,7 @@ export async function generateMockContext(): Promise<Context> {
     req: null,
     res: null,
     currentUser: await User.query().findOne({ email: 'tester@open.gov.sg' }),
+    isAdminOperation: false,
   }
 }
 
