@@ -21,6 +21,7 @@ class Flow extends Base {
   publishedAt: string
   remoteWebhookId: string
   executions?: Execution[]
+  testExecutionId: string
   testExecution?: Execution
   user: User
 
@@ -107,7 +108,7 @@ class Flow extends Base {
       relation: Base.BelongsToOneRelation,
       modelClass: Execution,
       join: {
-        from: `${this.tableName}.test_execution`,
+        from: `${this.tableName}.test_execution_id`,
         to: `${Execution.tableName}.id`,
       },
     },

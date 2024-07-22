@@ -13,6 +13,7 @@ import getFlows from './queries/get-flows'
 import getPendingFlowTransfers from './queries/get-pending-flow-transfers'
 import getPlumberStats from './queries/get-plumber-stats'
 import getStepWithTestExecutions from './queries/get-step-with-test-executions'
+import getTestExecutionSteps from './queries/get-test-execution-steps'
 import healthcheck from './queries/healthcheck'
 import testConnection from './queries/test-connection'
 import tilesQueryResolvers from './queries/tiles'
@@ -36,6 +37,7 @@ export default {
   getFlow,
   getFlows,
   getStepWithTestExecutions,
+  getTestExecutionSteps,
   getExecution,
   getExecutions,
   getExecutionSteps,
