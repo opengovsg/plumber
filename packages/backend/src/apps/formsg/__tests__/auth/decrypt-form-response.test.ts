@@ -14,27 +14,27 @@ LuxonSettings.defaultLocale = 'en-SG'
 
 // mocks hoisted here so that they can be used in import mocks
 const mocks = vi.hoisted(() => {
+  const webhooksAuthenticate = vi.fn()
+  const cryptoDecrypt = vi.fn()
+  const cryptoDecryptWithAttachments = vi.fn()
+  const mockSdk = {
+    webhooks: {
+      authenticate: webhooksAuthenticate,
+    },
+    crypto: {
+      decrypt: cryptoDecrypt,
+      decryptWithAttachments: cryptoDecryptWithAttachments,
+    },
+  }
+
   return {
-    webhooksAuthenticate: vi.fn(),
-    cryptoDecrypt: vi.fn(),
-    cryptoDecryptWithAttachments: vi.fn(),
+    webhooksAuthenticate,
+    cryptoDecrypt,
+    cryptoDecryptWithAttachments,
     consoleError: vi.fn(),
     consoleWarn: vi.fn(),
-  }
-})
-
-// Mock formsg sdk
-vi.mock('@opengovsg/formsg-sdk', () => {
-  return {
-    default: () => ({
-      webhooks: {
-        authenticate: mocks.webhooksAuthenticate,
-      },
-      crypto: {
-        decrypt: mocks.cryptoDecrypt,
-        decryptWithAttachments: mocks.cryptoDecryptWithAttachments,
-      },
-    }),
+    getSdk: vi.fn(() => mockSdk),
+    parseFormEnv: vi.fn(),
   }
 })
 
@@ -44,6 +44,11 @@ vi.mock('@/helpers/logger', () => ({
     error: mocks.consoleError,
     warn: mocks.consoleWarn,
   },
+}))
+
+vi.mock('../../common/form-env', () => ({
+  getSdk: mocks.getSdk,
+  parseFormEnv: mocks.parseFormEnv,
 }))
 
 describe('decrypt form response', () => {
@@ -421,6 +426,19 @@ describe('decrypt form response', () => {
       })
       await expect(decryptFormResponse($)).resolves.toEqual(true)
       expect(mocks.cryptoDecrypt).not.toBeCalled()
+    })
+  })
+
+  describe('form environments', () => {
+    it('should grab the sdk corresponding to the form environment', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({ responses: [] })
+      mocks.parseFormEnv.mockReturnValue('staging')
+
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+
+      expect(mocks.parseFormEnv).toBeCalled()
+      expect(mocks.getSdk).toBeCalledWith('staging')
     })
   })
 })
