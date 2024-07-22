@@ -2,7 +2,6 @@ import { IRawAction } from '@plumber/types'
 
 import { URL } from 'url'
 
-import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 
 import { isUrlAllowed } from '../../common/ip-resolver'
@@ -95,10 +94,7 @@ const action: IRawAction = {
 
       $.setActionItem({ raw: { data: responseData } })
     } catch (err) {
-      if (
-        !(err instanceof HttpError) &&
-        err.message === RECURSIVE_WEBHOOK_ERROR_NAME
-      ) {
+      if (err.message === RECURSIVE_WEBHOOK_ERROR_NAME) {
         throw new StepError(
           RECURSIVE_WEBHOOK_ERROR_NAME,
           RECURSIVE_WEBHOOK_ERROR_SOLUTION,
