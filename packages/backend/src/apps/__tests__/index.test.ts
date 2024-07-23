@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 import exportedApps from '@/apps'
 import {
-  ACTION_APPS_RANKING_MAP,
-  TRIGGER_APPS_RANKING_MAP,
+  ACTION_APPS_RANKING,
+  TRIGGER_APPS_RANKING,
 } from '@/graphql/queries/get-apps'
 
 describe('index.ts', () => {
@@ -29,8 +29,8 @@ describe('get-apps query', () => {
   it('number of apps in ranking maps should match with the number of apps we have', () => {
     const exportedAppNamesSet = new Set(Object.keys(exportedApps))
     const rankingMapAppsSet = new Set([
-      ...Object.keys(TRIGGER_APPS_RANKING_MAP),
-      ...Object.keys(ACTION_APPS_RANKING_MAP),
+      ...TRIGGER_APPS_RANKING,
+      ...ACTION_APPS_RANKING,
     ])
     expect(exportedAppNamesSet).toEqual(rankingMapAppsSet)
   })
