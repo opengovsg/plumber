@@ -8,6 +8,12 @@ import { isUrlAllowed } from '../../common/ip-resolver'
 
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
+export const RECURSIVE_WEBHOOK_ERROR_NAME =
+  'Recursively invoking Plumber webhooks is prohibited.'
+
+const RECURSIVE_WEBHOOK_ERROR_SOLUTION =
+  'Ensure that you are not redirecting back to a plumber URL.'
+
 const action: IRawAction = {
   name: 'Make a HTTP request',
   key: 'httpRequest',
@@ -54,7 +60,12 @@ const action: IRawAction = {
 
     // Prohibit calling ourselves to prevent self-DoS.
     if (new URL(url).hostname.toLowerCase().endsWith('plumber.gov.sg')) {
-      throw new Error('Recursively invoking Plumber webhooks is prohibited.')
+      throw new StepError(
+        RECURSIVE_WEBHOOK_ERROR_NAME,
+        RECURSIVE_WEBHOOK_ERROR_SOLUTION,
+        $.step.position,
+        $.app.name,
+      )
     }
 
     if (!(await isUrlAllowed(url))) {
@@ -66,9 +77,13 @@ const action: IRawAction = {
         url,
         method,
         data,
-        // Redirects open up way too many vulns (e.g. someone changes the
-        // redirect target to a malicious endpoint), so disable it.
-        maxRedirects: 0,
+        // there's an internal maxRedirect limit for chrome/safari,
+        // so we only block redirect back to plumber urls
+        beforeRedirect: (options) => {
+          if (options.hostname.toLowerCase().endsWith('plumber.gov.sg')) {
+            throw new Error(RECURSIVE_WEBHOOK_ERROR_NAME)
+          }
+        },
       })
 
       let responseData = response.data
@@ -79,6 +94,16 @@ const action: IRawAction = {
 
       $.setActionItem({ raw: { data: responseData } })
     } catch (err) {
+      if (err.message === RECURSIVE_WEBHOOK_ERROR_NAME) {
+        throw new StepError(
+          RECURSIVE_WEBHOOK_ERROR_NAME,
+          RECURSIVE_WEBHOOK_ERROR_SOLUTION,
+          $.step.position,
+          $.app.name,
+        )
+      }
+
+      // remaining errors are http errors to be caught
       throw new StepError(
         `Status code: ${err.response.status} (${err.response.statusText})`,
         'Check your custom app based on the status code and retry again.',

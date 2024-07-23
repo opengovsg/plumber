@@ -4,9 +4,12 @@ import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
+import StepError from '@/errors/step'
 
 import app from '../..'
-import makeRequestAction from '../../actions/http-request'
+import makeRequestAction, {
+  RECURSIVE_WEBHOOK_ERROR_NAME,
+} from '../../actions/http-request'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
@@ -52,12 +55,13 @@ describe('make http request', () => {
 
     await makeRequestAction.run($).catch(() => null)
     expect(mocks.isUrlAllowed).toHaveBeenCalledOnce()
-    expect(mocks.httpRequest).toHaveBeenCalledWith({
-      url: $.step.parameters.url,
-      method: $.step.parameters.method,
-      data: $.step.parameters.data,
-      maxRedirects: 0,
-    })
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: $.step.parameters.url,
+        method: $.step.parameters.method,
+        data: $.step.parameters.data,
+      }),
+    )
   })
 
   it('should throw an error for error with http request', async () => {
@@ -102,8 +106,15 @@ describe('make http request', () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.data = 'meep meep'
     $.step.parameters.url = url
-    await expect(makeRequestAction.run($)).rejects.toThrowError(
-      'Recursively invoking Plumber webhooks is prohibited.',
-    )
+    await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
+  })
+
+  it('should throw step error if user redirects to plumber', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.data = 'go crazy'
+    $.step.parameters.url = 'https://coolbeans.io'
+    const recursiveWebhookError = new Error(RECURSIVE_WEBHOOK_ERROR_NAME)
+    mocks.httpRequest.mockRejectedValueOnce(recursiveWebhookError)
+    await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
   })
 })
