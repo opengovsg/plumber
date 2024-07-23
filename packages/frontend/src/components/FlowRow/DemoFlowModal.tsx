@@ -50,7 +50,7 @@ export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
             <Image src={demoModalImg} alt="demo-modal-illustration" />
 
             <Flex flexDir="column" gap={4}>
-              <Badge variant="subtle" color="primary.600">
+              <Badge variant="subtle">
                 <BadgeLeftIcon as={BiBulb} />
                 Demo
               </Badge>
@@ -65,7 +65,7 @@ export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
             </Flex>
 
             <ModalFooter p={0} gap={4}>
-              <Button onClick={onClose} variant="clear" color="primary.600">
+              <Button onClick={onClose} variant="clear">
                 Skip demo and build now
               </Button>
               <Button onClick={() => setShowVideoModal(true)}>

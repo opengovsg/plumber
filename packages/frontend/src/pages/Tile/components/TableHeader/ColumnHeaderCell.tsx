@@ -126,8 +126,8 @@ function ColumnHeaderCell({
                   w={6}
                   h={6}
                   p={1}
-                  bg="primary.200"
-                  borderRadius="lg"
+                  bg="primary.100"
+                  borderRadius="md"
                 />
               )}
               {sortDir && (
@@ -136,8 +136,8 @@ function ColumnHeaderCell({
                   w={6}
                   h={6}
                   p={1}
-                  bg="primary.200"
-                  borderRadius="lg"
+                  bg="primary.100"
+                  borderRadius="md"
                 />
               )}
               {!isFiltered && !sortDir && (

@@ -1,19 +1,12 @@
 import { BaseSyntheticEvent, useCallback, useContext, useState } from 'react'
 import { FieldValues, useForm } from 'react-hook-form'
-import {
-  Center,
-  Flex,
-  FormControl,
-  Text,
-  useDisclosure,
-} from '@chakra-ui/react'
+import { Flex, FormControl, Text, useDisclosure } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import {
   Button,
   FormErrorMessage,
   FormLabel,
   Input,
-  Spinner,
 } from '@opengovsg/design-system-react'
 import { EditorSettingsContext } from 'contexts/EditorSettings'
 import * as yup from 'yup'
@@ -22,15 +15,6 @@ import DisallowRequestInfobox from './FlowTransfer/DisallowRequestInfobox'
 import FlowTransferConnections from './FlowTransfer/FlowTransferConnections'
 import PublishedFlowInfobox from './FlowTransfer/PublishedFlowInfobox'
 import TransferFlowModal from './FlowTransfer/TransferFlowModal'
-
-// TODO (mal): refactor all the spinners
-export function CustomSpinner() {
-  return (
-    <Center>
-      <Spinner color="primary.600" margin="auto" fontSize="4xl" />
-    </Center>
-  )
-}
 
 const inputSchema = yup
   .object({

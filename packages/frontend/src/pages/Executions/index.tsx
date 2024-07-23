@@ -181,7 +181,7 @@ export default function Executions(): ReactElement {
         {loading && (
           <CircularProgress
             isIndeterminate
-            color="primary.600"
+            color="primary.500"
             display="flex"
             justifyContent="center"
             my={5}

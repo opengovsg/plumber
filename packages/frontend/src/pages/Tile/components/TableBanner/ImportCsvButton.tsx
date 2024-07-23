@@ -23,12 +23,8 @@ import {
   useBoolean,
   useDisclosure,
 } from '@chakra-ui/react'
-import {
-  Attachment,
-  Button,
-  ButtonProps,
-  Spinner,
-} from '@opengovsg/design-system-react'
+import { Attachment, Button, ButtonProps } from '@opengovsg/design-system-react'
+import PrimarySpinner from 'components/PrimarySpinner'
 import { CREATE_ROWS } from 'graphql/mutations/tiles/create-rows'
 import { GET_ALL_ROWS } from 'graphql/queries/tiles/get-all-rows'
 import { GET_TABLE } from 'graphql/queries/tiles/get-table'
@@ -81,7 +77,7 @@ const ImportStatus = ({
             colorScheme="secondary"
             variant="link"
             onClick={setIsColumnDataExpanded.toggle}
-            _hover={{ textDecoration: 'none', color: 'primary.600' }}
+            _hover={{ textDecoration: 'none', color: 'primary.500' }}
             rightIcon={
               isColumnDataExpanded ? <BiChevronUp /> : <BiChevronDown />
             }
@@ -334,7 +330,7 @@ export const ImportCsvModalContent = ({
           <Card p={4} mt={2} shadow="none">
             {isParsing ? (
               <Flex>
-                <Spinner mr={2} color="primary.600" />
+                <PrimarySpinner mr={2} />
                 Parsing file...
               </Flex>
             ) : (

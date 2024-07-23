@@ -11,7 +11,7 @@ import {
   useBreakpointValue,
   VStack,
 } from '@chakra-ui/react'
-import { Spinner } from '@opengovsg/design-system-react'
+import PrimarySpinner from 'components/PrimarySpinner'
 import RedirectToLogin from 'components/RedirectToLogin'
 import * as URLS from 'config/urls'
 import { EditorSettingsProvider } from 'contexts/EditorSettings'
@@ -101,7 +101,7 @@ export default function EditorSettingsLayout(
   if (loading) {
     return (
       <Center h="100vh">
-        <Spinner color="primary.600" fontSize="4xl" />
+        <PrimarySpinner fontSize="6xl" />
       </Center>
     )
   }

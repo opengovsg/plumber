@@ -39,12 +39,12 @@ export const ROW_COLOR = {
   EVEN: 'var(--chakra-colors-secondary-50)',
   ODD: 'white',
   SELECTED: 'var(--chakra-colors-primary-50)',
-  EDITING: 'var(--chakra-colors-primary-100)',
+  EDITING: 'var(--chakra-colors-primary-50)',
 }
 
 export const HEADER_COLOR = {
-  DEFAULT: 'var(--chakra-colors-primary-100)',
-  HOVER: 'var(--chakra-colors-primary-200)',
+  DEFAULT: 'var(--chakra-colors-primary-50)',
+  HOVER: 'var(--chakra-colors-primary-100)',
 }
 
 export const BORDER_COLOR = {

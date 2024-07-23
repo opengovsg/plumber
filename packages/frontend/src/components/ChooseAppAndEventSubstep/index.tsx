@@ -42,7 +42,7 @@ const formAppComboboxOption = (app: IApp): ComboboxItem => ({
   ...(app?.isNewApp
     ? {
         badge: (
-          <Badge bgColor="interaction.muted.main.active" color="primary.600">
+          <Badge bgColor="interaction.muted.main.active" color="primary.500">
             New
           </Badge>
         ),
@@ -90,18 +90,6 @@ function ChooseAppAndEventSubstep(
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
 
-  apps?.sort((a, b) => {
-    if (a.isNewApp && b.isNewApp) {
-      return a.name.localeCompare(b.name)
-    }
-    if (a.isNewApp) {
-      return -1
-    }
-    if (b.isNewApp) {
-      return 1
-    }
-    return a.name.localeCompare(b.name)
-  })
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
 
   const appOptions = useMemo(

@@ -69,10 +69,8 @@ function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
         _active={{ bg: 'interaction.tinted.main.active' }}
       >
         <Flex alignItems="center">
-          <Icon boxSize={5} as={BiFilter} color="primary.600" mr={2} />
-          <Text textStyle="subhead-2" color="primary.600">
-            {filterLabel}
-          </Text>
+          <Icon boxSize={5} as={BiFilter} mr={2} />
+          <Text textStyle="subhead-2">{filterLabel}</Text>
         </Flex>
       </MenuButton>
       <Portal>

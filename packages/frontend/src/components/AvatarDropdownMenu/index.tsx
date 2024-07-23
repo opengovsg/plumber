@@ -20,7 +20,7 @@ export default function AvatarDropdownMenu() {
   }
 
   return (
-    <AvatarMenu bg="primary.600" size="xs" name={currentUser?.email}>
+    <AvatarMenu size="xs" name={currentUser?.email}>
       <Menu.Item pointerEvents="none">
         <Text color="base.content.medium" textStyle="subhead-3">
           {currentUser?.email}

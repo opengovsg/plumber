@@ -6,13 +6,13 @@ import { COMMON_APPS, CUSTOM_APPS } from './components/AppList'
 export default function ToolsLanding() {
   return (
     <Container py="88px" px={6}>
-      <Text textStyle="h1" color="primary.600" mb={16}>
+      <Text textStyle="h1" color="primary.500" mb={16}>
         Our tools and integrations
       </Text>
       <VStack gap={16} align="start">
         <VStack gap={12}>
           <Box>
-            <Text textStyle="h5" color="primary.600" mb={2}>
+            <Text textStyle="h5" color="primary.500" mb={2}>
               Custom Plumber Apps
             </Text>
             <Text textStyle="body-1">
@@ -25,7 +25,7 @@ export default function ToolsLanding() {
         </VStack>
         <HStack gap={14} spacing={0} wrap={{ base: 'wrap', md: 'nowrap' }}>
           <VStack align="start">
-            <Text textStyle="h5" color="primary.600">
+            <Text textStyle="h5" color="primary.500">
               Integrations
             </Text>
             <Text textStyle="body-1">

@@ -1,6 +1,6 @@
 import { Suspense, useContext } from 'react'
 import { Center } from '@chakra-ui/react'
-import { Spinner } from '@opengovsg/design-system-react'
+import PrimarySpinner from 'components/PrimarySpinner'
 import RedirectToLogin from 'components/RedirectToLogin'
 import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
 import useAuthentication from 'hooks/useAuthentication'
@@ -20,7 +20,7 @@ export default function TileLayout({
   if (isFlagsLoading || !flags) {
     return (
       <Center h="100vh">
-        <Spinner />
+        <PrimarySpinner fontSize="6xl" />
       </Center>
     )
   }
