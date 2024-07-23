@@ -31,12 +31,14 @@ type ChooseConnectionSubstepProps = {
 type ConnectionDropdownOption = {
   label: string
   value: string
+  description?: string
 }
 
 const optionGenerator = (
   connection: IConnection,
 ): ConnectionDropdownOption => ({
   label: (connection?.formattedData?.screenName as string) ?? 'Unnamed',
+  description: connection.key === 'formsg' ? connection?.id : undefined,
   value: connection?.id as string,
 })
 

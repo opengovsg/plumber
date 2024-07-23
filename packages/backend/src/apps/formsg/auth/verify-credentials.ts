@@ -51,7 +51,8 @@ export const verifyFormCreds = async (
   }
 
   await $.auth.set({
-    screenName: `${formId} - ${formTitle}`,
+    screenName: formTitle,
+    description: formId,
   })
 }
 
