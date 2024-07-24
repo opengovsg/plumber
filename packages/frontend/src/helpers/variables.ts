@@ -93,13 +93,44 @@ const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
   }
 
   const entries = Object.entries(data)
+  /**
+   * Need to identify that formSG checkbox is present in the data to not flatmap later
+   * Example of a checkbox field in formSG when the data is being processed
+   * entries: [
+   *  ['order', 2],
+   *  ['question', 'Required checkbox'],
+   *  ['fieldType', 'checkbox'],
+   *  [
+   *    'answerArray',
+   *    ['Option 1', 'Option 2'] --> these are the selected options in another array
+   *  ]
+   * ]
+   */
+  let shouldNotProcess = false
+  for (const entry of entries) {
+    const [name, value] = entry
+    if (name === 'fieldType' && value === 'checkbox') {
+      shouldNotProcess = true
+    }
+  }
 
   return entries.flatMap(([name, value]) => {
     const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
     if (Array.isArray(value)) {
+      // ONLY for formSG checkbox, it should not flatmap [answerArray, [option 1, option 2, ...]]
+      // but it should return to the frontend as a comma-separated value response
+      if (shouldNotProcess) {
+        return [
+          {
+            name: fullName,
+            value: value.join(', '),
+          },
+        ]
+      }
       return value.flatMap((item, index) => process(item, fullName, index))
     }
 
+    // recursively process the object value further
     if (typeof value === 'object' && value !== null) {
       return process(value, fullName)
     }

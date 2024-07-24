@@ -62,7 +62,7 @@ function findAndSubstituteVariables(
         })
         const data = executionStep?.dataOut
 
-        const keyPath = keyPaths.join('.')
+        const keyPath = keyPaths.join('.') // for lodash get to work
         let dataValue = get(data, keyPath)
         // custom logic to deal with backward compatibility of key encoding for
         // data from vault. Under the new logic, data from vault will always have
@@ -81,8 +81,12 @@ function findAndSubstituteVariables(
           ).toString('hex')
           dataValue = get(data, keyPaths.join('.'))
         }
+        // NOTE: dataValue could be an array if it is not processed on variables.ts
+        // which is the case for formSG checkbox only, this is to deal with forEach next time
         return preprocessVariable
           ? preprocessVariable(parameterKey, dataValue)
+          : Array.isArray(dataValue)
+          ? dataValue.join(', ')
           : dataValue
       }
 
