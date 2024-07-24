@@ -85,6 +85,7 @@ const authentication = shield(
       getCurrentUser: allow,
       getPlumberStats: allow,
     },
+    AdminQuery: isAdminOperation,
     Mutation: {
       '*': and(
         isAuthenticated,
