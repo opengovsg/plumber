@@ -5,11 +5,13 @@ const createFlow: MutationResolvers['createFlow'] = async (
   params,
   context,
 ) => {
+  // TODO: remove connection id and app key in the next PR
   const connectionId = params?.input?.connectionId
   const appKey = params?.input?.triggerAppKey
+  const flowName = params?.input?.flowName ?? 'Name your pipe'
 
   const flow = await context.currentUser.$relatedQuery('flows').insert({
-    name: 'Name your pipe',
+    name: flowName,
   })
 
   if (connectionId) {
