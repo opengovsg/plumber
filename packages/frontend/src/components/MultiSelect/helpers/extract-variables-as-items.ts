@@ -1,14 +1,14 @@
-import type { IStep, TDataOutMetadatumType } from '@plumber/types'
+import type { IExecutionStep, TDataOutMetadatumType } from '@plumber/types'
 
 import { ComboboxItem } from '@opengovsg/design-system-react'
 
 import { extractVariables } from '@/helpers/variables'
 
 function extractVariablesAsItems(
-  steps: IStep[],
+  executionSteps: IExecutionStep[],
   allowedTypes: TDataOutMetadatumType[] | null,
 ): ComboboxItem[] {
-  const stepsWithVariables = extractVariables(steps)
+  const stepsWithVariables = extractVariables(executionSteps)
 
   const result: ComboboxItem[] = []
   for (const step of stepsWithVariables) {
