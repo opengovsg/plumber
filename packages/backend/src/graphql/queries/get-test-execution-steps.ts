@@ -14,7 +14,9 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
     .findById(params.flowId)
     .withGraphFetched({
       testExecution: {
-        executionSteps: true,
+        executionSteps: {
+          step: true,
+        },
       },
       steps: true,
     })
@@ -37,17 +39,21 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
           ),
         )
         .from('execution_steps')
-        .join('executions', 'execution_steps.execution_id', 'executions.id')
         .whereIn(
           'step_id',
           flow.steps.map((step) => step.id),
         )
-        .andWhere('execution_steps.status', '=', 'success')
     })
     .select('*')
     .from('latest_execution_steps')
+    .withGraphFetched({
+      step: true,
+    })
     .where('rn', '=', 1)
     .withSoftDeleted() // because this adds a 'execution_steps.deleted_at' column to the query instead of latest_execution_steps
+
+  // sort by step position
+  latestExecutionSteps.sort((a, b) => a.step.position - b.step.position)
 
   return latestExecutionSteps
 }
