@@ -23,15 +23,12 @@ const executeFlow: MutationResolvers['executeFlow'] = async (
 
   untilStep.executionSteps = [executionStep] // attach missing execution step into current step
 
-  if (executionStep.isFailed) {
-    throw new Error(JSON.stringify(executionStep.errorDetails))
+  if (!executionStep.isFailed) {
+    await untilStep.$query().patch({
+      status: 'completed',
+    })
   }
-
-  await untilStep.$query().patch({
-    status: 'completed',
-  })
-
-  return { data: executionStep.dataOut, step: untilStep }
+  return executionStep
 }
 
 export default executeFlow

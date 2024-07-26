@@ -1,13 +1,14 @@
 import type {
   IAction,
   IBaseTrigger,
+  IJSONObject,
   IStep,
   ISubstep,
   ITrigger,
   ITriggerInstructions,
 } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { Box, Collapse } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
@@ -16,7 +17,9 @@ import ErrorResult from '@/components/ErrorResult'
 import FlowSubstepTitle from '@/components/FlowSubstepTitle'
 import WebhookUrlInfo from '@/components/WebhookUrlInfo'
 import { EditorContext } from '@/contexts/Editor'
+import { ExecutionStep } from '@/graphql/__generated__/graphql'
 import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
+import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
   extractVariables,
   filterVariables,
@@ -42,19 +45,6 @@ type TestSubstepProps = {
   selectedActionOrTrigger?: ITrigger | IAction
 }
 
-function serializeErrors(graphQLErrors: any) {
-  return graphQLErrors?.map((error: Record<string, unknown>) => {
-    try {
-      return {
-        ...error,
-        errorDetails: JSON.parse(error.message as string),
-      }
-    } catch {
-      return error
-    }
-  })
-}
-
 function TestSubstep(props: TestSubstepProps): JSX.Element {
   const {
     substep,
@@ -67,13 +57,49 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
   } = props
 
   const { readOnly, testExecutionSteps } = useContext(EditorContext)
-
-  const [executeFlow, { error, loading }] = useMutation(EXECUTE_FLOW, {
-    context: { autoSnackbar: false },
-  })
-
   const currentExecutionStep = testExecutionSteps.find(
     (executionStep) => executionStep.stepId === step.id,
+  )
+
+  /**
+   * Temporary state to store the last execution step error details,
+   * which could come from prior steps.
+   * To remove after single step testing is implemented
+   */
+  const [lastErrorDetails, setLastErrorDetails] = useState<
+    IJSONObject | undefined
+  >()
+
+  useEffect(() => {
+    setLastErrorDetails(currentExecutionStep?.errorDetails)
+  }, [currentExecutionStep])
+
+  const [executeFlow, { loading: isTestExecuting }] = useMutation(
+    EXECUTE_FLOW,
+    {
+      context: { autoSnackbar: false },
+      awaitRefetchQueries: true,
+      refetchQueries: [GET_TEST_EXECUTION_STEPS],
+      update(cache, { data }) {
+        // If last execution step is successful, it means the test run is successful
+        // Update the step status to completed without refreshing
+        const lastExecutionStep: ExecutionStep = data?.executeFlow
+        if (lastExecutionStep.status === 'success') {
+          const stepCache = cache.identify({
+            __typename: 'Step',
+            id: step.id,
+          })
+          cache.modify({
+            id: stepCache,
+            fields: {
+              status: () => 'completed',
+            },
+          })
+        } else {
+          setLastErrorDetails(lastExecutionStep.errorDetails ?? undefined)
+        }
+      },
+    },
   )
 
   const testVariables = useMemo(() => {
@@ -132,26 +158,16 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
               sx={{ mb: 2 }}
             />
           )}
-
-          {!!error?.graphQLErrors?.length && (
+          {lastErrorDetails ? (
             <Box w="100%">
-              {serializeErrors(error.graphQLErrors).map(
-                (error: any, index: number) => (
-                  <ErrorResult
-                    key={index}
-                    errorDetails={error.errorDetails}
-                    isTestRun={true}
-                  />
-                ),
-              )}
+              <ErrorResult errorDetails={lastErrorDetails} isTestRun={true} />
             </Box>
-          )}
-          {isTestSuccessful && (
+          ) : (
             <TestResult
               step={step}
               selectedActionOrTrigger={selectedActionOrTrigger}
               variables={testVariables}
-              isMock={currentExecutionStep.metadata?.isMock}
+              isMock={currentExecutionStep?.metadata?.isMock}
             />
           )}
 
@@ -160,7 +176,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
             variant={isTestSuccessful ? 'clear' : 'solid'}
             onClick={executeTestFlow}
             mt={2}
-            isLoading={loading}
+            isLoading={isTestExecuting}
             isDisabled={readOnly}
             data-test="flow-substep-continue-button"
           >
@@ -171,7 +187,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
               isFullWidth
               onClick={onContinueClick}
               mt={2}
-              isLoading={loading}
+              isLoading={isTestExecuting}
               isDisabled={readOnly}
               data-test="flow-substep-continue-button"
             >

@@ -86,6 +86,10 @@ const testRun = async (options: TestRunOptions) => {
       nextStepId = nextStep?.id
     }
   }
+
+  await flow.$query().patch({
+    testExecutionId: executionId,
+  })
 }
 
 export default testRun
