@@ -142,7 +142,7 @@ export function extractVariables(
     .map((executionStep: IExecutionStep, index: number) => {
       const metadata = executionStep.dataOutMetadata ?? {}
       const variables = process(
-        executionStep.id,
+        executionStep.stepId,
         executionStep.dataOut || {},
         metadata,
         '',

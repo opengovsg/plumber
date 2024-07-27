@@ -2,7 +2,8 @@ import type { IExecutionStep } from '@plumber/types'
 
 import { createContext, ReactNode } from 'react'
 import { useQuery } from '@apollo/client'
-import { GET_TEST_EXECUTION_STEPS } from 'graphql/queries/get-test-execution-steps'
+
+import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 
 interface IEditorContextValue {
   readOnly: boolean
