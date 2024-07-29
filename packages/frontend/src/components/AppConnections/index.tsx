@@ -5,9 +5,7 @@ import { useQuery } from '@apollo/client'
 
 import AppConnectionRow from '@/components/AppConnectionRow'
 import NoResultFound from '@/components/NoResultFound'
-import * as URLS from '@/config/urls'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
-import useFormatMessage from '@/hooks/useFormatMessage'
 
 type AppConnectionsProps = {
   appKey: string
@@ -17,7 +15,6 @@ export default function AppConnections(
   props: AppConnectionsProps,
 ): React.ReactElement {
   const { appKey } = props
-  const formatMessage = useFormatMessage()
   const { data } = useQuery(GET_APP_CONNECTIONS, {
     variables: { key: appKey },
   })
@@ -28,8 +25,8 @@ export default function AppConnections(
   if (!hasConnections) {
     return (
       <NoResultFound
-        to={URLS.APP_ADD_CONNECTION(appKey)}
-        text={formatMessage('app.noConnections')}
+        description="No connections found"
+        action="Go to your pipes to create a pipe and add new connections"
       />
     )
   }

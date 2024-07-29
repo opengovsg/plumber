@@ -8,7 +8,6 @@ import { Pagination } from '@opengovsg/design-system-react'
 import AppFlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
-import useFormatMessage from '@/hooks/useFormatMessage'
 
 type AppFlowsProps = {
   appKey: string
@@ -23,7 +22,6 @@ const getLimitAndOffset = (page: number) => ({
 
 export default function AppFlows(props: AppFlowsProps): React.ReactElement {
   const { appKey } = props
-  const formatMessage = useFormatMessage()
   const [searchParams, setSearchParams] = useSearchParams()
   const connectionId = searchParams.get('connectionId') || undefined
   const page = parseInt(searchParams.get('page') || '', 10) || 1
@@ -41,7 +39,12 @@ export default function AppFlows(props: AppFlowsProps): React.ReactElement {
   const hasFlows = flows?.length
 
   if (!hasFlows) {
-    return <NoResultFound text={formatMessage('app.noFlows')} />
+    return (
+      <NoResultFound
+        description="No pipes found"
+        action="Go to your pipes to create one"
+      />
+    )
   }
 
   return (

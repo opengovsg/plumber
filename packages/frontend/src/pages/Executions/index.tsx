@@ -34,7 +34,6 @@ import ExecutionStatusMenu, {
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import { GET_EXECUTIONS } from '@/graphql/queries/get-executions'
-import useFormatMessage from '@/hooks/useFormatMessage'
 
 const EXECUTION_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Executions'
@@ -53,7 +52,6 @@ const getLimitAndOffset = (params: ExecutionParameters) => ({
 })
 
 export default function Executions(): ReactElement {
-  const formatMessage = useFormatMessage()
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
 
@@ -190,7 +188,10 @@ export default function Executions(): ReactElement {
         )}
 
         {!loading && !hasExecutions && (
-          <NoResultFound text={formatMessage('executions.noExecutions')} />
+          <NoResultFound
+            description="No live executions found"
+            action={searchInput !== '' ? 'Try another search' : undefined}
+          />
         )}
 
         {!loading &&
