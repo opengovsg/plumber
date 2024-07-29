@@ -31,8 +31,7 @@ function createConnectionOrFlow(app: IApp) {
   if (app.auth) {
     return URLS.APP_ADD_CONNECTION(app.key)
   }
-
-  return URLS.CREATE_FLOW_WITH_APP(app.key)
+  return URLS.APPS // TEMPORARY TO AVOID ERROR, this entire component will be removed in the next PR
 }
 
 type AddNewAppConnectionProps = {

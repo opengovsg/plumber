@@ -36,27 +36,6 @@ export const APP_FLOWS_FOR_CONNECTION = (
 export const APP_FLOWS_PATTERN = '/app/:appKey/flows'
 
 export const EDITOR = '/editor'
-export const CREATE_FLOW = '/editor/create'
-export const CREATE_FLOW_WITH_APP = (appKey: string) =>
-  `/editor/create?appKey=${appKey}`
-export const CREATE_FLOW_WITH_APP_AND_CONNECTION = (
-  appKey?: string,
-  connectionId?: string,
-) => {
-  const params: { appKey?: string; connectionId?: string } = {}
-
-  if (appKey) {
-    params.appKey = appKey
-  }
-
-  if (connectionId) {
-    params.connectionId = connectionId
-  }
-
-  const searchParams = new URLSearchParams(params).toString()
-
-  return `/editor/create?${searchParams}`
-}
 
 export const FLOWS = '/flows'
 // TODO: revert this back to /flows/:flowId once we have a proper single flow page

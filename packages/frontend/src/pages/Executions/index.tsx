@@ -179,8 +179,6 @@ export default function Executions(): ReactElement {
           </InputGroup>
         </Flex>
 
-        <Divider borderColor="base.divider.medium" mb={4} />
-
         {loading && (
           <CircularProgress
             isIndeterminate

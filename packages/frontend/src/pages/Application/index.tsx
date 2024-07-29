@@ -8,7 +8,6 @@ import {
   useMatch,
   useNavigate,
   useParams,
-  useSearchParams,
 } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import AddIcon from '@mui/icons-material/Add'
@@ -59,12 +58,10 @@ export default function Application(): React.ReactElement | null {
     end: false,
   })
   const flowsPathMatch = useMatch({ path: URLS.APP_FLOWS_PATTERN, end: false })
-  const [searchParams] = useSearchParams()
   const { appKey } = useParams() as ApplicationParams
   const navigate = useNavigate()
   const { data, loading } = useQuery(GET_APP, { variables: { key: appKey } })
 
-  const connectionId = searchParams.get('connectionId') || undefined
   const goToApplicationPage = () => navigate('connections')
   const app = data?.getApp || {}
 
@@ -82,25 +79,6 @@ export default function Application(): React.ReactElement | null {
         },
       ),
     [appKey],
-  )
-
-  const NewFlowLink = React.useMemo(
-    () =>
-      React.forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(
-        function InlineLink(linkProps, ref) {
-          return (
-            <Link
-              ref={ref}
-              to={URLS.CREATE_FLOW_WITH_APP_AND_CONNECTION(
-                appKey,
-                connectionId,
-              )}
-              {...linkProps}
-            />
-          )
-        },
-      ),
-    [appKey, connectionId],
   )
 
   if (loading) {
@@ -126,20 +104,6 @@ export default function Application(): React.ReactElement | null {
 
             <Grid item xs="auto">
               <Routes>
-                <Route
-                  path={`${URLS.FLOWS}/*`}
-                  element={
-                    <ConditionalIconButton
-                      type="submit"
-                      size="lg"
-                      component={NewFlowLink}
-                      icon={<AddIcon />}
-                    >
-                      {formatMessage('app.createFlow')}
-                    </ConditionalIconButton>
-                  }
-                />
-
                 <Route
                   path={`${URLS.CONNECTIONS}/*`}
                   element={
