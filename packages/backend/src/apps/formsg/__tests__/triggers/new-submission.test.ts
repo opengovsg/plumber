@@ -305,8 +305,9 @@ describe('new submission trigger for answer array fields', () => {
     it('Checkbox type: changes the answerArray label to a single response', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
       const array = metadata.fields.textFieldId1.answerArray
+      // type will be array instead of text!
       expect(array).toEqual({
-        type: 'text',
+        type: 'array',
         label: 'Response 1',
         order: 1.1,
       })

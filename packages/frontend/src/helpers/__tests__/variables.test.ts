@@ -334,29 +334,53 @@ describe('variables', () => {
             },
           },
         }
+        // only include metadata for answerArray for testing purposes
+        steps[0].executionSteps[0].dataOutMetadata = {
+          fields: {
+            field1: {
+              answerArray: {
+                type: 'array',
+                label: 'test label',
+                order: 1.1,
+              },
+            },
+          },
+        }
 
         const result = extractVariables(steps)
-        // label exists because no metadata is provided
+        // answerArray object will be at the top due to an order given
         expect(result[0].output).toEqual([
+          expect.objectContaining({
+            name: 'step.step1-id.fields.field1.answerArray',
+            label: 'test label',
+            value: 'Lunch, Dinner',
+            type: 'array',
+            displayedValue: null,
+            order: 1.1,
+          }),
           expect.objectContaining({
             name: 'step.step1-id.fields.field1.order',
             label: 'fields.field1.order',
             value: 1,
+            type: null,
+            displayedValue: null,
+            order: null,
           }),
           expect.objectContaining({
             name: 'step.step1-id.fields.field1.question',
             label: 'fields.field1.question',
             value: 'Have you eaten your meals?',
+            type: null,
+            displayedValue: null,
+            order: null,
           }),
           expect.objectContaining({
             name: 'step.step1-id.fields.field1.fieldType',
             label: 'fields.field1.fieldType',
             value: 'checkbox',
-          }),
-          expect.objectContaining({
-            name: 'step.step1-id.fields.field1.answerArray',
-            label: 'fields.field1.answerArray',
-            value: 'Lunch, Dinner',
+            type: null,
+            displayedValue: null,
+            order: null,
           }),
         ])
       })

@@ -48,7 +48,11 @@ export interface IConnection {
   createdAt: string
 }
 
-export type TDataOutMetadatumType = 'text' | 'file'
+/**
+ * 'array' is currently used only in formSG checkbox field but
+ * will be extended to for-each feature handling
+ */
+export type TDataOutMetadatumType = 'text' | 'file' | 'array'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array
@@ -279,7 +283,9 @@ export interface IFieldDropdown extends IBaseField {
   source?: IFieldDropdownSource
 }
 
-export type DropdownAddNewId = 'tiles-createTileRow-tableId' | 'tiles-createTileRow-columnId'
+export type DropdownAddNewId =
+  | 'tiles-createTileRow-tableId'
+  | 'tiles-createTileRow-columnId'
 
 export interface IFieldDropdownSource {
   type: string

@@ -67,7 +67,7 @@ function buildAnswerArrayForCheckbox(
   // NOTE: checkbox answerArray will not be further splitted,
   // handled specifically in variables.ts and compute-parameters.ts
   return {
-    type: 'text',
+    type: 'array',
     label: `Response ${fieldData.order}`,
     order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
   }

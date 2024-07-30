@@ -7,6 +7,9 @@ import type {
 
 import get from 'lodash.get'
 
+// these are the variable types to display on the frontend (make visible)
+export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = ['text', 'array']
+
 export interface StepWithVariables {
   id: string
   name: string
@@ -22,7 +25,7 @@ export interface Variable extends RawVariable {
 interface RawVariable {
   /**
    * CAVEAT: not _just_ a name; it contains the lodash.get path for dataOut. Do
-   * not clobber unles you know what you're doing!
+   * not clobber unless you know what you're doing!
    */
   name: string
 
@@ -81,8 +84,16 @@ function postProcess(
 const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
 
-// converts dataOut from an execution step to an array of raw variables
-const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
+/**
+ * converts dataOut from an execution step to an array of raw variables
+ * metadata is included to check for type: array to not flatmap (for-each feature)
+ */
+const process = (
+  data: any,
+  metadata: IDataOutMetadata,
+  parentKey?: any,
+  index?: number,
+): RawVariable[] => {
   if (typeof data !== 'object') {
     return [
       {
@@ -108,8 +119,15 @@ const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
    */
   let shouldNotProcess = false
   for (const entry of entries) {
-    const [name, value] = entry
-    if (name === 'fieldType' && value === 'checkbox') {
+    const [name, _value] = entry
+    console.log(metadata)
+
+    // lodash get metadata by specifying the fullName path e.g. fields.fieldId.answerArray
+    // search for type: 'array' in metadata field to not flatmap
+    const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
+    console.log(fullName)
+    const { type = null } = get(metadata, fullName, {}) as IDataOutMetadatum
+    if (type === 'array') {
       shouldNotProcess = true
     }
   }
@@ -127,12 +145,14 @@ const process = (data: any, parentKey?: any, index?: number): RawVariable[] => {
           },
         ]
       }
-      return value.flatMap((item, index) => process(item, fullName, index))
+      return value.flatMap((item, index) =>
+        process(item, metadata, fullName, index),
+      )
     }
 
     // recursively process the object value further
     if (typeof value === 'object' && value !== null) {
-      return process(value, fullName)
+      return process(value, metadata, fullName)
     }
 
     return [
@@ -154,18 +174,24 @@ export function extractVariables(steps: IStep[]): StepWithVariables[] {
 
       return hasExecutionSteps
     })
-    .map((step: IStep, index: number) => ({
-      id: step.id,
-      // TODO: replace with step.name once introduced
-      name: `${index + 1}. ${
-        (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
-      }`,
-      output: postProcess(
-        step.id,
-        process(step.executionSteps?.[0]?.dataOut || {}, ''),
-        step.executionSteps?.[0]?.dataOutMetadata ?? {},
-      ),
-    }))
+    .map((step: IStep, index: number) => {
+      const metadata = step.executionSteps?.[0]?.dataOutMetadata ?? {}
+      const rawVariables = process(
+        step.executionSteps?.[0]?.dataOut || {},
+        metadata,
+        '',
+      )
+
+      return {
+        id: step.id,
+        // TODO: replace with step.name once introduced
+        name: `${index + 1}. ${
+          (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
+        }`,
+        // postProcess maps the array of rawVariables (name + value) to variables
+        output: postProcess(step.id, rawVariables, metadata),
+      }
+    })
     .filter(
       (processedStep) =>
         // Hide steps with 0 visible variables after post-processing.
