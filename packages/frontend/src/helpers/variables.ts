@@ -120,12 +120,10 @@ const process = (
   let shouldNotProcess = false
   for (const entry of entries) {
     const [name, _value] = entry
-    console.log(metadata)
 
     // lodash get metadata by specifying the fullName path e.g. fields.fieldId.answerArray
     // search for type: 'array' in metadata field to not flatmap
     const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
-    console.log(fullName)
     const { type = null } = get(metadata, fullName, {}) as IDataOutMetadatum
     if (type === 'array') {
       shouldNotProcess = true
