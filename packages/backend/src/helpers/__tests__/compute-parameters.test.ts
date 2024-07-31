@@ -15,6 +15,7 @@ const executionSteps = [
       stringProp: 'string value',
       numberProp: 123,
       'space separated prop': 'space separated value',
+      arrayProp: ['array value 1', 'hehe', 'array value 3'], // for-each intro
     },
   } as unknown as ExecutionStep,
 ]
@@ -82,6 +83,9 @@ describe('compute parameters', () => {
           {
             key1: `object 3 - {{step.${randomStepID}.space separated prop}}`,
           },
+          {
+            key1: `object 4 - {{step.${randomStepID}.arrayProp}}`,
+          },
         ],
       },
       expected: {
@@ -89,6 +93,7 @@ describe('compute parameters', () => {
           { key1: 'object 1 - string value' },
           { key1: 'object 2 - 123' },
           { key1: 'object 3 - space separated value' },
+          { key1: 'object 4 - array value 1, hehe, array value 3' },
         ],
       },
     },
@@ -123,6 +128,25 @@ describe('compute parameters', () => {
       expected: {
         objectParam: {
           key1: ['123', 'string value', 'space separated value'],
+        },
+      },
+    },
+    {
+      testDescription: 'nested objects with an array prop',
+      params: {
+        objectParam: {
+          subObject: {
+            key1: `{{step.${randomStepID}.numberProp}}`,
+            key2: `{{step.${randomStepID}.arrayProp}} and more...`,
+          },
+        },
+      },
+      expected: {
+        objectParam: {
+          subObject: {
+            key1: '123',
+            key2: 'array value 1, hehe, array value 3 and more...',
+          },
         },
       },
     },
@@ -254,7 +278,7 @@ describe('compute parameters', () => {
       ],
     })
   })
-  it('can compute on  templates with non-hex-encoded param keys using new vault WS objects whose keys hex-encoded', () => {
+  it('can compute on templates with non-hex-encoded param keys using new vault WS objects whose keys hex-encoded', () => {
     const vaultWSExecutionStep = [
       {
         stepId: randomStepID,

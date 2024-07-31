@@ -63,19 +63,14 @@ function isAnswerArrayValid(fieldData: IJSONObject): boolean {
 
 function buildAnswerArrayForCheckbox(
   fieldData: IJSONObject,
-): IDataOutMetadatum[] {
-  const answerArray = [] as IDataOutMetadatum[]
-  const array = fieldData.answerArray as IJSONArray
-  for (let i = 0; i < array.length; i++) {
-    answerArray.push({
-      type: 'text',
-      label: fieldData.order
-        ? `Response ${fieldData.order}, Selected Option ${i + 1}`
-        : null,
-      order: fieldData.order ? (fieldData.order as number) : null,
-    })
+): IDataOutMetadatum {
+  // NOTE: checkbox answerArray will not be further splitted,
+  // handled specifically in variables.ts and compute-parameters.ts
+  return {
+    type: 'array',
+    label: `Response ${fieldData.order}`,
+    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
   }
-  return answerArray
 }
 
 function buildAnswerArrayForTable(
@@ -105,7 +100,7 @@ function buildAnswerArrayMetadatum(
   fieldData: IJSONObject,
   stepId: string,
   submissionId: IJSONValue,
-): IDataOutMetadatum[] | IDataOutMetadatum[][] {
+): IDataOutMetadatum | IDataOutMetadatum[][] {
   // there should only be checkbox and table fieldtypes that contain answer array
   const fieldType = fieldData.fieldType
   switch (fieldType) {

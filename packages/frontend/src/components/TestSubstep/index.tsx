@@ -16,7 +16,11 @@ import FlowSubstepTitle from 'components/FlowSubstepTitle'
 import WebhookUrlInfo from 'components/WebhookUrlInfo'
 import { EditorContext } from 'contexts/Editor'
 import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
-import { extractVariables, filterVariables } from 'helpers/variables'
+import {
+  extractVariables,
+  filterVariables,
+  VISIBLE_VARIABLE_TYPES,
+} from 'helpers/variables'
 
 import TestResult from './TestResult'
 
@@ -76,10 +80,10 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
       return []
     }
 
-    return filterVariables(
-      extractVariables([executionStep]),
-      (variable) => (variable.type ?? 'text') === 'text',
-    )
+    return filterVariables(extractVariables([executionStep]), (variable) => {
+      const variableType = variable.type ?? 'text'
+      return VISIBLE_VARIABLE_TYPES.includes(variableType)
+    })
   }, [executionStep])
 
   const isExecuted = !error && called && !loading
