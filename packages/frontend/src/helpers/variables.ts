@@ -117,25 +117,18 @@ const process = (
    *  ]
    * ]
    */
-  let shouldNotProcess = false
-  for (const entry of entries) {
-    const [name, _value] = entry
-
+  return entries.flatMap(([name, value]) => {
     // lodash get metadata by specifying the fullName path e.g. fields.fieldId.answerArray
-    // search for type: 'array' in metadata field to not flatmap
     const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
     const { type = null } = get(metadata, fullName, {}) as IDataOutMetadatum
-    if (type === 'array') {
-      shouldNotProcess = true
-    }
-  }
 
-  return entries.flatMap(([name, value]) => {
-    const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
     if (Array.isArray(value)) {
-      // ONLY for formSG checkbox, it should not flatmap [answerArray, [option 1, option 2, ...]]
-      // but it should return to the frontend as a comma-separated value response
-      if (shouldNotProcess) {
+      /**
+       * ONLY for formSG checkbox now: it should not flatmap [answerArray, [option 1, option 2, ...]]
+       * search for type: 'array' in metadata field to not flatmap
+       * but it should return to the frontend as a comma-separated value response
+       */
+      if (type === 'array') {
         return [
           {
             name: fullName,
@@ -143,6 +136,7 @@ const process = (
           },
         ]
       }
+
       return value.flatMap((item, index) =>
         process(item, metadata, fullName, index),
       )
