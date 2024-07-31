@@ -49,7 +49,7 @@ const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
 
 /**
- * converts dataOut from an execution step to an array of raw variables
+ * converts dataOut from an execution step to an array of variables
  * metadata is included to check for type: array to not flatmap (for-each feature)
  */
 const process = (
@@ -73,9 +73,9 @@ const process = (
   if (typeof data !== 'object' || data == null) {
     return [
       {
-        name: `step.${stepId}.${parentKey}`,
+        name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
         value: data,
-        label: label ?? parentKey,
+        label: label ?? parentKey, // defaults to showing lodash path if a label doesn't exist (no metadata)
         displayedValue,
         type,
         order,
@@ -95,7 +95,7 @@ const process = (
     return type === 'array'
       ? [
           {
-            name: `step.${stepId}.${parentKey}`,
+            name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
             value: data.join(', '),
             label: label ?? parentKey,
             displayedValue,
@@ -105,6 +105,7 @@ const process = (
         ]
       : data.flatMap((item, index) => {
           const nextKey = joinBy('.', parentKey, index.toString())
+          // shrinks the metadata based on the index of the array
           const nextMetadata = get(
             metadata,
             index.toString(),
@@ -118,7 +119,7 @@ const process = (
    * handle objects here
    */
   return Object.entries(data).flatMap(([name, value]) => {
-    // lodash get metadata by specifying the fullName path e.g. fields.fieldId.answerArray
+    // lodash get does its work by specifying the 'name' path e.g. fields.fieldId.question
     const nextKey = joinBy('.', parentKey, name)
     const nextMetadata = get(metadata, name, {}) as IDataOutMetadatum
 
@@ -134,7 +135,6 @@ export function extractVariables(steps: IStep[]): StepWithVariables[] {
   return steps
     .filter((step: IStep) => {
       const hasExecutionSteps = !!step.executionSteps?.length
-
       return hasExecutionSteps
     })
     .map((step: IStep, index: number) => {
