@@ -15,56 +15,21 @@ export interface StepWithVariables {
   name: string
   output: Variable[]
 }
-export interface Variable extends RawVariable {
+export interface Variable {
   label: string | null
   type: TDataOutMetadatumType | null
   order: number | null
   displayedValue: string | null
-}
-
-interface RawVariable {
   /**
    * CAVEAT: not _just_ a name; it contains the lodash.get path for dataOut. Do
    * not clobber unless you know what you're doing!
    */
   name: string
-
   value: unknown
 }
 
-function postProcess(
-  stepId: string,
-  variables: RawVariable[],
-  metadata: IDataOutMetadata,
-): Variable[] {
-  const result: Variable[] = []
-  for (const variable of variables) {
-    const { name, ...rest } = variable
-
-    // lodash get does its work by specifying the 'name' path
-    const {
-      label = null,
-      isHidden = false,
-      type = null,
-      order = null,
-      displayedValue = null,
-    } = get(metadata, name, {}) as IDataOutMetadatum
-
-    if (isHidden) {
-      continue
-    }
-
-    result.push({
-      label: label ?? name, // defaults to showing lodash path if a label doesn't exist (no metadata)
-      type,
-      order,
-      displayedValue,
-      name: `step.${stepId}.${name}`, // Don't mess with this because of lodash get!!!
-      ...rest,
-    })
-  }
-
-  result.sort((a, b) => {
+function sortVariables(variables: Variable[]): void {
+  variables.sort((a, b) => {
     // Put vars with null order last, but preserve ordering (via `sort`'s
     // stability) if both are null.
     if (!a.order && !b.order) {
@@ -78,81 +43,88 @@ function postProcess(
     }
     return a.order - b.order
   })
-  return result
 }
 
 const joinBy = (delimiter = '.', ...args: string[]) =>
   args.filter(Boolean).join(delimiter)
 
 /**
- * converts dataOut from an execution step to an array of raw variables
+ * converts dataOut from an execution step to an array of variables
  * metadata is included to check for type: array to not flatmap (for-each feature)
  */
 const process = (
+  stepId: string,
   data: any,
   metadata: IDataOutMetadata,
   parentKey?: any,
-  index?: number,
-): RawVariable[] => {
-  if (typeof data !== 'object') {
+): Variable[] => {
+  const {
+    label = null,
+    isHidden = false,
+    type = null,
+    order = null,
+    displayedValue = null,
+  } = metadata
+
+  if (isHidden) {
+    return []
+  }
+
+  if (typeof data !== 'object' || data == null) {
     return [
       {
-        name: `${parentKey}.${index}`,
+        name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
         value: data,
+        label: label ?? parentKey, // defaults to showing lodash path if a label doesn't exist (no metadata)
+        displayedValue,
+        type,
+        order,
       },
     ]
   }
 
-  const entries = Object.entries(data)
   /**
-   * Need to identify that formSG checkbox is present in the data to not flatmap later
-   * Example of a checkbox field in formSG when the data is being processed
-   * entries: [
-   *  ['order', 2],
-   *  ['question', 'Required checkbox'],
-   *  ['fieldType', 'checkbox'],
-   *  [
-   *    'answerArray',
-   *    ['Option 1', 'Option 2'] --> these are the selected options in another array
-   *  ]
-   * ]
+   * Handle array values here
    */
-  return entries.flatMap(([name, value]) => {
-    // lodash get metadata by specifying the fullName path e.g. fields.fieldId.answerArray
-    const fullName = joinBy('.', parentKey, (index as number)?.toString(), name)
-    const { type = null } = get(metadata, fullName, {}) as IDataOutMetadatum
-
-    if (Array.isArray(value)) {
-      /**
-       * ONLY for formSG checkbox now: it should not flatmap [answerArray, [option 1, option 2, ...]]
-       * search for type: 'array' in metadata field to not flatmap
-       * but it should return to the frontend as a comma-separated value response
-       */
-      if (type === 'array') {
-        return [
+  if (Array.isArray(data)) {
+    /**
+     * ONLY for formSG checkbox now: it should not flatmap [answerArray, [option 1, option 2, ...]]
+     * search for type: 'array' in metadata field to not flatmap
+     * but it should return to the frontend as a comma-separated value response
+     */
+    return type === 'array'
+      ? [
           {
-            name: fullName,
-            value: value.join(', '),
+            name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
+            value: data.join(', '),
+            label: label ?? parentKey,
+            displayedValue,
+            type,
+            order,
           },
         ]
-      }
+      : data.flatMap((item, index) => {
+          const nextKey = joinBy('.', parentKey, index.toString())
+          // shrinks the metadata based on the index of the array
+          const nextMetadata = get(
+            metadata,
+            index.toString(),
+            {},
+          ) as IDataOutMetadatum
+          return process(stepId, item, nextMetadata, nextKey)
+        })
+  }
 
-      return value.flatMap((item, index) =>
-        process(item, metadata, fullName, index),
-      )
-    }
+  /**
+   * handle objects here
+   */
+  return Object.entries(data).flatMap(([name, value]) => {
+    // lodash get does its work by specifying the 'name' path e.g. fields.fieldId.question
+    const nextKey = joinBy('.', parentKey, name)
+    const nextMetadata = get(metadata, name, {}) as IDataOutMetadatum
 
     // recursively process the object value further
-    if (typeof value === 'object' && value !== null) {
-      return process(value, metadata, fullName)
-    }
-
-    return [
-      {
-        name: fullName,
-        value,
-      },
-    ]
+    return process(stepId, value, nextMetadata, nextKey)
   })
 }
 
@@ -163,25 +135,25 @@ export function extractVariables(steps: IStep[]): StepWithVariables[] {
   return steps
     .filter((step: IStep) => {
       const hasExecutionSteps = !!step.executionSteps?.length
-
       return hasExecutionSteps
     })
     .map((step: IStep, index: number) => {
       const metadata = step.executionSteps?.[0]?.dataOutMetadata ?? {}
-      const rawVariables = process(
+      const variables = process(
+        step.id,
         step.executionSteps?.[0]?.dataOut || {},
         metadata,
         '',
       )
-
+      // sort variable by order key in-place
+      sortVariables(variables)
       return {
         id: step.id,
         // TODO: replace with step.name once introduced
         name: `${index + 1}. ${
           (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
         }`,
-        // postProcess maps the array of rawVariables (name + value) to variables
-        output: postProcess(step.id, rawVariables, metadata),
+        output: variables,
       }
     })
     .filter(
