@@ -2,11 +2,12 @@ import type { IConnection } from '@plumber/types'
 
 import * as React from 'react'
 import { useQuery } from '@apollo/client'
-import AppConnectionRow from 'components/AppConnectionRow'
-import NoResultFound from 'components/NoResultFound'
-import * as URLS from 'config/urls'
-import { GET_APP_CONNECTIONS } from 'graphql/queries/get-app-connections'
-import useFormatMessage from 'hooks/useFormatMessage'
+
+import AppConnectionRow from '@/components/AppConnectionRow'
+import NoResultFound from '@/components/NoResultFound'
+import * as URLS from '@/config/urls'
+import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
+import useFormatMessage from '@/hooks/useFormatMessage'
 
 type AppConnectionsProps = {
   appKey: string

@@ -19,7 +19,8 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@opengovsg/design-system-react'
 import { Header } from '@tanstack/react-table'
-import { POPOVER_MOTION_PROPS } from 'theme/constants'
+
+import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { BORDER_COLOR, HEADER_COLOR } from '../../constants'
 import { useTableContext } from '../../contexts/TableContext'

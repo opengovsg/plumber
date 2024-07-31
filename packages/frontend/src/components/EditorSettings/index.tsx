@@ -11,13 +11,14 @@ import {
   useBreakpointValue,
   VStack,
 } from '@chakra-ui/react'
-import PrimarySpinner from 'components/PrimarySpinner'
-import RedirectToLogin from 'components/RedirectToLogin'
-import * as URLS from 'config/urls'
-import { EditorSettingsProvider } from 'contexts/EditorSettings'
-import { GET_FLOW } from 'graphql/queries/get-flow'
-import useAuthentication from 'hooks/useAuthentication'
-import InvalidEditorPage from 'pages/Editor/components/InvalidEditorPage'
+
+import PrimarySpinner from '@/components/PrimarySpinner'
+import RedirectToLogin from '@/components/RedirectToLogin'
+import * as URLS from '@/config/urls'
+import { EditorSettingsProvider } from '@/contexts/EditorSettings'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
+import useAuthentication from '@/hooks/useAuthentication'
+import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import EditorDrawer from './EditorDrawer'
 import EditorSidebar from './EditorSidebar'

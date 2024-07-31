@@ -2,8 +2,9 @@ import { useCallback, useContext, useMemo } from 'react'
 import { useMutation } from '@apollo/client'
 import { Flex, Skeleton, Stack, Text } from '@chakra-ui/react'
 import { Menu, useToast } from '@opengovsg/design-system-react'
-import { EditorSettingsContext } from 'contexts/EditorSettings'
-import { UPDATE_FLOW_CONFIG } from 'graphql/mutations/update-flow-config'
+
+import { EditorSettingsContext } from '@/contexts/EditorSettings'
+import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 
 enum Frequency {
   Once = 'once_per_day',

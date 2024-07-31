@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { DELETE_ROWS } from 'graphql/mutations/tiles/delete-rows'
+
+import { DELETE_ROWS } from '@/graphql/mutations/tiles/delete-rows'
 
 import { useTableContext } from '../contexts/TableContext'
 

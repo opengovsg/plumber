@@ -9,11 +9,12 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import { Infobox } from '@opengovsg/design-system-react'
-import InputCreator from 'components/InputCreator'
-import { processStep } from 'helpers/authenticationSteps'
-import computeAuthStepVariables from 'helpers/computeAuthStepVariables'
-import { getOpenerOrigin } from 'helpers/window'
-import useFormatMessage from 'hooks/useFormatMessage'
+
+import InputCreator from '@/components/InputCreator'
+import { processStep } from '@/helpers/authenticationSteps'
+import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
+import { getOpenerOrigin } from '@/helpers/window'
+import useFormatMessage from '@/hooks/useFormatMessage'
 
 import { generateExternalLink } from '../../helpers/translation-values'
 

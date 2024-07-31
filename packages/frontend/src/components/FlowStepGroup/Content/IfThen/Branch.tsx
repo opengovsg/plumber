@@ -22,15 +22,16 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { Button, IconButton } from '@opengovsg/design-system-react'
-import NestedEditor from 'components/FlowStepGroup/NestedEditor'
-import { EditorContext } from 'contexts/Editor'
+
+import NestedEditor from '@/components/FlowStepGroup/NestedEditor'
+import { EditorContext } from '@/contexts/Editor'
 import {
   type StepDisplayOverridesContextData,
   StepDisplayOverridesProvider,
-} from 'contexts/StepDisplayOverrides'
-import { DELETE_STEP } from 'graphql/mutations/delete-step'
-import { GET_FLOW } from 'graphql/queries/get-flow'
-import { isIfThenBranchCompleted } from 'helpers/toolbox'
+} from '@/contexts/StepDisplayOverrides'
+import { DELETE_STEP } from '@/graphql/mutations/delete-step'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { isIfThenBranchCompleted } from '@/helpers/toolbox'
 
 import { BranchContext } from './BranchContext'
 

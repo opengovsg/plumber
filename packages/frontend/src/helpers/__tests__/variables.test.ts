@@ -1,11 +1,12 @@
 import { IStep } from '@plumber/types'
 
+import { beforeEach, describe, expect, it } from 'vitest'
+
 import {
   extractVariables,
   filterVariables,
   StepWithVariables,
-} from 'helpers/variables'
-import { beforeEach, describe, expect, it } from 'vitest'
+} from '@/helpers/variables'
 
 describe('variables', () => {
   describe('extractVariables', () => {

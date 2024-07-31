@@ -9,7 +9,8 @@ import {
   FormLabel,
   MultiSelect as DSMultiSelect,
 } from '@opengovsg/design-system-react'
-import { StepExecutionsContext } from 'contexts/StepExecutions'
+
+import { StepExecutionsContext } from '@/contexts/StepExecutions'
 
 import extractVariablesAsItems from './helpers/extract-variables-as-items'
 

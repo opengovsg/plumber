@@ -12,11 +12,12 @@ import CardActionArea from '@mui/material/CardActionArea'
 import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
 import { useToast } from '@opengovsg/design-system-react'
-import ConnectionContextMenu from 'components/AppConnectionContextMenu'
-import { DELETE_CONNECTION } from 'graphql/mutations/delete-connection'
-import { TEST_CONNECTION } from 'graphql/queries/test-connection'
-import useFormatMessage from 'hooks/useFormatMessage'
 import { DateTime } from 'luxon'
+
+import ConnectionContextMenu from '@/components/AppConnectionContextMenu'
+import { DELETE_CONNECTION } from '@/graphql/mutations/delete-connection'
+import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
+import useFormatMessage from '@/hooks/useFormatMessage'
 
 import { CardContent, Typography } from './style'
 

@@ -3,8 +3,9 @@ import type { IField, IFieldDropdownSource } from '@plumber/types'
 import { useEffect, useMemo } from 'react'
 import { type FieldValues, useFormContext } from 'react-hook-form'
 import { useQuery } from '@apollo/client'
-import { GET_DYNAMIC_DATA } from 'graphql/queries/get-dynamic-data'
 import { get, set } from 'lodash'
+
+import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
 
 /**
  * Map of field path -> argument name

@@ -22,9 +22,10 @@ import {
   TouchableTooltip,
   useToast,
 } from '@opengovsg/design-system-react'
-import * as URLS from 'config/urls'
-import { DELETE_FLOW } from 'graphql/mutations/delete-flow'
-import { DUPLICATE_FLOW } from 'graphql/mutations/duplicate-flow'
+
+import * as URLS from '@/config/urls'
+import { DELETE_FLOW } from '@/graphql/mutations/delete-flow'
+import { DUPLICATE_FLOW } from '@/graphql/mutations/duplicate-flow'
 
 import MenuAlertDialog, { AlertDialogType } from './MenuAlertDialog'
 

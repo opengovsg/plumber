@@ -3,9 +3,10 @@ import { ITableMetadata, ITableRow } from '@plumber/types'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
-import PrimarySpinner from 'components/PrimarySpinner'
-import { GET_ALL_ROWS } from 'graphql/queries/tiles/get-all-rows'
-import { GET_TABLE } from 'graphql/queries/tiles/get-table'
+
+import PrimarySpinner from '@/components/PrimarySpinner'
+import { GET_ALL_ROWS } from '@/graphql/queries/tiles/get-all-rows'
+import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import Table from './components/Table'
 import TableBanner from './components/TableBanner'

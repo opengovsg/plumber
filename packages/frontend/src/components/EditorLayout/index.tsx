@@ -19,17 +19,18 @@ import {
   Spinner,
   TouchableTooltip,
 } from '@opengovsg/design-system-react'
-import Container from 'components/Container'
-import EditableTypography from 'components/EditableTypography'
-import Editor from 'components/Editor'
-import DemoFlowModal from 'components/FlowRow/DemoFlowModal'
-import * as URLS from 'config/urls'
-import { EditorProvider } from 'contexts/Editor'
-import { UPDATE_FLOW } from 'graphql/mutations/update-flow'
-import { UPDATE_FLOW_CONFIG } from 'graphql/mutations/update-flow-config'
-import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
-import { GET_FLOW } from 'graphql/queries/get-flow'
-import InvalidEditorPage from 'pages/Editor/components/InvalidEditorPage'
+
+import Container from '@/components/Container'
+import EditableTypography from '@/components/EditableTypography'
+import Editor from '@/components/Editor'
+import DemoFlowModal from '@/components/FlowRow/DemoFlowModal'
+import * as URLS from '@/config/urls'
+import { EditorProvider } from '@/contexts/Editor'
+import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
+import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
+import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
+import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import EditorSnackbar from './EditorSnackbar'
 

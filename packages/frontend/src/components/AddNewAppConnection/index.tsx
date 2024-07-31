@@ -20,11 +20,12 @@ import ListItemText from '@mui/material/ListItemText'
 import OutlinedInput from '@mui/material/OutlinedInput'
 import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import AppIcon from 'components/AppIcon'
-import * as URLS from 'config/urls'
-import { GET_APPS } from 'graphql/queries/get-apps'
-import useFormatMessage from 'hooks/useFormatMessage'
 import debounce from 'lodash/debounce'
+
+import AppIcon from '@/components/AppIcon'
+import * as URLS from '@/config/urls'
+import { GET_APPS } from '@/graphql/queries/get-apps'
+import useFormatMessage from '@/hooks/useFormatMessage'
 
 function createConnectionOrFlow(app: IApp) {
   if (app.auth) {

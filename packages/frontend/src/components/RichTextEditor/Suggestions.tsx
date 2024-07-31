@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Box, Collapse, Divider, Flex, Text } from '@chakra-ui/react'
-import VariablesList from 'components/VariablesList'
-import { StepWithVariables, Variable } from 'helpers/variables'
+
+import VariablesList from '@/components/VariablesList'
+import { StepWithVariables, Variable } from '@/helpers/variables'
 
 interface SuggestionsProps {
   data: StepWithVariables[]

@@ -24,14 +24,17 @@ import {
   InputRightElement,
 } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
-import Container from 'components/Container'
-import ExecutionRow from 'components/ExecutionRow'
-import ExecutionStatusMenu, { StatusType } from 'components/ExecutionStatusMenu'
-import NoResultFound from 'components/NoResultFound'
-import PageTitle from 'components/PageTitle'
-import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
-import useFormatMessage from 'hooks/useFormatMessage'
 import debounce from 'lodash/debounce'
+
+import Container from '@/components/Container'
+import ExecutionRow from '@/components/ExecutionRow'
+import ExecutionStatusMenu, {
+  StatusType,
+} from '@/components/ExecutionStatusMenu'
+import NoResultFound from '@/components/NoResultFound'
+import PageTitle from '@/components/PageTitle'
+import { GET_EXECUTIONS } from '@/graphql/queries/get-executions'
+import useFormatMessage from '@/hooks/useFormatMessage'
 
 const EXECUTION_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Executions'

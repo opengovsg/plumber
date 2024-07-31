@@ -1,8 +1,9 @@
 import type { IStep } from '@plumber/types'
 
 import * as React from 'react'
-import AppIcon from 'components/AppIcon'
-import IntermediateStepCount from 'components/IntermediateStepCount'
+
+import AppIcon from '@/components/AppIcon'
+import IntermediateStepCount from '@/components/IntermediateStepCount'
 
 type FlowAppIconsProps = {
   steps: Partial<IStep>[]

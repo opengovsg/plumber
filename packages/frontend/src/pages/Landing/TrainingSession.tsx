@@ -1,7 +1,8 @@
 import { BiRightArrowAlt } from 'react-icons/bi'
 import { Box, Container, Flex, Spacer, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import * as URLS from 'config/urls'
+
+import * as URLS from '@/config/urls'
 
 export default function TrainingSession() {
   return (

@@ -4,9 +4,10 @@ import { createContext, useEffect } from 'react'
 import { FetchResult, useMutation, useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
-import PrimarySpinner from 'components/PrimarySpinner'
-import { LOGOUT } from 'graphql/mutations/logout'
-import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
+
+import PrimarySpinner from '@/components/PrimarySpinner'
+import { LOGOUT } from '@/graphql/mutations/logout'
+import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
 
 type CurrentUser = Pick<IUser, 'id' | 'email'> | null
 

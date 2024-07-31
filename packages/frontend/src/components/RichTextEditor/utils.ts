@@ -1,5 +1,6 @@
-import { StepWithVariables } from 'helpers/variables'
 import { HTMLElement, parse, TextNode } from 'node-html-parser'
+
+import { StepWithVariables } from '@/helpers/variables'
 
 export type VariableInfoMap = Map<
   string,

@@ -1,7 +1,8 @@
 import * as React from 'react'
 import { ApolloProvider as BaseApolloProvider } from '@apollo/client'
 import { useToast } from '@opengovsg/design-system-react'
-import { createClient } from 'graphql/client'
+
+import { createClient } from '@/graphql/client'
 
 type ApolloProviderProps = {
   children: React.ReactNode

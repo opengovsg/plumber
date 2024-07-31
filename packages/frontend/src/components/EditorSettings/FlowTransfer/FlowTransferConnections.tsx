@@ -4,9 +4,10 @@ import { useContext } from 'react'
 import { useQuery } from '@apollo/client'
 import { Center, Flex, Text } from '@chakra-ui/react'
 import { Badge, Infobox } from '@opengovsg/design-system-react'
-import PrimarySpinner from 'components/PrimarySpinner'
-import { EditorSettingsContext } from 'contexts/EditorSettings'
-import { GET_FLOW_TRANSFER_DETAILS } from 'graphql/queries/get-flow-transfer-details'
+
+import PrimarySpinner from '@/components/PrimarySpinner'
+import { EditorSettingsContext } from '@/contexts/EditorSettings'
+import { GET_FLOW_TRANSFER_DETAILS } from '@/graphql/queries/get-flow-transfer-details'
 
 function StepConnectionDisplay(props: ITransferDetails) {
   const { appName, position, connectionName, instructions } = props

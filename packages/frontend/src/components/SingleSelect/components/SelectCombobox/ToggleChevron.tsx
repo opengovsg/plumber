@@ -1,6 +1,7 @@
 import { Icon, InputRightElement } from '@chakra-ui/react'
 import { BxsChevronDown, BxsChevronUp } from '@opengovsg/design-system-react'
-import PrimarySpinner from 'components/PrimarySpinner'
+
+import PrimarySpinner from '@/components/PrimarySpinner'
 
 import { useSelectContext } from '../../SelectContext'
 

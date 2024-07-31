@@ -4,11 +4,12 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
-import AppFlowRow from 'components/FlowRow'
-import NoResultFound from 'components/NoResultFound'
-import * as URLS from 'config/urls'
-import { GET_FLOWS } from 'graphql/queries/get-flows'
-import useFormatMessage from 'hooks/useFormatMessage'
+
+import AppFlowRow from '@/components/FlowRow'
+import NoResultFound from '@/components/NoResultFound'
+import * as URLS from '@/config/urls'
+import { GET_FLOWS } from '@/graphql/queries/get-flows'
+import useFormatMessage from '@/hooks/useFormatMessage'
 
 type AppFlowsProps = {
   appKey: string

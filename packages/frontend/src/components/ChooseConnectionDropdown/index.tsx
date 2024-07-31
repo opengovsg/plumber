@@ -3,8 +3,9 @@ import { IApp } from '@plumber/types'
 import { useCallback, useState } from 'react'
 import { FormControl } from '@chakra-ui/react'
 import { FormLabel } from '@opengovsg/design-system-react'
-import AddAppConnection from 'components/AddAppConnection'
-import { SingleSelect } from 'components/SingleSelect'
+
+import AddAppConnection from '@/components/AddAppConnection'
+import { SingleSelect } from '@/components/SingleSelect'
 
 type ConnectionDropdownOption = {
   label: string

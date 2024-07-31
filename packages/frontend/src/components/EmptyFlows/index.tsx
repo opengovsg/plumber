@@ -11,8 +11,9 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import NavigationDrawer from 'components/Layout/NavigationDrawer'
-import ApproveTransfersInfobox from 'pages/Flows/components/ApproveTransfersInfobox'
+
+import NavigationDrawer from '@/components/Layout/NavigationDrawer'
+import ApproveTransfersInfobox from '@/pages/Flows/components/ApproveTransfersInfobox'
 
 import FlowTemplate, { FlowTemplateProps } from './FlowTemplate'
 

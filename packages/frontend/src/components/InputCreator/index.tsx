@@ -1,12 +1,12 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
-import ControlledAutocomplete from 'components/ControlledAutocomplete'
-import MultiRow from 'components/MultiRow'
-import MultiSelect from 'components/MultiSelect'
-import RichTextEditor from 'components/RichTextEditor'
-import TextField from 'components/TextField'
-import { useIsFieldHidden } from 'helpers/isFieldHidden'
-import useDynamicData from 'hooks/useDynamicData'
+import ControlledAutocomplete from '@/components/ControlledAutocomplete'
+import MultiRow from '@/components/MultiRow'
+import MultiSelect from '@/components/MultiSelect'
+import RichTextEditor from '@/components/RichTextEditor'
+import TextField from '@/components/TextField'
+import { useIsFieldHidden } from '@/helpers/isFieldHidden'
+import useDynamicData from '@/hooks/useDynamicData'
 
 import BooleanRadio from './BooleanRadio'
 

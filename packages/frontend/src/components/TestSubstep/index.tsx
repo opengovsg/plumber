@@ -11,16 +11,17 @@ import { useCallback, useContext, useMemo } from 'react'
 import { useMutation } from '@apollo/client'
 import { Box, Collapse } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import ErrorResult from 'components/ErrorResult'
-import FlowSubstepTitle from 'components/FlowSubstepTitle'
-import WebhookUrlInfo from 'components/WebhookUrlInfo'
-import { EditorContext } from 'contexts/Editor'
-import { EXECUTE_FLOW } from 'graphql/mutations/execute-flow'
+
+import ErrorResult from '@/components/ErrorResult'
+import FlowSubstepTitle from '@/components/FlowSubstepTitle'
+import WebhookUrlInfo from '@/components/WebhookUrlInfo'
+import { EditorContext } from '@/contexts/Editor'
+import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
 import {
   extractVariables,
   filterVariables,
   VISIBLE_VARIABLE_TYPES,
-} from 'helpers/variables'
+} from '@/helpers/variables'
 
 import TestResult from './TestResult'
 

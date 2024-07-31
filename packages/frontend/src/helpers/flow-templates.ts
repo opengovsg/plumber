@@ -1,7 +1,7 @@
 import type {
   CreateTemplatedFlowInput,
   DemoVideoDetails,
-} from 'graphql/__generated__/graphql'
+} from '@/graphql/__generated__/graphql'
 
 export const FORMSG_POSTMAN_TEMPLATE = 'formsg-postman'
 

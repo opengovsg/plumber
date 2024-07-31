@@ -1,8 +1,9 @@
 import * as React from 'react'
 import { Route, Routes } from 'react-router-dom'
-import EditorSettingsLayout from 'components/EditorSettings'
-import FlowTransfer from 'components/EditorSettings/FlowTransfer'
-import Notifications from 'components/EditorSettings/Notifications'
+
+import EditorSettingsLayout from '@/components/EditorSettings'
+import FlowTransfer from '@/components/EditorSettings/FlowTransfer'
+import Notifications from '@/components/EditorSettings/Notifications'
 
 import CreateFlowPage from './create'
 import EditorPage from './index'

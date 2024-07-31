@@ -5,14 +5,15 @@ import {
   Image,
   useBreakpointValue,
 } from '@chakra-ui/react'
-import CPFLogo from 'assets/landing/CPF.png'
-import GovTechLogo from 'assets/landing/GOVTECH.png'
-import MindefLogo from 'assets/landing/MINDEF.png'
-import MoeLogo from 'assets/landing/MOE.png'
-import MohLogo from 'assets/landing/MOH.png'
-import MomLogo from 'assets/landing/MOM.png'
-import MsfLogo from 'assets/landing/MSF.png'
-import SpfLogo from 'assets/landing/SPF.png'
+
+import CPFLogo from '@/assets/landing/CPF.png'
+import GovTechLogo from '@/assets/landing/GOVTECH.png'
+import MindefLogo from '@/assets/landing/MINDEF.png'
+import MoeLogo from '@/assets/landing/MOE.png'
+import MohLogo from '@/assets/landing/MOH.png'
+import MomLogo from '@/assets/landing/MOM.png'
+import MsfLogo from '@/assets/landing/MSF.png'
+import SpfLogo from '@/assets/landing/SPF.png'
 
 const ALL_LOGOS = [
   MindefLogo,

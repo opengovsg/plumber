@@ -7,7 +7,8 @@ import {
   SidebarContainer,
   SidebarItem,
 } from '@opengovsg/design-system-react'
-import { LayoutNavigationContext } from 'contexts/LayoutNavigation'
+
+import { LayoutNavigationContext } from '@/contexts/LayoutNavigation'
 
 import DemoPageModal from './DemoPageModal'
 import { DrawerLink } from '.'
