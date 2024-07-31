@@ -44,6 +44,15 @@ type Query {
   # Flow transfers
   getPendingFlowTransfers: [FlowTransfer!]!
   getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
+  # Admin queries
+  admin: AdminQuery!
+}
+
+type AdminQuery {
+  getFlowOwner(flowId: String!): User!
+  getExecutionOwner(executionId: String!): User!
+  getTableOwner(tableId: String!): User!
+  searchUsersByEmail(query: String!): [User!]!
 }
 
 type Mutation {
