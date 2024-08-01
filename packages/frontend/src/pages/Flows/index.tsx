@@ -182,7 +182,10 @@ export default function Flows(): React.ReactElement {
             flows?.map((flow) => <FlowRow key={flow.id} flow={flow} />)}
 
           {!loading && !hasFlows && (
-            <NoResultFound text="You don't have any pipes yet." />
+            <NoResultFound
+              description="We couldn't find anything"
+              action="Try using different keywords or checking for typos."
+            />
           )}
 
           {!loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE && (
