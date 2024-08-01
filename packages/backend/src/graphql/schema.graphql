@@ -414,6 +414,7 @@ input RegisterConnectionInput {
 input CreateFlowInput {
   triggerAppKey: String
   connectionId: String
+  flowName: String
 }
 
 input CreateTemplatedFlowInput {
