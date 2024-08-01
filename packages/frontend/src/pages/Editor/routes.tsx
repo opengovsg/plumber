@@ -5,14 +5,11 @@ import EditorSettingsLayout from '@/components/EditorSettings'
 import FlowTransfer from '@/components/EditorSettings/FlowTransfer'
 import Notifications from '@/components/EditorSettings/Notifications'
 
-import CreateFlowPage from './create'
 import EditorPage from './index'
 
 export default function EditorRoutes(): React.ReactElement {
   return (
     <Routes>
-      <Route path="/create" element={<CreateFlowPage />} />
-
       <Route path="/:flowId" element={<EditorPage />} />
 
       <Route

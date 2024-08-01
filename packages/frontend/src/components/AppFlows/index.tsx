@@ -7,7 +7,6 @@ import { Pagination } from '@opengovsg/design-system-react'
 
 import AppFlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
-import * as URLS from '@/config/urls'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import useFormatMessage from '@/hooks/useFormatMessage'
 
@@ -42,12 +41,7 @@ export default function AppFlows(props: AppFlowsProps): React.ReactElement {
   const hasFlows = flows?.length
 
   if (!hasFlows) {
-    return (
-      <NoResultFound
-        to={URLS.CREATE_FLOW_WITH_APP_AND_CONNECTION(appKey, connectionId)}
-        text={formatMessage('app.noFlows')}
-      />
-    )
+    return <NoResultFound text={formatMessage('app.noFlows')} />
   }
 
   return (

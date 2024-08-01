@@ -7,7 +7,6 @@ import { useQuery } from '@apollo/client'
 import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
-import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
 
 import AddNewAppConnection from '@/components/AddNewAppConnection'
@@ -92,8 +91,6 @@ export default function Applications(): React.ReactElement {
             </ConditionalIconButton>
           </Grid>
         </Grid>
-
-        <Divider sx={{ mt: [2, 0], mb: 2 }} />
 
         {loading && (
           <CircularProgress

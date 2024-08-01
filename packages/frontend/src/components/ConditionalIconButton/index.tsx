@@ -33,7 +33,7 @@ export default function ConditionalIconButton(
         type={buttonProps.type}
         size={buttonProps.size}
         as={component}
-        aria-label={String(children)}
+        {...(buttonProps as IconButtonProps)}
       />
     )
   }
