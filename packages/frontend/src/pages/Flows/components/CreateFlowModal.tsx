@@ -63,6 +63,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
                 placeholder="For e.g. track event feedback, send customised replies"
                 value={flowName}
                 onChange={(event) => setFlowName(event.target.value)}
+                required
               />
             </Flex>
             <Infobox icon={<BiBulb />} variant="primary">
@@ -87,7 +88,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
 
         <ModalFooter>
           <Button
-            isDisabled={flowName === ''}
+            isDisabled={flowName.trim() === ''}
             isLoading={loading}
             onClick={onCreateFlow}
           >

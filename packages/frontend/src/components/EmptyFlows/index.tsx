@@ -43,7 +43,11 @@ interface EmptyFlowsProps {
 export default function EmptyFlows(props: EmptyFlowsProps) {
   const { count } = props
   // for creation of flows
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const {
+    isOpen: isCreateFlowModalOpen,
+    onOpen: onCreateFlowModalOpen,
+    onClose: onCreateFlowModalClose,
+  } = useDisclosure()
 
   return (
     <>
@@ -88,12 +92,14 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
             </Box>
           </AbsoluteCenter>
         </Box>
-        <Button w="100%" onClick={onOpen}>
+        <Button w="100%" onClick={onCreateFlowModalOpen}>
           Create my own pipe
         </Button>
       </Box>
 
-      {isOpen && <CreateFlowModal onClose={onClose} />}
+      {isCreateFlowModalOpen && (
+        <CreateFlowModal onClose={onCreateFlowModalClose} />
+      )}
     </>
   )
 }
