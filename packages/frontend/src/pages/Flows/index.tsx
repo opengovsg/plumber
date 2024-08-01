@@ -183,8 +183,8 @@ export default function Flows(): React.ReactElement {
 
           {!loading && !hasFlows && (
             <NoResultFound
-              description="No pipes found"
-              action="Try another search"
+              description="We couldn't find anything"
+              action="Try using different keywords or checking for typos."
             />
           )}
 

@@ -189,8 +189,16 @@ export default function Executions(): ReactElement {
 
         {!loading && !hasExecutions && (
           <NoResultFound
-            description="No live executions found"
-            action={searchInput !== '' ? 'Try another search' : undefined}
+            description={
+              searchInput === ''
+                ? 'No executions yet'
+                : "We couldn't find anything"
+            }
+            action={
+              searchInput === ''
+                ? 'Executions will appear here when your pipe has started running.'
+                : 'Try using different keywords or checking for typos.'
+            }
           />
         )}
 

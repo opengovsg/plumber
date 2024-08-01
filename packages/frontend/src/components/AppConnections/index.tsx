@@ -15,18 +15,18 @@ export default function AppConnections(
   props: AppConnectionsProps,
 ): React.ReactElement {
   const { appKey } = props
-  const { data } = useQuery(GET_APP_CONNECTIONS, {
+  const { data, loading } = useQuery(GET_APP_CONNECTIONS, {
     variables: { key: appKey },
   })
   const appConnections: IConnection[] = data?.getApp?.connections || []
 
   const hasConnections = appConnections?.length
 
-  if (!hasConnections) {
+  if (!loading && !hasConnections) {
     return (
       <NoResultFound
         description="No connections found"
-        action="Go to your pipes to create a pipe and add new connections"
+        action="Connections will appear here when you create and use a connection in your pipe."
       />
     )
   }

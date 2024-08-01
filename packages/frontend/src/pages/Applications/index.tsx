@@ -32,10 +32,11 @@ export default function Applications(): React.ReactElement {
           </Center>
         )}
 
+        {/* TODO (mal): change this to connections when the apps page change to connections */}
         {!loading && !hasApps && (
           <NoResultFound
-            description="No apps found"
-            action="Go to your pipes and create a pipe to connect apps and create an automated workflow"
+            description="No apps yet"
+            action="Apps will appear here when you use apps like FormSG and Telegram in your pipe."
           />
         )}
 
