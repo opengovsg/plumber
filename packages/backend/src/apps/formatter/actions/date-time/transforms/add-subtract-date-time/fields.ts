@@ -29,8 +29,7 @@ const opsSchema = z.object({
     .pipe(
       z
         .number({ invalid_type_error: 'Enter a whole number' })
-        .int('Enter whole numbers without decimals')
-        .positive('Enter a positive number'),
+        .int('Enter whole numbers without decimals'),
     ),
 })
 

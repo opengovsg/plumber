@@ -52,6 +52,32 @@ describe('add / subtract date time', () => {
       op: { opType: 'add', timeUnit: 'months', timeAmount: '2' },
       expectedResult: '2024-06-01T12:05:10.000+08:00',
     },
+    {
+      op: { opType: 'add', timeUnit: 'months', timeAmount: '0' },
+      expectedResult: '2024-04-01T12:05:10.000+08:00',
+    },
+
+    // Addition (negative numbers)
+    {
+      op: { opType: 'add', timeUnit: 'seconds', timeAmount: '-8' },
+      expectedResult: '2024-04-01T12:05:02.000+08:00',
+    },
+    {
+      op: { opType: 'add', timeUnit: 'minutes', timeAmount: '-3' },
+      expectedResult: '2024-04-01T12:02:10.000+08:00',
+    },
+    {
+      op: { opType: 'add', timeUnit: 'hours', timeAmount: '-9' },
+      expectedResult: '2024-04-01T03:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'add', timeUnit: 'days', timeAmount: '-0' },
+      expectedResult: '2024-04-01T12:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'add', timeUnit: 'months', timeAmount: '-1' },
+      expectedResult: '2024-03-01T12:05:10.000+08:00',
+    },
 
     // Subtraction
     {
@@ -74,8 +100,34 @@ describe('add / subtract date time', () => {
       op: { opType: 'subtract', timeUnit: 'months', timeAmount: '3' },
       expectedResult: '2024-01-01T12:05:10.000+08:00',
     },
+    {
+      op: { opType: 'subtract', timeUnit: 'months', timeAmount: '0' },
+      expectedResult: '2024-04-01T12:05:10.000+08:00',
+    },
+
+    // Subtraction (negative numbers)
+    {
+      op: { opType: 'subtract', timeUnit: 'seconds', timeAmount: '-8' },
+      expectedResult: '2024-04-01T12:05:18.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'minutes', timeAmount: '-3' },
+      expectedResult: '2024-04-01T12:08:10.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'hours', timeAmount: '-0' },
+      expectedResult: '2024-04-01T12:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'days', timeAmount: '-5' },
+      expectedResult: '2024-04-06T12:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'months', timeAmount: '-7' },
+      expectedResult: '2024-11-01T12:05:10.000+08:00',
+    },
   ])(
-    'can $op.opType $op.timeUnit (without overflow / underflow)',
+    'can $op.opType $op.timeAmount $op.timeUnit (without overflow / underflow)',
     ({ op, expectedResult }) => {
       $.step.parameters = {
         dateTimeFormat: 'formsgSubmissionTime',
@@ -111,6 +163,28 @@ describe('add / subtract date time', () => {
       expectedResult: '2026-02-01T12:05:10.000+08:00',
     },
 
+    // Addition (negative numbers)
+    {
+      op: { opType: 'add', timeUnit: 'seconds', timeAmount: '-15' },
+      expectedResult: '2024-04-01T12:04:55.000+08:00',
+    },
+    {
+      op: { opType: 'add', timeUnit: 'minutes', timeAmount: '-30' },
+      expectedResult: '2024-04-01T11:35:10.000+08:00',
+    },
+    {
+      op: { opType: 'add', timeUnit: 'hours', timeAmount: '-20' },
+      expectedResult: '2024-03-31T16:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'add', timeUnit: 'days', timeAmount: '-3' },
+      expectedResult: '2024-03-29T12:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'add', timeUnit: 'months', timeAmount: '-8' },
+      expectedResult: '2023-08-01T12:05:10.000+08:00',
+    },
+
     // Subtraction
     {
       op: { opType: 'subtract', timeUnit: 'seconds', timeAmount: '182' },
@@ -132,8 +206,30 @@ describe('add / subtract date time', () => {
       op: { opType: 'subtract', timeUnit: 'months', timeAmount: '15' },
       expectedResult: '2023-01-01T12:05:10.000+08:00',
     },
+
+    // Subtraction (negative numbers)
+    {
+      op: { opType: 'subtract', timeUnit: 'seconds', timeAmount: '-70' },
+      expectedResult: '2024-04-01T12:06:20.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'minutes', timeAmount: '-80' },
+      expectedResult: '2024-04-01T13:25:10.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'hours', timeAmount: '-12' },
+      expectedResult: '2024-04-02T00:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'days', timeAmount: '-35' },
+      expectedResult: '2024-05-06T12:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'months', timeAmount: '-10' },
+      expectedResult: '2025-02-01T12:05:10.000+08:00',
+    },
   ])(
-    'can handle overflow / underflow for $op.opType $op.timeUnit',
+    'can handle overflow / underflow for $op.opType $op.timeAmount $op.timeUnit',
     ({ op, expectedResult }) => {
       $.step.parameters = {
         dateTimeFormat: 'formsgSubmissionTime',
