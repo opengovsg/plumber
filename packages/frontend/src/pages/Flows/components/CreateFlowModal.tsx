@@ -85,16 +85,16 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
     >
       <ModalOverlay bg="base.canvas.overlay" />
       <Form onSubmit={handleSubmit}>
-        <FormControl isRequired>
-          <ModalContent>
-            <ModalHeader p="2.5rem 2rem 1.5rem">
-              <Text textStyle="h4">Create Pipe</Text>
-            </ModalHeader>
+        <ModalContent>
+          <ModalHeader p="2.5rem 2rem 1.5rem">
+            <Text textStyle="h4">Create Pipe</Text>
+          </ModalHeader>
 
-            <ModalBody>
-              <Flex flexDir="column" rowGap={4}>
-                {/* Specific form items */}
-                <Flex flexDir="column">
+          <ModalBody>
+            <Flex flexDir="column" rowGap={4}>
+              {/* Specific form items */}
+              <Flex flexDir="column">
+                <FormControl isRequired>
                   <FormLabel textStyle="subhead-1">Name your pipe</FormLabel>
                   <Input
                     ref={inputRef}
@@ -102,39 +102,39 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
                     onChange={handleInputChange}
                     required
                   />
-                </Flex>
-
-                <Infobox icon={<BiBulb />} variant="primary">
-                  <MarkdownRenderer
-                    source="Need suggestions on what to automate? [See use cases](https://guide.plumber.gov.sg/popular-workflows/all-workflows)"
-                    components={{
-                      a: ({ ...props }) => (
-                        <Link
-                          isExternal
-                          color="interaction.links.neutral-default"
-                          _hover={{ color: 'interaction.links.neutral-hover' }}
-                          {...props}
-                        />
-                      ),
-                      p: ({ ...props }) => <chakra.p {...props} />,
-                    }}
-                  />
-                </Infobox>
+                </FormControl>
               </Flex>
-            </ModalBody>
-            <ModalCloseButton mt={3} />
 
-            <ModalFooter>
-              <Button
-                type="submit"
-                isDisabled={isButtonDisabled}
-                isLoading={loading}
-              >
-                Create
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </FormControl>
+              <Infobox icon={<BiBulb />} variant="primary">
+                <MarkdownRenderer
+                  source="Need suggestions on what to automate? [See use cases](https://guide.plumber.gov.sg/popular-workflows/all-workflows)"
+                  components={{
+                    a: ({ ...props }) => (
+                      <Link
+                        isExternal
+                        color="interaction.links.neutral-default"
+                        _hover={{ color: 'interaction.links.neutral-hover' }}
+                        {...props}
+                      />
+                    ),
+                    p: ({ ...props }) => <chakra.p {...props} />,
+                  }}
+                />
+              </Infobox>
+            </Flex>
+          </ModalBody>
+          <ModalCloseButton mt={3} />
+
+          <ModalFooter>
+            <Button
+              type="submit"
+              isDisabled={isButtonDisabled}
+              isLoading={loading}
+            >
+              Create
+            </Button>
+          </ModalFooter>
+        </ModalContent>
       </Form>
     </Modal>
   )
