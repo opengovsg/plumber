@@ -5,13 +5,13 @@ const createFlow: MutationResolvers['createFlow'] = async (
   params,
   context,
 ) => {
-  const { flowName } = params.input
-  if (flowName.trim() === '') {
+  const trimmedFlowName = params.input.flowName.trim()
+  if (trimmedFlowName === '') {
     throw new Error('Pipe name needs to have at least 1 character.')
   }
 
   const flow = await context.currentUser.$relatedQuery('flows').insert({
-    name: flowName,
+    name: trimmedFlowName,
   })
 
   await flow.$relatedQuery('steps').insert([
