@@ -1,9 +1,10 @@
 import { Image, VStack } from '@chakra-ui/react'
 import { keyframes } from '@emotion/react'
-import connector from 'assets/landing/connector.svg'
-import formSelectionTile from 'assets/landing/formsSelectionTile.svg'
-import postmanSelectionTile from 'assets/landing/postmanSelectionTile.svg'
-import tilesSelectionTile from 'assets/landing/tilesSelectionTile.svg'
+
+import connector from '@/assets/landing/connector.svg'
+import formSelectionTile from '@/assets/landing/formsSelectionTile.svg'
+import postmanSelectionTile from '@/assets/landing/postmanSelectionTile.svg'
+import tilesSelectionTile from '@/assets/landing/tilesSelectionTile.svg'
 
 const expand = (order: number, fast?: boolean) => keyframes`
   0% {

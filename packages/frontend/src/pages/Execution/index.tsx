@@ -4,11 +4,12 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Flex, Grid, Text } from '@chakra-ui/react'
 import { Infobox, Pagination, Spinner } from '@opengovsg/design-system-react'
-import Container from 'components/Container'
-import ExecutionHeader from 'components/ExecutionHeader'
-import ExecutionStep from 'components/ExecutionStep'
-import { GET_EXECUTION } from 'graphql/queries/get-execution'
-import { GET_EXECUTION_STEPS } from 'graphql/queries/get-execution-steps'
+
+import Container from '@/components/Container'
+import ExecutionHeader from '@/components/ExecutionHeader'
+import ExecutionStep from '@/components/ExecutionStep'
+import { GET_EXECUTION } from '@/graphql/queries/get-execution'
+import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
 
 type ExecutionParams = {
   executionId: string

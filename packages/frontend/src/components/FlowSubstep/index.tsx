@@ -10,10 +10,11 @@ import { useContext, useEffect, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Box, Collapse, Stack } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import FlowSubstepTitle from 'components/FlowSubstepTitle'
-import InputCreator from 'components/InputCreator'
-import { EditorContext } from 'contexts/Editor'
-import { isFieldHidden } from 'helpers/isFieldHidden'
+
+import FlowSubstepTitle from '@/components/FlowSubstepTitle'
+import InputCreator from '@/components/InputCreator'
+import { EditorContext } from '@/contexts/Editor'
+import { isFieldHidden } from '@/helpers/isFieldHidden'
 
 type FlowSubstepProps = {
   substep: ISubstep

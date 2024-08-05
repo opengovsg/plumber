@@ -10,11 +10,12 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Badge, BadgeLeftIcon, Button } from '@opengovsg/design-system-react'
-import demoModalImg from 'assets/demo-modal.png'
+
+import demoModalImg from '@/assets/demo-modal.png'
 import {
   DEMO_VIDEOS_MAP,
   FORMSG_POSTMAN_TEMPLATE,
-} from 'helpers/flow-templates'
+} from '@/helpers/flow-templates'
 
 import DemoVideoModalContent from './DemoVideoModalContent'
 

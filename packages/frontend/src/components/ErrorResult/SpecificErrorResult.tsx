@@ -10,9 +10,10 @@ import {
   Infobox,
   useToast,
 } from '@opengovsg/design-system-react'
-import JSONViewer from 'components/JSONViewer'
-import { RETRY_PARTIAL_STEP } from 'graphql/mutations/retry-partial-step'
-import { GET_EXECUTION_STEPS } from 'graphql/queries/get-execution-steps'
+
+import JSONViewer from '@/components/JSONViewer'
+import { RETRY_PARTIAL_STEP } from '@/graphql/mutations/retry-partial-step'
+import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
 
 interface SpecificErrorResultProps {
   errorDetails: IStepError

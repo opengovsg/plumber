@@ -5,9 +5,10 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex, Icon, Text, useDisclosure } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import Container from 'components/Container'
-import PrimarySpinner from 'components/PrimarySpinner'
-import { GET_PENDING_FLOW_TRANSFERS } from 'graphql/queries/get-pending-flow-transfers'
+
+import Container from '@/components/Container'
+import PrimarySpinner from '@/components/PrimarySpinner'
+import { GET_PENDING_FLOW_TRANSFERS } from '@/graphql/queries/get-pending-flow-transfers'
 
 import * as URLS from './../../config/urls'
 import TransferRequestRow from './components/TransferRequestRow'

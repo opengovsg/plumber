@@ -12,17 +12,18 @@ import {
   Flex,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
-import FlowStep from 'components/FlowStep'
-import FlowStepGroup from 'components/FlowStepGroup'
-import { EditorContext } from 'contexts/Editor'
+
+import FlowStep from '@/components/FlowStep'
+import FlowStepGroup from '@/components/FlowStepGroup'
+import { EditorContext } from '@/contexts/Editor'
 import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
-} from 'contexts/StepExecutionsToInclude'
-import { CREATE_STEP } from 'graphql/mutations/create-step'
-import { UPDATE_STEP } from 'graphql/mutations/update-step'
-import { GET_APPS } from 'graphql/queries/get-apps'
-import { GET_FLOW } from 'graphql/queries/get-flow'
+} from '@/contexts/StepExecutionsToInclude'
+import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { UPDATE_STEP } from '@/graphql/mutations/update-step'
+import { GET_APPS } from '@/graphql/queries/get-apps'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
 
 interface AddStepButtonProps {
   onClick: () => void

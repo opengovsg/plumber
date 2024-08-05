@@ -1,8 +1,9 @@
 import type { ApolloLink } from '@apollo/client'
 import { from, HttpLink } from '@apollo/client'
 import { onError } from '@apollo/client/link/error'
-import { INVALID_TILE_VIEW_KEY, NOT_AUTHORISED } from 'config/errors'
-import * as URLS from 'config/urls'
+
+import { INVALID_TILE_VIEW_KEY, NOT_AUTHORISED } from '@/config/errors'
+import * as URLS from '@/config/urls'
 
 type CreateLinkOptions = {
   uri: string

@@ -28,8 +28,9 @@ import {
   DialogTitle,
 } from '@mui/material'
 import { Editor } from '@tiptap/react'
-import Form from 'components/Form'
 import { parse } from 'node-html-parser'
+
+import Form from '@/components/Form'
 
 import { BareEditor } from '.'
 

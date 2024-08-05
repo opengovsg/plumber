@@ -1,5 +1,6 @@
 import { Image, Stack, Text, VStack } from '@chakra-ui/react'
-import spreadsheetImg from 'assets/spreadsheet.png'
+
+import spreadsheetImg from '@/assets/spreadsheet.png'
 
 import CreateTileButton from './CreateTileButton'
 

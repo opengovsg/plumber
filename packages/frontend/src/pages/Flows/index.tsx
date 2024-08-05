@@ -1,29 +1,33 @@
 import type { IFlow, IFlowTransfer } from '@plumber/types'
 
-import { forwardRef, useCallback, useMemo } from 'react'
-import type { LinkProps } from 'react-router-dom'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useCallback, useMemo } from 'react'
+import { BiPlus } from 'react-icons/bi'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Center, Flex } from '@chakra-ui/react'
-import AddIcon from '@mui/icons-material/Add'
-import Box from '@mui/material/Box'
-import Divider from '@mui/material/Divider'
-import Grid from '@mui/material/Grid'
+import {
+  Box,
+  Center,
+  Flex,
+  Grid,
+  GridItem,
+  useDisclosure,
+} from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
-import ConditionalIconButton from 'components/ConditionalIconButton'
-import Container from 'components/Container'
-import EmptyFlowsTemplate from 'components/EmptyFlows'
-import FlowRow from 'components/FlowRow'
-import NoResultFound from 'components/NoResultFound'
-import PageTitle from 'components/PageTitle'
-import PrimarySpinner from 'components/PrimarySpinner'
-import SearchInput from 'components/SearchInput'
-import * as URLS from 'config/urls'
-import { GET_FLOWS } from 'graphql/queries/get-flows'
-import { GET_PENDING_FLOW_TRANSFERS } from 'graphql/queries/get-pending-flow-transfers'
 import debounce from 'lodash/debounce'
 
+import ConditionalIconButton from '@/components/ConditionalIconButton'
+import Container from '@/components/Container'
+import EmptyFlowsTemplate from '@/components/EmptyFlows'
+import FlowRow from '@/components/FlowRow'
+import NoResultFound from '@/components/NoResultFound'
+import PageTitle from '@/components/PageTitle'
+import PrimarySpinner from '@/components/PrimarySpinner'
+import SearchInput from '@/components/SearchInput'
+import { GET_FLOWS } from '@/graphql/queries/get-flows'
+import { GET_PENDING_FLOW_TRANSFERS } from '@/graphql/queries/get-pending-flow-transfers'
+
 import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
+import CreateFlowModal from './components/CreateFlowModal'
 
 const FLOW_PER_PAGE = 10
 const FLOWS_TITLE = 'Pipes'
@@ -42,6 +46,9 @@ export default function Flows(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
   const flowName = searchParams.get('input') || ''
+
+  // modal for creation of flows
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   // for flow transfers
   const { data: flowTransfersData, loading: flowTransfersLoading } = useQuery(
@@ -103,107 +110,98 @@ export default function Flows(): React.ReactElement {
   const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
   const hasFlows = flows?.length
 
-  const CreateFlowLink = useMemo(
-    () =>
-      forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(function InlineLink(
-        linkProps,
-        ref,
-      ) {
-        return <Link ref={ref} to={URLS.CREATE_FLOW} {...linkProps} />
-      }),
-    [],
-  )
-
   // TODO (mal): think of a way to make this less complicated
   if (!loading && !hasFlows && flowName === '' && page === 1) {
     return (
       <EmptyFlowsTemplate
-        CreateFlowLink={CreateFlowLink}
         count={flowTransfersLoading ? 0 : flowTransfers.length}
       />
     )
   }
 
   return (
-    <Box sx={{ py: 3 }}>
-      <Container variant="page">
-        <Grid
-          container
-          sx={{ mb: [0, 3] }}
-          paddingLeft={[0, 4.5]}
-          columnSpacing={1.5}
-          rowSpacing={3}
-        >
-          <Grid container item xs sm alignItems="center" order={{ xs: 0 }}>
-            <PageTitle title={FLOWS_TITLE} />
-          </Grid>
-
-          <Grid item xs={12} sm="auto" order={{ xs: 2, sm: 1 }}>
-            <SearchInput
-              searchValue={flowName}
-              onChange={onSearchInputChange}
-            />
-          </Grid>
-
+    <>
+      <Box py={9}>
+        <Container variant="page">
           <Grid
-            container
-            item
-            xs="auto"
-            sm="auto"
+            templateAreas={{
+              base: `
+              "title button"
+              "search search"
+            `,
+              md: `"title search button"`,
+            }}
+            gridTemplateColumns={{ base: '1fr auto', md: '2fr 1fr auto' }}
+            columnGap={3}
+            rowGap={5}
             alignItems="center"
-            order={{ xs: 1, sm: 2 }}
+            pl={{ base: '0', md: '2rem' }}
+            mb={{ base: '0', md: '1.5rem' }}
           >
-            <ConditionalIconButton
-              type="submit"
-              size="lg"
-              component={CreateFlowLink}
-              icon={<AddIcon />}
-              data-test="create-flow-button"
-            >
-              Create Pipe
-            </ConditionalIconButton>
+            <GridItem area="title">
+              <PageTitle title={FLOWS_TITLE} />
+            </GridItem>
+
+            <GridItem area="search">
+              <SearchInput
+                searchValue={flowName}
+                onChange={onSearchInputChange}
+              />
+            </GridItem>
+
+            <GridItem area="button">
+              <ConditionalIconButton
+                type="submit"
+                size="lg"
+                icon={<BiPlus />}
+                data-test="create-flow-button"
+                onClick={onOpen}
+              >
+                Create Pipe
+              </ConditionalIconButton>
+            </GridItem>
           </Grid>
-        </Grid>
 
-        <Divider sx={{ mt: [2, 0], mb: 2 }} />
+          {flowTransfersLoading ? (
+            <Center>
+              <PrimarySpinner fontSize="4xl" />
+            </Center>
+          ) : flowTransfers.length === 0 ? (
+            <></>
+          ) : (
+            <ApproveTransfersInfobox count={flowTransfers.length} />
+          )}
 
-        {flowTransfersLoading ? (
-          <Center>
-            <PrimarySpinner fontSize="4xl" />
-          </Center>
-        ) : flowTransfers.length === 0 ? (
-          <></>
-        ) : (
-          <ApproveTransfersInfobox count={flowTransfers.length} />
-        )}
+          {loading && (
+            <Center mt={8}>
+              <PrimarySpinner fontSize="4xl" />
+            </Center>
+          )}
 
-        {loading && (
-          <Center mt={8}>
-            <PrimarySpinner fontSize="4xl" />
-          </Center>
-        )}
+          {!loading &&
+            flows?.map((flow) => <FlowRow key={flow.id} flow={flow} />)}
 
-        {!loading &&
-          flows?.map((flow) => <FlowRow key={flow.id} flow={flow} />)}
-
-        {!loading && !hasFlows && (
-          <NoResultFound
-            text="You don't have any pipes yet."
-            to={URLS.CREATE_FLOW}
-          />
-        )}
-
-        {!loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE && (
-          <Flex justifyContent="center" mt={6}>
-            <Pagination
-              currentPage={pageInfo?.currentPage}
-              onPageChange={handlePageChange}
-              pageSize={FLOW_PER_PAGE}
-              totalCount={pageInfo?.totalCount}
+          {!loading && !hasFlows && (
+            <NoResultFound
+              description="We couldn't find anything"
+              action="Try using different keywords or checking for typos."
             />
-          </Flex>
-        )}
-      </Container>
-    </Box>
+          )}
+
+          {!loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE && (
+            <Flex justifyContent="center" mt={6}>
+              <Pagination
+                currentPage={pageInfo?.currentPage}
+                onPageChange={handlePageChange}
+                pageSize={FLOW_PER_PAGE}
+                totalCount={pageInfo?.totalCount}
+              />
+            </Flex>
+          )}
+        </Container>
+      </Box>
+
+      {isOpen && <CreateFlowModal onClose={onClose} />}
+    </>
   )
 }

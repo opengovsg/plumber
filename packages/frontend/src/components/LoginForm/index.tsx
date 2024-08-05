@@ -1,11 +1,12 @@
 import { type FormEvent, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { Flex } from '@chakra-ui/react'
-import { SGID_FEATURE_FLAG } from 'config/flags'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
-import { REQUEST_OTP } from 'graphql/mutations/request-otp'
-import { VERIFY_OTP } from 'graphql/mutations/verify-otp'
-import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
+
+import { SGID_FEATURE_FLAG } from '@/config/flags'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import { REQUEST_OTP } from '@/graphql/mutations/request-otp'
+import { VERIFY_OTP } from '@/graphql/mutations/verify-otp'
+import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'

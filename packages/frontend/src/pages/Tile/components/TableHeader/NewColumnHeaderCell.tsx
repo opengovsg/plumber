@@ -19,8 +19,9 @@ import {
   PopoverCloseButton,
 } from '@opengovsg/design-system-react'
 import { HeaderContext } from '@tanstack/react-table'
-import { GenericRowData } from 'pages/Tile/types'
-import { POPOVER_MOTION_PROPS } from 'theme/constants'
+
+import { GenericRowData } from '@/pages/Tile/types'
+import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { HEADER_COLOR } from '../../constants'
 import { useTableContext } from '../../contexts/TableContext'

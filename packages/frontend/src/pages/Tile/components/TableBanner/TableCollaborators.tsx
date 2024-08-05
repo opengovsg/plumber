@@ -21,11 +21,12 @@ import {
   Menu,
   useToast,
 } from '@opengovsg/design-system-react'
-import { AuthenticationContext } from 'contexts/Authentication'
-import { DELETE_TABLE_COLLABORATOR } from 'graphql/mutations/tiles/delete-table-collaborator'
-import { UPSERT_TABLE_COLLABORATOR } from 'graphql/mutations/tiles/upsert-table-collaborator'
-import { GET_TABLE } from 'graphql/queries/tiles/get-table'
-import { useTableContext } from 'pages/Tile/contexts/TableContext'
+
+import { AuthenticationContext } from '@/contexts/Authentication'
+import { DELETE_TABLE_COLLABORATOR } from '@/graphql/mutations/tiles/delete-table-collaborator'
+import { UPSERT_TABLE_COLLABORATOR } from '@/graphql/mutations/tiles/upsert-table-collaborator'
+import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
+import { useTableContext } from '@/pages/Tile/contexts/TableContext'
 
 const TableCollabRoleSelect = ({
   value,

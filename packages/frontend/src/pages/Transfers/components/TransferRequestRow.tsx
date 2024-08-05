@@ -6,9 +6,10 @@ import { BiCheck, BiX } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 import { IconButton, useToast } from '@opengovsg/design-system-react'
-import client from 'graphql/client'
-import { UPDATE_FLOW_TRANSFER_STATUS } from 'graphql/mutations/update-flow-transfer-status'
-import { GET_PENDING_FLOW_TRANSFERS } from 'graphql/queries/get-pending-flow-transfers'
+
+import client from '@/graphql/client'
+import { UPDATE_FLOW_TRANSFER_STATUS } from '@/graphql/mutations/update-flow-transfer-status'
+import { GET_PENDING_FLOW_TRANSFERS } from '@/graphql/queries/get-pending-flow-transfers'
 
 import ViewFlowModal from './ViewFlowModal'
 

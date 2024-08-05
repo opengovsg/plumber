@@ -14,9 +14,10 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Badge } from '@opengovsg/design-system-react'
-import FlowAppIcons from 'components/FlowAppIcons'
-import * as URLS from 'config/urls'
 import { DateTime } from 'luxon'
+
+import FlowAppIcons from '@/components/FlowAppIcons'
+import * as URLS from '@/config/urls'
 
 import FlowContextMenu from './FlowContextMenu'
 

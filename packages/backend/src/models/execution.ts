@@ -8,6 +8,7 @@ class Execution extends Base {
   flowId!: string
   testRun: boolean
   internalId: string
+  flow: Flow
   executionSteps: ExecutionStep[]
   status: ExecutionStatus
 

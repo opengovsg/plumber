@@ -24,9 +24,15 @@ import Text from '@tiptap/extension-text'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { StepExecutionsContext } from 'contexts/StepExecutions'
-import { extractVariables, filterVariables, Variable } from 'helpers/variables'
-import { POPOVER_MOTION_PROPS } from 'theme/constants'
+
+import { StepExecutionsContext } from '@/contexts/StepExecutions'
+import {
+  extractVariables,
+  filterVariables,
+  Variable,
+  VISIBLE_VARIABLE_TYPES,
+} from '@/helpers/variables'
+import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
@@ -87,7 +93,10 @@ const Editor = ({
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
       extractVariables(priorStepsWithExecutions),
-      (variable) => (variable.type ?? 'text') === 'text',
+      (variable) => {
+        const variableType = variable.type ?? 'text'
+        return VISIBLE_VARIABLE_TYPES.includes(variableType)
+      },
     )
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]

@@ -11,10 +11,11 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
-import brandmarkLogo from 'assets/logo.svg'
-import mainLogo from 'assets/plumber-logo.svg'
-import * as URLS from 'config/urls'
-import { GET_PLUMBER_STATS } from 'graphql/queries/get-plumber-stats'
+
+import brandmarkLogo from '@/assets/logo.svg'
+import mainLogo from '@/assets/plumber-logo.svg'
+import * as URLS from '@/config/urls'
+import { GET_PLUMBER_STATS } from '@/graphql/queries/get-plumber-stats'
 
 import { LandingAnimation } from './components/LandingAnimation'
 

@@ -8,7 +8,8 @@ import {
   DrawerOverlay,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
-import { LayoutNavigationContext } from 'contexts/LayoutNavigation'
+
+import { LayoutNavigationContext } from '@/contexts/LayoutNavigation'
 
 import NavigationSidebar from './NavigationSidebar'
 

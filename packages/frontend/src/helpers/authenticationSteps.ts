@@ -1,7 +1,7 @@
 import type { IAuthenticationStep, IJSONObject } from '@plumber/types'
 
-import apolloClient from 'graphql/client'
-import MUTATIONS from 'graphql/mutations'
+import apolloClient from '@/graphql/client'
+import MUTATIONS from '@/graphql/mutations'
 
 enum AuthenticationSteps {
   Mutation = 'mutation',

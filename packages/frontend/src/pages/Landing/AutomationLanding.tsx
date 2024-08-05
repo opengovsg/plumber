@@ -9,12 +9,13 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import customerIcon from 'assets/landing/Customer.svg'
-import itIcon from 'assets/landing/DevWorkflow.svg'
-import hrIcon from 'assets/landing/HR.svg'
-import marketingIcon from 'assets/landing/Marketing.svg'
-import operationsIcon from 'assets/landing/Operations.svg'
-import { APP_ICON_URL } from 'config/urls'
+
+import customerIcon from '@/assets/landing/Customer.svg'
+import itIcon from '@/assets/landing/DevWorkflow.svg'
+import hrIcon from '@/assets/landing/HR.svg'
+import marketingIcon from '@/assets/landing/Marketing.svg'
+import operationsIcon from '@/assets/landing/Operations.svg'
+import { APP_ICON_URL } from '@/config/urls'
 
 const AUTOMATIONS = [
   {

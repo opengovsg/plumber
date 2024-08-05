@@ -5,7 +5,7 @@ type Query {
     onlyWithActions: Boolean
   ): [App]
   getApp(key: String!): App
-  getConnectedApps(name: String): [App]
+  getConnectedApps: [App]
   testConnection(connectionId: String!, stepId: String): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(
@@ -44,6 +44,15 @@ type Query {
   # Flow transfers
   getPendingFlowTransfers: [FlowTransfer!]!
   getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
+  # Admin queries
+  admin: AdminQuery!
+}
+
+type AdminQuery {
+  getFlowOwner(flowId: String!): User!
+  getExecutionOwner(executionId: String!): User!
+  getTableOwner(tableId: String!): User!
+  searchUsersByEmail(query: String!): [User!]!
 }
 
 type Mutation {
@@ -403,8 +412,7 @@ input RegisterConnectionInput {
 }
 
 input CreateFlowInput {
-  triggerAppKey: String
-  connectionId: String
+  flowName: String!
 }
 
 input CreateTemplatedFlowInput {

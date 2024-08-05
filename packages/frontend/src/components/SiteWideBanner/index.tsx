@@ -1,9 +1,10 @@
 import { useCallback, useContext, useEffect, useState } from 'react'
 import CloseIcon from '@mui/icons-material/Close'
 import { Box, IconButton } from '@mui/material'
-import { BANNER_TEXT_FLAG } from 'config/flags'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
-import { getItemForSession, setItemForSession } from 'helpers/storage'
+
+import { BANNER_TEXT_FLAG } from '@/config/flags'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import { getItemForSession, setItemForSession } from '@/helpers/storage'
 
 const EMPTY_BANNER_MESSAGE = ''
 const SESSION_STORAGE_HIDE_BANNER_KEY = 'hide-banner'

@@ -24,14 +24,16 @@ import {
   InputRightElement,
 } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
-import Container from 'components/Container'
-import ExecutionRow from 'components/ExecutionRow'
-import ExecutionStatusMenu, { StatusType } from 'components/ExecutionStatusMenu'
-import NoResultFound from 'components/NoResultFound'
-import PageTitle from 'components/PageTitle'
-import { GET_EXECUTIONS } from 'graphql/queries/get-executions'
-import useFormatMessage from 'hooks/useFormatMessage'
 import debounce from 'lodash/debounce'
+
+import Container from '@/components/Container'
+import ExecutionRow from '@/components/ExecutionRow'
+import ExecutionStatusMenu, {
+  StatusType,
+} from '@/components/ExecutionStatusMenu'
+import NoResultFound from '@/components/NoResultFound'
+import PageTitle from '@/components/PageTitle'
+import { GET_EXECUTIONS } from '@/graphql/queries/get-executions'
 
 const EXECUTION_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Executions'
@@ -50,7 +52,6 @@ const getLimitAndOffset = (params: ExecutionParameters) => ({
 })
 
 export default function Executions(): ReactElement {
-  const formatMessage = useFormatMessage()
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '', 10) || 1
 
@@ -176,8 +177,6 @@ export default function Executions(): ReactElement {
           </InputGroup>
         </Flex>
 
-        <Divider borderColor="base.divider.medium" mb={4} />
-
         {loading && (
           <CircularProgress
             isIndeterminate
@@ -189,7 +188,18 @@ export default function Executions(): ReactElement {
         )}
 
         {!loading && !hasExecutions && (
-          <NoResultFound text={formatMessage('executions.noExecutions')} />
+          <NoResultFound
+            description={
+              searchInput === ''
+                ? 'No executions yet'
+                : "We couldn't find anything"
+            }
+            action={
+              searchInput === ''
+                ? 'Executions will appear here when your pipe has started running.'
+                : 'Try using different keywords or checking for typos.'
+            }
+          />
         )}
 
         {!loading &&

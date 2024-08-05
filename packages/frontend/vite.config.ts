@@ -1,3 +1,5 @@
+// @ts-check
+
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import loadVersion from 'vite-plugin-package-version'

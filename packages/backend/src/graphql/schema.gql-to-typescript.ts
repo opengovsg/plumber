@@ -19,3 +19,8 @@ export type ExecutionConnectionGraphQLType = ReturnType<
   typeof paginate<Execution>
 >
 export type FlowConnectionGraphQLType = ReturnType<typeof paginate<Flow>>
+
+// This is a special stub that enables us to group all our admin-related
+// queries into a special AdminQuery object. See @/graphql/query-resolvers for
+// more context.
+export type AdminQueryGraphQLType = Record<string, never>

@@ -2,8 +2,9 @@ import { useCallback, useContext } from 'react'
 import { useMutation } from '@apollo/client'
 import { Flex, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
-import { EditorSettingsContext } from 'contexts/EditorSettings'
-import { UPDATE_FLOW_STATUS } from 'graphql/mutations/update-flow-status'
+
+import { EditorSettingsContext } from '@/contexts/EditorSettings'
+import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 
 export default function PublishedFlowInfobox() {
   const { flow } = useContext(EditorSettingsContext)

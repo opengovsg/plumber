@@ -1,11 +1,12 @@
 import { IStep } from '@plumber/types'
 
+import { beforeEach, describe, expect, it } from 'vitest'
+
 import {
   extractVariables,
   filterVariables,
   StepWithVariables,
-} from 'helpers/variables'
-import { beforeEach, describe, expect, it } from 'vitest'
+} from '@/helpers/variables'
 
 describe('variables', () => {
   describe('extractVariables', () => {
@@ -296,6 +297,91 @@ describe('variables', () => {
           }),
           expect.objectContaining({
             value: 'd',
+          }),
+        ])
+      })
+    })
+
+    describe('process arrays in dataout', () => {
+      it('data without formsg checkbox field will have the array flat-mapped', () => {
+        steps[0].executionSteps[0].dataOut = {
+          recipients: ['coolbeans@open.gov.sg', 'plumbros@open.gov.sg'],
+        }
+
+        const result = extractVariables(steps)
+        // label exists because no metadata is provided
+        expect(result[0].output).toEqual([
+          expect.objectContaining({
+            name: 'step.step1-id.recipients.0',
+            label: 'recipients.0',
+            value: 'coolbeans@open.gov.sg',
+          }),
+          expect.objectContaining({
+            name: 'step.step1-id.recipients.1',
+            label: 'recipients.1',
+            value: 'plumbros@open.gov.sg',
+          }),
+        ])
+      })
+
+      it('data with formsg checkbox field will not have the array flat-mapped', () => {
+        steps[0].executionSteps[0].dataOut = {
+          fields: {
+            field1: {
+              order: 1,
+              question: 'Have you eaten your meals?',
+              fieldType: 'checkbox',
+              answerArray: ['Lunch', 'Dinner'],
+            },
+          },
+        }
+        // only include metadata for answerArray for testing purposes
+        steps[0].executionSteps[0].dataOutMetadata = {
+          fields: {
+            field1: {
+              answerArray: {
+                type: 'array',
+                label: 'test label',
+                order: 1.1,
+              },
+            },
+          },
+        }
+
+        const result = extractVariables(steps)
+        // answerArray object will be at the top due to an order given
+        expect(result[0].output).toEqual([
+          expect.objectContaining({
+            name: 'step.step1-id.fields.field1.answerArray',
+            label: 'test label',
+            value: 'Lunch, Dinner',
+            type: 'array',
+            displayedValue: null,
+            order: 1.1,
+          }),
+          expect.objectContaining({
+            name: 'step.step1-id.fields.field1.order',
+            label: 'fields.field1.order',
+            value: 1,
+            type: null,
+            displayedValue: null,
+            order: null,
+          }),
+          expect.objectContaining({
+            name: 'step.step1-id.fields.field1.question',
+            label: 'fields.field1.question',
+            value: 'Have you eaten your meals?',
+            type: null,
+            displayedValue: null,
+            order: null,
+          }),
+          expect.objectContaining({
+            name: 'step.step1-id.fields.field1.fieldType',
+            label: 'fields.field1.fieldType',
+            value: 'checkbox',
+            type: null,
+            displayedValue: null,
+            order: null,
           }),
         ])
       })

@@ -1,16 +1,17 @@
 import { useMemo, useState } from 'react'
 import { BiHistory, BiLayer, BiSolidGrid } from 'react-icons/bi'
 import { Box, Divider, Show } from '@chakra-ui/react'
-import AppBar from 'components/AppBar'
-import { PipeIcon } from 'components/Icons'
-import RedirectToLogin from 'components/RedirectToLogin'
-import SiteWideBanner from 'components/SiteWideBanner'
-import * as URLS from 'config/urls'
+
+import AppBar from '@/components/AppBar'
+import { PipeIcon } from '@/components/Icons'
+import RedirectToLogin from '@/components/RedirectToLogin'
+import SiteWideBanner from '@/components/SiteWideBanner'
+import * as URLS from '@/config/urls'
 import {
   LayoutNavigationProvider,
   LayoutNavigationProviderData,
-} from 'contexts/LayoutNavigation'
-import useAuthentication from 'hooks/useAuthentication'
+} from '@/contexts/LayoutNavigation'
+import useAuthentication from '@/hooks/useAuthentication'
 
 import NavigationSidebar from './NavigationSidebar'
 

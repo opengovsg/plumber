@@ -5,9 +5,10 @@ import {
   AvatarMenuDivider,
   Menu,
 } from '@opengovsg/design-system-react'
-import * as URLS from 'config/urls'
-import apolloClient from 'graphql/client'
-import useAuthentication from 'hooks/useAuthentication'
+
+import * as URLS from '@/config/urls'
+import apolloClient from '@/graphql/client'
+import useAuthentication from '@/hooks/useAuthentication'
 
 export default function AvatarDropdownMenu() {
   const { logout, currentUser } = useAuthentication()

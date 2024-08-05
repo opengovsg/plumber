@@ -12,13 +12,14 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Badge, BadgeLeftIcon, Button } from '@opengovsg/design-system-react'
-import demoModalImg from 'assets/demo-modal.png'
-import * as URLS from 'config/urls'
-import { CREATE_TEMPLATED_FLOW } from 'graphql/mutations/create-templated-flow'
+
+import demoModalImg from '@/assets/demo-modal.png'
+import * as URLS from '@/config/urls'
+import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
 import {
   FLOW_TEMPLATES_MAP,
   FORMSG_POSTMAN_TEMPLATE,
-} from 'helpers/flow-templates'
+} from '@/helpers/flow-templates'
 
 interface DemoPageModalProps {
   onClose: () => void

@@ -31,10 +31,11 @@ import {
   TagLabel,
   TagLeftIcon,
 } from '@opengovsg/design-system-react'
-import * as URLS from 'config/urls'
-import { DELETE_TABLE } from 'graphql/mutations/tiles/delete-table'
-import { GET_TABLES } from 'graphql/queries/tiles/get-tables'
-import { toPrettyDateString } from 'helpers/dateTime'
+
+import * as URLS from '@/config/urls'
+import { DELETE_TABLE } from '@/graphql/mutations/tiles/delete-table'
+import { GET_TABLES } from '@/graphql/queries/tiles/get-tables'
+import { toPrettyDateString } from '@/helpers/dateTime'
 
 const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
   const navigate = useNavigate()

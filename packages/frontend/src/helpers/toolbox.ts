@@ -2,13 +2,14 @@ import { type IStep } from '@plumber/types'
 
 import { useCallback, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { BranchContext } from 'components/FlowStepGroup/Content/IfThen/BranchContext'
-import { NESTED_IFTHEN_FEATURE_FLAG } from 'config/flags'
-import { LaunchDarklyContext } from 'contexts/LaunchDarkly'
-import client from 'graphql/client'
-import { CREATE_STEP } from 'graphql/mutations/create-step'
-import { UPDATE_STEP } from 'graphql/mutations/update-step'
-import { GET_FLOW } from 'graphql/queries/get-flow'
+
+import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
+import { NESTED_IFTHEN_FEATURE_FLAG } from '@/config/flags'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import client from '@/graphql/client'
+import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { UPDATE_STEP } from '@/graphql/mutations/update-step'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
 
 export const TOOLBOX_APP_KEY = 'toolbox'
 

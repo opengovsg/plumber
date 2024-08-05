@@ -1,8 +1,9 @@
 import { type IFlow, type IStep } from '@plumber/types'
 
 import { type FunctionComponent, useMemo } from 'react'
-import FlowStepHeader from 'components/FlowStepHeader'
-import { areAllIfThenBranchesCompleted, isIfThenStep } from 'helpers/toolbox'
+
+import FlowStepHeader from '@/components/FlowStepHeader'
+import { areAllIfThenBranchesCompleted, isIfThenStep } from '@/helpers/toolbox'
 
 import Error from './Content/Error'
 import IfThen from './Content/IfThen'

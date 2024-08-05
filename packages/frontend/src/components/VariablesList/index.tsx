@@ -1,5 +1,6 @@
 import { Box, Text } from '@chakra-ui/react'
-import { type Variable } from 'helpers/variables'
+
+import { type Variable } from '@/helpers/variables'
 
 function makeVariableComponent(
   variable: Variable,

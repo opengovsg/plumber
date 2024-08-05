@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
 import { createContext, useEffect, useState } from 'react'
-import appConfig from 'config/app'
-import type { AuthenticationContextParams } from 'contexts/Authentication'
-import useAuthentication from 'hooks/useAuthentication'
 import type { LDContext, LDFlagSet } from 'launchdarkly-js-client-sdk'
 import { basicLogger as LDLogger } from 'launchdarkly-js-client-sdk'
 import type { ProviderConfig as LDProviderConfig } from 'launchdarkly-react-client-sdk'
 import { useLDClient, withLDProvider } from 'launchdarkly-react-client-sdk'
+
+import appConfig from '@/config/app'
+import type { AuthenticationContextParams } from '@/contexts/Authentication'
+import useAuthentication from '@/hooks/useAuthentication'
 
 /**
  * Helper context that wraps around Launch Darkly's own LDProvider. It provides

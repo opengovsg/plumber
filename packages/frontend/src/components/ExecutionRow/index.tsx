@@ -15,10 +15,11 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Badge } from '@opengovsg/design-system-react'
-import { StatusType } from 'components/ExecutionStatusMenu'
-import FlowAppIcons from 'components/FlowAppIcons'
-import * as URLS from 'config/urls'
 import { DateTime } from 'luxon'
+
+import { StatusType } from '@/components/ExecutionStatusMenu'
+import FlowAppIcons from '@/components/FlowAppIcons'
+import * as URLS from '@/config/urls'
 
 type ExecutionRowProps = {
   execution: IExecution

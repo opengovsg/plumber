@@ -3,9 +3,10 @@ import { BiChevronRight } from 'react-icons/bi'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { Box, Divider, Flex, Heading, Icon, Link, Text } from '@chakra-ui/react'
-import * as URLS from 'config/urls'
-import { LOGIN_WITH_SELECTED_SGID } from 'graphql/mutations/login-with-selected-sgid'
-import { GET_CURRENT_USER } from 'graphql/queries/get-current-user'
+
+import * as URLS from '@/config/urls'
+import { LOGIN_WITH_SELECTED_SGID } from '@/graphql/mutations/login-with-selected-sgid'
+import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
 
 export interface Employment {
   workEmail: string

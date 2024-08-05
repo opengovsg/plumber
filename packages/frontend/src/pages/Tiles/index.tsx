@@ -2,10 +2,11 @@ import { ITableMetadata } from '@plumber/types'
 
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
-import Container from 'components/Container'
-import PageTitle from 'components/PageTitle'
-import PrimarySpinner from 'components/PrimarySpinner'
-import { GET_TABLES } from 'graphql/queries/tiles/get-tables'
+
+import Container from '@/components/Container'
+import PageTitle from '@/components/PageTitle'
+import PrimarySpinner from '@/components/PrimarySpinner'
+import { GET_TABLES } from '@/graphql/queries/tiles/get-tables'
 
 import CreateTileButton from './components/CreateTileButton'
 import EmptyTileList from './components/EmptyTileList'

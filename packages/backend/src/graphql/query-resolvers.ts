@@ -46,4 +46,9 @@ export default {
   getPendingFlowTransfers,
   getFlowTransferDetails,
   ...tilesQueryResolvers,
+
+  // This is a special stub that enables us to group all our admin-related
+  // queries into a special AdminQuery object; each "query" is handled by field
+  // resolvers defined in @/graphql/admin/queries.
+  admin: () => ({}),
 } satisfies QueryResolvers

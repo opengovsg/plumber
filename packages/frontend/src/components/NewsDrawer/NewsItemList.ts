@@ -9,6 +9,16 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2024-08-02',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: `Improvements we made`,
+    details: dedent`
+      ⚒️ Create a tile when you create your pipe - You can now create new tiles and add new columns directly when setting up your create row step.
+      
+      ✔ Simplified checkbox responses for FormSG - Checkbox responses are now combined into one variable, options are displayed and separated by commas. This makes checkbox variables less cluttered and checkbox data easier to use in your subsequent steps.
+    `,
+  },
+  {
     date: '2024-06-24',
     tag: NEW_FEATURE_TAG,
     title: `New integration - M365 Excel`,

@@ -4,14 +4,14 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
-import AppFlowRow from 'components/FlowRow'
-import NoResultFound from 'components/NoResultFound'
-import * as URLS from 'config/urls'
-import { GET_FLOWS } from 'graphql/queries/get-flows'
-import useFormatMessage from 'hooks/useFormatMessage'
+
+import AppFlowRow from '@/components/FlowRow'
+import NoResultFound from '@/components/NoResultFound'
+import { GET_FLOWS } from '@/graphql/queries/get-flows'
 
 type AppFlowsProps = {
   appKey: string
+  appName: string
 }
 
 const FLOW_PER_PAGE = 10
@@ -22,12 +22,11 @@ const getLimitAndOffset = (page: number) => ({
 })
 
 export default function AppFlows(props: AppFlowsProps): React.ReactElement {
-  const { appKey } = props
-  const formatMessage = useFormatMessage()
+  const { appKey, appName } = props
   const [searchParams, setSearchParams] = useSearchParams()
   const connectionId = searchParams.get('connectionId') || undefined
   const page = parseInt(searchParams.get('page') || '', 10) || 1
-  const { data } = useQuery(GET_FLOWS, {
+  const { data, loading } = useQuery(GET_FLOWS, {
     variables: {
       appKey,
       connectionId,
@@ -40,11 +39,10 @@ export default function AppFlows(props: AppFlowsProps): React.ReactElement {
   const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
   const hasFlows = flows?.length
 
-  if (!hasFlows) {
+  if (!loading && !hasFlows) {
     return (
       <NoResultFound
-        to={URLS.CREATE_FLOW_WITH_APP_AND_CONNECTION(appKey, connectionId)}
-        text={formatMessage('app.noFlows')}
+        description={`You have no pipes using a ${appName} connection`}
       />
     )
   }
