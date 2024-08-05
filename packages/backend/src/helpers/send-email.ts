@@ -46,7 +46,7 @@ export async function sendEmail({
       if (errorMsg.includes('blacklisted')) {
         logger.info('Blacklisted email', { email: recipient })
         errorMsg =
-          'Your email may be blocked. Contact us at support@open.gov.sg'
+          'Your email may be blocked. Contact us at support@plumber.gov.sg'
       }
     }
     throw new Error(errorMsg)
