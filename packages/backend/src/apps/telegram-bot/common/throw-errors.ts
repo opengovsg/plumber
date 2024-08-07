@@ -84,6 +84,14 @@ export async function throwSendMessageError(
           appName,
           err,
         )
+      } else if (errorString.includes('message thread not found')) {
+        throw new StepError(
+          'Incorrect topic configuration',
+          'Click on set up action and check that a valid topic ID is used.',
+          position,
+          appName,
+          err,
+        )
       } else {
         // return original error since uncaught
         throw err
