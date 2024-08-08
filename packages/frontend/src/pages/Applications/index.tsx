@@ -20,29 +20,27 @@ export default function Applications(): React.ReactElement {
   const hasApps = apps?.length
 
   return (
-    <Box py={9}>
-      <Container variant="page">
-        <Box pl={9} mb={6}>
-          <PageTitle title={APPS_TITLE} />
-        </Box>
+    <Container py={9}>
+      <Box pl={9} mb={6}>
+        <PageTitle title={APPS_TITLE} />
+      </Box>
 
-        {loading && (
-          <Center>
-            <PrimarySpinner data-test="apps-loader" fontSize="6xl" />
-          </Center>
-        )}
+      {loading && (
+        <Center>
+          <PrimarySpinner data-test="apps-loader" fontSize="6xl" />
+        </Center>
+      )}
 
-        {/* TODO (mal): change this to connections when the apps page change to connections */}
-        {!loading && !hasApps && (
-          <NoResultFound
-            description="No apps yet"
-            action="Apps will appear here when you use apps like FormSG and Telegram in your pipe."
-          />
-        )}
+      {/* TODO (mal): change this to connections when the apps page change to connections */}
+      {!loading && !hasApps && (
+        <NoResultFound
+          description="No apps yet"
+          action="Apps will appear here when you use apps like FormSG and Telegram in your pipe."
+        />
+      )}
 
-        {!loading &&
-          apps?.map((app: IApp) => <AppRow key={app.name} application={app} />)}
-      </Container>
-    </Box>
+      {!loading &&
+        apps?.map((app: IApp) => <AppRow key={app.name} application={app} />)}
+    </Container>
   )
 }

@@ -1,13 +1,14 @@
 import { useContext } from 'react'
-import { BiBulb } from 'react-icons/bi'
+import { BiBookOpen, BiBulb } from 'react-icons/bi'
 import { Link, useMatch } from 'react-router-dom'
-import { Text, useDisclosure } from '@chakra-ui/react'
+import { Box, Text, useDisclosure } from '@chakra-ui/react'
 import {
   Badge,
   SidebarContainer,
   SidebarItem,
 } from '@opengovsg/design-system-react'
 
+import * as URLS from '@/config/urls'
 import { LayoutNavigationContext } from '@/contexts/LayoutNavigation'
 
 import DemoPageModal from './DemoPageModal'
@@ -57,6 +58,12 @@ function NavigationSidebarItem({
   )
 }
 
+const templateDrawerLink: DrawerLink = {
+  Icon: BiBookOpen,
+  text: 'Templates',
+  to: URLS.TEMPLATES,
+}
+
 const DemoSidebarItem = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -77,9 +84,6 @@ const DemoSidebarItem = () => {
           bg: 'interaction.muted.main.active',
         }}
         display="flex"
-        position="fixed"
-        bottom={2}
-        bg="white"
       >
         <Text
           textStyle="subhead-1"
@@ -88,13 +92,6 @@ const DemoSidebarItem = () => {
         >
           Demo
         </Text>
-        <Badge
-          bgColor="interaction.muted.main.active"
-          color="primary.500"
-          display={{ sm: 'none', lg: 'block' }}
-        >
-          New
-        </Badge>
       </SidebarItem>
       {isOpen && <DemoPageModal onClose={onClose} />}
     </>
@@ -114,7 +111,13 @@ export default function NavigationSidebar() {
           closeDrawer={closeDrawer}
         />
       ))}
-      <DemoSidebarItem />
+      <Box position="fixed" bottom={2}>
+        <NavigationSidebarItem
+          link={templateDrawerLink}
+          closeDrawer={closeDrawer}
+        />
+        <DemoSidebarItem />
+      </Box>
     </SidebarContainer>
   )
 }

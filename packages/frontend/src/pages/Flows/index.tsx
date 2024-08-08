@@ -4,14 +4,7 @@ import { useCallback, useMemo } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import {
-  Box,
-  Center,
-  Flex,
-  Grid,
-  GridItem,
-  useDisclosure,
-} from '@chakra-ui/react'
+import { Center, Flex, Grid, GridItem, useDisclosure } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
 import debounce from 'lodash/debounce'
 
@@ -121,85 +114,83 @@ export default function Flows(): React.ReactElement {
 
   return (
     <>
-      <Box py={9}>
-        <Container variant="page">
-          <Grid
-            templateAreas={{
-              base: `
+      <Container py={9}>
+        <Grid
+          templateAreas={{
+            base: `
               "title button"
               "search search"
             `,
-              md: `"title search button"`,
-            }}
-            gridTemplateColumns={{ base: '1fr auto', md: '2fr 1fr auto' }}
-            columnGap={3}
-            rowGap={5}
-            alignItems="center"
-            pl={{ base: '0', md: '2rem' }}
-            mb={{ base: '0', md: '1.5rem' }}
-          >
-            <GridItem area="title">
-              <PageTitle title={FLOWS_TITLE} />
-            </GridItem>
+            md: `"title search button"`,
+          }}
+          gridTemplateColumns={{ base: '1fr auto', md: '2fr 1fr auto' }}
+          columnGap={3}
+          rowGap={5}
+          alignItems="center"
+          pl={{ base: '0', md: '2rem' }}
+          mb={{ base: '0', md: '1.5rem' }}
+        >
+          <GridItem area="title">
+            <PageTitle title={FLOWS_TITLE} />
+          </GridItem>
 
-            <GridItem area="search">
-              <SearchInput
-                searchValue={flowName}
-                onChange={onSearchInputChange}
-              />
-            </GridItem>
-
-            <GridItem area="button">
-              <ConditionalIconButton
-                type="submit"
-                size="lg"
-                icon={<BiPlus />}
-                data-test="create-flow-button"
-                onClick={onOpen}
-              >
-                Create Pipe
-              </ConditionalIconButton>
-            </GridItem>
-          </Grid>
-
-          {flowTransfersLoading ? (
-            <Center>
-              <PrimarySpinner fontSize="4xl" />
-            </Center>
-          ) : flowTransfers.length === 0 ? (
-            <></>
-          ) : (
-            <ApproveTransfersInfobox count={flowTransfers.length} />
-          )}
-
-          {loading && (
-            <Center mt={8}>
-              <PrimarySpinner fontSize="4xl" />
-            </Center>
-          )}
-
-          {!loading &&
-            flows?.map((flow) => <FlowRow key={flow.id} flow={flow} />)}
-
-          {!loading && !hasFlows && (
-            <NoResultFound
-              description="We couldn't find anything"
-              action="Try using different keywords or checking for typos."
+          <GridItem area="search">
+            <SearchInput
+              searchValue={flowName}
+              onChange={onSearchInputChange}
             />
-          )}
+          </GridItem>
 
-          {!loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE && (
-            <Flex justifyContent="center" mt={6}>
-              <Pagination
-                currentPage={pageInfo?.currentPage}
-                onPageChange={handlePageChange}
-                pageSize={FLOW_PER_PAGE}
-                totalCount={pageInfo?.totalCount}
-              />
-            </Flex>
-          )}
-        </Container>
-      </Box>
+          <GridItem area="button">
+            <ConditionalIconButton
+              type="submit"
+              size="lg"
+              icon={<BiPlus />}
+              data-test="create-flow-button"
+              onClick={onOpen}
+            >
+              Create Pipe
+            </ConditionalIconButton>
+          </GridItem>
+        </Grid>
+
+        {flowTransfersLoading ? (
+          <Center>
+            <PrimarySpinner fontSize="4xl" />
+          </Center>
+        ) : flowTransfers.length === 0 ? (
+          <></>
+        ) : (
+          <ApproveTransfersInfobox count={flowTransfers.length} />
+        )}
+
+        {loading && (
+          <Center mt={8}>
+            <PrimarySpinner fontSize="4xl" />
+          </Center>
+        )}
+
+        {!loading &&
+          flows?.map((flow) => <FlowRow key={flow.id} flow={flow} />)}
+
+        {!loading && !hasFlows && (
+          <NoResultFound
+            description="We couldn't find anything"
+            action="Try using different keywords or checking for typos."
+          />
+        )}
+
+        {!loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE && (
+          <Flex justifyContent="center" mt={6}>
+            <Pagination
+              currentPage={pageInfo?.currentPage}
+              onPageChange={handlePageChange}
+              pageSize={FLOW_PER_PAGE}
+              totalCount={pageInfo?.totalCount}
+            />
+          </Flex>
+        )}
+      </Container>
 
       {isOpen && <CreateFlowModal onClose={onClose} />}
     </>

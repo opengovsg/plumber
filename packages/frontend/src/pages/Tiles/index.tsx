@@ -29,7 +29,7 @@ export default function Tiles(): JSX.Element {
 
   const isEmpty = data.getTables.length === 0
   return (
-    <Container py={7}>
+    <Container py={9}>
       <Flex
         flexDir="column"
         justifyContent="space-between"
