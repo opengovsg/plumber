@@ -8,10 +8,10 @@ import { Pagination } from '@opengovsg/design-system-react'
 import AppFlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
+import useFormatMessage from '@/hooks/useFormatMessage'
 
 type AppFlowsProps = {
   appKey: string
-  appName: string
 }
 
 const FLOW_PER_PAGE = 10
@@ -22,11 +22,12 @@ const getLimitAndOffset = (page: number) => ({
 })
 
 export default function AppFlows(props: AppFlowsProps): React.ReactElement {
-  const { appKey, appName } = props
+  const { appKey } = props
+  const formatMessage = useFormatMessage()
   const [searchParams, setSearchParams] = useSearchParams()
   const connectionId = searchParams.get('connectionId') || undefined
   const page = parseInt(searchParams.get('page') || '', 10) || 1
-  const { data, loading } = useQuery(GET_FLOWS, {
+  const { data } = useQuery(GET_FLOWS, {
     variables: {
       appKey,
       connectionId,
@@ -39,12 +40,8 @@ export default function AppFlows(props: AppFlowsProps): React.ReactElement {
   const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
   const hasFlows = flows?.length
 
-  if (!loading && !hasFlows) {
-    return (
-      <NoResultFound
-        description={`You have no pipes using a ${appName} connection`}
-      />
-    )
+  if (!hasFlows) {
+    return <NoResultFound text={formatMessage('app.noFlows')} />
   }
 
   return (

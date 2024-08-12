@@ -5,7 +5,7 @@ type Query {
     onlyWithActions: Boolean
   ): [App]
   getApp(key: String!): App
-  getConnectedApps: [App]
+  getConnectedApps(name: String): [App]
   testConnection(connectionId: String!, stepId: String): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(

@@ -13,11 +13,15 @@ export const ADD_REDIRECT_TO_LOGIN = (redirectQueryParam: string): string =>
   `${LOGIN}/?redirect=${redirectQueryParam}`
 
 export const APPS = '/apps'
+export const NEW_APP_CONNECTION = '/apps/new'
 export const APP = (appKey: string): string => `/app/${appKey}`
 export const APP_PATTERN = '/app/:appKey'
 export const APP_CONNECTIONS = (appKey: string): string =>
   `/app/${appKey}/connections`
 export const APP_CONNECTIONS_PATTERN = '/app/:appKey/connections'
+export const APP_ADD_CONNECTION = (appKey: string): string =>
+  `/app/${appKey}/connections/add`
+export const APP_ADD_CONNECTION_PATTERN = '/app/:appKey/connections/add'
 export const APP_RECONNECT_CONNECTION = (
   appKey: string,
   connectionId: string,

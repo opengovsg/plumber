@@ -1,4 +1,5 @@
 export { default as AddAppConnection } from '../components/AddAppConnection'
+export { default as AddNewAppConnection } from '../components/AddNewAppConnection'
 export { default as ApolloProvider } from '../components/ApolloProvider'
 export { default as AppBar } from '../components/AppBar'
 export { default as AppConnectionContextMenu } from '../components/AppConnectionContextMenu'

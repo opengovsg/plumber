@@ -1,18 +1,46 @@
-import { ReactElement } from 'react'
-import { Stack, Text } from '@chakra-ui/react'
+import * as React from 'react'
+import type { LinkProps } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import AddCircleIcon from '@mui/icons-material/AddCircle'
+import Card from '@mui/material/Card'
+import CardActionArea from '@mui/material/CardActionArea'
+import Typography from '@mui/material/Typography'
+
+import { CardContent } from './style'
 
 type NoResultFoundProps = {
-  description: string
-  action?: string
+  text?: string
+  to?: string
 }
 
-export default function NoResultFound(props: NoResultFoundProps): ReactElement {
-  const { description, action } = props
+export default function NoResultFound(
+  props: NoResultFoundProps,
+): React.ReactElement {
+  const { text, to } = props
+
+  const ActionAreaLink = React.useMemo(
+    () =>
+      React.forwardRef<HTMLAnchorElement, Omit<LinkProps, 'to'>>(
+        function InlineLink(linkProps, ref) {
+          if (!to) {
+            return <div>{linkProps.children}</div>
+          }
+
+          return <Link ref={ref} to={to} {...linkProps} />
+        },
+      ),
+    [to],
+  )
 
   return (
-    <Stack mt={24} justifyContent="center" alignItems="center" gap={2}>
-      <Text textStyle="subhead-1">{description}</Text>
-      <Text>{action}</Text>
-    </Stack>
+    <Card elevation={0}>
+      <CardActionArea component={ActionAreaLink} {...props}>
+        <CardContent>
+          {!!to && <AddCircleIcon color="primary" />}
+
+          <Typography variant="body1">{text}</Typography>
+        </CardContent>
+      </CardActionArea>
+    </Card>
   )
 }

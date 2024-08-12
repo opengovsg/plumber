@@ -4,10 +4,10 @@ import type { QueryResolvers } from '../__generated__/types.generated'
 
 const getConnectedApps: QueryResolvers['getConnectedApps'] = async (
   _parent,
-  _params,
+  params,
   context,
 ) => {
-  let apps = await App.findAll()
+  let apps = await App.findAll(params.name)
 
   const connections = await context.currentUser
     .$relatedQuery('connections')
