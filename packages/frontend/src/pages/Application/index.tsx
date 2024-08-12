@@ -143,6 +143,13 @@ export default function Application(): React.ReactElement | null {
 
       <Routes>
         <Route
+          path="/connections/add"
+          element={
+            <AddAppConnection onClose={goToApplicationPage} application={app} />
+          }
+        />
+
+        <Route
           path="/connections/:connectionId/reconnect"
           element={
             <ReconnectConnection
