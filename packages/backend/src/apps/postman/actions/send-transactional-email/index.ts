@@ -21,7 +21,7 @@ import { throwPostmanStepError } from '../../common/throw-errors'
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
-  description: 'Sends an email with Postman',
+  description: 'Sends an email using Postman',
   arguments: transactionalEmailFields,
   doesFileProcessing: (step: Step) => {
     return (
