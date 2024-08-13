@@ -50,11 +50,22 @@ const action: IRawAction = {
     {
       label: 'Topic ID',
       key: 'topicId',
-      type: 'string' as const,
+      type: 'dropdown' as const,
+      allowArbitrary: true,
       required: false,
       description:
         'Leave it empty unless you are using topics. Refer to our user guide: https://guide.plumber.gov.sg/user-guides/actions/telegram',
-      variables: true,
+      variables: false,
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [
+          {
+            name: 'key',
+            value: 'getTelegramTopicIds',
+          },
+        ],
+      },
     },
   ],
 
