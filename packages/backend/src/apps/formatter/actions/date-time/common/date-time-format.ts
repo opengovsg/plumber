@@ -65,7 +65,7 @@ export const fieldSchema = z.object({
 })
 
 export const field = {
-  label: 'What format is the value in?',
+  label: 'Select the format of your value',
   key: fieldSchema.keyof().enum.dateTimeFormat,
   type: 'dropdown' as const,
   required: true,
