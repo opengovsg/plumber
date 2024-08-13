@@ -9,9 +9,9 @@ import TableColumnMetadata from '@/models/table-column-metadata'
  */
 export async function generateColumnNameMetadata(
   rowData: Record<string, string | number>,
-  prefix = 'row.', // this is the parent key for the row data
+  parentKey = 'row', // this is the parent key for the row data
 ): Promise<IDataOutMetadata> {
-  const metadata: IDataOutMetadata = {}
+  const columnMetadata: IDataOutMetadata = {}
 
   const columnIds = Object.keys(rowData)
 
@@ -20,9 +20,9 @@ export async function generateColumnNameMetadata(
     .select('id', 'name')
 
   columns.forEach((column) => {
-    metadata[`${prefix}${column.id}`] = {
+    columnMetadata[column.id] = {
       label: column.name,
     }
   })
-  return metadata
+  return { [parentKey]: columnMetadata }
 }
