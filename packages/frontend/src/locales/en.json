@@ -7,7 +7,7 @@
   "app.connections": "Connections",
   "app.flows": "Pipes",
   "addAppConnection.submit": "Submit",
-  "addAppConnection.callToDocs": "Visit <docsLink>our documentation</docsLink> to see how to add connection for {appName}.",
+  "addAppConnection.callToDocs": "Visit <docsLink>our guide</docsLink> to learn how to connect {appName}.",
   "connection.flowCount": "{count} pipes",
   "connection.viewFlows": "View pipes",
   "connection.testConnection": "Test connection",
