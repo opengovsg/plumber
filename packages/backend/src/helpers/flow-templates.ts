@@ -1,6 +1,5 @@
-import type { AppEventKeyPair } from '@plumber/types'
-
 import type {
+  AppEventKeyPair,
   CreateTemplatedFlowInput,
   FlowConfig,
 } from '@/graphql/__generated__/types.generated'

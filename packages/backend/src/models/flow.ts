@@ -30,6 +30,7 @@ class Flow extends Base {
    */
   config: IFlowConfig | null
 
+  // TODO (mal): add template when necessary
   static tableName = 'flows'
 
   static jsonSchema = {
