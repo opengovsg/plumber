@@ -25,7 +25,7 @@ type TelegramChat = {
 }
 
 // Reference: https://core.telegram.org/bots/api#message
-export type ForumTopic = {
+type ForumTopic = {
   name: string
 }
 
@@ -34,7 +34,7 @@ export type HasTelegramChat = {
 }
 
 // Reference: https://core.telegram.org/bots/api#message
-export type TelegramMessage = {
+type TelegramMessage = {
   message_id: number
   message_thread_id?: number
   from?: TelegramUser

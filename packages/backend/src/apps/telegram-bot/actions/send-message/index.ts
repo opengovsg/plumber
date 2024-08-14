@@ -48,24 +48,13 @@ const action: IRawAction = {
         'Sends the message silently. Users will receive a notification with no sound.',
     },
     {
-      label: 'Topic ID',
+      label: 'Channel Topic',
       key: 'topicId',
-      type: 'dropdown' as const,
-      allowArbitrary: true,
+      type: 'string' as const,
       required: false,
       description:
-        'Leave it empty unless you are using topics. Refer to our user guide: https://guide.plumber.gov.sg/user-guides/actions/telegram',
-      variables: false,
-      source: {
-        type: 'query' as const,
-        name: 'getDynamicData' as const,
-        arguments: [
-          {
-            name: 'key',
-            value: 'getTelegramTopicIds',
-          },
-        ],
-      },
+        'Key in the topic id if present. Refer to our user guide for more info.',
+      variables: true,
     },
   ],
 
