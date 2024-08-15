@@ -111,7 +111,11 @@ export default function NavigationSidebar() {
       )}
 
       {/* bottom sidebar items */}
-      <Box position="fixed" bottom={2} w="90%">
+      <Box
+        position="fixed"
+        bottom={2}
+        w={{ base: 'calc(100% - 2rem)', sm: 'inherit' }}
+      >
         {links.map((link, index) =>
           link.isBottom ? (
             <NavigationSidebarItem

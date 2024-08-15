@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BiBookOpen, BiHistory, BiLayer, BiSolidGrid } from 'react-icons/bi'
+import { BiBookOpen, BiHistory, BiSolidGrid, BiTable } from 'react-icons/bi'
 import { Box, Divider, Show } from '@chakra-ui/react'
 
 import AppBar from '@/components/AppBar'
@@ -34,7 +34,7 @@ const drawerLinks = [
     to: URLS.FLOWS,
   },
   {
-    Icon: BiLayer,
+    Icon: BiTable,
     text: 'Tiles',
     to: URLS.TILES,
   },

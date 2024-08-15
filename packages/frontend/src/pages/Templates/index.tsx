@@ -1,15 +1,19 @@
-import { Center, chakra, Flex, Image, Text } from '@chakra-ui/react'
+import { Center, chakra, Flex, Hide, Image, Text } from '@chakra-ui/react'
 import { Badge, Link } from '@opengovsg/design-system-react'
 
 import templatesPreviewImg from '@/assets/templates-preview.svg'
 import Container from '@/components/Container'
+import NavigationDrawer from '@/components/Layout/NavigationDrawer'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import * as URLS from '@/config/urls'
 
 export default function Templates(): JSX.Element {
   return (
-    <Container w={{ base: '80%', md: '60%', lg: '50%' }}>
-      <Center mt={12}>
+    <Container w={{ base: '90%', md: '60%', lg: '50%' }}>
+      <Hide above="sm">
+        <NavigationDrawer />
+      </Hide>
+      <Center mt={{ base: '1rem', sm: '3rem' }}>
         <Image src={templatesPreviewImg} alt="template-preview" />
       </Center>
       <Flex
