@@ -13,7 +13,6 @@ import { BiSearch } from 'react-icons/bi'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import {
-  Box,
   CircularProgress,
   Divider,
   Flex,
@@ -140,84 +139,82 @@ export default function Executions(): ReactElement {
   const hasExecutions = executions?.length
 
   return (
-    <Box py={9}>
-      <Container variant="page">
-        <Flex
-          flexDir={{ base: 'column', md: 'row' }}
-          justifyContent="space-between"
-          alignItems={{ base: 'flex-start', md: 'center' }}
-          gap={4}
-          mb={8}
-          pl={{ base: 0, sm: '1rem', md: '2rem' }}
-        >
-          <PageTitle title={EXECUTIONS_TITLE} />
-          <InputGroup maxW="25rem">
-            <InputLeftElement>
-              <Icon as={BiSearch} boxSize={5} />
-            </InputLeftElement>
-            <Input
-              textStyle="body-1"
-              pr={inputPadding}
-              placeholder="Search by pipe name"
-              defaultValue={searchInput}
-              onChange={onSearchInputChange}
-            ></Input>
-            <InputRightElement w="fit-content" p={1} ref={filterRef}>
-              <Divider
-                borderColor="base.divider.medium"
-                h={5}
-                mr={1}
-                orientation="vertical"
-              />
-              <ExecutionStatusMenu
-                filterStatus={filterStatus}
-                onFilterChange={onFilterChange}
-              ></ExecutionStatusMenu>
-            </InputRightElement>
-          </InputGroup>
-        </Flex>
-
-        {loading && (
-          <CircularProgress
-            isIndeterminate
-            color="primary.500"
-            display="flex"
-            justifyContent="center"
-            my={5}
-          />
-        )}
-
-        {!loading && !hasExecutions && (
-          <NoResultFound
-            description={
-              searchInput === ''
-                ? 'No executions yet'
-                : "We couldn't find anything"
-            }
-            action={
-              searchInput === ''
-                ? 'Executions will appear here when your pipe has started running.'
-                : 'Try using different keywords or checking for typos.'
-            }
-          />
-        )}
-
-        {!loading &&
-          executions?.map((execution) => (
-            <ExecutionRow key={execution.id} execution={execution} />
-          ))}
-
-        {!loading && pageInfo && pageInfo.totalCount > EXECUTION_PER_PAGE && (
-          <Flex justifyContent="center" mt={6}>
-            <Pagination
-              currentPage={pageInfo?.currentPage}
-              onPageChange={handlePageChange}
-              pageSize={EXECUTION_PER_PAGE}
-              totalCount={pageInfo?.totalCount}
+    <Container py={9}>
+      <Flex
+        flexDir={{ base: 'column', md: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ base: 'flex-start', md: 'center' }}
+        gap={4}
+        mb={8}
+        pl={{ base: 0, sm: '1rem', md: '2rem' }}
+      >
+        <PageTitle title={EXECUTIONS_TITLE} />
+        <InputGroup maxW="25rem">
+          <InputLeftElement>
+            <Icon as={BiSearch} boxSize={5} />
+          </InputLeftElement>
+          <Input
+            textStyle="body-1"
+            pr={inputPadding}
+            placeholder="Search by pipe name"
+            defaultValue={searchInput}
+            onChange={onSearchInputChange}
+          ></Input>
+          <InputRightElement w="fit-content" p={1} ref={filterRef}>
+            <Divider
+              borderColor="base.divider.medium"
+              h={5}
+              mr={1}
+              orientation="vertical"
             />
-          </Flex>
-        )}
-      </Container>
-    </Box>
+            <ExecutionStatusMenu
+              filterStatus={filterStatus}
+              onFilterChange={onFilterChange}
+            ></ExecutionStatusMenu>
+          </InputRightElement>
+        </InputGroup>
+      </Flex>
+
+      {loading && (
+        <CircularProgress
+          isIndeterminate
+          color="primary.500"
+          display="flex"
+          justifyContent="center"
+          my={5}
+        />
+      )}
+
+      {!loading && !hasExecutions && (
+        <NoResultFound
+          description={
+            searchInput === ''
+              ? 'No executions yet'
+              : "We couldn't find anything"
+          }
+          action={
+            searchInput === ''
+              ? 'Executions will appear here when your pipe has started running.'
+              : 'Try using different keywords or checking for typos.'
+          }
+        />
+      )}
+
+      {!loading &&
+        executions?.map((execution) => (
+          <ExecutionRow key={execution.id} execution={execution} />
+        ))}
+
+      {!loading && pageInfo && pageInfo.totalCount > EXECUTION_PER_PAGE && (
+        <Flex justifyContent="center" mt={6}>
+          <Pagination
+            currentPage={pageInfo?.currentPage}
+            onPageChange={handlePageChange}
+            pageSize={EXECUTION_PER_PAGE}
+            totalCount={pageInfo?.totalCount}
+          />
+        </Flex>
+      )}
+    </Container>
   )
 }
