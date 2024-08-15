@@ -1,47 +1,77 @@
-import { Center, Flex, Hide, Image, Text } from '@chakra-ui/react'
-import { Badge, Link } from '@opengovsg/design-system-react'
+import { useQuery } from '@apollo/client'
+import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
+import { Link, Tile } from '@opengovsg/design-system-react'
 
-import templatesPreviewImg from '@/assets/templates-preview.svg'
 import Container from '@/components/Container'
-import NavigationDrawer from '@/components/Layout/NavigationDrawer'
+import PageTitle from '@/components/PageTitle'
+import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
+import type { Template } from '@/graphql/__generated__/graphql'
+import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
+import { FALLBACK_ICON, TEMPLATE_ICONS_MAP } from '@/helpers/flow-templates'
+
+const TEMPLATES_TITLE = 'Templates'
 
 export default function Templates(): JSX.Element {
-  return (
-    <Container w={{ base: '90%', md: '60%', lg: '50%' }}>
-      <Hide above="sm">
-        <NavigationDrawer />
-      </Hide>
-      <Center mt={{ base: '1rem', sm: '3rem' }}>
-        <Image src={templatesPreviewImg} alt="template-preview" />
+  const { data, loading } = useQuery(GET_TEMPLATES)
+  const templates: Template[] = data?.getTemplates
+
+  if (loading) {
+    return (
+      <Center mt={12}>
+        <PrimarySpinner fontSize="4xl" />
       </Center>
-      <Flex
-        flexDir="column"
-        justifyContent="center"
-        rowGap={4}
-        alignItems="center"
-      >
-        <Badge bgColor="interaction.muted.main.active" color="primary.500">
-          Coming soon!
-        </Badge>
-        <Text textStyle="h3-semibold" textAlign="center">
-          Templates are pre-built pipes that you can use as is or customise
-          further
+    )
+  }
+
+  return (
+    <Container
+      py={9}
+      pl={{ base: '2rem', xl: '3.5rem' }}
+      pr={{ base: '2rem', xl: '8.5rem' }}
+    >
+      <Flex flexDir="column" mb={8} rowGap={2}>
+        <PageTitle title={TEMPLATES_TITLE} />
+        <Text textStyle="body-1">
+          Pre-built pipes that you can use as is or customise further for your
+          own use case
         </Text>
-        <Flex
-          flexDir={{ base: 'column', sm: 'row' }}
-          justifyContent="center"
-          alignItems="center"
-        >
-          <Text whiteSpace="pre-wrap">{`Need a template? `}</Text>
-          <Link
-            href={URLS.TEMPLATES_FORM_LINK}
-            isExternal
-            color="interaction.links.neutral-default"
+      </Flex>
+
+      <Grid
+        gridTemplateColumns={{ base: '1fr', md: '1fr 1fr', xl: '1fr 1fr 1fr' }}
+        columnGap={10}
+        rowGap={6}
+        mb={8}
+      >
+        {/* TODO (mal): add onClick in a later PR */}
+        {templates.map((template, index) => (
+          <Tile
+            key={index}
+            icon={() => (
+              <Box bg="primary.100" p={2} borderRadius={4}>
+                {TEMPLATE_ICONS_MAP[template.name] ?? FALLBACK_ICON}
+              </Box>
+            )}
           >
-            Let us know
-          </Link>
-        </Flex>
+            <Flex flexDir="column" gap={2} mt={2}>
+              <Text textStyle="subhead-1">{template.name}</Text>
+              <Text textStyle="body-2">{template.description}</Text>
+            </Flex>
+          </Tile>
+        ))}
+      </Grid>
+
+      <Flex
+        flexDir={{ base: 'column', md: 'row' }}
+        justifyContent="center"
+        alignItems="center"
+        textStyle="body-2"
+      >
+        <Text whiteSpace="pre-wrap">{`Can’t find what you’re looking for? `}</Text>
+        <Link href={URLS.TEMPLATES_FORM_LINK} isExternal textDecoration="none">
+          Request a template
+        </Link>
       </Flex>
     </Container>
   )
