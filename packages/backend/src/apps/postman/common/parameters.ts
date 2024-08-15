@@ -17,11 +17,10 @@ function recipientStringToArray(value: string) {
 
 export const transactionalEmailFields: IField[] = [
   {
-    label: 'Subject',
+    label: 'Email subject',
     key: 'subject',
     type: 'string' as const,
     required: true,
-    description: 'Email subject.',
     variables: true,
   },
   {
@@ -29,38 +28,38 @@ export const transactionalEmailFields: IField[] = [
     key: 'body',
     type: 'rich-text' as const,
     required: true,
-    description:
-      'Email body HTML. We are upgrading this field to a rich-text field, if you observe any issues while editing your existing pipes, please contact us via support@plumber.gov.sg',
     variables: true,
   },
   {
-    label: 'Recipient Email',
+    label: 'Recipient email(s)',
     key: 'destinationEmail',
     type: 'string' as const,
     required: true,
-    description: 'Recipient email addresses, comma-separated.',
+    description:
+      'To send to multiple recipients, comma-separate email addresses. Emails will be sent to each email address separately.',
     variables: true,
   },
   {
-    label: 'Reply-To Email',
-    key: 'replyTo',
-    type: 'string' as const,
-    required: false,
-    description: 'Reply-to email',
-    variables: true,
-  },
-  {
-    label: 'Sender Name',
+    label: 'Sender name',
     key: 'senderName',
     type: 'string' as const,
     required: true,
+    description: 'For e.g., HR department',
+    variables: true,
+  },
+  {
+    label: 'Reply-To email',
+    key: 'replyTo',
+    type: 'string' as const,
+    required: false,
+    description: 'If left blank, this will default to your email address',
     variables: true,
   },
   {
     label: 'Attachments',
     key: 'attachments',
     description:
-      'Find out more about supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
+      'Check supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
     type: 'multiselect' as const,
     required: false,
     variables: true,

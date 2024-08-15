@@ -26,7 +26,9 @@ export default function TrainingSession() {
         </Box>
         <Spacer></Spacer>
         <Button
-          onClick={() => window.open(URLS.PLUMBER_AMA_LINK, '_blank')}
+          as={'a'}
+          href={URLS.FEEDBACK_FORM_LINK}
+          target="_blank"
           w={{ base: '100%', md: 'auto' }}
           rightIcon={<BiRightArrowAlt fontSize="1.5rem" />}
         >

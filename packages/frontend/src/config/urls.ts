@@ -55,6 +55,9 @@ export const FLOW_EDITOR_TRANSFERS = (flowId?: string): string =>
 
 export const TRANSFERS = '/transfers'
 
+// Templates routes
+export const TEMPLATES = '/templates'
+
 export const DASHBOARD = FLOWS
 
 export const APP_ICON_URL = (appKey: string): string =>
@@ -71,4 +74,4 @@ export const FEEDBACK_FORM_LINK = 'https://go.gov.sg/plumber-feedback'
 export const STATUS_LINK = 'https://status.plumber.gov.sg/'
 export const SGID_CHECK_ELIGIBILITY_URL =
   'https://docs.id.gov.sg/faq-users#as-a-government-officer-why-am-i-not-able-to-login-to-my-work-tool-using-sgid'
-export const PLUMBER_AMA_LINK = 'https://go.gov.sg/plumber-ama'
+export const TEMPLATES_FORM_LINK = 'https://go.gov.sg/request-template'

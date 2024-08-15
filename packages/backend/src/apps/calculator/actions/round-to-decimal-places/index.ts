@@ -13,7 +13,7 @@ import { fields, fieldSchema } from './fields'
 const action = {
   name: 'Round number',
   key: 'roundToDecimalPlaces',
-  description: 'Round a number with a decimal down, up or off',
+  description: 'Round up/down/off numbers with decimals',
   arguments: fields,
 
   async run($) {

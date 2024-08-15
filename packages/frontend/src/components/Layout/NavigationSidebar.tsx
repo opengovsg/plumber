@@ -1,7 +1,7 @@
 import { useContext } from 'react'
 import { BiBulb } from 'react-icons/bi'
 import { Link, useMatch } from 'react-router-dom'
-import { Text, useDisclosure } from '@chakra-ui/react'
+import { Box, Text, useDisclosure } from '@chakra-ui/react'
 import {
   Badge,
   SidebarContainer,
@@ -77,9 +77,6 @@ const DemoSidebarItem = () => {
           bg: 'interaction.muted.main.active',
         }}
         display="flex"
-        position="fixed"
-        bottom={2}
-        bg="white"
       >
         <Text
           textStyle="subhead-1"
@@ -88,13 +85,6 @@ const DemoSidebarItem = () => {
         >
           Demo
         </Text>
-        <Badge
-          bgColor="interaction.muted.main.active"
-          color="primary.500"
-          display={{ sm: 'none', lg: 'block' }}
-        >
-          New
-        </Badge>
       </SidebarItem>
       {isOpen && <DemoPageModal onClose={onClose} />}
     </>
@@ -106,15 +96,39 @@ export default function NavigationSidebar() {
 
   // TODO (mal): I will make a discriminated union and combine with the drawer links if more than 1 "sidebar modal item" exists
   return (
+    // top sidebar items
     <SidebarContainer variant="sticky">
-      {links.map((link, index) => (
-        <NavigationSidebarItem
-          key={index}
-          link={link}
-          closeDrawer={closeDrawer}
-        />
-      ))}
-      <DemoSidebarItem />
+      {links.map((link, index) =>
+        link.isBottom ? (
+          <></>
+        ) : (
+          <NavigationSidebarItem
+            key={index}
+            link={link}
+            closeDrawer={closeDrawer}
+          />
+        ),
+      )}
+
+      {/* bottom sidebar items */}
+      <Box
+        position="fixed"
+        bottom={2}
+        w={{ base: 'calc(100% - 2rem)', sm: 'inherit' }}
+      >
+        {links.map((link, index) =>
+          link.isBottom ? (
+            <NavigationSidebarItem
+              key={index}
+              link={link}
+              closeDrawer={closeDrawer}
+            />
+          ) : (
+            <></>
+          ),
+        )}
+        <DemoSidebarItem />
+      </Box>
     </SidebarContainer>
   )
 }

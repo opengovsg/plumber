@@ -224,11 +224,6 @@ type DemoVideoDetails {
   title: String!
 }
 
-type DemoVideoDetails {
-  url: String!
-  title: String!
-}
-
 type StepLabel {
   connectionStepLabel: String
   settingsStepLabel: String

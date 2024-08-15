@@ -18,20 +18,19 @@ const trigger: IRawTrigger = {
   name: 'New form response',
   key: 'newSubmission',
   type: 'webhook',
-  description: 'Triggers when a new form response is received',
+  description: 'This workflow starts when a new form response is received',
   webhookTriggerInstructions: {
     hideWebhookUrl: true,
     errorMsg:
       'Make a new submission to the form you connected and test the step again.',
-    mockDataMsg:
-      'The data below is mocked based on your form. Make a FormSG submission to modify the data.',
+    mockDataMsg: 'The mock responses below are based on your form fields.',
   },
   arguments: [
     {
       label: 'NRIC Filter',
       key: 'nricFilter',
       type: 'dropdown' as const,
-      description: 'Choose how to handle NRIC numbers',
+      description: 'Choose how to handle NRIC/FINs',
       required: false,
       variables: false,
       value: NricFilter.None,
@@ -41,19 +40,20 @@ const trigger: IRawTrigger = {
           value: NricFilter.None,
         },
         {
-          label: 'Remove NRIC numbers',
+          label: 'Remove NRICs',
           value: NricFilter.Remove,
         },
         {
-          label: 'Mask NRIC numbers, e.g. S1234567A -> xxxxx567A',
+          label: 'Mask NRICs, e.g. S1234567A → xxxxx567A',
           value: NricFilter.Mask,
         },
         {
           label:
-            'Hash NRIC numbers, e.g. S1234567A -> 5f4dcc3b5aa765d61d8327deb882cf99',
+            'Hash NRICs, e.g. S1234567A → 5f4dcc3b5aa765d61d8327deb882cf99',
           value: NricFilter.Hash,
         },
       ],
+      showOptionValue: false,
     },
   ],
 

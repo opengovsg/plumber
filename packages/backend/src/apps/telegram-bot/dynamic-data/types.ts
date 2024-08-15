@@ -24,6 +24,11 @@ type TelegramChat = {
   photo?: unknown
 }
 
+// Reference: https://core.telegram.org/bots/api#message
+type ForumTopic = {
+  name: string
+}
+
 export type HasTelegramChat = {
   chat: TelegramChat
 }
@@ -43,8 +48,10 @@ type TelegramMessage = {
   forward_sender_name?: string
   forward_date?: number
   is_topic_message?: true
+  forum_topic_created?: ForumTopic
+  forum_topic_edited?: ForumTopic
   is_automatic_forward?: true
-  reply_to_message?: TelegramMessage
+  reply_to_message?: TelegramMessage // for replies in the same chat and message thread
   via_bot?: TelegramUser
   edit_date?: number
   has_protected_content?: true
