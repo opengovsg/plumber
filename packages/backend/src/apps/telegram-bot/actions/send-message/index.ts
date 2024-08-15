@@ -47,6 +47,15 @@ const action: IRawAction = {
       description:
         'Sends the message silently. Users will receive a notification with no sound.',
     },
+    {
+      label: 'Channel Topic',
+      key: 'topicId',
+      type: 'string' as const,
+      required: false,
+      description:
+        'Key in the topic id if present. Refer to our user guide for more info.',
+      variables: true,
+    },
   ],
 
   preprocessVariable(key: string, value: unknown) {
@@ -72,6 +81,9 @@ const action: IRawAction = {
       chat_id: $.step.parameters.chatId,
       text: sanitizedMarkdown,
       disable_notification: $.step.parameters.disableNotification,
+      ...($.step.parameters.topicId && {
+        message_thread_id: $.step.parameters.topicId,
+      }),
       parse_mode: 'markdown', // legacy markdown to allow only a small set of modifiers
     }
     try {

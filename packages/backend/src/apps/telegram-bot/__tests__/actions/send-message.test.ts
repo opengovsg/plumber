@@ -135,6 +135,10 @@ describe('send message', () => {
       errorDescription: 'Bad Request: chat not found',
       stepErrorName: 'Incorrect bot configuration',
     },
+    {
+      errorDescription: 'Bad Request: message thread not found',
+      stepErrorName: 'Incorrect topic configuration',
+    },
   ])(
     'should throw step error for 400 error codes',
     async ({ errorDescription, stepErrorName }) => {
