@@ -31,16 +31,16 @@ export const transactionalEmailFields: IField[] = [
     variables: true,
   },
   {
-    label: 'Recipient Email',
+    label: 'Recipient email(s)',
     key: 'destinationEmail',
     type: 'string' as const,
     required: true,
     description:
-      'If you have multiple recipients, comma-separate the email addresses',
+      'To send to multiple recipients, comma-separate email addresses. Emails will be sent to each email address separately.',
     variables: true,
   },
   {
-    label: 'Sender Name',
+    label: 'Sender name',
     key: 'senderName',
     type: 'string' as const,
     required: true,
@@ -48,7 +48,7 @@ export const transactionalEmailFields: IField[] = [
     variables: true,
   },
   {
-    label: 'Reply-To Email',
+    label: 'Reply-To email',
     key: 'replyTo',
     type: 'string' as const,
     required: false,
