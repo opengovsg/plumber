@@ -128,7 +128,7 @@ export default function Flows(): React.ReactElement {
           rowGap={5}
           alignItems="center"
           pl={{ base: '0', md: '2rem' }}
-          mb={{ base: '0', md: '1.5rem' }}
+          mb={6}
         >
           <GridItem area="title">
             <PageTitle title={FLOWS_TITLE} />

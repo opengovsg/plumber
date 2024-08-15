@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { BiBookOpen, BiBulb } from 'react-icons/bi'
+import { BiBulb } from 'react-icons/bi'
 import { Link, useMatch } from 'react-router-dom'
 import { Box, Text, useDisclosure } from '@chakra-ui/react'
 import {
@@ -8,7 +8,6 @@ import {
   SidebarItem,
 } from '@opengovsg/design-system-react'
 
-import * as URLS from '@/config/urls'
 import { LayoutNavigationContext } from '@/contexts/LayoutNavigation'
 
 import DemoPageModal from './DemoPageModal'
@@ -58,12 +57,6 @@ function NavigationSidebarItem({
   )
 }
 
-const templateDrawerLink: DrawerLink = {
-  Icon: BiBookOpen,
-  text: 'Templates',
-  to: URLS.TEMPLATES,
-}
-
 const DemoSidebarItem = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -103,19 +96,33 @@ export default function NavigationSidebar() {
 
   // TODO (mal): I will make a discriminated union and combine with the drawer links if more than 1 "sidebar modal item" exists
   return (
+    // top sidebar items
     <SidebarContainer variant="sticky">
-      {links.map((link, index) => (
-        <NavigationSidebarItem
-          key={index}
-          link={link}
-          closeDrawer={closeDrawer}
-        />
-      ))}
-      <Box position="fixed" bottom={2}>
-        <NavigationSidebarItem
-          link={templateDrawerLink}
-          closeDrawer={closeDrawer}
-        />
+      {links.map((link, index) =>
+        link.isBottom ? (
+          <></>
+        ) : (
+          <NavigationSidebarItem
+            key={index}
+            link={link}
+            closeDrawer={closeDrawer}
+          />
+        ),
+      )}
+
+      {/* bottom sidebar items */}
+      <Box position="fixed" bottom={2} w="90%">
+        {links.map((link, index) =>
+          link.isBottom ? (
+            <NavigationSidebarItem
+              key={index}
+              link={link}
+              closeDrawer={closeDrawer}
+            />
+          ) : (
+            <></>
+          ),
+        )}
         <DemoSidebarItem />
       </Box>
     </SidebarContainer>

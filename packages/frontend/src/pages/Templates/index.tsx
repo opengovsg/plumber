@@ -8,7 +8,7 @@ import * as URLS from '@/config/urls'
 
 export default function Templates(): JSX.Element {
   return (
-    <Container w="50%">
+    <Container w={{ base: '80%', md: '60%', lg: '50%' }}>
       <Center mt={12}>
         <Image src={templatesPreviewImg} alt="template-preview" />
       </Center>
