@@ -36,7 +36,7 @@ export function createSelectTransformDropdown(
   transforms: TransformSpec[],
 ): IFieldDropdown {
   return {
-    label: 'How do you want to transform your data?',
+    label: 'Select how you want to transform your data',
     key: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
     type: 'dropdown' as const,
     required: true,
