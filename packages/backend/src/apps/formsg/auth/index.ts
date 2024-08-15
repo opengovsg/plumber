@@ -20,7 +20,8 @@ const auth: IUserAddedConnectionAuth = {
       required: true,
       readOnly: false,
       value: null,
-      description: 'Click share on your form and copy the link from there',
+      description:
+        'Click share on your form and copy the link. It should be in the format: https://form.gov.sg/654ab1234abc1a012345f1e0b',
       clickToCopy: false,
       autoComplete: 'url' as const,
     },
