@@ -21,7 +21,7 @@ const auth: IUserAddedConnectionAuth = {
       readOnly: false,
       value: null,
       description:
-        'Enter your Form URL e.g. https://form.gov.sg/654ab1234abc1a012345f1e0b',
+        'Click share on your form and copy the link. It should be in the format: https://form.gov.sg/654ab1234abc1a012345f1e0b',
       clickToCopy: false,
       autoComplete: 'url' as const,
     },
@@ -32,7 +32,8 @@ const auth: IUserAddedConnectionAuth = {
       required: true,
       readOnly: false,
       value: null,
-      description: 'Secret key for your Form',
+      description:
+        'This is the key you downloaded/saved when you created the form',
       clickToCopy: false,
       autoComplete: 'off' as const,
     },
