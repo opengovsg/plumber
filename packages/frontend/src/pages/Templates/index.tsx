@@ -1,10 +1,9 @@
-import { Center, chakra, Flex, Hide, Image, Text } from '@chakra-ui/react'
+import { Center, Flex, Hide, Image, Text } from '@chakra-ui/react'
 import { Badge, Link } from '@opengovsg/design-system-react'
 
 import templatesPreviewImg from '@/assets/templates-preview.svg'
 import Container from '@/components/Container'
 import NavigationDrawer from '@/components/Layout/NavigationDrawer'
-import MarkdownRenderer from '@/components/MarkdownRenderer'
 import * as URLS from '@/config/urls'
 
 export default function Templates(): JSX.Element {
@@ -29,20 +28,20 @@ export default function Templates(): JSX.Element {
           Templates are pre-built pipes that you can use as is or customise
           further
         </Text>
-        <MarkdownRenderer
-          source={`Need a template? [Let us know](${URLS.TEMPLATES_FORM_LINK})`}
-          components={{
-            a: ({ ...props }) => (
-              <Link
-                isExternal
-                color="interaction.links.neutral-default"
-                _hover={{ color: 'interaction.links.neutral-hover' }}
-                {...props}
-              />
-            ),
-            p: ({ ...props }) => <chakra.p {...props} />,
-          }}
-        />
+        <Flex
+          flexDir={{ base: 'column', sm: 'row' }}
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Text whiteSpace="pre-wrap">{`Need a template? `}</Text>
+          <Link
+            href={URLS.TEMPLATES_FORM_LINK}
+            isExternal
+            color="interaction.links.neutral-default"
+          >
+            Let us know
+          </Link>
+        </Flex>
       </Flex>
     </Container>
   )
