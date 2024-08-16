@@ -4,7 +4,10 @@ import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 import appConfig from '@/config/app'
 import User from '@/models/user'
 
-import createFlowFromTemplate, { DEFAULT_FLOW_TEMPLATE } from './flow-templates'
+import {
+  createDemoFlowFromTemplate,
+  DEFAULT_FLOW_TEMPLATE,
+} from './flow-templates'
 
 const AUTH_COOKIE_NAME = 'plumber.sid'
 // 3 days expiry
@@ -59,13 +62,10 @@ export async function getOrCreateUser(email: string): Promise<User> {
   if (!user) {
     user = await User.query().insertAndFetch({ email })
     const { flowName, trigger, actions, demoVideoId } = DEFAULT_FLOW_TEMPLATE
-    await createFlowFromTemplate(
-      flowName,
-      trigger,
-      actions,
+    await createDemoFlowFromTemplate(
+      { flowName, trigger, actions, demoVideoId },
       user,
       true,
-      demoVideoId,
     )
   }
 

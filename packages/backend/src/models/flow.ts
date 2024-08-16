@@ -24,6 +24,8 @@ class Flow extends Base {
   testExecutionId: string
   testExecution?: Execution
   user: User
+  template: Template
+  templateId: string
 
   /**
    * Null means to use default config.

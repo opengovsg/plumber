@@ -1,53 +1,60 @@
-import { BiWinkSmile } from 'react-icons/bi'
+import { useQuery } from '@apollo/client'
 import {
   AbsoluteCenter,
   Box,
+  Center,
   Divider,
   Flex,
   Grid,
   Hide,
-  Icon,
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import NavigationDrawer from '@/components/Layout/NavigationDrawer'
+import type { Template } from '@/graphql/__generated__/graphql'
+import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import ApproveTransfersInfobox from '@/pages/Flows/components/ApproveTransfersInfobox'
 import CreateFlowModal from '@/pages/Flows/components/CreateFlowModal'
 
-import FlowTemplate, { FlowTemplateProps } from './FlowTemplate'
+import PrimarySpinner from '../PrimarySpinner'
 
-const flowTemplates: FlowTemplateProps[] = [
-  {
-    title: 'Notifications for form submission',
-    description: 'Set up notifications when a new form submission comes in',
-    link: 'https://guide.plumber.gov.sg/use-cases/notifications-for-formsg',
-  },
-  {
-    title: 'Customised acknowledgements',
-    description: `Send respondents’ customised acknowledgements based on their form responses`,
-    link: 'https://guide.plumber.gov.sg/use-cases/email-acknowledgements-to-respondent',
-  },
-  {
-    title: 'Attendance tracking',
-    description: 'Track turnout for events',
-    link: 'https://guide.plumber.gov.sg/use-cases/attendance-taking',
-  },
-]
+import FlowTemplate from './FlowTemplate'
 
 interface EmptyFlowsProps {
   count?: number
 }
 
+const TEMPLATE_NAMES_TO_DISPLAY = [
+  'Send follow ups',
+  'Schedule reminders',
+  'Route support enquiries',
+]
+
 export default function EmptyFlows(props: EmptyFlowsProps) {
   const { count } = props
+  const { data, loading } = useQuery(GET_TEMPLATES, {
+    variables: {
+      names: TEMPLATE_NAMES_TO_DISPLAY,
+    },
+  })
+  const templates: Template[] = data?.getTemplates
+
   // for creation of flows
   const {
     isOpen: isCreateFlowModalOpen,
     onOpen: onCreateFlowModalOpen,
     onClose: onCreateFlowModalClose,
   } = useDisclosure()
+
+  if (loading) {
+    return (
+      <Center mt={12}>
+        <PrimarySpinner fontSize="4xl" />
+      </Center>
+    )
+  }
 
   return (
     <>
@@ -64,26 +71,26 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
               <NavigationDrawer />
             </Box>
           </Hide>
-          <Text textStyle="h4" display="inline">
-            {`You don't have any pipes, see what others are creating`}{' '}
-            <Icon
-              as={BiWinkSmile}
-              verticalAlign="middle"
-              color="primary.500"
-              boxSize={8}
-            />
+          <Text textStyle="h4">
+            Start creating a pipe from one of our templates below
           </Text>
         </Flex>
-        <Grid mt={4} gridTemplateColumns="repeat(3, 1fr)" gap={4}>
-          {flowTemplates.map(({ title, description, link }, index) => (
-            <FlowTemplate
-              key={index}
-              title={title}
-              description={description}
-              link={link}
-            />
+
+        <Grid
+          gridTemplateColumns={{
+            base: '1fr',
+            md: '1fr 1fr',
+            lg: '1fr 1fr 1fr',
+          }}
+          columnGap={4}
+          rowGap={6}
+          mt={4}
+        >
+          {templates.map((template) => (
+            <FlowTemplate key={template.id} template={template} />
           ))}
         </Grid>
+
         <Box position="relative" my={8}>
           <Divider />
           <AbsoluteCenter>
@@ -92,8 +99,9 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
             </Box>
           </AbsoluteCenter>
         </Box>
-        <Button w="100%" onClick={onCreateFlowModalOpen}>
-          Create my own pipe
+
+        <Button w="100%" onClick={onCreateFlowModalOpen} variant="outline">
+          Create from scratch
         </Button>
       </Box>
 

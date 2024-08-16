@@ -417,7 +417,9 @@ input CreateTemplatedFlowInput {
   flowName: String!
   trigger: AppEventKeyPair!
   actions: [AppEventKeyPair!]!
-  demoVideoId: String!
+  demoVideoId: String
+  parametersList: [JSONObject]
+  templateId: String
 }
 
 input UpdateFlowInput {
