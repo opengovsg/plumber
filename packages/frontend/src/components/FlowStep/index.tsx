@@ -8,9 +8,11 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { BiInfoCircle } from 'react-icons/bi'
 import { useMutation, useQuery } from '@apollo/client'
-import { CircularProgress } from '@chakra-ui/react'
+import { chakra, CircularProgress, Flex } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { Infobox, Link } from '@opengovsg/design-system-react'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
 import type { ObjectShape } from 'yup/lib/object'
@@ -20,6 +22,7 @@ import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowStepHeader from '@/components/FlowStepHeader'
 import FlowSubstep from '@/components/FlowSubstep'
 import Form from '@/components/Form'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 import TestSubstep from '@/components/TestSubstep'
 import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
@@ -192,93 +195,123 @@ export default function FlowStep(
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
   return (
-    <FlowStepHeader
-      iconUrl={app?.iconUrl}
-      caption={displayOverrides?.caption ?? caption}
-      hintAboveCaption={
-        displayOverrides?.hintAboveCaption ?? (isTrigger ? 'When' : 'Then')
-      }
-      isCompleted={step.status === 'completed'}
-      onDelete={isDeletable ? onDelete : undefined}
-      onOpen={onOpen}
-      onClose={onClose}
-      collapsed={collapsed ?? false}
-      demoVideoUrl={app?.demoVideoDetails?.url}
-      demoVideoTitle={app?.demoVideoDetails?.title}
-    >
-      <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
-        <Form
-          defaultValues={step}
-          onSubmit={handleSubmit}
-          resolver={stepValidationSchema}
+    <Flex w="100%" flexDir="column">
+      {/* Show infobox only if the step is incomplete and has a help message */}
+      {step.status === 'incomplete' && selectedActionOrTrigger?.helpMessage && (
+        <Infobox
+          icon={<BiInfoCircle />}
+          variant="primaryExcludeIconColor"
+          style={{
+            borderBottomLeftRadius: '0',
+            borderBottomRightRadius: '0',
+          }}
         >
-          {!cannotChooseApp && (
-            <ChooseAppAndEventSubstep
-              expanded={currentSubstep === 0}
-              substep={{
-                key: 'chooseAppAndEvent',
-                name: 'Choose app & event',
-                arguments: [],
-              }}
-              onExpand={() => toggleSubstep(0)}
-              onCollapse={() => toggleSubstep(0)}
-              onSubmit={expandNextStep}
-              onChange={handleChange}
-              step={step}
-              isLastStep={isLastStep}
-            />
-          )}
+          <MarkdownRenderer
+            source={selectedActionOrTrigger?.helpMessage}
+            components={{
+              // Force all links in our message to be opened in a new tab.
+              a: ({ ...props }) => (
+                <Link
+                  isExternal
+                  color="interaction.links.neutral-default"
+                  _hover={{ color: 'interaction.links.neutral-hover' }}
+                  {...props}
+                />
+              ),
+              p: ({ ...props }) => <chakra.p {...props} />,
+            }}
+          />
+        </Infobox>
+      )}
 
-          {substeps?.length > 0 &&
-            substeps.map((substep: ISubstep, index: number) => (
-              <Fragment key={`${substep?.name}-${index}`}>
-                {substep.key === 'chooseConnection' && app && (
-                  <ChooseConnectionSubstep
-                    expanded={currentSubstep === index + 1}
-                    substep={substep}
-                    onExpand={() => toggleSubstep(index + 1)}
-                    onCollapse={() => toggleSubstep(index + 1)}
-                    onSubmit={expandNextStep}
-                    onChange={handleChange}
-                    application={app}
-                    step={step}
-                  />
-                )}
+      <FlowStepHeader
+        iconUrl={app?.iconUrl}
+        caption={displayOverrides?.caption ?? caption}
+        hintAboveCaption={
+          displayOverrides?.hintAboveCaption ?? (isTrigger ? 'When' : 'Then')
+        }
+        isCompleted={step.status === 'completed'}
+        onDelete={isDeletable ? onDelete : undefined}
+        onOpen={onOpen}
+        onClose={onClose}
+        collapsed={collapsed ?? false}
+        demoVideoUrl={app?.demoVideoDetails?.url}
+        demoVideoTitle={app?.demoVideoDetails?.title}
+      >
+        <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
+          <Form
+            defaultValues={step}
+            onSubmit={handleSubmit}
+            resolver={stepValidationSchema}
+          >
+            {!cannotChooseApp && (
+              <ChooseAppAndEventSubstep
+                expanded={currentSubstep === 0}
+                substep={{
+                  key: 'chooseAppAndEvent',
+                  name: 'Choose app & event',
+                  arguments: [],
+                }}
+                onExpand={() => toggleSubstep(0)}
+                onCollapse={() => toggleSubstep(0)}
+                onSubmit={expandNextStep}
+                onChange={handleChange}
+                step={step}
+                isLastStep={isLastStep}
+              />
+            )}
 
-                {substep.key === 'testStep' && (
-                  <TestSubstep
-                    expanded={currentSubstep === index + 1}
-                    substep={substep}
-                    onExpand={() => toggleSubstep(index + 1)}
-                    onCollapse={() => toggleSubstep(index + 1)}
-                    onChange={handleChange}
-                    onContinue={onContinue}
-                    step={step}
-                    selectedActionOrTrigger={selectedActionOrTrigger}
-                  />
-                )}
-
-                {substep.key &&
-                  ['chooseConnection', 'testStep'].includes(substep.key) ===
-                    false && (
-                    <FlowSubstep
+            {substeps?.length > 0 &&
+              substeps.map((substep: ISubstep, index: number) => (
+                <Fragment key={`${substep?.name}-${index}`}>
+                  {substep.key === 'chooseConnection' && app && (
+                    <ChooseConnectionSubstep
                       expanded={currentSubstep === index + 1}
                       substep={substep}
                       onExpand={() => toggleSubstep(index + 1)}
                       onCollapse={() => toggleSubstep(index + 1)}
                       onSubmit={expandNextStep}
                       onChange={handleChange}
+                      application={app}
                       step={step}
-                      settingsLabel={
-                        selectedActionOrTrigger?.settingsStepLabel ??
-                        app?.substepLabels?.settingsStepLabel
-                      }
                     />
                   )}
-              </Fragment>
-            ))}
-        </Form>
-      </StepExecutionsProvider>
-    </FlowStepHeader>
+
+                  {substep.key === 'testStep' && (
+                    <TestSubstep
+                      expanded={currentSubstep === index + 1}
+                      substep={substep}
+                      onExpand={() => toggleSubstep(index + 1)}
+                      onCollapse={() => toggleSubstep(index + 1)}
+                      onChange={handleChange}
+                      onContinue={onContinue}
+                      step={step}
+                      selectedActionOrTrigger={selectedActionOrTrigger}
+                    />
+                  )}
+
+                  {substep.key &&
+                    ['chooseConnection', 'testStep'].includes(substep.key) ===
+                      false && (
+                      <FlowSubstep
+                        expanded={currentSubstep === index + 1}
+                        substep={substep}
+                        onExpand={() => toggleSubstep(index + 1)}
+                        onCollapse={() => toggleSubstep(index + 1)}
+                        onSubmit={expandNextStep}
+                        onChange={handleChange}
+                        step={step}
+                        settingsLabel={
+                          selectedActionOrTrigger?.settingsStepLabel ??
+                          app?.substepLabels?.settingsStepLabel
+                        }
+                      />
+                    )}
+                </Fragment>
+              ))}
+          </Form>
+        </StepExecutionsProvider>
+      </FlowStepHeader>
+    </Flex>
   )
 }

@@ -63,6 +63,7 @@ const action: IRawAction = {
       variables: true,
     },
   ],
+  helpMessage: 'Connect a Slack channel to this step.',
 
   async run($) {
     await postMessage($)

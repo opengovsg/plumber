@@ -56,6 +56,9 @@ const trigger: IRawTrigger = {
       showOptionValue: false,
     },
   ],
+  // TODO (mal): change form link to correct one
+  helpMessage:
+    'Connect your form to this step. If you don’t have one, here is a [sample](https://go.gov.sg/request-template).',
 
   getDataOutMetadata,
 

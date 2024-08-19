@@ -85,6 +85,7 @@ const action: IRawAction = {
       ],
     },
   ],
+  helpMessage: 'Customise it by adding the columns you need.',
 
   getDataOutMetadata,
 

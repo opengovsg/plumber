@@ -140,6 +140,7 @@ const action: IRawAction = {
       ],
     },
   ],
+  helpMessage: 'This step identifies the row that you are making updates to.',
   getDataOutMetadata,
 
   async run($) {
