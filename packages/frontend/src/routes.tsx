@@ -13,6 +13,7 @@ import Flow from '@/pages/Flow'
 import Flows from '@/pages/Flows'
 import Login from '@/pages/Login'
 import SgidCallback from '@/pages/SgidCallback'
+import Template from '@/pages/Template'
 import Templates from '@/pages/Templates'
 import TileLayout from '@/pages/Tile/layouts/TileLayout'
 import Tiles from '@/pages/Tiles'
@@ -133,6 +134,15 @@ export default createRoutesFromElements(
       element={
         <Layout>
           <Templates />
+        </Layout>
+      }
+    />
+
+    <Route
+      path={`${URLS.TEMPLATE_PATTERN}/*`}
+      element={
+        <Layout>
+          <Template />
         </Layout>
       }
     />
