@@ -98,7 +98,9 @@ const Editor = ({
         return VISIBLE_VARIABLE_TYPES.includes(variableType)
       },
     )
+    console.log(stepsWithVars)
     const info = genVariableInfoMap(stepsWithVars)
+    console.log(info)
     return [stepsWithVars, info]
   }, [priorExecutionSteps])
 
