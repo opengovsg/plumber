@@ -35,10 +35,19 @@ export async function getTestExecutionSteps(
           ),
         )
         .from('execution_steps')
+        // this join might seem expensive but the query planner is smart enough to optimize it
+        // see notion doc (Single Step Testing) on EXPLAIN ANALYZE results
+        .innerJoin(
+          'executions',
+          'execution_steps.execution_id',
+          'executions.id',
+        )
         .whereIn(
           'step_id',
           flow.steps.map((step) => step.id),
         )
+        // We only look at test runs
+        .andWhere('executions.test_run', true)
     })
     .select('*')
     .from('latest_execution_steps')
