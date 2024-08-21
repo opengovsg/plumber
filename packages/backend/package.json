@@ -14,8 +14,10 @@
     "test:integration": "vitest --config ./vitest.config.integration.ts",
     "lint": "eslint . --ignore-path ../../.eslintignore",
     "db": "DOTENV_CONFIG_PATH=.env knex",
+    "readme:db:migration:create": "HOW TO USE: npm run -w backend db:migration:create your_migration_name",
     "db:migration:create": "npm run db -- migrate:make",
     "db:list": "npm run db -- migrate:list",
+    "readme:db:rollback": "This command rolls back the last migration BATCH, which might include more than one migration.",
     "db:rollback": "npm run db -- migrate:rollback",
     "db:migrate": "npm run db -- migrate:latest",
     "postsetup": "ts-node src/db/dynamodb_seeds/create_table.ts",
@@ -103,5 +105,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.26.0"
+  "version": "1.26.1"
 }

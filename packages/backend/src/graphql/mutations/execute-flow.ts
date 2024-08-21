@@ -11,8 +11,13 @@ const executeFlow: MutationResolvers['executeFlow'] = async (
 
   const untilStep = await context.currentUser
     .$relatedQuery('steps')
+    .withGraphFetched('flow')
     .findById(stepId)
     .throwIfNotFound()
+
+  if (untilStep.flow.active) {
+    throw new Error('Cannot test pipe that is currently published')
+  }
 
   const { executionStep } = await testRun({ stepId })
 

@@ -33,6 +33,8 @@ export default defineConfig({
         '@apollo/client',
         '@chakra-ui/react',
         'graphql',
+        'launchdarkly-js-client-sdk',
+        'launchdarkly-react-client-sdk',
         'react',
         'react/jsx-runtime',
         'react-dom',
