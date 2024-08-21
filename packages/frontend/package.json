@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.26.0",
+  "version": "1.26.1",
   "scripts": {
     "dev": "wait-on tcp:3000 && vite --host --force",
     "build": "tsc && vite build --mode=${VITE_MODE:-prod}",
