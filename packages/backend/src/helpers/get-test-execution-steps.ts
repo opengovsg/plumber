@@ -29,7 +29,7 @@ export async function getTestExecutionSteps(
     .with('latest_execution_steps', (builder) => {
       builder
         .select(
-          '*',
+          'execution_steps.*',
           raw(
             'ROW_NUMBER() OVER (PARTITION BY step_id ORDER BY execution_steps.created_at DESC) as rn',
           ),
