@@ -47,8 +47,6 @@ type Query {
   getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
   # Admin queries
   admin: AdminQuery!
-  # Templates
-  getTemplates(names: [String!]): [Template!]!
 }
 
 type AdminQuery {
@@ -840,27 +838,6 @@ input UpdateFlowTransferStatusInput {
 }
 
 # End of flow transfers types
-
-# Start of templates types
-
-type TemplateStep {
-  id: String!
-  name: String!
-  position: Int!
-  appKey: String
-  eventKey: String
-  parameters: JSONObject!
-  template: Template
-}
-
-type Template {
-  id: ID!
-  name: String!
-  description: String!
-  steps: [TemplateStep]!
-}
-
-# End of templates types
 
 schema {
   query: Query

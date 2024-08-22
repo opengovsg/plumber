@@ -9,7 +9,7 @@ const UPDATE_MAILING_LISTS_ID = '8ec2728a-6e4a-49c7-8721-ef6d4eb1d946'
 const ROUTE_SUPPORT_ENQUIRIES_ID = '2a84e2f6-4806-46a2-890a-0dba1411b12f'
 const GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID =
   '9c964678-8e24-440e-b2fd-b42da4dea4b1'
-const SEND_A_MESSAGE_TO_A_SLACK_CHANNEL_ID =
+const SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID =
   'c88d03f7-862b-45e5-8a51-33e293236bd8'
 
 /**
@@ -336,21 +336,21 @@ export const TEMPLATES: Template[] = [
   },
   // Template: Send message to a Slack channel
   {
-    id: SEND_A_MESSAGE_TO_A_SLACK_CHANNEL_ID,
+    id: SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
     name: 'Send message to a Slack channel',
     description: 'Schedule a recurring message to a Slack channel',
     // Steps: formsg --> slack
     steps: [
       {
         position: 1,
-        templateId: SEND_A_MESSAGE_TO_A_SLACK_CHANNEL_ID,
+        templateId: SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
         appKey: 'scheduler',
         eventKey: 'everyWeek',
         parameters: { hour: '9', weekday: '3' },
       },
       {
         position: 2,
-        templateId: SEND_A_MESSAGE_TO_A_SLACK_CHANNEL_ID,
+        templateId: SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
         appKey: 'slack',
         eventKey: 'sendMessageToChannel',
       },
