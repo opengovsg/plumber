@@ -50,6 +50,17 @@ export async function decryptFormResponse(
     return false
   }
 
+  // Note: this could occur due to pipe transfer since connection becomes null
+  if (!$.auth.data) {
+    logger.warn('Form is not connected to any pipe after pipe is transferred', {
+      event: 'formsg-missing-connection',
+      flowId: $.flow.id,
+      stepId: $.step.id,
+      userId: $.user.id,
+    })
+    return false
+  }
+
   const formSgSdk = getSdk(parseFormEnv($))
 
   const {
@@ -64,17 +75,6 @@ export async function decryptFormResponse(
     )
   } catch (e) {
     logger.error('Unable to verify formsg signature')
-    return false
-  }
-
-  // Note: this could occur due to pipe transfer since connection becomes null
-  if (!$.auth.data) {
-    logger.warn('Form is not connected to any pipe after pipe is transferred', {
-      event: 'formsg-missing-connection',
-      flowId: $.flow.id,
-      stepId: $.step.id,
-      userId: $.user.id,
-    })
     return false
   }
 
