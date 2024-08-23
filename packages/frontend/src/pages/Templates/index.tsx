@@ -1,26 +1,26 @@
-import { useQuery } from '@apollo/client'
-import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
+import { AbsoluteCenter, Box, Flex, Grid, Text } from '@chakra-ui/react'
 import { Link, Tile } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
-import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
-import type { Template } from '@/graphql/__generated__/graphql'
-import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import { FALLBACK_ICON, TEMPLATE_ICONS_MAP } from '@/helpers/flow-templates'
+
+import { TEMPLATES } from './templates-data'
 
 const TEMPLATES_TITLE = 'Templates'
 
 export default function Templates(): JSX.Element {
-  const { data, loading } = useQuery(GET_TEMPLATES)
-  const templates: Template[] = data?.getTemplates
-
-  if (loading) {
+  // Sanity check if our templates file is missing
+  if (!TEMPLATES || TEMPLATES.length === 0) {
     return (
-      <Center mt={12}>
-        <PrimarySpinner fontSize="4xl" />
-      </Center>
+      <Box position="relative" h="100%">
+        <AbsoluteCenter>
+          <Text>
+            There are no templates now, please contact support@plumber.gov.sg
+          </Text>
+        </AbsoluteCenter>
+      </Box>
     )
   }
 
@@ -45,12 +45,12 @@ export default function Templates(): JSX.Element {
         mb={8}
       >
         {/* TODO (mal): add onClick in a later PR */}
-        {templates.map((template, index) => (
+        {TEMPLATES.map((template, index) => (
           <Tile
             key={index}
             icon={() => (
               <Box bg="primary.100" p={2} borderRadius={4}>
-                {TEMPLATE_ICONS_MAP[template.name] ?? FALLBACK_ICON}
+                {TEMPLATE_ICONS_MAP[template.id] ?? FALLBACK_ICON}
               </Box>
             )}
           >

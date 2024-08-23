@@ -16,6 +16,17 @@ import type {
   CreateTemplatedFlowInput,
   DemoVideoDetails,
 } from '@/graphql/__generated__/graphql'
+import {
+  ATTENDANCE_TAKING_ID,
+  GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID,
+  ROUTE_SUPPORT_ENQUIRIES_ID,
+  SCHEDULE_REMINDERS_ID,
+  SEND_A_COPY_OF_FORM_RESPONSE_ID,
+  SEND_FOLLOW_UPS_ID,
+  SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
+  TRACK_FEEDBACK_ID,
+  UPDATE_MAILING_LISTS_ID,
+} from '@/pages/Templates/templates-data'
 
 export const FORMSG_POSTMAN_TEMPLATE = 'formsg-postman'
 
@@ -45,7 +56,7 @@ export const FLOW_TEMPLATES_MAP: Record<string, CreateTemplatedFlowInput> = {
   },
 }
 
-// This is to map from the template name to the icon to display
+// This is to map from the template id to the icon to display
 interface IconTemplateMap {
   [key: string]: ReactElement
 }
@@ -53,13 +64,13 @@ interface IconTemplateMap {
 export const FALLBACK_ICON = <BiQuestionMark fontSize="1.5rem" />
 
 export const TEMPLATE_ICONS_MAP: IconTemplateMap = {
-  'Send follow ups': <BiEnvelope fontSize="1.5rem" />,
-  'Send a copy of form response': <BiFile fontSize="1.5rem" />,
-  'Schedule reminders': <BiCalendar fontSize="1.5rem" />,
-  'Track feedback': <BiStar fontSize="1.5rem" />,
-  'Attendance taking': <BiCheckDouble fontSize="1.5rem" />,
-  'Update mailing lists': <BiListUl fontSize="1.5rem" />,
-  'Route support enquiries': <BiInfoCircle fontSize="1.5rem" />,
-  'Get live updates through Telegram': <BiBell fontSize="1.5rem" />,
-  'Send message to a Slack channel': <BiMessageAlt fontSize="1.5rem" />,
+  [SEND_FOLLOW_UPS_ID]: <BiEnvelope fontSize="1.5rem" />,
+  [SEND_A_COPY_OF_FORM_RESPONSE_ID]: <BiFile fontSize="1.5rem" />,
+  [SCHEDULE_REMINDERS_ID]: <BiCalendar fontSize="1.5rem" />,
+  [TRACK_FEEDBACK_ID]: <BiStar fontSize="1.5rem" />,
+  [ATTENDANCE_TAKING_ID]: <BiCheckDouble fontSize="1.5rem" />,
+  [UPDATE_MAILING_LISTS_ID]: <BiListUl fontSize="1.5rem" />,
+  [ROUTE_SUPPORT_ENQUIRIES_ID]: <BiInfoCircle fontSize="1.5rem" />,
+  [GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID]: <BiBell fontSize="1.5rem" />,
+  [SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID]: <BiMessageAlt fontSize="1.5rem" />,
 }
