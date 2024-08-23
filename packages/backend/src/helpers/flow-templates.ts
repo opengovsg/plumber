@@ -87,10 +87,14 @@ export async function createFlowFromTemplate(
 
   // transaction will insert flow and steps
   return await Flow.transaction(async (trx) => {
-    // insert flow with template id
+    // insert flow with template id in the template config
     const flow = await user.$relatedQuery('flows', trx).insert({
       name: flowName,
-      templateId,
+      config: {
+        templateConfig: {
+          templateId,
+        },
+      },
     })
 
     // account for trigger/action step having null for app or event key

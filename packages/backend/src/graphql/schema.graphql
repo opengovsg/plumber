@@ -352,6 +352,7 @@ type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
   demoConfig: FlowDemoConfig
+  templateConfig: FlowTemplateConfig
 }
 
 type FlowErrorConfig {
@@ -362,6 +363,10 @@ type FlowDemoConfig {
   hasLoadedOnce: Boolean!
   isAutoCreated: Boolean!
   videoId: String!
+}
+
+type FlowTemplateConfig {
+  templateId: String!
 }
 
 type Execution {

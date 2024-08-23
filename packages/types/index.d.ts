@@ -162,6 +162,7 @@ export interface IFlowConfig {
   errorConfig?: IFlowErrorConfig
   duplicateCount?: number
   demoConfig?: IFlowDemoConfig
+  templateConfig?: IFlowTemplateConfig
 }
 
 export interface IFlowErrorConfig {
@@ -172,6 +173,10 @@ export interface IFlowDemoConfig {
   hasLoadedOnce: boolean
   isAutoCreated: boolean
   videoId: string
+}
+
+export interface IFlowTemplateConfig {
+  templateId: string
 }
 
 export interface IFlow {

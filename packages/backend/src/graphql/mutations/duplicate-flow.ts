@@ -91,6 +91,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     // duplicate the flow with the previous config (only keep notification frequency)
     delete prevConfig['duplicateCount']
     delete prevConfig['demoConfig']
+    // delete prevConfig['templateConfig'] // TODO (mal): check whether to delete this
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
       .insert({

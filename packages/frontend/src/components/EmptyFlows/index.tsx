@@ -1,8 +1,6 @@
-import { useQuery } from '@apollo/client'
 import {
   AbsoluteCenter,
   Box,
-  Center,
   Divider,
   Flex,
   Grid,
@@ -13,12 +11,14 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 import NavigationDrawer from '@/components/Layout/NavigationDrawer'
-import type { Template } from '@/graphql/__generated__/graphql'
-import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import ApproveTransfersInfobox from '@/pages/Flows/components/ApproveTransfersInfobox'
 import CreateFlowModal from '@/pages/Flows/components/CreateFlowModal'
-
-import PrimarySpinner from '../PrimarySpinner'
+import {
+  ATTENDANCE_TAKING_ID,
+  SCHEDULE_REMINDERS_ID,
+  SEND_FOLLOW_UPS_ID,
+  TEMPLATES,
+} from '@/pages/Templates/templates-data'
 
 import FlowTemplate from './FlowTemplate'
 
@@ -26,20 +26,18 @@ interface EmptyFlowsProps {
   count?: number
 }
 
-const TEMPLATE_NAMES_TO_DISPLAY = [
-  'Send follow ups',
-  'Schedule reminders',
-  'Route support enquiries',
+const TEMPLATE_IDS_TO_DISPLAY = [
+  SEND_FOLLOW_UPS_ID,
+  SCHEDULE_REMINDERS_ID,
+  ATTENDANCE_TAKING_ID,
 ]
 
 export default function EmptyFlows(props: EmptyFlowsProps) {
   const { count } = props
-  const { data, loading } = useQuery(GET_TEMPLATES, {
-    variables: {
-      names: TEMPLATE_NAMES_TO_DISPLAY,
-    },
-  })
-  const templates: Template[] = data?.getTemplates
+
+  const displayTemplates = TEMPLATES.filter((template) =>
+    TEMPLATE_IDS_TO_DISPLAY.some((displayId) => displayId === template.id),
+  )
 
   // for creation of flows
   const {
@@ -47,14 +45,6 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
     onOpen: onCreateFlowModalOpen,
     onClose: onCreateFlowModalClose,
   } = useDisclosure()
-
-  if (loading) {
-    return (
-      <Center mt={12}>
-        <PrimarySpinner fontSize="4xl" />
-      </Center>
-    )
-  }
 
   return (
     <>
@@ -86,7 +76,7 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
           rowGap={6}
           mt={4}
         >
-          {templates.map((template) => (
+          {displayTemplates.map((template) => (
             <FlowTemplate key={template.id} template={template} />
           ))}
         </Grid>
