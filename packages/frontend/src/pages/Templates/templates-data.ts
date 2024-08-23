@@ -12,11 +12,27 @@ const GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID =
 const SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID =
   'c88d03f7-862b-45e5-8a51-33e293236bd8'
 
+// Helper function to ensure templates cannot be modified
+function deepFreeze<T>(object: T): T {
+  if (Array.isArray(object)) {
+    object.forEach(deepFreeze)
+  } else {
+    // Freeze each property if it is an object
+    Object.getOwnPropertyNames(object).forEach((name) => {
+      const value = (object as any)[name]
+      if (value && typeof value === 'object') {
+        deepFreeze(value)
+      }
+    })
+  }
+  return Object.freeze(object)
+}
+
 /**
  * Note that parameters will have {{Replace with __}}, these are
  * placeholders for users to change them to the variable pills
  */
-export const TEMPLATES: Template[] = [
+export const TEMPLATES: Template[] = deepFreeze<Template[]>([
   // Template: Send follow ups
   {
     id: SEND_FOLLOW_UPS_ID,
@@ -356,4 +372,4 @@ export const TEMPLATES: Template[] = [
       },
     ],
   },
-]
+])
