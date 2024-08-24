@@ -2,10 +2,9 @@ import { IJSONObject } from '@plumber/types'
 
 import { useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ApolloError, useMutation, useQuery } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import {
   Box,
-  Center,
   Flex,
   Hide,
   Modal,
@@ -17,12 +16,12 @@ import {
 } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
 
-import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
-import type { AppEventKeyPair, Template } from '@/graphql/__generated__/graphql'
+import type { AppEventKeyPair } from '@/graphql/__generated__/graphql'
 import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
-import { GET_TEMPLATE } from '@/graphql/queries/get-template'
 import { FALLBACK_ICON, TEMPLATE_ICONS_MAP } from '@/helpers/flow-templates'
+
+import { TEMPLATES } from '../Templates/templates-data'
 
 import TemplateBody from './components/TemplateBody'
 import InvalidTemplatePage from './InvalidTemplatePage'
@@ -32,16 +31,7 @@ export default function Template() {
   const navigate = useNavigate()
   const goToTemplatesPage = () => navigate(URLS.TEMPLATES)
 
-  const {
-    data,
-    loading: getTemplateLoading,
-    error,
-  } = useQuery(GET_TEMPLATE, {
-    variables: {
-      id: templateId,
-    },
-  })
-  const template: Template = data?.getTemplate
+  const template = TEMPLATES.find((template) => template.id === templateId)
   const toast = useToast()
 
   const [createTemplatedFlow, { loading: createFlowLoading }] = useMutation(
@@ -64,18 +54,18 @@ export default function Template() {
 
     // trigger or action could be null due to if-then
     const trigger: AppEventKeyPair = {
-      appKey: steps[0]?.appKey ?? '',
-      eventKey: steps[0]?.eventKey ?? '',
+      appKey: steps[0].appKey ?? '',
+      eventKey: steps[0].eventKey ?? '',
     }
 
     const actions: AppEventKeyPair[] = []
-    const parametersList: IJSONObject[] = [steps[0]?.parameters ?? {}]
+    const parametersList: IJSONObject[] = [steps[0].parameters ?? {}]
     for (let i = 1; i < steps.length; i++) {
       actions.push({
-        appKey: steps[i]?.appKey ?? '',
-        eventKey: steps[i]?.eventKey ?? '',
+        appKey: steps[i].appKey ?? '',
+        eventKey: steps[i].eventKey ?? '',
       })
-      parametersList.push(steps[i]?.parameters ?? {})
+      parametersList.push(steps[i].parameters ?? {})
     }
 
     const response = await createTemplatedFlow({
@@ -92,19 +82,8 @@ export default function Template() {
     navigate(URLS.FLOW(response.data?.createTemplatedFlow?.id))
   }, [toast, createTemplatedFlow, template, navigate])
 
-  if (getTemplateLoading) {
-    return (
-      <Center>
-        <PrimarySpinner fontSize="4xl" />
-      </Center>
-    )
-  }
-
-  // Show error page if template id is invalid
-  if (
-    error instanceof ApolloError &&
-    error?.graphQLErrors?.find((e) => e.message === 'NotFoundError')
-  ) {
+  // Show error page if template cannot be found
+  if (!template) {
     return <InvalidTemplatePage />
   }
 
@@ -124,7 +103,7 @@ export default function Template() {
             <Flex alignItems="center" columnGap={4}>
               <Hide below="md">
                 <Box bg="primary.100" p={2} borderRadius={4}>
-                  {TEMPLATE_ICONS_MAP[template.name] ?? FALLBACK_ICON}
+                  {TEMPLATE_ICONS_MAP[template.id] ?? FALLBACK_ICON}
                 </Box>
               </Hide>
 
@@ -143,7 +122,7 @@ export default function Template() {
             </Flex>
           </ModalHeader>
           <ModalBody>
-            <TemplateBody template={template} />
+            <TemplateBody templateSteps={template.steps} />
           </ModalBody>
         </ModalContent>
       </Modal>

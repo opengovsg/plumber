@@ -3,11 +3,11 @@ import type { IApp } from '@plumber/types'
 import { BiQuestionMark } from 'react-icons/bi'
 import { Box, Card, Flex, Icon, Image, Text } from '@chakra-ui/react'
 
-import type { Maybe, TemplateStep } from '@/graphql/__generated__/graphql'
+import { TemplateStep } from '@/pages/Templates/types'
 
 interface IfThenTemplateStepContentProps {
   app?: IApp
-  templateSteps: Maybe<TemplateStep>[]
+  templateSteps: TemplateStep[]
 }
 
 export default function IfThenTemplateStepContent(
@@ -20,7 +20,7 @@ export default function IfThenTemplateStepContent(
   }
   const branchNames: string[] = []
   templateSteps.forEach((templateStep) => {
-    if (templateStep && templateStep.parameters['branchName']) {
+    if (templateStep.parameters && templateStep.parameters['branchName']) {
       branchNames.push(String(templateStep.parameters['branchName']))
     }
   })

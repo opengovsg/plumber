@@ -1,26 +1,19 @@
 import type { IApp } from '@plumber/types'
 
 import { Fragment, useMemo } from 'react'
-import { BiPlus, BiQuestionMark } from 'react-icons/bi'
+import { BiPlus } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
-import {
-  AbsoluteCenter,
-  Box,
-  Center,
-  Divider,
-  Flex,
-  Text,
-} from '@chakra-ui/react'
+import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
-import PrimarySpinner from '@/components/PrimarySpinner'
-import type { Template } from '@/graphql/__generated__/graphql'
 import { GET_APPS } from '@/graphql/queries/get-apps'
-import TemplateStepContent from './TemplateStepContent'
+import type { TemplateStep } from '@/pages/Templates/types'
+
 import IfThenTemplateStepContent from './IfThenTemplateStepContent'
+import TemplateStepContent from './TemplateStepContent'
 
 interface TemplateBodyProps {
-  template: Template
+  templateSteps: TemplateStep[]
 }
 
 function AddStepGraphic() {
@@ -51,12 +44,11 @@ function AddStepGraphic() {
 }
 
 export default function TemplateBody(props: TemplateBodyProps) {
-  const { template } = props
+  const { templateSteps } = props
 
-  const templateSteps = template.steps ?? []
   const [templateStepsBeforeIfThen, templateStepsAfterIfThen] = useMemo(() => {
     const ifThenStartIndex = templateSteps.findIndex(
-      (templateStep) =>
+      (templateStep: TemplateStep) =>
         templateStep?.appKey === 'toolbox' &&
         templateStep?.eventKey === 'ifThen',
     )
@@ -67,20 +59,11 @@ export default function TemplateBody(props: TemplateBodyProps) {
       templateSteps.slice(0, ifThenStartIndex),
       templateSteps.slice(ifThenStartIndex),
     ]
-  }, [])
-  console.log(templateStepsAfterIfThen)
+  }, [templateSteps])
 
   // get all apps here and pass the correct app to the template step
   const { data } = useQuery(GET_APPS)
   const apps: IApp[] = data?.getApps
-
-  if (!template || !templateSteps) {
-    return (
-      <Center>
-        <PrimarySpinner fontSize="4xl" />
-      </Center>
-    )
-  }
 
   return (
     <Flex
