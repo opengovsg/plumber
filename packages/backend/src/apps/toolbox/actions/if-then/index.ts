@@ -95,6 +95,7 @@ const action: IRawAction = {
       subFields: getConditionArgs({ usePlaceholders: true }),
     },
   ],
+  helpMessage: 'Customise what happens in each of your branches.',
 
   async run($) {
     let isConditionMet

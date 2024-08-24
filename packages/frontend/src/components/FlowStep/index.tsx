@@ -188,6 +188,9 @@ export default function FlowStep(
     caption = 'This step happens after the previous step'
   }
 
+  const shouldShowInfobox: boolean =
+    step.status === 'incomplete' && !!selectedActionOrTrigger?.helpMessage
+
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
   }
@@ -197,7 +200,7 @@ export default function FlowStep(
   return (
     <Flex w="100%" flexDir="column">
       {/* Show infobox only if the step is incomplete and has a help message */}
-      {step.status === 'incomplete' && selectedActionOrTrigger?.helpMessage && (
+      {shouldShowInfobox && (
         <Infobox
           icon={<BiInfoCircle />}
           variant="primaryExcludeIconColor"
@@ -207,7 +210,7 @@ export default function FlowStep(
           }}
         >
           <MarkdownRenderer
-            source={selectedActionOrTrigger?.helpMessage}
+            source={selectedActionOrTrigger?.helpMessage ?? ''}
             components={{
               // Force all links in our message to be opened in a new tab.
               a: ({ ...props }) => (
@@ -237,6 +240,7 @@ export default function FlowStep(
         collapsed={collapsed ?? false}
         demoVideoUrl={app?.demoVideoDetails?.url}
         demoVideoTitle={app?.demoVideoDetails?.title}
+        isInfoboxPresent={shouldShowInfobox}
       >
         <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
           <Form

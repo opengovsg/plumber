@@ -47,6 +47,7 @@ interface FlowStepHeaderProps {
   children: ReactNode
   demoVideoUrl?: string
   demoVideoTitle?: string
+  isInfoboxPresent: boolean
 }
 
 const LOCAL_STORAGE_DEMO_TOOLTIP_KEY = 'demo-tooltip-clicked'
@@ -66,6 +67,7 @@ export default function FlowStepHeader(
     children,
     demoVideoUrl,
     demoVideoTitle,
+    isInfoboxPresent,
   } = props
 
   const handleClick = useCallback(() => {
@@ -107,6 +109,7 @@ export default function FlowStepHeader(
         borderWidth="1px"
         borderColor="base.divider.medium"
         borderRadius="lg"
+        borderTopRadius={isInfoboxPresent ? 'none' : 'lg'}
         p={0}
         bg="white"
         boxShadow={collapsed ? undefined : 'sm'}

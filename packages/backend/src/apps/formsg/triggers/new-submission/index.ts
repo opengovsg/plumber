@@ -58,7 +58,7 @@ const trigger: IRawTrigger = {
   ],
   // TODO (mal): change form link to correct one
   helpMessage:
-    'Connect your form to this step. If you don’t have one, here is a [sample](https://go.gov.sg/request-template).',
+    'Connect your form to this step. Here is an [example](https://go.gov.sg/request-template) for this template.',
 
   getDataOutMetadata,
 

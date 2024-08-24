@@ -57,7 +57,7 @@ const action: IRawAction = {
       variables: true,
     },
   ],
-  helpMessage: 'Connect your Telegram bot to this step.',
+  helpMessage: 'Connect your Telegram bot in this step.',
 
   preprocessVariable(key: string, value: unknown) {
     if (key === 'text' && typeof value === 'string') {

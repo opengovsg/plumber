@@ -85,7 +85,8 @@ const action: IRawAction = {
       ],
     },
   ],
-  helpMessage: 'Customise it by adding the columns you need.',
+  helpMessage:
+    'Customise your columns and choose the data that goes into them. You can recreate this example for this template.',
 
   getDataOutMetadata,
 
