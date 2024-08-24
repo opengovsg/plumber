@@ -86,8 +86,7 @@ export default function TemplateBody(props: TemplateBodyProps) {
         <Fragment key={index}>
           <TemplateStepContent
             app={apps?.find((app: IApp) => templateStep?.appKey === app.key)}
-            eventKey={templateStep?.eventKey ?? ''}
-            position={templateStep?.position ?? index + 1}
+            templateStep={templateStep}
           />
           {/* Don't show if it is the last step */}
           {index < templateSteps.length - 1 && <AddStepGraphic />}
