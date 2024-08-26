@@ -19,13 +19,18 @@ const executeFlow: MutationResolvers['executeFlow'] = async (
     throw new Error('Cannot test pipe that is currently published')
   }
 
-  const { executionStep, executionId } = await testRun({ stepId })
+  const { executionStep } = await testRun({ stepId })
 
   /**
-   * Update flow to use the new test execution
+   * We need to unset the test execution id for execute flow because
+   * the test run might not have tested all completed steps.
+   * Need to account for the case where we release Single Step Testing then rollback
+   * to test till step. In that case, we should unset test execution id to ensure we
+   * we fetch the latest test execution steps (including test till step) after we
+   * roll forward again
    */
   await untilStep.flow.$query().patch({
-    testExecutionId: executionId,
+    testExecutionId: null,
   })
 
   untilStep.executionSteps = [executionStep] // attach missing execution step into current step
