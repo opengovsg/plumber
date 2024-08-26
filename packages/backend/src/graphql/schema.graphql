@@ -851,6 +851,7 @@ type Template {
   steps: [TemplateStep!]!
   iconName: String # demo templates have no icon
   tag: TemplateTagType # TODO: change to tags in later PR
+  tileTemplateData: TileTemplateData
 }
 
 type TemplateStep {
@@ -860,6 +861,19 @@ type TemplateStep {
   sampleUrl: String # specific to template e.g. form or tile link
   sampleUrlDescription: String # differs for each step e.g. view a sample form
   parameters: JSONObject
+  tileTemplateStepData: [JSONObject] # the column names must match the tile that was created above!
+}
+
+# This is for creation of tile for a template
+type TileTemplateData {
+  name: String!
+  columns: [TileColumnData!]!
+  rowData: [JSONObject]
+}
+
+type TileColumnData {
+  name: String!
+  position: Int!
 }
 
 enum TemplateTagType {
