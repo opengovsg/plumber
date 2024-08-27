@@ -1,8 +1,14 @@
 import { gql } from '@apollo/client'
 
 export const GET_TEST_EXECUTION_STEPS = gql`
-  query GetTestExecutionSteps($flowId: String!) {
-    getTestExecutionSteps(flowId: $flowId) {
+  query GetTestExecutionSteps(
+    $flowId: String!
+    $ignoreTestExecutionId: Boolean
+  ) {
+    getTestExecutionSteps(
+      flowId: $flowId
+      ignoreTestExecutionId: $ignoreTestExecutionId
+    ) {
       id
       executionId
       stepId

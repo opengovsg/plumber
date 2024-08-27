@@ -31,6 +31,7 @@ export const EditorProvider = ({
     {
       variables: {
         flowId,
+        ignoreTestExecutionId: true, // TODO(ian): Remove this or use LD flag once SST is enabled
       },
     },
   )

@@ -49,11 +49,14 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
   const { step, selectedActionOrTrigger, variables, isMock = false } = props
 
   // No data only happens if user hasn't executed yet, or step returned null.
-  if (variables == null) {
+  if (!variables?.length) {
+    if (step.status !== 'completed') {
+      return <></>
+    }
     return (
       <Infobox variant="warning" width="full">
         <Box>
-          <Text fontWeight="600">{`We couldn't find any test data`}</Text>
+          <Text fontWeight="600">{`We couldn't find any data from your last test`}</Text>
           <Text mt={0.5}>{getNoOutputMessage(selectedActionOrTrigger)}</Text>
         </Box>
       </Infobox>
