@@ -88,11 +88,11 @@ const Editor = ({
   variablesEnabled,
   isRich,
 }: EditorProps) => {
-  const priorStepsWithExecutions = useContext(StepExecutionsContext)
+  const { priorExecutionSteps } = useContext(StepExecutionsContext)
 
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
-      extractVariables(priorStepsWithExecutions),
+      extractVariables(priorExecutionSteps),
       (variable) => {
         const variableType = variable.type ?? 'text'
         return VISIBLE_VARIABLE_TYPES.includes(variableType)
@@ -100,7 +100,7 @@ const Editor = ({
     )
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
-  }, [priorStepsWithExecutions])
+  }, [priorExecutionSteps])
 
   const extensions: Array<any> = [
     Placeholder.configure({

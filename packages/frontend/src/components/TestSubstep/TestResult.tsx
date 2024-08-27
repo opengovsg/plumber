@@ -1,11 +1,11 @@
 import type { IAction, IStep, ITrigger } from '@plumber/types'
 
-import { Box, Link, Text } from '@chakra-ui/react'
+import { Box, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
 import VariablesList from '@/components/VariablesList'
 import { isIfThenStep } from '@/helpers/toolbox'
-import { type StepWithVariables } from '@/helpers/variables'
+import type { Variable } from '@/helpers/variables'
 
 function getNoOutputMessage(
   selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
@@ -40,47 +40,22 @@ function getMockDataMessage(
 interface TestResultsProps {
   step: IStep
   selectedActionOrTrigger: ITrigger | IAction | undefined
-  stepsWithVariables: StepWithVariables[]
-  isExecuted: boolean
+  // if null, the step probably hasnt been tested yet
+  variables: Variable[] | null
   isMock?: boolean
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
-  const {
-    step,
-    selectedActionOrTrigger,
-    stepsWithVariables,
-    isExecuted,
-    isMock = false,
-  } = props
+  const { step, selectedActionOrTrigger, variables, isMock = false } = props
 
   // No data only happens if user hasn't executed yet, or step returned null.
-  if (stepsWithVariables.length == 0) {
-    if (isExecuted) {
-      return (
-        <Infobox variant="warning" width="full">
-          <Box>
-            <Text fontWeight="600">{`We couldn't find any test data`}</Text>
-            <Text mt={0.5}>{getNoOutputMessage(selectedActionOrTrigger)}</Text>
-          </Box>
-        </Infobox>
-      )
-    } else {
-      return <></>
-    }
-  }
-
-  // Paranoia, because all code after assumes that only 1 step was run.
-  if (stepsWithVariables.length > 1) {
+  if (variables == null) {
     return (
-      <Infobox variant="error" w="full">
-        <Text>
-          An unexpected error occurred, please contact{' '}
-          <Link href="mailto:support@plumber.gov.sg">
-            support@plumber.gov.sg
-          </Link>{' '}
-          for help!
-        </Text>
+      <Infobox variant="warning" width="full">
+        <Box>
+          <Text fontWeight="600">{`We couldn't find any test data`}</Text>
+          <Text mt={0.5}>{getNoOutputMessage(selectedActionOrTrigger)}</Text>
+        </Box>
       </Infobox>
     )
   }
@@ -90,7 +65,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
   // FIXME (ogp-weeloong): Revamp UI to allow special handling for
   // toolbox actions in an isolated codepath.
   if (isIfThenStep(step)) {
-    const isConditionMet = stepsWithVariables[0].output[0].value as boolean
+    const isConditionMet = variables[0].value as boolean
 
     if (isConditionMet) {
       return (
@@ -123,7 +98,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
           }
         </Text>
       </Infobox>
-      <VariablesList variables={stepsWithVariables[0].output} />
+      <VariablesList variables={variables} />
     </Box>
   )
 }

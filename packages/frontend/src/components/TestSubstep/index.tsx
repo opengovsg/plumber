@@ -66,31 +66,34 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     selectedActionOrTrigger,
   } = props
 
-  const editorContext = useContext(EditorContext)
+  const { readOnly, testExecutionSteps } = useContext(EditorContext)
 
-  const [executeFlow, { data, error, loading, called }] = useMutation(
-    EXECUTE_FLOW,
-    { context: { autoSnackbar: false } },
+  const [executeFlow, { error, loading }] = useMutation(EXECUTE_FLOW, {
+    context: { autoSnackbar: false },
+  })
+
+  const currentExecutionStep = testExecutionSteps.find(
+    (executionStep) => executionStep.stepId === step.id,
   )
 
-  // executionStep contains executionSteps because it is a step
-  const { data: response, step: executionStep } = data?.executeFlow ?? {}
-
-  const stepsWithVariables = useMemo(() => {
-    if (!executionStep) {
-      return []
+  const testVariables = useMemo(() => {
+    if (!currentExecutionStep) {
+      return null
     }
+    const stepWithVariables = filterVariables(
+      extractVariables([currentExecutionStep]),
+      (variable) => {
+        const variableType = variable.type ?? 'text'
+        return VISIBLE_VARIABLE_TYPES.includes(variableType)
+      },
+    )
+    if (stepWithVariables.length > 0) {
+      return stepWithVariables[0].output
+    }
+    return []
+  }, [currentExecutionStep])
 
-    return filterVariables(extractVariables([executionStep]), (variable) => {
-      const variableType = variable.type ?? 'text'
-      return VISIBLE_VARIABLE_TYPES.includes(variableType)
-    })
-  }, [executionStep])
-
-  const isExecuted = !error && called && !loading
-  const isCompleted = isExecuted && response
-
-  const { name } = substep
+  const isTestSuccessful = currentExecutionStep?.status === 'success'
 
   const executeTestFlow = useCallback(() => {
     executeFlow({
@@ -112,7 +115,11 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
 
   return (
     <>
-      <FlowSubstepTitle expanded={expanded} onClick={onToggle} title={name} />
+      <FlowSubstepTitle
+        expanded={expanded}
+        onClick={onToggle}
+        title={substep.name}
+      />
       <Collapse in={expanded} unmountOnExit style={{ overflow: 'initial' }}>
         <Box p="1rem 1rem 1.5rem">
           {step.webhookUrl && (
@@ -139,33 +146,33 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
               )}
             </Box>
           )}
-
-          <TestResult
-            step={step}
-            selectedActionOrTrigger={selectedActionOrTrigger}
-            stepsWithVariables={stepsWithVariables}
-            isExecuted={isExecuted}
-            isMock={executionStep?.executionSteps[0].metadata?.isMock}
-          />
+          {isTestSuccessful && (
+            <TestResult
+              step={step}
+              selectedActionOrTrigger={selectedActionOrTrigger}
+              variables={testVariables}
+              isMock={currentExecutionStep.metadata?.isMock}
+            />
+          )}
 
           <Button
             isFullWidth
-            variant={isCompleted ? 'clear' : 'solid'}
+            variant={isTestSuccessful ? 'clear' : 'solid'}
             onClick={executeTestFlow}
             mt={2}
             isLoading={loading}
-            isDisabled={editorContext.readOnly}
+            isDisabled={readOnly}
             data-test="flow-substep-continue-button"
           >
-            {isCompleted ? 'Test again' : 'Test Step'}
+            {isTestSuccessful ? 'Test again' : 'Test Step'}
           </Button>
-          {isCompleted && (
+          {isTestSuccessful && (
             <Button
               isFullWidth
               onClick={onContinueClick}
               mt={2}
               isLoading={loading}
-              isDisabled={editorContext.readOnly}
+              isDisabled={readOnly}
               data-test="flow-substep-continue-button"
             >
               Continue
