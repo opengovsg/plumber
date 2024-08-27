@@ -19,19 +19,23 @@ const executeFlow: MutationResolvers['executeFlow'] = async (
     throw new Error('Cannot test pipe that is currently published')
   }
 
-  const { executionStep } = await testRun({ stepId })
+  const { executionStep, executionId } = await testRun({ stepId })
+
+  /**
+   * Update flow to use the new test execution
+   */
+  await untilStep.flow.$query().patch({
+    testExecutionId: executionId,
+  })
 
   untilStep.executionSteps = [executionStep] // attach missing execution step into current step
 
-  if (executionStep.isFailed) {
-    throw new Error(JSON.stringify(executionStep.errorDetails))
+  if (!executionStep.isFailed) {
+    await untilStep.$query().patch({
+      status: 'completed',
+    })
   }
-
-  await untilStep.$query().patch({
-    status: 'completed',
-  })
-
-  return { data: executionStep.dataOut, step: untilStep }
+  return executionStep
 }
 
 export default executeFlow
