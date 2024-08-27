@@ -15,7 +15,8 @@ type Query {
     connectionId: String
     name: String
   ): FlowConnection
-  getStepWithTestExecutions(stepId: String!): [Step]
+  getStepWithTestExecutions(stepId: String!): [Step] @deprecated(reason: "Use getTestExecution instead")
+  getTestExecutionSteps(flowId: String!): [ExecutionStep]
   getExecution(executionId: String!): Execution
   getExecutions(
     limit: Int!
