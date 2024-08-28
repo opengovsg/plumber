@@ -96,9 +96,10 @@ const globalVariable = async (
         throw new Error('Execution ID is required to get last execution step')
       }
       return (
-        await step?.getLastExecutionStep(
-          options?.sameExecution ? execution.id : undefined,
-        )
+        await step?.getLastExecutionStep({
+          executionId: options?.sameExecution ? execution.id : undefined,
+          testRunOnly: options?.testRunOnly,
+        })
       )?.toJSON()
     },
     triggerOutput: {
