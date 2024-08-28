@@ -1,4 +1,4 @@
-import { Template } from './types'
+import { Template } from '@/graphql/__generated__/types.generated'
 
 const SEND_FOLLOW_UPS_ID = 'aae185f7-2592-4683-a812-2d412232e403'
 const SEND_A_COPY_OF_FORM_RESPONSE_ID = 'd06d1024-2f1d-46ca-b9b3-2d3d073eddfe'
