@@ -119,14 +119,23 @@ class Step extends Base {
     return apps[this.appKey]
   }
 
-  async getLastExecutionStep(executionId?: string) {
+  async getLastExecutionStep({
+    executionId,
+    testRunOnly,
+  }: {
+    executionId?: string
+    testRunOnly?: boolean
+  }) {
     const query = this.$relatedQuery('executionSteps')
       .orderBy('created_at', 'desc')
       .limit(1)
+      .where(true)
       .first()
-
+    if (testRunOnly) {
+      query.withGraphJoined('execution').andWhere('test_run', true)
+    }
     if (executionId) {
-      query.where('execution_id', executionId)
+      query.andWhere('execution_id', executionId)
     }
     const lastExecutionStep = await query
     if (lastExecutionStep?.appKey !== this.appKey) {

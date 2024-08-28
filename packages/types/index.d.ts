@@ -766,9 +766,10 @@ export type IGlobalVariable = {
     appKey: string
     parameters: IJSONObject
   }
-  getLastExecutionStep?: (options?: {
-    sameExecution?: boolean
-  }) => Promise<IExecutionStep | undefined>
+  getLastExecutionStep?: (options?: Partial<{
+    sameExecution: boolean
+    testRunOnly: boolean
+  }>) => Promise<IExecutionStep | undefined>
   execution?: {
     id: string
     testRun: boolean
