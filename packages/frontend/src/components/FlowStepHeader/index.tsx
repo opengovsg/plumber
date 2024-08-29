@@ -47,7 +47,7 @@ interface FlowStepHeaderProps {
   children: ReactNode
   demoVideoUrl?: string
   demoVideoTitle?: string
-  isInfoboxPresent: boolean
+  isInfoboxPresent?: boolean
 }
 
 const LOCAL_STORAGE_DEMO_TOOLTIP_KEY = 'demo-tooltip-clicked'
