@@ -10,29 +10,12 @@ const createTemplatedFlow: MutationResolvers['createTemplatedFlow'] = async (
   params,
   context,
 ) => {
-  const {
-    flowName,
-    trigger,
-    actions,
-    demoVideoId,
-    parametersList,
-    templateId,
-  } = params.input
+  const { templateId, isDemoTemplate } = params.input
   // 2 ways to create templated flow: demo or templates page
-  if (templateId) {
-    return createFlowFromTemplate(
-      { flowName, trigger, actions, parametersList, templateId },
-      context.currentUser,
-    )
+  if (isDemoTemplate) {
+    return createDemoFlowFromTemplate(templateId, context.currentUser, false)
   }
-  if (demoVideoId) {
-    return createDemoFlowFromTemplate(
-      { flowName, trigger, actions, demoVideoId },
-      context.currentUser,
-      false,
-    )
-  }
-  throw new Error('Invalid arguments given to create a templated flow')
+  return createFlowFromTemplate(templateId, context.currentUser)
 }
 
 export default createTemplatedFlow

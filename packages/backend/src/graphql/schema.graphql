@@ -51,8 +51,8 @@ type Query {
   getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
   # Admin queries
   admin: AdminQuery!
-  # Templates
-  getTemplates: [Template!]!
+  # Templates (including demo templates)
+  getTemplates(isDemoTemplate: Boolean!, names: [String!]): [Template!]!
 }
 
 type AdminQuery {
@@ -419,12 +419,8 @@ input CreateFlowInput {
 }
 
 input CreateTemplatedFlowInput {
-  flowName: String!
-  trigger: AppEventKeyPair!
-  actions: [AppEventKeyPair!]!
-  demoVideoId: String
-  parametersList: [JSONObject]
-  templateId: String
+  templateId: String!
+  isDemoTemplate: Boolean!
 }
 
 input UpdateFlowInput {
@@ -554,11 +550,6 @@ type Step {
   position: Int
   status: String
   executionSteps: [ExecutionStep]
-}
-
-input AppEventKeyPair {
-  appKey: String!
-  eventKey: String!
 }
 
 input StepConnectionInput {

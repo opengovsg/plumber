@@ -13,7 +13,11 @@ import { TemplateIcon } from '@/helpers/flow-templates'
 const TEMPLATES_TITLE = 'Templates'
 
 export default function Templates(): JSX.Element {
-  const { data, loading } = useQuery(GET_TEMPLATES)
+  const { data, loading } = useQuery(GET_TEMPLATES, {
+    variables: {
+      isDemoTemplate: false,
+    },
+  })
   const templates: Template[] = data?.getTemplates
 
   return (

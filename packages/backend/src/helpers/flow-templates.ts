@@ -1,34 +1,29 @@
+import { DEMO_TEMPLATES } from '@/db/storage/demo-templates-data'
+import { TEMPLATES } from '@/db/storage/templates-data'
 import type {
-  CreateTemplatedFlowInput,
   FlowConfig,
+  TemplateStep,
 } from '@/graphql/__generated__/types.generated'
 import Flow from '@/models/flow'
 import User from '@/models/user'
 
 import logger from './logger'
 
-export const DEFAULT_FLOW_TEMPLATE: CreateTemplatedFlowInput = {
-  flowName: 'Send notifications',
-  trigger: {
-    appKey: 'formsg',
-    eventKey: 'newSubmission',
-  },
-  actions: [
-    {
-      appKey: 'postman',
-      eventKey: 'sendTransactionalEmail',
-    },
-  ],
-  demoVideoId: 'formsg-postman',
-}
-
 export async function createDemoFlowFromTemplate(
-  templatedFlowInput: CreateTemplatedFlowInput,
+  templateId: string,
   user: User,
   isAutoCreated: boolean,
 ): Promise<Flow> {
-  const { flowName, trigger, actions, demoVideoId } = templatedFlowInput
-  const { appKey: triggerAppKey, eventKey: triggerEventKey } = trigger
+  // note that template id is the same as demo video id for backwards compatibility
+  // prevents user from creating any new template
+  const demoTemplate = DEMO_TEMPLATES.find(
+    (template) => template.id === templateId,
+  )
+  if (!demoTemplate) {
+    throw new Error('Invalid demo template id input')
+  }
+
+  const { name: flowName, steps } = demoTemplate
 
   // transaction will insert flow and steps
   return await Flow.transaction(async (trx) => {
@@ -36,7 +31,7 @@ export async function createDemoFlowFromTemplate(
       demoConfig: {
         hasLoadedOnce: false,
         isAutoCreated,
-        videoId: demoVideoId,
+        videoId: templateId,
       },
     }
     // insert flow
@@ -49,18 +44,18 @@ export async function createDemoFlowFromTemplate(
     await flow.$relatedQuery('steps', trx).insert({
       type: 'trigger',
       position: 1,
-      appKey: triggerAppKey,
-      key: triggerEventKey,
+      appKey: steps[0].appKey,
+      key: steps[0].eventKey,
     })
 
     // insert action steps
-    for (let i = 0; i < actions.length; i++) {
-      const { appKey: actionAppKey, eventKey: actionEventKey } = actions[i]
+    for (let i = 1; i < steps.length; i++) {
+      const step: TemplateStep = steps[i]
       await flow.$relatedQuery('steps', trx).insert({
         type: 'action',
-        position: i + 2, // start at position 2
-        appKey: actionAppKey,
-        key: actionEventKey,
+        position: step.position,
+        appKey: step.appKey,
+        key: step.eventKey,
       })
     }
 
@@ -68,8 +63,7 @@ export async function createDemoFlowFromTemplate(
       event: 'demo-flow-request',
       flowId: flow.id,
       flowName: flow.name,
-      trigger,
-      actions,
+      demoTemplateId: templateId,
       isAutoCreated,
     })
 
@@ -78,12 +72,16 @@ export async function createDemoFlowFromTemplate(
 }
 
 export async function createFlowFromTemplate(
-  templatedFlowInput: CreateTemplatedFlowInput,
+  templateId: string,
   user: User,
 ): Promise<Flow> {
-  const { flowName, trigger, actions, parametersList, templateId } =
-    templatedFlowInput
-  const { appKey: triggerAppKey, eventKey: triggerEventKey } = trigger
+  // prevents user from creating any new template
+  const template = TEMPLATES.find((template) => template.id === templateId)
+  if (!template) {
+    throw new Error('Invalid template id input')
+  }
+
+  const { name: flowName, steps } = template
 
   // transaction will insert flow and steps
   return await Flow.transaction(async (trx) => {
@@ -97,33 +95,25 @@ export async function createFlowFromTemplate(
       },
     })
 
-    // account for trigger/action step having null for app or event key
     // insert trigger step
     await flow.$relatedQuery('steps', trx).insert({
       type: 'trigger',
       position: 1,
-      ...(triggerAppKey !== '' && {
-        appKey: triggerAppKey,
-      }),
-      ...(triggerEventKey !== '' && {
-        key: triggerEventKey,
-      }),
-      parameters: parametersList[0],
+      appKey: steps[0].appKey,
+      key: steps[0].eventKey,
+      parameters: steps[0].parameters ?? {},
     })
 
-    // insert action steps
-    for (let i = 0; i < actions.length; i++) {
-      const { appKey: actionAppKey, eventKey: actionEventKey } = actions[i]
+    // action step could have app or event key to be null due to if-then
+    // insert action steps based on steps
+    for (let i = 1; i < steps.length; i++) {
+      const step: TemplateStep = steps[i]
       await flow.$relatedQuery('steps', trx).insert({
         type: 'action',
-        position: i + 2, // start at position 2
-        ...(actionAppKey !== '' && {
-          appKey: actionAppKey,
-        }),
-        ...(actionEventKey !== '' && {
-          key: actionEventKey,
-        }),
-        parameters: parametersList[i + 1], // start at 2nd index
+        position: step.position,
+        appKey: step.appKey,
+        key: step.eventKey,
+        parameters: step.parameters ?? {},
       })
     }
 
@@ -131,9 +121,6 @@ export async function createFlowFromTemplate(
       event: 'templated-flow-request',
       flowId: flow.id,
       flowName: flow.name,
-      trigger,
-      actions,
-      parametersList,
       templateId,
     })
 

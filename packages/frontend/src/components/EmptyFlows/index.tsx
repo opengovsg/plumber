@@ -1,6 +1,8 @@
+import { useQuery } from '@apollo/client'
 import {
   AbsoluteCenter,
   Box,
+  Center,
   Divider,
   Flex,
   Grid,
@@ -11,14 +13,17 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 import NavigationDrawer from '@/components/Layout/NavigationDrawer'
+import type { Template } from '@/graphql/__generated__/graphql'
+import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
+import {
+  ATTENDANCE_TAKING_NAME,
+  SCHEDULE_REMINDERS_NAME,
+  SEND_FOLLOW_UPS_NAME,
+} from '@/helpers/flow-templates'
 import ApproveTransfersInfobox from '@/pages/Flows/components/ApproveTransfersInfobox'
 import CreateFlowModal from '@/pages/Flows/components/CreateFlowModal'
-import {
-  ATTENDANCE_TAKING_ID,
-  SCHEDULE_REMINDERS_ID,
-  SEND_FOLLOW_UPS_ID,
-  TEMPLATES,
-} from '@/pages/Templates/templates-data'
+
+import PrimarySpinner from '../PrimarySpinner'
 
 import FlowTemplate from './FlowTemplate'
 
@@ -26,17 +31,25 @@ interface EmptyFlowsProps {
   count?: number
 }
 
-const TEMPLATE_IDS_TO_DISPLAY = [
-  SEND_FOLLOW_UPS_ID,
-  SCHEDULE_REMINDERS_ID,
-  ATTENDANCE_TAKING_ID,
+const DEMO_TEMPLATES_TO_DISPLAY = [
+  SEND_FOLLOW_UPS_NAME,
+  SCHEDULE_REMINDERS_NAME,
+  ATTENDANCE_TAKING_NAME,
 ]
 
 export default function EmptyFlows(props: EmptyFlowsProps) {
   const { count } = props
 
-  const displayTemplates = TEMPLATES.filter((template) =>
-    TEMPLATE_IDS_TO_DISPLAY.some((displayId) => displayId === template.id),
+  const { data, loading } = useQuery(GET_TEMPLATES, {
+    variables: {
+      isDemoTemplate: false,
+      names: DEMO_TEMPLATES_TO_DISPLAY,
+    },
+  })
+  const demoTemplates: Template[] = data?.getTemplates
+
+  const displayTemplates = demoTemplates?.filter((template) =>
+    DEMO_TEMPLATES_TO_DISPLAY.some((name) => name === template.name),
   )
 
   // for creation of flows
@@ -66,20 +79,26 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
           </Text>
         </Flex>
 
-        <Grid
-          gridTemplateColumns={{
-            base: '1fr',
-            md: '1fr 1fr',
-            lg: '1fr 1fr 1fr',
-          }}
-          columnGap={4}
-          rowGap={6}
-          mt={4}
-        >
-          {displayTemplates.map((template) => (
-            <FlowTemplate key={template.id} template={template} />
-          ))}
-        </Grid>
+        {loading ? (
+          <Center mt={12}>
+            <PrimarySpinner fontSize="4xl" />
+          </Center>
+        ) : (
+          <Grid
+            gridTemplateColumns={{
+              base: '1fr',
+              md: '1fr 1fr',
+              lg: '1fr 1fr 1fr',
+            }}
+            columnGap={4}
+            rowGap={6}
+            mt={4}
+          >
+            {displayTemplates.map((template) => (
+              <FlowTemplate key={template.id} template={template} />
+            ))}
+          </Grid>
+        )}
 
         <Box position="relative" my={8}>
           <Divider />

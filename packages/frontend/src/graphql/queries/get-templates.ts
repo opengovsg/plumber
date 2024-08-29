@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client'
 
 export const GET_TEMPLATES = gql`
-  query GetTemplates {
-    getTemplates {
+  query GetTemplates($isDemoTemplate: Boolean!, $names: [String!]) {
+    getTemplates(isDemoTemplate: $isDemoTemplate, names: $names) {
       id
       name
       description
