@@ -16,17 +16,18 @@ import type {
   CreateTemplatedFlowInput,
   DemoVideoDetails,
 } from '@/graphql/__generated__/graphql'
-import {
-  ATTENDANCE_TAKING_ID,
-  GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID,
-  ROUTE_SUPPORT_ENQUIRIES_ID,
-  SCHEDULE_REMINDERS_ID,
-  SEND_A_COPY_OF_FORM_RESPONSE_ID,
-  SEND_FOLLOW_UPS_ID,
-  SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
-  TRACK_FEEDBACK_ID,
-  UPDATE_MAILING_LISTS_ID,
-} from '@/pages/Templates/templates-data'
+
+// Remember to sync with the backend!
+const SEND_FOLLOW_UPS_NAME = 'Send follow ups'
+const SEND_A_COPY_OF_FORM_RESPONSE_NAME = 'Send a copy of form response'
+const SCHEDULE_REMINDERS_NAME = 'Schedule reminders'
+const TRACK_FEEDBACK_NAME = 'Track feedback'
+const ATTENDANCE_TAKING_NAME = 'Attendance taking'
+const UPDATE_MAILING_LISTS_NAME = 'Update mailing lists'
+const ROUTE_SUPPORT_ENQUIRIES_NAME = 'Route support enquiries'
+const GET_LIVE_UPDATES_THROUGH_TELEGRAM_NAME =
+  'Get live updates through Telegram'
+const SEND_MESSAGE_TO_A_SLACK_CHANNEL_NAME = 'Send message to a Slack channel'
 
 export const FORMSG_POSTMAN_TEMPLATE = 'formsg-postman'
 
@@ -64,13 +65,13 @@ interface IconTemplateMap {
 export const FALLBACK_ICON = <BiQuestionMark fontSize="1.5rem" />
 
 export const TEMPLATE_ICONS_MAP: IconTemplateMap = {
-  [SEND_FOLLOW_UPS_ID]: <BiEnvelope fontSize="1.5rem" />,
-  [SEND_A_COPY_OF_FORM_RESPONSE_ID]: <BiFile fontSize="1.5rem" />,
-  [SCHEDULE_REMINDERS_ID]: <BiCalendar fontSize="1.5rem" />,
-  [TRACK_FEEDBACK_ID]: <BiStar fontSize="1.5rem" />,
-  [ATTENDANCE_TAKING_ID]: <BiCheckDouble fontSize="1.5rem" />,
-  [UPDATE_MAILING_LISTS_ID]: <BiListUl fontSize="1.5rem" />,
-  [ROUTE_SUPPORT_ENQUIRIES_ID]: <BiInfoCircle fontSize="1.5rem" />,
-  [GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID]: <BiBell fontSize="1.5rem" />,
-  [SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID]: <BiMessageAlt fontSize="1.5rem" />,
+  [SEND_FOLLOW_UPS_NAME]: <BiEnvelope fontSize="1.5rem" />,
+  [SEND_A_COPY_OF_FORM_RESPONSE_NAME]: <BiFile fontSize="1.5rem" />,
+  [SCHEDULE_REMINDERS_NAME]: <BiCalendar fontSize="1.5rem" />,
+  [TRACK_FEEDBACK_NAME]: <BiStar fontSize="1.5rem" />,
+  [ATTENDANCE_TAKING_NAME]: <BiCheckDouble fontSize="1.5rem" />,
+  [UPDATE_MAILING_LISTS_NAME]: <BiListUl fontSize="1.5rem" />,
+  [ROUTE_SUPPORT_ENQUIRIES_NAME]: <BiInfoCircle fontSize="1.5rem" />,
+  [GET_LIVE_UPDATES_THROUGH_TELEGRAM_NAME]: <BiBell fontSize="1.5rem" />,
+  [SEND_MESSAGE_TO_A_SLACK_CHANNEL_NAME]: <BiMessageAlt fontSize="1.5rem" />,
 }
