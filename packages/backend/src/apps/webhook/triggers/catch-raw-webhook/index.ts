@@ -11,7 +11,9 @@ const trigger: IRawTrigger = {
   },
 
   async testRun($: IGlobalVariable) {
-    const lastExecutionStep = await $.getLastExecutionStep()
+    const lastExecutionStep = await $.getLastExecutionStep({
+      testRunOnly: true,
+    })
     // Allow for empty webhook body
     await $.pushTriggerItem({
       raw: lastExecutionStep?.dataOut ?? {},

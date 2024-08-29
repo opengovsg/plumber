@@ -1,6 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import { ReactElement, useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
 import { Link, useParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
@@ -34,7 +34,7 @@ import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import EditorSnackbar from './EditorSnackbar'
 
-export default function EditorLayout(): ReactElement {
+export default function EditorLayout() {
   const { flowId } = useParams()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
@@ -126,6 +126,10 @@ export default function EditorLayout(): ReactElement {
 
   const isEditorReadOnly = hasFlowTransfer || flow?.active
 
+  if (!flowId || !flow) {
+    return null
+  }
+
   return (
     <>
       <VStack h="100%">
@@ -208,10 +212,8 @@ export default function EditorLayout(): ReactElement {
         </HStack>
 
         <Container maxW={852} p={0}>
-          <EditorProvider value={{ readOnly: isEditorReadOnly }}>
-            {!flow && !loading && 'not found'}
-
-            {flow && <Editor flow={flow} steps={flow.steps} />}
+          <EditorProvider readOnly={isEditorReadOnly} flowId={flowId}>
+            <Editor flow={flow} steps={flow.steps} />
           </EditorProvider>
         </Container>
       </VStack>

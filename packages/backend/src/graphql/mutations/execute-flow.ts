@@ -21,17 +21,26 @@ const executeFlow: MutationResolvers['executeFlow'] = async (
 
   const { executionStep } = await testRun({ stepId })
 
-  untilStep.executionSteps = [executionStep] // attach missing execution step into current step
-
-  if (executionStep.isFailed) {
-    throw new Error(JSON.stringify(executionStep.errorDetails))
-  }
-
-  await untilStep.$query().patch({
-    status: 'completed',
+  /**
+   * We need to unset the test execution id for execute flow because
+   * the test run might not have tested all completed steps.
+   * Need to account for the case where we release Single Step Testing then rollback
+   * to test till step. In that case, we should unset test execution id to ensure we
+   * we fetch the latest test execution steps (including test till step) after we
+   * roll forward again
+   */
+  await untilStep.flow.$query().patch({
+    testExecutionId: null,
   })
 
-  return { data: executionStep.dataOut, step: untilStep }
+  untilStep.executionSteps = [executionStep] // attach missing execution step into current step
+
+  if (!executionStep.isFailed) {
+    await untilStep.$query().patch({
+      status: 'completed',
+    })
+  }
+  return executionStep
 }
 
 export default executeFlow

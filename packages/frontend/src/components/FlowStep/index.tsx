@@ -5,15 +5,15 @@ import {
   type MouseEventHandler,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react'
-import { useLazyQuery, useMutation, useQuery } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import { CircularProgress } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
+import type { ObjectShape } from 'yup/lib/object'
 
 import ChooseAppAndEventSubstep from '@/components/ChooseAppAndEventSubstep'
 import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
@@ -28,7 +28,6 @@ import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclu
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { GET_STEP_WITH_TEST_EXECUTIONS } from '@/graphql/queries/get-step-with-test-executions'
 
 type FlowStepProps = {
   collapsed?: boolean
@@ -75,7 +74,7 @@ function generateValidationSchema(substeps: ISubstep[]) {
         ...substepArgumentValidations,
       }
     },
-    {},
+    {} as ObjectShape,
   )
 
   const validationSchema = yup.object({
@@ -92,7 +91,7 @@ export default function FlowStep(
     props
   const isTrigger = step.type === 'trigger'
 
-  const editorContext = useContext(EditorContext)
+  const { readOnly, testExecutionSteps } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
   const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
@@ -103,32 +102,17 @@ export default function FlowStep(
   )
 
   const { data } = useQuery(GET_APPS)
-  const [
-    getStepWithTestExecutions,
-    { data: stepWithTestExecutionsData, called: _stepWithTestExecutionsCalled },
-  ] = useLazyQuery(GET_STEP_WITH_TEST_EXECUTIONS, {
-    fetchPolicy: 'network-only',
-  })
-  useEffect(() => {
-    if (!collapsed && !isTrigger) {
-      // FIXME (ogp-weeloong): We shouldn't be making network requests each time
-      // the user toggles a step. Let's fix this in a separate PR.
-      getStepWithTestExecutions({
-        variables: {
-          stepId: step.id,
-        },
-      })
-    }
-  }, [collapsed, getStepWithTestExecutions, step.id, isTrigger])
 
+  // This includes all steps that run even after the current step, but within the same branch.
   const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
-  const stepExecutions = useMemo(
+  const priorExecutionSteps = useMemo(
     () =>
-      (stepWithTestExecutionsData?.getStepWithTestExecutions ?? []).filter(
-        (stepExecution: IStep) =>
-          stepExecutionsToInclude?.has(stepExecution.id) ?? true,
+      testExecutionSteps.filter(
+        (stepExecution) =>
+          stepExecutionsToInclude?.has(stepExecution.stepId) &&
+          stepExecution.step.position < step.position,
       ),
-    [stepExecutionsToInclude, stepWithTestExecutionsData],
+    [step.position, stepExecutionsToInclude, testExecutionSteps],
   )
 
   const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
@@ -175,9 +159,7 @@ export default function FlowStep(
   )
 
   const isDeletable =
-    displayOverrides?.disableDelete === true
-      ? false
-      : !isTrigger && !editorContext.readOnly
+    displayOverrides?.disableDelete === true ? false : !isTrigger && !readOnly
   const [deleteStep] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
   })
@@ -224,7 +206,7 @@ export default function FlowStep(
       demoVideoUrl={app?.demoVideoDetails?.url}
       demoVideoTitle={app?.demoVideoDetails?.title}
     >
-      <StepExecutionsProvider value={stepExecutions}>
+      <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
         <Form
           defaultValues={step}
           onSubmit={handleSubmit}

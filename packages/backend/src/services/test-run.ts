@@ -1,26 +1,20 @@
+import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
 import { processAction } from '@/services/action'
 import { processFlow } from '@/services/flow'
 import { processTrigger } from '@/services/trigger'
 
-type TestRunOptions = {
+interface TestRunOptions {
   stepId: string
 }
 
-const testRun = async (options: TestRunOptions) => {
-  let untilStep = await Step.query()
-    .findById(options.stepId)
-    .withGraphFetched({
-      flow: {
-        steps: true,
-      },
-    })
+interface TestRunResult {
+  executionStep: ExecutionStep
+  executionId: string
+}
 
-  //
-  // Start test run
-  //
-
-  untilStep = await Step.query()
+const testRun = async (options: TestRunOptions): Promise<TestRunResult> => {
+  const untilStep = await Step.query()
     .findById(options.stepId)
     .withGraphFetched({
       flow: {
@@ -28,6 +22,10 @@ const testRun = async (options: TestRunOptions) => {
       },
     })
     .modifyGraph('flow.steps', (builder) => builder.orderBy('position', 'asc'))
+
+  //
+  // Start test run
+  //
 
   const flow = untilStep.flow
   const [triggerStep, ...actionSteps] = untilStep.flow.steps
@@ -37,30 +35,23 @@ const testRun = async (options: TestRunOptions) => {
     testRun: true,
   })
 
-  if (triggerError) {
-    const { executionStep: triggerExecutionStepWithError } =
-      await processTrigger({
-        flowId: flow.id,
-        stepId: triggerStep.id,
-        error: triggerError,
-        testRun: true,
-      })
-
-    return { executionStep: triggerExecutionStepWithError }
-  }
-
-  const firstTriggerItem = data[0]
+  // Just giving it a more descriptive name here
+  const hasTriggerStepFailed = !!triggerError
 
   const { executionId, executionStep: triggerExecutionStep } =
     await processTrigger({
       flowId: flow.id,
       stepId: triggerStep.id,
-      triggerItem: firstTriggerItem,
+      error: hasTriggerStepFailed ? triggerError : undefined,
+      triggerItem: hasTriggerStepFailed ? undefined : data[0],
       testRun: true,
     })
 
-  if (triggerStep.id === untilStep.id) {
-    return { executionStep: triggerExecutionStep }
+  // We store the last run executionStep to return
+  let executionStepToReturn = triggerExecutionStep
+  // We return early if the trigger step has failed or only trigger step was tested
+  if (hasTriggerStepFailed || triggerStep.id === untilStep.id) {
+    return { executionStep: executionStepToReturn, executionId }
   }
 
   // Actions may redirect steps. We keep track here so that we can let users
@@ -77,7 +68,9 @@ const testRun = async (options: TestRunOptions) => {
       })
 
     if (actionExecutionStep.isFailed || actionStep.id === untilStep.id) {
-      return { executionStep: actionExecutionStep }
+      // Store as test execution for easy retrieval later on
+      executionStepToReturn = actionExecutionStep
+      break
     }
 
     // Don't update next step ID if actionStep wouldn't have been run in real
@@ -86,6 +79,8 @@ const testRun = async (options: TestRunOptions) => {
       nextStepId = nextStep?.id
     }
   }
+
+  return { executionStep: executionStepToReturn, executionId }
 }
 
 export default testRun

@@ -1,7 +1,7 @@
 import type {
   IDataOutMetadata,
   IDataOutMetadatum,
-  IStep,
+  IExecutionStep,
   TDataOutMetadatumType,
 } from '@plumber/types'
 
@@ -128,30 +128,32 @@ const process = (
   })
 }
 
-export function extractVariables(steps: IStep[]): StepWithVariables[] {
-  if (!steps) {
+export function extractVariables(
+  executionSteps: IExecutionStep[],
+): StepWithVariables[] {
+  if (!executionSteps) {
     return []
   }
-  return steps
-    .filter((step: IStep) => {
-      const hasExecutionSteps = !!step.executionSteps?.length
-      return hasExecutionSteps
+  return executionSteps
+    .filter((executionStep: IExecutionStep) => {
+      const hasDataOut = Object.keys(executionStep.dataOut ?? {}).length
+      return hasDataOut
     })
-    .map((step: IStep, index: number) => {
-      const metadata = step.executionSteps?.[0]?.dataOutMetadata ?? {}
+    .map((executionStep: IExecutionStep, index: number) => {
+      const metadata = executionStep.dataOutMetadata ?? {}
       const variables = process(
-        step.id,
-        step.executionSteps?.[0]?.dataOut || {},
+        executionStep.stepId,
+        executionStep.dataOut || {},
         metadata,
         '',
       )
       // sort variable by order key in-place
       sortVariables(variables)
       return {
-        id: step.id,
-        // TODO: replace with step.name once introduced
+        id: executionStep.stepId,
         name: `${index + 1}. ${
-          (step.appKey || '').charAt(0)?.toUpperCase() + step.appKey?.slice(1)
+          (executionStep.appKey || '').charAt(0)?.toUpperCase() +
+          executionStep.appKey?.slice(1)
         }`,
         output: variables,
       }

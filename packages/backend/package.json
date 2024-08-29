@@ -40,7 +40,7 @@
     "@taskforcesh/bullmq-pro": "7.7.1",
     "ajv-formats": "^2.1.1",
     "async-mutex": "0.4.0",
-    "axios": "1.6.2",
+    "axios": "1.7.5",
     "big.js": "6.2.1",
     "cookie-parser": "1.4.6",
     "copyfiles": "^2.4.1",
@@ -105,5 +105,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.26.2"
+  "version": "1.27.0"
 }

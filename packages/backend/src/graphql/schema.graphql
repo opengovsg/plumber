@@ -15,7 +15,8 @@ type Query {
     connectionId: String
     name: String
   ): FlowConnection
-  getStepWithTestExecutions(stepId: String!): [Step]
+  getStepWithTestExecutions(stepId: String!): [Step] @deprecated(reason: "Use getTestExecution instead")
+  getTestExecutionSteps(flowId: String!, ignoreTestExecutionId: Boolean): [ExecutionStep]
   getExecution(executionId: String!): Execution
   getExecutions(
     limit: Int!
@@ -69,7 +70,7 @@ type Mutation {
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
-  executeFlow(input: ExecuteFlowInput): ExecuteFlowType
+  executeFlow(input: ExecuteFlowInput): ExecutionStep!
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
@@ -278,11 +279,6 @@ type Connection {
 
 type ConnectionData {
   screenName: String
-}
-
-type ExecuteFlowType {
-  data: JSONObject
-  step: Step
 }
 
 type ExecutionStep {

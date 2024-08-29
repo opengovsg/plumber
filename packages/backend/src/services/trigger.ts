@@ -11,6 +11,7 @@ type ProcessTriggerOptions = {
   testRun?: boolean
 }
 
+// TODO(ian): change this function name, it's basically just storing trigger data
 export const processTrigger = async (options: ProcessTriggerOptions) => {
   const { flowId, stepId, triggerItem, error, testRun } = options
 

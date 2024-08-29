@@ -71,23 +71,26 @@ const trigger: IRawTrigger = {
 
     // data out should never be empty after test step is pressed once: either mock or actual data
     const { formId } = getFormDetailsFromGlobalVariable($)
-    const lastExecutionStep = await $.getLastExecutionStep()
-
+    // We use last test execution step
+    const lastTestExecutionStep = await $.getLastExecutionStep({
+      testRunOnly: true,
+    })
     // If no past submission (no form) or the form is changed, it is a mock run (re-pull mock data)
     const hasNoPastSubmission =
-      lastExecutionStep?.dataOut?.formId !== formId ||
-      lastExecutionStep.metadata.isMock
+      lastTestExecutionStep?.dataOut?.formId !== formId ||
+      lastTestExecutionStep.metadata.isMock
 
     // if different or no form is detected, use mock data
     await $.pushTriggerItem({
       raw: hasNoPastSubmission
         ? await getMockData($)
-        : lastExecutionStep?.dataOut,
+        : lastTestExecutionStep?.dataOut,
       meta: {
         internalId: '',
       },
       isMock:
-        hasNoPastSubmission || (lastExecutionStep.metadata?.isMock ?? false), // use previous mock run status from metadata by default
+        hasNoPastSubmission ||
+        (lastTestExecutionStep.metadata?.isMock ?? false), // use previous mock run status from metadata by default
     })
   },
 }

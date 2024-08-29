@@ -1,4 +1,4 @@
-import { IStep } from '@plumber/types'
+import { IExecutionStep } from '@plumber/types'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -10,38 +10,32 @@ import {
 
 describe('variables', () => {
   describe('extractVariables', () => {
-    let steps: IStep[]
+    let executionSteps: IExecutionStep[]
 
     beforeEach(() => {
-      steps = [
+      executionSteps = [
         {
-          id: 'step1-id',
-          appKey: 'app1',
-          executionSteps: [
-            {
-              dataOut: {
-                stringProp: 'string value',
-              },
-            },
-          ],
+          dataOut: {
+            stringProp: 'string value',
+          },
+          id: 'execution-step-id-1',
+          stepId: 'step1-id',
+          appKey: 'App1',
         },
-      ] as unknown as IStep[]
+      ] as unknown as IExecutionStep[]
     })
 
     it('extracts variables from every step', () => {
-      steps.push({
-        id: 'step2-id',
-        appKey: 'app2',
-        executionSteps: [
-          {
-            dataOut: {
-              numberProp: 456,
-            },
-          },
-        ],
-      } as unknown as IStep)
+      executionSteps.push({
+        dataOut: {
+          numberProp: 456,
+        },
+        id: 'execution-step-id-2',
+        stepId: 'step2-id',
+        appKey: 'App2',
+      } as unknown as IExecutionStep)
 
-      const result = extractVariables(steps)
+      const result = extractVariables(executionSteps)
       expect(result).toEqual([
         {
           id: 'step1-id',
@@ -69,12 +63,12 @@ describe('variables', () => {
 
     describe('extracts variables from complex thingys', () => {
       it('handles nested objects', () => {
-        steps[0].executionSteps[0].dataOut.objectProp = {
+        executionSteps[0].dataOut.objectProp = {
           a: 1,
           b: 'str-2',
         }
 
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
             name: 'step.step1-id.stringProp',
@@ -92,13 +86,13 @@ describe('variables', () => {
       })
 
       it('handles arrays', () => {
-        steps[0].executionSteps[0].dataOut.arrayProp = [
+        executionSteps[0].dataOut.arrayProp = [
           9000,
           'HI THAR',
           { c: '1', d: 2 },
         ]
 
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         // label exists because no metadata is provided
         expect(result[0].output).toEqual([
           expect.objectContaining({
@@ -132,12 +126,12 @@ describe('variables', () => {
     // Sanity check with label metadatum only; hence the use of objectContaining
     describe('adds metadata to all prop types', () => {
       it('adds to primitive props', () => {
-        steps[0].executionSteps[0].dataOutMetadata = {
+        executionSteps[0].dataOutMetadata = {
           stringProp: {
             label: 'test label',
           },
         }
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         expect(result[0].output[0]).toEqual(
           expect.objectContaining({
             name: 'step.step1-id.stringProp',
@@ -148,19 +142,19 @@ describe('variables', () => {
       })
 
       it('adds to nested object props', () => {
-        steps[0].executionSteps[0].dataOut = {
+        executionSteps[0].dataOut = {
           objectProp: {
             a: 1,
             b: 'stringy 2',
           },
         }
-        steps[0].executionSteps[0].dataOutMetadata = {
+        executionSteps[0].dataOutMetadata = {
           objectProp: {
             a: { label: 'label a' },
             b: { label: 'label b' },
           },
         }
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
             name: 'step.step1-id.objectProp.a',
@@ -176,17 +170,17 @@ describe('variables', () => {
       })
 
       it('adds to array props', () => {
-        steps[0].executionSteps[0].dataOut = {
+        executionSteps[0].dataOut = {
           arrayProp: [9000, 'HI THAR', { c: '1', d: 2 }],
         }
-        steps[0].executionSteps[0].dataOutMetadata = {
+        executionSteps[0].dataOutMetadata = {
           arrayProp: [
             { label: 'label 9000' },
             { label: 'label HI THAR' },
             { c: { label: 'label c prop' }, d: { label: 'label d prop' } },
           ],
         }
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
             name: 'step.step1-id.arrayProp.0',
@@ -223,17 +217,17 @@ describe('variables', () => {
       'processes metadata into props',
       ({ metadataPropName, sampleMetadata }) => {
         it('adds corresponding prop if present', () => {
-          steps[0].executionSteps[0].dataOutMetadata = {
+          executionSteps[0].dataOutMetadata = {
             stringProp: sampleMetadata,
           }
-          const result = extractVariables(steps)
+          const result = extractVariables(executionSteps)
           expect(result[0].output[0]).toEqual(
             expect.objectContaining(sampleMetadata),
           )
         })
 
         it('sets corresponding prop to null if absent, label exists because no metadata is provided', () => {
-          const result = extractVariables(steps)
+          const result = extractVariables(executionSteps)
           expect(result[0].output[0]).toEqual(
             expect.objectContaining({
               [metadataPropName]: null,
@@ -246,12 +240,12 @@ describe('variables', () => {
 
     describe('processes order metadata', () => {
       it('adds order metadata if present', () => {
-        steps[0].executionSteps[0].dataOutMetadata = {
+        executionSteps[0].dataOutMetadata = {
           stringProp: {
             order: 10.4,
           },
         }
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         expect(result[0].output[0]).toEqual(
           expect.objectContaining({
             order: 10.4,
@@ -260,7 +254,7 @@ describe('variables', () => {
       })
 
       it('sets order prop to null if absent', () => {
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         expect(result[0].output[0]).toEqual(
           expect.objectContaining({
             order: null,
@@ -269,19 +263,19 @@ describe('variables', () => {
       })
 
       it('outputs variables as dictated by order', () => {
-        steps[0].executionSteps[0].dataOut = {
+        executionSteps[0].dataOut = {
           stringProp: 'a',
           stringProp2: 'b',
           stringProp3: 'c',
           stringProp4: 'd',
         }
-        steps[0].executionSteps[0].dataOutMetadata = {
+        executionSteps[0].dataOutMetadata = {
           stringProp: { order: 10 },
           stringProp2: { order: 10.2 },
           // Intentionally undefined order for stringProp3 and
           // stringProp4
         }
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         expect(result[0].output).toEqual([
           expect.objectContaining({
             value: 'a',
@@ -304,11 +298,11 @@ describe('variables', () => {
 
     describe('process arrays in dataout', () => {
       it('data without formsg checkbox field will have the array flat-mapped', () => {
-        steps[0].executionSteps[0].dataOut = {
+        executionSteps[0].dataOut = {
           recipients: ['coolbeans@open.gov.sg', 'plumbros@open.gov.sg'],
         }
 
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         // label exists because no metadata is provided
         expect(result[0].output).toEqual([
           expect.objectContaining({
@@ -325,7 +319,7 @@ describe('variables', () => {
       })
 
       it('data with formsg checkbox field will not have the array flat-mapped', () => {
-        steps[0].executionSteps[0].dataOut = {
+        executionSteps[0].dataOut = {
           fields: {
             field1: {
               order: 1,
@@ -336,7 +330,7 @@ describe('variables', () => {
           },
         }
         // only include metadata for answerArray for testing purposes
-        steps[0].executionSteps[0].dataOutMetadata = {
+        executionSteps[0].dataOutMetadata = {
           fields: {
             field1: {
               answerArray: {
@@ -348,7 +342,7 @@ describe('variables', () => {
           },
         }
 
-        const result = extractVariables(steps)
+        const result = extractVariables(executionSteps)
         // answerArray object will be at the top due to an order given
         expect(result[0].output).toEqual([
           expect.objectContaining({
