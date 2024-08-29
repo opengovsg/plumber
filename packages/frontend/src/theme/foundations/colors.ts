@@ -39,6 +39,11 @@ const bbBearColors = {
     sub: {
       default: '#5D6785',
     },
+    'sub-subtle': {
+      default: '#e9eaee',
+      hover: '#babecb',
+      active: '#9aa0b3',
+    },
     success: {
       default: '#0F796F',
     },

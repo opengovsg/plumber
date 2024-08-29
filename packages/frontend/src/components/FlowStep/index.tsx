@@ -203,7 +203,7 @@ export default function FlowStep(
       {shouldShowInfobox && (
         <Infobox
           icon={<BiInfoCircle />}
-          variant="primaryExcludeIconColor"
+          variant="secondary"
           style={{
             borderBottomLeftRadius: '0',
             borderBottomRightRadius: '0',

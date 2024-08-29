@@ -9,10 +9,13 @@ export const Infobox = {
         color: 'primary.500',
       },
     },
-    primaryExcludeIconColor: {
+    secondary: {
       messagebox: {
-        bg: 'primary.100',
+        bg: 'interaction.sub-subtle.default',
         borderRadius: '0.25rem',
+      },
+      icon: {
+        color: 'interaction.sub.default',
       },
     },
     warning: {
