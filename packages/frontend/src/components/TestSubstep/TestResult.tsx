@@ -97,7 +97,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
         <Text>
           {isMock && getMockDataMessage(selectedActionOrTrigger)}
           {
-            ' You can use the data below as variables in your action steps below.'
+            ' You can use the test data below as variables in your subsequent actions.'
           }
         </Text>
       </Infobox>
