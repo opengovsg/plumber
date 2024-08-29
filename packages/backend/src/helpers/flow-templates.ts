@@ -87,7 +87,7 @@ export async function createFlowFromTemplate(
       const step: TemplateStep = steps[i]
       validateAppAndEventKey(step, flowName)
       // replace all parameters with {{user_email}} to the current user email
-      const updatedParameters = step.parameters ?? {}
+      const updatedParameters = structuredClone(step.parameters ?? {})
       for (const [key, value] of Object.entries(updatedParameters)) {
         const substitutedValue = String(value).replaceAll(
           '{{user_email}}',
