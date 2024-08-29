@@ -3,7 +3,7 @@ import type { IApp } from '@plumber/types'
 import { BiQuestionMark } from 'react-icons/bi'
 import { Card, Flex, Icon, Image, Link, Text } from '@chakra-ui/react'
 
-import { TemplateStep } from '@/pages/Templates/types'
+import type { TemplateStep } from '@/graphql/__generated__/graphql'
 
 interface TemplateStepContentProps {
   app?: IApp
@@ -68,7 +68,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
         <Flex alignItems="center" columnGap={4}>
           <Text textStyle="subhead-1">{`${position}. ${eventName}`}</Text>
           <Link
-            href={sampleUrl}
+            href={sampleUrl ?? ''}
             target="blank"
             textStyle="caption-2"
             colorScheme="secondary"

@@ -1,10 +1,9 @@
-import { IJSONObject } from '@plumber/types'
-
 import { useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useMutation } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import {
   Box,
+  Center,
   Flex,
   Hide,
   Modal,
@@ -14,14 +13,14 @@ import {
   ModalOverlay,
   Text,
 } from '@chakra-ui/react'
-import { Button, useToast } from '@opengovsg/design-system-react'
+import { Button } from '@opengovsg/design-system-react'
 
+import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
-import type { AppEventKeyPair } from '@/graphql/__generated__/graphql'
+import type { Template } from '@/graphql/__generated__/graphql'
 import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
+import { GET_TEMPLATE } from '@/graphql/queries/get-template'
 import { FALLBACK_ICON, TEMPLATE_ICONS_MAP } from '@/helpers/flow-templates'
-
-import { TEMPLATES } from '../Templates/templates-data'
 
 import TemplateBody from './components/TemplateBody'
 import InvalidTemplatePage from './InvalidTemplatePage'
@@ -31,56 +30,36 @@ export default function Template() {
   const navigate = useNavigate()
   const goToTemplatesPage = () => navigate(URLS.TEMPLATES)
 
-  const template = TEMPLATES.find((template) => template.id === templateId)
-  const toast = useToast()
+  const { data, loading: getTemplateLoading } = useQuery(GET_TEMPLATE, {
+    variables: {
+      isDemoTemplate: false,
+      id: templateId,
+    },
+  })
+  const template: Template = data?.getTemplate
 
   const [createTemplatedFlow, { loading: createFlowLoading }] = useMutation(
     CREATE_TEMPLATED_FLOW,
   )
   const onCreateTemplatedFlow = useCallback(async () => {
-    // Simply sanity check: Template steps were not associated with the template
-    if (!template || template.steps.length === 0) {
-      toast({
-        title: `The template is invalid, please contact support@plumber.gov.sg`,
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-        position: 'top',
-      })
-      return
-    }
-
-    const { id, name, steps } = template
-
-    // trigger or action could be null due to if-then
-    const trigger: AppEventKeyPair = {
-      appKey: steps[0].appKey ?? '',
-      eventKey: steps[0].eventKey ?? '',
-    }
-
-    const actions: AppEventKeyPair[] = []
-    const parametersList: IJSONObject[] = [steps[0].parameters ?? {}]
-    for (let i = 1; i < steps.length; i++) {
-      actions.push({
-        appKey: steps[i].appKey ?? '',
-        eventKey: steps[i].eventKey ?? '',
-      })
-      parametersList.push(steps[i].parameters ?? {})
-    }
-
     const response = await createTemplatedFlow({
       variables: {
         input: {
-          flowName: name,
-          trigger,
-          actions,
-          parametersList,
-          templateId: id,
+          templateId,
+          isDemoTemplate: false,
         },
       },
     })
     navigate(URLS.FLOW(response.data?.createTemplatedFlow?.id))
-  }, [toast, createTemplatedFlow, template, navigate])
+  }, [createTemplatedFlow, templateId, navigate])
+
+  if (getTemplateLoading) {
+    return (
+      <Center>
+        <PrimarySpinner fontSize="4xl" />
+      </Center>
+    )
+  }
 
   // Show error page if template cannot be found
   if (!template) {
@@ -103,7 +82,7 @@ export default function Template() {
             <Flex alignItems="center" columnGap={4}>
               <Hide below="md">
                 <Box bg="primary.100" p={2} borderRadius={4}>
-                  {TEMPLATE_ICONS_MAP[template.id] ?? FALLBACK_ICON}
+                  {TEMPLATE_ICONS_MAP[template.name] ?? FALLBACK_ICON}
                 </Box>
               </Hide>
 

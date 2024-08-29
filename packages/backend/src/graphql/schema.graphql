@@ -53,6 +53,7 @@ type Query {
   admin: AdminQuery!
   # Templates (including demo templates)
   getTemplates(tag: TemplateTagType): [Template!]!
+  getTemplate(isDemoTemplate: Boolean!, id: String!): Template
 }
 
 type AdminQuery {

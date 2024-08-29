@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
 import { Link, Tile } from '@opengovsg/design-system-react'
@@ -13,7 +14,9 @@ import { TemplateIcon } from '@/helpers/flow-templates'
 const TEMPLATES_TITLE = 'Templates'
 
 export default function Templates(): JSX.Element {
+  const navigate = useNavigate()
   const { data, loading } = useQuery(GET_TEMPLATES)
+
   const templates: Template[] = data?.getTemplates
 
   return (
@@ -45,7 +48,6 @@ export default function Templates(): JSX.Element {
           rowGap={6}
           mb={8}
         >
-          {/* TODO (mal): add onClick in a later PR */}
           {templates.map((template, index) => (
             <Tile
               key={index}
@@ -54,6 +56,7 @@ export default function Templates(): JSX.Element {
                   <TemplateIcon iconName={template.iconName} />
                 </Box>
               )}
+              onClick={() => navigate(URLS.TEMPLATE(template.id))}
             >
               <Flex flexDir="column" gap={2} mt={2}>
                 <Text textStyle="subhead-1">{template.name}</Text>

@@ -6,8 +6,8 @@ import { useQuery } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
+import type { TemplateStep } from '@/graphql/__generated__/graphql'
 import { GET_APPS } from '@/graphql/queries/get-apps'
-import type { TemplateStep } from '@/pages/Templates/types'
 
 import IfThenTemplateStepContent from './IfThenTemplateStepContent'
 import TemplateStepContent from './TemplateStepContent'
