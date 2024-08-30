@@ -210,7 +210,11 @@ export default function FlowStep(
           }}
         >
           <MarkdownRenderer
-            source={selectedActionOrTrigger?.helpMessage ?? ''}
+            source={
+              step?.config?.templateConfig
+                ? step.config.templateConfig.helpMessage
+                : selectedActionOrTrigger?.helpMessage ?? ''
+            }
             components={{
               // Force all links in our message to be opened in a new tab.
               a: ({ ...props }) => (

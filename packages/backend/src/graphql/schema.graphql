@@ -550,6 +550,15 @@ type Step {
   position: Int
   status: String
   executionSteps: [ExecutionStep]
+  config: StepConfig
+}
+
+type StepConfig {
+  templateConfig: StepTemplateConfig
+}
+
+type StepTemplateConfig {
+  helpMessage: String!
 }
 
 input StepConnectionInput {

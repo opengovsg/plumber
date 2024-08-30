@@ -191,6 +191,13 @@ export async function createFlowFromTemplate(
       appKey: steps[0].appKey,
       key: steps[0].eventKey,
       parameters: steps[0].parameters ?? {},
+      ...(steps[0].sampleUrl && {
+        config: {
+          templateConfig: {
+            helpMessage: `Connect your form to this step. Here is an [example](${steps[0].sampleUrl}) for this template.`,
+          },
+        },
+      }),
     })
 
     // action step could have app or event key to be null due to if-then
@@ -212,6 +219,13 @@ export async function createFlowFromTemplate(
         appKey: step.appKey,
         key: step.eventKey,
         parameters: updatedParameters,
+        ...(step.appKey === 'tiles' && {
+          config: {
+            templateConfig: {
+              helpMessage: `We’ve already created a [Tile](${`/tiles/${tableId}`}) for you that you can customise in this step.`,
+            },
+          },
+        }),
       })
     }
 

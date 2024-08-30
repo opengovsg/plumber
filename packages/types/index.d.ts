@@ -133,6 +133,14 @@ export interface IExecution {
   createdAt: string
 }
 
+export interface IStepConfig {
+  templateConfig?: IStepTemplateConfig
+}
+
+export interface IStepTemplateConfig {
+  helpMessage: string
+}
+
 export interface IStep {
   id: string
   name?: string
@@ -149,6 +157,7 @@ export interface IStep {
   connection?: Partial<IConnection>
   flow: IFlow
   executionSteps: IExecutionStep[]
+  config: IStepConfig | null
   // FIXME: remove this property once execution steps are properly exposed via queries
   output?: IJSONObject
   appData?: IApp
