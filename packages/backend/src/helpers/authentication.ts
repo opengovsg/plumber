@@ -91,6 +91,7 @@ const authentication = shield(
         isAuthenticated,
         not(isAdminOperation), // Limiting admins to read-only for now.
       ),
+      updateFlowStatus: or(isAuthenticated, isAdminOperation),
       requestOtp: rateLimitRule({ window: '1s', max: 5 }),
       verifyOtp: rateLimitRule({ window: '1s', max: 5 }),
       // Not OTP, but no real reason to be looser than OTP.
