@@ -9,7 +9,10 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import { LOGOUT } from '@/graphql/mutations/logout'
 import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
 
-type CurrentUser = Pick<IUser, 'id' | 'email'> | null
+type CurrentUser = Pick<
+  IUser,
+  'id' | 'email' | 'createdAt' | 'updatedAt'
+> | null
 
 export type AuthenticationContextParams = {
   currentUser: CurrentUser
