@@ -95,6 +95,8 @@ describe('decrypt form response', () => {
       user: {
         id: 'userid',
         email: 'test-email@open.gov.sg',
+        createdAt: `${new Date().getTime()}`,
+        updatedAt: `${new Date().getTime()}`,
       },
       app,
     }

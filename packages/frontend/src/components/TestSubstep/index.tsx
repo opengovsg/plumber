@@ -15,8 +15,11 @@ import { Button } from '@opengovsg/design-system-react'
 
 import ErrorResult from '@/components/ErrorResult'
 import WebhookUrlInfo from '@/components/WebhookUrlInfo'
+import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { ExecutionStep } from '@/graphql/__generated__/graphql'
+import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
 import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
@@ -63,6 +66,10 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     (executionStep) => executionStep.stepId === step.id,
   )
 
+  // TODO: remove this kill switch once Single Step Testing is stable
+  const { flags } = useContext(LaunchDarklyContext)
+  const shouldUseSingleStepTest = !flags?.[SINGLE_STEP_TEST_KILL_SWITCH]
+
   /**
    * Temporary state to store the last execution step error details,
    * which could come from prior steps.
@@ -77,7 +84,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
   }, [currentExecutionStep])
 
   const [executeStep, { loading: isTestExecuting }] = useMutation(
-    EXECUTE_STEP,
+    shouldUseSingleStepTest ? EXECUTE_STEP : EXECUTE_FLOW,
     {
       context: { autoSnackbar: false },
       awaitRefetchQueries: true,
@@ -85,7 +92,9 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
       update(cache, { data }) {
         // If last execution step is successful, it means the test run is successful
         // Update the step status to completed without refreshing
-        const lastExecutionStep: ExecutionStep = data?.executeStep
+        const lastExecutionStep: ExecutionStep = shouldUseSingleStepTest
+          ? data?.executeStep
+          : data?.executeFlow
         if (lastExecutionStep.status === 'success') {
           const stepCache = cache.identify({
             __typename: 'Step',
@@ -123,7 +132,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
 
   const isTestSuccessful = currentExecutionStep?.status === 'success'
 
-  const executeTestFlow = useCallback(async () => {
+  const executeTestStep = useCallback(async () => {
     try {
       await executeStep({
         variables: {
@@ -181,7 +190,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
           <Button
             isFullWidth
             variant={isTestSuccessful ? 'clear' : 'solid'}
-            onClick={executeTestFlow}
+            onClick={executeTestStep}
             mt={2}
             isLoading={isTestExecuting}
             isDisabled={readOnly}
