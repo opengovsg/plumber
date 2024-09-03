@@ -6,7 +6,6 @@ import { Infobox } from '@opengovsg/design-system-react'
 import VariablesList from '@/components/VariablesList'
 import { isIfThenStep } from '@/helpers/toolbox'
 import type { Variable } from '@/helpers/variables'
-import useAuthentication from '@/hooks/useAuthentication'
 
 function getNoOutputMessage(
   selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
@@ -44,18 +43,6 @@ interface TestResultsProps {
   // if null, the step probably hasnt been tested yet
   variables: Variable[] | null
   isMock?: boolean
-}
-
-export function SingleStepTestingInfoBox() {
-  const { currentUser } = useAuthentication()
-  if (currentUser?.createdAt) {
-    return (
-      <Infobox variant="success">
-        <Text>{`What's new`}</Text>
-      </Infobox>
-    )
-  }
-  return null
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {

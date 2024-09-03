@@ -14,7 +14,6 @@ import { Box, Collapse } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import ErrorResult from '@/components/ErrorResult'
-import FlowSubstepTitle from '@/components/FlowSubstepTitle'
 import WebhookUrlInfo from '@/components/WebhookUrlInfo'
 import { EditorContext } from '@/contexts/Editor'
 import { ExecutionStep } from '@/graphql/__generated__/graphql'
@@ -26,7 +25,10 @@ import {
   VISIBLE_VARIABLE_TYPES,
 } from '@/helpers/variables'
 
+import FlowSubstepTitle from '../FlowSubstepTitle'
+
 import TestResult from './TestResult'
+import TestSubstepTitleTooltip from './TestSubstepTitleTooltip'
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -149,6 +151,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
         expanded={expanded}
         onClick={onToggle}
         title={substep.name}
+        rightEl={<TestSubstepTitleTooltip />}
       />
       <Collapse in={expanded} unmountOnExit style={{ overflow: 'initial' }}>
         <Box p="1rem 1rem 1.5rem">

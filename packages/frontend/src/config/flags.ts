@@ -5,8 +5,10 @@
  * Display flags
  */
 export const BANNER_TEXT_FLAG = 'banner_display'
-// we only want to show this infobox to users created before this date (ms since epoch)
+// we only want to show this notification to users created before this date (ms since epoch)
 export const SINGLE_STEP_TEST_SHOW_BEFORE_FLAG = 'single_step_test_show_before'
+// kill-switch for single-step testing in case of issues
+export const SINGLE_STEP_TEST_KILL_SWITCH = 'single_step_test_kill_switch'
 
 /**
  * Feature flags
