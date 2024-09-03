@@ -9,7 +9,7 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
-    date: '2024-08-04',
+    date: '2024-09-05',
     tag: NEW_ENHANCEMENT_TAG,
     title: `Improved step testing`,
     details: dedent`
