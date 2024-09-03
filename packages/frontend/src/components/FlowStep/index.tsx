@@ -17,7 +17,7 @@ import {
 } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { useMutation, useQuery } from '@apollo/client'
-import { chakra, CircularProgress, Flex } from '@chakra-ui/react'
+import { Box, chakra, CircularProgress, Flex } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { Infobox, Link } from '@opengovsg/design-system-react'
 import type { BaseSchema } from 'yup'
@@ -226,32 +226,33 @@ export default function FlowStep(
 
   return (
     <Flex w="100%" flexDir="column">
-      {/* Show infobox only if the step is incomplete and has a help message */}
       {shouldShowInfobox && (
-        <Infobox
-          icon={<BiInfoCircle />}
-          variant="secondary"
-          style={{
-            borderBottomLeftRadius: '0',
-            borderBottomRightRadius: '0',
-          }}
-        >
-          <MarkdownRenderer
-            source={templateStepHelpMessage}
-            components={{
-              // Force all links in our message to be opened in a new tab.
-              a: ({ ...props }) => (
-                <Link
-                  isExternal
-                  color="interaction.links.neutral-default"
-                  _hover={{ color: 'interaction.links.neutral-hover' }}
-                  {...props}
-                />
-              ),
-              p: ({ ...props }) => <chakra.p {...props} />,
+        <Box boxShadow={collapsed ? undefined : 'sm'} borderRadius="lg">
+          <Infobox
+            icon={<BiInfoCircle />}
+            variant="secondary"
+            style={{
+              borderBottomLeftRadius: 'none',
+              borderBottomRightRadius: 'none',
             }}
-          />
-        </Infobox>
+          >
+            <MarkdownRenderer
+              source={templateStepHelpMessage}
+              components={{
+                // Force all links in our message to be opened in a new tab.
+                a: ({ ...props }) => (
+                  <Link
+                    isExternal
+                    color="interaction.links.neutral-default"
+                    _hover={{ color: 'interaction.links.neutral-hover' }}
+                    {...props}
+                  />
+                ),
+                p: ({ ...props }) => <chakra.p {...props} />,
+              }}
+            />
+          </Infobox>
+        </Box>
       )}
 
       <FlowStepHeader

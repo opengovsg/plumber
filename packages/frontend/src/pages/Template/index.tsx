@@ -82,7 +82,8 @@ export default function TemplateModal(props: TemplateProps) {
               </Button>
             </Flex>
           </ModalHeader>
-          <ModalBody>
+
+          <ModalBody mx={8} mb={8} borderWidth={1} borderRadius="0.5rem">
             <TemplateBody templateSteps={steps} />
           </ModalBody>
         </ModalContent>
