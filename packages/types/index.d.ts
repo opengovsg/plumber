@@ -196,6 +196,8 @@ export interface IFlow {
 export interface IUser {
   id: string
   email: string
+  createdAt: string
+  updatedAt: string
   // TODO: remove these unused properties?
   connections?: IConnection[]
   flows?: IFlow[]

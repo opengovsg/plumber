@@ -9,6 +9,14 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2024-09-05',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: `Improved step testing`,
+    details: dedent`
+      🧪 Test your steps with ease! We’ve enhanced the step testing experience, allowing you to test individual steps without running the previous ones.
+    `,
+  },
+  {
     date: '2024-08-02',
     tag: NEW_ENHANCEMENT_TAG,
     title: `Improvements we made`,

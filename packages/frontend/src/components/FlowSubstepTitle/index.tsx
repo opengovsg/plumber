@@ -12,6 +12,7 @@ type FlowSubstepTitleProps = {
   onClick: () => void
   title: string
   valid?: boolean | null
+  rightEl?: React.ReactElement
 }
 
 const validIcon = (
@@ -27,7 +28,13 @@ const errorIcon = (
 )
 
 function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
-  const { expanded = false, onClick = () => null, valid = null, title } = props
+  const {
+    expanded = false,
+    onClick = () => null,
+    valid = null,
+    title,
+    rightEl,
+  } = props
 
   const hasValidation = valid !== null
   const validationStatusIcon = valid ? validIcon : errorIcon
@@ -47,6 +54,7 @@ function FlowSubstepTitle(props: FlowSubstepTitleProps): React.ReactElement {
             {expanded ? <BiChevronUp /> : <BiChevronDown />}
           </Box>
           <Text textStyle="subhead-1">{title}</Text>
+          {rightEl}
         </Flex>
 
         {hasValidation && validationStatusIcon}

@@ -34,6 +34,8 @@ describe('formsg webhook registration', () => {
       user: {
         id: 'abc-def',
         email: 'tester@open.gov.sg',
+        createdAt: `${new Date().getTime()}`,
+        updatedAt: `${new Date().getTime()}`,
       },
       app,
     }
