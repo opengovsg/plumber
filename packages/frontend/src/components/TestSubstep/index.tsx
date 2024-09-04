@@ -18,7 +18,7 @@ import FlowSubstepTitle from '@/components/FlowSubstepTitle'
 import WebhookUrlInfo from '@/components/WebhookUrlInfo'
 import { EditorContext } from '@/contexts/Editor'
 import { ExecutionStep } from '@/graphql/__generated__/graphql'
-import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
+import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
   extractVariables,
@@ -74,8 +74,8 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     setLastErrorDetails(currentExecutionStep?.errorDetails)
   }, [currentExecutionStep])
 
-  const [executeFlow, { loading: isTestExecuting }] = useMutation(
-    EXECUTE_FLOW,
+  const [executeStep, { loading: isTestExecuting }] = useMutation(
+    EXECUTE_STEP,
     {
       context: { autoSnackbar: false },
       awaitRefetchQueries: true,
@@ -83,7 +83,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
       update(cache, { data }) {
         // If last execution step is successful, it means the test run is successful
         // Update the step status to completed without refreshing
-        const lastExecutionStep: ExecutionStep = data?.executeFlow
+        const lastExecutionStep: ExecutionStep = data?.executeStep
         if (lastExecutionStep.status === 'success') {
           const stepCache = cache.identify({
             __typename: 'Step',
@@ -121,15 +121,19 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
 
   const isTestSuccessful = currentExecutionStep?.status === 'success'
 
-  const executeTestFlow = useCallback(() => {
-    executeFlow({
-      variables: {
-        input: {
-          stepId: step.id,
+  const executeTestFlow = useCallback(async () => {
+    try {
+      await executeStep({
+        variables: {
+          input: {
+            stepId: step.id,
+          },
         },
-      },
-    })
-  }, [executeFlow, step.id])
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  }, [executeStep, step.id])
 
   const onContinueClick = useCallback(() => {
     if (onContinue) {
