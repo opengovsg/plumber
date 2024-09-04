@@ -64,7 +64,9 @@ export const responseSchema = z
     publicId: data.publicId,
     letterLink: data.letterLink,
     issuedLetter: data.issuedLetter,
-    createdAt: DateTime.fromFormat(data.createdAt, 'EEE MMM dd yyyy').toFormat(
+    createdAt: DateTime.fromFormat(data.createdAt, 'EEE MMM dd yyyy', {
+      locale: 'en-US',
+    }).toFormat(
       'dd MMM yyyy', // format a time usable for other steps
     ),
   }))
