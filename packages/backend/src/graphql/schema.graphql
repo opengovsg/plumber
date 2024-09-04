@@ -71,6 +71,7 @@ type Mutation {
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
   executeFlow(input: ExecuteFlowInput): ExecutionStep!
+  executeStep(input: ExecuteStepInput): ExecutionStep!
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
@@ -435,6 +436,10 @@ input UpdateFlowConfigInput {
 }
 
 input ExecuteFlowInput {
+  stepId: String!
+}
+
+input ExecuteStepInput {
   stepId: String!
 }
 

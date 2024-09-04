@@ -10,6 +10,7 @@ import deleteFlow from './mutations/delete-flow'
 import deleteStep from './mutations/delete-step'
 import duplicateFlow from './mutations/duplicate-flow'
 import executeFlow from './mutations/execute-flow'
+import executeStep from './mutations/execute-step'
 import generateAuthUrl from './mutations/generate-auth-url'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
@@ -61,6 +62,7 @@ export default {
   updateFlowStatus,
   updateFlowConfig,
   executeFlow,
+  executeStep,
   deleteFlow,
   createStep,
   updateStep,
