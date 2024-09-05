@@ -64,6 +64,7 @@ export const responseSchema = z
     publicId: data.publicId,
     letterLink: data.letterLink,
     issuedLetter: data.issuedLetter,
+    // Have to set to en-US to process the month "Sep" while en-SG only accepts "Sept"
     createdAt: DateTime.fromFormat(data.createdAt, 'EEE MMM dd yyyy', {
       locale: 'en-US',
     }).toFormat(
