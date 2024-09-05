@@ -11,10 +11,34 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
   // For checking if flow belongs to the user
   const flow = await context.currentUser
     .$relatedQuery('flows')
+    .withGraphFetched({
+      steps: true,
+    })
     .findById(flowId)
     .throwIfNotFound()
 
-  return getTestExecutionStepsHelper(flow.id, ignoreTestExecutionId)
+  const testExecutionSteps = await getTestExecutionStepsHelper(
+    flow.id,
+    ignoreTestExecutionId,
+  )
+
+  // We do not return test execution steps if the step is not complete
+  // to ensure we dont show variables from other step/events.
+  // However, we will show errors regardless as the step may have never been
+  // successfully tested before
+  const completedStepsIds = flow.steps
+    .filter((step) => step.status === 'completed')
+    .map((step) => step.id)
+  const completedStepIdsSet = new Set(completedStepsIds)
+  const filteredTestExecutionSteps = testExecutionSteps.filter(
+    (executionStep) => {
+      if (executionStep.isFailed) {
+        return true
+      }
+      return completedStepIdsSet.has(executionStep.stepId)
+    },
+  )
+  return filteredTestExecutionSteps
 }
 
 export default getTestExecutionSteps

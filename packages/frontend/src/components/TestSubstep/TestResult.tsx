@@ -48,11 +48,12 @@ interface TestResultsProps {
 export default function TestResult(props: TestResultsProps): JSX.Element {
   const { step, selectedActionOrTrigger, variables, isMock = false } = props
 
+  if (step.status !== 'completed') {
+    return <></>
+  }
+
   // No data only happens if user hasn't executed yet, or step returned null.
   if (!variables?.length) {
-    if (step.status !== 'completed') {
-      return <></>
-    }
     return (
       <Infobox variant="warning" width="full">
         <Box>

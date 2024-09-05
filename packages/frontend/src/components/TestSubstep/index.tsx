@@ -63,7 +63,8 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
 
   const { readOnly, testExecutionSteps } = useContext(EditorContext)
   const currentExecutionStep = testExecutionSteps.find(
-    (executionStep) => executionStep.stepId === step.id,
+    (executionStep) =>
+      executionStep.stepId === step.id && executionStep.appKey === step.appKey,
   )
 
   // TODO: remove this kill switch once Single Step Testing is stable
@@ -130,7 +131,8 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     return []
   }, [currentExecutionStep])
 
-  const isTestSuccessful = currentExecutionStep?.status === 'success'
+  const isTestSuccessful =
+    step.status === 'completed' && currentExecutionStep?.status === 'success'
 
   const executeTestStep = useCallback(async () => {
     try {
