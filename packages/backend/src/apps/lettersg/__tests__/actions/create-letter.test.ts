@@ -15,10 +15,18 @@ const MOCK_RESPONSE = {
   issuedLetter: '<h1>Hello World</h1>',
 }
 
-const MOCK_S3_ATTACHMENT_KEY =
-  's3:plumber-development-common-bucket:123/letter.pdf'
+const MOCK_TEMPLATE_NAME = 'Basic template'
+const MOCK_TEMPLATE_DATA = {
+  templateId: 456,
+  name: MOCK_TEMPLATE_NAME,
+}
+
+const MOCK_S3_ATTACHMENT_KEY = `s3:plumber-development-common-bucket:123/${MOCK_TEMPLATE_NAME}.pdf`
 
 const mocks = vi.hoisted(() => ({
+  httpGet: vi.fn(() => ({
+    data: MOCK_TEMPLATE_DATA,
+  })),
   httpPost: vi.fn(() => ({
     data: MOCK_RESPONSE,
   })),
@@ -54,6 +62,7 @@ describe('create letter from template', () => {
         hasFileProcessingActions: true,
       },
       http: {
+        get: mocks.httpGet,
         post: mocks.httpPost,
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),

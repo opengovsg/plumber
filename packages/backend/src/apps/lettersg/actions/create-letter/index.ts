@@ -115,9 +115,19 @@ const action: IRawAction = {
         return
       }
 
+      const { data: templateData } = await $.http.get(
+        '/v1/templates/:templateId',
+        {
+          urlPathParams: {
+            templateId: $.step.parameters.templateId,
+          },
+        },
+      )
+
       const attachmentS3Key = await downloadAndStoreAttachmentInS3(
         $,
         response.publicId,
+        templateData.name,
       )
       $.setActionItem({
         raw: {
