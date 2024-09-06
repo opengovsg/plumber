@@ -37,6 +37,9 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
   }
 
   const testExecutionSteps = await getTestExecutionSteps(flow.id)
+  const testActionExecutionSteps = testExecutionSteps.filter(
+    (executionStep) => executionStep.step.isAction,
+  )
 
   /**
    * If none of the steps have been tested before, we create a new test execution
@@ -55,17 +58,17 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
    * but has been tested before (i.e. test execution steps exist), we set the test execution ID
    */
   if (!flow.testExecutionId) {
-    const [testTriggerExecutionStep, ...testActionExecutionSteps] =
-      testExecutionSteps
+    // For SST, the first testExecutionStep may not be a trigger step
+    const testExecutionIdToSet = testExecutionSteps[0].executionId
     // We set the test execution ID to the test trigger execution id
     flow = await Flow.transaction(async (trx) => {
       const updatedFlow = await flow.$query(trx).patchAndFetch({
-        testExecutionId: testTriggerExecutionStep.executionId,
+        testExecutionId: testExecutionIdToSet,
       })
       // We then set the execution id for the rest of the test execution steps
       await ExecutionStep.query(trx)
         .patch({
-          executionId: testTriggerExecutionStep.executionId,
+          executionId: testExecutionIdToSet,
         })
         .whereIn(
           'id',
@@ -80,10 +83,6 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
    * and creating a new execution step with the test execution id
    */
   if (stepToTest.isAction) {
-    const previousExecutionStep = testExecutionSteps.find(
-      (execStep) => execStep.stepId === stepToTest.id,
-    )
-
     const { executionStep: newExecutionStep } = await processAction({
       flowId: flow.id,
       stepId: stepToTest.id,
@@ -91,9 +90,13 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
       testRun: true,
     })
 
-    if (previousExecutionStep) {
-      await previousExecutionStep.$query().delete()
-    }
+    // Delete old execution steps of the same step
+    await ExecutionStep.query()
+      .whereNot('id', newExecutionStep.id)
+      .andWhere('execution_id', flow.testExecutionId)
+      .andWhere('step_id', stepToTest.id)
+      .delete()
+
     return {
       executionStep: newExecutionStep,
       executionId: flow.testExecutionId,
@@ -121,13 +124,11 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
         triggerItem: hasTriggerStepFailed ? undefined : data[0],
         testRun: true,
       })
-    const [_previousTriggerExecutionStep, ...testActionExecutionSteps] =
-      testExecutionSteps
 
     if (testActionExecutionSteps.length) {
       await ExecutionStep.query()
         .patch({
-          executionId: executionId,
+          executionId,
         })
         .whereIn(
           'id',

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import User from '@/models/user'
 
@@ -162,7 +163,7 @@ describe('get test execution steps', () => {
       ])
     })
 
-    it('should return failed executiosn as well', async () => {
+    it('should return failed executions as well', async () => {
       const testExecution2 = await Execution.query().insertGraphAndFetch({
         flowId: flow.id,
         testRun: true,
@@ -257,6 +258,31 @@ describe('get test execution steps', () => {
       expect(testExecutionSteps.map((step) => step.id)).toEqual([
         testExecution2.executionSteps[0].id,
         testExecution2.executionSteps[1].id,
+        testExecution1.executionSteps[2].id,
+      ])
+    })
+
+    it('should return the latest test execution steps if more than 1 found for a step', async () => {
+      const dupes = await ExecutionStep.query().insert([
+        {
+          executionId: testExecution1.id,
+          stepId: flow.steps[0].id,
+          status: 'success',
+          dataOut: { someData: 'data' },
+        },
+        {
+          executionId: testExecution1.id,
+          stepId: flow.steps[1].id,
+          status: 'success',
+          dataOut: { someData: 'data' },
+        },
+      ])
+      await flow.$query().patch({ testExecutionId: testExecution1.id })
+      const testExecutionSteps = await getTestExecutionSteps(flow.id, true)
+      expect(testExecutionSteps).to.toHaveLength(3)
+      expect(testExecutionSteps.map((step) => step.id)).toEqual([
+        dupes[0].id,
+        dupes[1].id,
         testExecution1.executionSteps[2].id,
       ])
     })

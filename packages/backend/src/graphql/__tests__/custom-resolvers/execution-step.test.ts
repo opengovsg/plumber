@@ -50,6 +50,7 @@ describe('execution step', () => {
   beforeEach(() => {
     executionStep = {
       $relatedQuery: mocks.$relatedQuery,
+      appKey: 'testApp',
     } as unknown as ExecutionStep
   })
 
@@ -125,5 +126,16 @@ describe('execution step', () => {
         expect(result).toBeNull()
       },
     )
+
+    it('should return null if appKey is different', async () => {
+      mocks.$relatedQuery.mockReturnValueOnce({
+        appKey: 'differentApp',
+        key: 'trigger1',
+        isTrigger: true,
+        isAction: false,
+      })
+      const result = await resolver.dataOutMetadata(executionStep, {}, null)
+      expect(result).toBeNull()
+    })
   })
 })
