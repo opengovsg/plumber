@@ -14,9 +14,15 @@ const dataOutMetadata: ExecutionStepResolver['dataOutMetadata'] = async (
     isTrigger,
   } = await parent.$relatedQuery('step')
   if (!appKey || !stepKey) {
-    return
+    return null
   }
 
+  /**
+   * Best effort to prevent unrelated dataout metadata
+   */
+  if (appKey !== parent.appKey) {
+    return null
+  }
   const app = await App.findOneByKey(appKey)
 
   if (isAction) {

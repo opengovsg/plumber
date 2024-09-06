@@ -35,10 +35,7 @@ const newEnhancementTag = (
     }}
   >
     <React.Fragment>
-      <BadgeLeftIcon
-        as={BiSolidSmile}
-        style={{ marginRight: '0.25rem', color: '#5D6785' }}
-      />
+      <BadgeLeftIcon as={BiSolidSmile} style={{ marginRight: '0.25rem' }} />
       Enhancements
     </React.Fragment>
   </Badge>

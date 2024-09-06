@@ -134,35 +134,39 @@ export function extractVariables(
   if (!executionSteps) {
     return []
   }
-  return executionSteps
-    .filter((executionStep: IExecutionStep) => {
-      const hasDataOut = Object.keys(executionStep.dataOut ?? {}).length
-      return hasDataOut
-    })
-    .map((executionStep: IExecutionStep, index: number) => {
-      const metadata = executionStep.dataOutMetadata ?? {}
-      const variables = process(
-        executionStep.stepId,
-        executionStep.dataOut || {},
-        metadata,
-        '',
+  return (
+    executionSteps
+      .filter((executionStep: IExecutionStep) => {
+        const hasDataOut = Object.keys(executionStep.dataOut ?? {}).length
+        return hasDataOut
+      })
+      // sort by step position since the order of steps by createdAt is no longer preserved in single-step testing
+      .sort((a, b) => a.step.position - b.step.position)
+      .map((executionStep: IExecutionStep) => {
+        const metadata = executionStep.dataOutMetadata ?? {}
+        const variables = process(
+          executionStep.stepId,
+          executionStep.dataOut || {},
+          metadata,
+          '',
+        )
+        // sort variable by order key in-place
+        sortVariables(variables)
+        return {
+          id: executionStep.stepId,
+          name: `${executionStep.step.position}. ${
+            (executionStep.appKey || '').charAt(0)?.toUpperCase() +
+            executionStep.appKey?.slice(1)
+          }`,
+          output: variables,
+        }
+      })
+      .filter(
+        (processedStep) =>
+          // Hide steps with 0 visible variables after post-processing.
+          processedStep.output.length > 0,
       )
-      // sort variable by order key in-place
-      sortVariables(variables)
-      return {
-        id: executionStep.stepId,
-        name: `${index + 1}. ${
-          (executionStep.appKey || '').charAt(0)?.toUpperCase() +
-          executionStep.appKey?.slice(1)
-        }`,
-        output: variables,
-      }
-    })
-    .filter(
-      (processedStep) =>
-        // Hide steps with 0 visible variables after post-processing.
-        processedStep.output.length > 0,
-    )
+  )
 }
 
 /**

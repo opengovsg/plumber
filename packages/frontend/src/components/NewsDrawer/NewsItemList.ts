@@ -9,6 +9,14 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2024-09-06',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: `Improved step testing`,
+    details: dedent`
+      🧪 **Test Step** and **Test again** now test only the specific step. Previously, all prior steps were run. We've updated this behaviour so that only the specific step will be run during testing.
+    `,
+  },
+  {
     date: '2024-08-02',
     tag: NEW_ENHANCEMENT_TAG,
     title: `Improvements we made`,

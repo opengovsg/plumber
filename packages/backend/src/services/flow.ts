@@ -8,6 +8,7 @@ type ProcessFlowOptions = {
   testRun?: boolean
 }
 
+// TODO(ian): change this function name, it's actually processing trigger
 export const processFlow = async (options: ProcessFlowOptions) => {
   const flow = await Flow.query()
     .findById(options.flowId)

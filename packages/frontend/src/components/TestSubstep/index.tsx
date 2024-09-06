@@ -14,11 +14,13 @@ import { Box, Collapse } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import ErrorResult from '@/components/ErrorResult'
-import FlowSubstepTitle from '@/components/FlowSubstepTitle'
 import WebhookUrlInfo from '@/components/WebhookUrlInfo'
+import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { ExecutionStep } from '@/graphql/__generated__/graphql'
 import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
+import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
   extractVariables,
@@ -26,7 +28,10 @@ import {
   VISIBLE_VARIABLE_TYPES,
 } from '@/helpers/variables'
 
+import FlowSubstepTitle from '../FlowSubstepTitle'
+
 import TestResult from './TestResult'
+import TestSubstepTitleTooltip from './TestSubstepTitleTooltip'
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -58,8 +63,13 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
 
   const { readOnly, testExecutionSteps } = useContext(EditorContext)
   const currentExecutionStep = testExecutionSteps.find(
-    (executionStep) => executionStep.stepId === step.id,
+    (executionStep) =>
+      executionStep.stepId === step.id && executionStep.appKey === step.appKey,
   )
+
+  // TODO: remove this kill switch once Single Step Testing is stable
+  const { flags } = useContext(LaunchDarklyContext)
+  const shouldUseSingleStepTest = !flags?.[SINGLE_STEP_TEST_KILL_SWITCH]
 
   /**
    * Temporary state to store the last execution step error details,
@@ -74,8 +84,8 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     setLastErrorDetails(currentExecutionStep?.errorDetails)
   }, [currentExecutionStep])
 
-  const [executeFlow, { loading: isTestExecuting }] = useMutation(
-    EXECUTE_FLOW,
+  const [executeStep, { loading: isTestExecuting }] = useMutation(
+    shouldUseSingleStepTest ? EXECUTE_STEP : EXECUTE_FLOW,
     {
       context: { autoSnackbar: false },
       awaitRefetchQueries: true,
@@ -83,7 +93,9 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
       update(cache, { data }) {
         // If last execution step is successful, it means the test run is successful
         // Update the step status to completed without refreshing
-        const lastExecutionStep: ExecutionStep = data?.executeFlow
+        const lastExecutionStep: ExecutionStep = shouldUseSingleStepTest
+          ? data?.executeStep
+          : data?.executeFlow
         if (lastExecutionStep.status === 'success') {
           const stepCache = cache.identify({
             __typename: 'Step',
@@ -119,17 +131,22 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     return []
   }, [currentExecutionStep])
 
-  const isTestSuccessful = currentExecutionStep?.status === 'success'
+  const isTestSuccessful =
+    step.status === 'completed' && currentExecutionStep?.status === 'success'
 
-  const executeTestFlow = useCallback(() => {
-    executeFlow({
-      variables: {
-        input: {
-          stepId: step.id,
+  const executeTestStep = useCallback(async () => {
+    try {
+      await executeStep({
+        variables: {
+          input: {
+            stepId: step.id,
+          },
         },
-      },
-    })
-  }, [executeFlow, step.id])
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  }, [executeStep, step.id])
 
   const onContinueClick = useCallback(() => {
     if (onContinue) {
@@ -145,6 +162,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
         expanded={expanded}
         onClick={onToggle}
         title={substep.name}
+        rightEl={<TestSubstepTitleTooltip />}
       />
       <Collapse in={expanded} unmountOnExit style={{ overflow: 'initial' }}>
         <Box p="1rem 1rem 1.5rem">
@@ -174,7 +192,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
           <Button
             isFullWidth
             variant={isTestSuccessful ? 'clear' : 'solid'}
-            onClick={executeTestFlow}
+            onClick={executeTestStep}
             mt={2}
             isLoading={isTestExecuting}
             isDisabled={readOnly}

@@ -1,9 +1,12 @@
 import type { IExecutionStep } from '@plumber/types'
 
-import { createContext, ReactNode } from 'react'
+import { createContext, ReactNode, useContext } from 'react'
 import { useQuery } from '@apollo/client'
 
+import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
+
+import { LaunchDarklyContext } from './LaunchDarkly'
 
 interface IEditorContextValue {
   readOnly: boolean
@@ -26,12 +29,17 @@ export const EditorProvider = ({
   flowId,
   children,
 }: EditorProviderProps) => {
+  // TODO: remove this kill switch once Single Step Testing is stable
+  const { flags } = useContext(LaunchDarklyContext)
+  const shouldUseSingleStepTest = !flags?.[SINGLE_STEP_TEST_KILL_SWITCH]
+
   const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
     GET_TEST_EXECUTION_STEPS,
     {
       variables: {
         flowId,
-        ignoreTestExecutionId: true, // TODO(ian): Remove this or use LD flag once SST is enabled
+        // ignore test execution id and fetch execution steps by ordering if SST not enabled
+        ignoreTestExecutionId: !shouldUseSingleStepTest,
       },
     },
   )
