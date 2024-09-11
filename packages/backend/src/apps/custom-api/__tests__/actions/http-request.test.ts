@@ -7,9 +7,8 @@ import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 
 import app from '../..'
-import makeRequestAction, {
-  RECURSIVE_WEBHOOK_ERROR_NAME,
-} from '../../actions/http-request'
+import makeRequestAction from '../../actions/http-request'
+import { RECURSIVE_WEBHOOK_ERROR_NAME } from '../../common/check-urls'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
@@ -54,7 +53,6 @@ describe('make http request', () => {
     mocks.httpRequest.mockReturnValue('mock response')
 
     await makeRequestAction.run($).catch(() => null)
-    expect(mocks.isUrlAllowed).toHaveBeenCalledOnce()
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: $.step.parameters.url,
@@ -83,18 +81,91 @@ describe('make http request', () => {
     )
   })
 
-  it('should throw an error if url is not malformed', async () => {
-    $.step.parameters.url = 'malformed-urll'
-    await expect(makeRequestAction.run($)).rejects.toThrowError('Invalid URL')
+  it('should follow redirect once', async () => {
+    mocks.isUrlAllowed.mockResolvedValueOnce(false)
+    $.step.parameters.method = 'POST'
+    $.step.parameters.data = 'meep meep'
+    $.step.parameters.url = 'http://test.local/endpoint?1234'
+    mocks.httpRequest.mockResolvedValue({
+      status: 302,
+      headers: {
+        location: 'https://redirect.com',
+      },
+    })
+    await makeRequestAction.run($)
+    expect(mocks.httpRequest).toHaveBeenCalledTimes(2)
   })
 
-  it('should throw an error if url is not allowed', async () => {
+  it('should follow redirect with GET if 301 or 302', async () => {
     mocks.isUrlAllowed.mockResolvedValueOnce(false)
-    $.step.parameters.url = 'https://internalip.com'
-    await expect(makeRequestAction.run($)).rejects.toThrowError(
-      'The URL you are trying to call is not allowed.',
+    $.step.parameters.method = 'POST'
+    $.step.parameters.data = 'meep meep'
+    $.step.parameters.url = 'http://test.local/endpoint?1234'
+    mocks.httpRequest.mockResolvedValue({
+      status: 301,
+      headers: {
+        location: 'https://redirect.com',
+      },
+    })
+    await makeRequestAction.run($)
+    expect(mocks.httpRequest).toHaveBeenCalledTimes(2)
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'http://test.local/endpoint?1234',
+        method: 'POST',
+        data: 'meep meep',
+      }),
+    )
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'https://redirect.com',
+        method: 'GET',
+        data: 'meep meep',
+      }),
     )
   })
+
+  it('should follow redirect with same method if 307 or 308', async () => {
+    mocks.isUrlAllowed.mockResolvedValueOnce(false)
+    $.step.parameters.method = 'POST'
+    $.step.parameters.data = 'meep meep'
+    $.step.parameters.url = 'http://test.local/endpoint?1234'
+    mocks.httpRequest.mockResolvedValue({
+      status: 307,
+      headers: {
+        location: 'https://redirect.com',
+      },
+    })
+    await makeRequestAction.run($)
+    expect(mocks.httpRequest).toHaveBeenCalledTimes(2)
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'http://test.local/endpoint?1234',
+        method: 'POST',
+        data: 'meep meep',
+      }),
+    )
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'https://redirect.com',
+        method: 'POST',
+        data: 'meep meep',
+      }),
+    )
+  })
+
+  it('should not redirect if no header location', async () => {
+    mocks.isUrlAllowed.mockResolvedValueOnce(false)
+    $.step.parameters.method = 'POST'
+    $.step.parameters.data = 'meep meep'
+    $.step.parameters.url = 'http://test.local/endpoint?1234'
+    mocks.httpRequest.mockResolvedValue({
+      status: 307,
+    })
+    await expect(makeRequestAction.run($)).rejects.toThrow('No location header')
+    expect(mocks.httpRequest).toHaveBeenCalledTimes(1)
+  })
+
   it.each([
     'http://staging.plumber.gov.sg/webhooks/abc-def-123',
     'https://www.plumber.gov.sg/webhooks/abc-def-123',
