@@ -2,6 +2,7 @@ import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
+import { sanitiseFormulaInput } from '../../common/sanitise-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
@@ -124,6 +125,12 @@ const action: IRawAction = {
       ],
     },
   ],
+  preprocessVariable(key: string, value: unknown) {
+    if (key === 'value' && typeof value === 'string') {
+      return sanitiseFormulaInput(value)
+    }
+    return value
+  },
 
   getDataOutMetadata,
 

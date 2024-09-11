@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { sanitiseFormulaInput } from '../../common/sanitise-input'
 import {
   constructMsGraphValuesArrayForRowWrite,
   convertRowToHexEncodedRowRecord,
@@ -75,6 +76,12 @@ const action: IRawAction = {
       ],
     },
   ],
+  preprocessVariable(key: string, value: unknown) {
+    if (key === 'value' && typeof value === 'string') {
+      return sanitiseFormulaInput(value)
+    }
+    return value
+  },
 
   getDataOutMetadata,
 
