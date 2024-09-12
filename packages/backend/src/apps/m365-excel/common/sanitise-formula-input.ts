@@ -19,8 +19,8 @@ const BLACKLISTED_FORMULAS_REGEX = new RegExp(
  * Note that excel formulas are case-insensitive
  */
 export function sanitiseInputValue(value: string): string {
-  // sanity check
-  if (!value || value.length === 0) {
+  // sanity check: null or empty string
+  if (!value) {
     return value
   }
 

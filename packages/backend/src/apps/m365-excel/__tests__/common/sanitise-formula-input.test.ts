@@ -43,6 +43,12 @@ describe('sanitise excel input', () => {
       const sanitisedInput = `'+HYPERLINK("https://google.com", "test link")`
       expect(sanitiseInputValue(input)).toEqual(sanitisedInput)
     })
+
+    it('trimmed input starts with =', () => {
+      const input = `\n=HYPERLINK("https://google.com", "test link")`
+      const sanitisedInput = `'\n=HYPERLINK("https://google.com", "test link")`
+      expect(sanitiseInputValue(input)).toEqual(sanitisedInput)
+    })
   })
 
   describe('multiple excel formulas in input', () => {
