@@ -1,19 +1,11 @@
 const DISALLOWED_STARTING_CHARACTERS = ['=', '+', '-', '@', '0x09', '0x0D']
-const DATA_EXFILTRATION_FORMULAS = [
-  'HYPERLINK',
-  'WEBSERVICE',
-  'IMPORTDATA',
-  'RTD',
-]
-const SYSTEM_COMMAND_EXECUTION_FORMULAS = ['CMD', 'EXEC', 'DDE', 'SHELL']
+const DATA_EXFILTRATION_FORMULAS = ['HYPERLINK', 'WEBSERVICE', 'IMPORTDATA']
+// Either deprecated or have to be used in external scripts
+// const SYSTEM_COMMAND_EXECUTION_FORMULAS = ['CMD', 'EXEC', 'DDE', 'SHELL']
 
 // Define denylist that could be part of a malicious formula
-const BLACKLISTED_FORMULAS = [
-  ...DATA_EXFILTRATION_FORMULAS,
-  ...SYSTEM_COMMAND_EXECUTION_FORMULAS,
-]
 const BLACKLISTED_FORMULAS_REGEX = new RegExp(
-  `${BLACKLISTED_FORMULAS.join('|')}\\(`,
+  `${DATA_EXFILTRATION_FORMULAS.join('|')}\\(`,
   'i',
 )
 
@@ -28,12 +20,12 @@ const BLACKLISTED_FORMULAS_REGEX = new RegExp(
  */
 export function sanitiseInputValue(value: string): string {
   // sanity check
-  if (value.length === 0) {
+  if (!value || value.length === 0) {
     return value
   }
 
   const shouldSanitiseInput =
-    DISALLOWED_STARTING_CHARACTERS.includes(value.charAt(0)) &&
+    DISALLOWED_STARTING_CHARACTERS.includes(value.trimStart().charAt(0)) &&
     BLACKLISTED_FORMULAS_REGEX.test(value)
 
   return shouldSanitiseInput ? `'${value}` : value
