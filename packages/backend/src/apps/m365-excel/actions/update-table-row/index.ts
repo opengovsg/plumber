@@ -4,10 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
-import {
-  processInputValue,
-  sanitiseFormulaInput,
-} from '../../common/normalise-formula-input'
+import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import {
   constructMsGraphValuesArrayForRowWrite,
   convertRowToHexEncodedRowRecord,
@@ -79,12 +76,6 @@ const action: IRawAction = {
       ],
     },
   ],
-  preprocessVariable(key: string, value: unknown) {
-    if (key === 'value' && typeof value === 'string') {
-      return sanitiseFormulaInput(value)
-    }
-    return value
-  },
 
   getDataOutMetadata,
 
@@ -141,6 +132,7 @@ const action: IRawAction = {
     //
 
     // Return updated row in case it has formulas.
+    // Note: we disallow blacklisted formula and sanitise when necessary
     const updateRowValuesResponse = await session.request(
       `/tables/${tableId}/rows/itemAt(index=${tableRowIndex})`,
       'patch',
@@ -154,7 +146,7 @@ const action: IRawAction = {
               // enable strict mode.
               columnsToUpdate.map((col) => ({
                 columnName: col.columnName,
-                value: processInputValue(col.value),
+                value: sanitiseInputValue(col.value),
               })),
             ),
           ],
