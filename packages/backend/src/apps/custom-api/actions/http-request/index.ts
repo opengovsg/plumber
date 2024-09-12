@@ -1,18 +1,15 @@
 import { IRawAction } from '@plumber/types'
 
-import { URL } from 'url'
-
 import StepError from '@/errors/step'
 
-import { isUrlAllowed } from '../../common/ip-resolver'
+import {
+  DISALLOWED_IP_RESOLVED_ERROR,
+  RECURSIVE_WEBHOOK_ERROR_NAME,
+} from '../../common/check-urls'
 
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
-export const RECURSIVE_WEBHOOK_ERROR_NAME =
-  'Recursively invoking Plumber webhooks is prohibited.'
-
-const RECURSIVE_WEBHOOK_ERROR_SOLUTION =
-  'Ensure that you are not redirecting back to a plumber URL.'
+const REDIRECT_STATUS_CODES = [301, 302, 307, 308]
 
 const action: IRawAction = {
   name: 'Make a HTTP request',
@@ -58,33 +55,39 @@ const action: IRawAction = {
     const data = $.step.parameters.data as string
     const url = $.step.parameters.url as string
 
-    // Prohibit calling ourselves to prevent self-DoS.
-    if (new URL(url).hostname.toLowerCase().endsWith('plumber.gov.sg')) {
-      throw new StepError(
-        RECURSIVE_WEBHOOK_ERROR_NAME,
-        RECURSIVE_WEBHOOK_ERROR_SOLUTION,
-        $.step.position,
-        $.app.name,
-      )
-    }
-
-    if (!(await isUrlAllowed(url))) {
-      throw new Error('The URL you are trying to call is not allowed.')
-    }
-
     try {
-      const response = await $.http.request({
+      let response = await $.http.request({
         url,
         method,
         data,
-        // there's an internal maxRedirect limit for chrome/safari,
-        // so we only block redirect back to plumber urls
-        beforeRedirect: (options) => {
-          if (options.hostname.toLowerCase().endsWith('plumber.gov.sg')) {
-            throw new Error(RECURSIVE_WEBHOOK_ERROR_NAME)
-          }
-        },
+        maxRedirects: 0,
+        //  overwriting this to allow redirects to resolve
+        validateStatus: (status) =>
+          (status >= 200 && status < 300) ||
+          REDIRECT_STATUS_CODES.includes(status),
       })
+
+      if (!response) {
+        throw new Error('No response returned')
+      }
+
+      /**
+       * We handle redirects here manually so we could apply the same request interceptors
+       * i.e. checking if url is recursive or resolves to internal ip
+       * this means that we allow for only one hop of redirect
+       */
+      if (REDIRECT_STATUS_CODES.includes(response.status)) {
+        if (!response.headers?.location) {
+          throw new Error('No location header')
+        }
+        response = await $.http.request({
+          url: response.headers.location,
+          method:
+            response.status === 301 || response.status === 302 ? 'GET' : method,
+          data,
+          maxRedirects: 0,
+        })
+      }
 
       let responseData = response.data
 
@@ -97,7 +100,16 @@ const action: IRawAction = {
       if (err.message === RECURSIVE_WEBHOOK_ERROR_NAME) {
         throw new StepError(
           RECURSIVE_WEBHOOK_ERROR_NAME,
-          RECURSIVE_WEBHOOK_ERROR_SOLUTION,
+          'Ensure that you are not redirecting back to a plumber URL.',
+          $.step.position,
+          $.app.name,
+        )
+      }
+
+      if (err.message === DISALLOWED_IP_RESOLVED_ERROR) {
+        throw new StepError(
+          DISALLOWED_IP_RESOLVED_ERROR,
+          'If you think this is a mistake, please contact us.',
           $.step.position,
           $.app.name,
         )
@@ -105,7 +117,11 @@ const action: IRawAction = {
 
       // remaining errors are http errors to be caught
       throw new StepError(
-        `Status code: ${err.response.status} (${err.response.statusText})`,
+        `Status code: ${
+          err.response
+            ? `${err.response.status} (${err.response.statusText})`
+            : err.message
+        } `,
         'Check your custom app based on the status code and retry again.',
         $.step.position,
         $.app.name,
