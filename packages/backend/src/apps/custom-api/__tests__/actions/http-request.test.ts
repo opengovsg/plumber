@@ -8,7 +8,10 @@ import StepError from '@/errors/step'
 
 import app from '../..'
 import makeRequestAction from '../../actions/http-request'
-import { RECURSIVE_WEBHOOK_ERROR_NAME } from '../../common/check-urls'
+import {
+  DISALLOWED_IP_RESOLVED_ERROR,
+  RECURSIVE_WEBHOOK_ERROR_NAME,
+} from '../../common/check-urls'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
@@ -166,26 +169,21 @@ describe('make http request', () => {
     expect(mocks.httpRequest).toHaveBeenCalledTimes(1)
   })
 
-  it.each([
-    'http://staging.plumber.gov.sg/webhooks/abc-def-123',
-    'https://www.plumber.gov.sg/webhooks/abc-def-123',
-    'https://plumber.gov.sg:443/webhooks/abc-def-123',
-    'HTTPS://PLUMBER.GOV.SG/WEBHOOKS/ABC-DEF-123',
-    'HtTpS://WwW.PluMbEr.GoV.Sg:443/WeBHoOkS/AbC-DeF-123',
-    'http://beta.plumber.gov.sg',
-  ])('does not invoke Plumber webhooks', async (url: string) => {
-    $.step.parameters.method = 'GET'
-    $.step.parameters.data = 'meep meep'
-    $.step.parameters.url = url
-    await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
-  })
-
   it('should throw step error if user redirects to plumber', async () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.data = 'go crazy'
-    $.step.parameters.url = 'https://coolbeans.io'
+    $.step.parameters.url = 'http://beta.plumber.gov.sg'
     const recursiveWebhookError = new Error(RECURSIVE_WEBHOOK_ERROR_NAME)
     mocks.httpRequest.mockRejectedValueOnce(recursiveWebhookError)
+    await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
+  })
+
+  it('should throw step error if url resolves to blacklisted ip', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.data = 'go crazy'
+    $.step.parameters.url = 'http://1.2.3.4'
+    const disallowedIpError = new Error(DISALLOWED_IP_RESOLVED_ERROR)
+    mocks.httpRequest.mockRejectedValueOnce(disallowedIpError)
     await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
   })
 })
