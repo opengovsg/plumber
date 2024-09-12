@@ -4,7 +4,10 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
-import { sanitiseFormulaInput } from '../../common/sanitise-input'
+import {
+  processInputValue,
+  sanitiseFormulaInput,
+} from '../../common/normalise-formula-input'
 import {
   constructMsGraphValuesArrayForRowWrite,
   convertRowToHexEncodedRowRecord,
@@ -151,7 +154,7 @@ const action: IRawAction = {
               // enable strict mode.
               columnsToUpdate.map((col) => ({
                 columnName: col.columnName,
-                value: col.value,
+                value: processInputValue(col.value),
               })),
             ),
           ],
