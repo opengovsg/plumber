@@ -34,7 +34,7 @@ export function genVariableInfoMap(
   return result
 }
 
-export function constructVariableSpanElement(
+function constructVariableSpanElement(
   varInfo: VariableInfoMap,
   id: string,
 ): HTMLElement {
