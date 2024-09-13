@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { TABLE_ID_WITH_BRACES_REGEX } from '../../common/constants'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import {
   constructMsGraphValuesArrayForRowWrite,
@@ -98,6 +99,16 @@ const action: IRawAction = {
 
     const { fileId, tableId, lookupColumn, lookupValue, columnsToUpdate } =
       parametersParseResult.data
+
+    // Validation to prevent path traversals
+    if (!TABLE_ID_WITH_BRACES_REGEX.test(String(tableId))) {
+      throw new StepError(
+        'Table is of an invalid format',
+        'Check that your table is selected correctly.',
+        $.step.position,
+        $.app.name,
+      )
+    }
 
     //
     // Find index of row to update
