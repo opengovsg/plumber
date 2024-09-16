@@ -4,7 +4,9 @@ export const APP_KEY = 'm365-excel'
 
 export const MS_GRAPH_OAUTH_BASE_URL = 'https://login.microsoftonline.com'
 
-// This format is {UUID-VERSION-4}
-// Reference: https://stackoverflow.com/questions/7905929/how-to-test-valid-uuid-guid
-export const TABLE_ID_WITH_BRACES_REGEX =
-  /^\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}$/
+/**
+ * Very loose regex to just accept only alphanumeric characters and dashes
+ * since there is no proper public documentation with M365
+ */
+export const TABLE_ID_REGEX = /^\{[a-zA-Z0-9-]+\}$/ // this include start and end braces
+export const FILE_ID_REGEX = /^[a-zA-Z0-9-]+$/

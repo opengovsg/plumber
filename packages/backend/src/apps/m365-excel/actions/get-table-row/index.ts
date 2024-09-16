@@ -4,7 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
-import { TABLE_ID_WITH_BRACES_REGEX } from '../../common/constants'
+import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
@@ -131,14 +131,7 @@ const action: IRawAction = {
       parametersParseResult.data
 
     // Validation to prevent path traversals
-    if (!TABLE_ID_WITH_BRACES_REGEX.test(String(tableId))) {
-      throw new StepError(
-        'Table is of an invalid format',
-        'Check that your table is selected correctly.',
-        $.step.position,
-        $.app.name,
-      )
-    }
+    validateDynamicFieldsAndThrowError(fileId, tableId, $)
 
     const session = await WorkbookSession.acquire($, fileId)
     const results = await getTableRowImpl({
