@@ -1,6 +1,6 @@
-import { HTMLElement, parse, TextNode } from 'node-html-parser'
+import { HTMLElement, Node, parse, TextNode } from 'node-html-parser'
 
-import { StepWithVariables } from '@/helpers/variables'
+import type { StepWithVariables } from '@/helpers/variables'
 
 export type VariableInfoMap = Map<
   string,
@@ -9,6 +9,9 @@ export type VariableInfoMap = Map<
     testRunValue: string
   }
 >
+
+const VARIABLE_REGEX =
+  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/
 
 export function genVariableInfoMap(
   stepsWithVariables: StepWithVariables[],
@@ -22,60 +25,79 @@ export function genVariableInfoMap(
         variable.label ??
         variable.name.replace(`step.${step.id}.`, `step${stepPosition + 1}.`)
       const testRunValue = variable.displayedValue ?? String(variable.value)
-
       result.set(placeholderString, {
         label,
         testRunValue,
       })
     }
   }
-
   return result
+}
+
+function constructVariableSpanElement(
+  varInfo: VariableInfoMap,
+  id: string,
+): HTMLElement {
+  const idComponents = id.split('.')
+  const varInfoForNode = varInfo.get(`{{${id}}}`)
+  const value = varInfoForNode?.testRunValue || ''
+  const label = varInfoForNode?.label || idComponents[idComponents.length - 1]
+  const span = new HTMLElement('span', {})
+  span.setAttribute('data-type', 'variable')
+  span.setAttribute('data-id', id)
+  span.setAttribute('data-label', label)
+  span.setAttribute('data-value', value)
+  span.set_content(`{{${id}}}`)
+  return span
 }
 
 function substituteTemplateStringWithSpan(
   s: string,
   varInfo: VariableInfoMap,
-): HTMLElement {
-  const searchRegex = /({{[^{}]+}})/
-  const nodes = s.split(searchRegex)
-  for (const i in nodes) {
-    const node = nodes[i]
-    if (!searchRegex.test(node)) {
+): Node[] {
+  const substrings = s.split(VARIABLE_REGEX)
+  const nodes: Node[] = []
+  for (const substring of substrings) {
+    if (!VARIABLE_REGEX.test(substring)) {
+      nodes.push(new TextNode(substring))
       continue
     }
-    const id = node.replace('{{', '').replace('}}', '')
-    const idComponents = id.split('.')
-    const varInfoForNode = varInfo.get(node)
-    const value = varInfoForNode?.testRunValue || ''
-    const label = varInfoForNode?.label || idComponents[idComponents.length - 1]
-    nodes[
-      i
-    ] = `<span data-type="variable" data-id="${id}" data-label="${label}" data-value="${value}">${nodes[i]}</span>`
+    const id = substring.replace('{{', '').replace('}}', '')
+    const spanElement = constructVariableSpanElement(varInfo, id)
+    nodes.push(spanElement)
   }
-  return parse(nodes.join(''))
+
+  return nodes
 }
+
 function recursiveSubstitute(
   el: HTMLElement,
   varInfo: VariableInfoMap,
 ): HTMLElement {
-  if (
-    el.getAttribute('data-type') === 'variable' &&
-    el.getAttribute('data-id')
-  ) {
-    // is already a variable span
-    return el
+  const dataIdAttr = el.getAttribute('data-id')
+  const dataTypeAttr = el.getAttribute('data-type')
+  if (dataTypeAttr === 'variable' && dataIdAttr != null) {
+    // if node is already a variable span,
+    // we should reconstruct a new span element with the latest data
+    return constructVariableSpanElement(varInfo, dataIdAttr)
   }
-  el.childNodes = el.childNodes.map((n) => {
+  const newChildNodes: Node[] = []
+  el.childNodes.forEach((n) => {
     if (n instanceof HTMLElement) {
-      return recursiveSubstitute(n, varInfo)
+      newChildNodes.push(recursiveSubstitute(n, varInfo))
     } else if (n instanceof TextNode) {
-      return substituteTemplateStringWithSpan(n.textContent, varInfo)
+      // We cannot use n.textContent here because it will unescape all HTML tags
+      newChildNodes.push(
+        ...substituteTemplateStringWithSpan(n.rawText, varInfo),
+      )
+    } else {
+      newChildNodes.push(n)
     }
-    return n
   })
+  el.childNodes = newChildNodes
   return el
 }
+
 export function substituteOldTemplates(
   original: string,
   varInfo: VariableInfoMap,
@@ -84,5 +106,6 @@ export function substituteOldTemplates(
     return ''
   }
   const originalElem = parse(original)
-  return recursiveSubstitute(originalElem, varInfo).outerHTML
+  const substitutedDom = recursiveSubstitute(originalElem, varInfo)
+  return substitutedDom.outerHTML
 }

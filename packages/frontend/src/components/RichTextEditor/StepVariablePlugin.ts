@@ -86,7 +86,10 @@ export const StepVariable = Node.create<VariableOptions>({
       mergeAttributes(
         { 'data-type': this.name },
         this.options.HTMLAttributes,
-        HTMLAttributes,
+        // we only want to save data-type and data-id
+        {
+          'data-id': HTMLAttributes['data-id'],
+        },
       ),
       `{{${node.attrs.id}}}`,
     ]

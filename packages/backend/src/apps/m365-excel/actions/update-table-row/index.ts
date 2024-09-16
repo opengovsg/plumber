@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import {
   constructMsGraphValuesArrayForRowWrite,
   convertRowToHexEncodedRowRecord,
@@ -131,6 +132,7 @@ const action: IRawAction = {
     //
 
     // Return updated row in case it has formulas.
+    // Note: we disallow blacklisted formula and sanitise when necessary
     const updateRowValuesResponse = await session.request(
       `/tables/${tableId}/rows/itemAt(index=${tableRowIndex})`,
       'patch',
@@ -144,7 +146,7 @@ const action: IRawAction = {
               // enable strict mode.
               columnsToUpdate.map((col) => ({
                 columnName: col.columnName,
-                value: col.value,
+                value: sanitiseInputValue(col.value),
               })),
             ),
           ],
