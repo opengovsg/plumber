@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
@@ -128,6 +129,9 @@ const action: IRawAction = {
 
     const { fileId, tableId, lookupColumn, lookupValue } =
       parametersParseResult.data
+
+    // Validation to prevent path traversals
+    validateDynamicFieldsAndThrowError(fileId, tableId, $)
 
     const session = await WorkbookSession.acquire($, fileId)
     const results = await getTableRowImpl({

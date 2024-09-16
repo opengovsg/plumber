@@ -3,6 +3,7 @@ import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
+import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
@@ -135,6 +136,10 @@ const action: IRawAction = {
     }
 
     const { fileId, tableId } = $.step.parameters
+
+    // Validation to prevent path traversals
+    validateDynamicFieldsAndThrowError(String(fileId), String(tableId), $)
+
     const columnValues = ($.step.parameters.columnValues as IJSONObject[]) ?? []
     if (columnValues.length === 0) {
       $.setActionItem({
