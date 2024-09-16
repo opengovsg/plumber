@@ -91,10 +91,9 @@ describe('s3', () => {
           transformToByteArray: vi.fn(() => 'file data bytes'),
         },
         Metadata: {
-          flowId: 'flow-id',
-          stepId: 'step-id',
-          executionId: 'execution-id',
-          publicId: 'public-id',
+          flowid: 'flow-id',
+          stepid: 'step-id',
+          executionid: 'execution-id',
         },
       })
     })
@@ -123,7 +122,7 @@ describe('s3', () => {
           flowId: 'wrong',
         }),
       ).rejects.toThrowError(
-        `S3 metadata mismatch for s3:${COMMON_S3_BUCKET}:abcd/my file.txt: expected flowId=wrong, got flow-id`,
+        `S3 metadata mismatch for abcd/my file.txt: expected flowId=wrong, got flow-id`,
       )
     })
 

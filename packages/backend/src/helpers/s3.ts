@@ -126,10 +126,12 @@ export async function getObjectFromS3Id(
    * We ignore metadataToCheck for common S3 mock folder
    */
   if (!id.startsWith(COMMON_S3_MOCK_FOLDER_PREFIX) && metadataToCheck) {
-    for (const [key, value] of Object.entries(metadataToCheck)) {
-      if (metadata?.[key] !== value) {
+    for (const [key, expectedValue] of Object.entries(metadataToCheck)) {
+      // s3 converts metadata keys to lowercase
+      const storedValue = metadata?.[key.toLocaleLowerCase()]
+      if (storedValue !== expectedValue) {
         throw new Error(
-          `S3 metadata mismatch for ${id}: expected ${key}=${value}, got ${metadata?.[key]}`,
+          `S3 metadata mismatch for ${idData.objectKey}: expected ${key}=${expectedValue}, got ${storedValue}`,
         )
       }
     }
