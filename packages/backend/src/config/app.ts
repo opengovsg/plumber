@@ -29,6 +29,7 @@ type AppConfig = {
   redisTls: boolean
   redisClusterMode: boolean
   enableBullMQDashboard: boolean
+  s3CommonBucket: string
   adminUserEmail: string
   requestBodySizeLimit: string
   postman: {
@@ -83,6 +84,7 @@ const appConfig: AppConfig = {
   redisClusterMode: process.env.REDIS_CLUSTER_MODE === 'true',
   adminUserEmail: process.env.ADMIN_USER_EMAIL,
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
+  s3CommonBucket: process.env.S3_COMMON_BUCKET,
   baseUrl: process.env.BASE_URL,
   webAppUrl,
   webhookUrl,
@@ -142,6 +144,10 @@ if (
   throw new Error(
     'MAX_JOB_ATTEMPTS environment variable is not a valid integer!',
   )
+}
+
+if (!appConfig.s3CommonBucket) {
+  throw new Error('S3_COMMON_BUCKET environment variable needs to be set!')
 }
 
 // Force SGT date-time formatting no matter what

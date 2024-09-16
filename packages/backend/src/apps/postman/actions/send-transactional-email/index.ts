@@ -69,12 +69,11 @@ const action: IRawAction = {
       )
     }
 
-    /**
-     * TODO: properly handle attachment saving
-     */
     const attachmentFiles = await Promise.all(
       result.data.attachments?.map(async (attachment) => {
-        const obj = await getObjectFromS3Id(attachment)
+        // We verify the flowId here to ensure that the attachment is from the same flow and not
+        // maliciously/ manually injected by another user who does not have access to this attachment
+        const obj = await getObjectFromS3Id(attachment, { flowId: $.flow.id })
         return { fileName: obj.name, data: obj.data }
       }),
     )
