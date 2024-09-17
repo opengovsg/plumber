@@ -24,6 +24,7 @@ import Text from '@tiptap/extension-text'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import escapeHtml from 'escape-html'
 
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import {
@@ -48,6 +49,7 @@ const RICH_TEXT_EXTENSIONS = [
     paragraph: {
       HTMLAttributes: { style: 'margin: 0' },
     },
+    document: false, // already included above,
   }),
   Link.configure({
     HTMLAttributes: { rel: null, target: '_blank' },
@@ -108,10 +110,23 @@ const Editor = ({
     }),
     StepVariable,
   ]
-  let content = substituteOldTemplates(initialValue, varInfo) // back-ward compatibility with old values from PowerInput
 
+  /**
+   * For single line text fields (i.e. isRich is false), we save the content as text rather than html.
+   * This means that angle brackets are not escaped when saved and will be rendered as html elements.
+   * Therefore, we need to escape any html characters in the initial value to prevent them from being rendered as html.
+   */
+  const unsubstituedValue = useMemo(() => {
+    if (isRich || initialValue == null) {
+      return initialValue
+    }
+    return escapeHtml(initialValue)
+  }, [initialValue, isRich])
+
+  let content = substituteOldTemplates(unsubstituedValue, varInfo) // backward compatibility with old values from PowerInput
   // convert new line character into br elem so tiptap can load the content correctly
   content = content.replaceAll('\n', '<br>')
+
   if (isRich) {
     extensions.push(...RICH_TEXT_EXTENSIONS)
   } else {
@@ -144,7 +159,6 @@ const Editor = ({
         onChange('')
         return
       }
-
       onChange(isRich ? editor.getHTML() : editor.getText())
     },
     editable,
