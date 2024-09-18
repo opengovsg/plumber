@@ -101,7 +101,11 @@ const action: IRawAction = {
       parametersParseResult.data
 
     // Validation to prevent path traversals
-    validateDynamicFieldsAndThrowError(fileId, tableId, $)
+    validateDynamicFieldsAndThrowError({
+      fileId,
+      tableId,
+      $,
+    })
 
     //
     // Find index of row to update
