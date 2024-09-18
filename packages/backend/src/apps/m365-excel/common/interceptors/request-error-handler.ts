@@ -59,23 +59,25 @@ const handle429: ThrowingHandler = ($, error) => {
 //
 // Retry failures due to flakey M365 servers
 //
-const handle503: ThrowingHandler = function ($, error) {
+const handle500and503: ThrowingHandler = function ($, error) {
   // Log to monitor spikes, just in case
-  logger.warn('Received HTTP 503 from MS Graph', {
-    event: 'm365-http-503',
+  const status = error.response.status
+  logger.warn(`Received HTTP ${status} from MS Graph`, {
+    event: `m365-http-${status}`,
     tenant: $.auth?.data?.tenantKey as string,
     baseUrl: error.response.config.baseURL,
     url: error.response.config.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
+    retryAfterMs: error.response?.headers?.['retry-after'],
   })
 
   // Microsoft _sometimes_ specifies a Retry-After when it returns 503.
   const retryAfterMs =
     parseRetryAfterToMs(error.response?.headers?.['retry-after']) ?? 'default'
   throw new RetriableError({
-    error: 'Encountered HTTP 503 from MS',
+    error: `Encountered HTTP ${status} from MS`,
     delayInMs: retryAfterMs,
     // From past data, 503s happen only for a single request, so we can just
     // retry this individual step instead of jamming the group.
@@ -112,8 +114,9 @@ const errorHandler: IApp['requestErrorHandler'] = async function ($, error) {
   switch (error.response.status) {
     case 429: // Rate limited
       return handle429($, error)
+    case 500:
     case 503: // Transient error
-      return handle503($, error)
+      return handle500and503($, error)
     case 509: // Bandwidth limit reached
       return handle509($, error)
   }
