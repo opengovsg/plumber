@@ -51,8 +51,18 @@ const action: IRawAction = {
       type: 'boolean-radio' as const,
       required: true,
       description:
-        'You will need to add an Email by Postman action after this step to send out the generated PDF.',
+        'You will need to add an Email by Postman action after this step to send out the generated PDF. The PDF will use the template name as the filename.',
       value: false,
+      options: [
+        {
+          label: 'No, I can send the letter link directly.',
+          value: false,
+        },
+        {
+          label: 'Yes, I require the additional PDF.',
+          value: true,
+        },
+      ],
     },
     {
       label: 'Personalised fields',
@@ -124,10 +134,12 @@ const action: IRawAction = {
         },
       )
 
+      // Note: s3 won't allow for template names with .., we only need to replace / with _ because of how we denote a S3 ID
+      const templateName = templateData.name.replaceAll('/', '_')
       const attachmentS3Key = await downloadAndStoreAttachmentInS3(
         $,
         response.publicId,
-        templateData.name,
+        templateName,
       )
       $.setActionItem({
         raw: {
