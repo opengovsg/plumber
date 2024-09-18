@@ -138,7 +138,11 @@ const action: IRawAction = {
     const { fileId, tableId } = $.step.parameters
 
     // Validation to prevent path traversals
-    validateDynamicFieldsAndThrowError(String(fileId), String(tableId), $)
+    validateDynamicFieldsAndThrowError({
+      fileId: String(fileId),
+      tableId: String(tableId),
+      $,
+    })
 
     const columnValues = ($.step.parameters.columnValues as IJSONObject[]) ?? []
     if (columnValues.length === 0) {

@@ -131,7 +131,11 @@ const action: IRawAction = {
       parametersParseResult.data
 
     // Validation to prevent path traversals
-    validateDynamicFieldsAndThrowError(fileId, tableId, $)
+    validateDynamicFieldsAndThrowError({
+      fileId: String(fileId),
+      tableId: String(tableId),
+      $,
+    })
 
     const session = await WorkbookSession.acquire($, fileId)
     const results = await getTableRowImpl({
