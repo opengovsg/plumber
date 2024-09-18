@@ -21,7 +21,6 @@ export async function downloadAndStoreAttachmentInS3(
     },
   })
 
-  // objectKey: `executionId/appKey/publicId/templateName.pdf`
   const objectKey = `${$.execution.id}/${$.step.appKey}/${publicId}/${templateName}.pdf`
   return await putObject(COMMON_S3_BUCKET, objectKey, pdfData, {
     flowId: $.flow.id,
