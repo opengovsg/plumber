@@ -102,8 +102,8 @@ const action: IRawAction = {
 
     // Validation to prevent path traversals
     validateDynamicFieldsAndThrowError({
-      fileId: String(fileId),
-      tableId: String(tableId),
+      fileId,
+      tableId,
       $,
     })
 

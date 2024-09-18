@@ -1,4 +1,4 @@
-import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
+import type { IGlobalVariable, IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
@@ -9,6 +9,7 @@ import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
 
 import getDataOutMetadata from './get-data-out-metadata'
+import { parametersSchema } from './schemas'
 
 // Small wrapper around constructMsGraphValuesArrayForRowWrite which throws
 // StepError. As StepError requires $, this helps avoid $ becoming viral through
@@ -135,41 +136,25 @@ const action: IRawAction = {
       await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
     }
 
-    const { fileId, tableId } = $.step.parameters
+    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
+
+    if (parametersParseResult.success === false) {
+      throw new StepError(
+        'There was a problem with the input.',
+        parametersParseResult.error.issues[0].message,
+        $.step?.position,
+        $.app.name,
+      )
+    }
+
+    const { fileId, tableId, columnValues } = parametersParseResult.data
 
     // Validation to prevent path traversals
     validateDynamicFieldsAndThrowError({
-      fileId: String(fileId),
-      tableId: String(tableId),
+      fileId,
+      tableId,
       $,
     })
-
-    const columnValues = ($.step.parameters.columnValues as IJSONObject[]) ?? []
-    if (columnValues.length === 0) {
-      $.setActionItem({
-        raw: {
-          success: true,
-        },
-      })
-      return
-    }
-
-    // Sanity check user's config.
-    const seenColumnNames = new Set<string>()
-    for (const val of columnValues) {
-      const currColumnName = String(val.columnName)
-
-      if (seenColumnNames.has(currColumnName)) {
-        throw new StepError(
-          `Column '${currColumnName}' can only be written once.`,
-          `Remove duplicate '${currColumnName}' columns from the 'New row data' section.`,
-          $.step?.position,
-          $.app.name,
-        )
-      }
-
-      seenColumnNames.add(currColumnName)
-    }
 
     const session = await WorkbookSession.acquire($, fileId as string)
 
@@ -193,9 +178,9 @@ const action: IRawAction = {
             buildRowUpdateArgs(
               $,
               tableHeaderInfo.columnNames,
-              columnValues.map((val) => ({
-                columnName: String(val.columnName),
-                value: sanitiseInputValue(String(val.value)),
+              columnValues.map((col) => ({
+                columnName: col.columnName,
+                value: sanitiseInputValue(col.value),
               })),
             ),
           ],
