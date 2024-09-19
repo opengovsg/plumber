@@ -35,7 +35,7 @@ export default function FlowTemplate(props: FlowTemplateProps) {
     <Card variant="outline">
       <CardBody>
         <Box bg="secondary.100" p={2} w="2.5rem" borderRadius="0.25rem">
-          {<TemplateIcon iconName={iconName} />}
+          <TemplateIcon iconName={iconName} />
         </Box>
 
         <Flex flexDir="column" gap={2} mt={2}>
