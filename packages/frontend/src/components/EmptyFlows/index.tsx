@@ -31,7 +31,7 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
 
   const { data, loading } = useQuery(GET_TEMPLATES, {
     variables: {
-      isEmptyFlowsTemplates: true,
+      tag: 'empty',
     },
   })
   const emptyFlowsTemplates: Template[] = data?.getTemplates

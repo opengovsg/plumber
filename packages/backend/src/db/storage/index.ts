@@ -42,16 +42,5 @@ export const TEMPLATES: Template[] = deepFreeze<Template[]>([
   ROUTE_SUPPORT_ENQUIRIES_TEMPLATE,
   GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE,
   SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE,
-])
-
-// To be displayed only when the users have no pipes
-export const EMPTY_FLOWS_TEMPLATES: Template[] = deepFreeze<Template[]>([
-  SEND_FOLLOW_UPS_TEMPLATE,
-  SCHEDULE_REMINDERS_TEMPLATE,
-  ATTENDANCE_TAKING_TEMPLATE,
-])
-
-// Demo templates follow the format for templates, just lesser info
-export const DEMO_TEMPLATES: Template[] = deepFreeze<Template[]>([
-  SEND_NOTIFICATIONS_DEMO_TEMPLATE,
+  SEND_NOTIFICATIONS_DEMO_TEMPLATE, // one and only demo template
 ])

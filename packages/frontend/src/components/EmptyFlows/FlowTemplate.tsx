@@ -25,7 +25,6 @@ export default function FlowTemplate(props: FlowTemplateProps) {
       variables: {
         input: {
           templateId: id,
-          isDemoTemplate: false,
         },
       },
     })

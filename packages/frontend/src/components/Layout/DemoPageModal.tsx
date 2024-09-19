@@ -23,8 +23,6 @@ interface DemoPageModalProps {
   onClose: () => void
 }
 
-// TODO(mal): move to getTemplate using id
-
 export default function DemoPageModal(props: DemoPageModalProps) {
   const { onClose } = props
   const navigate = useNavigate()
@@ -35,7 +33,6 @@ export default function DemoPageModal(props: DemoPageModalProps) {
       variables: {
         input: {
           templateId: SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID, // only 1 default template and demo video to display for GGWP v1
-          isDemoTemplate: true,
         },
       },
     })

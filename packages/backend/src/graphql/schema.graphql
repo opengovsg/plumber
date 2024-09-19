@@ -52,7 +52,7 @@ type Query {
   # Admin queries
   admin: AdminQuery!
   # Templates (including demo templates)
-  getTemplates(isEmptyFlowsTemplates: Boolean): [Template!]!
+  getTemplates(tag: TemplateTagType): [Template!]!
 }
 
 type AdminQuery {
@@ -420,7 +420,6 @@ input CreateFlowInput {
 
 input CreateTemplatedFlowInput {
   templateId: String!
-  isDemoTemplate: Boolean!
 }
 
 input UpdateFlowInput {
@@ -849,6 +848,7 @@ type Template {
   description: String!
   steps: [TemplateStep!]!
   iconName: String # demo templates have no icon
+  tag: TemplateTagType
 }
 
 type TemplateStep {
@@ -857,6 +857,11 @@ type TemplateStep {
   eventKey: String
   sampleUrl: String # specific to template e.g. form or tile link
   parameters: JSONObject
+}
+
+enum TemplateTagType {
+  demo
+  empty # for empty flows state
 }
 
 schema {

@@ -8,6 +8,7 @@ export const SEND_NOTIFICATIONS_DEMO_TEMPLATE: Template = {
   name: 'Send notifications',
   description:
     'This demo shows you how to send out a customised email notification with each new form response. Common use cases include notifications, or acknowledgments and follow up instructions.',
+  tag: 'demo',
   // Steps: formsg --> postman
   steps: [
     {

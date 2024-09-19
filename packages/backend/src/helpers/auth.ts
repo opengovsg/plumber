@@ -5,7 +5,7 @@ import appConfig from '@/config/app'
 import { SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID } from '@/db/storage/demo-send-notifications'
 import User from '@/models/user'
 
-import { createDemoFlowFromTemplate } from './flow-templates'
+import { createFlowFromTemplate } from './flow-templates'
 
 const AUTH_COOKIE_NAME = 'plumber.sid'
 // 3 days expiry
@@ -60,7 +60,7 @@ export async function getOrCreateUser(email: string): Promise<User> {
   if (!user) {
     user = await User.query().insertAndFetch({ email })
     // default demo template is formsg-postman
-    await createDemoFlowFromTemplate(
+    await createFlowFromTemplate(
       SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID,
       user,
       true,
