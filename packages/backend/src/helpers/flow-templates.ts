@@ -1,5 +1,4 @@
-import { DEMO_TEMPLATES } from '@/db/storage/demo-templates-data'
-import { TEMPLATES } from '@/db/storage/templates-data'
+import { DEMO_TEMPLATES, TEMPLATES } from '@/db/storage'
 import type {
   FlowConfig,
   TemplateStep,

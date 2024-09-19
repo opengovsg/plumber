@@ -1,6 +1,7 @@
 import type { Template } from '@/graphql/__generated__/types.generated'
 
 import { ATTENDANCE_TAKING_TEMPLATE } from './attendance-taking'
+import { SEND_NOTIFICATIONS_DEMO_TEMPLATE } from './demo-send-notifications'
 import { GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE } from './get-live-updates-through-telegram'
 import { ROUTE_SUPPORT_ENQUIRIES_TEMPLATE } from './route-support-enquiries'
 import { SCHEDULE_REMINDERS_TEMPLATE } from './schedule-reminders'
@@ -11,7 +12,6 @@ import { TRACK_FEEDBACK_TEMPLATE } from './track-feedback'
 import { UPDATE_MAILING_LISTS_TEMPLATE } from './update-mailing-lists'
 
 // Helper function to ensure templates cannot be modified
-// Note: This will be moved and replaced with typefest in a later PR
 function deepFreeze<T>(object: T): T {
   if (Array.isArray(object)) {
     object.forEach(deepFreeze)
@@ -42,4 +42,16 @@ export const TEMPLATES: Template[] = deepFreeze<Template[]>([
   ROUTE_SUPPORT_ENQUIRIES_TEMPLATE,
   GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE,
   SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE,
+])
+
+// To be displayed only when the users have no pipes
+export const EMPTY_FLOWS_TEMPLATES: Template[] = deepFreeze<Template[]>([
+  SEND_FOLLOW_UPS_TEMPLATE,
+  SCHEDULE_REMINDERS_TEMPLATE,
+  ATTENDANCE_TAKING_TEMPLATE,
+])
+
+// Demo templates follow the format for templates, just lesser info
+export const DEMO_TEMPLATES: Template[] = deepFreeze<Template[]>([
+  SEND_NOTIFICATIONS_DEMO_TEMPLATE,
 ])

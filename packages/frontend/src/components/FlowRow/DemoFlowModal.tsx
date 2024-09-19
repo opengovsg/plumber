@@ -14,7 +14,7 @@ import { Badge, BadgeLeftIcon, Button } from '@opengovsg/design-system-react'
 import demoModalImg from '@/assets/demo-modal.png'
 import {
   DEMO_VIDEOS_MAP,
-  FORMSG_POSTMAN_TEMPLATE_ID,
+  SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID,
 } from '@/helpers/flow-templates'
 
 import DemoVideoModalContent from './DemoVideoModalContent'
@@ -29,7 +29,7 @@ export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
   const { onClose, isAutoCreated, demoVideoId } = props
   // fallback to default demo video to display for GGWP v1
   const { url, title } =
-    DEMO_VIDEOS_MAP[demoVideoId ?? FORMSG_POSTMAN_TEMPLATE_ID]
+    DEMO_VIDEOS_MAP[demoVideoId ?? SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID]
 
   const [showVideoModal, setShowVideoModal] = useState(!isAutoCreated)
 

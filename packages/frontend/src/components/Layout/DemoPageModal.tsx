@@ -16,7 +16,7 @@ import { Badge, BadgeLeftIcon, Button } from '@opengovsg/design-system-react'
 import demoModalImg from '@/assets/demo-modal.png'
 import * as URLS from '@/config/urls'
 import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
-import { FORMSG_POSTMAN_TEMPLATE_ID } from '@/helpers/flow-templates'
+import { SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID } from '@/helpers/flow-templates'
 
 // TODO (mal): remove this after combining demos and templates
 interface DemoPageModalProps {
@@ -34,7 +34,7 @@ export default function DemoPageModal(props: DemoPageModalProps) {
     const response = await createTemplatedFlow({
       variables: {
         input: {
-          templateId: FORMSG_POSTMAN_TEMPLATE_ID, // only 1 default template and demo video to display for GGWP v1
+          templateId: SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID, // only 1 default template and demo video to display for GGWP v1
           isDemoTemplate: true,
         },
       },

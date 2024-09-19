@@ -52,7 +52,7 @@ type Query {
   # Admin queries
   admin: AdminQuery!
   # Templates (including demo templates)
-  getTemplates(isDemoTemplate: Boolean!, names: [String!]): [Template!]!
+  getTemplates(isEmptyFlowsTemplates: Boolean): [Template!]!
 }
 
 type AdminQuery {
@@ -848,7 +848,7 @@ type Template {
   name: String!
   description: String!
   steps: [TemplateStep!]!
-  iconName: String!
+  iconName: String # demo templates have no icon
 }
 
 type TemplateStep {

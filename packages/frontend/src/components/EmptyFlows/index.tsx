@@ -15,11 +15,6 @@ import { Button } from '@opengovsg/design-system-react'
 import NavigationDrawer from '@/components/Layout/NavigationDrawer'
 import type { Template } from '@/graphql/__generated__/graphql'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
-import {
-  ATTENDANCE_TAKING_NAME,
-  SCHEDULE_REMINDERS_NAME,
-  SEND_FOLLOW_UPS_NAME,
-} from '@/helpers/flow-templates'
 import ApproveTransfersInfobox from '@/pages/Flows/components/ApproveTransfersInfobox'
 import CreateFlowModal from '@/pages/Flows/components/CreateFlowModal'
 
@@ -31,26 +26,15 @@ interface EmptyFlowsProps {
   count?: number
 }
 
-const DEMO_TEMPLATES_TO_DISPLAY = [
-  SEND_FOLLOW_UPS_NAME,
-  SCHEDULE_REMINDERS_NAME,
-  ATTENDANCE_TAKING_NAME,
-]
-
 export default function EmptyFlows(props: EmptyFlowsProps) {
   const { count } = props
 
   const { data, loading } = useQuery(GET_TEMPLATES, {
     variables: {
-      isDemoTemplate: false,
-      names: DEMO_TEMPLATES_TO_DISPLAY,
+      isEmptyFlowsTemplates: true,
     },
   })
-  const demoTemplates: Template[] = data?.getTemplates
-
-  const displayTemplates = demoTemplates?.filter((template) =>
-    DEMO_TEMPLATES_TO_DISPLAY.some((name) => name === template.name),
-  )
+  const emptyFlowsTemplates: Template[] = data?.getTemplates
 
   // for creation of flows
   const {
@@ -94,7 +78,7 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
             rowGap={6}
             mt={4}
           >
-            {displayTemplates.map((template) => (
+            {emptyFlowsTemplates.map((template) => (
               <FlowTemplate key={template.id} template={template} />
             ))}
           </Grid>

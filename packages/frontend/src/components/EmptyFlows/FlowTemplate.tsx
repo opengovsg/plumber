@@ -8,7 +8,7 @@ import { Button } from '@opengovsg/design-system-react'
 import * as URLS from '@/config/urls'
 import type { Template } from '@/graphql/__generated__/graphql'
 import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
-import { FALLBACK_ICON, TEMPLATE_ICONS_MAP } from '@/helpers/flow-templates'
+import { TemplateIcon } from '@/helpers/flow-templates'
 
 export interface FlowTemplateProps {
   template: Template
@@ -16,7 +16,7 @@ export interface FlowTemplateProps {
 
 export default function FlowTemplate(props: FlowTemplateProps) {
   const { template } = props
-  const { id, name, description } = template
+  const { id, name, description, iconName } = template
   const navigate = useNavigate()
 
   const [createTemplatedFlow, { loading }] = useMutation(CREATE_TEMPLATED_FLOW)
@@ -36,7 +36,7 @@ export default function FlowTemplate(props: FlowTemplateProps) {
     <Card variant="outline">
       <CardBody>
         <Box bg="secondary.100" p={2} w="2.5rem" borderRadius="0.25rem">
-          {TEMPLATE_ICONS_MAP[name] ?? FALLBACK_ICON}
+          {<TemplateIcon iconName={iconName} />}
         </Box>
 
         <Flex flexDir="column" gap={2} mt={2}>

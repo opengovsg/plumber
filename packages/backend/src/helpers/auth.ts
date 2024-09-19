@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
-import { FORMSG_POSTMAN_TEMPLATE_ID } from '@/db/storage/demo-templates-data'
+import { SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID } from '@/db/storage/demo-send-notifications'
 import User from '@/models/user'
 
 import { createDemoFlowFromTemplate } from './flow-templates'
@@ -60,7 +60,11 @@ export async function getOrCreateUser(email: string): Promise<User> {
   if (!user) {
     user = await User.query().insertAndFetch({ email })
     // default demo template is formsg-postman
-    await createDemoFlowFromTemplate(FORMSG_POSTMAN_TEMPLATE_ID, user, true)
+    await createDemoFlowFromTemplate(
+      SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID,
+      user,
+      true,
+    )
   }
 
   return user
