@@ -64,7 +64,7 @@ export default function Templates(): JSX.Element {
               key={index}
               icon={() => (
                 <Box bg="primary.100" p={2} borderRadius={4}>
-                  {<TemplateIcon iconName={template.iconName} />}
+                  <TemplateIcon iconName={template.iconName} />
                 </Box>
               )}
             >
