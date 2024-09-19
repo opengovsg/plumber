@@ -77,7 +77,7 @@ export default function TemplateBody(props: TemplateBodyProps) {
       <Infobox icon={<></>} variant="primary" mb={6}>
         <Text textStyle="body-1">
           This is a preview of your workflow. Add details to use this template
-          as is. Or, add more steps to customise it to your use case.
+          as-is. Or, add more steps to customise it to your use case.
         </Text>
       </Infobox>
 
