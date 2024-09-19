@@ -1,4 +1,4 @@
-import { TEMPLATES } from '@/db/storage/templates-data'
+import { TEMPLATES } from '@/db/storage'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
