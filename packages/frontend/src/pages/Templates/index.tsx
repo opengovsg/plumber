@@ -8,7 +8,7 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
 import { Template } from '@/graphql/__generated__/graphql'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
-import { FALLBACK_ICON, TEMPLATE_ICONS_MAP } from '@/helpers/flow-templates'
+import { TemplateIcon } from '@/helpers/flow-templates'
 
 const TEMPLATES_TITLE = 'Templates'
 
@@ -64,7 +64,7 @@ export default function Templates(): JSX.Element {
               key={index}
               icon={() => (
                 <Box bg="primary.100" p={2} borderRadius={4}>
-                  {TEMPLATE_ICONS_MAP[template.name] ?? FALLBACK_ICON}
+                  {<TemplateIcon iconName={template.iconName} />}
                 </Box>
               )}
             >

@@ -6,6 +6,7 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: Template = {
   id: UPDATE_MAILING_LISTS_ID,
   name: 'Update mailing lists',
   description: 'Maintain mailing lists with updated recipient information',
+  iconName: 'BiListUl',
   // Steps: formsg --> find tile row --> update tile row
   steps: [
     {

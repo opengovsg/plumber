@@ -6,6 +6,7 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
   id: ROUTE_SUPPORT_ENQUIRIES_ID,
   name: 'Route support enquiries',
   description: 'Route enquiries to the correct departments to process',
+  iconName: 'BiDirections',
   // Steps: formsg --> if-then to 4 branches
   steps: [
     {

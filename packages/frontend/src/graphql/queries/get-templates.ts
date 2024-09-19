@@ -14,6 +14,7 @@ export const GET_TEMPLATES = gql`
         sampleUrl
         parameters
       }
+      iconName
     }
   }
 `
