@@ -8,8 +8,7 @@ const GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID =
 export const GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE: ITemplate = {
   id: GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID,
   name: 'Get live updates through Telegram',
-  description:
-    'Get updated on your operations quickly when you’re on the ground',
+  description: 'Get updated on ground operations quickly',
   iconName: 'BiBell',
   // Steps: formsg --> telegram
   steps: [
@@ -24,7 +23,9 @@ export const GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE: ITemplate = {
       position: 2,
       appKey: 'telegram-bot',
       eventKey: 'sendMessage',
-      parameters: {},
+      parameters: {
+        text: 'An incident has been reported! Here are the details: ',
+      },
     },
   ],
 }
