@@ -29,11 +29,50 @@ export const ATTENDANCE_TAKING_TEMPLATE: Template = {
       sampleUrl:
         'https://plumber.gov.sg/tiles/c77bc8fc-e1ca-4300-a50d-7f2933b9e5b4/a4ca3902-f0ef-41e1-9f5d-45c602c04d50',
       sampleUrlDescription: TILES_SAMPLE_URL_DESCRIPTION,
+      tileTemplateStepData: [
+        {
+          columnName: 'Email',
+          value: 'jane@email.com',
+          operator: 'equals',
+        },
+      ],
     },
     {
       position: 3,
       appKey: 'tiles',
       eventKey: 'updateSingleRow',
+      parameters: {
+        rowId: '{{Replace with row id result from step 2}}',
+      },
+      tileTemplateStepData: [
+        {
+          columnName: 'Attended?',
+          cellValue: 'Yes',
+        },
+      ],
     },
   ],
+  tileTemplateData: {
+    name: 'Event attendance',
+    columns: [
+      { name: 'Name', position: 0 },
+      { name: 'Email', position: 1 },
+      { name: 'Attended?', position: 2 },
+    ],
+    rowData: [
+      {
+        Name: 'Jane Doe',
+        Email: 'jane@email.com',
+        'Attended?': 'No',
+      },
+      {
+        Name: 'John Doe',
+        Email: 'john@email.com',
+        'Attended?': 'Yes',
+      },
+      {},
+      {},
+      {},
+    ],
+  },
 }

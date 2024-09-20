@@ -149,7 +149,7 @@ export async function createFlowFromTemplate(
         columnNameToIdMap[tableColumn.name] = tableColumn.id
       }
 
-      // replace row data and create table rows
+      // replace column names with column ids for each row data and create table rows
       const newRowData = replaceRowData(rowData, columnNameToIdMap)
       await createTableRows({ tableId, dataArray: newRowData })
     }
