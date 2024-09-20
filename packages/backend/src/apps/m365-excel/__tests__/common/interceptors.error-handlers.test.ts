@@ -203,7 +203,7 @@ describe('M365 request error handlers', () => {
   })
 
   it('throws HTTP error on other non-successful codes', async () => {
-    mockAxiosAdapterToThrowOnce(500, { 'retry-after': 123 })
+    mockAxiosAdapterToThrowOnce(501, { 'retry-after': 123 })
     await expect(http.get('/test-url')).rejects.toThrow(HttpError)
   })
 
