@@ -14,9 +14,6 @@ jobs:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: package-lock.json
-      - run: npm ci
-        env:
-          NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
       - run: npm run lint
       - run: echo "✅ Your code has been linted."
   test-and-build:
@@ -46,6 +43,8 @@ jobs:
           languages: js
           service-name: ${{ secrets.DD_SERVICE_NAME }}
           api-key: ${{ secrets.DD_API_KEY }}
+      - run: npm run lint
+      - run: echo "✅ Your code has been linted."
       - run: npm run test
         env:
           # Required to allow Datadog to trace Vitest tests
