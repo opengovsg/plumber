@@ -1,7 +1,26 @@
 name: Test and build
 on: [push]
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+        env:
+          NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+      - run: npm run lint
+      - run: echo "✅ Your code has been linted."
   test-and-build:
+    name: Test and Build
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
@@ -16,11 +35,21 @@ jobs:
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - run: npm ci
+      - name: Configure Datadog Test Visibility
         env:
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
-      - run: npm run lint
-      - run: echo "✅ Your code has been linted."
+          DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+        if: env.DD_SERVICE_NAME != '' && env.DD_API_KEY != ''
+        uses: datadog/test-visibility-github-action@v1
+        with:
+          languages: js
+          service-name: ${{ secrets.DD_SERVICE_NAME }}
+          api-key: ${{ secrets.DD_API_KEY }}
       - run: npm run test
+        env:
+          # Required to allow Datadog to trace Vitest tests
+          NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
       - run: echo "✅ All tests passed."
       - run: VITE_MODE=test npm run build
       - run: echo "✅ Your code has been built."
