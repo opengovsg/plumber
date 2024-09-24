@@ -118,8 +118,8 @@ describe('Common utility functions', () => {
         expect.objectContaining(SAMPLE_COMMON_FIELD),
 
         // Transforms' fields
-        ...SAMPLE_TRANSFORM_ONE.fields.map(expect.objectContaining),
-        ...SAMPLE_TRANSFORM_TWO.fields.map(expect.objectContaining),
+        expect.objectContaining(SAMPLE_TRANSFORM_ONE.fields[0]),
+        expect.objectContaining(SAMPLE_TRANSFORM_TWO.fields[0]),
       ])
     })
 

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
     // BullMQ worker mocks
     workerConstructor: vi.fn(() => ({
       on: workerOn,
+      close: vi.fn(),
     })),
     workerOn,
 
