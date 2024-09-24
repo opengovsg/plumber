@@ -17,12 +17,12 @@ jobs:
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - run: npm ci
-      - name: Configure Datadog Test Visibility
         env:
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+      - name: Configure Datadog Test Visibility
+        env:
           DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
-        if: env.DD_SERVICE_NAME != '' && env.DD_API_KEY != ''
         uses: datadog/test-visibility-github-action@v1
         with:
           languages: js
