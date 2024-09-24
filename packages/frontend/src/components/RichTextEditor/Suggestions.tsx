@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Box, Collapse, Divider, Flex, Text } from '@chakra-ui/react'
 
 import VariablesList from '@/components/VariablesList'
@@ -9,7 +9,7 @@ interface SuggestionsProps {
   onSuggestionClick: (variable: Variable) => void
 }
 
-export default function Suggestions(props: SuggestionsProps) {
+function Suggestions(props: SuggestionsProps) {
   const { data, onSuggestionClick = () => null } = props
   const [current, setCurrent] = useState<number>(0)
 
@@ -98,3 +98,5 @@ export default function Suggestions(props: SuggestionsProps) {
     </Flex>
   )
 }
+
+export default memo(Suggestions)

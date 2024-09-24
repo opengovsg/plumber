@@ -43,7 +43,17 @@ export function useIsFieldHidden(
   namePrefix: string | undefined | null,
   field: IField,
 ): boolean {
-  const { getValues } = useFormContext()
-  const siblingParams = namePrefix ? getValues(namePrefix) : getValues()
-  return isFieldHidden(field.hiddenIf, siblingParams)
+  const { watch } = useFormContext()
+  const fieldKeyToWatch =
+    field.hiddenIf && 'fieldKey' in field.hiddenIf
+      ? field.hiddenIf.fieldKey
+      : null
+
+  if (!fieldKeyToWatch) {
+    return isFieldHidden(field.hiddenIf, {})
+  }
+  const value = watch(
+    namePrefix ? `${namePrefix}.${fieldKeyToWatch}` : fieldKeyToWatch,
+  )
+  return isFieldHidden(field.hiddenIf, { [fieldKeyToWatch]: value })
 }

@@ -6,7 +6,6 @@ import {
   SubmitHandler,
   useForm,
   UseFormReturn,
-  useWatch,
 } from 'react-hook-form'
 
 type FormProps = {
@@ -26,35 +25,26 @@ export default function Form(props: FormProps): React.ReactElement {
     onSubmit = noop,
     defaultValues,
     resolver,
-    render,
     mode = 'all',
     ...formProps
   } = props
 
-  const methods: UseFormReturn = useForm({
+  const form: UseFormReturn = useForm({
     defaultValues,
     reValidateMode: 'onBlur',
     resolver,
     mode,
   })
 
-  const form = useWatch({ control: methods.control })
-
-  /**
-   * For fields having `hiddenIf` fields, we need to re-validate the form.
-   */
   React.useEffect(() => {
-    methods.trigger()
-  }, [methods.trigger, form, methods])
-
-  React.useEffect(() => {
-    methods.reset(defaultValues)
-  }, [defaultValues, methods])
+    form.reset(defaultValues)
+    form.trigger()
+  }, [defaultValues, form])
 
   return (
-    <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} {...formProps}>
-        {render ? render(methods) : children}
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} {...formProps}>
+        {children}
       </form>
     </FormProvider>
   )
