@@ -6,6 +6,7 @@ import { fromZodError } from 'zod-validation-error'
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
+import { getTemplateData } from '../../common/get-template-data'
 import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
 import { processMissingFields } from '../../helpers/process-missing-fields'
 
@@ -46,13 +47,23 @@ const action: IRawAction = {
       },
     },
     {
-      label: 'Generate PDF',
+      label: 'Export as PDF',
       key: 'shouldGeneratePdf',
       type: 'boolean-radio' as const,
       required: true,
       description:
-        'You will need to add an Email by Postman action after this step to send out the generated PDF.',
+        'Please add an "Email by Postman" action to send the letter. By default, recipients will receive a link to view the mobile-friendly digital letter. If necessary, they can download the letter as a PDF from the link.',
       value: false,
+      options: [
+        {
+          label: 'Send the letter link directly (Recommended)',
+          value: false,
+        },
+        {
+          label: 'Export letter as PDF to send',
+          value: true,
+        },
+      ],
     },
     {
       label: 'Personalised fields',
@@ -115,9 +126,14 @@ const action: IRawAction = {
         return
       }
 
+      const { data: templateData } = await getTemplateData($)
+
+      // Note: s3 won't allow for template names with .., we only need to replace / with _ because of how we denote a S3 ID
+      const templateName = templateData.name.replaceAll('/', '_')
       const attachmentS3Key = await downloadAndStoreAttachmentInS3(
         $,
         response.publicId,
+        templateName,
       )
       $.setActionItem({
         raw: {
@@ -141,7 +157,7 @@ const action: IRawAction = {
         if (lettersErrorData?.message === 'Invalid letter params.') {
           throw new StepError(
             `Personalised field(s) not specified${
-              missingFields.length === 0 ? '' : `: ${missingFields}`
+              missingFields.length === 0 ? '' : `: ${missingFields.join(', ')}`
             }`,
             'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
             $.step.position,

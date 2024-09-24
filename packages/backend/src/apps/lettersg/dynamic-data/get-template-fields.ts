@@ -4,6 +4,8 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
+import { getTemplateData } from '../common/get-template-data'
+
 const dynamicData: IDynamicData = {
   key: 'getTemplateFields',
   name: 'Get Template Fields',
@@ -16,11 +18,7 @@ const dynamicData: IDynamicData = {
     }
 
     try {
-      const { data } = await $.http.get('/v1/templates/:templateId', {
-        urlPathParams: {
-          templateId,
-        },
-      })
+      const { data } = await getTemplateData($)
 
       if (!data?.fields) {
         return {
