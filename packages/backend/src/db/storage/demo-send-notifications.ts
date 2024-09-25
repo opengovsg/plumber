@@ -13,13 +13,11 @@ export const SEND_NOTIFICATIONS_DEMO_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID,
       appKey: 'formsg',
       eventKey: 'newSubmission',
     },
     {
       position: 2,
-      templateId: SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID,
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
     },

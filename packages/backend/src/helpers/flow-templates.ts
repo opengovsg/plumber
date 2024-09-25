@@ -1,3 +1,6 @@
+import type { IApp } from '@plumber/types'
+
+import apps from '@/apps'
 import { TEMPLATES } from '@/db/storage'
 import type {
   FlowConfig,
@@ -7,6 +10,30 @@ import Flow from '@/models/flow'
 import User from '@/models/user'
 
 import logger from './logger'
+
+function validateAppAndEventKey(step: TemplateStep, templateName: string) {
+  let app: IApp
+  const { position, appKey, eventKey } = step
+  if (appKey) {
+    app = apps[appKey]
+    if (!app) {
+      throw new Error(
+        `Invalid app key for ${templateName} template at step ${position}`,
+      )
+    }
+  }
+
+  if (eventKey) {
+    const event = app?.triggers
+      ? app?.triggers.find((trigger) => trigger.key === eventKey)
+      : app?.actions.find((action) => action.key === eventKey)
+    if (!event) {
+      throw new Error(
+        `Invalid event key for ${templateName} template at step ${position}`,
+      )
+    }
+  }
+}
 
 export async function createFlowFromTemplate(
   templateId: string,
@@ -44,6 +71,7 @@ export async function createFlowFromTemplate(
       config: flowConfig,
     })
 
+    validateAppAndEventKey(steps[0], flowName)
     // insert trigger step
     await flow.$relatedQuery('steps', trx).insert({
       type: 'trigger',
@@ -57,6 +85,8 @@ export async function createFlowFromTemplate(
     // insert action steps based on steps
     for (let i = 1; i < steps.length; i++) {
       const step: TemplateStep = steps[i]
+      validateAppAndEventKey(step, flowName)
+
       await flow.$relatedQuery('steps', trx).insert({
         type: 'action',
         position: step.position,
