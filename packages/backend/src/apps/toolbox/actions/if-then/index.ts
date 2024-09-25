@@ -25,7 +25,7 @@ function shouldTakeBranch($: IGlobalVariable): boolean {
 async function getBranchStepIdToSkipTo(
   $: IGlobalVariable,
 ): Promise<IStep['id']> {
-  const currDepth = parseInt($.step.parameters.depth as string)
+  const currDepth = parseInt($.step.parameters?.depth as string)
   if (isNaN(currDepth)) {
     throw new Error(
       `Branch depth for initial branch step ${$.step.id} is not defined.`,
@@ -45,7 +45,7 @@ async function getBranchStepIdToSkipTo(
       return false
     }
 
-    const nextBranchDepth = parseInt(step.parameters.depth as string)
+    const nextBranchDepth = parseInt(step.parameters?.depth as string)
     if (isNaN(nextBranchDepth)) {
       throw new Error(
         `Branch depth for future branch step ${$.step.id} is not defined.`,
