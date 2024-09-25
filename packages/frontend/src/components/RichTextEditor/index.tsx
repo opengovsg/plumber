@@ -200,7 +200,9 @@ const Editor = ({
       autoFocus={false}
       gutter={0}
       matchWidth={true}
-      isOpen={isSuggestionsOpen}
+      isLazy
+      lazyBehavior="unmount"
+      isOpen={isSuggestionsOpen && variablesEnabled}
     >
       <div
         className="editor"
@@ -220,23 +222,21 @@ const Editor = ({
           <Box>
             {isRich && <MenuBar editor={editor} />}
             <EditorContent className="editor__content" editor={editor} />
-            {variablesEnabled && (
-              <PopoverContent
-                w="100%"
-                motionProps={POPOVER_MOTION_PROPS}
-                onFocus={(e) => {
-                  // Go back to previous focus when clicking on suggestions to resume typing
-                  if (e.relatedTarget instanceof HTMLElement) {
-                    e.relatedTarget?.focus()
-                  }
-                }}
-              >
-                <Suggestions
-                  data={stepsWithVariables}
-                  onSuggestionClick={handleVariableClick}
-                />
-              </PopoverContent>
-            )}
+            <PopoverContent
+              w="100%"
+              motionProps={POPOVER_MOTION_PROPS}
+              onFocus={(e) => {
+                // Go back to previous focus when clicking on suggestions to resume typing
+                if (e.relatedTarget instanceof HTMLElement) {
+                  e.relatedTarget?.focus()
+                }
+              }}
+            >
+              <Suggestions
+                data={stepsWithVariables}
+                onSuggestionClick={handleVariableClick}
+              />
+            </PopoverContent>
           </Box>
         </PopoverTrigger>
       </div>

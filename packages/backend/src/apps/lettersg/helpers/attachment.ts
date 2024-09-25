@@ -5,6 +5,7 @@ import { COMMON_S3_BUCKET, putObject } from '@/helpers/s3'
 export async function downloadAndStoreAttachmentInS3(
   $: IGlobalVariable,
   publicId: string,
+  templateName: string,
 ): Promise<string> {
   // Note: no try catch because no known error found yet: will still throw general error
   // separated the two http calls to avoid confusion
@@ -20,8 +21,7 @@ export async function downloadAndStoreAttachmentInS3(
     },
   })
 
-  // objectKey: `executionId/appKey/publicId/letter.pdf`
-  const objectKey = `${$.execution.id}/${$.step.appKey}/${publicId}/letter.pdf`
+  const objectKey = `${$.execution.id}/${$.step.appKey}/${publicId}/${templateName}.pdf`
   return await putObject(COMMON_S3_BUCKET, objectKey, pdfData, {
     flowId: $.flow.id,
     stepId: $.step.id,

@@ -39,7 +39,7 @@ describe('verifyCredentials', () => {
     await verifyCredentials($)
     expect(mocks.verifyAPIKey).toHaveBeenCalledOnce()
     expect(mocks.verifyAPIKey).toHaveBeenCalledWith($)
-    expect(mocks.verifyAPIKey).toReturnWith('vault-workspace-table-id')
+    expect(mocks.verifyAPIKey()).resolves.toEqual('vault-workspace-table-id')
   })
 
   it('sets the Vault Workspace API key and label', async () => {

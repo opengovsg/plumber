@@ -1,15 +1,12 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import { getTemplateData } from '../common/get-template-data'
+
 export async function processMissingFields(
   $: IGlobalVariable,
 ): Promise<string[]> {
   try {
-    const templateId = $.step.parameters.templateId as string
-    const { data } = await $.http.get('/v1/templates/:templateId', {
-      urlPathParams: {
-        templateId,
-      },
-    })
+    const { data } = await getTemplateData($)
 
     if (!data?.fields) {
       return []
