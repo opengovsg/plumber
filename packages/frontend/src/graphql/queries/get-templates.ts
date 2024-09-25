@@ -8,7 +8,6 @@ export const GET_TEMPLATES = gql`
       description
       steps {
         position
-        templateId
         appKey
         eventKey
         sampleUrl

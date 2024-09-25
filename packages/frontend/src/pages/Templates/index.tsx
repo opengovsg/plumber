@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client'
-import { AbsoluteCenter, Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
+import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
 import { Link, Tile } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
@@ -15,19 +15,6 @@ const TEMPLATES_TITLE = 'Templates'
 export default function Templates(): JSX.Element {
   const { data, loading } = useQuery(GET_TEMPLATES)
   const templates: Template[] = data?.getTemplates
-
-  // Sanity check if our templates file is missing
-  if (!templates || templates.length === 0) {
-    return (
-      <Box position="relative" h="100%">
-        <AbsoluteCenter>
-          <Text>
-            There are no templates now, please contact support@plumber.gov.sg
-          </Text>
-        </AbsoluteCenter>
-      </Box>
-    )
-  }
 
   return (
     <Container
