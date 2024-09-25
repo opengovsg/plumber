@@ -25,7 +25,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
     position === 1
       ? app?.triggers?.find((trigger) => trigger.key === eventKey)?.name ??
         FALLBACK_EVENT_NAME
-      : app?.actions?.find((trigger) => trigger.key === eventKey)?.name ??
+      : app?.actions?.find((action) => action.key === eventKey)?.name ??
         FALLBACK_EVENT_NAME
 
   return (
