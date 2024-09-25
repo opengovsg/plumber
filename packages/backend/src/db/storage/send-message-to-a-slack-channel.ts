@@ -11,14 +11,12 @@ export const SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
       appKey: 'scheduler',
       eventKey: 'everyWeek',
       parameters: { hour: '9', weekday: '3' },
     },
     {
       position: 2,
-      templateId: SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
       appKey: 'slack',
       eventKey: 'sendMessageToChannel',
     },

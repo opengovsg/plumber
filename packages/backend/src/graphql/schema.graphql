@@ -854,7 +854,6 @@ type Template {
 
 type TemplateStep {
   position: Int! # primary key, no need id for now
-  templateId: String! # foreign key
   appKey: String
   eventKey: String
   sampleUrl: String # specific to template e.g. form or tile link

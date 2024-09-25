@@ -10,14 +10,12 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: UPDATE_MAILING_LISTS_ID,
       appKey: 'formsg',
       eventKey: 'newSubmission',
       sampleUrl: 'https://form.gov.sg/66c2cf038ff0ca00daca1c6f',
     },
     {
       position: 2,
-      templateId: UPDATE_MAILING_LISTS_ID,
       appKey: 'tiles',
       eventKey: 'findSingleRow',
       sampleUrl:
@@ -25,7 +23,6 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: Template = {
     },
     {
       position: 3,
-      templateId: UPDATE_MAILING_LISTS_ID,
       appKey: 'tiles',
       eventKey: 'updateSingleRow',
     },

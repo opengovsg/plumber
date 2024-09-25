@@ -10,14 +10,12 @@ export const ATTENDANCE_TAKING_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: ATTENDANCE_TAKING_ID,
       appKey: 'formsg',
       eventKey: 'newSubmission',
       sampleUrl: 'https://form.gov.sg/66c2c58c0ebf8abcb0ad4c76',
     },
     {
       position: 2,
-      templateId: ATTENDANCE_TAKING_ID,
       appKey: 'tiles',
       eventKey: 'findSingleRow',
       sampleUrl:
@@ -25,7 +23,6 @@ export const ATTENDANCE_TAKING_TEMPLATE: Template = {
     },
     {
       position: 3,
-      templateId: ATTENDANCE_TAKING_ID,
       appKey: 'tiles',
       eventKey: 'updateSingleRow',
     },

@@ -11,14 +11,12 @@ export const TRACK_FEEDBACK_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: TRACK_FEEDBACK_ID,
       appKey: 'formsg',
       eventKey: 'newSubmission',
       sampleUrl: 'https://form.gov.sg/66c2d2ea69c2121a425975bc',
     },
     {
       position: 2,
-      templateId: TRACK_FEEDBACK_ID,
       appKey: 'tiles',
       eventKey: 'createTileRow',
       sampleUrl:

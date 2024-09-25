@@ -10,14 +10,12 @@ export const SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: SEND_A_COPY_OF_FORM_RESPONSE_ID,
       appKey: 'formsg',
       eventKey: 'newSubmission',
       sampleUrl: 'https://form.gov.sg/66c2bb59c28ac9d16c1b62c9',
     },
     {
       position: 2,
-      templateId: SEND_A_COPY_OF_FORM_RESPONSE_ID,
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {

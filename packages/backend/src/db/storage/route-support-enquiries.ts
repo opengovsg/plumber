@@ -10,14 +10,12 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
       appKey: 'formsg',
       eventKey: 'newSubmission',
       sampleUrl: 'https://form.gov.sg/66c2d127c61aa529969562c6',
     },
     {
       position: 2,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
@@ -35,7 +33,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
     },
     {
       position: 3,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {
@@ -48,7 +45,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
     },
     {
       position: 4,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
@@ -66,7 +62,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
     },
     {
       position: 5,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {
@@ -79,7 +74,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
     },
     {
       position: 6,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
@@ -97,11 +91,9 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
     },
     {
       position: 7,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
     },
     {
       position: 8,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
@@ -119,7 +111,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
     },
     {
       position: 9,
-      templateId: ROUTE_SUPPORT_ENQUIRIES_ID,
     },
   ],
 }

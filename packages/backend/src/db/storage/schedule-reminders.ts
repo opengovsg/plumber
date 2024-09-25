@@ -11,14 +11,12 @@ export const SCHEDULE_REMINDERS_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: SCHEDULE_REMINDERS_ID,
       appKey: 'scheduler',
       eventKey: 'everyWeek',
       parameters: { hour: '9', weekday: '1' },
     },
     {
       position: 2,
-      templateId: SCHEDULE_REMINDERS_ID,
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {

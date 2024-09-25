@@ -12,14 +12,12 @@ export const GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE: Template = {
   steps: [
     {
       position: 1,
-      templateId: GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID,
       appKey: 'formsg',
       eventKey: 'newSubmission',
       sampleUrl: 'https://form.gov.sg/66c2cfe9659625d2a4d9c037',
     },
     {
       position: 2,
-      templateId: GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID,
       appKey: 'telegram-bot',
       eventKey: 'sendMessage',
       parameters: {},
