@@ -1,5 +1,7 @@
 import type { Template } from '@/graphql/__generated__/types.generated'
 
+import { FORMSG_SAMPLE_URL_DESCRIPTION } from './constants'
+
 const ROUTE_SUPPORT_ENQUIRIES_ID = '2a84e2f6-4806-46a2-890a-0dba1411b12f'
 
 export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
@@ -14,6 +16,7 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
       appKey: 'formsg',
       eventKey: 'newSubmission',
       sampleUrl: 'https://form.gov.sg/66c2d127c61aa529969562c6',
+      sampleUrlDescription: FORMSG_SAMPLE_URL_DESCRIPTION,
     },
     {
       position: 2,
