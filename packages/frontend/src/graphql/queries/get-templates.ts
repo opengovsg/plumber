@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client'
 
 export const GET_TEMPLATES = gql`
-  query GetTemplates {
-    getTemplates {
+  query GetTemplates($tag: TemplateTagType) {
+    getTemplates(tag: $tag) {
       id
       name
       description

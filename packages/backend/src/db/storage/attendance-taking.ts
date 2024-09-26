@@ -7,6 +7,7 @@ export const ATTENDANCE_TAKING_TEMPLATE: Template = {
   name: 'Attendance taking',
   description: 'Track attendance for your event',
   iconName: 'BiCheckDouble',
+  tag: 'empty',
   // Steps: formsg --> find tile row --> update tile row
   steps: [
     {
