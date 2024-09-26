@@ -40,6 +40,8 @@ import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 
+import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
+
 type FlowStepProps = {
   collapsed?: boolean
   step: IStep
@@ -238,18 +240,7 @@ export default function FlowStep(
           >
             <MarkdownRenderer
               source={templateStepHelpMessage}
-              components={{
-                // Force all links in our message to be opened in a new tab.
-                a: ({ ...props }) => (
-                  <Link
-                    isExternal
-                    color="interaction.links.neutral-default"
-                    _hover={{ color: 'interaction.links.neutral-hover' }}
-                    {...props}
-                  />
-                ),
-                p: ({ ...props }) => <chakra.p {...props} />,
-              }}
+              components={infoboxMdComponents}
             />
           </Infobox>
         </Box>
