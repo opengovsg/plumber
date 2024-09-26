@@ -850,6 +850,7 @@ type Template {
   name: String!
   description: String!
   steps: [TemplateStep!]!
+  iconName: String!
 }
 
 type TemplateStep {

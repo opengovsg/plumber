@@ -6,6 +6,7 @@ export const SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE: Template = {
   id: SEND_A_COPY_OF_FORM_RESPONSE_ID,
   name: 'Send a copy of form response',
   description: 'Send respondents a copy of their form response',
+  iconName: 'BiFile',
   // Steps: formsg --> postman
   steps: [
     {

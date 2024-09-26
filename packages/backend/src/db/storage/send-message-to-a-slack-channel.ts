@@ -7,6 +7,7 @@ export const SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE: Template = {
   id: SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
   name: 'Send message to a Slack channel',
   description: 'Schedule a recurring message to a Slack channel',
+  iconName: 'BiMessageAlt',
   // Steps: formsg --> slack
   steps: [
     {
