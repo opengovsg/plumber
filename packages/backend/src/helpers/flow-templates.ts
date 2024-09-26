@@ -60,39 +60,29 @@ function replaceRowData(
 }
 
 /**
- * This replaces the column name to the column id in each tile event data.
- * This is because tiles apis uses column ids instead of the names
- * e.g. { columnName: <Name> } --> { columnId: <id> }
- * Then, generates parameters based on the format for each tile action
+ * Does a mapping from column name to id for tiles parameters
+ * e.g. { columnId: <Name> } --> { columnId: <Id> }
+ * This is a recursive function so parameters could be an object, array or string
  */
-function generateParametersForTilesAction(
-  tileEventData: IJSONObject[],
+function replaceParametersForTilesAction(
+  parameters: IJSONObject,
   columnNameToIdMap: Record<string, string>,
-  eventKey: string,
-) {
-  const updatedTileEventData: IJSONObject[] = JSON.parse(
-    JSON.stringify(tileEventData),
-  )
-
-  for (const row of updatedTileEventData) {
-    row['columnId'] = columnNameToIdMap[String(row['columnName'])]
-    delete row['columnName']
+): IJSONObject {
+  // Iterate over each key in the object or array
+  for (const [key, value] of Object.entries(parameters)) {
+    // Replace the value if the key is `columnId`
+    if (key === 'columnId') {
+      const columnName = String(parameters[key])
+      parameters[key] = columnNameToIdMap[columnName]
+    } else if (typeof value === 'object' && value !== null) {
+      // If the value is another object or array, recurse into it
+      parameters[key] = replaceParametersForTilesAction(
+        value as IJSONObject,
+        columnNameToIdMap,
+      )
+    }
   }
-
-  // This follows the parameters format for each tile action
-  switch (eventKey) {
-    case 'createTileRow':
-    case 'updateSingleRow':
-      return {
-        rowData: updatedTileEventData,
-      } as IJSONObject
-    case 'findSingleRow':
-      return {
-        filters: updatedTileEventData,
-        returnLastRow: true,
-      } as IJSONObject
-  }
-  return {} as IJSONObject
+  return parameters
 }
 
 export async function createFlowFromTemplate(
@@ -183,15 +173,14 @@ export async function createFlowFromTemplate(
         }
       }
 
-      // perform tiles parameter update with tile template step data
+      // perform tiles parameter update by checking for the `columnId` key
       if (step.appKey === 'tiles') {
         // update all the parameters and map the column name to id
         updatedParameters['tableId'] = tableId
         updatedParameters = {
-          ...generateParametersForTilesAction(
-            step.tileTemplateStepData,
+          ...replaceParametersForTilesAction(
+            updatedParameters,
             columnNameToIdMap,
-            step.eventKey,
           ),
           ...updatedParameters,
         }
