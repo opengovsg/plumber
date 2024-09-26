@@ -13,6 +13,7 @@ import getFlows from './queries/get-flows'
 import getPendingFlowTransfers from './queries/get-pending-flow-transfers'
 import getPlumberStats from './queries/get-plumber-stats'
 import getStepWithTestExecutions from './queries/get-step-with-test-executions'
+import getTemplates from './queries/get-templates'
 import getTestExecutionSteps from './queries/get-test-execution-steps'
 import healthcheck from './queries/healthcheck'
 import testConnection from './queries/test-connection'
@@ -47,6 +48,7 @@ export default {
   getPlumberStats,
   getPendingFlowTransfers,
   getFlowTransferDetails,
+  getTemplates,
   ...tilesQueryResolvers,
 
   // This is a special stub that enables us to group all our admin-related

@@ -15,8 +15,12 @@ type Query {
     connectionId: String
     name: String
   ): FlowConnection
-  getStepWithTestExecutions(stepId: String!): [Step] @deprecated(reason: "Use getTestExecution instead")
-  getTestExecutionSteps(flowId: String!, ignoreTestExecutionId: Boolean): [ExecutionStep]
+  getStepWithTestExecutions(stepId: String!): [Step]
+    @deprecated(reason: "Use getTestExecution instead")
+  getTestExecutionSteps(
+    flowId: String!
+    ignoreTestExecutionId: Boolean
+  ): [ExecutionStep]
   getExecution(executionId: String!): Execution
   getExecutions(
     limit: Int!
@@ -47,6 +51,8 @@ type Query {
   getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
   # Admin queries
   admin: AdminQuery!
+  # Templates
+  getTemplates: [Template!]!
 }
 
 type AdminQuery {
@@ -838,6 +844,21 @@ input UpdateFlowTransferStatusInput {
 }
 
 # End of flow transfers types
+
+type Template {
+  id: String!
+  name: String!
+  description: String!
+  steps: [TemplateStep!]!
+}
+
+type TemplateStep {
+  position: Int! # primary key, no need id for now
+  appKey: String
+  eventKey: String
+  sampleUrl: String # specific to template e.g. form or tile link
+  parameters: JSONObject
+}
 
 schema {
   query: Query
