@@ -7,6 +7,7 @@ export const SEND_FOLLOW_UPS_TEMPLATE: Template = {
   name: 'Send follow ups',
   description: 'Send follow up emails to respondents after they submit a form',
   iconName: 'BiEnvelope',
+  tag: 'empty',
   // Steps: formsg --> postman
   steps: [
     {

@@ -2,9 +2,10 @@ import { Request, Response } from 'express'
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
+import { SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID } from '@/db/storage/demo-send-notifications'
 import User from '@/models/user'
 
-import createFlowFromTemplate, { DEFAULT_FLOW_TEMPLATE } from './flow-templates'
+import { createFlowFromTemplate } from './flow-templates'
 
 const AUTH_COOKIE_NAME = 'plumber.sid'
 // 3 days expiry
@@ -58,14 +59,11 @@ export async function getOrCreateUser(email: string): Promise<User> {
   let user = await User.query().findOne({ email })
   if (!user) {
     user = await User.query().insertAndFetch({ email })
-    const { flowName, trigger, actions, demoVideoId } = DEFAULT_FLOW_TEMPLATE
+    // default demo template is formsg-postman
     await createFlowFromTemplate(
-      flowName,
-      trigger,
-      actions,
+      SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID,
       user,
       true,
-      demoVideoId,
     )
   }
 

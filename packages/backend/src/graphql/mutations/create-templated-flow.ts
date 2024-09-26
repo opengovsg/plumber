@@ -1,4 +1,4 @@
-import createFlowFromTemplate from '@/helpers/flow-templates'
+import { createFlowFromTemplate } from '@/helpers/flow-templates'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -7,14 +7,11 @@ const createTemplatedFlow: MutationResolvers['createTemplatedFlow'] = async (
   params,
   context,
 ) => {
-  const { flowName, trigger, actions, demoVideoId } = params.input
+  // TODO: remove isAutoCreated in later PR
   return createFlowFromTemplate(
-    flowName,
-    trigger,
-    actions,
+    params.input.templateId,
     context.currentUser,
     false,
-    demoVideoId,
   )
 }
 
