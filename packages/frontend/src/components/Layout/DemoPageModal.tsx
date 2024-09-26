@@ -21,6 +21,7 @@ import {
   FORMSG_POSTMAN_TEMPLATE,
 } from '@/helpers/flow-templates'
 
+// TODO (mal): remove this after combining demos and templates
 interface DemoPageModalProps {
   onClose: () => void
 }
