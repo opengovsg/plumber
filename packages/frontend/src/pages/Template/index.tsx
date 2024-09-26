@@ -63,7 +63,7 @@ export default function TemplateModal(props: TemplateProps) {
           <ModalHeader>
             <Flex alignItems="center" columnGap={4}>
               <Hide below="md">
-                <Box bg="primary.100" p={2} borderRadius={4}>
+                <Box bg="primary.100" p={2} borderRadius="base">
                   <TemplateIcon iconName={iconName} />
                 </Box>
               </Hide>
@@ -83,7 +83,7 @@ export default function TemplateModal(props: TemplateProps) {
             </Flex>
           </ModalHeader>
 
-          <ModalBody mx={8} mb={8} borderWidth={1} borderRadius="0.5rem">
+          <ModalBody mx={6} mb={8} borderWidth={1} borderRadius="lg">
             <TemplateBody templateSteps={steps} />
           </ModalBody>
         </ModalContent>

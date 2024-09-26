@@ -2,7 +2,7 @@ import { ITemplate } from '@plumber/types'
 
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Box, Center, Flex, Grid, Skeleton, Text } from '@chakra-ui/react'
+import { Box, Flex, Grid, Skeleton, Text } from '@chakra-ui/react'
 import { Link, Tile } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
@@ -37,44 +37,35 @@ export default function Templates(): JSX.Element {
           </Text>
         </Flex>
 
-        {/* Sanity check if our templates file is missing */}
-        {!templates || templates.length === 0 ? (
-          <Center my={24}>
-            <Text>
-              There are no templates now, please contact support@plumber.gov.sg
-            </Text>
-          </Center>
-        ) : (
-          <Grid
-            gridTemplateColumns={{
-              base: '1fr',
-              md: '1fr 1fr',
-              lg: '1fr 1fr 1fr',
-            }}
-            columnGap={10}
-            rowGap={6}
-            mb={8}
-          >
-            {templates.map((template, index) => (
-              <Tile
-                key={index}
-                icon={() => (
-                  <Box bg="primary.100" p={2} borderRadius={4}>
-                    <TemplateIcon iconName={template.iconName} />
-                  </Box>
-                )}
-                onClick={() => navigate(URLS.TEMPLATE(template.id))}
-              >
-                <Skeleton isLoaded={!loading}>
-                  <Flex flexDir="column" gap={2} mt={2}>
-                    <Text textStyle="subhead-1">{template.name}</Text>
-                    <Text textStyle="body-2">{template.description}</Text>
-                  </Flex>
-                </Skeleton>
-              </Tile>
-            ))}
-          </Grid>
-        )}
+        <Grid
+          gridTemplateColumns={{
+            base: '1fr',
+            md: '1fr 1fr',
+            lg: '1fr 1fr 1fr',
+          }}
+          columnGap={10}
+          rowGap={6}
+          mb={8}
+        >
+          {templates?.map((template, index) => (
+            <Tile
+              key={index}
+              icon={() => (
+                <Box bg="primary.100" p={2} borderRadius="base">
+                  <TemplateIcon iconName={template.iconName} />
+                </Box>
+              )}
+              onClick={() => navigate(URLS.TEMPLATE(template.id))}
+            >
+              <Skeleton isLoaded={!loading}>
+                <Flex flexDir="column" gap={2} mt={2}>
+                  <Text textStyle="subhead-1">{template.name}</Text>
+                  <Text textStyle="body-2">{template.description}</Text>
+                </Flex>
+              </Skeleton>
+            </Tile>
+          ))}
+        </Grid>
 
         <Flex
           flexDir={{ base: 'column', md: 'row' }}
