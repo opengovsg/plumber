@@ -1,3 +1,6 @@
+import { ComponentType } from 'react'
+import * as Icons from 'react-icons/bi'
+
 import type {
   CreateTemplatedFlowInput,
   DemoVideoDetails,
@@ -29,4 +32,25 @@ export const FLOW_TEMPLATES_MAP: Record<string, CreateTemplatedFlowInput> = {
     ],
     demoVideoId: FORMSG_POSTMAN_TEMPLATE,
   },
+}
+
+interface TemplateIconProps {
+  iconName: string
+  fontSize?: string
+}
+
+export const TemplateIcon = ({
+  iconName,
+  fontSize = '1.5rem',
+}: TemplateIconProps) => {
+  const IconComponent = (
+    Icons as Record<string, ComponentType<{ fontSize?: string }>>
+  )[iconName]
+
+  // sanity check: use a fallback icon
+  if (!IconComponent) {
+    return <Icons.BiQuestionMark fontSize={fontSize} />
+  }
+
+  return <IconComponent fontSize={fontSize} />
 }

@@ -7,6 +7,7 @@ export const TRACK_FEEDBACK_TEMPLATE: Template = {
   name: 'Track feedback',
   description:
     'Store survey feedback in a table. Share this table with your team.',
+  iconName: 'BiStar',
   // Steps: formsg --> create tile
   steps: [
     {

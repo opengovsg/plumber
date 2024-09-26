@@ -8,6 +8,7 @@ export const GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE: Template = {
   name: 'Get live updates through Telegram',
   description:
     'Get updated on your operations quickly when you’re on the ground',
+  iconName: 'BiBell',
   // Steps: formsg --> telegram
   steps: [
     {
