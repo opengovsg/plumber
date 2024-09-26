@@ -90,15 +90,13 @@ export async function createFlowFromTemplate(
       const updatedParameters = structuredClone(step?.parameters ?? {})
       for (const [key, value] of Object.entries(updatedParameters)) {
         // ignore objects e.g. conditions because nothing to replace inside for now
-        if (typeof value === 'object') {
-          continue
+        if (typeof value === 'string') {
+          const substitutedValue = String(value).replaceAll(
+            '{{user_email}}',
+            user.email,
+          )
+          updatedParameters[key] = substitutedValue
         }
-
-        const substitutedValue = String(value).replaceAll(
-          '{{user_email}}',
-          user.email,
-        )
-        updatedParameters[key] = substitutedValue
       }
 
       await flow.$relatedQuery('steps', trx).insert({
