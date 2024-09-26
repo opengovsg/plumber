@@ -1,5 +1,10 @@
 import type { Template } from '@/graphql/__generated__/types.generated'
 
+import {
+  FORMSG_SAMPLE_URL_DESCRIPTION,
+  TILES_SAMPLE_URL_DESCRIPTION,
+} from './constants'
+
 const TRACK_FEEDBACK_ID = 'b237ff81-dbe9-4513-8135-0b59eec2de97'
 
 export const TRACK_FEEDBACK_TEMPLATE: Template = {
@@ -15,6 +20,7 @@ export const TRACK_FEEDBACK_TEMPLATE: Template = {
       appKey: 'formsg',
       eventKey: 'newSubmission',
       sampleUrl: 'https://form.gov.sg/66c2d2ea69c2121a425975bc',
+      sampleUrlDescription: FORMSG_SAMPLE_URL_DESCRIPTION,
     },
     {
       position: 2,
@@ -22,6 +28,7 @@ export const TRACK_FEEDBACK_TEMPLATE: Template = {
       eventKey: 'createTileRow',
       sampleUrl:
         'https://plumber.gov.sg/tiles/18a72737-4a7e-4f90-8bb5-7d65bdac4136/d6f806c0-eb80-451b-872d-6e9a3d434ab2',
+      sampleUrlDescription: TILES_SAMPLE_URL_DESCRIPTION,
     },
   ],
 }

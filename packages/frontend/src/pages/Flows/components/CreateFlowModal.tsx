@@ -3,7 +3,6 @@ import { BiBulb } from 'react-icons/bi'
 import { Form, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
-  chakra,
   Flex,
   FormControl,
   Modal,
@@ -20,10 +19,10 @@ import {
   FormLabel,
   Infobox,
   Input,
-  Link,
 } from '@opengovsg/design-system-react'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import { infoboxMdComponents } from '@/components/MarkdownRenderer/CustomMarkdownComponents'
 import * as URLS from '@/config/urls'
 import { CREATE_FLOW } from '@/graphql/mutations/create-flow'
 
@@ -108,17 +107,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
               <Infobox icon={<BiBulb />} variant="primary">
                 <MarkdownRenderer
                   source="Need suggestions on what to automate? [See use cases](https://guide.plumber.gov.sg/popular-workflows/all-workflows)"
-                  components={{
-                    a: ({ ...props }) => (
-                      <Link
-                        isExternal
-                        color="interaction.links.neutral-default"
-                        _hover={{ color: 'interaction.links.neutral-hover' }}
-                        {...props}
-                      />
-                    ),
-                    p: ({ ...props }) => <chakra.p {...props} />,
-                  }}
+                  components={infoboxMdComponents}
                 />
               </Infobox>
             </Flex>
