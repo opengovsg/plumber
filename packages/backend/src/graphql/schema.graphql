@@ -848,7 +848,7 @@ type Template {
   description: String!
   steps: [TemplateStep!]!
   iconName: String # demo templates have no icon
-  tag: TemplateTagType
+  tag: TemplateTagType # TODO: change to tags in later PR
 }
 
 type TemplateStep {
