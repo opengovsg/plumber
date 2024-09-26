@@ -57,6 +57,8 @@ export const TRANSFERS = '/transfers'
 
 // Templates routes
 export const TEMPLATES = '/templates'
+export const TEMPLATE_PATTERN = '/templates/:templateId'
+export const TEMPLATE = (id: string): string => `/templates/${id}`
 
 export const DASHBOARD = FLOWS
 

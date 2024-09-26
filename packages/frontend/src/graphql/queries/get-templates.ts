@@ -11,6 +11,7 @@ export const GET_TEMPLATES = gql`
         appKey
         eventKey
         sampleUrl
+        sampleUrlDescription
         parameters
       }
       iconName
