@@ -156,17 +156,13 @@ export interface IStep {
   jobId?: string
 }
 
-export type AppEventKeyPair = {
-  appKey: string
-  eventKey: string
-}
-
 export interface IFlowConfig {
   maxQps?: number
   rejectIfOverMaxQps?: boolean
   errorConfig?: IFlowErrorConfig
   duplicateCount?: number
   demoConfig?: IFlowDemoConfig
+  templateConfig?: IFlowTemplateConfig
 }
 
 export interface IFlowErrorConfig {
@@ -177,6 +173,10 @@ export interface IFlowDemoConfig {
   hasLoadedOnce: boolean
   isAutoCreated: boolean
   videoId: string
+}
+
+export interface IFlowTemplateConfig {
+  templateId: string
 }
 
 export interface IFlow {

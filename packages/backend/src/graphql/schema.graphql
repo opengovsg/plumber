@@ -51,8 +51,8 @@ type Query {
   getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
   # Admin queries
   admin: AdminQuery!
-  # Templates
-  getTemplates: [Template!]!
+  # Templates (including demo templates)
+  getTemplates(tag: TemplateTagType): [Template!]!
 }
 
 type AdminQuery {
@@ -352,6 +352,7 @@ type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
   demoConfig: FlowDemoConfig
+  templateConfig: FlowTemplateConfig
 }
 
 type FlowErrorConfig {
@@ -362,6 +363,10 @@ type FlowDemoConfig {
   hasLoadedOnce: Boolean!
   isAutoCreated: Boolean!
   videoId: String!
+}
+
+type FlowTemplateConfig {
+  templateId: String!
 }
 
 type Execution {
@@ -414,10 +419,7 @@ input CreateFlowInput {
 }
 
 input CreateTemplatedFlowInput {
-  flowName: String!
-  trigger: AppEventKeyPair!
-  actions: [AppEventKeyPair!]!
-  demoVideoId: String!
+  templateId: String!
 }
 
 input UpdateFlowInput {
@@ -547,11 +549,6 @@ type Step {
   position: Int
   status: String
   executionSteps: [ExecutionStep]
-}
-
-input AppEventKeyPair {
-  appKey: String!
-  eventKey: String!
 }
 
 input StepConnectionInput {
@@ -850,7 +847,8 @@ type Template {
   name: String!
   description: String!
   steps: [TemplateStep!]!
-  iconName: String!
+  iconName: String # demo templates have no icon
+  tag: TemplateTagType # TODO: change to tags in later PR
 }
 
 type TemplateStep {
@@ -859,6 +857,11 @@ type TemplateStep {
   eventKey: String
   sampleUrl: String # specific to template e.g. form or tile link
   parameters: JSONObject
+}
+
+enum TemplateTagType {
+  demo
+  empty # for empty flows state
 }
 
 schema {
