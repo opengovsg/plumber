@@ -9,7 +9,10 @@ import {
   TILE_ID_PLACEHOLDER,
   USER_EMAIL_PLACEHOLDER,
 } from '@/db/storage/constants'
-import type { FlowConfig } from '@/graphql/__generated__/types.generated'
+import type {
+  FlowConfig,
+  StepConfig,
+} from '@/graphql/__generated__/types.generated'
 import { createTableRows } from '@/models/dynamodb/table-row'
 import Flow from '@/models/flow'
 import User from '@/models/user'
@@ -183,7 +186,14 @@ export async function createFlowFromTemplate(
       [TILE_COL_DATA_PLACEHOLDER]: columnNameToIdMap,
     }
 
-    // account for trigger/action step having null for app or event key
+    const triggerStepConfig: StepConfig = {
+      templateConfig: {
+        templateId,
+        ...(steps[0].sampleUrl && {
+          helpMessage: `Connect your form to this step. Here is an [example](${steps[0].sampleUrl}) for this template.`,
+        }),
+      },
+    }
     // insert trigger step
     await flow.$relatedQuery('steps', trx).insert({
       type: 'trigger',
@@ -191,13 +201,7 @@ export async function createFlowFromTemplate(
       appKey: steps[0].appKey,
       key: steps[0].eventKey,
       parameters: steps[0].parameters ?? {},
-      ...(steps[0].sampleUrl && {
-        config: {
-          templateConfig: {
-            helpMessage: `Connect your form to this step. Here is an [example](${steps[0].sampleUrl}) for this template.`,
-          },
-        },
-      }),
+      config: triggerStepConfig,
     })
 
     // action step could have app or event key to be null due to if-then
@@ -212,6 +216,14 @@ export async function createFlowFromTemplate(
         placeholderReplacementMap,
       )
 
+      const actionStepConfig: StepConfig = {
+        templateConfig: {
+          templateId,
+          ...(step.appKey === 'tiles' && {
+            helpMessage: `We’ve already created a [Tile](${`/tiles/${tableId}`}) for you that you can customise in this step.`,
+          }),
+        },
+      }
       // insert action step
       await flow.$relatedQuery('steps', trx).insert({
         type: 'action',
@@ -219,13 +231,7 @@ export async function createFlowFromTemplate(
         appKey: step.appKey,
         key: step.eventKey,
         parameters: updatedParameters,
-        ...(step.appKey === 'tiles' && {
-          config: {
-            templateConfig: {
-              helpMessage: `We’ve already created a [Tile](${`/tiles/${tableId}`}) for you that you can customise in this step.`,
-            },
-          },
-        }),
+        config: actionStepConfig,
       })
     }
 

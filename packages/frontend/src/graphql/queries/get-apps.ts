@@ -98,7 +98,6 @@ export const GET_APPS = gql`
           hideWebhookUrl
           mockDataMsg
         }
-        helpMessage
         substeps {
           key
           name
@@ -175,7 +174,6 @@ export const GET_APPS = gql`
           variant
           messageBody
         }
-        helpMessage
         groupsLaterSteps
         substeps {
           key

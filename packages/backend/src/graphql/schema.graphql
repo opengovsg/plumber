@@ -154,7 +154,6 @@ type Action {
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
   substeps: [ActionSubstep]
-  helpMessage: String
 }
 
 type ActionSubstep {
@@ -558,7 +557,8 @@ type StepConfig {
 }
 
 type StepTemplateConfig {
-  helpMessage: String!
+  templateId: String!
+  helpMessage: String # FormSG and Tiles will have a customised help message
 }
 
 input StepConnectionInput {
@@ -595,7 +595,6 @@ type Trigger {
   webhookTriggerInstructions: TriggerInstructions
   settingsStepLabel: String
   substeps: [TriggerSubstep]
-  helpMessage: String
 }
 
 type TriggerInstructions {

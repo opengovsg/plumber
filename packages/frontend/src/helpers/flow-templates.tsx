@@ -34,3 +34,9 @@ export const TemplateIcon = ({
   )[iconName]
   return <IconComponent fontSize={fontSize} />
 }
+
+export const HELP_MESSAGE_MAP: Record<string, string> = {
+  postman: 'Customise how your email looks like in this step.',
+  slack: 'Connect a Slack channel in this step.',
+  'telegram-bot': 'Connect your Telegram bot in this step.',
+}

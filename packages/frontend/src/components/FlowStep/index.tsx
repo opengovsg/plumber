@@ -31,6 +31,7 @@ import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclu
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { HELP_MESSAGE_MAP } from '@/helpers/flow-templates'
 
 type FlowStepProps = {
   collapsed?: boolean
@@ -188,8 +189,16 @@ export default function FlowStep(
     caption = 'This step happens after the previous step'
   }
 
+  const templateStepHelpMessage =
+    step.config?.templateConfig?.helpMessage ??
+    HELP_MESSAGE_MAP[step.appKey ?? '']
+
+  // Only show if it is an incomplete step belonging to a template
+  // AND the template step has a help message
   const shouldShowInfobox: boolean =
-    step.status === 'incomplete' && !!selectedActionOrTrigger?.helpMessage
+    step.status === 'incomplete' &&
+    !!step.config?.templateConfig &&
+    !!templateStepHelpMessage
 
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
@@ -210,11 +219,7 @@ export default function FlowStep(
           }}
         >
           <MarkdownRenderer
-            source={
-              step?.config?.templateConfig
-                ? step.config.templateConfig.helpMessage
-                : selectedActionOrTrigger?.helpMessage ?? ''
-            }
+            source={templateStepHelpMessage}
             components={{
               // Force all links in our message to be opened in a new tab.
               a: ({ ...props }) => (

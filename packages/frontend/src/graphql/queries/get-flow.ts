@@ -39,6 +39,9 @@ export const GET_FLOW = gql`
           isAutoCreated
           videoId
         }
+        templateConfig {
+          templateId
+        }
       }
       pendingTransfer {
         id

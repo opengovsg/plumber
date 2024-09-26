@@ -138,7 +138,8 @@ export interface IStepConfig {
 }
 
 export interface IStepTemplateConfig {
-  helpMessage: string
+  templateId: string
+  helpMessage?: string
 }
 
 export interface IStep {
@@ -628,10 +629,6 @@ export interface IBaseTrigger {
    * message to the user during pipe setup / config.
    */
   setupMessage?: SetupMessage
-  /**
-   * Displays an infobox to provide a general guide/help for users during step config
-   */
-  helpMessage?: string
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -725,10 +722,6 @@ export interface IBaseAction {
    * message to the user during pipe setup / config.
    */
   setupMessage?: SetupMessage
-  /**
-   * Displays an infobox to provide a general guide/help for users during step config
-   */
-  helpMessage?: string
 }
 
 export interface IRawAction extends IBaseAction {
