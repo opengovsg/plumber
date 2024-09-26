@@ -20,13 +20,14 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
     return <></>
   }
 
+  const isTrigger = position === 1
+
   // find event name based on triggers/actions of the app using position
-  const eventName =
-    position === 1
-      ? app?.triggers?.find((trigger) => trigger.key === eventKey)?.name ??
-        FALLBACK_EVENT_NAME
-      : app?.actions?.find((action) => action.key === eventKey)?.name ??
-        FALLBACK_EVENT_NAME
+  const eventName = isTrigger
+    ? app?.triggers?.find((trigger) => trigger.key === eventKey)?.name ??
+      FALLBACK_EVENT_NAME
+    : app?.actions?.find((action) => action.key === eventKey)?.name ??
+      FALLBACK_EVENT_NAME
 
   return (
     <Card
@@ -37,7 +38,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
       flexDir="row"
       alignItems="center"
       columnGap={4}
-      borderRadius={8}
+      borderRadius="lg"
     >
       <Flex
         borderWidth={1}
@@ -45,7 +46,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
         borderColor="base.divider.strong"
         justifyContent="center"
         alignItems="center"
-        borderRadius="0.25rem"
+        borderRadius="base"
       >
         <Image
           src={app?.iconUrl}
@@ -63,7 +64,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
       </Flex>
 
       <Flex flexDir="column" rowGap={1.5}>
-        <Text textStyle="body-2">{position === 1 ? 'When' : 'Then'}</Text>
+        <Text textStyle="body-2">{isTrigger ? 'When' : 'Then'}</Text>
 
         <Flex alignItems="center" columnGap={4}>
           <Text textStyle="subhead-1">{`${position}. ${eventName}`}</Text>

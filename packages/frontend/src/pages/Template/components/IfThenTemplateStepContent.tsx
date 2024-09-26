@@ -35,8 +35,8 @@ export default function IfThenTemplateStepContent(
         flexDir="row"
         alignItems="center"
         columnGap={4}
-        borderTopRadius={8}
-        borderBottomRadius={0}
+        borderTopRadius="lg"
+        borderBottomRadius="none"
       >
         <Flex
           borderWidth={1}
@@ -44,7 +44,7 @@ export default function IfThenTemplateStepContent(
           borderColor="base.divider.strong"
           justifyContent="center"
           alignItems="center"
-          borderRadius="0.25rem"
+          borderRadius="base"
         >
           <Image
             src={app?.iconUrl}
@@ -76,7 +76,7 @@ export default function IfThenTemplateStepContent(
           borderColor="base.divider.medium"
           borderTop="none"
           borderBottomRadius={
-            index === branchNames.length - 1 ? '0.5rem' : undefined
+            index === branchNames.length - 1 ? 'lg' : undefined
           }
         >
           <Text textStyle="subhead-1">{branchName}</Text>

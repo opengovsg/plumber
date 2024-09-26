@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
@@ -22,11 +21,7 @@ export default function Templates(): JSX.Element {
 
   const templates: Template[] = data?.getTemplates
   const { templateId } = useParams()
-  const template = useMemo(
-    () => templates?.find((template) => template.id === templateId),
-    [templates, templateId],
-  )
-
+  const template = templates?.find((template) => template.id === templateId)
   return (
     <>
       <Container
