@@ -154,6 +154,7 @@ type Action {
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
   substeps: [ActionSubstep]
+  helpMessage: String
 }
 
 type ActionSubstep {
@@ -585,6 +586,7 @@ type Trigger {
   webhookTriggerInstructions: TriggerInstructions
   settingsStepLabel: String
   substeps: [TriggerSubstep]
+  helpMessage: String
 }
 
 type TriggerInstructions {
