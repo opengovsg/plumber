@@ -27,7 +27,7 @@ export const SEND_FOLLOW_UPS_TEMPLATE: Template = {
         body: '<p style="margin: 0">Hi {{Replace with response 1 name}},</p><p style="margin: 0"></p><p style="margin: 0">We have received your registration for this event! More details will be sent to you nearer to the event date.</p><p style="margin: 0"></p><p style="margin: 0">Cheers,</p><p style="margin: 0">Event organising committee</p>',
         subject: 'Thank you for registering!',
         senderName: 'Event committee',
-        destinationEmail: '{{Replace with response 2 email}}',
+        destinationEmail: '{{user_email}}',
       },
     },
   ],

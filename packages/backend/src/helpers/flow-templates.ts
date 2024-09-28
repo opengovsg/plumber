@@ -86,13 +86,25 @@ export async function createFlowFromTemplate(
     for (let i = 1; i < steps.length; i++) {
       const step: TemplateStep = steps[i]
       validateAppAndEventKey(step, flowName)
+      // replace all parameters with {{user_email}} to the current user email
+      const updatedParameters = structuredClone(step?.parameters ?? {})
+      for (const [key, value] of Object.entries(updatedParameters)) {
+        // ignore objects e.g. conditions because nothing to replace inside for now
+        if (typeof value === 'string') {
+          const substitutedValue = value.replaceAll(
+            '{{user_email}}',
+            user.email,
+          )
+          updatedParameters[key] = substitutedValue
+        }
+      }
 
       await flow.$relatedQuery('steps', trx).insert({
         type: 'action',
         position: step.position,
         appKey: step.appKey,
         key: step.eventKey,
-        parameters: step.parameters ?? {},
+        parameters: updatedParameters,
       })
     }
 
