@@ -91,7 +91,7 @@ export async function createFlowFromTemplate(
       for (const [key, value] of Object.entries(updatedParameters)) {
         // ignore objects e.g. conditions because nothing to replace inside for now
         if (typeof value === 'string') {
-          const substitutedValue = String(value).replaceAll(
+          const substitutedValue = value.replaceAll(
             '{{user_email}}',
             user.email,
           )
