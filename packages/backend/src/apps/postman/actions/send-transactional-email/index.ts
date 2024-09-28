@@ -29,6 +29,7 @@ const action: IRawAction = {
       (step.parameters.attachments as IJSONArray).length > 0
     )
   },
+  helpMessage: 'Customise how your email looks like in this step.',
 
   async run($) {
     const {

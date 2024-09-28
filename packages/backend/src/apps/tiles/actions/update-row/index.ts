@@ -90,6 +90,8 @@ const action: IRawAction = {
       ],
     },
   ],
+  helpMessage:
+    'This step updates the row that was found. You need a Find row step before this.',
   getDataOutMetadata,
 
   async run($) {
