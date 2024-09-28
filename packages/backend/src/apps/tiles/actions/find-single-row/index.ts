@@ -140,6 +140,8 @@ const action: IRawAction = {
       ],
     },
   ],
+  helpMessage:
+    'This step finds a row in your Tile based on conditions you set.',
   getDataOutMetadata,
 
   async run($) {
