@@ -2,6 +2,8 @@ import type { Template } from '@/graphql/__generated__/types.generated'
 
 import {
   FORMSG_SAMPLE_URL_DESCRIPTION,
+  TILE_COL_DATA_PLACEHOLDER,
+  TILE_ID_PLACEHOLDER,
   TILES_SAMPLE_URL_DESCRIPTION,
 } from './constants'
 
@@ -32,18 +34,19 @@ export const TRACK_FEEDBACK_TEMPLATE: Template = {
       parameters: {
         rowData: [
           {
-            columnId: 'Rating',
+            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Rating}}`,
             cellValue: '{{Replace with response 1 rating}}',
           },
           {
-            columnId: 'Reason for rating',
+            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Reason for rating}}`,
             cellValue: '{{Replace with response 2 reason}}',
           },
           {
-            columnId: 'Email',
+            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Email}}`,
             cellValue: '{{Replace with response 3 email}}',
           },
         ],
+        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
       },
     },
   ],

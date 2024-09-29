@@ -1,6 +1,9 @@
 import type { Template } from '@/graphql/__generated__/types.generated'
 
-import { FORMSG_SAMPLE_URL_DESCRIPTION } from './constants'
+import {
+  FORMSG_SAMPLE_URL_DESCRIPTION,
+  USER_EMAIL_PLACEHOLDER,
+} from './constants'
 
 const SEND_FOLLOW_UPS_ID = 'aae185f7-2592-4683-a812-2d412232e403'
 
@@ -27,7 +30,7 @@ export const SEND_FOLLOW_UPS_TEMPLATE: Template = {
         body: '<p style="margin: 0">Hi {{Replace with response 1 name}},</p><p style="margin: 0"></p><p style="margin: 0">We have received your registration for this event! More details will be sent to you nearer to the event date.</p><p style="margin: 0"></p><p style="margin: 0">Cheers,</p><p style="margin: 0">Event organising committee</p>',
         subject: 'Thank you for registering!',
         senderName: 'Event committee',
-        destinationEmail: '{{user_email}}',
+        destinationEmail: `{{${USER_EMAIL_PLACEHOLDER}}}`,
       },
     },
   ],

@@ -30,8 +30,8 @@ function deepFreeze<T>(object: T): T {
 /**
  * Right now, some parameters have to be replaced dynamically.
  * 1. {{user_email}} will be replaced with the actual user email
- * 2. For tiles, any `columnId` key has the column name initially,
- * upon creating the tile, the column name value will be replaced with the id.
+ * 2. {{tile_col_data.col_name}}, the column name value will be replaced with the col id.
+ * 3. {{tile_table_id}} will be replaced with the tile id if created
  *
  * Note that parameters will have {{Replace with __}}, these are
  * placeholders for users to change them to the variable pills

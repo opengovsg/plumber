@@ -2,6 +2,8 @@ import type { Template } from '@/graphql/__generated__/types.generated'
 
 import {
   FORMSG_SAMPLE_URL_DESCRIPTION,
+  TILE_COL_DATA_PLACEHOLDER,
+  TILE_ID_PLACEHOLDER,
   TILES_SAMPLE_URL_DESCRIPTION,
 } from './constants'
 
@@ -31,12 +33,13 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: Template = {
       parameters: {
         filters: [
           {
-            columnId: 'Name',
+            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Name}}`,
             value: 'Anna Lee',
             operator: 'equals',
           },
         ],
         returnLastRow: true,
+        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
       },
     },
     {
@@ -47,14 +50,15 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: Template = {
         rowId: '{{Replace with row id result from step 2}}',
         rowData: [
           {
-            columnId: 'Email',
+            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Email}}`,
             cellValue: '{{Replace with email result from step 2}}',
           },
           {
-            columnId: 'Mobile number',
+            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Mobile number}}`,
             cellValue: '{{Replace with response 4 mobile number from step 1}}',
           },
         ],
+        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
       },
     },
   ],

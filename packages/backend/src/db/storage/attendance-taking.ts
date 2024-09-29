@@ -2,6 +2,8 @@ import type { Template } from '@/graphql/__generated__/types.generated'
 
 import {
   FORMSG_SAMPLE_URL_DESCRIPTION,
+  TILE_COL_DATA_PLACEHOLDER,
+  TILE_ID_PLACEHOLDER,
   TILES_SAMPLE_URL_DESCRIPTION,
 } from './constants'
 
@@ -32,12 +34,13 @@ export const ATTENDANCE_TAKING_TEMPLATE: Template = {
       parameters: {
         filters: [
           {
-            columnId: 'Email',
+            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Email}}`,
             value: 'jane@email.com',
             operator: 'equals',
           },
         ],
         returnLastRow: true,
+        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
       },
     },
     {
@@ -48,10 +51,11 @@ export const ATTENDANCE_TAKING_TEMPLATE: Template = {
         rowId: '{{Replace with row id result from step 2}}',
         rowData: [
           {
-            columnId: 'Attended?',
+            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Attended?}}`,
             cellValue: 'Yes',
           },
         ],
+        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
       },
     },
   ],
