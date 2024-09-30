@@ -1,13 +1,11 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, ITemplateStep } from '@plumber/types'
 
 import { BiQuestionMark } from 'react-icons/bi'
 import { Card, Flex, Icon, Image, Link, Text } from '@chakra-ui/react'
 
-import type { TemplateStep } from '@/graphql/__generated__/graphql'
-
 interface TemplateStepContentProps {
   app?: IApp
-  templateStep: TemplateStep
+  templateStep: ITemplateStep
 }
 
 const FALLBACK_EVENT_NAME = 'Sample Event'
