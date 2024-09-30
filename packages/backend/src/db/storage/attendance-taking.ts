@@ -1,6 +1,8 @@
 import type { ITemplate } from '@plumber/types'
 
 import {
+  CREATE_TEMPLATE_PLACEHOLDER,
+  CREATE_TEMPLATE_STEP_VARIABLE,
   FORMSG_SAMPLE_URL_DESCRIPTION,
   TILE_COL_DATA_PLACEHOLDER,
   TILE_ID_PLACEHOLDER,
@@ -35,13 +37,16 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       parameters: {
         filters: [
           {
-            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Email}}`,
+            columnId: CREATE_TEMPLATE_PLACEHOLDER(
+              TILE_COL_DATA_PLACEHOLDER,
+              'Email',
+            ),
             value: 'jane@email.com',
             operator: 'equals',
           },
         ],
         returnLastRow: true,
-        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
+        tableId: CREATE_TEMPLATE_PLACEHOLDER(TILE_ID_PLACEHOLDER),
       },
     },
     {
@@ -49,14 +54,17 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       appKey: 'tiles',
       eventKey: 'updateSingleRow',
       parameters: {
-        rowId: '{{Replace with Row ID from step 2}}',
+        rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Attended?}}`,
+            columnId: CREATE_TEMPLATE_PLACEHOLDER(
+              TILE_COL_DATA_PLACEHOLDER,
+              'Attended?',
+            ),
             cellValue: 'Yes',
           },
         ],
-        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
+        tableId: CREATE_TEMPLATE_PLACEHOLDER(TILE_ID_PLACEHOLDER),
       },
     },
   ],

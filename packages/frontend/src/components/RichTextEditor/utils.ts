@@ -34,6 +34,11 @@ export function genVariableInfoMap(
   return result
 }
 
+/**
+ * Note: template variable will not require varInfo since value should be empty.
+ * Template variable should take the same format as a step variable
+ * but using a fake step id defined in VariableBadge.tsx file
+ */
 function constructVariableSpanElement(
   varInfo: VariableInfoMap,
   id: string,

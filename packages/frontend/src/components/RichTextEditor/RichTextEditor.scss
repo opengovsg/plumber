@@ -183,8 +183,13 @@
     outline: none;
   }
 
-  .node-variable.ProseMirror-selectednode .chakra-badge {
+  .node-variable.ProseMirror-selectednode .chakra-badge[data-content='filled'] {
     box-shadow: 0 0 0 1px var(--chakra-colors-primary-600);
+  }
+
+  .node-variable.ProseMirror-selectednode .chakra-badge[data-content='empty'] {
+    box-shadow: 'none';
+    background-color: var(--chakra-colors-primary-100);
   }
 }
 

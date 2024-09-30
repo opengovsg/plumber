@@ -5,6 +5,7 @@ import get from 'lodash.get'
 import apps from '@/apps'
 import { TEMPLATES } from '@/db/storage'
 import {
+  STEP_ID_PLACEHOLDER,
   TILE_COL_DATA_PLACEHOLDER,
   TILE_ID_PLACEHOLDER,
   USER_EMAIL_PLACEHOLDER,
@@ -19,8 +20,8 @@ import User from '@/models/user'
 
 import logger from './logger'
 
-// e.g. {{user_email}}, {{tile_col_data.Email}}
-const PLACEHOLDER_REGEX = /\{\{[a-zA-Z0-9_.? ]+\}\}/
+// e.g. <<user_email>>, <<tile_col_data.Email>> to avoid clashes with {{step.}}
+const PLACEHOLDER_REGEX = /<<[a-zA-Z0-9_.? ]+>>/g
 const FORM_ID_LENGTH = 24
 const CREATE_APP_EVENT_KEY = (appKey?: string, eventKey?: string) => {
   if (!appKey && !eventKey) {
@@ -94,25 +95,39 @@ function replacePlaceholdersInParameters(
         placeholderReplacementMap,
       )
     } else if (typeof value === 'string') {
-      // Replace the value (placeholder) if it matches the regex
-      if (!PLACEHOLDER_REGEX.test(value)) {
-        continue
-      }
+      parameters[key] = replacePlaceholderValue(
+        value,
+        placeholderReplacementMap,
+      )
+    }
+  }
+  return parameters
+}
 
-      const placeholderId = value.replace('{{', '').replace('}}', '')
+function replacePlaceholderValue(
+  value: string,
+  placeholderReplacementMap: IJSONObject,
+): string {
+  const matches = value.match(PLACEHOLDER_REGEX) // need to replace every match
+  if (matches) {
+    for (const match of matches) {
+      const placeholderId = match.replace('<<', '').replace('>>', '')
+
       // placeholder could be nested with the dot notation e.g. tiles column data
-      // use lodash get function to go into nested objects
-      const placeholderValue = get(
+      // use lodash `get` function to go into nested objects
+      const replacementValue = get(
         placeholderReplacementMap,
         placeholderId,
         null,
       )
-      if (placeholderValue !== null) {
-        parameters[key] = placeholderValue
+
+      if (replacementValue !== null) {
+        value = value.replace(match, replacementValue)
       }
     }
   }
-  return parameters
+
+  return value
 }
 
 export async function createFlowFromTemplate(
@@ -187,7 +202,7 @@ export async function createFlowFromTemplate(
     }
 
     // prepare placeholder map for replacement
-    const placeholderReplacementMap = {
+    const placeholderReplacementMap: IJSONObject = {
       [USER_EMAIL_PLACEHOLDER]: user.email,
       [TILE_ID_PLACEHOLDER]: tableId,
       [TILE_COL_DATA_PLACEHOLDER]: columnNameToIdMap,
@@ -223,7 +238,7 @@ export async function createFlowFromTemplate(
       },
     }
     // insert trigger step
-    await flow.$relatedQuery('steps', trx).insert({
+    const triggerStep = await flow.$relatedQuery('steps', trx).insert({
       type: 'trigger',
       position: 1,
       appKey: steps[0].appKey,
@@ -231,6 +246,7 @@ export async function createFlowFromTemplate(
       parameters: steps[0].parameters ?? {},
       config: triggerStepConfig,
     })
+    placeholderReplacementMap[STEP_ID_PLACEHOLDER(1)] = triggerStep.id
 
     // action step could have app or event key to be null due to if-then
     // insert action steps based on steps
@@ -252,7 +268,7 @@ export async function createFlowFromTemplate(
         },
       }
       // insert action step
-      await flow.$relatedQuery('steps', trx).insert({
+      const actionStep = await flow.$relatedQuery('steps', trx).insert({
         type: 'action',
         position: step.position,
         appKey: step.appKey,
@@ -260,6 +276,9 @@ export async function createFlowFromTemplate(
         parameters: updatedParameters,
         config: actionStepConfig,
       })
+
+      placeholderReplacementMap[STEP_ID_PLACEHOLDER(step.position)] =
+        actionStep.id
     }
 
     logger.info('Flow created from template', {
