@@ -1,4 +1,4 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 import {
   FORMSG_SAMPLE_URL_DESCRIPTION,
@@ -9,7 +9,7 @@ import {
 
 const ATTENDANCE_TAKING_ID = '04f95a37-46fe-455b-aa96-28c421379e1a'
 
-export const ATTENDANCE_TAKING_TEMPLATE: Template = {
+export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
   id: ATTENDANCE_TAKING_ID,
   name: 'Attendance taking',
   description: 'Track attendance for your event',
@@ -61,11 +61,7 @@ export const ATTENDANCE_TAKING_TEMPLATE: Template = {
   ],
   tileTemplateData: {
     name: 'Event attendance',
-    columns: [
-      { name: 'Name', position: 0 },
-      { name: 'Email', position: 1 },
-      { name: 'Attended?', position: 2 },
-    ],
+    columns: ['Name', 'Email', 'Attended?'],
     rowData: [
       {
         Name: 'Jane Doe',

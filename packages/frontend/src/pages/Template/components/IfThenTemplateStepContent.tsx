@@ -1,13 +1,11 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, ITemplateStep } from '@plumber/types'
 
 import { BiQuestionMark } from 'react-icons/bi'
 import { Box, Card, Flex, Icon, Image, Text } from '@chakra-ui/react'
 
-import type { TemplateStep } from '@/graphql/__generated__/graphql'
-
 interface IfThenTemplateStepContentProps {
   app?: IApp
-  templateSteps: TemplateStep[]
+  templateSteps: ITemplateStep[]
 }
 
 export default function IfThenTemplateStepContent(

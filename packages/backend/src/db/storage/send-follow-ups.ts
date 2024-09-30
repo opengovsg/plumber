@@ -1,4 +1,4 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 import {
   FORMSG_SAMPLE_URL_DESCRIPTION,
@@ -7,7 +7,7 @@ import {
 
 const SEND_FOLLOW_UPS_ID = 'aae185f7-2592-4683-a812-2d412232e403'
 
-export const SEND_FOLLOW_UPS_TEMPLATE: Template = {
+export const SEND_FOLLOW_UPS_TEMPLATE: ITemplate = {
   id: SEND_FOLLOW_UPS_ID,
   name: 'Send follow ups',
   description: 'Send follow up emails to respondents after they submit a form',

@@ -1,4 +1,4 @@
-import type { IApp, IJSONObject } from '@plumber/types'
+import type { IApp, IJSONObject, ITemplateStep } from '@plumber/types'
 
 import get from 'lodash.get'
 
@@ -9,10 +9,7 @@ import {
   TILE_ID_PLACEHOLDER,
   USER_EMAIL_PLACEHOLDER,
 } from '@/db/storage/constants'
-import type {
-  FlowConfig,
-  TemplateStep,
-} from '@/graphql/__generated__/types.generated'
+import type { FlowConfig } from '@/graphql/__generated__/types.generated'
 import { createTableRows } from '@/models/dynamodb/table-row'
 import Flow from '@/models/flow'
 import User from '@/models/user'
@@ -22,7 +19,7 @@ import logger from './logger'
 // e.g. {{user_email}}, {{tile_col_data.Email}}
 const PLACEHOLDER_REGEX = /\{\{[a-zA-Z0-9_.? ]+\}\}/
 
-function validateAppAndEventKey(step: TemplateStep, templateName: string) {
+function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
   let app: IApp
   const { position, appKey, eventKey } = step
   if (appKey) {
@@ -48,7 +45,7 @@ function validateAppAndEventKey(step: TemplateStep, templateName: string) {
 
 // This replaces the keys of columns which are names to the column ids for row data
 // e.g. { Rating: 5 } --> { column_id: 5 }
-function replaceRowData(
+function replaceColumnNamesWithIds(
   rowData: IJSONObject[],
   columnNameToIdMap: Record<string, string>,
 ) {
@@ -58,7 +55,7 @@ function replaceRowData(
     for (const key in row) {
       if (!columnNameToIdMap[key]) {
         throw new Error(
-          'Creation of tile ran into an issue, please contact support@plumber.gov.sg',
+          `Unable to find tiles column id for specified column name: ${key} when inserting row data`,
         )
       }
       const newKey = columnNameToIdMap[key]
@@ -150,28 +147,41 @@ export async function createFlowFromTemplate(
     const columnNameToIdMap: Record<string, string> = {}
     if (tileTemplateData) {
       const { name, columns, rowData } = tileTemplateData
-      const table = await user.$relatedQuery('tables').insertGraph({
-        name,
-        role: 'owner',
-        columns,
-      })
-      tableId = table.id
 
-      // obtain a map of column name to the column id for easy replacement
-      for (const tableColumn of table.columns) {
-        columnNameToIdMap[tableColumn.name] = tableColumn.id
+      try {
+        // Takes the format of { name: colName, position: index }
+        const columnsToInsert = columns.map((column, index) => ({
+          name: column,
+          position: index,
+        }))
+
+        const table = await user.$relatedQuery('tables').insertGraph({
+          name,
+          role: 'owner',
+          columns: columnsToInsert,
+        })
+        tableId = table.id
+
+        // obtain a map of column name to the column id for easy replacement
+        for (const tableColumn of table.columns) {
+          columnNameToIdMap[tableColumn.name] = tableColumn.id
+        }
+
+        // replace column names with column ids for each row data and create table rows
+        const newRowData = replaceColumnNamesWithIds(rowData, columnNameToIdMap)
+        await createTableRows({ tableId, dataArray: newRowData })
+      } catch (e) {
+        logger.error(e)
+        throw new Error('Creation of tile ran into an issue')
       }
-
-      // replace column names with column ids for each row data and create table rows
-      const newRowData = replaceRowData(rowData, columnNameToIdMap)
-      await createTableRows({ tableId, dataArray: newRowData })
     }
 
     // prepare placeholder map for replacement
-    const placeholderReplacementMap: IJSONObject = {}
-    placeholderReplacementMap[USER_EMAIL_PLACEHOLDER] = user.email
-    placeholderReplacementMap[TILE_ID_PLACEHOLDER] = tableId
-    placeholderReplacementMap[TILE_COL_DATA_PLACEHOLDER] = columnNameToIdMap
+    const placeholderReplacementMap = {
+      [USER_EMAIL_PLACEHOLDER]: user.email,
+      [TILE_ID_PLACEHOLDER]: tableId,
+      [TILE_COL_DATA_PLACEHOLDER]: columnNameToIdMap,
+    }
 
     // account for trigger/action step having null for app or event key
     // insert trigger step
@@ -186,7 +196,7 @@ export async function createFlowFromTemplate(
     // action step could have app or event key to be null due to if-then
     // insert action steps based on steps
     for (let i = 1; i < steps.length; i++) {
-      const step: TemplateStep = steps[i]
+      const step: ITemplateStep = steps[i]
       validateAppAndEventKey(step, flowName)
 
       // replace all placeholder parameters in action steps only

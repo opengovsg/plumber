@@ -1,4 +1,4 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 import {
   FORMSG_SAMPLE_URL_DESCRIPTION,
@@ -7,7 +7,7 @@ import {
 
 const SEND_A_COPY_OF_FORM_RESPONSE_ID = 'd06d1024-2f1d-46ca-b9b3-2d3d073eddfe'
 
-export const SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE: Template = {
+export const SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE: ITemplate = {
   id: SEND_A_COPY_OF_FORM_RESPONSE_ID,
   name: 'Send a copy of form response',
   description: 'Send respondents a copy of their form response',

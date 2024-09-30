@@ -1,4 +1,4 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 import {
   FORMSG_SAMPLE_URL_DESCRIPTION,
@@ -9,7 +9,7 @@ import {
 
 const TRACK_FEEDBACK_ID = 'b237ff81-dbe9-4513-8135-0b59eec2de97'
 
-export const TRACK_FEEDBACK_TEMPLATE: Template = {
+export const TRACK_FEEDBACK_TEMPLATE: ITemplate = {
   id: TRACK_FEEDBACK_ID,
   name: 'Track feedback',
   description:
@@ -52,11 +52,7 @@ export const TRACK_FEEDBACK_TEMPLATE: Template = {
   ],
   tileTemplateData: {
     name: 'Event feedback',
-    columns: [
-      { name: 'Rating', position: 0 },
-      { name: 'Reason for rating', position: 1 },
-      { name: 'Email', position: 2 },
-    ],
+    columns: ['Rating', 'Reason for rating', 'Email'],
     rowData: [
       {
         Rating: '4',

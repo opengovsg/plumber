@@ -1,10 +1,10 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 import { USER_EMAIL_PLACEHOLDER } from './constants'
 
 const SCHEDULE_REMINDERS_ID = '65e90f41-b605-4e83-bcd7-e4d2e349299d'
 
-export const SCHEDULE_REMINDERS_TEMPLATE: Template = {
+export const SCHEDULE_REMINDERS_TEMPLATE: ITemplate = {
   id: SCHEDULE_REMINDERS_ID,
   name: 'Schedule reminders',
   description:

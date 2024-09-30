@@ -844,6 +844,8 @@ input UpdateFlowTransferStatusInput {
 
 # End of flow transfers types
 
+# Start of template types
+
 type Template {
   id: String!
   name: String!
@@ -851,7 +853,6 @@ type Template {
   steps: [TemplateStep!]!
   iconName: String # demo templates have no icon
   tag: TemplateTagType # TODO: change to tags in later PR
-  tileTemplateData: TileTemplateData
 }
 
 type TemplateStep {
@@ -863,22 +864,12 @@ type TemplateStep {
   parameters: JSONObject
 }
 
-# This is for creation of tile for a template
-type TileTemplateData {
-  name: String!
-  columns: [TileColumnData!]!
-  rowData: [JSONObject]
-}
-
-type TileColumnData {
-  name: String!
-  position: Int!
-}
-
 enum TemplateTagType {
   demo
   empty # for empty flows state
 }
+
+# End of template types
 
 schema {
   query: Query
