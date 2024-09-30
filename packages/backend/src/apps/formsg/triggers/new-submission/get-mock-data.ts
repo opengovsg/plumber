@@ -3,7 +3,7 @@ import { IGlobalVariable } from '@plumber/types'
 import { DateTime } from 'luxon'
 import { customAlphabet } from 'nanoid/async'
 
-import { COMMON_S3_BUCKET } from '@/helpers/s3'
+import { COMMON_S3_MOCK_FOLDER_PREFIX } from '@/helpers/s3'
 
 import { filterNric } from '../../auth/decrypt-form-response'
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
@@ -18,7 +18,7 @@ type FormField = {
   othersRadioButton?: boolean
 }
 
-const MOCK_ATTACHMENT_FILE_PATH = `s3:${COMMON_S3_BUCKET}:mock/plumber-logo.jpg`
+export const MOCK_ATTACHMENT_FILE_PATH = `${COMMON_S3_MOCK_FOLDER_PREFIX}plumber-logo.jpg`
 const MOCK_NRIC = 'S1234568B'
 
 function generateVerifiedSubmitterInfoData(

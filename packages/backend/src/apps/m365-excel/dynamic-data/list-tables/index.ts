@@ -4,6 +4,7 @@ import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 
 import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
 import { validateCanAccessFile } from '../../common/file-privacy'
+import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 
 const dynamicData: IDynamicData = {
   name: 'List Tables',
@@ -16,6 +17,12 @@ const dynamicData: IDynamicData = {
         data: [],
       }
     }
+
+    // Validation to prevent path traversals
+    validateDynamicFieldsAndThrowError({
+      fileId: String(fileId),
+      $,
+    })
 
     const authData = extractAuthDataWithPlumberFolder($)
 
