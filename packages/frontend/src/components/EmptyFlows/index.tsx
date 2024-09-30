@@ -1,3 +1,5 @@
+import type { ITemplate } from '@plumber/types'
+
 import { useQuery } from '@apollo/client'
 import {
   AbsoluteCenter,
@@ -13,7 +15,6 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 import NavigationDrawer from '@/components/Layout/NavigationDrawer'
-import type { Template } from '@/graphql/__generated__/graphql'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import ApproveTransfersInfobox from '@/pages/Flows/components/ApproveTransfersInfobox'
 import CreateFlowModal from '@/pages/Flows/components/CreateFlowModal'
@@ -34,7 +35,7 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
       tag: 'empty',
     },
   })
-  const emptyFlowsTemplates: Template[] = data?.getTemplates
+  const emptyFlowsTemplates: ITemplate[] = data?.getTemplates
 
   // for creation of flows
   const {

@@ -1,4 +1,4 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, ITemplateStep } from '@plumber/types'
 
 import { Fragment, useMemo } from 'react'
 import { BiPlus } from 'react-icons/bi'
@@ -6,14 +6,13 @@ import { useQuery } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
-import type { TemplateStep } from '@/graphql/__generated__/graphql'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 
 import IfThenTemplateStepContent from './IfThenTemplateStepContent'
 import TemplateStepContent from './TemplateStepContent'
 
 interface TemplateBodyProps {
-  templateSteps: TemplateStep[]
+  templateSteps: ITemplateStep[]
 }
 
 function AddStepGraphic() {
@@ -48,7 +47,7 @@ export default function TemplateBody(props: TemplateBodyProps) {
 
   const [templateStepsBeforeIfThen, templateStepsAfterIfThen] = useMemo(() => {
     const ifThenStartIndex = templateSteps.findIndex(
-      (templateStep: TemplateStep) =>
+      (templateStep: ITemplateStep) =>
         templateStep?.appKey === 'toolbox' &&
         templateStep?.eventKey === 'ifThen',
     )

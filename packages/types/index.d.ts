@@ -892,3 +892,33 @@ export interface IFlowTransfer {
   newOwner: IUser
   flow: IFlow
 }
+
+// Templates
+export interface ITemplate {
+  id: string
+  name: string
+  description: string
+  steps: ITemplateStep[]
+  iconName?: string // demo templates have no icons
+  tag?: TemplateTagType // TODO: change to tags in later PR
+  tileTemplateData?: TileTemplateData
+}
+
+// demo template or for empty flows state
+export type TemplateTagType = 'demo' | 'empty'
+
+export interface ITemplateStep {
+  position: number // primary key, no need id for now
+  appKey?: string
+  eventKey?: string
+  sampleUrl?: string // specific to template e.g. form or tile link
+  sampleUrlDescription?: string // differs for each step e.g. view a sample form
+  parameters?: IJSONObject
+}
+
+// This is for creation of tile for a template
+export type TileTemplateData = {
+  name: string
+  columns: string[]
+  rowData?: IJSONObject[]
+}

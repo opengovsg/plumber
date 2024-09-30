@@ -1,11 +1,11 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 import { FORMSG_SAMPLE_URL_DESCRIPTION } from './constants'
 
 const GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID =
   '9c964678-8e24-440e-b2fd-b42da4dea4b1'
 
-export const GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE: Template = {
+export const GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE: ITemplate = {
   id: GET_LIVE_UPDATES_THROUGH_TELEGRAM_ID,
   name: 'Get live updates through Telegram',
   description:

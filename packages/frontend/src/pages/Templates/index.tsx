@@ -1,3 +1,5 @@
+import { ITemplate } from '@plumber/types'
+
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
@@ -7,7 +9,6 @@ import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
-import { Template } from '@/graphql/__generated__/graphql'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import { TemplateIcon } from '@/helpers/flow-templates'
 
@@ -19,7 +20,7 @@ export default function Templates(): JSX.Element {
   const navigate = useNavigate()
   const { data, loading } = useQuery(GET_TEMPLATES)
 
-  const templates: Template[] = data?.getTemplates
+  const templates: ITemplate[] = data?.getTemplates
   const { templateId } = useParams()
   const template = templates?.find((template) => template.id === templateId)
   return (

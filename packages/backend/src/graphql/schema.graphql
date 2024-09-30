@@ -844,6 +844,8 @@ input UpdateFlowTransferStatusInput {
 
 # End of flow transfers types
 
+# Start of template types
+
 type Template {
   id: String!
   name: String!
@@ -866,6 +868,8 @@ enum TemplateTagType {
   demo
   empty # for empty flows state
 }
+
+# End of template types
 
 schema {
   query: Query

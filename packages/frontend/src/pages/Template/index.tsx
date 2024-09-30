@@ -1,3 +1,5 @@
+import type { ITemplate } from '@plumber/types'
+
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
@@ -15,14 +17,13 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
-import type { Template } from '@/graphql/__generated__/graphql'
 import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
 import { TemplateIcon } from '@/helpers/flow-templates'
 
 import TemplateBody from './components/TemplateBody'
 
 interface TemplateProps {
-  template: Template
+  template: ITemplate
 }
 
 // The template page is a modal and the route is /templates/:templateId
