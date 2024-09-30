@@ -234,8 +234,8 @@ export default function FlowStep(
             icon={<BiInfoCircle />}
             variant="secondary"
             style={{
-              borderBottomLeftRadius: 'none',
-              borderBottomRightRadius: 'none',
+              borderBottomLeftRadius: '0',
+              borderBottomRightRadius: '0',
             }}
           >
             <MarkdownRenderer
