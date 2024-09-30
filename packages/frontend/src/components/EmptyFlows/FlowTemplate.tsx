@@ -1,3 +1,5 @@
+import type { ITemplate } from '@plumber/types'
+
 import { useCallback } from 'react'
 import { BiRightArrowAlt } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
@@ -6,12 +8,11 @@ import { Box, Card, CardBody, CardFooter, Flex, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
-import type { Template } from '@/graphql/__generated__/graphql'
 import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
 import { TemplateIcon } from '@/helpers/flow-templates'
 
 export interface FlowTemplateProps {
-  template: Template
+  template: ITemplate
 }
 
 export default function FlowTemplate(props: FlowTemplateProps) {

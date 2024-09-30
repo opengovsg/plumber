@@ -1,4 +1,4 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 import { ATTENDANCE_TAKING_TEMPLATE } from './attendance-taking'
 import { SEND_NOTIFICATIONS_DEMO_TEMPLATE } from './demo-send-notifications'
@@ -28,11 +28,16 @@ function deepFreeze<T>(object: T): T {
 }
 
 /**
+ * Right now, some parameters have to be replaced dynamically.
+ * 1. {{user_email}} will be replaced with the actual user email
+ * 2. {{tile_col_data.col_name}}, the column name value will be replaced with the col id.
+ * 3. {{tile_table_id}} will be replaced with the tile id if created
+ *
  * Note that parameters will have {{Replace with __}}, these are
  * placeholders for users to change them to the variable pills
  * TODO (mal): change this in a later PR after discussing with the team
  */
-export const TEMPLATES: Template[] = deepFreeze<Template[]>([
+export const TEMPLATES: ITemplate[] = deepFreeze<ITemplate[]>([
   SEND_FOLLOW_UPS_TEMPLATE,
   SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE,
   SCHEDULE_REMINDERS_TEMPLATE,

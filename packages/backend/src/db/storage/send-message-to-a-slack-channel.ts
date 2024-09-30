@@ -1,9 +1,9 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 const SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID =
   'c88d03f7-862b-45e5-8a51-33e293236bd8'
 
-export const SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE: Template = {
+export const SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE: ITemplate = {
   id: SEND_MESSAGE_TO_A_SLACK_CHANNEL_ID,
   name: 'Send message to a Slack channel',
   description: 'Schedule a recurring message to a Slack channel',

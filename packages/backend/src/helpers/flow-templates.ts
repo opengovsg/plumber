@@ -1,17 +1,25 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, IJSONObject, ITemplateStep } from '@plumber/types'
+
+import get from 'lodash.get'
 
 import apps from '@/apps'
 import { TEMPLATES } from '@/db/storage'
-import type {
-  FlowConfig,
-  TemplateStep,
-} from '@/graphql/__generated__/types.generated'
+import {
+  TILE_COL_DATA_PLACEHOLDER,
+  TILE_ID_PLACEHOLDER,
+  USER_EMAIL_PLACEHOLDER,
+} from '@/db/storage/constants'
+import type { FlowConfig } from '@/graphql/__generated__/types.generated'
+import { createTableRows } from '@/models/dynamodb/table-row'
 import Flow from '@/models/flow'
 import User from '@/models/user'
 
 import logger from './logger'
 
-function validateAppAndEventKey(step: TemplateStep, templateName: string) {
+// e.g. {{user_email}}, {{tile_col_data.Email}}
+const PLACEHOLDER_REGEX = /\{\{[a-zA-Z0-9_.? ]+\}\}/
+
+function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
   let app: IApp
   const { position, appKey, eventKey } = step
   if (appKey) {
@@ -35,6 +43,68 @@ function validateAppAndEventKey(step: TemplateStep, templateName: string) {
   }
 }
 
+// This replaces the keys of columns which are names to the column ids for row data
+// e.g. { Rating: 5 } --> { column_id: 5 }
+function replaceColumnNamesWithIds(
+  rowData: IJSONObject[],
+  columnNameToIdMap: Record<string, string>,
+) {
+  const replacedRowData: IJSONObject[] = []
+  for (const row of rowData) {
+    const newRow: IJSONObject = {}
+    for (const key in row) {
+      if (!columnNameToIdMap[key]) {
+        throw new Error(
+          `Unable to find tiles column id for specified column name: ${key} when inserting row data`,
+        )
+      }
+      const newKey = columnNameToIdMap[key]
+      newRow[newKey] = row[key]
+    }
+    replacedRowData.push(newRow)
+  }
+  return replacedRowData
+}
+
+/**
+ * This is a recursive function as parameters could be an object, array or string.
+ * Note: This assumes that the placeholder appears once in each value.
+ * E.g. {{user_email}} won't appear twice in the parameter value.
+ */
+function replacePlaceholdersInParameters(
+  parameters: IJSONObject,
+  placeholderReplacementMap: IJSONObject,
+): IJSONObject {
+  // Iterate over each key in the object or array
+  for (const [key, value] of Object.entries(parameters)) {
+    if (typeof value === 'object' && value !== null) {
+      // If the value is another object or array, recurse into it
+      parameters[key] = replacePlaceholdersInParameters(
+        value as IJSONObject,
+        placeholderReplacementMap,
+      )
+    } else if (typeof value === 'string') {
+      // Replace the value (placeholder) if it matches the regex
+      if (!PLACEHOLDER_REGEX.test(value)) {
+        continue
+      }
+
+      const placeholderId = value.replace('{{', '').replace('}}', '')
+      // placeholder could be nested with the dot notation e.g. tiles column data
+      // use lodash get function to go into nested objects
+      const placeholderValue = get(
+        placeholderReplacementMap,
+        placeholderId,
+        null,
+      )
+      if (placeholderValue !== null) {
+        parameters[key] = placeholderValue
+      }
+    }
+  }
+  return parameters
+}
+
 export async function createFlowFromTemplate(
   templateId: string,
   user: User,
@@ -47,7 +117,7 @@ export async function createFlowFromTemplate(
   }
 
   // check if the template is a demo template first: affects name, config and logging only
-  const { name: flowName, steps, tag } = template
+  const { name: flowName, steps, tag, tileTemplateData } = template
   const isDemoTemplate = tag === 'demo'
   const flowConfig: FlowConfig = isDemoTemplate
     ? {
@@ -72,6 +142,48 @@ export async function createFlowFromTemplate(
     })
 
     validateAppAndEventKey(steps[0], flowName)
+    // create a tile with its columns and rows first if template uses tiles
+    let tableId: string | undefined
+    const columnNameToIdMap: Record<string, string> = {}
+    if (tileTemplateData) {
+      const { name, columns, rowData } = tileTemplateData
+
+      try {
+        // Takes the format of { name: colName, position: index }
+        const columnsToInsert = columns.map((column, index) => ({
+          name: column,
+          position: index,
+        }))
+
+        const table = await user.$relatedQuery('tables').insertGraph({
+          name,
+          role: 'owner',
+          columns: columnsToInsert,
+        })
+        tableId = table.id
+
+        // obtain a map of column name to the column id for easy replacement
+        for (const tableColumn of table.columns) {
+          columnNameToIdMap[tableColumn.name] = tableColumn.id
+        }
+
+        // replace column names with column ids for each row data and create table rows
+        const newRowData = replaceColumnNamesWithIds(rowData, columnNameToIdMap)
+        await createTableRows({ tableId, dataArray: newRowData })
+      } catch (e) {
+        logger.error(e)
+        throw new Error('Creation of tile ran into an issue')
+      }
+    }
+
+    // prepare placeholder map for replacement
+    const placeholderReplacementMap = {
+      [USER_EMAIL_PLACEHOLDER]: user.email,
+      [TILE_ID_PLACEHOLDER]: tableId,
+      [TILE_COL_DATA_PLACEHOLDER]: columnNameToIdMap,
+    }
+
+    // account for trigger/action step having null for app or event key
     // insert trigger step
     await flow.$relatedQuery('steps', trx).insert({
       type: 'trigger',
@@ -84,21 +196,16 @@ export async function createFlowFromTemplate(
     // action step could have app or event key to be null due to if-then
     // insert action steps based on steps
     for (let i = 1; i < steps.length; i++) {
-      const step: TemplateStep = steps[i]
+      const step: ITemplateStep = steps[i]
       validateAppAndEventKey(step, flowName)
-      // replace all parameters with {{user_email}} to the current user email
-      const updatedParameters = structuredClone(step?.parameters ?? {})
-      for (const [key, value] of Object.entries(updatedParameters)) {
-        // ignore objects e.g. conditions because nothing to replace inside for now
-        if (typeof value === 'string') {
-          const substitutedValue = value.replaceAll(
-            '{{user_email}}',
-            user.email,
-          )
-          updatedParameters[key] = substitutedValue
-        }
-      }
 
+      // replace all placeholder parameters in action steps only
+      const updatedParameters = replacePlaceholdersInParameters(
+        structuredClone(step.parameters ?? {}),
+        placeholderReplacementMap,
+      )
+
+      // insert action step
       await flow.$relatedQuery('steps', trx).insert({
         type: 'action',
         position: step.position,

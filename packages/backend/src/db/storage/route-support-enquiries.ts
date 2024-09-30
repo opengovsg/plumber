@@ -1,10 +1,10 @@
-import type { Template } from '@/graphql/__generated__/types.generated'
+import type { ITemplate } from '@plumber/types'
 
 import { FORMSG_SAMPLE_URL_DESCRIPTION } from './constants'
 
 const ROUTE_SUPPORT_ENQUIRIES_ID = '2a84e2f6-4806-46a2-890a-0dba1411b12f'
 
-export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: Template = {
+export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
   id: ROUTE_SUPPORT_ENQUIRIES_ID,
   name: 'Route support enquiries',
   description: 'Route enquiries to the correct departments to process',
