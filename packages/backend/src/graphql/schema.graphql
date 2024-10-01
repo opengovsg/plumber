@@ -14,25 +14,21 @@ type Query {
     appKey: String
     connectionId: String
     name: String
-  ): FlowConnection
-  getStepWithTestExecutions(stepId: String!): [Step]
-    @deprecated(reason: "Use getTestExecution instead")
-  getTestExecutionSteps(
-    flowId: String!
-    ignoreTestExecutionId: Boolean
-  ): [ExecutionStep]
+  ): PaginatedFlows
+  getStepWithTestExecutions(stepId: String!): [Step] @deprecated(reason: "Use getTestExecution instead")
+  getTestExecutionSteps(flowId: String!, ignoreTestExecutionId: Boolean): [ExecutionStep]
   getExecution(executionId: String!): Execution
   getExecutions(
     limit: Int!
     offset: Int!
     status: String
     searchInput: String
-  ): ExecutionConnection
+  ): PaginatedExecutions
   getExecutionSteps(
     executionId: String!
     limit: Int!
     offset: Int!
-  ): ExecutionStepConnection
+  ): PagingatedExecutionSteps
   getDynamicData(
     stepId: String!
     key: String!
@@ -40,7 +36,11 @@ type Query {
   ): [JSONObject]
   # Tiles
   getTable(tableId: String!): TableMetadata!
-  getTables: [TableMetadata!]!
+  getTables(
+    limit: Int!
+    offset: Int!
+    name: String
+  ): PaginatedTables!
   # Tiles rows
   getAllRows(tableId: String!): Any!
   getCurrentUser: User
@@ -326,9 +326,9 @@ type Field {
   options: [ArgumentOption]
 }
 
-type FlowConnection {
-  edges: [FlowEdge]
-  pageInfo: PageInfo
+type PaginatedFlows {
+  edges: [FlowEdge]!
+  pageInfo: PageInfo!
 }
 
 type FlowEdge {
@@ -682,14 +682,14 @@ type ExecutionStepEdge {
   node: ExecutionStep
 }
 
-type ExecutionConnection {
-  edges: [ExecutionEdge]
-  pageInfo: PageInfo
+type PaginatedExecutions {
+  edges: [ExecutionEdge]!
+  pageInfo: PageInfo!
 }
 
-type ExecutionStepConnection {
-  edges: [ExecutionStepEdge]
-  pageInfo: PageInfo
+type PagingatedExecutionSteps {
+  edges: [ExecutionStepEdge]!
+  pageInfo: PageInfo!
 }
 
 # Tiles types
@@ -756,6 +756,15 @@ type TableMetadata {
   viewOnlyKey: String
   collaborators: [TableCollaborator!]
   role: String
+}
+
+type TableMetadataEdge {
+  node: TableMetadata!
+}
+
+type PaginatedTables {
+  edges: [TableMetadataEdge!]!
+  pageInfo: PageInfo!
 }
 
 # End Tiles types

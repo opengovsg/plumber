@@ -22,6 +22,7 @@ const paginate = async <TModel extends Model>(
       totalCount: count,
     },
     edges: records.map((record: TModel) => {
+      // TODO: remove this node key and return the record directly
       return {
         node: record,
       }
