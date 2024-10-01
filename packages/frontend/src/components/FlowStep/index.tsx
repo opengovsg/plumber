@@ -1,4 +1,11 @@
-import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
+import type {
+  IAction,
+  IApp,
+  IFlowTemplateConfig,
+  IStep,
+  ISubstep,
+  ITrigger,
+} from '@plumber/types'
 
 import {
   Fragment,
@@ -31,7 +38,7 @@ import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclu
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { HELP_MESSAGE_MAP } from '@/helpers/flow-templates'
+import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 
 type FlowStepProps = {
   collapsed?: boolean
@@ -42,6 +49,7 @@ type FlowStepProps = {
   onClose: () => void
   onChange: (step: IStep) => void
   onContinue?: () => void
+  templateConfig?: IFlowTemplateConfig
 }
 
 // FIXME (ogp-weeloong): remove this; not needed since we already do validation in FlowSubstep.
@@ -91,8 +99,16 @@ function generateValidationSchema(substeps: ISubstep[]) {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, isLastStep, collapsed, onOpen, onClose, onChange, onContinue } =
-    props
+  const {
+    step,
+    isLastStep,
+    collapsed,
+    onOpen,
+    onClose,
+    onChange,
+    onContinue,
+    templateConfig,
+  } = props
   const isTrigger = step.type === 'trigger'
 
   const { readOnly, testExecutionSteps } = useContext(EditorContext)
@@ -189,16 +205,18 @@ export default function FlowStep(
     caption = 'This step happens after the previous step'
   }
 
-  const templateStepHelpMessage =
-    step.config?.templateConfig?.helpMessage ??
-    HELP_MESSAGE_MAP[step.appKey ?? '']
+  // generate help message only if template config exists
+  const stepAppEventKey = `${step?.appKey}_${step?.key}`
+  const templateStepAppEventKey = step.config.templateConfig?.appEventKey
+  const templateStepHelpMessage = replacePlaceholdersForHelpMessage(
+    templateStepAppEventKey,
+    templateConfig,
+  )
 
-  // Only show if it is an incomplete step belonging to a template
-  // AND the template step has a help message
+  // Only show if the template step app key matches the current step app key
+  // and has a help message (once tested successfully, the template step app key is removed)
   const shouldShowInfobox: boolean =
-    step.status === 'incomplete' &&
-    !!step.config?.templateConfig &&
-    !!templateStepHelpMessage
+    stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
 
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />

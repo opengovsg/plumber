@@ -138,8 +138,7 @@ export interface IStepConfig {
 }
 
 export interface IStepTemplateConfig {
-  templateId: string
-  helpMessage?: string
+  appEventKey?: string
 }
 
 export interface IStep {
@@ -158,7 +157,7 @@ export interface IStep {
   connection?: Partial<IConnection>
   flow: IFlow
   executionSteps: IExecutionStep[]
-  config: IStepConfig | null
+  config: IStepConfig
   // FIXME: remove this property once execution steps are properly exposed via queries
   output?: IJSONObject
   appData?: IApp
@@ -187,6 +186,8 @@ export interface IFlowDemoConfig {
 
 export interface IFlowTemplateConfig {
   templateId: string
+  formId?: string
+  tileId?: string
 }
 
 export interface IFlow {

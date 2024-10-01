@@ -26,7 +26,7 @@ export const GET_FLOW = gql`
         parameters
         config {
           templateConfig {
-            helpMessage
+            appEventKey
           }
         }
       }
@@ -41,6 +41,8 @@ export const GET_FLOW = gql`
         }
         templateConfig {
           templateId
+          formId
+          tileId
         }
       }
       pendingTransfer {

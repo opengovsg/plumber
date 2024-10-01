@@ -29,11 +29,7 @@ class Step extends Base {
   connection?: Connection
   flow: Flow
   executionSteps: ExecutionStep[]
-
-  /**
-   * Null means to use default config.
-   */
-  config: StepConfig | null
+  config: StepConfig
 
   static tableName = 'steps'
 

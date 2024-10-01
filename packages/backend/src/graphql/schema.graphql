@@ -367,6 +367,8 @@ type FlowDemoConfig {
 
 type FlowTemplateConfig {
   templateId: String!
+  formId: String
+  tileId: String
 }
 
 type Execution {
@@ -557,8 +559,7 @@ type StepConfig {
 }
 
 type StepTemplateConfig {
-  templateId: String!
-  helpMessage: String # FormSG and Tiles will have a customised help message
+  appEventKey: String
 }
 
 input StepConnectionInput {

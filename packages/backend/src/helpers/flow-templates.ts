@@ -21,6 +21,19 @@ import logger from './logger'
 
 // e.g. {{user_email}}, {{tile_col_data.Email}}
 const PLACEHOLDER_REGEX = /\{\{[a-zA-Z0-9_.? ]+\}\}/
+const FORM_ID_LENGTH = 24
+const CREATE_APP_EVENT_KEY = (appKey?: string, eventKey?: string) =>
+  `${appKey}_${eventKey}`
+// chose app_event key since it is unique among all triggers and actions
+const HELP_MESSAGE_APP_EVENT_KEY_SET = new Set([
+  'formsg_newSubmission',
+  'tiles_createTileRow',
+  'tiles_findSingleRow',
+  'tiles_updateSingleRow',
+  'postman_sendTransactionalEmail',
+  'slack_sendMessageToChannel',
+  'telegram-bot_sendMessage',
+])
 
 function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
   let app: IApp
@@ -186,11 +199,34 @@ export async function createFlowFromTemplate(
       [TILE_COL_DATA_PLACEHOLDER]: columnNameToIdMap,
     }
 
+    // patch formId and tileId if present
+    const formUrl = steps[0]?.sampleUrl ?? ''
+    const formId = formUrl.slice(-FORM_ID_LENGTH)
+    if (formId || tableId) {
+      await flow.$query(trx).patch({
+        config: {
+          templateConfig: {
+            ...flow.config.templateConfig,
+            ...(formId && {
+              formId,
+            }),
+            ...(tableId && {
+              tileId: tableId,
+            }),
+          },
+        },
+      })
+    }
+
+    // add step template config only if help message exists for the app-event
+    const triggerAppEventKey = CREATE_APP_EVENT_KEY(
+      steps[0].appKey,
+      steps[0].eventKey,
+    )
     const triggerStepConfig: StepConfig = {
       templateConfig: {
-        templateId,
-        ...(steps[0].sampleUrl && {
-          helpMessage: `Connect your form to this step. Here is an [example](${steps[0].sampleUrl}) for this template.`,
+        ...(HELP_MESSAGE_APP_EVENT_KEY_SET.has(triggerAppEventKey) && {
+          appEventKey: triggerAppEventKey,
         }),
       },
     }
@@ -216,11 +252,12 @@ export async function createFlowFromTemplate(
         placeholderReplacementMap,
       )
 
+      // add step template config only if help message exists for the app-event
+      const actionAppEventKey = CREATE_APP_EVENT_KEY(step.appKey, step.eventKey)
       const actionStepConfig: StepConfig = {
         templateConfig: {
-          templateId,
-          ...(step.appKey === 'tiles' && {
-            helpMessage: `We’ve already created a [Tile](${`/tiles/${tableId}`}) for you that you can customise in this step.`,
+          ...(HELP_MESSAGE_APP_EVENT_KEY_SET.has(actionAppEventKey) && {
+            appEventKey: actionAppEventKey,
           }),
         },
       }
