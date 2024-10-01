@@ -44,11 +44,8 @@ export default function EditorLayout() {
   const flow: IFlow = data?.getFlow
 
   // for loading demo modal
-  const {
-    hasLoadedOnce = true,
-    isAutoCreated,
-    videoId: demoVideoId,
-  } = flow?.config?.demoConfig || {}
+  const { hasLoadedOnce = true, videoId: demoVideoId } =
+    flow?.config?.demoConfig || {}
 
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG, {
     variables: {
@@ -224,11 +221,7 @@ export default function EditorLayout() {
       ></EditorSnackbar>
 
       {!hasLoadedOnce && (
-        <DemoFlowModal
-          onClose={handleClose}
-          isAutoCreated={isAutoCreated}
-          demoVideoId={demoVideoId}
-        />
+        <DemoFlowModal onClose={handleClose} demoVideoId={demoVideoId} />
       )}
     </>
   )

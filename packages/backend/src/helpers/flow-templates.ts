@@ -138,8 +138,6 @@ function replaceAllPlaceholdersInValue(
     const replacementValue = get(placeholderReplacementMap, placeholderId, null)
     return replacementValue !== null ? replacementValue : match
   })
-
-  return value
 }
 
 /**
@@ -164,7 +162,6 @@ function replaceAllPlaceholdersInValue(
 export async function createFlowFromTemplate(
   templateId: string,
   user: User,
-  isAutoCreated: boolean,
 ): Promise<Flow> {
   const template = TEMPLATES.find((template) => template.id === templateId)
   // prevents user from creating any new template
@@ -172,28 +169,32 @@ export async function createFlowFromTemplate(
     throw new Error('Invalid template id input')
   }
 
-  // check if the template is a demo template first: affects name, config and logging only
-  const { name: flowName, steps, tag, tileTemplateData } = template
-  const isDemoTemplate = tag === 'demo'
-  const flowConfig: FlowConfig = isDemoTemplate
-    ? {
-        demoConfig: {
-          hasLoadedOnce: false,
-          isAutoCreated,
-          videoId: templateId, // template id is the same as demo video id for backwards compatibility
-        },
-      }
-    : {
-        templateConfig: {
-          templateId,
-        },
-      }
+  // check if the template is a demo template first: affects config and logging only
+  const {
+    name: flowName,
+    steps,
+    tags,
+    tileTemplateData,
+    demoVideoId,
+  } = template
+  const isDemoTemplate = tags && tags.some((tag) => tag === 'demo')
+  // flow config will have extra demo config details only if it is a demo template
+  const flowConfig: FlowConfig = {
+    ...(isDemoTemplate && {
+      demoConfig: {
+        hasLoadedOnce: false,
+        videoId: demoVideoId,
+      },
+    }),
+    templateConfig: {
+      templateId,
+    },
+  }
 
   // transaction will insert flow and steps
   return await Flow.transaction(async (trx) => {
-    // insert flow with template id in the demo or template config
     const flow = await user.$relatedQuery('flows', trx).insert({
-      name: isDemoTemplate ? `[DEMO] ${flowName}` : flowName,
+      name: flowName,
       config: flowConfig,
     })
 
@@ -245,6 +246,7 @@ export async function createFlowFromTemplate(
     if (formId || tableId) {
       await flow.$query(trx).patch({
         config: {
+          ...flow.config, // keep demo config details if present
           templateConfig: {
             ...flow.config.templateConfig,
             ...(formId && {
@@ -317,7 +319,6 @@ export async function createFlowFromTemplate(
       flowName: flow.name,
       templateId,
       isDemoTemplate,
-      isAutoCreated,
     })
 
     return flow

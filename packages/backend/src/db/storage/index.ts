@@ -1,7 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
 import { ATTENDANCE_TAKING_TEMPLATE } from './attendance-taking'
-import { SEND_NOTIFICATIONS_DEMO_TEMPLATE } from './demo-send-notifications'
 import { GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE } from './get-live-updates-through-telegram'
 import { ROUTE_SUPPORT_ENQUIRIES_TEMPLATE } from './route-support-enquiries'
 import { SCHEDULE_REMINDERS_TEMPLATE } from './schedule-reminders'
@@ -28,7 +27,7 @@ function deepFreeze<T>(object: T): T {
 }
 
 export const TEMPLATES: ITemplate[] = deepFreeze<ITemplate[]>([
-  SEND_FOLLOW_UPS_TEMPLATE,
+  SEND_FOLLOW_UPS_TEMPLATE, // contains demo video
   SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE,
   SCHEDULE_REMINDERS_TEMPLATE,
   TRACK_FEEDBACK_TEMPLATE,
@@ -37,5 +36,4 @@ export const TEMPLATES: ITemplate[] = deepFreeze<ITemplate[]>([
   ROUTE_SUPPORT_ENQUIRIES_TEMPLATE,
   GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE,
   SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE,
-  SEND_NOTIFICATIONS_DEMO_TEMPLATE, // one and only demo template
 ])

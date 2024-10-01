@@ -10,7 +10,7 @@ export const SCHEDULE_REMINDERS_TEMPLATE: ITemplate = {
   description:
     'Schedule a recurring reminder to yourself to complete a task everyday',
   iconName: 'BiCalendar',
-  tag: 'empty',
+  tags: ['empty'],
   // Steps: scheduler --> postman
   steps: [
     {

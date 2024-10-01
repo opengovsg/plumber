@@ -4,11 +4,16 @@ import type { QueryResolvers } from '../__generated__/types.generated'
 
 const getTemplates: QueryResolvers['getTemplates'] = (_parent, params) => {
   const tag = params?.tag
-  // retrieve all non-demo templates if tag is not present
   if (!tag) {
-    return TEMPLATES.filter((template) => template.tag !== 'demo')
+    return TEMPLATES // retrieve all templates if tag is not present
   }
-  return TEMPLATES.filter((template) => template.tag === tag)
+
+  return TEMPLATES.filter((template) => {
+    if (!template.tags) {
+      return false
+    }
+    return template.tags.some((templateTag) => templateTag === tag)
+  })
 }
 
 export default getTemplates

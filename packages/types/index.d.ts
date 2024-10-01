@@ -180,7 +180,6 @@ export interface IFlowErrorConfig {
 
 export interface IFlowDemoConfig {
   hasLoadedOnce: boolean
-  isAutoCreated: boolean
   videoId: string
 }
 
@@ -903,8 +902,9 @@ export interface ITemplate {
   description: string
   steps: ITemplateStep[]
   iconName?: string // demo templates have no icons
-  tag?: TemplateTagType // TODO: change to tags in later PR
+  tags?: TemplateTagType[]
   tileTemplateData?: TileTemplateData
+  demoVideoId?: string
 }
 
 // demo template or for empty flows state

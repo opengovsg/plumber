@@ -16,7 +16,7 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
   description:
     'Track attendance for your event using a form and a pre-populated table of event participants',
   iconName: 'BiCheckDouble',
-  tag: 'empty',
+  tags: ['empty'],
   // Steps: formsg --> find tile row --> update tile row
   steps: [
     {

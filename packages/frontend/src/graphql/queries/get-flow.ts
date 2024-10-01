@@ -36,7 +36,6 @@ export const GET_FLOW = gql`
         }
         demoConfig {
           hasLoadedOnce
-          isAutoCreated
           videoId
         }
         templateConfig {
