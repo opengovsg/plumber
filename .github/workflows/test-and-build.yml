@@ -20,7 +20,6 @@ jobs:
         env:
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
       - name: Configure Datadog Test Visibility
-        if: false # remove after dd-trace is patched
         env:
           DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
@@ -34,7 +33,7 @@ jobs:
       - run: npm run test
         env:
           # Required to allow Datadog to trace Vitest tests
-          # NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
+          NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
       - run: echo "✅ All tests passed."
       - run: VITE_MODE=test npm run build
       - run: echo "✅ Your code has been built."
