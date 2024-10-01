@@ -3,7 +3,7 @@ import { IFlowTemplateConfig } from '@plumber/types'
 import { ComponentType } from 'react'
 import * as Icons from 'react-icons/bi'
 
-import appConfig from '@/config/app'
+import * as URLS from '@/config/urls'
 import type { DemoVideoDetails } from '@/graphql/__generated__/graphql'
 
 /** DEMO TEMPLATES */
@@ -42,7 +42,7 @@ export const TemplateIcon = ({
 // <<form_id>> and <<tile_id>> have to be replaced
 const FORM_ID_PLACEHOLDER = '<<form_id>>'
 const TILE_ID_PLACEHOLDER = '<<tile_id>>'
-const tileLink = `${appConfig.webAppUrl}/tiles/${TILE_ID_PLACEHOLDER}`
+const tileLink = `${window.location.origin}${URLS.TILE(TILE_ID_PLACEHOLDER)}`
 export const HELP_MESSAGE_MAP: Record<string, string> = {
   formsg_newSubmission: `Connect your form to this step. Here is an [example](https://form.gov.sg/${FORM_ID_PLACEHOLDER}) for this template.`,
   tiles_createTileRow: `We’ve already created a [Tile](${tileLink}) for you that you can customise in this step.`,
