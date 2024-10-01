@@ -1,4 +1,8 @@
-import type { PutObjectCommandInput } from '@aws-sdk/client-s3'
+import type {
+  GetObjectCommandInput,
+  GetObjectCommandOutput,
+  PutObjectCommandInput,
+} from '@aws-sdk/client-s3'
 import {
   GetObjectCommand,
   PutObjectCommand,
@@ -7,8 +11,8 @@ import {
 
 import appConfig from '@/config/app'
 
-// TODO: move to appConfig
-export const COMMON_S3_BUCKET = process.env.S3_COMMON_BUCKET
+export const COMMON_S3_BUCKET = appConfig.s3CommonBucket
+export const COMMON_S3_MOCK_FOLDER_PREFIX = `s3:${COMMON_S3_BUCKET}:mock/`
 
 const s3Client = new S3Client({
   region: 'ap-southeast-1',
@@ -40,7 +44,15 @@ export function parseS3Id(id: string): S3IdData | null {
   }
 
   const [_prefix, bucket, ...objectKeyBits] = id.split(':')
+
   const objectKey = objectKeyBits.join(':')
+
+  // check for possible path traversal
+  objectKey.split('/').forEach((segment) => {
+    if (segment === '..') {
+      throw new Error(`Invalid S3 ID: path traversal detected in ${objectKey}`)
+    }
+  })
 
   if (!bucket || objectKey.length == 0) {
     return null
@@ -92,20 +104,37 @@ export interface S3Object {
  * If the ID has an invalid format, or we don't receive an object body, this
  * throws an `Error`.
  */
-export async function getObjectFromS3Id(id: string): Promise<S3Object> {
+export async function getObjectFromS3Id(
+  id: string,
+  metadataToCheck?: Record<string, string>,
+): Promise<S3Object> {
   const idData = parseS3Id(id)
   if (!idData) {
     throw new Error(`Invalid S3 ID: ${id}`)
   }
 
-  const objectData = (
-    await s3Client.send(
-      new GetObjectCommand({ Bucket: idData.bucket, Key: idData.objectKey }),
-    )
-  ).Body
+  const { Body: objectData, Metadata: metadata } = await s3Client.send<
+    GetObjectCommandInput,
+    GetObjectCommandOutput
+  >(new GetObjectCommand({ Bucket: idData.bucket, Key: idData.objectKey }))
 
   if (!objectData) {
     throw new Error(`No object body for ${id}`)
+  }
+
+  /**
+   * We ignore metadataToCheck for common S3 mock folder
+   */
+  if (!id.startsWith(COMMON_S3_MOCK_FOLDER_PREFIX) && metadataToCheck) {
+    for (const [key, expectedValue] of Object.entries(metadataToCheck)) {
+      // s3 converts metadata keys to lowercase
+      const storedValue = metadata?.[key.toLocaleLowerCase()]
+      if (storedValue !== expectedValue) {
+        throw new Error(
+          `S3 metadata mismatch for ${idData.objectKey}: expected ${key}=${expectedValue}, got ${storedValue}`,
+        )
+      }
+    }
   }
 
   return {

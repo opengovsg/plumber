@@ -32,7 +32,11 @@ export function isIpAllowed(ip: string) {
   return ipRangeLabel === 'unicast'
 }
 
-export async function isUrlAllowed(url: string) {
-  const ip = await getIpFromUrl(url)
-  return isIpAllowed(ip)
+export async function isUrlAllowed(url: string): Promise<boolean> {
+  try {
+    const ip = await getIpFromUrl(url)
+    return isIpAllowed(ip)
+  } catch (e) {
+    return false
+  }
 }
