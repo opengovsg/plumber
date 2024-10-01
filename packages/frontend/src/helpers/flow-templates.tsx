@@ -61,14 +61,14 @@ export function replacePlaceholdersForHelpMessage(
   if (!appEventKey || !templateConfig) {
     return ''
   }
-  const helpMessage = HELP_MESSAGE_MAP[appEventKey] ?? ''
+  let helpMessage = HELP_MESSAGE_MAP[appEventKey] ?? ''
   const { formId, tileId } = templateConfig
   if (formId) {
-    helpMessage.replace(FORM_ID_PLACEHOLDER, formId)
+    helpMessage = helpMessage.replace(FORM_ID_PLACEHOLDER, formId)
   }
 
   if (tileId) {
-    return helpMessage.replace(TILE_ID_PLACEHOLDER, tileId)
+    helpMessage = helpMessage.replace(TILE_ID_PLACEHOLDER, tileId)
   }
   return helpMessage
 }
