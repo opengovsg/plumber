@@ -50,14 +50,15 @@ const ifThenHelpMessage = 'Customise what happens in each of your branches.'
 
 function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
   const { iconUrl, flow, steps, onOpen, onClose, collapsed } = props
+  const isTemplatedFlow = !!flow.config?.templateConfig?.templateId
 
   const { StepContent, hintAboveCaption, caption, isStepGroupCompleted } =
     useMemo(() => getStepContent(steps), [steps])
 
   return (
     <Flex w="100%" flexDir="column">
-      {/* Show infobox only if the step group is incomplete */}
-      {!isStepGroupCompleted && (
+      {/* Show infobox only if the step group is incomplete and from a template */}
+      {!isStepGroupCompleted && isTemplatedFlow && (
         <Infobox
           icon={<BiInfoCircle />}
           variant="secondary"

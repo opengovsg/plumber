@@ -9,7 +9,10 @@ import {
   TILE_ID_PLACEHOLDER,
   USER_EMAIL_PLACEHOLDER,
 } from '@/db/storage/constants'
-import type { FlowConfig } from '@/graphql/__generated__/types.generated'
+import type {
+  FlowConfig,
+  StepConfig,
+} from '@/graphql/__generated__/types.generated'
 import { createTableRows } from '@/models/dynamodb/table-row'
 import Flow from '@/models/flow'
 import User from '@/models/user'
@@ -18,6 +21,13 @@ import logger from './logger'
 
 // e.g. {{user_email}}, {{tile_col_data.Email}}
 const PLACEHOLDER_REGEX = /\{\{[a-zA-Z0-9_.? ]+\}\}/
+const FORM_ID_LENGTH = 24
+const CREATE_APP_EVENT_KEY = (appKey?: string, eventKey?: string) => {
+  if (!appKey && !eventKey) {
+    return '' // for empty step
+  }
+  return `${appKey}_${eventKey}`
+}
 
 function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
   let app: IApp
@@ -183,7 +193,35 @@ export async function createFlowFromTemplate(
       [TILE_COL_DATA_PLACEHOLDER]: columnNameToIdMap,
     }
 
-    // account for trigger/action step having null for app or event key
+    // patch formId and tileId if present
+    const formUrl = steps[0]?.sampleUrl ?? ''
+    const formId = formUrl.slice(-FORM_ID_LENGTH)
+    if (formId || tableId) {
+      await flow.$query(trx).patch({
+        config: {
+          templateConfig: {
+            ...flow.config.templateConfig,
+            ...(formId && {
+              formId,
+            }),
+            ...(tableId && {
+              tileId: tableId,
+            }),
+          },
+        },
+      })
+    }
+
+    // add step template config only if help message exists for the app-event
+    const triggerAppEventKey = CREATE_APP_EVENT_KEY(
+      steps[0].appKey,
+      steps[0].eventKey,
+    )
+    const triggerStepConfig: StepConfig = {
+      templateConfig: {
+        appEventKey: triggerAppEventKey,
+      },
+    }
     // insert trigger step
     await flow.$relatedQuery('steps', trx).insert({
       type: 'trigger',
@@ -191,6 +229,7 @@ export async function createFlowFromTemplate(
       appKey: steps[0].appKey,
       key: steps[0].eventKey,
       parameters: steps[0].parameters ?? {},
+      config: triggerStepConfig,
     })
 
     // action step could have app or event key to be null due to if-then
@@ -205,6 +244,13 @@ export async function createFlowFromTemplate(
         placeholderReplacementMap,
       )
 
+      // add step template config only if help message exists for the app-event
+      const actionAppEventKey = CREATE_APP_EVENT_KEY(step.appKey, step.eventKey)
+      const actionStepConfig: StepConfig = {
+        templateConfig: {
+          appEventKey: actionAppEventKey,
+        },
+      }
       // insert action step
       await flow.$relatedQuery('steps', trx).insert({
         type: 'action',
@@ -212,6 +258,7 @@ export async function createFlowFromTemplate(
         appKey: step.appKey,
         key: step.eventKey,
         parameters: updatedParameters,
+        config: actionStepConfig,
       })
     }
 

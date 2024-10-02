@@ -133,6 +133,14 @@ export interface IExecution {
   createdAt: string
 }
 
+export interface IStepConfig {
+  templateConfig?: IStepTemplateConfig
+}
+
+export interface IStepTemplateConfig {
+  appEventKey?: string
+}
+
 export interface IStep {
   id: string
   name?: string
@@ -149,6 +157,7 @@ export interface IStep {
   connection?: Partial<IConnection>
   flow: IFlow
   executionSteps: IExecutionStep[]
+  config: IStepConfig
   // FIXME: remove this property once execution steps are properly exposed via queries
   output?: IJSONObject
   appData?: IApp
@@ -177,6 +186,8 @@ export interface IFlowDemoConfig {
 
 export interface IFlowTemplateConfig {
   templateId: string
+  formId?: string
+  tileId?: string
 }
 
 export interface IFlow {
@@ -619,10 +630,6 @@ export interface IBaseTrigger {
    * message to the user during pipe setup / config.
    */
   setupMessage?: SetupMessage
-  /**
-   * Displays an infobox to provide a general guide/help for users during step config
-   */
-  helpMessage?: string
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -716,10 +723,6 @@ export interface IBaseAction {
    * message to the user during pipe setup / config.
    */
   setupMessage?: SetupMessage
-  /**
-   * Displays an infobox to provide a general guide/help for users during step config
-   */
-  helpMessage?: string
 }
 
 export interface IRawAction extends IBaseAction {

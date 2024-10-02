@@ -24,6 +24,11 @@ export const GET_FLOW = gql`
           }
         }
         parameters
+        config {
+          templateConfig {
+            appEventKey
+          }
+        }
       }
       config {
         errorConfig {
@@ -33,6 +38,11 @@ export const GET_FLOW = gql`
           hasLoadedOnce
           isAutoCreated
           videoId
+        }
+        templateConfig {
+          templateId
+          formId
+          tileId
         }
       }
       pendingTransfer {
