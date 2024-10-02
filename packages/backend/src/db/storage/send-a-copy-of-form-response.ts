@@ -1,7 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
 import {
-  CREATE_TEMPLATE_PLACEHOLDER,
   CREATE_TEMPLATE_STEP_VARIABLE,
   FORMSG_SAMPLE_URL_DESCRIPTION,
   USER_EMAIL_PLACEHOLDER,
@@ -37,7 +36,7 @@ export const SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE: ITemplate = {
         )}</p></td></tr></tbody></table><p style="margin: 0"></p><p style="margin: 0">More details will be sent to you nearer to the date.</p><p style="margin: 0"></p><p style="margin: 0">Cheers,</p><p style="margin: 0">Event committee</p>`,
         subject: 'We have received your registration!',
         senderName: 'Event committee',
-        destinationEmail: CREATE_TEMPLATE_PLACEHOLDER(USER_EMAIL_PLACEHOLDER),
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
       },
     },
   ],

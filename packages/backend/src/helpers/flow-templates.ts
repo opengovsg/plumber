@@ -5,10 +5,10 @@ import get from 'lodash.get'
 import apps from '@/apps'
 import { TEMPLATES } from '@/db/storage'
 import {
-  STEP_ID_PLACEHOLDER,
-  TILE_COL_DATA_PLACEHOLDER,
-  TILE_ID_PLACEHOLDER,
-  USER_EMAIL_PLACEHOLDER,
+  STEP_ID_KEY,
+  TILE_COL_DATA_KEY,
+  TILE_ID_KEY,
+  USER_EMAIL_KEY,
 } from '@/db/storage/constants'
 import type {
   FlowConfig,
@@ -21,7 +21,7 @@ import User from '@/models/user'
 import logger from './logger'
 
 // e.g. <<user_email>>, <<tile_col_data.Email>> to avoid clashes with {{step.}}
-const PLACEHOLDER_REGEX = /<<[a-zA-Z0-9_.? ]+>>/g
+const PLACEHOLDER_REGEX = /<<([a-zA-Z0-9_.? ]+)>>/g
 const FORM_ID_LENGTH = 24
 const CREATE_APP_EVENT_KEY = (appKey?: string, eventKey?: string) => {
   if (!appKey && !eventKey) {
@@ -79,8 +79,29 @@ function replaceColumnNamesWithIds(
 
 /**
  * This is a recursive function as parameters could be an object, array or string.
- * Note: This assumes that the placeholder appears once in each value.
- * E.g. {{user_email}} won't appear twice in the parameter value.
+ * Converts all placeholders with the data value associated based on the map
+ * E.g.
+ * Placeholder replacement map:
+ * {
+ *  user_email: test@open.gov.sg,
+ *  tile_table_id: '123',
+ *  tile_col_data: {
+ *    name: 'jack',
+ *    email: 'jack@open.gov.sg',
+ *  }
+ * }
+ *
+ * Parameters before:
+ * {
+ *  body: This is my email: <<user_email>>, this is my table id: <<tile_table_id>>
+ *  body2: Row name: <<tile_col_data.name>>, row email: <<tile_col_data.email>>
+ * }
+ *
+ * Parameters after replacement:
+ * {
+ *  body: This is my email: test@open.gov.sg, this is my table id: 123
+ *  body2: Row name: jack, row email: jack@oopen.gov.sg
+ * }
  */
 function replacePlaceholdersInParameters(
   parameters: IJSONObject,
@@ -95,7 +116,7 @@ function replacePlaceholdersInParameters(
         placeholderReplacementMap,
       )
     } else if (typeof value === 'string') {
-      parameters[key] = replacePlaceholderValue(
+      parameters[key] = replaceAllPlaceholdersInValue(
         value,
         placeholderReplacementMap,
       )
@@ -104,32 +125,42 @@ function replacePlaceholdersInParameters(
   return parameters
 }
 
-function replacePlaceholderValue(
+function replaceAllPlaceholdersInValue(
   value: string,
   placeholderReplacementMap: IJSONObject,
 ): string {
-  const matches = value.match(PLACEHOLDER_REGEX) // need to replace every match
-  if (matches) {
-    for (const match of matches) {
-      const placeholderId = match.replace('<<', '').replace('>>', '')
+  // Remove the '<<' and '>>' using the captured group directly
+  return value.replace(PLACEHOLDER_REGEX, (match, capturedGroup) => {
+    const placeholderId = capturedGroup.trim() // Remove any accidental spaces
 
-      // placeholder could be nested with the dot notation e.g. tiles column data
-      // use lodash `get` function to go into nested objects
-      const replacementValue = get(
-        placeholderReplacementMap,
-        placeholderId,
-        null,
-      )
-
-      if (replacementValue !== null) {
-        value = value.replace(match, replacementValue)
-      }
-    }
-  }
+    // placeholder could be nested with the dot notation e.g. tiles column data
+    // use lodash `get` function to go into nested objects
+    const replacementValue = get(placeholderReplacementMap, placeholderId, null)
+    return replacementValue !== null ? replacementValue : match
+  })
 
   return value
 }
 
+/**
+ * IMPORTANT:
+ * Right now, some parameters have to be replaced dynamically.
+ * 1. <<user_email>> will be replaced with the actual user email
+ * 2. <<tile_col_data.col_name>>, the column name value will be replaced with the col id.
+ * 3. <<tile_table_id>> will be replaced with the tile id if created
+ * 4. <<step_id_position>>, this will be replaced by one of the newly created template step id
+ *
+ * To create a new placeholder in the template:
+ * In constants.ts file:
+ *  - Add a key for the placeholder in constant.ts e.g. user_email
+ *  - Add a new placeholder based on the key in i.e. <<user_email>>
+ *
+ * In this function:
+ *  - Add data for this key in the `placeholderReplacementMap`
+ *
+ * Note: A nested placeholder would be needed if data is nested
+ * Refer to <<tile_col_data.col_name>> for an example.
+ */
 export async function createFlowFromTemplate(
   templateId: string,
   user: User,
@@ -203,9 +234,9 @@ export async function createFlowFromTemplate(
 
     // prepare placeholder map for replacement
     const placeholderReplacementMap: IJSONObject = {
-      [USER_EMAIL_PLACEHOLDER]: user.email,
-      [TILE_ID_PLACEHOLDER]: tableId,
-      [TILE_COL_DATA_PLACEHOLDER]: columnNameToIdMap,
+      [USER_EMAIL_KEY]: user.email,
+      [TILE_ID_KEY]: tableId,
+      [TILE_COL_DATA_KEY]: columnNameToIdMap,
     }
 
     // patch formId and tileId if present
@@ -246,7 +277,7 @@ export async function createFlowFromTemplate(
       parameters: steps[0].parameters ?? {},
       config: triggerStepConfig,
     })
-    placeholderReplacementMap[STEP_ID_PLACEHOLDER(1)] = triggerStep.id
+    placeholderReplacementMap[STEP_ID_KEY(1)] = triggerStep.id
 
     // action step could have app or event key to be null due to if-then
     // insert action steps based on steps
@@ -277,8 +308,7 @@ export async function createFlowFromTemplate(
         config: actionStepConfig,
       })
 
-      placeholderReplacementMap[STEP_ID_PLACEHOLDER(step.position)] =
-        actionStep.id
+      placeholderReplacementMap[STEP_ID_KEY(step.position)] = actionStep.id
     }
 
     logger.info('Flow created from template', {

@@ -1,7 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
 import {
-  CREATE_TEMPLATE_PLACEHOLDER,
   CREATE_TEMPLATE_STEP_VARIABLE,
   FORMSG_SAMPLE_URL_DESCRIPTION,
   USER_EMAIL_PLACEHOLDER,
@@ -56,7 +55,7 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
           'Replace this with data from step 1',
         )}!`,
         senderName: 'IT support request',
-        destinationEmail: CREATE_TEMPLATE_PLACEHOLDER(USER_EMAIL_PLACEHOLDER),
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
       },
     },
     {
@@ -92,7 +91,7 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
           'Replace this with data from step 1',
         )}!`,
         senderName: 'IT support ',
-        destinationEmail: CREATE_TEMPLATE_PLACEHOLDER(USER_EMAIL_PLACEHOLDER),
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
       },
     },
     {

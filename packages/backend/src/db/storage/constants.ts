@@ -1,13 +1,32 @@
 export const FORMSG_SAMPLE_URL_DESCRIPTION = 'View a sample form'
 export const TILES_SAMPLE_URL_DESCRIPTION = 'View a sample table'
 
-// placeholders for each template step to be replaced
-export const USER_EMAIL_PLACEHOLDER = 'user_email'
-export const TILE_ID_PLACEHOLDER = 'tile_table_id'
-export const TILE_COL_DATA_PLACEHOLDER = 'tile_col_data'
-export const STEP_ID_PLACEHOLDER = (position: number) => `step_id_${position}`
+// placeholder keys to be used for the placeholder replacement map
+export const USER_EMAIL_KEY = 'user_email'
+export const TILE_ID_KEY = 'tile_table_id'
+export const TILE_COL_DATA_KEY = 'tile_col_data'
+export const STEP_ID_KEY = (position: number) => `step_id_${position}`
 
-// construct template placeholders e.g. <<placeholder>>
+/**
+ * These placeholders are constructed by the respective keys above
+ * e.g. user_email becomes <<user_email>>
+ * nested placeholders could exist e.g. <<tile_col_data.email>>
+ * Create your own placeholder here if you have additional ones
+ */
+export const USER_EMAIL_PLACEHOLDER = `<<${USER_EMAIL_KEY}>>`
+export const TILE_ID_PLACEHOLDER = `<<${TILE_ID_KEY}>>`
+export const TILE_COL_DATA_PLACEHOLDER = (colName: string) =>
+  `<<${TILE_COL_DATA_KEY}.${colName}>>`
+export const STEP_ID_PLACEHOLDER = (position: number) =>
+  `<<${STEP_ID_KEY(position)}>>`
+
+/**
+ * Some templates require a step variable which follows the format of
+ * our step i.e. {{step.step_id.label}}
+ * If the step variable does not need to take reference to a previous step,
+ * so we fill the step id with the placeholder template step id
+ * since no step data is required.
+ */
 const PLACEHOLDER_TEMPLATE_STEP_ID = '00000000-0000-0000-0000-000000000000'
 export const CREATE_TEMPLATE_STEP_VARIABLE = (
   varLabel: string,
@@ -17,14 +36,5 @@ export const CREATE_TEMPLATE_STEP_VARIABLE = (
   if (!position) {
     return `{{step.${PLACEHOLDER_TEMPLATE_STEP_ID}.${varLabel}}}`
   }
-  return `{{step.<<${STEP_ID_PLACEHOLDER(position)}>>.${varLabel}}}`
-}
-export const CREATE_TEMPLATE_PLACEHOLDER = (
-  placeholderKey: string,
-  nestedKey?: string,
-) => {
-  if (nestedKey) {
-    return `<<${placeholderKey}.${nestedKey}>>` // for nested placeholders
-  }
-  return `<<${placeholderKey}>>`
+  return `{{step.${STEP_ID_PLACEHOLDER(position)}.${varLabel}}}`
 }

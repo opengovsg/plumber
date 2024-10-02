@@ -27,15 +27,6 @@ function deepFreeze<T>(object: T): T {
   return Object.freeze(object)
 }
 
-/**
- * Right now, some parameters have to be replaced dynamically.
- * 1. <<user_email>> will be replaced with the actual user email
- * 2. <<tile_col_data.col_name>>, the column name value will be replaced with the col id.
- * 3. <<tile_table_id>> will be replaced with the tile id if created
- *
- * Use `CREATE_TEMPLATE_STEP_VARIABLE` to create empty placeholders
- * for users to change them to the variable pills
- */
 export const TEMPLATES: ITemplate[] = deepFreeze<ITemplate[]>([
   SEND_FOLLOW_UPS_TEMPLATE,
   SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE,

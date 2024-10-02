@@ -1,7 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
 import {
-  CREATE_TEMPLATE_PLACEHOLDER,
   CREATE_TEMPLATE_STEP_VARIABLE,
   FORMSG_SAMPLE_URL_DESCRIPTION,
   TILE_COL_DATA_PLACEHOLDER,
@@ -36,34 +35,25 @@ export const TRACK_FEEDBACK_TEMPLATE: ITemplate = {
       parameters: {
         rowData: [
           {
-            columnId: CREATE_TEMPLATE_PLACEHOLDER(
-              TILE_COL_DATA_PLACEHOLDER,
-              'Rating',
-            ),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Rating'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with response 1 rating',
             ),
           },
           {
-            columnId: CREATE_TEMPLATE_PLACEHOLDER(
-              TILE_COL_DATA_PLACEHOLDER,
-              'Reason for rating',
-            ),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Reason for rating'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with response 2 reason',
             ),
           },
           {
-            columnId: CREATE_TEMPLATE_PLACEHOLDER(
-              TILE_COL_DATA_PLACEHOLDER,
-              'Email',
-            ),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Email'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with response 3 email',
             ),
           },
         ],
-        tableId: CREATE_TEMPLATE_PLACEHOLDER(TILE_ID_PLACEHOLDER),
+        tableId: TILE_ID_PLACEHOLDER,
       },
     },
   ],

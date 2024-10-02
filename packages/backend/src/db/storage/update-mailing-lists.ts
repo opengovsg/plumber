@@ -1,7 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
 import {
-  CREATE_TEMPLATE_PLACEHOLDER,
   CREATE_TEMPLATE_STEP_VARIABLE,
   FORMSG_SAMPLE_URL_DESCRIPTION,
   TILE_COL_DATA_PLACEHOLDER,
@@ -36,16 +35,13 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       parameters: {
         filters: [
           {
-            columnId: CREATE_TEMPLATE_PLACEHOLDER(
-              TILE_COL_DATA_PLACEHOLDER,
-              'Name',
-            ),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
             value: 'Anna Lee',
             operator: 'equals',
           },
         ],
         returnLastRow: true,
-        tableId: CREATE_TEMPLATE_PLACEHOLDER(TILE_ID_PLACEHOLDER),
+        tableId: TILE_ID_PLACEHOLDER,
       },
     },
     {
@@ -56,16 +52,13 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
         rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: CREATE_TEMPLATE_PLACEHOLDER(
-              TILE_COL_DATA_PLACEHOLDER,
-              'Mobile number',
-            ),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Mobile number'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with new mobile number from step 1',
             ),
           },
         ],
-        tableId: CREATE_TEMPLATE_PLACEHOLDER(TILE_ID_PLACEHOLDER),
+        tableId: TILE_ID_PLACEHOLDER,
       },
     },
   ],

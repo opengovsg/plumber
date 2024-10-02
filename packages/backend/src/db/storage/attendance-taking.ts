@@ -1,7 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
 import {
-  CREATE_TEMPLATE_PLACEHOLDER,
   CREATE_TEMPLATE_STEP_VARIABLE,
   FORMSG_SAMPLE_URL_DESCRIPTION,
   TILE_COL_DATA_PLACEHOLDER,
@@ -37,16 +36,13 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       parameters: {
         filters: [
           {
-            columnId: CREATE_TEMPLATE_PLACEHOLDER(
-              TILE_COL_DATA_PLACEHOLDER,
-              'Email',
-            ),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Email'),
             value: 'jane@email.com',
             operator: 'equals',
           },
         ],
         returnLastRow: true,
-        tableId: CREATE_TEMPLATE_PLACEHOLDER(TILE_ID_PLACEHOLDER),
+        tableId: TILE_ID_PLACEHOLDER,
       },
     },
     {
@@ -57,14 +53,11 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
         rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: CREATE_TEMPLATE_PLACEHOLDER(
-              TILE_COL_DATA_PLACEHOLDER,
-              'Attended?',
-            ),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Attended?'),
             cellValue: 'Yes',
           },
         ],
-        tableId: CREATE_TEMPLATE_PLACEHOLDER(TILE_ID_PLACEHOLDER),
+        tableId: TILE_ID_PLACEHOLDER,
       },
     },
   ],
