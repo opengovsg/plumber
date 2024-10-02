@@ -30,7 +30,6 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
-
         ...commonEnv,
       }
     default:

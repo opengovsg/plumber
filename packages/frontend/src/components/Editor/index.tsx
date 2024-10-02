@@ -273,6 +273,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 onContinue={() => {
                   setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
                 }}
+                templateConfig={flow?.config?.templateConfig}
               />
               <AddStepButton
                 onClick={() => addStep(step.id)}
