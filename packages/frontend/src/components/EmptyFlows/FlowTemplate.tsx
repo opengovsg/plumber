@@ -1,14 +1,11 @@
 import type { ITemplate } from '@plumber/types'
 
-import { useCallback } from 'react'
 import { BiRightArrowAlt } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@apollo/client'
 import { Box, Card, CardBody, CardFooter, Flex, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
-import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
 import { TemplateIcon } from '@/helpers/flow-templates'
 
 export interface FlowTemplateProps {
@@ -19,18 +16,6 @@ export default function FlowTemplate(props: FlowTemplateProps) {
   const { template } = props
   const { id, name, description, iconName } = template
   const navigate = useNavigate()
-
-  const [createTemplatedFlow, { loading }] = useMutation(CREATE_TEMPLATED_FLOW)
-  const onCreateTemplatedFlow = useCallback(async () => {
-    const response = await createTemplatedFlow({
-      variables: {
-        input: {
-          templateId: id,
-        },
-      },
-    })
-    navigate(URLS.FLOW(response.data?.createTemplatedFlow?.id))
-  }, [createTemplatedFlow, id, navigate])
 
   return (
     <Card variant="outline">
@@ -49,8 +34,7 @@ export default function FlowTemplate(props: FlowTemplateProps) {
         <Button
           rightIcon={<BiRightArrowAlt style={{ marginLeft: '-0.25rem' }} />}
           variant="link"
-          onClick={onCreateTemplatedFlow}
-          isLoading={loading}
+          onClick={() => navigate(URLS.TEMPLATE(id))}
         >
           <Text textStyle="caption-1">Use template</Text>
         </Button>
