@@ -39,7 +39,7 @@ export default function Templates(): JSX.Element {
         </Flex>
 
         {loading ? (
-          <Center my={12}>
+          <Center mb={8}>
             <PrimarySpinner fontSize="4xl" />
           </Center>
         ) : (
@@ -47,7 +47,7 @@ export default function Templates(): JSX.Element {
             gridTemplateColumns={{
               base: '1fr',
               md: '1fr 1fr',
-              xl: '1fr 1fr 1fr',
+              lg: '1fr 1fr 1fr',
             }}
             columnGap={10}
             rowGap={6}
@@ -57,8 +57,8 @@ export default function Templates(): JSX.Element {
               <Tile
                 key={index}
                 icon={() => (
-                  <Box bg="primary.100" p={2} borderRadius={4}>
-                    {<TemplateIcon iconName={template.iconName} />}
+                  <Box bg="primary.100" p={2} borderRadius="base">
+                    <TemplateIcon iconName={template.iconName} />
                   </Box>
                 )}
                 onClick={() => navigate(URLS.TEMPLATE(template.id))}

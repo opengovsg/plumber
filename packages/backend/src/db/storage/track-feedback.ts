@@ -13,7 +13,7 @@ export const TRACK_FEEDBACK_TEMPLATE: ITemplate = {
   id: TRACK_FEEDBACK_ID,
   name: 'Track feedback',
   description:
-    'Store survey feedback in a table. Share this table with your team.',
+    'Store survey feedback in a table and share it with your team by generating a link to it.',
   iconName: 'BiStar',
   // Steps: formsg --> create tile
   steps: [
