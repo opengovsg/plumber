@@ -27,6 +27,8 @@ if (['prod', 'staging'].includes(appConfig.env)) {
     clientToken: 'pubdc3dfc4ab0145729ebc91a19e9fae167',
     site: 'datadoghq.com',
     service: 'plumber',
+    // deployed with cloudflare workers
+    proxy: 'https://rum-proxy.plumber.gov.sg',
     env: appConfig.env,
     sessionSampleRate: 100,
     sessionReplaySampleRate: 100,
