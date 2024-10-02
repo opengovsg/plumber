@@ -2,11 +2,12 @@ import { ITemplate } from '@plumber/types'
 
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Box, Flex, Grid, Skeleton, Text } from '@chakra-ui/react'
+import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
 import { Link, Tile } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
+import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import { TemplateIcon } from '@/helpers/flow-templates'
@@ -37,35 +38,39 @@ export default function Templates(): JSX.Element {
           </Text>
         </Flex>
 
-        <Grid
-          gridTemplateColumns={{
-            base: '1fr',
-            md: '1fr 1fr',
-            lg: '1fr 1fr 1fr',
-          }}
-          columnGap={10}
-          rowGap={6}
-          mb={8}
-        >
-          {templates?.map((template, index) => (
-            <Tile
-              key={index}
-              icon={() => (
-                <Box bg="primary.100" p={2} borderRadius="base">
-                  <TemplateIcon iconName={template.iconName} />
-                </Box>
-              )}
-              onClick={() => navigate(URLS.TEMPLATE(template.id))}
-            >
-              <Skeleton isLoaded={!loading}>
+        {loading ? (
+          <Center mb={8}>
+            <PrimarySpinner fontSize="4xl" />
+          </Center>
+        ) : (
+          <Grid
+            gridTemplateColumns={{
+              base: '1fr',
+              md: '1fr 1fr',
+              lg: '1fr 1fr 1fr',
+            }}
+            columnGap={10}
+            rowGap={6}
+            mb={8}
+          >
+            {templates.map((template, index) => (
+              <Tile
+                key={index}
+                icon={() => (
+                  <Box bg="primary.100" p={2} borderRadius="base">
+                    <TemplateIcon iconName={template.iconName} />
+                  </Box>
+                )}
+                onClick={() => navigate(URLS.TEMPLATE(template.id))}
+              >
                 <Flex flexDir="column" gap={2} mt={2}>
                   <Text textStyle="subhead-1">{template.name}</Text>
                   <Text textStyle="body-2">{template.description}</Text>
                 </Flex>
-              </Skeleton>
-            </Tile>
-          ))}
-        </Grid>
+              </Tile>
+            ))}
+          </Grid>
+        )}
 
         <Flex
           flexDir={{ base: 'column', md: 'row' }}
