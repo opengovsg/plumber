@@ -27,7 +27,7 @@ export const SCHEDULE_REMINDERS_TEMPLATE: ITemplate = {
         body: '<p style="margin: 0">This is a scheduled reminder to do you best this week! </p>',
         subject: "It's a new week!",
         senderName: 'Weekly motivation',
-        destinationEmail: `{{${USER_EMAIL_PLACEHOLDER}}}`,
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
       },
     },
   ],

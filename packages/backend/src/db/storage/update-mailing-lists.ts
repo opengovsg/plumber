@@ -1,6 +1,7 @@
 import type { ITemplate } from '@plumber/types'
 
 import {
+  CREATE_TEMPLATE_STEP_VARIABLE,
   FORMSG_SAMPLE_URL_DESCRIPTION,
   TILE_COL_DATA_PLACEHOLDER,
   TILE_ID_PLACEHOLDER,
@@ -34,13 +35,13 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       parameters: {
         filters: [
           {
-            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Name}}`,
+            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
             value: 'Anna Lee',
             operator: 'equals',
           },
         ],
         returnLastRow: true,
-        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
+        tableId: TILE_ID_PLACEHOLDER,
       },
     },
     {
@@ -48,18 +49,16 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       appKey: 'tiles',
       eventKey: 'updateSingleRow',
       parameters: {
-        rowId: '{{Replace with row ID from step 2}}',
+        rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Email}}`,
-            cellValue: '{{Replace with email result from step 2}}',
-          },
-          {
-            columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Mobile number}}`,
-            cellValue: '{{Replace with response 4 mobile number from step 1}}',
+            columnId: TILE_COL_DATA_PLACEHOLDER('Mobile number'),
+            cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
+              'Replace with new mobile number from step 1',
+            ),
           },
         ],
-        tableId: `{{${TILE_ID_PLACEHOLDER}}}`,
+        tableId: TILE_ID_PLACEHOLDER,
       },
     },
   ],

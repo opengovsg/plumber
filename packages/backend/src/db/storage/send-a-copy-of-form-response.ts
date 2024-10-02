@@ -1,6 +1,7 @@
 import type { ITemplate } from '@plumber/types'
 
 import {
+  CREATE_TEMPLATE_STEP_VARIABLE,
   FORMSG_SAMPLE_URL_DESCRIPTION,
   USER_EMAIL_PLACEHOLDER,
 } from './constants'
@@ -26,10 +27,16 @@ export const SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE: ITemplate = {
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {
-        body: '<p style="margin: 0">Hi {{Replace this with data from step 1}},</p><p style="margin: 0"></p><p style="margin: 0">We have received your registration, here is what you submitted:</p><p style="margin: 0"></p><table style="border-collapse:collapse;"><tbody><tr><td style="border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;" colspan="1" rowspan="1"><p style="margin: 0">Question</p></td><td style="border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;" colspan="1" rowspan="1"><p style="margin: 0">Response</p></td></tr><tr><td style="border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;" colspan="1" rowspan="1"><p style="margin: 0">{{Replace this with question from step 1}}</p></td><td style="border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;" colspan="1" rowspan="1"><p style="margin: 0">{{Replace this with response from step 1}}</p></td></tr></tbody></table><p style="margin: 0"></p><p style="margin: 0">More details will be sent to you nearer to the date.</p><p style="margin: 0"></p><p style="margin: 0">Cheers,</p><p style="margin: 0">Event committee</p>',
+        body: `<p style="margin: 0">Hi ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )},</p><p style="margin: 0"></p><p style="margin: 0">We have received your registration, here is what you submitted:</p><p style="margin: 0"></p><table style="border-collapse:collapse;"><tbody><tr><td style="border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;" colspan="1" rowspan="1"><p style="margin: 0">Question</p></td><td style="border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;" colspan="1" rowspan="1"><p style="margin: 0">Response</p></td></tr><tr><td style="border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;" colspan="1" rowspan="1"><p style="margin: 0">${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with question from step 1',
+        )}</p></td><td style="border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;" colspan="1" rowspan="1"><p style="margin: 0">${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with response from step 1',
+        )}</p></td></tr></tbody></table><p style="margin: 0"></p><p style="margin: 0">More details will be sent to you nearer to the date.</p><p style="margin: 0"></p><p style="margin: 0">Cheers,</p><p style="margin: 0">Event committee</p>`,
         subject: 'We have received your registration!',
         senderName: 'Event committee',
-        destinationEmail: `{{${USER_EMAIL_PLACEHOLDER}}}`,
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
       },
     },
   ],

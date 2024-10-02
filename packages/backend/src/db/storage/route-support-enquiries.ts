@@ -1,6 +1,10 @@
 import type { ITemplate } from '@plumber/types'
 
-import { FORMSG_SAMPLE_URL_DESCRIPTION } from './constants'
+import {
+  CREATE_TEMPLATE_STEP_VARIABLE,
+  FORMSG_SAMPLE_URL_DESCRIPTION,
+  USER_EMAIL_PLACEHOLDER,
+} from './constants'
 
 const ROUTE_SUPPORT_ENQUIRIES_ID = '2a84e2f6-4806-46a2-890a-0dba1411b12f'
 
@@ -29,7 +33,9 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
           {
             is: 'is',
             text: 'Resetting device',
-            field: '{{Replace with response 1 request}}',
+            field: CREATE_TEMPLATE_STEP_VARIABLE(
+              'Replace with response 1 request',
+            ),
             condition: 'equals',
           },
         ],
@@ -40,11 +46,16 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {
-        body: '<p style="margin: 0">You have received a support request from {{Replace this with data from step 1}}! </p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about: </p><p style="margin: 0">{{Replace this with data from step 1}}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>',
-        subject:
-          'You have received a IT support request from {{Replace this with data from step 1}}!',
+        body: `<p style="margin: 0">You have received a support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}! </p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about: </p><p style="margin: 0">${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>`,
+        subject: `You have received a IT support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}!`,
         senderName: 'IT support request',
-        destinationEmail: '{{Replace with reset device team email}}',
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
       },
     },
     {
@@ -58,7 +69,9 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
           {
             is: 'is',
             text: 'Damaged device',
-            field: '{{Replace with response 1 request}}',
+            field: CREATE_TEMPLATE_STEP_VARIABLE(
+              'Replace with response 1 request',
+            ),
             condition: 'equals',
           },
         ],
@@ -69,11 +82,16 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {
-        body: '<p style="margin: 0">You have received a support request from {{Replace this with data from step 1}}!</p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about:</p><p style="margin: 0">{{Replace this with data from step 1}}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>',
-        subject:
-          'You have received a IT support request from {{Replace this with data from step 1}}!',
+        body: `<p style="margin: 0">You have received a support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}!</p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about:</p><p style="margin: 0">${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>`,
+        subject: `You have received a IT support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}!`,
         senderName: 'IT support ',
-        destinationEmail: '{{Replace with damage device email}}',
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
       },
     },
     {
@@ -87,7 +105,9 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
           {
             is: 'is',
             text: 'Lost device',
-            field: '{{Replace with response 1 request}}',
+            field: CREATE_TEMPLATE_STEP_VARIABLE(
+              'Replace with response 1 request',
+            ),
             condition: 'equals',
           },
         ],
@@ -107,7 +127,9 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
           {
             is: 'is',
             text: 'New device',
-            field: '{{Replace with response 1 request}}',
+            field: CREATE_TEMPLATE_STEP_VARIABLE(
+              'Replace with response 1 request',
+            ),
             condition: 'equals',
           },
         ],
