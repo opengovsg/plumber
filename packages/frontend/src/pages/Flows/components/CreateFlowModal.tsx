@@ -106,7 +106,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
 
               <Infobox icon={<BiBulb />} variant="primary">
                 <MarkdownRenderer
-                  source="Need suggestions on what to automate? [See use cases](https://guide.plumber.gov.sg/popular-workflows/all-workflows)"
+                  source={`Need suggestions on what to automate? [See use cases](${URLS.TEMPLATES})`}
                   components={infoboxMdComponents}
                 />
               </Infobox>
