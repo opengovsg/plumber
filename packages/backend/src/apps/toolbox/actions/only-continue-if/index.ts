@@ -3,8 +3,8 @@ import type { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 
 import conditionIsTrue from '../../common/condition-is-true'
+import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 import getConditionArgs from '../../common/get-condition-args'
-import { skipToNextBranch } from '../../common/skip-to-next-branch'
 
 const action: IRawAction = {
   name: 'Only continue if',
@@ -30,7 +30,7 @@ const action: IRawAction = {
 
     // only check for next branch step to jump to if result is false
     if (!result) {
-      const nextBranchStepId = await skipToNextBranch($, true)
+      const nextBranchStepId = await getBranchStepIdToSkipTo($)
       return nextBranchStepId
         ? {
             nextStep: {

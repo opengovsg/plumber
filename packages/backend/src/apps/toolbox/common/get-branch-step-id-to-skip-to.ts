@@ -2,9 +2,8 @@ import type { IGlobalVariable, IStep } from '@plumber/types'
 
 import Step from '@/models/step'
 
-export async function skipToNextBranch(
+export async function getBranchStepIdToSkipTo(
   $: IGlobalVariable,
-  onlyContinueIfFlag?: boolean,
 ): Promise<IStep['id']> {
   // PERF-FIXME: Objectionjs does no caching, so this will almost always be
   // queried multiple times by the same worker during a test run. If it does
@@ -14,29 +13,22 @@ export async function skipToNextBranch(
     .orderBy('position', 'asc')
     .throwIfNotFound()
 
-  let currBranchStep: Partial<Step> = $.step
+  // search for immediate branch before current step
+  const currBranchStep = flowSteps
+    .slice(0, $.step.position) // position is 1-indexed so if-then takes current step by default
+    .reverse()
+    .find((step) => step.appKey === 'toolbox' && step.key === 'ifThen')
 
-  // Only continue if step will require to update currBranchStep as the reference point
-  if (onlyContinueIfFlag) {
-    // search for immediate branch before current step
-    currBranchStep = flowSteps
-      .slice(0, $.step.position)
-      .reverse()
-      .find((step) => step.appKey === 'toolbox' && step.key === 'ifThen')
-
-    // no branches so no next branch step to skip to
-    if (!currBranchStep) {
-      return null
-    }
+  // only continue if step could be before any if-then branches
+  if (!currBranchStep) {
+    return null
   }
 
   const currDepth = parseInt(currBranchStep.parameters?.depth as string)
 
   if (isNaN(currDepth)) {
     throw new Error(
-      `Branch depth for ${
-        onlyContinueIfFlag ? 'only continue if' : 'if then'
-      } branch step ${currBranchStep.id} is not defined.`,
+      `Branch depth for current branch step ${currBranchStep.id} is not defined for ${$.step.id}.`,
     )
   }
 

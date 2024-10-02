@@ -3,8 +3,8 @@ import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 
 import conditionIsTrue from '../../common/condition-is-true'
+import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 import getConditionArgs from '../../common/get-condition-args'
-import { skipToNextBranch } from '../../common/skip-to-next-branch'
 
 const ACTION_KEY = 'ifThen'
 
@@ -74,7 +74,7 @@ const action: IRawAction = {
       return
     }
 
-    const nextStepId = await skipToNextBranch($)
+    const nextStepId = await getBranchStepIdToSkipTo($)
     return nextStepId
       ? {
           nextStep: {
