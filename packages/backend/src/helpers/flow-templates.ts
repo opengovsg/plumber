@@ -22,18 +22,12 @@ import logger from './logger'
 // e.g. {{user_email}}, {{tile_col_data.Email}}
 const PLACEHOLDER_REGEX = /\{\{[a-zA-Z0-9_.? ]+\}\}/
 const FORM_ID_LENGTH = 24
-const CREATE_APP_EVENT_KEY = (appKey?: string, eventKey?: string) =>
-  `${appKey}_${eventKey}`
-// chose app_event key since it is unique among all triggers and actions
-const HELP_MESSAGE_APP_EVENT_KEY_SET = new Set([
-  'formsg_newSubmission',
-  'tiles_createTileRow',
-  'tiles_findSingleRow',
-  'tiles_updateSingleRow',
-  'postman_sendTransactionalEmail',
-  'slack_sendMessageToChannel',
-  'telegram-bot_sendMessage',
-])
+const CREATE_APP_EVENT_KEY = (appKey?: string, eventKey?: string) => {
+  if (!appKey && !eventKey) {
+    return '' // for empty step
+  }
+  return `${appKey}_${eventKey}`
+}
 
 function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
   let app: IApp
@@ -225,9 +219,7 @@ export async function createFlowFromTemplate(
     )
     const triggerStepConfig: StepConfig = {
       templateConfig: {
-        ...(HELP_MESSAGE_APP_EVENT_KEY_SET.has(triggerAppEventKey) && {
-          appEventKey: triggerAppEventKey,
-        }),
+        appEventKey: triggerAppEventKey,
       },
     }
     // insert trigger step
@@ -256,9 +248,7 @@ export async function createFlowFromTemplate(
       const actionAppEventKey = CREATE_APP_EVENT_KEY(step.appKey, step.eventKey)
       const actionStepConfig: StepConfig = {
         templateConfig: {
-          ...(HELP_MESSAGE_APP_EVENT_KEY_SET.has(actionAppEventKey) && {
-            appEventKey: actionAppEventKey,
-          }),
+          appEventKey: actionAppEventKey,
         },
       }
       // insert action step

@@ -38,11 +38,14 @@ export const TemplateIcon = ({
   return <IconComponent fontSize={fontSize} />
 }
 
-// key: app_event key pair, value: help message
-// <<form_id>> and <<tile_id>> have to be replaced
+/**
+ * chose app_event key since it is unique among all triggers and actions
+ * key: app_event key pair, value: help message
+ * <<form_id>> and <<tile_id>> have to be replaced
+ */
 const FORM_ID_PLACEHOLDER = '<<form_id>>'
 const TILE_ID_PLACEHOLDER = '<<tile_id>>'
-const tileLink = `${window.location.origin}${URLS.TILE(TILE_ID_PLACEHOLDER)}`
+const tileLink = URLS.TILE(TILE_ID_PLACEHOLDER)
 export const HELP_MESSAGE_MAP: Record<string, string> = {
   formsg_newSubmission: `Connect your form to this step. Here is an [example](https://form.gov.sg/${FORM_ID_PLACEHOLDER}) for this template.`,
   tiles_createTileRow: `We’ve already created a [Tile](${tileLink}) for you that you can customise in this step.`,
