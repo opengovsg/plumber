@@ -40,9 +40,9 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {
-        body: '<p style="margin: 0">You have received a support request from {{Replace with response 3 name}}! </p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about: </p><p style="margin: 0">{{Replace with response 2 description}}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>',
+        body: '<p style="margin: 0">You have received a support request from {{Replace this with data from step 1}}! </p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about: </p><p style="margin: 0">{{Replace this with data from step 1}}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>',
         subject:
-          'You have received a IT support request from {{Replace with response 3 name}}!',
+          'You have received a IT support request from {{Replace this with data from step 1}}!',
         senderName: 'IT support request',
         destinationEmail: '{{Replace with reset device team email}}',
       },
@@ -69,9 +69,9 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {
-        body: '<p style="margin: 0">You have received a support request from {{Replace with response 3 name}}!</p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about:</p><p style="margin: 0">{{Replace with response 2 description}}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>',
+        body: '<p style="margin: 0">You have received a support request from {{Replace this with data from step 1}}!</p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about:</p><p style="margin: 0">{{Replace this with data from step 1}}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>',
         subject:
-          'You have received a IT support request from {{Replace with response 3 name}}!',
+          'You have received a IT support request from {{Replace this with data from step 1}}!',
         senderName: 'IT support ',
         destinationEmail: '{{Replace with damage device email}}',
       },

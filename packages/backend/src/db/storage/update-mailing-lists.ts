@@ -12,7 +12,8 @@ const UPDATE_MAILING_LISTS_ID = '8ec2728a-6e4a-49c7-8721-ef6d4eb1d946'
 export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
   id: UPDATE_MAILING_LISTS_ID,
   name: 'Update mailing lists',
-  description: 'Maintain mailing lists with updated recipient information',
+  description:
+    'Maintain mailing lists and keep them updated with the latest recipient information',
   iconName: 'BiListUl',
   // Steps: formsg --> find tile row --> update tile row
   steps: [
@@ -47,7 +48,7 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       appKey: 'tiles',
       eventKey: 'updateSingleRow',
       parameters: {
-        rowId: '{{Replace with row id result from step 2}}',
+        rowId: '{{Replace with row ID from step 2}}',
         rowData: [
           {
             columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Email}}`,

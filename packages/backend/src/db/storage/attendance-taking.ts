@@ -12,7 +12,8 @@ const ATTENDANCE_TAKING_ID = '04f95a37-46fe-455b-aa96-28c421379e1a'
 export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
   id: ATTENDANCE_TAKING_ID,
   name: 'Attendance taking',
-  description: 'Track attendance for your event',
+  description:
+    'Track attendance for your event using a form and a pre-populated table of event participants',
   iconName: 'BiCheckDouble',
   tag: 'empty',
   // Steps: formsg --> find tile row --> update tile row
@@ -48,7 +49,7 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       appKey: 'tiles',
       eventKey: 'updateSingleRow',
       parameters: {
-        rowId: '{{Replace with row id result from step 2}}',
+        rowId: '{{Replace with Row ID from step 2}}',
         rowData: [
           {
             columnId: `{{${TILE_COL_DATA_PLACEHOLDER}.Attended?}}`,

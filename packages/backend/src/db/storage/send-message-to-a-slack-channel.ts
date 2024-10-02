@@ -20,6 +20,9 @@ export const SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE: ITemplate = {
       position: 2,
       appKey: 'slack',
       eventKey: 'sendMessageToChannel',
+      parameters: {
+        message: 'Update weekly sync document! Sync is at 3pm today at Room A.',
+      },
     },
   ],
 }

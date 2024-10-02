@@ -12,7 +12,7 @@ export const Infobox = {
     secondary: {
       messagebox: {
         bg: 'interaction.sub-subtle.default',
-        borderRadius: '0.25rem',
+        borderRadius: '0.5rem',
       },
       icon: {
         color: 'interaction.sub.default',
