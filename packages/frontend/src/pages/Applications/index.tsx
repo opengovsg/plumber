@@ -2,7 +2,7 @@ import type { IApp } from '@plumber/types'
 
 import * as React from 'react'
 import { useQuery } from '@apollo/client'
-import { Box, Center } from '@chakra-ui/react'
+import { Center } from '@chakra-ui/react'
 
 import AppRow from '@/components/AppRow'
 import Container from '@/components/Container'
@@ -21,9 +21,7 @@ export default function Applications(): React.ReactElement {
 
   return (
     <Container py={9}>
-      <Box pl={9} mb={6}>
-        <PageTitle title={APPS_TITLE} />
-      </Box>
+      <PageTitle title={APPS_TITLE} />
 
       {loading && (
         <Center>

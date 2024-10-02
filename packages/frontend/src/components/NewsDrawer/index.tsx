@@ -25,7 +25,11 @@ const latestNewsTimestamp =
     ? new Date(NEWS_ITEM_LIST[0].date).getTime().toString()
     : ''
 
-export default function NewsDrawer() {
+export default function NewsDrawer({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   // check whether user has read and closed the news drawer
   const [localLatestTimestamp, setLocalLatestTimestamp] = useState(
     localStorage.getItem(LOCAL_STORAGE_LAST_READ_KEY),
@@ -46,7 +50,7 @@ export default function NewsDrawer() {
   return (
     <>
       <Button colorScheme="secondary" variant="link" onClick={onOpen}>
-        <Text textStyle="subhead-1">{`What's new`}</Text>
+        {children}
         {localLatestTimestamp !== latestNewsTimestamp && (
           <Box
             borderRadius="50%"

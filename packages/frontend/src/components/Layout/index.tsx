@@ -81,8 +81,8 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   return (
     <>
       <SiteWideBanner />
-      <AppBar />
       <LayoutNavigationProvider value={layoutNavigationProviderData}>
+        <AppBar />
         <Box display="flex" flex="1">
           <Show above="sm">
             <NavigationSidebar />
