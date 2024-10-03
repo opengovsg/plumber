@@ -35,7 +35,7 @@ import EditorSnackbar from './EditorSnackbar'
 
 export default function EditorLayout() {
   const { flowId } = useParams()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
   const { data, loading, error } = useQuery(GET_FLOW, {
@@ -44,10 +44,8 @@ export default function EditorLayout() {
   const flow: IFlow = data?.getFlow
 
   const handleClose = useCallback(() => {
-    searchParams.delete('showDemo') // not using setSearchParams because it creates a browser state
-    window.history.replaceState({}, '', window.location.pathname)
-    window.location.reload()
-  }, [searchParams])
+    setSearchParams({}, { replace: true })
+  }, [setSearchParams])
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
@@ -109,18 +107,16 @@ export default function EditorLayout() {
     return <InvalidEditorPage />
   }
 
-  // for loading demo video
-  const showDemo = searchParams.get('showDemo')
-  const flowTemplate = flow?.template
-  const isDemoTemplate = flowTemplate?.tags?.some((tag) => tag === 'demo')
-  const shouldOpenDemoModal =
-    showDemo === 'true' && !!flowTemplate && isDemoTemplate
-
   const isEditorReadOnly = hasFlowTransfer || flow?.active
 
   if (!flowId || !flow) {
     return null
   }
+
+  // for loading demo video
+  const showDemo = searchParams.get('showDemo')
+  const demoVideoDetails = flow.template?.demoVideoDetails
+  const shouldOpenDemoModal = showDemo === 'true' && !!demoVideoDetails
 
   return (
     <>
@@ -218,7 +214,7 @@ export default function EditorLayout() {
       {shouldOpenDemoModal && (
         <DemoFlowModal
           onClose={handleClose}
-          demoVideoDetails={flowTemplate.demoVideoDetails}
+          demoVideoDetails={demoVideoDetails}
         />
       )}
     </>

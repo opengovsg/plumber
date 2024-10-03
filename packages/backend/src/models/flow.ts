@@ -3,7 +3,6 @@ import { IFlowConfig } from '@plumber/types'
 import type { ModelOptions, QueryContext } from 'objection'
 import { ValidationError } from 'objection'
 
-import type { Template } from '@/graphql/__generated__/types.generated'
 import { doesActionProcessFiles } from '@/helpers/actions'
 
 import Base from './base'
@@ -25,7 +24,6 @@ class Flow extends Base {
   testExecutionId: string
   testExecution?: Execution
   user: User
-  template: Template
 
   /**
    * Null means to use default config.

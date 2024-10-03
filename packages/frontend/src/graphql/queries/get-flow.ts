@@ -48,7 +48,6 @@ export const GET_FLOW = gql`
         }
       }
       template {
-        tags
         demoVideoDetails {
           url
           title

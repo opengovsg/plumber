@@ -14,4 +14,4 @@ const template: FlowResolver['template'] = async (parent) => {
 
 export default {
   template,
-} satisfies Resolvers['Flow']
+} satisfies FlowResolver

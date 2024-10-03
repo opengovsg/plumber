@@ -61,16 +61,15 @@ export default function NavigationSidebar() {
   return (
     // top sidebar items
     <SidebarContainer variant="sticky">
-      {links.map((link, index) =>
-        link.isBottom ? (
-          <></>
-        ) : (
-          <NavigationSidebarItem
-            key={index}
-            link={link}
-            closeDrawer={closeDrawer}
-          />
-        ),
+      {links.map(
+        (link, index) =>
+          !link.isBottom && (
+            <NavigationSidebarItem
+              key={index}
+              link={link}
+              closeDrawer={closeDrawer}
+            />
+          ),
       )}
 
       {/* bottom sidebar items */}
@@ -79,16 +78,15 @@ export default function NavigationSidebar() {
         bottom={2}
         w={{ base: 'calc(100% - 2rem)', sm: 'inherit' }}
       >
-        {links.map((link, index) =>
-          link.isBottom ? (
-            <NavigationSidebarItem
-              key={index}
-              link={link}
-              closeDrawer={closeDrawer}
-            />
-          ) : (
-            <></>
-          ),
+        {links.map(
+          (link, index) =>
+            link.isBottom && (
+              <NavigationSidebarItem
+                key={index}
+                link={link}
+                closeDrawer={closeDrawer}
+              />
+            ),
         )}
       </Box>
     </SidebarContainer>

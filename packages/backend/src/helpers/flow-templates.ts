@@ -170,20 +170,9 @@ export async function createFlowFromTemplate(
   }
 
   const { name: flowName, steps, tileTemplateData } = template
-  const flowConfig: FlowConfig = {
-    templateConfig: {
-      templateId,
-    },
-  }
 
   // transaction will insert flow and steps
   return await Flow.transaction(async (trx) => {
-    const flow = await user.$relatedQuery('flows', trx).insert({
-      name: flowName,
-      config: flowConfig,
-    })
-
-    validateAppAndEventKey(steps[0], flowName)
     // create a tile with its columns and rows first if template uses tiles
     let tableId: string | undefined
     const columnNameToIdMap: Record<string, string> = {}
@@ -225,77 +214,51 @@ export async function createFlowFromTemplate(
       [TILE_COL_DATA_KEY]: columnNameToIdMap,
     }
 
-    // patch formId and tileId if present
     const formUrl = steps[0]?.sampleUrl ?? ''
     const formId = formUrl.slice(-FORM_ID_LENGTH)
-    if (formId || tableId) {
-      await flow.$query(trx).patch({
-        config: {
-          ...flow.config, // keep demo config details if present
-          templateConfig: {
-            ...flow.config.templateConfig,
-            ...(formId && {
-              formId,
-            }),
-            ...(tableId && {
-              tileId: tableId,
-            }),
-          },
+    const flow = await user.$relatedQuery('flows', trx).insert({
+      name: flowName,
+      config: {
+        templateConfig: {
+          templateId,
+          ...(formId && {
+            formId,
+          }),
+          ...(tableId && {
+            tileId: tableId,
+          }),
         },
-      })
-    }
-
-    // add step template config only if help message exists for the app-event
-    const triggerAppEventKey = CREATE_APP_EVENT_KEY(
-      steps[0].appKey,
-      steps[0].eventKey,
-    )
-    const triggerStepConfig: StepConfig = {
-      templateConfig: {
-        appEventKey: triggerAppEventKey,
-      },
-    }
-    // insert trigger step
-    const triggerStep = await flow.$relatedQuery('steps', trx).insert({
-      type: 'trigger',
-      position: 1,
-      appKey: steps[0].appKey,
-      key: steps[0].eventKey,
-      parameters: steps[0].parameters ?? {},
-      config: triggerStepConfig,
+      } satisfies FlowConfig,
     })
-    placeholderReplacementMap[STEP_ID_KEY(1)] = triggerStep.id
 
-    // action step could have app or event key to be null due to if-then
-    // insert action steps based on steps
-    for (let i = 1; i < steps.length; i++) {
-      const step: ITemplateStep = steps[i]
-      validateAppAndEventKey(step, flowName)
+    // step could have app or event key to be null due to if-then
+    for (const templateStep of steps) {
+      const { position, appKey, eventKey, parameters } = templateStep
+      validateAppAndEventKey(templateStep, flowName)
 
       // replace all placeholder parameters in action steps only
       const updatedParameters = replacePlaceholdersInParameters(
-        structuredClone(step.parameters ?? {}),
+        structuredClone(parameters ?? {}),
         placeholderReplacementMap,
       )
 
       // add step template config only if help message exists for the app-event
-      const actionAppEventKey = CREATE_APP_EVENT_KEY(step.appKey, step.eventKey)
-      const actionStepConfig: StepConfig = {
-        templateConfig: {
-          appEventKey: actionAppEventKey,
-        },
-      }
-      // insert action step
-      const actionStep = await flow.$relatedQuery('steps', trx).insert({
-        type: 'action',
-        position: step.position,
-        appKey: step.appKey,
-        key: step.eventKey,
+      const appEventKey = CREATE_APP_EVENT_KEY(appKey, eventKey)
+
+      const step = await flow.$relatedQuery('steps', trx).insert({
+        type: position === 1 ? 'trigger' : 'action',
+        position,
+        appKey,
+        key: eventKey,
         parameters: updatedParameters,
-        config: actionStepConfig,
+        config: {
+          templateConfig: {
+            appEventKey,
+          },
+        } satisfies StepConfig,
       })
 
-      placeholderReplacementMap[STEP_ID_KEY(step.position)] = actionStep.id
+      placeholderReplacementMap[STEP_ID_KEY(position)] = step.id
     }
 
     logger.info('Flow created from template', {
