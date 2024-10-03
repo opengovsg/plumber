@@ -201,6 +201,7 @@ export interface IFlow {
   lastInternalId: () => Promise<string>
   config: IFlowConfig | null
   pendingTransfer?: IFlowTransfer
+  template?: ITemplate
 }
 
 export interface IUser {
@@ -481,10 +482,7 @@ export interface IApp {
     settingsStepLabel?: string // for step accordion label: app level
     addConnectionLabel?: string // for adding connection in choose connection dropdown
   }
-  demoVideoDetails?: {
-    url: string
-    title: string
-  }
+  demoVideoDetails?: DemoVideoDetails
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this
@@ -904,7 +902,7 @@ export interface ITemplate {
   iconName?: string // demo templates have no icons
   tags?: TemplateTagType[]
   tileTemplateData?: TileTemplateData
-  demoVideoId?: string
+  demoVideoDetails?: DemoVideoDetails
 }
 
 // demo template or for empty flows state
@@ -924,4 +922,9 @@ export type TileTemplateData = {
   name: string
   columns: string[]
   rowData?: IJSONObject[]
+}
+
+export type DemoVideoDetails = {
+  url: string
+  title: string
 }

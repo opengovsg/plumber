@@ -14,6 +14,7 @@ type Params = {
   }
 }
 
+// TODO (mal): remove demo config
 const updateFlowConfig = async (
   _parent: unknown,
   params: Params,

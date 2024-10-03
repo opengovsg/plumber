@@ -345,6 +345,7 @@ type Flow {
   config: FlowConfig
   userId: String
   pendingTransfer: FlowTransfer
+  template: Template
 }
 
 # Rate limiting config is omitted here e.g. maxQps
@@ -861,6 +862,7 @@ type Template {
   steps: [TemplateStep!]!
   iconName: String # demo templates have no icon
   tags: [TemplateTagType!]
+  demoVideoDetails: DemoVideoDetails
 }
 
 type TemplateStep {

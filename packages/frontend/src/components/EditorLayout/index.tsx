@@ -2,7 +2,7 @@ import type { IFlow } from '@plumber/types'
 
 import { useCallback, useMemo } from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
 import {
   Box,
@@ -36,6 +36,7 @@ import EditorSnackbar from './EditorSnackbar'
 
 export default function EditorLayout() {
   const { flowId } = useParams()
+  const [searchParams] = useSearchParams()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
   const { data, loading, error } = useQuery(GET_FLOW, {
@@ -43,10 +44,7 @@ export default function EditorLayout() {
   })
   const flow: IFlow = data?.getFlow
 
-  // for loading demo modal
-  const { hasLoadedOnce = true, videoId: demoVideoId } =
-    flow?.config?.demoConfig || {}
-
+  // TODO (mal): remove demo config
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG, {
     variables: {
       input: {
@@ -59,7 +57,9 @@ export default function EditorLayout() {
 
   const handleClose = useCallback(async () => {
     await updateFlowConfig()
-  }, [updateFlowConfig])
+    searchParams.delete('showDemo') // not using setSearchParams because it creates a browser state
+    window.history.replaceState({}, '', window.location.pathname)
+  }, [updateFlowConfig, searchParams])
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
@@ -120,6 +120,13 @@ export default function EditorLayout() {
   ) {
     return <InvalidEditorPage />
   }
+
+  // for loading demo video
+  const showDemo = searchParams.get('showDemo')
+  const flowTemplate = flow?.template
+  const isDemoTemplate = flowTemplate?.tags?.some((tag) => tag === 'demo')
+  const shouldOpenDemoModal =
+    showDemo === 'true' && !!flowTemplate && isDemoTemplate
 
   const isEditorReadOnly = hasFlowTransfer || flow?.active
 
@@ -220,8 +227,11 @@ export default function EditorLayout() {
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       ></EditorSnackbar>
 
-      {!hasLoadedOnce && (
-        <DemoFlowModal onClose={handleClose} demoVideoId={demoVideoId} />
+      {shouldOpenDemoModal && (
+        <DemoFlowModal
+          onClose={handleClose}
+          demoVideoDetails={flowTemplate.demoVideoDetails}
+        />
       )}
     </>
   )

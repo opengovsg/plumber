@@ -7,7 +7,6 @@ import {
 } from './constants'
 
 const SEND_FOLLOW_UPS_ID = 'aae185f7-2592-4683-a812-2d412232e403'
-const SEND_FOLLOW_UPS_DEMO_VIDEO_ID = 'formsg-postman' // taken from previous demo to maintain backwards compatibility
 
 export const SEND_FOLLOW_UPS_TEMPLATE: ITemplate = {
   id: SEND_FOLLOW_UPS_ID,
@@ -15,7 +14,10 @@ export const SEND_FOLLOW_UPS_TEMPLATE: ITemplate = {
   description: 'Send follow up emails to respondents after they submit a form',
   iconName: 'BiEnvelope',
   tags: ['empty', 'demo'],
-  demoVideoId: SEND_FOLLOW_UPS_DEMO_VIDEO_ID,
+  demoVideoDetails: {
+    url: 'https://demo.arcade.software/FzpL1zCmibw0oXR6HUJi?embed&show_copy_link=true',
+    title: 'Send notifications',
+  },
   // Steps: formsg --> postman
   steps: [
     {

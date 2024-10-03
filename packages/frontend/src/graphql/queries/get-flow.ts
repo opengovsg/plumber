@@ -34,10 +34,6 @@ export const GET_FLOW = gql`
         errorConfig {
           notificationFrequency
         }
-        demoConfig {
-          hasLoadedOnce
-          videoId
-        }
         templateConfig {
           templateId
           formId
@@ -49,6 +45,13 @@ export const GET_FLOW = gql`
         newOwner {
           id
           email
+        }
+      }
+      template {
+        tags
+        demoVideoDetails {
+          url
+          title
         }
       }
     }

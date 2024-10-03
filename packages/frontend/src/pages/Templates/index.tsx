@@ -54,8 +54,9 @@ export default function Templates(): JSX.Element {
             mb={8}
           >
             {templates?.map((template, index) => {
-              const isDemoTemplate =
-                template.tags && template.tags.some((tag) => tag === 'demo')
+              const isDemoTemplate = template.tags?.some(
+                (tag) => tag === 'demo',
+              )
               return (
                 <Tile
                   key={index}

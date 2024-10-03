@@ -11,6 +11,7 @@ import FlowTransfer from './flow-transfers'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
 import User from './user'
+import type { Template } from '@/graphql/__generated__/types.generated'
 
 class Flow extends Base {
   id!: string
@@ -24,6 +25,7 @@ class Flow extends Base {
   testExecutionId: string
   testExecution?: Execution
   user: User
+  template: Template
 
   /**
    * Null means to use default config.

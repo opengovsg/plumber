@@ -4,22 +4,6 @@ import { ComponentType } from 'react'
 import * as Icons from 'react-icons/bi'
 
 import * as URLS from '@/config/urls'
-import type { DemoVideoDetails } from '@/graphql/__generated__/graphql'
-
-/** DEMO TEMPLATES */
-export const SEND_FOLLOW_UPS_DEMO_VIDEO_ID = 'formsg-postman'
-
-/**
- * This is to map from the backend config to the video content, so we can modify it here
- * instead of needing to modify the db data unnecessarily.
- * Note: This is kept here due to backwards compatibility of old pipes with demo config
- */
-export const DEMO_VIDEOS_MAP: Record<string, DemoVideoDetails> = {
-  [SEND_FOLLOW_UPS_DEMO_VIDEO_ID]: {
-    url: 'https://demo.arcade.software/FzpL1zCmibw0oXR6HUJi?embed&show_copy_link=true',
-    title: 'Send notifications',
-  },
-}
 
 interface TemplateIconProps {
   iconName?: string | null

@@ -169,23 +169,8 @@ export async function createFlowFromTemplate(
     throw new Error('Invalid template id input')
   }
 
-  // check if the template is a demo template first: affects config and logging only
-  const {
-    name: flowName,
-    steps,
-    tags,
-    tileTemplateData,
-    demoVideoId,
-  } = template
-  const isDemoTemplate = tags && tags.some((tag) => tag === 'demo')
-  // flow config will have extra demo config details only if it is a demo template
+  const { name: flowName, steps, tileTemplateData } = template
   const flowConfig: FlowConfig = {
-    ...(isDemoTemplate && {
-      demoConfig: {
-        hasLoadedOnce: false,
-        videoId: demoVideoId,
-      },
-    }),
     templateConfig: {
       templateId,
     },
@@ -318,7 +303,6 @@ export async function createFlowFromTemplate(
       flowId: flow.id,
       flowName: flow.name,
       templateId,
-      isDemoTemplate,
     })
 
     return flow
