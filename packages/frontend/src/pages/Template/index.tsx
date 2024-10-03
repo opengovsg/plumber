@@ -32,7 +32,9 @@ export default function TemplateModal(props: TemplateProps) {
   const navigate = useNavigate()
   const goToTemplatesPage = () => navigate(URLS.TEMPLATES)
 
-  const { id, name, description, iconName, steps } = template
+  const { id, name, description, iconName, tags, steps } = template
+
+  const isDemoTemplate = tags?.some((tag) => tag === 'demo')
 
   const [createTemplatedFlow, { loading: createFlowLoading }] = useMutation(
     CREATE_TEMPLATED_FLOW,
@@ -45,8 +47,12 @@ export default function TemplateModal(props: TemplateProps) {
         },
       },
     })
-    navigate(URLS.FLOW(response.data?.createTemplatedFlow?.id))
-  }, [createTemplatedFlow, id, navigate])
+    navigate(
+      isDemoTemplate
+        ? URLS.FLOW_WITH_DEMO(response.data?.createTemplatedFlow?.id)
+        : URLS.FLOW(response.data?.createTemplatedFlow?.id),
+    )
+  }, [createTemplatedFlow, id, navigate, isDemoTemplate])
 
   return (
     <>

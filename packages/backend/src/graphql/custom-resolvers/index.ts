@@ -1,4 +1,5 @@
 import ExecutionStep from './execution-step'
+import Flow from './flow'
 import TableMetadata from './table-metadata'
 
 /**
@@ -12,4 +13,4 @@ import TableMetadata from './table-metadata'
  * schema.gql-to-typescript.ts.
  */
 
-export default { ExecutionStep, TableMetadata }
+export default { ExecutionStep, TableMetadata, Flow }

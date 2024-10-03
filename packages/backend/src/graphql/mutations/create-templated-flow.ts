@@ -7,12 +7,7 @@ const createTemplatedFlow: MutationResolvers['createTemplatedFlow'] = async (
   params,
   context,
 ) => {
-  // TODO: remove isAutoCreated in later PR
-  return createFlowFromTemplate(
-    params.input.templateId,
-    context.currentUser,
-    false,
-  )
+  return createFlowFromTemplate(params.input.templateId, context.currentUser)
 }
 
 export default createTemplatedFlow

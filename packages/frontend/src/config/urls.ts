@@ -36,6 +36,8 @@ export const EDITOR = '/editor'
 export const FLOWS = '/flows'
 // TODO: revert this back to /flows/:flowId once we have a proper single flow page
 export const FLOW = (flowId: string): string => `/editor/${flowId}`
+export const FLOW_WITH_DEMO = (flowId: string): string =>
+  `/editor/${flowId}/?showDemo=true`
 export const FLOW_PATTERN = '/flows/:flowId'
 
 // Tiles routes

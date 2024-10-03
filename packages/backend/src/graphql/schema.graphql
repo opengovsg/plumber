@@ -345,6 +345,7 @@ type Flow {
   config: FlowConfig
   userId: String
   pendingTransfer: FlowTransfer
+  template: Template
 }
 
 # Rate limiting config is omitted here e.g. maxQps
@@ -361,7 +362,6 @@ type FlowErrorConfig {
 
 type FlowDemoConfig {
   hasLoadedOnce: Boolean!
-  isAutoCreated: Boolean!
   videoId: String!
 }
 
@@ -861,7 +861,8 @@ type Template {
   description: String!
   steps: [TemplateStep!]!
   iconName: String # demo templates have no icon
-  tag: TemplateTagType # TODO: change to tags in later PR
+  tags: [TemplateTagType!]
+  demoVideoDetails: DemoVideoDetails
 }
 
 type TemplateStep {

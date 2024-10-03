@@ -3,7 +3,7 @@ import { ITemplate } from '@plumber/types'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
-import { Link, Tile } from '@opengovsg/design-system-react'
+import { Badge, Link, Tile } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
@@ -53,22 +53,34 @@ export default function Templates(): JSX.Element {
             rowGap={6}
             mb={8}
           >
-            {templates.map((template, index) => (
-              <Tile
-                key={index}
-                icon={() => (
-                  <Box bg="primary.100" p={2} borderRadius="base">
-                    <TemplateIcon iconName={template.iconName} />
-                  </Box>
-                )}
-                onClick={() => navigate(URLS.TEMPLATE(template.id))}
-              >
-                <Flex flexDir="column" gap={2} mt={2}>
-                  <Text textStyle="subhead-1">{template.name}</Text>
-                  <Text textStyle="body-2">{template.description}</Text>
-                </Flex>
-              </Tile>
-            ))}
+            {templates?.map((template, index) => {
+              const isDemoTemplate = template.tags?.some(
+                (tag) => tag === 'demo',
+              )
+              return (
+                <Tile
+                  key={index}
+                  icon={() => (
+                    <Box bg="primary.100" p={2} borderRadius="base">
+                      <TemplateIcon iconName={template.iconName} />
+                    </Box>
+                  )}
+                  onClick={() => navigate(URLS.TEMPLATE(template.id))}
+                >
+                  <Flex flexDir="column" gap={2} mt={2}>
+                    <Flex gap={2}>
+                      <Text textStyle="subhead-1">{template.name}</Text>
+                      {isDemoTemplate && (
+                        <Badge bg="primary.100" color="primary.500">
+                          Demo included
+                        </Badge>
+                      )}
+                    </Flex>
+                    <Text textStyle="body-2">{template.description}</Text>
+                  </Flex>
+                </Tile>
+              )
+            })}
           </Grid>
         )}
 

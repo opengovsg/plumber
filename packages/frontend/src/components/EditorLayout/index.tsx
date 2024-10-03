@@ -2,7 +2,7 @@ import type { IFlow } from '@plumber/types'
 
 import { useCallback, useMemo } from 'react'
 import { BiChevronLeft, BiCog } from 'react-icons/bi'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
 import {
   Box,
@@ -27,7 +27,6 @@ import DemoFlowModal from '@/components/FlowRow/DemoFlowModal'
 import * as URLS from '@/config/urls'
 import { EditorProvider } from '@/contexts/Editor'
 import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
-import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
@@ -36,6 +35,7 @@ import EditorSnackbar from './EditorSnackbar'
 
 export default function EditorLayout() {
   const { flowId } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
   const { data, loading, error } = useQuery(GET_FLOW, {
@@ -43,26 +43,9 @@ export default function EditorLayout() {
   })
   const flow: IFlow = data?.getFlow
 
-  // for loading demo modal
-  const {
-    hasLoadedOnce = true,
-    isAutoCreated,
-    videoId: demoVideoId,
-  } = flow?.config?.demoConfig || {}
-
-  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG, {
-    variables: {
-      input: {
-        id: flowId,
-        hasLoadedOnce: true, // this is to not load demo modal and show tooltip anymore
-      },
-    },
-    refetchQueries: [GET_FLOW],
-  })
-
-  const handleClose = useCallback(async () => {
-    await updateFlowConfig()
-  }, [updateFlowConfig])
+  const handleClose = useCallback(() => {
+    setSearchParams({}, { replace: true })
+  }, [setSearchParams])
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
@@ -129,6 +112,11 @@ export default function EditorLayout() {
   if (!flowId || !flow) {
     return null
   }
+
+  // for loading demo video
+  const showDemo = searchParams.get('showDemo')
+  const demoVideoDetails = flow.template?.demoVideoDetails
+  const shouldOpenDemoModal = showDemo === 'true' && !!demoVideoDetails
 
   return (
     <>
@@ -223,11 +211,10 @@ export default function EditorLayout() {
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       ></EditorSnackbar>
 
-      {!hasLoadedOnce && (
+      {shouldOpenDemoModal && (
         <DemoFlowModal
           onClose={handleClose}
-          isAutoCreated={isAutoCreated}
-          demoVideoId={demoVideoId}
+          demoVideoDetails={demoVideoDetails}
         />
       )}
     </>

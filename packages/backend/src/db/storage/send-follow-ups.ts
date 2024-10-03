@@ -13,7 +13,11 @@ export const SEND_FOLLOW_UPS_TEMPLATE: ITemplate = {
   name: 'Send follow ups',
   description: 'Send follow up emails to respondents after they submit a form',
   iconName: 'BiEnvelope',
-  tag: 'empty',
+  tags: ['empty', 'demo'],
+  demoVideoDetails: {
+    url: 'https://demo.arcade.software/FzpL1zCmibw0oXR6HUJi?embed&show_copy_link=true',
+    title: 'Send notifications',
+  },
   // Steps: formsg --> postman
   steps: [
     {

@@ -1,81 +1,32 @@
-import { ReactElement, useState } from 'react'
-import { BiBulb } from 'react-icons/bi'
-import {
-  Flex,
-  Image,
-  Modal,
-  ModalContent,
-  ModalFooter,
-  ModalOverlay,
-  Text,
-} from '@chakra-ui/react'
-import { Badge, BadgeLeftIcon, Button } from '@opengovsg/design-system-react'
+import { DemoVideoDetails } from '@plumber/types'
 
-import demoModalImg from '@/assets/demo-modal.png'
-import {
-  DEMO_VIDEOS_MAP,
-  SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID,
-} from '@/helpers/flow-templates'
+import { ReactElement } from 'react'
+import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
 
 import DemoVideoModalContent from './DemoVideoModalContent'
 
 interface DemoFlowModalProps {
   onClose: () => void
-  isAutoCreated?: boolean
-  demoVideoId?: string
+  demoVideoDetails?: DemoVideoDetails
 }
 
 export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
-  const { onClose, isAutoCreated, demoVideoId } = props
+  const { onClose, demoVideoDetails } = props
   // fallback to default demo video to display for GGWP v1
-  const { url, title } =
-    DEMO_VIDEOS_MAP[demoVideoId ?? SEND_NOTIFICATIONS_DEMO_TEMPLATE_ID]
-
-  const [showVideoModal, setShowVideoModal] = useState(!isAutoCreated)
+  const { url, title } = demoVideoDetails ?? {}
 
   return (
     <Modal
       isOpen={true}
       onClose={onClose}
-      size={showVideoModal ? '5xl' : '3xl'}
+      size="5xl"
       motionPreset="none"
       closeOnEsc={false}
       isCentered
     >
       <ModalOverlay bg="base.canvas.overlay" />
-      <ModalContent p={showVideoModal ? '1rem' : '2rem'} borderRadius={8}>
-        {/* Demo created by user should immediately load demo video */}
-        {showVideoModal ? (
-          <DemoVideoModalContent src={url} title={title} />
-        ) : (
-          <Flex flexDir="column" gap={8}>
-            <Image src={demoModalImg} alt="demo-modal-illustration" />
-
-            <Flex flexDir="column" gap={4}>
-              <Badge variant="subtle">
-                <BadgeLeftIcon as={BiBulb} />
-                Demo
-              </Badge>
-              <Text textStyle="h3-semibold">Send notifications</Text>
-              <Text textStyle="body-1">
-                You will learn how to set up a workflow that will send out a
-                customised email notification to a respondent whenever they
-                submit your form. Common use cases include sending
-                acknowledgments or providing follow up instructions to form
-                respondents.
-              </Text>
-            </Flex>
-
-            <ModalFooter p={0} gap={4}>
-              <Button onClick={onClose} variant="clear">
-                Skip demo and build now
-              </Button>
-              <Button onClick={() => setShowVideoModal(true)}>
-                Start demo
-              </Button>
-            </ModalFooter>
-          </Flex>
-        )}
+      <ModalContent p={4} borderRadius="lg">
+        <DemoVideoModalContent src={url} title={title} />
       </ModalContent>
     </Modal>
   )
