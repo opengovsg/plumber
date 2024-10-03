@@ -44,8 +44,9 @@ export default function EditorLayout() {
   const flow: IFlow = data?.getFlow
 
   const handleClose = useCallback(() => {
-    setSearchParams({}, { replace: true })
-  }, [setSearchParams])
+    searchParams.delete('showDemo')
+    setSearchParams(searchParams, { replace: true })
+  }, [searchParams, setSearchParams])
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
