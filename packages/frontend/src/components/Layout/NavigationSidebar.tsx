@@ -26,7 +26,7 @@ function NavigationSidebarItem({
   return (
     <SidebarItem
       mx={{ sm: '1rem' }}
-      w={{ lg: '14.75rem' }}
+      w={{ lg: '16.75rem' }}
       icon={icon}
       as={Link}
       to={to}

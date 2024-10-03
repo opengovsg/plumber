@@ -61,20 +61,26 @@ export default function Templates(): JSX.Element {
                 <Tile
                   key={index}
                   icon={() => (
-                    <Box bg="primary.100" p={2} borderRadius="base">
-                      <TemplateIcon iconName={template.iconName} />
+                    <Box py={2}>
+                      <TemplateIcon
+                        iconName={template.iconName}
+                        fontSize="2rem"
+                      />
                     </Box>
                   )}
+                  badge={
+                    isDemoTemplate ? (
+                      <Badge bg="primary.100" color="primary.500">
+                        Demo included
+                      </Badge>
+                    ) : undefined
+                  }
+                  display="flex"
                   onClick={() => navigate(URLS.TEMPLATE(template.id))}
                 >
                   <Flex flexDir="column" gap={2} mt={2}>
                     <Flex gap={2}>
                       <Text textStyle="subhead-1">{template.name}</Text>
-                      {isDemoTemplate && (
-                        <Badge bg="primary.100" color="primary.500">
-                          Demo included
-                        </Badge>
-                      )}
                     </Flex>
                     <Text textStyle="body-2">{template.description}</Text>
                   </Flex>
