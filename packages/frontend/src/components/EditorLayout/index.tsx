@@ -27,7 +27,6 @@ import DemoFlowModal from '@/components/FlowRow/DemoFlowModal'
 import * as URLS from '@/config/urls'
 import { EditorProvider } from '@/contexts/Editor'
 import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
-import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
@@ -44,22 +43,11 @@ export default function EditorLayout() {
   })
   const flow: IFlow = data?.getFlow
 
-  // TODO (mal): remove demo config
-  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG, {
-    variables: {
-      input: {
-        id: flowId,
-        hasLoadedOnce: true, // this is to not load demo modal and show tooltip anymore
-      },
-    },
-    refetchQueries: [GET_FLOW],
-  })
-
-  const handleClose = useCallback(async () => {
-    await updateFlowConfig()
+  const handleClose = useCallback(() => {
     searchParams.delete('showDemo') // not using setSearchParams because it creates a browser state
     window.history.replaceState({}, '', window.location.pathname)
-  }, [updateFlowConfig, searchParams])
+    window.location.reload()
+  }, [searchParams])
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''

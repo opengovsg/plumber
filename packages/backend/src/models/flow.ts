@@ -3,6 +3,7 @@ import { IFlowConfig } from '@plumber/types'
 import type { ModelOptions, QueryContext } from 'objection'
 import { ValidationError } from 'objection'
 
+import type { Template } from '@/graphql/__generated__/types.generated'
 import { doesActionProcessFiles } from '@/helpers/actions'
 
 import Base from './base'
@@ -11,7 +12,6 @@ import FlowTransfer from './flow-transfers'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
 import User from './user'
-import type { Template } from '@/graphql/__generated__/types.generated'
 
 class Flow extends Base {
   id!: string
