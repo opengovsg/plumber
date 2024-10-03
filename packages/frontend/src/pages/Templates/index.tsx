@@ -1,23 +1,22 @@
 import { ITemplate } from '@plumber/types'
 
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Box, Center, Flex, Grid, Text } from '@chakra-ui/react'
-import { Badge, Link, Tile } from '@opengovsg/design-system-react'
+import { Center, Flex, Grid, Text } from '@chakra-ui/react'
+import { Link } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
+import TemplateTile from '@/components/TemplateTile'
 import * as URLS from '@/config/urls'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
-import { TemplateIcon } from '@/helpers/flow-templates'
 
 import TemplateModal from '../Template'
 
 const TEMPLATES_TITLE = 'Templates'
 
 export default function Templates(): JSX.Element {
-  const navigate = useNavigate()
   const { data, loading } = useQuery(GET_TEMPLATES)
 
   const templates: ITemplate[] = data?.getTemplates
@@ -53,40 +52,9 @@ export default function Templates(): JSX.Element {
             rowGap={6}
             mb={8}
           >
-            {templates?.map((template, index) => {
-              const isDemoTemplate = template.tags?.some(
-                (tag) => tag === 'demo',
-              )
-              return (
-                <Tile
-                  key={index}
-                  icon={() => (
-                    <Box py={2}>
-                      <TemplateIcon
-                        iconName={template.iconName}
-                        fontSize="2rem"
-                      />
-                    </Box>
-                  )}
-                  badge={
-                    isDemoTemplate ? (
-                      <Badge bg="primary.100" color="primary.500">
-                        Demo included
-                      </Badge>
-                    ) : undefined
-                  }
-                  display="flex"
-                  onClick={() => navigate(URLS.TEMPLATE(template.id))}
-                >
-                  <Flex flexDir="column" gap={2} mt={2}>
-                    <Flex gap={2}>
-                      <Text textStyle="subhead-1">{template.name}</Text>
-                    </Flex>
-                    <Text textStyle="body-2">{template.description}</Text>
-                  </Flex>
-                </Tile>
-              )
-            })}
+            {templates?.map((template, index) => (
+              <TemplateTile key={index} template={template} />
+            ))}
           </Grid>
         )}
 

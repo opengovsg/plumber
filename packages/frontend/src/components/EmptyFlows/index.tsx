@@ -20,8 +20,7 @@ import ApproveTransfersInfobox from '@/pages/Flows/components/ApproveTransfersIn
 import CreateFlowModal from '@/pages/Flows/components/CreateFlowModal'
 
 import PrimarySpinner from '../PrimarySpinner'
-
-import FlowTemplate from './FlowTemplate'
+import TemplateTile from '../TemplateTile'
 
 interface EmptyFlowsProps {
   count?: number
@@ -79,8 +78,8 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
             rowGap={6}
             mt={4}
           >
-            {emptyFlowsTemplates.map((template) => (
-              <FlowTemplate key={template.id} template={template} />
+            {emptyFlowsTemplates.map((template, index) => (
+              <TemplateTile key={index} template={template} />
             ))}
           </Grid>
         )}

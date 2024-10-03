@@ -47,7 +47,11 @@ function NavigationSidebarItem({
         {text}
       </Text>
       {link.badge && (
-        <Badge color="white" display={{ sm: 'none', lg: 'block' }}>
+        <Badge
+          color="white"
+          bg="primary.400"
+          display={{ sm: 'none', lg: 'block' }}
+        >
           {link.badge}
         </Badge>
       )}

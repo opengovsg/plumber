@@ -8,7 +8,7 @@ export const SCHEDULE_REMINDERS_TEMPLATE: ITemplate = {
   id: SCHEDULE_REMINDERS_ID,
   name: 'Schedule reminders',
   description:
-    'Schedule a recurring reminder to yourself to complete a task everyday',
+    'Schedule a recurring reminder to yourself to complete a task weekly',
   iconName: 'BiCalendar',
   tags: ['empty'],
   // Steps: scheduler --> postman
