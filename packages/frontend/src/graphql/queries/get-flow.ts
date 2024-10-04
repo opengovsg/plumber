@@ -24,15 +24,20 @@ export const GET_FLOW = gql`
           }
         }
         parameters
+        config {
+          templateConfig {
+            appEventKey
+          }
+        }
       }
       config {
         errorConfig {
           notificationFrequency
         }
-        demoConfig {
-          hasLoadedOnce
-          isAutoCreated
-          videoId
+        templateConfig {
+          templateId
+          formId
+          tileId
         }
       }
       pendingTransfer {
@@ -40,6 +45,12 @@ export const GET_FLOW = gql`
         newOwner {
           id
           email
+        }
+      }
+      template {
+        demoVideoDetails {
+          url
+          title
         }
       }
     }

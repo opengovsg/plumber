@@ -5,6 +5,7 @@ import { URL } from 'url'
 
 import apps from '@/apps'
 import appConfig from '@/config/app'
+import type { StepConfig } from '@/graphql/__generated__/types.generated'
 
 import Base from './base'
 import Connection from './connection'
@@ -28,6 +29,7 @@ class Step extends Base {
   connection?: Connection
   flow: Flow
   executionSteps: ExecutionStep[]
+  config: StepConfig
 
   static tableName = 'steps'
 

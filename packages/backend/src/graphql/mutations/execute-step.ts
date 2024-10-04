@@ -29,6 +29,7 @@ const executeStep: MutationResolvers['executeStep'] = async (
   if (!executionStep.isFailed) {
     await stepToTest.$query().patch({
       status: 'completed',
+      config: {}, // clear template step config when step is tested successfully
     })
   }
 

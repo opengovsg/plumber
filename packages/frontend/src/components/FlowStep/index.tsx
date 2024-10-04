@@ -1,4 +1,11 @@
-import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
+import type {
+  IAction,
+  IApp,
+  IFlowTemplateConfig,
+  IStep,
+  ISubstep,
+  ITrigger,
+} from '@plumber/types'
 
 import {
   Fragment,
@@ -8,9 +15,11 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { BiInfoCircle } from 'react-icons/bi'
 import { useMutation, useQuery } from '@apollo/client'
-import { CircularProgress } from '@chakra-ui/react'
+import { Box, CircularProgress, Flex } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { Infobox } from '@opengovsg/design-system-react'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
 import type { ObjectShape } from 'yup/lib/object'
@@ -20,6 +29,7 @@ import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowStepHeader from '@/components/FlowStepHeader'
 import FlowSubstep from '@/components/FlowSubstep'
 import Form from '@/components/Form'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 import TestSubstep from '@/components/TestSubstep'
 import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
@@ -28,6 +38,9 @@ import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclu
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
+
+import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 type FlowStepProps = {
   collapsed?: boolean
@@ -38,6 +51,7 @@ type FlowStepProps = {
   onClose: () => void
   onChange: (step: IStep) => void
   onContinue?: () => void
+  templateConfig?: IFlowTemplateConfig
 }
 
 // FIXME (ogp-weeloong): remove this; not needed since we already do validation in FlowSubstep.
@@ -87,8 +101,16 @@ function generateValidationSchema(substeps: ISubstep[]) {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, isLastStep, collapsed, onOpen, onClose, onChange, onContinue } =
-    props
+  const {
+    step,
+    isLastStep,
+    collapsed,
+    onOpen,
+    onClose,
+    onChange,
+    onContinue,
+    templateConfig,
+  } = props
   const isTrigger = step.type === 'trigger'
 
   const { readOnly, testExecutionSteps } = useContext(EditorContext)
@@ -185,6 +207,19 @@ export default function FlowStep(
     caption = 'This step happens after the previous step'
   }
 
+  // generate help message only if template config exists
+  const stepAppEventKey = `${step?.appKey}_${step?.key}`
+  const templateStepAppEventKey = step.config.templateConfig?.appEventKey
+  const templateStepHelpMessage = replacePlaceholdersForHelpMessage(
+    templateStepAppEventKey,
+    templateConfig,
+  )
+
+  // Only show if the template step app key matches the current step app key
+  // and has a help message (once tested successfully, the template step app key is removed)
+  const shouldShowInfobox: boolean =
+    stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
+
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
   }
@@ -192,93 +227,114 @@ export default function FlowStep(
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
   return (
-    <FlowStepHeader
-      iconUrl={app?.iconUrl}
-      caption={displayOverrides?.caption ?? caption}
-      hintAboveCaption={
-        displayOverrides?.hintAboveCaption ?? (isTrigger ? 'When' : 'Then')
-      }
-      isCompleted={step.status === 'completed'}
-      onDelete={isDeletable ? onDelete : undefined}
-      onOpen={onOpen}
-      onClose={onClose}
-      collapsed={collapsed ?? false}
-      demoVideoUrl={app?.demoVideoDetails?.url}
-      demoVideoTitle={app?.demoVideoDetails?.title}
-    >
-      <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
-        <Form
-          defaultValues={step}
-          onSubmit={handleSubmit}
-          resolver={stepValidationSchema}
-        >
-          {!cannotChooseApp && (
-            <ChooseAppAndEventSubstep
-              expanded={currentSubstep === 0}
-              substep={{
-                key: 'chooseAppAndEvent',
-                name: 'Choose app & event',
-                arguments: [],
-              }}
-              onExpand={() => toggleSubstep(0)}
-              onCollapse={() => toggleSubstep(0)}
-              onSubmit={expandNextStep}
-              onChange={handleChange}
-              step={step}
-              isLastStep={isLastStep}
+    <Flex w="100%" flexDir="column">
+      {shouldShowInfobox && (
+        <Box boxShadow={collapsed ? undefined : 'sm'} borderRadius="lg">
+          <Infobox
+            icon={<BiInfoCircle />}
+            variant="secondary"
+            style={{
+              borderBottomLeftRadius: '0',
+              borderBottomRightRadius: '0',
+            }}
+          >
+            <MarkdownRenderer
+              source={templateStepHelpMessage}
+              components={infoboxMdComponents}
             />
-          )}
+          </Infobox>
+        </Box>
+      )}
 
-          {substeps?.length > 0 &&
-            substeps.map((substep: ISubstep, index: number) => (
-              <Fragment key={`${substep?.name}-${index}`}>
-                {substep.key === 'chooseConnection' && app && (
-                  <ChooseConnectionSubstep
-                    expanded={currentSubstep === index + 1}
-                    substep={substep}
-                    onExpand={() => toggleSubstep(index + 1)}
-                    onCollapse={() => toggleSubstep(index + 1)}
-                    onSubmit={expandNextStep}
-                    onChange={handleChange}
-                    application={app}
-                    step={step}
-                  />
-                )}
+      <FlowStepHeader
+        iconUrl={app?.iconUrl}
+        caption={displayOverrides?.caption ?? caption}
+        hintAboveCaption={
+          displayOverrides?.hintAboveCaption ?? (isTrigger ? 'When' : 'Then')
+        }
+        isCompleted={step.status === 'completed'}
+        onDelete={isDeletable ? onDelete : undefined}
+        onOpen={onOpen}
+        onClose={onClose}
+        collapsed={collapsed ?? false}
+        demoVideoUrl={app?.demoVideoDetails?.url}
+        demoVideoTitle={app?.demoVideoDetails?.title}
+        isInfoboxPresent={shouldShowInfobox}
+      >
+        <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
+          <Form
+            defaultValues={step}
+            onSubmit={handleSubmit}
+            resolver={stepValidationSchema}
+          >
+            {!cannotChooseApp && (
+              <ChooseAppAndEventSubstep
+                expanded={currentSubstep === 0}
+                substep={{
+                  key: 'chooseAppAndEvent',
+                  name: 'Choose app & event',
+                  arguments: [],
+                }}
+                onExpand={() => toggleSubstep(0)}
+                onCollapse={() => toggleSubstep(0)}
+                onSubmit={expandNextStep}
+                onChange={handleChange}
+                step={step}
+                isLastStep={isLastStep}
+              />
+            )}
 
-                {substep.key === 'testStep' && (
-                  <TestSubstep
-                    expanded={currentSubstep === index + 1}
-                    substep={substep}
-                    onExpand={() => toggleSubstep(index + 1)}
-                    onCollapse={() => toggleSubstep(index + 1)}
-                    onChange={handleChange}
-                    onContinue={onContinue}
-                    step={step}
-                    selectedActionOrTrigger={selectedActionOrTrigger}
-                  />
-                )}
-
-                {substep.key &&
-                  ['chooseConnection', 'testStep'].includes(substep.key) ===
-                    false && (
-                    <FlowSubstep
+            {substeps?.length > 0 &&
+              substeps.map((substep: ISubstep, index: number) => (
+                <Fragment key={`${substep?.name}-${index}`}>
+                  {substep.key === 'chooseConnection' && app && (
+                    <ChooseConnectionSubstep
                       expanded={currentSubstep === index + 1}
                       substep={substep}
                       onExpand={() => toggleSubstep(index + 1)}
                       onCollapse={() => toggleSubstep(index + 1)}
                       onSubmit={expandNextStep}
                       onChange={handleChange}
+                      application={app}
                       step={step}
-                      settingsLabel={
-                        selectedActionOrTrigger?.settingsStepLabel ??
-                        app?.substepLabels?.settingsStepLabel
-                      }
                     />
                   )}
-              </Fragment>
-            ))}
-        </Form>
-      </StepExecutionsProvider>
-    </FlowStepHeader>
+
+                  {substep.key === 'testStep' && (
+                    <TestSubstep
+                      expanded={currentSubstep === index + 1}
+                      substep={substep}
+                      onExpand={() => toggleSubstep(index + 1)}
+                      onCollapse={() => toggleSubstep(index + 1)}
+                      onChange={handleChange}
+                      onContinue={onContinue}
+                      step={step}
+                      selectedActionOrTrigger={selectedActionOrTrigger}
+                    />
+                  )}
+
+                  {substep.key &&
+                    ['chooseConnection', 'testStep'].includes(substep.key) ===
+                      false && (
+                      <FlowSubstep
+                        expanded={currentSubstep === index + 1}
+                        substep={substep}
+                        onExpand={() => toggleSubstep(index + 1)}
+                        onCollapse={() => toggleSubstep(index + 1)}
+                        onSubmit={expandNextStep}
+                        onChange={handleChange}
+                        step={step}
+                        settingsLabel={
+                          selectedActionOrTrigger?.settingsStepLabel ??
+                          app?.substepLabels?.settingsStepLabel
+                        }
+                      />
+                    )}
+                </Fragment>
+              ))}
+          </Form>
+        </StepExecutionsProvider>
+      </FlowStepHeader>
+    </Flex>
   )
 }

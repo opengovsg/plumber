@@ -133,6 +133,14 @@ export interface IExecution {
   createdAt: string
 }
 
+export interface IStepConfig {
+  templateConfig?: IStepTemplateConfig
+}
+
+export interface IStepTemplateConfig {
+  appEventKey?: string
+}
+
 export interface IStep {
   id: string
   name?: string
@@ -149,16 +157,12 @@ export interface IStep {
   connection?: Partial<IConnection>
   flow: IFlow
   executionSteps: IExecutionStep[]
+  config: IStepConfig
   // FIXME: remove this property once execution steps are properly exposed via queries
   output?: IJSONObject
   appData?: IApp
   retryable?: boolean
   jobId?: string
-}
-
-export type AppEventKeyPair = {
-  appKey: string
-  eventKey: string
 }
 
 export interface IFlowConfig {
@@ -167,6 +171,7 @@ export interface IFlowConfig {
   errorConfig?: IFlowErrorConfig
   duplicateCount?: number
   demoConfig?: IFlowDemoConfig
+  templateConfig?: IFlowTemplateConfig
 }
 
 export interface IFlowErrorConfig {
@@ -175,8 +180,13 @@ export interface IFlowErrorConfig {
 
 export interface IFlowDemoConfig {
   hasLoadedOnce: boolean
-  isAutoCreated: boolean
   videoId: string
+}
+
+export interface IFlowTemplateConfig {
+  templateId: string
+  formId?: string
+  tileId?: string
 }
 
 export interface IFlow {
@@ -191,6 +201,7 @@ export interface IFlow {
   lastInternalId: () => Promise<string>
   config: IFlowConfig | null
   pendingTransfer?: IFlowTransfer
+  template?: ITemplate
 }
 
 export interface IUser {
@@ -471,10 +482,7 @@ export interface IApp {
     settingsStepLabel?: string // for step accordion label: app level
     addConnectionLabel?: string // for adding connection in choose connection dropdown
   }
-  demoVideoDetails?: {
-    url: string
-    title: string
-  }
+  demoVideoDetails?: DemoVideoDetails
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this
@@ -768,10 +776,12 @@ export type IGlobalVariable = {
     appKey: string
     parameters: IJSONObject
   }
-  getLastExecutionStep?: (options?: Partial<{
-    sameExecution: boolean
-    testRunOnly: boolean
-  }>) => Promise<IExecutionStep | undefined>
+  getLastExecutionStep?: (
+    options?: Partial<{
+      sameExecution: boolean
+      testRunOnly: boolean
+    }>,
+  ) => Promise<IExecutionStep | undefined>
   execution?: {
     id: string
     testRun: boolean
@@ -881,4 +891,40 @@ export interface IFlowTransfer {
   oldOwner: IUser
   newOwner: IUser
   flow: IFlow
+}
+
+// Templates
+export interface ITemplate {
+  id: string
+  name: string
+  description: string
+  steps: ITemplateStep[]
+  iconName?: string // demo templates have no icons
+  tags?: TemplateTagType[]
+  tileTemplateData?: TileTemplateData
+  demoVideoDetails?: DemoVideoDetails
+}
+
+// demo template or for empty flows state
+export type TemplateTagType = 'demo' | 'empty'
+
+export interface ITemplateStep {
+  position: number // primary key, no need id for now
+  appKey?: string
+  eventKey?: string
+  sampleUrl?: string // specific to template e.g. form or tile link
+  sampleUrlDescription?: string // differs for each step e.g. view a sample form
+  parameters?: IJSONObject
+}
+
+// This is for creation of tile for a template
+export type TileTemplateData = {
+  name: string
+  columns: string[]
+  rowData?: IJSONObject[]
+}
+
+export type DemoVideoDetails = {
+  url: string
+  title: string
 }

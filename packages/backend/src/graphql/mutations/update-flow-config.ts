@@ -37,6 +37,7 @@ const updateFlowConfig = async (
     }
   }
 
+  // TODO (mal): remove demo config
   if (params.input.hasLoadedOnce !== undefined) {
     newConfig.demoConfig = {
       ...newConfig.demoConfig, // If ever undefined (should never be), it gets set to an empty object first
