@@ -53,6 +53,7 @@ const drawerLinks = [
     text: 'Templates',
     to: URLS.TEMPLATES,
     isBottom: true,
+    badge: 'New',
   },
 ]
 
