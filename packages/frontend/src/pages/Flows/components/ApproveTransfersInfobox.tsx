@@ -6,9 +6,8 @@ import { useQuery } from '@apollo/client'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
+import * as URLS from '@/config/urls'
 import { GET_PENDING_FLOW_TRANSFERS } from '@/graphql/queries/get-pending-flow-transfers'
-
-import * as URLS from '../../../config/urls'
 
 export default function ApproveTransfersInfobox() {
   const { data, loading } = useQuery(GET_PENDING_FLOW_TRANSFERS)
