@@ -1,4 +1,4 @@
-import type { IFlow, IFlowTransfer } from '@plumber/types'
+import type { IFlow } from '@plumber/types'
 
 import { useCallback, useMemo } from 'react'
 import { BiPlus } from 'react-icons/bi'
@@ -10,17 +10,16 @@ import debounce from 'lodash/debounce'
 
 import ConditionalIconButton from '@/components/ConditionalIconButton'
 import Container from '@/components/Container'
-import EmptyFlowsTemplate from '@/components/EmptyFlows'
 import FlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import SearchInput from '@/components/SearchInput'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
-import { GET_PENDING_FLOW_TRANSFERS } from '@/graphql/queries/get-pending-flow-transfers'
 
 import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
 import CreateFlowModal from './components/CreateFlowModal'
+import EmptyFlows from './components/EmptyFlows'
 
 const FLOW_PER_PAGE = 10
 const FLOWS_TITLE = 'Pipes'
@@ -42,13 +41,6 @@ export default function Flows(): React.ReactElement {
 
   // modal for creation of flows
   const { isOpen, onOpen, onClose } = useDisclosure()
-
-  // for flow transfers
-  const { data: flowTransfersData, loading: flowTransfersLoading } = useQuery(
-    GET_PENDING_FLOW_TRANSFERS,
-  )
-  const flowTransfers: IFlowTransfer[] =
-    flowTransfersData?.getPendingFlowTransfers
 
   // format search params for empty string input and first page
   const formatSearchParams = useCallback(
@@ -101,68 +93,58 @@ export default function Flows(): React.ReactElement {
 
   const { pageInfo, edges } = data?.getFlows || {}
   const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
-  const hasFlows = flows?.length
+  const hasFlows = flows?.length > 0
+  const isSearching = flowName !== '' || page !== 1
 
-  // TODO (mal): think of a way to make this less complicated
-  if (!loading && !hasFlows && flowName === '' && page === 1) {
-    return (
-      <EmptyFlowsTemplate
-        count={flowTransfersLoading ? 0 : flowTransfers.length}
-      />
-    )
-  }
+  const isEmptyState = !hasFlows && !isSearching
+  const isEmptySearchResults = !loading && !hasFlows && isSearching
+  const hasPagination = pageInfo && pageInfo.totalCount > FLOW_PER_PAGE
 
   return (
     <>
       <Container py={9}>
-        <Grid
-          templateAreas={{
-            base: `
+        {!isEmptyState && (
+          <Grid
+            templateAreas={{
+              base: `
               "title button"
               "search search"
             `,
-            md: `"title search button"`,
-          }}
-          gridTemplateColumns={{ base: '1fr auto', md: '2fr 1fr auto' }}
-          columnGap={3}
-          rowGap={5}
-          alignItems="center"
-          pl={{ base: '0', md: '2rem' }}
-          mb={6}
-        >
-          <GridItem area="title">
-            <PageTitle title={FLOWS_TITLE} />
-          </GridItem>
+              md: `"title search button"`,
+            }}
+            gridTemplateColumns={{ base: '1fr auto', md: '2fr 1fr auto' }}
+            columnGap={3}
+            rowGap={5}
+            alignItems="center"
+            pl={{ base: '0', md: '2rem' }}
+            mb={6}
+          >
+            <GridItem area="title">
+              <PageTitle title={FLOWS_TITLE} />
+            </GridItem>
 
-          <GridItem area="search">
-            <SearchInput
-              searchValue={flowName}
-              onChange={onSearchInputChange}
-            />
-          </GridItem>
+            <GridItem area="search">
+              <SearchInput
+                searchValue={flowName}
+                onChange={onSearchInputChange}
+              />
+            </GridItem>
 
-          <GridItem area="button">
-            <ConditionalIconButton
-              type="submit"
-              size="lg"
-              icon={<BiPlus />}
-              data-test="create-flow-button"
-              onClick={onOpen}
-            >
-              Create Pipe
-            </ConditionalIconButton>
-          </GridItem>
-        </Grid>
-
-        {flowTransfersLoading ? (
-          <Center>
-            <PrimarySpinner fontSize="4xl" />
-          </Center>
-        ) : flowTransfers.length === 0 ? (
-          <></>
-        ) : (
-          <ApproveTransfersInfobox count={flowTransfers.length} />
+            <GridItem area="button">
+              <ConditionalIconButton
+                type="submit"
+                size="lg"
+                icon={<BiPlus />}
+                data-test="create-flow-button"
+                onClick={onOpen}
+              >
+                Create Pipe
+              </ConditionalIconButton>
+            </GridItem>
+          </Grid>
         )}
+
+        <ApproveTransfersInfobox />
 
         {loading && (
           <Center mt={8}>
@@ -170,17 +152,19 @@ export default function Flows(): React.ReactElement {
           </Center>
         )}
 
+        {!loading && isEmptyState && <EmptyFlows onCreate={onOpen} />}
+
         {!loading &&
           flows?.map((flow) => <FlowRow key={flow.id} flow={flow} />)}
 
-        {!loading && !hasFlows && (
+        {isEmptySearchResults && (
           <NoResultFound
             description="We couldn't find anything"
             action="Try using different keywords or checking for typos."
           />
         )}
 
-        {!loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE && (
+        {hasPagination && (
           <Flex justifyContent="center" mt={6}>
             <Pagination
               currentPage={pageInfo?.currentPage}

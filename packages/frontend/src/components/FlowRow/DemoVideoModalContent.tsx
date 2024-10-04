@@ -1,6 +1,6 @@
 interface DemoVideoModalContentProps {
-  src: string
-  title: string
+  src?: string
+  title?: string
 }
 
 export default function DemoVideoModalContent(

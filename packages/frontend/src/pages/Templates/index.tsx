@@ -1,48 +1,82 @@
-import { Center, Flex, Hide, Image, Text } from '@chakra-ui/react'
-import { Badge, Link } from '@opengovsg/design-system-react'
+import { ITemplate } from '@plumber/types'
 
-import templatesPreviewImg from '@/assets/templates-preview.svg'
+import { useParams } from 'react-router-dom'
+import { useQuery } from '@apollo/client'
+import { Center, Flex, Grid, Text } from '@chakra-ui/react'
+import { Link } from '@opengovsg/design-system-react'
+
 import Container from '@/components/Container'
-import NavigationDrawer from '@/components/Layout/NavigationDrawer'
+import PageTitle from '@/components/PageTitle'
+import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
+import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
+
+import TemplateModal from '../Template'
+
+import TemplateTile from './components/TemplateTile'
+
+const TEMPLATES_TITLE = 'Templates'
 
 export default function Templates(): JSX.Element {
+  const { data, loading } = useQuery(GET_TEMPLATES)
+
+  const templates: ITemplate[] = data?.getTemplates
+  const { templateId } = useParams()
+  const template = templates?.find((template) => template.id === templateId)
   return (
-    <Container w={{ base: '90%', md: '60%', lg: '50%' }}>
-      <Hide above="sm">
-        <NavigationDrawer />
-      </Hide>
-      <Center mt={{ base: '1rem', sm: '3rem' }}>
-        <Image src={templatesPreviewImg} alt="template-preview" />
-      </Center>
-      <Flex
-        flexDir="column"
-        justifyContent="center"
-        rowGap={4}
-        alignItems="center"
+    <>
+      <Container
+        py={9}
+        pl={{ base: '2rem', xl: '3.5rem' }}
+        pr={{ base: '2rem', xl: '8.5rem' }}
       >
-        <Badge bgColor="interaction.muted.main.active" color="primary.500">
-          Coming soon!
-        </Badge>
-        <Text textStyle="h3-semibold" textAlign="center">
-          Templates are pre-built pipes that you can use as is or customise
-          further
-        </Text>
+        <Flex flexDir="column" mb={8} rowGap={2}>
+          <PageTitle title={TEMPLATES_TITLE} />
+          <Text textStyle="body-1">
+            Pre-built pipes that you can use as is or customise further for your
+            own use case
+          </Text>
+        </Flex>
+
+        {loading ? (
+          <Center mb={8}>
+            <PrimarySpinner fontSize="4xl" />
+          </Center>
+        ) : (
+          <Grid
+            gridTemplateColumns={{
+              base: '1fr',
+              md: '1fr 1fr',
+              lg: '1fr 1fr 1fr',
+            }}
+            columnGap={10}
+            rowGap={6}
+            mb={8}
+          >
+            {templates?.map((template, index) => (
+              <TemplateTile key={index} template={template} />
+            ))}
+          </Grid>
+        )}
+
         <Flex
-          flexDir={{ base: 'column', sm: 'row' }}
+          flexDir={{ base: 'column', md: 'row' }}
           justifyContent="center"
           alignItems="center"
+          textStyle="body-2"
         >
-          <Text whiteSpace="pre-wrap">{`Need a template? `}</Text>
+          <Text whiteSpace="pre-wrap">{`Can’t find what you’re looking for? `}</Text>
           <Link
             href={URLS.TEMPLATES_FORM_LINK}
             isExternal
-            color="interaction.links.neutral-default"
+            textDecoration="none"
           >
-            Let us know
+            Request a template
           </Link>
         </Flex>
-      </Flex>
-    </Container>
+      </Container>
+
+      {template && <TemplateModal template={template} />}
+    </>
   )
 }

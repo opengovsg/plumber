@@ -21,6 +21,7 @@ import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { ExecutionStep } from '@/graphql/__generated__/graphql'
 import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
 import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
   extractVariables,
@@ -89,7 +90,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     {
       context: { autoSnackbar: false },
       awaitRefetchQueries: true,
-      refetchQueries: [GET_TEST_EXECUTION_STEPS],
+      refetchQueries: [GET_TEST_EXECUTION_STEPS, GET_FLOW],
       update(cache, { data }) {
         // If last execution step is successful, it means the test run is successful
         // Update the step status to completed without refreshing

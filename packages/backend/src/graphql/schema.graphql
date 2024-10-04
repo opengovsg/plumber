@@ -15,8 +15,12 @@ type Query {
     connectionId: String
     name: String
   ): FlowConnection
-  getStepWithTestExecutions(stepId: String!): [Step] @deprecated(reason: "Use getTestExecution instead")
-  getTestExecutionSteps(flowId: String!, ignoreTestExecutionId: Boolean): [ExecutionStep]
+  getStepWithTestExecutions(stepId: String!): [Step]
+    @deprecated(reason: "Use getTestExecution instead")
+  getTestExecutionSteps(
+    flowId: String!
+    ignoreTestExecutionId: Boolean
+  ): [ExecutionStep]
   getExecution(executionId: String!): Execution
   getExecutions(
     limit: Int!
@@ -47,6 +51,8 @@ type Query {
   getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
   # Admin queries
   admin: AdminQuery!
+  # Templates (including demo templates)
+  getTemplates(tag: TemplateTagType): [Template!]!
 }
 
 type AdminQuery {
@@ -339,6 +345,7 @@ type Flow {
   config: FlowConfig
   userId: String
   pendingTransfer: FlowTransfer
+  template: Template
 }
 
 # Rate limiting config is omitted here e.g. maxQps
@@ -346,6 +353,7 @@ type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
   demoConfig: FlowDemoConfig
+  templateConfig: FlowTemplateConfig
 }
 
 type FlowErrorConfig {
@@ -354,8 +362,13 @@ type FlowErrorConfig {
 
 type FlowDemoConfig {
   hasLoadedOnce: Boolean!
-  isAutoCreated: Boolean!
   videoId: String!
+}
+
+type FlowTemplateConfig {
+  templateId: String!
+  formId: String
+  tileId: String
 }
 
 type Execution {
@@ -408,10 +421,7 @@ input CreateFlowInput {
 }
 
 input CreateTemplatedFlowInput {
-  flowName: String!
-  trigger: AppEventKeyPair!
-  actions: [AppEventKeyPair!]!
-  demoVideoId: String!
+  templateId: String!
 }
 
 input UpdateFlowInput {
@@ -541,11 +551,15 @@ type Step {
   position: Int
   status: String
   executionSteps: [ExecutionStep]
+  config: StepConfig
 }
 
-input AppEventKeyPair {
-  appKey: String!
-  eventKey: String!
+type StepConfig {
+  templateConfig: StepTemplateConfig
+}
+
+type StepTemplateConfig {
+  appEventKey: String
 }
 
 input StepConnectionInput {
@@ -838,6 +852,34 @@ input UpdateFlowTransferStatusInput {
 }
 
 # End of flow transfers types
+
+# Start of template types
+
+type Template {
+  id: String!
+  name: String!
+  description: String!
+  steps: [TemplateStep!]!
+  iconName: String # demo templates have no icon
+  tags: [TemplateTagType!]
+  demoVideoDetails: DemoVideoDetails
+}
+
+type TemplateStep {
+  position: Int! # primary key, no need id for now
+  appKey: String
+  eventKey: String
+  sampleUrl: String # specific to template e.g. form or tile link
+  sampleUrlDescription: String # differs for each step e.g. view a sample form
+  parameters: JSONObject
+}
+
+enum TemplateTagType {
+  demo
+  empty # for empty flows state
+}
+
+# End of template types
 
 schema {
   query: Query

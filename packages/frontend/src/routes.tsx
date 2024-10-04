@@ -138,6 +138,15 @@ export default createRoutesFromElements(
     />
 
     <Route
+      path={URLS.TEMPLATE_PATTERN}
+      element={
+        <Layout>
+          <Templates />
+        </Layout>
+      }
+    />
+
+    <Route
       path={URLS.LOGIN}
       element={
         <PublicLayout>

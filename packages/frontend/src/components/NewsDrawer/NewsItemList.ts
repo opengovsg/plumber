@@ -1,5 +1,7 @@
 import dedent from 'dedent'
 
+import * as URLS from '@/config/urls'
+
 import IfThenAnimation from './assets/If-ThenGraphic.json'
 import { NewsItemProps } from './NewsItem'
 import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
@@ -8,6 +10,15 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
+  {
+    date: '2024-10-04',
+    tag: NEW_FEATURE_TAG,
+    title: 'Save time building workflows with Templates!',
+    details: `Each template comes with pre-selected steps and content set up for you. Use them as starting points or to get inspired by what others are creating. We are continuously working on adding more relevant templates to speed up workflow building. If you need a template, put in a request [here](${URLS.TEMPLATES_FORM_LINK})!`,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-templates-whats-new.png',
+    },
+  },
   {
     date: '2024-09-06',
     tag: NEW_ENHANCEMENT_TAG,
