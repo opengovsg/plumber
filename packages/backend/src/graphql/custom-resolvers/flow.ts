@@ -5,7 +5,7 @@ import type { Resolvers } from '../__generated__/types.generated'
 type FlowResolver = Resolvers['Flow']
 
 const template: FlowResolver['template'] = async (parent) => {
-  const templateId = parent?.config?.templateConfig.templateId
+  const templateId = parent?.config?.templateConfig?.templateId
   if (!templateId) {
     return null
   }
