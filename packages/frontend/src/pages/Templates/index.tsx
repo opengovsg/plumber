@@ -8,11 +8,12 @@ import { Link } from '@opengovsg/design-system-react'
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
-import TemplateTile from '@/components/TemplateTile'
 import * as URLS from '@/config/urls'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 
 import TemplateModal from '../Template'
+
+import TemplateTile from './components/TemplateTile'
 
 const TEMPLATES_TITLE = 'Templates'
 
