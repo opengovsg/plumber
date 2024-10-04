@@ -1,4 +1,4 @@
-import type { IFlow, IFlowTransfer } from '@plumber/types'
+import type { IFlow } from '@plumber/types'
 
 import { useCallback, useMemo } from 'react'
 import { BiPlus } from 'react-icons/bi'
@@ -17,7 +17,6 @@ import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import SearchInput from '@/components/SearchInput'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
-import { GET_PENDING_FLOW_TRANSFERS } from '@/graphql/queries/get-pending-flow-transfers'
 
 import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
 import CreateFlowModal from './components/CreateFlowModal'
@@ -42,13 +41,6 @@ export default function Flows(): React.ReactElement {
 
   // modal for creation of flows
   const { isOpen, onOpen, onClose } = useDisclosure()
-
-  // for flow transfers
-  const { data: flowTransfersData, loading: flowTransfersLoading } = useQuery(
-    GET_PENDING_FLOW_TRANSFERS,
-  )
-  const flowTransfers: IFlowTransfer[] =
-    flowTransfersData?.getPendingFlowTransfers
 
   // format search params for empty string input and first page
   const formatSearchParams = useCallback(
@@ -105,11 +97,7 @@ export default function Flows(): React.ReactElement {
 
   // TODO (mal): think of a way to make this less complicated
   if (!loading && !hasFlows && flowName === '' && page === 1) {
-    return (
-      <EmptyFlowsTemplate
-        count={flowTransfersLoading ? 0 : flowTransfers.length}
-      />
-    )
+    return <EmptyFlowsTemplate />
   }
 
   return (
@@ -154,15 +142,7 @@ export default function Flows(): React.ReactElement {
           </GridItem>
         </Grid>
 
-        {flowTransfersLoading ? (
-          <Center>
-            <PrimarySpinner fontSize="4xl" />
-          </Center>
-        ) : flowTransfers.length === 0 ? (
-          <></>
-        ) : (
-          <ApproveTransfersInfobox count={flowTransfers.length} />
-        )}
+        <ApproveTransfersInfobox />
 
         {loading && (
           <Center mt={8}>

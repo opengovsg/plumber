@@ -22,13 +22,7 @@ import CreateFlowModal from '@/pages/Flows/components/CreateFlowModal'
 import PrimarySpinner from '../PrimarySpinner'
 import TemplateTile from '../TemplateTile'
 
-interface EmptyFlowsProps {
-  count?: number
-}
-
-export default function EmptyFlows(props: EmptyFlowsProps) {
-  const { count } = props
-
+export default function EmptyFlows() {
   const { data, loading } = useQuery(GET_TEMPLATES, {
     variables: {
       tag: 'empty',
@@ -46,11 +40,7 @@ export default function EmptyFlows(props: EmptyFlowsProps) {
   return (
     <>
       <Box px="10vw" py="10vh">
-        {count === undefined || count === 0 ? (
-          <></>
-        ) : (
-          <ApproveTransfersInfobox count={count} />
-        )}
+        <ApproveTransfersInfobox />
 
         <Flex>
           <Hide above="sm">
