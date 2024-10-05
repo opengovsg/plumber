@@ -34,8 +34,8 @@ export const requestSchema = z
     payerIdentifier: z
       .string()
       .trim()
-      .max(10, {
-        message: 'Payer identifier cannot be more than 10 characters',
+      .max(20, {
+        message: 'Payer identifier cannot be more than 20 characters',
       })
       .transform((value) => {
         if (!value || value.length === 0) {
