@@ -147,13 +147,14 @@ export default function Executions(): ReactElement {
         title={EXECUTIONS_TITLE}
         searchComponent={
           !hasNoUserExecutions && (
-            <InputGroup maxW="25rem">
+            <InputGroup>
               <InputLeftElement>
                 <Icon as={BiSearch} boxSize={5} />
               </InputLeftElement>
               <Input
                 textStyle="body-1"
-                w="21rem"
+                minW="21rem"
+                w="full"
                 pr={inputPadding}
                 placeholder="Search by pipe name"
                 defaultValue={input}

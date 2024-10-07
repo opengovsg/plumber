@@ -47,19 +47,19 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
             templateAreas={{
               base: `
                 "apps arrow-container"
-                "title arrow-container"
+                "title title"
               `,
-              sm: `"apps title arrow-container"`,
+              md: `"apps title arrow-container"`,
             }}
-            gridTemplateRows={{ base: 'auto auto', sm: 'auto' }}
+            gridTemplateRows={{ base: 'auto auto', md: 'auto' }}
             gridTemplateColumns={{
               base: 'minmax(0, auto) min-content',
-              sm: 'calc(30px * 3 + 8px * 2) minmax(0, auto) min-content',
+              md: 'calc(30px * 3 + 8px * 2) minmax(0, auto) min-content',
             }}
             gap={6}
             alignItems="center"
             py={6}
-            px={8}
+            px={{ base: 3, md: 8 }}
           >
             <GridItem area="apps">
               <HStack>
@@ -95,7 +95,7 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
               </VStack>
             </GridItem>
             <GridItem area="arrow-container">
-              <Flex alignItems="center" gap={4}>
+              <Flex alignItems="center" gap={4} justifyContent="flex-end">
                 <Badge
                   py={1}
                   px={2}
