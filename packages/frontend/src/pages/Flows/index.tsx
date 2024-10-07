@@ -20,15 +20,59 @@ import EmptyFlows from './components/EmptyFlows'
 const FLOW_PER_PAGE = 10
 const FLOWS_TITLE = 'Pipes'
 
+interface FlowsInternalProps {
+  isLoading: boolean
+  isSearching: boolean
+  flows: IFlow[]
+  onCreateModalOpen: () => void
+}
+
 const getLimitAndOffset = (page: number) => ({
   limit: FLOW_PER_PAGE,
   offset: (page - 1) * FLOW_PER_PAGE,
 })
 
-export default function Flows(): React.ReactElement {
-  const { input, page, setSearchParams } = usePaginationAndFilter()
+function FlowsList({
+  isLoading,
+  isSearching,
+  flows,
+  onCreateModalOpen,
+}: FlowsInternalProps) {
+  const hasFlows = flows.length > 0
+  const hasNoUserFlows = !hasFlows && !isSearching
+  const isEmptySearchResults = !hasFlows && isSearching
 
-  // modal for creation of flows
+  if (isLoading) {
+    return (
+      <Center mt={8}>
+        <PrimarySpinner fontSize="4xl" />
+      </Center>
+    )
+  }
+
+  if (hasNoUserFlows) {
+    return <EmptyFlows onCreate={onCreateModalOpen} />
+  }
+
+  if (isEmptySearchResults) {
+    return (
+      <NoResultFound
+        description="We couldn't find anything"
+        action="Try using different keywords or checking for typos."
+      />
+    )
+  }
+  return (
+    <Box>
+      {flows.map((flow) => (
+        <FlowRow key={flow.id} flow={flow} />
+      ))}
+    </Box>
+  )
+}
+
+export default function Flows(): React.ReactElement {
+  const { input, page, setSearchParams, isSearching } = usePaginationAndFilter()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const { data, loading } = useQuery(GET_FLOWS, {
@@ -39,17 +83,14 @@ export default function Flows(): React.ReactElement {
   })
 
   const { pageInfo, edges } = data?.getFlows || {}
-  const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
-  const hasFlows = flows?.length > 0
-  const isSearching = input !== '' || page !== 1
-
-  const isEmptyState = !hasFlows && !isSearching
-  const isEmptySearchResults = !loading && !hasFlows && isSearching
-  const hasPagination = pageInfo && pageInfo.totalCount > FLOW_PER_PAGE
+  const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node) ?? []
+  const hasPagination =
+    !loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE
+  const hasNoUserFlows = flows.length === 0 && !isSearching
 
   return (
-    <>
-      <Container py={9} overflowY={'hidden'}>
+    <Container py={9} overflowY={'hidden'}>
+      {!hasNoUserFlows && (
         <PageTitle
           title={FLOWS_TITLE}
           searchComponent={
@@ -64,45 +105,28 @@ export default function Flows(): React.ReactElement {
             </Button>
           }
         />
+      )}
 
-        <ApproveTransfersInfobox />
+      <ApproveTransfersInfobox />
 
-        {loading && (
-          <Center mt={8}>
-            <PrimarySpinner fontSize="4xl" />
-          </Center>
-        )}
+      <FlowsList
+        flows={flows}
+        isLoading={loading}
+        isSearching={isSearching}
+        onCreateModalOpen={onOpen}
+      />
 
-        {!loading && isEmptyState && <EmptyFlows onCreate={onOpen} />}
-
-        {!loading && (
-          <Box>
-            {flows?.map((flow) => (
-              <FlowRow key={flow.id} flow={flow} />
-            ))}
-          </Box>
-        )}
-
-        {isEmptySearchResults && (
-          <NoResultFound
-            description="We couldn't find anything"
-            action="Try using different keywords or checking for typos."
+      {hasPagination && (
+        <Flex justifyContent="center" mt={6}>
+          <Pagination
+            currentPage={pageInfo?.currentPage}
+            onPageChange={(page) => setSearchParams({ page })}
+            pageSize={FLOW_PER_PAGE}
+            totalCount={pageInfo?.totalCount}
           />
-        )}
-
-        {hasPagination && (
-          <Flex justifyContent="center" mt={6}>
-            <Pagination
-              currentPage={pageInfo?.currentPage}
-              onPageChange={(page) => setSearchParams({ page })}
-              pageSize={FLOW_PER_PAGE}
-              totalCount={pageInfo?.totalCount}
-            />
-          </Flex>
-        )}
-      </Container>
-
+        </Flex>
+      )}
       {isOpen && <CreateFlowModal onClose={onClose} />}
-    </>
+    </Container>
   )
 }

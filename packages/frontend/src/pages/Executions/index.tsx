@@ -11,7 +11,7 @@ import {
 import { BiSearch } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
 import {
-  CircularProgress,
+  Center,
   Divider,
   Flex,
   Icon,
@@ -30,6 +30,7 @@ import ExecutionStatusMenu, {
 } from '@/components/ExecutionStatusMenu'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
+import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_EXECUTIONS } from '@/graphql/queries/get-executions'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
@@ -42,6 +43,12 @@ interface ExecutionParameters {
   input: string
 }
 
+interface ExecutionsListProps {
+  executions: IExecution[]
+  isSearching: boolean
+  isLoading: boolean
+}
+
 const getLimitAndOffset = (params: ExecutionParameters) => ({
   limit: EXECUTION_PER_PAGE,
   offset: (params.page - 1) * EXECUTION_PER_PAGE,
@@ -49,8 +56,48 @@ const getLimitAndOffset = (params: ExecutionParameters) => ({
   searchInput: params.input,
 })
 
+function ExecutionsList({
+  executions,
+  isLoading,
+  isSearching,
+}: ExecutionsListProps) {
+  const hasExecutions = executions.length > 0
+
+  if (isLoading) {
+    return (
+      <Center mt={8}>
+        <PrimarySpinner fontSize="4xl" />
+      </Center>
+    )
+  }
+
+  if (!hasExecutions) {
+    return (
+      <NoResultFound
+        description={
+          isSearching ? "We couldn't find anything" : 'No executions yet'
+        }
+        action={
+          isSearching
+            ? 'Try using different keywords or checking for typos.'
+            : 'Executions will appear here when your pipe has started running.'
+        }
+      />
+    )
+  }
+
+  return (
+    <>
+      {executions.map((execution) => (
+        <ExecutionRow key={execution.id} execution={execution} />
+      ))}
+    </>
+  )
+}
+
 export default function Executions(): ReactElement {
-  const { input, page, status, setSearchParams } = usePaginationAndFilter()
+  const { input, page, status, setSearchParams, isSearching } =
+    usePaginationAndFilter()
 
   const filterRef = useRef<HTMLDivElement>(null)
   const [inputPadding, setInputPadding] = useState<number>(0)
@@ -76,10 +123,8 @@ export default function Executions(): ReactElement {
   const getExecutions = data?.getExecutions || {}
   const { pageInfo, edges } = getExecutions
 
-  const executions: IExecution[] = edges?.map(
-    ({ node }: { node: IExecution }) => node,
-  )
-  const hasExecutions = executions?.length
+  const executions: IExecution[] =
+    edges?.map(({ node }: { node: IExecution }) => node) ?? []
 
   const handleSearchInputChangeDebounced = useMemo(
     () => debounce((newInput) => setSearchParams({ input: newInput }), 500),
@@ -93,66 +138,50 @@ export default function Executions(): ReactElement {
     [handleSearchInputChangeDebounced],
   )
 
+  const hasNoUserExecutions = executions.length === 0 && !isSearching
+  const hasPagination = !loading && pageInfo?.totalCount > EXECUTION_PER_PAGE
+
   return (
     <Container py={9}>
       <PageTitle
         title={EXECUTIONS_TITLE}
         searchComponent={
-          <InputGroup maxW="25rem">
-            <InputLeftElement>
-              <Icon as={BiSearch} boxSize={5} />
-            </InputLeftElement>
-            <Input
-              textStyle="body-1"
-              pr={inputPadding}
-              placeholder="Search by pipe name"
-              defaultValue={input}
-              onChange={onSearchInputChange}
-            ></Input>
-            <InputRightElement w="fit-content" p={1} ref={filterRef}>
-              <Divider
-                borderColor="base.divider.medium"
-                h={5}
-                mr={1}
-                orientation="vertical"
-              />
-              <ExecutionStatusMenu
-                filterStatus={status}
-                onFilterChange={(status) => setSearchParams({ status })}
-              ></ExecutionStatusMenu>
-            </InputRightElement>
-          </InputGroup>
+          !hasNoUserExecutions && (
+            <InputGroup maxW="25rem">
+              <InputLeftElement>
+                <Icon as={BiSearch} boxSize={5} />
+              </InputLeftElement>
+              <Input
+                textStyle="body-1"
+                pr={inputPadding}
+                placeholder="Search by pipe name"
+                defaultValue={input}
+                onChange={onSearchInputChange}
+              ></Input>
+              <InputRightElement w="fit-content" p={1} ref={filterRef}>
+                <Divider
+                  borderColor="base.divider.medium"
+                  h={5}
+                  mr={1}
+                  orientation="vertical"
+                />
+                <ExecutionStatusMenu
+                  filterStatus={status}
+                  onFilterChange={(status) => setSearchParams({ status })}
+                ></ExecutionStatusMenu>
+              </InputRightElement>
+            </InputGroup>
+          )
         }
       />
-      {loading && (
-        <CircularProgress
-          isIndeterminate
-          color="primary.500"
-          display="flex"
-          justifyContent="center"
-          my={5}
-        />
-      )}
 
-      {!loading && !hasExecutions && (
-        <NoResultFound
-          description={
-            input === '' ? 'No executions yet' : "We couldn't find anything"
-          }
-          action={
-            input === ''
-              ? 'Executions will appear here when your pipe has started running.'
-              : 'Try using different keywords or checking for typos.'
-          }
-        />
-      )}
+      <ExecutionsList
+        executions={executions}
+        isLoading={loading}
+        isSearching={isSearching}
+      />
 
-      {!loading &&
-        executions?.map((execution) => (
-          <ExecutionRow key={execution.id} execution={execution} />
-        ))}
-
-      {!loading && pageInfo && pageInfo.totalCount > EXECUTION_PER_PAGE && (
+      {hasPagination && (
         <Flex justifyContent="center" mt={6}>
           <Pagination
             currentPage={pageInfo?.currentPage}
