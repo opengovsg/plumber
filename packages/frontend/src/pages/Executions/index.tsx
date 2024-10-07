@@ -153,6 +153,7 @@ export default function Executions(): ReactElement {
               </InputLeftElement>
               <Input
                 textStyle="body-1"
+                w="21rem"
                 pr={inputPadding}
                 placeholder="Search by pipe name"
                 defaultValue={input}
