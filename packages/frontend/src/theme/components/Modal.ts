@@ -14,6 +14,9 @@ const baseStyle = definePartsStyle({
     fontSize: 'lg',
     fontWeight: 'bold',
   },
+  dialog: {
+    margin: 'auto',
+  },
 })
 
 export const Modal = defineMultiStyleConfig({

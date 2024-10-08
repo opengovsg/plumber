@@ -28,6 +28,7 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
 
     if (graphQLErrors) {
       graphQLErrors.forEach(({ message, locations, path }) => {
+        console.log('message', message)
         if (autoSnackbar) {
           callback?.(message)
         }
@@ -45,9 +46,7 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
           window.location.href = URLS.UNAUTHORIZED_TILE
         }
       })
-    }
-
-    if (networkError) {
+    } else if (networkError) {
       if (autoSnackbar) {
         callback?.(networkError.toString())
       }

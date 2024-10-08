@@ -19,6 +19,7 @@ import {
   IconButton,
   Input,
   Menu,
+  Tag,
   useToast,
 } from '@opengovsg/design-system-react'
 
@@ -27,6 +28,8 @@ import { DELETE_TABLE_COLLABORATOR } from '@/graphql/mutations/tiles/delete-tabl
 import { UPSERT_TABLE_COLLABORATOR } from '@/graphql/mutations/tiles/upsert-table-collaborator'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 import { useTableContext } from '@/pages/Tile/contexts/TableContext'
+
+import { useShareModalContext } from './ShareModalContext'
 
 const TableCollabRoleSelect = ({
   value,
@@ -39,6 +42,8 @@ const TableCollabRoleSelect = ({
   isEditable: boolean
   variant?: ButtonProps['variant']
 }) => {
+  const { role } = useTableContext()
+
   return (
     <Menu gutter={0}>
       <MenuButton
@@ -54,7 +59,10 @@ const TableCollabRoleSelect = ({
       >
         {value}
       </MenuButton>
-      <MenuList w={32}>
+      <MenuList w={32} pointerEvents={isEditable ? 'auto' : 'none'}>
+        {role === 'owner' && (
+          <MenuItem onClick={() => onChange('owner')}>Owner</MenuItem>
+        )}
         <MenuItem onClick={() => onChange('editor')}>Editor</MenuItem>
         <MenuItem onClick={() => onChange('viewer')}>Viewer</MenuItem>
       </MenuList>
@@ -107,8 +115,13 @@ const AddNewCollaborator = ({
               isEditable={true}
             />
           </Flex>
-          <Button variant="outline" type="submit" isLoading={isAdding}>
-            Add collaborator
+          <Button
+            variant={role === 'owner' ? 'solid' : 'outline'}
+            colorScheme="red"
+            type="submit"
+            isLoading={isAdding}
+          >
+            {role === 'owner' ? 'Transfer ownership' : 'Add collaborator'}
           </Button>
         </VStack>
       </FormControl>
@@ -120,35 +133,45 @@ const CollaboratorListRow = ({
   collaborator,
   onRoleChange,
   onDelete,
-  isEditable,
 }: {
   collaborator: ITableCollaborator
   onRoleChange: (role: ITableCollabRole) => void
   onDelete: () => void
-  isEditable: boolean
 }) => {
   const { currentUser } = useContext(AuthenticationContext)
+  const { hasEditPermission } = useTableContext()
+
   const [isDeleting, setIsDeleting] = useState(false)
-  const isOwnerOrSelf =
-    collaborator.role === 'owner' || collaborator.email === currentUser?.email
+  const isOwner = collaborator.role === 'owner'
+  const isSelf = collaborator.email === currentUser?.email
 
   const onDeleteHandler = useCallback(async () => {
     setIsDeleting(true)
-    await onDelete()
-    setIsDeleting(false)
+    try {
+      await onDelete()
+    } finally {
+      setIsDeleting(false)
+    }
   }, [onDelete])
 
   return (
     <Flex alignItems="center" w="100%" py={1} px={4}>
-      <Text flex={1}>{collaborator.email}</Text>
+      <Text flex={1}>
+        {collaborator.email}{' '}
+        {isSelf && (
+          <Tag colorScheme="secondary" size="sm" ml={2} pointerEvents="none">
+            You
+          </Tag>
+        )}
+      </Text>
       <Flex w={44}>
         <TableCollabRoleSelect
           value={collaborator.role}
           onChange={onRoleChange}
           variant="clear"
-          isEditable={!isOwnerOrSelf && isEditable}
+          isEditable={!isOwner && !isSelf && hasEditPermission}
         />
-        {!isOwnerOrSelf && isEditable && (
+        {!isOwner && !isSelf && hasEditPermission && (
           <IconButton
             colorScheme="critical"
             onClick={onDeleteHandler}
@@ -165,6 +188,7 @@ const CollaboratorListRow = ({
 
 const TableCollaborators = () => {
   const { collaborators, tableId, hasEditPermission } = useTableContext()
+  const { setEmailToTransfer } = useShareModalContext()
   const toast = useToast({
     status: 'success',
     duration: 3000,
@@ -196,6 +220,10 @@ const TableCollaborators = () => {
 
   const upsertCollaboratorHandler = useCallback(
     async (email: string, role: string, update?: boolean) => {
+      if (role === 'owner') {
+        setEmailToTransfer(email)
+        return
+      }
       await upsertCollaborator({
         variables: {
           input: {
@@ -217,7 +245,7 @@ const TableCollaborators = () => {
           }),
       })
     },
-    [tableId, toast, upsertCollaborator],
+    [setEmailToTransfer, tableId, toast, upsertCollaborator],
   )
 
   if (!collaborators) {
@@ -235,11 +263,10 @@ const TableCollaborators = () => {
           <CollaboratorListRow
             key={collab.email}
             collaborator={collab}
-            onRoleChange={(role) =>
-              upsertCollaboratorHandler(collab.email, role, true)
+            onRoleChange={(newRole) =>
+              upsertCollaboratorHandler(collab.email, newRole, true)
             }
             onDelete={() => deleteCollaboratorHandler(collab.email)}
-            isEditable={hasEditPermission}
           />
         ))}
       </VStack>
