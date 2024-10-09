@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
+import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
 import sendTransactionalEmail from '../../actions/send-transactional-email'
@@ -316,6 +317,7 @@ describe('send transactional email', () => {
           },
         } as AxiosError),
       )
+
     await expect(sendTransactionalEmail.run($)).rejects.toThrowError(StepError)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
@@ -334,6 +336,57 @@ describe('send transactional email', () => {
       userEmail: $.user.email,
       executionId: $.execution.id,
       blacklistedRecipients: [recipients[1]],
+    })
+  })
+
+  it('should retry on 502, 504, 520', async () => {
+    const recipients = [
+      'recipient1@open.gov.sg',
+      'recipient2@open.gov.sg',
+      'recipient3@open.gov.sg',
+    ]
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.http.post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          params: {
+            body: 'test body',
+            subject: 'test subject',
+            from: 'jack',
+            reply_to: 'replyTo@open.gov.sg',
+          },
+        },
+      })
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: '<html>cloudflare error</html>',
+            status: 520,
+            statusText: 'Too Many Requests',
+          },
+        } as AxiosError),
+      )
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: '<html>cloudflare error</html>',
+            status: 502,
+            statusText: 'Too Many Requests',
+          },
+        } as AxiosError),
+      )
+
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'INTERMITTENT-ERROR', 'INTERMITTENT-ERROR'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
     })
   })
 
