@@ -35,7 +35,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Identifier',
-      description: 'Max 10 characters. e.g. NRIC',
+      description: 'Max 20 characters. e.g. NRIC',
       key: 'payerIdentifier',
       type: 'string' as const,
       required: false,
