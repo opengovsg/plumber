@@ -91,6 +91,12 @@ const authentication = shield(
         isAuthenticated,
         not(isAdminOperation), // Limiting admins to read-only for now.
       ),
+      /**
+       * Allow admins to retry steps and publish/unpublish pipes
+       */
+      retryPartialStep: or(isAuthenticated, isAdminOperation),
+      retryExecutionStep: or(isAuthenticated, isAdminOperation),
+      bulkRetryExecutions: or(isAuthenticated, isAdminOperation),
       updateFlowStatus: or(isAuthenticated, isAdminOperation),
       requestOtp: rateLimitRule({ window: '1s', max: 5 }),
       verifyOtp: rateLimitRule({ window: '1s', max: 5 }),
