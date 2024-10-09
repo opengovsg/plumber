@@ -1,15 +1,9 @@
-import type {
-  IGlobalVariable,
-  IJSONObject,
-  IRawAction,
-  IStep,
-} from '@plumber/types'
+import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
-import Step from '@/models/step'
 
-import toolboxApp from '../..'
 import conditionIsTrue from '../../common/condition-is-true'
+import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 import getConditionArgs from '../../common/get-condition-args'
 
 const ACTION_KEY = 'ifThen'
@@ -20,42 +14,6 @@ function shouldTakeBranch($: IGlobalVariable): boolean {
     throw new Error('No conditions found')
   }
   return conditions.every((condition) => conditionIsTrue(condition))
-}
-
-async function getBranchStepIdToSkipTo(
-  $: IGlobalVariable,
-): Promise<IStep['id']> {
-  const currDepth = parseInt($.step.parameters.depth as string)
-  if (isNaN(currDepth)) {
-    throw new Error(
-      `Branch depth for initial branch step ${$.step.id} is not defined.`,
-    )
-  }
-
-  // PERF-FIXME: Objectionjs does no caching, so this will almost always be
-  // queried multiple times by the same worker during a test run. If it does
-  // turn out to impact perf, we can LRU memoize this by executionId.
-  const flowSteps = await Step.query()
-    .where('flow_id', $.flow.id)
-    .orderBy('position', 'asc')
-    .throwIfNotFound()
-
-  const nextBranchStep = flowSteps.slice($.step.position).find((step) => {
-    if (!(step.appKey === toolboxApp.key && step.key === ACTION_KEY)) {
-      return false
-    }
-
-    const nextBranchDepth = parseInt(step.parameters.depth as string)
-    if (isNaN(nextBranchDepth)) {
-      throw new Error(
-        `Branch depth for future branch step ${$.step.id} is not defined.`,
-      )
-    }
-
-    return nextBranchDepth <= currDepth
-  })
-
-  return nextBranchStep?.['id']
 }
 
 const action: IRawAction = {

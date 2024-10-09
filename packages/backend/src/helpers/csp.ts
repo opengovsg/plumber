@@ -15,6 +15,8 @@ const helmetOptions: HelmetOptions = {
         'https://*.browser-intake-datadoghq.com',
         // Launch Darkly feature flags
         'https://*.launchdarkly.com',
+        // For proxying datadog rum
+        'https://rum-proxy.plumber.gov.sg',
         appConfig.baseUrl,
       ],
       // for google fonts

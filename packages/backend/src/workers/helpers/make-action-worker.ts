@@ -117,6 +117,7 @@ export function makeActionWorker(
           jobId,
           jobEnqueueTime: job.timestamp,
           jobDelay: job.opts?.delay ?? 0,
+          attempts: job.attemptsStarted,
           timeInJobQueue: Date.now() - job.timestamp - (job.opts?.delay ?? 0),
           workerVersion: appConfig.version,
         })
@@ -227,12 +228,15 @@ export function makeActionWorker(
       },
     )
 
-    const willRetryJob = !(
-      err instanceof UnrecoverableError ||
-      job.attemptsMade === MAXIMUM_JOB_ATTEMPTS
-    )
+    // The job will be retried if:
+    // 1. The error is not an UnrecoverableError, and
+    // 2. We haven't exceeded the maximum number of retry attempts
+    const willRetryJob =
+      !(err instanceof UnrecoverableError) && // Not an unrecoverable error
+      job.attemptsMade < MAXIMUM_JOB_ATTEMPTS // Haven't reached max attempts
+
+    // No further post-processing needed if we're retrying.
     if (willRetryJob) {
-      // No further post-processing needed if we're retrying.
       return
     }
 
