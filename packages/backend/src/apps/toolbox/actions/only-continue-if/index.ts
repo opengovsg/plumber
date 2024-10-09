@@ -1,8 +1,9 @@
-import { IRawAction } from '@plumber/types'
+import type { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
 import conditionIsTrue from '../../common/condition-is-true'
+import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 import getConditionArgs from '../../common/get-condition-args'
 
 const action: IRawAction = {
@@ -27,10 +28,17 @@ const action: IRawAction = {
       raw: { result },
     })
 
+    // only check for next branch step to jump to if result is false
     if (!result) {
-      return {
-        nextStep: { command: 'stop-execution' },
-      }
+      const nextBranchStepId = await getBranchStepIdToSkipTo($)
+      return nextBranchStepId
+        ? {
+            nextStep: {
+              command: 'jump-to-step',
+              stepId: nextBranchStepId as string,
+            },
+          }
+        : { nextStep: { command: 'stop-execution' } }
     }
   },
 }
