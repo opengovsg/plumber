@@ -47,5 +47,5 @@ export async function getBranchStepIdToSkipTo(
 
     return nextBranchDepth <= currDepth
   })
-  return nextBranchStep?.['id']
+  return nextBranchStep?.id
 }
