@@ -8,6 +8,7 @@ export const dataOutSchema = z.object(
         'BLACKLISTED',
         'RATE-LIMITED',
         'INVALID-ATTACHMENT',
+        'INTERMITTENT-ERROR',
         'ERROR',
       ]),
     ),

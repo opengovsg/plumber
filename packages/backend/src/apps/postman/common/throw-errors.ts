@@ -2,6 +2,7 @@ import { IGlobalVariable } from '@plumber/types'
 
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
+import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
 import { PostmanEmailSendStatus } from './data-out-validator'
@@ -11,6 +12,11 @@ type PostmanApiErrorData = {
   code: string
   message: string
 }
+
+// These are HTTP error codes returned by Cloudflare, which likely indicate
+// that Postman's origin server did not receive the request.
+// Until this is fixed, we will retry these requests on behalf of the user
+const POSTMAN_RETRIABLE_HTTP_CODES = [502, 504, 520]
 
 export function getPostmanErrorStatus(
   error: HttpError,
@@ -31,6 +37,9 @@ export function getPostmanErrorStatus(
     case 'rate_limit':
       return 'RATE-LIMITED'
     default:
+      if (POSTMAN_RETRIABLE_HTTP_CODES.includes(error.response?.status)) {
+        return 'INTERMITTENT-ERROR'
+      }
       // return original error if not caught
       return 'ERROR'
   }
@@ -96,6 +105,12 @@ export function throwPostmanStepError({
         appName,
         error,
       )
+    case 'INTERMITTENT-ERROR':
+      throw new RetriableError({
+        error: error.details,
+        delayInMs: 'default',
+        delayType: 'step',
+      })
     case 'ERROR':
     default:
       throw new StepError(
