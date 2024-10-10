@@ -362,7 +362,7 @@ describe('send transactional email', () => {
         new HttpError({
           response: {
             data: '<html>cloudflare error</html>',
-            status: 520,
+            status: 500,
             statusText: 'Too Many Requests',
           },
         } as AxiosError),
@@ -380,7 +380,7 @@ describe('send transactional email', () => {
     await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        status: ['ACCEPTED', 'INTERMITTENT-ERROR', 'INTERMITTENT-ERROR'],
+        status: ['ACCEPTED', 'ERROR', 'INTERMITTENT-ERROR'],
         recipient: recipients,
         subject: 'test subject',
         body: 'test body',
@@ -419,5 +419,42 @@ describe('send transactional email', () => {
       },
     })
     expect(mocks.sendBlacklistEmail).not.toHaveBeenCalled()
+  })
+
+  it('should only retry to non-accepted emails', async () => {
+    const recipients = [
+      'recipient1@open.gov.sg',
+      'recipient2@open.gov.sg',
+      'recipient3@open.gov.sg',
+      'recipient4@open.gov.sg',
+      'recipient5@open.gov.sg',
+    ]
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+      status: 'success',
+      errorDetails: 'error error',
+      dataOut: {
+        status: [
+          'BLACKLISTED',
+          'ACCEPTED',
+          'INTERMITTENT-ERROR',
+          'ERROR',
+          'RATE-LIMITED',
+        ],
+        recipient: recipients,
+      },
+    })
+    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    expect($.http.post).toBeCalledTimes(4)
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
   })
 })
