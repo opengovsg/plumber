@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -93,22 +94,6 @@ describe('update table collaborators', () => {
     expect(addedCollaborator).toHaveProperty('role', 'viewer')
   })
 
-  it('should not allow adding of owner role', async () => {
-    await expect(
-      upsertTableCollaborator(
-        null,
-        {
-          input: {
-            tableId: dummyTable.id,
-            email: 'owner2@open.gov.sg',
-            role: 'owner',
-          },
-        },
-        context,
-      ),
-    ).rejects.toThrowError('Cannot set collaborator role as owner')
-  })
-
   it('should not allow editing role of owner', async () => {
     context.currentUser = editor
     await expect(
@@ -173,6 +158,66 @@ describe('update table collaborators', () => {
         },
         context,
       ),
-    ).rejects.toThrow('You do not have access to this tile')
+    ).rejects.toThrow(ForbiddenError)
+  })
+
+  describe('transfer ownership', () => {
+    it('should not allow adding of owner role if you are not owner', async () => {
+      context.currentUser = editor
+      await expect(
+        upsertTableCollaborator(
+          null,
+          {
+            input: {
+              tableId: dummyTable.id,
+              email: 'owner2@open.gov.sg',
+              role: 'owner',
+            },
+          },
+          context,
+        ),
+      ).rejects.toThrowError(ForbiddenError)
+    })
+
+    it('should allow transfer of owner role if you are owner, old owner will become editor', async () => {
+      await expect(
+        upsertTableCollaborator(
+          null,
+          {
+            input: {
+              tableId: dummyTable.id,
+              email: editor.email,
+              role: 'owner',
+            },
+          },
+          context,
+        ),
+      ).resolves.not.toThrow()
+      const collaborators = await dummyTable
+        .$relatedQuery('collaborators')
+        .where('table_collaborators.deleted_at', null)
+      expect(
+        collaborators.find((col) => col.email === editor.email),
+      ).toHaveProperty('role', 'owner')
+      expect(
+        collaborators.find((col) => col.email === owner.email),
+      ).toHaveProperty('role', 'editor')
+    })
+
+    it('should not allow transfer of ownership to non-existent user', async () => {
+      await expect(
+        upsertTableCollaborator(
+          null,
+          {
+            input: {
+              tableId: dummyTable.id,
+              email: 'non-existent-user@open.gov.sg',
+              role: 'owner',
+            },
+          },
+          context,
+        ),
+      ).rejects.toThrowError(BadUserInputError)
+    })
   })
 })
