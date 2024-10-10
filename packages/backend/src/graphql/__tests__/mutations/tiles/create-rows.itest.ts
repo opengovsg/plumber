@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
 import createRows from '@/graphql/mutations/tiles/create-rows'
 import { getTableRows } from '@/models/dynamodb/table-row/functions'
 import TableMetadata from '@/models/table-metadata'
@@ -118,6 +119,6 @@ describe('create row mutation', () => {
         },
         context,
       ),
-    ).rejects.toThrow('You do not have access to this tile')
+    ).rejects.toThrow(ForbiddenError)
   })
 })
