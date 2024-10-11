@@ -12,7 +12,10 @@ const getFlowOwner: AdminQueryResolvers['getFlowOwner'] = async (
   const flow = await Flow.query()
     .findById(flowId)
     .withGraphJoined({ user: true })
-    .throwIfNotFound()
+
+  if (!flow) {
+    return null
+  }
 
   return flow.user
 }
