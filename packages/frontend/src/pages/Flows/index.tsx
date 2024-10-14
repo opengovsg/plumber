@@ -89,7 +89,7 @@ export default function Flows(): React.ReactElement {
   const hasNoUserFlows = flows.length === 0 && !isSearching
 
   return (
-    <Container py={9} overflowY={'hidden'}>
+    <Container py={9}>
       {!hasNoUserFlows && (
         <PageTitle
           title={FLOWS_TITLE}
