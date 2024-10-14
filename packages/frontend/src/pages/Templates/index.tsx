@@ -25,14 +25,14 @@ export default function Templates(): JSX.Element {
   const template = templates?.find((template) => template.id === templateId)
   return (
     <>
-      <Container
-        py={9}
-        pl={{ base: '2rem', xl: '3.5rem' }}
-        pr={{ base: '2rem', xl: '8.5rem' }}
-      >
+      <Container py={9}>
         <Flex flexDir="column" mb={8} rowGap={2}>
           <PageTitle title={TEMPLATES_TITLE} />
-          <Text textStyle="body-1">
+          <Text
+            textStyle="body-1"
+            pl={{ base: 2, md: 8 }}
+            mt={{ base: -10, md: -6 }}
+          >
             Pre-built pipes that you can use as is or customise further for your
             own use case
           </Text>
@@ -49,6 +49,8 @@ export default function Templates(): JSX.Element {
               md: '1fr 1fr',
               lg: '1fr 1fr 1fr',
             }}
+            pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
+            pr={{ base: '0.5rem', md: '2rem', xl: '8.5rem' }}
             columnGap={10}
             rowGap={6}
             mb={8}
