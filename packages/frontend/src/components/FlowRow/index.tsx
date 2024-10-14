@@ -53,19 +53,19 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
             templateAreas={{
               base: `
                 "apps menu"
-                "title menu"
+                "title title"
               `,
-              sm: `"apps title menu"`,
+              md: `"apps title menu"`,
             }}
-            gridTemplateRows={{ base: 'auto auto', sm: 'auto' }}
+            gridTemplateRows={{ base: 'auto auto', md: 'auto' }}
             gridTemplateColumns={{
               base: 'minmax(0, auto) min-content',
-              sm: 'calc(30px * 3 + 8px * 2) minmax(0, auto) min-content',
+              md: 'calc(30px * 3 + 8px * 2) minmax(0, auto) min-content',
             }}
             gap={6}
             alignItems="center"
             py={6}
-            px={8}
+            px={{ base: 3, md: 8 }}
           >
             <GridItem area="apps">
               <HStack>
@@ -103,7 +103,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
               </VStack>
             </GridItem>
             <GridItem area="menu">
-              <Flex alignItems="center" gap={1.5}>
+              <Flex alignItems="center" gap={1.5} justifyContent="flex-end">
                 <Badge
                   colorScheme={flow?.active ? 'success' : 'grey'}
                   variant="subtle"

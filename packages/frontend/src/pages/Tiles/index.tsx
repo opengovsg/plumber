@@ -7,7 +7,7 @@ import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
-import { PaginatedTables } from '@/graphql/__generated__/graphql'
+import { PaginatedTables, TableMetadata } from '@/graphql/__generated__/graphql'
 import { GET_TABLES } from '@/graphql/queries/tiles/get-tables'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
@@ -19,10 +19,44 @@ const TILES_TITLE = 'Tiles'
 
 const TILES_PER_PAGE = 10
 
-export default function Tiles(): JSX.Element {
-  const { input, page, setSearchParams } = usePaginationAndFilter()
+interface TilesContentProps {
+  isLoading: boolean
+  isSearching: boolean
+  tiles: TableMetadata[]
+}
 
-  const { data, loading: isTileListLoading } = useQuery<{
+function TilesContent({ isLoading, isSearching, tiles }: TilesContentProps) {
+  const hasTiles = tiles.length > 0
+
+  const hasNoUserTiles = !hasTiles && !isSearching
+  const isEmptySearchResults = !hasTiles && isSearching
+
+  if (isLoading) {
+    return (
+      // moved this here to prevent re-rendering of search field
+      <Center h="100%">
+        <PrimarySpinner fontSize="4xl" thickness="4px" margin="auto" />
+      </Center>
+    )
+  }
+  if (hasNoUserTiles) {
+    return <EmptyTileList />
+  }
+  if (isEmptySearchResults) {
+    return (
+      <NoResultFound
+        description="We couldn't find anything"
+        action="Try using different keywords or checking for typos."
+      />
+    )
+  }
+  return <TileList tiles={tiles} />
+}
+
+export default function Tiles(): JSX.Element {
+  const { input, page, setSearchParams, isSearching } = usePaginationAndFilter()
+
+  const { data, loading } = useQuery<{
     getTables: PaginatedTables
   }>(GET_TABLES, {
     variables: {
@@ -32,42 +66,35 @@ export default function Tiles(): JSX.Element {
     },
   })
 
-  const { pageInfo, edges } = data?.getTables || { edges: [] }
-  const tilesToDisplay = edges.map(({ node }) => node)
-  const hasNoTiles =
-    !isTileListLoading && tilesToDisplay?.length === 0 && input.trim() === ''
-  const hasNoSearchResults =
-    !isTileListLoading && tilesToDisplay?.length === 0 && input.trim() !== ''
+  const { pageInfo, edges } = data?.getTables ?? {}
+  const tilesToDisplay = edges?.map(({ node }) => node) ?? []
+
+  const hasNoUserTiles = tilesToDisplay.length === 0 && !isSearching
+  const hasPagination =
+    !loading && pageInfo && pageInfo.totalCount > TILES_PER_PAGE
 
   return (
     <Container py={9}>
       <PageTitle
         title={TILES_TITLE}
         searchComponent={
-          !hasNoTiles && (
+          !hasNoUserTiles && (
             <DebouncedSearchInput
               searchValue={input}
               onChange={(input) => setSearchParams({ input })}
             />
           )
         }
-        createComponent={!hasNoTiles && <CreateTileButton />}
+        createComponent={!hasNoUserTiles && <CreateTileButton />}
       />
-      {isTileListLoading && (
-        // moved this here to prevent re-rendering of search field
-        <Center h="100%">
-          <PrimarySpinner fontSize="4xl" thickness="4px" margin="auto" />
-        </Center>
-      )}
-      {hasNoTiles && <EmptyTileList />}
-      {hasNoSearchResults && (
-        <NoResultFound
-          description="We couldn't find anything"
-          action="Try using different keywords or checking for typos."
-        />
-      )}
-      <TileList tiles={tilesToDisplay} />
-      {pageInfo && pageInfo.totalCount > TILES_PER_PAGE && (
+
+      <TilesContent
+        isLoading={loading}
+        isSearching={isSearching}
+        tiles={tilesToDisplay}
+      />
+
+      {hasPagination && (
         <Flex justifyContent="center" mt={6}>
           <Pagination
             currentPage={pageInfo.currentPage}

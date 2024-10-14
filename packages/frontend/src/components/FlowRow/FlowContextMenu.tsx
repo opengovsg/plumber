@@ -130,6 +130,7 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
         onClose={onMenuClose}
         isOpen={isMenuOpen}
         placement="bottom-end"
+        isLazy
         gutter={0}
       >
         <MenuButton

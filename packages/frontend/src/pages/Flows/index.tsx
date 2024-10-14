@@ -1,21 +1,17 @@
 import type { IFlow } from '@plumber/types'
 
-import { useCallback, useMemo } from 'react'
-import { BiPlus } from 'react-icons/bi'
-import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Center, Flex, Grid, GridItem, useDisclosure } from '@chakra-ui/react'
-import { Pagination } from '@opengovsg/design-system-react'
-import debounce from 'lodash/debounce'
+import { Box, Center, Flex, useDisclosure } from '@chakra-ui/react'
+import { Button, Pagination } from '@opengovsg/design-system-react'
 
-import ConditionalIconButton from '@/components/ConditionalIconButton'
 import Container from '@/components/Container'
+import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import FlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
-import SearchInput from '@/components/SearchInput'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
+import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
 import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
 import CreateFlowModal from './components/CreateFlowModal'
@@ -24,9 +20,11 @@ import EmptyFlows from './components/EmptyFlows'
 const FLOW_PER_PAGE = 10
 const FLOWS_TITLE = 'Pipes'
 
-interface FlowsParameters {
-  page: number
-  input: string
+interface FlowsInternalProps {
+  isLoading: boolean
+  isSearching: boolean
+  flows: IFlow[]
+  onCreateModalOpen: () => void
 }
 
 const getLimitAndOffset = (page: number) => ({
@@ -34,149 +32,101 @@ const getLimitAndOffset = (page: number) => ({
   offset: (page - 1) * FLOW_PER_PAGE,
 })
 
+function FlowsList({
+  isLoading,
+  isSearching,
+  flows,
+  onCreateModalOpen,
+}: FlowsInternalProps) {
+  const hasFlows = flows.length > 0
+  const hasNoUserFlows = !hasFlows && !isSearching
+  const isEmptySearchResults = !hasFlows && isSearching
+
+  if (isLoading) {
+    return (
+      <Center mt={8}>
+        <PrimarySpinner fontSize="4xl" />
+      </Center>
+    )
+  }
+
+  if (hasNoUserFlows) {
+    return <EmptyFlows onCreate={onCreateModalOpen} />
+  }
+
+  if (isEmptySearchResults) {
+    return (
+      <NoResultFound
+        description="We couldn't find anything"
+        action="Try using different keywords or checking for typos."
+      />
+    )
+  }
+  return (
+    <Box>
+      {flows.map((flow) => (
+        <FlowRow key={flow.id} flow={flow} />
+      ))}
+    </Box>
+  )
+}
+
 export default function Flows(): React.ReactElement {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const page = parseInt(searchParams.get('page') || '', 10) || 1
-  const flowName = searchParams.get('input') || ''
-
-  // modal for creation of flows
+  const { input, page, setSearchParams, isSearching } = usePaginationAndFilter()
   const { isOpen, onOpen, onClose } = useDisclosure()
-
-  // format search params for empty string input and first page
-  const formatSearchParams = useCallback(
-    (params: Partial<FlowsParameters>) => {
-      setSearchParams({
-        ...(params.page &&
-          params.page != 1 && { page: params.page.toString() }),
-        ...(params.input != '' && { input: params.input }),
-      })
-    },
-    [setSearchParams],
-  )
-
-  const handlePageChange = useCallback(
-    (page: number) => {
-      formatSearchParams({
-        page,
-        input: flowName,
-      })
-    },
-    [flowName, formatSearchParams],
-  )
-
-  // handle and debounce input
-  const handleSearchInputChange = useCallback(
-    (input: string) => {
-      formatSearchParams({ input })
-    },
-    [formatSearchParams],
-  )
-
-  const handleSearchInputChangeDebounced = useMemo(
-    () => debounce(handleSearchInputChange, 1000),
-    [handleSearchInputChange],
-  )
-
-  const onSearchInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      handleSearchInputChangeDebounced(event.target.value)
-    },
-    [handleSearchInputChangeDebounced],
-  )
 
   const { data, loading } = useQuery(GET_FLOWS, {
     variables: {
       ...getLimitAndOffset(page),
-      name: flowName,
+      name: input,
     },
   })
 
   const { pageInfo, edges } = data?.getFlows || {}
-  const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node)
-  const hasFlows = flows?.length > 0
-  const isSearching = flowName !== '' || page !== 1
-
-  const isEmptyState = !hasFlows && !isSearching
-  const isEmptySearchResults = !loading && !hasFlows && isSearching
-  const hasPagination = pageInfo && pageInfo.totalCount > FLOW_PER_PAGE
+  const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node) ?? []
+  const hasPagination =
+    !loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE
+  const hasNoUserFlows = flows.length === 0 && !isSearching
 
   return (
-    <>
-      <Container py={9}>
-        {!isEmptyState && (
-          <Grid
-            templateAreas={{
-              base: `
-              "title button"
-              "search search"
-            `,
-              md: `"title search button"`,
-            }}
-            gridTemplateColumns={{ base: '1fr auto', md: '2fr 1fr auto' }}
-            columnGap={3}
-            rowGap={5}
-            alignItems="center"
-            pl={{ base: '0', md: '2rem' }}
-            mb={6}
-          >
-            <GridItem area="title">
-              <PageTitle title={FLOWS_TITLE} />
-            </GridItem>
-
-            <GridItem area="search">
-              <SearchInput
-                searchValue={flowName}
-                onChange={onSearchInputChange}
-              />
-            </GridItem>
-
-            <GridItem area="button">
-              <ConditionalIconButton
-                type="submit"
-                size="lg"
-                icon={<BiPlus />}
-                data-test="create-flow-button"
-                onClick={onOpen}
-              >
-                Create Pipe
-              </ConditionalIconButton>
-            </GridItem>
-          </Grid>
-        )}
-
-        <ApproveTransfersInfobox />
-
-        {loading && (
-          <Center mt={8}>
-            <PrimarySpinner fontSize="4xl" />
-          </Center>
-        )}
-
-        {!loading && isEmptyState && <EmptyFlows onCreate={onOpen} />}
-
-        {!loading &&
-          flows?.map((flow) => <FlowRow key={flow.id} flow={flow} />)}
-
-        {isEmptySearchResults && (
-          <NoResultFound
-            description="We couldn't find anything"
-            action="Try using different keywords or checking for typos."
-          />
-        )}
-
-        {hasPagination && (
-          <Flex justifyContent="center" mt={6}>
-            <Pagination
-              currentPage={pageInfo?.currentPage}
-              onPageChange={handlePageChange}
-              pageSize={FLOW_PER_PAGE}
-              totalCount={pageInfo?.totalCount}
+    <Container py={9}>
+      {!hasNoUserFlows && (
+        <PageTitle
+          title={FLOWS_TITLE}
+          searchComponent={
+            <DebouncedSearchInput
+              searchValue={input}
+              onChange={(input) => setSearchParams({ input })}
             />
-          </Flex>
-        )}
-      </Container>
+          }
+          createComponent={
+            <Button data-test="create-flow-button" onClick={onOpen}>
+              Create Pipe
+            </Button>
+          }
+        />
+      )}
 
+      <ApproveTransfersInfobox />
+
+      <FlowsList
+        flows={flows}
+        isLoading={loading}
+        isSearching={isSearching}
+        onCreateModalOpen={onOpen}
+      />
+
+      {hasPagination && (
+        <Flex justifyContent="center" mt={6}>
+          <Pagination
+            currentPage={pageInfo?.currentPage}
+            onPageChange={(page) => setSearchParams({ page })}
+            pageSize={FLOW_PER_PAGE}
+            totalCount={pageInfo?.totalCount}
+          />
+        </Flex>
+      )}
       {isOpen && <CreateFlowModal onClose={onClose} />}
-    </>
+    </Container>
   )
 }

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { BiSearch } from 'react-icons/bi'
-import { Icon, InputGroup, InputRightElement } from '@chakra-ui/react'
+import { Icon, InputGroup, InputLeftElement } from '@chakra-ui/react'
 import { Input } from '@opengovsg/design-system-react'
 import debounce from 'lodash/debounce'
 
@@ -27,6 +27,9 @@ export default function DebouncedSearchInput({
 
   return (
     <InputGroup>
+      <InputLeftElement h="100%">
+        <Icon as={BiSearch} style={{ height: 20, width: 20 }} />
+      </InputLeftElement>
       <Input
         type="text"
         w="full"
@@ -35,9 +38,6 @@ export default function DebouncedSearchInput({
         defaultValue={searchValue}
         placeholder="Search"
       />
-      <InputRightElement h="100%">
-        <Icon as={BiSearch} style={{ height: 20, width: 20 }} />
-      </InputRightElement>
     </InputGroup>
   )
 }
