@@ -149,7 +149,7 @@ const action: IRawAction = {
       returnLastRow: boolean | undefined
     }
 
-    await TableCollaborator.hasAccess($.user?.id, tableId, 'owner', $)
+    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
     const columns = await TableColumnMetadata.query().where({
       table_id: tableId,

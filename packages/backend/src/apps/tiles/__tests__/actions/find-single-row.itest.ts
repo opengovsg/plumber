@@ -81,10 +81,14 @@ describe('tiles create row action', () => {
     expect($.setActionItem).toBeCalled()
   })
 
-  it('should now allow non-owners to find single row', async () => {
-    $.user = viewer
-    await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+  it('should allow editors to find single row', async () => {
     $.user = editor
+    await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+    expect($.setActionItem).toBeCalled()
+  })
+
+  it('should not allow viewers to find single row', async () => {
+    $.user = viewer
     await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
   })
 })
