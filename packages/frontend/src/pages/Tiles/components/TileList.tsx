@@ -1,5 +1,3 @@
-import { ITableMetadata } from '@plumber/types'
-
 import { MouseEvent, useCallback, useRef } from 'react'
 import { BiDotsHorizontalRounded, BiShow, BiTrash } from 'react-icons/bi'
 import { MdOutlineRemoveRedEye } from 'react-icons/md'
@@ -33,11 +31,12 @@ import {
 } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
+import type { TableMetadata } from '@/graphql/__generated__/graphql'
 import { DELETE_TABLE } from '@/graphql/mutations/tiles/delete-table'
 import { GET_TABLES } from '@/graphql/queries/tiles/get-tables'
 import { toPrettyDateString } from '@/helpers/dateTime'
 
-const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
+const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
   const navigate = useNavigate()
   const [deleteTable, { loading: isDeletingTable }] = useMutation(
     DELETE_TABLE,
@@ -182,7 +181,7 @@ const TileListItem = ({ table }: { table: ITableMetadata }): JSX.Element => {
 }
 
 interface TileListProps {
-  tiles: ITableMetadata[]
+  tiles: TableMetadata[]
 }
 
 const TileList = ({ tiles }: TileListProps): JSX.Element => {
