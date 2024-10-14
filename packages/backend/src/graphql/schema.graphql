@@ -56,9 +56,9 @@ type Query {
 }
 
 type AdminQuery {
-  getFlowOwner(flowId: String!): User!
-  getExecutionOwner(executionId: String!): User!
-  getTableOwner(tableId: String!): User!
+  getFlowOwner(flowId: String!): User
+  getExecutionOwner(executionId: String!): User
+  getTableOwner(tableId: String!): User
   searchUsersByEmail(query: String!): [User!]!
 }
 

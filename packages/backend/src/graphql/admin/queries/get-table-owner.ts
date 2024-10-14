@@ -13,8 +13,11 @@ const getTableOwner: AdminQueryResolvers['getTableOwner'] = async (
     .where('table_id', tableId)
     .andWhere('role', 'owner')
     .withGraphJoined({ user: true })
-    .throwIfNotFound()
     .first()
+
+  if (!tableCollaborator) {
+    return null
+  }
 
   return tableCollaborator.user
 }
