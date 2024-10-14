@@ -31,7 +31,7 @@ import {
 } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
-import { TableMetadata } from '@/graphql/__generated__/graphql'
+import type { TableMetadata } from '@/graphql/__generated__/graphql'
 import { DELETE_TABLE } from '@/graphql/mutations/tiles/delete-table'
 import { GET_TABLES } from '@/graphql/queries/tiles/get-tables'
 import { toPrettyDateString } from '@/helpers/dateTime'

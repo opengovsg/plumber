@@ -28,7 +28,7 @@ type Query {
     executionId: String!
     limit: Int!
     offset: Int!
-  ): PagingatedExecutionSteps
+  ): PaginatedExecutionSteps
   getDynamicData(
     stepId: String!
     key: String!
@@ -687,7 +687,7 @@ type PaginatedExecutions {
   pageInfo: PageInfo!
 }
 
-type PagingatedExecutionSteps {
+type PaginatedExecutionSteps {
   edges: [ExecutionStepEdge]!
   pageInfo: PageInfo!
 }
