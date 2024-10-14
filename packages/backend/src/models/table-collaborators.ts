@@ -71,7 +71,7 @@ class TableCollaborator extends Base {
     ) {
       if ($) {
         throw new StepError(
-          'You do not sufficient permissions to this tile',
+          'You do not have sufficient permissions for this tile',
           `Please ensure that you are ${
             role === 'viewer' ? 'a' : 'an'
           } ${role} of this tile.`,
@@ -79,7 +79,9 @@ class TableCollaborator extends Base {
           $.app.name,
         )
       }
-      throw new ForbiddenError('You do not sufficient permissions to this tile')
+      throw new ForbiddenError(
+        'You do not have sufficient permissions for this tile',
+      )
     }
   }
 }

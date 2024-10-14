@@ -28,7 +28,6 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
 
     if (graphQLErrors) {
       graphQLErrors.forEach(({ message, locations, path }) => {
-        console.log('message', message)
         if (autoSnackbar) {
           callback?.(message)
         }

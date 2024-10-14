@@ -59,7 +59,7 @@ const TableCollabRoleSelect = ({
       >
         {value}
       </MenuButton>
-      <MenuList w={32} pointerEvents={isEditable ? 'auto' : 'none'}>
+      <MenuList w={32}>
         {role === 'owner' && (
           <MenuItem onClick={() => onChange('owner')}>Owner</MenuItem>
         )}
@@ -144,6 +144,7 @@ const CollaboratorListRow = ({
   const [isDeleting, setIsDeleting] = useState(false)
   const isOwner = collaborator.role === 'owner'
   const isSelf = collaborator.email === currentUser?.email
+  const isEditable = hasEditPermission && !isOwner && !isSelf
 
   const onDeleteHandler = useCallback(async () => {
     setIsDeleting(true)
@@ -169,9 +170,9 @@ const CollaboratorListRow = ({
           value={collaborator.role}
           onChange={onRoleChange}
           variant="clear"
-          isEditable={!isOwner && !isSelf && hasEditPermission}
+          isEditable={isEditable}
         />
-        {!isOwner && !isSelf && hasEditPermission && (
+        {isEditable && (
           <IconButton
             colorScheme="critical"
             onClick={onDeleteHandler}
