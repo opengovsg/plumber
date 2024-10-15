@@ -125,7 +125,10 @@ const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
             <MenuList w={144}>
               <MenuItem
                 icon={<Icon as={BiShow} boxSize={5} />}
-                onClick={() => navigate(URLS.TILE(table.id))}
+                onClick={(event) => {
+                  event.preventDefault() // default behavior of the Link in the parent
+                  navigate(URLS.TILE(table.id))
+                }}
               >
                 View
               </MenuItem>

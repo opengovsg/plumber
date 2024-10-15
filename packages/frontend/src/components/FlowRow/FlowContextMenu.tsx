@@ -7,7 +7,7 @@ import {
   BiShow,
   BiTrash,
 } from 'react-icons/bi'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Icon,
@@ -35,6 +35,7 @@ interface FlowContextMenuProps {
 
 export default function FlowContextMenu(props: FlowContextMenuProps) {
   const { flow } = props
+  const navigate = useNavigate()
 
   // dialog control
   const {
@@ -146,9 +147,11 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
         />
         <MenuList w="12.5rem">
           <MenuItem
-            as={Link}
-            to={URLS.FLOW(flow.id)}
             icon={<Icon as={BiShow} boxSize={5} />}
+            onClick={(event) => {
+              event.preventDefault() // default behavior of the Link in the CardBody
+              navigate(URLS.FLOW(flow.id))
+            }}
           >
             View
           </MenuItem>
