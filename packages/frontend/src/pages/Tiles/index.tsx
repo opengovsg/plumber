@@ -70,8 +70,14 @@ export default function Tiles(): JSX.Element {
   const tilesToDisplay = edges?.map(({ node }) => node) ?? []
 
   const hasNoUserTiles = tilesToDisplay.length === 0 && !isSearching
-  const hasPagination =
-    !loading && pageInfo && pageInfo.totalCount > TILES_PER_PAGE
+  const totalCount: number = pageInfo?.totalCount ?? 0
+  const hasPagination = !loading && pageInfo && totalCount > TILES_PER_PAGE
+
+  // ensure invalid pages won't be accessed even after deleting tiles
+  const lastPage = Math.ceil(totalCount / TILES_PER_PAGE)
+  if (lastPage !== 0 && page > lastPage) {
+    setSearchParams({ page: lastPage })
+  }
 
   return (
     <Container py={9}>
@@ -100,7 +106,7 @@ export default function Tiles(): JSX.Element {
             currentPage={pageInfo.currentPage}
             onPageChange={(page) => setSearchParams({ page })}
             pageSize={TILES_PER_PAGE}
-            totalCount={pageInfo.totalCount}
+            totalCount={totalCount}
           />
         </Flex>
       )}
