@@ -46,7 +46,7 @@ export default function DebouncedSearchInput({
       </InputLeftElement>
       <Input
         type="text"
-        w={{ base: '100%', md: '20rem' }}
+        minW="20rem"
         maxW="100%"
         fontSize="md"
         onChange={onSearchInputChange}
@@ -54,18 +54,17 @@ export default function DebouncedSearchInput({
         value={tempSearchValue}
         placeholder="Search"
       />
-      <InputRightElement h="100%">
-        <Icon
-          as={BiSolidXCircle}
-          cursor="pointer"
-          opacity={0.6}
-          _hover={{ opacity: 1 }}
-          h={4}
-          w={4}
-          display={tempSearchValue ? 'block' : 'none'}
-          onClick={clearSearch}
-        />
-      </InputRightElement>
+      {tempSearchValue && (
+        <InputRightElement h="100%">
+          <Icon
+            as={BiSolidXCircle}
+            cursor="pointer"
+            opacity={0.6}
+            _hover={{ opacity: 1 }}
+            onClick={clearSearch}
+          />
+        </InputRightElement>
+      )}
     </InputGroup>
   )
 }

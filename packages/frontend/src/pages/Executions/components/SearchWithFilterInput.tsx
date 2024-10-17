@@ -54,7 +54,7 @@ export default function SearchWithFilterInput({
       return
     }
     setInputPadding(filterRef.current.offsetWidth + 8)
-  }, [status])
+  }, [filterRef.current?.offsetWidth, status])
 
   return (
     <InputGroup>
@@ -63,7 +63,7 @@ export default function SearchWithFilterInput({
       </InputLeftElement>
       <Input
         textStyle="body-1"
-        w={{ base: '100%', md: '25rem' }}
+        minW="25rem"
         maxW="100%"
         pr={inputPadding}
         placeholder="Search by pipe name"
@@ -72,17 +72,19 @@ export default function SearchWithFilterInput({
         onChange={onSearchInputChange}
       />
       <InputRightElement w="fit-content" p={1} ref={filterRef}>
-        <Icon
-          as={BiSolidXCircle}
-          cursor="pointer"
-          opacity={0.6}
-          _hover={{ opacity: 1 }}
-          h={4}
-          w={4}
-          mr={2}
-          display={tempSearchValue ? 'block' : 'none'}
-          onClick={clearSearch}
-        />
+        {tempSearchValue && (
+          <Icon
+            as={BiSolidXCircle}
+            cursor="pointer"
+            opacity={0.6}
+            _hover={{ opacity: 1 }}
+            display="block"
+            w={4}
+            ml={-1}
+            mr={2}
+            onClick={clearSearch}
+          />
+        )}
         <Divider
           borderColor="base.divider.medium"
           h={5}
