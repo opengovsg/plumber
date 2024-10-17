@@ -16,7 +16,7 @@ import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
 import SearchWithFilterInput from './components/SearchWithFilterInput'
 
-const EXECUTION_PER_PAGE = 10
+const EXECUTIONS_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Executions'
 
 interface ExecutionParameters {
@@ -32,8 +32,8 @@ interface ExecutionsListProps {
 }
 
 const getLimitAndOffset = (params: ExecutionParameters) => ({
-  limit: EXECUTION_PER_PAGE,
-  offset: (params.page - 1) * EXECUTION_PER_PAGE,
+  limit: EXECUTIONS_PER_PAGE,
+  offset: (params.page - 1) * EXECUTIONS_PER_PAGE,
   ...(params.status !== StatusType.Waiting && { status: params.status }),
   searchInput: params.input,
 })
@@ -98,7 +98,14 @@ export default function Executions(): ReactElement {
     edges?.map(({ node }: { node: IExecution }) => node) ?? []
 
   const hasNoUserExecutions = executions.length === 0 && !isSearching
-  const hasPagination = !loading && pageInfo?.totalCount > EXECUTION_PER_PAGE
+  const totalCount: number = pageInfo?.totalCount ?? 0
+  const hasPagination = !loading && totalCount > EXECUTIONS_PER_PAGE
+
+  // ensure invalid pages won't be accessed even after deleting executions
+  const lastPage = Math.ceil(totalCount / EXECUTIONS_PER_PAGE)
+  if (lastPage !== 0 && page > lastPage) {
+    setSearchParams({ page: lastPage })
+  }
 
   return (
     <Container py={9}>
@@ -127,8 +134,8 @@ export default function Executions(): ReactElement {
           <Pagination
             currentPage={pageInfo?.currentPage}
             onPageChange={(page) => setSearchParams({ page })}
-            pageSize={EXECUTION_PER_PAGE}
-            totalCount={pageInfo?.totalCount}
+            pageSize={EXECUTIONS_PER_PAGE}
+            totalCount={totalCount}
           />
         </Flex>
       )}
