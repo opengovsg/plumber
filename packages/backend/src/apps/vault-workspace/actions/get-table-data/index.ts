@@ -1,9 +1,8 @@
 import { IRawAction } from '@plumber/types'
 
-import filterTableRows from '../../common/filter-table-rows'
+import { throwVaultDeprecationError } from '../../common/throw-vault-deprecation-error'
 
-import getDataOutMetadata from './get-data-out-metadata'
-
+// Note: column is still kept as dropdown so the db values are preserved
 const action: IRawAction = {
   name: 'Get table data',
   key: 'getTableData',
@@ -17,16 +16,6 @@ const action: IRawAction = {
       variables: true,
       description:
         'Specify a column we should look for cells which match the Lookup Value.',
-      source: {
-        type: 'query',
-        name: 'getDynamicData',
-        arguments: [
-          {
-            name: 'key',
-            value: 'listColumns',
-          },
-        ],
-      },
     },
 
     {
@@ -37,15 +26,9 @@ const action: IRawAction = {
       variables: true,
     },
   ],
-  getDataOutMetadata,
 
   async run($) {
-    const lookupColumn = $.step.parameters.lookupColumn as string
-    const lookupValue = $.step.parameters.lookupValue as string
-    const row = await filterTableRows($, lookupColumn, lookupValue)
-    $.setActionItem({
-      raw: row,
-    })
+    throwVaultDeprecationError($)
   },
 }
 
