@@ -45,9 +45,7 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
           window.location.href = URLS.UNAUTHORIZED_TILE
         }
       })
-    }
-
-    if (networkError) {
+    } else if (networkError) {
       if (autoSnackbar) {
         callback?.(networkError.toString())
       }

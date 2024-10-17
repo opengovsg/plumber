@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
 import deleteRows from '@/graphql/mutations/tiles/delete-rows'
 import { createTableRows, getTableRowCount } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
@@ -100,6 +101,6 @@ describe('delete rows mutation', () => {
         { input: { tableId: dummyTable.id, rowIds: slicedRows } },
         context,
       ),
-    ).rejects.toThrow('You do not have access to this tile')
+    ).rejects.toThrow(ForbiddenError)
   })
 })

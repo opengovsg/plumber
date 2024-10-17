@@ -5,6 +5,7 @@ import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import logger from '@/helpers/logger'
 import TableCollaborator from '@/models/table-collaborators'
+import User from '@/models/user'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -25,13 +26,39 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
       throw new BadUserInputError('Cannot change own role')
     }
 
+    let collaboratorUser: User
+
     if (role === 'owner') {
-      throw new BadUserInputError('Cannot set collaborator role as owner')
+      /**
+       * If transferring ownership, current user must be owner
+       * and new user must exist
+       */
+      await TableCollaborator.hasAccess(
+        context.currentUser.id,
+        tableId,
+        'owner',
+      )
+      collaboratorUser = await User.query().findOne({ email })
+      if (!collaboratorUser) {
+        throw new BadUserInputError(
+          'User not found. You can only transfer to users who have logged in at least once.',
+        )
+      }
+    } else {
+      /**
+       * If mere adding collaborator, current user be editor
+       * and new user will be created if not exists
+       */
+      await TableCollaborator.hasAccess(
+        context.currentUser.id,
+        tableId,
+        'editor',
+      )
+      collaboratorUser = await getOrCreateUser(validatedEmail)
+      if (!collaboratorUser) {
+        throw new BadUserInputError('Error creating user')
+      }
     }
-
-    await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
-
-    const collaboratorUser = await getOrCreateUser(validatedEmail)
 
     try {
       /**
@@ -46,6 +73,9 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
             user_id: collaboratorUser.id,
           })
           .withSoftDeleted()
+        /**
+         * Upsert collaborator here
+         */
         if (existingCollaborator) {
           if (existingCollaborator.role === 'owner') {
             throw new BadUserInputError('Cannot change owner role')
@@ -64,6 +94,17 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
             role,
           })
         }
+
+        /**
+         * When transferring ownership, we need to make sure the current owner is set to editor
+         */
+        if (role === 'owner') {
+          await TableCollaborator.query(trx)
+            .where({ table_id: tableId, user_id: context.currentUser.id })
+            .update({
+              role: 'editor',
+            })
+        }
       })
     } catch (e) {
       logger.error({
@@ -76,7 +117,7 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
         userId: context.currentUser.id,
         error: e,
       })
-      throw new Error('Failed to upsert collaborator')
+      throw new Error(e.message ?? 'Failed to upsert collaborator')
     }
 
     return true

@@ -1,5 +1,6 @@
 import { IGlobalVariable, ITableCollabRole } from '@plumber/types'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
 import StepError from '@/errors/step'
 
 import Base from './base'
@@ -70,7 +71,7 @@ class TableCollaborator extends Base {
     ) {
       if ($) {
         throw new StepError(
-          'You do not have access to this tile',
+          'You do not have sufficient permissions for this tile',
           `Please ensure that you are ${
             role === 'viewer' ? 'a' : 'an'
           } ${role} of this tile.`,
@@ -78,7 +79,9 @@ class TableCollaborator extends Base {
           $.app.name,
         )
       }
-      throw new Error('You do not have access to this tile.')
+      throw new ForbiddenError(
+        'You do not have sufficient permissions for this tile',
+      )
     }
   }
 }

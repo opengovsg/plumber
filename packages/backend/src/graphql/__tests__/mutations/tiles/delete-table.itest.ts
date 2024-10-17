@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
 import deleteTable from '@/graphql/mutations/tiles/delete-table'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
@@ -64,11 +65,11 @@ describe('delete table mutation', () => {
     context.currentUser = editor
     await expect(
       deleteTable(null, { input: { id: dummyTable.id } }, context),
-    ).rejects.toThrow('You do not have access to this tile')
+    ).rejects.toThrow(ForbiddenError)
 
     context.currentUser = viewer
     await expect(
       deleteTable(null, { input: { id: dummyTable.id } }, context),
-    ).rejects.toThrow('You do not have access to this tile')
+    ).rejects.toThrow(ForbiddenError)
   })
 })
