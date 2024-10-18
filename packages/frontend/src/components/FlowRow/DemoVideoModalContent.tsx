@@ -1,3 +1,5 @@
+import useProxyUrlForGovt from '@/hooks/useProxyUrlForGovt'
+
 interface DemoVideoModalContentProps {
   src?: string
   title?: string
@@ -5,8 +7,14 @@ interface DemoVideoModalContentProps {
 
 export default function DemoVideoModalContent(
   props: DemoVideoModalContentProps,
-): JSX.Element {
+) {
   const { src, title } = props
+  const { createProxiedUrl } = useProxyUrlForGovt()
+
+  if (!src) {
+    return null
+  }
+
   return (
     <div
       style={{
@@ -17,7 +25,7 @@ export default function DemoVideoModalContent(
       }}
     >
       <iframe
-        src={src}
+        src={createProxiedUrl(src)}
         title={title}
         loading="lazy"
         allowFullScreen
@@ -30,7 +38,7 @@ export default function DemoVideoModalContent(
           height: '100%',
           colorScheme: 'light',
         }}
-      ></iframe>
+      />
     </div>
   )
 }
