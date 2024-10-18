@@ -6,7 +6,7 @@
  * We check for existence of "menlo-view.menlosecurity.com" in window.name to determine if we should prepend the proxy url
  */
 
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 const isGovtBrowser = window.name?.includes('menlo-view.menlosecurity.com')
 
@@ -21,4 +21,14 @@ const useProxyUrl = () => {
   return { createProxiedUrl }
 }
 
-export { useProxyUrl }
+const useDefaultZoom = () => {
+  useEffect(() => {
+    if (!isGovtBrowser) {
+      return
+    }
+    // Set html font size to 14px
+    document.documentElement.style.fontSize = '14px'
+  }, [])
+}
+
+export { useDefaultZoom, useProxyUrl }
