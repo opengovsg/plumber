@@ -50,7 +50,6 @@ export default function DebouncedSearchInput({
         maxW="100%"
         fontSize="md"
         onChange={onSearchInputChange}
-        defaultValue={searchValue}
         value={tempSearchValue}
         placeholder="Search"
       />
