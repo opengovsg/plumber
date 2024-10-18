@@ -67,7 +67,6 @@ export default function SearchWithFilterInput({
         maxW="100%"
         pr={inputPadding}
         placeholder="Search by pipe name"
-        defaultValue={searchValue}
         value={tempSearchValue}
         onChange={onSearchInputChange}
       />
