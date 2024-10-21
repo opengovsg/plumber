@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
@@ -70,8 +71,17 @@ export default function Tiles(): JSX.Element {
   const tilesToDisplay = edges?.map(({ node }) => node) ?? []
 
   const hasNoUserTiles = tilesToDisplay.length === 0 && !isSearching
-  const hasPagination =
-    !loading && pageInfo && pageInfo.totalCount > TILES_PER_PAGE
+  const totalCount: number = pageInfo?.totalCount ?? 0
+  const hasPagination = !loading && pageInfo && totalCount > TILES_PER_PAGE
+
+  // ensure invalid pages won't be accessed even after deleting tiles
+  const lastPage = Math.ceil(totalCount / TILES_PER_PAGE)
+  useEffect(() => {
+    // Defer the search params update till after the initial render
+    if (lastPage !== 0 && page > lastPage) {
+      setSearchParams({ page: lastPage })
+    }
+  }, [lastPage, page, setSearchParams])
 
   return (
     <Container py={9}>
@@ -100,7 +110,7 @@ export default function Tiles(): JSX.Element {
             currentPage={pageInfo.currentPage}
             onPageChange={(page) => setSearchParams({ page })}
             pageSize={TILES_PER_PAGE}
-            totalCount={pageInfo.totalCount}
+            totalCount={totalCount}
           />
         </Flex>
       )}

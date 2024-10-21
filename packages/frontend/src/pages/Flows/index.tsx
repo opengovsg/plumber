@@ -1,5 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
+import { ReactElement, useEffect } from 'react'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, useDisclosure } from '@chakra-ui/react'
 import { Button, Pagination } from '@opengovsg/design-system-react'
@@ -17,7 +18,7 @@ import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
 import CreateFlowModal from './components/CreateFlowModal'
 import EmptyFlows from './components/EmptyFlows'
 
-const FLOW_PER_PAGE = 10
+const FLOWS_PER_PAGE = 10
 const FLOWS_TITLE = 'Pipes'
 
 interface FlowsInternalProps {
@@ -28,8 +29,8 @@ interface FlowsInternalProps {
 }
 
 const getLimitAndOffset = (page: number) => ({
-  limit: FLOW_PER_PAGE,
-  offset: (page - 1) * FLOW_PER_PAGE,
+  limit: FLOWS_PER_PAGE,
+  offset: (page - 1) * FLOWS_PER_PAGE,
 })
 
 function FlowsList({
@@ -71,7 +72,7 @@ function FlowsList({
   )
 }
 
-export default function Flows(): React.ReactElement {
+export default function Flows(): ReactElement {
   const { input, page, setSearchParams, isSearching } = usePaginationAndFilter()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -84,9 +85,18 @@ export default function Flows(): React.ReactElement {
 
   const { pageInfo, edges } = data?.getFlows || {}
   const flows: IFlow[] = edges?.map(({ node }: { node: IFlow }) => node) ?? []
-  const hasPagination =
-    !loading && pageInfo && pageInfo.totalCount > FLOW_PER_PAGE
+  const totalCount: number = pageInfo?.totalCount ?? 0
+  const hasPagination = !loading && totalCount > FLOWS_PER_PAGE
   const hasNoUserFlows = flows.length === 0 && !isSearching
+
+  // ensure invalid pages won't be accessed even after deleting flows
+  const lastPage = Math.ceil(totalCount / FLOWS_PER_PAGE)
+  useEffect(() => {
+    // Defer the search params update till after the initial render
+    if (lastPage !== 0 && page > lastPage) {
+      setSearchParams({ page: lastPage })
+    }
+  }, [lastPage, page, setSearchParams])
 
   return (
     <Container py={9}>
@@ -121,8 +131,8 @@ export default function Flows(): React.ReactElement {
           <Pagination
             currentPage={pageInfo?.currentPage}
             onPageChange={(page) => setSearchParams({ page })}
-            pageSize={FLOW_PER_PAGE}
-            totalCount={pageInfo?.totalCount}
+            pageSize={FLOWS_PER_PAGE}
+            totalCount={totalCount}
           />
         </Flex>
       )}
