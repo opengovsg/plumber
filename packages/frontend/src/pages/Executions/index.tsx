@@ -1,6 +1,6 @@
 import type { IExecution } from '@plumber/types'
 
-import { ReactElement } from 'react'
+import { ReactElement, useEffect } from 'react'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
@@ -103,9 +103,12 @@ export default function Executions(): ReactElement {
 
   // ensure invalid pages won't be accessed even after deleting executions
   const lastPage = Math.ceil(totalCount / EXECUTIONS_PER_PAGE)
-  if (lastPage !== 0 && page > lastPage) {
-    setSearchParams({ page: lastPage })
-  }
+  useEffect(() => {
+    // Defer the search params update till after the initial render
+    if (lastPage !== 0 && page > lastPage) {
+      setSearchParams({ page: lastPage })
+    }
+  }, [lastPage, page, setSearchParams])
 
   return (
     <Container py={9}>

@@ -1,5 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
+import { ReactElement, useEffect } from 'react'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, useDisclosure } from '@chakra-ui/react'
 import { Button, Pagination } from '@opengovsg/design-system-react'
@@ -71,7 +72,7 @@ function FlowsList({
   )
 }
 
-export default function Flows(): React.ReactElement {
+export default function Flows(): ReactElement {
   const { input, page, setSearchParams, isSearching } = usePaginationAndFilter()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -90,9 +91,12 @@ export default function Flows(): React.ReactElement {
 
   // ensure invalid pages won't be accessed even after deleting flows
   const lastPage = Math.ceil(totalCount / FLOWS_PER_PAGE)
-  if (lastPage !== 0 && page > lastPage) {
-    setSearchParams({ page: lastPage })
-  }
+  useEffect(() => {
+    // Defer the search params update till after the initial render
+    if (lastPage !== 0 && page > lastPage) {
+      setSearchParams({ page: lastPage })
+    }
+  }, [lastPage, page, setSearchParams])
 
   return (
     <Container py={9}>
