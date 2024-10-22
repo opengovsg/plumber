@@ -1,5 +1,3 @@
-import { useProxyUrl } from '@/hooks/useGovtBrowser'
-
 interface DemoVideoModalContentProps {
   src?: string
   title?: string
@@ -7,14 +5,8 @@ interface DemoVideoModalContentProps {
 
 export default function DemoVideoModalContent(
   props: DemoVideoModalContentProps,
-) {
+): JSX.Element {
   const { src, title } = props
-  const { createProxiedUrl } = useProxyUrl()
-
-  if (!src) {
-    return null
-  }
-
   return (
     <div
       style={{
@@ -25,7 +17,7 @@ export default function DemoVideoModalContent(
       }}
     >
       <iframe
-        src={createProxiedUrl(src)}
+        src={src}
         title={title}
         loading="lazy"
         allowFullScreen
@@ -38,7 +30,7 @@ export default function DemoVideoModalContent(
           height: '100%',
           colorScheme: 'light',
         }}
-      />
+      ></iframe>
     </div>
   )
 }
