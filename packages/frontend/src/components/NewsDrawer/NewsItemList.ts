@@ -11,6 +11,14 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2024-10-23',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: `Tile transfer`,
+    details: dedent`
+      You can now transfer ownership of **tiles** to other users. Editors can now also connect tiles to their pipes.
+    `,
+  },
+  {
     date: '2024-10-04',
     tag: NEW_FEATURE_TAG,
     title: 'Save time building workflows with Templates!',
