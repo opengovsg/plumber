@@ -82,10 +82,14 @@ describe('tiles create row action', () => {
     expect($.setActionItem).toBeCalled()
   })
 
-  it('should now allow non-owners to update row', async () => {
-    $.user = viewer
-    await expect(updateRowAction.run($)).rejects.toThrow(StepError)
+  it('should allow editors to update row', async () => {
     $.user = editor
+    await expect(updateRowAction.run($)).resolves.toBeUndefined()
+    expect($.setActionItem).toBeCalled()
+  })
+
+  it('should not allow viewers to update row', async () => {
+    $.user = viewer
     await expect(updateRowAction.run($)).rejects.toThrow(StepError)
   })
 })

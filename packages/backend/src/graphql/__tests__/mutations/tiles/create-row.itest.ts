@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
 import createRow from '@/graphql/mutations/tiles/create-row'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
@@ -112,6 +113,6 @@ describe('create row mutation', () => {
         },
         context,
       ),
-    ).rejects.toThrow('You do not have access to this tile')
+    ).rejects.toThrow(ForbiddenError)
   })
 })

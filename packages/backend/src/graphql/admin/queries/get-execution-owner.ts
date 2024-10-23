@@ -12,7 +12,10 @@ const getExecutionOwner: AdminQueryResolvers['getExecutionOwner'] = async (
   const execution = await Execution.query()
     .findById(executionId)
     .withGraphJoined({ flow: { user: true } })
-    .throwIfNotFound()
+
+  if (!execution) {
+    return null
+  }
 
   return execution.flow.user
 }

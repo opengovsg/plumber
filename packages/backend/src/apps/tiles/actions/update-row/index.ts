@@ -108,7 +108,7 @@ const action: IRawAction = {
       )
     }
 
-    await TableCollaborator.hasAccess($.user?.id, tableId, 'owner', $)
+    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
     /**
      * Row ID is empty, this could be because the previous get single row action
