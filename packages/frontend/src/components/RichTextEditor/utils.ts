@@ -12,7 +12,7 @@ export type VariableInfoMap = Map<
 
 const VARIABLE_REGEX =
   /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/
-
+const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 /**
  * Used to generate substituted string for hyperlink checking
  */
@@ -20,7 +20,7 @@ export function simpleSubstitute(
   original: string,
   varInfo: VariableInfoMap,
 ): string {
-  return original.replace(VARIABLE_REGEX, (match) => {
+  return original.replaceAll(GLOBAL_VARIABLE_REGEX, (match) => {
     const id = match.replace('{{', '').replace('}}', '')
     const varInfoForNode = varInfo.get(`{{${id}}}`)
     return varInfoForNode?.testRunValue || ''
