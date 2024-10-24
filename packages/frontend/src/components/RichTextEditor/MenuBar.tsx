@@ -1,6 +1,6 @@
 import './MenuBar.scss'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { LuHeading1, LuHeading2, LuHeading3, LuHeading4 } from 'react-icons/lu'
 import {
   RiArrowGoBackLine,
@@ -20,18 +20,25 @@ import {
   RiTableLine,
   RiUnderline,
 } from 'react-icons/ri'
-import { LoadingButton } from '@mui/lab'
 import {
-  Dialog,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-} from '@mui/material'
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogCloseButton,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
+  Box,
+  useDisclosure,
+} from '@chakra-ui/react'
+import { Button, Link } from '@opengovsg/design-system-react'
 import { Editor } from '@tiptap/react'
 import { parse } from 'node-html-parser'
 
 import Form from '@/components/Form'
+import { makeExternalLink } from '@/helpers/urls'
 
+import { simpleSubstitute, type VariableInfoMap } from './utils'
 import { BareEditor } from '.'
 
 enum MenuLabels {
@@ -221,76 +228,98 @@ const menuButtons = [
   },
 ]
 
+const dialogPlaceholders: Partial<Record<MenuLabels, string>> = {
+  [MenuLabels.LinkSet]: 'Enter a full URL with http prefix',
+  [MenuLabels.ImageAdd]:
+    'Enter direct image link (e.g. https://file.go.gov.sg/clipplumber.png)',
+}
+
 interface MenuBarProps {
   editor: Editor | null
+  variableMap: VariableInfoMap
 }
-export const MenuBar = ({ editor }: MenuBarProps) => {
-  const [showValueDialog, setShowValueDialog] = useState(false)
+
+export const MenuBar = ({ editor, variableMap }: MenuBarProps) => {
+  const {
+    isOpen: isDialogOpen,
+    onClose,
+    onOpen: onDialogOpen,
+  } = useDisclosure()
+  const cancelRef = useRef(null)
   const [dialogValue, setDialogValue] = useState('')
   const [dialogLabel, setDialogLabel] = useState<MenuLabels | null>(null)
-  const onClickOverrides: { [key: string]: () => void } = {
-    [MenuLabels.LinkSet]: useCallback(() => {
-      if (!editor) {
-        return
-      }
-      const previousUrl = editor.getAttributes('link').href
-      setDialogLabel(MenuLabels.LinkSet)
-      setDialogValue(previousUrl)
-      setShowValueDialog(true)
-    }, [editor]),
-    [MenuLabels.ImageAdd]: useCallback(() => {
-      if (!editor) {
-        return
-      }
-      setDialogLabel(MenuLabels.ImageAdd)
-      setDialogValue('')
-      setShowValueDialog(true)
-    }, [editor]),
-  }
-  const dialogOnSubmits: { [key: string]: () => void } = {
-    [MenuLabels.LinkSet]: useCallback(() => {
-      if (!editor) {
-        return
-      }
-      const url = dialogValue
-      // cancelled
-      if (url === null) {
-        return
-      }
 
-      // empty
-      if (url === '') {
-        editor.chain().focus().extendMarkRange('link').unsetLink().run()
+  const onDialogClose = useCallback(() => {
+    setDialogLabel(null)
+    setDialogValue('')
+    onClose()
+  }, [onClose])
 
-        return
-      }
+  const onClickOverrides: Partial<Record<MenuLabels, () => void>> = useMemo(
+    () => ({
+      [MenuLabels.LinkSet]: () => {
+        if (!editor) {
+          return
+        }
+        const previousUrl = editor.getAttributes('link').href
+        setDialogLabel(MenuLabels.LinkSet)
+        setDialogValue(previousUrl)
+        onDialogOpen()
+      },
+      [MenuLabels.ImageAdd]: () => {
+        if (!editor) {
+          return
+        }
+        setDialogLabel(MenuLabels.ImageAdd)
+        setDialogValue('')
+        onDialogOpen()
+      },
+    }),
+    [editor, onDialogOpen],
+  )
 
-      // update link
-      editor
-        .chain()
-        .focus()
-        .extendMarkRange('link')
-        .setLink({ href: url })
-        .run()
-      setShowValueDialog(false)
-    }, [editor, dialogValue, setShowValueDialog]),
-    [MenuLabels.ImageAdd]: useCallback(() => {
-      if (!editor) {
-        return
-      }
-      const url = dialogValue
-      if (url === null) {
-        return
-      }
-      editor.chain().focus().setImage({ src: url }).run()
-      setShowValueDialog(false)
-    }, [editor, dialogValue]),
-  }
-  const dialogPlaceholders: { [key: string]: string } = {
-    [MenuLabels.LinkSet]: 'Enter a full URL with http prefix',
-    [MenuLabels.ImageAdd]:
-      'Enter direct image link (e.g. https://file.go.gov.sg/clipplumber.png)',
-  }
+  const dialogOnSubmits: Partial<Record<MenuLabels, () => void>> = useMemo(
+    () => ({
+      [MenuLabels.LinkSet]: () => {
+        if (!editor) {
+          return
+        }
+        const url = dialogValue
+        // cancelled
+        if (url === null) {
+          return
+        }
+
+        // empty
+        if (url === '') {
+          editor.chain().focus().extendMarkRange('link').unsetLink().run()
+          return
+        }
+
+        // update link
+        editor
+          .chain()
+          .focus()
+          .extendMarkRange('link')
+          .setLink({ href: url })
+          .run()
+        onDialogClose()
+      },
+      [MenuLabels.ImageAdd]: () => {
+        if (!editor) {
+          return
+        }
+        const url = dialogValue
+        if (url === null) {
+          return
+        }
+        editor.chain().focus().setImage({ src: url }).run()
+        onDialogClose()
+      },
+    }),
+    [editor, dialogValue, onDialogClose],
+  )
+
   if (!editor) {
     return null
   }
@@ -316,8 +345,9 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
               }}
               className={`menu-item${isActive?.(editor) ? ' is-active' : ''}`}
               onClick={() => {
-                if (onClickOverrides && onClickOverrides[label]) {
-                  onClickOverrides[label]()
+                const clickOverride = onClickOverrides[label]
+                if (clickOverride) {
+                  clickOverride()
                   return
                 }
                 onClick(editor)
@@ -328,25 +358,20 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
           )
         })}
       </div>
-      <Dialog
-        open={showValueDialog}
-        className="menubar-dialog"
-        onClose={() => setShowValueDialog(false)}
-        sx={{ alignItems: 'flex-start', overflow: 'scroll' }}
-        PaperProps={{
-          // so that the variable selector float can overlay
-          sx: { display: 'inline-table' },
-        }}
-      >
-        <DialogTitle>{dialogLabel}</DialogTitle>
-        <DialogContent>
-          <DialogContentText
-            tabIndex={-1}
-            component="div"
-            className="menubar-dialog-content"
-          >
-            {dialogLabel && (
-              <Form onSubmit={() => dialogOnSubmits[dialogLabel]()}>
+      {isDialogOpen && dialogLabel && (
+        <AlertDialog
+          leastDestructiveRef={cancelRef}
+          motionPreset="none"
+          returnFocusOnClose={true}
+          onClose={onDialogClose}
+          isOpen={true}
+        >
+          <AlertDialogOverlay />
+          <Form onSubmit={() => dialogOnSubmits[dialogLabel]?.()}>
+            <AlertDialogContent>
+              <AlertDialogHeader>{dialogLabel}</AlertDialogHeader>
+              <AlertDialogCloseButton />
+              <AlertDialogBody ref={cancelRef}>
                 <BareEditor
                   // val is in HTML, need to parse back to plain text
                   onChange={(val) => setDialogValue(parse(val).textContent)}
@@ -355,19 +380,33 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
                   variablesEnabled
                   placeholder={dialogPlaceholders[dialogLabel]}
                 />
-                <LoadingButton
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  sx={{ boxShadow: 2 }}
-                >
-                  Submit
-                </LoadingButton>
-              </Form>
-            )}
-          </DialogContentText>
-        </DialogContent>
-      </Dialog>
+                <Box p={2}>
+                  <Link
+                    isExternal
+                    referrerPolicy="no-referrer"
+                    isDisabled={!dialogValue}
+                    target="_blank"
+                    href={
+                      dialogValue
+                        ? makeExternalLink(
+                            simpleSubstitute(dialogValue, variableMap),
+                          )
+                        : undefined
+                    }
+                  >
+                    Open link
+                  </Link>
+                </Box>
+              </AlertDialogBody>
+              <AlertDialogFooter>
+                <Button colorScheme="primary" type="submit">
+                  Done
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </Form>
+        </AlertDialog>
+      )}
     </>
   )
 }
