@@ -245,7 +245,6 @@ export const MenuBar = ({ editor, variableMap }: MenuBarProps) => {
     onClose,
     onOpen: onDialogOpen,
   } = useDisclosure()
-  const menuBarRef = useRef(null)
   const cancelRef = useRef(null)
   const [dialogValue, setDialogValue] = useState('')
   const [dialogLabel, setDialogLabel] = useState<MenuLabels | null>(null)
@@ -327,7 +326,7 @@ export const MenuBar = ({ editor, variableMap }: MenuBarProps) => {
 
   return (
     <>
-      <div className="editor__header" ref={menuBarRef}>
+      <div className="editor__header">
         {menuButtons.map(({ onClick, label, icon, isActive }, index) => {
           if (!onClick) {
             return <div className="divider" key={`${label}${index}`} />
