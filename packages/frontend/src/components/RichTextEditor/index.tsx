@@ -167,6 +167,11 @@ const Editor = ({
       const editorElement = editor.view.dom as HTMLElement
       editorElement.style.minHeight = isRich ? '9rem' : '2.625rem' // Set initial minHeight directly
     },
+    editorProps: {
+      transformPastedHTML: (html) => {
+        return substituteOldTemplates(html, varInfo)
+      },
+    },
   })
   useEffect(() => {
     // have to listen to editable as this element might not re-render upon
