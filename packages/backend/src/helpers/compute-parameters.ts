@@ -1,8 +1,7 @@
-import { IAction, IJSONObject } from '@plumber/types'
+import type { IAction } from '@plumber/types'
 
 import get from 'lodash.get'
 
-import vaultWorkspace from '@/apps/vault-workspace'
 import ExecutionStep from '@/models/execution-step'
 
 import Step from '../models/step'
@@ -63,24 +62,8 @@ function findAndSubstituteVariables(
         const data = executionStep?.dataOut
 
         const keyPath = keyPaths.join('.') // for lodash get to work
-        let dataValue = get(data, keyPath)
-        // custom logic to deal with backward compatibility of key encoding for
-        // data from vault. Under the new logic, data from vault will always have
-        // hex-encoded key while the old templates might still used non-encoded
-        // hence if the value is not defined and keysEncoded flag was set, we
-        // attempt to convert the template string to use hex-encoded key
-        // FIXME: Remove this custom logic after we migrate off Vault WS
-        if (
-          dataValue === undefined &&
-          executionStep?.appKey === vaultWorkspace.key &&
-          (data?._metadata as IJSONObject)?.keysEncoded &&
-          keyPaths.length > 0
-        ) {
-          keyPaths[keyPaths.length - 1] = Buffer.from(
-            keyPaths[keyPaths.length - 1],
-          ).toString('hex')
-          dataValue = get(data, keyPaths.join('.'))
-        }
+        const dataValue = get(data, keyPath)
+
         // NOTE: dataValue could be an array if it is not processed on variables.ts
         // which is the case for formSG checkbox only, this is to deal with forEach next time
         return preprocessVariable
