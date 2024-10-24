@@ -28,7 +28,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogOverlay,
-  Flex,
+  Box,
   useDisclosure,
 } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
@@ -381,12 +381,8 @@ export const MenuBar = ({ editor, variableMap }: MenuBarProps) => {
                   variablesEnabled
                   placeholder={dialogPlaceholders[dialogLabel]}
                 />
-              </AlertDialogBody>
-              <AlertDialogFooter>
-                <Flex justify="space-between" w="full" alignItems="center">
-                  <Button
-                    variant="clear"
-                    as={Link}
+                <Box p={2}>
+                  <Link
                     isExternal
                     referrerPolicy="no-referrer"
                     isDisabled={!dialogValue}
@@ -400,11 +396,13 @@ export const MenuBar = ({ editor, variableMap }: MenuBarProps) => {
                     }
                   >
                     Open link
-                  </Button>
-                  <Button colorScheme="primary" type="submit">
-                    Confirm
-                  </Button>
-                </Flex>
+                  </Link>
+                </Box>
+              </AlertDialogBody>
+              <AlertDialogFooter>
+                <Button colorScheme="primary" type="submit">
+                  Done
+                </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </Form>
