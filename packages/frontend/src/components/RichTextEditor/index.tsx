@@ -53,6 +53,7 @@ const RICH_TEXT_EXTENSIONS = [
   }),
   Link.configure({
     HTMLAttributes: { rel: null, target: '_blank' },
+    openOnClick: false,
   }),
   Underline,
   Table.configure({
@@ -207,6 +208,7 @@ const Editor = ({
       matchWidth={true}
       isLazy
       lazyBehavior="unmount"
+      onClose={closeSuggestions}
       isOpen={isSuggestionsOpen && variablesEnabled}
     >
       <div
@@ -218,14 +220,12 @@ const Editor = ({
           if (e.currentTarget.contains(e.relatedTarget)) {
             return
           }
-
           closeSuggestions()
         }}
-        onFocus={openSuggestions}
       >
         <PopoverTrigger>
           <Box>
-            {isRich && <MenuBar editor={editor} />}
+            {isRich && <MenuBar editor={editor} variableMap={varInfo} />}
             <EditorContent className="editor__content" editor={editor} />
             <PopoverContent
               w="100%"
