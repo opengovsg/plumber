@@ -54,13 +54,11 @@ const CHUNK_SIZE = 100
 
 const ImportStatus = ({
   columnsToCreate,
-  errorMsg,
   importStatus,
   rowsImported,
   rowsToImport,
 }: {
   columnsToCreate: string[]
-  errorMsg: string | null
   importStatus: IMPORT_STATUS
   rowsImported: number
   rowsToImport: number
@@ -83,7 +81,7 @@ const ImportStatus = ({
               isColumnDataExpanded ? <BiChevronUp /> : <BiChevronDown />
             }
           >
-            {columnsToCreate.length} column(s) to create
+            {columnsToCreate.length} column(s) will be created
           </Button>
           <Collapse in={isColumnDataExpanded}>
             <List spacing={3} mt={4}>
@@ -121,7 +119,7 @@ const ImportStatus = ({
         </Box>
       )
     case 'error':
-      return <Text color="red.500">Error: {errorMsg}</Text>
+      return null
   }
 }
 
@@ -236,6 +234,10 @@ export const ImportCsvModalContent = ({
     [],
   )
 
+  useEffect(() => {
+    setErrorMsg(null)
+  }, [file])
+
   const onImport = useCallback(async () => {
     // do not import if no rows or columns to create
     if (!result?.length && !columnsToCreate.length) {
@@ -280,7 +282,7 @@ export const ImportCsvModalContent = ({
     } catch (e) {
       setImportStatus('error')
       if (e instanceof Error) {
-        setErrorMsg(e.message)
+        setErrorMsg('Error: ' + e.message)
       }
     }
   }, [
@@ -321,6 +323,7 @@ export const ImportCsvModalContent = ({
           onChange={setFile}
           title="Upload CSV"
           name="file-upload"
+          onError={setErrorMsg}
           colorScheme="primary"
           showFileSize={true}
           accept={['.csv']}
@@ -337,13 +340,17 @@ export const ImportCsvModalContent = ({
             ) : (
               <ImportStatus
                 columnsToCreate={columnsToCreate}
-                errorMsg={errorMsg}
                 importStatus={importStatus}
                 rowsImported={rowsImported}
                 rowsToImport={rowsToImport}
               />
             )}
           </Card>
+        )}
+        {errorMsg && (
+          <Text color="red.500" textStyle="caption-2" fontSize="sm" mt={1}>
+            {errorMsg}
+          </Text>
         )}
       </ModalBody>
 
