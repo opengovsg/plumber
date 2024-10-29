@@ -1,7 +1,6 @@
 import { randomUUID } from 'crypto'
 import { describe, expect, it } from 'vitest'
 
-import vaultWorkspace from '@/apps/vault-workspace'
 import ExecutionStep from '@/models/execution-step'
 
 import computeParameters from '../compute-parameters'
@@ -278,34 +277,12 @@ describe('compute parameters', () => {
       ],
     })
   })
-  it('can compute on templates with non-hex-encoded param keys using new vault WS objects whose keys hex-encoded', () => {
-    const vaultWSExecutionStep = [
-      {
-        stepId: randomStepID,
-        appKey: vaultWorkspace.key,
-        dataOut: {
-          '4974732d612d6d65': 'Mario!', // key is hex-encoded `Its a me`
-          _metadata: {
-            keysEncoded: true,
-          },
-        },
-      } as unknown as ExecutionStep,
-    ]
-    const params = {
-      toSubstitute: `Its a me {{step.${randomStepID}.Its-a-me}}`,
-    }
-    const expected = {
-      toSubstitute: 'Its a me Mario!',
-    }
-    const result = computeParameters(params, vaultWSExecutionStep)
-    expect(result).toEqual(expected)
-  })
 
   it('should work with space separated keys', () => {
-    const vaultWSExecutionStep = [
+    const executionStep = [
       {
         stepId: randomStepID,
-        appKey: vaultWorkspace.key,
+        appKey: 'test-app',
         dataOut: {
           '   weopfkweopf     ': 'Itsa me',
           'weiofjwef wefwe fwe fwefwe f  ': 'Mario!',
@@ -318,15 +295,15 @@ describe('compute parameters', () => {
     const expected = {
       toSubstitute: 'Itsa me Mario!',
     }
-    const result = computeParameters(params, vaultWSExecutionStep)
+    const result = computeParameters(params, executionStep)
     expect(result).toEqual(expected)
   })
 
   it('should not replace parameters with tabs or newlines', () => {
-    const vaultWSExecutionStep = [
+    const executionStep = [
       {
         stepId: randomStepID,
-        appKey: vaultWorkspace.key,
+        appKey: 'test-app',
         dataOut: {
           '\tab tab\t': 'Itsa me',
           'newlines\n': 'Mario!',
@@ -339,7 +316,7 @@ describe('compute parameters', () => {
     const expected = {
       toSubstitute: `{{step.${randomStepID}.\tab tab\t}} {{step.${randomStepID}.newlines\n}}`,
     }
-    const result = computeParameters(params, vaultWSExecutionStep)
+    const result = computeParameters(params, executionStep)
     expect(result).toEqual(expected)
   })
 })
