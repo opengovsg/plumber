@@ -25,7 +25,7 @@ const dynamicData: IDynamicData = {
       const tile = await currentUser
         .$relatedQuery('tables')
         .findById($.step.parameters.tableId as string)
-        .where('role', 'owner')
+        .whereIn('role', ['owner', 'editor'])
         .throwIfNotFound()
       const columns = await tile
         .$relatedQuery('columns')

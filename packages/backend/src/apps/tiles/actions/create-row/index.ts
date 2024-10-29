@@ -94,7 +94,7 @@ const action: IRawAction = {
       rowData: { columnId: string; cellValue: string }[]
     }
 
-    await TableCollaborator.hasAccess($.user?.id, tableId, 'owner', $)
+    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
     const table = await TableMetadata.query().findById(tableId)
 

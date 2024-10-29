@@ -7,7 +7,8 @@ const PLACEHOLDER_TEMPLATE_STEP_ID = '00000000-0000-0000-0000-000000000000'
 
 export const VariableBadge = ({ node }: { node: Node }) => {
   // this happens when there is no value mapped properly
-  const isEmpty = node.attrs.value === ''
+  const isEmpty = node.attrs.value === '' || node.attrs.value == null
+  const value = String(node.attrs.value)
   const isTemplate = String(node.attrs.id).includes(
     PLACEHOLDER_TEMPLATE_STEP_ID,
   )
@@ -42,9 +43,9 @@ export const VariableBadge = ({ node }: { node: Node }) => {
           >
             {node.attrs.label}
           </Text>
-          {node.attrs.value && (
+          {!isEmpty && (
             <Text isTruncated maxW="50ch" color="base.content.medium">
-              {node.attrs.value}
+              {value}
             </Text>
           )}
         </Badge>

@@ -65,6 +65,7 @@ function ExecutionStatusMenu(props: ExecutionStatusMenuProps) {
         as={Button}
         size="xs"
         variant="clear"
+        pl={2}
         _hover={{ bg: 'interaction.tinted.main.hover' }}
         _active={{ bg: 'interaction.tinted.main.active' }}
       >
