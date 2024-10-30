@@ -1,3 +1,4 @@
+import { Attachment } from './Attachment'
 import { Button } from './Button'
 import { Container } from './Container'
 import { FormLabel } from './FormLabel'
@@ -20,4 +21,5 @@ export const components = {
   Sidebar,
   SingleSelect,
   Radio,
+  Attachment,
 }
