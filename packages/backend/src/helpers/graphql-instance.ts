@@ -4,6 +4,7 @@ import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/dis
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default'
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import { RequestHandler } from 'express'
+import { Kind, OperationDefinitionNode } from 'graphql/language'
 import { applyMiddleware } from 'graphql-middleware'
 
 import appConfig from '@/config/app'
@@ -42,6 +43,31 @@ function ApolloServerPluginUserTracer(): ApolloServerPlugin<AuthenticatedContext
   }
 }
 
+function preventBatching(): ApolloServerPlugin {
+  return {
+    async requestDidStart() {
+      return {
+        async didResolveOperation(requestContext) {
+          const { document } = requestContext
+          // There should only be one operation definition per document
+          const queryDefinition = document.definitions.find(
+            (definition) => definition.kind === Kind.OPERATION_DEFINITION,
+          ) as OperationDefinitionNode | undefined
+
+          if (queryDefinition) {
+            // Check if there are multiple selections (root fields) in the query
+            if (queryDefinition.selectionSet.selections.length > 1) {
+              throw new Error(
+                'Multiple root fields in a single operation are not allowed.',
+              )
+            }
+          }
+        },
+      }
+    },
+  }
+}
+
 const schema = makeExecutableSchema({ typeDefs, resolvers })
 
 const schemaWithMiddleware = applyMiddleware(
@@ -57,6 +83,7 @@ const server = new ApolloServer<UnauthenticatedContext>({
       ? ApolloServerPluginLandingPageLocalDefault()
       : ApolloServerPluginLandingPageDisabled(),
     ApolloServerPluginUserTracer(),
+    preventBatching(),
   ],
   formatError: (error) => {
     logger.error(error)
