@@ -175,9 +175,13 @@ const action: IRawAction = {
       )
     }
 
+    /**
+     * When columnIds are not provided, we only return rowId
+     */
     const result = await getTableRows({
       tableId,
       filters,
+      autoPaginate: true,
     })
 
     if (!result || !result.length) {

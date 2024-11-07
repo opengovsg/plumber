@@ -1,5 +1,6 @@
 import { ITableMetadata, ITableRow } from '@plumber/types'
 
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
@@ -17,6 +18,7 @@ export default function Tile(): JSX.Element {
     tileId: string
     viewOnlyKey?: string
   }>()
+  const [rows, setRows] = useState<ITableRow[]>([])
 
   const { data: getTableData } = useQuery<{
     getTable: ITableMetadata
@@ -32,7 +34,7 @@ export default function Tile(): JSX.Element {
   })
   const ownRole = getTableData?.getTable?.role
 
-  const { data: getAllRowsData } = useQuery<{
+  const { data: getAllRowsData, fetchMore } = useQuery<{
     getAllRows: ITableRow[]
   }>(GET_ALL_ROWS, {
     variables: {
@@ -45,6 +47,9 @@ export default function Tile(): JSX.Element {
         }
       : undefined,
     fetchPolicy: 'network-only',
+    onCompleted: (data) => {
+      setRows((prevRows) => [...prevRows, ...data.getAllRows])
+    },
   })
 
   if (!getTableData?.getTable || !getAllRowsData?.getAllRows) {
@@ -57,7 +62,6 @@ export default function Tile(): JSX.Element {
 
   const { id, name, columns, viewOnlyKey, collaborators } =
     getTableData.getTable
-  const rows = getAllRowsData.getAllRows
 
   return (
     <TableContextProvider
@@ -68,6 +72,7 @@ export default function Tile(): JSX.Element {
       viewOnlyKey={viewOnlyKey}
       collaborators={collaborators}
       role={ownRole}
+      isFetching={isFetching}
     >
       <Flex
         flexDir={{ base: 'column' }}

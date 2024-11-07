@@ -12,7 +12,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
   params,
   context,
 ) => {
-  const { tableId } = params
+  const { tableId, lastRowId, lastUpdatedAt: _lastUpdatedAt } = params
 
   try {
     const table = context.tilesViewKey
@@ -37,7 +37,12 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
     }
 
     const columnIds = table.columns.map((column) => column.id)
-    return getTableRows({ tableId, columnIds })
+    return getTableRows({
+      tableId,
+      columnIds,
+      cursorRowId: lastRowId,
+      autoPaginate: false,
+    })
   } catch (e) {
     logger.error(e)
     if (e instanceof NotFoundError) {

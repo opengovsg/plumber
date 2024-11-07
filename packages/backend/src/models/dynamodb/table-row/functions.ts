@@ -259,13 +259,20 @@ export const getTableRowCount = async ({
 
 export const getTableRows = async ({
   tableId,
+  autoPaginate = true,
   columnIds,
   filters,
+  cursorRowId,
 }: {
   tableId: string
+  autoPaginate?: boolean
   columnIds?: string[]
   filters?: TableRowFilter[]
-}): Promise<TableRowOutput[]> => {
+  cursorRowId?: string
+}): Promise<{
+  rows: TableRowOutput[]
+  cursorRowId?: string
+}> => {
   try {
     // need to use ProjectionExpression to select nested attributes
     const { ProjectionExpression, ExpressionAttributeNames } =
@@ -275,7 +282,7 @@ export const getTableRows = async ({
         indexUsed: 'byCreatedAt',
       })
     const tableRows = []
-    let cursor: any = null
+    let cursor: any = cursorRowId ? { rowId: cursorRowId } : null
     do {
       const query = TableRow.query.byCreatedAt({ tableId })
       if (filters?.length) {
@@ -283,7 +290,7 @@ export const getTableRows = async ({
       }
       const response = await query.go({
         order: 'asc',
-        pages: 'all',
+        pages: 'all', // this is ignored, we need to paginate manually
         cursor,
         params: {
           ProjectionExpression,
@@ -301,11 +308,14 @@ export const getTableRows = async ({
       }
       tableRows.push(...data.Items)
       cursor = data.LastEvaluatedKey
-    } while (cursor)
-    return tableRows.map((row) => ({
-      ...row,
-      data: row.data || {}, // data can be undefined if values are empty
-    }))
+      // loop only if cursor is
+    } while (cursor && autoPaginate)
+    return {
+      rows: tableRows.map((row) => ({
+        ...row,
+        data: row.data || {}, // data can be undefined if values are empty
+      })),
+    }
   } catch (e: unknown) {
     handleDynamoDBError(e)
   }

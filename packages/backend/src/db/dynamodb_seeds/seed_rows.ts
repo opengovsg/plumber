@@ -25,7 +25,7 @@ const COUNT_ONLY = argv[3]
 const ROW_COUNT = 10000
 async function seedRows(tableId: string) {
   // delete existing rows
-  const existingRows = await getTableRows({ tableId })
+  const existingRows = await getTableRows({ tableId, autoPaginate: true })
   console.log('count', existingRows.length)
 
   if (COUNT_ONLY === 'count') {
