@@ -8,6 +8,7 @@ import { Kind, OperationDefinitionNode } from 'graphql/language'
 import { applyMiddleware } from 'graphql-middleware'
 
 import appConfig from '@/config/app'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
@@ -43,7 +44,7 @@ function ApolloServerPluginUserTracer(): ApolloServerPlugin<AuthenticatedContext
   }
 }
 
-function preventBatching(): ApolloServerPlugin {
+function PreventBatching(): ApolloServerPlugin {
   return {
     async requestDidStart() {
       return {
@@ -54,13 +55,11 @@ function preventBatching(): ApolloServerPlugin {
             (definition) => definition.kind === Kind.OPERATION_DEFINITION,
           ) as OperationDefinitionNode | undefined
 
-          if (queryDefinition) {
-            // Check if there are multiple selections (root fields) in the query
-            if (queryDefinition.selectionSet.selections.length > 1) {
-              throw new Error(
-                'Multiple root fields in a single operation are not allowed.',
-              )
-            }
+          // Check if there are multiple selections (root fields) in the query
+          if (queryDefinition?.selectionSet.selections.length > 1) {
+            throw new BadUserInputError(
+              'Multiple root fields in a single operation are not allowed.',
+            )
           }
         },
       }
@@ -75,7 +74,7 @@ const schemaWithMiddleware = applyMiddleware(
   authentication.generate(schema),
 )
 
-const server = new ApolloServer<UnauthenticatedContext>({
+export const server = new ApolloServer<UnauthenticatedContext>({
   schema: schemaWithMiddleware,
   introspection: appConfig.isDev,
   plugins: [
@@ -83,8 +82,10 @@ const server = new ApolloServer<UnauthenticatedContext>({
       ? ApolloServerPluginLandingPageLocalDefault()
       : ApolloServerPluginLandingPageDisabled(),
     ApolloServerPluginUserTracer(),
-    preventBatching(),
+    PreventBatching(),
   ],
+  // We don't want to allow batching within a single HTTP request, this defaults to false
+  allowBatchedHttpRequests: false,
   formatError: (error) => {
     logger.error(error)
     let errorMessage = error.message
