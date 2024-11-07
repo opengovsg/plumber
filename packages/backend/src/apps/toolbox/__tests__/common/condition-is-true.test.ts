@@ -94,6 +94,41 @@ describe('Condition is true', () => {
     expect(result).toEqual(expectedResult)
   })
 
+  /**
+   * Typical datetime formats:
+   * yyyy-MM-dd HH:mm
+   * dd MMM yyyy
+   * dd/MM/yyyy HH:mm:ss
+   * ISO format
+   */
+  it.each([
+    { text: '2024-11-06 12:00', expectedResult: true },
+    { text: '03/11/2024 12:00:30', expectedResult: false },
+  ])('supports before', ({ text, expectedResult }) => {
+    const result = conditionIsTrue({
+      field: '04 Nov 2024',
+      is: 'is',
+      condition: 'before',
+      text,
+    })
+
+    expect(result).toEqual(expectedResult)
+  })
+
+  it.each([
+    { text: '2024-11-06T12:00:00.500+08:00', expectedResult: false },
+    { text: '03 Nov 2024 23:59', expectedResult: true },
+  ])('supports after', ({ text, expectedResult }) => {
+    const result = conditionIsTrue({
+      field: '04 Nov 2024',
+      is: 'is',
+      condition: 'after',
+      text,
+    })
+
+    expect(result).toEqual(expectedResult)
+  })
+
   it.each([
     { field: 'hello', text: 9.9, condition: 'equals', expectedResult: true },
     { field: 10, text: 10, condition: 'gte', expectedResult: false },
@@ -132,6 +167,25 @@ describe('Condition is true', () => {
         text: null,
       })
       expect(result).toEqual(expectedResult)
+    },
+  )
+
+  it.each([
+    { field: 10, condition: 'gte', text: 'abc' },
+    { field: 'abc', condition: 'lt', text: 10 },
+    { field: '04 Nov 2024', condition: 'before', text: 'abc' },
+    { field: 'abc', condition: 'before', text: '04 Nov 2024' },
+  ])(
+    'throws an error for invalid field or value for comparison',
+    ({ field, condition, text }) => {
+      expect(() =>
+        conditionIsTrue({
+          field,
+          is: 'is',
+          condition,
+          text,
+        }),
+      ).toThrowError()
     },
   )
 

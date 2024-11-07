@@ -6,9 +6,14 @@ function compareNumbers(
   value: IJSONValue,
 ): boolean {
   // WARNING: can only compare safely up till Number.MAX_SAFE_INTEGER but BigInt cannot compare floats...
-  if (isNaN(Number(field)) || isNaN(Number(value))) {
-    throw new Error('Non-number used in field or value for comparison')
+  if (isNaN(Number(field))) {
+    throw new Error('Non-number used in field for comparison')
   }
+
+  if (isNaN(Number(value))) {
+    throw new Error('Non-number used in value for comparison')
+  }
+
   switch (condition) {
     case 'gte':
       return Number(field) >= Number(value)
@@ -21,6 +26,29 @@ function compareNumbers(
   }
 }
 
+function compareDates(
+  field: IJSONValue,
+  condition: 'before' | 'after',
+  value: IJSONValue,
+) {
+  const fieldTimestamp = new Date(field as string).getTime()
+  if (isNaN(fieldTimestamp)) {
+    throw new Error('Invalid date used in field for comparison')
+  }
+
+  const valueTimestamp = new Date(value as string).getTime()
+  if (isNaN(valueTimestamp)) {
+    throw new Error('Invalid date used in value for comparison')
+  }
+
+  switch (condition) {
+    case 'before':
+      return fieldTimestamp < valueTimestamp
+    case 'after':
+      return fieldTimestamp > valueTimestamp
+  }
+}
+
 export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
   // `value` is named `text` for legacy reasons.
   const { field, is, condition, text: value } = conditionArgs
@@ -29,6 +57,10 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
   switch (condition) {
     case 'equals':
       result = field === value
+      break
+    case 'before':
+    case 'after':
+      result = compareDates(field, condition, value)
       break
     case 'gte':
     case 'gt':
