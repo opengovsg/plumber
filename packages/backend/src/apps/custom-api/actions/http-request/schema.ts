@@ -6,8 +6,8 @@ export const requestSchema = z.object({
   customHeaders: z
     .array(
       z.object({
-        key: z.string().trim().min(1, 'Key empty').nullish(),
-        value: z.string().trim().min(1, 'Value empty').nullish(),
+        key: z.string().trim().min(1, 'Key empty'),
+        value: z.string().trim().min(1, 'Value empty'),
       }),
     )
     .transform((params, context) => {

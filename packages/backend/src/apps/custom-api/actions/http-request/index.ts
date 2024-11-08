@@ -54,6 +54,7 @@ const action: IRawAction = {
       description: 'Add custom headers here.',
       variables: true,
       customButtonText: 'Add',
+      hideBlankRow: true,
       showDivider: false,
       subFields: [
         {

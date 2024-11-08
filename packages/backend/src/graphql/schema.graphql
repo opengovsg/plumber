@@ -190,6 +190,7 @@ type ActionSubstepArgument {
   hiddenIf: FieldVisibilityCondition
   customButtonText: String
   customStyle: JSONObject
+  hideBlankRow: Boolean
   showDivider: Boolean
   isSingleLine: Boolean
 

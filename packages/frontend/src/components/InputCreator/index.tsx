@@ -161,6 +161,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         subFields={schema.subFields}
         required={required}
         customButtonText={schema.customButtonText}
+        hideBlankRow={schema.hideBlankRow}
         showDivider={schema.showDivider}
         type={type}
         // These are InputCreatorProps which MultiRow will forward.

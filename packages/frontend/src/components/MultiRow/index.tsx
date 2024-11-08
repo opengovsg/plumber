@@ -21,6 +21,7 @@ export type MultiRowProps = {
   label?: string
   description?: string
   flexDir?: string
+  hideBlankRow?: boolean
   showDivider?: boolean
   customButtonText?: string
   type?: string
@@ -34,6 +35,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     required,
     description,
     customButtonText,
+    hideBlankRow,
     showDivider,
     type,
     ...forwardedInputCreatorProps
@@ -72,7 +74,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     <Controller
       name={name}
       control={control}
-      defaultValue={[{ ...newRowDefaultValue }]}
+      defaultValue={hideBlankRow ? [] : [{ ...newRowDefaultValue }]}
       render={({ field: { value: fallbackRows } }): JSX.Element => {
         // HACKFIX (ogp-weeloong): I don't know why `rows` lags behind
         // `fallbackRows` on the 1st render.

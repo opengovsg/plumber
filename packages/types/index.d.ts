@@ -358,6 +358,7 @@ export interface IFieldMultiRowMultiCol extends IBaseField {
   type: 'multirow-multicol'
   value?: string
   customButtonText?: string
+  hideBlankRow?: boolean
   showDivider?: boolean
 
   subFields: IField[]
@@ -367,6 +368,7 @@ export interface IFieldMultiRow extends IBaseField {
   type: 'multirow'
   value?: string
   customButtonText?: string
+  hideBlankRow?: boolean
   showDivider?: boolean
 
   subFields: IField[]

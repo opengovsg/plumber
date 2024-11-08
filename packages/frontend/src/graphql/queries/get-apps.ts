@@ -190,6 +190,7 @@ export const GET_APPS = gql`
             allowArbitrary
             customButtonText
             customStyle
+            hideBlankRow
             showDivider
             showOptionValue
             isSingleLine
