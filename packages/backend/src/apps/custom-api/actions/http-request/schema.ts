@@ -44,6 +44,5 @@ export const requestSchema = z.object({
         result[key] = sanitizeMarkdown(cleanV)
       }
       return result
-    })
-    .nullish(),
+    }),
 })
