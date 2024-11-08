@@ -23,6 +23,7 @@ const action: IRawAction = {
       required: true,
       description: `The HTTP method we'll use to perform the request.`,
       value: 'GET',
+      showOptionValue: false,
       options: [
         { label: 'DELETE', value: 'DELETE' },
         { label: 'GET', value: 'GET' },
