@@ -105,7 +105,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                         name={namePrefix}
                         subFields={subFields}
                         canRemoveRow={canRemoveRow}
-                        isEditorReadOnly={true}
+                        isEditorReadOnly={isEditorReadOnly}
                         remove={remove}
                         index={index}
                       />
