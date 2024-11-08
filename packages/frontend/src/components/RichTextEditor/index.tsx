@@ -1,6 +1,6 @@
 import './RichTextEditor.scss'
 
-import { useCallback, useContext, useEffect, useMemo } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import {
   Box,
@@ -82,6 +82,7 @@ interface EditorProps {
   placeholder?: string
   variablesEnabled?: boolean
   isRich?: boolean
+  isSingleLine?: boolean
 }
 const Editor = ({
   onChange,
@@ -90,6 +91,7 @@ const Editor = ({
   placeholder,
   variablesEnabled,
   isRich,
+  isSingleLine,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
 
@@ -167,6 +169,7 @@ const Editor = ({
     onCreate: ({ editor }) => {
       const editorElement = editor.view.dom as HTMLElement
       editorElement.style.minHeight = isRich ? '9rem' : '2.625rem' // Set initial minHeight directly
+      editorElement.style.maxHeight = isSingleLine ? '2.625rem' : ''
     },
     editorProps: {
       transformPastedHTML: (html) => {
@@ -257,8 +260,10 @@ interface RichTextEditorProps {
   description?: string
   disabled?: boolean
   placeholder?: string
+  customStyle?: React.CSSProperties
   variablesEnabled?: boolean
   isRich?: boolean
+  isSingleLine?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -268,12 +273,15 @@ const RichTextEditor = ({
   description,
   disabled,
   placeholder,
+  customStyle,
   variablesEnabled,
   isRich,
+  isSingleLine,
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
+
   return (
-    <FormControl flex={1} data-test="text-input-group">
+    <FormControl flex={1} style={customStyle} data-test="text-input-group">
       {label && (
         <FormLabel isRequired={required} description={description}>
           {label}
@@ -293,6 +301,7 @@ const RichTextEditor = ({
             placeholder={placeholder}
             variablesEnabled={variablesEnabled}
             isRich={isRich}
+            isSingleLine={isSingleLine}
           />
         )}
       />

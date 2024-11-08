@@ -1,11 +1,16 @@
 import { IRawAction } from '@plumber/types'
 
-import StepError from '@/errors/step'
+import { ZodError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
+
+import StepError, { GenericSolution } from '@/errors/step'
 
 import {
   DISALLOWED_IP_RESOLVED_ERROR,
   RECURSIVE_WEBHOOK_ERROR_NAME,
 } from '../../common/check-urls'
+
+import { requestSchema } from './schema'
 
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
@@ -23,6 +28,7 @@ const action: IRawAction = {
       required: true,
       description: `The HTTP method we'll use to perform the request.`,
       value: 'GET',
+      showOptionValue: false,
       options: [
         { label: 'DELETE', value: 'DELETE' },
         { label: 'GET', value: 'GET' },
@@ -41,6 +47,35 @@ const action: IRawAction = {
       variables: true,
     },
     {
+      label: 'Custom Headers',
+      key: 'customHeaders',
+      type: 'multirow-multicol' as const,
+      required: false,
+      description: 'Add custom headers here.',
+      variables: true,
+      customButtonText: 'Add',
+      showDivider: false,
+      subFields: [
+        {
+          placeholder: 'Key',
+          key: 'key',
+          type: 'string' as const,
+          required: true,
+          variables: false,
+          customStyle: { flex: 0.5 },
+        },
+        {
+          placeholder: 'Value',
+          key: 'value',
+          type: 'string' as const,
+          required: true,
+          variables: true,
+          isSingleLine: true,
+          customStyle: { flex: 1, minWidth: 0 },
+        },
+      ],
+    },
+    {
       label: 'Data',
       key: 'data',
       type: 'string' as const,
@@ -56,11 +91,15 @@ const action: IRawAction = {
     const url = $.step.parameters.url as string
 
     try {
+      const parsedS = requestSchema.parse($.step.parameters)
+      const { customHeaders } = parsedS
+
       let response = await $.http.request({
         url,
         method,
         data,
         maxRedirects: 0,
+        headers: customHeaders,
         //  overwriting this to allow redirects to resolve
         validateStatus: (status) =>
           (status >= 200 && status < 300) ||
@@ -97,6 +136,16 @@ const action: IRawAction = {
 
       $.setActionItem({ raw: { data: responseData } })
     } catch (err) {
+      if (err instanceof ZodError) {
+        const firstError = fromZodError(err).details[0]
+        throw new StepError(
+          `${firstError.message} under set up action`,
+          GenericSolution.ReconfigureInvalidField,
+          $.step.position,
+          $.app.name,
+        )
+      }
+
       if (err.message === RECURSIVE_WEBHOOK_ERROR_NAME) {
         throw new StepError(
           RECURSIVE_WEBHOOK_ERROR_NAME,

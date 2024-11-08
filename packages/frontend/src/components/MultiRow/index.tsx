@@ -4,11 +4,15 @@ import { useCallback, useContext, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
-import { Divider, Flex, Text } from '@chakra-ui/react'
+import { Flex } from '@chakra-ui/react'
 import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator, { InputCreatorProps } from '@/components/InputCreator'
 import { EditorContext } from '@/contexts/Editor'
+
+import MultiCol from '../MultiCol.tsx'
+
+import RowDivider from './RowDivider'
 
 export type MultiRowProps = {
   name: string
@@ -16,6 +20,10 @@ export type MultiRowProps = {
   required?: boolean
   label?: string
   description?: string
+  flexDir?: string
+  showDivider?: boolean
+  customButtonText?: string
+  type?: string
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
 function MultiRow(props: MultiRowProps): JSX.Element {
@@ -25,6 +33,9 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     label,
     required,
     description,
+    customButtonText,
+    showDivider,
+    type,
     ...forwardedInputCreatorProps
   } = props
 
@@ -88,48 +99,61 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               const namePrefix = `${name}.${index}`
               return (
                 <Flex key={`${name}.${index}`} flexDir="column" gap={4} mb={4}>
-                  {/*
-                   * Sub-Fields
-                   *
-                   * Note: we edge case the 1st sub-field to show our "remove
-                   * row" icon
-                   */}
-                  <Flex alignItems="center" gap={2}>
-                    <InputCreator
-                      schema={subFields[0]}
-                      namePrefix={namePrefix}
-                      {...forwardedInputCreatorProps}
-                    />
-                    {canRemoveRow && (
-                      <IconButton
-                        variant="clear"
-                        aria-label="Remove"
-                        icon={<BiTrash />}
-                        isDisabled={isEditorReadOnly}
-                        onClick={() => remove(index)}
+                  {type === 'multirow-multicol' ? (
+                    <>
+                      <MultiCol
+                        name={namePrefix}
+                        subFields={subFields}
+                        canRemoveRow={canRemoveRow}
+                        isEditorReadOnly={true}
+                        remove={remove}
+                        index={index}
                       />
-                    )}
-                  </Flex>
-                  {subFields.slice(1).map((subField) => (
-                    <InputCreator
-                      key={`${row.id}.${subField.key}`}
-                      schema={subField}
-                      namePrefix={namePrefix}
-                      {...forwardedInputCreatorProps}
-                    />
-                  ))}
+                      {/*
+                       * "And" divider
+                       */}
+                      {showDivider && index !== actualRows.length - 1 && (
+                        <RowDivider />
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/*
+                       * Sub-Fields
+                       *
+                       * Note: we edge case the 1st sub-field to show our "remove
+                       * row" icon
+                       */}
+                      <Flex alignItems="center" gap={2}>
+                        <InputCreator
+                          schema={subFields[0]}
+                          namePrefix={namePrefix}
+                          {...forwardedInputCreatorProps}
+                        />
+                        {canRemoveRow && (
+                          <IconButton
+                            variant="clear"
+                            aria-label="Remove"
+                            icon={<BiTrash />}
+                            isDisabled={isEditorReadOnly}
+                            onClick={() => remove(index)}
+                          />
+                        )}
+                      </Flex>
+                      {subFields.slice(1).map((subField) => (
+                        <InputCreator
+                          key={`${row.id}.${subField.key}`}
+                          schema={subField}
+                          namePrefix={namePrefix}
+                          {...forwardedInputCreatorProps}
+                        />
+                      ))}
 
-                  {/*
-                   * "And" divider
-                   */}
-                  {index !== actualRows.length - 1 && (
-                    <Flex alignItems="center">
-                      <Divider />
-                      <Text textStyle="subhead-3" mx={2.5}>
-                        And
-                      </Text>
-                      <Divider />
-                    </Flex>
+                      {/*
+                       * "And" divider
+                       */}
+                      {index !== actualRows.length - 1 && <RowDivider />}
+                    </>
                   )}
                 </Flex>
               )
@@ -142,7 +166,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               isDisabled={isEditorReadOnly}
               maxW="fit-content"
             >
-              And
+              {customButtonText ?? 'And'}
             </Button>
           </Flex>
         )

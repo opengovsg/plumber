@@ -19,6 +19,7 @@ type TextFieldProps = {
   clickToCopy?: boolean
   readOnly?: boolean
   description?: string
+  customStyle?: React.CSSProperties
 } & MuiTextFieldProps
 
 const createCopyAdornment = (
@@ -50,6 +51,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
     readOnly,
     onBlur,
     onChange,
+    customStyle,
     ...textFieldProps
   } = props
 
@@ -68,7 +70,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
           ...field
         },
       }) => (
-        <FormControl>
+        <FormControl style={customStyle}>
           {label && (
             <FormLabel
               isRequired={required}

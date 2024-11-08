@@ -114,6 +114,8 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           description={description}
           disabled={disabled}
           placeholder={placeholder}
+          isSingleLine={schema.isSingleLine}
+          customStyle={schema.customStyle}
           variablesEnabled
         />
       )
@@ -133,6 +135,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         description={description}
         clickToCopy={clickToCopy}
         autoComplete={schema.autoComplete}
+        customStyle={schema.customStyle}
       />
     )
   }
@@ -149,7 +152,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     )
   }
 
-  if (type === 'multirow') {
+  if (type === 'multirow' || type === 'multirow-multicol') {
     return (
       <MultiRow
         name={computedName}
@@ -157,6 +160,9 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         description={description}
         subFields={schema.subFields}
         required={required}
+        customButtonText={schema.customButtonText}
+        showDivider={schema.showDivider}
+        type={type}
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
         disabled={disabled}
