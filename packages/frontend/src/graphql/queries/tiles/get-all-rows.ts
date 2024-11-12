@@ -1,7 +1,10 @@
-import { gql } from '@apollo/client'
+import { graphql } from '@/graphql/__generated__'
 
-export const GET_ALL_ROWS = gql`
-  query GetAllRows($tableId: String!) {
-    getAllRows(tableId: $tableId)
+export const GET_ALL_ROWS = graphql(`
+  query GetAllRows($tableId: String!, $stringifiedCursor: String) {
+    getAllRows(tableId: $tableId, stringifiedCursor: $stringifiedCursor) {
+      rows
+      stringifiedCursor
+    }
   }
-`
+`)

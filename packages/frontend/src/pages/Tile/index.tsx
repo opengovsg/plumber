@@ -1,6 +1,6 @@
 import { ITableMetadata, ITableRow } from '@plumber/types'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
@@ -19,6 +19,7 @@ export default function Tile(): JSX.Element {
     viewOnlyKey?: string
   }>()
   const [rows, setRows] = useState<ITableRow[]>([])
+  const [isFetching, setIsFetching] = useState(true)
 
   const { data: getTableData } = useQuery<{
     getTable: ITableMetadata
@@ -34,25 +35,59 @@ export default function Tile(): JSX.Element {
   })
   const ownRole = getTableData?.getTable?.role
 
-  const { data: getAllRowsData, fetchMore } = useQuery<{
-    getAllRows: ITableRow[]
-  }>(GET_ALL_ROWS, {
+  const { data: initialData, fetchMore,  } = useQuery(GET_ALL_ROWS, {
     variables: {
-      tableId,
-      viewOnlyKey: urlViewOnlyKey,
+      tableId: tableId as string,
     },
     context: urlViewOnlyKey
       ? {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
         }
       : undefined,
-    fetchPolicy: 'network-only',
-    onCompleted: (data) => {
-      setRows((prevRows) => [...prevRows, ...data.getAllRows])
+    fetchPolicy: 'no-cache',
+    onCompleted: async (data) => {
+      if (!data.getAllRows) {
+        return
+      }
+      setRows((prevRows) => [...prevRows, ...data.getAllRows.rows])
     },
   })
 
-  if (!getTableData?.getTable || !getAllRowsData?.getAllRows) {
+  // Function to load more items until all data is fetched
+  const loadMoreRows = useCallback(
+    async (cursor: string | null) => {
+      let currentCursor: string | null = cursor
+
+      while (currentCursor) {
+        const { data } = await fetchMore({
+          variables: { stringifiedCursor: currentCursor },
+        })
+
+        if (data) {
+          setRows((prevRows) => [...prevRows, ...data.getAllRows.rows])
+          currentCursor = data.getAllRows.stringifiedCursor ?? null
+        } else {
+          currentCursor = null
+        }
+      }
+      setIsFetching(false)
+    },
+    [fetchMore],
+  )
+
+  // Load all data when the component mounts
+  useEffect(() => {
+    const initialRows = initialData?.getAllRows
+    if (!initialRows) {
+      return
+    }
+    setRows(initialRows.rows)
+    if (initialRows.stringifiedCursor) {
+      loadMoreRows(initialRows.stringifiedCursor)
+    }
+  }, [initialData, loadMoreRows])
+
+  if (!getTableData?.getTable || !initialData?.getAllRows) {
     return (
       <Center height="100vh">
         <PrimarySpinner fontSize="6xl" thickness="4px" margin="auto" />

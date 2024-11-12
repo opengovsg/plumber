@@ -12,7 +12,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
   params,
   context,
 ) => {
-  const { tableId, lastRowId, lastUpdatedAt: _lastUpdatedAt } = params
+  const { tableId, stringifiedCursor, lastUpdatedAt: _lastUpdatedAt } = params
 
   try {
     const table = context.tilesViewKey
@@ -37,12 +37,13 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
     }
 
     const columnIds = table.columns.map((column) => column.id)
-    return getTableRows({
+    return await getTableRows({
       tableId,
       columnIds,
-      cursorRowId: lastRowId,
+      stringifiedCursor,
       autoPaginate: false,
     })
+    // TODO: remove keys from rows to reduce payload size
   } catch (e) {
     logger.error(e)
     if (e instanceof NotFoundError) {

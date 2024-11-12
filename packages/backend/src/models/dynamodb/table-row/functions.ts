@@ -262,16 +262,16 @@ export const getTableRows = async ({
   autoPaginate = true,
   columnIds,
   filters,
-  cursorRowId,
+  stringifiedCursor,
 }: {
   tableId: string
   autoPaginate?: boolean
   columnIds?: string[]
   filters?: TableRowFilter[]
-  cursorRowId?: string
+  stringifiedCursor?: string
 }): Promise<{
   rows: TableRowOutput[]
-  cursorRowId?: string
+  stringifiedCursor?: string
 }> => {
   try {
     // need to use ProjectionExpression to select nested attributes
@@ -282,7 +282,7 @@ export const getTableRows = async ({
         indexUsed: 'byCreatedAt',
       })
     const tableRows = []
-    let cursor: any = cursorRowId ? { rowId: cursorRowId } : null
+    let cursor: any = stringifiedCursor ? JSON.parse(stringifiedCursor) : null
     do {
       const query = TableRow.query.byCreatedAt({ tableId })
       if (filters?.length) {
@@ -315,6 +315,7 @@ export const getTableRows = async ({
         ...row,
         data: row.data || {}, // data can be undefined if values are empty
       })),
+      stringifiedCursor: cursor ? JSON.stringify(cursor) : undefined,
     }
   } catch (e: unknown) {
     handleDynamoDBError(e)
