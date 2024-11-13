@@ -200,6 +200,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  justify-content: center;
 
   .tiptap p.is-editor-empty:first-child::before {
     color: #adb5bd;

@@ -23,7 +23,7 @@ export type MultiRowProps = {
   flexDir?: string
   hideBlankRow?: boolean
   showDivider?: boolean
-  customButtonText?: string
+  addRowButtonText?: string
   type?: string
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
@@ -34,7 +34,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     label,
     required,
     description,
-    customButtonText,
+    addRowButtonText,
     hideBlankRow,
     showDivider,
     type,
@@ -100,7 +100,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
             {actualRows.map((row, index) => {
               const namePrefix = `${name}.${index}`
               return (
-                <Flex key={`${name}.${index}`} flexDir="column" gap={4} mb={4}>
+                <Flex key={row.id} flexDir="column" gap={4} mb={4}>
                   {type === 'multirow-multicol' ? (
                     <>
                       <MultiCol
@@ -168,7 +168,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               isDisabled={isEditorReadOnly}
               maxW="fit-content"
             >
-              {customButtonText ?? 'And'}
+              {addRowButtonText ?? 'And'}
             </Button>
           </Flex>
         )

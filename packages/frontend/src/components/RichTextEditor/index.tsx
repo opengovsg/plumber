@@ -1,6 +1,6 @@
 import './RichTextEditor.scss'
 
-import React, { useCallback, useContext, useEffect, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import {
   Box,

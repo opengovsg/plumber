@@ -33,6 +33,7 @@ export default function MultiCol(props: MultiColProps) {
             key={`${name}.${subF.key}`}
             schema={subF}
             namePrefix={name}
+            parentType="multicol"
             {...forwardedInputCreatorProps}
           />
         )
@@ -43,7 +44,7 @@ export default function MultiCol(props: MultiColProps) {
           aria-label="Remove"
           icon={<BiTrash />}
           isDisabled={isEditorReadOnly}
-          onClick={() => remove && remove(index)}
+          onClick={() => remove?.(index)}
         />
       )}
     </Flex>

@@ -53,9 +53,8 @@ const action: IRawAction = {
       required: false,
       description: 'Add custom headers here.',
       variables: true,
-      customButtonText: 'Add',
+      addRowButtonText: 'Add',
       hideBlankRow: true,
-      showDivider: false,
       subFields: [
         {
           placeholder: 'Key',
@@ -63,7 +62,6 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: false,
-          customStyle: { flex: 0.5 },
         },
         {
           placeholder: 'Value',
@@ -71,8 +69,6 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
-          isSingleLine: true,
-          customStyle: { flex: 1, minWidth: 0 },
         },
       ],
     },

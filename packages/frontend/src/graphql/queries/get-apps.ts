@@ -188,12 +188,9 @@ export const GET_APPS = gql`
             variables
             variableTypes
             allowArbitrary
-            customButtonText
-            customStyle
+            addRowButtonText
             hideBlankRow
-            showDivider
             showOptionValue
-            isSingleLine
             value
             options {
               label
@@ -229,9 +226,7 @@ export const GET_APPS = gql`
               variables
               variableTypes
               allowArbitrary
-              customStyle
               showOptionValue
-              isSingleLine
               hiddenIf {
                 fieldKey
                 fieldValue

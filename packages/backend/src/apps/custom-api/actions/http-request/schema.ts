@@ -6,26 +6,27 @@ export const requestSchema = z.object({
   customHeaders: z
     .array(
       z.object({
-        key: z.string().trim().min(1, 'Key empty'),
-        value: z.string().trim().min(1, 'Value empty'),
+        // key cannot be null or empty
+        key: z
+          .string({
+            required_error: 'Key empty',
+            invalid_type_error: 'Key empty',
+          })
+          .trim()
+          .min(1, 'Key empty'),
+        // value optional in the event the substituted variable is empty
+        value: z.string().trim().nullish().optional(),
       }),
     )
     .transform((params, context) => {
       const result = Object.create(null)
       const seenFields = new Set<string>()
       for (const { key, value } of params) {
-        // no null fields or values are allowed
+        // no null keys are allowed
         if (!key) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'Key empty',
-          })
-          return z.NEVER
-        }
-        if (!value) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Value empty',
           })
           return z.NEVER
         }
@@ -40,7 +41,7 @@ export const requestSchema = z.object({
         }
         seenFields.add(key)
 
-        const cleanV = value.replaceAll(/\r?\n|\r/g, ' ')
+        const cleanV = value?.replaceAll(/\r?\n|\r/g, ' ') || ''
         result[key] = sanitizeMarkdown(cleanV)
       }
       return result

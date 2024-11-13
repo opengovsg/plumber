@@ -330,8 +330,6 @@ export interface IFieldDropdownOption {
 export interface IFieldText extends IBaseField {
   type: 'string'
   value?: string
-  customStyle?: React.CSSProperties
-  isSingleLine?: boolean
 
   // Not applicable if field has variables.
   autoComplete?: AutoCompleteValue
@@ -340,8 +338,6 @@ export interface IFieldText extends IBaseField {
 export interface IFieldMultiline extends IBaseField {
   type: 'multiline'
   value?: string
-  customStyle?: React.CSSProperties
-  isSingleLine?: boolean
 
   // Not applicable if field has variables.
   autoComplete?: AutoCompleteValue
@@ -357,9 +353,8 @@ export interface IFieldMultiSelect extends IBaseField {
 export interface IFieldMultiRowMultiCol extends IBaseField {
   type: 'multirow-multicol'
   value?: string
-  customButtonText?: string
+  addRowButtonText?: string
   hideBlankRow?: boolean
-  showDivider?: boolean
 
   subFields: IField[]
 }
@@ -367,9 +362,8 @@ export interface IFieldMultiRowMultiCol extends IBaseField {
 export interface IFieldMultiRow extends IBaseField {
   type: 'multirow'
   value?: string
-  customButtonText?: string
+  addRowButtonText?: string
   hideBlankRow?: boolean
-  showDivider?: boolean
 
   subFields: IField[]
 }
