@@ -21,6 +21,7 @@ const trigger: IRawTrigger = {
       required: true,
       value: null,
       variables: false,
+      showOptionValue: false,
       options: [
         {
           label: '1',
@@ -156,6 +157,7 @@ const trigger: IRawTrigger = {
       required: true,
       value: null,
       variables: false,
+      showOptionValue: false,
       options: [
         {
           label: '00:00',

@@ -25,6 +25,7 @@ const action: IRawAction = {
       required: true,
       value: 'score',
       variables: false,
+      showOptionValue: false,
       options: [
         {
           label: 'Match strength',
@@ -45,6 +46,7 @@ const action: IRawAction = {
       required: true,
       value: 'desc',
       variables: false,
+      showOptionValue: false,
       options: [
         {
           label: 'Descending (newest or best match first)',
