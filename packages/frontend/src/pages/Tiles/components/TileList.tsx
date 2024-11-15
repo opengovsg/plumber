@@ -1,17 +1,15 @@
 import { MouseEvent, useCallback, useRef } from 'react'
-import { BiDotsHorizontalRounded, BiShow, BiTrash } from 'react-icons/bi'
+import { BiTrash } from 'react-icons/bi'
+import { BsDot } from 'react-icons/bs'
 import { MdOutlineRemoveRedEye } from 'react-icons/md'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Box,
   Divider,
   Flex,
   Icon,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
+  Skeleton,
   Text,
   useDisclosure,
   VStack,
@@ -31,8 +29,17 @@ import { DELETE_TABLE } from '@/graphql/mutations/tiles/delete-table'
 import { GET_TABLES } from '@/graphql/queries/tiles/get-tables'
 import { toPrettyDateString } from '@/helpers/dateTime'
 
-const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
-  const navigate = useNavigate()
+import { TileConnections } from '..'
+
+const TileListItem = ({
+  isConnectionsLoading,
+  numConnections,
+  table,
+}: {
+  isConnectionsLoading: boolean
+  numConnections: number
+  table: TableMetadata
+}): JSX.Element => {
   const toast = useToast()
   const [deleteTable, { loading: isDeletingTable }] = useMutation(
     DELETE_TABLE,
@@ -50,12 +57,6 @@ const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
     isOpen: isDialogOpen,
     onOpen: onDialogOpen,
     onClose: onDialogClose,
-  } = useDisclosure()
-  // need to manage state to prevent bubbling of click event
-  const {
-    isOpen: isMenuOpen,
-    onToggle: onMenuToggle,
-    onClose: onMenuClose,
   } = useDisclosure()
 
   const onDeleteButtonClick = useCallback(
@@ -88,6 +89,9 @@ const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
         alignItems="center"
         _hover={{
           bg: 'interaction.muted.neutral.hover',
+          '& .hover-remove-button': {
+            visibility: 'visible',
+          },
         }}
         _active={{
           bg: 'interaction.muted.neutral.active',
@@ -95,9 +99,17 @@ const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
       >
         <Box>
           <Text textStyle="h6">{table.name}</Text>
-          <Text textStyle="body-2">
-            Last opened {toPrettyDateString(+table.lastAccessedAt)}
-          </Text>
+          <Flex gap={1} textStyle="body-2" color="base.content.medium">
+            <Text>Last opened {toPrettyDateString(+table.lastAccessedAt)}</Text>
+            {table.role !== 'viewer' && numConnections && (
+              <>
+                <Icon as={BsDot} fontSize="1.5em" />
+                <Skeleton isLoaded={!isConnectionsLoading}>
+                  <Text>Used in {numConnections} pipes</Text>
+                </Skeleton>
+              </>
+            )}
+          </Flex>
         </Box>
         <Flex alignItems="center" gap={4}>
           {table.role === 'viewer' && (
@@ -113,39 +125,16 @@ const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
               <TagLabel>View only</TagLabel>
             </Tag>
           )}
-          <Menu onClose={onMenuClose} isOpen={isMenuOpen} gutter={0}>
-            <MenuButton
-              as={IconButton}
-              colorScheme="secondary"
+          {table.role === 'owner' && (
+            <IconButton
+              className="hover-remove-button"
               variant="clear"
-              icon={<BiDotsHorizontalRounded />}
-              aria-label="options"
-              onClick={(event) => {
-                event.preventDefault()
-                onMenuToggle()
-              }}
+              aria-label="Remove"
+              icon={<BiTrash />}
+              onClick={onDeleteButtonClick}
+              visibility="hidden"
             />
-            <MenuList w={144}>
-              <MenuItem
-                icon={<Icon as={BiShow} boxSize={5} />}
-                onClick={(event) => {
-                  event.preventDefault() // default behavior of the Link in the parent
-                  navigate(URLS.TILE(table.id))
-                }}
-              >
-                View
-              </MenuItem>
-              {table.role === 'owner' && (
-                <MenuItem
-                  icon={<Icon as={BiTrash} boxSize={5} />}
-                  color="interaction.critical.default"
-                  onClick={onDeleteButtonClick}
-                >
-                  Delete
-                </MenuItem>
-              )}
-            </MenuList>
-          </Menu>
+          )}
         </Flex>
       </Flex>
       <MenuAlertDialog
@@ -162,10 +151,16 @@ const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
 }
 
 interface TileListProps {
+  isConnectionsLoading: boolean
+  tileConnections: TileConnections
   tiles: TableMetadata[]
 }
 
-const TileList = ({ tiles }: TileListProps): JSX.Element => {
+const TileList = ({
+  isConnectionsLoading,
+  tileConnections,
+  tiles,
+}: TileListProps): JSX.Element => {
   return (
     <VStack
       alignItems="stretch"
@@ -174,7 +169,12 @@ const TileList = ({ tiles }: TileListProps): JSX.Element => {
       spacing={0}
     >
       {tiles.map((tile) => (
-        <TileListItem key={tile.id} table={tile} />
+        <TileListItem
+          key={tile.id}
+          isConnectionsLoading={isConnectionsLoading}
+          numConnections={tileConnections[tile.id]}
+          table={tile}
+        />
       ))}
     </VStack>
   )
