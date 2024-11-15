@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import getTableConnections from '@/graphql/queries/tiles/get-table-connections'
@@ -15,7 +16,9 @@ interface TablePipeCountObj {
 }
 
 function getRandNum() {
-  return Math.floor(Math.random() * 5) + 1
+  const array = new Uint32Array(1)
+  crypto.getRandomValues(array)
+  return Math.floor((array[0] / (0xffffffff + 1)) * 5) + 1
 }
 
 describe('get table connections query', () => {
@@ -46,8 +49,7 @@ describe('get table connections query', () => {
       const res = await generateMockTable({ userId: context.currentUser.id })
       const { id: tableId } = res.table
 
-      const numFlows = Math.floor(Math.random() * 5) + 1
-      const numSteps = Math.floor(Math.random() * 5) + 1
+      const [numFlows, numSteps] = [getRandNum(), getRandNum()]
       tablePipeCount[tableId] = numFlows
 
       for (let i = 0; i < numFlows; i++) {
