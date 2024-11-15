@@ -16,9 +16,7 @@ interface TablePipeCountObj {
 }
 
 function getRandNum() {
-  const array = new Uint32Array(1)
-  crypto.getRandomValues(array)
-  return Math.floor((array[0] / (0xffffffff + 1)) * 5) + 1
+  return crypto.randomInt(1, 6)
 }
 
 describe('get table connections query', () => {
