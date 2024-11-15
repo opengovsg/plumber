@@ -6,6 +6,7 @@ import getTables from './get-tables'
 
 interface ExtendedFlow extends Flow {
   tableid: string
+  count: number
 }
 
 interface TableConnection {
@@ -29,16 +30,18 @@ const getTableConnections: QueryResolvers['getTableConnections'] = async (
   // get distinct rows of tables used in flows
   // returns flow id and table id
   const distinctTableFlows = await Flow.query()
-    .distinct('flows.id', Flow.raw("steps.parameters ->> 'tableId' AS tableId"))
+    .select(Flow.raw("steps.parameters ->> 'tableId' AS tableid"))
+    .countDistinct('flows.id')
     .innerJoinRelated('steps')
     .innerJoinRelated('user')
     .where('steps.app_key', 'tiles')
     .whereRaw("steps.parameters ->> 'tableId' IS NOT NULL")
     .whereRaw(`steps.parameters ->> 'tableId' IN (${tableIdStr})`)
+    .groupByRaw("steps.parameters ->> 'tableId'")
 
   const result = distinctTableFlows.reduce(
-    (acc: TableConnection, obj: ExtendedFlow) => {
-      acc[obj.tableid] = (acc[obj.tableid] || 0) + 1
+    (acc: TableConnection, row: ExtendedFlow) => {
+      acc[row.tableid] = row.count
       return acc
     },
     {},
