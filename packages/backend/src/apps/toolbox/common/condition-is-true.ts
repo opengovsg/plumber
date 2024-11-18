@@ -1,5 +1,7 @@
 import type { IJSONObject, IJSONValue } from '@plumber/types'
 
+import { generateTimestampFromFormats } from '@/helpers/generate-timestamp-from-formats'
+
 function compareNumbers(
   field: IJSONValue,
   condition: 'gte' | 'gt' | 'lte' | 'lt',
@@ -26,17 +28,34 @@ function compareNumbers(
   }
 }
 
+// support only formatter date formats
+const VALID_DATETIME_FORMATS = [
+  'dd/LL/yy',
+  'dd/LL/yyyy',
+  'dd LLL yyyy',
+  'dd LLLL yyyy',
+  'yyyy/LL/dd',
+  'dd LLL yyyy hh:mm a',
+  'dd LLL yyyy hh:mm:ss a',
+]
+
 function compareDates(
   field: IJSONValue,
   condition: 'before' | 'after',
   value: IJSONValue,
 ) {
-  const fieldTimestamp = new Date(field as string).getTime()
+  const fieldTimestamp = generateTimestampFromFormats(
+    field as string,
+    VALID_DATETIME_FORMATS,
+  )
   if (isNaN(fieldTimestamp)) {
     throw new Error('Invalid date used in field for comparison')
   }
 
-  const valueTimestamp = new Date(value as string).getTime()
+  const valueTimestamp = generateTimestampFromFormats(
+    value as string,
+    VALID_DATETIME_FORMATS,
+  )
   if (isNaN(valueTimestamp)) {
     throw new Error('Invalid date used in value for comparison')
   }

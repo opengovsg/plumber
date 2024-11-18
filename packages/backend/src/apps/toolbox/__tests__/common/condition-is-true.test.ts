@@ -94,16 +94,12 @@ describe('Condition is true', () => {
     expect(result).toEqual(expectedResult)
   })
 
-  /**
-   * Typical datetime formats:
-   * yyyy-MM-dd HH:mm
-   * dd MMM yyyy
-   * dd/MM/yyyy HH:mm:ss
-   * ISO format
-   */
+  // check all date formats
   it.each([
-    { text: '2024-11-06 12:00', expectedResult: true },
-    { text: '03/11/2024 12:00:30', expectedResult: false },
+    { text: '05/11/24', expectedResult: true }, // 'dd/LL/yy'
+    { text: '03/11/2024', expectedResult: false }, // 'dd/LL/yyyy'
+    { text: '05 Nov 2024', expectedResult: true }, // 'dd LLL yyyy'
+    { text: '03 November 2024', expectedResult: false }, // 'dd LLLL yyyy'
   ])('supports before', ({ text, expectedResult }) => {
     const result = conditionIsTrue({
       field: '04 Nov 2024',
@@ -116,8 +112,9 @@ describe('Condition is true', () => {
   })
 
   it.each([
-    { text: '2024-11-06T12:00:00.500+08:00', expectedResult: false },
-    { text: '03 Nov 2024 23:59', expectedResult: true },
+    { text: '2024/11/03', expectedResult: true }, // 'yyyy/LL/dd'
+    { text: '04 Nov 2024 12:01 AM', expectedResult: false }, // 'dd LLL yyyy hh:mm a'
+    { text: '03 Nov 2024 11:59:59 PM', expectedResult: true }, // 'dd LLL yyyy hh:mm:ss a'
   ])('supports after', ({ text, expectedResult }) => {
     const result = conditionIsTrue({
       field: '04 Nov 2024',
@@ -173,8 +170,8 @@ describe('Condition is true', () => {
   it.each([
     { field: 10, condition: 'gte', text: 'abc' },
     { field: 'abc', condition: 'lt', text: 10 },
-    { field: '04 Nov 2024', condition: 'before', text: 'abc' },
-    { field: 'abc', condition: 'before', text: '04 Nov 2024' },
+    { field: '04 Sep 2024', condition: 'before', text: 'abc' },
+    { field: '123', condition: 'before', text: '04 Nov 2024' },
   ])(
     'throws an error for invalid field or value for comparison',
     ({ field, condition, text }) => {
