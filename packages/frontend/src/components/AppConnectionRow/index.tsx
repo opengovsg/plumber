@@ -15,7 +15,7 @@ import { useToast } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
 
 import ConnectionContextMenu from '@/components/AppConnectionContextMenu'
-import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
+import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { DELETE_CONNECTION } from '@/graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 import useFormatMessage from '@/hooks/useFormatMessage'
@@ -35,7 +35,6 @@ const countTranslation = (value: React.ReactNode) => (
 
 function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const toast = useToast()
-  const [dialogType, setDialogType] = useState<AlertDialogType>('delete') // delete by default
   const [verificationVisible, setVerificationVisible] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
   const [testConnection, { called: testCalled, loading: testLoading }] =
@@ -99,7 +98,6 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
       action: { [key: string]: string },
     ) => {
       if (action.type === 'delete') {
-        setDialogType('delete')
         onDialogOpen()
       } else if (action.type === 'test') {
         setVerificationVisible(true)
@@ -215,7 +213,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         cancelRef={cancelRef}
         onDialogClose={onDialogClose}
         dialogHeader="Connection"
-        dialogType={dialogType}
+        dialogType="delete"
         onClick={onConnectionDelete}
         isLoading={isDeletingConnection}
       />

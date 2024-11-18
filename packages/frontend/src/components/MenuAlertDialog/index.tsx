@@ -9,14 +9,14 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 export type AlertDialogType = 'delete' | 'duplicate'
-export type AlertHeaderType = 'App' | 'Connection' | 'Pipe' | 'Tile'
+export type AlertHeaderType = 'Connection' | 'Pipe' | 'Tile'
 
 interface MenuAlertDialogProps {
   isDialogOpen: boolean
   cancelRef: React.RefObject<HTMLButtonElement>
   onDialogClose: () => void
   dialogType: AlertDialogType
-  dialogHeader: string
+  dialogHeader: AlertHeaderType
   onClick: () => void
   isLoading: boolean
 }
@@ -28,7 +28,7 @@ interface AlertDialogContent {
 }
 
 function getAlertDialogContent(
-  dialogHeader: string,
+  dialogHeader: AlertHeaderType,
   dialogType: AlertDialogType,
 ): AlertDialogContent {
   switch (dialogType) {
@@ -40,8 +40,8 @@ function getAlertDialogContent(
       }
     case 'duplicate':
       return {
-        header: `Duplicate ${dialogHeader}`,
-        body: `You'll need to replace the data in every step and test each step in your duplicated ${dialogHeader?.toLowerCase()} before publishing it.`,
+        header: 'Duplicate Pipe',
+        body: `You'll need to replace the data in every step and test each step in your duplicated pipe before publishing it.`,
         buttonText: 'Duplicate',
       }
   }
