@@ -3,7 +3,7 @@ import type { IConnection } from '@plumber/types'
 import * as React from 'react'
 import { useCallback, useRef, useState } from 'react'
 import { useLazyQuery, useMutation } from '@apollo/client'
-import { Card } from '@chakra-ui/react'
+import { Card, useDisclosure } from '@chakra-ui/react'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
@@ -15,6 +15,7 @@ import { useToast } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
 
 import ConnectionContextMenu from '@/components/AppConnectionContextMenu'
+import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { DELETE_CONNECTION } from '@/graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 import useFormatMessage from '@/hooks/useFormatMessage'
@@ -46,17 +47,49 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         setTimeout(() => setVerificationVisible(false), 3000)
       },
     })
-  const [deleteConnection] = useMutation(DELETE_CONNECTION)
+  const [deleteConnection, { loading: isDeletingConnection }] =
+    useMutation(DELETE_CONNECTION)
 
   const formatMessage = useFormatMessage()
   const { id, key, formattedData, createdAt, flowCount } = props.connection
 
   const contextButtonRef = useRef<SVGSVGElement | null>(null)
   const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const {
+    isOpen: isDialogOpen,
+    onOpen: onDialogOpen,
+    onClose: onDialogClose,
+  } = useDisclosure()
 
   const handleClose = () => {
     setAnchorEl(null)
   }
+
+  const onConnectionDelete = useCallback(async () => {
+    await deleteConnection({
+      variables: { input: { id } },
+      update: (cache) => {
+        const connectionCacheId = cache.identify({
+          __typename: 'Connection',
+          id,
+        })
+        cache.evict({
+          id: connectionCacheId,
+        })
+      },
+      onCompleted: () => {
+        onDialogClose()
+        toast({
+          title: 'The connection has been deleted.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+          position: 'bottom-right',
+        })
+      },
+    })
+  }, [deleteConnection, id, toast, onDialogClose])
 
   const onContextMenuClick = () => setAnchorEl(contextButtonRef.current)
   const onContextMenuAction = useCallback(
@@ -65,27 +98,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
       action: { [key: string]: string },
     ) => {
       if (action.type === 'delete') {
-        await deleteConnection({
-          variables: { input: { id } },
-          update: (cache) => {
-            const connectionCacheId = cache.identify({
-              __typename: 'Connection',
-              id,
-            })
-
-            cache.evict({
-              id: connectionCacheId,
-            })
-          },
-        })
-
-        toast({
-          title: 'The connection has been deleted.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-          position: 'bottom-right',
-        })
+        onDialogOpen()
       } else if (action.type === 'test') {
         setVerificationVisible(true)
         const testResults = await testConnection({
@@ -101,7 +114,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         }
       }
     },
-    [deleteConnection, id, testConnection, toast],
+    [id, onDialogOpen, testConnection],
   )
 
   const relativeCreatedAt = DateTime.fromMillis(
@@ -195,6 +208,15 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
           anchorEl={anchorEl}
         />
       )}
+      <MenuAlertDialog
+        isDialogOpen={isDialogOpen}
+        cancelRef={cancelRef}
+        onDialogClose={onDialogClose}
+        dialogHeader="Connection"
+        dialogType="delete"
+        onClick={onConnectionDelete}
+        isLoading={isDeletingConnection}
+      />
     </>
   )
 }

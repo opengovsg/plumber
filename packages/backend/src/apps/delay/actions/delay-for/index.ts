@@ -16,6 +16,7 @@ const action: IRawAction = {
       value: null,
       description: 'Delay for unit, e.g. minutes, hours, days, weeks.',
       variables: false,
+      showOptionValue: false,
       options: [
         {
           label: 'Minutes',
