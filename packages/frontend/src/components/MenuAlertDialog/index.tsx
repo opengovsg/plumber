@@ -9,12 +9,14 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 export type AlertDialogType = 'delete' | 'duplicate'
+export type AlertHeaderType = 'Connection' | 'Pipe' | 'Tile'
 
 interface MenuAlertDialogProps {
   isDialogOpen: boolean
   cancelRef: React.RefObject<HTMLButtonElement>
   onDialogClose: () => void
-  type: AlertDialogType
+  dialogType: AlertDialogType
+  dialogHeader: AlertHeaderType
   onClick: () => void
   isLoading: boolean
 }
@@ -25,12 +27,15 @@ interface AlertDialogContent {
   buttonText: string
 }
 
-function getAlertDialogContent(type: AlertDialogType): AlertDialogContent {
-  switch (type) {
+function getAlertDialogContent(
+  dialogHeader: AlertHeaderType,
+  dialogType: AlertDialogType,
+): AlertDialogContent {
+  switch (dialogType) {
     case 'delete':
       return {
-        header: 'Delete Pipe',
-        body: "Are you sure you want to delete this pipe? You can't undo this action afterwards.",
+        header: `Delete ${dialogHeader}`,
+        body: `Are you sure you want to delete this ${dialogHeader?.toLowerCase()}? You can't undo this action afterwards.`,
         buttonText: 'Delete',
       }
     case 'duplicate':
@@ -43,9 +48,19 @@ function getAlertDialogContent(type: AlertDialogType): AlertDialogContent {
 }
 
 export default function MenuAlertDialog(props: MenuAlertDialogProps) {
-  const { isDialogOpen, cancelRef, onDialogClose, type, onClick, isLoading } =
-    props
-  const { header, body, buttonText } = getAlertDialogContent(type)
+  const {
+    isDialogOpen,
+    cancelRef,
+    onDialogClose,
+    dialogHeader,
+    dialogType,
+    onClick,
+    isLoading,
+  } = props
+  const { header, body, buttonText } = getAlertDialogContent(
+    dialogHeader,
+    dialogType,
+  )
 
   return (
     <AlertDialog

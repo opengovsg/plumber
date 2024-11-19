@@ -4,12 +4,6 @@ import { MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
   Box,
   Divider,
   Flex,
@@ -23,13 +17,14 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import {
-  Button,
   IconButton,
   Tag,
   TagLabel,
   TagLeftIcon,
+  useToast,
 } from '@opengovsg/design-system-react'
 
+import MenuAlertDialog from '@/components/MenuAlertDialog'
 import * as URLS from '@/config/urls'
 import type { TableMetadata } from '@/graphql/__generated__/graphql'
 import { DELETE_TABLE } from '@/graphql/mutations/tiles/delete-table'
@@ -38,6 +33,7 @@ import { toPrettyDateString } from '@/helpers/dateTime'
 
 const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
   const navigate = useNavigate()
+  const toast = useToast()
   const [deleteTable, { loading: isDeletingTable }] = useMutation(
     DELETE_TABLE,
     {
@@ -73,7 +69,14 @@ const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
   const deleteTile = useCallback(async () => {
     await deleteTable()
     onDialogClose()
-  }, [deleteTable, onDialogClose])
+    toast({
+      title: 'The tile has been deleted.',
+      status: 'success',
+      duration: 3000,
+      isClosable: true,
+      position: 'top',
+    })
+  }, [deleteTable, onDialogClose, toast])
 
   return (
     <Link to={URLS.TILE(table.id)}>
@@ -145,40 +148,15 @@ const TileListItem = ({ table }: { table: TableMetadata }): JSX.Element => {
           </Menu>
         </Flex>
       </Flex>
-      <AlertDialog
-        isOpen={isDialogOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={onDialogClose}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader>Delete Tile</AlertDialogHeader>
-
-            <AlertDialogBody>
-              {"Are you sure? You can't undo this action afterwards."}
-            </AlertDialogBody>
-
-            <AlertDialogFooter>
-              <Button
-                ref={cancelRef}
-                onClick={onDialogClose}
-                variant="clear"
-                colorScheme="secondary"
-              >
-                Cancel
-              </Button>
-              <Button
-                colorScheme="critical"
-                onClick={deleteTile}
-                ml={3}
-                isLoading={isDeletingTable}
-              >
-                Delete
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+      <MenuAlertDialog
+        isDialogOpen={isDialogOpen}
+        cancelRef={cancelRef}
+        onDialogClose={onDialogClose}
+        dialogHeader="Tile"
+        dialogType="delete"
+        onClick={deleteTile}
+        isLoading={isDeletingTable}
+      />
     </Link>
   )
 }

@@ -23,11 +23,10 @@ import {
   useToast,
 } from '@opengovsg/design-system-react'
 
+import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
 import * as URLS from '@/config/urls'
 import { DELETE_FLOW } from '@/graphql/mutations/delete-flow'
 import { DUPLICATE_FLOW } from '@/graphql/mutations/duplicate-flow'
-
-import MenuAlertDialog, { AlertDialogType } from './MenuAlertDialog'
 
 interface FlowContextMenuProps {
   flow: IFlow
@@ -184,7 +183,8 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
         isDialogOpen={isDialogOpen}
         cancelRef={cancelRef}
         onDialogClose={onDialogClose}
-        type={dialogType}
+        dialogHeader="Pipe"
+        dialogType={dialogType}
         onClick={dialogType === 'delete' ? onFlowDelete : onFlowDuplicate}
         isLoading={dialogType === 'delete' ? isDeletingFlow : isDuplicatingFlow}
       />
