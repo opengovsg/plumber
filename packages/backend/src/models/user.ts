@@ -25,6 +25,7 @@ class User extends Base {
   tables?: TableMetadata[]
   sentFlowTransfers?: FlowTransfer[]
   receivedFlowTransfers?: FlowTransfer[]
+  lastLoginAt?: Date
 
   // for typescript support when creating TableCollaborator row in insertGraph
   role?: ITableCollabRole
