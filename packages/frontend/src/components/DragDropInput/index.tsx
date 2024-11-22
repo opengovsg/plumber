@@ -132,10 +132,7 @@ function DragDropInput(props: DragDropInputProps) {
                       : placeholder ?? 'Enter or drop your file here'
                   }
                 />
-                <FileUpload
-                  accept={['text/plain', 'image/png'].join(',')}
-                  processFile={processFile}
-                />
+                <FileUpload accept="text/plain" processFile={processFile} />
               </Stack>
               {error && <FormErrorMessage>{error?.message}</FormErrorMessage>}
             </FormControl>
