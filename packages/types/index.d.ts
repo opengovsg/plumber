@@ -362,6 +362,14 @@ export interface IFieldRichText extends IBaseField {
   value?: string
 }
 
+export interface IFieldDragDrop extends IBaseField {
+  type: 'dragdrop'
+  value?: string
+
+  // Not applicable if field has variables.
+  autoComplete?: AutoCompleteValue
+}
+
 export interface IFieldBooleanRadio extends IBaseField {
   type: 'boolean-radio'
   value?: boolean // will default to null if not provided
@@ -386,6 +394,7 @@ export type IField =
   | IFieldMultiRow
   | IFieldRichText
   | IFieldBooleanRadio
+  | IFieldDragDrop
 
 export interface IAuthenticationStepField {
   name: string

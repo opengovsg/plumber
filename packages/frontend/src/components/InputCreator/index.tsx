@@ -1,6 +1,7 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
+import DragDropInput from '@/components/DragDropInput'
 import MultiRow from '@/components/MultiRow'
 import MultiSelect from '@/components/MultiSelect'
 import RichTextEditor from '@/components/RichTextEditor'
@@ -64,6 +65,19 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         required={required}
         defaultValue={value as boolean}
         options={schema?.options}
+      />
+    )
+  }
+
+  if (type === 'dragdrop') {
+    return (
+      <DragDropInput
+        description={description}
+        label={label}
+        name={computedName}
+        required={required}
+        autoComplete={schema.autoComplete}
+        placeholder={schema.placeholder}
       />
     )
   }
