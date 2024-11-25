@@ -189,7 +189,6 @@ type ActionSubstepArgument {
   source: ActionSubstepArgumentSource
   hiddenIf: FieldVisibilityCondition
   addRowButtonText: String
-  hideBlankRow: Boolean
 
   # Only for dropdown
   addNewOption: DropdownAddNewOption
