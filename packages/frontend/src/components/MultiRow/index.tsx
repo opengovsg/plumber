@@ -72,7 +72,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     <Controller
       name={name}
       control={control}
-      defaultValue={!required ? [] : [{ ...newRowDefaultValue }]}
+      defaultValue={required ? [{ ...newRowDefaultValue }] : []}
       render={({ field: { value: fallbackRows } }): JSX.Element => {
         // HACKFIX (ogp-weeloong): I don't know why `rows` lags behind
         // `fallbackRows` on the 1st render.
