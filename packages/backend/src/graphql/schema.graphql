@@ -188,6 +188,7 @@ type ActionSubstepArgument {
   value: JSONObject
   source: ActionSubstepArgumentSource
   hiddenIf: FieldVisibilityCondition
+  addRowButtonText: String
 
   # Only for dropdown
   addNewOption: DropdownAddNewOption
