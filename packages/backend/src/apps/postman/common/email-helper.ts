@@ -55,6 +55,7 @@ interface Email {
   senderName: string
   attachments?: { fileName: string; data: Uint8Array }[]
   replyTo?: string
+  ccList?: string[]
 }
 
 interface PostmanPromiseFulfilled {
@@ -89,6 +90,13 @@ export async function sendTransactionalEmails(
     )
     requestData.append('disable_tracking', 'true')
 
+    if (email.ccList?.length) {
+      // For single CC, send as JSON array. For multiple CCs, append individually
+      email.ccList.length === 1
+        ? requestData.append('cc', JSON.stringify(email.ccList))
+        : email.ccList.forEach((value) => requestData.append('cc', value))
+    }
+
     if (email.replyTo) {
       requestData.append('reply_to', email.replyTo)
     }
@@ -122,6 +130,7 @@ export async function sendTransactionalEmails(
           subject,
           from,
           reply_to,
+          ...(email.ccList?.length && { cc: email.ccList }),
         },
       } satisfies PostmanPromiseFulfilled
     } catch (e) {

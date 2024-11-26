@@ -225,6 +225,25 @@ describe('send transactional email', () => {
     })
   })
 
+  it('should send to CC recipients', async () => {
+    const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
+    const ccRecipients = ['cc1@open.gov.sg', 'cc2@open.gov.sg']
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.step.parameters.destinationEmailCc = ccRecipients.join(',')
+    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'ACCEPTED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        cc: ccRecipients,
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+  })
+
   it('should throw partial step error if one succeeds while the rest are blacklists', async () => {
     const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
     $.step.parameters.destinationEmail = recipients.join(',')
