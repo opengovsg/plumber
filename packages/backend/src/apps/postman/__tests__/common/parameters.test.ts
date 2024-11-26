@@ -132,7 +132,7 @@ describe('postman transactional email schema zod validation', () => {
 
   it('should validate multiple valid CC emails', () => {
     validPayload.destinationEmailCc =
-      'recipient@example.com, recipient2@example.com,recipient3@example.com'
+      'recipientCc@example.com, recipientCc2@example.com,recipientCc3@example.com'
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === true) // using assert here for type assertion
     expect(result.data.destinationEmailCc).toEqual([
