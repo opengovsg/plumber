@@ -1,4 +1,4 @@
-import { DateTime } from 'luxon'
+import { generateTimestampFromFormats } from '@/helpers/generate-timestamp-from-formats'
 
 const VALID_DATETIME_FORMATS = [
   'yyyy-MM-dd HH:mm',
@@ -8,22 +8,5 @@ const VALID_DATETIME_FORMATS = [
 
 export default function generateTimestamp(date: string, time: string): number {
   const datetimeString = `${date} ${time}`
-  // check through our accepted formats
-  for (const datetimeFormat of VALID_DATETIME_FORMATS) {
-    // check both en-SG and en-US because Sept accepted for SG but Sep accepted for US
-    let datetime = DateTime.fromFormat(datetimeString, datetimeFormat, {
-      locale: 'en-SG',
-    })
-    if (datetime.isValid) {
-      return datetime.toMillis()
-    }
-
-    datetime = DateTime.fromFormat(datetimeString, datetimeFormat, {
-      locale: 'en-US',
-    })
-    if (datetime.isValid) {
-      return datetime.toMillis()
-    }
-  }
-  return NaN
+  return generateTimestampFromFormats(datetimeString, VALID_DATETIME_FORMATS)
 }

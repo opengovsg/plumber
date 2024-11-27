@@ -188,6 +188,7 @@ export const GET_APPS = gql`
             variables
             variableTypes
             allowArbitrary
+            addRowButtonText
             showOptionValue
             value
             options {

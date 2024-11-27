@@ -15,6 +15,7 @@ export type InputCreatorProps = {
   namePrefix?: string
   stepId?: string
   disabled?: boolean
+  parentType?: string
 }
 
 type RawOption = {
@@ -26,7 +27,7 @@ const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
   options?.map(({ name, value }) => ({ label: name as string, value: value }))
 
 export default function InputCreator(props: InputCreatorProps): JSX.Element {
-  const { schema, namePrefix, stepId, disabled } = props
+  const { schema, namePrefix, stepId, disabled, parentType } = props
 
   const {
     key: name,
@@ -114,6 +115,10 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           description={description}
           disabled={disabled}
           placeholder={placeholder}
+          isSingleLine={parentType === 'multicol'}
+          customStyle={
+            parentType === 'multicol' ? { flex: 1, minWidth: 0 } : {}
+          }
           variablesEnabled
         />
       )
@@ -133,6 +138,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         description={description}
         clickToCopy={clickToCopy}
         autoComplete={schema.autoComplete}
+        customStyle={parentType === 'multicol' ? { flex: 0.5 } : {}}
       />
     )
   }
@@ -149,7 +155,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     )
   }
 
-  if (type === 'multirow') {
+  if (type === 'multirow' || type === 'multirow-multicol') {
     return (
       <MultiRow
         name={computedName}
@@ -157,6 +163,9 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         description={description}
         subFields={schema.subFields}
         required={required}
+        addRowButtonText={schema.addRowButtonText}
+        showDivider={type !== 'multirow-multicol'}
+        type={type}
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
         disabled={disabled}

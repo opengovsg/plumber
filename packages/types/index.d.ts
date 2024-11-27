@@ -350,9 +350,18 @@ export interface IFieldMultiSelect extends IBaseField {
   variableTypes?: TDataOutMetadatumType[]
 }
 
+export interface IFieldMultiRowMultiCol extends IBaseField {
+  type: 'multirow-multicol'
+  value?: string
+  addRowButtonText?: string
+
+  subFields: IField[]
+}
+
 export interface IFieldMultiRow extends IBaseField {
   type: 'multirow'
   value?: string
+  addRowButtonText?: string
 
   subFields: IField[]
 }
@@ -382,6 +391,7 @@ export type IField =
   | IFieldDropdown
   | IFieldText
   | IFieldMultiline
+  | IFieldMultiRowMultiCol
   | IFieldMultiSelect
   | IFieldMultiRow
   | IFieldRichText

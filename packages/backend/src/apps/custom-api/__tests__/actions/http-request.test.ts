@@ -65,6 +65,30 @@ describe('make http request', () => {
     )
   })
 
+  it('invokes the webhook with custom headers', async () => {
+    $.step.parameters.method = 'POST'
+    $.step.parameters.data = 'meep meep'
+    $.step.parameters.url = 'http://test.local/endpoint?1234'
+    $.step.parameters.customHeaders = [
+      { key: 'Key1', value: 'Value1' },
+      { key: 'Key2', value: 'Value2' },
+    ]
+    mocks.httpRequest.mockReturnValue('mock response')
+
+    await makeRequestAction.run($).catch(() => null)
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: $.step.parameters.url,
+        method: $.step.parameters.method,
+        data: $.step.parameters.data,
+        headers: {
+          Key1: 'Value1',
+          Key2: 'Value2',
+        },
+      }),
+    )
+  })
+
   it('should throw an error for error with http request', async () => {
     $.step.parameters.method = 'POST'
     $.step.parameters.data = 'meep meep'
@@ -82,6 +106,22 @@ describe('make http request', () => {
     await expect(makeRequestAction.run($)).rejects.toThrowError(
       'Status code: 403',
     )
+  })
+
+  it.each([[{ value: 'test' }], [{ key: 'test' }]])(
+    'should throw error for invalid custom headers (no field)',
+    async () => {
+      $.step.parameters.customHeaders = [{ value: 'test' }]
+      await expect(makeRequestAction.run($)).rejects.toThrowError()
+    },
+  )
+
+  it('should throw error for invalid custom headers (duplicate keys)', async () => {
+    $.step.parameters.customHeaders = [
+      { key: 'test', value: 'value1' },
+      { key: 'test', value: 'value2' },
+    ]
+    await expect(makeRequestAction.run($)).rejects.toThrowError()
   })
 
   it('should follow redirect once', async () => {
