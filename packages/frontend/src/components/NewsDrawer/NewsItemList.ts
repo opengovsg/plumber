@@ -11,6 +11,22 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2024-11-27',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'Dynamic headers in Custom API',
+    details: dedent`
+      Variables from previous steps can now be used as headers in the Custom API action. Those set in connections will still take priority.
+    `,
+  },
+  {
+    date: '2024-11-27',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'Toolbox date comparisons',
+    details: dedent`
+      Toolbox actions now support date comparisons. Check out the [guide](https://guide.plumber.gov.sg/user-guides/actions/toolbox#supported-comparisons-for-data-types) for more details.
+    `,
+  },
+  {
     date: '2024-10-23',
     tag: NEW_ENHANCEMENT_TAG,
     title: `Tile transfer`,
