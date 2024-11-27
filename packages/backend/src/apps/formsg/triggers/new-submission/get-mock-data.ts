@@ -18,8 +18,20 @@ type FormField = {
   othersRadioButton?: boolean
 }
 
+// Adapted from https://github.com/opengovsg/FormSG/blob/82c5ba6fff7e9628b6c32449148e89c0224e9ff5/shared/types/form/form.ts#L96
+type PaymentProduct = {
+  _id: string
+  name: string
+  description: string
+  multi_qty: boolean
+  min_qty: number
+  max_qty: number
+  amount_cents: number
+}
+
 export const MOCK_ATTACHMENT_FILE_PATH = `${COMMON_S3_MOCK_FOLDER_PREFIX}plumber-logo.jpg`
 const MOCK_NRIC = 'S1234568B'
+const MOCK_UEN = '201612345A'
 
 function generateVerifiedSubmitterInfoData(
   authType: string,
@@ -41,8 +53,41 @@ function generateVerifiedSubmitterInfoData(
           uinFin: filteredNric,
         },
       }
+    case 'CP':
+      return {
+        verifiedSubmitterInfo: {
+          cpUid: filteredNric,
+          cpUen: MOCK_UEN,
+        },
+      }
   }
   return {}
+}
+
+function generateMockPaymentData(products: Partial<PaymentProduct>[]) {
+  // if there are no payment products, default to a mocked one
+  const firstProduct: Partial<PaymentProduct> =
+    products.length > 0
+      ? products[0]
+      : {
+          name: 'Test Product',
+          amount_cents: 123,
+        }
+
+  // Only the amount and product service is ideally obtainable based on their form data
+  return {
+    paymentContent: {
+      type: 'payment_charge',
+      status: 'succeeded',
+      payer: 'payer@open.gov.sg',
+      url: 'https://form.gov.sg/api/v3/payments/abcde/12345/invoice/download',
+      paymentIntent: 'pi_12345',
+      amount: (firstProduct.amount_cents / 100).toFixed(2),
+      productService: firstProduct.name,
+      dateTime: new Date().toISOString(),
+      transactionFee: '0.05',
+    },
+  }
 }
 
 async function getMockData($: IGlobalVariable) {
@@ -80,6 +125,10 @@ async function getMockData($: IGlobalVariable) {
           )
         }
 
+        if (data.responses[formFields[i]._id].fieldType === 'email') {
+          data.responses[formFields[i]._id].answer = $.user.email
+        }
+
         data.responses[formFields[i]._id].order = i + 1
         data.responses[formFields[i]._id].id = undefined
       }
@@ -95,7 +144,10 @@ async function getMockData($: IGlobalVariable) {
       submissionId: await generateIdAsync(),
       submissionTime: DateTime.now().toISO(),
       formId,
-      ...generateVerifiedSubmitterInfoData(formDetails.form.authType, $),
+      ...(formDetails.form.isSubmitterIdCollectionEnabled &&
+        generateVerifiedSubmitterInfoData(formDetails.form.authType, $)),
+      ...(formDetails.form.payments_field.enabled &&
+        generateMockPaymentData(formDetails.form.payments_field.products)),
     }
   } catch (e) {
     throw new Error(
