@@ -42,12 +42,12 @@ export default function getConditionArgs({
         {
           label: 'Equals to',
           value: 'equals',
-          description: 'Used for text values',
         },
+        { label: 'Empty', value: 'empty' },
         {
           label: 'Contains',
           value: 'contains',
-          description: 'Used for text values',
+          description: 'Used for text',
         },
 
         { label: 'Greater than', value: 'gt', description: 'Used for numbers' },
@@ -72,7 +72,6 @@ export default function getConditionArgs({
           value: 'after',
           description: 'Used for dates',
         },
-        { label: 'Empty', value: 'empty' },
       ],
     },
     {
