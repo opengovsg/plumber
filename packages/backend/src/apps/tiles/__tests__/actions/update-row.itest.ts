@@ -10,6 +10,7 @@ import {
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import { createTableRow } from '@/models/dynamodb/table-row'
+import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -90,6 +91,26 @@ describe('tiles create row action', () => {
 
   it('should not allow viewers to update row', async () => {
     $.user = viewer
+    await expect(updateRowAction.run($)).rejects.toThrow(StepError)
+  })
+
+  it('should throw error if no tableId', async () => {
+    $.step.parameters.tableId = ''
+    await expect(updateRowAction.run($)).rejects.toThrow(StepError)
+  })
+
+  it('should throw correct error if Tile deleted', async () => {
+    $.user = editor
+    await TableMetadata.query()
+      .patch({
+        deletedAt: new Date().toISOString(),
+      })
+      .where({ id: $.step.parameters.tableId })
+    await TableColumnMetadata.query()
+      .patch({
+        deletedAt: new Date().toISOString(),
+      })
+      .where({ table_id: $.step.parameters.tableId })
     await expect(updateRowAction.run($)).rejects.toThrow(StepError)
   })
 })
