@@ -83,4 +83,14 @@ describe('tiles create row action', () => {
     $.user = viewer
     await expect(createRowAction.run($)).rejects.toThrow(StepError)
   })
+
+  it('should throw correct error if Tile deleted', async () => {
+    $.user = editor
+    await TableMetadata.query()
+      .patch({
+        deletedAt: new Date().toISOString(),
+      })
+      .where({ id: $.step.parameters.tableId })
+    await expect(createRowAction.run($)).rejects.toThrow(StepError)
+  })
 })

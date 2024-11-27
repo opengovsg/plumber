@@ -97,6 +97,14 @@ const action: IRawAction = {
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
     const table = await TableMetadata.query().findById(tableId)
+    if (!table) {
+      throw new StepError(
+        'Tile not found',
+        'Tile may have been deleted. Please check your tile.',
+        $.step.position,
+        'tiles',
+      )
+    }
 
     /**
      * convert array to object

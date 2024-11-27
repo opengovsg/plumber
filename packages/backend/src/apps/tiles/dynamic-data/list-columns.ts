@@ -26,7 +26,9 @@ const dynamicData: IDynamicData = {
         .$relatedQuery('tables')
         .findById($.step.parameters.tableId as string)
         .whereIn('role', ['owner', 'editor'])
-        .throwIfNotFound()
+        .throwIfNotFound({
+          message: 'Tile may have been deleted. Please check your tile.',
+        })
       const columns = await tile
         .$relatedQuery('columns')
         .orderBy('position', 'asc')
@@ -38,14 +40,17 @@ const dynamicData: IDynamicData = {
           name: name,
         })),
       }
-    } catch (e) {
-      logger.error('Tiles dynamic data: list columns error', {
-        userId: $.user?.id,
-        tableId: $.step.parameters.tableId,
-        flowId: $.flow?.id,
-        stepId: $.step?.id,
-      })
-      throw new Error('Unable to fetch columns')
+    } catch (err) {
+      logger.error(
+        err.data.message ?? 'Tiles dynamic data: list columns error',
+        {
+          userId: $.user?.id,
+          tableId: $.step.parameters.tableId,
+          flowId: $.flow?.id,
+          stepId: $.step?.id,
+        },
+      )
+      throw new Error(err.data.message ?? 'Unable to fetch columns')
     }
   },
 }
