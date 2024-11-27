@@ -87,8 +87,19 @@ export default function Tiles(): JSX.Element {
     variables: queryVars,
   })
 
-  const { pageInfo, edges } = data?.getTables ?? {}
-  const tilesToDisplay = edges?.map(({ node }) => node) ?? []
+  const { pageInfo, edges = [] } = data?.getTables ?? {}
+
+  const { tilesToDisplay, tableIds } = edges.reduce<{
+    tilesToDisplay: TableMetadata[]
+    tableIds: string[]
+  }>(
+    (acc, { node }) => {
+      acc.tilesToDisplay.push(node)
+      acc.tableIds.push(node.id)
+      return acc
+    },
+    { tilesToDisplay: [], tableIds: [] },
+  )
 
   const hasNoUserTiles = tilesToDisplay.length === 0 && !isSearching
   const totalCount: number = pageInfo?.totalCount ?? 0
@@ -97,7 +108,7 @@ export default function Tiles(): JSX.Element {
   const { data: connectionsData, loading: isConnectionsLoading } = useQuery<{
     getTableConnections: JSON
   }>(GET_TABLE_CONNECTIONS, {
-    variables: queryVars,
+    variables: { tableIds },
     skip: hasNoUserTiles,
   })
   const tileConnections = connectionsData?.getTableConnections ?? {}

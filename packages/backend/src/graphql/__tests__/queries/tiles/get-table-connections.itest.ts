@@ -33,7 +33,20 @@ describe('get table connections query', () => {
 
     const tableConnections = await getTableConnections(
       null,
-      { limit: 10, offset: 0 },
+      { tableIds: [] },
+      context,
+    )
+    expect(tableConnections).toEqual({})
+    expect(Object.keys(tableConnections).length).toBe(0)
+  })
+
+  it('should return empty object if user has no access to any tables', async () => {
+    const numTables = 5
+    const testIds = Array.from({ length: numTables }, () => crypto.randomUUID())
+
+    const tableConnections = await getTableConnections(
+      null,
+      { tableIds: testIds },
       context,
     )
     expect(tableConnections).toEqual({})
@@ -79,13 +92,12 @@ describe('get table connections query', () => {
 
       const tableConnections = await getTableConnections(
         null,
-        { limit, offset },
+        { tableIds: pageTableIds },
         context,
       )
       expect(Object.keys(tableConnections).length).toBe(expectedLength)
       expect(Object.keys(tableConnections).sort()).toEqual(pageTableIds.sort())
 
-      //   Object.keys(tableConnections).forEach()
       Object.entries(tableConnections).forEach(([key, value]) => {
         expect(value).toBe(tablePipeCount[key])
       })
@@ -140,16 +152,77 @@ describe('get table connections query', () => {
 
       const tableConnections = await getTableConnections(
         null,
-        { limit, offset },
+        { tableIds: pageTableIds },
         context,
       )
       expect(Object.keys(tableConnections).length).toBe(expectedLength)
       expect(Object.keys(tableConnections).sort()).toEqual(pageTableIds.sort())
 
-      //   Object.keys(tableConnections).forEach()
       Object.entries(tableConnections).forEach(([key, value]) => {
         expect(value).toBe(tablePipeCount[key])
       })
     }
+  })
+
+  it('should not return table connections for tables the user does not have access to', async () => {
+    const numTables = 5
+    const tablePipeCount: TablePipeCountObj = {}
+    for (let i = 0; i < numTables; i++) {
+      const res = await generateMockTable({ userId: context.currentUser.id })
+      const { id: tableId } = res.table
+      const { id: editorId } = res.editor
+
+      const [numFlows, numSteps] = [getRandNum(), getRandNum()]
+      const [editorFlows, editorSteps] = [getRandNum(), getRandNum()]
+
+      tablePipeCount[tableId] = numFlows + editorFlows
+      for (let i = 0; i < numFlows; i++) {
+        await generateMockFlow({
+          userId: context.currentUser.id,
+          tableId,
+          numSteps,
+        })
+      }
+      for (let i = 0; i < editorFlows; i++) {
+        await generateMockFlow({
+          userId: editorId,
+          tableId,
+          numSteps: editorSteps,
+        })
+      }
+    }
+
+    // test as a whole
+    const { edges, pageInfo } = await getTables(
+      null,
+      { limit: 10, offset: 0 },
+      context,
+    )
+
+    const pageTables = edges.map((edge) => edge.node)
+    expect(pageTables).toHaveLength(numTables)
+    expect(pageInfo.currentPage).toBe(1)
+    expect(pageInfo.totalCount).toBe(numTables)
+
+    const pageTableIds = edges.map((edge) => edge.node.id)
+    const testIds = [...pageTableIds, crypto.randomUUID()] // add a random table id
+    expect(testIds).toHaveLength(numTables + 1)
+    const tableConnections = await getTableConnections(
+      null,
+      { tableIds: testIds },
+      context,
+    )
+    expect(Object.keys(tableConnections).length).toBe(numTables)
+    expect(Object.keys(tableConnections).sort()).toEqual(pageTableIds.sort())
+
+    Object.entries(tableConnections).forEach(([key, value]) => {
+      expect(value).toBe(tablePipeCount[key])
+    })
+  })
+
+  it('should throw error if tableIds is null', async () => {
+    await expect(
+      getTableConnections(null, { tableIds: null }, context),
+    ).rejects.toThrow('tableIds is required')
   })
 })
