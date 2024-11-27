@@ -1,14 +1,21 @@
 import type { IJSONObject, IJSONValue } from '@plumber/types'
 
+import { generateTimestampFromFormats } from '@/helpers/generate-timestamp-from-formats'
+
 function compareNumbers(
   field: IJSONValue,
   condition: 'gte' | 'gt' | 'lte' | 'lt',
   value: IJSONValue,
 ): boolean {
   // WARNING: can only compare safely up till Number.MAX_SAFE_INTEGER but BigInt cannot compare floats...
-  if (isNaN(Number(field)) || isNaN(Number(value))) {
-    throw new Error('Non-number used in field or value for comparison')
+  if (isNaN(Number(field))) {
+    throw new Error('Non-number used in field for comparison')
   }
+
+  if (isNaN(Number(value))) {
+    throw new Error('Non-number used in value for comparison')
+  }
+
   switch (condition) {
     case 'gte':
       return Number(field) >= Number(value)
@@ -21,6 +28,46 @@ function compareNumbers(
   }
 }
 
+// support only formatter date formats
+const VALID_DATETIME_FORMATS = [
+  'dd/LL/yy',
+  'dd/LL/yyyy',
+  'dd LLL yyyy',
+  'dd LLLL yyyy',
+  'yyyy/LL/dd',
+  'dd LLL yyyy hh:mm a',
+  'dd LLL yyyy hh:mm:ss a',
+]
+
+function compareDates(
+  field: IJSONValue,
+  condition: 'before' | 'after',
+  value: IJSONValue,
+) {
+  const fieldTimestamp = generateTimestampFromFormats(
+    field as string,
+    VALID_DATETIME_FORMATS,
+  )
+  if (isNaN(fieldTimestamp)) {
+    throw new Error('Invalid date used in field for comparison')
+  }
+
+  const valueTimestamp = generateTimestampFromFormats(
+    value as string,
+    VALID_DATETIME_FORMATS,
+  )
+  if (isNaN(valueTimestamp)) {
+    throw new Error('Invalid date used in value for comparison')
+  }
+
+  switch (condition) {
+    case 'before':
+      return fieldTimestamp < valueTimestamp
+    case 'after':
+      return fieldTimestamp > valueTimestamp
+  }
+}
+
 export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
   // `value` is named `text` for legacy reasons.
   const { field, is, condition, text: value } = conditionArgs
@@ -29,6 +76,10 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
   switch (condition) {
     case 'equals':
       result = field === value
+      break
+    case 'before':
+    case 'after':
+      result = compareDates(field, condition, value)
       break
     case 'gte':
     case 'gt':

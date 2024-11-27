@@ -39,13 +39,39 @@ export default function getConditionArgs({
       variables: false,
       showOptionValue: false,
       options: [
-        { label: 'Equals to', value: 'equals' },
-        { label: 'Greater than ', value: 'gt' },
-        { label: 'Greater than or equals to', value: 'gte' },
-        { label: 'Less than', value: 'lt' },
-        { label: 'Less than or equals to', value: 'lte' },
-        { label: 'Contains', value: 'contains' },
+        {
+          label: 'Equals to',
+          value: 'equals',
+        },
         { label: 'Empty', value: 'empty' },
+        {
+          label: 'Contains',
+          value: 'contains',
+          description: 'Used for text',
+        },
+
+        { label: 'Greater than', value: 'gt', description: 'Used for numbers' },
+        {
+          label: 'Greater than or equals to',
+          value: 'gte',
+          description: 'Used for numbers',
+        },
+        { label: 'Less than', value: 'lt', description: 'Used for numbers' },
+        {
+          label: 'Less than or equals to',
+          value: 'lte',
+          description: 'Used for numbers',
+        },
+        {
+          label: 'Before',
+          value: 'before',
+          description: 'Used for dates',
+        },
+        {
+          label: 'After',
+          value: 'after',
+          description: 'Used for dates',
+        },
       ],
     },
     {
