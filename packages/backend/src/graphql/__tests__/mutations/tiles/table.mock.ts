@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 
+import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
@@ -50,6 +51,56 @@ export async function generateMockTable({
     editor,
     viewer,
   }
+}
+
+// generate mock flow including steps
+export async function generateMockFlow({
+  userId,
+  tableId,
+  numSteps,
+}: {
+  userId: string
+  tableId: string
+  numSteps: number
+}) {
+  const currentUser = await User.query().findById(userId)
+
+  const tableName = `test-flow-${tableId}`
+  const flowRes = await currentUser.$relatedQuery('flows').insert({
+    name: tableName,
+  })
+  const flowId = flowRes.id
+
+  for (let i = 0; i < numSteps; i++) {
+    await generateMockStep({
+      tableId,
+      flowId,
+      position: i + 2,
+    })
+  }
+}
+
+export async function generateMockStep({
+  tableId,
+  flowId,
+  position,
+}: {
+  tableId: string
+  flowId: string
+  position?: number
+}) {
+  await Step.query().insert({
+    key: 'createTileRow',
+    appKey: 'tiles',
+    type: 'action',
+    parameters: {
+      rowData: [],
+      tableId: tableId,
+    },
+    flowId: flowId,
+    status: 'incomplete',
+    position: position,
+  })
 }
 
 export async function generateMockTableColumns({

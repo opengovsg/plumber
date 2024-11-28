@@ -9,6 +9,7 @@ import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { PaginatedTables, TableMetadata } from '@/graphql/__generated__/graphql'
+import { GET_TABLE_CONNECTIONS } from '@/graphql/queries/tiles/get-table-connections'
 import { GET_TABLES } from '@/graphql/queries/tiles/get-tables'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
@@ -20,13 +21,24 @@ const TILES_TITLE = 'Tiles'
 
 const TILES_PER_PAGE = 10
 
+export interface TileConnections {
+  [key: string]: number
+}
 interface TilesContentProps {
   isLoading: boolean
   isSearching: boolean
+  isConnectionsLoading: boolean
   tiles: TableMetadata[]
+  tileConnections: TileConnections
 }
 
-function TilesContent({ isLoading, isSearching, tiles }: TilesContentProps) {
+function TilesContent({
+  isConnectionsLoading,
+  isLoading,
+  isSearching,
+  tileConnections,
+  tiles,
+}: TilesContentProps) {
   const hasTiles = tiles.length > 0
 
   const hasNoUserTiles = !hasTiles && !isSearching
@@ -51,28 +63,55 @@ function TilesContent({ isLoading, isSearching, tiles }: TilesContentProps) {
       />
     )
   }
-  return <TileList tiles={tiles} />
+  return (
+    <TileList
+      isConnectionsLoading={isConnectionsLoading}
+      tileConnections={tileConnections}
+      tiles={tiles}
+    />
+  )
 }
 
 export default function Tiles(): JSX.Element {
   const { input, page, setSearchParams, isSearching } = usePaginationAndFilter()
 
+  const queryVars = {
+    limit: TILES_PER_PAGE,
+    offset: (page - 1) * TILES_PER_PAGE,
+    name: input,
+  }
+
   const { data, loading } = useQuery<{
     getTables: PaginatedTables
   }>(GET_TABLES, {
-    variables: {
-      limit: TILES_PER_PAGE,
-      offset: (page - 1) * TILES_PER_PAGE,
-      name: input,
-    },
+    variables: queryVars,
   })
 
-  const { pageInfo, edges } = data?.getTables ?? {}
-  const tilesToDisplay = edges?.map(({ node }) => node) ?? []
+  const { pageInfo, edges = [] } = data?.getTables ?? {}
+
+  const { tilesToDisplay, tableIds } = edges.reduce<{
+    tilesToDisplay: TableMetadata[]
+    tableIds: string[]
+  }>(
+    (acc, { node }) => {
+      acc.tilesToDisplay.push(node)
+      acc.tableIds.push(node.id)
+      return acc
+    },
+    { tilesToDisplay: [], tableIds: [] },
+  )
 
   const hasNoUserTiles = tilesToDisplay.length === 0 && !isSearching
   const totalCount: number = pageInfo?.totalCount ?? 0
   const hasPagination = !loading && pageInfo && totalCount > TILES_PER_PAGE
+
+  const { data: connectionsData, loading: isConnectionsLoading } = useQuery<{
+    getTableConnections: JSON
+  }>(GET_TABLE_CONNECTIONS, {
+    variables: { tableIds },
+    skip: hasNoUserTiles,
+  })
+  const tileConnections = connectionsData?.getTableConnections ?? {}
 
   // ensure invalid pages won't be accessed even after deleting tiles
   const lastPage = Math.ceil(totalCount / TILES_PER_PAGE)
@@ -99,8 +138,10 @@ export default function Tiles(): JSX.Element {
       />
 
       <TilesContent
+        isConnectionsLoading={isConnectionsLoading}
         isLoading={loading}
         isSearching={isSearching}
+        tileConnections={tileConnections}
         tiles={tilesToDisplay}
       />
 
