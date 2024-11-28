@@ -25,6 +25,9 @@ const getTableConnections: QueryResolvers['getTableConnections'] = async (
   if (!tableIds) {
     throw new Error('tableIds is required')
   }
+  if (tableIds.length === 0) {
+    return {}
+  }
 
   try {
     // get distinct rows of tables used in flows

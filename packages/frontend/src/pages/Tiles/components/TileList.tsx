@@ -104,7 +104,7 @@ const TileListItem = ({
             <Text {...textStyles.lastOpened}>
               Last opened {toPrettyDateString(+table.lastAccessedAt)}
             </Text>
-            {table.role !== 'viewer' && numConnections > 0 && (
+            {numConnections > 0 && (
               <Skeleton isLoaded={!isConnectionsLoading}>
                 <Flex {...flexStyles.usedInPipes}>
                   <Icon
@@ -131,6 +131,7 @@ const TileListItem = ({
               variant="clear"
               aria-label="Remove"
               icon={<BiTrash />}
+              isDisabled={isConnectionsLoading}
               onClick={onDeleteButtonClick}
               visibility="hidden"
             />

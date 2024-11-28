@@ -1,8 +1,9 @@
 import crypto from 'crypto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import getTableConnections from '@/graphql/queries/tiles/get-table-connections'
 import getTables from '@/graphql/queries/tiles/get-tables'
+import Flow from '@/models/flow'
 import Context from '@/types/express/context'
 
 import {
@@ -36,6 +37,8 @@ describe('get table connections query', () => {
       { tableIds: [] },
       context,
     )
+    const flowQuerySpy = vi.spyOn(Flow, 'query')
+    expect(flowQuerySpy).not.toHaveBeenCalled()
     expect(tableConnections).toEqual({})
     expect(Object.keys(tableConnections).length).toBe(0)
   })
