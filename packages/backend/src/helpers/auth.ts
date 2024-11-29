@@ -61,6 +61,22 @@ export async function getOrCreateUser(email: string): Promise<User> {
   return user
 }
 
+export async function updateLastLogin(id: string) {
+  if (!id) {
+    throw new Error('User id required!')
+  }
+
+  const updatedRows = await User.query()
+    .patch({
+      lastLoginAt: new Date(),
+    })
+    .where({ id })
+
+  if (!updatedRows) {
+    throw new Error('No user found')
+  }
+}
+
 // Admin tokens are more sensitive so we set a low max age of 5 min
 const ADMIN_TOKEN_MAX_AGE_SEC = 5 * 60
 

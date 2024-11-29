@@ -56,6 +56,7 @@ const verifyOtp: MutationResolvers['verifyOtp'] = async (
     otpHash: null,
     otpAttempts: 0,
     otpSentAt: null,
+    lastLoginAt: new Date(),
   })
 
   // set auth jwt as cookie
