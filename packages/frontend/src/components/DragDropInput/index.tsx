@@ -5,6 +5,7 @@ import { FormControl, Input, Stack } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
 import FileUpload from '@/components/FileUpload'
+import { usePreventDrop } from '@/hooks/useDisableDragDrop'
 
 const SECRET_KEY_REGEX = /^[a-zA-Z0-9/+]+={0,2}$/
 
@@ -29,6 +30,9 @@ function DragDropInput(props: DragDropInputProps) {
     ...inputProps
   } = props
   const [dragging, setDragging] = useState(false)
+
+  // Disable drag drop anywhere else
+  usePreventDrop()
 
   const { control, setError, setValue } = useFormContext()
 
@@ -120,6 +124,18 @@ function DragDropInput(props: DragDropInputProps) {
                 <Input
                   {...inputProps}
                   {...field}
+                  {...(dragging
+                    ? {
+                        py: 12,
+                        backgroundColor: 'primary.50',
+                        borderColor: 'primary.500',
+                        borderWidth: 2,
+                        borderStyle: 'dashed',
+                        _focusVisible: {
+                          boxShadow: 'none',
+                        },
+                      }
+                    : undefined)}
                   type="password"
                   onChange={(...args) => controllerOnChange(...args)}
                   onDragEnter={handleDragEnter}
@@ -131,6 +147,7 @@ function DragDropInput(props: DragDropInputProps) {
                       ? 'Drop your file here'
                       : placeholder ?? 'Enter or drop your file here'
                   }
+                  transition="padding 0.2s ease-out"
                 />
                 <FileUpload accept="text/plain" processFile={processFile} />
               </Stack>
