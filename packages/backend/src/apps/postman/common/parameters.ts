@@ -47,7 +47,7 @@ export const transactionalEmailFields: IField[] = [
     type: 'string' as const,
     required: true,
     description:
-      'To send to multiple recipients, comma-separate email addresses. Emails will be sent to each email address separately.',
+      'Enter the email addresses of the main recipients, separated by commas.\nEach recipient will receive an individual email.',
     variables: true,
   },
   {
@@ -56,7 +56,7 @@ export const transactionalEmailFields: IField[] = [
     type: 'string' as const,
     required: false,
     description:
-      'To CC multiple recipients, comma-separate email addresses. CC recipients will receive multiple copies of the email.',
+      'Enter the email addresses to CC, separated by commas.\nCC recipients will receive a copy of the email for each main recipient.',
     variables: true,
   },
   {
@@ -64,7 +64,7 @@ export const transactionalEmailFields: IField[] = [
     key: 'senderName',
     type: 'string' as const,
     required: true,
-    description: 'For e.g., HR department',
+    description: 'For e.g., HR department.',
     variables: true,
   },
   {
@@ -72,7 +72,7 @@ export const transactionalEmailFields: IField[] = [
     key: 'replyTo',
     type: 'string' as const,
     required: false,
-    description: 'If left blank, this will default to your email address',
+    description: 'If left blank, this will default to your email address.',
     variables: true,
   },
   {
