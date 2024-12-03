@@ -149,11 +149,12 @@ const action: IRawAction = {
       returnLastRow: boolean | undefined
     }
 
-    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
+    /**
+     * Check for columns first, there will not be any columns if the tile has been deleted.
+     */
+    const columns = await TableColumnMetadata.getColumns(tableId, $)
 
-    const columns = await TableColumnMetadata.query().where({
-      table_id: tableId,
-    })
+    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
     // Check that filters are valid
     try {

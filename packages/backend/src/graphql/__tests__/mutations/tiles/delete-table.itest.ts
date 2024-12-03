@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import deleteTable from '@/graphql/mutations/tiles/delete-table'
+import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -35,7 +36,7 @@ describe('delete table mutation', () => {
     })
   })
 
-  it('should delete table and columns', async () => {
+  it('should delete table, columns and collaborators', async () => {
     const success = await deleteTable(
       null,
       { input: { id: dummyTable.id } },
@@ -46,9 +47,13 @@ describe('delete table mutation', () => {
       .resultSize()
 
     const deletedTable = await TableMetadata.query().findById(dummyTable.id)
+    const tableCollaborators = await TableCollaborator.query().where({
+      table_id: dummyTable.id,
+    })
     expect(success).toBe(true)
     expect(deletedTable).toBeUndefined()
     expect(tableColumnCount).toBe(0)
+    expect(tableCollaborators.length).toBe(0)
   })
 
   it('should throw an error if table is not found', async () => {

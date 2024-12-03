@@ -20,6 +20,9 @@ const deleteTable: MutationResolvers['deleteTable'] = async (
       .throwIfNotFound()
 
     await table.$relatedQuery('columns', trx).delete()
+    await TableCollaborator.query().where({ table_id: params.input.id }).patch({
+      deletedAt: new Date().toISOString(),
+    })
     await table.$query(trx).delete()
   })
 
