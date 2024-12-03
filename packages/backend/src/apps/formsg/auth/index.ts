@@ -34,7 +34,7 @@ const auth: IUserAddedConnectionAuth = {
       value: null,
       description:
         'This is the key you downloaded/saved when you created the form',
-      placeholder: 'Enter or drop your Secret Key to continue',
+      placeholder: 'Enter or drop your Secret Key here to continue',
       clickToCopy: false,
       autoComplete: 'off' as const,
     },
