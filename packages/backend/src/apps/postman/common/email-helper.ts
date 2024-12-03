@@ -89,7 +89,9 @@ export async function sendTransactionalEmails(
       `${email.senderName} <${appConfig.postman.fromAddress}>`,
     )
     requestData.append('disable_tracking', 'true')
-    requestData.append('cc', JSON.stringify(email.ccList))
+    if (email.ccList?.length) {
+      requestData.append('cc', JSON.stringify(email.ccList))
+    }
 
     if (email.replyTo) {
       requestData.append('reply_to', email.replyTo)
