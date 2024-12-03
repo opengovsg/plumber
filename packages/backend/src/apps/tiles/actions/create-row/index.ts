@@ -120,7 +120,7 @@ const action: IRawAction = {
         'Invalid column ID(s)',
         'Column(s) may have been deleted or modified. Please check your tile and pipe setup.',
         $.step.position,
-        'tiles',
+        $.app.name,
       )
     }
 
