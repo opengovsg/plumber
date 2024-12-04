@@ -32,6 +32,8 @@ export default function EditColumnName({
       {isEditingColumnName ? (
         <>
           <Input
+            autoFocus
+            onFocus={(e) => e.target.select()}
             size="sm"
             value={newColumnName}
             onChange={(e) => setNewColumnName(e.target.value)}
@@ -40,7 +42,6 @@ export default function EditColumnName({
                 onSave()
               }
             }}
-            onBlur={onSave}
           />
           <IconButton
             aria-label="save"
