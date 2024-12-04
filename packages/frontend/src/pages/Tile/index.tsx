@@ -1,9 +1,10 @@
 import { ITableMetadata, ITableRow } from '@plumber/types'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
+import { datadogRum } from '@datadog/browser-rum'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_ALL_ROWS } from '@/graphql/queries/tiles/get-all-rows'
@@ -20,6 +21,7 @@ export default function Tile(): JSX.Element {
   }>()
   const [rows, setRows] = useState<ITableRow[]>([])
   const [isFetching, setIsFetching] = useState(true)
+  const startTime = useRef(performance.now())
 
   const { data: getTableData } = useQuery<{
     getTable: ITableMetadata
@@ -62,6 +64,11 @@ export default function Tile(): JSX.Element {
         currentCursor = newData.getAllRows.stringifiedCursor
         setRows(allRows)
       }
+      datadogRum.setGlobalContextProperty(
+        'tile_load_time',
+        performance.now() - startTime.current,
+      )
+      datadogRum.setGlobalContextProperty('tile_row_count', allRows.length)
       setIsFetching(false)
     },
   })

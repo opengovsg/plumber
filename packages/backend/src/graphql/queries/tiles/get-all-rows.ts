@@ -12,7 +12,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
   params,
   context,
 ) => {
-  const { tableId, stringifiedCursor, lastUpdatedAt: _lastUpdatedAt } = params
+  const { tableId, stringifiedCursor } = params
 
   try {
     const table = context.tilesViewKey
