@@ -259,16 +259,18 @@ export const getTableRowCount = async ({
 
 export const getTableRows = async ({
   tableId,
-  autoPaginate = true,
   columnIds,
   filters,
   stringifiedCursor,
 }: {
   tableId: string
-  autoPaginate?: boolean
   columnIds?: string[]
   filters?: TableRowFilter[]
-  stringifiedCursor?: string
+  /**
+   * if stringifiedCursor is 'start', we will fetch the first page of results
+   * if undefined, we will auto-paginate
+   */
+  stringifiedCursor?: string | 'start'
 }): Promise<{
   rows: TableRowOutput[]
   stringifiedCursor?: string
@@ -282,7 +284,10 @@ export const getTableRows = async ({
         indexUsed: 'byCreatedAt',
       })
     const tableRows = []
-    let cursor: any = stringifiedCursor ? JSON.parse(stringifiedCursor) : null
+    let cursor: any =
+      stringifiedCursor && stringifiedCursor !== 'start'
+        ? JSON.parse(stringifiedCursor)
+        : null
     do {
       const query = TableRow.query.byCreatedAt({ tableId })
       if (filters?.length) {
@@ -309,7 +314,8 @@ export const getTableRows = async ({
       tableRows.push(...data.Items)
       cursor = data.LastEvaluatedKey
       // loop only if cursor is
-    } while (cursor && autoPaginate)
+    } while (cursor && !stringifiedCursor)
+
     return {
       rows: tableRows.map((row) => ({
         ...row,

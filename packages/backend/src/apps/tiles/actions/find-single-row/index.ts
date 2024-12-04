@@ -181,7 +181,6 @@ const action: IRawAction = {
     const { rows } = await getTableRows({
       tableId,
       filters,
-      autoPaginate: true,
     })
 
     if (!rows || !rows.length) {

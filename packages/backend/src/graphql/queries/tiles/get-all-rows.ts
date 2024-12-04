@@ -40,8 +40,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
     return await getTableRows({
       tableId,
       columnIds,
-      stringifiedCursor,
-      autoPaginate: false,
+      stringifiedCursor: stringifiedCursor ?? 'start',
     })
     // TODO: remove keys from rows to reduce payload size
   } catch (e) {
