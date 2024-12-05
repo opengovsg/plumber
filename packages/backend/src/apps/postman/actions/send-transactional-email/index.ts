@@ -96,7 +96,10 @@ const action: IRawAction = {
       lastExecutionStep?.dataOut,
     )
     const isPartialRetry =
-      prevDataOutParseResult.success && lastExecutionStep.errorDetails
+      prevDataOutParseResult.success &&
+      lastExecutionStep.errorDetails &&
+      // Don't do partial retry in test runs! always send to all recipients
+      !$.execution.testRun
 
     if (isPartialRetry) {
       const { status, recipient } = prevDataOutParseResult.data
