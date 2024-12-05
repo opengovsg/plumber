@@ -15,6 +15,17 @@ function recipientStringToArray(value: string) {
   return uniq(recipientArray)
 }
 
+function validateEmails(value: string, ctx: z.RefinementCtx, msg: string) {
+  const recipients = recipientStringToArray(value)
+  if (recipients.some((recipient) => !validator.validate(recipient))) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: msg,
+    })
+  }
+  return recipients
+}
+
 export const transactionalEmailFields: IField[] = [
   {
     label: 'Email subject',
@@ -36,7 +47,16 @@ export const transactionalEmailFields: IField[] = [
     type: 'string' as const,
     required: true,
     description:
-      'To send to multiple recipients, comma-separate email addresses. Emails will be sent to each email address separately.',
+      'Enter the email addresses of the main recipients, separated by commas.\nEach recipient will receive an individual email.',
+    variables: true,
+  },
+  {
+    label: 'CC recipient email(s)',
+    key: 'destinationEmailCc',
+    type: 'string' as const,
+    required: false,
+    description:
+      'Enter the email addresses to CC, separated by commas.\nCC recipients will receive a copy of the email for each main recipient.',
     variables: true,
   },
   {
@@ -44,7 +64,7 @@ export const transactionalEmailFields: IField[] = [
     key: 'senderName',
     type: 'string' as const,
     required: true,
-    description: 'For e.g., HR department',
+    description: 'For e.g., HR department.',
     variables: true,
   },
   {
@@ -52,7 +72,7 @@ export const transactionalEmailFields: IField[] = [
     key: 'replyTo',
     type: 'string' as const,
     required: false,
-    description: 'If left blank, this will default to your email address',
+    description: 'If left blank, this will default to your email address.',
     variables: true,
   },
   {
@@ -74,16 +94,15 @@ export const transactionalEmailSchema = z.object({
     .min(1, { message: 'Empty body' })
     // for backward-compatibility with content produced by the old editor
     .transform((v) => v.replace(/\n/g, '<br>')),
-  destinationEmail: z.string().transform((value, ctx) => {
-    const recipients = recipientStringToArray(value)
-    if (recipients.some((recipient) => !validator.validate(recipient))) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Invalid recipient emails',
-      })
-    }
-    return recipients
-  }),
+  destinationEmail: z
+    .string()
+    .transform((value, ctx) =>
+      validateEmails(value, ctx, 'Invalid recipient emails'),
+    ),
+  destinationEmailCc: z
+    .string()
+    .transform((value, ctx) => validateEmails(value, ctx, 'Invalid CC emails'))
+    .optional(),
   replyTo: z.preprocess((value) => {
     if (typeof value !== 'string') {
       return value

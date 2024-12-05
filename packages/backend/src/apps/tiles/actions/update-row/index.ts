@@ -108,6 +108,12 @@ const action: IRawAction = {
       )
     }
 
+    /**
+     * Check for columns first, there will not be any columns if the tile has been deleted.
+     */
+    const columns = await TableColumnMetadata.getColumns(tableId, $)
+    const columnIds = columns.map((c) => c.id)
+
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
     /**
@@ -122,13 +128,6 @@ const action: IRawAction = {
       })
       return
     }
-
-    const columns = await TableColumnMetadata.query()
-      .where({
-        table_id: tableId,
-      })
-      .select('id', 'name')
-    const columnIds = columns.map((c) => c.id)
 
     const row = await getRawRowById({
       tableId,

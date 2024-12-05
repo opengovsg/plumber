@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   sgidUserInfo: vi.fn(),
   setAuthCookie: vi.fn(),
   getOrCreateUser: vi.fn(),
+  updateLastLogin: vi.fn(),
   isWhitelistedEmail: vi.fn(),
   logError: vi.fn(),
   setCookie: vi.fn(),
@@ -44,6 +45,7 @@ vi.mock('@opengovsg/sgid-client', () => ({
 vi.mock('@/helpers/auth', () => ({
   setAuthCookie: mocks.setAuthCookie,
   getOrCreateUser: mocks.getOrCreateUser,
+  updateLastLogin: mocks.updateLastLogin,
 }))
 
 vi.mock('@/models/login-whitelist-entry', () => ({
@@ -89,6 +91,7 @@ describe('Login with SGID', () => {
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
       'loong_loong@coffee.gov.sg',
     )
+    expect(mocks.updateLastLogin).toHaveBeenCalledWith('abc-def')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
@@ -139,6 +142,7 @@ describe('Login with SGID', () => {
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).not.toBeCalled()
+    expect(mocks.updateLastLogin).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
     expect(result.publicOfficerEmployments).toEqual([])
   })
@@ -176,6 +180,7 @@ describe('Login with SGID', () => {
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith('loong@tea.gov.sg')
+    expect(mocks.updateLastLogin).toHaveBeenCalledWith('abc-def')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
@@ -254,6 +259,7 @@ describe('Login with SGID', () => {
       },
     )
     expect(mocks.getOrCreateUser).not.toBeCalled()
+    expect(mocks.updateLastLogin).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
   })
 
@@ -270,6 +276,7 @@ describe('Login with SGID', () => {
       event: 'sgid-login-failed-user-info',
     })
     expect(mocks.getOrCreateUser).not.toBeCalled()
+    expect(mocks.updateLastLogin).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
   })
 

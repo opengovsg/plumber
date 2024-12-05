@@ -36,11 +36,8 @@ type Query {
   ): [JSONObject]
   # Tiles
   getTable(tableId: String!): TableMetadata!
-  getTables(
-    limit: Int!
-    offset: Int!
-    name: String
-  ): PaginatedTables!
+  getTableConnections(tableIds: [String!]!): JSONObject
+  getTables(limit: Int!, offset: Int!, name: String): PaginatedTables!
   # Tiles rows
   getAllRows(tableId: String!): Any!
   getCurrentUser: User

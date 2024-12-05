@@ -2,7 +2,7 @@ import { type Request } from 'express'
 import { verify as verifyJwt } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
-import { getOrCreateUser, setAuthCookie } from '@/helpers/auth'
+import { getOrCreateUser, setAuthCookie, updateLastLogin } from '@/helpers/auth'
 import logger from '@/helpers/logger'
 import {
   type PublicOfficerEmployment,
@@ -44,6 +44,7 @@ const loginWithSelectedSgid: MutationResolvers['loginWithSelectedSgid'] =
     }
 
     const user = await getOrCreateUser(workEmail)
+    await updateLastLogin(user.id)
     setAuthCookie(context.res, { userId: user.id })
 
     return {

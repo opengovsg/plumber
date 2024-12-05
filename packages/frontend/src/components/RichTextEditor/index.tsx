@@ -283,7 +283,11 @@ const RichTextEditor = ({
   return (
     <FormControl flex={1} style={customStyle} data-test="text-input-group">
       {label && (
-        <FormLabel isRequired={required} description={description}>
+        <FormLabel
+          isRequired={required}
+          description={description}
+          style={{ whiteSpace: 'pre-wrap' }}
+        >
           {label}
         </FormLabel>
       )}

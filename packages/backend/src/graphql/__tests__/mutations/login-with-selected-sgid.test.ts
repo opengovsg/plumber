@@ -8,6 +8,7 @@ import type Context from '@/types/express/context'
 const mocks = vi.hoisted(() => ({
   setAuthCookie: vi.fn(),
   getOrCreateUser: vi.fn(),
+  updateLastLogin: vi.fn(),
   logError: vi.fn(),
   verifyJwt: vi.fn(),
 }))
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/helpers/auth', () => ({
   setAuthCookie: mocks.setAuthCookie,
   getOrCreateUser: mocks.getOrCreateUser,
+  updateLastLogin: mocks.updateLastLogin,
 }))
 
 vi.mock('jsonwebtoken', () => ({
@@ -79,6 +81,7 @@ describe('Login with selected SGID', () => {
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
       'loong_loong@coffee.gov.sg',
     )
+    expect(mocks.updateLastLogin).toHaveBeenCalledWith('abc-def')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
@@ -118,6 +121,7 @@ describe('Login with selected SGID', () => {
     ).rejects.toThrowError('Invalid work email')
 
     expect(mocks.getOrCreateUser).not.toBeCalled()
+    expect(mocks.updateLastLogin).not.toBeCalled()
     expect(mocks.setAuthCookie).not.toBeCalled()
   })
 

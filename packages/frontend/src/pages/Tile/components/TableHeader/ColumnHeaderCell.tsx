@@ -176,6 +176,7 @@ function ColumnHeaderCell({
               <Button
                 leftIcon={<Icon as={BiTrash} boxSize={4} />}
                 variant="link"
+                size="xs"
                 py={2}
                 color="interaction.critical.default"
                 _hover={{

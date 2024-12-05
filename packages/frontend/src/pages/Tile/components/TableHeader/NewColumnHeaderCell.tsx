@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useState } from 'react'
+import { FormEvent, useCallback, useRef, useState } from 'react'
 import { FiPlus } from 'react-icons/fi'
 import {
   Flex,
@@ -33,6 +33,7 @@ export default function NewColumnHeaderCell({
   const { mode } = useTableContext()
   const isViewMode = mode === 'view'
 
+  const inputRef = useRef<HTMLInputElement>(null)
   const { isOpen, onClose, onOpen } = useDisclosure()
   const { createColumns, isCreatingColumns } = useUpdateTable()
   const [newColumnName, setNewColumnName] = useState('')
@@ -63,6 +64,7 @@ export default function NewColumnHeaderCell({
       isOpen={isOpen}
       isLazy={true}
       lazyBehavior="unmount"
+      initialFocusRef={inputRef}
     >
       <PopoverTrigger>
         <Flex
@@ -92,6 +94,7 @@ export default function NewColumnHeaderCell({
         <form onSubmit={onSubmit}>
           <PopoverBody px={4}>
             <Input
+              ref={inputRef}
               placeholder="Column name"
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}

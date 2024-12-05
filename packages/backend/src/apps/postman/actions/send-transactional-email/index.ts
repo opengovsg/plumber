@@ -35,12 +35,14 @@ const action: IRawAction = {
       subject,
       body,
       destinationEmail,
+      destinationEmailCc,
       senderName,
       replyTo,
       attachments = [],
     } = $.step.parameters
     const result = transactionalEmailSchema.safeParse({
       destinationEmail,
+      destinationEmailCc,
       senderName,
       subject,
       body,
@@ -94,7 +96,10 @@ const action: IRawAction = {
       lastExecutionStep?.dataOut,
     )
     const isPartialRetry =
-      prevDataOutParseResult.success && lastExecutionStep.errorDetails
+      prevDataOutParseResult.success &&
+      lastExecutionStep.errorDetails &&
+      // Don't do partial retry in test runs! always send to all recipients
+      !$.execution.testRun
 
     if (isPartialRetry) {
       const { status, recipient } = prevDataOutParseResult.data
@@ -112,6 +117,7 @@ const action: IRawAction = {
           /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
           '<p style="margin: 0">&nbsp;</p>',
         ),
+        ccList: result.data.destinationEmailCc,
         replyTo: result.data.replyTo,
         senderName: result.data.senderName,
         attachments: attachmentFiles,
