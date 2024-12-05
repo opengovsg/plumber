@@ -463,8 +463,47 @@ describe('send transactional email', () => {
         recipient: recipients,
       },
     })
+    $.execution.testRun = false
     await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
     expect($.http.post).toBeCalledTimes(4)
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+  })
+
+  it('should send to all recipients in test runs', async () => {
+    const recipients = [
+      'recipient1@open.gov.sg',
+      'recipient2@open.gov.sg',
+      'recipient3@open.gov.sg',
+      'recipient4@open.gov.sg',
+      'recipient5@open.gov.sg',
+    ]
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+      status: 'success',
+      errorDetails: 'error error',
+      dataOut: {
+        status: [
+          'BLACKLISTED',
+          'ACCEPTED',
+          'INTERMITTENT-ERROR',
+          'ERROR',
+          'RATE-LIMITED',
+        ],
+        recipient: recipients,
+      },
+    })
+    $.execution.testRun = true
+    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    expect($.http.post).toBeCalledTimes(5)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
