@@ -36,6 +36,8 @@ type AppConfig = {
     apiKey: string
     fromAddress: string
     rateLimit: number
+    oldApiKey: string
+    oldFromAddress: string
   }
   isWorker: boolean
   workerActionConcurrency: number
@@ -100,9 +102,11 @@ const appConfig: AppConfig = {
   },
   postman: {
     apiKey: process.env.POSTMAN_API_KEY,
-    fromAddress:
-      process.env.POSTMAN_FROM_ADDRESS || 'donotreply@plumber.gov.sg',
+    fromAddress: process.env.POSTMAN_FROM_ADDRESS || 'info@plumber.gov.sg',
     rateLimit: parseInt(process.env.POSTMAN_RATE_LIMIT) || 169,
+    oldApiKey: process.env.POSTMAN_OLD_API_KEY,
+    oldFromAddress:
+      process.env.POSTMAN_OLD_FROM_ADDRESS || 'donotreply@plumber.gov.sg',
   },
   launchDarklySdkKey: process.env.LAUNCH_DARKLY_SDK_KEY,
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
@@ -122,6 +126,10 @@ if (!appConfig.adminJwtSecretKey) {
 
 if (!appConfig.postman.apiKey) {
   throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
+}
+
+if (!appConfig.postman.oldApiKey) {
+  throw new Error('POSTMAN_OLD_API_KEY environment variable needs to be set!')
 }
 
 if (
