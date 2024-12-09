@@ -172,4 +172,43 @@ describe('get all rows query', () => {
       ),
     ).rejects.toThrow('Table not found')
   })
+
+  describe('last accessed at', () => {
+    it('should update last accessed at for current user', async () => {
+      const oldLastAccessedAt = new Date().toISOString()
+      await TableCollaborator.query()
+        .patch({
+          lastAccessedAt: oldLastAccessedAt,
+        })
+        .where('table_id', dummyTable.id)
+        .andWhere('user_id', context.currentUser.id)
+      await getAllRows(null, { tableId: dummyTable.id }, context)
+      const { lastAccessedAt } = await TableCollaborator.query().findOne({
+        table_id: dummyTable.id,
+        user_id: context.currentUser.id,
+      })
+      expect(new Date(lastAccessedAt).getTime()).toBeGreaterThan(
+        new Date(oldLastAccessedAt).getTime(),
+      )
+    })
+
+    it('should not update last accessed at for admin operations', async () => {
+      context.isAdminOperation = true
+      const oldLastAccessedAt = new Date().toISOString()
+      await TableCollaborator.query()
+        .patch({
+          lastAccessedAt: oldLastAccessedAt,
+        })
+        .where('table_id', dummyTable.id)
+        .andWhere('user_id', context.currentUser.id)
+      await getAllRows(null, { tableId: dummyTable.id }, context)
+      const { lastAccessedAt } = await TableCollaborator.query().findOne({
+        table_id: dummyTable.id,
+        user_id: context.currentUser.id,
+      })
+      expect(new Date(lastAccessedAt).getTime()).toEqual(
+        new Date(oldLastAccessedAt).getTime(),
+      )
+    })
+  })
 })
