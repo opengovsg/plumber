@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   s3Client: {
     send: vi.fn(() => ({
       $metadata: {
-        httpStatusCode: 204,
+        httpStatusCode: 200,
       },
     })),
   },
@@ -35,7 +35,7 @@ vi.mock('@aws-sdk/client-s3', () => ({
   },
   PutObjectCommand: mocks.PutObjectCommand,
   GetObjectCommand: vi.fn(),
-  DeleteObjectCommand: vi.fn(),
+  DeleteObjectsCommand: vi.fn(),
 }))
 
 describe('deleteFromS3', () => {
