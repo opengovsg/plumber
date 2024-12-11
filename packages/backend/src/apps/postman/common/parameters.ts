@@ -80,11 +80,27 @@ export const transactionalEmailFields: IField[] = [
     label: 'Attachments',
     key: 'attachments',
     description:
-      'Check supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
-    type: 'multiselect' as const,
+      'Check supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).\nPlease note that the maximum file size for each file is 2MB, and the total size of all attachments cannot exceed 10MB.',
+    type: 'attachment-multicheckbox' as const,
     required: false,
     variables: true,
     variableTypes: ['file'],
+    subFields: [
+      {
+        label: 'FormSG attachments',
+        key: 'formsgAttachments',
+        type: 'string' as const,
+        required: false,
+        variables: true,
+      },
+      {
+        label: 'Uploaded attachments',
+        key: 'uploadedAttachments',
+        type: 'string' as const,
+        required: false,
+        variables: false,
+      },
+    ],
   },
 ]
 

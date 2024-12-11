@@ -10,7 +10,7 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 export type AlertDialogType = 'delete' | 'duplicate'
-export type AlertHeaderType = 'Connection' | 'Pipe' | 'Tile' | 'Step'
+export type AlertHeaderType = 'Connection' | 'Pipe' | 'Tile' | 'Step' | 'File'
 
 interface MenuAlertDialogProps {
   isDialogOpen: boolean

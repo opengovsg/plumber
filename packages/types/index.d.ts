@@ -342,7 +342,7 @@ export interface IFieldText extends IBaseField {
 }
 
 export interface IFieldMultiCheckbox extends IBaseField {
-  type: 'multicheckbox'
+  type: 'attachment-multicheckbox'
   value?: string
   variableTypes?: TDataOutMetadatumType[]
 
