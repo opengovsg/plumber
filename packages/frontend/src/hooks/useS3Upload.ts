@@ -116,7 +116,7 @@ export const useS3Upload = (
       console.error('Error uploading to S3: ', error)
       toast({
         title: `Failed to upload ${file.name}`,
-        status: 'success',
+        status: 'error',
         duration: 3000,
         isClosable: true,
         position: 'top',
