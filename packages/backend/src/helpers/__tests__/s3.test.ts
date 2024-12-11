@@ -170,9 +170,14 @@ describe('s3', () => {
       const expectedUrl = 'https://presigned-url.example.com'
       mocks.getPresignedUrl.mockResolvedValueOnce(expectedUrl)
 
-      const result = await getPresignedUrl(COMMON_S3_BUCKET, 'test/file.txt', {
-        contentType: 'text/plain',
-      })
+      const result = await getPresignedUrl(
+        COMMON_S3_BUCKET,
+        'test/file.txt',
+        'text/plain',
+        {
+          contentType: 'text/plain',
+        },
+      )
 
       expect(result).toBe(expectedUrl)
       const putObjectCommand = new mocks.PutObjectCommand(VALID_PUT_OBJ_INPUTS)
@@ -190,6 +195,7 @@ describe('s3', () => {
       const result = await getPresignedUrl(
         COMMON_S3_BUCKET,
         'test/file.txt',
+        'text/plain',
         null,
       )
 
@@ -208,7 +214,7 @@ describe('s3', () => {
       )
 
       await expect(
-        getPresignedUrl(COMMON_S3_BUCKET, 'test/file.txt', null),
+        getPresignedUrl(COMMON_S3_BUCKET, 'test/file.txt', 'text/plain', null),
       ).rejects.toThrow('Failed to generate presigned URL')
     })
   })
