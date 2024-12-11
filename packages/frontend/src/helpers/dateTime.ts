@@ -9,7 +9,7 @@ export function dateString() {
 
 export function toPrettyDateString(
   date: number | string | null,
-  from: 'iso' | 'ms' | null,
+  from?: 'iso' | 'ms',
 ) {
   if (!date) {
     return ''
