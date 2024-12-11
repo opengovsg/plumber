@@ -39,7 +39,7 @@ export const useS3Upload = (
   const uploadToS3 = async (file: File, flowId: string) => {
     try {
       setIsUploading(true)
-      const { name: filename, size } = file
+      const { name: filename, size, type } = file
       const updatedAt = new Date().toISOString()
 
       const res = await generatePresignedUrl({
@@ -47,6 +47,7 @@ export const useS3Upload = (
           input: {
             id: flowId,
             filename,
+            fileType: type,
             size,
             updatedAt,
             manualUpload: true,

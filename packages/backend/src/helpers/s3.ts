@@ -136,11 +136,13 @@ export function parseS3Id(id: string): S3IdData | null {
 export async function getPresignedUrl(
   bucket: string,
   objectKey: string,
+  contentType: string,
   metadata: PutObjectCommandInput['Metadata'] | null,
 ): Promise<string> {
   const putObjectCommand = new PutObjectCommand({
     Bucket: bucket,
     Key: objectKey,
+    ContentType: contentType,
     Metadata: metadata,
   })
 

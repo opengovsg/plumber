@@ -10,6 +10,7 @@ import Context from '@/types/express/context'
 const VALID_PARAMS = {
   id: '193040de-c818-4a0c-90f9-1dcfb1963f53',
   filename: 'test.txt',
+  fileType: 'text/plain',
   size: 100,
   updatedAt: new Date().toISOString(),
   manualUpload: true,
