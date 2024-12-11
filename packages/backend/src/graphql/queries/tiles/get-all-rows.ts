@@ -30,7 +30,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
           .throwIfNotFound()
 
     // update last accessed at for collaborator/table
-    if (!context.tilesViewKey) {
+    if (!context.tilesViewKey && !context.isAdminOperation) {
       await table.$relatedQuery('collaborators').patch({
         lastAccessedAt: new Date().toISOString(),
       })
