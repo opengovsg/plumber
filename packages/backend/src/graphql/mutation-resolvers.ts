@@ -7,11 +7,13 @@ import createStep from './mutations/create-step'
 import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
+import deleteFromS3 from './mutations/delete-from-s3'
 import deleteStep from './mutations/delete-step'
 import duplicateFlow from './mutations/duplicate-flow'
 import executeFlow from './mutations/execute-flow'
 import executeStep from './mutations/execute-step'
 import generateAuthUrl from './mutations/generate-auth-url'
+import generatePresignedUrl from './mutations/generate-presigned-url'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
 import logout from './mutations/logout'
@@ -77,5 +79,7 @@ export default {
   createFlowTransfer,
   updateFlowTransferStatus,
   duplicateFlow,
+  deleteFromS3,
+  generatePresignedUrl,
   ...tilesMutationResolvers,
 } satisfies MutationResolvers

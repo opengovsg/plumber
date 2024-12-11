@@ -174,6 +174,7 @@ export interface IFlowConfig {
   duplicateCount?: number
   templateConfig?: IFlowTemplateConfig
   showSurvey?: boolean
+  attachments?: IFlowAttachmentsConfig[]
 }
 
 export interface IFlowErrorConfig {
@@ -184,6 +185,13 @@ export interface IFlowTemplateConfig {
   templateId: string
   formId?: string
   tileId?: string
+}
+
+export interface IFlowAttachmentsConfig {
+  name: string
+  value: string
+  size: number
+  updatedAt: string
 }
 
 export interface IFlow {
@@ -333,6 +341,14 @@ export interface IFieldText extends IBaseField {
   autoComplete?: AutoCompleteValue
 }
 
+export interface IFieldMultiCheckbox extends IBaseField {
+  type: 'multicheckbox'
+  value?: string
+  variableTypes?: TDataOutMetadatumType[]
+
+  subFields: IField[]
+}
+
 export interface IFieldMultiline extends IBaseField {
   type: 'multiline'
   value?: string
@@ -399,6 +415,7 @@ export interface IFieldBooleanRadioOption {
 export type IField =
   | IFieldDropdown
   | IFieldText
+  | IFieldMultiCheckbox
   | IFieldMultiline
   | IFieldMultiRowMultiCol
   | IFieldMultiSelect
