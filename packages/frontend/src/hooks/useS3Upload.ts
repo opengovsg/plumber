@@ -13,7 +13,7 @@ import {
 } from '@/components/AttachmentMultiCheckbox/utils'
 import { CheckboxVariable } from '@/components/VariablesList/VariableCheckbox'
 import { GENERATE_PRESIGNED_POST } from '@/graphql/mutations/generate-presigned-post'
-import { GENERATE_PRESIGNED_URL } from '@/graphql/mutations/generate-presigned-url'
+// import { GENERATE_PRESIGNED_URL } from '@/graphql/mutations/generate-presigned-url'
 import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 
@@ -33,7 +33,7 @@ export const useS3Upload = (
 ) => {
   const toast = useToast()
   const [isUploading, setIsUploading] = useState(false)
-  const [generatePresignedUrl] = useMutation(GENERATE_PRESIGNED_URL)
+  // const [generatePresignedUrl] = useMutation(GENERATE_PRESIGNED_URL)
   const [generatePresignedPost] = useMutation(GENERATE_PRESIGNED_POST)
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const [updateStep] = useMutation(UPDATE_STEP)
