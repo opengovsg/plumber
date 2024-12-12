@@ -13,11 +13,6 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
-import {
-  createPresignedPost,
-  PresignedPost,
-  PresignedPostOptions,
-} from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 import appConfig from '@/config/app'
@@ -146,8 +141,6 @@ export async function getPresignedUrl(
 ): Promise<string> {
   const putObjectCommand = new PutObjectCommand({
     Bucket: bucket,
-    // FOR UAT TESTING,
-    // Bucket: process.env.TEST_S3_UPLOAD_BUCKET,
     Key: objectKey,
     ContentType: contentType,
     Metadata: metadata,
