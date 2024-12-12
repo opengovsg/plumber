@@ -13,7 +13,9 @@ import duplicateFlow from './mutations/duplicate-flow'
 import executeFlow from './mutations/execute-flow'
 import executeStep from './mutations/execute-step'
 import generateAuthUrl from './mutations/generate-auth-url'
-import generatePresignedUrl from './mutations/generate-presigned-url'
+import generatePresignedUrl, {
+  generatePresignedPost,
+} from './mutations/generate-presigned-url'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
 import logout from './mutations/logout'
@@ -81,5 +83,6 @@ export default {
   duplicateFlow,
   deleteFromS3,
   generatePresignedUrl,
+  generatePresignedPost,
   ...tilesMutationResolvers,
 } satisfies MutationResolvers
