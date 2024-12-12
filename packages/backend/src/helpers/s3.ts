@@ -71,6 +71,7 @@ function throwAttachmentError(
 
 const s3Client = new S3Client({
   region: 'ap-southeast-1',
+  endpoint: process.env.S3_ENDPOINT,
   ...(appConfig.isDev && {
     credentials: {
       accessKeyId: process.env.S3_ACCESS_KEY,
