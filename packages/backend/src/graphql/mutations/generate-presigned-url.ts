@@ -29,7 +29,7 @@ const generatePresignedUrl: MutationResolvers['generatePresignedUrl'] = async (
     new RegExp(
       `https://${COMMON_S3_BUCKET}\\.s3\\.[a-z0-9-]+\\.amazonaws\\.com`,
     ),
-    `https://upload.${appConfig.appEnv}.plumber.gov.sg`,
+    `https://upload-${appConfig.appEnv}.plumber.gov.sg`,
   )
 
   return { url: customUrl, s3Id: `s3:${COMMON_S3_BUCKET}:${filePath}` }
