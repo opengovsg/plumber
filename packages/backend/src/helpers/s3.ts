@@ -13,6 +13,11 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
+import {
+  createPresignedPost,
+  PresignedPost,
+  PresignedPostOptions,
+} from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 import appConfig from '@/config/app'
@@ -140,9 +145,9 @@ export async function getPresignedUrl(
   metadata: PutObjectCommandInput['Metadata'] | null,
 ): Promise<string> {
   const putObjectCommand = new PutObjectCommand({
-    // Bucket: bucket,
+    Bucket: bucket,
     // FOR UAT TESTING,
-    Bucket: process.env.TEST_S3_UPLOAD_BUCKET,
+    // Bucket: process.env.TEST_S3_UPLOAD_BUCKET,
     Key: objectKey,
     ContentType: contentType,
     Metadata: metadata,
@@ -151,6 +156,21 @@ export async function getPresignedUrl(
   const presignedUrl = await getSignedUrl(s3Client, putObjectCommand, {
     expiresIn: 5 * 60, // 5 minutes
   })
+
+  // const params: PresignedPostOptions = {
+  //   Bucket: bucket,
+  //   Key: objectKey,
+  //   Conditions: [
+  //     ['starts-with', '$Content-Type', contentType], // Accept any content type
+  //   ],
+  //   // Metadata: metadata,
+  //   // Fields
+  //   Fields: {
+  //     ...metadata,
+  //   },
+  //   Expires: 5 * 60, // 5 minutes
+  // }
+  // const presignedUrl = await createPresignedPost(s3Client, params)
 
   return presignedUrl
 }
