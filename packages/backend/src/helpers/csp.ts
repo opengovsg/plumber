@@ -20,7 +20,7 @@ const helmetOptions: HelmetOptions = {
         // For Lens Survey
         'https://lens.hack2025.com.sg',
         // For S3 bucket
-        'https://plumber-uat-attachment-bucket-private-0d9400e.s3.ap-southeast-1.amazonaws.com',
+        'https://s3.ap-southeast-1.amazonaws.com',
         appConfig.baseUrl,
       ],
       // for google fonts
