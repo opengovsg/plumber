@@ -71,7 +71,6 @@ function throwAttachmentError(
 
 const s3Client = new S3Client({
   region: 'ap-southeast-1',
-  endpoint: process.env.S3_ENDPOINT,
   ...(appConfig.isDev && {
     credentials: {
       accessKeyId: process.env.S3_ACCESS_KEY,
@@ -141,7 +140,9 @@ export async function getPresignedUrl(
   metadata: PutObjectCommandInput['Metadata'] | null,
 ): Promise<string> {
   const putObjectCommand = new PutObjectCommand({
-    Bucket: bucket,
+    // Bucket: bucket,
+    // FOR UAT TESTING,
+    Bucket: process.env.TEST_S3_UPLOAD_BUCKET,
     Key: objectKey,
     ContentType: contentType,
     Metadata: metadata,
