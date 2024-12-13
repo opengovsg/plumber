@@ -99,7 +99,14 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
             direction="row"
             spacing="1rem"
             aria-disabled={isDisabled}
-            sx={styles.selected}
+            sx={{
+              ...styles.selected,
+              ...(!isSearchable && {
+                margin: 'auto',
+                pr: 0,
+                pl: 0,
+              }),
+            }}
             aria-hidden
           >
             {selectedItemMeta.icon ? (
@@ -112,22 +119,23 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
             <Text noOfLines={1}>{textToDisplay}</Text>
           </Stack>
           <Input
-            isReadOnly={!isSearchable || isReadOnly}
             isInvalid={isInvalid}
-            isDisabled={isDisabled}
             placeholder={textToDisplay ? '' : placeholder}
-            sx={styles.field}
+            sx={{
+              ...styles.field,
+              cursor: isSearchable ? 'text' : 'pointer',
+            }}
             {...getInputProps({
               onClick: handleToggleMenu,
               onBlur: () => !isOpen && resetInputValue(),
               ref: mergedInputRef,
               disabled: isDisabled,
-              readOnly: isReadOnly,
+              readOnly: !isSearchable || isReadOnly,
               required: isRequired,
               'aria-expanded': !!isOpen,
             })}
           />
-          <ToggleChevron />
+          {isSearchable && <ToggleChevron />}
         </InputGroup>
         <ComboboxClearButton />
       </Flex>

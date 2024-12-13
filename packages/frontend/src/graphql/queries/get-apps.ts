@@ -188,8 +188,10 @@ export const GET_APPS = gql`
             variables
             variableTypes
             allowArbitrary
+            isSearchable
             addRowButtonText
             showOptionValue
+            customStyle
             value
             options {
               label
@@ -225,7 +227,10 @@ export const GET_APPS = gql`
               variables
               variableTypes
               allowArbitrary
+              isSearchable
               showOptionValue
+              customStyle
+              value
               hiddenIf {
                 fieldKey
                 fieldValue

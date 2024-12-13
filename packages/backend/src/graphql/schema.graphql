@@ -183,8 +183,10 @@ type ActionSubstepArgument {
   variables: Boolean
   variableTypes: [String]
   allowArbitrary: Boolean
+  isSearchable: Boolean
   placeholder: String
   showOptionValue: Boolean
+  customStyle: JSONObject
   options: [ArgumentOption]
   value: JSONObject
   source: ActionSubstepArgumentSource

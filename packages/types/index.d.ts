@@ -288,6 +288,7 @@ export interface IFieldDropdown extends IBaseField {
   type: 'dropdown'
   showOptionValue?: boolean
   allowArbitrary?: boolean
+  isSearchable?: boolean
   addNewOption?: {
     id: DropdownAddNewId // identifier when add new option is selected
     type: DropdownAddNewType
@@ -352,12 +353,15 @@ export interface IFieldMultiSelect extends IBaseField {
   variableTypes?: TDataOutMetadatumType[]
 }
 
+type IFieldMultiRowMultiColSubField = IField & {
+  customStyle?: Record<string, string | number>
+}
+
 export interface IFieldMultiRowMultiCol extends IBaseField {
   type: 'multirow-multicol'
   value?: string
   addRowButtonText?: string
-
-  subFields: IField[]
+  subFields: IFieldMultiRowMultiColSubField[]
 }
 
 export interface IFieldMultiRow extends IBaseField {

@@ -108,6 +108,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                         isEditorReadOnly={isEditorReadOnly}
                         remove={remove}
                         index={index}
+                        {...forwardedInputCreatorProps}
                       />
                       {/*
                        * "And" divider

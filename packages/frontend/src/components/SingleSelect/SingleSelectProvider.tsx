@@ -61,6 +61,7 @@ export interface SingleSelectProviderProps<
     onSelected: (value: string) => void
     isCreating: boolean
   }
+  isSearchable?: boolean
 }
 
 function constructFreeSoloItem(freeSoloValue: string) {
@@ -371,6 +372,7 @@ export const SingleSelectProvider = ({
   return (
     <SelectContext.Provider
       value={{
+        isSearchable,
         size,
         isOpen,
         selectedItem,
@@ -387,7 +389,6 @@ export const SingleSelectProvider = ({
         items: filteredItems,
         nothingFoundLabel,
         inputValue,
-        isSearchable,
         isClearable,
         isInvalid,
         isDisabled,

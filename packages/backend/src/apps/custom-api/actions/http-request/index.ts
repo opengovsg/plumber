@@ -61,6 +61,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: false,
+          customStyle: { flex: 2 },
         },
         {
           placeholder: 'Value',
@@ -68,6 +69,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
+          customStyle: { flex: 3 },
         },
       ],
     },
