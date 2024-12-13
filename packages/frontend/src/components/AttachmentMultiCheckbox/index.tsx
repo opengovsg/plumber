@@ -116,17 +116,22 @@ function AttachmentMultiCheckbox(props: MultiCheckboxProps) {
       },
     )
 
-    const newItems = vars[0].output.map((v) => {
-      const { displayedValue, label, value } = v
-      return {
-        name: displayedValue,
-        label: `${label}: ${displayedValue}`,
-        displayedValue,
-        type: 'file' as TDataOutMetadatumType,
-        order: null,
-        value,
-      } as CheckboxVariable
-    })
+    if (vars.length === 0) {
+      return []
+    }
+
+    const newItems =
+      vars[0]?.output?.map((v) => {
+        const { displayedValue, label, value } = v
+        return {
+          name: displayedValue,
+          label: `${label}: ${displayedValue}`,
+          displayedValue,
+          type: 'file' as TDataOutMetadatumType,
+          order: null,
+          value,
+        } as CheckboxVariable
+      }) || []
 
     const currentAttachments = getValues(name) || []
 

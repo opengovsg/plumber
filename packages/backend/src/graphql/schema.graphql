@@ -98,7 +98,6 @@ type Mutation {
   duplicateFlow(input: DuplicateFlowInput): Flow
   # S3 operations
   generatePresignedUrl(input: GeneratePresignedUrlInput): PresignedUrl
-  generatePresignedPost(input: GeneratePresignedUrlInput): PresignedPost
   deleteFromS3(id: String!): Boolean
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
@@ -548,12 +547,6 @@ scalar Any
 
 input PreviousStepInput {
   id: String
-}
-
-type PresignedPost {
-  url: String!
-  fields: JSONObject!
-  s3Id: String!
 }
 
 type PresignedUrl {

@@ -13,7 +13,6 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
-import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 import appConfig from '@/config/app'
@@ -152,29 +151,6 @@ export async function getPresignedUrl(
   })
 
   return presignedUrl
-}
-
-export async function getPresignedPost(
-  bucket: string,
-  objectKey: string,
-  contentType: string,
-  metadata: PutObjectCommandInput['Metadata'] | null,
-) {
-  const Conditions = [{ bucket }]
-
-  try {
-    const { url, fields } = await createPresignedPost(s3Client, {
-      Bucket: bucket,
-      Key: objectKey,
-      Conditions,
-      Expires: 60,
-      Fields: metadata,
-    })
-
-    return { url, fields }
-  } catch (e) {
-    console.error('Failed to create pre signed URL:', e)
-  }
 }
 
 /**
