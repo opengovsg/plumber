@@ -68,6 +68,7 @@ function AttachmentMultiCheckbox(props: MultiCheckboxProps) {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { control, setError, getValues } = useFormContext()
 
+  const [currentTab, setCurrentTab] = useState<number>(0)
   const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
   const [selectedOptions, setSelectedOptions] = useState<
     (AttachmentConfigInput | CheckboxVariable)[]
@@ -128,22 +129,23 @@ function AttachmentMultiCheckbox(props: MultiCheckboxProps) {
       } as CheckboxVariable
     })
 
-    const currentAttachments = getValues(name) || []
-
-    setSelectedOptions([
-      ...reformatToAttachmentConfig(
-        newItems.filter((v) => currentAttachments.includes(v.value)),
-      ),
-      ...uploadedItems.filter((f) => currentAttachments.includes(f.value)),
-    ])
     return [...newItems]
-  }, [getValues, name, priorExecutionSteps, uploadedItems, variableTypes])
+  }, [priorExecutionSteps, variableTypes])
 
   const suggestions = useMemo(() => {
     if (!subFields || subFields.length === 0) {
       return []
     }
-    return subFields?.map((field) => {
+    const currentAttachments = getValues(name) || []
+
+    setSelectedOptions([
+      ...reformatToAttachmentConfig(
+        items.filter((v) => currentAttachments.includes(v.value)),
+      ),
+      ...uploadedItems.filter((f) => currentAttachments.includes(f.value)),
+    ])
+
+    return subFields.map((field) => {
       const { variables } = field
       return {
         id: field.key,
@@ -153,7 +155,11 @@ function AttachmentMultiCheckbox(props: MultiCheckboxProps) {
         addNew: !variables,
       }
     })
-  }, [items, subFields, uploadedItems])
+  }, [getValues, items, name, subFields, uploadedItems])
+
+  const checkedItems = useMemo(() => {
+    return selectedOptions.map((option) => option.value)
+  }, [selectedOptions])
 
   const { deleteFromS3, isDeleting } = useS3Delete(
     name,
@@ -304,12 +310,12 @@ function AttachmentMultiCheckbox(props: MultiCheckboxProps) {
                             )
                           }}
                           variableComponentType="checkbox"
-                          checkedItems={selectedOptions?.map(
-                            (option) => option.value,
-                          )}
+                          checkedItems={checkedItems}
                           accept={ACCEPTED_FILE_TYPES.join(',')}
                           processFile={processFile}
                           onDelete={onDelete}
+                          currentTab={currentTab}
+                          onTabChange={setCurrentTab}
                         />
                       )}
                     </PopoverContent>
