@@ -15,8 +15,12 @@ type Query {
     connectionId: String
     name: String
   ): PaginatedFlows
-  getStepWithTestExecutions(stepId: String!): [Step] @deprecated(reason: "Use getTestExecution instead")
-  getTestExecutionSteps(flowId: String!, ignoreTestExecutionId: Boolean): [ExecutionStep]
+  getStepWithTestExecutions(stepId: String!): [Step]
+    @deprecated(reason: "Use getTestExecution instead")
+  getTestExecutionSteps(
+    flowId: String!
+    ignoreTestExecutionId: Boolean
+  ): [ExecutionStep]
   getExecution(executionId: String!): Execution
   getExecutions(
     limit: Int!
@@ -550,6 +554,7 @@ type Step {
   status: String
   executionSteps: [ExecutionStep]
   config: StepConfig
+  createdAt: String
 }
 
 type StepConfig {

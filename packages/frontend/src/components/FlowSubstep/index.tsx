@@ -6,14 +6,16 @@ import type {
   ISubstep,
 } from '@plumber/types'
 
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Box, Collapse, Stack } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import FlowSubstepTitle from '@/components/FlowSubstepTitle'
 import InputCreator from '@/components/InputCreator'
+import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
 
 type FlowSubstepProps = {
@@ -97,10 +99,24 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   const { name, arguments: args } = substep
 
+  const { flags } = useContext(LaunchDarklyContext)
   const editorContext = useContext(EditorContext)
   const formContext = useFormContext()
   const [validationStatus, setValidationStatus] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
+  )
+
+  // filter inputs hidden behind feature flags based on timestamp
+  const argsToDisplay = useMemo(
+    () =>
+      args?.filter((arg) => {
+        if (!flags) {
+          return true
+        }
+        const flag = getInputFlag(arg.key)
+        return !flags[flag] || +step.createdAt <= flags[flag]
+      }),
+    [args, flags, step.createdAt],
   )
 
   useEffect(() => {
@@ -115,6 +131,10 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   const onToggle = expanded ? onCollapse : onExpand
 
+  if (!argsToDisplay || argsToDisplay.length === 0) {
+    return <></>
+  }
+
   return (
     <>
       <FlowSubstepTitle
@@ -126,7 +146,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       <Collapse in={expanded} unmountOnExit style={{ overflow: 'initial' }}>
         <Box p="1rem 1rem 1.5rem">
           <Stack w="100%" spacing={4}>
-            {args?.map((argument) => (
+            {argsToDisplay.map((argument) => (
               <InputCreator
                 key={argument.key}
                 schema={argument}
