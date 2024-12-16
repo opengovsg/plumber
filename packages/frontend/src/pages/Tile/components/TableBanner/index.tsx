@@ -6,9 +6,10 @@ import { useTableContext } from '../../contexts/TableContext'
 import BreadCrumb from './BreadCrumb'
 import EditMode from './EditMode'
 import ImportExportToolbar from './ImportExportToolbar'
+import RefreshButton from './RefreshButton'
 
 function TableBanner() {
-  const { tableName, role } = useTableContext()
+  const { tableName, role, isFetching } = useTableContext()
 
   return (
     <Flex
@@ -23,7 +24,10 @@ function TableBanner() {
         {role ? <BreadCrumb /> : <Text textStyle="subhead-1">{tableName}</Text>}
         <EditMode />
       </Flex>
-      <ImportExportToolbar />
+      <Flex gap={2}>
+        {isFetching && <RefreshButton />}
+        <ImportExportToolbar />
+      </Flex>
     </Flex>
   )
 }

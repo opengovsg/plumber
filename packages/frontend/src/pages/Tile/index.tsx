@@ -1,5 +1,6 @@
 import { ITableMetadata, ITableRow } from '@plumber/types'
 
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
@@ -17,6 +18,8 @@ export default function Tile(): JSX.Element {
     tileId: string
     viewOnlyKey?: string
   }>()
+  const [rows, setRows] = useState<ITableRow[]>([])
+  const [isFetching, setIsFetching] = useState(true)
 
   const { data: getTableData } = useQuery<{
     getTable: ITableMetadata
@@ -32,12 +35,9 @@ export default function Tile(): JSX.Element {
   })
   const ownRole = getTableData?.getTable?.role
 
-  const { data: getAllRowsData } = useQuery<{
-    getAllRows: ITableRow[]
-  }>(GET_ALL_ROWS, {
+  const { data: initialData, fetchMore } = useQuery(GET_ALL_ROWS, {
     variables: {
-      tableId,
-      viewOnlyKey: urlViewOnlyKey,
+      tableId: tableId as string,
     },
     context: urlViewOnlyKey
       ? {
@@ -45,9 +45,28 @@ export default function Tile(): JSX.Element {
         }
       : undefined,
     fetchPolicy: 'network-only',
+    onCompleted: async (data) => {
+      if (!data.getAllRows) {
+        return
+      }
+      let currentCursor = data.getAllRows.stringifiedCursor
+      let allRows = data.getAllRows.rows
+      setRows(allRows)
+      while (currentCursor) {
+        const { data: newData } = await fetchMore({
+          variables: {
+            stringifiedCursor: currentCursor,
+          },
+        })
+        allRows = [...allRows, ...newData.getAllRows.rows]
+        currentCursor = newData.getAllRows.stringifiedCursor
+        setRows(allRows)
+      }
+      setIsFetching(false)
+    },
   })
 
-  if (!getTableData?.getTable || !getAllRowsData?.getAllRows) {
+  if (!getTableData?.getTable || !initialData?.getAllRows) {
     return (
       <Center height="100vh">
         <PrimarySpinner fontSize="6xl" thickness="4px" margin="auto" />
@@ -57,7 +76,6 @@ export default function Tile(): JSX.Element {
 
   const { id, name, columns, viewOnlyKey, collaborators } =
     getTableData.getTable
-  const rows = getAllRowsData.getAllRows
 
   return (
     <TableContextProvider
@@ -68,6 +86,7 @@ export default function Tile(): JSX.Element {
       viewOnlyKey={viewOnlyKey}
       collaborators={collaborators}
       role={ownRole}
+      isFetching={isFetching}
     >
       <Flex
         flexDir={{ base: 'column' }}

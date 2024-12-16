@@ -24,7 +24,7 @@ export default function DeleteRowsButton({
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  if (isViewMode) {
+  if (isViewMode || !rowsSelected.length) {
     return null
   }
 
@@ -34,7 +34,6 @@ export default function DeleteRowsButton({
         height: ROW_HEIGHT.FOOTER,
         maxHeight: ROW_HEIGHT.FOOTER,
         overflow: 'visible',
-        visibility: rowsSelected.length ? 'visible' : 'hidden',
       }}
     >
       <Button
