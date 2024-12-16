@@ -25,7 +25,7 @@ const deleteFromS3: MutationResolvers['deleteFromS3'] = async (
     .orderBy('steps.position', 'asc')
 
   // remove attachment from all steps to prevent execution failure
-  steps.map(
+  const deletePromises = steps.map(
     async (step: { id: string; parameters: { attachments?: string[] } }) => {
       const { id: stepId, parameters } = step
       const { attachments = [] } = parameters
@@ -43,6 +43,8 @@ const deleteFromS3: MutationResolvers['deleteFromS3'] = async (
       }
     },
   )
+  await Promise.allSettled(deletePromises)
+
   return await deleteObjects(COMMON_S3_BUCKET, [{ Key: objectKey }])
 }
 

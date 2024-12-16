@@ -56,7 +56,7 @@ export const useS3Operations = (
 
   const deleteFromS3 = async (file: any) => {
     try {
-      const { name: filename, value } = file
+      const { name: filename, value, displayedValue } = file
       const flowId = getValues('flowId')
       setIsDeleting(true)
       await deleteFile({ variables: { id: value } })
@@ -71,7 +71,7 @@ export const useS3Operations = (
 
       await refetchFlow()
 
-      triggerToast(`${filename} deleted successfully`, 'success')
+      triggerToast(`${displayedValue} deleted successfully`, 'success')
       setIsDeleting(false)
       options.onSuccess?.(filename)
       return true

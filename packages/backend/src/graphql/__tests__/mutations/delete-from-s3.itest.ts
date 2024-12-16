@@ -6,6 +6,7 @@ import Flow from '@/models/flow'
 import Context from '@/types/express/context'
 
 import { generateMockContext } from './tiles/table.mock'
+import { generateMockFlow, generateMockStep } from './flow.mock'
 
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 const mockBucket = 'test-bucket'
@@ -38,6 +39,29 @@ vi.mock('@aws-sdk/client-s3', () => ({
   DeleteObjectsCommand: vi.fn(),
 }))
 
+function createMockS3Id(mockFileName: string) {
+  return `s3:${mockBucket}:${mockFlowId}/${mockFileName}.txt`
+}
+
+async function createMockStep(
+  context: Context,
+  flowId: string,
+  position: number,
+  params: Record<string, any>,
+  config: Record<string, any> = {},
+) {
+  return generateMockStep(
+    context,
+    'sendTransactionalEmail',
+    'postman',
+    'action',
+    flowId,
+    position,
+    params,
+    config,
+  )
+}
+
 describe('deleteFromS3', () => {
   let context: Context
   beforeEach(async () => {
@@ -46,15 +70,33 @@ describe('deleteFromS3', () => {
   })
 
   it('should successfully delete an object when user owns the flow', async () => {
-    await Flow.query().insert({
-      id: mockFlowId,
-      name: 'Test Flow',
-      userId: context.currentUser.id,
-    })
+    await generateMockFlow(context, mockFlowId)
 
     await expect(deleteFromS3(null, { id: mockS3Id }, context)).resolves.toBe(
       true,
     )
+  })
+
+  it('should delete object from all other steps within a flow', async () => {
+    const fileToDelete = createMockS3Id('test_1')
+    await generateMockFlow(context, mockFlowId)
+    await createMockStep(context, mockFlowId, 2, {
+      body: 'Test body',
+      attachments: [fileToDelete],
+    })
+    await createMockStep(context, mockFlowId, 2, {
+      body: 'Test body',
+      attachments: [fileToDelete, createMockS3Id('test_2')],
+    })
+
+    await deleteFromS3(null, { id: fileToDelete }, context)
+    const postDeleteSteps = await context.currentUser
+      .$relatedQuery('steps')
+      .where({ flow_id: mockFlowId })
+
+    postDeleteSteps.forEach((step) => {
+      expect(step.parameters.attachments).not.toContain(fileToDelete)
+    })
   })
 
   it('should throw an error if user does not have access to the flow', async () => {
