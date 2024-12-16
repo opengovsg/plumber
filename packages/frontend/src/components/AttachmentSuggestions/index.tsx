@@ -23,7 +23,7 @@ import Suggestions from './components/Suggestions'
 import { useAttachmentSelection } from './hooks/useAttachmentSelection'
 import { reformatToCheckboxVariables, validateFiles } from './utils'
 
-interface AttachmentMultiCheckboxProps {
+interface AttachmentSuggestionsProps {
   name: string
   label?: string
   defaultValue?: string
@@ -32,7 +32,7 @@ interface AttachmentMultiCheckboxProps {
   variableTypes?: TDataOutMetadatumType[]
 }
 
-function AttachmentMultiCheckbox(props: AttachmentMultiCheckboxProps) {
+function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const {
     name,
     required,
@@ -245,4 +245,4 @@ function AttachmentMultiCheckbox(props: AttachmentMultiCheckboxProps) {
   )
 }
 
-export default memo(AttachmentMultiCheckbox)
+export default memo(AttachmentSuggestions)
