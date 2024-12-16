@@ -1,6 +1,6 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
-import AttachmentMultiCheckbox from '@/components/AttachmentMultiCheckbox'
+import AttachmentSuggestions from '@/components/AttachmentSuggestions'
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
 import DragDropInput from '@/components/DragDropInput'
 import MultiRow from '@/components/MultiRow'
@@ -152,14 +152,13 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     )
   }
 
-  if (type === 'attachment-multicheckbox') {
+  if (type === 'attachment') {
     return (
-      <AttachmentMultiCheckbox
+      <AttachmentSuggestions
         name={computedName}
         label={label}
         description={description}
         variableTypes={schema.variableTypes}
-        subFields={schema.subFields}
       />
     )
   }

@@ -377,6 +377,7 @@ type FlowTemplateConfig {
 
 type FlowAttachmentConfig {
   name: String!
+  displayedValue: String!
   value: String!
   size: Int!
   updatedAt: String!
@@ -453,6 +454,7 @@ enum NotificationFrequency {
 
 input FlowAttachmentsConfigInput {
   name: String!
+  displayedValue: String!
   value: String!
   size: Int!
   updatedAt: String!

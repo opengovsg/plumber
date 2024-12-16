@@ -1,9 +1,16 @@
+import { ChangeEvent, memo } from 'react'
 import { BiTrash } from 'react-icons/bi'
 import { BsDot } from 'react-icons/bs'
-import { Checkbox, Flex, Icon, IconButton, Text } from '@chakra-ui/react'
+import {
+  Checkbox as ChakraCheckbox,
+  Flex,
+  Icon,
+  IconButton,
+  Text,
+} from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
 
-import { formatFileSizeToStr } from '@/components/AttachmentMultiCheckbox/utils'
+import { formatFileSizeToStr } from '@/components/AttachmentSuggestions/utils'
 import { toPrettyDateString } from '@/helpers/dateTime'
 import { Variable } from '@/helpers/variables'
 
@@ -13,48 +20,48 @@ export interface CheckboxVariable extends Variable {
   uploaded?: boolean
 }
 
-interface VariableCheckboxProps {
+interface CheckboxProps {
   variable: CheckboxVariable
-  onClick?: (variable: CheckboxVariable, checked?: boolean) => void
-  checkedItems?: unknown[]
+  onClick: (variable: CheckboxVariable, checked: boolean) => void
+  isChecked: boolean
   allowDelete?: boolean
   onDelete?: (event: React.MouseEvent, file: Variable) => void
   addNew?: boolean
-  accept?: string
 }
 
-export default function VariableCheckbox(props: VariableCheckboxProps) {
-  const { variable, checkedItems, onClick, allowDelete, onDelete } = props
-  const { label, size, value, updatedAt = null, uploaded } = variable
+function Checkbox(props: CheckboxProps) {
+  const { variable, isChecked, onClick, allowDelete, onDelete } = props
+  const { displayedValue, size, value, updatedAt = null, uploaded } = variable
+
+  // Note: removes the outline around the checkbox that is last focused
+  const handleBlur = (e: ChangeEvent<HTMLInputElement>) => e.target.blur()
+
   return (
-    <Checkbox
+    <ChakraCheckbox
       key={value as string}
-      isChecked={checkedItems?.includes(value)}
+      isChecked={isChecked}
       onChange={(e) => {
         onClick?.(variable, e.target.checked)
+        handleBlur(e)
       }}
       _hover={{
         backgroundColor: 'primary.100',
         cursor: 'pointer',
-        outline: 'none',
       }}
       p="0.5rem"
-      outline="none"
     >
       <Flex alignItems="center" justify="space-between" maxW="100%">
         <Flex direction="column">
-          <TouchableTooltip
-            label={(label?.length ?? 0) > 20 ? label : undefined}
-          >
-            <Text noOfLines={1}>{label}</Text>
+          <TouchableTooltip label={displayedValue}>
+            <Text noOfLines={1}>{displayedValue}</Text>
           </TouchableTooltip>
           {uploaded && (
             <Flex direction="row" alignItems="center">
-              <Text textStyle="body-2">
+              <Text textStyle="body-2" noOfLines={1}>
                 {size ? formatFileSizeToStr(size) : ''}
               </Text>
               <Icon as={BsDot} />
-              <Text textStyle="body-2">
+              <Text textStyle="body-2" noOfLines={1}>
                 {toPrettyDateString(updatedAt, 'iso')}
               </Text>
             </Flex>
@@ -68,10 +75,11 @@ export default function VariableCheckbox(props: VariableCheckboxProps) {
             variant="clear"
             minH={0}
             onClick={(e) => onDelete?.(e, variable)}
-            mr="0.5rem"
           />
         )}
       </Flex>
-    </Checkbox>
+    </ChakraCheckbox>
   )
 }
+
+export default memo(Checkbox)

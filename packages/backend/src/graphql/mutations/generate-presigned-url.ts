@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto'
 
-import appConfig from '@/config/app'
 import { COMMON_S3_BUCKET, getPresignedUrl } from '@/helpers/s3'
 import Flow from '@/models/flow'
 
@@ -25,14 +24,7 @@ const generatePresignedUrl: MutationResolvers['generatePresignedUrl'] = async (
     manualUpload: manualUpload.toString(),
   })
 
-  const customUrl = url.replace(
-    new RegExp(
-      `https://${COMMON_S3_BUCKET}\\.s3\\.[a-z0-9-]+\\.amazonaws\\.com`,
-    ),
-    `https://upload-${appConfig.appEnv}.plumber.gov.sg`,
-  )
-
-  return { url: customUrl, s3Id: `s3:${COMMON_S3_BUCKET}:${filePath}` }
+  return { url, s3Id: `s3:${COMMON_S3_BUCKET}:${filePath}` }
 }
 
 export default generatePresignedUrl

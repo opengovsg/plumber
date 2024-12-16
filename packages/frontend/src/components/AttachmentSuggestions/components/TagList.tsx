@@ -2,13 +2,11 @@ import { Tag, TagCloseButton, TagLabel } from '@chakra-ui/react'
 
 interface TagsProps {
   selectedOptions: any[]
-  onClick: (option: any, onChange: any, values: any, isChecked: boolean) => void
-  onChange: (option: any) => void
-  values: any[]
+  onClick: (option: any) => void
 }
 
-function Tags(props: TagsProps) {
-  const { onClick, onChange, selectedOptions, values } = props
+function TagList(props: TagsProps) {
+  const { onClick, selectedOptions } = props
 
   if (selectedOptions.length === 0) {
     return <></>
@@ -17,7 +15,7 @@ function Tags(props: TagsProps) {
   return (
     <>
       {selectedOptions?.map((option) => {
-        const { name, value } = option
+        const { displayedValue, value } = option
         return (
           <Tag
             key={value as string}
@@ -29,12 +27,15 @@ function Tags(props: TagsProps) {
             maxW="200px"
             flex="0 1 auto"
           >
-            <TagLabel isTruncated flex="1 1 auto" minW="0" title={name}>
-              {name}
+            <TagLabel
+              isTruncated
+              flex="1 1 auto"
+              minW="0"
+              title={displayedValue}
+            >
+              {displayedValue}
             </TagLabel>
-            <TagCloseButton
-              onClick={() => onClick(option, onChange, values, false)}
-            />
+            <TagCloseButton onClick={() => onClick(option)} />
           </Tag>
         )
       })}
@@ -42,4 +43,4 @@ function Tags(props: TagsProps) {
   )
 }
 
-export default Tags
+export default TagList

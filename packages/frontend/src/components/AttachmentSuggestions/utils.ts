@@ -2,7 +2,7 @@ import { TDataOutMetadatumType } from '@plumber/types'
 
 import { FieldValues } from 'react-hook-form'
 
-import { CheckboxVariable } from '@/components/VariablesList/VariableCheckbox'
+import { type CheckboxVariable } from './components/Checkbox'
 
 export const MAX_NUM_FILES = 10
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB in bytes
@@ -42,6 +42,7 @@ export const ACCEPTED_FILE_TYPES = [
 
 export interface AttachmentConfigInput {
   name: string
+  displayedValue: string
   value: string
   size?: number
   updatedAt?: string | number
@@ -113,7 +114,7 @@ export function createUpdateStep(
   return mutationInput
 }
 
-export function reformatAttachmentsConfig(
+export function reformatToCheckboxVariables(
   options: CheckboxVariable[],
 ): CheckboxVariable[] {
   if (options.length === 0) {
@@ -121,11 +122,16 @@ export function reformatAttachmentsConfig(
   }
 
   return sortAttachmentsByUpdatedAt(options).map((a, index) => {
-    const { name = '', value, size, updatedAt } = a
+    const { name, displayedValue, value, size, updatedAt } = a
     return {
+      /**
+       * NOTE: we store the value as name because variables are stored
+       * using the name field as {{step.xyx}}.
+       * We use name for consistent setting of the selected checkbox.
+       */
       name,
-      value: value,
-      displayedValue: name,
+      value,
+      displayedValue,
       type: 'file' as TDataOutMetadatumType,
       order: index + 1,
       label: name,
@@ -144,9 +150,10 @@ export function reformatToAttachmentConfig(
   }
 
   return sortAttachmentsByUpdatedAt(options).map((o) => {
-    const { name, value, size, updatedAt } = o
+    const { displayedValue, name, value, size, updatedAt } = o
     return {
       name,
+      displayedValue,
       value: value as string,
       size,
       updatedAt,

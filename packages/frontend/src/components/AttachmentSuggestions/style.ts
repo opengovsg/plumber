@@ -4,7 +4,7 @@ export const boxStyles = {
   padding: '8px 12px',
   cursor: 'pointer',
   display: 'flex',
-  justifyContent: 'space-between',
+  justifyContent: 'flex-start',
   alignItems: 'center',
   backgroundColor: 'white',
   '&:hover': {
@@ -17,3 +17,10 @@ export const boxStyles = {
 }
 
 export const divWrapperStyles = { height: 40, width: '100%' }
+
+export const noVariablesTextStyles = {
+  p: 4,
+  opacity: 0.5,
+  textStyle: 'body-1',
+  color: 'base.content.medium',
+}

@@ -189,6 +189,7 @@ export interface IFlowTemplateConfig {
 
 export interface IFlowAttachmentsConfig {
   name: string
+  displayedValue: string
   value: string
   size: number
   updatedAt: string
@@ -341,12 +342,10 @@ export interface IFieldText extends IBaseField {
   autoComplete?: AutoCompleteValue
 }
 
-export interface IFieldMultiCheckbox extends IBaseField {
-  type: 'attachment-multicheckbox'
+export interface IFieldAttachment extends IBaseField {
+  type: 'attachment'
   value?: string
   variableTypes?: TDataOutMetadatumType[]
-
-  subFields: IField[]
 }
 
 export interface IFieldMultiline extends IBaseField {
@@ -415,7 +414,7 @@ export interface IFieldBooleanRadioOption {
 export type IField =
   | IFieldDropdown
   | IFieldText
-  | IFieldMultiCheckbox
+  | IFieldAttachment
   | IFieldMultiline
   | IFieldMultiRowMultiCol
   | IFieldMultiSelect

@@ -43,6 +43,7 @@ export const GET_FLOW = gql`
         showSurvey
         attachments {
           name
+          displayedValue
           value
           size
           updatedAt
