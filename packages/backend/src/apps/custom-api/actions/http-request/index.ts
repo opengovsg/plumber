@@ -88,12 +88,12 @@ const action: IRawAction = {
 
     try {
       const parsedS = requestSchema.parse($.step.parameters)
-      const { customHeaders } = parsedS
+      const { customHeaders, data: parsedData } = parsedS
 
       let response = await $.http.request({
         url,
         method,
-        data,
+        data: parsedData,
         maxRedirects: 0,
         headers: customHeaders,
         //  overwriting this to allow redirects to resolve
