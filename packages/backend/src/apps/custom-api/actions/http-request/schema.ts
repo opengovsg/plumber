@@ -2,24 +2,6 @@ import { z } from 'zod'
 
 import { sanitizeMarkdown } from '@/apps/telegram-bot/common/markdown-v1'
 
-function isStringifiedJSON(input: string) {
-  if (typeof input !== 'string') {
-    return false // If not a string, it can't be stringified JSON
-  }
-
-  try {
-    // NOTE: assume that user is trying to input JSON data if it starts with { or ends with }
-    if (input.startsWith('{') || input.endsWith('}')) {
-      return true
-    }
-
-    const parsed = JSON.parse(input)
-    return typeof parsed === 'object' && parsed !== null
-  } catch (e) {
-    return false // Not valid JSON
-  }
-}
-
 export const requestSchema = z.object({
   customHeaders: z
     .array(
@@ -74,14 +56,11 @@ export const requestSchema = z.object({
       }
 
       try {
-        if (isStringifiedJSON(str)) {
-          JSON.parse(str) // to test if it's valid JSON
-          return str
-        } else {
-          // NOTE: caters for existing users that are sending strings in the data field
-          // all non JSON-like inputs will be treated as string
-          return str
+        // NOTE: assume that user is trying to input JSON data if it starts with { or ends with }
+        if (str.startsWith('{') || str.endsWith('}')) {
+          JSON.parse(str) // to test for valid JSON
         }
+        return str
       } catch (e) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
