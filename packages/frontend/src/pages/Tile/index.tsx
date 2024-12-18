@@ -46,7 +46,9 @@ export default function Tile(): JSX.Element {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
         }
       : undefined,
-    fetchPolicy: 'network-only',
+    // this fetchPolicy needs to be set for onCompleted to be called on refetch
+    // i.e. after csv upload
+    fetchPolicy: 'cache-and-network',
     onCompleted: async (data) => {
       if (!data.getAllRows) {
         return
