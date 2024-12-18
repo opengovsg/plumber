@@ -87,57 +87,53 @@ export const transactionalEmailFields: IField[] = [
   },
 ]
 
-export const transactionalEmailSchema = z
-  .object({
-    subject: z.string().min(1, { message: 'Empty subject' }).trim(),
-    body: z
-      .string()
-      .min(1, { message: 'Empty body' })
-      // for backward-compatibility with content produced by the old editor
-      .transform((v) => v.replace(/\n/g, '<br>')),
-    destinationEmail: z
-      .string()
-      .transform((value, ctx) =>
-        validateEmails(value, ctx, 'Invalid recipient emails'),
-      ),
-    destinationEmailCc: z
-      .string()
-      .transform((value, ctx) =>
-        validateEmails(value, ctx, 'Invalid CC emails'),
-      )
-      .optional(),
-    replyTo: z.preprocess((value) => {
-      if (typeof value !== 'string') {
-        return value
+export const transactionalEmailSchema = z.object({
+  subject: z.string().min(1, { message: 'Empty subject' }).trim(),
+  body: z
+    .string()
+    .min(1, { message: 'Empty body' })
+    // for backward-compatibility with content produced by the old editor
+    .transform((v) => v.replace(/\n/g, '<br>')),
+  destinationEmail: z
+    .string()
+    .transform((value, ctx) =>
+      validateEmails(value, ctx, 'Invalid recipient emails'),
+    ),
+  destinationEmailCc: z
+    .string()
+    .transform((value, ctx) => validateEmails(value, ctx, 'Invalid CC emails'))
+    /**
+     * NOTE: Postman limits a maximum of 50 recipients (including primary recipient and CC recipients)
+     * Currently, Plumber sends emails to the main recipient individually,
+     * hence a limit of 49 CC recipients is enforced.
+     */
+    .refine((value) => value.length <= 49, {
+      message: 'The total number of CC recipient emails must not exceed 49',
+    })
+    .optional(),
+  replyTo: z.preprocess((value) => {
+    if (typeof value !== 'string') {
+      return value
+    }
+    return value.trim() === '' ? undefined : value.trim()
+  }, z.string().email({ message: 'Invalid reply to email' }).optional()),
+  senderName: z.string().min(1, { message: 'Empty sender name' }).trim(),
+  attachments: z.array(z.string()).transform((array, context) => {
+    const result: string[] = []
+    for (const value of array) {
+      // Account for optional attachment fields with no response.
+      if (!value) {
+        continue
       }
-      return value.trim() === '' ? undefined : value.trim()
-    }, z.string().email({ message: 'Invalid reply to email' }).optional()),
-    senderName: z.string().min(1, { message: 'Empty sender name' }).trim(),
-    attachments: z.array(z.string()).transform((array, context) => {
-      const result: string[] = []
-      for (const value of array) {
-        // Account for optional attachment fields with no response.
-        if (!value) {
-          continue
-        }
-        if (!parseS3Id(value)) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `${value} is not a S3 ID.`,
-          })
-          return z.NEVER
-        }
-        result.push(value)
+      if (!parseS3Id(value)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${value} is not a S3 ID.`,
+        })
+        return z.NEVER
       }
-      return result
-    }),
-  })
-  .refine(
-    (data) =>
-      data.destinationEmail.length + (data.destinationEmailCc?.length ?? 0) <=
-      50, // Note: Postman limits a maximum of 50 recipients (including primary recipient and CC recipients)
-    {
-      message:
-        'The total number of emails in Recipient email(s) and CC recipient email(s) must not exceed 50',
-    },
-  )
+      result.push(value)
+    }
+    return result
+  }),
+})

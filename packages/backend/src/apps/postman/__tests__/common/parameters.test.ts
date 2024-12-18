@@ -161,9 +161,9 @@ describe('postman transactional email schema zod validation', () => {
   )
 
   it.each([
-    { recipient: 10, cc: 41 },
-    { recipient: 41, cc: 10 },
-    { recipient: 50, cc: 1 },
+    { recipient: 10, cc: 50 },
+    { recipient: 41, cc: 51 },
+    { recipient: 50, cc: 52 },
     { recipient: 1, cc: 50 },
   ])(
     'should fail if total number of emails in Recipient email(s) and CC recipient email(s) exceeds 50',
@@ -173,7 +173,7 @@ describe('postman transactional email schema zod validation', () => {
       const result = transactionalEmailSchema.safeParse(validPayload)
       assert(result.success === false)
       expect(result.error?.errors[0].message).toEqual(
-        'The total number of emails in Recipient email(s) and CC recipient email(s) must not exceed 50',
+        'The total number of CC recipient emails must not exceed 49',
       )
     },
   )
