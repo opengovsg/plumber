@@ -1,3 +1,4 @@
+import { type MouseEventHandler } from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -9,7 +10,7 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 export type AlertDialogType = 'delete' | 'duplicate'
-export type AlertHeaderType = 'Connection' | 'Pipe' | 'Tile'
+export type AlertHeaderType = 'Connection' | 'Pipe' | 'Tile' | 'Step'
 
 interface MenuAlertDialogProps {
   isDialogOpen: boolean
@@ -17,7 +18,7 @@ interface MenuAlertDialogProps {
   onDialogClose: () => void
   dialogType: AlertDialogType
   dialogHeader: AlertHeaderType
-  onClick: () => void
+  onClick: (() => void) | MouseEventHandler
   isLoading: boolean
 }
 

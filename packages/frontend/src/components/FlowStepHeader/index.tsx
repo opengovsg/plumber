@@ -3,6 +3,7 @@ import {
   type MouseEventHandler,
   type ReactNode,
   useCallback,
+  useRef,
   useState,
 } from 'react'
 import {
@@ -30,6 +31,8 @@ import { IconButton } from '@opengovsg/design-system-react'
 
 import DemoVideoModalContent from '@/components/FlowRow/DemoVideoModalContent'
 
+import MenuAlertDialog from '../MenuAlertDialog'
+
 // Chakra's `Collapse` sets `overflow: hidden` by default, which causes dropdown
 // menu items to be hidden. We override overflow by making `Collapse` a Chakra
 // element.
@@ -41,6 +44,7 @@ interface FlowStepHeaderProps {
   hintAboveCaption: string
   isCompleted?: boolean
   onDelete?: MouseEventHandler
+  isDeleting?: boolean
   onOpen: () => void
   onClose: () => void
   collapsed: boolean
@@ -61,6 +65,7 @@ export default function FlowStepHeader(
     hintAboveCaption,
     isCompleted,
     onDelete,
+    isDeleting,
     onOpen,
     onClose,
     collapsed,
@@ -78,6 +83,13 @@ export default function FlowStepHeader(
       onClose()
     }
   }, [collapsed, onOpen, onClose])
+
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const {
+    isOpen: isDialogOpen,
+    onOpen: onDialogOpen,
+    onClose: onDialogClose,
+  } = useDisclosure()
 
   // for loading demo modal
   const {
@@ -231,7 +243,10 @@ export default function FlowStepHeader(
           {onDelete && (
             <Flex ml="auto">
               <IconButton
-                onClick={onDelete}
+                onClick={(event) => {
+                  onDialogOpen()
+                  event.stopPropagation()
+                }}
                 variant="clear"
                 aria-label="Delete Step"
                 icon={<BiTrashAlt />}
@@ -261,6 +276,18 @@ export default function FlowStepHeader(
             <DemoVideoModalContent src={demoVideoUrl} title={demoVideoTitle} />
           </ModalContent>
         </Modal>
+      )}
+
+      {onDelete && isDeleting !== undefined && (
+        <MenuAlertDialog
+          isDialogOpen={isDialogOpen}
+          cancelRef={cancelRef}
+          onDialogClose={onDialogClose}
+          dialogHeader="Step"
+          dialogType="delete"
+          onClick={onDelete}
+          isLoading={isDeleting}
+        />
       )}
     </>
   )
