@@ -56,7 +56,7 @@ describe('create row mutation', () => {
       context,
     )
 
-    const rows = await getTableRows({
+    const { rows } = await getTableRows({
       tableId: dummyTable.id,
       columnIds: dummyColumnIds,
     })
@@ -81,7 +81,7 @@ describe('create row mutation', () => {
       context,
     )
 
-    const rows = await getTableRows({
+    const { rows } = await getTableRows({
       tableId: dummyTable.id,
       columnIds: dummyColumnIds,
     })

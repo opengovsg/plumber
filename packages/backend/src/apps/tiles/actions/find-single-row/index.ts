@@ -176,12 +176,15 @@ const action: IRawAction = {
       )
     }
 
-    const result = await getTableRows({
+    /**
+     * When columnIds are not provided, we only return rowId
+     */
+    const { rows } = await getTableRows({
       tableId,
       filters,
     })
 
-    if (!result || !result.length) {
+    if (!rows || !rows.length) {
       $.setActionItem({
         raw: {
           rowsFound: 0,
@@ -190,8 +193,8 @@ const action: IRawAction = {
       return
     }
     const rowIdToUse = returnLastRow
-      ? result[result.length - 1].rowId
-      : result[0].rowId
+      ? rows[rows.length - 1].rowId
+      : rows[0].rowId
 
     /**
      * We use raw row data instead of mapped column names as we want them to
@@ -205,7 +208,7 @@ const action: IRawAction = {
 
     $.setActionItem({
       raw: {
-        rowsFound: result.length,
+        rowsFound: rows.length,
         rowId: rowIdToUse,
         row: rowToReturn.data,
       } satisfies FindSingleRowOutput,

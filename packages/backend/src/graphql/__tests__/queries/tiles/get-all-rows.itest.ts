@@ -46,7 +46,7 @@ describe('get all rows query', () => {
     const numRowsToInsert = 100
     await insertMockTableRows(dummyTable.id, numRowsToInsert, dummyColumnIds)
 
-    const rows = await getAllRows(
+    const { rows } = await getAllRows(
       null,
       {
         tableId: dummyTable.id,
@@ -69,7 +69,7 @@ describe('get all rows query', () => {
       rowIdsInserted.push(rowId)
     }
 
-    const rows = await getAllRows(
+    const { rows } = await getAllRows(
       null,
       {
         tableId: dummyTable.id,
@@ -79,25 +79,32 @@ describe('get all rows query', () => {
     expect(rows.map((r: ITableRow) => r.rowId)).toEqual(rowIdsInserted)
   })
 
-  it('should fetch all rows even if more than 1MB', async () => {
+  it('should fetch all rows even if more than 1MB by pagination', async () => {
     // 1 randomly generated row is about 470 bytes
-    // 4000 rows will be about about 1.8MB
-    const numRowsToInsert = 4000
+    // 10000 rows will be about 4.7MB
+    const numRowsToInsert = 10000
     await insertMockTableRows(dummyTable.id, numRowsToInsert, dummyColumnIds)
 
-    const rows = await getAllRows(
-      null,
-      {
-        tableId: dummyTable.id,
-      },
-      context,
-    )
-
-    expect(rows).toHaveLength(numRowsToInsert)
+    let cursor: string | null = null
+    let rows: ITableRow[] = []
+    do {
+      const { rows: pageRows, stringifiedCursor } = await getAllRows(
+        null,
+        {
+          tableId: dummyTable.id,
+          stringifiedCursor: cursor,
+        },
+        context,
+      )
+      cursor = stringifiedCursor
+      expect(pageRows.length).toBeLessThan(numRowsToInsert)
+      rows = rows.concat(pageRows)
+    } while (cursor)
+    expect(rows.length).toBe(numRowsToInsert)
   }, 100000)
 
   it('should return empty array if no rows', async () => {
-    const rows = await getAllRows(
+    const { rows } = await getAllRows(
       null,
       {
         tableId: dummyTable.id,
@@ -120,7 +127,7 @@ describe('get all rows query', () => {
 
     await createTableRow(rowToInsert)
 
-    const returnedRows = await getAllRows(
+    const { rows: returnedRows } = await getAllRows(
       null,
       {
         tableId: dummyTable.id,

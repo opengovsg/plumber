@@ -1,6 +1,8 @@
 import { Flex, Text } from '@chakra-ui/react'
+import { Spinner } from '@opengovsg/design-system-react'
 
 import { BORDER_COLOR } from '../../constants'
+import { useTableContext } from '../../contexts/TableContext'
 
 interface RowCountProps {
   rowCount: number
@@ -8,8 +10,9 @@ interface RowCountProps {
 }
 
 export default function RowCount({ rowCount, rowSelection }: RowCountProps) {
-  const numRowsSelected = Object.keys(rowSelection).length
+  const { isFetching } = useTableContext()
 
+  const numRowsSelected = Object.keys(rowSelection).length
   const rowCountToShow = numRowsSelected || rowCount
 
   return (
@@ -21,6 +24,7 @@ export default function RowCount({ rowCount, rowSelection }: RowCountProps) {
       borderColor={BORDER_COLOR.DEFAULT}
       px={4}
     >
+      {isFetching && <Spinner mr={1} />}
       <Text textStyle="body-2" whiteSpace="nowrap">
         {rowCountToShow}
         {' row' +

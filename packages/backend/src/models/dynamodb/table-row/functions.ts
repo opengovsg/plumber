@@ -261,11 +261,20 @@ export const getTableRows = async ({
   tableId,
   columnIds,
   filters,
+  stringifiedCursor,
 }: {
   tableId: string
   columnIds?: string[]
   filters?: TableRowFilter[]
-}): Promise<TableRowOutput[]> => {
+  /**
+   * if stringifiedCursor is 'start', we will fetch the first page of results
+   * if undefined, we will auto-paginate
+   */
+  stringifiedCursor?: string | 'start'
+}): Promise<{
+  rows: TableRowOutput[]
+  stringifiedCursor?: string
+}> => {
   try {
     // need to use ProjectionExpression to select nested attributes
     const { ProjectionExpression, ExpressionAttributeNames } =
@@ -275,7 +284,10 @@ export const getTableRows = async ({
         indexUsed: 'byCreatedAt',
       })
     const tableRows = []
-    let cursor: any = null
+    let cursor: any =
+      stringifiedCursor && stringifiedCursor !== 'start'
+        ? JSON.parse(stringifiedCursor)
+        : null
     do {
       const query = TableRow.query.byCreatedAt({ tableId })
       if (filters?.length) {
@@ -283,7 +295,7 @@ export const getTableRows = async ({
       }
       const response = await query.go({
         order: 'asc',
-        pages: 'all',
+        pages: 'all', // this is ignored, we need to paginate manually
         cursor,
         params: {
           ProjectionExpression,
@@ -301,11 +313,16 @@ export const getTableRows = async ({
       }
       tableRows.push(...data.Items)
       cursor = data.LastEvaluatedKey
-    } while (cursor)
-    return tableRows.map((row) => ({
-      ...row,
-      data: row.data || {}, // data can be undefined if values are empty
-    }))
+      // loop only if cursor is
+    } while (cursor && !stringifiedCursor)
+
+    return {
+      rows: tableRows.map((row) => ({
+        ...row,
+        data: row.data || {}, // data can be undefined if values are empty
+      })),
+      stringifiedCursor: cursor ? JSON.stringify(cursor) : undefined,
+    }
   } catch (e: unknown) {
     handleDynamoDBError(e)
   }

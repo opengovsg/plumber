@@ -80,7 +80,7 @@ describe('dynamodb table row functions', () => {
         })
       }
       await createTableRows({ tableId: dummyTable.id, dataArray })
-      const rows = await getTableRows({
+      const { rows } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b', 'randomcol'],
       })
@@ -100,7 +100,7 @@ describe('dynamodb table row functions', () => {
       await createTableRows({ tableId: dummyTable.id, dataArray })
 
       // LTE
-      const rows1 = await getTableRows({
+      const { rows: rows1 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -114,7 +114,7 @@ describe('dynamodb table row functions', () => {
       expect(rows1.length).toEqual(501)
 
       // LT
-      const rows2 = await getTableRows({
+      const { rows: rows2 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -128,7 +128,7 @@ describe('dynamodb table row functions', () => {
       expect(rows2.length).toEqual(500)
 
       // GT
-      const rows3 = await getTableRows({
+      const { rows: rows3 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -142,7 +142,7 @@ describe('dynamodb table row functions', () => {
       expect(rows3.length).toEqual(499)
 
       // GTE
-      const rows4 = await getTableRows({
+      const { rows: rows4 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -156,7 +156,7 @@ describe('dynamodb table row functions', () => {
       expect(rows4.length).toEqual(500)
 
       // EQUALS
-      const rows5 = await getTableRows({
+      const { rows: rows5 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -170,7 +170,7 @@ describe('dynamodb table row functions', () => {
       expect(rows5.length).toEqual(1)
 
       // Contains
-      const rows6 = await getTableRows({
+      const { rows: rows6 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -184,7 +184,7 @@ describe('dynamodb table row functions', () => {
       expect(rows6.length).toEqual(19)
 
       // Contains
-      const rows7 = await getTableRows({
+      const { rows: rows7 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -198,7 +198,7 @@ describe('dynamodb table row functions', () => {
       expect(rows7.length).toEqual(111)
 
       // Empty
-      const rows8 = await getTableRows({
+      const { rows: rows8 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -223,7 +223,7 @@ describe('dynamodb table row functions', () => {
       await createTableRows({ tableId: dummyTable.id, dataArray })
 
       // LTE & GTE
-      const rows1 = await getTableRows({
+      const { rows: rows1 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -243,7 +243,7 @@ describe('dynamodb table row functions', () => {
       expect(rows1.length).toEqual(301)
 
       // CONTAINS & BEGINS WITH
-      const rows2 = await getTableRows({
+      const { rows: rows2 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
@@ -262,7 +262,7 @@ describe('dynamodb table row functions', () => {
       expect(rows2.length).toEqual(11)
 
       // IS EMPTY & EQUALS
-      const rows3 = await getTableRows({
+      const { rows: rows3 } = await getTableRows({
         tableId: dummyTable.id,
         columnIds: ['a', 'b'],
         filters: [
