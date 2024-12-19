@@ -66,19 +66,11 @@ function findAndSubstituteVariables(
 
         // NOTE: dataValue could be an array if it is not processed on variables.ts
         // which is the case for formSG checkbox only, this is to deal with forEach next time
-        const processedVar = preprocessVariable
+        return preprocessVariable
           ? preprocessVariable(parameterKey, dataValue)
           : Array.isArray(dataValue)
           ? dataValue.join(', ')
           : dataValue
-        /**
-         * NOTE: this is to deal with escaping variables in custom api data field
-         * be careful with this as it may break other apps if the key 'data' is used
-         */
-        if (parameterKey === 'data') {
-          return JSON.stringify(processedVar).slice(1, -1)
-        }
-        return processedVar
       }
 
       return part
