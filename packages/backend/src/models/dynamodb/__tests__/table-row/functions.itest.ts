@@ -16,6 +16,7 @@ import {
   getRawRowById,
   getTableRowCount,
   getTableRows,
+  patchTableRow,
   updateTableRow,
 } from '../../table-row/functions'
 
@@ -331,6 +332,65 @@ describe('dynamodb table row functions', () => {
         columnIds: dummyColumnIds,
       })
       expect(updatedRow.data).toEqual(newData)
+    })
+  })
+
+  describe('patchTableRow', () => {
+    it('should patch the data map for the row, leaving other columns unchanged', async () => {
+      const data = generateMockTableRowData({
+        columnIds: dummyColumnIds,
+      })
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+      const newData = generateMockTableRowData({
+        columnIds: [dummyColumnIds[0]],
+      })
+      const updatedRow = await patchTableRow({
+        tableId: dummyTable.id,
+        rowId: row.rowId,
+        data: newData,
+      })
+
+      expect(updatedRow.data).toEqual({ ...data, ...newData })
+    })
+
+    it('should not change if no columns are provided', async () => {
+      const data = generateMockTableRowData({
+        columnIds: dummyColumnIds,
+      })
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+      const updatedRow = await patchTableRow({
+        tableId: dummyTable.id,
+        rowId: row.rowId,
+        data: {},
+      })
+
+      expect(updatedRow.data).toEqual(data)
+    })
+
+    it('should auto-marshall the data', async () => {
+      const data = generateMockTableRowData({
+        columnIds: dummyColumnIds,
+      })
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+      const updatedRow = await patchTableRow({
+        tableId: dummyTable.id,
+        rowId: row.rowId,
+        data: { [dummyColumnIds[0]]: '123' },
+      })
+      expect(updatedRow.data).toEqual({ ...data, [dummyColumnIds[0]]: 123 })
+    })
+
+    it('should update the updatedAt value', async () => {
+      const data = generateMockTableRowData({
+        columnIds: dummyColumnIds,
+      })
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+      const updatedRow = await patchTableRow({
+        tableId: dummyTable.id,
+        rowId: row.rowId,
+        data: { [dummyColumnIds[0]]: '123' },
+      })
+      expect(updatedRow.updatedAt).toBeGreaterThan(row.updatedAt)
     })
   })
 })

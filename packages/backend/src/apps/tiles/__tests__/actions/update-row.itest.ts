@@ -18,7 +18,7 @@ import Context from '@/types/express/context'
 import tiles from '../..'
 import updateRowAction from '../../actions/update-row'
 
-describe('tiles create row action', () => {
+describe('tiles update row action', () => {
   let context: Context
   let dummyTable: TableMetadata
   let dummyColumnIds: string[]
@@ -112,5 +112,33 @@ describe('tiles create row action', () => {
       })
       .where({ table_id: $.step.parameters.tableId })
     await expect(updateRowAction.run($)).rejects.toThrow(StepError)
+  })
+
+  it('should not fail if row does not exist', async () => {
+    $.step.parameters.rowId = '123'
+    await expect(updateRowAction.run($)).resolves.not.toThrow(StepError)
+  })
+
+  it('should not update columns that are not in the table', async () => {
+    const data = generateMockTableRowData({
+      columnIds: dummyColumnIds,
+    })
+    const row = await createTableRow({ tableId: dummyTable.id, data })
+    $.step.parameters.rowId = row.rowId
+    $.step.parameters.rowData = [
+      { columnId: 'invalid_column', cellValue: '123' },
+      { columnId: dummyColumnIds[0], cellValue: '123' },
+    ]
+    await updateRowAction.run($)
+    expect($.setActionItem).toBeCalledWith({
+      raw: {
+        rowId: row.rowId,
+        updated: true,
+        row: {
+          ...row.data,
+          [dummyColumnIds[0]]: 123,
+        },
+      },
+    })
   })
 })

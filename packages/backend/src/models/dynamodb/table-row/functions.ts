@@ -221,6 +221,38 @@ export const updateTableRow = async ({
   }
 }
 
+/**
+ * This atomically updates the data object for keys that are changed
+ */
+export const patchTableRow = async ({
+  rowId,
+  tableId,
+  data: patchData,
+}: UpdateRowInput): Promise<TableRowItem> => {
+  try {
+    const res = await TableRow.patch({
+      tableId,
+      rowId,
+    })
+      .data(({ data }, { set }) => {
+        for (const key in patchData) {
+          set(
+            data[key],
+            patchData[key] ? autoMarshallNumberStrings(patchData[key]) : '',
+          )
+        }
+      })
+      .go({
+        ignoreOwnership: true,
+        // Return the new row data
+        response: 'all_new',
+      })
+    return res.data
+  } catch (e: unknown) {
+    handleDynamoDBError(e)
+  }
+}
+
 export const deleteTableRows = async ({
   rowIds,
   tableId,
