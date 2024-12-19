@@ -22,11 +22,12 @@ export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
  */
 export const getAppFlag = (appKey: string) => `app_${appKey}`
 export const getAppTriggerFlag = (appKey: string, triggerKey: string) =>
-  `app_${appKey}_trigger_${triggerKey}  `
+  `app_${appKey}_trigger_${triggerKey}`
 export const getAppActionFlag = (appKey: string, actionKey: string) =>
   `app_${appKey}_action_${actionKey}`
 
 /**
- * Input flags
+ * Input flags: use both appKey and key in case of duplicate key between app_events
  */
-export const getInputFlag = (key: string) => `input_${key}`
+export const getInputFlag = (appKey: string, key: string) =>
+  `input_${appKey}_${key}`

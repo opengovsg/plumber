@@ -1,9 +1,11 @@
 import type {
+  IAction,
   IField,
   IJSONObject,
   IJSONValue,
   IStep,
   ISubstep,
+  ITrigger,
 } from '@plumber/types'
 
 import { useContext, useEffect, useMemo, useState } from 'react'
@@ -27,6 +29,7 @@ type FlowSubstepProps = {
   onSubmit: () => void
   step: IStep
   settingsLabel?: string
+  selectedActionOrTrigger?: ITrigger | IAction
 }
 
 function isValidArgValue(value: IJSONValue): boolean {
@@ -95,6 +98,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     onSubmit,
     step,
     settingsLabel,
+    selectedActionOrTrigger,
   } = props
 
   const { name, arguments: args } = substep
@@ -113,10 +117,10 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         if (!flags) {
           return true
         }
-        const flag = getInputFlag(arg.key)
+        const flag = getInputFlag(selectedActionOrTrigger?.key ?? '', arg.key)
         return !flags[flag] || +step.createdAt <= flags[flag]
       }),
-    [args, flags, step.createdAt],
+    [args, flags, step.createdAt, selectedActionOrTrigger],
   )
 
   useEffect(() => {
