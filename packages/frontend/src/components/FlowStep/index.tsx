@@ -182,7 +182,7 @@ export default function FlowStep(
 
   const isDeletable =
     displayOverrides?.disableDelete === true ? false : !isTrigger && !readOnly
-  const [deleteStep] = useMutation(DELETE_STEP, {
+  const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
   })
   const onDelete = useCallback<MouseEventHandler>(
@@ -254,6 +254,7 @@ export default function FlowStep(
         }
         isCompleted={step.status === 'completed'}
         onDelete={isDeletable ? onDelete : undefined}
+        isDeleting={isDeletable ? isDeletingStep : undefined}
         onOpen={onOpen}
         onClose={onClose}
         collapsed={collapsed ?? false}
