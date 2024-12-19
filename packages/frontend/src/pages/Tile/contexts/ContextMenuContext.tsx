@@ -5,7 +5,7 @@ import {
   useContext,
   useState,
 } from 'react'
-import { BiTrash } from 'react-icons/bi'
+import { BiCopy, BiTrash } from 'react-icons/bi'
 import {
   Icon,
   Menu,
@@ -14,6 +14,7 @@ import {
   MenuList,
   Portal,
 } from '@chakra-ui/react'
+import { useToast } from '@opengovsg/design-system-react'
 
 import DeleteRowsModal from '../components/TableFooter/DeleteRowsModal'
 
@@ -46,7 +47,13 @@ export const ContextMenuContextProvider = ({
   children,
 }: ContextMenuContextProviderProps) => {
   const [position, setPosition] = useState<[number, number] | null>(null)
-  const [rowIdsToDelete, setRowIdsToDelete] = useState<string[]>([])
+  const [rowIdsSelected, setRowIdsSelected] = useState<string[]>([])
+  const toast = useToast({
+    title: 'Row ID copied to clipboard',
+    description: 'You can use this in the Update single row step',
+    status: 'success',
+    isClosable: true,
+  })
 
   const rowsSelected = Object.keys(rowSelection)
 
@@ -57,12 +64,20 @@ export const ContextMenuContextProvider = ({
       setPosition(pos)
       if (!rowsSelected.includes(rowId)) {
         clearRowSelection()
-        setRowIdsToDelete([rowId])
+        setRowIdsSelected([rowId])
       } else {
-        setRowIdsToDelete(rowsSelected)
+        setRowIdsSelected(rowsSelected)
       }
     },
     [clearRowSelection, rowsSelected],
+  )
+
+  const onRowIdCopy = useCallback(
+    (rowId: string) => {
+      navigator.clipboard.writeText(rowId)
+      toast()
+    },
+    [toast],
   )
 
   return (
@@ -90,7 +105,17 @@ export const ContextMenuContextProvider = ({
               left={position[0]}
               top={position[1]}
             />
-            <MenuList m={0}>
+            <MenuList m={0} gap={1} display="flex" flexDir="column">
+              {rowsSelected.length <= 1 && (
+                <MenuItem
+                  icon={<Icon as={BiCopy} boxSize={5} />}
+                  display="flex"
+                  alignItems="center"
+                  onClick={() => onRowIdCopy(rowIdsSelected[0])}
+                >
+                  Copy row ID
+                </MenuItem>
+              )}
               <MenuItem
                 icon={<Icon as={BiTrash} boxSize={5} />}
                 color="interaction.critical.default"
@@ -106,7 +131,7 @@ export const ContextMenuContextProvider = ({
         <DeleteRowsModal
           removeRows={removeRows}
           onClose={() => setIsDeleteModalOpen(false)}
-          rowIdsToDelete={rowIdsToDelete}
+          rowIdsToDelete={rowIdsSelected}
         />
       )}
     </ContextMenuContext.Provider>
