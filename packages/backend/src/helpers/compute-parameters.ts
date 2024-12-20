@@ -101,7 +101,9 @@ export function getDataValue(
         current = current[partialKey]
         partialKey = '' // Reset partialKey for next level
       } else if (i === keys.length - 1) {
-        return undefined
+        // Retry by combining all keys from the beginning to see if there's a match
+        const retryKey = keys.slice(0, i + 1).join('.')
+        return obj[retryKey] as string
       }
     }
   }

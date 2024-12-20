@@ -407,6 +407,14 @@ describe('getDataValue', () => {
     }
 
     expect(getDataValue(obj, 'a.b.c')).toBe('correct value')
+
+    const obj2 = {
+      a: {
+        b: 'wrong value',
+      },
+      'a.b.c': 'correct value',
+    }
+    expect(getDataValue(obj2, 'a.b.c')).toBe('correct value')
   })
 
   it('should return undefined for non-existent paths', () => {
