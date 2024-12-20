@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import ExecutionStep from '@/models/execution-step'
 
-import computeParameters from '../compute-parameters'
+import computeParameters, { getDataValue } from '../compute-parameters'
 
 const randomStepID = randomUUID()
 
@@ -318,5 +318,110 @@ describe('compute parameters', () => {
     }
     const result = computeParameters(params, executionStep)
     expect(result).toEqual(expected)
+  })
+
+  it('should work with single keys with dots', () => {
+    const randomKey = randomUUID()
+    const executionStep = [
+      {
+        stepId: randomStepID,
+        dataOut: {
+          fields: {
+            [`${randomKey}.b.c`]: 'Itsa me',
+          },
+        },
+      } as unknown as ExecutionStep,
+    ]
+    const params = {
+      toSubstitute: `{{step.${randomStepID}.fields.${randomKey}.b.c}}`,
+    }
+    const expected = {
+      toSubstitute: 'Itsa me',
+    }
+    const result = computeParameters(params, executionStep)
+    expect(result).toEqual(expected)
+  })
+})
+
+describe('getDataValue', () => {
+  it('should retrieve simple properties', () => {
+    const obj = {
+      simple: 'value',
+      'with space': 'spaced value',
+    }
+
+    expect(getDataValue(obj, 'simple')).toBe('value')
+    expect(getDataValue(obj, 'with space')).toBe('spaced value')
+  })
+
+  it('should retrieve nested properties using dot notation', () => {
+    const obj = {
+      level1: {
+        prop: 'correct value',
+      },
+    }
+
+    expect(getDataValue(obj, 'level1.prop')).toBe('correct value')
+  })
+
+  it.each([
+    {
+      'a.b.c': 'wrong value',
+      a: {
+        b: {
+          c: {
+            d: 'correct value',
+          },
+        },
+      },
+    },
+    {
+      'a.b': {
+        'c.d': 'correct value',
+      },
+      'a.b.c': 'wrong value',
+    },
+  ])('should handle deeply nested properties', (obj) => {
+    expect(getDataValue(obj, 'a.b.c.d')).toBe('correct value')
+  })
+
+  it('should handle arrays in objects', () => {
+    const obj = {
+      arr: ['first', 'second'],
+    }
+
+    expect(getDataValue(obj, 'arr.0')).toBe('first')
+    expect(getDataValue(obj, 'arr.1')).toBe('second')
+  })
+
+  it('should prioritize exact matches over nested paths', () => {
+    const obj = {
+      a: {
+        b: {
+          c: 'correct value',
+        },
+      },
+      'a.b': {
+        c: 'nested value',
+      },
+    }
+
+    expect(getDataValue(obj, 'a.b.c')).toBe('correct value')
+  })
+
+  it('should return undefined for non-existent paths', () => {
+    const obj = {
+      a: {
+        b: 'value',
+      },
+    }
+
+    expect(getDataValue(obj, 'a.c')).toBeUndefined()
+    expect(getDataValue(obj, 'x.y.z')).toBeUndefined()
+  })
+
+  it('should return undefined if input is null or undefined', () => {
+    expect(getDataValue(null, 'a.b.c')).toBeUndefined()
+    expect(getDataValue(undefined, 'a.b.c')).toBeUndefined()
   })
 })

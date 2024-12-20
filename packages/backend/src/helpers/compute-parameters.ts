@@ -1,6 +1,4 @@
-import type { IAction } from '@plumber/types'
-
-import get from 'lodash.get'
+import type { IAction, IJSONObject } from '@plumber/types'
 
 import ExecutionStep from '@/models/execution-step'
 
@@ -62,7 +60,7 @@ function findAndSubstituteVariables(
         const data = executionStep?.dataOut
 
         const keyPath = keyPaths.join('.') // for lodash get to work
-        const dataValue = get(data, keyPath)
+        const dataValue = getDataValue(data, keyPath)
 
         // NOTE: dataValue could be an array if it is not processed on variables.ts
         // which is the case for formSG checkbox only, this is to deal with forEach next time
@@ -76,6 +74,39 @@ function findAndSubstituteVariables(
       return part
     })
     .join('')
+}
+
+export function getDataValue(
+  obj: IJSONObject,
+  keyString: string,
+): string | undefined {
+  const keys = keyString.split('.')
+  let current: any = obj
+  let partialKey = ''
+
+  for (let i = 0; i < keys.length; i++) {
+    if (!current) {
+      return undefined
+    }
+
+    if (current[keys[i]] !== undefined) {
+      // Exact match at this level
+      current = current[keys[i]]
+      partialKey = '' // Reset partialKey for next level
+    } else {
+      // Build partial key and check
+      partialKey = partialKey ? `${partialKey}.${keys[i]}` : keys[i]
+
+      if (current[partialKey] !== undefined) {
+        current = current[partialKey]
+        partialKey = '' // Reset partialKey for next level
+      } else if (i === keys.length - 1) {
+        return undefined
+      }
+    }
+  }
+
+  return current
 }
 
 export default function computeParameters(
