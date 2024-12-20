@@ -76,10 +76,36 @@ function findAndSubstituteVariables(
     .join('')
 }
 
+function hasCircularReference(obj: IJSONObject) {
+  const visitedObjects = new WeakSet()
+
+  function detect(value: any) {
+    if (value && typeof value === 'object') {
+      if (visitedObjects.has(value)) {
+        return true // Circular reference detected
+      }
+      visitedObjects.add(value)
+
+      for (const key in value) {
+        if (detect(value[key])) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  return detect(obj)
+}
+
 export function getDataValue(
   obj: IJSONObject,
   keyString: string,
 ): string | undefined {
+  if (hasCircularReference(obj)) {
+    return undefined
+  }
+
   const keys = keyString.split('.')
   let current: any = obj
   let partialKey = ''

@@ -432,4 +432,31 @@ describe('getDataValue', () => {
     expect(getDataValue(null, 'a.b.c')).toBeUndefined()
     expect(getDataValue(undefined, 'a.b.c')).toBeUndefined()
   })
+
+  it('should handle circular references', () => {
+    const obj: any = {}
+    obj.a = obj
+    expect(getDataValue(obj, 'a')).toBeUndefined()
+
+    // Add more test cases
+    const obj2: any = { a: { b: {} } }
+    obj2.a.b.c = obj2.a
+    expect(getDataValue(obj2, 'a.b.c.b')).toBeUndefined()
+
+    const obj3: any = { x: { y: { z: 'value' } } }
+    obj3.x.y.cycle = obj3.x
+    expect(getDataValue(obj3, 'x.y.cycle.y.z')).toBeUndefined()
+
+    // Test single key circular reference
+    const obj4: any = {}
+    obj4.self = obj4
+    expect(getDataValue(obj4, 'self')).toBeUndefined()
+
+    // Test circular reference with primitive values
+    const obj5: any = { a: 1 }
+    obj5.b = obj5
+
+    expect(getDataValue(obj5, 'b')).toBeUndefined()
+    expect(getDataValue(obj5, 'b.a')).toBeUndefined()
+  })
 })

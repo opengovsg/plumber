@@ -101,6 +101,7 @@ export async function decryptFormResponse(
 
     for (const [index, formField] of submission.responses.entries()) {
       const { _id, ...rest } = formField
+      console.log('formField', formField)
 
       if (rest.fieldType === 'nric' && !!rest.answer) {
         const filteredAnswer = filterNric($, rest.answer)
@@ -121,7 +122,10 @@ export async function decryptFormResponse(
 
       // Note: the order may not be sequential; fields (e.g. NRIC) can be
       // omitted from the output.
-      parsedData[_id] = {
+      const parsedId = _id.replace('.', '_')
+      console.log('old id', _id)
+      console.log('new id', parsedId)
+      parsedData[`${_id}...`] = {
         order: index + 1,
         ...rest,
       }
