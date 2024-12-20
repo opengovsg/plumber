@@ -1,4 +1,6 @@
-import type { IAction, IJSONObject } from '@plumber/types'
+import type { IAction } from '@plumber/types'
+
+import get from 'lodash.get'
 
 import ExecutionStep from '@/models/execution-step'
 
@@ -60,7 +62,7 @@ function findAndSubstituteVariables(
         const data = executionStep?.dataOut
 
         const keyPath = keyPaths.join('.') // for lodash get to work
-        const dataValue = getDataValue(data, keyPath)
+        const dataValue = get(data, keyPath)
 
         // NOTE: dataValue could be an array if it is not processed on variables.ts
         // which is the case for formSG checkbox only, this is to deal with forEach next time
@@ -74,67 +76,6 @@ function findAndSubstituteVariables(
       return part
     })
     .join('')
-}
-
-function hasCircularReference(obj: IJSONObject) {
-  const visitedObjects = new WeakSet()
-
-  function detect(value: any) {
-    if (value && typeof value === 'object') {
-      if (visitedObjects.has(value)) {
-        return true // Circular reference detected
-      }
-      visitedObjects.add(value)
-
-      for (const key in value) {
-        if (detect(value[key])) {
-          return true
-        }
-      }
-    }
-    return false
-  }
-
-  return detect(obj)
-}
-
-export function getDataValue(
-  obj: IJSONObject,
-  keyString: string,
-): string | undefined {
-  if (hasCircularReference(obj)) {
-    return undefined
-  }
-
-  const keys = keyString.split('.')
-  let current: any = obj
-  let partialKey = ''
-
-  for (let i = 0; i < keys.length; i++) {
-    if (!current) {
-      return undefined
-    }
-
-    if (current[keys[i]] !== undefined) {
-      // Exact match at this level
-      current = current[keys[i]]
-      partialKey = '' // Reset partialKey for next level
-    } else {
-      // Build partial key and check
-      partialKey = partialKey ? `${partialKey}.${keys[i]}` : keys[i]
-
-      if (current[partialKey] !== undefined) {
-        current = current[partialKey]
-        partialKey = '' // Reset partialKey for next level
-      } else if (i === keys.length - 1) {
-        // Retry by combining all keys from the beginning to see if there's a match
-        const retryKey = keys.slice(0, i + 1).join('.')
-        return obj[retryKey] as string
-      }
-    }
-  }
-
-  return current
 }
 
 export default function computeParameters(
