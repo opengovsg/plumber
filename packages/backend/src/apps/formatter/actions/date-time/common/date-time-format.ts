@@ -46,6 +46,16 @@ const formatConverters = {
         return dateTime
       }
 
+      /**
+       * NOTE: special handling for MyInfo Child, which sends birth date in dd/mm/yyyy format.
+       * Keep this to a single converter for FormSG date fields to minimise confusion for users.
+       */
+      const dtMyInfoChild = DateTime.fromFormat(input, 'dd/MM/yyyy')
+
+      if (dtMyInfoChild.isValid) {
+        return dtMyInfoChild
+      }
+
       // en-US parsing failed, fall back to en-SG.
       return DateTime.fromFormat(input, 'dd MMM yyyy')
     },
