@@ -123,7 +123,7 @@ export async function decryptFormResponse(
       // omitted from the output.
       // Note: FormSG uses dot notation for field ids for MyInfo children
       // we replace with underscore to avoid issues when using lodash get.
-      parsedData[_id.replace('.', '_')] = {
+      parsedData[_id.replaceAll('.', '_')] = {
         order: index + 1,
         ...rest,
       }
