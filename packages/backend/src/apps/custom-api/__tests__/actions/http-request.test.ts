@@ -226,4 +226,91 @@ describe('make http request', () => {
     mocks.httpRequest.mockRejectedValueOnce(disallowedIpError)
     await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
   })
+
+  describe('tests that data is valid JSON', () => {
+    // NOTE: caters for existing users that are sending strings in the data field
+    it.each(['[1, 2, 3]', 'meep meep'])(
+      'should not throw error if data is string',
+      async (testData: any) => {
+        $.step.parameters.method = 'POST'
+        $.step.parameters.data = testData
+        $.step.parameters.url = 'http://test.local/endpoint?1234'
+
+        mocks.httpRequest.mockReturnValue('mock response')
+
+        await makeRequestAction.run($).catch(() => null)
+        expect(mocks.httpRequest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: $.step.parameters.url,
+            method: $.step.parameters.method,
+            data: $.step.parameters.data,
+          }),
+        )
+      },
+    )
+
+    it.each([
+      '{"abc": 123}',
+      '{"abc": "def", "ghi": 456, "jkl": {"nested": "nested-value"}}',
+      '{"abc": "def", "ghi": 456, "jkl": {"nested": {"nested-nested": "nested-nested-value"}}}',
+      JSON.stringify({ data: undefined }),
+      JSON.stringify({ data: null }),
+      null,
+      '',
+    ])(
+      'should not throw error if data is valid JSON or null or empty string',
+      async (testJSON: any) => {
+        $.step.parameters.method = 'POST'
+        $.step.parameters.data = testJSON
+
+        $.step.parameters.url = 'http://test.local/endpoint?1234'
+        mocks.httpRequest.mockReturnValue('mock response')
+
+        await makeRequestAction.run($).catch(() => null)
+        expect(mocks.httpRequest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: $.step.parameters.url,
+            method: $.step.parameters.method,
+            data: $.step.parameters.data,
+          }),
+        )
+      },
+    )
+
+    it.each([
+      '{"abc": 123',
+      '"abc": 123}',
+      '{""abc"": "def"}',
+      '{"name": "zuck""}',
+      '{"name": "zuck", "age": "40}',
+      '{ this looks like json but isnt }',
+    ])(
+      'should throw error if data is not valid JSON',
+      async (testJSON: any) => {
+        $.step.parameters.method = 'POST'
+        $.step.parameters.data = testJSON
+        $.step.parameters.url = 'http://test.local/endpoint?1234'
+
+        mocks.httpRequest.mockReturnValue('mock response')
+        await expect(makeRequestAction.run($)).rejects.toThrowError(
+          'Invalid JSON data',
+        )
+      },
+    )
+  })
+
+  describe('escaping variables should maintain original type', () => {
+    it.each([
+      [true, true],
+      [false, false],
+      ['true', 'true'],
+      [123, 123],
+      ['string with "quotes" inside', 'string with \\"quotes\\" inside'],
+      ['string without quotes', 'string without quotes'],
+      ['{string with braces}', '{string with braces}'],
+    ])('should escape variables', (input, expected) => {
+      const escaped = makeRequestAction.preprocessVariable('data', input)
+      expect(escaped).toBe(expected)
+    })
+  })
 })
