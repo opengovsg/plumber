@@ -2,6 +2,10 @@ import { assert, beforeEach, describe, expect, it } from 'vitest'
 
 import { transactionalEmailSchema } from '../../common/parameters'
 
+function generateEmails(length: number) {
+  return Array.from({ length }, (_, i) => `user${i + 1}@example.com`).join(',')
+}
+
 describe('postman transactional email schema zod validation', () => {
   let validPayload: Record<string, unknown>
 
@@ -153,6 +157,24 @@ describe('postman transactional email schema zod validation', () => {
       const result = transactionalEmailSchema.safeParse(validPayload)
       assert(result.success === false)
       expect(result.error?.errors[0].message).toEqual('Invalid CC emails')
+    },
+  )
+
+  it.each([
+    { recipient: 10, cc: 50 },
+    { recipient: 41, cc: 51 },
+    { recipient: 50, cc: 52 },
+    { recipient: 1, cc: 50 },
+  ])(
+    'should fail if total number of emails in Recipient email(s) and CC recipient email(s) exceeds 50',
+    ({ recipient, cc }) => {
+      validPayload.destinationEmail = generateEmails(recipient)
+      validPayload.destinationEmailCc = generateEmails(cc)
+      const result = transactionalEmailSchema.safeParse(validPayload)
+      assert(result.success === false)
+      expect(result.error?.errors[0].message).toEqual(
+        'The total number of CC recipient emails must not exceed 49',
+      )
     },
   )
 })

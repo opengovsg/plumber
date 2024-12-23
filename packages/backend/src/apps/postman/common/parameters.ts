@@ -102,6 +102,14 @@ export const transactionalEmailSchema = z.object({
   destinationEmailCc: z
     .string()
     .transform((value, ctx) => validateEmails(value, ctx, 'Invalid CC emails'))
+    /**
+     * NOTE: Postman limits a maximum of 50 recipients (including primary recipient and CC recipients)
+     * Currently, Plumber sends emails to the main recipient individually,
+     * hence a limit of 49 CC recipients is enforced.
+     */
+    .refine((value) => value.length <= 49, {
+      message: 'The total number of CC recipient emails must not exceed 49',
+    })
     .optional(),
   replyTo: z.preprocess((value) => {
     if (typeof value !== 'string') {

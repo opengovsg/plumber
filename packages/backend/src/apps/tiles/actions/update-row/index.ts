@@ -2,7 +2,7 @@ import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 import { stripInvalidKeys } from '@/models/dynamodb/helpers'
-import { getRawRowById, updateTableRow } from '@/models/dynamodb/table-row'
+import { patchTableRow } from '@/models/dynamodb/table-row'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
@@ -129,50 +129,49 @@ const action: IRawAction = {
       return
     }
 
-    const row = await getRawRowById({
-      tableId,
-      rowId,
-      columnIds,
-    })
-
-    /**
-     * Row ID does not correspond to a row, we short circuit the action but do not fail it.
-     */
-    if (!row) {
-      $.setActionItem({
-        raw: {
-          updated: false,
-        } satisfies UpdateRowOutput,
-      })
-      return
-    }
-
-    const updatedData = {
-      ...(row.data ?? {}),
+    const patchData = {
       ...rowData.reduce((acc, { columnId, cellValue }) => {
-        acc[columnId] = cellValue
+        // Check that the column still exists
+        if (columnIds.includes(columnId)) {
+          acc[columnId] = cellValue
+        }
         return acc
       }, {} as Record<string, string>),
     }
-
-    const strippedUpdatedData = stripInvalidKeys({
-      columnIds,
-      data: updatedData,
-    })
-
-    await updateTableRow({
-      tableId,
-      rowId,
-      data: strippedUpdatedData,
-    })
-
-    $.setActionItem({
-      raw: {
-        row: strippedUpdatedData,
+    try {
+      const updatedRow = await patchTableRow({
+        tableId,
         rowId,
-        updated: true,
-      } satisfies UpdateRowOutput,
-    })
+        data: patchData,
+      })
+
+      const updatedRowData = stripInvalidKeys({
+        columnIds,
+        data: updatedRow.data,
+      })
+
+      $.setActionItem({
+        raw: {
+          row: updatedRowData,
+          rowId,
+          updated: true,
+        } satisfies UpdateRowOutput,
+      })
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message.includes('The conditional request failed')
+      ) {
+        // This means the corresponding row does not exist
+        $.setActionItem({
+          raw: {
+            updated: false,
+          } satisfies UpdateRowOutput,
+        })
+        return
+      }
+      throw e
+    }
   },
 }
 
