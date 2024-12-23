@@ -25,3 +25,9 @@ export const getAppTriggerFlag = (appKey: string, triggerKey: string) =>
   `app_${appKey}_trigger_${triggerKey}`
 export const getAppActionFlag = (appKey: string, actionKey: string) =>
   `app_${appKey}_action_${actionKey}`
+
+/**
+ * Input flags: use both appKey and key in case of duplicate key between app_events
+ */
+export const getInputFlag = (appKey: string, key: string) =>
+  `input_${appKey}_${key}`
