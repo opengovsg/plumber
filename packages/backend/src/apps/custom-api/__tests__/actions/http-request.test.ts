@@ -298,4 +298,19 @@ describe('make http request', () => {
       },
     )
   })
+
+  describe('escaping variables should maintain original type', () => {
+    it.each([
+      [true, true],
+      [false, false],
+      ['true', 'true'],
+      [123, 123],
+      ['string with "quotes" inside', 'string with \\"quotes\\" inside'],
+      ['string without quotes', 'string without quotes'],
+      ['{string with braces}', '{string with braces}'],
+    ])('should escape variables', (input, expected) => {
+      const escaped = makeRequestAction.preprocessVariable('data', input)
+      expect(escaped).toBe(expected)
+    })
+  })
 })
