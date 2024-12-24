@@ -8,7 +8,15 @@ export type CreateRowsInput = {
   tableId: string
   dataArray: Array<TableRowItem['data']>
 }
-export type UpdateRowInput = Pick<TableRowItem, 'tableId' | 'data' | 'rowId'>
+export type UpdateRowInput = Pick<TableRowItem, 'tableId' | 'rowId' | 'data'>
+
+export type PatchRowInput = Pick<TableRowItem, 'tableId' | 'rowId'> & {
+  patchData: {
+    set?: TableRowItem['data']
+    add?: TableRowItem['data']
+    subtract?: TableRowItem['data']
+  }
+}
 export interface DeleteRowsInput {
   tableId: string
   rowIds: string[]

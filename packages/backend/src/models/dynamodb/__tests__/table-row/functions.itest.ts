@@ -390,10 +390,122 @@ describe('dynamodb table row functions', () => {
       const updatedRow = await patchTableRow({
         tableId: dummyTable.id,
         rowId: row.rowId,
-        data: newData,
+        patchData: {
+          set: newData,
+        },
       })
 
       expect(updatedRow.data).toEqual({ ...data, ...newData })
+    })
+
+    it('should set, add or subtract values for the row', async () => {
+      const data = {
+        [dummyColumnIds[0]]: 10,
+        [dummyColumnIds[1]]: 20,
+        [dummyColumnIds[2]]: 30,
+      }
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+      const updatedRow = await patchTableRow({
+        tableId: dummyTable.id,
+        rowId: row.rowId,
+        patchData: {
+          set: {
+            [dummyColumnIds[0]]: '1',
+          },
+          add: {
+            [dummyColumnIds[1]]: '2',
+          },
+          subtract: {
+            [dummyColumnIds[2]]: '3',
+          },
+        },
+      })
+
+      const expectedData = {
+        [dummyColumnIds[0]]: 1,
+        [dummyColumnIds[1]]: 22,
+        [dummyColumnIds[2]]: 27,
+      }
+
+      expect(updatedRow.data).toEqual(expectedData)
+    })
+
+    it('should throw a step error if operand is not a number', async () => {
+      const data = {
+        [dummyColumnIds[0]]: 10,
+        [dummyColumnIds[1]]: 20,
+        [dummyColumnIds[2]]: 30,
+      }
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+
+      await expect(
+        patchTableRow({
+          tableId: dummyTable.id,
+          rowId: row.rowId,
+          patchData: {
+            set: {
+              [dummyColumnIds[0]]: '1',
+            },
+            add: {
+              [dummyColumnIds[1]]: 'add',
+            },
+            subtract: {
+              [dummyColumnIds[2]]: '3',
+            },
+          },
+        }),
+      ).rejects.toThrow(Error)
+    })
+
+    it('should throw a generic error if original value is not a number', async () => {
+      const data = {
+        [dummyColumnIds[0]]: 10,
+        [dummyColumnIds[1]]: 20,
+        [dummyColumnIds[2]]: 'string',
+      }
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+
+      await expect(
+        patchTableRow({
+          tableId: dummyTable.id,
+          rowId: row.rowId,
+          patchData: {
+            set: {
+              [dummyColumnIds[0]]: '1',
+            },
+            add: {
+              [dummyColumnIds[1]]: '2re',
+            },
+            subtract: {
+              [dummyColumnIds[2]]: '3',
+            },
+          },
+        }),
+      ).rejects.toThrow(Error)
+    })
+
+    it('should work fine if only add/subtract is provided', async () => {
+      const data = {
+        [dummyColumnIds[0]]: 10,
+        [dummyColumnIds[1]]: 20,
+        [dummyColumnIds[2]]: 30,
+      }
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+
+      const updatedRow = await patchTableRow({
+        tableId: dummyTable.id,
+        rowId: row.rowId,
+        patchData: {
+          subtract: {
+            [dummyColumnIds[2]]: '3',
+          },
+        },
+      })
+      expect(updatedRow.data).toEqual({
+        [dummyColumnIds[0]]: 10,
+        [dummyColumnIds[1]]: 20,
+        [dummyColumnIds[2]]: 27,
+      })
     })
 
     it('should not change if no columns are provided', async () => {
@@ -404,7 +516,7 @@ describe('dynamodb table row functions', () => {
       const updatedRow = await patchTableRow({
         tableId: dummyTable.id,
         rowId: row.rowId,
-        data: {},
+        patchData: {},
       })
 
       expect(updatedRow.data).toEqual(data)
@@ -418,7 +530,7 @@ describe('dynamodb table row functions', () => {
       const updatedRow = await patchTableRow({
         tableId: dummyTable.id,
         rowId: row.rowId,
-        data: { [dummyColumnIds[0]]: '123' },
+        patchData: { set: { [dummyColumnIds[0]]: '123' } },
       })
       expect(updatedRow.data).toEqual({ ...data, [dummyColumnIds[0]]: 123 })
     })
@@ -431,7 +543,7 @@ describe('dynamodb table row functions', () => {
       const updatedRow = await patchTableRow({
         tableId: dummyTable.id,
         rowId: row.rowId,
-        data: { [dummyColumnIds[0]]: '123' },
+        patchData: { [dummyColumnIds[0]]: '123' },
       })
       expect(updatedRow.updatedAt).toBeGreaterThan(row.updatedAt)
     })

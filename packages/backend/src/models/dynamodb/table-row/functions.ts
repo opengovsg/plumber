@@ -10,6 +10,7 @@ import {
   CreateRowInput,
   CreateRowsInput,
   DeleteRowsInput,
+  PatchRowInput,
   TableRowFilter,
   TableRowFilterOperator,
   TableRowItem,
@@ -227,26 +228,40 @@ export const updateTableRow = async ({
 export const patchTableRow = async ({
   rowId,
   tableId,
-  data: patchData,
-}: UpdateRowInput): Promise<TableRowItem> => {
+  patchData,
+}: PatchRowInput): Promise<TableRowItem> => {
   try {
-    const res = await TableRow.patch({
+    const patchOperation = TableRow.patch({
       tableId,
       rowId,
+    }).data(({ data }, { set, add, subtract }) => {
+      // Handle set operations
+      Object.entries(patchData.set || {}).forEach(
+        ([key, value]: [string, string]) => {
+          set(data[key], value ? autoMarshallNumberStrings(value) : '')
+        },
+      )
+
+      // Handle add operations
+      Object.entries(patchData.add || {}).forEach(
+        ([key, value]: [string, string]) => {
+          add(data[key], autoMarshallNumberStrings(value))
+        },
+      )
+
+      // Handle subtract operations
+      Object.entries(patchData.subtract || {}).forEach(
+        ([key, value]: [string, string]) => {
+          subtract(data[key], autoMarshallNumberStrings(value))
+        },
+      )
     })
-      .data(({ data }, { set }) => {
-        for (const key in patchData) {
-          set(
-            data[key],
-            patchData[key] ? autoMarshallNumberStrings(patchData[key]) : '',
-          )
-        }
-      })
-      .go({
-        ignoreOwnership: true,
-        // Return the new row data
-        response: 'all_new',
-      })
+
+    const res = await patchOperation.go({
+      ignoreOwnership: true,
+      response: 'all_new',
+    })
+
     return res.data
   } catch (e: unknown) {
     handleDynamoDBError(e)

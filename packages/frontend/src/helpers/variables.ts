@@ -32,13 +32,13 @@ function sortVariables(variables: Variable[]): void {
   variables.sort((a, b) => {
     // Put vars with null order last, but preserve ordering (via `sort`'s
     // stability) if both are null.
-    if (!a.order && !b.order) {
+    if (a.order == null && !b.order == null) {
       return 0
     }
-    if (!a.order) {
+    if (a.order == null) {
       return 1
     }
-    if (!b.order) {
+    if (b.order == null) {
       return -1
     }
     return a.order - b.order

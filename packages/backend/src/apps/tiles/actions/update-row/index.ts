@@ -1,8 +1,11 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
-import { stripInvalidKeys } from '@/models/dynamodb/helpers'
-import { patchTableRow } from '@/models/dynamodb/table-row'
+import {
+  autoMarshallNumberStrings,
+  stripInvalidKeys,
+} from '@/models/dynamodb/helpers'
+import { PatchRowInput, patchTableRow } from '@/models/dynamodb/table-row'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
@@ -117,7 +120,7 @@ const action: IRawAction = {
     const { tableId, rowId, rowData } = $.step.parameters as {
       tableId: string
       rowId: string
-      rowData: { columnId: string; cellValue: string }[]
+      rowData: { columnId: string; cellValue: string; operator?: string }[]
     }
 
     if (!tableId) {
@@ -150,20 +153,48 @@ const action: IRawAction = {
       return
     }
 
-    const patchData = {
-      ...rowData.reduce((acc, { columnId, cellValue }) => {
-        // Check that the column still exists
-        if (columnIds.includes(columnId)) {
-          acc[columnId] = cellValue
-        }
-        return acc
-      }, {} as Record<string, string>),
+    function assertNumber(value: string): void {
+      if (typeof autoMarshallNumberStrings(value) !== 'number') {
+        throw new StepError(
+          'Add/subtract value must be a number',
+          'The value to add or subtract by must be a number.',
+          $.step.position,
+          $.app.name,
+        )
+      }
     }
+
+    const patchData = {
+      ...rowData.reduce(
+        (acc, { columnId, cellValue, operator }) => {
+          // Check that the column still exists
+          if (columnIds.includes(columnId)) {
+            switch (operator) {
+              case 'add':
+                assertNumber(cellValue)
+                acc.add[columnId] = cellValue
+                break
+              case 'subtract':
+                assertNumber(cellValue)
+                acc.subtract[columnId] = cellValue
+                break
+              // we default to set, since old operators will be undefined
+              default:
+                acc.set[columnId] = cellValue
+                break
+            }
+          }
+          return acc
+        },
+        { set: {}, add: {}, subtract: {} } as PatchRowInput['patchData'],
+      ),
+    }
+
     try {
       const updatedRow = await patchTableRow({
         tableId,
         rowId,
-        data: patchData,
+        patchData,
       })
 
       const updatedRowData = stripInvalidKeys({
