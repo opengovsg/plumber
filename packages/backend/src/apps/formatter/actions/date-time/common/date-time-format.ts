@@ -61,14 +61,17 @@ const formatConverters = Object.assign({
     stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
   },
   ...Object.fromEntries(
-    commonDateFormats.map((format) => [
-      format,
-      {
-        description: format,
-        parse: (input: string): DateTime => DateTime.fromFormat(input, format),
-        stringify: (dateTime: DateTime): string => dateTime.toFormat(format),
-      },
-    ]),
+    commonDateFormats
+      .filter((format) => format !== 'dd LLL yyyy') // Exclude repeated option due to formsgDateField
+      .map((format) => [
+        format,
+        {
+          description: format,
+          parse: (input: string): DateTime =>
+            DateTime.fromFormat(input, format),
+          stringify: (dateTime: DateTime): string => dateTime.toFormat(format),
+        },
+      ]),
   ),
 }) satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
 
@@ -104,7 +107,10 @@ export const field = {
       description: 'Select this if you are transforming a FormSG date field',
       value: supportedFormats.enum.formsgDateField,
     },
-    ...commonDateFormatOptions,
+    // Exclude repeated option due to formsgDateField
+    ...commonDateFormatOptions.filter(
+      (option) => option.value !== 'dd LLL yyyy',
+    ),
   ],
 } satisfies IField
 

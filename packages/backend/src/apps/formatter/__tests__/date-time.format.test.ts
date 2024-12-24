@@ -71,7 +71,54 @@ describe('convert date time', () => {
       toFormat: 'dd/LL/yy',
       expectedResult: '01/04/24',
     },
-    // TODO: add tests
+    {
+      inputFormat: 'dd/LL/yy',
+      inputValue: '01/04/24',
+      toFormat: 'dd/LL/yyyy',
+      expectedResult: '01/04/2024',
+    },
+    {
+      inputFormat: 'dd/LL/yyyy',
+      inputValue: '01/04/2024',
+      toFormat: 'dd LLLL yyyy',
+      expectedResult: '01 April 2024',
+    },
+    {
+      inputFormat: 'dd LLLL yyyy',
+      inputValue: '01 April 2024',
+      toFormat: 'yyyy/LL/dd',
+      expectedResult: '2024/04/01',
+    },
+    {
+      inputFormat: 'yyyy/LL/dd',
+      inputValue: '2024/04/01',
+      toFormat: 'hh:mm a',
+      expectedResult: '12:00 am',
+    },
+    {
+      inputFormat: 'hh:mm a',
+      inputValue: '11:45 pm',
+      toFormat: 'hh:mm:ss a',
+      expectedResult: '11:45:00 pm',
+    },
+    {
+      inputFormat: 'hh:mm:ss a',
+      inputValue: '11:45:00 pm',
+      toFormat: 'hh:mm a',
+      expectedResult: '11:45 pm',
+    },
+    {
+      inputFormat: 'dd LLL yyyy hh:mm a',
+      inputValue: '01 Apr 2024 11:45 pm',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '01 Apr 2024',
+    },
+    {
+      inputFormat: 'dd LLL yyyy hh:mm:ss a',
+      inputValue: '01 Apr 2024 11:45:30 pm',
+      toFormat: 'hh:mm:ss a',
+      expectedResult: '11:45:30 pm',
+    },
   ])('can handle all supported input formats', (testParams) => {
     const { inputFormat, inputValue, toFormat, expectedResult } = testParams
     $.step.parameters = {
