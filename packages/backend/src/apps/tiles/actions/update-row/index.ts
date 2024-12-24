@@ -91,10 +91,14 @@ const action: IRawAction = {
           value: 'set',
           options: [
             { label: '=', value: 'set', description: 'Set as' },
-            { label: '+', value: 'add', description: 'Add by' },
-            { label: '-', value: 'subtract', description: 'Subtract by' },
+            { label: '+', value: 'add', description: 'Add by (numbers only)' },
+            {
+              label: '-',
+              value: 'subtract',
+              description: 'Subtract by (numbers only)',
+            },
           ],
-          customStyle: { flexBasis: '44px' },
+          customStyle: { flexBasis: '71px' },
         },
         {
           placeholder: 'Value',

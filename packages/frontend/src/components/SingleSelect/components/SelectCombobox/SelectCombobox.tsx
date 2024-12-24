@@ -99,14 +99,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
             direction="row"
             spacing="1rem"
             aria-disabled={isDisabled}
-            sx={{
-              ...styles.selected,
-              ...(!isSearchable && {
-                margin: 'auto',
-                pr: 0,
-                pl: 0,
-              }),
-            }}
+            sx={styles.selected}
             aria-hidden
           >
             {selectedItemMeta.icon ? (
@@ -135,7 +128,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
               'aria-expanded': !!isOpen,
             })}
           />
-          {isSearchable && <ToggleChevron />}
+          <ToggleChevron />
         </InputGroup>
         <ComboboxClearButton />
       </Flex>
