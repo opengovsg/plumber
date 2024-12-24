@@ -3,6 +3,11 @@ import type { IField } from '@plumber/types'
 import { DateTime } from 'luxon'
 import z from 'zod'
 
+import {
+  commonDateFormatOptions,
+  commonDateFormats,
+} from './date-format-options'
+
 /**
  * This file contains stuff to handle all the date formats we want to support:
  * - Field and schema definitions
@@ -17,9 +22,13 @@ interface DateFormatConverter {
   stringify: (dateTime: DateTime) => string
 }
 
-const supportedFormats = z.enum(['formsgSubmissionTime', 'formsgDateField'])
+const supportedFormats = z.enum([
+  'formsgSubmissionTime',
+  'formsgDateField', // dd LLL yyyy; this is kept due to backwards compatibility
+  ...commonDateFormats,
+])
 
-const formatConverters = {
+const formatConverters = Object.assign({
   formsgSubmissionTime: {
     description: 'FormSG submission time',
     parse: (input: string): DateTime => DateTime.fromISO(input),
@@ -46,22 +55,22 @@ const formatConverters = {
         return dateTime
       }
 
-      /**
-       * NOTE: special handling for MyInfo Child, which sends birth date in dd/mm/yyyy format.
-       * Keep this to a single converter for FormSG date fields to minimise confusion for users.
-       */
-      const dtMyInfoChild = DateTime.fromFormat(input, 'dd/MM/yyyy')
-
-      if (dtMyInfoChild.isValid) {
-        return dtMyInfoChild
-      }
-
       // en-US parsing failed, fall back to en-SG.
       return DateTime.fromFormat(input, 'dd MMM yyyy')
     },
     stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
   },
-} satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
+  ...Object.fromEntries(
+    commonDateFormats.map((format) => [
+      format,
+      {
+        description: format,
+        parse: (input: string): DateTime => DateTime.fromFormat(input, format),
+        stringify: (dateTime: DateTime): string => dateTime.toFormat(format),
+      },
+    ]),
+  ),
+}) satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
 
 //
 // Field definitions and schema
@@ -95,6 +104,7 @@ export const field = {
       description: 'Select this if you are transforming a FormSG date field',
       value: supportedFormats.enum.formsgDateField,
     },
+    ...commonDateFormatOptions,
   ],
 } satisfies IField
 
@@ -110,7 +120,7 @@ export function parseDateTime(
 
   if (!result.isValid) {
     throw new Error(
-      `'${valueToTransform}' is not a valid ${formatConverters[dateTimeFormat].description}`,
+      `${valueToTransform}' is not a valid ${formatConverters[dateTimeFormat].description}`,
     )
   }
 
