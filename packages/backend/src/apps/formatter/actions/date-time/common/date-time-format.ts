@@ -95,16 +95,15 @@ export const field = {
   showOptionValue: false,
   options: [
     {
-      label: 'FormSG submission time - e.g. 2024-02-25T08:15:30.250+08:00',
-      description:
-        'Select this if you are transforming a FormSG submission time',
+      label: 'FormSG Submission Time',
+      description: '2024-03-25T08:15:30.250+08:00',
       value: supportedFormats.enum.formsgSubmissionTime,
     },
     {
       // FormSG UI is a bit misleading; although the field shows dd/mm/yyyy,
       // date fields are sent as dd MMM yyyy over webhooks.
-      label: 'FormSG date field - e.g. 25 Mar 2024',
-      description: 'Select this if you are transforming a FormSG date field',
+      label: 'FormSG Date Field - DD MMM YYYY',
+      description: '25 Mar 2024',
       value: supportedFormats.enum.formsgDateField,
     },
     // Exclude repeated option due to formsgDateField
