@@ -410,6 +410,98 @@ describe('decrypt form response', () => {
         }),
       )
     })
+
+    it('should parse form fields and replace dots with underscores in keys', async () => {
+      mockDecryptedSubmission({
+        responses: [
+          {
+            _id: 'question1.field.answer',
+            fieldType: 'textarea',
+            question: 'What do you eat for breakfast?',
+            answer: 'i eat lorem dimsum for breakfast',
+          },
+          {
+            _id: 'question2.field.answer',
+            fieldType: 'mobile',
+            question: 'What is your mobile number?',
+            answer: '+6591234567',
+          },
+        ],
+      })
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            question1_field_answer: {
+              fieldType: 'textarea',
+              question: 'What do you eat for breakfast?',
+              answer: 'i eat lorem dimsum for breakfast',
+              order: 1,
+            },
+            question2_field_answer: {
+              fieldType: 'mobile',
+              question: 'What is your mobile number?',
+              answer: '+6591234567',
+              order: 2,
+            },
+          },
+        }),
+      )
+      expect($.request.headers).toBeUndefined()
+      expect($.request.query).toBeUndefined()
+    })
+
+    it('should parse form fields and replace dots with underscores in keys', async () => {
+      mockDecryptedSubmission({
+        responses: [
+          {
+            _id: 'childrenbirthrecords.abc.childdateofbirth.0',
+            fieldType: 'children',
+            question: 'Child Date of birth',
+            answer: '31/03/2017',
+          },
+          {
+            _id: 'childrenbirthrecords.abc.childname.0',
+            fieldType: 'children',
+            question: 'Child Name',
+            answer: 'John Doe',
+          },
+          {
+            _id: 'question2.field.answer',
+            fieldType: 'mobile',
+            question: 'What is your mobile number?',
+            answer: '+6591234567',
+          },
+        ],
+      })
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            childrenbirthrecords_abc_childdateofbirth_0: {
+              fieldType: 'children',
+              question: 'Child Date of birth',
+              answer: '31/03/2017',
+              order: 1,
+            },
+            childrenbirthrecords_abc_childname_0: {
+              fieldType: 'children',
+              question: 'Child Name',
+              answer: 'John Doe',
+              order: 2,
+            },
+            question2_field_answer: {
+              fieldType: 'mobile',
+              question: 'What is your mobile number?',
+              answer: '+6591234567',
+              order: 3,
+            },
+          },
+        }),
+      )
+      expect($.request.headers).toBeUndefined()
+      expect($.request.query).toBeUndefined()
+    })
   })
 
   describe('attachments', () => {

@@ -319,4 +319,34 @@ describe('compute parameters', () => {
     const result = computeParameters(params, executionStep)
     expect(result).toEqual(expected)
   })
+
+  it('should process parameters with underscores in keys', () => {
+    const executionStep = [
+      {
+        stepId: randomStepID,
+        dataOut: {
+          childrenbirthrecords_abc_childdateofbirth_0: {
+            fieldType: 'children',
+            question: 'Child Date of birth',
+            answer: '31/03/2017',
+            order: 1,
+          },
+          childrenbirthrecords_abc_childname_0: {
+            fieldType: 'children',
+            question: 'Child Name',
+            answer: 'John Doe',
+            order: 2,
+          },
+        },
+      } as unknown as ExecutionStep,
+    ]
+    const params = {
+      toSubstitute: `{{step.${randomStepID}.childrenbirthrecords_abc_childdateofbirth_0.answer}} {{step.${randomStepID}.childrenbirthrecords_abc_childname_0.answer}}`,
+    }
+    const expected = {
+      toSubstitute: `31/03/2017 John Doe`,
+    }
+    const result = computeParameters(params, executionStep)
+    expect(result).toEqual(expected)
+  })
 })
