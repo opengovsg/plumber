@@ -64,5 +64,10 @@ describe('common date-time formatter functions', () => {
         expect(dateTime.toUnixInteger()).toEqual(1727452800)
       },
     )
+
+    it('supports parsing MyInfo Child date field', () => {
+      const dateTime = parseDateTime('dd/LL/yyyy', '25/03/2024')
+      expect(dateTime.toUnixInteger()).toEqual(1711296000)
+    })
   })
 })

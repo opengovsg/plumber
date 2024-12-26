@@ -3,6 +3,11 @@ import type { IField } from '@plumber/types'
 import { DateTime } from 'luxon'
 import z from 'zod'
 
+import {
+  commonDateFormatOptions,
+  commonDateFormats,
+} from './date-format-options'
+
 /**
  * This file contains stuff to handle all the date formats we want to support:
  * - Field and schema definitions
@@ -17,9 +22,13 @@ interface DateFormatConverter {
   stringify: (dateTime: DateTime) => string
 }
 
-const supportedFormats = z.enum(['formsgSubmissionTime', 'formsgDateField'])
+const supportedFormats = z.enum([
+  'formsgSubmissionTime',
+  'formsgDateField', // dd LLL yyyy; this is kept due to backwards compatibility
+  ...commonDateFormats,
+])
 
-const formatConverters = {
+const formatConverters = Object.assign({
   formsgSubmissionTime: {
     description: 'FormSG submission time',
     parse: (input: string): DateTime => DateTime.fromISO(input),
@@ -51,7 +60,20 @@ const formatConverters = {
     },
     stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
   },
-} satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
+  ...Object.fromEntries(
+    commonDateFormats
+      .filter((format) => format !== 'dd LLL yyyy') // Exclude repeated option due to formsgDateField
+      .map((format) => [
+        format,
+        {
+          description: format,
+          parse: (input: string): DateTime =>
+            DateTime.fromFormat(input, format),
+          stringify: (dateTime: DateTime): string => dateTime.toFormat(format),
+        },
+      ]),
+  ),
+}) satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
 
 //
 // Field definitions and schema
@@ -73,18 +95,21 @@ export const field = {
   showOptionValue: false,
   options: [
     {
-      label: 'FormSG submission time - e.g. 2024-02-25T08:15:30.250+08:00',
-      description:
-        'Select this if you are transforming a FormSG submission time',
+      label: 'FormSG Submission Time',
+      description: '2024-03-25T08:15:30.250+08:00',
       value: supportedFormats.enum.formsgSubmissionTime,
     },
     {
       // FormSG UI is a bit misleading; although the field shows dd/mm/yyyy,
       // date fields are sent as dd MMM yyyy over webhooks.
-      label: 'FormSG date field - e.g. 25 Mar 2024',
-      description: 'Select this if you are transforming a FormSG date field',
+      label: 'FormSG Date Field - DD MMM YYYY',
+      description: '25 Mar 2024',
       value: supportedFormats.enum.formsgDateField,
     },
+    // Exclude repeated option due to formsgDateField
+    ...commonDateFormatOptions.filter(
+      (option) => option.value !== 'dd LLL yyyy',
+    ),
   ],
 } satisfies IField
 
@@ -100,7 +125,7 @@ export function parseDateTime(
 
   if (!result.isValid) {
     throw new Error(
-      `'${valueToTransform}' is not a valid ${formatConverters[dateTimeFormat].description}`,
+      `${valueToTransform}' is not a valid ${formatConverters[dateTimeFormat].description}`,
     )
   }
 
