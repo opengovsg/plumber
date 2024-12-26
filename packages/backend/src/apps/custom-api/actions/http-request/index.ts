@@ -81,6 +81,15 @@ const action: IRawAction = {
     },
   ],
 
+  preprocessVariable(parameterKey: string, variableValue: unknown) {
+    if (parameterKey === 'data' && typeof variableValue === 'string') {
+      // NOTE: this removes the " from the start and end of the string
+      // as it is already added in the user input
+      return JSON.stringify(variableValue).slice(1, -1)
+    }
+    return variableValue
+  },
+
   async run($) {
     const method = $.step.parameters.method as TMethod
     const data = $.step.parameters.data as string
@@ -88,12 +97,12 @@ const action: IRawAction = {
 
     try {
       const parsedS = requestSchema.parse($.step.parameters)
-      const { customHeaders } = parsedS
+      const { customHeaders, data: parsedData } = parsedS
 
       let response = await $.http.request({
         url,
         method,
-        data,
+        data: parsedData,
         maxRedirects: 0,
         headers: customHeaders,
         //  overwriting this to allow redirects to resolve

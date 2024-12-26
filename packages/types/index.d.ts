@@ -163,6 +163,7 @@ export interface IStep {
   appData?: IApp
   retryable?: boolean
   jobId?: string
+  createdAt: string
 }
 
 export interface IFlowConfig {

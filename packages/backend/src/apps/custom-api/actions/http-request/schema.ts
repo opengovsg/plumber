@@ -47,4 +47,27 @@ export const requestSchema = z.object({
       return result
     })
     .nullish(),
+  data: z
+    .string()
+    .transform((str, ctx) => {
+      // Allow empty string
+      if (str === '') {
+        return str
+      }
+
+      try {
+        // NOTE: assume that user is trying to input JSON data if it starts with { or ends with }
+        if (str.startsWith('{') || str.endsWith('}')) {
+          JSON.parse(str) // to test for valid JSON
+        }
+        return str
+      } catch (e) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Invalid JSON data',
+        })
+        return z.NEVER
+      }
+    })
+    .nullish(),
 })

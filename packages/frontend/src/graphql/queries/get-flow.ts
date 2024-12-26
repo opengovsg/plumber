@@ -15,6 +15,7 @@ export const GET_FLOW = gql`
         webhookUrl
         status
         position
+        createdAt
         connection {
           id
           verified

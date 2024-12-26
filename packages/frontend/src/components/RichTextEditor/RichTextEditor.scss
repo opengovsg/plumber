@@ -1,5 +1,6 @@
 .ProseMirror {
   padding: 0.5rem 14px;
+  max-height: 20em;
 
   > * + * {
     margin-top: 0.75em;

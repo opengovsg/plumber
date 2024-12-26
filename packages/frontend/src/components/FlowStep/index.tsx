@@ -329,6 +329,7 @@ export default function FlowStep(
                           selectedActionOrTrigger?.settingsStepLabel ??
                           app?.substepLabels?.settingsStepLabel
                         }
+                        selectedActionOrTrigger={selectedActionOrTrigger}
                       />
                     )}
                 </Fragment>
