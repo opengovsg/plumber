@@ -206,6 +206,7 @@ async function getDataOutMetadata(
       fieldType: { isHidden: true },
       order: { isHidden: true },
       myInfo: { attr: { isHidden: true } },
+      isVisible: { isHidden: true },
     }
     if (isAnswerArrayValid(fieldData)) {
       fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(
@@ -221,6 +222,10 @@ async function getDataOutMetadata(
 
   const result: IDataOutMetadata = {
     fields: fieldMetadata,
+    formId: {
+      type: 'text',
+      label: 'Form ID',
+    },
     submissionId: {
       type: 'text',
       label: 'Submission ID',
