@@ -66,7 +66,7 @@ describe('common date-time formatter functions', () => {
     )
 
     it('supports parsing MyInfo Child date field', () => {
-      const dateTime = parseDateTime('formsgDateField', '25/03/2024')
+      const dateTime = parseDateTime('dd/LL/yyyy', '25/03/2024')
       expect(dateTime.toUnixInteger()).toEqual(1711296000)
     })
   })
