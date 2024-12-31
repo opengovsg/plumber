@@ -3,7 +3,6 @@ import axios from 'axios'
 import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
 
-import { getLdFlagValue } from './launch-darkly'
 import logger from './logger'
 
 export interface PostmanEmailRequestBody {
@@ -20,34 +19,20 @@ export async function sendEmail({
   replyTo,
 }: PostmanEmailRequestBody): Promise<void> {
   try {
-    const shouldUseNewCredentials = await getLdFlagValue<boolean>(
-      'new_postman_credentials',
-      'plumber@open.gov.sg', // mock email
-      false,
-    )
-
     await axios.post(
       'https://api.postman.gov.sg/v1/transactional/email/send',
       {
         subject,
         body,
         recipient,
-        from: `Plumber <${
-          shouldUseNewCredentials
-            ? appConfig.postman.fromAddress
-            : appConfig.postman.oldFromAddress
-        }>`,
+        from: `Plumber <${appConfig.postman.fromAddress}>`,
         ...(replyTo && { reply_to: replyTo }),
         disable_tracking: true,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${
-            shouldUseNewCredentials
-              ? appConfig.postman.apiKey
-              : appConfig.postman.oldApiKey
-          }`,
+          Authorization: `Bearer ${appConfig.postman.apiKey}`,
         },
       },
     )
