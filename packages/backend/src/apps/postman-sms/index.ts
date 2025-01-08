@@ -21,6 +21,7 @@ const app: IApp = {
   actions,
   queue,
   isNewApp: true,
+  category: 'communications',
 }
 
 export default app

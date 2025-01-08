@@ -17,6 +17,7 @@ const app: IApp = {
   auth,
   actions,
   dynamicData,
+  category: 'communications',
 }
 
 export default app
