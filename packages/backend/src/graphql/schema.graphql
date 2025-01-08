@@ -232,6 +232,14 @@ type App {
   substepLabels: StepLabel
   setupMessage: SetupMessage
   demoVideoDetails: DemoVideoDetails
+  category: AppCategory
+}
+
+enum AppCategory {
+  data
+  communications
+  logic
+  integrations
 }
 
 type DemoVideoDetails {

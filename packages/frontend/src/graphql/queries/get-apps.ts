@@ -20,6 +20,7 @@ export const GET_APPS = gql`
       connectionCount
       description
       isNewApp
+      category
       substepLabels {
         connectionStepLabel
         settingsStepLabel
