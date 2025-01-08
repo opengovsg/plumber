@@ -21,6 +21,7 @@ const app: IApp = {
     title: 'Setting up Email by Postman',
   },
   queue: getGenericAppQueue('POSTMAN_EMAIL'),
+  category: 'communications',
 }
 
 export default app

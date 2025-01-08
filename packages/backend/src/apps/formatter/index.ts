@@ -16,6 +16,7 @@ const app: IApp = {
   substepLabels: {
     settingsStepLabel: 'Set up formatter',
   },
+  category: 'data',
 }
 
 export default app
