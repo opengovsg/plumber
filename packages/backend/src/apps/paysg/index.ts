@@ -15,6 +15,7 @@ const app: IApp = {
   beforeRequest: [addAuthHeader],
   auth,
   actions,
+  category: 'integrations',
 }
 
 export default app
