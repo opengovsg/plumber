@@ -59,10 +59,10 @@ export default function ModalBodyContent(
       return []
     }
 
-    const triggersOrActions = isTrigger
-      ? selectedApp.triggers
-      : selectedApp.actions
-    return triggersOrActions?.filter((triggerOrAction) => {
+    const triggersOrActions: Array<ITrigger | IAction> = isTrigger
+      ? selectedApp.triggers ?? []
+      : selectedApp.actions ?? []
+    return triggersOrActions?.filter((triggerOrAction: ITrigger | IAction) => {
       // Filter away triggers or actions hidden behind feature flags
       if (isLoading || !launchDarkly.flags || !selectedApp?.key) {
         return true
@@ -76,7 +76,7 @@ export default function ModalBodyContent(
 
   const handleTriggerOrActionSelection = async (
     app: IApp,
-    triggerOrAction: IAction | ITrigger,
+    triggerOrAction: ITrigger | IAction,
   ) => {
     // account for the if-then edge case
     if (
@@ -106,52 +106,54 @@ export default function ModalBodyContent(
   if (selectedApp) {
     return (
       <Flex flexDir="column" gap={3}>
-        {filteredTriggersOrActions?.map((triggerOrAction) => {
-          const isIfThen =
-            selectedApp.key === TOOLBOX_APP_KEY &&
-            triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
-          const isDisabled = isIfThen && !isLastStep
+        {filteredTriggersOrActions?.map(
+          (triggerOrAction: ITrigger | IAction) => {
+            const isIfThen =
+              selectedApp.key === TOOLBOX_APP_KEY &&
+              triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
+            const isDisabled = isIfThen && !isLastStep
 
-          return (
-            <Box
-              key={triggerOrAction.key}
-              p={4}
-              borderWidth="1px"
-              borderRadius="lg"
-              onClick={() =>
-                !isDisabled &&
-                handleTriggerOrActionSelection(selectedApp, triggerOrAction)
-              }
-              opacity={isDisabled ? 0.5 : 1}
-              _hover={{
-                bg: 'interaction.muted.neutral.hover',
-                cursor: isDisabled ? 'not-allowed' : 'pointer',
-              }}
-              _active={{
-                bg: 'interaction.muted.neutral.active',
-              }}
-              _focus={{
-                outline: 'none',
-                boxShadow: isDisabled
-                  ? 'none'
-                  : '0 0 0 2px var(--chakra-colors-primary-500)',
-              }}
-              tabIndex={isDisabled ? -1 : 0} // Make focusable unless disabled
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+            return (
+              <Box
+                key={triggerOrAction.key}
+                p={4}
+                borderWidth="1px"
+                borderRadius="lg"
+                onClick={() =>
+                  !isDisabled &&
                   handleTriggerOrActionSelection(selectedApp, triggerOrAction)
                 }
-              }}
-            >
-              <Text textStyle="subhead-1">{triggerOrAction.name}</Text>
-              <Text textStyle="body-2">
-                {isDisabled
-                  ? 'This can only be used in the last step'
-                  : triggerOrAction.description}
-              </Text>
-            </Box>
-          )
-        })}
+                opacity={isDisabled ? 0.5 : 1}
+                _hover={{
+                  bg: 'interaction.muted.neutral.hover',
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                }}
+                _active={{
+                  bg: 'interaction.muted.neutral.active',
+                }}
+                _focus={{
+                  outline: 'none',
+                  boxShadow: isDisabled
+                    ? 'none'
+                    : '0 0 0 2px var(--chakra-colors-primary-500)',
+                }}
+                tabIndex={isDisabled ? -1 : 0} // Make focusable unless disabled
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleTriggerOrActionSelection(selectedApp, triggerOrAction)
+                  }
+                }}
+              >
+                <Text textStyle="subhead-1">{triggerOrAction.name}</Text>
+                <Text textStyle="body-2">
+                  {isDisabled
+                    ? 'This can only be used in the last step'
+                    : triggerOrAction.description}
+                </Text>
+              </Box>
+            )
+          },
+        )}
       </Flex>
     )
   }
