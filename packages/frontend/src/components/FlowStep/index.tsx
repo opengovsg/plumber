@@ -40,6 +40,7 @@ import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 
+import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 type FlowStepProps = {
@@ -226,6 +227,17 @@ export default function FlowStep(
   const toggleSubstep = (substepIndex: number) =>
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
+  if (!selectedActionOrTrigger) {
+    return (
+      <EmptyFlowStepHeader
+        step={step}
+        isLastStep={isLastStep}
+        onChange={handleChange}
+        onSubmit={expandNextStep}
+      />
+    )
+  }
+
   return (
     <Flex w="100%" flexDir="column">
       {shouldShowInfobox && (
@@ -268,6 +280,8 @@ export default function FlowStep(
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}
           >
+            {/* Note: keeping this to allow users to still modify their app or event but can change
+            to pop open the modal instead if */}
             {!cannotChooseApp && (
               <ChooseAppAndEventSubstep
                 expanded={currentSubstep === 0}
