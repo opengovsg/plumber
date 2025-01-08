@@ -19,6 +19,7 @@ const app: IApp = {
   dynamicData,
   getTransferDetails,
   queue,
+  category: 'data',
 }
 
 export default app
