@@ -45,6 +45,14 @@ const bbBearTextStyles = {
     letterSpacing: 0,
     fontFamily: 'body',
   },
+  'caption-3': {
+    fontWeight: 500,
+    fontSize: '0.625rem',
+    lineHeight: '1rem',
+    letterSpacing: '0.080em',
+    fontFamily: 'body',
+    textTransform: 'uppercase',
+  },
   h1: {
     fontWeight: 600,
     lineHeight: '3rem',

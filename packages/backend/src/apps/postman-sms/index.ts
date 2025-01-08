@@ -20,6 +20,7 @@ const app: IApp = {
   auth,
   actions,
   queue,
+  category: 'communications',
 }
 
 export default app

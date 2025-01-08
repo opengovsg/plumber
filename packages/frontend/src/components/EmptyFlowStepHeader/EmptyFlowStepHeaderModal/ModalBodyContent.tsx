@@ -1,9 +1,18 @@
 import type { IAction, IApp, ITrigger } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
-import { BiArrowFromRight, BiChevronRight } from 'react-icons/bi'
-import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react'
-import { Badge } from '@opengovsg/design-system-react'
+import { useContext, useMemo, useState } from 'react'
+import { BiArrowFromRight, BiChevronRight, BiSearch } from 'react-icons/bi'
+import {
+  Box,
+  Flex,
+  Icon,
+  Image,
+  InputGroup,
+  InputLeftElement,
+  Text,
+} from '@chakra-ui/react'
+import { Badge, Input } from '@opengovsg/design-system-react'
+import { groupBy } from 'lodash'
 
 import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
@@ -13,6 +22,8 @@ import {
   useIfThenInitializer,
   useIsIfThenSelectable,
 } from '@/helpers/toolbox'
+
+const OTHERS_CATEGORY = 'Other'
 
 interface ModalBodyContentProps {
   apps: IApp[]
@@ -32,18 +43,40 @@ export default function ModalBodyContent(
   const [_, isInitializingIfThen] = useIfThenInitializer()
   const isLoading = launchDarkly.isLoading || isInitializingIfThen
 
-  const filteredApps = useMemo(
-    () =>
-      apps?.filter((app) => {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Combine filtering and grouping logic into a single operation
+  const groupedApps = useMemo(() => {
+    const filteredApps = apps
+      ?.filter((app) => {
         // Filter away apps hidden behind feature flags
         if (isLoading || !launchDarkly.flags || !app?.key) {
           return true
         }
         const ldAppFlag = getAppFlag(app.key)
         return launchDarkly.flags[ldAppFlag] ?? true
-      }),
-    [apps, launchDarkly.flags, isLoading],
-  )
+      })
+      .filter((app) =>
+        app.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+
+    // Group the filtered apps
+    const grouped = groupBy(
+      filteredApps,
+      (app) => app.category || OTHERS_CATEGORY,
+    )
+
+    // Sort categories alphabetically, with 'Other' at the end for trigger apps specifically
+    return Object.entries(grouped).sort((a, b) => {
+      if (a[0] === OTHERS_CATEGORY) {
+        return 1
+      }
+      if (b[0] === OTHERS_CATEGORY) {
+        return -1
+      }
+      return a[0].localeCompare(b[0])
+    })
+  }, [apps, searchQuery, launchDarkly.flags, isLoading])
 
   const filteredTriggersOrActions = useMemo(() => {
     if (!selectedApp) {
@@ -139,91 +172,135 @@ export default function ModalBodyContent(
    * to the next page
    */
   return (
-    <Flex flexDir="column" gap={3}>
-      {filteredApps?.map((app) => {
-        const triggersOrActions = isTrigger ? app.triggers : app.actions
-        const singleTriggerOrAction =
-          triggersOrActions?.length === 1 ? triggersOrActions[0] : null
+    <Flex flexDir="column" gap={6}>
+      <InputGroup>
+        <InputLeftElement pointerEvents="none">
+          <Icon as={BiSearch} color="base.content.medium" />
+        </InputLeftElement>
+        <Input
+          placeholder="Search for apps..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          _focus={{
+            borderColor: 'primary.500',
+            boxShadow: '0 0 0 1px var(--chakra-colors-primary-500)',
+          }}
+        />
+      </InputGroup>
 
-        return (
-          <Flex
-            key={app.key}
-            p={4}
-            borderWidth="1px"
-            borderColor="base.divider.medium"
-            borderRadius="lg"
-            onClick={() => {
-              if (singleTriggerOrAction) {
-                handleTriggerOrActionSelection(app, singleTriggerOrAction)
-              } else {
-                setSelectedApp(app)
-              }
-            }}
-            justifyContent="space-between"
-            alignItems="center"
-            _hover={{
-              bg: 'interaction.muted.neutral.hover',
-              cursor: 'pointer',
-            }}
-            _active={{
-              bg: 'interaction.muted.neutral.active',
-            }}
-            _focus={{
-              outline: 'none',
-              boxShadow: '0 0 0 2px var(--chakra-colors-primary-500)',
-            }}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                if (singleTriggerOrAction) {
-                  handleTriggerOrActionSelection(app, singleTriggerOrAction)
-                } else {
-                  setSelectedApp(app)
-                }
-              }
-            }}
-          >
-            <Flex alignItems="center" gap={4}>
-              <Image
-                src={app.iconUrl}
-                boxSize={8}
-                borderStyle="solid"
-                fit="contain"
-                fallback={
-                  <Icon
-                    boxSize={6}
-                    as={BiArrowFromRight}
-                    color="base.content.default"
-                  />
-                }
-              />
-
-              <Flex flexDir="column" gap={1}>
-                <Flex gap={2}>
-                  <Text textStyle="subhead-1">{app.name}</Text>
-                  {app.isNewApp && (
-                    <Badge
-                      bgColor="interaction.muted.main.active"
-                      color="primary.500"
-                    >
-                      New
-                    </Badge>
-                  )}
-                </Flex>
-                <Text textStyle="body-2">
-                  {singleTriggerOrAction
-                    ? singleTriggerOrAction.description
-                    : app.description}
-                </Text>
-              </Flex>
-            </Flex>
-
-            {triggersOrActions && triggersOrActions?.length > 1 && (
-              <Icon as={BiChevronRight} />
+      {groupedApps && groupedApps.length === 0 ? (
+        <Flex
+          justifyContent="center"
+          alignItems="center"
+          py={8}
+          color="base.content.medium"
+        >
+          No apps found
+        </Flex>
+      ) : (
+        groupedApps.map(([category, apps]) => (
+          <Box key={category}>
+            {category !== OTHERS_CATEGORY && (
+              <Text textStyle="caption-3" mb={3}>
+                {category}
+              </Text>
             )}
-          </Flex>
-        )
-      })}
+
+            <Flex flexDir="column" gap={3}>
+              {apps.map((app) => {
+                const triggersOrActions = isTrigger ? app.triggers : app.actions
+                const singleTriggerOrAction =
+                  triggersOrActions?.length === 1 ? triggersOrActions[0] : null
+
+                return (
+                  <Flex
+                    key={app.key}
+                    p={4}
+                    borderWidth="1px"
+                    borderColor="base.divider.medium"
+                    borderRadius="lg"
+                    onClick={() => {
+                      if (singleTriggerOrAction) {
+                        handleTriggerOrActionSelection(
+                          app,
+                          singleTriggerOrAction,
+                        )
+                      } else {
+                        setSelectedApp(app)
+                      }
+                    }}
+                    justifyContent="space-between"
+                    alignItems="center"
+                    _hover={{
+                      bg: 'interaction.muted.neutral.hover',
+                      cursor: 'pointer',
+                    }}
+                    _active={{
+                      bg: 'interaction.muted.neutral.active',
+                    }}
+                    _focus={{
+                      outline: 'none',
+                      boxShadow: '0 0 0 2px var(--chakra-colors-primary-500)',
+                    }}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (singleTriggerOrAction) {
+                          handleTriggerOrActionSelection(
+                            app,
+                            singleTriggerOrAction,
+                          )
+                        } else {
+                          setSelectedApp(app)
+                        }
+                      }
+                    }}
+                  >
+                    <Flex alignItems="center" gap={4}>
+                      <Image
+                        src={app.iconUrl}
+                        boxSize={8}
+                        borderStyle="solid"
+                        fit="contain"
+                        fallback={
+                          <Icon
+                            boxSize={6}
+                            as={BiArrowFromRight}
+                            color="base.content.default"
+                          />
+                        }
+                      />
+
+                      <Flex flexDir="column" gap={1}>
+                        <Flex gap={2}>
+                          <Text textStyle="subhead-1">{app.name}</Text>
+                          {app.isNewApp && (
+                            <Badge
+                              bgColor="interaction.muted.main.active"
+                              color="primary.500"
+                            >
+                              New
+                            </Badge>
+                          )}
+                        </Flex>
+                        <Text textStyle="body-2">
+                          {singleTriggerOrAction
+                            ? singleTriggerOrAction.description
+                            : app.description}
+                        </Text>
+                      </Flex>
+                    </Flex>
+
+                    {triggersOrActions && triggersOrActions?.length > 1 && (
+                      <Icon as={BiChevronRight} />
+                    )}
+                  </Flex>
+                )
+              })}
+            </Flex>
+          </Box>
+        ))
+      )}
     </Flex>
   )
 }

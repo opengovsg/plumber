@@ -521,6 +521,7 @@ export interface IApp {
     addConnectionLabel?: string // for adding connection in choose connection dropdown
   }
   demoVideoDetails?: DemoVideoDetails
+  category?: AppCategory
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this
@@ -554,6 +555,8 @@ export interface IApp {
    */
   setupMessage?: SetupMessage
 }
+
+export type AppCategory = 'data' | 'communications' | 'logic' | 'integrations'
 
 export type TBeforeRequest = (
   $: IGlobalVariable,
