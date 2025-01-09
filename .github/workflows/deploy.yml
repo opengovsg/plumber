@@ -146,7 +146,7 @@ jobs:
           image: ${{ steps.ecr-image-uri.outputs.image }}
 
       - name: Deploy Amazon ECS task definition to server
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.full-task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
