@@ -2,6 +2,7 @@ import { ITriggerInstructions } from '@plumber/types'
 
 import * as React from 'react'
 import ReactMarkdown from 'react-markdown'
+import { Box } from '@chakra-ui/react'
 import type { AlertProps } from '@mui/material/Alert'
 
 import TextField from '../TextField'
@@ -14,7 +15,7 @@ type WebhookUrlInfoProps = {
 } & AlertProps
 
 function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
-  const { webhookUrl, webhookTriggerInstructions, ...alertProps } = props
+  const { webhookTriggerInstructions, ...alertProps } = props
 
   const { beforeUrlMsg, afterUrlMsg, hideWebhookUrl } =
     webhookTriggerInstructions
@@ -27,16 +28,9 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
     <Alert icon={false} color="info" {...alertProps}>
       {beforeUrlMsg && <ReactMarkdown>{beforeUrlMsg}</ReactMarkdown>}
       {!hideWebhookUrl && (
-        <TextField
-          sx={{
-            my: '1rem',
-          }}
-          readOnly
-          clickToCopy={true}
-          name="webhookUrl"
-          fullWidth
-          defaultValue={webhookUrl}
-        />
+        <Box my={4}>
+          <TextField readOnly clickToCopy={true} name="webhookUrl" />
+        </Box>
       )}
       {afterUrlMsg && <ReactMarkdown>{afterUrlMsg}</ReactMarkdown>}
     </Alert>

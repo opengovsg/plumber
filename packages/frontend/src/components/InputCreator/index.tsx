@@ -138,18 +138,14 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
 
     return (
       <TextField
-        defaultValue={value}
         required={required}
         placeholder={placeholder}
         readOnly={readOnly || disabled}
         name={computedName}
-        size="small"
         label={label}
-        fullWidth
         multiline={type === 'multiline'}
         description={description}
         clickToCopy={clickToCopy}
-        autoComplete={schema.autoComplete}
       />
     )
   }
