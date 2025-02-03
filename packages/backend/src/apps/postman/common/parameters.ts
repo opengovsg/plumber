@@ -57,6 +57,8 @@ export const transactionalEmailFields: IField[] = [
     required: false,
     description:
       'Enter the email addresses to CC, separated by commas.\nCC recipients will receive a copy of the email for each main recipient.',
+    tooltipText:
+      'CC recipient status is not tracked, and blacklisted CC recipients will be ignored, but the email will still be sent to other recipients.',
     variables: true,
   },
   {
