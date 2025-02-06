@@ -51,6 +51,7 @@ export function usePaginationAndFilter() {
     page,
     input,
     status,
+    searchParams,
     setSearchParams: setFormattedSearchParams,
     isSearching: input.trim() !== '' || page !== 1 || status !== '',
   }

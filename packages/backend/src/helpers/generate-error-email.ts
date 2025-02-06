@@ -14,14 +14,16 @@ function truncateFlowName(flowName: string) {
     : flowName
 }
 
-export function createBodyErrorMessage(flowName: string): string {
+export function createBodyErrorMessage(
+  flowName: string,
+  pipeId: string,
+): string {
   const currDateTime = DateTime.now().toFormat('MMM dd yyyy, hh:mm a')
   const searchParams = new URLSearchParams()
   searchParams.set('status', 'failure')
-  searchParams.set('input', flowName)
 
   const appPrefixUrl = appConfig.isDev ? appConfig.webAppUrl : appConfig.baseUrl
-  const redirectUrl = `/executions?${searchParams.toString()}`
+  const redirectUrl = `/execution-pipe/${pipeId}?${searchParams.toString()}`
   const formattedUrl = `${appPrefixUrl}${redirectUrl}`
 
   const bodyMessage = `
@@ -76,7 +78,7 @@ export async function sendErrorEmail(flow: Flow) {
 
   await sendEmail({
     subject: `Plumber: Possible error on ${truncatedFlowName}`,
-    body: createBodyErrorMessage(truncatedFlowName),
+    body: createBodyErrorMessage(truncatedFlowName, flowId),
     recipient: userEmail,
     replyTo: 'support@plumber.gov.sg',
   })
