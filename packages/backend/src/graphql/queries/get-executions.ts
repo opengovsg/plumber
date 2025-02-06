@@ -30,7 +30,6 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
     })
     .where(filterBuilder)
     .orderBy('created_at', 'desc')
-    .debug()
 
   return paginate(executionsQuery, params.limit, params.offset)
 }
