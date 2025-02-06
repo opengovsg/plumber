@@ -182,7 +182,6 @@ export default function Executions(): ReactElement {
       flowId: searchInput ?? '',
     }),
     fetchPolicy: 'cache-and-network',
-    pollInterval: 5000,
     skip: !searchInput,
   })
 
