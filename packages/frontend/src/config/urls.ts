@@ -1,10 +1,12 @@
 export const CONNECTIONS = '/connections'
 export const EXECUTIONS = '/executions'
 export const EXECUTION_PATTERN = '/executions/:executionId'
-export const EXECUTION_FLOW = (pipeId: string): string =>
-  `/executions?pipeId=${pipeId}`
+export const EXECUTIONS_FOR_FLOW_PATTERN = '/execution-pipe/:flowId'
+export const EXECUTIONS_FOR_FLOW = (flowId: string): string =>
+  `/execution-pipe/${flowId}`
 export const EXECUTION = (executionId: string): string =>
   `/executions/${executionId}`
+
 export const ROOT = '/'
 
 export const FOUR_O_FOUR = '/404'

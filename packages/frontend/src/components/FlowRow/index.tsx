@@ -58,7 +58,9 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
           sx={{ cursor: 'pointer' }}
           p={0}
           as={Link}
-          to={isExecution ? URLS.EXECUTION_FLOW(flow.id) : URLS.FLOW(flow.id)}
+          to={
+            isExecution ? URLS.EXECUTIONS_FOR_FLOW(flow.id) : URLS.FLOW(flow.id)
+          }
           display="flex"
           alignItems="center"
           justifyContent="stretch"

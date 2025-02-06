@@ -21,10 +21,9 @@ export function createBodyErrorMessage(
   const currDateTime = DateTime.now().toFormat('MMM dd yyyy, hh:mm a')
   const searchParams = new URLSearchParams()
   searchParams.set('status', 'failure')
-  searchParams.set('pipeId', pipeId)
 
   const appPrefixUrl = appConfig.isDev ? appConfig.webAppUrl : appConfig.baseUrl
-  const redirectUrl = `/executions?${searchParams.toString()}`
+  const redirectUrl = `/execution-pipe/${pipeId}?${searchParams.toString()}`
   const formattedUrl = `${appPrefixUrl}${redirectUrl}`
 
   const bodyMessage = `
