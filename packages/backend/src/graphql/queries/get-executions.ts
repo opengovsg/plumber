@@ -23,11 +23,6 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
 
   const executionsQuery = context.currentUser
     .$relatedQuery('executions')
-    .withGraphFetched({
-      flow: {
-        steps: true,
-      },
-    })
     .where(filterBuilder)
     .orderBy('created_at', 'desc')
 

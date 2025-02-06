@@ -24,14 +24,6 @@ export const GET_EXECUTIONS = gql`
           createdAt
           updatedAt
           status
-          flow {
-            id
-            name
-            active
-            steps {
-              iconUrl
-            }
-          }
         }
       }
     }

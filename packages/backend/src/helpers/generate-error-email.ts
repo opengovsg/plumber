@@ -16,12 +16,12 @@ function truncateFlowName(flowName: string) {
 
 export function createBodyErrorMessage(
   flowName: string,
-  flowId: string,
+  pipeId: string,
 ): string {
   const currDateTime = DateTime.now().toFormat('MMM dd yyyy, hh:mm a')
   const searchParams = new URLSearchParams()
   searchParams.set('status', 'failure')
-  searchParams.set('input', flowId)
+  searchParams.set('pipeId', pipeId)
 
   const appPrefixUrl = appConfig.isDev ? appConfig.webAppUrl : appConfig.baseUrl
   const redirectUrl = `/executions?${searchParams.toString()}`
