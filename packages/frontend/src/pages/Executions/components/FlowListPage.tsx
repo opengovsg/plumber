@@ -1,21 +1,28 @@
 import type { IFlow } from '@plumber/types'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Center, Container, Flex } from '@chakra-ui/react'
+import { useQuery } from '@apollo/client'
+import { Box, Center, Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
 
+import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import FlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
-import { PageInfo } from '@/graphql/__generated__/graphql'
+import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
 const RESULTS_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Select a pipe to view executions'
+
+const getLimitAndOffset = (page: number) => ({
+  limit: RESULTS_PER_PAGE,
+  offset: (page - 1) * RESULTS_PER_PAGE,
+})
 
 interface FlowsInternalProps {
   isLoading: boolean
@@ -37,7 +44,7 @@ function FlowsList({ isLoading, isSearching, flows }: FlowsInternalProps) {
   }
 
   if (hasNoUserFlows) {
-    return <>No Executions</>
+    return <>Create a pipe to see executions</>
   }
 
   if (isEmptySearchResults) {
@@ -64,19 +71,30 @@ function FlowsList({ isLoading, isSearching, flows }: FlowsInternalProps) {
 }
 
 interface FlowsListPageProps {
-  loading: boolean
-  flows: IFlow[]
-  pageInfo: PageInfo
+  setFlows: React.Dispatch<React.SetStateAction<IFlow[]>>
 }
 
-export default function FlowListPage({
-  loading,
-  flows,
-  pageInfo,
-}: FlowsListPageProps) {
+export default function FlowListPage({ setFlows }: FlowsListPageProps) {
   const { input, page, status, setSearchParams, isSearching } =
     usePaginationAndFilter()
   const navigate = useNavigate()
+
+  const { data, loading } = useQuery(GET_FLOWS, {
+    variables: {
+      ...getLimitAndOffset(page),
+      name: input,
+    },
+  })
+
+  const { pageInfo, edges } = data?.getFlows || {}
+  const flows: IFlow[] = useMemo(
+    () => edges?.map(({ node }: { node: IFlow }) => node) ?? [],
+    [edges],
+  )
+
+  useEffect(() => {
+    setFlows(flows)
+  }, [flows, setFlows])
 
   const totalCount: number = pageInfo?.totalCount ?? 0
   const hasPagination = !loading && totalCount > RESULTS_PER_PAGE
@@ -84,6 +102,7 @@ export default function FlowListPage({
 
   // ensure invalid pages won't be accessed even after deleting flows
   const lastPage = Math.ceil(totalCount / RESULTS_PER_PAGE)
+
   useEffect(() => {
     // Defer the search params update till after the initial render
     if (lastPage !== 0 && page > lastPage) {
@@ -92,10 +111,12 @@ export default function FlowListPage({
   }, [lastPage, page, setSearchParams])
 
   useEffect(() => {
-    if (!loading && input && flows.length > 0 && status === 'failure') {
-      const pipeId = flows.filter((f) => f.name === input)?.[0]?.id
-      if (pipeId) {
-        navigate(`${URLS.EXECUTION_FLOW(pipeId)}&status=failure`, {
+    if (!loading && input && flows && status === 'failure') {
+      const matchingPipeIds = flows
+        .filter((f) => f.name === input)
+        .map((f) => f.id)
+      if (matchingPipeIds.length === 1) {
+        navigate(`${URLS.EXECUTION_FLOW(matchingPipeIds[0])}&status=failure`, {
           replace: true,
         })
       } else {

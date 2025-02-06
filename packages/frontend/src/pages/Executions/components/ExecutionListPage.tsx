@@ -1,9 +1,10 @@
 import type { IExecution, IFlow } from '@plumber/types'
 
 import { useQuery } from '@apollo/client'
-import { Center, Container, Flex } from '@chakra-ui/react'
+import { Center, Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
 
+import Container from '@/components/Container'
 import ExecutionRow from '@/components/ExecutionRow'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'

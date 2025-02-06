@@ -1,37 +1,16 @@
 import { IFlow } from '@plumber/types'
 
-import { ReactElement, useMemo } from 'react'
-import { useQuery } from '@apollo/client'
+import { ReactElement, useState } from 'react'
 
-import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
 import ExecutionListPage from './components/ExecutionListPage'
 import FlowListPage from './components/FlowListPage'
 
-const RESULTS_PER_PAGE = 10
-
-const getLimitAndOffset = (page: number) => ({
-  limit: RESULTS_PER_PAGE,
-  offset: (page - 1) * RESULTS_PER_PAGE,
-})
-
 export default function Executions(): ReactElement {
-  const { searchParams, input, page } = usePaginationAndFilter()
+  const { searchParams } = usePaginationAndFilter()
   const flowId = searchParams.get('pipeId') || ''
-
-  const { data, loading } = useQuery(GET_FLOWS, {
-    variables: {
-      ...getLimitAndOffset(page),
-      name: input,
-    },
-  })
-
-  const { pageInfo, edges } = data?.getFlows || {}
-  const flows: IFlow[] = useMemo(
-    () => edges?.map(({ node }: { node: IFlow }) => node) ?? [],
-    [edges],
-  )
+  const [flows, setFlows] = useState<IFlow[]>([])
 
   const flow = flows.find((flow) => flow.id === flowId)
 
@@ -39,5 +18,5 @@ export default function Executions(): ReactElement {
     return <ExecutionListPage flow={flow} />
   }
 
-  return <FlowListPage loading={loading} flows={flows} pageInfo={pageInfo} />
+  return <FlowListPage setFlows={setFlows} />
 }
