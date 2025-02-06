@@ -1,9 +1,10 @@
-import type { IExecution } from '@plumber/types'
+import type { IExecution, IFlow } from '@plumber/types'
 
-import { ReactElement, useEffect } from 'react'
+import { ReactElement, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
+import * as yup from 'yup'
 
 import Container from '@/components/Container'
 import ExecutionRow from '@/components/ExecutionRow'
@@ -11,10 +12,12 @@ import { StatusType } from '@/components/ExecutionStatusMenu'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
+import client from '@/graphql/client'
 import { GET_EXECUTIONS } from '@/graphql/queries/get-executions'
+import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
-import SearchWithFilterInput from './components/SearchWithFilterInput'
+import SelectWithFilterInput from './components/SelectWithFilterInput'
 
 const EXECUTIONS_PER_PAGE = 10
 const EXECUTIONS_TITLE = 'Executions'
@@ -22,7 +25,7 @@ const EXECUTIONS_TITLE = 'Executions'
 interface ExecutionParameters {
   page: number
   status: string
-  input: string
+  flowId: string
 }
 
 interface ExecutionsListProps {
@@ -31,12 +34,29 @@ interface ExecutionsListProps {
   isLoading: boolean
 }
 
+const FLOW_LIMIT = 100
+const FLOW_VARIABLES = {
+  limit: FLOW_LIMIT,
+  offset: 0,
+  name: '',
+}
+
 const getLimitAndOffset = (params: ExecutionParameters) => ({
   limit: EXECUTIONS_PER_PAGE,
   offset: (params.page - 1) * EXECUTIONS_PER_PAGE,
   ...(params.status !== StatusType.Waiting && { status: params.status }),
-  searchInput: params.input,
+  flowId: params.flowId,
 })
+
+/**
+ * TODO: remove this after some time
+ * This is a temporary fix to ensure that any execution failure emails
+ * with flow name as input still works
+ */
+const checkValidUuid = (uuid: string) => {
+  const schema = yup.string().uuid()
+  return schema.isValidSync(uuid)
+}
 
 function ExecutionsList({
   executions,
@@ -57,12 +77,14 @@ function ExecutionsList({
     return (
       <NoResultFound
         description={
-          isSearching ? "We couldn't find anything" : 'No executions yet'
+          isSearching
+            ? 'No executions matching criteria'
+            : 'Select a pipe to view executions'
         }
         action={
           isSearching
-            ? 'Try using different keywords or checking for typos.'
-            : 'Executions will appear here when your pipe has started running.'
+            ? 'Select a different pipe or change the status filter.'
+            : ''
         }
       />
     )
@@ -81,14 +103,87 @@ export default function Executions(): ReactElement {
   const { input, page, status, setSearchParams, isSearching } =
     usePaginationAndFilter()
 
+  const [allFlows, setAllFlows] = useState<IFlow[]>([])
+  const [isLoadingFlows, setIsLoadingFlows] = useState(true)
+
+  useEffect(() => {
+    // Fetches all flows by paginating through results
+    // First fetches initial page, then if there are more pages,
+    // fetches remaining pages and combines results
+    const fetchAllFlows = async () => {
+      try {
+        const { data } = await client.query({
+          query: GET_FLOWS,
+          variables: FLOW_VARIABLES,
+        })
+
+        const { edges, pageInfo } = data.getFlows || {}
+        const totalCount = pageInfo.totalCount
+        let allFlowsData = edges.map(({ node }: { node: IFlow }) => node)
+
+        const remainingPages = Math.ceil(totalCount / FLOW_LIMIT) - 1
+        if (remainingPages > 0) {
+          const pageNumbers = [...Array(remainingPages)].map((_, i) => i + 1)
+          const remainingQueries = pageNumbers.map((pageNum) =>
+            client.query({
+              query: GET_FLOWS,
+              variables: {
+                ...FLOW_VARIABLES,
+                offset: pageNum * FLOW_LIMIT,
+              },
+            }),
+          )
+
+          const results = await Promise.all(remainingQueries)
+          const additionalFlows = results.flatMap((result) =>
+            result.data.getFlows.edges.map(({ node }: { node: IFlow }) => node),
+          )
+          allFlowsData = [...allFlowsData, ...additionalFlows]
+        }
+
+        setAllFlows(allFlowsData)
+      } finally {
+        setIsLoadingFlows(false)
+      }
+    }
+
+    fetchAllFlows()
+  }, [])
+
+  const flows = useMemo(() => allFlows, [allFlows])
+  const items = useMemo(
+    () =>
+      flows.map((flow) => ({
+        value: flow.id,
+        label: flow.name,
+      })),
+    [flows],
+  )
+
+  /**
+   * TODO: remove this after some time
+   * This is a temporary fix to ensure that any execution failure emails
+   * with flow name as input still works
+   */
+  const searchInput = useMemo(() => {
+    if (checkValidUuid(input)) {
+      return input
+    } else {
+      const newInput = flows.find((flow) => flow.name === input)?.id
+      setSearchParams({ input: newInput })
+      return newInput
+    }
+  }, [input, flows, setSearchParams])
+
   const { data, loading } = useQuery(GET_EXECUTIONS, {
     variables: getLimitAndOffset({
       page,
       status,
-      input,
+      flowId: searchInput ?? '',
     }),
     fetchPolicy: 'cache-and-network',
     pollInterval: 5000,
+    skip: !searchInput,
   })
 
   const getExecutions = data?.getExecutions || {}
@@ -97,7 +192,6 @@ export default function Executions(): ReactElement {
   const executions: IExecution[] =
     edges?.map(({ node }: { node: IExecution }) => node) ?? []
 
-  const hasNoUserExecutions = executions.length === 0 && !isSearching
   const totalCount: number = pageInfo?.totalCount ?? 0
   const hasPagination = !loading && totalCount > EXECUTIONS_PER_PAGE
 
@@ -115,14 +209,14 @@ export default function Executions(): ReactElement {
       <PageTitle
         title={EXECUTIONS_TITLE}
         searchComponent={
-          !hasNoUserExecutions && (
-            <SearchWithFilterInput
-              searchValue={input}
-              onChange={(input) => setSearchParams({ input })}
-              status={status}
-              onStatusChange={(status) => setSearchParams({ status })}
-            />
-          )
+          <SelectWithFilterInput
+            searchValue={searchInput}
+            onChange={(input) => setSearchParams({ input })}
+            status={status}
+            onStatusChange={(status) => setSearchParams({ status })}
+            items={items}
+            loading={isLoadingFlows}
+          />
         }
       />
 

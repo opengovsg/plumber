@@ -35,6 +35,8 @@ export interface SharedSelectContextReturnProps<
   isRefreshLoading?: boolean
   /** Controls if user can add one arbitrary item of their choosing. */
   freeSolo?: boolean
+  /** Variant of the select */
+  variant?: string
 }
 
 interface SelectContextReturn<Item extends ComboboxItem = ComboboxItem>

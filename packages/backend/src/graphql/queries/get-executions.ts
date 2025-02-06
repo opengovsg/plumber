@@ -11,14 +11,13 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
 ) => {
   const filterBuilder = (builder: ExtendedQueryBuilder<Execution>) => {
     builder.where('test_run', 'FALSE')
+    builder.where('flow_id', params.flowId)
+
     if (!('status' in params)) {
       builder.whereNull('status')
     }
     if (params.status) {
       builder.where('status', params.status)
-    }
-    if (params.searchInput) {
-      builder.where('name', 'ilike', `%${params.searchInput}%`)
     }
   }
 
@@ -31,6 +30,7 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
     })
     .where(filterBuilder)
     .orderBy('created_at', 'desc')
+    .debug()
 
   return paginate(executionsQuery, params.limit, params.offset)
 }
