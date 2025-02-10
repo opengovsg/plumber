@@ -40,12 +40,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     }
 
     const stepIds = steps.map((step) => step.id)
-
-    /**
-     * NOTE: do not delete execution steps
-     * The deletion causes RDS CPU Utilisation to spike
-     */
-    // await Step.relatedQuery('executionSteps', trx).for(stepIds).delete()
+    await Step.relatedQuery('executionSteps', trx).for(stepIds).delete()
     await Step.query(trx).findByIds(stepIds).delete()
 
     await steps[0].flow

@@ -25,13 +25,7 @@ export async function getTestExecutionSteps(
 
   if (flow.testExecution && !ignoreTestExecutionId) {
     const testExecutionSteps = flow.testExecution.executionSteps
-
-    /**
-     * NOTE: filters out test execution steps for steps that have been deleted
-     */
-    testExecutionSteps
-      .filter((e) => e.step)
-      .sort((a, b) => a.step.position - b.step.position)
+    testExecutionSteps.sort((a, b) => a.step.position - b.step.position)
 
     /**
      * Sanity check to ensure not more than 1 execution step per step is returned

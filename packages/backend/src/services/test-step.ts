@@ -38,7 +38,7 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
 
   const testExecutionSteps = await getTestExecutionSteps(flow.id)
   const testActionExecutionSteps = testExecutionSteps.filter(
-    (executionStep) => executionStep.step && executionStep.step.isAction,
+    (executionStep) => executionStep.step.isAction,
   )
 
   /**
