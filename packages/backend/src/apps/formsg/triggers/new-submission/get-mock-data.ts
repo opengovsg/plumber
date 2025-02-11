@@ -64,6 +64,10 @@ function generateVerifiedSubmitterInfoData(
   return {}
 }
 
+function generateMockAddressData(): string[] {
+  return ['51', 'Bras Basah Road', 'Lazada One', '08', '888', '189554']
+}
+
 function generateMockPaymentData(products: Partial<PaymentProduct>[]) {
   // if there are no payment products, default to a mocked one
   const firstProduct: Partial<PaymentProduct> =
@@ -112,6 +116,11 @@ async function getMockData($: IGlobalVariable) {
               'Others: Sample Input',
             )
           }
+        }
+
+        if (data.responses[formFields[i]._id].fieldType === 'address') {
+          data.responses[formFields[i]._id].answerArray =
+            generateMockAddressData()
         }
 
         if (data.responses[formFields[i]._id].fieldType === 'attachment') {

@@ -7,6 +7,7 @@ import {
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { ADDRESS_LABELS } from '../../common/constants'
 import trigger from '../../triggers/new-submission'
 
 describe('new submission trigger', () => {
@@ -290,6 +291,25 @@ describe('new submission trigger for answer array fields', () => {
             order: 3,
             answerArray: ['weird', 'strange'],
           },
+          addressFieldComplete: {
+            question: 'What is your address?',
+            fieldType: 'address',
+            order: 4,
+            answerArray: [
+              '51',
+              'Bras Basah Road',
+              'Lazada One',
+              '08',
+              '888',
+              '189554',
+            ],
+          },
+          addressFieldPartial: {
+            question: 'What is your address?',
+            fieldType: 'address',
+            order: 5,
+            answerArray: ['51', 'Bras Basah Road', '', '', '', '189554'], // Some empty fields
+          },
         },
       },
     } as unknown as IExecutionStep
@@ -342,6 +362,26 @@ describe('new submission trigger for answer array fields', () => {
     it('Unknown type: answerArray label should be undefined', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
       expect(metadata.fields.textFieldId3.answerArray).toBeUndefined()
+    })
+
+    it('Address type: includes all address fields', async () => {
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const addressMetadata = metadata.fields.addressFieldComplete
+        .answerArray as IDataOutMetadatum[]
+
+      expect(addressMetadata).toHaveLength(6)
+      ADDRESS_LABELS.forEach((label, index) => {
+        expect(addressMetadata[index].label).toEqual(`Response 4, ${label}`)
+      })
+    })
+
+    it('Address type: includes all metadata for empty address fields', async () => {
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const addressMetadata = metadata.fields.addressFieldPartial
+        .answerArray as IDataOutMetadatum[]
+      ADDRESS_LABELS.forEach((label, index) => {
+        expect(addressMetadata[index].label).toEqual(`Response 5, ${label}`)
+      })
     })
   })
 })

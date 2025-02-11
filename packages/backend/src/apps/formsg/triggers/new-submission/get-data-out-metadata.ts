@@ -10,6 +10,8 @@ import {
 import logger from '@/helpers/logger'
 import { parseS3Id } from '@/helpers/s3'
 
+import { ADDRESS_LABELS } from '../../common/constants'
+
 function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const question: IDataOutMetadatum = {
     type: 'text',
@@ -57,8 +59,20 @@ function isAnswerArrayValid(fieldData: IJSONObject): boolean {
   if (!fieldData.answerArray) {
     return false
   }
-  // strict check for only table and checkbox variables
-  return fieldData.fieldType === 'table' || fieldData.fieldType === 'checkbox'
+  // strict check for only table, checkbox and address variables
+  const answerArrayFields = ['table', 'checkbox', 'address']
+  return answerArrayFields.includes(fieldData.fieldType as string)
+}
+
+function buildAnswerArrayForAddress(fieldData: IJSONObject): IDataOutMetadata {
+  const { order } = fieldData
+
+  // NOTE: we return all labels as there are some optional fields in FormSG
+  return ADDRESS_LABELS.map((label, index) => ({
+    type: 'text',
+    label: `Response ${order}, ${label}`,
+    order: order ? `${order}.${index + 1}` : null,
+  }))
 }
 
 function buildAnswerArrayForCheckbox(
@@ -108,6 +122,8 @@ function buildAnswerArrayMetadatum(
       return buildAnswerArrayForCheckbox(fieldData)
     case 'table':
       return buildAnswerArrayForTable(fieldData)
+    case 'address':
+      return buildAnswerArrayForAddress(fieldData)
     default:
       logger.warn(`Answer array unknown fieldtype: ${fieldType}`, {
         fieldType,
