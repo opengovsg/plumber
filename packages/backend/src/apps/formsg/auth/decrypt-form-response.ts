@@ -132,7 +132,6 @@ export async function decryptFormResponse(
         )
       }
 
-      // TODO: remove this type casting once FormSG updates their sdk
       if (rest.fieldType === 'address') {
         rest.answerArray = processLocalAddress(rest.answerArray as string[])
       }
