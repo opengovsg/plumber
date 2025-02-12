@@ -15,7 +15,7 @@ import { GET_EXECUTIONS } from '@/graphql/queries/get-executions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
-import StatusInput from './components/StatusInput'
+import StatusInput from '../Executions/components/StatusInput'
 
 const RESULTS_PER_PAGE = 10
 

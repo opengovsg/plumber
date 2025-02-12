@@ -1,5 +1,7 @@
 import { IExecutionStepMetadata, IJSONObject } from '@plumber/types'
 
+import appConfig from '@/config/app'
+
 import Base from './base'
 import Execution from './execution'
 import Step from './step'
@@ -44,6 +46,10 @@ class ExecutionStep extends Base {
     },
   }
 
+  static get virtualAttributes() {
+    return ['iconUrl']
+  }
+
   static relationMappings = () => ({
     execution: {
       relation: Base.BelongsToOneRelation,
@@ -65,6 +71,14 @@ class ExecutionStep extends Base {
 
   get isFailed() {
     return this.status === 'failure'
+  }
+
+  get iconUrl() {
+    if (!this.appKey) {
+      return null
+    }
+
+    return `${appConfig.baseUrl}/apps/${this.appKey}/assets/favicon.svg`
   }
 }
 

@@ -23,7 +23,11 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
 
   const executionsQuery = context.currentUser
     .$relatedQuery('executions')
+    .withGraphFetched({
+      executionSteps: true,
+    })
     .where(filterBuilder)
+    .withSoftDeleted()
     .orderBy('created_at', 'desc')
 
   return paginate(executionsQuery, params.limit, params.offset)

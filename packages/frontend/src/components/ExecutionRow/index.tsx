@@ -28,7 +28,7 @@ type ExecutionRowProps = {
 
 export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
   const { execution, page } = props
-  const { flow } = execution
+  const { flow, executionSteps } = execution
 
   const createdAt = DateTime.fromMillis(parseInt(execution.createdAt, 10))
   const relativeCreatedAt = createdAt.toRelative()
@@ -67,7 +67,12 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
           >
             <GridItem area="apps">
               <HStack>
-                <FlowAppIcons steps={flow.steps} />
+                <FlowAppIcons
+                  // NOTE: passing executionSteps into steps props to preserve deleted steps
+                  steps={[...executionSteps].sort(
+                    (a, b) => Number(a.createdAt) - Number(b.createdAt),
+                  )}
+                />
               </HStack>
             </GridItem>
             <GridItem area="title">
