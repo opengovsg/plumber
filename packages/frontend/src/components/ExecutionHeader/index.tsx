@@ -1,6 +1,6 @@
 import type { IExecution } from '@plumber/types'
 
-import { Fragment, ReactElement } from 'react'
+import { Fragment, ReactElement, useCallback } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Flex, Icon, Link, Stack, Text } from '@chakra-ui/react'
@@ -14,26 +14,30 @@ type ExecutionHeaderProps = {
 }
 
 function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
+  const { id, name } = props
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const backToPage = searchParams.get('backToPage')
 
+  const handleBack = useCallback(() => {
+    let backUrl = URLS.EXECUTIONS_FOR_FLOW(id)
+
+    if (backToPage) {
+      backUrl += `?page=${backToPage}`
+    }
+    navigate(backUrl)
+  }, [navigate, id, backToPage])
+
   return (
     <Flex gap={2} alignItems="center">
-      <Button
-        as={Link}
-        variant="link"
-        onClick={() => {
-          navigate(`${URLS.EXECUTIONS_FOR_FLOW(props.id)}?page=${backToPage}`)
-        }}
-      >
+      <Button as={Link} variant="link" onClick={handleBack}>
         <Icon
           boxSize={6}
           color="interaction.support.disabled-content"
           as={BiChevronLeft}
         />
       </Button>
-      <Text textStyle="h4">{props.name}</Text>
+      <Text textStyle="h4">{name}</Text>
     </Flex>
   )
 }
