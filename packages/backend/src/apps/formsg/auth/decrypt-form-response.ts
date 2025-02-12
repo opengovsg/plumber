@@ -3,7 +3,6 @@ import { IGlobalVariable } from '@plumber/types'
 import {
   DecryptedAttachments,
   DecryptedContent,
-  FieldType,
 } from '@opengovsg/formsg-sdk/dist/types'
 import { DateTime } from 'luxon'
 
@@ -14,9 +13,6 @@ import { getSdk, parseFormEnv } from '../common/form-env'
 import { NricFilter } from '../triggers/new-submission/index'
 
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
-
-// TODO: remove this once FormSG updates their sdk
-type ExtendedFieldType = FieldType | 'address'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -137,7 +133,7 @@ export async function decryptFormResponse(
       }
 
       // TODO: remove this type casting once FormSG updates their sdk
-      if (rest.fieldType === ('address' as ExtendedFieldType)) {
+      if (rest.fieldType === 'address') {
         rest.answerArray = processLocalAddress(rest.answerArray as string[])
       }
 
