@@ -2,7 +2,7 @@ import type { IExecution } from '@plumber/types'
 
 import { Fragment, ReactElement } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Flex, Icon, Link, Stack, Text } from '@chakra-ui/react'
 import { Button, Tooltip } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
@@ -14,7 +14,9 @@ type ExecutionHeaderProps = {
 }
 
 function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const backToPage = searchParams.get('backToPage')
 
   return (
     <Flex gap={2} alignItems="center">
@@ -22,7 +24,7 @@ function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
         as={Link}
         variant="link"
         onClick={() => {
-          navigate(URLS.EXECUTIONS_FOR_FLOW(props.id))
+          navigate(`${URLS.EXECUTIONS_FOR_FLOW(props.id)}?page=${backToPage}`)
         }}
       >
         <Icon
