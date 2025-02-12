@@ -296,6 +296,7 @@ type ExecutionStep {
   stepId: String
   step: Step
   appKey: String
+  iconUrl: String
   jobId: String
   status: String
   dataIn: JSONObject
@@ -380,6 +381,7 @@ type Execution {
   updatedAt: String
   status: String
   flow: Flow
+  executionSteps: [ExecutionStep]
 }
 
 type BulkRetryExecutionsResult {

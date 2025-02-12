@@ -28,6 +28,7 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
         .from('execution_steps')
         .groupBy('step_id')
         .where('execution_id', '=', execution.id)
+        .withSoftDeleted()
     })
     .join('latest_steps', (builder) => {
       builder

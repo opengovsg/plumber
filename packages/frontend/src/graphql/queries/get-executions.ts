@@ -24,6 +24,14 @@ export const GET_EXECUTIONS = gql`
           createdAt
           updatedAt
           status
+          executionSteps {
+            id
+            appKey
+            createdAt
+            updatedAt
+            status
+            iconUrl
+          }
         }
       }
     }
