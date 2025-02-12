@@ -1,3 +1,5 @@
+import { raw } from 'objection'
+
 import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -10,6 +12,8 @@ const createStep: MutationResolvers['createStep'] = async (
   const { input } = params
 
   return await Step.transaction(async (trx) => {
+    await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
+
     // Put SELECTs in transaction just in case there's concurrent modification.
     const flow = await context.currentUser
       .$relatedQuery('flows', trx)
@@ -25,6 +29,13 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
+    await flow
+      .$relatedQuery('steps', trx)
+      .patch({
+        position: raw(`position + 1`),
+      })
+      .where('position', '>=', previousStep.position + 1)
+
     const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
       key: input.key,
       appKey: input.appKey,
@@ -32,19 +43,6 @@ const createStep: MutationResolvers['createStep'] = async (
       position: previousStep.position + 1,
       parameters: input.parameters,
     })
-
-    const nextSteps = await flow
-      .$relatedQuery('steps', trx)
-      .where('position', '>=', step.position)
-      .whereNot('id', step.id)
-
-    const nextStepQueries = nextSteps.map(async (nextStep, index) => {
-      await nextStep.$query(trx).patchAndFetch({
-        position: step.position + index + 1,
-      })
-    })
-
-    await Promise.all(nextStepQueries)
 
     return step
   })
