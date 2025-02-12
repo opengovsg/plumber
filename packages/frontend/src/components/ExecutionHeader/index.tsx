@@ -22,7 +22,7 @@ function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
   const handleBack = useCallback(() => {
     let backUrl = URLS.EXECUTIONS_FOR_FLOW(id)
 
-    if (backToPage) {
+    if (backToPage && /^\d+$/.test(backToPage)) {
       backUrl += `?page=${backToPage}`
     }
     navigate(backUrl)
