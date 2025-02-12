@@ -64,6 +64,7 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
             <GridItem area="apps">
               <HStack>
                 <FlowAppIcons
+                  // NOTE: passing executionSteps into steps props to preserve deleted steps
                   steps={[...executionSteps].sort(
                     (a, b) => Number(a.createdAt) - Number(b.createdAt),
                   )}
