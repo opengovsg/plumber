@@ -535,4 +535,59 @@ describe('decrypt form response', () => {
       expect(mocks.getSdk).toBeCalledWith('staging')
     })
   })
+
+  describe('local address field', () => {
+    it('should handle local address fields', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'addressFieldComplete',
+            fieldType: 'address',
+            question: 'What is your address?',
+            answerArray: [
+              '51',
+              'Bras Basah Road',
+              'Lazada One',
+              '08',
+              '888',
+              '189554',
+            ],
+          },
+          {
+            _id: 'addressFieldPartial',
+            fieldType: 'address',
+            question: 'What is your address?',
+            answerArray: ['51', 'Bras Basah Road', '', '', '', '189554'],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            addressFieldComplete: {
+              fieldType: 'address',
+              question: 'What is your address?',
+              answerArray: [
+                '51',
+                'Bras Basah Road',
+                'Lazada One',
+                '#08-888',
+                '189554',
+              ],
+              order: 1,
+            },
+            addressFieldPartial: {
+              fieldType: 'address',
+              question: 'What is your address?',
+              answerArray: ['51', 'Bras Basah Road', '', '', '189554'],
+              order: 2,
+            },
+          },
+        }),
+      )
+    })
+  })
 })

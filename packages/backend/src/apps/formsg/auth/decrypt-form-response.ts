@@ -3,6 +3,7 @@ import { IGlobalVariable } from '@plumber/types'
 import {
   DecryptedAttachments,
   DecryptedContent,
+  FieldType,
 } from '@opengovsg/formsg-sdk/dist/types'
 import { DateTime } from 'luxon'
 
@@ -14,7 +15,23 @@ import { NricFilter } from '../triggers/new-submission/index'
 
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 
+// TODO: remove this once FormSG updates their sdk
+type ExtendedFieldType = FieldType | 'address'
+
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
+
+function processLocalAddress(answerArray: string[]): string[] {
+  const answer = [...answerArray]
+
+  // Combine level number and unit number if both exist
+  const levelNumber = answer[3]
+  const unitNumber = answer[4]
+  answer[3] = levelNumber && unitNumber ? `#${levelNumber}-${unitNumber}` : ''
+  // Remove element at index 4 since we've combined it with element 3
+  answer.splice(4, 1)
+
+  return answer
+}
 
 /**
  * Filters NRIC if an NRIC filter was configured for the pipe.
@@ -117,6 +134,11 @@ export async function decryptFormResponse(
           formField,
           attachments,
         )
+      }
+
+      // TODO: remove this type casting once FormSG updates their sdk
+      if (rest.fieldType === ('address' as ExtendedFieldType)) {
+        rest.answerArray = processLocalAddress(rest.answerArray as string[])
       }
 
       // Note: the order may not be sequential; fields (e.g. NRIC) can be

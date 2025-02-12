@@ -65,7 +65,7 @@ function generateVerifiedSubmitterInfoData(
 }
 
 function generateMockAddressData(): string[] {
-  return ['51', 'Bras Basah Road', 'Lazada One', '08', '888', '189554']
+  return ['51', 'Bras Basah Road', 'Lazada One', '#08-888', '189554']
 }
 
 function generateMockPaymentData(products: Partial<PaymentProduct>[]) {

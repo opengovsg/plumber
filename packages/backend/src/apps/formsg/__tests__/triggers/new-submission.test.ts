@@ -299,8 +299,7 @@ describe('new submission trigger for answer array fields', () => {
               '51',
               'Bras Basah Road',
               'Lazada One',
-              '08',
-              '888',
+              '#08-888',
               '189554',
             ],
           },
@@ -308,7 +307,7 @@ describe('new submission trigger for answer array fields', () => {
             question: 'What is your address?',
             fieldType: 'address',
             order: 5,
-            answerArray: ['51', 'Bras Basah Road', '', '', '', '189554'], // Some empty fields
+            answerArray: ['51', 'Bras Basah Road', '', '', '189554'], // Some empty fields
           },
         },
       },
@@ -369,7 +368,7 @@ describe('new submission trigger for answer array fields', () => {
       const addressMetadata = metadata.fields.addressFieldComplete
         .answerArray as IDataOutMetadatum[]
 
-      expect(addressMetadata).toHaveLength(6)
+      expect(addressMetadata).toHaveLength(5)
       ADDRESS_LABELS.forEach((label, index) => {
         expect(addressMetadata[index].label).toEqual(`Response 4, ${label}`)
       })
