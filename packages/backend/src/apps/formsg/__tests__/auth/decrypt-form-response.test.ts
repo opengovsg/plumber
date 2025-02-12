@@ -547,7 +547,7 @@ describe('decrypt form response', () => {
             question: 'What is your address?',
             answerArray: [
               '51',
-              'Bras Basah Road',
+              'BRAS BASAH ROAD',
               'Lazada One',
               '08',
               '888',
@@ -558,7 +558,7 @@ describe('decrypt form response', () => {
             _id: 'addressFieldPartial',
             fieldType: 'address',
             question: 'What is your address?',
-            answerArray: ['51', 'Bras Basah Road', '', '', '', '189554'],
+            answerArray: ['51', 'BRAS BASAH ROAD', '', '', '', '189554'],
           },
         ],
       })
@@ -572,7 +572,7 @@ describe('decrypt form response', () => {
               question: 'What is your address?',
               answerArray: [
                 '51',
-                'Bras Basah Road',
+                'BRAS BASAH ROAD',
                 'Lazada One',
                 '#08-888',
                 '189554',
@@ -582,7 +582,7 @@ describe('decrypt form response', () => {
             addressFieldPartial: {
               fieldType: 'address',
               question: 'What is your address?',
-              answerArray: ['51', 'Bras Basah Road', '', '', '189554'],
+              answerArray: ['51', 'BRAS BASAH ROAD', '', '', '189554'],
               order: 2,
             },
           },

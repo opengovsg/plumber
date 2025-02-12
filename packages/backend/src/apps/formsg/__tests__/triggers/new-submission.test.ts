@@ -297,7 +297,7 @@ describe('new submission trigger for answer array fields', () => {
             order: 4,
             answerArray: [
               '51',
-              'Bras Basah Road',
+              'BRAS BASAH ROAD',
               'Lazada One',
               '#08-888',
               '189554',
@@ -307,7 +307,7 @@ describe('new submission trigger for answer array fields', () => {
             question: 'What is your address?',
             fieldType: 'address',
             order: 5,
-            answerArray: ['51', 'Bras Basah Road', '', '', '189554'], // Some empty fields
+            answerArray: ['51', 'BRAS BASAH ROAD', '', '', '189554'], // Some empty fields
           },
         },
       },
