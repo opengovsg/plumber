@@ -61,7 +61,6 @@ export interface SingleSelectProviderProps<
     onSelected: (value: string) => void
     isCreating: boolean
   }
-  variant?: string
 }
 
 function constructFreeSoloItem(freeSoloValue: string) {
@@ -98,7 +97,6 @@ export const SingleSelectProvider = ({
   isRefreshLoading = false,
   freeSolo = false,
   addNew,
-  variant,
 }: SingleSelectProviderProps): JSX.Element => {
   const theme = useTheme()
   // Required in case size is set in theme, we should respect the one set in theme.
@@ -354,7 +352,6 @@ export const SingleSelectProvider = ({
     size,
     isClearable,
     colorScheme,
-    variant,
   })
 
   const virtualListHeight = useMemo(() => {
@@ -411,7 +408,6 @@ export const SingleSelectProvider = ({
         isRefreshLoading,
         freeSolo,
         isCreatingNewOption: addNew?.isCreating,
-        variant: variant ?? 'default',
       }}
     >
       {children}
