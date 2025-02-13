@@ -14,19 +14,33 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   params,
   context,
 ) => {
-  let flow = await context.currentUser
+  const flow = await context.currentUser
     .$relatedQuery('flows')
     .findOne({
-      id: params.input.id,
+      'flows.id': params.input.id,
     })
+    .withGraphJoined('steps')
+    .orderBy('steps.position', 'asc')
     .throwIfNotFound()
 
+  // Do nothing if status did not change
   if (flow.active === params.input.active) {
     return flow
   }
 
-  flow = await flow.$query().withGraphFetched('steps').patchAndFetch({
+  // Check that step positions are contiguous when publishing
+  if (
+    params.input.active &&
+    !flow.steps.every((step, index) => step.position === index + 1)
+  ) {
+    throw new Error(
+      'Step positions are out of order. Please contact support@plumber.gov.sg for help.',
+    )
+  }
+
+  await flow.$query().patch({
     active: params.input.active,
+    publishedAt: params.input.active ? new Date().toISOString() : null,
   })
 
   const triggerStep = await flow.getTriggerStep()
@@ -37,13 +51,7 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   }
 
   if (trigger.type !== 'webhook') {
-    if (flow.active) {
-      // FIXME (ogp-weeloong): update published date for all flows in separate
-      // PR.
-      flow = await flow.$query().patchAndFetch({
-        publishedAt: new Date().toISOString(),
-      })
-
+    if (params.input.active) {
       const jobName = `${JOB_NAME}-${flow.id}`
 
       await flowQueue.add(

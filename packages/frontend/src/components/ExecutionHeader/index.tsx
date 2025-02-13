@@ -1,19 +1,44 @@
 import type { IExecution } from '@plumber/types'
 
-import { Fragment, ReactElement } from 'react'
-import { Flex, Stack, Text } from '@chakra-ui/react'
-import { Tooltip } from '@opengovsg/design-system-react'
+import { Fragment, ReactElement, useCallback } from 'react'
+import { BiChevronLeft } from 'react-icons/bi'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Flex, Icon, Link, Stack, Text } from '@chakra-ui/react'
+import { Button, Tooltip } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
+
+import * as URLS from '@/config/urls'
 
 type ExecutionHeaderProps = {
   execution: IExecution
 }
 
-function ExecutionName(props: Pick<IExecution['flow'], 'name'>) {
+function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
+  const { id, name } = props
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const backToPage = searchParams.get('backToPage')
+
+  const handleBack = useCallback(() => {
+    let backUrl = URLS.EXECUTIONS_FOR_FLOW(id)
+
+    if (backToPage && /^\d+$/.test(backToPage)) {
+      backUrl += `?page=${backToPage}`
+    }
+    navigate(backUrl)
+  }, [navigate, id, backToPage])
+
   return (
-    <Text textStyle="h4" mb={4}>
-      {props.name}
-    </Text>
+    <Flex gap={2} alignItems="center">
+      <Button as={Link} variant="link" onClick={handleBack}>
+        <Icon
+          boxSize={6}
+          color="interaction.support.disabled-content"
+          as={BiChevronLeft}
+        />
+      </Button>
+      <Text textStyle="h4">{name}</Text>
+    </Flex>
   )
 }
 
@@ -48,6 +73,7 @@ export default function ExecutionHeader(
   props: ExecutionHeaderProps,
 ): ReactElement {
   const { execution } = props
+  const { flow } = execution
 
   if (!execution) {
     return <Fragment />
@@ -58,13 +84,14 @@ export default function ExecutionHeader(
       <Stack
         direction={{ base: 'column', sm: 'row' }}
         justifyContent="space-between"
+        alignItems="center"
       >
-        <ExecutionDate createdAt={execution.createdAt} />
+        <ExecutionName name={flow.name} id={flow.id} />
         <ExecutionId id={execution.id} />
       </Stack>
 
-      <Stack direction="row">
-        <ExecutionName name={execution.flow.name} />
+      <Stack direction="row" justifyContent="flex-end">
+        <ExecutionDate createdAt={execution.createdAt} />
       </Stack>
     </Stack>
   )
