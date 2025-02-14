@@ -97,6 +97,27 @@ describe('M365 request error handlers', () => {
     vi.restoreAllMocks()
   })
 
+  it.each([500, 502])(
+    'logs a warning and throws a RetriableError with default step delay on %s',
+    async (status) => {
+      mockAxiosAdapterToThrowOnce(status)
+      await http
+        .get('/test-url')
+        .then(() => {
+          expect.unreachable()
+        })
+        .catch((error): void => {
+          expect(error).toBeInstanceOf(RetriableError)
+          expect(error.delayType).toEqual('step')
+          expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
+        })
+      expect(mocks.logWarning).toHaveBeenCalledWith(
+        expect.stringContaining(`HTTP ${status}`),
+        expect.objectContaining({ event: `m365-http-${status}` }),
+      )
+    },
+  )
+
   it('logs a warning and throws a RetriableError with default step delay on 503, if response does not have retry-after', async () => {
     mockAxiosAdapterToThrowOnce(503)
     await http
