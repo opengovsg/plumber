@@ -59,7 +59,7 @@ const handle429: ThrowingHandler = ($, error) => {
 //
 // Retry failures due to flakey M365 servers
 //
-const handle500and503: ThrowingHandler = function ($, error) {
+const handle500and502and503: ThrowingHandler = function ($, error) {
   // Log to monitor spikes, just in case
   const status = error.response.status
   logger.warn(`Received HTTP ${status} from MS Graph`, {
@@ -115,8 +115,9 @@ const errorHandler: IApp['requestErrorHandler'] = async function ($, error) {
     case 429: // Rate limited
       return handle429($, error)
     case 500:
+    case 502: // Bad gateway
     case 503: // Transient error
-      return handle500and503($, error)
+      return handle500and502and503($, error)
     case 509: // Bandwidth limit reached
       return handle509($, error)
   }
