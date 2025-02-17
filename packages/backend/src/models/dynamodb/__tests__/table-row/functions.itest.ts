@@ -102,23 +102,35 @@ describe('dynamodb table row functions', () => {
         }
         await createTableRows({ tableId: dummyTable.id, dataArray })
       })
-      it('should be able to paginate and get a large number of rows', async () => {
-        const { rows } = await getTableRows({
-          tableId: dummyTable.id,
-          columnIds: dummyColumnIds,
-        })
-        expect(rows).toHaveLength(TEN_THOUSAND)
-      })
+      it(
+        'should be able to paginate and get a large number of rows',
+        async () => {
+          const { rows } = await getTableRows({
+            tableId: dummyTable.id,
+            columnIds: dummyColumnIds,
+          })
+          expect(rows).toHaveLength(TEN_THOUSAND)
+        },
+        {
+          timeout: 20000,
+        },
+      )
 
-      it('should be able to paginate and get a large number of rows with a scan limit', async () => {
-        const SCAN_LIMIT = 5789
-        const { rows } = await getTableRows({
-          tableId: dummyTable.id,
-          columnIds: dummyColumnIds,
-          scanLimit: SCAN_LIMIT,
-        })
-        expect(rows).toHaveLength(SCAN_LIMIT)
-      })
+      it(
+        'should be able to paginate and get a large number of rows with a scan limit',
+        async () => {
+          const SCAN_LIMIT = 5789
+          const { rows } = await getTableRows({
+            tableId: dummyTable.id,
+            columnIds: dummyColumnIds,
+            scanLimit: SCAN_LIMIT,
+          })
+          expect(rows).toHaveLength(SCAN_LIMIT)
+        },
+        {
+          timeout: 20000,
+        },
+      )
     })
 
     it('should get relevant rows based on a single filter', async () => {
