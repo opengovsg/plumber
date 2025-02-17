@@ -90,6 +90,37 @@ describe('dynamodb table row functions', () => {
       expect(Object.keys(rows[0])).not.toContain('randomcol')
     })
 
+    describe('get table rows with scan limit', () => {
+      const TEN_THOUSAND = 10000
+      // i tried using beforeAll hook to cut down the setup time, but couldnt get it to work for this nested describe
+      beforeEach(async () => {
+        const dataArray = []
+        for (let i = 0; i < TEN_THOUSAND; i++) {
+          dataArray.push(
+            generateMockTableRowData({ columnIds: dummyColumnIds }),
+          )
+        }
+        await createTableRows({ tableId: dummyTable.id, dataArray })
+      })
+      it('should be able to paginate and get a large number of rows', async () => {
+        const { rows } = await getTableRows({
+          tableId: dummyTable.id,
+          columnIds: dummyColumnIds,
+        })
+        expect(rows).toHaveLength(TEN_THOUSAND)
+      })
+
+      it('should be able to paginate and get a large number of rows with a scan limit', async () => {
+        const SCAN_LIMIT = 5789
+        const { rows } = await getTableRows({
+          tableId: dummyTable.id,
+          columnIds: dummyColumnIds,
+          scanLimit: SCAN_LIMIT,
+        })
+        expect(rows).toHaveLength(SCAN_LIMIT)
+      })
+    })
+
     it('should get relevant rows based on a single filter', async () => {
       const dataArray = []
       for (let i = 0; i < 1000; i++) {

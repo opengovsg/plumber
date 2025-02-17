@@ -1,11 +1,10 @@
-import type { IJSONObject, IStep } from '@plumber/types'
+import type { IJSONObject, IStep, IStepConfig } from '@plumber/types'
 
 import { type StaticHookArguments, ValidationError } from 'objection'
 import { URL } from 'url'
 
 import apps from '@/apps'
 import appConfig from '@/config/app'
-import type { StepConfig } from '@/graphql/__generated__/types.generated'
 
 import Base from './base'
 import Connection from './connection'
@@ -29,7 +28,7 @@ class Step extends Base {
   connection?: Connection
   flow: Flow
   executionSteps: ExecutionStep[]
-  config: StepConfig
+  config: IStepConfig
 
   static tableName = 'steps'
 
