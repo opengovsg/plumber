@@ -293,20 +293,31 @@ export const getTableRows = async ({
   tableId,
   columnIds,
   filters,
+  order = 'asc',
   stringifiedCursor,
+  scanLimit,
 }: {
   tableId: string
   columnIds?: string[]
   filters?: TableRowFilter[]
+  order?: 'asc' | 'desc'
   /**
    * if stringifiedCursor is 'start', we will fetch the first page of results
    * if undefined, we will auto-paginate
    */
   stringifiedCursor?: string | 'start'
+  /**
+   * Optional limit on the total number of rows scanned.
+   */
+  scanLimit?: number
 }): Promise<{
   rows: TableRowOutput[]
   stringifiedCursor?: string
 }> => {
+  if (stringifiedCursor && scanLimit) {
+    throw new Error('stringifiedCursor and scanLimit cannot both be provided')
+  }
+
   try {
     // need to use ProjectionExpression to select nested attributes
     const { ProjectionExpression, ExpressionAttributeNames } =
@@ -316,6 +327,7 @@ export const getTableRows = async ({
         indexUsed: 'byCreatedAt',
       })
     const tableRows = []
+    let remainingScanLimit = scanLimit ?? Infinity
     let cursor: any =
       stringifiedCursor && stringifiedCursor !== 'start'
         ? JSON.parse(stringifiedCursor)
@@ -326,12 +338,13 @@ export const getTableRows = async ({
         addFiltersToQuery(query, filters)
       }
       const response = await query.go({
-        order: 'asc',
+        order,
         pages: 'all', // this is ignored, we need to paginate manually
         cursor,
         params: {
           ProjectionExpression,
           ExpressionAttributeNames,
+          Limit: remainingScanLimit,
         },
         // use data:'raw' to bypass electrodb formatting, since we're using ProjectionExpression to select nested attributes
         // ref: https://electrodb.dev/en/queries/get/#execution-options
@@ -339,21 +352,25 @@ export const getTableRows = async ({
         pager: 'raw',
         ignoreOwnership: true,
       })
+
       // need to explicitly cast to DynamoDB's raw output because of the 'raw' option
       const data = response.data as unknown as QueryCommandOutput & {
         Items: TableRowOutput[]
       }
       tableRows.push(...data.Items)
+      remainingScanLimit -= data.ScannedCount
       cursor = data.LastEvaluatedKey
       // loop only if cursor is
-    } while (cursor && !stringifiedCursor)
+    } while (cursor && !stringifiedCursor && remainingScanLimit > 0)
 
     return {
       rows: tableRows.map((row) => ({
         ...row,
         data: row.data || {}, // data can be undefined if values are empty
       })),
-      stringifiedCursor: cursor ? JSON.stringify(cursor) : undefined,
+      stringifiedCursor:
+        cursor && stringifiedCursor ? JSON.stringify(cursor) : undefined,
+      // if no cursor was passed in, we should not return
     }
   } catch (e: unknown) {
     handleDynamoDBError(e)
