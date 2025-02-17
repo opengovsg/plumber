@@ -3,6 +3,7 @@ import { IApp } from '@plumber/types'
 import getTransferDetails from './common/get-transfer-details'
 import actions from './actions'
 import dynamicData from './dynamic-data'
+import queue from './queue'
 
 const app: IApp = {
   name: 'Tiles',
@@ -17,6 +18,7 @@ const app: IApp = {
   actions,
   dynamicData,
   getTransferDetails,
+  queue,
 }
 
 export default app
