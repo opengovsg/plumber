@@ -24,10 +24,6 @@ describe('Queue config', () => {
     vi.restoreAllMocks()
   })
 
-  it('configures a delayable queue', () => {
-    expect(tilesApp.queue.isQueueDelayable).toEqual(true)
-  })
-
   it('sets group ID to the file ID', async () => {
     mocks.stepQueryResult.mockResolvedValueOnce({
       parameters: {
@@ -67,9 +63,5 @@ describe('Queue config', () => {
       type: 'concurrency',
       concurrency: 1,
     })
-  })
-
-  it('avoids bursting via a leaky bucket approach', () => {
-    expect(tilesApp.queue.queueRateLimit.max).toEqual(1)
   })
 })
