@@ -24,4 +24,3 @@
 import './m365'
 import './formsg'
 import './postman-sms'
-import './tiles'

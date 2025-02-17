@@ -1,6 +1,5 @@
 import type { IAppQueue } from '@plumber/types'
 
-import { TILES_INTERVAL_BETWEEN_FIND_SINGLE_ROW_MS } from '@/config/app-env-vars/tiles'
 import Step from '@/models/step'
 
 // Define actions that should be queued
@@ -38,11 +37,7 @@ const queueSettings = {
     type: 'concurrency',
     concurrency: 1,
   },
-  isQueueDelayable: true,
-  queueRateLimit: {
-    max: 1,
-    duration: TILES_INTERVAL_BETWEEN_FIND_SINGLE_ROW_MS,
-  },
+  isQueueDelayable: false,
 } satisfies IAppQueue
 
 export default queueSettings
