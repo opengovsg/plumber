@@ -72,7 +72,8 @@ const action: IRawAction = {
       variables: true,
     },
     {
-      label: 'Responses',
+      label: 'Additional responses',
+      description: 'These will be included in reports exported from PaySG',
       key: 'responses',
       type: 'multirow' as const,
       required: false,
