@@ -1,5 +1,7 @@
 import { IGlobalVariable, ITransferDetails } from '@plumber/types'
 
+import get from 'lodash.get'
+
 import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 import { getEmptyConnectionDetails } from '@/helpers/get-default-transfer-details'
 import logger from '@/helpers/logger'
@@ -52,17 +54,27 @@ async function getTransferDetails(
       connectionName: results.data.name,
     }
   } catch (error) {
-    logger.warn('M365 excel file cannot be found after pipe transfer', {
+    const errorCode = get(error, 'details.error.code', '')
+    logger.warn('Error with M365 excel before pipe transfer', {
       event: 'm365-excel-pipe-transfer',
+      errorCode,
       error,
       flowId: $.flow.id,
       stepId: $.step.id,
     })
 
+    if (errorCode === 'itemNotFound') {
+      return {
+        position: $.step.position,
+        appName: $.app.name,
+        instructions: 'M365 file cannot be found in your folder',
+      }
+    }
+
     return {
       position: $.step.position,
       appName: $.app.name,
-      instructions: 'M365 file cannot be found in your folder',
+      instructions: 'Unknown error with M365 excel',
     }
   }
 }
