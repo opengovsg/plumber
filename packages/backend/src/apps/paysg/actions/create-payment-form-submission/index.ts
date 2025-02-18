@@ -19,6 +19,7 @@ const action: IRawAction = {
       key: 'formId',
       type: 'string' as const,
       required: true,
+      placeholder: 'e.g. https://pay.gov.sg/forms/aBC123Def456HijK789LMn',
     },
     {
       label: 'FormSG Form ID',
