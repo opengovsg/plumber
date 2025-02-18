@@ -36,7 +36,6 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
       inputRef,
       isClearable,
       size,
-      variant,
     } = useSelectContext()
 
     const mergedInputRef = useMergeRefs(inputRef, ref)
@@ -127,7 +126,6 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
               required: isRequired,
               'aria-expanded': !!isOpen,
             })}
-            variant={variant}
           />
           <ToggleChevron />
         </InputGroup>
