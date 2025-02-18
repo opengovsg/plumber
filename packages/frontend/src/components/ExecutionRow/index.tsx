@@ -23,17 +23,21 @@ import * as URLS from '@/config/urls'
 
 type ExecutionRowProps = {
   execution: IExecution
+  page: number
 }
 
 export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
-  const { execution } = props
-  const { flow } = execution
+  const { execution, page } = props
+  const { flow, executionSteps } = execution
 
   const createdAt = DateTime.fromMillis(parseInt(execution.createdAt, 10))
   const relativeCreatedAt = createdAt.toRelative()
 
   return (
-    <Link to={URLS.EXECUTION(execution.id)} data-test="execution-row">
+    <Link
+      to={`${URLS.EXECUTION(execution.id)}?backToPage=${page}`}
+      data-test="execution-row"
+    >
       <Card
         boxShadow="none"
         _hover={{ bg: 'interaction.muted.neutral.hover' }}
@@ -63,7 +67,12 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
           >
             <GridItem area="apps">
               <HStack>
-                <FlowAppIcons steps={flow.steps} />
+                <FlowAppIcons
+                  // NOTE: passing executionSteps into steps props to preserve deleted steps
+                  steps={[...executionSteps].sort(
+                    (a, b) => Number(a.createdAt) - Number(b.createdAt),
+                  )}
+                />
               </HStack>
             </GridItem>
             <GridItem area="title">

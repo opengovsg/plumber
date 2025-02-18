@@ -9,7 +9,7 @@ import Applications from '@/pages/Applications'
 import EditorRoutes from '@/pages/Editor/routes'
 import Execution from '@/pages/Execution'
 import Executions from '@/pages/Executions'
-import ExecutionsForFlowPage from '@/pages/Executions/ExecutionsForFlowPage'
+import ExecutionsForFlow from '@/pages/ExecutionsForFlow'
 import Flow from '@/pages/Flow'
 import Flows from '@/pages/Flows'
 import Login from '@/pages/Login'
@@ -48,7 +48,7 @@ export default createRoutesFromElements(
       path={URLS.EXECUTIONS_FOR_FLOW_PATTERN}
       element={
         <Layout>
-          <ExecutionsForFlowPage />
+          <ExecutionsForFlow />
         </Layout>
       }
     />

@@ -14,6 +14,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
   }
 
   return await Step.transaction(async (trx) => {
+    await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
     // Include SELECTs in transaction too just in case there's concurrent modification.
     const steps = await context.currentUser
       .$relatedQuery('steps', trx)
@@ -43,7 +44,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
 
     /**
      * NOTE: do not delete execution steps
-     * The deletion causes RDS CPU Utilisation to spike
+     * The deletion causes RDS CPU Utilisation to spike for high volume pipes.
      */
     // await Step.relatedQuery('executionSteps', trx).for(stepIds).delete()
     await Step.query(trx).findByIds(stepIds).delete()
