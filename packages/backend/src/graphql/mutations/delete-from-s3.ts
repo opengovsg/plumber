@@ -1,5 +1,6 @@
 import { COMMON_S3_BUCKET, deleteObjects, parseS3Id } from '@/helpers/s3'
 import Flow from '@/models/flow'
+import Step from '@/models/step'
 
 import { MutationResolvers } from '../__generated__/types.generated'
 
@@ -31,15 +32,16 @@ const deleteFromS3: MutationResolvers['deleteFromS3'] = async (
       const { attachments = [] } = parameters
 
       if (attachments.length > 0 && attachments.includes(id)) {
-        await context.currentUser
-          .$relatedQuery('steps')
-          .patch({
-            parameters: {
-              ...parameters,
-              attachments: attachments.filter((a) => a !== id),
-            },
-          })
-          .where('steps.id', stepId)
+        await Step.transaction(async (trx) => {
+          await Step.query(trx)
+            .patch({
+              parameters: {
+                ...parameters,
+                attachments: attachments.filter((a) => a !== id),
+              },
+            })
+            .where('steps.id', stepId)
+        })
       }
     },
   )
