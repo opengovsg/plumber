@@ -76,6 +76,7 @@ export const requestSchema = z.object({
     .string()
     .trim()
     .max(500, { message: 'Description cannot be more than 500 characters' })
+    .transform((value) => value || undefined)
     .optional(),
   responses: z.array(
     z.object({
