@@ -3,7 +3,7 @@ import type { IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import StepError, { GenericSolution } from '@/errors/step'
+import StepError from '@/errors/step'
 
 import { requestSchema } from './schema'
 
@@ -79,14 +79,14 @@ const action: IRawAction = {
       required: false,
       subFields: [
         {
-          label: 'Question',
+          placeholder: 'Question',
           key: 'question',
           type: 'string' as const,
           required: true,
           variables: true,
         },
         {
-          label: 'Answer',
+          placeholder: 'Answer',
           key: 'answer',
           type: 'string' as const,
           required: true,
@@ -119,7 +119,7 @@ const action: IRawAction = {
 
         throw new StepError(
           `${firstError.message} at "${firstError.path}"`,
-          GenericSolution.ReconfigureInvalidField,
+          `${firstError.message} under set up step`,
           $.step.position,
           $.app.name,
         )
