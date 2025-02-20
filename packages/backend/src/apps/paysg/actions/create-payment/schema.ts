@@ -67,7 +67,7 @@ export const requestSchema = z
       .string()
       .trim()
       .min(1, { message: 'Empty description' })
-      .max(500, { message: 'Payer email cannot be more than 500 characters' }),
+      .max(500, { message: 'Description cannot be more than 500 characters' }),
     paymentAmountCents: z
       .string()
       .trim()

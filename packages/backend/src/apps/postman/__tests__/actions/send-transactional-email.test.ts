@@ -14,7 +14,6 @@ const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
   getDefaultReplyTo: vi.fn(() => 'replyTo@open.gov.sg'),
   sendBlacklistEmail: vi.fn(),
-  getLdFlagValue: vi.fn(),
 }))
 
 vi.mock('@/helpers/s3', async () => {
@@ -35,10 +34,6 @@ vi.mock('../../common/parameters-helper', () => ({
 vi.mock('../../common/send-blacklist-email', () => ({
   sendBlacklistEmail: mocks.sendBlacklistEmail,
   createRequestBlacklistFormLink: vi.fn(),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
 }))
 
 describe('send transactional email', () => {
