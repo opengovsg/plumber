@@ -9,6 +9,11 @@ import {
   DISALLOWED_IP_RESOLVED_ERROR,
   RECURSIVE_WEBHOOK_ERROR_NAME,
 } from '../../common/check-urls'
+import {
+  CUSTOM_API_TIMEOUT,
+  CUSTOM_API_TIMEOUT_ERROR,
+  CUSTOM_API_TIMEOUT_ERROR_STR,
+} from '../../common/constants'
 
 import { requestSchema } from './schema'
 
@@ -105,6 +110,7 @@ const action: IRawAction = {
         data: parsedData,
         maxRedirects: 0,
         headers: customHeaders,
+        timeout: CUSTOM_API_TIMEOUT,
         //  overwriting this to allow redirects to resolve
         validateStatus: (status) =>
           (status >= 200 && status < 300) ||
@@ -166,6 +172,16 @@ const action: IRawAction = {
           'If you think this is a mistake, please contact us.',
           $.step.position,
           $.app.name,
+        )
+      }
+
+      if (err.message === CUSTOM_API_TIMEOUT_ERROR) {
+        throw new StepError(
+          CUSTOM_API_TIMEOUT_ERROR_STR,
+          'The request took too long to respond. Please check your network connection and try again.',
+          $.step.position,
+          $.app.name,
+          err,
         )
       }
 

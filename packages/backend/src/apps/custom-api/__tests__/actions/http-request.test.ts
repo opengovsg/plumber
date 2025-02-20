@@ -12,6 +12,11 @@ import {
   DISALLOWED_IP_RESOLVED_ERROR,
   RECURSIVE_WEBHOOK_ERROR_NAME,
 } from '../../common/check-urls'
+import {
+  CUSTOM_API_TIMEOUT,
+  CUSTOM_API_TIMEOUT_ERROR,
+  CUSTOM_API_TIMEOUT_ERROR_STR,
+} from '../../common/constants'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
@@ -55,7 +60,7 @@ describe('make http request', () => {
     $.step.parameters.url = 'http://test.local/endpoint?1234'
     mocks.httpRequest.mockReturnValue('mock response')
 
-    await makeRequestAction.run($).catch(() => null)
+    await makeRequestAction.run($).catch((): void => null)
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: $.step.parameters.url,
@@ -75,7 +80,7 @@ describe('make http request', () => {
     ]
     mocks.httpRequest.mockReturnValue('mock response')
 
-    await makeRequestAction.run($).catch(() => null)
+    await makeRequestAction.run($).catch((): void => null)
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: $.step.parameters.url,
@@ -227,6 +232,32 @@ describe('make http request', () => {
     await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
   })
 
+  it('should include timeout in the request config', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+    mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+    await makeRequestAction.run($)
+
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timeout: CUSTOM_API_TIMEOUT,
+      }),
+    )
+  })
+
+  it('should throw step error if request times out', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+
+    const timeoutError = new Error(CUSTOM_API_TIMEOUT_ERROR)
+    mocks.httpRequest.mockRejectedValueOnce(timeoutError)
+
+    await expect(makeRequestAction.run($)).rejects.toThrow(
+      CUSTOM_API_TIMEOUT_ERROR_STR,
+    )
+  })
+
   describe('tests that data is valid JSON', () => {
     // NOTE: caters for existing users that are sending strings in the data field
     it.each(['[1, 2, 3]', 'meep meep'])(
@@ -238,7 +269,7 @@ describe('make http request', () => {
 
         mocks.httpRequest.mockReturnValue('mock response')
 
-        await makeRequestAction.run($).catch(() => null)
+        await makeRequestAction.run($).catch((): void => null)
         expect(mocks.httpRequest).toHaveBeenCalledWith(
           expect.objectContaining({
             url: $.step.parameters.url,
@@ -266,7 +297,7 @@ describe('make http request', () => {
         $.step.parameters.url = 'http://test.local/endpoint?1234'
         mocks.httpRequest.mockReturnValue('mock response')
 
-        await makeRequestAction.run($).catch(() => null)
+        await makeRequestAction.run($).catch((): void => null)
         expect(mocks.httpRequest).toHaveBeenCalledWith(
           expect.objectContaining({
             url: $.step.parameters.url,
