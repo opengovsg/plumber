@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { Link, useMatch } from 'react-router-dom'
+import { Link, matchPath, useLocation } from 'react-router-dom'
 import { Box, Text } from '@chakra-ui/react'
 import {
   Badge,
@@ -20,8 +20,12 @@ function NavigationSidebarItem({
   link,
   closeDrawer,
 }: NavigationSidebarItemProps): JSX.Element {
-  const { to, Icon: icon, text } = link
-  const selected = useMatch({ path: to, end: true })
+  const { pathname } = useLocation()
+
+  const { to, Icon: icon, text, otherLinks } = link
+  const selected = [to, ...(otherLinks || [])].some((link) =>
+    matchPath(link, pathname),
+  )
 
   return (
     <SidebarItem

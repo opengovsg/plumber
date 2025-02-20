@@ -1,49 +1,39 @@
-import type { IExecution } from '@plumber/types'
+import type { IFlow } from '@plumber/types'
 
-import { ReactElement, useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Center, Flex } from '@chakra-ui/react'
+import { Box, Center, Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
-import ExecutionRow from '@/components/ExecutionRow'
-import { StatusType } from '@/components/ExecutionStatusMenu'
+import DebouncedSearchInput from '@/components/DebouncedSearchInput'
+import FlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
-import { GET_EXECUTIONS } from '@/graphql/queries/get-executions'
+import * as URLS from '@/config/urls'
+import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
-import SearchWithFilterInput from './components/SearchWithFilterInput'
+const RESULTS_PER_PAGE = 10
+const EXECUTIONS_TITLE = 'Select a pipe to view executions'
 
-const EXECUTIONS_PER_PAGE = 10
-const EXECUTIONS_TITLE = 'Executions'
-
-interface ExecutionParameters {
-  page: number
-  status: string
-  input: string
-}
-
-interface ExecutionsListProps {
-  executions: IExecution[]
-  isSearching: boolean
-  isLoading: boolean
-}
-
-const getLimitAndOffset = (params: ExecutionParameters) => ({
-  limit: EXECUTIONS_PER_PAGE,
-  offset: (params.page - 1) * EXECUTIONS_PER_PAGE,
-  ...(params.status !== StatusType.Waiting && { status: params.status }),
-  searchInput: params.input,
+const getLimitAndOffset = (page: number) => ({
+  limit: RESULTS_PER_PAGE,
+  offset: (page - 1) * RESULTS_PER_PAGE,
 })
 
-function ExecutionsList({
-  executions,
-  isLoading,
-  isSearching,
-}: ExecutionsListProps) {
-  const hasExecutions = executions.length > 0
+interface FlowsInternalProps {
+  isLoading: boolean
+  isSearching: boolean
+  flows: IFlow[]
+}
+
+function FlowsList({ isLoading, isSearching, flows }: FlowsInternalProps) {
+  const hasFlows = flows.length > 0
+  const hasNoUserFlows = !hasFlows && !isSearching
+  const isEmptySearchResults = !hasFlows && isSearching
 
   if (isLoading) {
     return (
@@ -53,56 +43,58 @@ function ExecutionsList({
     )
   }
 
-  if (!hasExecutions) {
+  if (hasNoUserFlows) {
+    return <>Create a pipe to see executions</>
+  }
+
+  if (isEmptySearchResults) {
     return (
       <NoResultFound
-        description={
-          isSearching ? "We couldn't find anything" : 'No executions yet'
-        }
-        action={
-          isSearching
-            ? 'Try using different keywords or checking for typos.'
-            : 'Executions will appear here when your pipe has started running.'
-        }
+        description="We couldn't find anything"
+        action="Try using different keywords or checking for typos."
       />
     )
   }
-
   return (
-    <>
-      {executions.map((execution) => (
-        <ExecutionRow key={execution.id} execution={execution} />
+    <Box>
+      {flows.map((flow) => (
+        <FlowRow
+          key={flow.id}
+          flow={flow}
+          isExecution={true}
+          showMenu={false}
+          showTimestamp={false}
+        />
       ))}
-    </>
+    </Box>
   )
 }
 
-export default function Executions(): ReactElement {
+export default function Executions() {
   const { input, page, status, setSearchParams, isSearching } =
     usePaginationAndFilter()
+  const navigate = useNavigate()
 
-  const { data, loading } = useQuery(GET_EXECUTIONS, {
-    variables: getLimitAndOffset({
-      page,
-      status,
-      input,
-    }),
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 5000,
+  const { data, loading } = useQuery(GET_FLOWS, {
+    variables: {
+      ...getLimitAndOffset(page),
+      name: input,
+    },
   })
 
-  const getExecutions = data?.getExecutions || {}
-  const { pageInfo, edges } = getExecutions
+  const { pageInfo, edges } = data?.getFlows || {}
+  const flows: IFlow[] = useMemo(
+    () => edges?.map(({ node }: { node: IFlow }) => node) ?? [],
+    [edges],
+  )
 
-  const executions: IExecution[] =
-    edges?.map(({ node }: { node: IExecution }) => node) ?? []
-
-  const hasNoUserExecutions = executions.length === 0 && !isSearching
   const totalCount: number = pageInfo?.totalCount ?? 0
-  const hasPagination = !loading && totalCount > EXECUTIONS_PER_PAGE
+  const hasPagination = !loading && totalCount > RESULTS_PER_PAGE
+  const hasNoUserFlows = flows.length === 0 && !isSearching
 
-  // ensure invalid pages won't be accessed even after deleting executions
-  const lastPage = Math.ceil(totalCount / EXECUTIONS_PER_PAGE)
+  // ensure invalid pages won't be accessed even after deleting flows
+  const lastPage = Math.ceil(totalCount / RESULTS_PER_PAGE)
+
   useEffect(() => {
     // Defer the search params update till after the initial render
     if (lastPage !== 0 && page > lastPage) {
@@ -110,34 +102,46 @@ export default function Executions(): ReactElement {
     }
   }, [lastPage, page, setSearchParams])
 
+  useEffect(() => {
+    if (!loading && input && flows && status === 'failure') {
+      const matchingPipeIds = flows
+        .filter((f) => f.name === input)
+        .map((f) => f.id)
+      if (matchingPipeIds.length === 1) {
+        navigate(
+          `${URLS.EXECUTIONS_FOR_FLOW(matchingPipeIds[0])}?status=failure`,
+          {
+            replace: true,
+          },
+        )
+      } else {
+        setSearchParams({ status: '' })
+      }
+    }
+  }, [loading, flows, input, navigate, status, setSearchParams])
+
   return (
     <Container py={9}>
-      <PageTitle
-        title={EXECUTIONS_TITLE}
-        searchComponent={
-          !hasNoUserExecutions && (
-            <SearchWithFilterInput
+      {!hasNoUserFlows && (
+        <PageTitle
+          title={EXECUTIONS_TITLE}
+          searchComponent={
+            <DebouncedSearchInput
               searchValue={input}
               onChange={(input) => setSearchParams({ input })}
-              status={status}
-              onStatusChange={(status) => setSearchParams({ status })}
             />
-          )
-        }
-      />
+          }
+        />
+      )}
 
-      <ExecutionsList
-        executions={executions}
-        isLoading={loading}
-        isSearching={isSearching}
-      />
+      <FlowsList flows={flows} isLoading={loading} isSearching={isSearching} />
 
       {hasPagination && (
         <Flex justifyContent="center" mt={6}>
           <Pagination
             currentPage={pageInfo?.currentPage}
             onPageChange={(page) => setSearchParams({ page })}
-            pageSize={EXECUTIONS_PER_PAGE}
+            pageSize={RESULTS_PER_PAGE}
             totalCount={totalCount}
           />
         </Flex>

@@ -10,6 +10,7 @@ import {
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import { createTableRow, TableRowFilter } from '@/models/dynamodb/table-row'
+import * as tableFunctions from '@/models/dynamodb/table-row/functions'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
@@ -17,6 +18,24 @@ import Context from '@/types/express/context'
 
 import tiles from '../..'
 import findSingleRowAction from '../../actions/find-single-row'
+
+const mocks = vi.hoisted(() => ({
+  stepQueryResult: vi.fn().mockResolvedValue({
+    config: {
+      adminOverride: {
+        tileScanLimit: 100,
+      },
+    },
+  }),
+}))
+
+vi.mock('@/models/step', () => ({
+  default: {
+    query: vi.fn().mockReturnThis(),
+    findById: vi.fn().mockReturnThis(),
+    throwIfNotFound: mocks.stepQueryResult,
+  },
+}))
 
 describe('tiles create row action', () => {
   let context: Context
@@ -106,5 +125,38 @@ describe('tiles create row action', () => {
       })
       .where({ table_id: $.step.parameters.tableId })
     await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+  })
+
+  it('should call getTableRows with scan limit if exists in step config', async () => {
+    const getTableRowsSpy = vi
+      .spyOn(tableFunctions, 'getTableRows')
+      .mockResolvedValueOnce({
+        rows: [],
+        stringifiedCursor: undefined,
+      })
+    await findSingleRowAction.run($)
+    expect(getTableRowsSpy).toHaveBeenCalledWith({
+      tableId: $.step.parameters.tableId,
+      filters: $.step.parameters.filters,
+      scanLimit: 100,
+      order: 'asc',
+    })
+  })
+
+  it('should call getTableRows with scan limit and order', async () => {
+    const getTableRowsSpy = vi
+      .spyOn(tableFunctions, 'getTableRows')
+      .mockResolvedValueOnce({
+        rows: [],
+        stringifiedCursor: undefined,
+      })
+    $.step.parameters.returnLastRow = true
+    await findSingleRowAction.run($)
+    expect(getTableRowsSpy).toHaveBeenCalledWith({
+      tableId: $.step.parameters.tableId,
+      filters: $.step.parameters.filters,
+      scanLimit: 100,
+      order: 'desc',
+    })
   })
 })

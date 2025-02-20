@@ -23,6 +23,7 @@ export type DrawerLink = {
   Icon: React.ElementType
   text: string
   to: string
+  otherLinks?: string[]
   isBottom?: boolean
   badge?: string
 }
@@ -47,6 +48,7 @@ const drawerLinks = [
     Icon: BiHistory,
     text: 'Executions',
     to: URLS.EXECUTIONS,
+    otherLinks: [URLS.EXECUTIONS_FOR_FLOW_PATTERN, URLS.EXECUTION_PATTERN],
   },
   {
     Icon: BiBookOpen,

@@ -8,6 +8,7 @@ import {
   TableRowFilter,
   TableRowFilterOperator,
 } from '@/models/dynamodb/table-row'
+import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
@@ -149,6 +150,7 @@ const action: IRawAction = {
       returnLastRow: boolean | undefined
     }
 
+    const step = await Step.query().findById($.step.id).throwIfNotFound()
     /**
      * Check for columns first, there will not be any columns if the tile has been deleted.
      */
@@ -175,13 +177,16 @@ const action: IRawAction = {
         $.app.name,
       )
     }
+    // Retrieve the manual scan limit override, converting it to a number.
+    // If the conversion results in NaN, we set scanLimit to undefined.
+    const scanLimitRaw = +step.config?.adminOverride?.tileScanLimit
+    const scanLimit = isNaN(scanLimitRaw) ? undefined : scanLimitRaw
 
-    /**
-     * When columnIds are not provided, we only return rowId
-     */
     const { rows } = await getTableRows({
       tableId,
       filters,
+      order: returnLastRow ? 'desc' : 'asc',
+      scanLimit,
     })
 
     if (!rows || !rows.length) {
@@ -192,9 +197,7 @@ const action: IRawAction = {
       })
       return
     }
-    const rowIdToUse = returnLastRow
-      ? rows[rows.length - 1].rowId
-      : rows[0].rowId
+    const rowIdToUse = rows[0].rowId
 
     /**
      * We use raw row data instead of mapped column names as we want them to

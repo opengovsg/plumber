@@ -25,29 +25,38 @@ export async function getTestExecutionSteps(
 
   if (flow.testExecution && !ignoreTestExecutionId) {
     const testExecutionSteps = flow.testExecution.executionSteps
-    testExecutionSteps.sort((a, b) => a.step.position - b.step.position)
+
+    /**
+     * NOTE: filters out test execution steps for steps that have been deleted
+     */
+    const filteredTestExecutionSteps = testExecutionSteps
+      .filter((e) => e.step)
+      .sort((a, b) => a.step.position - b.step.position)
 
     /**
      * Sanity check to ensure not more than 1 execution step per step is returned
      * If more than 1 exists, we return the latest one sorted by createdAt
      */
     const stepIds = new Set<string>()
-    const dedupedTestExecutionSteps = testExecutionSteps.reduce((acc, curr) => {
-      if (stepIds.has(curr.stepId)) {
-        const otherExecutionStep = acc[acc.length - 1]
-        // possible bug in single step testing !! this should not happen
-        console.warn(
-          `Bug: More than 1 execution step found for step ${curr.stepId}`,
-        )
-        if (curr.createdAt > otherExecutionStep.createdAt) {
-          acc[acc.length - 1] = curr
+    const dedupedTestExecutionSteps = filteredTestExecutionSteps.reduce(
+      (acc, curr) => {
+        if (stepIds.has(curr.stepId)) {
+          const otherExecutionStep = acc[acc.length - 1]
+          // possible bug in single step testing !! this should not happen
+          console.warn(
+            `Bug: More than 1 execution step found for step ${curr.stepId}`,
+          )
+          if (curr.createdAt > otherExecutionStep.createdAt) {
+            acc[acc.length - 1] = curr
+          }
+        } else {
+          stepIds.add(curr.stepId)
+          acc.push(curr)
         }
-      } else {
-        stepIds.add(curr.stepId)
-        acc.push(curr)
-      }
-      return acc
-    }, [] as ExecutionStep[])
+        return acc
+      },
+      [] as ExecutionStep[],
+    )
 
     return dedupedTestExecutionSteps
   }

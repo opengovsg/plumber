@@ -1,6 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
 import { ReactElement } from 'react'
+import { BiChevronRight } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -9,6 +10,7 @@ import {
   Grid,
   GridItem,
   HStack,
+  Icon,
   Text,
   VStack,
 } from '@chakra-ui/react'
@@ -22,10 +24,18 @@ import FlowContextMenu from './FlowContextMenu'
 
 type FlowRowProps = {
   flow: IFlow
+  isExecution?: boolean
+  showMenu?: boolean
+  showTimestamp?: boolean
 }
 
 export default function FlowRow(props: FlowRowProps): ReactElement {
-  const { flow } = props
+  const {
+    flow,
+    showMenu = true,
+    showTimestamp = true,
+    isExecution = false,
+  } = props
 
   const createdAt = DateTime.fromMillis(parseInt(flow.createdAt, 10))
   const updatedAt = DateTime.fromMillis(parseInt(flow.updatedAt, 10))
@@ -42,12 +52,18 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
         borderRadius={0}
         borderBottom="1px solid"
         borderBottomColor="base.divider.medium"
+        minH={100}
       >
         <CardBody
           sx={{ cursor: 'pointer' }}
           p={0}
           as={Link}
-          to={URLS.FLOW(flow.id)}
+          to={
+            isExecution ? URLS.EXECUTIONS_FOR_FLOW(flow.id) : URLS.FLOW(flow.id)
+          }
+          display="flex"
+          alignItems="center"
+          justifyContent="stretch"
         >
           <Grid
             templateAreas={{
@@ -63,6 +79,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
               md: 'calc(30px * 3 + 8px * 2) minmax(0, auto) min-content',
             }}
             gap={6}
+            flex={1}
             alignItems="center"
             py={6}
             px={{ base: 3, md: 8 }}
@@ -90,16 +107,18 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
                 >
                   {flow?.name}
                 </Text>
-                <Text
-                  display="inline-block"
-                  w="100%"
-                  maxW="85%"
-                  color="base.content.medium"
-                  textStyle="body-2"
-                >
-                  {isUpdated && `updated ${relativeUpdatedAt}`}
-                  {!isUpdated && `created ${relativeCreatedAt}`}
-                </Text>
+                {showTimestamp && (
+                  <Text
+                    display="inline-block"
+                    w="100%"
+                    maxW="85%"
+                    color="base.content.medium"
+                    textStyle="body-2"
+                  >
+                    {isUpdated && `updated ${relativeUpdatedAt}`}
+                    {!isUpdated && `created ${relativeCreatedAt}`}
+                  </Text>
+                )}
               </VStack>
             </GridItem>
             <GridItem area="menu">
@@ -111,7 +130,11 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
                   <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
                 </Badge>
 
-                <FlowContextMenu flow={flow} />
+                {showMenu ? (
+                  <FlowContextMenu flow={flow} />
+                ) : (
+                  <Icon boxSize={5} as={BiChevronRight} />
+                )}
               </Flex>
             </GridItem>
           </Grid>

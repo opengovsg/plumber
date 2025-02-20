@@ -1,3 +1,5 @@
+import { raw } from 'objection'
+
 import testStep from '@/services/test-step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -29,7 +31,8 @@ const executeStep: MutationResolvers['executeStep'] = async (
   if (!executionStep.isFailed) {
     await stepToTest.$query().patch({
       status: 'completed',
-      config: {}, // clear template step config when step is tested successfully
+      // clear templateConfig in config when step is tested successfully
+      config: raw(`config - 'templateConfig'`),
     })
   }
 

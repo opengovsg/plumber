@@ -26,6 +26,7 @@ import {
   Tag,
   TagLabel,
   TagLeftIcon,
+  useIsMobile,
   useToast,
 } from '@opengovsg/design-system-react'
 
@@ -54,6 +55,7 @@ const TileListItem = ({
   numConnections: number
   table: TableMetadata
 }): JSX.Element => {
+  const isMobile = useIsMobile()
   const toast = useToast()
   const [deleteTable, { loading: isDeletingTable }] = useMutation(
     DELETE_TABLE,
@@ -127,13 +129,13 @@ const TileListItem = ({
           )}
           {table.role === 'owner' && (
             <IconButton
-              className="hover-remove-button"
+              className={isMobile ? undefined : 'hover-remove-button'}
               variant="clear"
               aria-label="Remove"
               icon={<BiTrash />}
               isDisabled={isConnectionsLoading}
               onClick={onDeleteButtonClick}
-              visibility="hidden"
+              visibility={isMobile ? 'visible' : 'hidden'}
             />
           )}
         </Flex>

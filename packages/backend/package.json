@@ -34,7 +34,7 @@
     "@bull-board/express": "5.17.0",
     "@graphql-tools/schema": "10.0.0",
     "@launchdarkly/node-server-sdk": "9.0.4",
-    "@opengovsg/formsg-sdk": "0.11.0",
+    "@opengovsg/formsg-sdk": "0.13.0",
     "@opengovsg/sgid-client": "2.1.0",
     "@plumber/types": "file:../types",
     "@taskforcesh/bullmq-pro": "7.7.1",
@@ -52,7 +52,7 @@
     "dotenv": "^10.0.0",
     "electrodb": "2.12.0",
     "email-validator": "2.0.4",
-    "express": "4.19.2",
+    "express": "4.21.2",
     "form-data": "4.0.0",
     "graphql": "16.8.1",
     "graphql-middleware": "6.1.35",
@@ -69,7 +69,7 @@
     "luxon": "2.5.2",
     "morgan": "^1.10.0",
     "multer": "1.4.5-lts.1",
-    "nanoid": "3.3.6",
+    "nanoid": "3.3.8",
     "objection": "^3.0.0",
     "p-limit": "3.1.0",
     "pg": "^8.7.1",
@@ -105,5 +105,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.32.0"
+  "version": "1.34.1"
 }
