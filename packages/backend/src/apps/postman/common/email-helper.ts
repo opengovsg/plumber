@@ -5,7 +5,6 @@ import { sortBy } from 'lodash'
 
 import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
-import { getLdFlagValue } from '@/helpers/launch-darkly'
 
 import {
   PostmanEmailDataOut,
@@ -80,12 +79,6 @@ export async function sendTransactionalEmails(
   errorStatus?: PostmanEmailSendStatus
   error?: HttpError
 }> {
-  const shouldUseNewCredentials = await getLdFlagValue<boolean>(
-    'new_postman_credentials',
-    'plumber@open.gov.sg', // mock email
-    false,
-  )
-
   const promises = recipients.map(async (recipientEmail) => {
     const requestData = new FormData()
     requestData.append('subject', email.subject)
@@ -93,11 +86,7 @@ export async function sendTransactionalEmails(
     requestData.append('recipient', recipientEmail)
     requestData.append(
       'from',
-      `${email.senderName} <${
-        shouldUseNewCredentials
-          ? appConfig.postman.fromAddress
-          : appConfig.postman.oldFromAddress
-      }>`,
+      `${email.senderName} <${appConfig.postman.fromAddress}>`,
     )
     requestData.append('disable_tracking', 'true')
     if (email.ccList?.length > 0) {
@@ -123,11 +112,7 @@ export async function sendTransactionalEmails(
         {
           headers: {
             ...requestData.getHeaders(),
-            Authorization: `Bearer ${
-              shouldUseNewCredentials
-                ? appConfig.postman.apiKey
-                : appConfig.postman.oldApiKey
-            }`,
+            Authorization: `Bearer ${appConfig.postman.apiKey}`,
           },
         },
       )
