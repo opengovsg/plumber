@@ -24,6 +24,7 @@ interface ExecutionsListProps {
   isSearching: boolean
   isLoading: boolean
   page: number
+  status: string
 }
 
 const getLimitAndOffset = (page: number) => ({
@@ -40,6 +41,7 @@ function ExecutionsList({
   isLoading,
   isSearching,
   page,
+  status,
 }: ExecutionsListProps) {
   const hasExecutions = executions.length > 0
 
@@ -69,7 +71,12 @@ function ExecutionsList({
   return (
     <>
       {executions.map((execution) => (
-        <ExecutionRow key={execution.id} execution={execution} page={page} />
+        <ExecutionRow
+          key={execution.id}
+          execution={execution}
+          page={page}
+          status={status}
+        />
       ))}
     </>
   )
@@ -152,6 +159,7 @@ export default function ExecutionsForFlowPage() {
         isLoading={isLoading}
         isSearching={isSearching}
         page={page}
+        status={status}
       />
       {hasPagination && (
         <Flex justifyContent="center" mt={6}>
