@@ -24,10 +24,11 @@ import * as URLS from '@/config/urls'
 type ExecutionRowProps = {
   execution: IExecution
   page: number
+  status: string
 }
 
 export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
-  const { execution, page } = props
+  const { execution, page, status } = props
   const { flow, executionSteps } = execution
 
   const createdAt = DateTime.fromMillis(parseInt(execution.createdAt, 10))
@@ -35,7 +36,9 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
 
   return (
     <Link
-      to={`${URLS.EXECUTION(execution.id)}?backToPage=${page}`}
+      to={`${URLS.EXECUTION(
+        execution.id,
+      )}?backToPage=${page}&backToStatus=${status}`}
       data-test="execution-row"
     >
       <Card

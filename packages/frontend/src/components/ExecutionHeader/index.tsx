@@ -9,8 +9,42 @@ import { DateTime } from 'luxon'
 
 import * as URLS from '@/config/urls'
 
+import { StatusType } from '../ExecutionStatusMenu'
+
 type ExecutionHeaderProps = {
   execution: IExecution
+}
+
+const isValidPage = (value: string | null): boolean => /^\d+$/.test(value || '')
+const isValidStatus = (value: string | null): boolean =>
+  Object.values(StatusType).includes(value as StatusType) &&
+  value !== StatusType.Empty
+
+const buildBackUrl = (
+  baseUrl: string,
+  params: Record<string, string | null>,
+) => {
+  const validParams = Object.entries(params)
+    .filter(([key, value]) => {
+      if (!value) {
+        return false
+      }
+
+      switch (key) {
+        case 'page':
+          return isValidPage(value)
+        case 'status':
+          return isValidStatus(value)
+        default:
+          return false
+      }
+    })
+    .reduce((acc, [key, value]) => {
+      acc.append(key, value || '')
+      return acc
+    }, new URLSearchParams())
+
+  return validParams.toString() ? `${baseUrl}?${validParams}` : baseUrl
 }
 
 function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
@@ -18,15 +52,16 @@ function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const backToPage = searchParams.get('backToPage')
+  const backToStatus = searchParams.get('backToStatus')
 
   const handleBack = useCallback(() => {
-    let backUrl = URLS.EXECUTIONS_FOR_FLOW(id)
-
-    if (backToPage && /^\d+$/.test(backToPage)) {
-      backUrl += `?page=${backToPage}`
-    }
+    const baseUrl = URLS.EXECUTIONS_FOR_FLOW(id)
+    const backUrl = buildBackUrl(baseUrl, {
+      page: backToPage,
+      status: backToStatus,
+    })
     navigate(backUrl)
-  }, [navigate, id, backToPage])
+  }, [navigate, id, backToPage, backToStatus])
 
   return (
     <Flex gap={2} alignItems="center">
