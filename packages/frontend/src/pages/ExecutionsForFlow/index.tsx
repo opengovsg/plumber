@@ -8,6 +8,7 @@ import { Pagination } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
 import ExecutionRow from '@/components/ExecutionRow'
+import { StatusType } from '@/components/ExecutionStatusMenu'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
@@ -98,7 +99,9 @@ export default function ExecutionsForFlowPage() {
     {
       variables: {
         ...getLimitAndOffset(page),
-        status,
+        ...(status !== StatusType.Waiting && {
+          status,
+        }),
         flowId,
       },
       skip: !flowId,
