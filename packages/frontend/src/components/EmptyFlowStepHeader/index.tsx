@@ -1,24 +1,20 @@
-import type { IStep } from '@plumber/types'
-
 import { BiRun, BiSolidBolt } from 'react-icons/bi'
 import { Flex, Icon, Text, useDisclosure } from '@chakra-ui/react'
 
 import EmptyFlowStepHeaderModal from './EmptyFlowStepHeaderModal'
 
 interface EmptyFlowStepHeaderProps {
-  step: IStep
+  isTrigger: boolean
   isLastStep: boolean
-  onChange: ({ step }: { step: IStep }) => void
-  onSubmit: () => void
+  onSubmit: (appKey: string, eventKey: string) => void
 }
 
 export default function EmptyFlowStepHeader(
   props: EmptyFlowStepHeaderProps,
 ): JSX.Element {
-  const { step, isLastStep, onChange, onSubmit } = props
+  const { isTrigger, isLastStep, onSubmit } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
-  const isTrigger = step.type === 'trigger'
   return (
     <>
       <Flex
@@ -51,9 +47,8 @@ export default function EmptyFlowStepHeader(
       <EmptyFlowStepHeaderModal
         isOpen={isOpen}
         onClose={onClose}
-        step={step}
+        isTrigger={isTrigger}
         isLastStep={isLastStep}
-        onChange={onChange}
         onSubmit={onSubmit}
       />
     </>

@@ -1,4 +1,4 @@
-import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
+import type { IAction, IApp, ITrigger } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
 import { BiArrowFromRight, BiChevronRight } from 'react-icons/bi'
@@ -11,34 +11,25 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
   useIfThenInitializer,
+  useIsIfThenSelectable,
 } from '@/helpers/toolbox'
 
 interface ModalBodyContentProps {
   apps: IApp[]
   selectedApp: IApp | null
   setSelectedApp: (app: IApp | null) => void
-  step: IStep
+  isTrigger: boolean
   isLastStep: boolean
-  onChange: ({ step }: { step: IStep }) => void
-  onSubmit: () => void
+  onSubmit: (appKey: string, actionKey: string) => void
 }
 
 export default function ModalBodyContent(
   props: ModalBodyContentProps,
 ): JSX.Element {
-  const {
-    apps,
-    selectedApp,
-    setSelectedApp,
-    step,
-    isLastStep,
-    onChange,
-    onSubmit,
-  } = props
-  const isTrigger = step.type === 'trigger'
-
+  const { apps, selectedApp, setSelectedApp, isTrigger, isLastStep, onSubmit } =
+    props
   const launchDarkly = useContext(LaunchDarklyContext)
-  const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
+  const [_, isInitializingIfThen] = useIfThenInitializer()
   const isLoading = launchDarkly.isLoading || isInitializingIfThen
 
   const filteredApps = useMemo(
@@ -78,26 +69,10 @@ export default function ModalBodyContent(
     app: IApp,
     triggerOrAction: ITrigger | IAction,
   ) => {
-    // account for the if-then edge case
-    if (
-      app.key === TOOLBOX_APP_KEY &&
-      triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
-    ) {
-      await initializeIfThen(step)
-      onSubmit()
-      return
-    }
-
-    onChange({
-      step: {
-        ...step,
-        appKey: app.key,
-        key: triggerOrAction.key,
-        parameters: {},
-      },
-    })
-    onSubmit()
+    onSubmit(app.key, triggerOrAction.key)
   }
+
+  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
 
   /**
    * Returns second level modal view of triggers or actions: if an app has multiple
@@ -111,7 +86,7 @@ export default function ModalBodyContent(
             const isIfThen =
               selectedApp.key === TOOLBOX_APP_KEY &&
               triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
-            const isDisabled = isIfThen && !isLastStep
+            const isDisabled = isIfThen && !isIfThenSelectable
 
             return (
               <Box

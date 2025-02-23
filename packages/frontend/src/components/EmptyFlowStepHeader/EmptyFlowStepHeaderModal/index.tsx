@@ -1,4 +1,4 @@
-import type { IApp, IStep } from '@plumber/types'
+import type { IApp } from '@plumber/types'
 
 import { useEffect, useState } from 'react'
 import { BiChevronLeft, BiLinkExternal } from 'react-icons/bi'
@@ -25,17 +25,15 @@ import ModalBodyContent from './ModalBodyContent'
 interface EmptyFlowStepHeaderModalProps {
   isOpen: boolean
   onClose: () => void
-  step: IStep
+  isTrigger: boolean
   isLastStep: boolean
-  onChange: ({ step }: { step: IStep }) => void
-  onSubmit: () => void
+  onSubmit: (appKey: string, eventKey: string) => void
 }
 
 export default function EmptyFlowStepHeaderModal(
   props: EmptyFlowStepHeaderModalProps,
 ): JSX.Element {
-  const { isOpen, onClose, isLastStep, step, onChange, onSubmit } = props
-  const isTrigger = step.type === 'trigger'
+  const { isOpen, onClose, isLastStep, isTrigger, onSubmit } = props
 
   const [selectedApp, setSelectedApp] = useState<IApp | null>(null)
 
@@ -90,9 +88,8 @@ export default function EmptyFlowStepHeaderModal(
             apps={apps}
             selectedApp={selectedApp}
             setSelectedApp={setSelectedApp}
-            step={step}
+            isTrigger={isTrigger}
             isLastStep={isLastStep}
-            onChange={onChange}
             onSubmit={onSubmit}
           />
         </ModalBody>

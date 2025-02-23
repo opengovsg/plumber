@@ -39,6 +39,11 @@ import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+  useIfThenInitializer,
+} from '@/helpers/toolbox'
 
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
@@ -221,19 +226,38 @@ export default function FlowStep(
   const shouldShowInfobox: boolean =
     stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
 
+  const [initializeIfThen] = useIfThenInitializer()
+
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
   }
   const toggleSubstep = (substepIndex: number) =>
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
-  if (!selectedActionOrTrigger) {
+  const onSubmitForEmptyHeader = async (appKey: string, eventKey: string) => {
+    // account for the if-then edge case
+    if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
+      await initializeIfThen(step)
+    } else {
+      handleChange({
+        step: {
+          ...step,
+          appKey,
+          key: eventKey,
+          parameters: {},
+        },
+      })
+    }
+    expandNextStep()
+    onOpen()
+  }
+
+  if (!app) {
     return (
       <EmptyFlowStepHeader
-        step={step}
+        isTrigger={isTrigger}
         isLastStep={isLastStep}
-        onChange={handleChange}
-        onSubmit={expandNextStep}
+        onSubmit={onSubmitForEmptyHeader}
       />
     )
   }
