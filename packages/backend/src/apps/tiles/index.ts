@@ -7,9 +7,9 @@ import queue from './queue'
 
 const app: IApp = {
   name: 'Tiles',
-  description:
-    'Tiles is a simple database to view, store and automate your data - all in one place',
   key: 'tiles',
+  description:
+    'A simple built-in database to view, store and automate your data',
   iconUrl: '{BASE_URL}/apps/tiles/assets/favicon.svg',
   authDocUrl: '',
   baseUrl: '',

@@ -11,6 +11,7 @@ import dynamicData from './dynamic-data'
 const app: IApp = {
   name: 'Telegram',
   key: 'telegram-bot',
+  description: 'Send messages to a Telegram chat, group or channel',
   iconUrl: '{BASE_URL}/apps/telegram-bot/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/telegram',
   baseUrl: 'https://telegram.org',
