@@ -8,6 +8,7 @@ import auth from './auth'
 const app: IApp = {
   name: 'Custom API',
   key: 'custom-api',
+  description: 'Make a HTTP request',
   iconUrl: '{BASE_URL}/apps/custom-api/assets/favicon.svg',
   authDocUrl: '',
   beforeRequest: [checkUrls, addHeaders],
@@ -16,7 +17,7 @@ const app: IApp = {
   apiBaseUrl: '',
   primaryColor: '0059F7',
   actions,
-  category: 'integrations',
+  category: 'others',
 }
 
 export default app

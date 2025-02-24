@@ -11,6 +11,7 @@ import queue from './queue'
 const app: IApp = {
   name: 'M365 Excel',
   key: 'm365-excel',
+  description: 'Create, find or update a row in a table',
   iconUrl: '{BASE_URL}/apps/m365-excel/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
   baseUrl: 'https://www.office.com',
