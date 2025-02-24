@@ -8,6 +8,7 @@ import { Pagination } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
 import ExecutionRow from '@/components/ExecutionRow'
+import { StatusType } from '@/components/ExecutionStatusMenu'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
@@ -24,6 +25,7 @@ interface ExecutionsListProps {
   isSearching: boolean
   isLoading: boolean
   page: number
+  status: string
 }
 
 const getLimitAndOffset = (page: number) => ({
@@ -40,6 +42,7 @@ function ExecutionsList({
   isLoading,
   isSearching,
   page,
+  status,
 }: ExecutionsListProps) {
   const hasExecutions = executions.length > 0
 
@@ -69,7 +72,12 @@ function ExecutionsList({
   return (
     <>
       {executions.map((execution) => (
-        <ExecutionRow key={execution.id} execution={execution} page={page} />
+        <ExecutionRow
+          key={execution.id}
+          execution={execution}
+          page={page}
+          status={status}
+        />
       ))}
     </>
   )
@@ -91,7 +99,9 @@ export default function ExecutionsForFlowPage() {
     {
       variables: {
         ...getLimitAndOffset(page),
-        status,
+        ...(status !== StatusType.Waiting && {
+          status,
+        }),
         flowId,
       },
       skip: !flowId,
@@ -152,6 +162,7 @@ export default function ExecutionsForFlowPage() {
         isLoading={isLoading}
         isSearching={isSearching}
         page={page}
+        status={status}
       />
       {hasPagination && (
         <Flex justifyContent="center" mt={6}>
