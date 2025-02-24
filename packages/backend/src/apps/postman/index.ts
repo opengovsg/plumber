@@ -7,6 +7,7 @@ import actions from './actions'
 const app: IApp = {
   name: 'Email by Postman',
   key: 'postman',
+  description: 'Send emails',
   iconUrl: '{BASE_URL}/apps/postman/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/postman',
   baseUrl: 'https://postman.gov.sg',

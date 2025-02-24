@@ -239,7 +239,7 @@ enum AppCategory {
   data
   communications
   logic
-  integrations
+  others
 }
 
 type DemoVideoDetails {
