@@ -8,6 +8,7 @@ import dynamicData from './dynamic-data'
 const app: IApp = {
   name: 'LetterSG',
   key: 'lettersg',
+  description: 'Create a letter',
   iconUrl: '{BASE_URL}/apps/lettersg/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/lettersg',
   baseUrl: '',
@@ -17,7 +18,7 @@ const app: IApp = {
   auth,
   actions,
   dynamicData,
-  category: 'integrations',
+  category: 'communications',
 }
 
 export default app
