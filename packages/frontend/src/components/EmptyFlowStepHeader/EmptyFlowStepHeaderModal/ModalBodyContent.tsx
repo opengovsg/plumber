@@ -283,11 +283,7 @@ export default function ModalBodyContent(
                             </Badge>
                           )}
                         </Flex>
-                        <Text textStyle="body-2">
-                          {singleTriggerOrAction
-                            ? singleTriggerOrAction.description
-                            : app.description}
-                        </Text>
+                        <Text textStyle="body-2">{app.description}</Text>
                       </Flex>
                     </Flex>
 

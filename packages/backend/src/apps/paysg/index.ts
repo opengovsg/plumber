@@ -7,6 +7,8 @@ import auth from './auth'
 const app: IApp = {
   name: 'PaySG',
   key: 'paysg',
+  description:
+    'Create payment, get details of payments created and send emails to payees',
   iconUrl: '{BASE_URL}/apps/paysg/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/paysg',
   baseUrl: '',
@@ -15,7 +17,7 @@ const app: IApp = {
   beforeRequest: [addAuthHeader],
   auth,
   actions,
-  category: 'integrations',
+  category: 'others',
 }
 
 export default app
