@@ -59,7 +59,13 @@ export default function EmptyFlowStepHeaderModal(
       autoFocus={false}
     >
       <ModalOverlay bg="base.canvas.overlay" />
-      <ModalContent>
+      <ModalContent
+        maxW="600px"
+        maxH="90vh"
+        h="auto"
+        overflow="hidden"
+        borderRadius="lg"
+      >
         <ModalHeader>
           {selectedApp ? (
             <Flex gap={2} flexDir="column" alignItems="flex-start">
@@ -78,7 +84,7 @@ export default function EmptyFlowStepHeaderModal(
             <Text textStyle="h3-semibold" pt={4}>
               {isTrigger
                 ? 'Choose how you want your workflow to start'
-                : 'Choose which action you want to run next'}
+                : 'Add steps'}
             </Text>
           )}
         </ModalHeader>
