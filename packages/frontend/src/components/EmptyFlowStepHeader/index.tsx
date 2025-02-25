@@ -24,7 +24,9 @@ export default function EmptyFlowStepHeader(
         borderRadius="lg"
         bg="white"
         p={4}
-        justifyContent="center"
+        pl={8}
+        h="96px"
+        // justifyContent="flex-start"
         alignItems="center"
         gap={4}
         onClick={onOpen}
@@ -36,11 +38,11 @@ export default function EmptyFlowStepHeader(
           bg: 'interaction.muted.neutral.active',
         }}
       >
-        <Icon as={isTrigger ? BiSolidBolt : BiRun} />
-        <Text>
+        <Icon as={isTrigger ? BiSolidBolt : BiRun} boxSize={6} />
+        <Text textStyle="subhead-1">
           {isTrigger
             ? 'Choose how you want your workflow to start'
-            : 'Choose which action you want to run next'}
+            : 'Choose an action'}
         </Text>
       </Flex>
 
