@@ -12,7 +12,7 @@ import {
   Flex,
   useDisclosure,
 } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
+import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 import { Rating } from 'lens-widget'
 
 import FlowStep from '@/components/FlowStep'
@@ -58,25 +58,35 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
     <>
       <Box pos="relative" h={24}>
         {/* Top vertical line */}
-        <Box h="1.875rem">
+        <Box mt={2} h={5}>
           <Divider orientation="vertical" borderColor="base.divider.strong" />
         </Box>
         {/* Bottom vertical line */}
         {!isLastStep && (
-          <Box mt={9} h="1.875rem">
+          <Box mt={10} h={5}>
             <Divider orientation="vertical" borderColor="base.divider.strong" />
           </Box>
         )}
         <AbsoluteCenter>
-          <IconButton
-            // onClick={onClick}
-            onClick={onOpen}
-            isDisabled={isDisabled}
-            aria-label="Add Step"
-            icon={<BiPlus />}
-            variant="outline"
-            size="xs"
-          />
+          <TouchableTooltip label="Add Step" placement="right">
+            <IconButton
+              onClick={onOpen}
+              isDisabled={isDisabled}
+              aria-label="Add Step"
+              icon={<BiPlus />}
+              variant={isLastStep ? 'outline' : 'clear'}
+              size="xs"
+              color="interaction.sub.default"
+              borderRadius="full"
+              _hover={{
+                bg: 'interaction.muted.neutral.hover',
+              }}
+              _active={{
+                bg: 'interaction.muted.neutral.active',
+              }}
+              borderColor={isLastStep ? 'interaction.sub.default' : undefined}
+            />
+          </TouchableTooltip>
         </AbsoluteCenter>
       </Box>
 
