@@ -10,6 +10,7 @@ import {
   CircularProgress,
   Divider,
   Flex,
+  useDisclosure,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
@@ -20,44 +21,69 @@ import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
+import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+  useIfThenInitializer,
+} from '@/helpers/toolbox'
+
+import EmptyFlowStepHeaderModal from '../EmptyFlowStepHeader/EmptyFlowStepHeaderModal'
 
 // TODO(mal): Remove this comment before merging this main PR
 interface AddStepButtonProps {
-  onClick: () => void
+  onClick: (appKey: string, eventKey: string) => void
   isDisabled: boolean
   isLastStep: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
   const { onClick, isDisabled, isLastStep } = props
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
+  const handleSubmit = (appKey: string, actionKey: string) => {
+    onClick(appKey, actionKey)
+    onClose()
+  }
 
   return (
-    <Box pos="relative" h={24}>
-      {/* Top vertical line */}
-      <Box h="1.875rem">
-        <Divider orientation="vertical" borderColor="base.divider.strong" />
-      </Box>
-      {/* Bottom vertical line */}
-      {!isLastStep && (
-        <Box mt={9} h="1.875rem">
+    <>
+      <Box pos="relative" h={24}>
+        {/* Top vertical line */}
+        <Box h="1.875rem">
           <Divider orientation="vertical" borderColor="base.divider.strong" />
         </Box>
-      )}
-      <AbsoluteCenter>
-        <IconButton
-          onClick={onClick}
-          isDisabled={isDisabled}
-          aria-label="Add Step"
-          icon={<BiPlus />}
-          variant="outline"
-          size="xs"
-        />
-      </AbsoluteCenter>
-    </Box>
+        {/* Bottom vertical line */}
+        {!isLastStep && (
+          <Box mt={9} h="1.875rem">
+            <Divider orientation="vertical" borderColor="base.divider.strong" />
+          </Box>
+        )}
+        <AbsoluteCenter>
+          <IconButton
+            // onClick={onClick}
+            onClick={onOpen}
+            isDisabled={isDisabled}
+            aria-label="Add Step"
+            icon={<BiPlus />}
+            variant="outline"
+            size="xs"
+          />
+        </AbsoluteCenter>
+      </Box>
+
+      <EmptyFlowStepHeaderModal
+        isOpen={isOpen}
+        onClose={onClose}
+        isTrigger={false} // Can only add an action all the time
+        isLastStep={isLastStep}
+        onSubmit={handleSubmit}
+      />
+    </>
   )
 }
 
@@ -69,9 +95,23 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
       query: GET_FLOW,
       variables: { id: flowId },
     })
+
+    // getFlow requires certain attributes to be returned
+    const completeCreatedStep = {
+      ...createdStep,
+      iconUrl: null,
+      webhookUrl: null,
+      config: {
+        templateConfig: {
+          appEventKey: null,
+        },
+      },
+      createdAt: new Date().toISOString(),
+    }
+
     const steps = flow.steps.reduce((steps: any[], currentStep: any) => {
       if (currentStep.id === previousStepId) {
-        return [...steps, currentStep, createdStep]
+        return [...steps, currentStep, completeCreatedStep]
       }
 
       return [...steps, currentStep]
@@ -96,6 +136,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     CREATE_STEP,
     { refetchQueries: [GET_FLOW] },
   )
+  const [initializeIfThen] = useIfThenInitializer()
 
   const { flow, steps: rawSteps } = props
   const steps = useMemo(
@@ -142,8 +183,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [updateStep, flow.id],
   )
 
+  // Add a step to the flow with the given appKey and eventKey
   const addStep = useCallback(
-    async (previousStepId: string) => {
+    async (previousStepId: string, appKey: string, eventKey: string) => {
       const mutationInput = {
         previousStep: {
           id: previousStepId,
@@ -151,17 +193,41 @@ export default function Editor(props: EditorProps): React.ReactElement {
         flow: {
           id: flow.id,
         },
+        appKey,
+        key: eventKey,
       }
 
       const createdStep = await createStep({
         variables: { input: mutationInput },
         update: updateHandlerFactory(flow.id, previousStepId),
       })
-      const createdStepId = createdStep.data.createStep.id
 
-      setCurrentStepId(createdStepId)
+      const newStep = createdStep.data.createStep
+      setCurrentStepId(newStep.id)
+
+      // account for the if-then edge case
+      if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
+        // Get the complete step data from the cache
+        const { getFlow: updatedFlow } = client.readQuery({
+          query: GET_FLOW,
+          variables: { id: flow.id },
+        })
+
+        const completeStep = updatedFlow.steps.find(
+          (s: IStep) => s.id === newStep.id,
+        )
+
+        if (completeStep) {
+          const completeStepWithFlow = {
+            ...completeStep,
+            flow,
+            flowId: flow.id,
+          }
+          await initializeIfThen(completeStepWithFlow)
+        }
+      }
     },
-    [createStep, flow.id],
+    [createStep, flow, initializeIfThen],
   )
 
   // FIXME (ogp-weeloong): optimize this a bit further by omitting query.
@@ -277,7 +343,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 templateConfig={flow?.config?.templateConfig}
               />
               <AddStepButton
-                onClick={() => addStep(step.id)}
+                onClick={(appKey, eventKey) => {
+                  addStep(step.id, appKey, eventKey)
+                }}
                 isDisabled={creationInProgress || isReadOnlyEditor}
                 isLastStep={index === steps.length - 1}
               />
