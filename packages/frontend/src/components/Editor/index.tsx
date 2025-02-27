@@ -43,15 +43,27 @@ interface AddStepButtonProps {
   onClick: (appKey: string, eventKey: string) => void
   isDisabled: boolean
   isLastStep: boolean
+  isTriggerAbsent?: boolean
+  isActionAbsent?: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, isDisabled, isLastStep } = props
+  const { onClick, isDisabled, isLastStep, isTriggerAbsent, isActionAbsent } =
+    props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const handleSubmit = (appKey: string, actionKey: string) => {
     onClick(appKey, actionKey)
     onClose()
+  }
+
+  let tooltipLabel = 'Add Step'
+  if (isTriggerAbsent) {
+    tooltipLabel = 'Choose how you want your workflow to start first'
+  } else if (isActionAbsent) {
+    tooltipLabel = 'Choose an action first'
+  } else if (isDisabled) {
+    tooltipLabel = 'Unpublish your pipe before adding steps'
   }
 
   return (
@@ -68,10 +80,10 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
           </Box>
         )}
         <AbsoluteCenter>
-          <TouchableTooltip label="Add Step" placement="right">
+          <TouchableTooltip label={tooltipLabel} placement="right">
             <IconButton
               onClick={onOpen}
-              isDisabled={isDisabled}
+              isDisabled={isDisabled || isTriggerAbsent || isActionAbsent}
               aria-label="Add Step"
               icon={<BiPlus />}
               variant={isLastStep ? 'outline' : 'clear'}
@@ -333,6 +345,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [parentStepExecutionsToInclude, stepsBeforeGroup],
   )
 
+  // Only affects editor when there are 2 steps: This works inside the If-Then editor too
+  const isTriggerAbsent =
+    steps.length === 2 && steps[0].appKey === null && steps[0].key === null
+  const isActionAbsent =
+    steps.length === 2 && steps[1].appKey === null && steps[1].key === null
+
   if (!apps) {
     return (
       <Center w="full" h="100vh">
@@ -379,6 +397,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 }}
                 isDisabled={creationInProgress || isReadOnlyEditor}
                 isLastStep={index === steps.length - 1}
+                isTriggerAbsent={isTriggerAbsent}
+                isActionAbsent={isActionAbsent}
               />
             </Fragment>
           ))}
