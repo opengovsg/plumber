@@ -25,6 +25,7 @@ import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 
+// TODO(mal): Remove this comment before merging this main PR
 interface AddStepButtonProps {
   onClick: () => void
   isDisabled: boolean
