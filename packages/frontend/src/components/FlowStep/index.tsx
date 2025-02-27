@@ -39,7 +39,13 @@ import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+  useIfThenInitializer,
+} from '@/helpers/toolbox'
 
+import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 type FlowStepProps = {
@@ -220,11 +226,41 @@ export default function FlowStep(
   const shouldShowInfobox: boolean =
     stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
 
+  const [initializeIfThen] = useIfThenInitializer()
+
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
   }
   const toggleSubstep = (substepIndex: number) =>
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
+
+  const onSubmitForEmptyHeader = async (appKey: string, eventKey: string) => {
+    // account for the if-then edge case
+    if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
+      await initializeIfThen(step)
+    } else {
+      handleChange({
+        step: {
+          ...step,
+          appKey,
+          key: eventKey,
+          parameters: {},
+        },
+      })
+    }
+    expandNextStep()
+    onOpen()
+  }
+
+  if (!app) {
+    return (
+      <EmptyFlowStepHeader
+        isTrigger={isTrigger}
+        isLastStep={isLastStep}
+        onSubmit={onSubmitForEmptyHeader}
+      />
+    )
+  }
 
   return (
     <Flex w="100%" flexDir="column">
@@ -268,6 +304,8 @@ export default function FlowStep(
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}
           >
+            {/* Note: keeping this to allow users to still modify their app or event but can change
+            to pop open the modal instead if */}
             {!cannotChooseApp && (
               <ChooseAppAndEventSubstep
                 expanded={currentSubstep === 0}
