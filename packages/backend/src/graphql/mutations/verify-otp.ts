@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 
 import BaseError from '@/errors/base'
-import { setAuthCookie } from '@/helpers/auth'
+import { sendOnboardingEmail, setAuthCookie } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import User from '@/models/user'
 
@@ -51,6 +51,8 @@ const verifyOtp: MutationResolvers['verifyOtp'] = async (
   ) {
     throw new BaseError('Invalid OTP')
   }
+  await sendOnboardingEmail(user.id)
+
   // reset otp columns
   await user.$query().patch({
     otpHash: null,
@@ -58,7 +60,6 @@ const verifyOtp: MutationResolvers['verifyOtp'] = async (
     otpSentAt: null,
     lastLoginAt: new Date(),
   })
-
   // set auth jwt as cookie
   setAuthCookie(context.res, { userId: user.id })
 

@@ -3,7 +3,12 @@ import { type Response } from 'express'
 import { sign as signJwt } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
-import { getOrCreateUser, setAuthCookie, updateLastLogin } from '@/helpers/auth'
+import {
+  getOrCreateUser,
+  sendOnboardingEmail,
+  setAuthCookie,
+  updateLastLogin,
+} from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import logger from '@/helpers/logger'
 import {
@@ -129,6 +134,7 @@ const loginWithSgid: MutationResolvers['loginWithSgid'] = async (
   // Log user in directly if there is only 1 employment.
   if (publicOfficerEmployments.length === 1) {
     const user = await getOrCreateUser(publicOfficerEmployments[0].workEmail)
+    await sendOnboardingEmail(user.id)
     await updateLastLogin(user.id)
     setAuthCookie(context.res, { userId: user.id })
 

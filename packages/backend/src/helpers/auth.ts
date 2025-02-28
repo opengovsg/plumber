@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { Request, Response } from 'express'
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
@@ -7,6 +8,7 @@ import User from '@/models/user'
 const AUTH_COOKIE_NAME = 'plumber.sid'
 // 3 days expiry
 const TOKEN_EXPIRES_IN_SEC = 3 * 24 * 60 * 60
+const ONBOARDING_EMAIL_RELEASE_DATE = new Date('2025-02-27')
 
 export function setAuthCookie(
   res: Response,
@@ -59,6 +61,32 @@ export async function getOrCreateUser(email: string): Promise<User> {
   }
 
   return user
+}
+
+export async function sendOnboardingEmail(id: string) {
+  if (!id) {
+    throw new Error('User id required!')
+  }
+
+  const user = await User.query().findById(id)
+  if (!user) {
+    throw new Error('User not found!')
+  }
+
+  // check if user has logged in before and has been created
+  // after the specified date for the release of onboarding email
+  if (
+    user.lastLoginAt !== null ||
+    new Date(user.createdAt) < ONBOARDING_EMAIL_RELEASE_DATE
+  ) {
+    return
+  }
+  // call plumber webhook to send onboarding email only in prod
+  if (appConfig.isProd && appConfig.onboardingEmailWebhookUrl) {
+    await axios.post(appConfig.onboardingEmailWebhookUrl, {
+      email: user.email,
+    })
+  }
 }
 
 export async function updateLastLogin(id: string) {
