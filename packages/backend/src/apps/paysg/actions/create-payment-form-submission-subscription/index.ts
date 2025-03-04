@@ -88,6 +88,7 @@ const action: IRawAction = {
           value: 'monthly',
         },
       ],
+      showOptionValue: false,
       required: true,
     },
     {
