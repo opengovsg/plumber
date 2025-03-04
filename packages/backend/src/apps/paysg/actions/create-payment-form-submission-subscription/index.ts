@@ -8,10 +8,10 @@ import StepError, { GenericSolution } from '@/errors/step'
 import { requestSchema } from './schema'
 
 const action: IRawAction = {
-  name: 'Create payment form submission for one-time payment',
-  key: 'createPaymentFormSubmission',
+  name: 'Create payment form submission for subscription',
+  key: 'createPaymentFormSubmissionSubscription',
   description:
-    'Create a new submission for a payment form, and initiate a one-time payment',
+    'Create a new submission for a payment form, and initiate a subscription',
   arguments: [
     {
       label: 'Payment Form Link',
@@ -58,6 +58,20 @@ const action: IRawAction = {
       variables: true,
     },
     {
+      label: 'Payer Address',
+      key: 'payer_address',
+      type: 'string' as const,
+      required: false,
+      variables: true,
+    },
+    {
+      label: 'Payer Identifier',
+      key: 'payer_identifier',
+      type: 'string' as const,
+      required: false,
+      variables: true,
+    },
+    {
       label: 'Amount (in cents)',
       key: 'amount_in_cents',
       type: 'string' as const,
@@ -65,10 +79,22 @@ const action: IRawAction = {
       variables: true,
     },
     {
+      label: 'Frequency',
+      key: 'frequency',
+      type: 'dropdown',
+      options: [
+        {
+          label: 'Monthly',
+          value: 'monthly',
+        },
+      ],
+      required: true,
+    },
+    {
       label: 'Description',
       key: 'description',
       type: 'string' as const,
-      required: false,
+      required: true,
       variables: true,
     },
     {
@@ -103,7 +129,7 @@ const action: IRawAction = {
       const { formId, ...body } = requestSchema.parse($.step.parameters)
 
       await $.http.post(
-        `/v1/payment-services/:paymentServiceId/forms/:formId/submissions`,
+        `/v1/payment-services/:paymentServiceId/forms/:formId/subscription-submissions`,
         body,
         {
           urlPathParams: {
