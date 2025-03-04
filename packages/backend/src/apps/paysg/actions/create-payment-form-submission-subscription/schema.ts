@@ -1,4 +1,3 @@
-import emailValidator from 'email-validator'
 import { z } from 'zod'
 
 import { requestSchema as createPaymentFormSubmissionRequestSchema } from '../create-payment-form-submission/schema'
