@@ -10,10 +10,7 @@ import {
   DISALLOWED_IP_RESOLVED_ERROR,
   RECURSIVE_WEBHOOK_ERROR_NAME,
 } from '../../common/check-urls'
-import {
-  CUSTOM_API_TIMEOUT,
-  CUSTOM_API_TIMEOUT_ERROR,
-} from '../../common/constants'
+import { CUSTOM_API_TIMEOUT } from '../../common/constants'
 
 import { requestSchema } from './schema'
 
@@ -185,7 +182,7 @@ const action: IRawAction = {
         )
       }
 
-      if (err.message === CUSTOM_API_TIMEOUT_ERROR) {
+      if (err.message === `timeout of ${timeout}ms exceeded`) {
         throw new StepError(
           `HTTP request exceeded timeout of ${timeout / 1000}s`,
           'The request took too long to respond.',
