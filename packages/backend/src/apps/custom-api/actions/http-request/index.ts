@@ -188,7 +188,7 @@ const action: IRawAction = {
       if (err.message === CUSTOM_API_TIMEOUT_ERROR) {
         throw new StepError(
           `HTTP request exceeded timeout of ${timeout / 1000}s`,
-          'The request took too long to respond. Please check your network connection and try again.',
+          'The request took too long to respond.',
           $.step.position,
           $.app.name,
           err,
