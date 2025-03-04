@@ -83,7 +83,7 @@ describe('Login with selected SGID', () => {
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
       'loong_loong@coffee.gov.sg',
     )
-    expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith('abc-def')
+    expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith({ id: 'abc-def' })
     expect(mocks.updateLastLogin).toHaveBeenCalledWith('abc-def')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',

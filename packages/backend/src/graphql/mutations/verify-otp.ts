@@ -51,7 +51,7 @@ const verifyOtp: MutationResolvers['verifyOtp'] = async (
   ) {
     throw new BaseError('Invalid OTP')
   }
-  await sendOnboardingEmail(user.id)
+  await sendOnboardingEmail(user)
 
   // reset otp columns
   await user.$query().patch({

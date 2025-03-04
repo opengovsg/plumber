@@ -63,16 +63,7 @@ export async function getOrCreateUser(email: string): Promise<User> {
   return user
 }
 
-export async function sendOnboardingEmail(id: string) {
-  if (!id) {
-    throw new Error('User id required!')
-  }
-
-  const user = await User.query().findById(id)
-  if (!user) {
-    throw new Error('User not found!')
-  }
-
+export async function sendOnboardingEmail(user: User) {
   // check if user has logged in before and has been created
   // after the specified date for the release of onboarding email
   if (
@@ -82,7 +73,7 @@ export async function sendOnboardingEmail(id: string) {
     return
   }
   // call plumber webhook to send onboarding email only in prod
-  if (appConfig.isProd && appConfig.onboardingEmailWebhookUrl) {
+  if (!appConfig.isDev && appConfig.onboardingEmailWebhookUrl) {
     await axios.post(appConfig.onboardingEmailWebhookUrl, {
       email: user.email,
     })

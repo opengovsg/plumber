@@ -134,7 +134,7 @@ const loginWithSgid: MutationResolvers['loginWithSgid'] = async (
   // Log user in directly if there is only 1 employment.
   if (publicOfficerEmployments.length === 1) {
     const user = await getOrCreateUser(publicOfficerEmployments[0].workEmail)
-    await sendOnboardingEmail(user.id)
+    await sendOnboardingEmail(user)
     await updateLastLogin(user.id)
     setAuthCookie(context.res, { userId: user.id })
 

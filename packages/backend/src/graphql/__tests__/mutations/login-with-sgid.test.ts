@@ -93,7 +93,7 @@ describe('Login with SGID', () => {
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
       'loong_loong@coffee.gov.sg',
     )
-    expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith('abc-def')
+    expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith({ id: 'abc-def' })
     expect(mocks.updateLastLogin).toHaveBeenCalledWith('abc-def')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
@@ -184,7 +184,7 @@ describe('Login with SGID', () => {
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith('loong@tea.gov.sg')
-    expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith('abc-def')
+    expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith({ id: 'abc-def' })
     expect(mocks.updateLastLogin).toHaveBeenCalledWith('abc-def')
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',

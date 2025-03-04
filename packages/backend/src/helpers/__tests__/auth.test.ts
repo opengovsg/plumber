@@ -229,31 +229,17 @@ describe('Auth helpers', () => {
     afterEach(() => {
       vi.restoreAllMocks()
     })
-
-    it('throws error with no user id', async () => {
-      await expect(sendOnboardingEmail('')).rejects.toThrowError(
-        'User id required',
-      )
-    })
-
-    it('throws error with non-existent user id', async () => {
-      mocks.findById.mockResolvedValueOnce(null)
-      await expect(sendOnboardingEmail('non-existent-id')).rejects.toThrowError(
-        'User not found',
-      )
-    })
-
     it('does not send email if user has logged in before', async () => {
       const mockUser = {
         id: 'test-id',
         email: 'test@example.com',
         lastLoginAt: new Date(),
         createdAt: new Date(),
-      }
+      } as unknown as User
 
       mocks.findById.mockResolvedValueOnce(mockUser)
 
-      await sendOnboardingEmail(mockUser.id)
+      await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()
     })
 
@@ -262,11 +248,11 @@ describe('Auth helpers', () => {
         id: 'test-id',
         email: 'test@example.com',
         createdAt: new Date('2024-01-01'), // Before release date
-      }
+      } as unknown as User
 
       mocks.findById.mockResolvedValueOnce(mockUser)
 
-      await sendOnboardingEmail(mockUser.id)
+      await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()
     })
 
@@ -275,11 +261,11 @@ describe('Auth helpers', () => {
         id: 'test-id',
         email: 'test@example.com',
         createdAt: new Date('2025-03-01'), // After release date
-      }
+      } as unknown as User
 
       mocks.findById.mockResolvedValueOnce(mockUser)
 
-      await sendOnboardingEmail(mockUser.id)
+      await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()
     })
 
@@ -296,7 +282,7 @@ describe('Auth helpers', () => {
       mocks.findById.mockResolvedValueOnce(mockUser)
       vi.mocked(axios.post).mockResolvedValueOnce({ data: {} })
 
-      await sendOnboardingEmail(mockUser.id)
+      await sendOnboardingEmail(mockUser)
 
       expect(axios.post).toHaveBeenCalledWith(
         appConfig.onboardingEmailWebhookUrl,
@@ -319,7 +305,7 @@ describe('Auth helpers', () => {
 
       mocks.findById.mockResolvedValueOnce(mockUser)
 
-      await sendOnboardingEmail(mockUser.id)
+      await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()
     })
   })

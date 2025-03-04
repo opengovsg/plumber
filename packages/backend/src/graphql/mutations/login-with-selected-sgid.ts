@@ -49,7 +49,7 @@ const loginWithSelectedSgid: MutationResolvers['loginWithSelectedSgid'] =
     }
 
     const user = await getOrCreateUser(workEmail)
-    await sendOnboardingEmail(user.id)
+    await sendOnboardingEmail(user)
     await updateLastLogin(user.id)
     setAuthCookie(context.res, { userId: user.id })
 
