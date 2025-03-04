@@ -14,6 +14,18 @@ import {
 const CF_REDIRECTION_WORKER_FOR_UNIT_TESTS =
   'https://http-request-unit-tester.plumber-wrench.workers.dev'
 
+vi.mock('@/models/step', () => ({
+  default: {
+    query: () => ({
+      findById: () => ({
+        throwIfNotFound: vi.fn(() => ({
+          config: {},
+        })),
+      }),
+    }),
+  },
+}))
+
 describe('http request interceptors', () => {
   let $: IGlobalVariable
 
