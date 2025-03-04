@@ -6,6 +6,8 @@ import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import JSONViewer from '@/components/JSONViewer'
 
+import { CONTACT_PLUMBER_LINK } from './constants'
+
 interface GenericErrorResultProps {
   errorDetails: IJSONObject
   isTestRun: boolean
@@ -29,16 +31,20 @@ export default function GenericErrorResult(props: GenericErrorResultProps) {
           {`Check if you have configured ${
             isTestRun ? 'the steps above' : 'this step'
           } correctly and retest. If
-          this error still persists, contact us at support@plumber.gov.sg. `}
-          <Button
-            onClick={toggleDropdown}
-            variant="link"
-            size="sm"
-            sx={{ textDecoration: 'underline' }}
-          >
-            View error details below.
-          </Button>
+          this error still persists, contact us at `}
+          <Text as="a" href={CONTACT_PLUMBER_LINK} target="_blank">
+            {CONTACT_PLUMBER_LINK}
+          </Text>
+          .
         </Text>
+        <Button
+          onClick={toggleDropdown}
+          variant="link"
+          size="sm"
+          sx={{ textDecoration: 'underline' }}
+        >
+          View error details below.
+        </Button>
 
         <Box>
           <Collapse in={isOpen}>

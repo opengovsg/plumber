@@ -15,14 +15,15 @@ import JSONViewer from '@/components/JSONViewer'
 import { RETRY_PARTIAL_STEP } from '@/graphql/mutations/retry-partial-step'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
 
+import { CONTACT_PLUMBER_LINK } from './constants'
+
 interface SpecificErrorResultProps {
   errorDetails: IStepError
   isTestRun: boolean
   executionStepId?: string
 }
 
-const contactPlumberMessage =
-  'If this error still persists, contact us at support@plumber.gov.sg.'
+const contactPlumberMessage = `If this error still persists, contact us at [${CONTACT_PLUMBER_LINK}](${CONTACT_PLUMBER_LINK}).`
 
 export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   const { errorDetails, isTestRun, executionStepId } = props
