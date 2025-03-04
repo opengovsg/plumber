@@ -54,7 +54,7 @@ const action: IRawAction = {
       label: 'Payer Email',
       key: 'payer_email',
       type: 'string' as const,
-      required: false,
+      required: true,
       variables: true,
     },
     {
