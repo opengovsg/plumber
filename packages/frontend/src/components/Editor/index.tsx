@@ -32,7 +32,7 @@ import {
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 
-import EmptyFlowStepHeaderModal from '../EmptyFlowStepHeader/EmptyFlowStepHeaderModal'
+import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
 // TODO(mal): Remove this comment before merging this main PR
 interface AddStepButtonProps {
@@ -98,7 +98,7 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
         </AbsoluteCenter>
       </Box>
 
-      <EmptyFlowStepHeaderModal
+      <FlowStepConfigurationModal
         isOpen={isOpen}
         onClose={onClose}
         isTrigger={false} // Can only add an action all the time
