@@ -1,7 +1,7 @@
 import { BiRun, BiSolidBolt } from 'react-icons/bi'
 import { Flex, Icon, Text, useDisclosure } from '@chakra-ui/react'
 
-import EmptyFlowStepHeaderModal from './EmptyFlowStepHeaderModal'
+import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
 interface EmptyFlowStepHeaderProps {
   isTrigger: boolean
@@ -26,7 +26,6 @@ export default function EmptyFlowStepHeader(
         p={4}
         pl={8}
         h="96px"
-        // justifyContent="flex-start"
         alignItems="center"
         gap={4}
         onClick={onOpen}
@@ -46,7 +45,7 @@ export default function EmptyFlowStepHeader(
         </Text>
       </Flex>
 
-      <EmptyFlowStepHeaderModal
+      <FlowStepConfigurationModal
         isOpen={isOpen}
         onClose={onClose}
         isTrigger={isTrigger}
