@@ -5,8 +5,7 @@ import { Box, Collapse, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import JSONViewer from '@/components/JSONViewer'
-
-import { CONTACT_PLUMBER_LINK } from './constants'
+import { SUPPORT_FORM_LINK } from '@/config/urls'
 
 interface GenericErrorResultProps {
   errorDetails: IJSONObject
@@ -32,8 +31,8 @@ export default function GenericErrorResult(props: GenericErrorResultProps) {
             isTestRun ? 'the steps above' : 'this step'
           } correctly and retest. If
           this error still persists, contact us at `}
-          <Text as="a" href={CONTACT_PLUMBER_LINK} target="_blank">
-            {CONTACT_PLUMBER_LINK}
+          <Text as="a" href={SUPPORT_FORM_LINK} target="_blank">
+            {SUPPORT_FORM_LINK}
           </Text>
           .
         </Text>
