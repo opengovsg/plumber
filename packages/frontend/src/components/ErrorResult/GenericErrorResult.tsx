@@ -5,6 +5,7 @@ import { Box, Collapse, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import JSONViewer from '@/components/JSONViewer'
+import { SUPPORT_FORM_LINK } from '@/config/urls'
 
 interface GenericErrorResultProps {
   errorDetails: IJSONObject
@@ -29,16 +30,20 @@ export default function GenericErrorResult(props: GenericErrorResultProps) {
           {`Check if you have configured ${
             isTestRun ? 'the steps above' : 'this step'
           } correctly and retest. If
-          this error still persists, contact us at support@plumber.gov.sg. `}
-          <Button
-            onClick={toggleDropdown}
-            variant="link"
-            size="sm"
-            sx={{ textDecoration: 'underline' }}
-          >
-            View error details below.
-          </Button>
+          this error still persists, contact us at `}
+          <Text as="a" href={SUPPORT_FORM_LINK} target="_blank">
+            {SUPPORT_FORM_LINK}
+          </Text>
+          .
         </Text>
+        <Button
+          onClick={toggleDropdown}
+          variant="link"
+          size="sm"
+          sx={{ textDecoration: 'underline' }}
+        >
+          View error details below.
+        </Button>
 
         <Box>
           <Collapse in={isOpen}>

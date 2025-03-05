@@ -12,6 +12,7 @@ import {
 } from '@opengovsg/design-system-react'
 
 import JSONViewer from '@/components/JSONViewer'
+import { SUPPORT_FORM_LINK } from '@/config/urls'
 import { RETRY_PARTIAL_STEP } from '@/graphql/mutations/retry-partial-step'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
 
@@ -21,8 +22,7 @@ interface SpecificErrorResultProps {
   executionStepId?: string
 }
 
-const contactPlumberMessage =
-  'If this error still persists, contact us at support@plumber.gov.sg.'
+const contactPlumberMessage = `If this error still persists, contact us at [${SUPPORT_FORM_LINK}](${SUPPORT_FORM_LINK}).`
 
 export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   const { errorDetails, isTestRun, executionStepId } = props
