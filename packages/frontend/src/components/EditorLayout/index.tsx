@@ -162,6 +162,10 @@ export default function EditorLayout() {
               aria-label="guide"
               icon={<BiInfoCircle />}
               colorScheme="secondary"
+              _hover={{
+                color: 'primary.500',
+                bg: 'interaction.muted.main.hover',
+              }}
             />
           </TouchableTooltip>
 
@@ -173,6 +177,10 @@ export default function EditorLayout() {
               aria-label="settings"
               icon={<BiCog />}
               colorScheme="secondary"
+              _hover={{
+                color: 'primary.500',
+                bg: 'interaction.muted.main.hover',
+              }}
             />
           </TouchableTooltip>
 
