@@ -20,12 +20,16 @@ export const FORMSG_WEBHOOK_VERIFICATION_MESSAGE = {
     'The form is currently connected to a different endpoint. Continuing with this connection will override this setting.',
   UNAUTHORIZED:
     "We couldn't verify your form connection. Ensure that you are either the form owner or have been added as an editor.",
+  USER_NOT_FOUND:
+    "We couldn't find your FormSG account. Please log in to FormSG with this email and try again.",
   ERROR: "We couldn't verify your form connection. Please try again later.",
 }
 
 export const FORMSG_WEBHOOK_REGISTRATION_MESSAGE = {
   UNAUTHORIZED:
     "We couldn't connect your form. Ensure that you are either the form owner or have been added as an editor.",
+  USER_NOT_FOUND:
+    "We couldn't find your FormSG account. Please log in to FormSG with this email and try again.",
   ERROR: "We couldn't connect your form. Please try again later.",
 }
 
@@ -124,9 +128,12 @@ export async function registerWebhookUrl(
     if (e instanceof HttpError) {
       error = e.response
       // 403 when user email does not have permissions to obtain form settings
-      // 422 when user email cannot be retrieved from the database
-      if (e.response.status === 403 || e.response.status === 422) {
+      if (e.response.status === 403) {
         errorMsg = FORMSG_WEBHOOK_REGISTRATION_MESSAGE.UNAUTHORIZED
+      }
+      // 422 when user email cannot be retrieved from the database
+      if (e.response.status === 422) {
+        errorMsg = FORMSG_WEBHOOK_REGISTRATION_MESSAGE.USER_NOT_FOUND
       }
     }
     logger.error('registerWebhookUrl error', {
@@ -186,9 +193,12 @@ export async function verifyWebhookUrl(
     if (e instanceof HttpError) {
       error = e.response
       // 403 when user email does not have permissions to obtain form settings
-      // 422 when user email cannot be retrieved from the database
-      if (e.response.status === 403 || e.response.status === 422) {
+      if (e.response.status === 403) {
         errorMsg = FORMSG_WEBHOOK_VERIFICATION_MESSAGE.UNAUTHORIZED
+      }
+      // 422 when user email cannot be retrieved from the database
+      if (e.response.status === 422) {
+        errorMsg = FORMSG_WEBHOOK_REGISTRATION_MESSAGE.USER_NOT_FOUND
       }
     }
     logger.error('verifyWebhookUrl error', {

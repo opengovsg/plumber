@@ -138,7 +138,7 @@ describe('formsg webhook registration', () => {
       $.http.post = vi.fn().mockRejectedValueOnce(new HttpError(error422))
       await expect(verifyWebhookUrl($)).resolves.toEqual({
         registrationVerified: false,
-        message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.UNAUTHORIZED,
+        message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.USER_NOT_FOUND,
       })
     })
   })
@@ -184,7 +184,7 @@ describe('formsg webhook registration', () => {
       } as AxiosError
       $.http.patch = vi.fn().mockRejectedValueOnce(new HttpError(error422))
       await expect(registerWebhookUrl($)).rejects.toThrowError(
-        FORMSG_WEBHOOK_REGISTRATION_MESSAGE.UNAUTHORIZED,
+        FORMSG_WEBHOOK_REGISTRATION_MESSAGE.USER_NOT_FOUND,
       )
     })
 
