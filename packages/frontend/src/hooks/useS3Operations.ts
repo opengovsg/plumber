@@ -59,6 +59,15 @@ export const useS3Operations = (
       const { name: filename, value, displayedValue } = file
       const flowId = getValues('flowId')
       setIsDeleting(true)
+
+      // NOTE: this is to ensure all changes are saved before deleting a file
+      // to prevent data loss. If a user fills in fields and deletes a file
+      // before clicking "Continue," the file would be deleted, but other
+      // inputs remain visible in the UI without being saved.
+      const currentAttachments = getValues(name) || []
+      const mutationInput = createUpdateStep(getValues(), currentAttachments)
+      await updateStep({ variables: { input: mutationInput } })
+
       await deleteFile({ variables: { id: value } })
 
       await updateFlowConfig(
