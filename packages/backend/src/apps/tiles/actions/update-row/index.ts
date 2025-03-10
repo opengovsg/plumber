@@ -156,7 +156,7 @@ const action: IRawAction = {
     function assertNumber(value: string): void {
       if (typeof autoMarshallNumberStrings(value) !== 'number') {
         throw new StepError(
-          'Add/subtract value must be a number',
+          'Unable to update row',
           'The value to add or subtract by must be a number.',
           $.step.position,
           $.app.name,
@@ -210,17 +210,22 @@ const action: IRawAction = {
         } satisfies UpdateRowOutput,
       })
     } catch (e) {
-      if (
-        e instanceof Error &&
-        e.message.includes('The conditional request failed')
-      ) {
-        // This means the corresponding row does not exist
-        $.setActionItem({
-          raw: {
-            updated: false,
-          } satisfies UpdateRowOutput,
-        })
-        return
+      if (e instanceof Error) {
+        if (e.message.includes('The conditional request failed')) {
+          // This means the corresponding row does not exist
+          $.setActionItem({
+            raw: {
+              updated: false,
+            } satisfies UpdateRowOutput,
+          })
+          return
+        }
+        throw new StepError(
+          'Failed to update row',
+          e.message,
+          $.step.position,
+          $.app.name,
+        )
       }
       throw e
     }

@@ -34,7 +34,7 @@ export function handleDynamoDBError(error: unknown): never {
         message.includes('Incorrect operand type for operator or function')
       ) {
         throw new Error(
-          'You can only add or subtract numbers, please check your values',
+          'You can only add or subtract numbers, please check your values.',
         )
       }
       throw new Error('DynamoDB Internal Error: ' + message)
