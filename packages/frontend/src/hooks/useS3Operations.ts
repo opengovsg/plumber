@@ -19,7 +19,7 @@ import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 
 interface UseS3UploadOptions {
-  onError?: (filename: string, type: string) => void
+  onError?: (filename: string, type: string, errorMessage: string) => void
   onSuccess?: (filename: string) => void
 }
 
@@ -88,7 +88,8 @@ export const useS3Operations = (
       console.error('Error deleting file:', error)
       triggerToast(`Failed to delete ${file.name}`, 'error')
       setIsDeleting(false)
-      options.onError?.(file.name, 'deleteError')
+      const errorMessage = error instanceof Error ? error.message : ''
+      options.onError?.(file.name, 'deleteError', errorMessage)
       return false
     }
   }
@@ -164,7 +165,8 @@ export const useS3Operations = (
       console.error('Error uploading to S3: ', error)
       triggerToast(`Failed to upload ${file.name}`, 'error')
       setIsUploading(false)
-      options.onError?.(file.name, 'uploadError')
+      const errorMessage = error instanceof Error ? error.message : ''
+      options.onError?.(file.name, 'uploadError', errorMessage)
     }
   }
 

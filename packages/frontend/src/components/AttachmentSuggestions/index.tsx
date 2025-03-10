@@ -147,10 +147,12 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
 
   const { deleteUploadedFile, isDeleting, uploadToS3, isUploading } =
     useS3Operations(name, getValues, refetchFlow, uploadedItems, {
-      onError: (filename: string, type: string) => {
+      onError: (filename: string, type: string, errorMessage: string) => {
         setError(name, {
           type: type,
-          message: `Failed to delete ${filename}`,
+          message: `Failed to ${
+            type === 'uploadError' ? 'upload' : 'delete'
+          } ${filename}. ${errorMessage}`,
         })
       },
     })
@@ -191,6 +193,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
         field: { onChange, value: values },
         fieldState: { error },
       }) => {
+        console.log('error', error)
         return (
           <FormControl isInvalid={!!error} ref={wrapperRef}>
             {label && (
