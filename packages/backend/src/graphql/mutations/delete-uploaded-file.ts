@@ -4,7 +4,7 @@ import Step from '@/models/step'
 
 import { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteFromS3: MutationResolvers['deleteFromS3'] = async (
+const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
   _parent,
   params,
   context,
@@ -50,4 +50,4 @@ const deleteFromS3: MutationResolvers['deleteFromS3'] = async (
   return await deleteObjects(COMMON_S3_BUCKET, [{ Key: objectKey }])
 }
 
-export default deleteFromS3
+export default deleteUploadedFile

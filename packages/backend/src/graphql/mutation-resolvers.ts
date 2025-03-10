@@ -7,8 +7,8 @@ import createStep from './mutations/create-step'
 import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
-import deleteFromS3 from './mutations/delete-from-s3'
 import deleteStep from './mutations/delete-step'
+import deleteUploadedFile from './mutations/delete-uploaded-file'
 import duplicateFlow from './mutations/duplicate-flow'
 import executeFlow from './mutations/execute-flow'
 import executeStep from './mutations/execute-step'
@@ -79,7 +79,7 @@ export default {
   createFlowTransfer,
   updateFlowTransferStatus,
   duplicateFlow,
-  deleteFromS3,
+  deleteUploadedFile,
   generatePresignedUrl,
   ...tilesMutationResolvers,
 } satisfies MutationResolvers

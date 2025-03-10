@@ -1,7 +1,8 @@
+import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
-import deleteFromS3 from '@/graphql/mutations/delete-from-s3'
+import deleteUploadedFile from '@/graphql/mutations/delete-uploaded-file'
 import Flow from '@/models/flow'
 import Context from '@/types/express/context'
 
@@ -12,7 +13,7 @@ const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 const mockBucket = 'test-bucket'
 const mockObjectName = 'some-file.jpg'
 const mockObjectKey = `${mockFlowId}s/${mockObjectName}`
-const mockS3Id = `s3:${mockBucket}:${mockFlowId}/${mockObjectName}`
+const mockS3Id = `s3:${mockBucket}:${mockFlowId}/${randomUUID()}/${mockObjectName}`
 
 const mocks = vi.hoisted(() => ({
   s3Client: {
@@ -40,7 +41,7 @@ vi.mock('@aws-sdk/client-s3', () => ({
 }))
 
 function createMockS3Id(mockFileName: string) {
-  return `s3:${mockBucket}:${mockFlowId}/${mockFileName}.txt`
+  return `s3:${mockBucket}:${mockFlowId}/${randomUUID()}/${mockFileName}.txt`
 }
 
 async function createMockStep(
@@ -72,9 +73,9 @@ describe('deleteFromS3', () => {
   it('should successfully delete an object when user owns the flow', async () => {
     await generateMockFlow(context, mockFlowId)
 
-    await expect(deleteFromS3(null, { id: mockS3Id }, context)).resolves.toBe(
-      true,
-    )
+    await expect(
+      deleteUploadedFile(null, { id: mockS3Id }, context),
+    ).resolves.toBe(true)
   })
 
   it('should delete object from all other steps within a flow', async () => {
@@ -89,7 +90,7 @@ describe('deleteFromS3', () => {
       attachments: [fileToDelete, createMockS3Id('test_2')],
     })
 
-    await deleteFromS3(null, { id: fileToDelete }, context)
+    await deleteUploadedFile(null, { id: fileToDelete }, context)
     const postDeleteSteps = await context.currentUser
       .$relatedQuery('steps')
       .where({ flow_id: mockFlowId })
@@ -106,8 +107,8 @@ describe('deleteFromS3', () => {
         new ForbiddenError('You do not have access to this flow'),
       )
 
-    await expect(deleteFromS3(null, { id: mockS3Id }, context)).rejects.toThrow(
-      ForbiddenError,
-    )
+    await expect(
+      deleteUploadedFile(null, { id: mockS3Id }, context),
+    ).rejects.toThrow(ForbiddenError)
   })
 })

@@ -145,20 +145,15 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     return selectedOptions.map((option) => option.name as string)
   }, [selectedOptions])
 
-  const { deleteFromS3, isDeleting, uploadToS3, isUploading } = useS3Operations(
-    name,
-    getValues,
-    refetchFlow,
-    uploadedItems,
-    {
+  const { deleteUploadedFile, isDeleting, uploadToS3, isUploading } =
+    useS3Operations(name, getValues, refetchFlow, uploadedItems, {
       onError: (filename: string, type: string) => {
         setError(name, {
           type: type,
           message: `Failed to delete ${filename}`,
         })
       },
-    },
-  )
+    })
 
   const onDelete = (e: React.MouseEvent, file: Variable) => {
     e?.stopPropagation()
@@ -167,7 +162,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   }
 
   const onDeleteConfirm = async () => {
-    await deleteFromS3(selectedFile)
+    await deleteUploadedFile(selectedFile)
     onDialogClose()
   }
 

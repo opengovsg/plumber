@@ -13,7 +13,7 @@ import {
   createUpdateStep,
   reformatToAttachmentConfig,
 } from '@/components/AttachmentSuggestions/utils'
-import { DELETE_FROM_S3 } from '@/graphql/mutations/delete-from-s3'
+import { DELETE_UPLOADED_FILE } from '@/graphql/mutations/delete-uploaded-file'
 import { GENERATE_PRESIGNED_URL } from '@/graphql/mutations/generate-presigned-url'
 import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
@@ -35,7 +35,7 @@ export const useS3Operations = (
   const toast = useToast()
   const [isDeleting, setIsDeleting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [deleteFile] = useMutation(DELETE_FROM_S3)
+  const [deleteFile] = useMutation(DELETE_UPLOADED_FILE)
   const [generatePresignedUrl] = useMutation(GENERATE_PRESIGNED_URL)
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const [updateStep] = useMutation(UPDATE_STEP)
@@ -54,7 +54,7 @@ export const useS3Operations = (
     }
   }
 
-  const deleteFromS3 = async (file: any) => {
+  const deleteUploadedFile = async (file: any) => {
     try {
       const { name: filename, value, displayedValue } = file
       const flowId = getValues('flowId')
@@ -169,5 +169,5 @@ export const useS3Operations = (
     })
   }
 
-  return { deleteFromS3, isDeleting, uploadToS3, isUploading }
+  return { deleteUploadedFile, isDeleting, uploadToS3, isUploading }
 }

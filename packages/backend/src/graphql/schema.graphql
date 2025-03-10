@@ -98,7 +98,7 @@ type Mutation {
   duplicateFlow(input: DuplicateFlowInput): Flow
   # S3 operations
   generatePresignedUrl(input: GeneratePresignedUrlInput): PresignedUrl
-  deleteFromS3(id: String!): Boolean
+  deleteUploadedFile(id: String!): Boolean
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
