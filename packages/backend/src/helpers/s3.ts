@@ -291,15 +291,14 @@ export async function checkObjectScanStatus(bucket: string, objectKey: string) {
 }
 
 export const validateObjectKey = (objectKey: string) => {
-  // validate length of object key
-  const byteLength = Buffer.byteLength(objectKey, 'utf-8')
-
   // validate characters in object key
-  const invalidCharacters = /[\\{}^`%~#<>|[\]]/ // Add other characters as needed
+  const invalidCharacters = /[\\{}^`%~#<>|[\]]/
   if (invalidCharacters.test(objectKey)) {
     return false
   }
 
+  // validate length of object key
+  const byteLength = Buffer.byteLength(objectKey, 'utf-8')
   return byteLength <= 1024
 }
 
