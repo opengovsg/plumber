@@ -72,7 +72,8 @@ export const transactionalEmailFields: IField[] = [
     key: 'replyTo',
     type: 'string' as const,
     required: false,
-    description: 'If left blank, this will default to your email address.',
+    description:
+      'If left blank, this will default to your email address. Only one email address is allowed.',
     variables: true,
   },
   {
