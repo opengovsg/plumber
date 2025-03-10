@@ -485,7 +485,7 @@ input DuplicateFlowInput {
 }
 
 input GeneratePresignedUrlInput {
-  id: String!
+  flowId: String!
   filename: String!
   fileType: String!
   size: Int!

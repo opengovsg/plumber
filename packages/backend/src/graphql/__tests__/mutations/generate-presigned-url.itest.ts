@@ -1,14 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
-// import { knex } from '@/db'
 import { generateMockContext } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import generatePresignedUrl from '@/graphql/mutations/generate-presigned-url'
 import Flow from '@/models/flow'
 import Context from '@/types/express/context'
 
 const VALID_PARAMS = {
-  id: '193040de-c818-4a0c-90f9-1dcfb1963f53',
+  flowId: '193040de-c818-4a0c-90f9-1dcfb1963f53',
   filename: 'test.txt',
   fileType: 'text/plain',
   size: 100,
@@ -35,7 +34,7 @@ describe('generatePresignedUrl', () => {
     mocks.getSignedUrl.mockResolvedValueOnce(expectedUrl)
 
     await Flow.query().insert({
-      id: VALID_PARAMS.id,
+      id: VALID_PARAMS.flowId,
       name: 'Test Flow',
       userId: context.currentUser.id,
     })
@@ -47,7 +46,7 @@ describe('generatePresignedUrl', () => {
     )
     const expectedKeys = ['url', 's3Id']
     expect(Object.keys(result)).toEqual(expectedKeys)
-    expect(result.s3Id).toContain(VALID_PARAMS.id)
+    expect(result.s3Id).toContain(VALID_PARAMS.flowId)
   })
 
   it('should throw an error if the user does not have access to the flow', async () => {

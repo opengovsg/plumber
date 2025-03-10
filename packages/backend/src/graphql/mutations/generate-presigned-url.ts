@@ -10,14 +10,14 @@ const generatePresignedUrl: MutationResolvers['generatePresignedUrl'] = async (
   params,
   context,
 ) => {
-  const { id, filename, fileType, size, updatedAt, manualUpload } = params.input
+  const { flowId, filename, fileType, size, updatedAt, manualUpload } =
+    params.input
 
-  await Flow.hasAccess(context.currentUser.id, id)
-
+  await Flow.hasAccess(context.currentUser.id, flowId)
   const uuid = randomUUID()
-  const filePath = `${id}/${uuid}/${filename}`
+  const filePath = `${flowId}/${uuid}/${filename}`
   const url = await getPresignedUrl(COMMON_S3_BUCKET, filePath, fileType, {
-    flowId: id,
+    flowId,
     filename,
     size: size.toString(),
     updatedAt,

@@ -93,7 +93,7 @@ export const useS3Operations = (
       const res = await generatePresignedUrl({
         variables: {
           input: {
-            id: flowId,
+            flowId,
             filename,
             fileType: type,
             size,
