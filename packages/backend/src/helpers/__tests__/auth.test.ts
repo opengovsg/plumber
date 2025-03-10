@@ -260,7 +260,7 @@ describe('Auth helpers', () => {
       const mockUser = {
         id: 'test-id',
         email: 'test@example.com',
-        createdAt: new Date('2025-03-01'), // After release date
+        createdAt: new Date('2025-03-11'), // After release date
       } as unknown as User
 
       mocks.findById.mockResolvedValueOnce(mockUser)
@@ -276,7 +276,7 @@ describe('Auth helpers', () => {
         id: 'test-id',
         email: 'test@example.com',
         lastLoginAt: null,
-        createdAt: new Date('2025-03-01'), // After release date
+        createdAt: new Date('2025-03-11'), // After release date
       } as unknown as User
 
       mocks.findById.mockResolvedValueOnce(mockUser)
@@ -300,7 +300,7 @@ describe('Auth helpers', () => {
         id: 'test-id',
         email: 'test@example.com',
         lastLoginAt: null,
-        createdAt: new Date('2025-03-01'), // After release date
+        createdAt: new Date('2025-03-11'), // After release date
       } as unknown as User
 
       mocks.findById.mockResolvedValueOnce(mockUser)
