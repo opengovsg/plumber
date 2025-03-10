@@ -1,4 +1,9 @@
-import { COMMON_S3_BUCKET, deleteObjects, parseS3Id } from '@/helpers/s3'
+import {
+  COMMON_S3_BUCKET,
+  deleteObjects,
+  parseS3Id,
+  validateManualUploadId,
+} from '@/helpers/s3'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 
@@ -10,6 +15,10 @@ const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
   context,
 ) => {
   const { id } = params
+  if (!validateManualUploadId(id)) {
+    throw new Error('Invalid id')
+  }
+
   const { objectKey } = parseS3Id(id)
 
   // check if flow belongs to user
@@ -31,22 +40,22 @@ const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
           id: string
           parameters: { attachments?: string[] }
         }) => {
-      const { id: stepId, parameters } = step
-      const { attachments = [] } = parameters
+          const { id: stepId, parameters } = step
+          const { attachments = [] } = parameters
 
-      if (attachments.length > 0 && attachments.includes(id)) {
-          await Step.query(trx)
-            .patch({
-              parameters: {
-                ...parameters,
-                attachments: attachments.filter((a) => a !== id),
-              },
-            })
-            .where('steps.id', stepId)
-      }
-    },
+          if (attachments.length > 0 && attachments.includes(id)) {
+            await Step.query(trx)
+              .patch({
+                parameters: {
+                  ...parameters,
+                  attachments: attachments.filter((a) => a !== id),
+                },
+              })
+              .where('steps.id', stepId)
+          }
+        },
       ),
-  )
+    )
   })
 
   return await deleteObjects(COMMON_S3_BUCKET, [{ Key: objectKey }])

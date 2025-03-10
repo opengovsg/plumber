@@ -60,4 +60,48 @@ describe('generatePresignedUrl', () => {
       generatePresignedUrl(null, { input: VALID_PARAMS }, context),
     ).rejects.toThrow(ForbiddenError)
   })
+
+  it('should throw an error if the file size is too large', async () => {
+    const expectedUrl = 'https://presigned-url.example.com'
+    mocks.getSignedUrl.mockResolvedValueOnce(expectedUrl)
+
+    await Flow.query().insert({
+      id: VALID_PARAMS.flowId,
+      name: 'Test Flow',
+      userId: context.currentUser.id,
+    })
+
+    const tooLargeParams = { ...VALID_PARAMS, size: 2 * 1024 * 1024 + 1 }
+    await expect(
+      generatePresignedUrl(null, { input: tooLargeParams }, context),
+    ).rejects.toThrow('Size of attachment exceeds 2MB')
+  })
+
+  it.each([
+    'application/octet-stream',
+    'application/x-executable',
+    'application/x-shockwave-flash',
+    'application/x-msdownload',
+  ])(
+    'should throw an error if the file type is not supported: %s',
+    async (fileType) => {
+      const expectedUrl = 'https://presigned-url.example.com'
+      mocks.getSignedUrl.mockResolvedValueOnce(expectedUrl)
+
+      await Flow.query().insert({
+        id: VALID_PARAMS.flowId,
+        name: 'Test Flow',
+        userId: context.currentUser.id,
+      })
+
+      const unsupportedParams = {
+        ...VALID_PARAMS,
+        fileType,
+      }
+
+      await expect(
+        generatePresignedUrl(null, { input: unsupportedParams }, context),
+      ).rejects.toThrow('Unsupported file type')
+    },
+  )
 })

@@ -289,3 +289,28 @@ export async function checkObjectScanStatus(bucket: string, objectKey: string) {
 
   return { isValid: false, scanStatus: scanStatus }
 }
+
+export const validateObjectKey = (objectKey: string) => {
+  // validate length of object key
+  const byteLength = Buffer.byteLength(objectKey, 'utf-8')
+
+  // validate characters in object key
+  const invalidCharacters = /[\\{}^`%~#<>|[\]]/ // Add other characters as needed
+  if (invalidCharacters.test(objectKey)) {
+    return false
+  }
+
+  return byteLength <= 1024
+}
+
+// NOTE: we only allow deletion of manually deleted files
+// Manually uploaded files will have this id format: s3:bucket-name:flow-id/random-uuid/filename
+// FormSG attachments will use variables: {{step.uuid.fields.form-id.answer}}
+export const validateManualUploadId = (id: string): boolean => {
+  const UUID_PATTERN =
+    '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+  const s3IdPattern = new RegExp(
+    `^s3:[^:]+:${UUID_PATTERN}\\/${UUID_PATTERN}\\/.+$`,
+  )
+  return s3IdPattern.test(id)
+}

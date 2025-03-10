@@ -1,4 +1,5 @@
 import { ObjectIdentifier } from '@aws-sdk/client-s3'
+import { randomUUID } from 'crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -11,6 +12,8 @@ import {
   MALWARE_SCAN_STATUS,
   parseS3Id,
   putObject,
+  validateManualUploadId,
+  validateObjectKey,
 } from '../s3'
 
 const VALID_PUT_OBJ_INPUTS = {
@@ -337,6 +340,74 @@ describe('s3', () => {
           isValid: false,
           scanStatus: status,
         })
+      })
+    })
+  })
+
+  describe('validateObjectKey', () => {
+    it('should return true for an object key with byte length less than or equal to 1024', () => {
+      const validKey = 'a'.repeat(1024)
+      expect(validateObjectKey(validKey)).toBe(true)
+    })
+
+    it('should return false for an object key with byte length greater than 1024', () => {
+      const invalidKey = 'a'.repeat(1025)
+      expect(validateObjectKey(invalidKey)).toBe(false)
+    })
+
+    it('should return true for an empty object key', () => {
+      const emptyKey = ''
+      expect(validateObjectKey(emptyKey)).toBe(true)
+    })
+
+    it('should correctly handle multibyte characters', () => {
+      const multibyteKey = 'ü'.repeat(512) // Each 'ü' is 2 bytes in UTF-8
+      expect(validateObjectKey(multibyteKey)).toBe(true)
+
+      const invalidMultibyteKey = 'ü'.repeat(513) // 1026 bytes
+      expect(validateObjectKey(invalidMultibyteKey)).toBe(false)
+    })
+
+    it('should return false for object keys with invalid characters', () => {
+      const invalidKeys = [
+        'key\\with\\backslash',
+        'key{with}braces',
+        'key^with^caret',
+        'key%with%percent',
+        'key<with<less',
+        'key>with>greater',
+        'key#with#hash',
+        'key|with|pipe',
+        'key~with~tilde',
+        'key`with`backtick',
+        'key[with[square',
+        'key]with]square',
+      ]
+      invalidKeys.forEach((key) => {
+        expect(validateObjectKey(key)).toBe(false)
+      })
+    })
+  })
+
+  describe('validateS3IdFormat', () => {
+    it('should return true for a valid S3 ID format', () => {
+      const validId = `s3:bucket-name:${randomUUID()}/${randomUUID()}/filename.txt`
+      expect(validateManualUploadId(validId)).toBe(true)
+    })
+
+    it('should return false for an invalid S3 ID format', () => {
+      const invalidIds = [
+        's3:bucket-name:invalid-uuid/invalid-uuid/filename.txt',
+        's3:bucket-name:1234/5678/filename.txt',
+        's3:bucket-name:uuid/uuid',
+        's3:bucket-name:uuid/uuid/',
+        's3:bucket-name:/uuid/filename.txt',
+        'bucket-name:uuid/uuid/filename.txt',
+        's3:bucket-name:uuid/uuid/filename',
+        '{{step.12345678.fields.987654321abc.answer}}',
+      ]
+      invalidIds.forEach((id) => {
+        expect(validateManualUploadId(id)).toBe(false)
       })
     })
   })
