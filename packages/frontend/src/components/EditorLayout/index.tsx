@@ -1,7 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
 import { useCallback, useMemo } from 'react'
-import { BiChevronLeft, BiCog } from 'react-icons/bi'
+import { BiChevronLeft, BiCog, BiInfoCircle } from 'react-icons/bi'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
 import {
@@ -131,7 +131,6 @@ export default function EditorLayout() {
           px={8}
           borderBottom="1px solid"
           borderColor="base.divider.subtle"
-          spacing={4}
         >
           <Flex flex={1} alignItems="center">
             <Box as={Link} to={URLS.FLOWS} mt={1}>
@@ -154,24 +153,35 @@ export default function EditorLayout() {
             )}
           </Flex>
 
-          <Button
-            as={Link}
-            to={URLS.GUIDE_LINK}
-            colorScheme="secondary"
-            target="_blank"
-            variant="link"
-          >
-            Guide
-          </Button>
+          <TouchableTooltip label="Guide" aria-label="guide tooltip">
+            <IconButton
+              as={Link}
+              to={URLS.GUIDE_LINK}
+              target="_blank"
+              variant="clear"
+              aria-label="guide"
+              icon={<BiInfoCircle />}
+              colorScheme="secondary"
+              _hover={{
+                color: 'primary.500',
+                bg: 'interaction.muted.main.hover',
+              }}
+            />
+          </TouchableTooltip>
 
           <TouchableTooltip label="Settings" aria-label="settings tooltip">
             <IconButton
               as={Link}
               to={URLS.FLOW_EDITOR_NOTIFICATIONS(flowId)}
-              variant="outline"
+              variant="clear"
               aria-label="settings"
               icon={<BiCog />}
-            ></IconButton>
+              colorScheme="secondary"
+              _hover={{
+                color: 'primary.500',
+                bg: 'interaction.muted.main.hover',
+              }}
+            />
           </TouchableTooltip>
 
           {/* Used a tooltip instead because the words take up too much space on mobile view */}
@@ -188,7 +198,7 @@ export default function EditorLayout() {
               isDisabled={isFlowIncomplete || hasFlowTransfer}
               isLoading={loading}
               spinner={<Spinner fontSize={24} />}
-              size="md"
+              size="sm"
               onClick={() => onFlowStatusUpdate(!flow.active)}
             >
               <Skeleton isLoaded={!loading}>
