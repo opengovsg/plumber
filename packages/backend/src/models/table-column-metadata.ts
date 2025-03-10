@@ -38,9 +38,11 @@ class TableColumnMetadata extends Base {
   })
 
   static getColumns = async (tableId: string, $?: IGlobalVariable) => {
-    const columns = await TableColumnMetadata.query().where({
-      table_id: tableId,
-    })
+    const columns = await TableColumnMetadata.query()
+      .where({
+        table_id: tableId,
+      })
+      .orderBy('position')
 
     if (columns.length === 0) {
       throw new StepError(

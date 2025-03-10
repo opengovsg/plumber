@@ -17,11 +17,12 @@ export async function generateColumnNameMetadata(
 
   const columns = await TableColumnMetadata.query()
     .findByIds(columnIds)
-    .select('id', 'name')
+    .select('id', 'name', 'position')
 
   columns.forEach((column) => {
     columnMetadata[column.id] = {
       label: column.name,
+      order: column.position,
     }
   })
   return { [parentKey]: columnMetadata }
