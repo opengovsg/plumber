@@ -5,10 +5,12 @@ import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 import appConfig from '@/config/app'
 import User from '@/models/user'
 
+import logger from './logger'
+
 const AUTH_COOKIE_NAME = 'plumber.sid'
 // 3 days expiry
 const TOKEN_EXPIRES_IN_SEC = 3 * 24 * 60 * 60
-const ONBOARDING_EMAIL_RELEASE_DATE = new Date('2025-02-27')
+const ONBOARDING_EMAIL_RELEASE_DATE = new Date('2025-03-10')
 
 export function setAuthCookie(
   res: Response,
@@ -73,9 +75,16 @@ export async function sendOnboardingEmail(user: User) {
     return
   }
   // call plumber webhook to send onboarding email only in prod
-  if (!appConfig.isDev && appConfig.onboardingEmailWebhookUrl) {
-    await axios.post(appConfig.onboardingEmailWebhookUrl, {
-      email: user.email,
+  try {
+    if (appConfig.isProd && appConfig.onboardingEmailWebhookUrl) {
+      await axios.post(appConfig.onboardingEmailWebhookUrl, {
+        email: user.email,
+      })
+    }
+  } catch (error) {
+    logger.error({
+      event: 'onboarding-email-error',
+      error: error.message,
     })
   }
 }
