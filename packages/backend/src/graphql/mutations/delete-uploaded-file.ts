@@ -17,22 +17,24 @@ const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
   await Flow.hasAccess(context.currentUser.id, flowId)
 
   // only postman has attachments
-  const steps = await context.currentUser
-    .$relatedQuery('steps')
-    .where({
-      'steps.flow_id': flowId,
-      'steps.app_key': 'postman',
+  // Get all postman steps and update attachments in a single transaction
+  await Step.transaction(async (trx) => {
+    const steps = await Step.query(trx).where({
+      flow_id: flowId,
+      app_key: 'postman',
     })
-    .orderBy('steps.position', 'asc')
 
-  // remove attachment from all steps to prevent execution failure
-  const deletePromises = steps.map(
-    async (step: { id: string; parameters: { attachments?: string[] } }) => {
+    // Remove attachment from all steps that contain it
+    await Promise.all(
+      steps.map(
+        async (step: {
+          id: string
+          parameters: { attachments?: string[] }
+        }) => {
       const { id: stepId, parameters } = step
       const { attachments = [] } = parameters
 
       if (attachments.length > 0 && attachments.includes(id)) {
-        await Step.transaction(async (trx) => {
           await Step.query(trx)
             .patch({
               parameters: {
@@ -41,11 +43,11 @@ const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
               },
             })
             .where('steps.id', stepId)
-        })
       }
     },
+      ),
   )
-  await Promise.allSettled(deletePromises)
+  })
 
   return await deleteObjects(COMMON_S3_BUCKET, [{ Key: objectKey }])
 }
