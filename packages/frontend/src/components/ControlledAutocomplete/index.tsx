@@ -23,6 +23,7 @@ export interface ControlledAutocompleteProps {
   required?: boolean
   placeholder?: string
   addNewOption?: IFieldDropdown['addNewOption']
+  isSearchable?: boolean
 }
 
 const formComboboxOptions = (
@@ -62,6 +63,7 @@ function ControlledAutocomplete(
     required,
     placeholder,
     addNewOption,
+    isSearchable,
   } = props
 
   const items = useMemo(
@@ -92,6 +94,7 @@ function ControlledAutocomplete(
     name,
     control,
     rules: { required },
+    // fixme: this default value is not working as expected
     defaultValue: defaultValue ?? '',
   })
 
@@ -146,14 +149,14 @@ function ControlledAutocomplete(
       )}
       {/* Dropdown row option content */}
       <Flex>
-        <Box flexGrow={1}>
+        <Box flex={1}>
           <SingleSelect
             name="choose-dropdown-option"
             colorScheme="secondary"
             isClearable={!required}
             items={items}
             onChange={fieldOnChange}
-            value={fieldValue}
+            value={fieldValue ?? defaultValue}
             placeholder={placeholder}
             ref={ref}
             data-test={`${name}-autocomplete`}
@@ -161,6 +164,7 @@ function ControlledAutocomplete(
             isRefreshLoading={loading}
             freeSolo={freeSolo}
             isReadOnly={isCreatingNewOption}
+            isSearchable={isSearchable}
             addNew={
               addNewOption
                 ? {

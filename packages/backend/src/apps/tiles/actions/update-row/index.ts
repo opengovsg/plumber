@@ -49,7 +49,7 @@ const action: IRawAction = {
     {
       label: 'Row data',
       key: 'rowData',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       description:
         'Enter the data to update the row with. Columns not specified will not be updated.',
       required: true,
@@ -79,6 +79,26 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2, minWidth: 0 },
+        },
+        {
+          key: 'operator' as const,
+          type: 'dropdown' as const,
+          isSearchable: false,
+          required: true,
+          variables: false,
+          showOptionValue: false,
+          value: 'set',
+          options: [
+            { label: '=', value: 'set', description: 'Set as' },
+            { label: '+', value: 'add', description: 'Add by (numbers only)' },
+            {
+              label: '-',
+              value: 'subtract',
+              description: 'Subtract by (numbers only)',
+            },
+          ],
+          customStyle: { flexBasis: '71px' },
         },
         {
           placeholder: 'Value',
@@ -86,6 +106,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: false,
           variables: true,
+          customStyle: { flex: 3, minWidth: 0 },
         },
       ],
     },

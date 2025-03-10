@@ -112,17 +112,18 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
             <Text noOfLines={1}>{textToDisplay}</Text>
           </Stack>
           <Input
-            isReadOnly={!isSearchable || isReadOnly}
             isInvalid={isInvalid}
-            isDisabled={isDisabled}
             placeholder={textToDisplay ? '' : placeholder}
-            sx={styles.field}
+            sx={{
+              ...styles.field,
+              cursor: isSearchable ? 'text' : 'pointer',
+            }}
             {...getInputProps({
               onClick: handleToggleMenu,
               onBlur: () => !isOpen && resetInputValue(),
               ref: mergedInputRef,
               disabled: isDisabled,
-              readOnly: isReadOnly,
+              readOnly: !isSearchable || isReadOnly,
               required: isRequired,
               'aria-expanded': !!isOpen,
             })}

@@ -87,6 +87,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     const preparedOptions = schema.options || optionGenerator(data)
     return (
       <ControlledAutocomplete
+        isSearchable={schema.isSearchable ?? true}
         name={computedName}
         required={required}
         freeSolo={schema.allowArbitrary}
@@ -130,9 +131,6 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           disabled={disabled}
           placeholder={placeholder}
           isSingleLine={parentType === 'multicol'}
-          customStyle={
-            parentType === 'multicol' ? { flex: 1, minWidth: 0 } : {}
-          }
           variablesEnabled
         />
       )
@@ -140,19 +138,14 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
 
     return (
       <TextField
-        defaultValue={value}
         required={required}
         placeholder={placeholder}
         readOnly={readOnly || disabled}
         name={computedName}
-        size="small"
         label={label}
-        fullWidth
         multiline={type === 'multiline'}
         description={description}
         clickToCopy={clickToCopy}
-        autoComplete={schema.autoComplete}
-        customStyle={parentType === 'multicol' ? { flex: 0.5 } : {}}
       />
     )
   }
