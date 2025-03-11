@@ -290,6 +290,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
               collapsed={currentStepId !== groupedSteps[0].id}
               onOpen={() => setCurrentStepId(groupedSteps[0].id)}
               onClose={() => setCurrentStepId(null)}
+              setCurrentStepId={setCurrentStepId}
             />
           )}
         </StepExecutionsToIncludeProvider>
