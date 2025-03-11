@@ -100,7 +100,11 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
         const variableType = variable.type ?? 'text'
         return variableTypes?.includes(variableType) ?? false
       },
-    )
+    ).map((v) => ({
+      ...v,
+      // NOTE: add the source to display in the tag
+      output: v.output.map((o) => ({ ...o, source: v.name })),
+    }))
 
     const selectedFromVars = filteredVars.reduce(
       (acc: CheckboxVariable[], v) => {
@@ -193,7 +197,6 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
         field: { onChange, value: values },
         fieldState: { error },
       }) => {
-        console.log('error', error)
         return (
           <FormControl isInvalid={!!error} ref={wrapperRef}>
             {label && (

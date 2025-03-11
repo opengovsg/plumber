@@ -18,6 +18,7 @@ export interface CheckboxVariable extends Variable {
   updatedAt?: string | number
   size?: number
   uploaded?: boolean
+  source?: string
 }
 
 interface CheckboxProps {
@@ -31,7 +32,22 @@ interface CheckboxProps {
 
 function Checkbox(props: CheckboxProps) {
   const { variable, isChecked, onClick, allowDelete, onDelete } = props
-  const { displayedValue, size, value, updatedAt = null, uploaded } = variable
+  const {
+    displayedValue,
+    label,
+    size,
+    value,
+    updatedAt = null,
+    uploaded,
+  } = variable
+
+  const getInfoText = (info?: number | string | null) => {
+    return (
+      <Text textStyle="body-2" noOfLines={1} color="base.content.medium">
+        {info ?? ''}
+      </Text>
+    )
+  }
 
   // Note: removes the outline around the checkbox that is last focused
   const handleBlur = (e: ChangeEvent<HTMLInputElement>) => e.target.blur()
@@ -52,20 +68,20 @@ function Checkbox(props: CheckboxProps) {
     >
       <Flex alignItems="center" justify="space-between" maxW="100%">
         <Flex direction="column">
-          <TouchableTooltip label={displayedValue}>
-            <Text noOfLines={1}>{displayedValue}</Text>
+          <TouchableTooltip label={uploaded ? displayedValue : label}>
+            <Text noOfLines={1}>{uploaded ? displayedValue : label}</Text>
           </TouchableTooltip>
-          {uploaded && (
-            <Flex direction="row" alignItems="center">
-              <Text textStyle="body-2" noOfLines={1}>
-                {size ? formatFileSizeToStr(size) : ''}
-              </Text>
-              <Icon as={BsDot} />
-              <Text textStyle="body-2" noOfLines={1}>
-                {toPrettyDateString(updatedAt, 'iso')}
-              </Text>
-            </Flex>
-          )}
+          <Flex direction="row" alignItems="center">
+            {uploaded ? (
+              <Flex direction="row" alignItems="center">
+                {getInfoText(size ? formatFileSizeToStr(size) : '')}
+                <Icon as={BsDot} />
+                {getInfoText(toPrettyDateString(updatedAt, 'iso'))}
+              </Flex>
+            ) : (
+              getInfoText(displayedValue)
+            )}
+          </Flex>
         </Flex>
         {allowDelete && (
           <IconButton

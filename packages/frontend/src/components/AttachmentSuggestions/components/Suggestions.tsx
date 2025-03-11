@@ -92,18 +92,23 @@ export default function Suggestions(props: SuggestionsProps) {
                   />
                 )}
                 <Box data-test="attachment-group" maxH={64} overflowY="auto">
-                  {output?.map((variable) => (
-                    <Checkbox
-                      key={variable.name}
-                      variable={variable}
-                      allowDelete={addNew}
-                      isChecked={selectedNames.includes(variable.name)}
-                      onClick={(variable, checked) => {
-                        onSuggestionClick(variable, checked, onChange, values)
-                      }}
-                      onDelete={onDelete}
-                    />
-                  ))}
+                  {output?.map((variable) => {
+                    return (
+                      <Checkbox
+                        key={variable.name}
+                        variable={{
+                          ...variable,
+                          source: option.name,
+                        }}
+                        allowDelete={addNew}
+                        isChecked={selectedNames.includes(variable.name)}
+                        onClick={(variable, checked) => {
+                          onSuggestionClick(variable, checked, onChange, values)
+                        }}
+                        onDelete={onDelete}
+                      />
+                    )
+                  })}
                 </Box>
               </Collapse>
             )
