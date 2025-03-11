@@ -63,6 +63,7 @@ describe('makeActionWorker', () => {
 
   it('creates a worker for the specified queue name', () => {
     makeActionWorker({
+      appKey: 'test-app',
       queueName: '{test-app-queue}',
       queueConfig: { isQueueDelayable: false },
     })
@@ -78,6 +79,7 @@ describe('makeActionWorker', () => {
 
   it('supports specifying a redis connection prefix', () => {
     makeActionWorker({
+      appKey: 'test-app',
       queueName: 'some-queue',
       redisConnectionPrefix: '{test}',
       queueConfig: { isQueueDelayable: false },
@@ -170,6 +172,7 @@ describe('makeActionWorker', () => {
     "sets up queue according to the app's queue config",
     ({ appQueueConfig, expectedWorkerOptions }) => {
       makeActionWorker({
+        appKey: 'test-app',
         queueName: '{test-app-queue}',
         queueConfig: appQueueConfig,
       })
