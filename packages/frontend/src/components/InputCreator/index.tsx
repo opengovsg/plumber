@@ -138,6 +138,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
 
     return (
       <TextField
+        defaultValue={value}
         required={required}
         placeholder={placeholder}
         readOnly={readOnly || disabled}
