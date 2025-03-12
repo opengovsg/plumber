@@ -1,16 +1,15 @@
 import * as React from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import { BiCopy } from 'react-icons/bi'
 import Markdown from 'react-markdown'
-import { FormControl } from '@chakra-ui/react'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-import MuiTextField, {
-  TextFieldProps as MuiTextFieldProps,
-} from '@mui/material/TextField'
-import { FormLabel } from '@opengovsg/design-system-react'
-
-import copyInputValue from '@/helpers/copyInputValue'
+import { FormControl, InputGroup, InputRightElement } from '@chakra-ui/react'
+import {
+  FormLabel,
+  IconButton,
+  Input,
+  Textarea,
+} from '@opengovsg/design-system-react'
+import copy from 'clipboard-copy'
 
 type TextFieldProps = {
   shouldUnregister?: boolean
@@ -19,58 +18,52 @@ type TextFieldProps = {
   clickToCopy?: boolean
   readOnly?: boolean
   description?: string
-  customStyle?: React.CSSProperties
-} & MuiTextFieldProps
-
-const createCopyAdornment = (
-  ref: React.RefObject<HTMLInputElement | null>,
-): React.ReactElement => {
-  return (
-    <InputAdornment position="end">
-      <IconButton
-        onClick={() => copyInputValue(ref.current as HTMLInputElement)}
-        edge="end"
-      >
-        <ContentCopyIcon color="primary" />
-      </IconButton>
-    </InputAdornment>
-  )
+  required?: boolean
+  multiline?: boolean
+  onChange?: (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void
+  onBlur?: (
+    event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void
+  placeholder?: string
+  defaultValue?: string
 }
 
 export default function TextField(props: TextFieldProps): React.ReactElement {
   const { control } = useFormContext()
-  const inputRef = React.useRef<HTMLInputElement | null>(null)
   const {
     required,
     name,
     label,
     description,
     defaultValue,
+    placeholder,
     shouldUnregister,
     clickToCopy,
+    multiline,
     readOnly,
     onBlur,
     onChange,
-    customStyle,
-    ...textFieldProps
   } = props
+
+  const SelectedComponent = multiline ? Textarea : Input
 
   return (
     <Controller
-      rules={{ required }}
+      rules={{ required: required }}
       name={name}
       defaultValue={defaultValue || ''}
       control={control}
       shouldUnregister={shouldUnregister}
       render={({
         field: {
-          ref,
           onChange: controllerOnChange,
           onBlur: controllerOnBlur,
           ...field
         },
       }) => (
-        <FormControl style={customStyle}>
+        <FormControl>
           {label && (
             <FormLabel
               isRequired={required}
@@ -83,35 +76,37 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
               {label}
             </FormLabel>
           )}
-          <MuiTextField
-            {...textFieldProps}
-            {...field}
-            onChange={(...args) => {
-              controllerOnChange(...args)
-              onChange?.(...args)
-            }}
-            onBlur={(...args) => {
-              controllerOnBlur()
-              onBlur?.(...args)
-            }}
-            inputRef={(element) => {
-              inputRef.current = element
-              ref(element)
-            }}
-            InputProps={{
-              readOnly,
-              endAdornment: clickToCopy ? createCopyAdornment(inputRef) : null,
-            }}
-          />
+          <InputGroup>
+            <SelectedComponent
+              {...field}
+              placeholder={placeholder}
+              onChange={(...args) => {
+                controllerOnChange(...args)
+                onChange?.(...args)
+              }}
+              onBlur={(...args) => {
+                controllerOnBlur()
+                onBlur?.(...args)
+              }}
+              isReadOnly={readOnly}
+            />
+            {clickToCopy && (
+              <InputRightElement>
+                <IconButton
+                  icon={<BiCopy />}
+                  colorScheme="primary"
+                  variant="clear"
+                  aria-label={'Copy'}
+                  minHeight="42px"
+                  mr="2px"
+                  borderRadius="base"
+                  onClick={() => copy(field.value)}
+                />
+              </InputRightElement>
+            )}
+          </InputGroup>
         </FormControl>
       )}
     />
   )
-}
-
-TextField.defaultProps = {
-  readOnly: false,
-  disabled: false,
-  clickToCopy: false,
-  shouldUnregister: false,
 }

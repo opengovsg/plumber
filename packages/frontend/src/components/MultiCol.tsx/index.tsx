@@ -1,14 +1,14 @@
-import type { IField } from '@plumber/types'
+import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
 
 import { BiTrash } from 'react-icons/bi'
-import { Flex } from '@chakra-ui/react'
+import { Flex, useBreakpointValue } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
 
 type MultiColProps = {
   name: string
-  subFields: IField[]
+  subFields: IFieldMultiRowMultiColSubField[]
   canRemoveRow?: boolean
   isEditorReadOnly?: boolean
   remove?: (index?: number | number[]) => void
@@ -25,17 +25,23 @@ export default function MultiCol(props: MultiColProps) {
     index,
     ...forwardedInputCreatorProps
   } = props
+
+  const isMobile = useBreakpointValue({ base: true, sm: false })
   return (
-    <Flex flexDir="row" gap={2}>
+    <Flex flexDir={isMobile ? 'column' : 'row'} gap={2}>
       {subFields.map((subF) => {
         return (
-          <InputCreator
+          <div
             key={`${name}.${subF.key}`}
-            schema={subF}
-            namePrefix={name}
-            parentType="multicol"
-            {...forwardedInputCreatorProps}
-          />
+            style={isMobile ? { flex: 1 } : subF.customStyle}
+          >
+            <InputCreator
+              schema={subF}
+              namePrefix={name}
+              parentType="multicol"
+              {...forwardedInputCreatorProps}
+            />
+          </div>
         )
       })}
       {canRemoveRow && (

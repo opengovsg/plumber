@@ -22,8 +22,6 @@ interface SpecificErrorResultProps {
   executionStepId?: string
 }
 
-const contactPlumberMessage = `If this error still persists, contact us at [${SUPPORT_FORM_LINK}](${SUPPORT_FORM_LINK}).`
-
 export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   const { errorDetails, isTestRun, executionStepId } = props
   const { name, solution, position, appName, details, partialRetry } =
@@ -55,7 +53,7 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
 
   return (
     <Infobox variant="error">
-      <Box minW="0">
+      <Box minW="0" w="full">
         {/* Actual executions will not need to show step position and app name */}
         {isTestRun && (
           <Badge
@@ -72,9 +70,20 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
         </Text>
 
         <Text textStyle="body-1">
-          <Markdown linkTarget="_blank">
-            {solution + '\n' + contactPlumberMessage}
-          </Markdown>
+          <Markdown linkTarget="_blank">{solution}</Markdown>
+          <Box
+            marginTop={4}
+            borderTop="1px solid #E0E0E0"
+            fontSize="0.8rem"
+            opacity={0.8}
+            w="full"
+          >
+            If this error still persists, contact us at{' '}
+            <a href={SUPPORT_FORM_LINK} target="_blank" rel="noreferrer">
+              {SUPPORT_FORM_LINK}
+            </a>
+            .
+          </Box>
           {details && (
             <>
               <Button

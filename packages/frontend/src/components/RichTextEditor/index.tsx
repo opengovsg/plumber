@@ -260,7 +260,6 @@ interface RichTextEditorProps {
   description?: string
   disabled?: boolean
   placeholder?: string
-  customStyle?: React.CSSProperties
   variablesEnabled?: boolean
   isRich?: boolean
   isSingleLine?: boolean
@@ -273,7 +272,6 @@ const RichTextEditor = ({
   description,
   disabled,
   placeholder,
-  customStyle,
   variablesEnabled,
   isRich,
   isSingleLine,
@@ -281,7 +279,7 @@ const RichTextEditor = ({
   const { control } = useFormContext()
 
   return (
-    <FormControl flex={1} style={customStyle} data-test="text-input-group">
+    <FormControl flex={1} data-test="text-input-group">
       {label && (
         <FormLabel
           isRequired={required}

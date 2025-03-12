@@ -27,6 +27,16 @@ export function handleDynamoDBError(error: unknown): never {
           delayType: 'step',
         })
       }
+      if (
+        message.includes(
+          'An operand in the update expression has an incorrect data type',
+        ) ||
+        message.includes('Incorrect operand type for operator or function')
+      ) {
+        throw new Error(
+          'You can only add or subtract numbers, please check your values.',
+        )
+      }
       throw new Error('DynamoDB Internal Error: ' + message)
     }
     if (error.code < 6000) {
@@ -89,11 +99,11 @@ export function stripInvalidKeys({
   columnIds: string[]
   data: Record<string, string | number>
 }) {
-  const validKeys = new Set(columnIds)
   const strippedData: Record<string, string | number> = {}
-  for (const [key, value] of Object.entries(data)) {
-    if (validKeys.has(key)) {
-      strippedData[key] = value
+  // Iterate through columnIds to maintain order
+  for (const columnId of columnIds) {
+    if (columnId in data) {
+      strippedData[columnId] = data[columnId]
     }
   }
   return strippedData

@@ -37,7 +37,7 @@ export const SelectMenu = (): JSX.Element => {
           { suppressRefError: true },
         )}
         style={floatingStyles}
-        sx={styles.list}
+        sx={{ ...styles.list, minWidth: '230px' }}
         zIndex="dropdown"
       >
         {isOpen && items.length > 0 && (

@@ -1,8 +1,11 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
-import { stripInvalidKeys } from '@/models/dynamodb/helpers'
-import { patchTableRow } from '@/models/dynamodb/table-row'
+import {
+  autoMarshallNumberStrings,
+  stripInvalidKeys,
+} from '@/models/dynamodb/helpers'
+import { PatchRowInput, patchTableRow } from '@/models/dynamodb/table-row'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
@@ -49,7 +52,7 @@ const action: IRawAction = {
     {
       label: 'Row data',
       key: 'rowData',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       description:
         'Enter the data to update the row with. Columns not specified will not be updated.',
       required: true,
@@ -79,6 +82,26 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2, minWidth: 0 },
+        },
+        {
+          key: 'operator' as const,
+          type: 'dropdown' as const,
+          isSearchable: false,
+          required: true,
+          variables: false,
+          showOptionValue: false,
+          value: 'set',
+          options: [
+            { label: '=', value: 'set', description: 'Set as' },
+            { label: '+', value: 'add', description: 'Add by (numbers only)' },
+            {
+              label: '-',
+              value: 'subtract',
+              description: 'Subtract by (numbers only)',
+            },
+          ],
+          customStyle: { flexBasis: '71px' },
         },
         {
           placeholder: 'Value',
@@ -86,6 +109,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: false,
           variables: true,
+          customStyle: { flex: 3, minWidth: 0 },
         },
       ],
     },
@@ -96,7 +120,7 @@ const action: IRawAction = {
     const { tableId, rowId, rowData } = $.step.parameters as {
       tableId: string
       rowId: string
-      rowData: { columnId: string; cellValue: string }[]
+      rowData: { columnId: string; cellValue: string; operator?: string }[]
     }
 
     if (!tableId) {
@@ -129,20 +153,48 @@ const action: IRawAction = {
       return
     }
 
-    const patchData = {
-      ...rowData.reduce((acc, { columnId, cellValue }) => {
-        // Check that the column still exists
-        if (columnIds.includes(columnId)) {
-          acc[columnId] = cellValue
-        }
-        return acc
-      }, {} as Record<string, string>),
+    function assertNumber(value: string): void {
+      if (typeof autoMarshallNumberStrings(value) !== 'number') {
+        throw new StepError(
+          'Unable to update row',
+          'The value to add or subtract by must be a number.',
+          $.step.position,
+          $.app.name,
+        )
+      }
     }
+
+    const patchData = {
+      ...rowData.reduce(
+        (acc, { columnId, cellValue, operator }) => {
+          // Check that the column still exists
+          if (columnIds.includes(columnId)) {
+            switch (operator) {
+              case 'add':
+                assertNumber(cellValue)
+                acc.add[columnId] = cellValue
+                break
+              case 'subtract':
+                assertNumber(cellValue)
+                acc.subtract[columnId] = cellValue
+                break
+              // we default to set, since old operators will be undefined
+              default:
+                acc.set[columnId] = cellValue
+                break
+            }
+          }
+          return acc
+        },
+        { set: {}, add: {}, subtract: {} } as PatchRowInput['patchData'],
+      ),
+    }
+
     try {
       const updatedRow = await patchTableRow({
         tableId,
         rowId,
-        data: patchData,
+        patchData,
       })
 
       const updatedRowData = stripInvalidKeys({
@@ -158,17 +210,22 @@ const action: IRawAction = {
         } satisfies UpdateRowOutput,
       })
     } catch (e) {
-      if (
-        e instanceof Error &&
-        e.message.includes('The conditional request failed')
-      ) {
-        // This means the corresponding row does not exist
-        $.setActionItem({
-          raw: {
-            updated: false,
-          } satisfies UpdateRowOutput,
-        })
-        return
+      if (e instanceof Error) {
+        if (e.message.includes('The conditional request failed')) {
+          // This means the corresponding row does not exist
+          $.setActionItem({
+            raw: {
+              updated: false,
+            } satisfies UpdateRowOutput,
+          })
+          return
+        }
+        throw new StepError(
+          'Failed to update row',
+          e.message,
+          $.step.position,
+          $.app.name,
+        )
       }
       throw e
     }
