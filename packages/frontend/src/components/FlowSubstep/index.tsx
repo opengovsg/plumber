@@ -135,6 +135,16 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   const onToggle = expanded ? onCollapse : onExpand
 
+  // Skip to the next step if the substep is meant to be hidden
+  useEffect(() => {
+    if (!expanded) {
+      return
+    }
+    if (!argsToDisplay || argsToDisplay.length === 0) {
+      onSubmit()
+    }
+  }, [argsToDisplay, expanded, onSubmit])
+
   if (!argsToDisplay || argsToDisplay.length === 0) {
     return <></>
   }
