@@ -32,6 +32,7 @@ export default function createHttpClient({
 }: IHttpClientParams) {
   const instance = axios.create({
     baseURL,
+    allowAbsoluteUrls: false,
   })
 
   // Edge case: unlike response interceptors, axios request interceptors are
