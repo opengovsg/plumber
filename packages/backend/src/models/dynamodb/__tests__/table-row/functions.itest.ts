@@ -104,6 +104,9 @@ describe('dynamodb table row functions', () => {
       })
       it(
         'should be able to paginate and get a large number of rows',
+        {
+          timeout: 20000,
+        },
         async () => {
           const { rows } = await getTableRows({
             tableId: dummyTable.id,
@@ -111,13 +114,13 @@ describe('dynamodb table row functions', () => {
           })
           expect(rows).toHaveLength(TEN_THOUSAND)
         },
-        {
-          timeout: 20000,
-        },
       )
 
       it(
         'should be able to paginate and get a large number of rows with a scan limit',
+        {
+          timeout: 20000,
+        },
         async () => {
           const SCAN_LIMIT = 5789
           const { rows } = await getTableRows({
@@ -126,9 +129,6 @@ describe('dynamodb table row functions', () => {
             scanLimit: SCAN_LIMIT,
           })
           expect(rows).toHaveLength(SCAN_LIMIT)
-        },
-        {
-          timeout: 20000,
         },
       )
     })
