@@ -1,4 +1,5 @@
-import { Flex, Text } from '@chakra-ui/react'
+import { BiErrorCircle } from 'react-icons/bi'
+import { Flex, Icon, Text } from '@chakra-ui/react'
 import { Spinner } from '@opengovsg/design-system-react'
 
 import { BORDER_COLOR } from '../../constants'
@@ -10,7 +11,7 @@ interface RowCountProps {
 }
 
 export default function RowCount({ rowCount, rowSelection }: RowCountProps) {
-  const { isFetching } = useTableContext()
+  const { isFetching, isThroughputError } = useTableContext()
 
   const numRowsSelected = Object.keys(rowSelection).length
   const rowCountToShow = numRowsSelected || rowCount
@@ -23,8 +24,12 @@ export default function RowCount({ rowCount, rowSelection }: RowCountProps) {
       bg={numRowsSelected ? 'primary.50' : 'white'}
       borderColor={BORDER_COLOR.DEFAULT}
       px={4}
+      gap={1}
     >
-      {isFetching && <Spinner mr={1} />}
+      {isFetching && <Spinner />}
+      {!isFetching && isThroughputError && (
+        <Icon boxSize={4} as={BiErrorCircle} color="red.500" />
+      )}
       <Text textStyle="body-2" whiteSpace="nowrap">
         {rowCountToShow}
         {' row' +
