@@ -43,7 +43,12 @@ function Checkbox(props: CheckboxProps) {
 
   const getInfoText = (info?: number | string | null) => {
     return (
-      <Text textStyle="body-2" noOfLines={1} color="base.content.medium">
+      <Text
+        textStyle="body-2"
+        noOfLines={1}
+        color="base.content.medium"
+        overflowX="hidden"
+      >
         {info ?? ''}
       </Text>
     )
@@ -65,9 +70,10 @@ function Checkbox(props: CheckboxProps) {
         cursor: 'pointer',
       }}
       p="0.5rem"
+      overflowX="hidden"
     >
       <Flex alignItems="center" justify="space-between" maxW="100%">
-        <Flex direction="column">
+        <Flex direction="column" overflowX="hidden">
           <TouchableTooltip label={uploaded ? displayedValue : label}>
             <Text noOfLines={1}>{uploaded ? displayedValue : label}</Text>
           </TouchableTooltip>
