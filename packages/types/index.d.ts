@@ -543,7 +543,7 @@ export interface IApp {
   setupMessage?: SetupMessage
 }
 
-export type AppCategory = 'data' | 'communications' | 'logic' | 'others'
+export type AppCategory = 'data' | 'communication' | 'logic' | 'others'
 
 export type TBeforeRequest = (
   $: IGlobalVariable,

@@ -5,7 +5,7 @@ import actions from './actions'
 const app: IApp = {
   name: 'Email by Postman',
   key: 'postman',
-  description: 'Send emails',
+  description: 'Send emails via Postman',
   iconUrl: '{BASE_URL}/apps/postman/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/postman',
   baseUrl: 'https://postman.gov.sg',
@@ -19,7 +19,7 @@ const app: IApp = {
     url: 'https://demo.arcade.software/VppMAbGKfFXFEsKxnKiw?embed&show_copy_link=true',
     title: 'Setting up Email by Postman',
   },
-  category: 'communications',
+  category: 'communication',
 }
 
 export default app
