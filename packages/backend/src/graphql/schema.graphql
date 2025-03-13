@@ -237,7 +237,7 @@ type App {
 
 enum AppCategory {
   data
-  communications
+  communication
   logic
   others
 }
