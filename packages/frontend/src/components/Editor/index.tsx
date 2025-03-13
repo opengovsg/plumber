@@ -38,21 +38,15 @@ import useAuthentication from '@/hooks/useAuthentication'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
-// TODO(mal): Remove this comment before merging this main PR
 interface AddStepButtonProps {
-  onClick: (appKey: string, eventKey: string) => void
+  onCreateStep: (appKey: string, eventKey: string) => Promise<IStep>
   isHidden: boolean
   isLastStep: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, isHidden, isLastStep } = props
+  const { onCreateStep, isHidden, isLastStep } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
-
-  const handleSubmit = (appKey: string, actionKey: string) => {
-    onClick(appKey, actionKey)
-    onClose()
-  }
 
   if (isHidden) {
     return (
@@ -100,13 +94,15 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
         </AbsoluteCenter>
       </Box>
 
-      <FlowStepConfigurationModal
-        isOpen={isOpen}
-        onClose={onClose}
-        isTrigger={false} // Can only add an action all the time
-        isLastStep={isLastStep}
-        onSubmit={handleSubmit}
-      />
+      {/* Prevent unnecessary renders */}
+      {isOpen && (
+        <FlowStepConfigurationModal
+          onClose={onClose}
+          isTrigger={false} // Can only add an action all the time
+          isLastStep={isLastStep}
+          onCreateStep={onCreateStep}
+        />
+      )}
     </>
   )
 }
@@ -257,9 +253,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
             flow,
             flowId: flow.id,
           }
-          await initializeIfThen(completeStepWithFlow)
+          return await initializeIfThen(completeStepWithFlow)
         }
       }
+
+      return newStep as IStep
     },
     [createStep, flow, initializeIfThen],
   )
@@ -392,13 +390,13 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 templateConfig={flow?.config?.templateConfig}
               />
               <AddStepButton
-                onClick={(appKey, eventKey) => {
-                  addStep(step.id, appKey, eventKey)
-                }}
                 isHidden={
                   creationInProgress ||
                   isReadOnlyEditor ||
                   isTriggerOrActionAbsent
+                }
+                onCreateStep={async (appKey, eventKey) =>
+                  await addStep(step.id, appKey, eventKey)
                 }
                 isLastStep={index === steps.length - 1}
               />

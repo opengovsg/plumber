@@ -164,7 +164,7 @@ export function useIsIfThenSelectable({
  * "Choose App & Event" substep.
  */
 export function useIfThenInitializer(): [
-  (currStep: IStep) => Promise<void>,
+  (currStep: IStep) => Promise<IStep>,
   boolean,
 ] {
   const [isInitializing, setIsInitializing] = useState(false)
@@ -262,6 +262,7 @@ export function useIfThenInitializer(): [
       await client.refetchQueries({ include: [GET_FLOW] })
 
       setIsInitializing(false)
+      return currStep
     },
     [createStep, depth, updateStep],
   )

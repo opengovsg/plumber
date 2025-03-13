@@ -11,24 +11,25 @@ import {
   ModalHeader,
   Text,
 } from '@chakra-ui/react'
-import { Badge } from '@opengovsg/design-system-react'
+import { Badge, ModalCloseButton } from '@opengovsg/design-system-react'
 import { groupBy } from 'lodash'
 
 import { getAppFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
+import FeedbackFooter from './FeedbackFooter'
+
 const OTHERS_CATEGORY = 'Other'
 
 interface ChooseAppProps {
   apps: IApp[]
-  setSelectedApp: (app: IApp) => void
   isTrigger: boolean
-  onSubmit: (appKey: string, actionKey: string) => void
-  onNext: () => void
+  onSelectApp: (app: IApp) => void
+  onSelectAppEvent: (app: IApp, triggerOrAction: ITrigger | IAction) => void
 }
 
 export default function ChooseApp(props: ChooseAppProps) {
-  const { apps, setSelectedApp, isTrigger, onSubmit, onNext } = props
+  const { apps, isTrigger, onSelectApp, onSelectAppEvent } = props
   const launchDarkly = useContext(LaunchDarklyContext)
   const isLoading = launchDarkly.isLoading
 
@@ -61,20 +62,6 @@ export default function ChooseApp(props: ChooseAppProps) {
     })
   }, [apps, launchDarkly.flags, isLoading])
 
-  // If app only has one trigger or action, select it
-  const handleTriggerOrActionSelection = async (
-    app: IApp,
-    triggerOrAction: ITrigger | IAction,
-  ) => {
-    onSubmit(app.key, triggerOrAction.key)
-  }
-
-  // If app has multiple triggers or actions, select the app and load event screen
-  const handleAppSelection = (app: IApp) => {
-    setSelectedApp(app)
-    onNext()
-  }
-
   return (
     <>
       <ModalHeader>
@@ -89,6 +76,7 @@ export default function ChooseApp(props: ChooseAppProps) {
           </Text>
         </Flex>
       </ModalHeader>
+      <ModalCloseButton mt={4} />
 
       {/* Returns first level modal view of apps: if an app only has one trigger or action,
        * it will be shown as a single item. Else, it will be shown as an expandable item
@@ -132,12 +120,9 @@ export default function ChooseApp(props: ChooseAppProps) {
                         borderRadius="lg"
                         onClick={() => {
                           if (singleTriggerOrAction) {
-                            handleTriggerOrActionSelection(
-                              app,
-                              singleTriggerOrAction,
-                            )
+                            onSelectAppEvent(app, singleTriggerOrAction)
                           } else {
-                            handleAppSelection(app)
+                            onSelectApp(app)
                           }
                         }}
                         justifyContent="space-between"
@@ -158,12 +143,9 @@ export default function ChooseApp(props: ChooseAppProps) {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             if (singleTriggerOrAction) {
-                              handleTriggerOrActionSelection(
-                                app,
-                                singleTriggerOrAction,
-                              )
+                              onSelectAppEvent(app, singleTriggerOrAction)
                             } else {
-                              handleAppSelection(app)
+                              onSelectApp(app)
                             }
                           }
                         }}
@@ -211,6 +193,7 @@ export default function ChooseApp(props: ChooseAppProps) {
           )}
         </Flex>
       </ModalBody>
+      <FeedbackFooter />
     </>
   )
 }
