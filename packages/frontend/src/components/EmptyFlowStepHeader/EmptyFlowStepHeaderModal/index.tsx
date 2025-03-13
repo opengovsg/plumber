@@ -84,7 +84,7 @@ export default function EmptyFlowStepHeaderModal(
             <Text textStyle="h3-semibold" pt={4}>
               {isTrigger
                 ? 'Choose how you want your workflow to start'
-                : 'Add steps'}
+                : 'Add a step'}
             </Text>
           )}
         </ModalHeader>
