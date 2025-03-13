@@ -23,7 +23,7 @@ const app: IApp = {
   auth,
   actions,
   queue: getGenericAppQueue('TELEGRAM'),
-  category: 'communications',
+  category: 'communication',
 }
 
 export default app
