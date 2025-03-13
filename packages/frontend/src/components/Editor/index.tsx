@@ -40,7 +40,7 @@ import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
 // TODO(mal): Remove this comment before merging this main PR
 interface AddStepButtonProps {
-  onClick: (appKey: string, eventKey: string) => void
+  onCreateStep: (appKey: string, eventKey: string) => Promise<IStep>
   isDisabled: boolean
   isLastStep: boolean
   isTriggerAbsent?: boolean
@@ -48,14 +48,14 @@ interface AddStepButtonProps {
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, isDisabled, isLastStep, isTriggerAbsent, isActionAbsent } =
-    props
+  const {
+    onCreateStep,
+    isDisabled,
+    isLastStep,
+    isTriggerAbsent,
+    isActionAbsent,
+  } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
-
-  const handleSubmit = (appKey: string, actionKey: string) => {
-    onClick(appKey, actionKey)
-    onClose()
-  }
 
   let tooltipLabel = 'Add Step'
   if (isTriggerAbsent) {
@@ -102,13 +102,15 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
         </AbsoluteCenter>
       </Box>
 
-      <FlowStepConfigurationModal
-        isOpen={isOpen}
-        onClose={onClose}
-        isTrigger={false} // Can only add an action all the time
-        isLastStep={isLastStep}
-        onSubmit={handleSubmit}
-      />
+      {/* Prevent unnecessary renders */}
+      {isOpen && (
+        <FlowStepConfigurationModal
+          onClose={onClose}
+          isTrigger={false} // Can only add an action all the time
+          isLastStep={isLastStep}
+          onCreateStep={onCreateStep}
+        />
+      )}
     </>
   )
 }
@@ -259,9 +261,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
             flow,
             flowId: flow.id,
           }
-          await initializeIfThen(completeStepWithFlow)
+          return await initializeIfThen(completeStepWithFlow)
         }
       }
+
+      return newStep as IStep
     },
     [createStep, flow, initializeIfThen],
   )
@@ -392,9 +396,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 templateConfig={flow?.config?.templateConfig}
               />
               <AddStepButton
-                onClick={(appKey, eventKey) => {
-                  addStep(step.id, appKey, eventKey)
-                }}
+                onCreateStep={async (appKey, eventKey) =>
+                  await addStep(step.id, appKey, eventKey)
+                }
                 isDisabled={creationInProgress || isReadOnlyEditor}
                 isLastStep={index === steps.length - 1}
                 isTriggerAbsent={isTriggerAbsent}

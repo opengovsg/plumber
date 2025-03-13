@@ -3,7 +3,7 @@ import { type IAction, IApp, ITrigger } from '@plumber/types'
 import { useContext, useMemo } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
 import { Box, Flex, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
 
 import { getAppActionFlag, getAppTriggerFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
@@ -14,16 +14,18 @@ import {
   useIsIfThenSelectable,
 } from '@/helpers/toolbox'
 
+import FeedbackFooter from './FeedbackFooter'
+
 interface ChooseEventProps {
   selectedApp: IApp
   isTrigger: boolean
   isLastStep: boolean
-  onSubmit: (appKey: string, actionKey: string) => void
+  onSelectAppEvent: (app: IApp, event: ITrigger | IAction) => void
   onBack: () => void
 }
 
 export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
-  const { selectedApp, isTrigger, isLastStep, onSubmit, onBack } = props
+  const { selectedApp, isTrigger, isLastStep, onSelectAppEvent, onBack } = props
 
   const launchDarkly = useContext(LaunchDarklyContext)
   const [_, isInitializingIfThen] = useIfThenInitializer()
@@ -51,13 +53,6 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
     })
   }, [selectedApp, isTrigger, launchDarkly.flags, isLoading])
 
-  const handleTriggerOrActionSelection = async (
-    app: IApp,
-    triggerOrAction: ITrigger | IAction,
-  ) => {
-    onSubmit(app.key, triggerOrAction.key)
-  }
-
   return (
     <>
       <ModalHeader>
@@ -74,6 +69,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
           <Text textStyle="body-1">{selectedApp.description}</Text>
         </Flex>
       </ModalHeader>
+      <ModalCloseButton mt={4} />
 
       {/* Returns second level modal view of triggers or actions: if an app has multiple
        * triggers or actions, it will be shown as a list of items */}
@@ -94,7 +90,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
                   borderRadius="lg"
                   onClick={() =>
                     !isDisabled &&
-                    handleTriggerOrActionSelection(selectedApp, triggerOrAction)
+                    onSelectAppEvent(selectedApp, triggerOrAction)
                   }
                   opacity={isDisabled ? 0.5 : 1}
                   _hover={{
@@ -113,10 +109,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
                   tabIndex={isDisabled ? -1 : 0} // Make focusable unless disabled
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      handleTriggerOrActionSelection(
-                        selectedApp,
-                        triggerOrAction,
-                      )
+                      onSelectAppEvent(selectedApp, triggerOrAction)
                     }
                   }}
                 >
@@ -132,6 +125,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
           )}
         </Flex>
       </ModalBody>
+      <FeedbackFooter />
     </>
   )
 }
