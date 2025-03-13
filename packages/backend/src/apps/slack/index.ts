@@ -21,7 +21,7 @@ const app: IApp = {
   actions,
   dynamicData,
   queue: getGenericAppQueue('SLACK'),
-  category: 'communications',
+  category: 'communication',
 }
 
 export default app
