@@ -100,6 +100,9 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: true,
       publishedAt: expect.any(String),
+      config: {
+        showSurvey: true,
+      },
     })
 
     // jobName is constructed as "flow-<flow.id>"
@@ -132,6 +135,9 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: false,
       publishedAt: null,
+      config: {
+        showSurvey: undefined,
+      },
     })
 
     expect(flowQueue.removeRepeatableByKey).toHaveBeenCalledWith('repeat-key')
@@ -154,6 +160,9 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: true,
       publishedAt: expect.any(String),
+      config: {
+        showSurvey: true,
+      },
     })
 
     // But no job should be added when trigger type is webhook.
@@ -175,6 +184,9 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: false,
       publishedAt: null,
+      config: {
+        showSurvey: undefined,
+      },
     })
 
     // For webhook triggers no removal of a repeatable job should be attempted.
