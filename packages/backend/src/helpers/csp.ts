@@ -17,6 +17,8 @@ const helmetOptions: HelmetOptions = {
         'https://*.launchdarkly.com',
         // For proxying datadog rum
         'https://rum-proxy.plumber.gov.sg',
+        // For Lens Survey
+        'https://lens.hack2025.com.sg',
         appConfig.baseUrl,
       ],
       // for google fonts

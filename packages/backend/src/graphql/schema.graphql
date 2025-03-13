@@ -359,6 +359,7 @@ type FlowConfig {
   duplicateCount: Int
   demoConfig: FlowDemoConfig
   templateConfig: FlowTemplateConfig
+  showSurvey: Boolean
 }
 
 type FlowErrorConfig {

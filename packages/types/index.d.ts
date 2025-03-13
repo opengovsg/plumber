@@ -174,6 +174,7 @@ export interface IFlowConfig {
   duplicateCount?: number
   demoConfig?: IFlowDemoConfig
   templateConfig?: IFlowTemplateConfig
+  showSurvey?: boolean
 }
 
 export interface IFlowErrorConfig {

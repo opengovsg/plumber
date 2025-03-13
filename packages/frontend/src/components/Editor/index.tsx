@@ -12,9 +12,11 @@ import {
   Flex,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { Rating } from 'lens-widget'
 
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
+import appConfig from '@/config/app'
 import { EditorContext } from '@/contexts/Editor'
 import {
   StepExecutionsToIncludeContext,
@@ -24,6 +26,7 @@ import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import useAuthentication from '@/hooks/useAuthentication'
 
 interface AddStepButtonProps {
   onClick: () => void
@@ -97,6 +100,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
   )
 
   const { flow, steps: rawSteps } = props
+  const showSurvey = flow.active && flow.config?.showSurvey
+  const { currentUser } = useAuthentication()
+
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
     // non-undefined. We do it here instead of fetching in GraphQL since all
@@ -294,6 +300,18 @@ export default function Editor(props: EditorProps): React.ReactElement {
           )}
         </StepExecutionsToIncludeProvider>
       </Flex>
+
+      {showSurvey && (
+        <Rating
+          clientKey={appConfig.lensSurveyClientKey}
+          brandColour="#cf1a68"
+          attributes={[
+            `FlowId: ${flow.id}`,
+            `UserEmail: ${currentUser?.email}`,
+            ...(appConfig.env !== 'prod' ? [`Env: ${appConfig.env}`] : []),
+          ]}
+        />
+      )}
     </Flex>
   )
 }
