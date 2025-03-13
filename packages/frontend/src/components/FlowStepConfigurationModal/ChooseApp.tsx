@@ -81,7 +81,27 @@ export default function ChooseApp(props: ChooseAppProps) {
       {/* Returns first level modal view of apps: if an app only has one trigger or action,
        * it will be shown as a single item. Else, it will be shown as an expandable item
        * to the next page */}
-      <ModalBody>
+      <ModalBody
+        // Reference: https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
+        sx={{
+          background: `
+            /* Shadow Cover TOP */
+            linear-gradient(white 30%, rgba(255, 255, 255, 0)) center top,
+
+            /* Shadow Cover BOTTOM */
+            linear-gradient(rgba(255, 255, 255, 0), white 70%) center bottom,
+
+            /* Shadow TOP */
+            radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) center top,
+
+            /* Shadow BOTTOM */
+            radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) center bottom
+          `,
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: '100% 40px, 100% 40px, 100% 14px, 100% 14px',
+          backgroundAttachment: 'local, local, scroll, scroll',
+        }}
+      >
         <Flex flexDir="column" gap={6}>
           {groupedApps && groupedApps.length === 0 ? (
             <Flex
