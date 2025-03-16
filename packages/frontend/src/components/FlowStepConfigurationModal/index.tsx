@@ -2,48 +2,60 @@ import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
 
 import { useCallback, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useMutation, useQuery } from '@apollo/client'
-import { Flex, Modal, ModalContent, ModalOverlay, Text } from '@chakra-ui/react'
+import { useMutation } from '@apollo/client'
+import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
 
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
-import { GET_APPS } from '@/graphql/queries/get-apps'
-import {
-  TOOLBOX_ACTIONS,
-  TOOLBOX_APP_KEY,
-  useIfThenInitializer,
-} from '@/helpers/toolbox'
 
-import PrimarySpinner from '../PrimarySpinner'
-
-import ChooseApp from './ChooseApp'
-import ChooseEvent from './ChooseEvent'
+import ChooseAndAddConnection from './ChooseAndAddConnection'
+import ChooseAppAndEvent from './ChooseAppAndEvent'
+import InvalidModalScreen from './InvalidModalScreen'
 
 interface FlowStepConfigurationModalProps {
   onClose: () => void
   isTrigger: boolean
   isLastStep: boolean
-  onCreateStep?: (appKey: string, eventKey: string) => Promise<IStep> // For adding of a new step
-  step?: IStep // for updating of an existing step
+  onCreateStep?: (
+    appKey: string,
+    eventKey: string,
+    connectionId?: string,
+  ) => Promise<IStep> // For adding of a new step
+  // for updating of an existing step
+  step?: IStep
+  app?: IApp
+  event?: ITrigger | IAction
 }
 
-export type ModalScreen = 'choose-app' | 'choose-event' | 'choose-connection'
+export type ModalScreen =
+  | 'choose-app'
+  | 'choose-event'
+  | 'choose-connection'
+  | 'add-connection'
+
+export type ModalState = {
+  currentScreen: ModalScreen
+  selectedApp: IApp | null
+  selectedEvent: ITrigger | IAction | null
+}
 
 export default function FlowStepConfigurationModal(
   props: FlowStepConfigurationModalProps,
 ): JSX.Element {
-  const { onClose, isLastStep, isTrigger, onCreateStep, step } = props
+  const { onClose, isLastStep, isTrigger, onCreateStep, step, app, event } =
+    props
   const { flowId } = useParams()
-  const [currentScreen, setCurrentScreen] = useState<ModalScreen>('choose-app')
-  const [selectedApp, setSelectedApp] = useState<IApp | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [modalState, setModalState] = useState<ModalState>({
+    currentScreen: 'choose-app',
+    selectedApp: app ?? null,
+    selectedEvent: event ?? null,
+  })
 
-  const { data } = useQuery(GET_APPS)
-  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
-    isTrigger ? !!app.triggers?.length : !!app.actions?.length,
-  )
+  const { currentScreen } = modalState
 
+  const updateModalState = (newState: Partial<ModalState>) => {
+    setModalState((prevState) => ({ ...prevState, ...newState }))
+  }
   const [updateStep] = useMutation(UPDATE_STEP)
-  const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
 
   const onUpdateStep = useCallback(
     async (step: IStep) => {
@@ -71,79 +83,47 @@ export default function FlowStepConfigurationModal(
     [updateStep, flowId],
   )
 
-  const onSelectAppEvent = useCallback(
-    async (app: IApp, triggerOrAction: ITrigger | IAction) => {
-      if (app.auth) {
-        setSelectedApp(app)
-        setCurrentScreen('choose-connection')
-        return
-      }
-      // If the app has no connections, create or update a new step and close the modal
-      setIsLoading(true)
-      if (onCreateStep) {
-        await onCreateStep(app.key, triggerOrAction.key)
-      } else if (step) {
-        // account for the if-then edge case
-        if (
-          app.key === TOOLBOX_APP_KEY &&
-          triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
-        ) {
-          await initializeIfThen(step)
-        } else {
-          await onUpdateStep({
-            ...step,
-            appKey: app.key,
-            key: triggerOrAction.key,
-            parameters: {},
-          })
-        }
-      }
-      setIsLoading(false)
-      onClose()
-    },
-    [onClose, onCreateStep, onUpdateStep, initializeIfThen, step],
-  )
-
-  // Will consist both modal header and body
   const currentScreenComponent = useMemo(() => {
-    switch (currentScreen) {
-      case 'choose-app':
-        return (
-          <ChooseApp
-            apps={apps}
-            isTrigger={isTrigger}
-            onSelectApp={(app: IApp) => {
-              setSelectedApp(app)
-              setCurrentScreen('choose-event')
-            }}
-            onSelectAppEvent={onSelectAppEvent}
-          />
-        )
-      case 'choose-event':
-        return (
-          selectedApp && (
-            <ChooseEvent
-              selectedApp={selectedApp}
-              isTrigger={isTrigger}
-              isLastStep={isLastStep}
-              onSelectAppEvent={onSelectAppEvent}
-              onBack={() => {
-                setSelectedApp(null)
-                setCurrentScreen('choose-app')
-              }}
-            />
-          )
-        )
-      case 'choose-connection':
-        return selectedApp && <h1>Choose Connection Screen</h1>
+    // Group choose app and event together, and choose connection and add connection together
+    if (currentScreen === 'choose-app' || currentScreen === 'choose-event') {
+      return (
+        <ChooseAppAndEvent
+          onClose={onClose}
+          isTrigger={isTrigger}
+          isLastStep={isLastStep}
+          modalState={modalState}
+          updateModalState={updateModalState}
+          onUpdateStep={onUpdateStep}
+          onCreateStep={onCreateStep}
+          step={step}
+        />
+      )
+    } else if (
+      currentScreen === 'choose-connection' ||
+      currentScreen === 'add-connection'
+    ) {
+      return (
+        <ChooseAndAddConnection
+          onClose={onClose}
+          modalState={modalState}
+          updateModalState={updateModalState}
+          step={step ?? null}
+          onUpdateStep={onUpdateStep}
+          onCreateStep={onCreateStep}
+        />
+      )
+    } else {
+      return <InvalidModalScreen />
     }
   }, [
     currentScreen,
-    apps,
+    onClose,
     isTrigger,
-    onSelectAppEvent,
-    selectedApp,
     isLastStep,
+    modalState,
+    onUpdateStep,
+    onCreateStep,
+    step,
   ])
 
   return (
@@ -163,14 +143,7 @@ export default function FlowStepConfigurationModal(
         overflow="hidden"
         borderRadius="lg"
       >
-        {isLoading || isInitializingIfThen ? (
-          <Flex flexDir="column" alignItems="center" gap={6} my={12}>
-            <PrimarySpinner margin="auto" fontSize="4xl" />
-            <Text>Adding step...</Text>
-          </Flex>
-        ) : (
-          currentScreenComponent
-        )}
+        {currentScreenComponent}
       </ModalContent>
     </Modal>
   )
