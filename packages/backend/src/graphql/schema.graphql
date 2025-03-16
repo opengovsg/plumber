@@ -254,6 +254,11 @@ type StepLabel {
   addConnectionLabel: String
 }
 
+type ConnectionModalLabel {
+  chooseConnectionLabel: String
+  addConnectionLabel: String
+}
+
 type AppAuth {
   connectionType: String!
   connectionRegistrationType: String
@@ -261,6 +266,7 @@ type AppAuth {
   fields: [Field] # Only for user-added connections
   authenticationSteps: [AuthenticationStep]
   reconnectionSteps: [ReconnectionStep]
+  connectionModalLabel: ConnectionModalLabel
 }
 
 enum ArgumentEnumType {

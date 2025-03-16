@@ -39,7 +39,11 @@ import useAuthentication from '@/hooks/useAuthentication'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
 interface AddStepButtonProps {
-  onCreateStep: (appKey: string, eventKey: string) => Promise<IStep>
+  onCreateStep: (
+    appKey: string,
+    eventKey: string,
+    connectionId?: string,
+  ) => Promise<IStep>
   isHidden: boolean
   isLastStep: boolean
 }
@@ -94,7 +98,6 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
         </AbsoluteCenter>
       </Box>
 
-      {/* Prevent unnecessary renders */}
       {isOpen && (
         <FlowStepConfigurationModal
           onClose={onClose}
@@ -215,7 +218,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
   // Add a step to the flow with the given appKey and eventKey
   const addStep = useCallback(
-    async (previousStepId: string, appKey: string, eventKey: string) => {
+    async (
+      previousStepId: string,
+      appKey: string,
+      eventKey: string,
+      connectionId?: string,
+    ) => {
       const mutationInput = {
         previousStep: {
           id: previousStepId,
@@ -225,6 +233,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
         },
         appKey,
         key: eventKey,
+        connection: { id: connectionId },
       }
 
       const createdStep = await createStep({
@@ -363,6 +372,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
         flexDir="column"
         alignItems="center"
         py={3}
+        pb={24}
         w="53.25rem"
         maxW="full"
       >
@@ -395,8 +405,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
                   isReadOnlyEditor ||
                   isTriggerOrActionAbsent
                 }
-                onCreateStep={async (appKey, eventKey) =>
-                  await addStep(step.id, appKey, eventKey)
+                onCreateStep={async (appKey, eventKey, connectionId) =>
+                  await addStep(step.id, appKey, eventKey, connectionId)
                 }
                 isLastStep={index === steps.length - 1}
               />

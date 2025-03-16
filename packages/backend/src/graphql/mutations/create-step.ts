@@ -1,5 +1,6 @@
 import { raw } from 'objection'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -13,6 +14,16 @@ const createStep: MutationResolvers['createStep'] = async (
 
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
+
+    if (input.connection?.id) {
+      // if connectionId is specified, verify that the connection exists and belongs to the user
+      const connection = await context.currentUser
+        .$relatedQuery('connections')
+        .findOne({ id: input.connection.id })
+      if (!connection) {
+        throw new BadUserInputError('Connection not found')
+      }
+    }
 
     // Put SELECTs in transaction just in case there's concurrent modification.
     const flow = await context.currentUser
@@ -42,6 +53,7 @@ const createStep: MutationResolvers['createStep'] = async (
       type: 'action',
       position: previousStep.position + 1,
       parameters: input.parameters,
+      connectionId: input.connection?.id,
     })
 
     return step

@@ -364,6 +364,8 @@ export default function FlowStep(
           isTrigger={isTrigger}
           isLastStep={isLastStep}
           step={step}
+          app={app}
+          event={selectedActionOrTrigger}
         />
       )}
     </>
