@@ -577,6 +577,11 @@ export interface DynamicDataOutput {
 export type AuthConnectionType = 'user-added' | 'system-added'
 export type ConnectionRegistrationType = 'global' | 'per-step'
 
+type IConnectionModalLabel = {
+  chooseConnectionLabel?: string
+  addConnectionLabel?: string
+}
+
 interface IBaseAuth {
   connectionType: AuthConnectionType
 
@@ -595,6 +600,7 @@ interface IBaseAuth {
   verifyConnectionRegistration?(
     $: IGlobalVariable,
   ): Promise<IVerifyConnectionRegistrationOutput>
+  connectionModalLabel?: IConnectionModalLabel
 }
 
 interface IUserAddedConnectionAuth extends IBaseAuth {

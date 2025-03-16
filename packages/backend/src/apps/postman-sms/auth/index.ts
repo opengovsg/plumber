@@ -39,6 +39,10 @@ const auth: IUserAddedConnectionAuth = {
 
   verifyCredentials,
   isStillVerified,
+  connectionModalLabel: {
+    chooseConnectionLabel: 'Choose campaign to connect',
+    addConnectionLabel: 'Add new campaign',
+  },
 }
 
 export default auth
