@@ -12,6 +12,7 @@ import {
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 
+import { APP_ALLOWING_EMPTY_CONNECTION } from '../constants'
 import InvalidModalScreen from '../InvalidModalScreen'
 import { type ModalState } from '..'
 
@@ -55,7 +56,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
   const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
   const onSelectAppEvent = useCallback(
     async (app: IApp, triggerOrAction: ITrigger | IAction) => {
-      if (app.auth) {
+      if (app.auth && app.key !== APP_ALLOWING_EMPTY_CONNECTION) {
         updateModalState({
           selectedApp: app,
           selectedEvent: triggerOrAction,
