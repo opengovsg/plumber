@@ -271,7 +271,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 onClose={() => setCurrentStepId(null)}
                 onChange={onStepChange}
                 onContinue={() => {
-                  setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+                  if (
+                    index === stepsBeforeGroup.length - 1 &&
+                    groupedSteps.length > 0
+                  ) {
+                    setCurrentStepId(groupedSteps[0].id)
+                  } else {
+                    setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+                  }
                 }}
                 templateConfig={flow?.config?.templateConfig}
               />
