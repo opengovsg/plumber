@@ -32,7 +32,6 @@ import {
 import FlowSubstepTitle from '../FlowSubstepTitle'
 
 import TestResult from './TestResult'
-import TestSubstepTitleTooltip from './TestSubstepTitleTooltip'
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -163,7 +162,6 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
         expanded={expanded}
         onClick={onToggle}
         title={substep.name}
-        rightEl={<TestSubstepTitleTooltip />}
       />
       <Collapse in={expanded} unmountOnExit style={{ overflow: 'initial' }}>
         <Box p="1rem 1rem 1.5rem">
