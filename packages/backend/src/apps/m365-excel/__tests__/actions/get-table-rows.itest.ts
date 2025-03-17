@@ -194,4 +194,38 @@ describe('getTableRowsAction', () => {
       }),
     })
   })
+
+  it('should limit returned rows to 500 when more matches are found', async () => {
+    // Create an array of 600 matching rows
+    const matchingRows = Array.from({ length: 600 }, (_, i) => [
+      `test-value`,
+      `data${i + 1}`,
+    ])
+    mocks.getTopNTableRows.mockResolvedValue({
+      columns: ['Column1', 'Column2'],
+      rows: matchingRows,
+      headerSheetRowIndex: 0,
+    })
+
+    await getTableRowsAction.run($)
+
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: expect.objectContaining({
+        rowsFound: 500, // Should be limited to 500 rows
+        columns: ['Column1', 'Column2'],
+        rows: expect.any(String),
+      }),
+    })
+
+    // Verify the rowData contains exactly 500 rows
+    const call = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const rowData = JSON.parse(call.raw.rows)
+    expect(rowData).toHaveLength(500)
+
+    // Verify the first and last rows are correct
+    expect(rowData[0].tableRowIndex).toBe(0)
+    expect(rowData[0].sheetRowNumber).toBe(2) // headerSheetRowIndex(0) + rowIndex(0) + 2
+    expect(rowData[499].tableRowIndex).toBe(499)
+    expect(rowData[499].sheetRowNumber).toBe(501) // headerSheetRowIndex(0) + rowIndex(499) + 2
+  })
 })

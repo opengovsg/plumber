@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { GET_TABLE_ROWS_LIMIT } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
 import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
@@ -74,7 +75,7 @@ const action: IRawAction = {
       variables: false,
       label: 'Lookup column',
       description:
-        'If multiple rows meet your condition, the topmost entry will be returned',
+        'Only the first 500 rows that meet the condition will be returned',
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
@@ -178,10 +179,13 @@ const action: IRawAction = {
       return
     }
 
+    // Max limit of 500 rows
+    const slicedRows = rowsToReturn.slice(0, GET_TABLE_ROWS_LIMIT)
+
     $.setActionItem({
       raw: {
-        rowsFound: rowsToReturn.length,
-        rows: JSON.stringify(rowsToReturn),
+        rowsFound: slicedRows.length,
+        rows: JSON.stringify(slicedRows),
         columns,
       } satisfies DataOut,
     })
