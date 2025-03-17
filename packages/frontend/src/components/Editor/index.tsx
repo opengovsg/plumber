@@ -23,6 +23,7 @@ import {
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
@@ -102,6 +103,13 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const { flow, steps: rawSteps } = props
   const showSurvey = flow.active && flow.config?.showSurvey
   const { currentUser } = useAuthentication()
+
+  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
+  const onFlowConfigUpdate = useCallback(async () => {
+    await updateFlowConfig({
+      variables: { input: { id: flow.id, showSurvey: false } },
+    })
+  }, [updateFlowConfig, flow.id])
 
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
@@ -310,6 +318,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
             `UserEmail: ${currentUser?.email}`,
             ...(appConfig.env !== 'prod' ? [`Env: ${appConfig.env}`] : []),
           ]}
+          onSubmit={onFlowConfigUpdate}
+          onClose={onFlowConfigUpdate}
         />
       )}
     </Flex>

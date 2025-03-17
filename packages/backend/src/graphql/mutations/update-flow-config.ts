@@ -11,6 +11,7 @@ type Params = {
     id: string
     notificationFrequency: IFlowErrorConfig['notificationFrequency']
     hasLoadedOnce: IFlowDemoConfig['hasLoadedOnce']
+    showSurvey: boolean
   }
 }
 
@@ -38,11 +39,15 @@ const updateFlowConfig = async (
   }
 
   // TODO (mal): remove demo config
-  if (params.input.hasLoadedOnce !== undefined) {
-    newConfig.demoConfig = {
-      ...newConfig.demoConfig, // If ever undefined (should never be), it gets set to an empty object first
-      hasLoadedOnce: params.input.hasLoadedOnce,
-    }
+  // if (params.input.hasLoadedOnce !== undefined) {
+  //   newConfig.demoConfig = {
+  //     ...newConfig.demoConfig, // If ever undefined (should never be), it gets set to an empty object first
+  //     hasLoadedOnce: params.input.hasLoadedOnce,
+  //   }
+  // }
+
+  if (params.input.showSurvey !== undefined) {
+    newConfig.showSurvey = params.input.showSurvey
   }
 
   return await flow.$query().patchAndFetch({
