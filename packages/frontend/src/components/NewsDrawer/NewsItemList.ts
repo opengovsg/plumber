@@ -11,13 +11,13 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
-    date: '2024-12-17',
+    date: '2025-03-17',
     tag: NEW_ENHANCEMENT_TAG,
-    title: 'Email attachments and CC for Postman action',
+    title: 'Improvements we made',
     details: dedent`
-      📎 Attachments can now be uploaded and sent using the Postman action. Check out the supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).
+      ⚒️ Tiles - You can now choose how to update Tile values: set as, add by, or subtract by.
 
-      📩 Adding CC recipients is now supported in the Postman action.
+      📩 Postman - Attachments can now be uploaded and sent using the Email by Postman action. Check out the supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).
     `,
   },
   {
