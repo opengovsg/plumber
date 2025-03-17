@@ -11,6 +11,7 @@ import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
+import { FIND_MULTIPLE_ROWS_LIMIT } from '../../common/constants'
 import { validateFilters } from '../../common/validate-filters'
 import { FindMultipleRowsOutput } from '../../types'
 
@@ -42,7 +43,8 @@ const action: IRawAction = {
     },
     {
       label: 'Lookup conditions',
-      description: 'All rows that meet the conditions will be returned',
+      description:
+        'Only the first 500 rows that meet the conditions will be returned',
       key: 'filters',
       type: 'multirow' as const,
       required: true,
@@ -207,11 +209,12 @@ const action: IRawAction = {
     columns.forEach((c) => {
       columnsToReturn[c.name] = c.id
     })
+    const slicedRows = rows.slice(0, FIND_MULTIPLE_ROWS_LIMIT)
 
     $.setActionItem({
       raw: {
-        rowsFound: rows.length,
-        rows: JSON.stringify(rows),
+        rowsFound: slicedRows.length,
+        rows: JSON.stringify(slicedRows),
         columns: columnsToReturn,
       } satisfies FindMultipleRowsOutput,
     })

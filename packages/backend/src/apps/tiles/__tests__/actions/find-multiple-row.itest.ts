@@ -153,4 +153,38 @@ describe('findMultipleRowsAction', () => {
       order: 'asc',
     })
   })
+
+  it('should limit the returned rows to 500 even if more rows match the conditions', async () => {
+    const mockRows = Array(520)
+      .fill(null)
+      .map((_, i) => ({
+        rowId: `row${i}`,
+        data: generateMockTableRowData({ columnIds: dummyColumnIds }),
+      }))
+
+    vi.spyOn(tableFunctions, 'getTableRows').mockResolvedValueOnce({
+      rows: mockRows,
+      stringifiedCursor: undefined,
+    })
+
+    await findMultipleRowsAction.run($)
+
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: expect.objectContaining({
+        rowsFound: 500,
+        rows: expect.stringMatching(/^\[.*\]$/),
+      }),
+    })
+
+    expect(() => {
+      JSON.parse(($.setActionItem as any).mock.calls[0][0].raw.rows)
+    }).not.toThrow()
+
+    const parsedRows = JSON.parse(
+      ($.setActionItem as any).mock.calls[0][0].raw.rows,
+    )
+    expect(parsedRows).toHaveLength(500)
+    expect(parsedRows[0].rowId).toBe('row0')
+    expect(parsedRows[499].rowId).toBe('row499')
+  })
 })
