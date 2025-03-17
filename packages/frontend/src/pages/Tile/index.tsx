@@ -26,6 +26,7 @@ export default function Tile(): JSX.Element | null {
     data: getTableData,
     loading: isTableLoading,
     error: getTableError,
+    called: isGetTableCalled,
   } = useQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
@@ -45,7 +46,8 @@ export default function Tile(): JSX.Element | null {
     urlViewOnlyKey,
   })
 
-  if (isTableLoading) {
+  // On first load, show loading spinner
+  if (isTableLoading && !isGetTableCalled) {
     return (
       <Center height="100vh">
         <PrimarySpinner fontSize="6xl" thickness="4px" margin="auto" />
