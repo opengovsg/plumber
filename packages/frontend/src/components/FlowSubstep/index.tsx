@@ -179,7 +179,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
             type="submit"
             data-test="flow-substep-continue-button"
           >
-            Continue
+            Save and continue
           </Button>
         </Box>
       </Collapse>

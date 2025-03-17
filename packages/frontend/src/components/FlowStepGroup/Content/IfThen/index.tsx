@@ -19,7 +19,7 @@ import Branch from './Branch'
 import { BranchContext } from './BranchContext'
 
 export default function IfThen(props: ContentProps): JSX.Element {
-  const { flow, steps } = props
+  const { flow, steps, setCurrentStepId } = props
 
   const { depth } = useContext(BranchContext)
   const { readOnly: isEditorReadOnly } = useContext(EditorContext)
@@ -82,7 +82,11 @@ export default function IfThen(props: ContentProps): JSX.Element {
     <Flex flexDir="column">
       {branchesWithSteps.map((branchSteps, index) => (
         <Fragment key={branchSteps[0].id}>
-          <Branch flow={flow} steps={branchSteps} />
+          <Branch
+            flow={flow}
+            steps={branchSteps}
+            setCurrentStepId={setCurrentStepId}
+          />
           {index < branchesWithSteps.length - 1 && (
             <Divider borderColor="base.divider.medium" />
           )}

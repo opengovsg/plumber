@@ -20,7 +20,6 @@ const app: IApp = {
   auth,
   actions,
   queue,
-  isNewApp: true,
 }
 
 export default app

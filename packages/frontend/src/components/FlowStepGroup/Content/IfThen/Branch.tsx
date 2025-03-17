@@ -31,17 +31,18 @@ import {
 } from '@/contexts/StepDisplayOverrides'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { isIfThenBranchCompleted } from '@/helpers/toolbox'
+import { isIfThenBranchCompleted, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { BranchContext } from './BranchContext'
 
 interface BranchProps {
   flow: IFlow
   steps: IStep[]
+  setCurrentStepId: (stepId: string) => void
 }
 
 export default function Branch(props: BranchProps): JSX.Element {
-  const { flow, steps } = props
+  const { flow, steps, setCurrentStepId } = props
   const {
     isOpen: editorIsOpen,
     onOpen: openEditor,
@@ -86,11 +87,23 @@ export default function Branch(props: BranchProps): JSX.Element {
     [openDeleteConfirmationImpl],
   )
   const deleteBranch = useCallback(async () => {
+    const idsToDelete = steps.map((step) => step.id)
     await deleteStep({
-      variables: { input: { ids: steps.map((step) => step.id) } },
+      variables: { input: { ids: idsToDelete } },
     })
+
+    // prevents accordion from collapsing when deleting the first branch
+    const ifThenRemaining = flow.steps
+      .filter(
+        (step) =>
+          step.key === TOOLBOX_ACTIONS.IfThen && !idsToDelete.includes(step.id),
+      )
+      .map((step) => step.id)
+    if (ifThenRemaining.length > 0) {
+      setCurrentStepId(ifThenRemaining[0])
+    }
     closeDeleteConfirmation()
-  }, [closeDeleteConfirmation, deleteStep, steps])
+  }, [closeDeleteConfirmation, deleteStep, flow, steps, setCurrentStepId])
 
   return (
     <>
