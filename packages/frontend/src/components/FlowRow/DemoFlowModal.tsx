@@ -12,7 +12,6 @@ interface DemoFlowModalProps {
 
 export default function DemoFlowModal(props: DemoFlowModalProps): ReactElement {
   const { onClose, demoVideoDetails } = props
-  // fallback to default demo video to display for GGWP v1
   const { url, title } = demoVideoDetails ?? {}
 
   return (
