@@ -1,24 +1,32 @@
 import { ITableMetadata } from '@plumber/types'
 
 import { useParams } from 'react-router-dom'
-import { useQuery } from '@apollo/client'
+import { ApolloError, useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
+import { NOT_FOUND } from '@/config/errors'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
+import { parseGraphqlError } from '@/helpers/parseGraphqlError'
+
+import { MissingTile } from '../UnauthorizedTile'
 
 import Table from './components/Table'
 import TableBanner from './components/TableBanner'
 import { TableContextProvider } from './contexts/TableContext'
 import { useFetchAllRows } from './hooks/useFetchAllRows'
 
-export default function Tile(): JSX.Element {
+export default function Tile(): JSX.Element | null {
   const { tileId: tableId, viewOnlyKey: urlViewOnlyKey } = useParams<{
     tileId: string
     viewOnlyKey?: string
   }>()
 
-  const { data: getTableData } = useQuery<{
+  const {
+    data: getTableData,
+    loading: isTableLoading,
+    error: getTableError,
+  } = useQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
     variables: {
@@ -37,12 +45,30 @@ export default function Tile(): JSX.Element {
     urlViewOnlyKey,
   })
 
-  if (!getTableData?.getTable) {
+  if (isTableLoading) {
     return (
       <Center height="100vh">
         <PrimarySpinner fontSize="6xl" thickness="4px" margin="auto" />
       </Center>
     )
+  }
+
+  if (getTableError) {
+    if (getTableError instanceof ApolloError) {
+      const { code } = parseGraphqlError(getTableError)
+      if (code === NOT_FOUND) {
+        return (
+          <MissingTile title="You do not have access to this Tile, or it does not exist." />
+        )
+      }
+    }
+    return (
+      <MissingTile title="Error loading your tile. Please refresh and try again." />
+    )
+  }
+
+  if (!getTableData?.getTable) {
+    return null
   }
 
   const { id, name, columns, viewOnlyKey, collaborators } =

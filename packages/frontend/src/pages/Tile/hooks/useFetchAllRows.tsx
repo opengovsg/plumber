@@ -1,10 +1,12 @@
 import { ITableRow } from '@plumber/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ApolloError, ServerError, useLazyQuery } from '@apollo/client'
+import { ApolloError, useLazyQuery } from '@apollo/client'
 import { datadogRum } from '@datadog/browser-rum'
 
+import { RATE_LIMITED } from '@/config/errors'
 import { GET_ALL_ROWS } from '@/graphql/queries/tiles/get-all-rows'
+import { parseGraphqlError } from '@/helpers/parseGraphqlError'
 
 export function useFetchAllRows({
   tableId,
@@ -56,8 +58,7 @@ export function useFetchAllRows({
       } catch (e) {
         if (
           e instanceof ApolloError &&
-          e.networkError &&
-          (e.networkError as ServerError).statusCode === 429
+          parseGraphqlError(e).code === RATE_LIMITED
         ) {
           setIsThroughputError(true)
           cursorToContinueFrom.current = currentCursor
