@@ -15,9 +15,9 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     tag: NEW_ENHANCEMENT_TAG,
     title: 'Improvements we made',
     details: dedent`
-      ⚒️ Tiles - You can now choose how to update Tile values: set as, add by, or subtract by.
+      ⚒️ Tiles - you can now choose how to update numbers in Tiles: set as, add by, or subtract by.
 
-      📩 Postman - Attachments can now be uploaded and sent using the Email by Postman action. Check out the supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).
+      📩 Postman - you can now upload and send your own attachments using the Email by Postman action. Check out the supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).
     `,
   },
   {
