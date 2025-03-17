@@ -3,6 +3,7 @@ import { ITableRow } from '@plumber/types'
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import getAllRows from '@/graphql/queries/tiles/get-all-rows'
 import { createTableRow } from '@/models/dynamodb/table-row'
 import TableCollaborator from '@/models/table-collaborators'
@@ -177,7 +178,7 @@ describe('get all rows query', () => {
         },
         context,
       ),
-    ).rejects.toThrow('Table not found')
+    ).rejects.toThrow(NotFoundError)
   })
 
   describe('last accessed at', () => {
