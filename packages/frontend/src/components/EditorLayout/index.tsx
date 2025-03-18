@@ -4,15 +4,7 @@ import { useCallback, useMemo } from 'react'
 import { BiChevronLeft, BiCog, BiInfoCircle } from 'react-icons/bi'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
-import {
-  Box,
-  Flex,
-  HStack,
-  Icon,
-  Skeleton,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
+import { Box, Flex, HStack, Icon, Skeleton, Text } from '@chakra-ui/react'
 import {
   Button,
   IconButton,
@@ -124,10 +116,14 @@ export default function EditorLayout() {
 
   return (
     <>
-      <VStack h="100%">
+      <Flex h="100vh" flexDirection="column">
         <HStack
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          zIndex={10}
           bg="white"
-          w="100%"
           justifyContent="space-between"
           alignItems="center"
           py={2}
@@ -213,13 +209,13 @@ export default function EditorLayout() {
           </TouchableTooltip>
         </HStack>
 
-        <Container maxW={852} p={0}>
+        <Container maxW="full" p={0} mt="61px" flex={1} overflowY="auto">
           <EditorProvider readOnly={isEditorReadOnly} flowId={flowId}>
             <Editor flow={flow} steps={flow.steps} />
             {flow.active && flow.config?.showSurvey && <LensSurvey />}
           </EditorProvider>
         </Container>
-      </VStack>
+      </Flex>
 
       <EditorSnackbar
         isOpen={!!flow?.active}
