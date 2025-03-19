@@ -7,6 +7,7 @@ import { useQuery } from '@apollo/client'
 import { FormControl, useDisclosure, useOutsideClick } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
+import { HIDE_POSTMAN_UPLOAD_ATTACHMENT_FLAG } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
@@ -52,7 +53,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   // TODO (kevinkim-ogp): remove this after we confirm that upload is stable
   const launchDarkly = useContext(LaunchDarklyContext)
   const hideUploadAttachments =
-    launchDarkly.flags?.['hide-postman-upload-attachment']
+    launchDarkly.flags?.[HIDE_POSTMAN_UPLOAD_ATTACHMENT_FLAG]
 
   const flowId = getValues('flowId')
 
