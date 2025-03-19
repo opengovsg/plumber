@@ -324,7 +324,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
           attributes={[
             `FlowId: ${flow.id}`,
             `UserEmail: ${currentUser?.email}`,
-            ...(appConfig.env !== 'prod' ? [`Env: ${appConfig.env}`] : []),
           ]}
           onSubmit={onFlowConfigUpdate}
           onClose={onFlowConfigUpdate}
