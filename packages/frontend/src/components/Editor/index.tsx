@@ -188,7 +188,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
   }
 
   return (
-    <Flex w="full" justifyContent="center">
+    <Flex w="full" justifyContent={isDrawerOpen ? 'space-between' : 'center'}>
       <Flex
         flexDir="column"
         alignItems="center"
