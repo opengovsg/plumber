@@ -5,13 +5,7 @@ import type {
   ITrigger,
 } from '@plumber/types'
 
-import {
-  type MouseEventHandler,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react'
+import { type MouseEventHandler, useCallback, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
@@ -87,8 +81,11 @@ export default function FlowStep(
       e.stopPropagation()
       await deleteStep({ variables: { input: { ids: [step.id] } } })
       // setCurrentSubstep(0)
+      // NOTE: this ensures that the drawer is closed and step headers
+      // return to the original width when the drawer is closed
+      onClose()
     },
-    [deleteStep, step.id],
+    [deleteStep, step.id, onClose],
   )
 
   // generate help message only if template config exists
