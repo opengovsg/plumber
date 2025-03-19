@@ -1,6 +1,5 @@
 import type {
   IAction,
-  IApp,
   IFlowTemplateConfig,
   IStep,
   ITrigger,
@@ -14,7 +13,7 @@ import {
   useState,
 } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
-import { useMutation, useQuery } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
@@ -23,9 +22,9 @@ import MarkdownRenderer from '@/components/MarkdownRenderer'
 import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
+import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
@@ -46,16 +45,7 @@ type FlowStepProps = {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const {
-    step,
-    collapsed,
-    isLastStep,
-    onChange,
-    onOpen,
-    onClose,
-    templateConfig,
-  } = props
-  const isTrigger = step.type === 'trigger'
+  const { step, collapsed, isLastStep, onOpen, onClose, templateConfig } = props
   const {
     isOpen: isModalOpen,
     onOpen: onModalOpen,
@@ -64,20 +54,7 @@ export default function FlowStep(
 
   const { readOnly } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
-
-  const { data } = useQuery(GET_APPS)
-
-  const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
-  const [currentSubstep, setCurrentSubstep] = useState<number | null>(
-    // OK to set to 1, even if a step has _no_ substeps, everything will just be
-    // collapsed due to matching logic below.
-    cannotChooseApp ? 1 : 0,
-  )
-
-  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
-    isTrigger ? !!app.triggers?.length : !!app.actions?.length,
-  )
-  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
+  const { app, apps, caption, isTrigger } = useStepMetadata(step)
 
   const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
     () => (isTrigger ? app?.triggers : app?.actions) || [],
@@ -93,6 +70,13 @@ export default function FlowStep(
     [actionsOrTriggers, step?.key],
   )
 
+  // const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
+  // const [currentSubstep, setCurrentSubstep] = useState<number | null>(
+  //   // OK to set to 1, even if a step has _no_ substeps, everything will just be
+  //   // collapsed due to matching logic below.
+  //   cannotChooseApp ? 1 : 0,
+  // )
+
   const isDeletable =
     displayOverrides?.disableDelete === true ? false : !readOnly
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
@@ -102,24 +86,10 @@ export default function FlowStep(
     async (e) => {
       e.stopPropagation()
       await deleteStep({ variables: { input: { ids: [step.id] } } })
-      setCurrentSubstep(0)
+      // setCurrentSubstep(0)
     },
     [deleteStep, step.id],
   )
-
-  // define caption description based on app and step
-  let caption = ''
-  if (selectedActionOrTrigger?.name) {
-    caption = `${step.position}. ${selectedActionOrTrigger?.name}`
-  } else if (app?.name) {
-    caption = `${step.position}. ${app.name}`
-  } else if (isTrigger) {
-    caption = 'This step starts your pipe'
-  } else if (step.position === 2) {
-    caption = 'This step happens after your pipe starts'
-  } else {
-    caption = 'This step happens after the previous step'
-  }
 
   // generate help message only if template config exists
   const stepAppEventKey = `${step?.appKey}_${step?.key}`

@@ -4,6 +4,8 @@ import { useMemo } from 'react'
 import { Box, CloseButton, Flex } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
+import { useStepMetadata } from '@/hooks/useStepMetadata'
+
 import { EDITOR_MAX_HEIGHT } from '../Editor'
 
 import Step from './Step'
@@ -50,6 +52,8 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     return steps.find((step) => step.id === currentStepId)
   }, [currentStepId, steps])
 
+  const { caption } = useStepMetadata(step)
+
   const isIfThenStep = useMemo(() => {
     return step?.appKey === 'toolbox' && step?.key === 'ifThen'
   }, [step])
@@ -75,10 +79,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
       overflowY="auto"
     >
       <Flex alignItems="center" justifyContent="space-between" mb={4}>
-        <Box>
-          {/* FIXME (kevinkim-ogp): show the correct name as the flow step header */}
-          Step {step.position} - {step.appKey}
-        </Box>
+        <Box>{caption}</Box>
         <CloseButton
           onClick={onDrawerClose}
           position="absolute"
