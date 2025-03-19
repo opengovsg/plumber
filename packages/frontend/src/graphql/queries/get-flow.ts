@@ -41,6 +41,13 @@ export const GET_FLOW = gql`
           tileId
         }
         showSurvey
+        attachments {
+          name
+          displayedValue
+          value
+          size
+          updatedAt
+        }
       }
       pendingTransfer {
         id

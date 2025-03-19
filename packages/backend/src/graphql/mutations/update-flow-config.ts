@@ -1,4 +1,8 @@
-import type { IFlowConfig, IFlowErrorConfig } from '@plumber/types'
+import type {
+  IFlowAttachmentsConfig,
+  IFlowConfig,
+  IFlowErrorConfig,
+} from '@plumber/types'
 
 import Context from '@/types/express/context'
 
@@ -7,6 +11,7 @@ type Params = {
     id: string
     notificationFrequency: IFlowErrorConfig['notificationFrequency']
     showSurvey: boolean
+    attachments?: IFlowAttachmentsConfig[]
   }
 }
 
@@ -35,6 +40,11 @@ const updateFlowConfig = async (
 
   if (params.input.showSurvey !== undefined) {
     newConfig.showSurvey = params.input.showSurvey
+  }
+
+  // Adds uploaded attachments to flow config
+  if (params.input.attachments !== undefined) {
+    newConfig.attachments = params.input.attachments
   }
 
   return await flow.$query().patchAndFetch({

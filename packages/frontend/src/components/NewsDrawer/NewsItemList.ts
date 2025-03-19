@@ -11,6 +11,16 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2025-03-17',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'Improvements we made',
+    details: dedent`
+      ⚒️ Tiles - you can now choose how to update numbers in Tiles: set as, add by, or subtract by.
+
+      📩 Postman - you can now upload and send your own attachments using the Email by Postman action. Check out the supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).
+    `,
+  },
+  {
     date: '2024-11-27',
     tag: NEW_ENHANCEMENT_TAG,
     title: 'Dynamic headers in Custom API',
@@ -57,7 +67,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     title: `Improvements we made`,
     details: dedent`
       ⚒️ Create a tile when you create your pipe - You can now create new tiles and add new columns directly when setting up your create row step.
-      
+
       ✔ Simplified checkbox responses for FormSG - Checkbox responses are now combined into one variable, options are displayed and separated by commas. This makes checkbox variables less cluttered and checkbox data easier to use in your subsequent steps.
     `,
   },
@@ -77,7 +87,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     details: dedent`
       ⚙️ Pipe settings — transfer pipes and customise the frequency of error notifications. You can find this in each pipe.
 
-      🧪 FormSG mock data — we’ve also improved one-click testing to check if your step is working correctly, without needing to submit a form.      
+      🧪 FormSG mock data — we’ve also improved one-click testing to check if your step is working correctly, without needing to submit a form.
 
       ❓ If empty (for toolbox actions) — we now check for empty data values and prevent errors.
     `,
@@ -98,7 +108,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     title: 'New action - Formatter',
     details: dedent`
       Struggling with date formats or needing to schedule reminders based on form submissions? Meet Formatter!
-      
+
       Simplify data handling by formatting, manipulating, and converting it to your liking. Whether it's beautifying dates or performing time calculations, Formatter's got you covered. Stay tuned for even more features by Formatter!
     `,
     multimedia: {
@@ -176,7 +186,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
       * Email notifications for pipe failures
           * Sent on the first failed execution for a pipe
           * You will only receive a maximum of 1 per day per pipe
-      
+
 
       * Variable values are now displayed
           * Values will now be shown in the pill together with the variable name
@@ -187,8 +197,8 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     tag: NEW_FEATURE_TAG,
     title: `What's new on Plumber`,
     details: dedent`
-      Stay updated on new features, bug fixes and enhancements through this drawer. 
-      
+      Stay updated on new features, bug fixes and enhancements through this drawer.
+
       The Plumber team has been working hard to release some new features and improvements to your overall user experience so keep a look out for these!
     `,
   },

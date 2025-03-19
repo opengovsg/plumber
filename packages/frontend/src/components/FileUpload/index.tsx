@@ -1,15 +1,26 @@
 import { useCallback, useRef } from 'react'
 import { BiUpload } from 'react-icons/bi'
-import { Input } from '@chakra-ui/react'
+import { Button, Input } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+
+import PrimarySpinner from '@/components/PrimarySpinner'
 
 interface FileUploadProps {
   accept?: string
+  buttonType?: 'iconButton' | 'textButton'
+  disabled?: boolean
+  loading?: boolean
   processFile?: (file: File) => void
 }
 
 export default function FileUpload(props: FileUploadProps) {
-  const { accept, processFile } = props
+  const {
+    accept = 'text/plain',
+    buttonType = 'iconButton',
+    disabled = false,
+    loading = false,
+    processFile,
+  } = props
   const fileUploadRef = useRef<HTMLInputElement | null>(null)
 
   const onFileChange = useCallback(
@@ -40,12 +51,35 @@ export default function FileUpload(props: FileUploadProps) {
         accept={accept}
         onChange={onFileChange}
       />
-      <IconButton
-        aria-label="Upload from file"
-        variant="outline"
-        icon={<BiUpload />}
-        onClick={() => fileUploadRef.current?.click()}
-      />
+      {buttonType === 'textButton' ? (
+        <Button
+          name="openFileUpload"
+          variant="clear"
+          onClick={() => fileUploadRef.current?.click()}
+          gap="3"
+          justifyContent="flex-start"
+          w="100%"
+          isDisabled={disabled}
+        >
+          {loading ? (
+            <>
+              <PrimarySpinner color="secondary.content.medium" /> Uploading...
+            </>
+          ) : (
+            <>
+              <BiUpload /> Upload
+            </>
+          )}
+        </Button>
+      ) : (
+        <IconButton
+          aria-label="Upload from file"
+          variant="outline"
+          icon={<BiUpload />}
+          onClick={() => fileUploadRef.current?.click()}
+          isDisabled={disabled}
+        />
+      )}
     </>
   )
 }
