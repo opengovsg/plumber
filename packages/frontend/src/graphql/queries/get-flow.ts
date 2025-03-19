@@ -40,6 +40,7 @@ export const GET_FLOW = gql`
           formId
           tileId
         }
+        showSurvey
       }
       pendingTransfer {
         id

@@ -37,7 +37,9 @@ export default function EditorLayout() {
   const { flowId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const [updateFlow] = useMutation(UPDATE_FLOW)
-  const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS)
+  const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
+    refetchQueries: [GET_FLOW],
+  })
   const { data, loading, error } = useQuery(GET_FLOW, {
     variables: { id: flowId },
   })

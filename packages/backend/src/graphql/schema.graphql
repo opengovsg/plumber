@@ -43,7 +43,7 @@ type Query {
   getTableConnections(tableIds: [String!]!): JSONObject
   getTables(limit: Int!, offset: Int!, name: String): PaginatedTables!
   # Tiles rows
- getAllRows(tableId: String!, stringifiedCursor: String): GetTableRowsResult!
+  getAllRows(tableId: String!, stringifiedCursor: String): GetTableRowsResult!
   getCurrentUser: User
   healthcheck: AppHealth
   getPlumberStats: Stats
@@ -357,17 +357,12 @@ type Flow {
 type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
-  demoConfig: FlowDemoConfig
   templateConfig: FlowTemplateConfig
+  showSurvey: Boolean
 }
 
 type FlowErrorConfig {
   notificationFrequency: NotificationFrequency!
-}
-
-type FlowDemoConfig {
-  hasLoadedOnce: Boolean!
-  videoId: String!
 }
 
 type FlowTemplateConfig {
@@ -448,7 +443,7 @@ enum NotificationFrequency {
 input UpdateFlowConfigInput {
   id: String!
   notificationFrequency: NotificationFrequency
-  hasLoadedOnce: Boolean
+  showSurvey: Boolean
 }
 
 input ExecuteFlowInput {
