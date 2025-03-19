@@ -7,11 +7,13 @@ import { useQuery } from '@apollo/client'
 import { FormControl, useDisclosure, useOutsideClick } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import {
   extractVariables,
   filterVariables,
+  StepWithVariables,
   type Variable,
 } from '@/helpers/variables'
 import { useS3Operations } from '@/hooks/useS3Operations'
@@ -46,6 +48,11 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const wrapperRef = useRef(null)
   const { control, setError, getValues } = useFormContext()
   const [currentTab, setCurrentTab] = useState<number>(0)
+
+  // TODO (kevinkim-ogp): remove this after we confirm that upload is stable
+  const launchDarkly = useContext(LaunchDarklyContext)
+  const hideUploadAttachments =
+    launchDarkly.flags?.['hide-postman-upload-attachment']
 
   const flowId = getValues('flowId')
 
@@ -87,9 +94,12 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   })
 
   const uploadedItems = useMemo(() => {
+    if (hideUploadAttachments) {
+      return []
+    }
     const attachmentsConfig = flowData?.getFlow?.config?.attachments ?? []
     return reformatToCheckboxVariables(attachmentsConfig)
-  }, [flowData])
+  }, [flowData, hideUploadAttachments])
 
   const suggestions = useMemo(() => {
     const selectedNames = getValues(name)
@@ -129,15 +139,16 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     ])
     return [
       ...filteredVars,
-      {
+      !hideUploadAttachments && {
         id: 'uploaded',
         name: 'Uploaded attachments',
         output: uploadedItems,
         addNew: true,
       },
-    ]
+    ].filter(Boolean) as StepWithVariables[]
   }, [
     getValues,
+    hideUploadAttachments,
     name,
     priorExecutionSteps,
     setSelectedOptions,
