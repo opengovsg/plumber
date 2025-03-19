@@ -46,6 +46,7 @@ type AppConfig = {
   }
   launchDarklySdkKey: string
   maxJobAttempts: number
+  onboardingEmailWebhookUrl: string
 }
 
 const port = process.env.PORT || '3000'
@@ -105,6 +106,7 @@ const appConfig: AppConfig = {
   },
   launchDarklySdkKey: process.env.LAUNCH_DARKLY_SDK_KEY,
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
+  onboardingEmailWebhookUrl: process.env.ONBOARDING_EMAIL_WEBHOOK_URL || '',
 }
 
 if (!appConfig.encryptionKey) {
