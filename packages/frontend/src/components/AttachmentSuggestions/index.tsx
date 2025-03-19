@@ -94,12 +94,9 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   })
 
   const uploadedItems = useMemo(() => {
-    if (hideUploadAttachments) {
-      return []
-    }
     const attachmentsConfig = flowData?.getFlow?.config?.attachments ?? []
     return reformatToCheckboxVariables(attachmentsConfig)
-  }, [flowData, hideUploadAttachments])
+  }, [flowData])
 
   const suggestions = useMemo(() => {
     const selectedNames = getValues(name)
