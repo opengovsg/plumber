@@ -119,12 +119,12 @@ export default function FlowStepHeader(
       <Box
         w="full"
         borderWidth="1px"
-        borderColor="base.divider.medium"
+        borderColor={collapsed ? 'base.divider.medium' : 'base.content.brand'}
         borderRadius="lg"
         borderTopRadius={isInfoboxPresent ? 'none' : 'lg'}
         p={0}
         bg="white"
-        boxShadow={collapsed ? undefined : 'sm'}
+        overflow="hidden"
         data-test="flow-step" // adding to identify element for e2e testing
       >
         {/*

@@ -1,16 +1,25 @@
-import { type IFlow, type IStep } from '@plumber/types'
+import { IFlow, IStep } from '@plumber/types'
 
-import { type FunctionComponent, useMemo } from 'react'
+import { FunctionComponent, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { Box, Flex } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
-import FlowStepHeader from '@/components/FlowStepHeader'
 import { areAllIfThenBranchesCompleted, isIfThenStep } from '@/helpers/toolbox'
 
-import Error from './Content/Error'
-import IfThen from './Content/IfThen'
-import { type ContentProps } from './Content/types'
+import Error from '../FlowStepGroup/Content/Error'
+import IfThen from '../FlowStepGroup/Content/IfThen'
+import { ContentProps } from '../FlowStepGroup/Content/types'
+
+interface StepGroupProps {
+  iconUrl?: string
+  flow: IFlow
+  steps: IStep[]
+  collapsed: boolean
+  onOpen: () => void
+  onClose: () => void
+  setCurrentStepId: (stepId: string) => void
+}
 
 function getStepContent(steps: IStep[]): {
   StepContent: FunctionComponent<ContentProps>
@@ -37,22 +46,12 @@ function getStepContent(steps: IStep[]): {
   }
 }
 
-interface FlowStepGroupProps {
-  iconUrl?: string
-  flow: IFlow
-  steps: IStep[]
-  onOpen: () => void
-  onClose: () => void
-  collapsed: boolean
-}
-
 const ifThenHelpMessage = 'Customise what happens in each of your branches.'
 
-function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
-  const { iconUrl, flow, steps, onOpen, onClose, collapsed } = props
+export default function StepGroup(props: StepGroupProps) {
+  const { flow, steps, collapsed, setCurrentStepId } = props
   const isTemplatedFlow = !!flow.config?.templateConfig?.templateId
-
-  const { hintAboveCaption, caption, isStepGroupCompleted } = useMemo(
+  const { StepContent, isStepGroupCompleted } = useMemo(
     () => getStepContent(steps),
     [steps],
   )
@@ -75,20 +74,11 @@ function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
         </Box>
       )}
 
-      <FlowStepHeader
-        iconUrl={iconUrl}
-        caption={caption}
-        hintAboveCaption={hintAboveCaption}
-        onOpen={onOpen}
-        onClose={onClose}
-        collapsed={collapsed ?? false}
-        isCompleted={isStepGroupCompleted}
-        isInfoboxPresent={!isStepGroupCompleted}
-      >
-        {null}
-      </FlowStepHeader>
+      <StepContent
+        flow={flow}
+        steps={steps}
+        setCurrentStepId={setCurrentStepId}
+      />
     </Flex>
   )
 }
-
-export default FlowStepGroup

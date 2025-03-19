@@ -1,8 +1,11 @@
 import type { IApp, IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useContext, useMemo } from 'react'
-import { Center, Flex } from '@chakra-ui/react'
+import { Fragment, useCallback, useContext, useMemo, useState } from 'react'
+import { useMutation } from '@apollo/client'
+import { Center, Flex, useDisclosure } from '@chakra-ui/react'
+import { useIsMobile } from '@opengovsg/design-system-react'
 
+import EditorRightDrawer from '@/components/EditorRightDrawer'
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
 import { EditorContext } from '@/contexts/Editor'
@@ -10,18 +13,31 @@ import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
+import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
 
 import { AddStepButton } from './AddStepButton'
 
+// FIXME (kevinkim-ogp): this is a temporary fix for the scrollbar
+// find a better way to get the max height
+export const EDITOR_MAX_HEIGHT = 'calc(100vh - 61px)'
+
 type EditorProps = {
   flow: IFlow
   steps: IStep[]
 }
 
-export default function Editor(props: EditorProps) {
+export default function Editor(props: EditorProps): React.ReactElement {
+  const [updateStep] = useMutation(UPDATE_STEP)
+  const isMobile = useIsMobile()
+  const {
+    isOpen: isDrawerOpen,
+    onOpen: onDrawerOpen,
+    onClose: onDrawerClose,
+  } = useDisclosure()
+
   const { flow, steps: rawSteps } = props
 
   const {
@@ -43,6 +59,33 @@ export default function Editor(props: EditorProps) {
         flowId: flow.id,
       })),
     [flow, rawSteps],
+  )
+
+  const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
+
+  const onStepChange = useCallback(
+    (step: IStep) => {
+      const mutationInput: Record<string, unknown> = {
+        id: step.id,
+        key: step.key,
+        parameters: step.parameters,
+        connection: {
+          id: step.connection?.id,
+        },
+        flow: {
+          id: flow.id,
+        },
+      }
+
+      if (step.appKey) {
+        mutationInput.appKey = step.appKey
+      }
+
+      updateStep({
+        variables: { input: mutationInput },
+      })
+    },
+    [updateStep, flow.id],
   )
 
   const appsWithActions: IApp[] = allApps.filter(
@@ -150,9 +193,13 @@ export default function Editor(props: EditorProps) {
         flexDir="column"
         alignItems="center"
         py={3}
-        pb={24}
-        w="53.25rem"
+        px={isDrawerOpen ? (isMobile ? 0 : '5rem') : 0}
+        w={isDrawerOpen ? (isMobile ? '0px' : undefined) : '53.25rem'}
+        flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
         maxW="full"
+        transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
+        maxHeight={EDITOR_MAX_HEIGHT}
+        overflowY={isDrawerOpen ? 'auto' : undefined}
       >
         <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
           {stepsBeforeGroup.map((step, index) => {
@@ -162,10 +209,18 @@ export default function Editor(props: EditorProps) {
                   step={step}
                   isLastStep={index === steps.length - 1}
                   index={index + 1}
-                  collapsed={currentStepId !== step.id}
-                  onOpen={() => setCurrentStepId(step.id)}
+                  collapsed={
+                    !isDrawerOpen && currentStepId === step.id
+                      ? true
+                      : currentStepId !== step.id
+                  }
+                  onOpen={() => {
+                    setCurrentStepId(step.id)
+                    onDrawerOpen()
+                  }}
                   onClose={() => {
                     setCurrentStepId(null)
+                    onDrawerClose()
                   }}
                   onChange={onUpdateStep}
                   onContinue={() => {
@@ -208,6 +263,22 @@ export default function Editor(props: EditorProps) {
           )}
         </StepExecutionsToIncludeProvider>
       </Flex>
+      <EditorRightDrawer
+        flow={flow}
+        flowStepGroupIconUrl={flowStepGroupIconUrl}
+        index={currentStepIndex}
+        isDrawerOpen={isDrawerOpen}
+        isLastStep={currentStepIndex === steps.length - 1}
+        onDrawerClose={onDrawerClose}
+        onDrawerOpen={onDrawerOpen}
+        onStepChange={onStepChange}
+        currentStepId={currentStepId}
+        currentStepIndex={currentStepIndex}
+        groupedSteps={groupedSteps}
+        setCurrentStepId={setCurrentStepId}
+        setCurrentStepIndex={setCurrentStepIndex}
+        steps={steps}
+      />
     </Flex>
   )
 }
