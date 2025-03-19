@@ -14,6 +14,7 @@ import { makeActionWorker } from '@/workers/helpers/make-action-worker'
 
 // Worker for our main action queue
 export const mainActionWorker = makeActionWorker({
+  appKey: MAIN_ACTION_QUEUE_NAME,
   queueName: MAIN_ACTION_QUEUE_NAME,
   redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
   queueConfig: {
@@ -32,6 +33,7 @@ for (const [appKey, app] of Object.entries(apps)) {
   }
 
   appActionWorkers[appKey] = makeActionWorker({
+    appKey,
     queueName: appActionQueues[appKey].name,
     queueConfig: app.queue,
   })

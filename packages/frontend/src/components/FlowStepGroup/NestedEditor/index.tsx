@@ -28,6 +28,7 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
       onClose={onClose}
       size="6xl"
       closeOnEsc={false}
+      closeOnOverlayClick={false}
       motionPreset="none"
     >
       <ModalOverlay />

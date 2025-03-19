@@ -12,18 +12,22 @@ import {
   Flex,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { Rating } from 'lens-widget'
 
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
+import appConfig from '@/config/app'
 import { EditorContext } from '@/contexts/Editor'
 import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import useAuthentication from '@/hooks/useAuthentication'
 
 interface AddStepButtonProps {
   onClick: () => void
@@ -97,6 +101,16 @@ export default function Editor(props: EditorProps): React.ReactElement {
   )
 
   const { flow, steps: rawSteps } = props
+  const showSurvey = flow.active && flow.config?.showSurvey
+  const { currentUser } = useAuthentication()
+
+  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
+  const onFlowConfigUpdate = useCallback(async () => {
+    await updateFlowConfig({
+      variables: { input: { id: flow.id, showSurvey: false } },
+    })
+  }, [updateFlowConfig, flow.id])
+
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
     // non-undefined. We do it here instead of fetching in GraphQL since all
@@ -271,7 +285,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 onClose={() => setCurrentStepId(null)}
                 onChange={onStepChange}
                 onContinue={() => {
-                  setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+                  if (
+                    index === stepsBeforeGroup.length - 1 &&
+                    groupedSteps.length > 0
+                  ) {
+                    setCurrentStepId(groupedSteps[0].id)
+                  } else {
+                    setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+                  }
                 }}
                 templateConfig={flow?.config?.templateConfig}
               />
@@ -290,10 +311,24 @@ export default function Editor(props: EditorProps): React.ReactElement {
               collapsed={currentStepId !== groupedSteps[0].id}
               onOpen={() => setCurrentStepId(groupedSteps[0].id)}
               onClose={() => setCurrentStepId(null)}
+              setCurrentStepId={setCurrentStepId}
             />
           )}
         </StepExecutionsToIncludeProvider>
       </Flex>
+
+      {showSurvey && (
+        <Rating
+          clientKey={appConfig.lensSurveyClientKey}
+          brandColour="#cf1a68"
+          attributes={[
+            `FlowId: ${flow.id}`,
+            `UserEmail: ${currentUser?.email}`,
+          ]}
+          onSubmit={onFlowConfigUpdate}
+          onClose={onFlowConfigUpdate}
+        />
+      )}
     </Flex>
   )
 }

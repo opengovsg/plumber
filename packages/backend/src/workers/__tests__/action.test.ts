@@ -44,6 +44,7 @@ describe('action workers', () => {
 
   it('creates the worker for the main action queue and makes it undelayable', () => {
     expect(mocks.makeActionWorker).toHaveBeenCalledWith({
+      appKey: MAIN_ACTION_QUEUE_NAME,
       queueName: MAIN_ACTION_QUEUE_NAME,
       redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
       queueConfig: {
@@ -54,10 +55,12 @@ describe('action workers', () => {
 
   it('creates a worker for each app that has their own action queue', () => {
     expect(mocks.makeActionWorker).toHaveBeenCalledWith({
+      appKey: 'app-with-queue-1',
       queueName: '{app-actions-app-with-queue-1}',
       queueConfig: { stubQueueConfig: 1 },
     })
     expect(mocks.makeActionWorker).toHaveBeenCalledWith({
+      appKey: 'app-with-queue-2',
       queueName: '{app-actions-app-with-queue-2}',
       queueConfig: { stubQueueConfig: 2 },
     })

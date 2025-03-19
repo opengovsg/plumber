@@ -14,6 +14,7 @@ export interface StepWithVariables {
   id: string
   name: string
   output: Variable[]
+  addNew?: boolean
 }
 export interface Variable {
   label: string | null

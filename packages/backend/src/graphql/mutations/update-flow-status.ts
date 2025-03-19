@@ -41,6 +41,16 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   await flow.$query().patch({
     active: params.input.active,
     publishedAt: params.input.active ? new Date().toISOString() : null,
+    config: {
+      ...flow.config,
+      // When publishing: set to true if undefined else false
+      // When unpublishing: keep existing value
+      showSurvey: params.input.active
+        ? flow.config?.showSurvey === undefined
+          ? true
+          : false
+        : flow.config?.showSurvey,
+    },
   })
 
   const triggerStep = await flow.getTriggerStep()

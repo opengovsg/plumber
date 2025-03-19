@@ -104,7 +104,7 @@ const TileListItem = ({
           </Flex>
           <Flex {...flexStyles.container}>
             <Text {...textStyles.lastOpened}>
-              Last opened {toPrettyDateString(+table.lastAccessedAt)}
+              Last opened {toPrettyDateString(+table.lastAccessedAt, 'ms')}
             </Text>
             {numConnections > 0 && (
               <Skeleton isLoaded={!isConnectionsLoading}>

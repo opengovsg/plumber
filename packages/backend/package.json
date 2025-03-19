@@ -31,6 +31,7 @@
     "@apollo/server": "4.9.4",
     "@aws-sdk/client-dynamodb": "3.460.0",
     "@aws-sdk/client-s3": "3.369.0",
+    "@aws-sdk/s3-request-presigner": "3.369.0",
     "@bull-board/express": "5.17.0",
     "@graphql-tools/schema": "10.0.0",
     "@launchdarkly/node-server-sdk": "9.0.4",
@@ -40,7 +41,7 @@
     "@taskforcesh/bullmq-pro": "7.7.1",
     "ajv-formats": "^2.1.1",
     "async-mutex": "0.4.0",
-    "axios": "1.7.5",
+    "axios": "1.8.3",
     "big.js": "6.2.1",
     "cookie-parser": "1.4.6",
     "copyfiles": "^2.4.1",
@@ -105,5 +106,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.37.0"
+  "version": "1.38.0"
 }

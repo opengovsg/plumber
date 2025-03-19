@@ -43,7 +43,7 @@ type Query {
   getTableConnections(tableIds: [String!]!): JSONObject
   getTables(limit: Int!, offset: Int!, name: String): PaginatedTables!
   # Tiles rows
- getAllRows(tableId: String!, stringifiedCursor: String): GetTableRowsResult!
+  getAllRows(tableId: String!, stringifiedCursor: String): GetTableRowsResult!
   getCurrentUser: User
   healthcheck: AppHealth
   getPlumberStats: Stats
@@ -96,6 +96,9 @@ type Mutation {
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
   duplicateFlow(input: DuplicateFlowInput): Flow
+  # S3 operations
+  generatePresignedUrl(input: GeneratePresignedUrlInput): PresignedUrl
+  deleteUploadedFile(id: String!): Boolean
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
@@ -357,23 +360,27 @@ type Flow {
 type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
-  demoConfig: FlowDemoConfig
   templateConfig: FlowTemplateConfig
+  showSurvey: Boolean
+  attachments: [FlowAttachmentConfig]
 }
 
 type FlowErrorConfig {
   notificationFrequency: NotificationFrequency!
 }
 
-type FlowDemoConfig {
-  hasLoadedOnce: Boolean!
-  videoId: String!
-}
-
 type FlowTemplateConfig {
   templateId: String!
   formId: String
   tileId: String
+}
+
+type FlowAttachmentConfig {
+  name: String!
+  displayedValue: String!
+  value: String!
+  size: Int!
+  updatedAt: String!
 }
 
 type Execution {
@@ -445,10 +452,20 @@ enum NotificationFrequency {
   always
 }
 
+input FlowAttachmentsConfigInput {
+  name: String!
+  displayedValue: String!
+  value: String!
+  size: Int!
+  updatedAt: String!
+}
+
 input UpdateFlowConfigInput {
   id: String!
   notificationFrequency: NotificationFrequency
+  showSurvey: Boolean
   hasLoadedOnce: Boolean
+  attachments: [FlowAttachmentsConfigInput]
 }
 
 input ExecuteFlowInput {
@@ -465,6 +482,15 @@ input DeleteFlowInput {
 
 input DuplicateFlowInput {
   id: String!
+}
+
+input GeneratePresignedUrlInput {
+  flowId: String!
+  filename: String!
+  fileType: String!
+  size: Int!
+  updatedAt: String!
+  manualUpload: Boolean
 }
 
 input CreateStepInput {
@@ -523,6 +549,11 @@ scalar Any
 
 input PreviousStepInput {
   id: String
+}
+
+type PresignedUrl {
+  url: String!
+  s3Id: String!
 }
 
 type ReconnectionStep {
