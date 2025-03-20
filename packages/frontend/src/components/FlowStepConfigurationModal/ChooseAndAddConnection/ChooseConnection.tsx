@@ -20,28 +20,30 @@ import { ConnectionDropdownOption } from '.'
 const DEFAULT_CHOOSE_CONNECTION_LABEL = 'Choose connection'
 
 interface ChooseConnectionProps {
-  onClose: () => void
   selectedApp: IApp
-  updateModalState: (newState: Partial<ModalState>) => void
-  selectedStep: IStep | null
   selectedConnectionId: string
+  updateModalState: (newState: Partial<ModalState>) => void
   appConnectionsLoading: boolean
   connectionOptions: ConnectionDropdownOption[]
   handleConnectionChange: (value: string, shouldRefetch: boolean) => void
+  handleSubmit: () => void
+  mockStep?: IStep
+  step?: IStep
 }
 
 export default function ChooseConnection(
   props: ChooseConnectionProps,
 ): JSX.Element {
   const {
-    onClose,
     selectedApp,
-    updateModalState,
-    selectedStep,
     selectedConnectionId,
+    updateModalState,
     appConnectionsLoading,
     connectionOptions,
     handleConnectionChange,
+    handleSubmit,
+    mockStep,
+    step,
   } = props
   const editorContext = useContext(EditorContext)
   const supportsConnectionRegistration =
@@ -58,7 +60,7 @@ export default function ChooseConnection(
   }>(TEST_CONNECTION, {
     variables: {
       connectionId: selectedConnectionId,
-      stepId: supportsConnectionRegistration ? selectedStep?.id : undefined,
+      stepId: supportsConnectionRegistration ? mockStep?.id : undefined,
     },
     skip: !selectedConnectionId,
   })
@@ -72,14 +74,14 @@ export default function ChooseConnection(
         variables: {
           input: {
             connectionId: selectedConnectionId,
-            stepId: selectedStep?.id,
+            stepId: mockStep?.id,
           },
         },
       })
       await retestConnection()
     }
   }, [
-    selectedStep,
+    mockStep,
     selectedConnectionId,
     registerConnection,
     supportsConnectionRegistration,
@@ -89,18 +91,25 @@ export default function ChooseConnection(
   const onBack = () => {
     const triggersOrActions = selectedApp.triggers || selectedApp.actions || []
     if (triggersOrActions.length === 1) {
-      updateModalState({ currentScreen: 'choose-app' })
+      updateModalState({
+        currentScreen: 'choose-app',
+        selectedApp: null,
+        selectedEvent: null,
+        selectedConnectionId: '',
+      })
     } else {
-      updateModalState({ currentScreen: 'choose-event' })
+      updateModalState({
+        currentScreen: 'choose-event',
+        selectedEvent: null,
+      })
     }
   }
 
   return (
     <>
-      {/* No connection selected or step does not have both the key and appKey yet */}
+      {/* Hide back button only if step has both the key and appKey */}
       <ModalHeader>
-        {(selectedConnectionId === '' ||
-          (!selectedStep?.key && !selectedStep?.appKey)) && (
+        {(!step?.key || !step?.appKey) && (
           <Button
             variant="clear"
             colorScheme="secondary"
@@ -136,13 +145,14 @@ export default function ChooseConnection(
               }
             />
             <SetConnectionButton
-              onNextStep={onClose}
+              onNextStep={handleSubmit}
               onRegisterConnection={onRegisterConnection}
               readOnly={editorContext.readOnly}
               supportsConnectionRegistration={supportsConnectionRegistration}
               testResult={testConnectionData?.testConnection}
               testResultLoading={testResultLoading}
               registerConnectionLoading={registerConnectionLoading}
+              isNewStep={!step}
             />
           </Flex>
         </Flex>
