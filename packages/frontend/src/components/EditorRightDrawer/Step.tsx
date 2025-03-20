@@ -35,7 +35,7 @@ type FlowStepProps = {
   collapsed?: boolean
   step: IStep
   isLastStep: boolean
-  index?: number
+  index?: number | null
   onChange: (step: IStep) => void
   onClose: () => void
   onContinue?: () => void
@@ -89,6 +89,7 @@ function generateValidationSchema(substeps: ISubstep[]) {
 
 export default function Step(props: FlowStepProps): React.ReactElement | null {
   const {
+    index,
     step,
     isLastStep,
     collapsed,
@@ -97,7 +98,7 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     onOpen,
     templateConfig,
   } = props
-  const isTrigger = step.type === 'trigger'
+
   const {
     isOpen: isModalOpen,
     onOpen: onModalOpen,
@@ -126,7 +127,8 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     [step.position, stepExecutionsToInclude, testExecutionSteps],
   )
 
-  const { app, apps, selectedActionOrTrigger, substeps } = useStepMetadata(step)
+  const { app, apps, isTrigger, selectedActionOrTrigger, substeps } =
+    useStepMetadata(step)
 
   const handleChange = useCallback(
     ({ step }: { step: IStep }) => {
@@ -165,10 +167,10 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
   useEffect(() => {
-    if (currentSubstep !== 0) {
-      toggleSubstep(0)
+    if (index !== null) {
+      setCurrentSubstep(0)
     }
-  }, [step])
+  }, [index])
 
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />

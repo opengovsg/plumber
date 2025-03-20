@@ -90,6 +90,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
 
       {!isIfThenStep && (
         <Step
+          index={index}
           step={step}
           isLastStep={index === steps.length - 1}
           collapsed={true}
