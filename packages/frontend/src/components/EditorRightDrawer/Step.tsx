@@ -1,11 +1,4 @@
-import type {
-  IAction,
-  IApp,
-  IFlowTemplateConfig,
-  IStep,
-  ISubstep,
-  ITrigger,
-} from '@plumber/types'
+import type { IFlowTemplateConfig, IStep, ISubstep } from '@plumber/types'
 
 import {
   Fragment,
@@ -16,7 +9,6 @@ import {
   useState,
 } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
-import { useQuery } from '@apollo/client'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { Infobox } from '@opengovsg/design-system-react'
@@ -33,8 +25,8 @@ import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclude'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
+import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
@@ -122,8 +114,6 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     cannotChooseApp ? 1 : 0,
   )
 
-  const { data } = useQuery(GET_APPS)
-
   // This includes all steps that run even after the current step, but within the same branch.
   const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
   const priorExecutionSteps = useMemo(
@@ -136,29 +126,7 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     [step.position, stepExecutionsToInclude, testExecutionSteps],
   )
 
-  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
-    isTrigger ? !!app.triggers?.length : !!app.actions?.length,
-  )
-  const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
-
-  const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
-    () => (isTrigger ? app?.triggers : app?.actions) || [],
-    [app?.actions, app?.triggers, isTrigger],
-  )
-
-  const selectedActionOrTrigger = useMemo(
-    () =>
-      actionsOrTriggers.find(
-        (actionOrTrigger: IAction | ITrigger) =>
-          actionOrTrigger.key === step?.key,
-      ),
-    [actionsOrTriggers, step?.key],
-  )
-
-  const substeps = useMemo(
-    () => selectedActionOrTrigger?.substeps || [],
-    [selectedActionOrTrigger],
-  )
+  const { app, apps, selectedActionOrTrigger, substeps } = useStepMetadata(step)
 
   const handleChange = useCallback(
     ({ step }: { step: IStep }) => {

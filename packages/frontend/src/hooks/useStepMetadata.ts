@@ -1,4 +1,4 @@
-import { IAction, IApp, IStep, ITrigger } from '@plumber/types'
+import { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { useMemo } from 'react'
 import { useQuery } from '@apollo/client'
@@ -11,6 +11,7 @@ interface UseStepMetadataResult {
   selectedActionOrTrigger: IAction | ITrigger | undefined
   caption: string
   isTrigger: boolean
+  substeps: ISubstep[]
 }
 
 export function useStepMetadata(
@@ -54,11 +55,17 @@ export function useStepMetadata(
     caption = 'This step happens after the previous step'
   }
 
+  const substeps = useMemo(
+    () => selectedActionOrTrigger?.substeps || [],
+    [selectedActionOrTrigger],
+  )
+
   return {
     app,
     apps,
     selectedActionOrTrigger,
     caption,
     isTrigger,
+    substeps,
   }
 }
