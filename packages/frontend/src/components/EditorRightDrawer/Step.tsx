@@ -168,9 +168,9 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
 
   useEffect(() => {
     if (index !== null) {
-      setCurrentSubstep(0)
+      setCurrentSubstep(cannotChooseApp ? 1 : 0)
     }
-  }, [index])
+  }, [cannotChooseApp, index])
 
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />

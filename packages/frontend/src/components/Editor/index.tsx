@@ -39,7 +39,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     onClose: onDrawerClose,
   } = useDisclosure()
 
-  const { flow, steps: rawSteps } = props
+  const { flow, steps: rawSteps, isNested } = props
 
   const {
     readOnly: isReadOnlyEditor,
@@ -188,6 +188,19 @@ export default function Editor(props: EditorProps): React.ReactElement {
     )
   }
 
+  const getStepPadding = () => {
+    if (isDrawerOpen) {
+      if (isMobile) {
+        return 0
+      }
+      if (isNested) {
+        return '3rem'
+      }
+      return '5rem'
+    }
+    return 0
+  }
+
   return (
     <Flex w="full" justifyContent={isDrawerOpen ? 'space-between' : 'center'}>
       <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
@@ -196,12 +209,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
           flexDir="column"
           alignItems="center"
           py={3}
-          px={isDrawerOpen ? (isMobile ? 0 : '5rem') : 0}
+          px={getStepPadding()}
           w={isDrawerOpen ? (isMobile ? '0px' : undefined) : '53.25rem'}
           flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
           maxW="full"
           transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
-          height={EDITOR_MAX_HEIGHT}
+          height={isNested ? undefined : EDITOR_MAX_HEIGHT}
           overflowY={isDrawerOpen ? 'auto' : undefined}
         >
           {stepsBeforeGroup.map((step, index) => (
@@ -264,23 +277,25 @@ export default function Editor(props: EditorProps): React.ReactElement {
             />
           )}
         </Flex>
+
+        <EditorRightDrawer
+          flow={flow}
+          flowStepGroupIconUrl={flowStepGroupIconUrl}
+          index={currentStepIndex}
+          isDrawerOpen={isDrawerOpen}
+          isLastStep={currentStepIndex === steps.length - 1}
+          isNested={isNested}
+          onDrawerClose={onDrawerClose}
+          onDrawerOpen={onDrawerOpen}
+          onStepChange={onStepChange}
+          currentStepId={currentStepId}
+          currentStepIndex={currentStepIndex}
+          groupedSteps={groupedSteps}
+          setCurrentStepId={setCurrentStepId}
+          setCurrentStepIndex={setCurrentStepIndex}
+          steps={steps}
+        />
       </StepExecutionsToIncludeProvider>
-      <EditorRightDrawer
-        flow={flow}
-        flowStepGroupIconUrl={flowStepGroupIconUrl}
-        index={currentStepIndex}
-        isDrawerOpen={isDrawerOpen}
-        isLastStep={currentStepIndex === steps.length - 1}
-        onDrawerClose={onDrawerClose}
-        onDrawerOpen={onDrawerOpen}
-        onStepChange={onStepChange}
-        currentStepId={currentStepId}
-        currentStepIndex={currentStepIndex}
-        groupedSteps={groupedSteps}
-        setCurrentStepId={setCurrentStepId}
-        setCurrentStepIndex={setCurrentStepIndex}
-        steps={steps}
-      />
     </Flex>
   )
 }

@@ -17,6 +17,7 @@ interface EditorRightDrawerProps {
   index: number | null
   isDrawerOpen: boolean
   isLastStep: boolean
+  isNested?: boolean
   onDrawerClose: () => void
   onDrawerOpen: () => void
   onStepChange: (step: IStep) => void
@@ -27,7 +28,7 @@ interface EditorRightDrawerProps {
   setCurrentStepIndex: (stepIndex: number) => void
   steps: any[]
 }
-// FIXME (kevinkim-ogp): accordions are not opening correctly on test step
+
 export default function EditorRightDrawer(props: EditorRightDrawerProps) {
   const {
     flow,
@@ -35,6 +36,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     index,
     isDrawerOpen,
     isLastStep,
+    isNested,
     onDrawerClose,
     onDrawerOpen,
     onStepChange,
@@ -58,17 +60,37 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     return step?.appKey === 'toolbox' && step?.key === 'ifThen'
   }, [step])
 
+  const showStep = useMemo(
+    () => !isIfThenStep || (isIfThenStep && isNested),
+    [isIfThenStep, isNested],
+  )
+
   if (!currentStepId || !step) {
     return null
+  }
+
+  const getStepWidth = () => {
+    if (isDrawerOpen) {
+      if (isMobile) {
+        return '100vw'
+      }
+      if (isNested) {
+        return '40rem'
+      }
+      return '53.25rem'
+    }
+
+    return '0'
   }
 
   return (
     <Flex
       flexDir="column"
       position="relative"
-      width={isDrawerOpen ? (isMobile ? '100vw' : '53.25rem') : '0'}
+      width={getStepWidth()}
       bg="white"
       p="4"
+      borderRadius="lg"
       boxShadow="lg"
       transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
       display={isDrawerOpen ? 'block' : 'none'}
@@ -80,15 +102,10 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     >
       <Flex alignItems="center" justifyContent="space-between" mb={4}>
         <Box>{caption}</Box>
-        <CloseButton
-          onClick={onDrawerClose}
-          position="absolute"
-          top="0"
-          right="4"
-        />
+        <CloseButton onClick={onDrawerClose} position="absolute" right="4" />
       </Flex>
 
-      {!isIfThenStep && (
+      {showStep && (
         <Step
           index={index}
           step={step}
