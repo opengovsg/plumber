@@ -36,18 +36,21 @@ export type ModalState = {
   currentScreen: ModalScreen
   selectedApp: IApp | null
   selectedEvent: ITrigger | IAction | null
+  selectedConnectionId: string
 }
 
 export default function FlowStepConfigurationModal(
   props: FlowStepConfigurationModalProps,
 ): JSX.Element {
-  const { onClose, isLastStep, isTrigger, onCreateStep, step, app, event } =
+  const { onClose, isTrigger, isLastStep, onCreateStep, step, app, event } =
     props
   const { flowId } = useParams()
+  // Remember to always clear the selectedConnectionId when the modal is back to the first screen
   const [modalState, setModalState] = useState<ModalState>({
     currentScreen: 'choose-app',
     selectedApp: app ?? null,
     selectedEvent: event ?? null,
+    selectedConnectionId: step?.connection?.id ?? '',
   })
 
   const { currentScreen } = modalState
@@ -107,9 +110,9 @@ export default function FlowStepConfigurationModal(
           onClose={onClose}
           modalState={modalState}
           updateModalState={updateModalState}
-          step={step ?? null}
           onUpdateStep={onUpdateStep}
           onCreateStep={onCreateStep}
+          step={step}
         />
       )
     } else {
