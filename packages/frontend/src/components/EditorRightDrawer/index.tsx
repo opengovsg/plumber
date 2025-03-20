@@ -118,6 +118,8 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
               const nextStepId = steps[nextStepIndex]?.id
               setCurrentStepId(nextStepId)
               setCurrentStepIndex(nextStepIndex)
+            } else if (isLastStep) {
+              onDrawerClose()
             }
           }}
           onClose={onDrawerClose}
