@@ -17,6 +17,7 @@ import generatePresignedUrl from './mutations/generate-presigned-url'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
 import logout from './mutations/logout'
+import obtainDraftStep from './mutations/obtain-draft-step'
 import registerConnection from './mutations/register-connection'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
@@ -81,5 +82,6 @@ export default {
   duplicateFlow,
   deleteUploadedFile,
   generatePresignedUrl,
+  obtainDraftStep,
   ...tilesMutationResolvers,
 } satisfies MutationResolvers

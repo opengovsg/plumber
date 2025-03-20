@@ -115,6 +115,8 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
+  # Draft steps
+  obtainDraftStep(input: ObtainDraftStepInput): Step
 }
 
 """
@@ -598,6 +600,7 @@ type Step {
   executionSteps: [ExecutionStep]
   config: StepConfig
   createdAt: String
+  draft: Boolean
 }
 
 type StepConfig {
@@ -940,6 +943,11 @@ enum TemplateTagType {
 }
 
 # End of template types
+
+input ObtainDraftStepInput {
+  position: Int!
+  flowId: String!
+}
 
 schema {
   query: Query
