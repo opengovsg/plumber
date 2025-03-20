@@ -27,6 +27,7 @@ export const EDITOR_MAX_HEIGHT = 'calc(100vh - 61px)'
 type EditorProps = {
   flow: IFlow
   steps: IStep[]
+  isNested?: boolean
 }
 
 export default function Editor(props: EditorProps): React.ReactElement {
@@ -189,68 +190,69 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
   return (
     <Flex w="full" justifyContent={isDrawerOpen ? 'space-between' : 'center'}>
-      <Flex
-        flexDir="column"
-        alignItems="center"
-        py={3}
-        px={isDrawerOpen ? (isMobile ? 0 : '5rem') : 0}
-        w={isDrawerOpen ? (isMobile ? '0px' : undefined) : '53.25rem'}
-        flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
-        maxW="full"
-        transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
-        maxHeight={EDITOR_MAX_HEIGHT}
-        overflowY={isDrawerOpen ? 'auto' : undefined}
-      >
-        <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-          {stepsBeforeGroup.map((step, index) => {
-            return (
-              <Fragment key={`${step.id}-${index}`}>
-                <FlowStep
-                  step={step}
-                  isLastStep={index === steps.length - 1}
-                  index={index + 1}
-                  collapsed={
-                    !isDrawerOpen && currentStepId === step.id
-                      ? true
-                      : currentStepId !== step.id
+      <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
+        <Flex
+          display="block"
+          flexDir="column"
+          alignItems="center"
+          py={3}
+          px={isDrawerOpen ? (isMobile ? 0 : '5rem') : 0}
+          w={isDrawerOpen ? (isMobile ? '0px' : undefined) : '53.25rem'}
+          flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
+          maxW="full"
+          transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
+          height={EDITOR_MAX_HEIGHT}
+          overflowY={isDrawerOpen ? 'auto' : undefined}
+        >
+          {stepsBeforeGroup.map((step, index) => (
+            <Fragment key={`${step.id}-${index}`}>
+              <FlowStep
+                step={step}
+                isLastStep={index === steps.length - 1}
+                index={index + 1}
+                collapsed={
+                  !isDrawerOpen && currentStepId === step.id
+                    ? true
+                    : currentStepId !== step.id
+                }
+                onOpen={() => {
+                  setCurrentStepId(step.id)
+                  setCurrentStepIndex(index)
+                  onDrawerOpen()
+                }}
+                onClose={() => {
+                  setCurrentStepId(null)
+                  setCurrentStepIndex(null)
+                  onDrawerClose()
+                }}
+                onChange={onStepChange}
+                onContinue={() => {
+                  if (
+                    index === stepsBeforeGroup.length - 1 &&
+                    groupedSteps.length > 0
+                  ) {
+                    setCurrentStepId(groupedSteps[0].id)
+                  } else {
+                    setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
                   }
-                  onOpen={() => {
-                    setCurrentStepId(step.id)
-                    onDrawerOpen()
-                  }}
-                  onClose={() => {
-                    setCurrentStepId(null)
-                    onDrawerClose()
-                  }}
-                  onChange={onUpdateStep}
-                  onContinue={() => {
-                    if (
-                      index === stepsBeforeGroup.length - 1 &&
-                      groupedSteps.length > 0
-                    ) {
-                      setCurrentStepId(groupedSteps[0].id)
-                    } else {
-                      setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
-                    }
-                  }}
-                  templateConfig={flow?.config?.templateConfig}
-                />
-                <AddStepButton
-                  // hide all add button steps if is readonly
-                  isHidden={isReadOnlyEditor}
-                  // show empty action if no action step exists
-                  showEmptyAction={hasNoActionSteps && !groupedSteps.length}
-                  // Disable add button steps if first action is not set up
-                  isDisabled={
-                    (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
-                    !groupedSteps.length
-                  }
-                  isLastStep={index === steps.length - 1}
-                  stepId={step.id}
-                />
-              </Fragment>
-            )
-          })}
+                }}
+                templateConfig={flow?.config?.templateConfig}
+              />
+              <AddStepButton
+                // hide all add button steps if is readonly
+                isHidden={isReadOnlyEditor}
+                // show empty action if no action step exists
+                showEmptyAction={hasNoActionSteps && !groupedSteps.length}
+                // Disable add button steps if first action is not set up
+                isDisabled={
+                  (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
+                  !groupedSteps.length
+                }
+                isLastStep={index === steps.length - 1}
+                stepId={step.id}
+              />
+            </Fragment>
+          ))}
           {groupedSteps.length > 0 && (
             <FlowStepGroup
               iconUrl={flowStepGroupIconUrl}
@@ -261,8 +263,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
               onClose={() => setCurrentStepId(null)}
             />
           )}
-        </StepExecutionsToIncludeProvider>
-      </Flex>
+        </Flex>
+      </StepExecutionsToIncludeProvider>
       <EditorRightDrawer
         flow={flow}
         flowStepGroupIconUrl={flowStepGroupIconUrl}
