@@ -12,6 +12,7 @@ interface SetConnectionButtonProps {
   testResult: ITestConnectionOutput | undefined
   testResultLoading: boolean
   registerConnectionLoading: boolean
+  isNewStep?: boolean
 }
 
 const SetConnectionButton = ({
@@ -22,6 +23,7 @@ const SetConnectionButton = ({
   testResult,
   testResultLoading,
   registerConnectionLoading,
+  isNewStep,
 }: SetConnectionButtonProps) => {
   const onSubmit = useCallback(() => {
     if (
@@ -40,13 +42,20 @@ const SetConnectionButton = ({
     testResult,
   ])
 
+  const stepActionText =
+    isNewStep === undefined
+      ? 'Continue'
+      : isNewStep
+      ? 'Add step'
+      : 'Save and continue'
+
   const buttonText = useMemo(() => {
     if (testResultLoading) {
       return 'Testing connection...'
     }
 
     if (!testResult) {
-      return 'Continue'
+      return stepActionText
     }
 
     if (registerConnectionLoading) {
@@ -58,20 +67,21 @@ const SetConnectionButton = ({
     }
 
     if (!supportsConnectionRegistration) {
-      return readOnly ? 'Connection verified' : 'Continue'
+      return readOnly ? 'Connection verified' : stepActionText
     }
 
     if (!testResult.registrationVerified) {
       return readOnly ? 'Not connected' : 'Connect'
     }
 
-    return 'Continue'
+    return stepActionText
   }, [
     readOnly,
     testResultLoading,
     testResult,
     supportsConnectionRegistration,
     registerConnectionLoading,
+    stepActionText,
   ])
 
   return (

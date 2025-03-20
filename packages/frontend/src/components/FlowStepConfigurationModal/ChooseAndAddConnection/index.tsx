@@ -1,8 +1,10 @@
 import { IApp, IConnection, IStep } from '@plumber/types'
 
-import { useCallback, useMemo, useState } from 'react'
-import { useQuery } from '@apollo/client'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { useMutation, useQuery } from '@apollo/client'
 
+import { GET_OR_CREATE_MOCK_STEP } from '@/graphql/mutations/get-or-create-mock-step'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 
 import InvalidModalScreen from '../InvalidModalScreen'
@@ -15,13 +17,13 @@ interface ChooseAndAddConnectionProps {
   onClose: () => void
   modalState: ModalState
   updateModalState: (newState: Partial<ModalState>) => void
-  step: IStep | null
   onUpdateStep: (step: IStep) => Promise<IStep>
   onCreateStep?: (
     appKey: string,
     eventKey: string,
     connectionId?: string,
   ) => Promise<IStep>
+  step?: IStep
 }
 
 export type ConnectionDropdownOption = {
@@ -47,12 +49,27 @@ export default function ChooseAndAddConnection(
     onUpdateStep,
     onCreateStep,
   } = props
-  const { currentScreen, selectedApp, selectedEvent } = modalState
+  const { currentScreen, selectedApp, selectedEvent, selectedConnectionId } =
+    modalState
+  const { flowId } = useParams()
+  const [getOrCreateMockStep] = useMutation(GET_OR_CREATE_MOCK_STEP)
+  const onGetOrCreateMockStep = useCallback(async () => {
+    const { data } = await getOrCreateMockStep({
+      variables: { input: { flowId } },
+    })
+    return data.getOrCreateMockStep as IStep
+  }, [flowId, getOrCreateMockStep])
 
-  const [selectedStep, setSelectedStep] = useState<IStep | null>(step)
-  const [selectedConnectionId, setSelectedConnectionId] = useState<string>(
-    selectedStep?.connection?.id ?? '',
-  )
+  const [mockStep, setMockStep] = useState<IStep | null>(null)
+  useEffect(() => {
+    // load mock step on mount
+    if (!mockStep) {
+      const fetchMockStep = async () => {
+        setMockStep(await onGetOrCreateMockStep())
+      }
+      fetchMockStep()
+    }
+  }, [onGetOrCreateMockStep, mockStep])
 
   const {
     data,
@@ -73,26 +90,14 @@ export default function ChooseAndAddConnection(
     return options
   }, [data])
 
+  // This updates the mock step to be verified and registered
   const handleConnectionChange = useCallback(
     async (connectionId: string, shouldRefetch: boolean) => {
-      if (!selectedApp || !selectedEvent) {
+      if (!selectedApp || !selectedEvent || !mockStep) {
         return
       }
 
-      if (!selectedStep) {
-        if (onCreateStep) {
-          const newStep = await onCreateStep(
-            selectedApp.key,
-            selectedEvent.key,
-            connectionId,
-          )
-          setSelectedStep(newStep)
-          setSelectedConnectionId(connectionId)
-        }
-        return
-      }
-
-      if (connectionId === selectedStep?.connection?.id) {
+      if (connectionId === mockStep?.connection?.id) {
         return
       }
 
@@ -100,53 +105,108 @@ export default function ChooseAndAddConnection(
         await refetch()
       }
 
-      const updatedStep = await onUpdateStep({
-        ...selectedStep,
+      const updatedMockStep = await onUpdateStep({
+        ...mockStep,
         appKey: selectedApp.key,
         key: selectedEvent.key,
         connection: {
           id: connectionId,
         },
       })
-      setSelectedStep(updatedStep)
-      setSelectedConnectionId(connectionId)
+      setMockStep(updatedMockStep)
+      updateModalState({ selectedConnectionId: connectionId })
     },
     [
-      selectedStep,
+      mockStep,
       selectedApp,
       selectedEvent,
       onUpdateStep,
       refetch,
-      setSelectedStep,
-      onCreateStep,
+      setMockStep,
+      updateModalState,
     ],
   )
 
+  // Add a new connection and update the mock step for verifying and registering of connection
   const handleAddConnection = useCallback(
-    (response: Record<string, any>) => {
+    async (response: Record<string, any>) => {
       const newConnectionId = response?.createConnection?.id as
         | string
         | undefined
+
       if (newConnectionId) {
+        if (!selectedApp || !selectedEvent || !mockStep) {
+          return
+        }
+
         handleConnectionChange(newConnectionId, true)
-        setSelectedConnectionId(newConnectionId)
-        updateModalState({ currentScreen: 'choose-connection' })
+        const updatedMockStep = await onUpdateStep({
+          ...mockStep,
+          appKey: selectedApp.key,
+          key: selectedEvent.key,
+          connection: {
+            id: newConnectionId,
+          },
+        })
+        setMockStep(updatedMockStep)
+        updateModalState({
+          selectedConnectionId: newConnectionId,
+          currentScreen: 'choose-connection',
+        })
       }
     },
-    [handleConnectionChange, setSelectedConnectionId, updateModalState],
+    [
+      handleConnectionChange,
+      mockStep,
+      onUpdateStep,
+      selectedApp,
+      selectedEvent,
+      updateModalState,
+    ],
   )
+
+  // If the step is not provided, create a new step; else update the existing step
+  const handleSubmit = useCallback(() => {
+    if (!selectedApp || !selectedEvent || !selectedConnectionId) {
+      return
+    }
+
+    if (onCreateStep) {
+      onCreateStep(selectedApp.key, selectedEvent.key, selectedConnectionId)
+      onClose()
+    } else if (step) {
+      onUpdateStep({
+        ...step,
+        appKey: selectedApp.key,
+        key: selectedEvent.key,
+        connection: {
+          id: selectedConnectionId,
+        },
+      })
+      onClose()
+    }
+  }, [
+    selectedApp,
+    selectedEvent,
+    selectedConnectionId,
+    onCreateStep,
+    step,
+    onClose,
+    onUpdateStep,
+  ])
 
   if (selectedApp && selectedEvent && currentScreen === 'choose-connection') {
     return (
       <ChooseConnection
-        onClose={onClose}
         selectedApp={selectedApp}
-        updateModalState={updateModalState}
-        selectedStep={selectedStep}
         selectedConnectionId={selectedConnectionId}
+        updateModalState={updateModalState}
         appConnectionsLoading={appConnectionsLoading}
         connectionOptions={connectionOptions}
         handleConnectionChange={handleConnectionChange}
+        handleSubmit={handleSubmit}
+        mockStep={mockStep ?? undefined}
+        step={step}
       />
     )
   } else if (selectedApp && currentScreen === 'add-connection') {

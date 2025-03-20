@@ -131,6 +131,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
           updateModalState({
             selectedApp: null,
             selectedEvent: null,
+            selectedConnectionId: '',
             currentScreen: 'choose-app',
           })
         }}
