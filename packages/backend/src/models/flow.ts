@@ -75,7 +75,8 @@ class Flow extends Base {
         to: 'steps.flow_id',
       },
       filter(builder: ExtendedQueryBuilder<Step>) {
-        builder.where('draft', false)
+        builder.where('type', '!=', 'mock')
+        builder.andWhere('position', '>', 0)
         builder.orderBy('position', 'asc')
       },
     },

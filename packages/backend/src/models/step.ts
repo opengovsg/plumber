@@ -29,7 +29,6 @@ class Step extends Base {
   flow: Flow
   executionSteps: ExecutionStep[]
   config: IStepConfig
-  draft: boolean
 
   static tableName = 'steps'
 
@@ -42,7 +41,7 @@ class Step extends Base {
       flowId: { type: 'string', format: 'uuid' },
       key: { type: ['string', 'null'] },
       appKey: { type: ['string', 'null'], minLength: 1, maxLength: 255 },
-      type: { type: 'string', enum: ['action', 'trigger'] },
+      type: { type: 'string', enum: ['action', 'trigger', 'mock'] },
       connectionId: { type: ['string', 'null'], format: 'uuid' },
       status: {
         type: 'string',
@@ -51,7 +50,6 @@ class Step extends Base {
       },
       position: { type: 'integer' },
       parameters: { type: 'object' },
-      draft: { type: 'boolean', default: false },
     },
   }
 

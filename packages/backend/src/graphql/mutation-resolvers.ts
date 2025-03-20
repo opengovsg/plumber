@@ -14,10 +14,10 @@ import executeFlow from './mutations/execute-flow'
 import executeStep from './mutations/execute-step'
 import generateAuthUrl from './mutations/generate-auth-url'
 import generatePresignedUrl from './mutations/generate-presigned-url'
+import getOrCreateMockStep from './mutations/get-or-create-mock-step'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
 import logout from './mutations/logout'
-import obtainDraftStep from './mutations/obtain-draft-step'
 import registerConnection from './mutations/register-connection'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
@@ -82,6 +82,6 @@ export default {
   duplicateFlow,
   deleteUploadedFile,
   generatePresignedUrl,
-  obtainDraftStep,
+  getOrCreateMockStep,
   ...tilesMutationResolvers,
 } satisfies MutationResolvers

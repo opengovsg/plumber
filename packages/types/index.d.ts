@@ -150,7 +150,7 @@ export interface IStep {
   appKey?: string
   iconUrl: string
   webhookUrl: string
-  type: 'action' | 'trigger'
+  type: 'action' | 'trigger' | 'mock'
   connectionId?: string
   status: string
   position: number

@@ -115,8 +115,8 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
-  # Draft steps
-  obtainDraftStep(input: ObtainDraftStepInput): Step
+  # Mock step
+  getOrCreateMockStep(input: GetOrCreateMockStepInput): Step
 }
 
 """
@@ -600,7 +600,6 @@ type Step {
   executionSteps: [ExecutionStep]
   config: StepConfig
   createdAt: String
-  draft: Boolean
 }
 
 type StepConfig {
@@ -618,6 +617,7 @@ input StepConnectionInput {
 enum StepEnumType {
   trigger
   action
+  mock
 }
 
 input StepFlowInput {
@@ -944,8 +944,7 @@ enum TemplateTagType {
 
 # End of template types
 
-input ObtainDraftStepInput {
-  position: Int!
+input GetOrCreateMockStepInput {
   flowId: String!
 }
 
