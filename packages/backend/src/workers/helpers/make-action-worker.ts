@@ -8,6 +8,7 @@ import {
 
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
+import { WORKER_CONCURRENCY } from '@/config/workers'
 import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import {
@@ -30,12 +31,16 @@ import { processAction } from '@/services/action'
 function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
 ) /* inferred type */ {
-  const { queueName, redisConnectionPrefix, queueConfig } = params
+  const { appKey, queueName, redisConnectionPrefix, queueConfig } = params
   const { isQueueDelayable, queueRateLimit } = queueConfig
+
+  const concurrency =
+    WORKER_CONCURRENCY[appKey as keyof typeof WORKER_CONCURRENCY] ||
+    appConfig.workerActionConcurrency
 
   const workerOptions: WorkerProOptions = {
     connection: createRedisClient(),
-    concurrency: appConfig.workerActionConcurrency,
+    concurrency,
     settings: {
       backoffStrategy: exponentialBackoffWithJitter,
     },
@@ -74,6 +79,7 @@ function convertParamsToBullMqOptions(
 }
 
 interface MakeActionWorkerParams {
+  appKey: string
   queueName: string
   redisConnectionPrefix?: string
   queueConfig: IAppQueue

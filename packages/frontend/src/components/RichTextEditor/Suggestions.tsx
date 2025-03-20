@@ -1,8 +1,10 @@
 import { memo, useState } from 'react'
-import { Box, Collapse, Divider, Flex, Text } from '@chakra-ui/react'
+import { Collapse, Text } from '@chakra-ui/react'
 
 import VariablesList from '@/components/VariablesList'
 import { StepWithVariables, Variable } from '@/helpers/variables'
+
+import SuggestionsWrapper from '../SuggestionsWrapper'
 
 interface SuggestionsProps {
   data: StepWithVariables[]
@@ -27,75 +29,24 @@ function Suggestions(props: SuggestionsProps) {
   }
 
   return (
-    // max height = 256px (variable list) + 48px (from choose data)
-    <Flex w="100%" boxShadow="sm">
-      {/* Select step to find variable list */}
-      <Box flexGrow={1}>
-        <Text
-          pt={4}
-          px={4}
-          pb={2}
-          textStyle="subhead-1"
-          color="base.content.medium"
+    <SuggestionsWrapper
+      suggestionType="variables"
+      leftPanelData={data}
+      currentTab={current}
+      onTabChange={setCurrent}
+      rightPanel={data.map((option, index) => (
+        <Collapse
+          key={`primary-suggestion-${option.name}-variables`}
+          in={current === index}
+          unmountOnExit
         >
-          Use data from...
-        </Text>
-        <Divider borderColor="base.divider.medium" />
-        <Box h={64} overflowY="auto">
-          {data.map((option, index) => (
-            <Text
-              key={`primary-suggestion-${option.name}`}
-              pl={4}
-              py={3}
-              bg={
-                !!option.output?.length && current === index
-                  ? 'secondary.100'
-                  : undefined
-              }
-              textStyle="subhead-1"
-              color="base.content.strong"
-              onClick={() => setCurrent(index)}
-              _hover={{
-                backgroundColor: 'secondary.50',
-                cursor: 'pointer',
-              }}
-            >
-              {option.name}
-            </Text>
-          ))}
-        </Box>
-      </Box>
-
-      <Box>
-        <Divider orientation="vertical" borderColor="base.divider.medium" />
-      </Box>
-
-      {/* Variables List */}
-      <Box flexGrow={1} w="50%">
-        <Text
-          pt={4}
-          px={4}
-          pb={2}
-          textStyle="subhead-1"
-          color="base.content.medium"
-        >
-          Choose data
-        </Text>
-        <Divider borderColor="base.divider.medium" />
-        {data.map((option, index) => (
-          <Collapse
-            key={`primary-suggestion-${option.name}-variables`}
-            in={current === index}
-            unmountOnExit
-          >
-            <VariablesList
-              variables={option.output ?? []}
-              onClick={onSuggestionClick}
-            />
-          </Collapse>
-        ))}
-      </Box>
-    </Flex>
+          <VariablesList
+            variables={option.output ?? []}
+            onClick={onSuggestionClick}
+          />
+        </Collapse>
+      ))}
+    />
   )
 }
 

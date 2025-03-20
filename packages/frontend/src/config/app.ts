@@ -4,6 +4,7 @@ interface AppConfig {
   isDev: boolean
   env: string
   version: string
+  lensSurveyClientKey: string
 }
 
 function getAppConfig(): AppConfig {
@@ -22,14 +23,24 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '64bf4b539077f112ef24e4ae',
         sgidClientId: 'PLUMBER-c24255a5',
         isDev: false,
+        lensSurveyClientKey: 'cm85ca2f300053ooz4vydrmyw',
         ...commonEnv,
       }
+    // UAT and staging differ for the lens survey client key only
     case 'uat':
+      return {
+        launchDarklyClientId: '65016ca0b45b7712e6c95703',
+        sgidClientId: 'PLUMBERSTAGING-776896b1',
+        isDev: false,
+        lensSurveyClientKey: 'cm8fp8i030008zm2tbuc07xe5',
+        ...commonEnv,
+      }
     case 'staging':
       return {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
+        lensSurveyClientKey: 'cm86psst900052orfqetz3gz5',
         ...commonEnv,
       }
     default:
@@ -37,6 +48,7 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '64bf4b539077f112ef24e4ad',
         sgidClientId: 'PLUMBERLOCALDEV-dc1a72f7',
         isDev: true,
+        lensSurveyClientKey: 'cm8fpeah2000gzm2t572lhfti',
         ...commonEnv,
       }
   }

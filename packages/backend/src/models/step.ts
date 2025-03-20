@@ -29,6 +29,7 @@ class Step extends Base {
   flow: Flow
   executionSteps: ExecutionStep[]
   config: IStepConfig
+  draft: boolean
 
   static tableName = 'steps'
 
@@ -50,6 +51,7 @@ class Step extends Base {
       },
       position: { type: 'integer' },
       parameters: { type: 'object' },
+      draft: { type: 'boolean', default: false },
     },
   }
 

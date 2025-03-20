@@ -8,13 +8,16 @@ import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
 import deleteStep from './mutations/delete-step'
+import deleteUploadedFile from './mutations/delete-uploaded-file'
 import duplicateFlow from './mutations/duplicate-flow'
 import executeFlow from './mutations/execute-flow'
 import executeStep from './mutations/execute-step'
 import generateAuthUrl from './mutations/generate-auth-url'
+import generatePresignedUrl from './mutations/generate-presigned-url'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
 import logout from './mutations/logout'
+import obtainDraftStep from './mutations/obtain-draft-step'
 import registerConnection from './mutations/register-connection'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
@@ -77,5 +80,8 @@ export default {
   createFlowTransfer,
   updateFlowTransferStatus,
   duplicateFlow,
+  deleteUploadedFile,
+  generatePresignedUrl,
+  obtainDraftStep,
   ...tilesMutationResolvers,
 } satisfies MutationResolvers

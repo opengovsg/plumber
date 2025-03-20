@@ -3,6 +3,7 @@ import { IFlowConfig } from '@plumber/types'
 import type { ModelOptions, QueryContext } from 'objection'
 import { ValidationError } from 'objection'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
 import { doesActionProcessFiles } from '@/helpers/actions'
 
 import Base from './base'
@@ -74,6 +75,7 @@ class Flow extends Base {
         to: 'steps.flow_id',
       },
       filter(builder: ExtendedQueryBuilder<Step>) {
+        builder.where('draft', false)
         builder.orderBy('position', 'asc')
       },
     },
@@ -113,6 +115,20 @@ class Flow extends Base {
       },
     },
   })
+
+  static hasAccess = async (
+    userId: string,
+    flowId: string,
+  ): Promise<void | never> => {
+    const flow = await this.query().findOne({
+      id: flowId,
+      user_id: userId,
+    })
+
+    if (!flow) {
+      throw new ForbiddenError('You do not have access to this flow')
+    }
+  }
 
   async lastInternalId() {
     const lastExecution = await this.$relatedQuery('executions')

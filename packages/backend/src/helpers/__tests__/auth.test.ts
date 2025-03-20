@@ -1,12 +1,15 @@
+import axios from 'axios'
 import jwt from 'jsonwebtoken'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import appConfig from '@/config/app'
+import User from '@/models/user'
 
 import {
   getAdminTokenUser,
   getOrCreateUser,
   parseAdminToken,
+  sendOnboardingEmail,
   updateLastLogin,
 } from '../auth'
 
@@ -23,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   patch: vi.fn(() => ({
     where: mockPatchWhere,
   })),
+  findById: vi.fn(),
 }))
 
 vi.mock('@/models/user', () => ({
@@ -32,7 +36,21 @@ vi.mock('@/models/user', () => ({
       findOne: mocks.findOne,
       insertAndFetch: mocks.insertAndFetch,
       patch: mocks.patch,
+      findById: mocks.findById,
     })),
+  },
+}))
+
+vi.mock('axios', () => ({
+  default: {
+    post: vi.fn(),
+  },
+}))
+vi.mock('@/config/app', () => ({
+  default: {
+    isProd: false,
+    onboardingEmailWebhookUrl: 'https://test-webhook.com',
+    adminJwtSecretKey: 'test-secret-key',
   },
 }))
 
@@ -200,6 +218,95 @@ describe('Auth helpers', () => {
       await expect(updateLastLogin('non-existent-id')).rejects.toThrowError(
         'No user found',
       )
+    })
+  })
+
+  describe('sendOnboardingEmail', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+    it('does not send email if user has logged in before', async () => {
+      const mockUser = {
+        id: 'test-id',
+        email: 'test@example.com',
+        lastLoginAt: new Date(),
+        createdAt: new Date(),
+      } as unknown as User
+
+      mocks.findById.mockResolvedValueOnce(mockUser)
+
+      await sendOnboardingEmail(mockUser)
+      expect(axios.post).not.toHaveBeenCalled()
+    })
+
+    it('does not send email if user was created before release date', async () => {
+      const mockUser = {
+        id: 'test-id',
+        email: 'test@example.com',
+        createdAt: new Date('2024-01-01'), // Before release date
+      } as unknown as User
+
+      mocks.findById.mockResolvedValueOnce(mockUser)
+
+      await sendOnboardingEmail(mockUser)
+      expect(axios.post).not.toHaveBeenCalled()
+    })
+
+    it('does not send email in non-prod environment', async () => {
+      const mockUser = {
+        id: 'test-id',
+        email: 'test@example.com',
+        createdAt: new Date('2025-03-11'), // After release date
+      } as unknown as User
+
+      mocks.findById.mockResolvedValueOnce(mockUser)
+
+      await sendOnboardingEmail(mockUser)
+      expect(axios.post).not.toHaveBeenCalled()
+    })
+
+    it('sends email in prod for eligible users', async () => {
+      appConfig.isProd = true
+
+      const mockUser = {
+        id: 'test-id',
+        email: 'test@example.com',
+        lastLoginAt: null,
+        createdAt: new Date('2025-03-11'), // After release date
+      } as unknown as User
+
+      mocks.findById.mockResolvedValueOnce(mockUser)
+      vi.mocked(axios.post).mockResolvedValueOnce({ data: {} })
+
+      await sendOnboardingEmail(mockUser)
+
+      expect(axios.post).toHaveBeenCalledWith(
+        appConfig.onboardingEmailWebhookUrl,
+        {
+          email: mockUser.email,
+        },
+      )
+    })
+
+    it('does not send email if webhook URL is not configured', async () => {
+      vi.mocked(appConfig).isProd = true
+      vi.mocked(appConfig).onboardingEmailWebhookUrl = ''
+
+      const mockUser = {
+        id: 'test-id',
+        email: 'test@example.com',
+        lastLoginAt: null,
+        createdAt: new Date('2025-03-11'), // After release date
+      } as unknown as User
+
+      mocks.findById.mockResolvedValueOnce(mockUser)
+
+      await sendOnboardingEmail(mockUser)
+      expect(axios.post).not.toHaveBeenCalled()
     })
   })
 })

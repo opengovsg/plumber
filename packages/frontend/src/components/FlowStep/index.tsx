@@ -233,6 +233,12 @@ export default function FlowStep(
   const toggleSubstep = (substepIndex: number) =>
     setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
 
+  if (!app) {
+    return (
+      <EmptyFlowStepHeader isTrigger={isTrigger} onModalOpen={onModalOpen} />
+    )
+  }
+
   return (
     <>
       <Flex w="100%" flexDir="column">

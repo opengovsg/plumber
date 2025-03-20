@@ -1,5 +1,7 @@
 import { IApp } from '@plumber/types'
 
+import { getGenericAppQueue } from '@/queues/helpers/get-generic-app-queue'
+
 import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
@@ -18,6 +20,7 @@ const app: IApp = {
   auth,
   actions,
   dynamicData,
+  queue: getGenericAppQueue('SLACK'),
   category: 'communication',
 }
 
