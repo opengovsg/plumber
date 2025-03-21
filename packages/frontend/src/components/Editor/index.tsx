@@ -1,6 +1,13 @@
 import type { IApp, IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useContext, useMemo, useState } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useMutation } from '@apollo/client'
 import { Center, Flex, useDisclosure } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
@@ -179,6 +186,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
   // Disables last add step button but show empty action instead
   const hasNoActionSteps = nonIfThenActionSteps.length === 0
 
+  // Open the drawer on load
+  useEffect(() => {
+    if (appsWithActions && !isDrawerOpen) {
+      onDrawerOpen()
+      setCurrentStepId(stepsBeforeGroup[0].id)
+    }
+  }, [])
+
   if (!appsWithActions || !groupingActions) {
     return (
       <Center height="100vh" position="fixed" width="full" top={0} left={0}>
@@ -276,6 +291,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
               collapsed={currentStepId !== groupedSteps[0].id}
               onOpen={() => setCurrentStepId(groupedSteps[0].id)}
               onClose={() => setCurrentStepId(null)}
+              setCurrentStepId={setCurrentStepId}
             />
           )}
         </Flex>
