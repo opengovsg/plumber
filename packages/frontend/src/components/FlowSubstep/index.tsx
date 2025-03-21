@@ -171,16 +171,32 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
             ))}
           </Stack>
 
-          <Button
-            isFullWidth
-            onClick={onSubmit}
+          <Stack
+            direction="row"
+            spacing={4}
             mt={4}
-            isDisabled={!validationStatus || editorContext.readOnly}
-            type="submit"
-            data-test="flow-substep-continue-button"
+            justify="flex-end"
+            borderTop="1px solid"
+            borderTopColor="base.divider.medium"
+            pt={4}
           >
-            Save and continue
-          </Button>
+            <Button
+              isDisabled={editorContext.readOnly}
+              type="submit"
+              data-test="flow-substep-continue-button"
+              variant="clear"
+            >
+              Save
+            </Button>
+            <Button
+              onClick={onSubmit}
+              type="submit"
+              data-test="flow-substep-continue-button"
+              isDisabled={!validationStatus || editorContext.readOnly}
+            >
+              Complete step
+            </Button>
+          </Stack>
         </Box>
       </Collapse>
     </>
