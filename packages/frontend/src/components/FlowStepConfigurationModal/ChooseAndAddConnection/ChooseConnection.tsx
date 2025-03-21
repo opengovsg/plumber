@@ -13,10 +13,9 @@ import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
 import ChooseConnectionDropdown from './ChooseConnectionDropdown'
 import ConnectionHeader from './ConnectionHeader'
+import { DEFAULT_CHOOSE_CONNECTION_LABEL } from './constants'
 import SetConnectionButton from './SetConnectionButton'
 import { ConnectionDropdownOption } from '.'
-
-const DEFAULT_CHOOSE_CONNECTION_LABEL = 'Choose connection'
 
 interface ChooseConnectionProps {
   selectedApp: IApp
