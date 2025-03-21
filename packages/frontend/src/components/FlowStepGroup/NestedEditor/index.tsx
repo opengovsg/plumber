@@ -41,7 +41,7 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
         bg="base.canvas.brand-subtle"
         m={{ base: 0, lg: 16 }}
         borderRadius="lg"
-        maxH="calc(100vh - 8rem)"
+        height="calc(100vh - 8rem)"
       >
         <ModalHeader display="flex" justifyContent="center">
           <Button

@@ -9,7 +9,7 @@ import { type MouseEventHandler, useCallback, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
-import { Infobox } from '@opengovsg/design-system-react'
+import { Infobox, useIsMobile } from '@opengovsg/design-system-react'
 
 import FlowStepHeader from '@/components/FlowStepHeader'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
@@ -27,6 +27,7 @@ import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponent
 type FlowStepProps = {
   collapsed?: boolean
   step: IStep
+  isDrawerOpen: boolean
   isLastStep: boolean
   index?: number
   onOpen: () => void
@@ -39,13 +40,23 @@ type FlowStepProps = {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, collapsed, isLastStep, onOpen, onClose, templateConfig } = props
+  const {
+    step,
+    collapsed,
+    onChange,
+    onOpen,
+    onClose,
+    templateConfig,
+    isDrawerOpen,
+    isLastStep,
+  } = props
   const {
     isOpen: isModalOpen,
     onOpen: onModalOpen,
     onClose: onModalClose,
   } = useDisclosure()
 
+  const isMobile = useIsMobile()
   const { readOnly } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const { app, apps, caption, isTrigger } = useStepMetadata(step)
@@ -107,7 +118,12 @@ export default function FlowStep(
 
   return (
     <>
-      <Flex w="100%" flexDir="column">
+      <Flex
+        alignItems="center"
+        display={isMobile ? 'block' : 'flex'}
+        flexDir="column"
+        w="100%"
+      >
         {shouldShowInfobox && (
           <Box boxShadow={collapsed ? undefined : 'sm'} borderRadius="lg">
             <Infobox
@@ -140,6 +156,7 @@ export default function FlowStep(
               (isTrigger ? 'When' : 'Then')
             }
             isCompleted={step.status === 'completed'}
+            isDrawerOpen={isDrawerOpen}
             onDelete={isDeletable ? onDelete : undefined}
             isDeleting={isDeletable ? isDeletingStep : undefined}
             onOpen={onOpen}

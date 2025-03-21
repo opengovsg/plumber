@@ -68,75 +68,74 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     return null
   }
 
-  const getStepWidth = () => {
-    if (isDrawerOpen) {
-      if (isMobile) {
-        return '100vw'
-      }
-      if (isNested) {
-        return '40rem'
-      }
-      return '53.25rem'
-    }
-
-    return '0'
-  }
-
   return (
     <Flex
       flexDir="column"
       position="relative"
-      width={getStepWidth()}
+      width={
+        isDrawerOpen ? (isMobile ? '100vw' : isNested ? '40rem' : '55rem') : '0'
+      }
       bg="white"
-      p="4"
+      py="4"
       borderRadius="lg"
       boxShadow="lg"
       transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
       display={isDrawerOpen ? 'block' : 'none'}
       transform={isDrawerOpen ? 'translateX(0)' : 'translateX(100%)'}
-      // FIXME (kevinkim-ogp): this is a temporary fix for the scrollbar
-      // find a better way to get the max height
       maxHeight={EDITOR_MAX_HEIGHT}
       overflowY="auto"
     >
-      <Flex alignItems="center" justifyContent="space-between" mb={4}>
+      <Flex
+        alignItems="center"
+        justifyContent="space-between"
+        position="fixed"
+        w="full"
+        px="4"
+      >
         <Box>{caption}</Box>
         <CloseButton onClick={onDrawerClose} position="absolute" right="4" />
       </Flex>
-
-      {showStep && (
-        <Step
-          index={index}
-          step={step}
-          isLastStep={index === steps.length - 1}
-          collapsed={true}
-          onChange={onStepChange}
-          onContinue={() => {
-            if (!isLastStep && currentStepIndex !== null) {
-              const nextStepIndex = currentStepIndex + 1
-              const nextStepId = steps[nextStepIndex]?.id
-              setCurrentStepId(nextStepId)
-              setCurrentStepIndex(nextStepIndex)
-            } else if (isLastStep) {
-              onDrawerClose()
-            }
-          }}
-          onClose={onDrawerClose}
-          onOpen={onDrawerOpen}
-          templateConfig={flow?.config?.templateConfig}
-        />
-      )}
-      {groupedSteps.length > 0 && isIfThenStep && (
-        <StepGroup
-          iconUrl={flowStepGroupIconUrl}
-          flow={flow}
-          steps={groupedSteps}
-          collapsed={currentStepId !== groupedSteps[0].id}
-          onOpen={() => setCurrentStepId(groupedSteps[0].id)}
-          onClose={() => setCurrentStepId(null)}
-          setCurrentStepId={setCurrentStepId}
-        />
-      )}
+      <Flex
+        height="calc(100% - 1.5rem)"
+        overflowY="auto"
+        position="relative"
+        px="4"
+        top="2rem"
+      >
+        {showStep && (
+          <Step
+            index={index}
+            step={step}
+            isLastStep={index === steps.length - 1}
+            collapsed={true}
+            onChange={onStepChange}
+            onContinue={() => {
+              if (!isLastStep && currentStepIndex !== null) {
+                const nextStepIndex = currentStepIndex + 1
+                const nextStepId = steps[nextStepIndex]?.id
+                setCurrentStepId(nextStepId)
+                setCurrentStepIndex(nextStepIndex)
+              } else if (isLastStep) {
+                onDrawerClose()
+              }
+            }}
+            onClose={onDrawerClose}
+            onOpen={onDrawerOpen}
+            templateConfig={flow?.config?.templateConfig}
+          />
+        )}
+        {groupedSteps.length > 0 && isIfThenStep && (
+          <StepGroup
+            iconUrl={flowStepGroupIconUrl}
+            flow={flow}
+            steps={groupedSteps}
+            collapsed={currentStepId !== groupedSteps[0].id}
+            onOpen={() => setCurrentStepId(groupedSteps[0].id)}
+            onClose={() => setCurrentStepId(null)}
+            setCurrentStepId={setCurrentStepId}
+          />
+        )}
+      </Flex>
     </Flex>
   )
 }

@@ -36,6 +36,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
     onClose: onDrawerClose,
   } = useDisclosure()
 
+  console.log('isDrawerOpen', isDrawerOpen)
+
   const { flow, steps: rawSteps, isNested } = props
 
   const {
@@ -204,20 +206,22 @@ export default function Editor(props: EditorProps): React.ReactElement {
         <Flex
           display="block"
           flexDir="column"
+          flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
+          height={isNested ? undefined : EDITOR_MAX_HEIGHT}
+          minH="100%"
+          w="100%"
+          maxW="full"
           alignItems="center"
+          overflowY="auto"
           py={3}
           px={getStepPadding()}
-          w={isDrawerOpen ? (isMobile ? '0px' : undefined) : '53.25rem'}
-          flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
-          maxW="full"
           transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
-          height={isNested ? undefined : EDITOR_MAX_HEIGHT}
-          overflowY={isDrawerOpen ? 'auto' : undefined}
         >
           {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
+                isDrawerOpen={isDrawerOpen}
                 isLastStep={index === steps.length - 1}
                 index={index + 1}
                 collapsed={
@@ -266,6 +270,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           {groupedSteps.length > 0 && (
             <FlowStepGroup
               iconUrl={flowStepGroupIconUrl}
+              isDrawerOpen={isDrawerOpen}
               flow={flow}
               steps={groupedSteps}
               collapsed={currentStepId !== groupedSteps[0].id}

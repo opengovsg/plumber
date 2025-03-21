@@ -27,7 +27,7 @@ import {
   Tooltip,
   useDisclosure,
 } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
+import { IconButton, useIsMobile } from '@opengovsg/design-system-react'
 
 import DemoVideoModalContent from '@/components/FlowRow/DemoVideoModalContent'
 
@@ -43,6 +43,7 @@ interface FlowStepHeaderProps {
   caption: string
   hintAboveCaption: string
   isCompleted?: boolean
+  isDrawerOpen: boolean
   onDelete?: MouseEventHandler
   isDeleting?: boolean
   onOpen: () => void
@@ -64,6 +65,7 @@ export default function FlowStepHeader(
     caption,
     hintAboveCaption,
     isCompleted,
+    isDrawerOpen,
     onDelete,
     isDeleting,
     onOpen,
@@ -74,6 +76,7 @@ export default function FlowStepHeader(
     demoVideoTitle,
     isInfoboxPresent,
   } = props
+  const isMobile = useIsMobile()
 
   const handleClick = useCallback(() => {
     if (collapsed) {
@@ -114,10 +117,11 @@ export default function FlowStepHeader(
     [onModalOpen],
   )
 
+  console.log('isDrawerOpen', isDrawerOpen)
+
   return (
     <>
       <Box
-        w="full"
         borderWidth="1px"
         borderColor={collapsed ? 'base.divider.medium' : 'base.content.brand'}
         borderRadius="lg"
@@ -126,6 +130,15 @@ export default function FlowStepHeader(
         bg="white"
         overflow="hidden"
         data-test="flow-step" // adding to identify element for e2e testing
+        w={
+          isDrawerOpen
+            ? isMobile
+              ? '0px'
+              : '100%'
+            : isMobile
+            ? '100vw'
+            : '55rem'
+        }
       >
         {/*
          * Top header
