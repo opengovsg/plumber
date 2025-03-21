@@ -526,6 +526,7 @@ input UpdateStepInput {
   flow: StepFlowInput
   parameters: JSONObject
   previousStep: PreviousStepInput
+  status: String
 }
 
 input DeleteStepInput {

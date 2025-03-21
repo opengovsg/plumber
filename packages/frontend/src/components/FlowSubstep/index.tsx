@@ -8,7 +8,7 @@ import type {
   ITrigger,
 } from '@plumber/types'
 
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Box, Collapse, Stack } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
@@ -26,7 +26,11 @@ type FlowSubstepProps = {
   onExpand: () => void
   onCollapse: () => void
   onChange: ({ step }: { step: IStep }) => void
-  onSubmit: (type?: string, currentStep?: IStep) => Promise<boolean> | void
+  onSubmit: (
+    type?: string,
+    currentStep?: IStep,
+    status?: string,
+  ) => Promise<boolean> | void
   step: IStep
   settingsLabel?: string
   selectedActionOrTrigger?: ITrigger | IAction
@@ -135,6 +139,17 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   const onToggle = expanded ? onCollapse : onExpand
 
+  // NOTE: this is meant to avoid users losing progress
+  // we validate the substeps so that the header reflects the correct status
+  const handleSave = useCallback(() => {
+    const currentStep = formContext.getValues() as IStep
+    const isValid = validateSubstep(substep, currentStep)
+    editorContext.onUpdateStep({
+      ...currentStep,
+      status: isValid ? 'completed' : 'incomplete',
+    })
+  }, [editorContext, formContext, substep])
+
   // Skip to the next step if the substep is meant to be hidden
   useEffect(() => {
     if (!expanded) {
@@ -182,14 +197,8 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
           >
             <Button
               isDisabled={editorContext.readOnly}
-              type="submit"
               variant="clear"
-              onClick={() => {
-                // NOTE: saving does not require validation
-                // this is meant to avoid users losing progress
-                const currentStep = formContext.getValues() as IStep
-                onSubmit('save', currentStep)
-              }}
+              onClick={() => handleSave()}
             >
               Save
             </Button>
