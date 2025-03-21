@@ -51,7 +51,7 @@ export default function FlowStepConfigurationModal(
   const { flowId } = useParams()
   // Remember to always clear the selectedConnectionId when the modal is back to the first screen
   const [modalState, setModalState] = useState<ModalState>({
-    currentScreen: 'choose-app',
+    currentScreen: app && event ? 'choose-connection' : 'choose-app',
     selectedApp: app ?? null,
     selectedEvent: event ?? null,
     selectedConnectionId: step?.connection?.id ?? '',
@@ -140,6 +140,7 @@ export default function FlowStepConfigurationModal(
       isCentered
       isOpen={true}
       onClose={onClose}
+      closeOnOverlayClick={false}
       size="xl"
       scrollBehavior="inside"
       autoFocus={false}

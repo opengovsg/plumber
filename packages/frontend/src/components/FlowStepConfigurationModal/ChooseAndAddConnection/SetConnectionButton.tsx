@@ -12,7 +12,7 @@ interface SetConnectionButtonProps {
   testResult: ITestConnectionOutput | undefined
   testResultLoading: boolean
   registerConnectionLoading: boolean
-  isNewStep?: boolean
+  isNewStep: boolean
 }
 
 const SetConnectionButton = ({
@@ -42,12 +42,7 @@ const SetConnectionButton = ({
     testResult,
   ])
 
-  const stepActionText =
-    isNewStep === undefined
-      ? 'Continue'
-      : isNewStep
-      ? 'Add step'
-      : 'Save and continue'
+  const stepActionText = isNewStep ? 'Add step' : 'Save and continue'
 
   const buttonText = useMemo(() => {
     if (testResultLoading) {

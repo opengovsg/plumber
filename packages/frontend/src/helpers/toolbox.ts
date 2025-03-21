@@ -128,7 +128,7 @@ export function areAllIfThenBranchesCompleted(
 
 /**
  * Helper hook to check if If-then action should be selectable; supports edge
- * case in ChooseAppAndEventSubstep.
+ * case in ChooseEvent component.
  *
  * If-then should only be selectable if:
  * - We're the last step.

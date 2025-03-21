@@ -24,7 +24,6 @@ import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
 import type { ObjectShape } from 'yup/lib/object'
 
-import ChooseAppAndEventSubstep from '@/components/ChooseAppAndEventSubstep'
 import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowStepHeader from '@/components/FlowStepHeader'
 import FlowSubstep from '@/components/FlowSubstep'
@@ -123,12 +122,7 @@ export default function FlowStep(
   const { readOnly, testExecutionSteps } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
-  const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
-  const [currentSubstep, setCurrentSubstep] = useState<number | null>(
-    // OK to set to 1, even if a step has _no_ substeps, everything will just be
-    // collapsed due to matching logic below.
-    cannotChooseApp ? 1 : 0,
-  )
+  const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
 
   const { data } = useQuery(GET_APPS)
 
@@ -283,75 +277,57 @@ export default function FlowStep(
                 onSubmit={handleSubmit}
                 resolver={stepValidationSchema}
               >
-                {/* Note: keeping this to allow users to still modify their app or event but can change
-            to pop open the modal instead if */}
-                {!cannotChooseApp && (
-                  <ChooseAppAndEventSubstep
-                    expanded={currentSubstep === 0}
-                    substep={{
-                      key: 'chooseAppAndEvent',
-                      name: 'Choose app & event',
-                      arguments: [],
-                    }}
-                    onExpand={() => toggleSubstep(0)}
-                    onCollapse={() => toggleSubstep(0)}
-                    onSubmit={expandNextStep}
-                    onChange={handleChange}
-                    step={step}
-                    isLastStep={isLastStep}
-                  />
-                )}
+                {/* Place ChooseConnectionSubstep outside the accordion structure */}
+                {substeps?.some(
+                  (substep: ISubstep) => substep.key === 'chooseConnection',
+                ) &&
+                  app && (
+                    <ChooseConnectionSubstep
+                      step={step}
+                      application={app}
+                      onReconnect={onModalOpen}
+                    />
+                  )}
 
+                {/* Render the remaining substeps as accordions */}
                 {substeps?.length > 0 &&
-                  substeps.map((substep: ISubstep, index: number) => (
-                    <Fragment key={`${substep?.name}-${index}`}>
-                      {substep.key === 'chooseConnection' && app && (
-                        <ChooseConnectionSubstep
-                          expanded={currentSubstep === index + 1}
-                          substep={substep}
-                          onExpand={() => toggleSubstep(index + 1)}
-                          onCollapse={() => toggleSubstep(index + 1)}
-                          onSubmit={expandNextStep}
-                          onChange={handleChange}
-                          application={app}
-                          step={step}
-                        />
-                      )}
+                  substeps
+                    .filter((substep) => substep.key !== 'chooseConnection')
+                    .map((substep: ISubstep, index: number) => {
+                      return (
+                        <Fragment key={`${substep?.name}-${index}`}>
+                          {substep.key === 'testStep' && (
+                            <TestSubstep
+                              expanded={currentSubstep === index}
+                              substep={substep}
+                              onExpand={() => toggleSubstep(index)}
+                              onCollapse={() => toggleSubstep(index)}
+                              onChange={handleChange}
+                              onContinue={onContinue}
+                              step={step}
+                              selectedActionOrTrigger={selectedActionOrTrigger}
+                            />
+                          )}
 
-                      {substep.key === 'testStep' && (
-                        <TestSubstep
-                          expanded={currentSubstep === index + 1}
-                          substep={substep}
-                          onExpand={() => toggleSubstep(index + 1)}
-                          onCollapse={() => toggleSubstep(index + 1)}
-                          onChange={handleChange}
-                          onContinue={onContinue}
-                          step={step}
-                          selectedActionOrTrigger={selectedActionOrTrigger}
-                        />
-                      )}
-
-                      {substep.key &&
-                        ['chooseConnection', 'testStep'].includes(
-                          substep.key,
-                        ) === false && (
-                          <FlowSubstep
-                            expanded={currentSubstep === index + 1}
-                            substep={substep}
-                            onExpand={() => toggleSubstep(index + 1)}
-                            onCollapse={() => toggleSubstep(index + 1)}
-                            onSubmit={expandNextStep}
-                            onChange={handleChange}
-                            step={step}
-                            settingsLabel={
-                              selectedActionOrTrigger?.settingsStepLabel ??
-                              app?.substepLabels?.settingsStepLabel
-                            }
-                            selectedActionOrTrigger={selectedActionOrTrigger}
-                          />
-                        )}
-                    </Fragment>
-                  ))}
+                          {substep.key && substep.key !== 'testStep' && (
+                            <FlowSubstep
+                              expanded={currentSubstep === index}
+                              substep={substep}
+                              onExpand={() => toggleSubstep(index)}
+                              onCollapse={() => toggleSubstep(index)}
+                              onSubmit={expandNextStep}
+                              onChange={handleChange}
+                              step={step}
+                              settingsLabel={
+                                selectedActionOrTrigger?.settingsStepLabel ??
+                                app?.substepLabels?.settingsStepLabel
+                              }
+                              selectedActionOrTrigger={selectedActionOrTrigger}
+                            />
+                          )}
+                        </Fragment>
+                      )
+                    })}
               </Form>
             </StepExecutionsProvider>
           </FlowStepHeader>
@@ -360,7 +336,10 @@ export default function FlowStep(
 
       {isModalOpen && (
         <FlowStepConfigurationModal
-          onClose={onModalClose}
+          onClose={() => {
+            onModalClose()
+            onOpen() // to open the flowstep upon updating of the step
+          }}
           isTrigger={isTrigger}
           isLastStep={isLastStep}
           step={step}
