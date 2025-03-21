@@ -23,6 +23,8 @@ import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
+import { EDITOR_MARGIN_TOP } from '../Editor/constants'
+
 import EditorSnackbar from './EditorSnackbar'
 import { LensSurvey } from './LensSurvey'
 
@@ -209,7 +211,13 @@ export default function EditorLayout() {
           </TouchableTooltip>
         </HStack>
 
-        <Container maxW="full" p={0} mt="61px" flex={1} overflowY="auto">
+        <Container
+          maxW="full"
+          p={0}
+          mt={EDITOR_MARGIN_TOP}
+          flex={1}
+          overflowY="auto"
+        >
           <EditorProvider readOnly={isEditorReadOnly} flowId={flowId}>
             <Editor flow={flow} steps={flow.steps} />
             {flow.active && flow.config?.showSurvey && <LensSurvey />}

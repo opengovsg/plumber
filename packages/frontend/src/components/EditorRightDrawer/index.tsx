@@ -4,9 +4,8 @@ import { useMemo } from 'react'
 import { Box, CloseButton, Flex } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
+import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
-
-import { EDITOR_MAX_HEIGHT } from '../Editor'
 
 import Step from './Step'
 import StepGroup from './StepGroup'

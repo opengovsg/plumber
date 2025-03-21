@@ -5,6 +5,7 @@ import { useMutation } from '@apollo/client'
 import { Center, Flex, useDisclosure } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
+import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
 import EditorRightDrawer from '@/components/EditorRightDrawer'
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
@@ -19,10 +20,6 @@ import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 import PrimarySpinner from '../PrimarySpinner'
 
 import { AddStepButton } from './AddStepButton'
-
-// FIXME (kevinkim-ogp): this is a temporary fix for the scrollbar
-// find a better way to get the max height
-export const EDITOR_MAX_HEIGHT = 'calc(100vh - 61px)'
 
 type EditorProps = {
   flow: IFlow
