@@ -1,10 +1,8 @@
 import { type IAction, IApp, IStep, ITrigger } from '@plumber/types'
 
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useQuery } from '@apollo/client'
-import { Flex, Text } from '@chakra-ui/react'
 
-import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import {
   TOOLBOX_ACTIONS,
@@ -52,8 +50,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
+  const [initializeIfThen] = useIfThenInitializer()
   const onSelectAppEvent = useCallback(
     async (app: IApp, triggerOrAction: ITrigger | IAction) => {
       if (app.auth && app.key !== APP_ALLOWING_EMPTY_CONNECTION) {
@@ -65,7 +62,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
         return
       }
       // If the app has no connections, create or update a new step and close the modal
-      setIsLoading(true)
+      updateModalState({ isLoading: true })
       if (onCreateStep) {
         await onCreateStep(app.key, triggerOrAction.key)
       } else if (step) {
@@ -84,8 +81,11 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
           })
         }
       }
-      setIsLoading(false)
-      onClose()
+      // For a better visual experience, delay the closing of the modal
+      setTimeout(() => {
+        updateModalState({ isLoading: false })
+        onClose()
+      }, 500)
     },
     [
       onClose,
@@ -96,15 +96,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       updateModalState,
     ],
   )
-
-  if (isLoading || isInitializingIfThen) {
-    return (
-      <Flex flexDir="column" alignItems="center" gap={6} my={12}>
-        <PrimarySpinner margin="auto" fontSize="4xl" />
-        <Text>Adding step...</Text>
-      </Flex>
-    )
-  }
 
   if (currentScreen === 'choose-app') {
     return (

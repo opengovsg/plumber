@@ -3,9 +3,12 @@ import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
 import { useCallback, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
+import { Flex, Modal, ModalContent, ModalOverlay, Text } from '@chakra-ui/react'
 
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
+import { useIfThenInitializer } from '@/helpers/toolbox'
+
+import PrimarySpinner from '../PrimarySpinner'
 
 import ChooseAndAddConnection from './ChooseAndAddConnection'
 import ChooseAppAndEvent from './ChooseAppAndEvent'
@@ -37,6 +40,7 @@ export type ModalState = {
   selectedApp: IApp | null
   selectedEvent: ITrigger | IAction | null
   selectedConnectionId: string
+  isLoading: boolean
 }
 
 export default function FlowStepConfigurationModal(
@@ -51,9 +55,11 @@ export default function FlowStepConfigurationModal(
     selectedApp: app ?? null,
     selectedEvent: event ?? null,
     selectedConnectionId: step?.connection?.id ?? '',
+    isLoading: false,
   })
 
-  const { currentScreen } = modalState
+  const { currentScreen, isLoading } = modalState
+  const [_, isInitializingIfThen] = useIfThenInitializer()
 
   const updateModalState = (newState: Partial<ModalState>) => {
     setModalState((prevState) => ({ ...prevState, ...newState }))
@@ -146,7 +152,14 @@ export default function FlowStepConfigurationModal(
         overflow="hidden"
         borderRadius="lg"
       >
-        {currentScreenComponent}
+        {isLoading || isInitializingIfThen ? (
+          <Flex flexDir="column" alignItems="center" gap={6} my={12}>
+            <PrimarySpinner margin="auto" fontSize="4xl" />
+            <Text>{step ? 'Updating step...' : 'Adding step...'}</Text>
+          </Flex>
+        ) : (
+          currentScreenComponent
+        )}
       </ModalContent>
     </Modal>
   )
