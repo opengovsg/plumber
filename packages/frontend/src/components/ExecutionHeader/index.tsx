@@ -96,7 +96,7 @@ function ExecutionDate(props: Pick<IExecution, 'createdAt'>) {
 
   return (
     <Tooltip
-      label={createdAt.toLocaleString(DateTime.DATE_MED)}
+      label={createdAt.toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}
       aria-label="Created at tooltip"
     >
       <Text textStyle="body-1">{relativeCreatedAt}</Text>
