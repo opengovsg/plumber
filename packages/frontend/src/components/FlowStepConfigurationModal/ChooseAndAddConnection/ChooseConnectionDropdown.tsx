@@ -6,7 +6,8 @@ import { FormLabel } from '@opengovsg/design-system-react'
 
 import { SingleSelect } from '@/components/SingleSelect'
 
-import { DEFAULT_ADD_CONNECTION_LABEL } from './constants'
+import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
+
 import { ConnectionDropdownOption } from '.'
 
 interface ChooseConnectionDropdownProps {

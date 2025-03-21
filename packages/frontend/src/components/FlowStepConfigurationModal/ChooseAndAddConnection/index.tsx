@@ -7,11 +7,13 @@ import { useMutation, useQuery } from '@apollo/client'
 import { GET_OR_CREATE_MOCK_STEP } from '@/graphql/mutations/get-or-create-mock-step'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 
+import { EXCEL_APP_KEY } from '../constants'
 import InvalidModalScreen from '../InvalidModalScreen'
 import { type ModalState } from '..'
 
 import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
+import ConfigureExcelConnection from './ConfigureExcelConnection'
 
 interface ChooseAndAddConnectionProps {
   onClose: () => void
@@ -256,6 +258,21 @@ export default function ChooseAndAddConnection(
         onSubmit={handleAddConnection}
         selectedApp={selectedApp}
         onBack={() => updateModalState({ currentScreen: 'choose-connection' })}
+      />
+    )
+  } else if (
+    selectedApp?.key === EXCEL_APP_KEY &&
+    selectedEvent &&
+    currentScreen === 'configure-excel-connection'
+  ) {
+    return (
+      <ConfigureExcelConnection
+        selectedApp={selectedApp as IApp}
+        selectedConnectionId={selectedConnectionId}
+        onBack={() => updateModalState({ currentScreen: 'choose-event' })}
+        handleSubmit={handleSubmit}
+        mockStep={mockStep ?? undefined}
+        step={step}
       />
     )
   } else {

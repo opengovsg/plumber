@@ -11,9 +11,10 @@ import { EditorContext } from '@/contexts/Editor'
 import { REGISTER_CONNECTION } from '@/graphql/mutations/register-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
+import { DEFAULT_CHOOSE_CONNECTION_LABEL } from '../constants'
+
 import ChooseConnectionDropdown from './ChooseConnectionDropdown'
 import ConnectionHeader from './ConnectionHeader'
-import { DEFAULT_CHOOSE_CONNECTION_LABEL } from './constants'
 import SetConnectionButton from './SetConnectionButton'
 import { ConnectionDropdownOption } from '.'
 

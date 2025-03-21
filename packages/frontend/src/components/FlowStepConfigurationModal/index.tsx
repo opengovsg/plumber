@@ -34,6 +34,7 @@ export type ModalScreen =
   | 'choose-event'
   | 'choose-connection'
   | 'add-connection'
+  | 'configure-excel-connection'
 
 export type ModalState = {
   currentScreen: ModalScreen
@@ -109,7 +110,8 @@ export default function FlowStepConfigurationModal(
       )
     } else if (
       currentScreen === 'choose-connection' ||
-      currentScreen === 'add-connection'
+      currentScreen === 'add-connection' ||
+      currentScreen === 'configure-excel-connection'
     ) {
       return (
         <ChooseAndAddConnection

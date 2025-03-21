@@ -5,7 +5,7 @@ import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react'
 
 import mainLogo from '@/assets/logo.svg'
 
-function AppLogoBox({ imageUrl }: { imageUrl: string }) {
+export function AppLogoBox({ imageUrl }: { imageUrl: string }) {
   return (
     <Box
       boxSize={14}
