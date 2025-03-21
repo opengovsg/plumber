@@ -171,9 +171,9 @@ export default function ChooseAndAddConnection(
       return
     }
 
+    updateModalState({ isLoading: true })
     if (onCreateStep) {
       onCreateStep(selectedApp.key, selectedEvent.key, selectedConnectionId)
-      onClose()
     } else if (step) {
       onUpdateStep({
         ...step,
@@ -183,8 +183,12 @@ export default function ChooseAndAddConnection(
           id: selectedConnectionId,
         },
       })
-      onClose()
     }
+    // For a better visual experience, delay the closing of the modal
+    setTimeout(() => {
+      updateModalState({ isLoading: false })
+      onClose()
+    }, 500)
   }, [
     selectedApp,
     selectedEvent,
@@ -193,6 +197,7 @@ export default function ChooseAndAddConnection(
     step,
     onClose,
     onUpdateStep,
+    updateModalState,
   ])
 
   if (selectedApp && selectedEvent && currentScreen === 'choose-connection') {
