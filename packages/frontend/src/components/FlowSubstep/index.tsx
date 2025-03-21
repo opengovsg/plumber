@@ -13,7 +13,7 @@ import { useFormContext } from 'react-hook-form'
 import { Box, Collapse, Stack } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
 
-import FlowSubstepTitle from '@/components/FlowSubstepTitle'
+// import FlowSubstepTitle from '@/components/FlowSubstepTitle'
 import InputCreator from '@/components/InputCreator'
 import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
@@ -92,15 +92,15 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const {
     substep,
     expanded = false,
-    onExpand,
-    onCollapse,
+    // onExpand,
+    // onCollapse,
     onSubmit,
     step,
-    settingsLabel,
+    // settingsLabel,
     selectedActionOrTrigger,
   } = props
 
-  const { name, arguments: args } = substep
+  const { arguments: args } = substep
   const toast = useToast()
   const [isSaving, setIsSaving] = useState(false)
 
@@ -143,7 +143,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     return () => subscription.unsubscribe()
   }, [substep, formContext.watch, formContext])
 
-  const onToggle = expanded ? onCollapse : onExpand
+  // const onToggle = expanded ? onCollapse : onExpand
 
   // NOTE: this is meant to avoid users losing progress
   // we validate the substeps so that the header reflects the correct status
@@ -193,12 +193,12 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   return (
     <>
-      <FlowSubstepTitle
+      {/* <FlowSubstepTitle
         expanded={expanded}
         onClick={onToggle}
         title={settingsLabel ?? name}
         valid={validationStatus}
-      />
+      /> */}
       <Collapse in={expanded} unmountOnExit style={{ overflow: 'initial' }}>
         <Box p="1rem 1rem 1.5rem">
           <Stack w="100%" spacing={4}>
