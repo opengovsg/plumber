@@ -249,9 +249,7 @@ type DemoVideoDetails {
 }
 
 type StepLabel {
-  connectionStepLabel: String
   settingsStepLabel: String
-  addConnectionLabel: String
 }
 
 type ConnectionModalLabel {
