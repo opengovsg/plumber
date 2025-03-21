@@ -1,6 +1,7 @@
 import { COMMON_S3_BUCKET, deleteObjects, parseS3Id } from '@/helpers/s3'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
+import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -24,6 +25,12 @@ const deleteFlow: MutationResolvers['deleteFlow'] = async (
 
   await flow.$relatedQuery('executions').delete()
   await flow.$relatedQuery('steps').delete()
+  // delete mock step if present
+  await Step.query()
+    .where('flow_id', flow.id)
+    .andWhere('type', 'mock')
+    .andWhere('position', 0)
+    .delete()
 
   // delete attachments from s3
   // Note: specify object keys individually, cannot delete entire folder
