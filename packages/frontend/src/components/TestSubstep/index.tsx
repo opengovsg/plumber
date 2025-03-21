@@ -10,7 +10,7 @@ import type {
 
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { Box, Collapse } from '@chakra-ui/react'
+import { Box, Collapse, useDisclosure } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import ErrorResult from '@/components/ErrorResult'
@@ -27,7 +27,9 @@ import { extractVariables } from '@/helpers/variables'
 
 import FlowSubstepTitle from '../FlowSubstepTitle'
 
+import TestMultiRowResultModal from './TestMultiRowResultModal'
 import TestResult from './TestResult'
+import { isMultiRowStep } from './utils'
 
 // the default alert follows the raw webhook alert
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -58,6 +60,11 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
   } = props
 
   const { readOnly, testExecutionSteps } = useContext(EditorContext)
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+  } = useDisclosure()
   const currentExecutionStep = testExecutionSteps.find(
     (executionStep) =>
       executionStep.stepId === step.id && executionStep.appKey === step.appKey,
@@ -103,6 +110,15 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
               status: () => 'completed',
             },
           })
+
+          if (isMultiRowStep(step)) {
+            if (
+              lastExecutionStep.dataOut?.rowsFound &&
+              Number(lastExecutionStep.dataOut?.rowsFound) > 0
+            ) {
+              onModalOpen()
+            }
+          }
         } else {
           setLastErrorDetails(lastExecutionStep.errorDetails ?? undefined)
         }
@@ -203,6 +219,13 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
           )}
         </Box>
       </Collapse>
+      {isMultiRowStep(step) && (
+        <TestMultiRowResultModal
+          isOpen={isModalOpen}
+          onClose={onModalClose}
+          variables={testVariables}
+        />
+      )}
     </>
   )
 }
