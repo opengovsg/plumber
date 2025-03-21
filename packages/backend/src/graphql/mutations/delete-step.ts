@@ -31,28 +31,38 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     // ** IMPORTANT NOTE **
     // We only support contiguous steps for now.
     //
-    if (
-      !steps.every(
-        (step, index) =>
-          index === 0 || step.position === steps[index - 1].position + 1,
-      )
-    ) {
-      throw new Error('Must delete contiguous steps!')
+    if (steps.length === 1 && steps[0].type === 'trigger') {
+      await steps[0].$query().patchAndFetch({
+        key: null,
+        appKey: null,
+        connectionId: null,
+        parameters: {},
+        status: 'incomplete',
+      })
+    } else {
+      if (
+        !steps.every(
+          (step, index) =>
+            index === 0 || step.position === steps[index - 1].position + 1,
+        )
+      ) {
+        throw new Error('Must delete contiguous steps!')
+      }
+
+      const stepIds = steps.map((step) => step.id)
+
+      /**
+       * NOTE: do not delete execution steps
+       * The deletion causes RDS CPU Utilisation to spike for high volume pipes.
+       */
+      // await Step.relatedQuery('executionSteps', trx).for(stepIds).delete()
+      await Step.query(trx).findByIds(stepIds).delete()
+
+      await steps[0].flow
+        .$relatedQuery('steps', trx)
+        .where('position', '>', steps[steps.length - 1].position)
+        .patch({ position: raw(`position - ${steps.length}`) })
     }
-
-    const stepIds = steps.map((step) => step.id)
-
-    /**
-     * NOTE: do not delete execution steps
-     * The deletion causes RDS CPU Utilisation to spike for high volume pipes.
-     */
-    // await Step.relatedQuery('executionSteps', trx).for(stepIds).delete()
-    await Step.query(trx).findByIds(stepIds).delete()
-
-    await steps[0].flow
-      .$relatedQuery('steps', trx)
-      .where('position', '>', steps[steps.length - 1].position)
-      .patch({ position: raw(`position - ${steps.length}`) })
 
     return await steps[0].flow
       .$query(trx)

@@ -182,7 +182,7 @@ export default function FlowStep(
   )
 
   const isDeletable =
-    displayOverrides?.disableDelete === true ? false : !isTrigger && !readOnly
+    displayOverrides?.disableDelete === true ? false : !readOnly
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
   })
@@ -190,6 +190,7 @@ export default function FlowStep(
     async (e) => {
       e.stopPropagation()
       await deleteStep({ variables: { input: { ids: [step.id] } } })
+      setCurrentSubstep(0)
     },
     [deleteStep, step.id],
   )
