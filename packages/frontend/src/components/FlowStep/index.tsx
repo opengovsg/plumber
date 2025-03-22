@@ -40,7 +40,9 @@ import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
-import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
+import FlowStepConfigurationModal, {
+  type ModalScreen,
+} from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 type FlowStepProps = {
@@ -123,6 +125,7 @@ export default function FlowStep(
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
   const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
+  const [initialScreen, setInitialScreen] = useState<ModalScreen>('choose-app')
 
   const { data } = useQuery(GET_APPS)
 
@@ -195,6 +198,16 @@ export default function FlowStep(
     [deleteStep, step.id],
   )
 
+  const isEditable = actionsOrTriggers.length > 1
+  const onEditEvent = useCallback<MouseEventHandler>(
+    (e) => {
+      e.stopPropagation()
+      setInitialScreen('choose-event')
+      onModalOpen()
+    },
+    [onModalOpen],
+  )
+
   // define caption description based on app and step
   let caption = ''
   if (selectedActionOrTrigger?.name) {
@@ -252,7 +265,10 @@ export default function FlowStep(
         {!app || !selectedActionOrTrigger ? (
           <EmptyFlowStepHeader
             isTrigger={isTrigger}
-            onModalOpen={onModalOpen}
+            onModalOpen={() => {
+              setInitialScreen('choose-app')
+              onModalOpen()
+            }}
           />
         ) : (
           <FlowStepHeader
@@ -271,6 +287,7 @@ export default function FlowStep(
             demoVideoUrl={app?.demoVideoDetails?.url}
             demoVideoTitle={app?.demoVideoDetails?.title}
             isInfoboxPresent={shouldShowInfobox}
+            onEditEvent={isEditable ? onEditEvent : undefined}
           >
             <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
               <Form
@@ -286,7 +303,10 @@ export default function FlowStep(
                     <ChooseConnectionSubstep
                       step={step}
                       application={app}
-                      onReconnect={onModalOpen}
+                      onReconnect={() => {
+                        setInitialScreen('choose-connection')
+                        onModalOpen()
+                      }}
                     />
                   )}
 
@@ -346,6 +366,7 @@ export default function FlowStep(
           step={step}
           app={app}
           event={selectedActionOrTrigger}
+          initialScreen={initialScreen}
         />
       )}
     </>

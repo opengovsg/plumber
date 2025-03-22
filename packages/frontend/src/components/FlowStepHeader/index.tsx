@@ -8,6 +8,7 @@ import {
 } from 'react'
 import {
   BiArrowFromRight,
+  BiEdit,
   BiHelpCircle,
   BiSolidCheckCircle,
   BiSolidErrorCircle,
@@ -52,6 +53,7 @@ interface FlowStepHeaderProps {
   demoVideoUrl?: string
   demoVideoTitle?: string
   isInfoboxPresent?: boolean
+  onEditEvent?: MouseEventHandler
 }
 
 const LOCAL_STORAGE_DEMO_TOOLTIP_KEY = 'demo-tooltip-clicked'
@@ -73,6 +75,7 @@ export default function FlowStepHeader(
     demoVideoUrl,
     demoVideoTitle,
     isInfoboxPresent,
+    onEditEvent,
   } = props
 
   const handleClick = useCallback(() => {
@@ -237,11 +240,27 @@ export default function FlowStepHeader(
             </Flex>
           </Flex>
 
-          {/*
-           * Delete step button
-           */}
-          {onDelete && (
-            <Flex ml="auto">
+          <Flex ml="auto" gap={2}>
+            {onEditEvent && (
+              <Tooltip
+                label="Change event"
+                placement="top-start"
+                openDelay={300}
+                gutter={0}
+              >
+                <IconButton
+                  onClick={onEditEvent}
+                  variant="clear"
+                  aria-label="Edit Event"
+                  icon={<BiEdit />}
+                />
+              </Tooltip>
+            )}
+
+            {/*
+             * Delete step button
+             */}
+            {onDelete && (
               <IconButton
                 onClick={(event) => {
                   onDialogOpen()
@@ -251,8 +270,8 @@ export default function FlowStepHeader(
                 aria-label="Delete Step"
                 icon={<BiTrashAlt />}
               />
-            </Flex>
-          )}
+            )}
+          </Flex>
         </Flex>
 
         {/*

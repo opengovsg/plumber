@@ -14,6 +14,8 @@ import {
   useIsIfThenSelectable,
 } from '@/helpers/toolbox'
 
+import { type ModalScreen } from '..'
+
 import FeedbackFooter from './FeedbackFooter'
 
 interface ChooseEventProps {
@@ -22,10 +24,18 @@ interface ChooseEventProps {
   isLastStep: boolean
   onSelectAppEvent: (app: IApp, event: ITrigger | IAction) => void
   onBack: () => void
+  initialScreen?: ModalScreen
 }
 
 export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
-  const { selectedApp, isTrigger, isLastStep, onSelectAppEvent, onBack } = props
+  const {
+    selectedApp,
+    isTrigger,
+    isLastStep,
+    onSelectAppEvent,
+    onBack,
+    initialScreen,
+  } = props
 
   const launchDarkly = useContext(LaunchDarklyContext)
   const [_, isInitializingIfThen] = useIfThenInitializer()
@@ -57,18 +67,22 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
     <>
       <ModalHeader>
         <Flex gap={2} flexDir="column" alignItems="flex-start">
-          <Button
-            variant="clear"
-            colorScheme="secondary"
-            size="xs"
-            onClick={onBack}
-            leftIcon={<BiChevronLeft />}
-            ml={-4}
-          >
-            Back
-          </Button>
-          <Text textStyle="h3-semibold">{selectedApp.name}</Text>
-          <Text textStyle="body-1">{selectedApp.description}</Text>
+          {initialScreen !== 'choose-event' && (
+            <Button
+              variant="clear"
+              colorScheme="secondary"
+              size="xs"
+              onClick={onBack}
+              leftIcon={<BiChevronLeft />}
+              ml={-4}
+            >
+              Back
+            </Button>
+          )}
+          <Box mt={2}>
+            <Text textStyle="h3-semibold">{selectedApp.name}</Text>
+            <Text textStyle="body-1">{selectedApp.description}</Text>
+          </Box>
         </Flex>
       </ModalHeader>
       <ModalCloseButton mt={2} size="xs" />

@@ -7,9 +7,9 @@ import { useMutation, useQuery } from '@apollo/client'
 import { GET_OR_CREATE_MOCK_STEP } from '@/graphql/mutations/get-or-create-mock-step'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 
+import type { ModalScreen, ModalState } from '..'
 import { EXCEL_APP_KEY } from '../constants'
 import InvalidModalScreen from '../InvalidModalScreen'
-import { type ModalState } from '..'
 
 import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
@@ -26,6 +26,7 @@ interface ChooseAndAddConnectionProps {
     connectionId?: string,
   ) => Promise<IStep>
   step?: IStep
+  initialScreen?: ModalScreen
 }
 
 export type ConnectionDropdownOption = {
@@ -76,6 +77,7 @@ export default function ChooseAndAddConnection(
     step,
     onUpdateStep,
     onCreateStep,
+    initialScreen,
   } = props
   const { currentScreen, selectedApp, selectedEvent, selectedConnectionId } =
     modalState
@@ -250,6 +252,7 @@ export default function ChooseAndAddConnection(
         handleSubmit={handleSubmit}
         mockStep={mockStep ?? undefined}
         step={step}
+        initialScreen={initialScreen}
       />
     )
   } else if (selectedApp && currentScreen === 'add-connection') {

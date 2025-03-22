@@ -6,7 +6,10 @@ import { useMutation, useQuery } from '@apollo/client'
 import { Flex, ModalBody, ModalHeader } from '@chakra-ui/react'
 import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
 
-import { ModalState } from '@/components/FlowStepConfigurationModal'
+import type {
+  ModalScreen,
+  ModalState,
+} from '@/components/FlowStepConfigurationModal'
 import { EditorContext } from '@/contexts/Editor'
 import { REGISTER_CONNECTION } from '@/graphql/mutations/register-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
@@ -28,6 +31,7 @@ interface ChooseConnectionProps {
   handleSubmit: () => void
   mockStep?: IStep
   step?: IStep
+  initialScreen?: ModalScreen
 }
 
 export default function ChooseConnection(
@@ -43,6 +47,7 @@ export default function ChooseConnection(
     handleSubmit,
     mockStep,
     step,
+    initialScreen,
   } = props
   const editorContext = useContext(EditorContext)
   const supportsConnectionRegistration =
@@ -106,9 +111,8 @@ export default function ChooseConnection(
 
   return (
     <>
-      {/* Hide back button only if step has both the key and appKey */}
       <ModalHeader>
-        {(!step?.key || !step?.appKey) && (
+        {initialScreen !== 'choose-connection' && (
           <Button
             variant="clear"
             colorScheme="secondary"

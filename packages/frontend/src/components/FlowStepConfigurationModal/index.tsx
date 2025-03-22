@@ -27,6 +27,7 @@ interface FlowStepConfigurationModalProps {
   step?: IStep
   app?: IApp
   event?: ITrigger | IAction
+  initialScreen?: ModalScreen
 }
 
 export type ModalScreen =
@@ -47,12 +48,20 @@ export type ModalState = {
 export default function FlowStepConfigurationModal(
   props: FlowStepConfigurationModalProps,
 ): JSX.Element {
-  const { onClose, isTrigger, isLastStep, onCreateStep, step, app, event } =
-    props
+  const {
+    onClose,
+    isTrigger,
+    isLastStep,
+    onCreateStep,
+    step,
+    app,
+    event,
+    initialScreen,
+  } = props
   const { flowId } = useParams()
   // Remember to always clear the selectedConnectionId when the modal is back to the first screen
   const [modalState, setModalState] = useState<ModalState>({
-    currentScreen: app && event ? 'choose-connection' : 'choose-app',
+    currentScreen: initialScreen ?? 'choose-app',
     selectedApp: app ?? null,
     selectedEvent: event ?? null,
     selectedConnectionId: step?.connection?.id ?? '',
@@ -106,6 +115,7 @@ export default function FlowStepConfigurationModal(
           onUpdateStep={onUpdateStep}
           onCreateStep={onCreateStep}
           step={step}
+          initialScreen={initialScreen}
         />
       )
     } else if (
@@ -121,6 +131,7 @@ export default function FlowStepConfigurationModal(
           onUpdateStep={onUpdateStep}
           onCreateStep={onCreateStep}
           step={step}
+          initialScreen={initialScreen}
         />
       )
     } else {
@@ -135,6 +146,7 @@ export default function FlowStepConfigurationModal(
     onUpdateStep,
     onCreateStep,
     step,
+    initialScreen,
   ])
 
   return (

@@ -11,9 +11,9 @@ import {
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 
+import type { ModalScreen, ModalState } from '..'
 import { APP_ALLOWING_EMPTY_CONNECTION, EXCEL_APP_KEY } from '../constants'
 import InvalidModalScreen from '../InvalidModalScreen'
-import { type ModalState } from '..'
 
 import ChooseApp from './ChooseApp'
 import ChooseEvent from './ChooseEvent'
@@ -31,6 +31,7 @@ type ChooseAppAndEventProps = {
     connectionId?: string,
   ) => Promise<IStep>
   step?: IStep
+  initialScreen?: ModalScreen
 }
 
 export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
@@ -43,6 +44,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     onUpdateStep,
     onCreateStep,
     step,
+    initialScreen,
   } = props
   const { currentScreen, selectedApp } = modalState
 
@@ -180,6 +182,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             currentScreen: 'choose-app',
           })
         }}
+        initialScreen={initialScreen}
       />
     )
   } else {
