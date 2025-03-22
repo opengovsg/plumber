@@ -77,7 +77,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             ...step,
             appKey: app.key,
             key: triggerOrAction.key,
-            parameters: {},
           })
         }
       }
