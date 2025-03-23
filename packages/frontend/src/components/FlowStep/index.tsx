@@ -198,7 +198,7 @@ export default function FlowStep(
     [deleteStep, step.id],
   )
 
-  const isEditable = actionsOrTriggers.length > 1
+  const isEditable = !readOnly && actionsOrTriggers.length > 1
   const onEditEvent = useCallback<MouseEventHandler>(
     (e) => {
       e.stopPropagation()
