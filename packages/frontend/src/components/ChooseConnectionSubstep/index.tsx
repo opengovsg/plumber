@@ -10,7 +10,10 @@ import MarkdownRenderer from '@/components/MarkdownRenderer'
 import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
-import { optionGenerator } from '../FlowStepConfigurationModal/ChooseAndAddConnection'
+import {
+  type ConnectionDropdownOption,
+  optionGenerator,
+} from '../FlowStepConfigurationModal/ChooseAndAddConnection'
 import { APP_ALLOWING_EMPTY_CONNECTION } from '../FlowStepConfigurationModal/constants'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
@@ -18,6 +21,19 @@ type ChooseConnectionSubstepProps = {
   step: IStep
   application: IApp
   onReconnect: () => void
+}
+
+const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
+  const { label, description: formId } = connectionOption
+  if (label.startsWith('[')) {
+    const endIndex = label.indexOf(']')
+    const env = label.substring(1, endIndex)
+    // Only add subodmain for STAGING and UAT
+    if (env === 'STAGING' || env === 'UAT') {
+      return `https://${env}.form.gov.sg/${formId}`
+    }
+  }
+  return `https://form.gov.sg/${formId}`
 }
 
 function ChooseConnectionSubstep(
@@ -70,7 +86,7 @@ function ChooseConnectionSubstep(
       // For FormSG, we provide a link to the form for easier reference
       return `Connected to ${connectionOption.label} ${
         application.key === 'formsg'
-          ? `([View form](https://form.gov.sg/${connectionOption.description}))`
+          ? `([View form](${formLinkGenerator(connectionOption)}))`
           : ''
       }`
     }
