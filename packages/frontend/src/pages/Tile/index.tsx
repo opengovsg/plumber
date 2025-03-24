@@ -22,6 +22,11 @@ export default function Tile(): JSX.Element | null {
     viewOnlyKey?: string
   }>()
 
+  const { rows, isFetching, isThroughputError, refetch } = useFetchAllRows({
+    tableId: tableId as string,
+    urlViewOnlyKey,
+  })
+
   const {
     data: getTableData,
     loading: isTableLoading,
@@ -38,13 +43,12 @@ export default function Tile(): JSX.Element | null {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
         }
       : undefined,
+    onCompleted: () => {
+      // only start fetching rows after table metadata is loaded
+      refetch()
+    },
   })
   const ownRole = getTableData?.getTable?.role
-
-  const { rows, isFetching, isThroughputError, refetch } = useFetchAllRows({
-    tableId: tableId as string,
-    urlViewOnlyKey,
-  })
 
   // On first load, show loading spinner
   if (isTableLoading && !isGetTableCalled) {

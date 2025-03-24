@@ -1,6 +1,6 @@
 import { ITableRow } from '@plumber/types'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { ApolloError, useLazyQuery } from '@apollo/client'
 import { datadogRum } from '@datadog/browser-rum'
 
@@ -88,11 +88,6 @@ export function useFetchAllRows({
     }
     await fetchAllRows(cursorToContinueFrom.current)
   }, [fetchAllRows, isThroughputError])
-
-  useEffect(() => {
-    setRows([])
-    fetchAllRows()
-  }, [fetchAllRows])
 
   return {
     rows,
