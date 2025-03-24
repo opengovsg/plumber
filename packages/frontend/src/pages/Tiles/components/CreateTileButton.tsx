@@ -160,6 +160,8 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
             tableColumns={[]}
             tableRows={[]}
             isFetching={false}
+            isThroughputError={false}
+            refetch={() => Promise.resolve()} // stubbed refetch
           >
             <ImportCsvModalContent
               onPreImport={() => createTable({ isBlank: true })}
