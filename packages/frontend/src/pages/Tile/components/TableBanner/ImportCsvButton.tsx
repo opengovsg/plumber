@@ -267,7 +267,7 @@ export const ImportCsvModalContent = ({
             },
           })
           if (i === chunkedData.length - 1 && !onPreImport) {
-            refetch()
+            await refetch()
           }
           setRowsImported((i + 1) * CHUNK_SIZE)
         }
