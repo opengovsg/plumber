@@ -41,15 +41,12 @@ import EmptyFlowStepHeaderModal from '../EmptyFlowStepHeader/EmptyFlowStepHeader
 // TODO(mal): Remove this comment before merging this main PR
 interface AddStepButtonProps {
   onClick: (appKey: string, eventKey: string) => void
-  isDisabled: boolean
+  isHidden: boolean
   isLastStep: boolean
-  isTriggerAbsent?: boolean
-  isActionAbsent?: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, isDisabled, isLastStep, isTriggerAbsent, isActionAbsent } =
-    props
+  const { onClick, isHidden, isLastStep } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const handleSubmit = (appKey: string, actionKey: string) => {
@@ -57,13 +54,15 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
     onClose()
   }
 
-  let tooltipLabel = 'Add Step'
-  if (isTriggerAbsent) {
-    tooltipLabel = 'Choose how you want your workflow to start first'
-  } else if (isActionAbsent) {
-    tooltipLabel = 'Choose an action first'
-  } else if (isDisabled) {
-    tooltipLabel = 'Unpublish your pipe before adding steps'
+  if (isHidden) {
+    return (
+      <Box pos="relative" h={24} py={2}>
+        {/* dont show line if last step, leave box for padding */}
+        {!isLastStep && (
+          <Divider orientation="vertical" borderColor="base.divider.strong" />
+        )}
+      </Box>
+    )
   }
 
   return (
@@ -79,11 +78,10 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
             <Divider orientation="vertical" borderColor="base.divider.strong" />
           </Box>
         )}
-        <AbsoluteCenter>
-          <TouchableTooltip label={tooltipLabel} placement="right">
+        <AbsoluteCenter display={isHidden ? 'none' : 'flex'}>
+          <TouchableTooltip label={'Insert step'} placement="right">
             <IconButton
               onClick={onOpen}
-              isDisabled={isDisabled || isTriggerAbsent || isActionAbsent}
               aria-label="Add Step"
               icon={<BiPlus />}
               variant={isLastStep ? 'outline' : 'clear'}
@@ -346,10 +344,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
   )
 
   // Only affects editor when there are 2 steps: This works inside the If-Then editor too
-  const isTriggerAbsent =
-    steps.length === 2 && steps[0].appKey === null && steps[0].key === null
-  const isActionAbsent =
-    steps.length === 2 && steps[1].appKey === null && steps[1].key === null
+  const isTriggerOrActionAbsent =
+    steps.length === 2 &&
+    (steps[0].appKey === null ||
+      steps[0].key === null ||
+      steps[1].appKey === null ||
+      steps[1].key === null)
 
   if (!apps) {
     return (
@@ -395,10 +395,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 onClick={(appKey, eventKey) => {
                   addStep(step.id, appKey, eventKey)
                 }}
-                isDisabled={creationInProgress || isReadOnlyEditor}
+                isHidden={
+                  creationInProgress ||
+                  isReadOnlyEditor ||
+                  isTriggerOrActionAbsent
+                }
                 isLastStep={index === steps.length - 1}
-                isTriggerAbsent={isTriggerAbsent}
-                isActionAbsent={isActionAbsent}
               />
             </Fragment>
           ))}
