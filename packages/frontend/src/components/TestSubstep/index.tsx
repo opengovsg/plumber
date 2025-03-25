@@ -191,6 +191,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
               selectedActionOrTrigger={selectedActionOrTrigger}
               variables={testVariables}
               isMock={currentExecutionStep?.metadata?.isMock}
+              onModalOpen={onModalOpen}
             />
           )}
 
@@ -223,6 +224,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
         <TestMultiRowResultModal
           isOpen={isModalOpen}
           onClose={onModalClose}
+          step={step}
           variables={testVariables}
         />
       )}

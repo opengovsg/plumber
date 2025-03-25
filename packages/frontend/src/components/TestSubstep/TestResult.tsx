@@ -7,6 +7,9 @@ import VariablesList from '@/components/VariablesList'
 import { isIfThenStep } from '@/helpers/toolbox'
 import type { Variable } from '@/helpers/variables'
 
+import MultiRowResultVariables from './MultiRowResultVariables'
+import { isMultiRowStep } from './utils'
+
 function getNoOutputMessage(
   selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
 ): string | null {
@@ -43,10 +46,17 @@ interface TestResultsProps {
   // if null, the step probably hasnt been tested yet
   variables: Variable[] | null
   isMock?: boolean
+  onModalOpen?: () => void
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
-  const { step, selectedActionOrTrigger, variables, isMock = false } = props
+  const {
+    step,
+    selectedActionOrTrigger,
+    variables,
+    onModalOpen,
+    isMock = false,
+  } = props
 
   if (step.status !== 'completed') {
     return <></>
@@ -102,7 +112,16 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
           }
         </Text>
       </Infobox>
-      <VariablesList variables={variables} />
+      {isMultiRowStep(step) ? (
+        <MultiRowResultVariables
+          step={step}
+          selectedActionOrTrigger={selectedActionOrTrigger}
+          variables={variables}
+          onModalOpen={onModalOpen}
+        />
+      ) : (
+        <VariablesList variables={variables} />
+      )}
     </Box>
   )
 }

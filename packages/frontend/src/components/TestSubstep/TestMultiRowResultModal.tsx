@@ -1,5 +1,8 @@
+import { IStep } from '@plumber/types'
+
 import { useMemo } from 'react'
 import {
+  Flex,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -24,32 +27,57 @@ interface Column {
   label: string
 }
 
+interface RowValue {
+  columnName: string
+  value: string
+}
+
 interface DataRow {
   id: string
   data: Record<string, string>
+  row?: Record<string, RowValue>
 }
 
 interface TestMultiRowResultModalProps {
   isOpen: boolean
   onClose: () => void
   variables: Variable[] | null
+  step: IStep
 }
 
 export default function TestMultiRowResultModal(
   props: TestMultiRowResultModalProps,
 ) {
-  const { isOpen, onClose, variables } = props
+  const { isOpen, onClose, variables, step } = props
 
-  // Memoize the parsed data to avoid unnecessary re-parsing
+  const isTilesStep = useMemo(() => {
+    return step.appKey === 'tiles'
+  }, [step.appKey])
+
   const { rowsFound, dataRows, columns } = useMemo(() => {
-    const rowsFoundVar = variables?.find(
-      (variable) => variable.label === 'No. of rows found',
+    const rowsFoundObj = variables?.find(
+      (v) => v.name.split('.').pop() === 'rowsFound',
     )
 
-    const rowsVar = variables?.find((v) => v.label === 'Data rows')
-    const parsedRows: DataRow[] = rowsVar
-      ? JSON.parse(rowsVar.value as string)
+    const rawRows = variables?.find((v) => v.name.split('.').pop() === 'rows')
+    const parsedRows: DataRow[] = rawRows
+      ? JSON.parse(rawRows.value as string)
       : []
+
+    const dataRows: DataRow[] = isTilesStep
+      ? parsedRows
+      : /**
+         * NOTE: extra processing required for M365 Excel rows due to different
+         * data structure
+         */
+        parsedRows.map((r) => ({
+          id: r.id,
+          data: Object.fromEntries(
+            Object.values(r.row as Record<string, RowValue>).map(
+              ({ columnName, value }) => [columnName, value],
+            ),
+          ),
+        }))
 
     const columnVars =
       variables?.filter((v) => v.name.includes('columns')) || []
@@ -59,11 +87,11 @@ export default function TestMultiRowResultModal(
     }))
 
     return {
-      rowsFound: rowsFoundVar?.value as string,
-      dataRows: parsedRows,
+      rowsFound: rowsFoundObj?.value as string,
+      dataRows,
       columns: parsedColumns,
     }
-  }, [variables])
+  }, [isTilesStep, variables])
 
   if (!variables) {
     return null
@@ -87,7 +115,12 @@ export default function TestMultiRowResultModal(
           borderBottom="1px solid"
           borderColor="base.divider.medium"
         >
-          Found {rowsFound} rows
+          <Flex direction="column">
+            List of row(s) found
+            <Text textStyle="body-2" color="base.content.medium">
+              {rowsFound} row(s)
+            </Text>
+          </Flex>
           <ModalCloseButton />
         </ModalHeader>
         <ModalBody>
