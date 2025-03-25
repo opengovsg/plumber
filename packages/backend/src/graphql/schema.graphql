@@ -6,7 +6,7 @@ type Query {
   ): [App]
   getApp(key: String!): App
   getConnectedApps: [App]
-  testConnection(connectionId: String!, stepId: String): TestConnectionResult
+  testConnection(connectionId: String!, flowId: String): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(
     limit: Int!
@@ -441,7 +441,7 @@ input DeleteConnectionInput {
 
 input RegisterConnectionInput {
   connectionId: String!
-  stepId: String
+  flowId: String
 }
 
 input CreateFlowInput {
