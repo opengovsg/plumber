@@ -10,16 +10,6 @@ const updateStep: MutationResolvers['updateStep'] = async (
 ) => {
   const { input } = params
 
-  if (input.connection.id) {
-    // if connectionId is specified, verify that the connection exists and belongs to the user
-    const connection = await context.currentUser
-      .$relatedQuery('connections')
-      .findOne({ id: input.connection.id })
-    if (!connection) {
-      throw new BadUserInputError('Connection not found')
-    }
-  }
-
   const step = await Step.transaction(async (trx) => {
     const step = await context.currentUser.$relatedQuery('steps', trx).findOne({
       'steps.id': input.id,
@@ -27,6 +17,17 @@ const updateStep: MutationResolvers['updateStep'] = async (
     })
     if (!step) {
       throw new BadUserInputError('Step not found')
+    }
+
+    if (input.connection.id) {
+      // if connectionId is specified, verify that the connection exists and belongs to the user
+      const connection = await context.currentUser
+        .$relatedQuery('connections')
+        .findOne({ id: input.connection.id })
+      // we check that the connection exists and is the same app
+      if (!connection || connection.key !== step.appKey) {
+        throw new BadUserInputError('Connection not found')
+      }
     }
 
     const shouldInvalidate =

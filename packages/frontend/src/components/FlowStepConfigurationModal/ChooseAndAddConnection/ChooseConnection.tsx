@@ -27,7 +27,7 @@ interface ChooseConnectionProps {
   connectionOptions: ConnectionDropdownOption[]
   handleConnectionChange: (value: string, shouldRefetch: boolean) => void
   handleSubmit: () => void
-  mockStep?: IStep
+  flowId: string
   step?: IStep
 }
 
@@ -42,7 +42,7 @@ export default function ChooseConnection(
     connectionOptions,
     handleConnectionChange,
     handleSubmit,
-    mockStep,
+    flowId,
     step,
   } = props
   const editorContext = useContext(EditorContext)
@@ -60,7 +60,7 @@ export default function ChooseConnection(
   }>(TEST_CONNECTION, {
     variables: {
       connectionId: selectedConnectionId,
-      stepId: supportsConnectionRegistration ? mockStep?.id : undefined,
+      flowId: supportsConnectionRegistration ? flowId : undefined,
     },
     skip: !selectedConnectionId,
   })
@@ -74,18 +74,18 @@ export default function ChooseConnection(
         variables: {
           input: {
             connectionId: selectedConnectionId,
-            stepId: mockStep?.id,
+            flowId,
           },
         },
       })
       await retestConnection()
     }
   }, [
-    mockStep,
     selectedConnectionId,
     registerConnection,
     supportsConnectionRegistration,
     retestConnection,
+    flowId,
   ])
 
   const onBack = () => {
@@ -152,7 +152,7 @@ export default function ChooseConnection(
               testResult={testConnectionData?.testConnection}
               testResultLoading={testResultLoading}
               registerConnectionLoading={registerConnectionLoading}
-              isNewStep={!step}
+              isNewStep={true}
             />
           </Flex>
         </Flex>

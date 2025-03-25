@@ -42,12 +42,7 @@ const SetConnectionButton = ({
     testResult,
   ])
 
-  const stepActionText =
-    isNewStep === undefined
-      ? 'Continue'
-      : isNewStep
-      ? 'Add step'
-      : 'Save and continue'
+  const stepActionText = isNewStep ? 'Add step' : 'Continue'
 
   const buttonText = useMemo(() => {
     if (testResultLoading) {
