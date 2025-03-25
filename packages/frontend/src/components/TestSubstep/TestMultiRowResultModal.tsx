@@ -10,12 +10,14 @@ import {
   TableContainer,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tr,
 } from '@chakra-ui/react'
 
 import { Variable } from '@/helpers/variables'
+import { BORDER_COLOR, FONT_SIZE, ROW_COLOR } from '@/pages/Tile/constants'
 
 interface Column {
   key: string
@@ -76,7 +78,7 @@ export default function TestMultiRowResultModal(
       isCentered
     >
       <ModalOverlay />
-      <ModalContent maxH="80vh" overflow="hidden">
+      <ModalContent maxH="80vh" overflow="hidden" borderRadius="lg">
         <ModalHeader
           position="sticky"
           top={0}
@@ -89,20 +91,75 @@ export default function TestMultiRowResultModal(
           <ModalCloseButton />
         </ModalHeader>
         <ModalBody>
-          <TableContainer mt={4} overflowY="scroll" maxH="calc(80vh - 100px)">
+          <TableContainer
+            my={2}
+            maxH="calc(80vh - 100px)"
+            overflowY="auto"
+            border="1px solid"
+            borderColor={BORDER_COLOR.DEFAULT}
+            borderRadius="md"
+          >
             <Table variant="simple">
-              <Thead position="sticky" top={0} bg="white" zIndex={1}>
+              <Thead
+                position="sticky"
+                top={0}
+                bg="var(--chakra-colors-primary-50)"
+                zIndex={1}
+              >
                 <Tr>
-                  {columns.map((c) => (
-                    <Th key={c.key}>{c.label}</Th>
+                  <Th
+                    borderRightWidth="1px"
+                    borderColor={BORDER_COLOR.DEFAULT}
+                  />
+                  {columns.map((c, colIndex) => (
+                    <Th
+                      key={c.key}
+                      borderColor={BORDER_COLOR.DEFAULT}
+                      borderRightWidth={
+                        colIndex === columns.length - 1 ? 0 : '1px'
+                      }
+                    >
+                      <Text
+                        fontSize={FONT_SIZE.DEFAULT}
+                        overflow="hidden"
+                        whiteSpace="nowrap"
+                        textOverflow="ellipsis"
+                        maxW="100%"
+                        textStyle="subhead-2"
+                        userSelect="none"
+                        textTransform="none"
+                      >
+                        {c.label}
+                      </Text>
+                    </Th>
                   ))}
                 </Tr>
               </Thead>
               <Tbody>
-                {dataRows.map((row) => (
-                  <Tr key={row.id}>
-                    {columns.map((c) => (
-                      <Td key={c.key}>{row.data[c.key] ?? ''}</Td>
+                {dataRows.map((row, index) => (
+                  <Tr
+                    key={row.id}
+                    backgroundColor={index % 2 ? ROW_COLOR.EVEN : ROW_COLOR.ODD}
+                    borderColor={BORDER_COLOR.DEFAULT}
+                  >
+                    <Td
+                      borderColor={BORDER_COLOR.DEFAULT}
+                      borderRightWidth="1px"
+                      fontSize={FONT_SIZE.SMALL}
+                    >
+                      {index + 1}
+                    </Td>
+                    {columns.map((c, colIndex) => (
+                      <Td
+                        key={c.key}
+                        borderColor={BORDER_COLOR.DEFAULT}
+                        borderRightWidth={
+                          colIndex === columns.length - 1 ? 0 : '1px'
+                        }
+                        fontSize={FONT_SIZE.DEFAULT}
+                      >
+                        {row.data[c.key] ?? ''}
+                      </Td>
                     ))}
                   </Tr>
                 ))}
