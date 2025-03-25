@@ -4,8 +4,9 @@ import appConfig from '@/config/app'
 import StepError from '@/errors/step'
 
 import { getToken } from '../../auth/get-token'
-import { getAttachmentsFromS3 } from '../../common/utils'
+import { getAttachmentsFromS3, getValidationError } from '../../common/utils'
 
+import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema } from './schema'
 
 const action: IRawAction = {
@@ -42,6 +43,7 @@ const action: IRawAction = {
       ],
     },
   ],
+  getDataOutMetadata,
 
   async run($) {
     const { attachments, infoToExtract } = $.step.parameters as {
@@ -61,9 +63,11 @@ const action: IRawAction = {
     const result = requestSchema.safeParse({ attachments, infoToExtract })
 
     if (!result.success) {
+      const { stepErrorName, stepErrorSolution } = getValidationError(result)
+
       throw new StepError(
-        'Invalid attachments',
-        'Please check the attachments field',
+        stepErrorName,
+        stepErrorSolution,
         $.step.position,
         $.app.name,
       )
@@ -105,16 +109,7 @@ const action: IRawAction = {
         },
       })
 
-      const dataOut: Record<string, any> = {
-        Quota: res.data.quota,
-      }
-      Object.keys(res.data.fields).forEach((key) => {
-        const index = parseInt(key.split('additionalProp')[1])
-        const fieldName = infoToExtract[index].infoToExtract
-        dataOut[fieldName] = res.data.fields[key]
-      })
-
-      $.setActionItem({ raw: { ...dataOut } })
+      $.setActionItem({ raw: { ...res.data } })
     } catch (err) {
       console.error(err)
       if (err.response.data.message === `Request Too Long`) {
