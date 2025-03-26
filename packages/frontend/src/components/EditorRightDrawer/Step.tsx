@@ -113,8 +113,8 @@ export default function Step(props: StepProps): React.ReactElement | null {
   const { app, apps, isTrigger, selectedActionOrTrigger, substeps } =
     useStepMetadata(step)
 
-  const handleSubmit = (val: any) => {
-    onUpdateStep(val as IStep)
+  const handleSubmit = async (val: any) => {
+    await onUpdateStep(val as IStep)
   }
 
   const expandNextStep = useCallback(() => {

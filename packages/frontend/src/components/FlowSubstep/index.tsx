@@ -8,10 +8,10 @@ import type {
   ITrigger,
 } from '@plumber/types'
 
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Box, Collapse, Stack } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import { Button, useToast } from '@opengovsg/design-system-react'
 
 import FlowSubstepTitle from '@/components/FlowSubstepTitle'
 import InputCreator from '@/components/InputCreator'
@@ -30,7 +30,7 @@ type FlowSubstepProps = {
     type?: string,
     currentStep?: IStep,
     status?: string,
-  ) => Promise<boolean> | void
+  ) => Promise<{ data?: { updateStep?: any } } | void> | void
   step: IStep
   settingsLabel?: string
   selectedActionOrTrigger?: ITrigger | IAction
@@ -106,10 +106,13 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   } = props
 
   const { name, arguments: args } = substep
+  const toast = useToast()
+  const [isSaving, setIsSaving] = useState(false)
 
   const { flags } = useContext(LaunchDarklyContext)
   const editorContext = useContext(EditorContext)
   const formContext = useFormContext()
+  const { isDirty } = formContext.formState
   const [validationStatus, setValidationStatus] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
   )
@@ -141,14 +144,35 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   // NOTE: this is meant to avoid users losing progress
   // we validate the substeps so that the header reflects the correct status
-  const handleSave = useCallback(() => {
-    const currentStep = formContext.getValues() as IStep
-    const isValid = validateSubstep(substep, currentStep)
-    editorContext.onUpdateStep({
-      ...currentStep,
-      status: isValid ? 'completed' : 'incomplete',
-    })
-  }, [editorContext, formContext, substep])
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      const currentStep = formContext.getValues() as IStep
+      const isValid = validateSubstep(substep, currentStep)
+      const result = await editorContext.onUpdateStep({
+        ...currentStep,
+        status: isValid ? 'completed' : 'incomplete',
+      })
+
+      if (!result) {
+        throw new Error('Failed to save step')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error saving step',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   // Skip to the next step if the substep is meant to be hidden
   useEffect(() => {
@@ -181,7 +205,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
                 schema={argument}
                 namePrefix="parameters"
                 stepId={step.id}
-                disabled={editorContext.readOnly}
+                disabled={editorContext.readOnly || isSaving}
               />
             ))}
           </Stack>
@@ -196,17 +220,20 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
             pt={4}
           >
             <Button
-              isDisabled={editorContext.readOnly}
+              isDisabled={editorContext.readOnly || isSaving || !isDirty}
+              isLoading={isSaving}
               variant="clear"
               onClick={() => handleSave()}
             >
-              Save
+              {isDirty ? 'Save' : 'Saved'}
             </Button>
             <Button
               onClick={() => onSubmit()}
               type="submit"
               data-test="flow-substep-continue-button"
-              isDisabled={!validationStatus || editorContext.readOnly}
+              isDisabled={
+                !validationStatus || editorContext.readOnly || isSaving
+              }
             >
               Complete step
             </Button>
