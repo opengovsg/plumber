@@ -5,6 +5,7 @@ import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { getToken } from '../../auth/get-token'
 
+import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema } from './schema'
 
 const uint8ArrayToBase64 = (uint8Array: Uint8Array) => {
@@ -31,7 +32,7 @@ const action: IRawAction = {
       key: 'documentType',
       type: 'dropdown',
       options: [
-        { label: 'Bank Statement', value: 'BANK STATEMENT' },
+        { label: 'Bank Statement', value: 'BANK_STATEMENT' },
         { label: 'Cheque', value: 'CHEQUE' },
         { label: 'Invoice', value: 'INVOICE' },
         { label: 'Passport', value: 'PASSPORT' },
@@ -41,6 +42,7 @@ const action: IRawAction = {
       required: true,
     },
   ],
+  getDataOutMetadata,
 
   async run($) {
     const { attachments, documentType } = $.step.parameters as {
@@ -101,7 +103,9 @@ const action: IRawAction = {
         },
       })
 
-      $.setActionItem({ raw: { ...aisayRes.data } })
+      $.setActionItem({
+        raw: { ...aisayRes.data, documentType: result.data.documentType },
+      })
     } catch (err) {
       if (
         err.response.data.message ===
