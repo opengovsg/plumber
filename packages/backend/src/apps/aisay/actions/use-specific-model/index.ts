@@ -4,6 +4,8 @@ import StepError from '@/errors/step'
 import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { getToken } from '../../auth/get-token'
+import { parseError } from '../../common/error-parser'
+import { getValidationError } from '../../common/utils'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema } from './schema'
@@ -19,11 +21,11 @@ const action: IRawAction = {
     'For documents with standard formats: Receipt, Invoices, Quotation, Bank Statement, Transfer Advice, Passport, Cheque',
   arguments: [
     {
-      label: 'Attachments',
+      label: 'File',
       key: 'attachments',
-      description: 'Use files from previous steps',
+      description: 'Use file from previous steps',
       type: 'multiselect' as const,
-      required: false,
+      required: true,
       variables: true,
       variableTypes: ['file'],
     },
@@ -50,8 +52,6 @@ const action: IRawAction = {
       documentType: string
     }
 
-    const result = requestSchema.safeParse({ attachments, documentType })
-
     if (!$.auth.data.clientId || !$.auth.data.clientSecret) {
       throw new StepError(
         'Missing client ID or client secret',
@@ -61,10 +61,13 @@ const action: IRawAction = {
       )
     }
 
+    const result = requestSchema.safeParse({ attachments, documentType })
     if (!result.success) {
+      const { stepErrorName, stepErrorSolution } = getValidationError(result)
+
       throw new StepError(
-        'Invalid attachments',
-        'Please check the attachments field',
+        stepErrorName,
+        stepErrorSolution,
         $.step.position,
         $.app.name,
       )
@@ -107,24 +110,15 @@ const action: IRawAction = {
         raw: { ...aisayRes.data, documentType: result.data.documentType },
       })
     } catch (err) {
-      if (
-        err.response.data.message ===
-        `Quota exceeded for id ${$.auth.data.clientId}: 0 of 0 used, with current request of 1 pages`
-      ) {
-        throw new StepError(
-          'Quota exceeded',
-          'Please contact AISAY to increase your quota.',
-          $.step.position,
-          $.app.name,
-        )
-      } else {
-        throw new StepError(
-          'Failed to call specific model',
-          'Please try again.',
-          $.step.position,
-          $.app.name,
-        )
-      }
+      console.error(err)
+      const { stepErrorName, stepErrorSolution } = parseError(err)
+
+      throw new StepError(
+        stepErrorName,
+        stepErrorSolution,
+        $.step.position,
+        $.app.name,
+      )
     }
   },
 } satisfies IRawAction
