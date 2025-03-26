@@ -16,11 +16,11 @@ const action: IRawAction = {
     'For interpretation of documents with standard or non-standard formats',
   arguments: [
     {
-      label: 'Attachments',
+      label: 'File',
       key: 'attachments',
       description: 'Use files from previous steps',
       type: 'multiselect' as const,
-      required: false,
+      required: true,
       variables: true,
       variableTypes: ['file'],
     },
@@ -61,7 +61,6 @@ const action: IRawAction = {
     }
 
     const result = requestSchema.safeParse({ attachments, infoToExtract })
-
     if (!result.success) {
       const { stepErrorName, stepErrorSolution } = getValidationError(result)
 
