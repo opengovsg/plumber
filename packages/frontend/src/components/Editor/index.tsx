@@ -41,17 +41,28 @@ import EmptyFlowStepHeaderModal from '../EmptyFlowStepHeader/EmptyFlowStepHeader
 // TODO(mal): Remove this comment before merging this main PR
 interface AddStepButtonProps {
   onClick: (appKey: string, eventKey: string) => void
-  isDisabled: boolean
+  isHidden: boolean
   isLastStep: boolean
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, isDisabled, isLastStep } = props
+  const { onClick, isHidden, isLastStep } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const handleSubmit = (appKey: string, actionKey: string) => {
     onClick(appKey, actionKey)
     onClose()
+  }
+
+  if (isHidden) {
+    return (
+      <Box pos="relative" h={24} py={2}>
+        {/* dont show line if last step, leave box for padding */}
+        {!isLastStep && (
+          <Divider orientation="vertical" borderColor="base.divider.strong" />
+        )}
+      </Box>
+    )
   }
 
   return (
@@ -67,11 +78,10 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
             <Divider orientation="vertical" borderColor="base.divider.strong" />
           </Box>
         )}
-        <AbsoluteCenter>
-          <TouchableTooltip label="Add Step" placement="right">
+        <AbsoluteCenter display={isHidden ? 'none' : 'flex'}>
+          <TouchableTooltip label={'Insert step'} placement="right">
             <IconButton
               onClick={onOpen}
-              isDisabled={isDisabled}
               aria-label="Add Step"
               icon={<BiPlus />}
               variant={isLastStep ? 'outline' : 'clear'}
@@ -333,6 +343,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [parentStepExecutionsToInclude, stepsBeforeGroup],
   )
 
+  // Only affects editor when there are 2 steps: This works inside the If-Then editor too
+  const isTriggerOrActionAbsent =
+    steps.length === 2 &&
+    (steps[0].appKey === null ||
+      steps[0].key === null ||
+      steps[1].appKey === null ||
+      steps[1].key === null)
+
   if (!apps) {
     return (
       <Center w="full" h="100vh">
@@ -377,7 +395,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 onClick={(appKey, eventKey) => {
                   addStep(step.id, appKey, eventKey)
                 }}
-                isDisabled={creationInProgress || isReadOnlyEditor}
+                isHidden={
+                  creationInProgress ||
+                  isReadOnlyEditor ||
+                  isTriggerOrActionAbsent
+                }
                 isLastStep={index === steps.length - 1}
               />
             </Fragment>

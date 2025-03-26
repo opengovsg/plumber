@@ -78,14 +78,20 @@ export default function EmptyFlowStepHeaderModal(
                 Back
               </Button>
               <Text textStyle="h3-semibold">{selectedApp.name}</Text>
+              <Text textStyle="body-1">{selectedApp.description}</Text>
               {/* TODO: Check if description is needed for each app */}
             </Flex>
           ) : (
-            <Text textStyle="h3-semibold" pt={4}>
-              {isTrigger
-                ? 'Choose how you want your workflow to start'
-                : 'Add a step'}
-            </Text>
+            <Flex gap={2} flexDir="column" alignItems="flex-start">
+              <Text textStyle="h3-semibold" pt={4}>
+                {isTrigger
+                  ? 'Choose how you want your workflow to start'
+                  : 'Add a step'}
+              </Text>
+              <Text textStyle="body-1">
+                These are actions that you can add to your workflow.
+              </Text>
+            </Flex>
           )}
         </ModalHeader>
 
