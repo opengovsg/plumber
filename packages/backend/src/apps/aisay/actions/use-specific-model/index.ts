@@ -16,7 +16,7 @@ const uint8ArrayToBase64 = (uint8Array: Uint8Array) => {
 
 const action: IRawAction = {
   name: 'Use specific model',
-  key: 'callSpecificModel',
+  key: 'useSpecificModel',
   description:
     'For documents with standard formats: Receipt, Invoices, Quotation, Bank Statement, Transfer Advice, Passport, Cheque',
   arguments: [
