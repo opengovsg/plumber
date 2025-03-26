@@ -1,6 +1,6 @@
-import type { IApp, IField, IJSONObject } from '@plumber/types'
+import type { IField, IJSONObject } from '@plumber/types'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import { FieldValues, SubmitHandler } from 'react-hook-form'
 import { BiChevronLeft } from 'react-icons/bi'
 import { Flex, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
@@ -18,6 +18,8 @@ import { getOpenerOrigin } from '@/helpers/window'
 
 import Form from '../../Form'
 import { infoboxMdComponents } from '../../MarkdownRenderer/CustomMarkdownComponents'
+import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import InvalidModalScreen from '../InvalidModalScreen'
 
 import ConnectionHeader from './ConnectionHeader'
 
@@ -25,7 +27,6 @@ const DEFAULT_ADD_CONNECTION_LABEL = 'Add new connection'
 
 type AddConnectionProps = {
   onSubmit: (response: Record<string, unknown>) => void
-  selectedApp: IApp
   onBack: () => void
 }
 
@@ -34,8 +35,12 @@ type Response = {
 }
 
 export default function AddConnection(props: AddConnectionProps): JSX.Element {
-  const { onSubmit, selectedApp, onBack } = props
-  const { name, authDocUrl, key, auth } = selectedApp
+  const { onSubmit, onBack } = props
+  const {
+    modalState: { selectedApp },
+  } = useContext(FlowStepConfigurationContext)
+  const { name, authDocUrl, key, auth } = selectedApp || {}
+
   const [error, setError] = useState<IJSONObject | null>(null)
   const [inProgress, setInProgress] = useState(false)
   const steps = auth?.authenticationSteps
@@ -99,6 +104,10 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
     },
     [key, steps, onSubmit],
   )
+
+  if (!selectedApp) {
+    return <InvalidModalScreen />
+  }
 
   return (
     <>

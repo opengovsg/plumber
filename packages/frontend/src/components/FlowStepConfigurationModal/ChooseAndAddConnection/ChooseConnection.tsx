@@ -1,4 +1,4 @@
-import { type IApp, IStep, ITestConnectionOutput } from '@plumber/types'
+import type { ITestConnectionOutput } from '@plumber/types'
 
 import { useCallback, useContext } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
@@ -6,12 +6,13 @@ import { useMutation, useQuery } from '@apollo/client'
 import { Flex, ModalBody, ModalHeader } from '@chakra-ui/react'
 import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
 
-import { ModalState } from '@/components/FlowStepConfigurationModal'
 import { EditorContext } from '@/contexts/Editor'
 import { REGISTER_CONNECTION } from '@/graphql/mutations/register-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
 import SetConnectionButton from '../../SetConnectionButton'
+import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import InvalidModalScreen from '../InvalidModalScreen'
 
 import ChooseConnectionDropdown from './ChooseConnectionDropdown'
 import ConnectionHeader from './ConnectionHeader'
@@ -20,32 +21,28 @@ import { ConnectionDropdownOption } from '.'
 const DEFAULT_CHOOSE_CONNECTION_LABEL = 'Choose connection'
 
 interface ChooseConnectionProps {
-  selectedApp: IApp
-  selectedConnectionId: string
-  updateModalState: (newState: Partial<ModalState>) => void
   appConnectionsLoading: boolean
   connectionOptions: ConnectionDropdownOption[]
   handleConnectionChange: (value: string, shouldRefetch: boolean) => void
   handleSubmit: () => void
-  flowId: string
-  step?: IStep
 }
 
 export default function ChooseConnection(
   props: ChooseConnectionProps,
 ): JSX.Element {
   const {
-    selectedApp,
-    selectedConnectionId,
-    updateModalState,
     appConnectionsLoading,
     connectionOptions,
     handleConnectionChange,
     handleSubmit,
-    flowId,
-    step,
   } = props
-  const editorContext = useContext(EditorContext)
+  const { readOnly, flowId } = useContext(EditorContext)
+
+  const { modalState, patchModalState, step } = useContext(
+    FlowStepConfigurationContext,
+  )
+  const { selectedApp, selectedConnectionId } = modalState
+
   const supportsConnectionRegistration =
     !!selectedApp?.auth?.connectionRegistrationType
 
@@ -82,27 +79,35 @@ export default function ChooseConnection(
     }
   }, [
     selectedConnectionId,
-    registerConnection,
     supportsConnectionRegistration,
-    retestConnection,
+    registerConnection,
     flowId,
+    retestConnection,
   ])
 
   const onBack = () => {
+    if (!selectedApp) {
+      return
+    }
+
     const triggersOrActions = selectedApp.triggers || selectedApp.actions || []
     if (triggersOrActions.length === 1) {
-      updateModalState({
+      patchModalState({
         currentScreen: 'choose-app',
         selectedApp: null,
         selectedEvent: null,
         selectedConnectionId: '',
       })
     } else {
-      updateModalState({
+      patchModalState({
         currentScreen: 'choose-event',
         selectedEvent: null,
       })
     }
+  }
+
+  if (!selectedApp) {
+    return <InvalidModalScreen />
   }
 
   return (
@@ -135,19 +140,19 @@ export default function ChooseConnection(
         <Flex flexDir="column" alignItems="center" gap={6}>
           <Flex w="100%" flexDir="column" gap={4}>
             <ChooseConnectionDropdown
-              isDisabled={editorContext.readOnly || appConnectionsLoading}
+              isDisabled={readOnly || appConnectionsLoading}
               connectionOptions={connectionOptions}
               onChange={handleConnectionChange}
               value={selectedConnectionId}
               application={selectedApp}
               onAddNewConnection={() =>
-                updateModalState({ currentScreen: 'add-connection' })
+                patchModalState({ currentScreen: 'add-connection' })
               }
             />
             <SetConnectionButton
               onNextStep={handleSubmit}
               onRegisterConnection={onRegisterConnection}
-              readOnly={editorContext.readOnly}
+              readOnly={readOnly}
               supportsConnectionRegistration={supportsConnectionRegistration}
               testResult={testConnectionData?.testConnection}
               testResultLoading={testResultLoading}

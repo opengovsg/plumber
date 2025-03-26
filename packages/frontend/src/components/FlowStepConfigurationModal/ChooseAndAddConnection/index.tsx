@@ -1,28 +1,19 @@
-import { IApp, IConnection, IStep } from '@plumber/types'
+import type { IApp, IConnection } from '@plumber/types'
 
-import { useCallback, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 
+import { EditorContext } from '@/contexts/Editor'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 
+import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
-import { type ModalState } from '..'
 
 import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
 
 interface ChooseAndAddConnectionProps {
   onClose: () => void
-  modalState: ModalState
-  updateModalState: (newState: Partial<ModalState>) => void
-  onUpdateStep: (step: IStep) => Promise<IStep>
-  onCreateStep?: (
-    appKey: string,
-    eventKey: string,
-    connectionId?: string,
-  ) => Promise<IStep>
-  step?: IStep
 }
 
 export type ConnectionDropdownOption = {
@@ -40,17 +31,13 @@ const optionGenerator = (
 export default function ChooseAndAddConnection(
   props: ChooseAndAddConnectionProps,
 ) {
-  const {
-    onClose,
-    modalState,
-    updateModalState,
-    step,
-    onUpdateStep,
-    onCreateStep,
-  } = props
+  const { onClose } = props
+  const { flowId, onCreateStep, onUpdateStep } = useContext(EditorContext)
+  const { modalState, patchModalState, step, prevStepId } = useContext(
+    FlowStepConfigurationContext,
+  )
   const { currentScreen, selectedApp, selectedEvent, selectedConnectionId } =
     modalState
-  const { flowId } = useParams()
 
   const {
     data,
@@ -81,9 +68,9 @@ export default function ChooseAndAddConnection(
       if (shouldRefetch) {
         await refetch()
       }
-      updateModalState({ selectedConnectionId: connectionId })
+      patchModalState({ selectedConnectionId: connectionId })
     },
-    [selectedApp, selectedEvent, refetch, updateModalState],
+    [selectedApp, selectedEvent, refetch, patchModalState],
   )
 
   // Add a new connection and update the mock step for verifying and registering of connection
@@ -99,48 +86,54 @@ export default function ChooseAndAddConnection(
         }
 
         handleConnectionChange(newConnectionId, true)
-        updateModalState({
+        patchModalState({
           selectedConnectionId: newConnectionId,
           currentScreen: 'choose-connection',
         })
       }
     },
-    [handleConnectionChange, selectedApp, selectedEvent, updateModalState],
+    [handleConnectionChange, selectedApp, selectedEvent, patchModalState],
   )
 
   // If the step is not provided, create a new step; else update the existing step
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!selectedApp || !selectedEvent || !selectedConnectionId) {
       return
     }
 
-    updateModalState({ isLoading: true })
-    if (onCreateStep) {
-      onCreateStep(selectedApp.key, selectedEvent.key, selectedConnectionId)
-    } else if (step) {
-      onUpdateStep({
-        ...step,
-        appKey: selectedApp.key,
-        key: selectedEvent.key,
-        connection: {
-          id: selectedConnectionId,
-        },
-      })
-    }
-    // For a better visual experience, delay the closing of the modal
-    setTimeout(() => {
-      updateModalState({ isLoading: false })
+    patchModalState({ isLoading: true })
+    try {
+      if (prevStepId) {
+        await onCreateStep(
+          prevStepId,
+          selectedApp.key,
+          selectedEvent.key,
+          selectedConnectionId,
+        )
+      } else if (step) {
+        await onUpdateStep({
+          ...step,
+          appKey: selectedApp.key,
+          key: selectedEvent.key,
+          connection: {
+            id: selectedConnectionId,
+          },
+        })
+      }
       onClose()
-    }, 500)
+    } finally {
+      patchModalState({ isLoading: false })
+    }
   }, [
     selectedApp,
     selectedEvent,
     selectedConnectionId,
-    onCreateStep,
+    patchModalState,
+    prevStepId,
     step,
-    onClose,
+    onCreateStep,
     onUpdateStep,
-    updateModalState,
+    onClose,
   ])
 
   if (!flowId) {
@@ -150,15 +143,10 @@ export default function ChooseAndAddConnection(
   if (selectedApp && selectedEvent && currentScreen === 'choose-connection') {
     return (
       <ChooseConnection
-        selectedApp={selectedApp}
-        selectedConnectionId={selectedConnectionId}
-        updateModalState={updateModalState}
         appConnectionsLoading={appConnectionsLoading}
         connectionOptions={connectionOptions}
         handleConnectionChange={handleConnectionChange}
         handleSubmit={handleSubmit}
-        flowId={flowId}
-        step={step}
       />
     )
   }
@@ -166,8 +154,7 @@ export default function ChooseAndAddConnection(
     return (
       <AddConnection
         onSubmit={handleAddConnection}
-        selectedApp={selectedApp}
-        onBack={() => updateModalState({ currentScreen: 'choose-connection' })}
+        onBack={() => patchModalState({ currentScreen: 'choose-connection' })}
       />
     )
   }

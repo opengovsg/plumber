@@ -25,7 +25,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
         .$relatedQuery('connections')
         .findOne({ id: input.connection.id })
       // we check that the connection exists and is the same app
-      if (!connection || connection.key !== step.appKey) {
+      if (!connection || connection.key !== input.appKey) {
         throw new BadUserInputError('Connection not found')
       }
     }

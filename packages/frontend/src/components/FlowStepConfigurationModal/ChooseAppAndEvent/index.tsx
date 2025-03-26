@@ -1,8 +1,9 @@
-import { type IAction, IApp, IStep, ITrigger } from '@plumber/types'
+import { type IAction, IApp, ITrigger } from '@plumber/types'
 
-import { useCallback } from 'react'
+import { useCallback, useContext } from 'react'
 import { useQuery } from '@apollo/client'
 
+import { EditorContext } from '@/contexts/Editor'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import {
   TOOLBOX_ACTIONS,
@@ -11,38 +12,30 @@ import {
 } from '@/helpers/toolbox'
 
 import { APP_ALLOWING_EMPTY_CONNECTION } from '../constants'
+import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
-import { type ModalState } from '..'
 
 import ChooseApp from './ChooseApp'
 import ChooseEvent from './ChooseEvent'
 
 type ChooseAppAndEventProps = {
   onClose: () => void
-  isTrigger: boolean
-  isLastStep: boolean
-  modalState: ModalState
-  updateModalState: (newState: Partial<ModalState>) => void
-  onUpdateStep: (step: IStep) => Promise<IStep>
-  onCreateStep?: (
-    appKey: string,
-    eventKey: string,
-    connectionId?: string,
-  ) => Promise<IStep>
-  step?: IStep
 }
 
 export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
+  const { onClose } = props
+
+  const { onUpdateStep, onCreateStep } = useContext(EditorContext)
+
   const {
-    onClose,
-    isTrigger,
-    isLastStep,
     modalState,
-    updateModalState,
-    onUpdateStep,
-    onCreateStep,
+    patchModalState,
+    prevStepId,
+    isLastStep,
+    isTrigger,
     step,
-  } = props
+  } = useContext(FlowStepConfigurationContext)
+
   const { currentScreen, selectedApp } = modalState
 
   const { data } = useQuery(GET_APPS)
@@ -54,7 +47,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
   const onSelectAppEvent = useCallback(
     async (app: IApp, triggerOrAction: ITrigger | IAction) => {
       if (app.auth && app.key !== APP_ALLOWING_EMPTY_CONNECTION) {
-        updateModalState({
+        patchModalState({
           selectedApp: app,
           selectedEvent: triggerOrAction,
           currentScreen: 'choose-connection',
@@ -62,9 +55,9 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
         return
       }
       // If the app has no connections, create or update a new step and close the modal
-      updateModalState({ isLoading: true })
-      if (onCreateStep) {
-        await onCreateStep(app.key, triggerOrAction.key)
+      patchModalState({ isLoading: true })
+      if (prevStepId) {
+        await onCreateStep(prevStepId, app.key, triggerOrAction.key)
       } else if (step) {
         // account for the if-then edge case
         if (
@@ -82,17 +75,18 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       }
       // For a better visual experience, delay the closing of the modal
       setTimeout(() => {
-        updateModalState({ isLoading: false })
+        patchModalState({ isLoading: false })
         onClose()
       }, 500)
     },
     [
-      onClose,
-      onCreateStep,
-      onUpdateStep,
-      initializeIfThen,
+      patchModalState,
+      prevStepId,
       step,
-      updateModalState,
+      onCreateStep,
+      initializeIfThen,
+      onUpdateStep,
+      onClose,
     ],
   )
 
@@ -102,7 +96,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
         apps={apps}
         isTrigger={isTrigger}
         onSelectApp={(app: IApp) => {
-          updateModalState({
+          patchModalState({
             selectedApp: app,
             currentScreen: 'choose-event',
           })
@@ -118,7 +112,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
         isLastStep={isLastStep}
         onSelectAppEvent={onSelectAppEvent}
         onBack={() => {
-          updateModalState({
+          patchModalState({
             selectedApp: null,
             selectedEvent: null,
             selectedConnectionId: '',
