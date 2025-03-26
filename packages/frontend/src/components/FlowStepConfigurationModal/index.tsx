@@ -1,166 +1,98 @@
 import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
 
-import { useCallback, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { useMutation } from '@apollo/client'
+import { useContext } from 'react'
 import { Flex, Modal, ModalContent, ModalOverlay, Text } from '@chakra-ui/react'
 
-import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { useIfThenInitializer } from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
 
 import ChooseAndAddConnection from './ChooseAndAddConnection'
 import ChooseAppAndEvent from './ChooseAppAndEvent'
+import {
+  FlowStepConfigurationContext,
+  FlowStepConfigurationContextProvider,
+} from './FlowStepConfigurationContext'
 import InvalidModalScreen from './InvalidModalScreen'
 
 interface FlowStepConfigurationModalProps {
   onClose: () => void
   isTrigger: boolean
   isLastStep: boolean
-  onCreateStep?: (
-    appKey: string,
-    eventKey: string,
-    connectionId?: string,
-  ) => Promise<IStep> // For adding of a new step
   // for updating of an existing step
   step?: IStep
   app?: IApp
   event?: ITrigger | IAction
+  prevStepId?: string
 }
 
-export type ModalScreen =
-  | 'choose-app'
-  | 'choose-event'
-  | 'choose-connection'
-  | 'add-connection'
-
-export type ModalState = {
-  currentScreen: ModalScreen
-  selectedApp: IApp | null
-  selectedEvent: ITrigger | IAction | null
-  selectedConnectionId: string
-  isLoading: boolean
-}
-
-export default function FlowStepConfigurationModal(
-  props: FlowStepConfigurationModalProps,
-): JSX.Element {
-  const { onClose, isTrigger, isLastStep, onCreateStep, step, app, event } =
-    props
-  const { flowId } = useParams()
-  // Remember to always clear the selectedConnectionId when the modal is back to the first screen
-  const [modalState, setModalState] = useState<ModalState>({
-    currentScreen: 'choose-app',
-    selectedApp: app ?? null,
-    selectedEvent: event ?? null,
-    selectedConnectionId: step?.connection?.id ?? '',
-    isLoading: false,
-  })
-
+function FlowStepConfigurationModalContent({
+  onClose,
+}: {
+  onClose: () => void
+}): JSX.Element {
+  const { modalState, step } = useContext(FlowStepConfigurationContext)
   const { currentScreen, isLoading } = modalState
   const [_, isInitializingIfThen] = useIfThenInitializer()
 
-  const updateModalState = (newState: Partial<ModalState>) => {
-    setModalState((prevState) => ({ ...prevState, ...newState }))
+  if (isLoading || isInitializingIfThen) {
+    return (
+      <Flex flexDir="column" alignItems="center" gap={6} my={12}>
+        <PrimarySpinner margin="auto" fontSize="4xl" />
+        <Text>{step ? 'Updating step...' : 'Adding step...'}</Text>
+      </Flex>
+    )
   }
-  const [updateStep] = useMutation(UPDATE_STEP)
+  if (currentScreen === 'choose-app' || currentScreen === 'choose-event') {
+    return <ChooseAppAndEvent onClose={onClose} />
+  }
+  if (
+    currentScreen === 'choose-connection' ||
+    currentScreen === 'add-connection'
+  ) {
+    return <ChooseAndAddConnection onClose={onClose} />
+  }
+  return <InvalidModalScreen />
+}
 
-  const onUpdateStep = useCallback(
-    async (step: IStep) => {
-      const mutationInput: Record<string, unknown> = {
-        id: step.id,
-        key: step.key,
-        parameters: step.parameters,
-        connection: {
-          id: step.connection?.id,
-        },
-        flow: {
-          id: flowId,
-        },
-      }
-
-      if (step.appKey) {
-        mutationInput.appKey = step.appKey
-      }
-
-      const { data } = await updateStep({
-        variables: { input: mutationInput },
-      })
-      return data?.updateStep as IStep
-    },
-    [updateStep, flowId],
-  )
-
-  const currentScreenComponent = useMemo(() => {
-    // Group choose app and event together, and choose connection and add connection together
-    if (currentScreen === 'choose-app' || currentScreen === 'choose-event') {
-      return (
-        <ChooseAppAndEvent
-          onClose={onClose}
-          isTrigger={isTrigger}
-          isLastStep={isLastStep}
-          modalState={modalState}
-          updateModalState={updateModalState}
-          onUpdateStep={onUpdateStep}
-          onCreateStep={onCreateStep}
-          step={step}
-        />
-      )
-    } else if (
-      currentScreen === 'choose-connection' ||
-      currentScreen === 'add-connection'
-    ) {
-      return (
-        <ChooseAndAddConnection
-          onClose={onClose}
-          modalState={modalState}
-          updateModalState={updateModalState}
-          onUpdateStep={onUpdateStep}
-          onCreateStep={onCreateStep}
-          step={step}
-        />
-      )
-    } else {
-      return <InvalidModalScreen />
-    }
-  }, [
-    currentScreen,
-    onClose,
-    isTrigger,
-    isLastStep,
-    modalState,
-    onUpdateStep,
-    onCreateStep,
-    step,
-  ])
+/**
+ * This modal appears in two scenarios
+ * 1. Adding a new step
+ * 2. Editing the initial trigger or action of an empty flow
+ */
+export default function FlowStepConfigurationModal(
+  props: FlowStepConfigurationModalProps,
+): JSX.Element {
+  const { onClose, isTrigger, isLastStep, step, app, event, prevStepId } = props
 
   return (
-    <Modal
-      isCentered
-      isOpen={true}
-      onClose={onClose}
-      size="xl"
-      scrollBehavior="inside"
-      autoFocus={false}
+    <FlowStepConfigurationContextProvider
+      isTrigger={isTrigger}
+      isLastStep={isLastStep}
+      app={app}
+      event={event}
+      prevStepId={prevStepId}
+      step={step}
     >
-      <ModalOverlay bg="base.canvas.overlay" />
-      <ModalContent
-        maxW="600px"
-        maxH="90vh"
-        h="auto"
-        overflow="hidden"
-        borderRadius="lg"
+      <Modal
+        isCentered
+        isOpen={true}
+        onClose={onClose}
+        size="xl"
+        scrollBehavior="inside"
+        autoFocus={false}
       >
-        {isLoading || isInitializingIfThen ? (
-          <Flex flexDir="column" alignItems="center" gap={6} my={12}>
-            <PrimarySpinner margin="auto" fontSize="4xl" />
-            <Text>{step ? 'Updating step...' : 'Adding step...'}</Text>
-          </Flex>
-        ) : (
-          currentScreenComponent
-        )}
-      </ModalContent>
-    </Modal>
+        <ModalOverlay bg="base.canvas.overlay" />
+        <ModalContent
+          maxW="600px"
+          maxH="90vh"
+          h="auto"
+          overflow="hidden"
+          borderRadius="lg"
+        >
+          <FlowStepConfigurationModalContent onClose={onClose} />
+        </ModalContent>
+      </Modal>
+    </FlowStepConfigurationContextProvider>
   )
 }

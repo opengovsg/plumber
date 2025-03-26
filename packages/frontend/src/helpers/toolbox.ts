@@ -192,7 +192,7 @@ export function useIfThenInitializer(): [
             appKey: TOOLBOX_APP_KEY,
             key: TOOLBOX_ACTIONS.IfThen,
             flow: {
-              id: currStep.flow.id,
+              id: currStep.flowId,
             },
             parameters: {
               branchName: 'Branch 1',
@@ -213,7 +213,7 @@ export function useIfThenInitializer(): [
               id: currStep.id,
             },
             flow: {
-              id: currStep.flow.id,
+              id: currStep.flowId,
             },
             parameters: {
               depth,
@@ -240,7 +240,7 @@ export function useIfThenInitializer(): [
               id: currStep.id,
             },
             flow: {
-              id: currStep.flow.id,
+              id: currStep.flowId,
             },
           },
         },
@@ -252,7 +252,7 @@ export function useIfThenInitializer(): [
               id: secondBranch.data.createStep.id,
             },
             flow: {
-              id: currStep.flow.id,
+              id: currStep.flowId,
             },
           },
         },
