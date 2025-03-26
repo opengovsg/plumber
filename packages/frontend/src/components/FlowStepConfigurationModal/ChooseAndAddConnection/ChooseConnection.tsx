@@ -156,7 +156,7 @@ export default function ChooseConnection(
               testResult={testConnectionData?.testConnection}
               testResultLoading={testResultLoading}
               registerConnectionLoading={registerConnectionLoading}
-              isNewStep={true}
+              isNewStep={!step?.appKey || !step?.key}
             />
           </Flex>
         </Flex>
