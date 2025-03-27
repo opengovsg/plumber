@@ -1,6 +1,6 @@
 import { type IAction, IApp, ITrigger } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { BiArrowFromRight, BiChevronRight } from 'react-icons/bi'
 import {
   Box,
@@ -17,21 +17,34 @@ import { groupBy } from 'lodash'
 import { getAppFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
+import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+
 import FeedbackFooter from './FeedbackFooter'
 
 const OTHERS_CATEGORY = 'Other'
 
 interface ChooseAppProps {
   apps: IApp[]
-  isTrigger: boolean
-  onSelectApp: (app: IApp) => void
   onSelectAppEvent: (app: IApp, triggerOrAction: ITrigger | IAction) => void
 }
 
 export default function ChooseApp(props: ChooseAppProps) {
-  const { apps, isTrigger, onSelectApp, onSelectAppEvent } = props
+  const { apps, onSelectAppEvent } = props
   const launchDarkly = useContext(LaunchDarklyContext)
+  const { patchModalState, isTrigger } = useContext(
+    FlowStepConfigurationContext,
+  )
   const isLoading = launchDarkly.isLoading
+
+  const onSelectApp = useCallback(
+    (app: IApp) => {
+      patchModalState({
+        selectedApp: app,
+        currentScreen: 'choose-event',
+      })
+    },
+    [patchModalState],
+  )
 
   // Combine filtering and grouping logic into a single operation
   const groupedApps = useMemo(() => {
