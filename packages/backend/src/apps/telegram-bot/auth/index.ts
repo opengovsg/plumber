@@ -22,6 +22,9 @@ const auth: IUserAddedConnectionAuth = {
 
   verifyCredentials,
   isStillVerified,
+  connectionModalLabel: {
+    chooseConnectionLabel: 'Connect to Telegram',
+  },
 }
 
 export default auth

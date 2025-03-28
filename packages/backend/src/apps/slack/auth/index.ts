@@ -47,6 +47,9 @@ const auth: IUserAddedConnectionAuth = {
   generateAuthUrl,
   verifyCredentials,
   isStillVerified,
+  connectionModalLabel: {
+    chooseConnectionLabel: 'Connect to Slack',
+  },
 }
 
 export default auth

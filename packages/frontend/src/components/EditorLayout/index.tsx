@@ -32,6 +32,7 @@ import { GET_FLOW } from '@/graphql/queries/get-flow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import EditorSnackbar from './EditorSnackbar'
+import { LensSurvey } from './LensSurvey'
 
 export default function EditorLayout() {
   const { flowId } = useParams()
@@ -215,6 +216,7 @@ export default function EditorLayout() {
         <Container maxW={852} p={0}>
           <EditorProvider readOnly={isEditorReadOnly} flowId={flowId}>
             <Editor flow={flow} steps={flow.steps} />
+            {flow.active && flow.config?.showSurvey && <LensSurvey />}
           </EditorProvider>
         </Container>
       </VStack>

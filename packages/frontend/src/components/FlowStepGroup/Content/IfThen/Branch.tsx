@@ -38,18 +38,18 @@ import { BranchContext } from './BranchContext'
 interface BranchProps {
   flow: IFlow
   steps: IStep[]
-  setCurrentStepId: (stepId: string) => void
 }
 
 export default function Branch(props: BranchProps): JSX.Element {
-  const { flow, steps, setCurrentStepId } = props
+  const { flow, steps } = props
   const {
     isOpen: editorIsOpen,
     onOpen: openEditor,
     onClose: closeEditor,
   } = useDisclosure()
   const { depth } = useContext(BranchContext)
-  const { readOnly: isEditorReadOnly } = useContext(EditorContext)
+  const { readOnly: isEditorReadOnly, setCurrentStepId } =
+    useContext(EditorContext)
   const branchName = steps[0].parameters.branchName as string
 
   const initialStep = steps[0]

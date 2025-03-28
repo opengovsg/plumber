@@ -30,6 +30,9 @@ const auth: IUserAddedConnectionAuth = {
 
   verifyCredentials,
   isStillVerified: () => Promise.resolve(true),
+  connectionModalLabel: {
+    chooseConnectionLabel: 'Connect to Custom API',
+  },
 }
 
 export default auth
