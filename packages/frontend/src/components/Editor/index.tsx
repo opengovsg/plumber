@@ -1,8 +1,8 @@
 import type { IApp, IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useContext, useMemo, useState } from 'react'
+import { Fragment, useContext, useMemo } from 'react'
 import { BiPlus } from 'react-icons/bi'
-import { useMutation, useQuery } from '@apollo/client'
+import { useQuery } from '@apollo/client'
 import {
   AbsoluteCenter,
   Box,
@@ -13,46 +13,27 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
-import { Rating } from 'lens-widget'
 
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
-import appConfig from '@/config/app'
 import { EditorContext } from '@/contexts/Editor'
 import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
-import client from '@/graphql/client'
-import { CREATE_STEP } from '@/graphql/mutations/create-step'
-import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
-import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
-import {
-  TOOLBOX_ACTIONS,
-  TOOLBOX_APP_KEY,
-  useIfThenInitializer,
-} from '@/helpers/toolbox'
-import useAuthentication from '@/hooks/useAuthentication'
 
-import EmptyFlowStepHeaderModal from '../EmptyFlowStepHeader/EmptyFlowStepHeaderModal'
+import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
-// TODO(mal): Remove this comment before merging this main PR
 interface AddStepButtonProps {
-  onClick: (appKey: string, eventKey: string) => void
   isHidden: boolean
   isLastStep: boolean
+  stepId: string
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, isHidden, isLastStep } = props
+  const { isHidden, isLastStep, stepId } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
-
-  const handleSubmit = (appKey: string, actionKey: string) => {
-    onClick(appKey, actionKey)
-    onClose()
-  }
 
   if (isHidden) {
     return (
@@ -100,53 +81,16 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
         </AbsoluteCenter>
       </Box>
 
-      <EmptyFlowStepHeaderModal
-        isOpen={isOpen}
-        onClose={onClose}
-        isTrigger={false} // Can only add an action all the time
-        isLastStep={isLastStep}
-        onSubmit={handleSubmit}
-      />
+      {isOpen && (
+        <FlowStepConfigurationModal
+          onClose={onClose}
+          isTrigger={false} // Can only add an action all the time
+          isLastStep={isLastStep}
+          prevStepId={stepId}
+        />
+      )}
     </>
   )
-}
-
-function updateHandlerFactory(flowId: string, previousStepId: string) {
-  return function createStepUpdateHandler(cache: any, mutationResult: any) {
-    const { data } = mutationResult
-    const { createStep: createdStep } = data
-    const { getFlow: flow } = cache.readQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-    })
-
-    // getFlow requires certain attributes to be returned
-    const completeCreatedStep = {
-      ...createdStep,
-      iconUrl: null,
-      webhookUrl: null,
-      config: {
-        templateConfig: {
-          appEventKey: null,
-        },
-      },
-      createdAt: new Date().toISOString(),
-    }
-
-    const steps = flow.steps.reduce((steps: any[], currentStep: any) => {
-      if (currentStep.id === previousStepId) {
-        return [...steps, currentStep, completeCreatedStep]
-      }
-
-      return [...steps, currentStep]
-    }, [])
-
-    cache.writeQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-      data: { getFlow: { ...flow, steps } },
-    })
-  }
 }
 
 type EditorProps = {
@@ -155,23 +99,14 @@ type EditorProps = {
 }
 
 export default function Editor(props: EditorProps): React.ReactElement {
-  const [updateStep] = useMutation(UPDATE_STEP)
-  const [createStep, { loading: creationInProgress }] = useMutation(
-    CREATE_STEP,
-    { refetchQueries: [GET_FLOW] },
-  )
-  const [initializeIfThen] = useIfThenInitializer()
-
   const { flow, steps: rawSteps } = props
-  const showSurvey = flow.active && flow.config?.showSurvey
-  const { currentUser } = useAuthentication()
 
-  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
-  const onFlowConfigUpdate = useCallback(async () => {
-    await updateFlowConfig({
-      variables: { input: { id: flow.id, showSurvey: false } },
-    })
-  }, [updateFlowConfig, flow.id])
+  const {
+    readOnly: isReadOnlyEditor,
+    currentStepId,
+    onUpdateStep,
+    setCurrentStepId,
+  } = useContext(EditorContext)
 
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
@@ -184,84 +119,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
         flowId: flow.id,
       })),
     [flow, rawSteps],
-  )
-
-  const [currentStepId, setCurrentStepId] = useState<string | null>(
-    steps[0]?.id,
-  )
-
-  const { readOnly: isReadOnlyEditor } = useContext(EditorContext)
-
-  const onStepChange = useCallback(
-    (step: IStep) => {
-      const mutationInput: Record<string, unknown> = {
-        id: step.id,
-        key: step.key,
-        parameters: step.parameters,
-        connection: {
-          id: step.connection?.id,
-        },
-        flow: {
-          id: flow.id,
-        },
-      }
-
-      if (step.appKey) {
-        mutationInput.appKey = step.appKey
-      }
-
-      updateStep({
-        variables: { input: mutationInput },
-      })
-    },
-    [updateStep, flow.id],
-  )
-
-  // Add a step to the flow with the given appKey and eventKey
-  const addStep = useCallback(
-    async (previousStepId: string, appKey: string, eventKey: string) => {
-      const mutationInput = {
-        previousStep: {
-          id: previousStepId,
-        },
-        flow: {
-          id: flow.id,
-        },
-        appKey,
-        key: eventKey,
-      }
-
-      const createdStep = await createStep({
-        variables: { input: mutationInput },
-        update: updateHandlerFactory(flow.id, previousStepId),
-      })
-
-      const newStep = createdStep.data.createStep
-      setCurrentStepId(newStep.id)
-
-      // account for the if-then edge case
-      if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
-        // Get the complete step data from the cache
-        const { getFlow: updatedFlow } = client.readQuery({
-          query: GET_FLOW,
-          variables: { id: flow.id },
-        })
-
-        const completeStep = updatedFlow.steps.find(
-          (s: IStep) => s.id === newStep.id,
-        )
-
-        if (completeStep) {
-          const completeStepWithFlow = {
-            ...completeStep,
-            flow,
-            flowId: flow.id,
-          }
-          await initializeIfThen(completeStepWithFlow)
-        }
-      }
-    },
-    [createStep, flow, initializeIfThen],
   )
 
   // FIXME (ogp-weeloong): optimize this a bit further by omitting query.
@@ -365,6 +222,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
         flexDir="column"
         alignItems="center"
         py={3}
+        pb={24}
         w="53.25rem"
         maxW="full"
       >
@@ -378,7 +236,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 collapsed={currentStepId !== step.id}
                 onOpen={() => setCurrentStepId(step.id)}
                 onClose={() => setCurrentStepId(null)}
-                onChange={onStepChange}
+                onChange={onUpdateStep}
                 onContinue={() => {
                   if (
                     index === stepsBeforeGroup.length - 1 &&
@@ -392,15 +250,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 templateConfig={flow?.config?.templateConfig}
               />
               <AddStepButton
-                onClick={(appKey, eventKey) => {
-                  addStep(step.id, appKey, eventKey)
-                }}
-                isHidden={
-                  creationInProgress ||
-                  isReadOnlyEditor ||
-                  isTriggerOrActionAbsent
-                }
+                isHidden={isReadOnlyEditor || isTriggerOrActionAbsent}
                 isLastStep={index === steps.length - 1}
+                stepId={step.id}
               />
             </Fragment>
           ))}
@@ -412,24 +264,10 @@ export default function Editor(props: EditorProps): React.ReactElement {
               collapsed={currentStepId !== groupedSteps[0].id}
               onOpen={() => setCurrentStepId(groupedSteps[0].id)}
               onClose={() => setCurrentStepId(null)}
-              setCurrentStepId={setCurrentStepId}
             />
           )}
         </StepExecutionsToIncludeProvider>
       </Flex>
-
-      {showSurvey && (
-        <Rating
-          clientKey={appConfig.lensSurveyClientKey}
-          brandColour="#cf1a68"
-          attributes={[
-            `FlowId: ${flow.id}`,
-            `UserEmail: ${currentUser?.email}`,
-          ]}
-          onSubmit={onFlowConfigUpdate}
-          onClose={onFlowConfigUpdate}
-        />
-      )}
     </Flex>
   )
 }
