@@ -80,6 +80,10 @@ export const GET_APPS = gql`
             }
           }
         }
+        connectionModalLabel {
+          chooseConnectionLabel
+          addConnectionLabel
+        }
       }
       triggers {
         name

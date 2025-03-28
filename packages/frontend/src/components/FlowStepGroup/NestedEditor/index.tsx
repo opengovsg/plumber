@@ -1,5 +1,6 @@
 import { type IFlow, type IStep } from '@plumber/types'
 
+import { useContext } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
 import {
   Box,
@@ -11,6 +12,7 @@ import {
 import { Button } from '@opengovsg/design-system-react'
 
 import Editor from '@/components/Editor'
+import { EditorContext, EditorProvider } from '@/contexts/Editor'
 
 interface NestedEditorProps {
   flow: IFlow
@@ -21,6 +23,8 @@ interface NestedEditorProps {
 
 export default function NestedEditor(props: NestedEditorProps): JSX.Element {
   const { flow, steps, isOpen, onClose } = props
+
+  const { flowId, readOnly } = useContext(EditorContext)
 
   return (
     <Modal
@@ -53,7 +57,11 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
           </Button>
         </ModalHeader>
         <Box p={8}>
-          <Editor flow={flow} steps={steps} />
+          {/* We wrap this nested editor in an EditorProvider to ensure currentStepId
+            is of a different scope than the parent editor. */}
+          <EditorProvider flowId={flowId} readOnly={readOnly}>
+            <Editor flow={flow} steps={steps} />
+          </EditorProvider>
         </Box>
       </ModalContent>
     </Modal>
