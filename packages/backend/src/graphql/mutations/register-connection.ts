@@ -19,29 +19,21 @@ async function makeGlobalVariableForGlobalRegistration(
   })
 }
 
-async function makeGlobalVariableForPerStepRegistration(
+async function makeGlobalVariableForPerFlowRegistration(
   currentUser: User,
   app: IApp,
   connection: Connection,
-  stepId: string,
+  flowId: string,
 ): Promise<IGlobalVariable> {
-  const step = await currentUser
-    .$relatedQuery('steps')
-    .withGraphFetched({
-      connection: true,
-      flow: { user: true },
-    })
-    .findById(stepId)
+  const flow = await currentUser
+    .$relatedQuery('flows')
+    .findById(flowId)
     .throwIfNotFound()
-  if (step.connectionId !== connection.id) {
-    throw new Error('Connection does not match step')
-  }
 
   return await globalVariable({
     connection,
     app,
-    step,
-    flow: step.flow,
+    flow,
     user: currentUser,
   })
 }
@@ -51,7 +43,7 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
   params,
   context,
 ) => {
-  const { connectionId, stepId } = params.input
+  const { connectionId, flowId } = params.input
 
   const connection = await context.currentUser
     .$relatedQuery('connections')
@@ -75,11 +67,11 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
           app,
           connection,
         )
-      : await makeGlobalVariableForPerStepRegistration(
+      : await makeGlobalVariableForPerFlowRegistration(
           context.currentUser,
           app,
           connection,
-          stepId,
+          flowId,
         )
 
   const connectionStillVerified = await app.auth.isStillVerified($)

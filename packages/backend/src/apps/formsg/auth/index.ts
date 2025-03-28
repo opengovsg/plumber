@@ -47,6 +47,10 @@ const auth: IUserAddedConnectionAuth = {
   connectionRegistrationType: 'per-step' as const,
   registerConnection: registerWebhookUrl,
   verifyConnectionRegistration: verifyWebhookUrl,
+  connectionModalLabel: {
+    chooseConnectionLabel: 'Choose form to connect',
+    addConnectionLabel: 'Add new form',
+  },
 }
 
 export default auth
