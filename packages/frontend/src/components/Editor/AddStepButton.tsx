@@ -48,7 +48,11 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
               h={20}
               my={2}
             />
-            <EmptyFlowStepHeader isTrigger={false} onModalOpen={onOpen} />
+            <EmptyFlowStepHeader
+              isDrawerOpen={false}
+              isTrigger={false}
+              onModalOpen={onOpen}
+            />
           </>
         )}
         {/* Top vertical line */}

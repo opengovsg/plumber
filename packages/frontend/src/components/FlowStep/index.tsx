@@ -38,11 +38,11 @@ export default function FlowStep(
   const {
     step,
     collapsed,
+    isDrawerOpen,
+    isLastStep,
     onOpen,
     onClose,
     templateConfig,
-    isDrawerOpen,
-    isLastStep,
   } = props
 
   const {
@@ -51,10 +51,10 @@ export default function FlowStep(
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { isMobile, readOnly, setCurrentStepId, setCurrentStepIndex } =
+  const { allApps, isMobile, readOnly, setCurrentStepId, setCurrentStepIndex } =
     useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
-  const { app, caption, isTrigger } = useStepMetadata(step)
+  const { app, caption, isTrigger } = useStepMetadata(allApps, step)
 
   const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
     () => (isTrigger ? app?.triggers : app?.actions) || [],

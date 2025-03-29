@@ -1,13 +1,9 @@
 import { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { useMemo } from 'react'
-import { useQuery } from '@apollo/client'
-
-import { GET_APPS } from '@/graphql/queries/get-apps'
 
 interface UseStepMetadataResult {
   app: IApp | undefined
-  apps: IApp[]
   selectedActionOrTrigger: IAction | ITrigger | undefined
   caption: string
   isIfThenStep: boolean
@@ -16,16 +12,16 @@ interface UseStepMetadataResult {
 }
 
 export function useStepMetadata(
+  allApps: IApp[],
   step: IStep | undefined,
 ): UseStepMetadataResult {
-  const { data } = useQuery(GET_APPS)
   const isTrigger = useMemo(() => step?.type === 'trigger', [step])
   const isIfThenStep = useMemo(
     () => step?.appKey === 'toolbox' && step?.key === 'ifThen',
     [step],
   )
 
-  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
+  const apps: IApp[] = allApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
   const app = apps?.find((currentApp: IApp) => currentApp.key === step?.appKey)
@@ -50,6 +46,10 @@ export function useStepMetadata(
     caption = `${step?.position ? `${step.position}. ` : ''}${
       selectedActionOrTrigger?.name
     }`
+
+    if (selectedActionOrTrigger.key === 'ifThen') {
+      caption = `${step?.position ? `${step.position}. ` : ''} If condition`
+    }
   } else if (app?.name) {
     caption = `${step?.position ? `${step.position}. ` : ''}${app.name}`
   } else if (isTrigger) {
@@ -67,7 +67,6 @@ export function useStepMetadata(
 
   return {
     app,
-    apps,
     selectedActionOrTrigger,
     caption,
     isIfThenStep,
