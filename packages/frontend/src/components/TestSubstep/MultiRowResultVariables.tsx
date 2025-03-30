@@ -1,4 +1,4 @@
-import { IAction, IStep, ITrigger, TDataOutMetadatumType } from '@plumber/types'
+import { IAction, IStep, ITrigger } from '@plumber/types'
 
 import { useMemo } from 'react'
 import { MdOpenInNew } from 'react-icons/md'
@@ -29,27 +29,32 @@ export default function MultiRowResultVariables(
       }
     }
 
-    const columns = variables
-      .filter((v) => v.name.includes('columns'))
-      .map((variable) =>
-        step.appKey === 'tiles' ? variable.label : variable.value,
-      )
+    /**
+     * NOTE (kevinkim-ogp): for initial user tests, we do not show column names in the variable output to reduce confusion for users.
+     * Enable this only if required, otherwise remove before release
+     */
 
-    const columnsVariable = {
-      name: 'columns',
-      label: 'Columns',
-      value: columns.join(', '),
-      type: 'text' as TDataOutMetadatumType,
-      order: 1,
-      displayedValue: columns.join(', '),
-    } as Variable
+    // const columns = variables
+    //   .filter((v) => v.name.includes('columns'))
+    //   .map((variable) =>
+    //     step.appKey === 'tiles' ? variable.label : variable.value,
+    //   )
+
+    // const columnsVariable = {
+    //   name: 'columns',
+    //   label: 'Columns',
+    //   value: columns.join(', '),
+    //   type: 'text' as TDataOutMetadatumType,
+    //   order: 1,
+    //   displayedValue: columns.join(', '),
+    // } as Variable
 
     const variablesWithModal = variables.filter(
       (v) => v.name.split('.').pop() === 'rows',
     )
 
     const variableListVariables = [
-      columnsVariable,
+      // columnsVariable,
       ...variables.filter(
         (v) =>
           v.name.split('.').pop() === 'rowsFound' &&
@@ -61,7 +66,7 @@ export default function MultiRowResultVariables(
       variablesWithModal,
       variableListVariables,
     }
-  }, [step, variables])
+  }, [variables])
 
   if (step.status !== 'completed') {
     return <></>
