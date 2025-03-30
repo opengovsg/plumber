@@ -3,10 +3,10 @@ import { IStep } from '@plumber/types'
 import { Fragment, useContext } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
-import { AddStepButton } from '@/components/Editor/AddStepButton'
 import FlowStep from '@/components/FlowStep'
 import { EditorContext } from '@/contexts/Editor'
 
+import { HoverAddStepButton } from './HoverAddStepButton'
 import { branchStyles } from './styles'
 
 interface BranchProps {
@@ -14,7 +14,8 @@ interface BranchProps {
     previousStepId: string,
     appKey: string,
     eventKey: string,
-  ) => Promise<void>
+    connectionId?: string,
+  ) => Promise<IStep>
   branchSteps: IStep[]
   groupedSteps: IStep[][]
   stepsBeforeGroup: IStep[]
@@ -111,12 +112,10 @@ export default function Branch(props: BranchProps) {
               }}
               onChange={onUpdateStep}
             />
-            <AddStepButton
+            <HoverAddStepButton
+              onClick={() => addStep(step.id, step?.appKey, step?.key)}
               isDisabled={isEditorReadOnly}
-              isHidden={isEditorReadOnly}
               isLastStep={index === branchSteps.length - 1}
-              stepId={step.id}
-              showEmptyAction={false}
             />
           </Fragment>
         )
