@@ -1,200 +1,126 @@
-import { type IFlow, type IStep } from '@plumber/types'
+import { IStep } from '@plumber/types'
 
-import {
-  type MouseEventHandler,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-} from 'react'
-import { BiSolidCheckCircle, BiTrashAlt } from 'react-icons/bi'
-import { useMutation } from '@apollo/client'
-import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
-  Flex,
-  Icon,
-  Text,
-  useDisclosure,
-} from '@chakra-ui/react'
-import { Button, IconButton } from '@opengovsg/design-system-react'
+import { Fragment, useContext } from 'react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 
-import NestedEditor from '@/components/FlowStepGroup/NestedEditor'
+import { AddStepButton } from '@/components/Editor/AddStepButton'
+import FlowStep from '@/components/FlowStep'
 import { EditorContext } from '@/contexts/Editor'
-import {
-  type StepDisplayOverridesContextData,
-  StepDisplayOverridesProvider,
-} from '@/contexts/StepDisplayOverrides'
-import { DELETE_STEP } from '@/graphql/mutations/delete-step'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { isIfThenBranchCompleted, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
-import { BranchContext } from './BranchContext'
+import { branchStyles } from './styles'
 
 interface BranchProps {
-  flow: IFlow
-  steps: IStep[]
-  onClose: () => void
+  addStep: (
+    previousStepId: string,
+    appKey: string,
+    eventKey: string,
+  ) => Promise<void>
+  branchSteps: IStep[]
+  groupedSteps: IStep[][]
+  stepsBeforeGroup: IStep[]
 }
 
-export default function Branch(props: BranchProps): JSX.Element {
-  const { flow, steps, onClose } = props
+export default function Branch(props: BranchProps) {
+  const { addStep, branchSteps, groupedSteps, stepsBeforeGroup } = props
+
   const {
-    isOpen: editorIsOpen,
-    onOpen: openEditor,
-    onClose: closeEditor,
-  } = useDisclosure()
-  const { depth } = useContext(BranchContext)
-  const { readOnly: isEditorReadOnly, setCurrentStepId } =
-    useContext(EditorContext)
-  const branchName = steps[0].parameters.branchName as string
-
-  const initialStep = steps[0]
-  const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
-    () => ({
-      [initialStep.id]: {
-        hintAboveCaption: 'If-then',
-        // Only the 1st branch can have an undefined name.
-        caption: (initialStep.parameters.branchName as string) ?? 'Branch 1',
-        disableActionChanges: true,
-        disableDelete: true,
-      },
-    }),
-    [initialStep.id, initialStep.parameters.branchName],
-  )
-  const isCompleted = useMemo(() => isIfThenBranchCompleted(steps), [steps])
-
-  //
-  // Handle branch deletion
-  //
-  const {
-    isOpen: deleteConfirmationIsOpen,
-    onOpen: openDeleteConfirmationImpl,
-    onClose: closeDeleteConfirmation,
-  } = useDisclosure()
-  const cancelDeleteButton = useRef<HTMLButtonElement>(null)
-  const [deleteStep, { loading: isDeletingBranch }] = useMutation(DELETE_STEP, {
-    refetchQueries: [GET_FLOW],
-  })
-  const openDeleteConfirmation = useCallback<MouseEventHandler>(
-    (e) => {
-      e.stopPropagation()
-      openDeleteConfirmationImpl()
-    },
-    [openDeleteConfirmationImpl],
-  )
-  const deleteBranch = useCallback(async () => {
-    const idsToDelete = steps.map((step) => step.id)
-    await deleteStep({
-      variables: { input: { ids: idsToDelete } },
-    })
-
-    // prevents accordion from collapsing when deleting the first branch
-    const ifThenRemaining = flow.steps
-      .filter(
-        (step) =>
-          step.key === TOOLBOX_ACTIONS.IfThen && !idsToDelete.includes(step.id),
-      )
-      .map((step) => step.id)
-    if (ifThenRemaining.length > 0) {
-      setCurrentStepId(ifThenRemaining[0])
-    }
-    closeDeleteConfirmation()
-    if (ifThenRemaining.length === 0) {
-      onClose()
-    }
-  }, [
-    closeDeleteConfirmation,
-    deleteStep,
-    flow,
-    steps,
+    currentStepId,
+    isDrawerOpen,
+    isMobile,
+    readOnly: isEditorReadOnly,
+    onDrawerClose,
+    onDrawerOpen,
+    onUpdateStep,
     setCurrentStepId,
-    onClose,
-  ])
+    setCurrentStepIndex,
+  } = useContext(EditorContext)
 
   return (
-    <>
-      {/*
-       * Branch row
-       */}
-      <Flex
-        onClick={openEditor}
-        h={16}
-        w="full"
-        alignItems="center"
-        px={4}
-        _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
-        _active={{ bg: 'interaction.muted.neutral.active' }}
+    <Flex key={branchSteps[0].id} {...branchStyles.container}>
+      <Box
+        borderWidth="1px"
+        border="none"
+        p={0}
+        bg="white"
+        overflow="hidden"
+        w={
+          isDrawerOpen
+            ? isMobile
+              ? '0px'
+              : '100%'
+            : isMobile
+            ? '100%'
+            : '40rem'
+        }
+        mb={2}
       >
-        <Text textStyle="subhead-1">{branchName}</Text>
-        {isCompleted && (
-          <Icon
-            ml={1}
-            boxSize={4}
-            color="interaction.success.default"
-            as={BiSolidCheckCircle}
-          />
-        )}
-        <IconButton
-          onClick={openDeleteConfirmation}
-          variant="clear"
-          aria-label="Delete Branch"
-          icon={<BiTrashAlt />}
-          isLoading={isDeletingBranch}
-          isDisabled={isEditorReadOnly}
-          ml="auto"
-          colorScheme="secondary"
-        />
-      </Flex>
-      {/*
-       * Delete Confirmation Modal
-       */}
-      <AlertDialog
-        isOpen={deleteConfirmationIsOpen}
-        leastDestructiveRef={cancelDeleteButton}
-        onClose={closeDeleteConfirmation}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader>Delete {branchName}</AlertDialogHeader>
-            <AlertDialogBody>
-              Are you sure you want to delete this branch? This action cannot be
-              undone.
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button
-                colorScheme="neutral"
-                variant="clear"
-                ref={cancelDeleteButton}
-                onClick={closeDeleteConfirmation}
-              >
-                Cancel
-              </Button>
-              <Button colorScheme="critical" onClick={deleteBranch} ml={3}>
-                Yes, delete branch
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
-      {/*
-       * Nexted branch editor (pops up in modal)
-       */}
-      {/* Nested If-thens should have depth = depth + 1 */}
-      <BranchContext.Provider value={{ depth: depth + 1 }}>
-        <StepDisplayOverridesProvider value={initialStepDisplayOverride}>
-          <NestedEditor
-            onClose={closeEditor}
-            isOpen={editorIsOpen}
-            flow={flow}
-            steps={steps}
-          />
-        </StepDisplayOverridesProvider>
-      </BranchContext.Provider>
-    </>
+        <Flex alignItems="center" borderRadius="inherit" w="full">
+          {/* Branch name */}
+          <Text textStyle="subhead-1" color="base.content.default">
+            {branchSteps[0].parameters.branchName as string}
+          </Text>
+
+          {/* FIXME (kevinkim-ogp): make this only appear on hover to minimise confusion between delete entire branch and deleting branch steps */}
+          {/* <Flex ml="auto">
+            <IconButton
+              boxSize={8}
+              onClick={(event) => {
+                // onDialogOpen()
+                event.stopPropagation()
+              }}
+              variant="clear"
+              aria-label="Delete branch"
+              icon={<BiTrashAlt />}
+            />
+          </Flex> */}
+        </Flex>
+      </Box>
+      {branchSteps.map((step, index) => {
+        return (
+          <Fragment key={`${step.id}-${stepsBeforeGroup.length + index}`}>
+            <FlowStep
+              step={step}
+              isNested={true}
+              isLastStep={index === branchSteps.length - 1}
+              // FIXME (kevinkim-ogp): this is a temporary solution to ensure the step is collapsed when the drawer is closed
+              collapsed={
+                !isDrawerOpen && currentStepId === step.id
+                  ? true
+                  : currentStepId !== step.id
+              }
+              onOpen={() => {
+                setCurrentStepId(step.id)
+                setCurrentStepIndex(stepsBeforeGroup.length + index)
+                onDrawerOpen()
+              }}
+              onClose={() => {
+                setCurrentStepId(null)
+                setCurrentStepIndex(null)
+                onDrawerClose()
+              }}
+              onContinue={() => {
+                // FIXME (kevinkim-ogp): this doesn't seem correct
+                if (
+                  index === stepsBeforeGroup.length - 1 &&
+                  groupedSteps.length > 0
+                ) {
+                  setCurrentStepId(groupedSteps[0][0].id)
+                } else {
+                  setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+                }
+              }}
+              onChange={onUpdateStep}
+            />
+            <AddStepButton
+              isDisabled={isEditorReadOnly}
+              isHidden={isEditorReadOnly}
+              isLastStep={index === branchSteps.length - 1}
+              stepId={step.id}
+              showEmptyAction={false}
+            />
+          </Fragment>
+        )
+      })}
+    </Flex>
   )
 }

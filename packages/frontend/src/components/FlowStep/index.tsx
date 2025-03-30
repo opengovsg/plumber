@@ -1,9 +1,4 @@
-import type {
-  IAction,
-  IFlowTemplateConfig,
-  IStep,
-  ITrigger,
-} from '@plumber/types'
+import type { IAction, IStep, ITrigger } from '@plumber/types'
 
 import { type MouseEventHandler, useCallback, useContext, useMemo } from 'react'
 import { useMutation } from '@apollo/client'
@@ -14,7 +9,6 @@ import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
@@ -23,27 +17,19 @@ import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 type FlowStepProps = {
   collapsed?: boolean
   step: IStep
-  isDrawerOpen: boolean
   isLastStep: boolean
+  isNested?: boolean
   index?: number
   onOpen: () => void
   onClose: () => void
   onContinue?: () => void
-  templateConfig?: IFlowTemplateConfig
+  shouldHighlight?: boolean
 }
 
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const {
-    step,
-    collapsed,
-    isDrawerOpen,
-    isLastStep,
-    onOpen,
-    onClose,
-    templateConfig,
-  } = props
+  const { step, collapsed, isLastStep, onOpen, onClose } = props
 
   const {
     isOpen: isModalOpen,
@@ -51,8 +37,15 @@ export default function FlowStep(
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { allApps, isMobile, readOnly, setCurrentStepId, setCurrentStepIndex } =
-    useContext(EditorContext)
+  const {
+    allApps,
+    currentStepId,
+    isDrawerOpen,
+    isMobile,
+    readOnly,
+    setCurrentStepId,
+    setCurrentStepIndex,
+  } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const { app, caption, isTrigger } = useStepMetadata(allApps, step)
 
@@ -89,18 +82,7 @@ export default function FlowStep(
     [deleteStep, step.id, onClose, setCurrentStepId, setCurrentStepIndex],
   )
 
-  // generate help message only if template config exists
-  const stepAppEventKey = `${step?.appKey}_${step?.key}`
-  const templateStepAppEventKey = step.config.templateConfig?.appEventKey
-  const templateStepHelpMessage = replacePlaceholdersForHelpMessage(
-    templateStepAppEventKey,
-    templateConfig,
-  )
-
-  // Only show if the template step app key matches the current step app key
-  // and has a help message (once tested successfully, the template step app key is removed)
-  const shouldShowInfobox: boolean =
-    stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
+  const shouldHighlight = currentStepId === step.id
 
   return (
     <>
@@ -132,7 +114,7 @@ export default function FlowStep(
             collapsed={collapsed ?? true}
             demoVideoUrl={app?.demoVideoDetails?.url}
             demoVideoTitle={app?.demoVideoDetails?.title}
-            isInfoboxPresent={shouldShowInfobox}
+            shouldHighlight={shouldHighlight}
           />
         )}
       </Flex>

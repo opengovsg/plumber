@@ -1,4 +1,4 @@
-import { IFlow, IStep } from '@plumber/types'
+import { IFlow } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
 import { Box, CloseButton, Flex } from '@chakra-ui/react'
@@ -15,7 +15,6 @@ interface EditorRightDrawerProps {
   index: number | null
   isLastStep: boolean
   isNested?: boolean
-  groupedSteps: IStep[]
   steps: any[]
 }
 

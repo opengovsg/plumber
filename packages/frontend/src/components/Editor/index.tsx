@@ -3,7 +3,6 @@ import type { IApp, IFlow, IStep } from '@plumber/types'
 import { Fragment, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
 
-import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
 import EditorRightDrawer from '@/components/EditorRightDrawer'
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
@@ -12,11 +11,16 @@ import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
-import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
+import {
+  extractBranchesWithSteps,
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
 
 import { AddStepButton } from './AddStepButton'
+import { editorStyles } from './styles'
 
 type EditorProps = {
   flow: IFlow
@@ -28,16 +32,17 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const { flow, steps: rawSteps, isNested } = props
 
   const {
+    allApps,
     readOnly: isReadOnlyEditor,
     isDrawerOpen,
     isMobile,
     currentStepId,
     currentStepIndex,
-    onDrawerOpen,
+    onCreateStep,
     onDrawerClose,
+    onDrawerOpen,
     setCurrentStepId,
     setCurrentStepIndex,
-    allApps,
   } = useContext(EditorContext)
 
   const steps = useMemo(
@@ -89,9 +94,15 @@ export default function Editor(props: EditorProps): React.ReactElement {
       }
       return groupingActions.has(`${step.appKey}-${step.key}`)
     })
+
+    let branchesWithSteps: IStep[][] = []
+    if (groupStepIdx !== -1) {
+      branchesWithSteps = extractBranchesWithSteps(steps.slice(groupStepIdx), 0)
+    }
+
     return groupStepIdx === -1
       ? [steps, []]
-      : [steps.slice(0, groupStepIdx), steps.slice(groupStepIdx)]
+      : [steps.slice(0, groupStepIdx), branchesWithSteps]
   }, [
     groupingActions,
     // updateHandlerFactory creates a new array, so referential equality is OK.
@@ -103,7 +114,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     if (groupedSteps.length === 0) {
       return undefined
     }
-    return appsWithActions.find((app) => app.key === groupedSteps[0].appKey)
+    return appsWithActions.find((app) => app.key === groupedSteps[0][0].appKey)
       ?.iconUrl
   }, [appsWithActions, groupedSteps])
 
@@ -157,9 +168,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
       if (isMobile) {
         return 0
       }
-      if (isNested) {
-        return '3rem'
-      }
       return '5rem'
     }
     return 0
@@ -169,24 +177,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
     <Flex w="full" justifyContent={isDrawerOpen ? 'space-between' : 'center'}>
       <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
         <Flex
-          display="block"
-          flexDir="column"
+          {...editorStyles.container}
           flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
-          height={isNested ? undefined : EDITOR_MAX_HEIGHT}
-          minH="100%"
-          w="100%"
-          maxW="full"
-          alignItems="center"
-          overflowY="auto"
-          py={3}
           px={getStepPadding()}
-          transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
         >
           {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
-                isDrawerOpen={isDrawerOpen}
                 isLastStep={index === steps.length - 1}
                 index={index + 1}
                 collapsed={
@@ -209,12 +207,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
                     index === stepsBeforeGroup.length - 1 &&
                     groupedSteps.length > 0
                   ) {
-                    setCurrentStepId(groupedSteps[0].id)
+                    setCurrentStepId(groupedSteps[0][0].id)
                   } else {
                     setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
                   }
                 }}
-                templateConfig={flow?.config?.templateConfig}
+                shouldHighlight={
+                  groupedSteps.length > 0 && groupedSteps[0][0].id === step.id
+                }
               />
               <AddStepButton
                 // hide all add button steps if is readonly
@@ -233,21 +233,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
           ))}
           {groupedSteps.length > 0 && (
             <FlowStepGroup
-              iconUrl={flowStepGroupIconUrl}
-              isDrawerOpen={isDrawerOpen}
-              flow={flow}
-              steps={groupedSteps}
-              collapsed={currentStepId !== groupedSteps[0].id}
-              onOpen={() => {
-                setCurrentStepId(groupedSteps[0].id)
-                onDrawerOpen()
-              }}
-              onClose={() => {
-                setCurrentStepId(null)
-                onDrawerClose()
-              }}
-              setCurrentStepId={setCurrentStepId}
-            />
+              stepsBeforeGroup={stepsBeforeGroup}
+              groupedSteps={groupedSteps}
+              addStep={onCreateStep}
+            >
+              {null}
+            </FlowStepGroup>
           )}
         </Flex>
 
@@ -257,7 +248,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
           index={currentStepIndex}
           isLastStep={currentStepIndex === steps.length - 1}
           isNested={isNested}
-          groupedSteps={groupedSteps}
           steps={steps}
         />
       </StepExecutionsToIncludeProvider>

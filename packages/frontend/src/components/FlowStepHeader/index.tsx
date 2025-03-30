@@ -2,13 +2,14 @@ import {
   type MouseEvent,
   type MouseEventHandler,
   useCallback,
+  useContext,
+  useMemo,
   useRef,
   useState,
 } from 'react'
 import {
   BiArrowFromRight,
   BiHelpCircle,
-  BiSolidCheckCircle,
   BiSolidErrorCircle,
   BiTrashAlt,
 } from 'react-icons/bi'
@@ -24,14 +25,14 @@ import {
   Tooltip,
   useDisclosure,
 } from '@chakra-ui/react'
-import { IconButton, useIsMobile } from '@opengovsg/design-system-react'
+import { IconButton } from '@opengovsg/design-system-react'
 
 import DemoVideoModalContent from '@/components/FlowRow/DemoVideoModalContent'
-import { getFlowStepWidth } from '@/helpers/editor'
+import { EditorContext } from '@/contexts/Editor'
 
 import MenuAlertDialog from '../MenuAlertDialog'
 
-import { stepHeaderBoxStyles } from './style'
+import { flowStepHeaderStyles } from './styles'
 
 interface FlowStepHeaderProps {
   iconUrl?: string
@@ -39,6 +40,7 @@ interface FlowStepHeaderProps {
   hintAboveCaption: string | null
   isCompleted?: boolean
   isDrawerOpen: boolean
+  isNested?: boolean
   onDelete?: MouseEventHandler
   isDeleting?: boolean
   onOpen: () => void
@@ -46,7 +48,7 @@ interface FlowStepHeaderProps {
   collapsed: boolean
   demoVideoUrl?: string
   demoVideoTitle?: string
-  isInfoboxPresent?: boolean
+  shouldHighlight?: boolean
 }
 
 const LOCAL_STORAGE_DEMO_TOOLTIP_KEY = 'demo-tooltip-clicked'
@@ -57,19 +59,34 @@ export default function FlowStepHeader(
   const {
     iconUrl,
     caption,
-    hintAboveCaption,
     isCompleted,
-    isDrawerOpen,
+    isNested,
     onDelete,
     isDeleting,
+    shouldHighlight,
     onOpen,
     onClose,
     collapsed,
     demoVideoUrl,
     demoVideoTitle,
-    isInfoboxPresent,
   } = props
-  const isMobile = useIsMobile()
+
+  const { isDrawerOpen, isMobile } = useContext(EditorContext)
+
+  const width = useMemo(() => {
+    if (isDrawerOpen) {
+      if (isMobile) {
+        return '0px'
+      }
+      return '100%'
+    }
+
+    if (isMobile) {
+      return '100%'
+    }
+
+    return isNested ? '40rem' : '55rem'
+  }, [isDrawerOpen, isMobile, isNested])
 
   const handleClick = useCallback(() => {
     if (collapsed) {
@@ -112,20 +129,35 @@ export default function FlowStepHeader(
 
   return (
     <>
-      <Box
-        {...stepHeaderBoxStyles}
-        borderColor={collapsed ? 'base.divider.medium' : 'base.content.brand'}
-        borderTopRadius={isInfoboxPresent ? 'none' : 'lg'}
-        data-test="flow-step" // adding to identify element for e2e testing
-        w={getFlowStepWidth(isDrawerOpen, isMobile)}
-      >
-        {/*
-         * Top header
-         */}
+      {!isCompleted && (
         <Flex
-          p={4}
-          alignItems="center"
-          borderRadius="inherit"
+          {...flowStepHeaderStyles.incompleteContainer}
+          borderColor={
+            shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
+          }
+          boxSize={isNested ? 8 : 10}
+          w={width}
+        >
+          <Icon boxSize={6} color="yellow.200" as={BiSolidErrorCircle} />
+          <Text textStyle="body-2" color="base.content.medium" p={0} ml={1.5}>
+            Update this step with the latest data
+          </Text>
+        </Flex>
+      )}
+      <Flex
+        {...flowStepHeaderStyles.container}
+        borderTopWidth={isCompleted ? '1px' : 0}
+        borderColor={
+          shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
+        }
+        borderTopRadius={!isCompleted ? 'none' : 'lg'}
+        w={width}
+      >
+        {/* Top header */}
+        <Flex
+          {...flowStepHeaderStyles.topHeader}
+          px={4}
+          py={isNested ? 2 : 4}
           _hover={{
             bg: 'interaction.muted.neutral.hover',
             cursor: 'pointer',
@@ -135,25 +167,16 @@ export default function FlowStepHeader(
             bg: 'interaction.muted.neutral.active',
             borderBottomRadius: collapsed ? 'inherit' : 'none',
           }}
-          w="full"
           onClick={handleClick}
         >
           <Flex
-            position="relative"
-            boxSize={16}
-            mr={4}
-            borderWidth={1}
-            borderColor="base.divider.strong"
-            justifyContent="center"
-            alignItems="center"
+            {...flowStepHeaderStyles.appIconWrapper}
+            boxSize={isNested ? 6 : 8}
           >
-            {/*
-             * App icon
-             */}
+            {/* App icon */}
             <Image
               src={iconUrl}
-              boxSize={8}
-              borderStyle="solid"
+              boxSize={isNested ? 6 : 8}
               fit="contain"
               fallback={
                 <Icon
@@ -163,43 +186,9 @@ export default function FlowStepHeader(
                 />
               }
             />
-            {/*
-             * Step completion status badge
-             */}
-            {isCompleted !== undefined && (
-              <Flex
-                position="absolute"
-                top={0}
-                insetEnd={0}
-                boxSize={6}
-                transform="translate(0.5rem, -0.5rem)"
-                borderRadius="full"
-                bg="white"
-              >
-                {isCompleted ? (
-                  <Icon
-                    boxSize="full"
-                    color="interaction.success.default"
-                    as={BiSolidCheckCircle}
-                  />
-                ) : (
-                  <Icon
-                    boxSize="full"
-                    color="yellow.200"
-                    as={BiSolidErrorCircle}
-                  />
-                )}
-              </Flex>
-            )}
           </Flex>
-          {/*
-           * Captions
-           */}
+          {/*  Captions */}
           <Flex direction="column" align="start">
-            <Text textStyle="body-2" color="base.content.medium" p={0} mb={1.5}>
-              {hintAboveCaption}
-            </Text>
-
             <Flex alignItems="center" gap={2}>
               <Text textStyle="subhead-1" color="base.content.default">
                 {caption}
@@ -229,12 +218,11 @@ export default function FlowStepHeader(
             </Flex>
           </Flex>
 
-          {/*
-           * Delete step button
-           */}
+          {/* Delete step button */}
           {onDelete && (
             <Flex ml="auto">
               <IconButton
+                boxSize={isNested ? 8 : 10}
                 onClick={(event) => {
                   onDialogOpen()
                   event.stopPropagation()
@@ -245,11 +233,13 @@ export default function FlowStepHeader(
                 colorScheme="secondary"
                 className={isMobile ? undefined : 'hover-remove-button'}
                 visibility={isMobile ? 'visible' : 'hidden'}
+                minHeight={isNested ? 6 : 8}
+                minWidth={isNested ? 6 : 8}
               />
             </Flex>
           )}
         </Flex>
-      </Box>
+      </Flex>
 
       {isModalOpen && hasDemoVideo && (
         <Modal isCentered isOpen={true} onClose={onModalClose} size="5xl">

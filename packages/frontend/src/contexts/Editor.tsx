@@ -51,18 +51,18 @@ interface IEditorContextValue {
 
 export const EditorContext = createContext<IEditorContextValue>({
   flowId: '',
-  readOnly: false,
-  testExecutionSteps: [],
   currentStepId: null,
   currentStepIndex: null,
   isDrawerOpen: false,
   isMobile: false,
+  readOnly: false,
+  testExecutionSteps: [],
+  onCreateStep: () => Promise.resolve({} as IStep),
+  onDrawerClose: () => null,
+  onDrawerOpen: () => null,
+  onUpdateStep: () => Promise.resolve({} as IStep),
   setCurrentStepId: () => null,
   setCurrentStepIndex: () => null,
-  onDrawerOpen: () => null,
-  onDrawerClose: () => null,
-  onCreateStep: () => Promise.resolve({} as IStep),
-  onUpdateStep: () => Promise.resolve({} as IStep),
   allApps: [],
 })
 
@@ -206,7 +206,9 @@ export const EditorProvider = ({
             ...completeStep,
             flowId: flowId,
           }
-          return await initializeIfThen(completeStepWithFlow)
+          return (await initializeIfThen(
+            completeStepWithFlow,
+          )) as unknown as IStep
         }
       }
 
@@ -258,20 +260,20 @@ export const EditorProvider = ({
   return (
     <EditorContext.Provider
       value={{
-        flowId,
-        readOnly,
-        testExecutionSteps,
+        allApps,
         currentStepId,
         currentStepIndex,
         isDrawerOpen,
         isMobile,
-        setCurrentStepId,
-        setCurrentStepIndex,
         onDrawerOpen,
         onDrawerClose,
+        flowId,
+        readOnly,
+        testExecutionSteps,
         onCreateStep,
         onUpdateStep,
-        allApps,
+        setCurrentStepId,
+        setCurrentStepIndex,
       }}
     >
       {children}
