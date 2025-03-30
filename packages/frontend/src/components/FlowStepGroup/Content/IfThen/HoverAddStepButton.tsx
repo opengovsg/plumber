@@ -30,7 +30,7 @@ export function HoverAddStepButton(
           transform: 'scale(1)',
         },
         h: 8,
-        m: 1,
+        my: 1,
         borderRadius: 'lg',
       }}
     >
