@@ -33,6 +33,7 @@ export function HoverAddStepButton(
         my: 1,
         borderRadius: 'lg',
       }}
+      pointerEvents={isDisabled ? 'none' : 'auto'}
     >
       {/* vertical line */}
       {!isLastStep && (
@@ -40,20 +41,22 @@ export function HoverAddStepButton(
           <Divider orientation="vertical" borderColor="base.divider.strong" />
         </Flex>
       )}
-      <Button
-        aria-label="Add Step"
-        className="add-button"
-        position="absolute"
-        opacity={0}
-        transition="all 0.2s ease-in-out"
-        w="full"
-        onClick={onClick}
-        isDisabled={isDisabled}
-        variant="outline"
-        size="xs"
-      >
-        <BiPlus />
-      </Button>
+      {!isDisabled && (
+        <Button
+          aria-label="Add Step"
+          className="add-button"
+          position="absolute"
+          opacity={0}
+          transition="all 0.2s ease-in-out"
+          w="full"
+          onClick={onClick}
+          isDisabled={isDisabled}
+          variant="outline"
+          size="xs"
+        >
+          <BiPlus />
+        </Button>
+      )}
     </Flex>
   )
 }
