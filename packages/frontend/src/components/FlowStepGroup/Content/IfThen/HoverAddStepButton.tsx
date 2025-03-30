@@ -5,13 +5,14 @@ import { Button } from '@opengovsg/design-system-react'
 interface CompactAddStepButtonProps {
   onClick: () => void
   isDisabled: boolean
+  isDrawerOpen: boolean
   isLastStep: boolean
 }
 
 export function HoverAddStepButton(
   props: CompactAddStepButtonProps,
 ): JSX.Element {
-  const { onClick, isDisabled, isLastStep } = props
+  const { onClick, isDisabled, isDrawerOpen, isLastStep } = props
 
   return (
     <Flex
@@ -48,7 +49,7 @@ export function HoverAddStepButton(
           position="absolute"
           opacity={0}
           transition="all 0.2s ease-in-out"
-          w="full"
+          w={isDrawerOpen ? 'full' : '40rem'}
           onClick={onClick}
           isDisabled={isDisabled}
           variant="outline"
