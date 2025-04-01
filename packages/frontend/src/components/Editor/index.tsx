@@ -122,24 +122,29 @@ export default function Editor(props: EditorProps): React.ReactElement {
   // Compute which steps are eligible for variable extraction.
   //
   // Note:
-  // We don't include grouped steps inside `stepExecutionsToInclude` by default,
-  // since some groups may not want to extract variables from _all_ steps in the
-  // group (e.g. If-then only wants to extract from steps in the current branch).
-  //
-  // Instead, we expect step-grouping actions to instantiate a nested Editor with
-  // the appropriate subarray of steps in the group; we will then handle merging
-  // stepExecutionsToInclude between the parent Editor and the nested Editor.
+  // we include some grouped steps as there is no longer a nested editor
+  // we identify the group by checking if the current step id is in the group
   //
   const parentStepExecutionsToInclude = useContext(
     StepExecutionsToIncludeContext,
   )
+
+  const groupStepsToInclude = useMemo(
+    () =>
+      groupedSteps.filter((group) =>
+        group.some((step) => step.id === currentStepId),
+      ),
+    [currentStepId, groupedSteps],
+  )
+
   const stepExecutionsToInclude = useMemo(
     () =>
       new Set([
         ...parentStepExecutionsToInclude,
         ...stepsBeforeGroup.map((step) => step.id),
+        ...groupStepsToInclude.flatMap((step) => step.map((s) => s.id)),
       ]),
-    [parentStepExecutionsToInclude, stepsBeforeGroup],
+    [parentStepExecutionsToInclude, stepsBeforeGroup, groupStepsToInclude],
   )
 
   const nonIfThenActionSteps = stepsBeforeGroup.filter(
