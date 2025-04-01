@@ -1,12 +1,11 @@
 import type { IApp, IStep, ITestConnectionOutput } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
-import { BiRefresh, BiSolidCircle } from 'react-icons/bi'
+import { BiLink, BiRefresh, BiSolidCircle } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
-import { Flex, Icon } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import { Flex, Icon, Text } from '@chakra-ui/react'
+import { Button, Link } from '@opengovsg/design-system-react'
 
-import MarkdownRenderer from '@/components/MarkdownRenderer'
 import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
@@ -15,12 +14,24 @@ import {
   optionGenerator,
 } from '../FlowStepConfigurationModal/ChooseAndAddConnection'
 import { APP_ALLOWING_EMPTY_CONNECTION } from '../FlowStepConfigurationModal/constants'
-import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 type ChooseConnectionSubstepProps = {
   step: IStep
   application: IApp
   onReconnect: () => void
+}
+
+type ConnectionLink = {
+  url: string
+  text: string
+  isExternal: boolean
+}
+
+interface ConnectionStatus {
+  text: string
+  color: string
+  connectionError?: string
+  connectionLink?: ConnectionLink
 }
 
 const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
@@ -53,6 +64,8 @@ function ChooseConnectionSubstep(
       connectionId: connection?.id,
       flowId: supportsConnectionRegistration ? step.flowId : undefined,
     },
+    // cache-first to prevent the test connection from being called multiple times
+    fetchPolicy: 'cache-first',
     skip: !connection?.id,
   })
 
@@ -71,55 +84,94 @@ function ChooseConnectionSubstep(
       return false
     }
     return true
-  }, [application.key, testConnectionData?.testConnection, testResultLoading])
+  }, [application.key, testConnectionData, testResultLoading])
 
-  const connectionText = useMemo(() => {
+  const connectionStatus: ConnectionStatus = useMemo(() => {
     if (!connection) {
-      return 'No connection selected'
+      return {
+        text: 'Not connected',
+        color: 'yellow.200',
+      }
     } else if (testResultLoading) {
-      return 'Testing connection...'
+      return {
+        text: 'Testing connection...',
+        color: 'yellow.200',
+      }
     } else if (!isTestStepValid) {
-      return 'Connection error'
+      return {
+        text: 'Connection not verified',
+        color: 'yellow.200',
+        connectionError: testConnectionData?.testConnection?.message,
+      }
     } else {
       const connectionOption = optionGenerator(connection, application.key)
 
+      let connectionLink: ConnectionLink | undefined
+      if (application.key === 'formsg') {
+        connectionLink = {
+          url: formLinkGenerator(connectionOption),
+          text: 'View form',
+          isExternal: true,
+        }
+      }
+
       // For FormSG, we provide a link to the form for easier reference
-      return `Connected to ${connectionOption.label} ${
-        application.key === 'formsg'
-          ? `([View form](${formLinkGenerator(connectionOption)}))`
-          : ''
-      }`
+      return {
+        text: `Connected to ${connectionOption.label}`,
+        color: 'green.500',
+        connectionLink,
+      }
     }
-  }, [connection, testResultLoading, isTestStepValid, application.key])
+  }, [
+    connection,
+    testResultLoading,
+    isTestStepValid,
+    testConnectionData?.testConnection?.message,
+    application.key,
+  ])
 
   return (
-    <>
-      <Flex w="100%" p="1rem 1rem 1.5rem" flexDir="column" gap={4}>
-        <Flex justifyContent="space-between" alignItems="center">
-          <Flex alignItems="center" gap={2}>
-            <Icon
-              as={BiSolidCircle}
-              color={isTestStepValid ? 'green.500' : 'yellow.200'}
-              boxSize={3}
-            />
-            <MarkdownRenderer
-              source={connectionText}
-              components={infoboxMdComponents}
-            />
-          </Flex>
-
-          <Button
-            variant="clear"
-            colorScheme="secondary"
-            leftIcon={<BiRefresh />}
-            onClick={onReconnect}
-            isDisabled={editorContext.readOnly}
-          >
-            Reconnect
-          </Button>
+    <Flex w="100%" p="1rem 1rem 1.5rem" flexDir="column" gap={4}>
+      <Flex justifyContent="space-between" alignItems="baseline">
+        <Flex alignItems="baseline" gap={2}>
+          <Icon
+            as={BiSolidCircle}
+            color={connectionStatus.color}
+            boxSize={3}
+            ml={1}
+          />
+          <Text>
+            {connectionStatus.text}
+            {connectionStatus.connectionLink && (
+              <Link
+                href={connectionStatus.connectionLink.url}
+                isExternal={connectionStatus.connectionLink.isExternal}
+                target="_blank"
+                ml={2}
+              >
+                {connectionStatus.connectionLink.text}
+              </Link>
+            )}
+            {connectionStatus.connectionError && (
+              <Text color="red.500" fontSize="xs">
+                {connectionStatus.connectionError}
+              </Text>
+            )}
+          </Text>
         </Flex>
+
+        <Button
+          variant="clear"
+          colorScheme="secondary"
+          size="xs"
+          leftIcon={connection ? <BiRefresh /> : <BiLink />}
+          onClick={onReconnect}
+          isDisabled={editorContext.readOnly}
+        >
+          {connection ? 'Reconnect' : 'Connect'}
+        </Button>
       </Flex>
-    </>
+    </Flex>
   )
 }
 
