@@ -1,7 +1,5 @@
 import { IApp } from '@plumber/types'
 
-// import addHeaders from './common/add-headers'
-// import checkUrls from './common/check-urls'
 import actions from './actions'
 import auth from './auth'
 
