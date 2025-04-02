@@ -44,15 +44,7 @@ export default function Branch(props: BranchProps) {
         p={0}
         bg="white"
         overflow="hidden"
-        w={
-          isDrawerOpen
-            ? isMobile
-              ? '0px'
-              : '100%'
-            : isMobile
-            ? '100%'
-            : '40rem'
-        }
+        w={isDrawerOpen ? (isMobile ? '0px' : '100%') : '100%'}
         mb={2}
       >
         <Flex alignItems="center" borderRadius="inherit" w="full">

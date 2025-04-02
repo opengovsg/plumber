@@ -85,7 +85,7 @@ export default function FlowStepHeader(
       return '100%'
     }
 
-    return isNested ? '40rem' : '55rem'
+    return isNested ? 'full' : '55rem'
   }, [isDrawerOpen, isMobile, isNested])
 
   const handleClick = useCallback(() => {

@@ -12,7 +12,7 @@ interface CompactAddStepButtonProps {
 export function HoverAddStepButton(
   props: CompactAddStepButtonProps,
 ): JSX.Element {
-  const { onClick, isDisabled, isDrawerOpen, isLastStep } = props
+  const { onClick, isDisabled, isLastStep } = props
 
   return (
     <Flex
@@ -49,7 +49,7 @@ export function HoverAddStepButton(
           position="absolute"
           opacity={0}
           transition="all 0.2s ease-in-out"
-          w={isDrawerOpen ? 'full' : '40rem'}
+          w="full"
           onClick={onClick}
           isDisabled={isDisabled}
           variant="outline"
