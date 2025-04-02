@@ -101,12 +101,12 @@ export default function IfThen(props: IfThenProps): JSX.Element {
         })}
       </Flex>
       <Flex w="100%" px={4} pb={4}>
-        {/* TODO (kevinkim-ogp): Convert this to a button to show on hover to reduce spacing between grouped steps */}
         <Button
           onClick={onAddBranch}
           isDisabled={isEditorReadOnly}
           leftIcon={<BiPlus />}
           {...ifThenStyles.addBranchButton}
+          pointerEvents={isEditorReadOnly ? 'none' : 'auto'}
         >
           Add branch
         </Button>
