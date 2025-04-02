@@ -1,4 +1,4 @@
-import type { IExecutionStep, IStep } from '@plumber/types'
+import type { IApp, IExecutionStep, IStep } from '@plumber/types'
 
 import {
   createContext,
@@ -13,6 +13,7 @@ import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
+import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
@@ -36,6 +37,7 @@ interface IEditorContextValue {
     connectionId?: string,
   ) => Promise<IStep>
   onUpdateStep: (step: IStep) => Promise<IStep>
+  allApps: IApp[]
 }
 
 export const EditorContext = createContext<IEditorContextValue>({
@@ -46,6 +48,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   setCurrentStepId: () => null,
   onCreateStep: () => Promise.resolve({} as IStep),
   onUpdateStep: () => Promise.resolve({} as IStep),
+  allApps: [],
 })
 
 type EditorProviderProps = {
@@ -105,6 +108,9 @@ export const EditorProvider = ({
   const shouldUseSingleStepTest = !flags?.[SINGLE_STEP_TEST_KILL_SWITCH]
 
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
+
+  const { data: getAppsData } = useQuery(GET_APPS)
+  const allApps = getAppsData?.getApps ?? []
 
   const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
     GET_TEST_EXECUTION_STEPS,
@@ -222,6 +228,7 @@ export const EditorProvider = ({
         setCurrentStepId,
         onCreateStep,
         onUpdateStep,
+        allApps,
       }}
     >
       {children}

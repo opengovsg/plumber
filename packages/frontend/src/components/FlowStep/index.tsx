@@ -16,7 +16,7 @@ import {
   useState,
 } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
-import { useMutation, useQuery } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { Infobox } from '@opengovsg/design-system-react'
@@ -36,7 +36,6 @@ import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclude'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 
@@ -91,7 +90,7 @@ function generateValidationSchema(substeps: ISubstep[]) {
       }
     },
     {} as ObjectShape,
-  )
+  ) as unknown as ObjectShape
 
   const validationSchema = yup.object({
     parameters: yup.object(fieldValidations),
@@ -120,7 +119,7 @@ export default function FlowStep(
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { readOnly, testExecutionSteps } = useContext(EditorContext)
+  const { readOnly, testExecutionSteps, allApps } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
   const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
@@ -129,8 +128,6 @@ export default function FlowStep(
     // collapsed due to matching logic below.
     cannotChooseApp ? 1 : 0,
   )
-
-  const { data } = useQuery(GET_APPS)
 
   // This includes all steps that run even after the current step, but within the same branch.
   const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
@@ -144,7 +141,7 @@ export default function FlowStep(
     [step.position, stepExecutionsToInclude, testExecutionSteps],
   )
 
-  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
+  const apps: IApp[] = allApps.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
   const app = apps?.find((currentApp: IApp) => currentApp.key === step.appKey)
