@@ -1,7 +1,6 @@
 import type { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
-import { useQuery } from '@apollo/client'
 import { Box, Collapse, Flex, FormControl } from '@chakra-ui/react'
 import {
   Badge,
@@ -16,7 +15,6 @@ import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
 import { getAppActionFlag, getAppFlag, getAppTriggerFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
@@ -83,12 +81,11 @@ function ChooseAppAndEventSubstep(
   } = props
 
   const launchDarkly = useContext(LaunchDarklyContext)
-  const editorContext = useContext(EditorContext)
+  const { readOnly, allApps } = useContext(EditorContext)
 
   const isTrigger = step.type === 'trigger'
 
-  const { data } = useQuery(GET_APPS)
-  const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
+  const apps: IApp[] = allApps.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
 
@@ -263,7 +260,7 @@ function ChooseAppAndEventSubstep(
                   name="choose-app-option"
                   colorScheme="secondary"
                   isClearable={false}
-                  isDisabled={isLoading || editorContext.readOnly}
+                  isDisabled={isLoading || readOnly}
                   // Don't display options until we can check feature flags!
                   items={isLoading ? [] : appOptions}
                   onChange={(selectedOption) => {
@@ -285,7 +282,7 @@ function ChooseAppAndEventSubstep(
                     name="choose-event-option"
                     colorScheme="secondary"
                     isClearable={false}
-                    isDisabled={isLoading || editorContext.readOnly}
+                    isDisabled={isLoading || readOnly}
                     // Don't display options until we can check feature flags!
                     items={isLoading ? [] : actionOrTriggerOptions}
                     onChange={(selectedOption) => {
@@ -315,7 +312,7 @@ function ChooseAppAndEventSubstep(
             isFullWidth
             onClick={onSubmit}
             mt={4}
-            isDisabled={!valid || editorContext.readOnly}
+            isDisabled={!valid || readOnly}
             data-test="flow-substep-continue-button"
           >
             Continue
