@@ -1,6 +1,6 @@
 import { type IAction, IApp, ITrigger } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
 import { Box, Flex, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
 import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
@@ -14,20 +14,25 @@ import {
   useIsIfThenSelectable,
 } from '@/helpers/toolbox'
 
+import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import InvalidModalScreen from '../InvalidModalScreen'
+
 import FeedbackFooter from './FeedbackFooter'
 
 interface ChooseEventProps {
-  selectedApp: IApp
-  isTrigger: boolean
-  isLastStep: boolean
   onSelectAppEvent: (app: IApp, event: ITrigger | IAction) => void
-  onBack: () => void
 }
 
 export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
-  const { selectedApp, isTrigger, isLastStep, onSelectAppEvent, onBack } = props
+  const { onSelectAppEvent } = props
 
   const launchDarkly = useContext(LaunchDarklyContext)
+
+  const { modalState, isTrigger, isLastStep, patchModalState } = useContext(
+    FlowStepConfigurationContext,
+  )
+  const { selectedApp } = modalState
+
   const [_, isInitializingIfThen] = useIfThenInitializer()
   const isLoading = launchDarkly.isLoading || isInitializingIfThen
 
@@ -52,6 +57,19 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
       return launchDarkly.flags[launchDarklyKey] ?? true
     })
   }, [selectedApp, isTrigger, launchDarkly.flags, isLoading])
+
+  const onBack = useCallback(() => {
+    patchModalState({
+      selectedApp: null,
+      selectedEvent: null,
+      selectedConnectionId: '',
+      currentScreen: 'choose-app',
+    })
+  }, [patchModalState])
+
+  if (!selectedApp) {
+    return <InvalidModalScreen />
+  }
 
   return (
     <>

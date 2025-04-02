@@ -2,7 +2,6 @@ import type { IApp, IFlow, IStep } from '@plumber/types'
 
 import { Fragment, useContext, useMemo } from 'react'
 import { BiPlus } from 'react-icons/bi'
-import { useQuery } from '@apollo/client'
 import {
   AbsoluteCenter,
   Box,
@@ -21,7 +20,6 @@ import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
@@ -106,6 +104,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     currentStepId,
     onUpdateStep,
     setCurrentStepId,
+    allApps,
   } = useContext(EditorContext)
 
   const steps = useMemo(
@@ -121,25 +120,23 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [flow, rawSteps],
   )
 
-  // FIXME (ogp-weeloong): optimize this a bit further by omitting query.
-  const { data } = useQuery(GET_APPS)
-  const apps: IApp[] = data?.getApps?.filter(
+  const appsWithActions: IApp[] = allApps.filter(
     (app: IApp) => !!app.actions?.length,
   )
 
   const groupingActions = useMemo(() => {
-    if (!apps) {
+    if (!appsWithActions) {
       return null
     }
 
     return new Set(
-      apps?.flatMap((app) =>
+      appsWithActions?.flatMap((app) =>
         app.actions
           ?.filter((action) => action.groupsLaterSteps)
           ?.map((action) => `${app.key}-${action.key}`),
       ) ?? [],
     )
-  }, [apps])
+  }, [appsWithActions])
 
   const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
     if (!groupingActions) {
@@ -173,8 +170,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
     if (groupedSteps.length === 0) {
       return undefined
     }
-    return apps.find((app) => app.key === groupedSteps[0].appKey)?.iconUrl
-  }, [apps, groupedSteps])
+    return appsWithActions.find((app) => app.key === groupedSteps[0].appKey)
+      ?.iconUrl
+  }, [appsWithActions, groupedSteps])
 
   //
   // Compute which steps are eligible for variable extraction.
@@ -208,7 +206,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
       steps[1].appKey === null ||
       steps[1].key === null)
 
-  if (!apps) {
+  if (!appsWithActions) {
     return (
       <Center w="full" h="100vh">
         <CircularProgress isIndeterminate my={2} />
@@ -235,7 +233,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 index={index + 1}
                 collapsed={currentStepId !== step.id}
                 onOpen={() => setCurrentStepId(step.id)}
-                onClose={() => setCurrentStepId(null)}
+                onClose={() => {
+                  setCurrentStepId(null)
+                }}
                 onChange={onUpdateStep}
                 onContinue={() => {
                   if (
