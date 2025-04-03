@@ -22,9 +22,7 @@ export const GET_APPS = gql`
       isNewApp
       category
       substepLabels {
-        connectionStepLabel
         settingsStepLabel
-        addConnectionLabel
       }
       setupMessage {
         variant
