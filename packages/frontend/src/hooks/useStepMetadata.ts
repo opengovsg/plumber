@@ -48,7 +48,7 @@ export function useStepMetadata(
     }`
 
     if (selectedActionOrTrigger.key === 'ifThen') {
-      caption = `${step?.position ? `${step.position}. ` : ''} If condition`
+      caption = `${step?.position ? `${step.position}. ` : ''} Condition`
     }
   } else if (app?.name) {
     caption = `${step?.position ? `${step.position}. ` : ''}${app.name}`
