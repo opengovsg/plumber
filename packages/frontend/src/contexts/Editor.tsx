@@ -8,7 +8,9 @@ import {
   useState,
 } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
+import { Center } from '@chakra-ui/react'
 
+import PrimarySpinner from '@/components/PrimarySpinner'
 import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
@@ -109,7 +111,7 @@ export const EditorProvider = ({
 
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
 
-  const { data: getAppsData } = useQuery(GET_APPS)
+  const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
   const allApps = getAppsData?.getApps ?? []
 
   const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
@@ -217,6 +219,14 @@ export const EditorProvider = ({
     },
     [updateStep, flowId],
   )
+
+  if (isLoadingAllApps) {
+    return (
+      <Center height="100vh" position="fixed" width="full" top={0} left={0}>
+        <PrimarySpinner fontSize="4xl" />
+      </Center>
+    )
+  }
 
   return (
     <EditorContext.Provider
