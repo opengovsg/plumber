@@ -52,7 +52,7 @@ export function HoverAddStepButton(
           w="full"
           onClick={onClick}
           isDisabled={isDisabled}
-          variant="outline"
+          variant="clear"
           size="xs"
         >
           <BiPlus />
