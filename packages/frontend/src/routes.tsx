@@ -19,7 +19,7 @@ import TileLayout from '@/pages/Tile/layouts/TileLayout'
 import Tiles from '@/pages/Tiles'
 import Transfers from '@/pages/Transfers'
 import TransfersLayout from '@/pages/Transfers/layouts/TransfersLayout'
-import UnauthorizedTile from '@/pages/UnauthorizedTile'
+import { InvalidTileLink } from '@/pages/UnauthorizedTile'
 
 const Landing = lazy(() => import('@/pages/Landing'))
 const Tile = lazy(() => import('@/pages/Tile'))
@@ -109,7 +109,7 @@ export default createRoutesFromElements(
       }
     />
 
-    <Route path={URLS.UNAUTHORIZED_TILE} element={<UnauthorizedTile />} />
+    <Route path={URLS.UNAUTHORIZED_TILE} element={<InvalidTileLink />} />
 
     <Route
       path={URLS.TILE_PATTERN}

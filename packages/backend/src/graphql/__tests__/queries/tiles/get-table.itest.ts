@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import TableMetadataResolver from '@/graphql/custom-resolvers/table-metadata'
 import getTable from '@/graphql/queries/tiles/get-table'
 import TableCollaborator from '@/models/table-collaborators'
@@ -88,7 +89,7 @@ describe('get single table query', () => {
         },
         context,
       ),
-    ).rejects.toThrow('Table not found')
+    ).rejects.toThrow(NotFoundError)
   })
 
   it('should throw an error if collaborator does not exist or is soft deleted', async () => {
@@ -105,7 +106,7 @@ describe('get single table query', () => {
         },
         context,
       ),
-    ).rejects.toThrow('Table not found')
+    ).rejects.toThrow(NotFoundError)
   })
 
   it('should allow all collaborators to call this function', async () => {
