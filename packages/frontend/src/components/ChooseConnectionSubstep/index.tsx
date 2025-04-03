@@ -1,139 +1,79 @@
-import type {
-  IApp,
-  IConnection,
-  IStep,
-  ISubstep,
-  ITestConnectionOutput,
-} from '@plumber/types'
+import type { IApp, IStep, ITestConnectionOutput } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
-import { useMutation, useQuery } from '@apollo/client'
-import { Collapse, Flex } from '@chakra-ui/react'
+import { useContext, useMemo } from 'react'
+import { BiLink, BiRefresh, BiSolidCircle } from 'react-icons/bi'
+import { useQuery } from '@apollo/client'
+import { Flex, Icon, Text } from '@chakra-ui/react'
+import { Button, Link } from '@opengovsg/design-system-react'
 
-import ChooseConnectionDropdown from '@/components/ChooseConnectionDropdown'
-import FlowSubstepTitle from '@/components/FlowSubstepTitle'
-import SetConnectionButton from '@/components/SetConnectionButton'
 import { EditorContext } from '@/contexts/Editor'
-import { REGISTER_CONNECTION } from '@/graphql/mutations/register-connection'
-import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
+import {
+  type ConnectionDropdownOption,
+  optionGenerator,
+} from '../FlowStepConfigurationModal/ChooseAndAddConnection'
+import { APP_ALLOWING_EMPTY_CONNECTION } from '../FlowStepConfigurationModal/constants'
+
 type ChooseConnectionSubstepProps = {
-  application: IApp
-  substep: ISubstep
-  expanded?: boolean
-  onExpand: () => void
-  onCollapse: () => void
-  onChange: ({ step }: { step: IStep }) => void
-  onSubmit: () => void
   step: IStep
+  application: IApp
+  onReconnect: () => void
 }
 
-type ConnectionDropdownOption = {
-  label: string
-  value: string
+type ConnectionLink = {
+  url: string
+  text: string
+  isExternal: boolean
 }
 
-const optionGenerator = (
-  connection: IConnection,
-): ConnectionDropdownOption => ({
-  label: (connection?.formattedData?.screenName as string) ?? 'Unnamed',
-  value: connection?.id as string,
-})
+interface ConnectionStatus {
+  text: string
+  color: string
+  connectionError?: string
+  connectionLink?: ConnectionLink
+}
+
+const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
+  const { label, description: formId } = connectionOption
+  if (label.startsWith('[')) {
+    const endIndex = label.indexOf(']')
+    const env = label.substring(1, endIndex)
+    // Only add subodmain for STAGING and UAT
+    if (env === 'STAGING' || env === 'UAT') {
+      return `https://${env}.form.gov.sg/${formId}`
+    }
+  }
+  return `https://form.gov.sg/${formId}`
+}
 
 function ChooseConnectionSubstep(
   props: ChooseConnectionSubstepProps,
 ): React.ReactElement {
-  const {
-    substep,
-    expanded = false,
-    onExpand,
-    onCollapse,
-    step,
-    onSubmit,
-    onChange,
-    application,
-  } = props
-  const { connection, appKey } = step
+  const { step, application, onReconnect } = props
+  const { connection } = step
   const editorContext = useContext(EditorContext)
-  const { data, loading, refetch } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: appKey },
-  })
 
   const supportsConnectionRegistration =
     !!application.auth?.connectionRegistrationType
 
-  const {
-    loading: testResultLoading,
-    refetch: retestConnection,
-    data: testConnectionData,
-  } = useQuery<{
+  const { loading: testResultLoading, data: testConnectionData } = useQuery<{
     testConnection: ITestConnectionOutput
   }>(TEST_CONNECTION, {
     variables: {
       connectionId: connection?.id,
       flowId: supportsConnectionRegistration ? step.flowId : undefined,
     },
+    // cache-first to prevent the test connection from being called multiple times
+    fetchPolicy: 'cache-first',
     skip: !connection?.id,
   })
 
-  const [registerConnection, { loading: registerConnectionLoading }] =
-    useMutation(REGISTER_CONNECTION)
-
-  const connectionOptions = useMemo(() => {
-    const appWithConnections = data?.getApp as IApp
-    const options =
-      appWithConnections?.connections?.map((connection) =>
-        optionGenerator(connection),
-      ) || []
-
-    return options
-  }, [data])
-
-  const { name } = substep
-
-  const handleChange = useCallback(
-    async (connectionId: string, shouldRefetch: boolean) => {
-      if (connectionId === step.connection?.id) {
-        return
-      }
-      if (shouldRefetch) {
-        await refetch()
-      }
-      onChange({
-        step: {
-          ...step,
-          connection: {
-            id: connectionId,
-          },
-        },
-      })
-    },
-    [step, onChange, refetch],
-  )
-
-  const onRegisterConnection = useCallback(async () => {
-    if (step.connection?.id && supportsConnectionRegistration) {
-      await registerConnection({
-        variables: {
-          input: {
-            connectionId: step.connection.id,
-            flowId: step.flowId,
-          },
-        },
-      })
-      await retestConnection()
-    }
-  }, [
-    step,
-    registerConnection,
-    supportsConnectionRegistration,
-    retestConnection,
-  ])
-
-  const onToggle = expanded ? onCollapse : onExpand
-
   const isTestStepValid = useMemo(() => {
+    if (application.key === APP_ALLOWING_EMPTY_CONNECTION) {
+      return true
+    }
+
     if (testResultLoading || !testConnectionData?.testConnection) {
       return null
     }
@@ -144,37 +84,94 @@ function ChooseConnectionSubstep(
       return false
     }
     return true
-  }, [testConnectionData?.testConnection, testResultLoading])
+  }, [application.key, testConnectionData, testResultLoading])
+
+  const connectionStatus: ConnectionStatus = useMemo(() => {
+    if (!connection) {
+      return {
+        text: 'Not connected',
+        color: 'yellow.200',
+      }
+    } else if (testResultLoading) {
+      return {
+        text: 'Testing connection...',
+        color: 'yellow.200',
+      }
+    } else if (!isTestStepValid) {
+      return {
+        text: 'Connection not verified',
+        color: 'yellow.200',
+        connectionError: testConnectionData?.testConnection?.message,
+      }
+    } else {
+      const connectionOption = optionGenerator(connection, application.key)
+
+      let connectionLink: ConnectionLink | undefined
+      if (application.key === 'formsg') {
+        connectionLink = {
+          url: formLinkGenerator(connectionOption),
+          text: 'View form',
+          isExternal: true,
+        }
+      }
+
+      // For FormSG, we provide a link to the form for easier reference
+      return {
+        text: `Connected to ${connectionOption.label}`,
+        color: 'green.500',
+        connectionLink,
+      }
+    }
+  }, [
+    connection,
+    testResultLoading,
+    isTestStepValid,
+    testConnectionData?.testConnection?.message,
+    application.key,
+  ])
 
   return (
-    <>
-      <FlowSubstepTitle
-        expanded={expanded}
-        onClick={onToggle}
-        title={application?.substepLabels?.connectionStepLabel ?? name}
-        valid={isTestStepValid}
-      />
-      <Collapse in={expanded} unmountOnExit>
-        <Flex w="100%" p="1rem 1rem 1.5rem" flexDir="column" gap={4}>
-          <ChooseConnectionDropdown
-            isDisabled={editorContext.readOnly || loading}
-            connectionOptions={connectionOptions}
-            onChange={handleChange}
-            value={connection?.id}
-            application={application}
+    <Flex w="100%" p="1rem 1rem 1.5rem" flexDir="column" gap={4}>
+      <Flex justifyContent="space-between" alignItems="baseline">
+        <Flex alignItems="baseline" gap={2}>
+          <Icon
+            as={BiSolidCircle}
+            color={connectionStatus.color}
+            boxSize={3}
+            ml={1}
           />
-          <SetConnectionButton
-            onNextStep={onSubmit}
-            onRegisterConnection={onRegisterConnection}
-            readOnly={editorContext.readOnly}
-            supportsConnectionRegistration={supportsConnectionRegistration}
-            testResult={testConnectionData?.testConnection}
-            testResultLoading={testResultLoading}
-            registerConnectionLoading={registerConnectionLoading}
-          />
+          <Text>
+            {connectionStatus.text}
+            {connectionStatus.connectionLink && (
+              <Link
+                href={connectionStatus.connectionLink.url}
+                isExternal={connectionStatus.connectionLink.isExternal}
+                target="_blank"
+                ml={2}
+              >
+                {connectionStatus.connectionLink.text}
+              </Link>
+            )}
+            {connectionStatus.connectionError && (
+              <Text color="red.500" fontSize="xs">
+                {connectionStatus.connectionError}
+              </Text>
+            )}
+          </Text>
         </Flex>
-      </Collapse>
-    </>
+
+        <Button
+          variant="clear"
+          colorScheme="secondary"
+          size="xs"
+          leftIcon={connection ? <BiRefresh /> : <BiLink />}
+          onClick={onReconnect}
+          isDisabled={editorContext.readOnly}
+        >
+          {connection ? 'Reconnect' : 'Connect'}
+        </Button>
+      </Flex>
+    </Flex>
   )
 }
 

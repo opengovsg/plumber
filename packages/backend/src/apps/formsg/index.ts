@@ -17,9 +17,7 @@ const app: IApp = {
   triggers,
   actions: [],
   substepLabels: {
-    connectionStepLabel: 'Connect your form',
     settingsStepLabel: 'Other settings',
-    addConnectionLabel: 'Add new form',
   },
   demoVideoDetails: {
     url: 'https://demo.arcade.software/6cWULLTHkTH4XsSB1rs1?embed&show_copy_link=true',

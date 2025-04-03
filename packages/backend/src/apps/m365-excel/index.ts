@@ -24,9 +24,6 @@ const app: IApp = {
   dynamicData,
   getTransferDetails,
   queue,
-  substepLabels: {
-    connectionStepLabel: 'Connect to M365 Excel',
-  },
   setupMessage: {
     variant: 'warning',
     messageBody:
