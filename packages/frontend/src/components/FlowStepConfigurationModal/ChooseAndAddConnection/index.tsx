@@ -19,14 +19,40 @@ interface ChooseAndAddConnectionProps {
 export type ConnectionDropdownOption = {
   label: string
   value: string
+  description?: string
 }
 
-const optionGenerator = (
-  connection: IConnection,
-): ConnectionDropdownOption => ({
-  label: (connection?.formattedData?.screenName as string) ?? 'Unnamed',
-  value: connection?.id as string,
-})
+// For FormSG, it will generate a label with the form title and the description with the form id
+// Note: doing this on the frontend instead because of backwards compatibility whereby
+// only re-verifying the connection on the backend will update the connection formattedData (inconsistency)
+export const optionGenerator = (
+  connection: Partial<IConnection>,
+  appKey: string,
+): ConnectionDropdownOption => {
+  const screenName = connection?.formattedData?.screenName as string
+  if (appKey === 'formsg') {
+    // parse the screenName to get the env, formId, and formTitle
+    const [envWithFormId, formTitle] = screenName.split(' - ')
+    let env = ''
+    let formId = envWithFormId
+    if (envWithFormId.startsWith('[')) {
+      const endIndex = envWithFormId.indexOf(']')
+      env = envWithFormId.substring(0, endIndex + 1) + ' '
+      formId = envWithFormId.substring(endIndex + 2) // skip "]"
+    }
+
+    return {
+      label: `${env}${formTitle}`,
+      value: connection?.id as string,
+      description: formId,
+    }
+  }
+
+  return {
+    label: screenName ?? 'Unnamed',
+    value: connection?.id as string,
+  }
+}
 
 export default function ChooseAndAddConnection(
   props: ChooseAndAddConnectionProps,
@@ -52,7 +78,7 @@ export default function ChooseAndAddConnection(
     const appWithConnections = data?.getApp as IApp
     const options =
       appWithConnections?.connections?.map((connection) =>
-        optionGenerator(connection),
+        optionGenerator(connection, appWithConnections.key),
       ) || []
 
     return options
