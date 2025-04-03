@@ -17,6 +17,7 @@ import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 type FlowStepProps = {
   collapsed?: boolean
   step: IStep
+  isDeletable?: boolean
   isLastStep: boolean
   isNested?: boolean
   index?: number

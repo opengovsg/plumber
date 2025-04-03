@@ -138,6 +138,7 @@ export default function Branch(props: BranchProps) {
           <Fragment key={`${step.id}-${stepsBeforeGroup.length + index}`}>
             <FlowStep
               step={step}
+              isDeletable={index !== 0}
               isNested={true}
               isLastStep={index === branchSteps.length - 1}
               // FIXME (kevinkim-ogp): this is a temporary solution to ensure the step is collapsed when the drawer is closed
