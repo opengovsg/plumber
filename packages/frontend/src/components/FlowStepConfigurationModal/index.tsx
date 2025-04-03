@@ -78,6 +78,7 @@ export default function FlowStepConfigurationModal(
         isCentered
         isOpen={true}
         onClose={onClose}
+        closeOnOverlayClick={false}
         size="xl"
         scrollBehavior="inside"
         autoFocus={false}

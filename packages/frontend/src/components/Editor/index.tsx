@@ -25,12 +25,13 @@ import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
 interface AddStepButtonProps {
   isHidden: boolean
+  isDisabled: boolean
   isLastStep: boolean
   stepId: string
 }
 
 function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { isHidden, isLastStep, stepId } = props
+  const { isHidden, isLastStep, stepId, isDisabled } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   if (isHidden) {
@@ -58,10 +59,14 @@ function AddStepButton(props: AddStepButtonProps): JSX.Element {
           </Box>
         )}
         <AbsoluteCenter display={isHidden ? 'none' : 'flex'}>
-          <TouchableTooltip label={'Insert step'} placement="right">
+          <TouchableTooltip
+            label={isDisabled ? 'Add your first action first' : 'Add step'}
+            placement="right"
+          >
             <IconButton
               onClick={onOpen}
               aria-label="Add Step"
+              isDisabled={isDisabled}
               icon={<BiPlus />}
               variant={isLastStep ? 'outline' : 'clear'}
               size="xs"
@@ -198,13 +203,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [parentStepExecutionsToInclude, stepsBeforeGroup],
   )
 
-  // Only affects editor when there are 2 steps: This works inside the If-Then editor too
-  const isTriggerOrActionAbsent =
-    steps.length === 2 &&
-    (steps[0].appKey === null ||
-      steps[0].key === null ||
-      steps[1].appKey === null ||
-      steps[1].key === null)
+  const isFirstActionAbsent = !steps[1]?.appKey || !steps[1]?.key
 
   if (!appsWithActions) {
     return (
@@ -250,7 +249,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 templateConfig={flow?.config?.templateConfig}
               />
               <AddStepButton
-                isHidden={isReadOnlyEditor || isTriggerOrActionAbsent}
+                // hide all add button steps if is readonly
+                // hide in-between add button steps if first action is absent
+                isHidden={
+                  isReadOnlyEditor ||
+                  (isFirstActionAbsent && index !== steps.length - 1)
+                }
+                // Disable all add button steps if first action is absent
+                isDisabled={isFirstActionAbsent}
                 isLastStep={index === steps.length - 1}
                 stepId={step.id}
               />

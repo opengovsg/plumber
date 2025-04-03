@@ -22,8 +22,7 @@ import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
 
 import ConnectionHeader from './ConnectionHeader'
-
-const DEFAULT_ADD_CONNECTION_LABEL = 'Add new connection'
+import { DEFAULT_ADD_CONNECTION_LABEL } from './constants'
 
 type AddConnectionProps = {
   onSubmit: (response: Record<string, unknown>) => void

@@ -6,6 +6,7 @@ import { FormLabel } from '@opengovsg/design-system-react'
 
 import { SingleSelect } from '@/components/SingleSelect'
 
+import { DEFAULT_ADD_CONNECTION_LABEL } from './constants'
 import { ConnectionDropdownOption } from '.'
 
 interface ChooseConnectionDropdownProps {
@@ -51,7 +52,9 @@ function ChooseConnectionDropdown({
             application?.auth?.connectionType === 'user-added'
               ? {
                   type: 'modal',
-                  label: 'Add new connection',
+                  label:
+                    application?.auth?.connectionModalLabel
+                      ?.addConnectionLabel ?? DEFAULT_ADD_CONNECTION_LABEL,
                   onSelected: onAddNewConnection,
                   isCreating: false,
                 }
