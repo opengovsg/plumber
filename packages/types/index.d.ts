@@ -516,9 +516,7 @@ export interface IApp {
   description?: string
   isNewApp?: boolean
   substepLabels?: {
-    connectionStepLabel?: string // for step accordion label
     settingsStepLabel?: string // for step accordion label: app level
-    addConnectionLabel?: string // for adding connection in choose connection dropdown
   }
   demoVideoDetails?: DemoVideoDetails
   category?: AppCategory

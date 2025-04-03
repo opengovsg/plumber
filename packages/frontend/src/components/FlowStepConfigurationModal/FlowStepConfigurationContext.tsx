@@ -62,7 +62,7 @@ export const FlowStepConfigurationContextProvider = ({
   children,
 }: FlowStepConfigurationContextProps) => {
   const [modalState, setModalState] = useState<ModalState>({
-    currentScreen: 'choose-app',
+    currentScreen: app && event ? 'choose-connection' : 'choose-app',
     selectedApp: app ?? null,
     selectedEvent: event ?? null,
     selectedConnectionId: step?.connection?.id ?? '',
