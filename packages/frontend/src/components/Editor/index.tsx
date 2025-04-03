@@ -1,17 +1,7 @@
 import type { IApp, IFlow, IStep } from '@plumber/types'
 
 import { Fragment, useContext, useMemo } from 'react'
-import { BiPlus } from 'react-icons/bi'
-import {
-  AbsoluteCenter,
-  Box,
-  Center,
-  CircularProgress,
-  Divider,
-  Flex,
-  useDisclosure,
-} from '@chakra-ui/react'
-import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
+import { Center, Flex } from '@chakra-ui/react'
 
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
@@ -20,88 +10,18 @@ import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
-import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
+import PrimarySpinner from '../PrimarySpinner'
 
-interface AddStepButtonProps {
-  isHidden: boolean
-  isDisabled: boolean
-  isLastStep: boolean
-  stepId: string
-}
-
-function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { isHidden, isLastStep, stepId, isDisabled } = props
-  const { isOpen, onOpen, onClose } = useDisclosure()
-
-  if (isHidden) {
-    return (
-      <Box pos="relative" h={24} py={2}>
-        {/* dont show line if last step, leave box for padding */}
-        {!isLastStep && (
-          <Divider orientation="vertical" borderColor="base.divider.strong" />
-        )}
-      </Box>
-    )
-  }
-
-  return (
-    <>
-      <Box pos="relative" h={24}>
-        {/* Top vertical line */}
-        <Box mt={2} h={5}>
-          <Divider orientation="vertical" borderColor="base.divider.strong" />
-        </Box>
-        {/* Bottom vertical line */}
-        {!isLastStep && (
-          <Box mt={10} h={5}>
-            <Divider orientation="vertical" borderColor="base.divider.strong" />
-          </Box>
-        )}
-        <AbsoluteCenter display={isHidden ? 'none' : 'flex'}>
-          <TouchableTooltip
-            label={isDisabled ? 'Add your first action first' : 'Add step'}
-            placement="right"
-          >
-            <IconButton
-              onClick={onOpen}
-              aria-label="Add Step"
-              isDisabled={isDisabled}
-              icon={<BiPlus />}
-              variant={isLastStep ? 'outline' : 'clear'}
-              size="xs"
-              color="interaction.sub.default"
-              borderRadius="full"
-              _hover={{
-                bg: 'interaction.muted.neutral.hover',
-              }}
-              _active={{
-                bg: 'interaction.muted.neutral.active',
-              }}
-              borderColor={isLastStep ? 'interaction.sub.default' : undefined}
-            />
-          </TouchableTooltip>
-        </AbsoluteCenter>
-      </Box>
-
-      {isOpen && (
-        <FlowStepConfigurationModal
-          onClose={onClose}
-          isTrigger={false} // Can only add an action all the time
-          isLastStep={isLastStep}
-          prevStepId={stepId}
-        />
-      )}
-    </>
-  )
-}
+import { AddStepButton } from './AddStepButton'
 
 type EditorProps = {
   flow: IFlow
   steps: IStep[]
 }
 
-export default function Editor(props: EditorProps): React.ReactElement {
+export default function Editor(props: EditorProps) {
   const { flow, steps: rawSteps } = props
 
   const {
@@ -203,12 +123,23 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [parentStepExecutionsToInclude, stepsBeforeGroup],
   )
 
-  const isFirstActionAbsent = !steps[1]?.appKey || !steps[1]?.key
+  const nonIfThenActionSteps = stepsBeforeGroup.filter(
+    (step) =>
+      step.type === 'action' &&
+      step.appKey !== TOOLBOX_APP_KEY &&
+      step.key !== TOOLBOX_ACTIONS.IfThen,
+  )
+  // Disables last add step and hide in-between add step buttons
+  const hasExactlyOneEmptyActionStep =
+    nonIfThenActionSteps.length === 1 && !nonIfThenActionSteps[0].appKey
 
-  if (!appsWithActions) {
+  // Disables last add step button but show empty action instead
+  const hasNoActionSteps = nonIfThenActionSteps.length === 0
+
+  if (!appsWithActions || !groupingActions) {
     return (
-      <Center w="full" h="100vh">
-        <CircularProgress isIndeterminate my={2} />
+      <Center height="100vh" position="fixed" width="full" top={0} left={0}>
+        <PrimarySpinner fontSize="4xl" />
       </Center>
     )
   }
@@ -224,44 +155,47 @@ export default function Editor(props: EditorProps): React.ReactElement {
         maxW="full"
       >
         <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-          {stepsBeforeGroup.map((step, index) => (
-            <Fragment key={`${step.id}-${index}`}>
-              <FlowStep
-                step={step}
-                isLastStep={index === steps.length - 1}
-                index={index + 1}
-                collapsed={currentStepId !== step.id}
-                onOpen={() => setCurrentStepId(step.id)}
-                onClose={() => {
-                  setCurrentStepId(null)
-                }}
-                onChange={onUpdateStep}
-                onContinue={() => {
-                  if (
-                    index === stepsBeforeGroup.length - 1 &&
-                    groupedSteps.length > 0
-                  ) {
-                    setCurrentStepId(groupedSteps[0].id)
-                  } else {
-                    setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+          {stepsBeforeGroup.map((step, index) => {
+            return (
+              <Fragment key={`${step.id}-${index}`}>
+                <FlowStep
+                  step={step}
+                  isLastStep={index === steps.length - 1}
+                  index={index + 1}
+                  collapsed={currentStepId !== step.id}
+                  onOpen={() => setCurrentStepId(step.id)}
+                  onClose={() => {
+                    setCurrentStepId(null)
+                  }}
+                  onChange={onUpdateStep}
+                  onContinue={() => {
+                    if (
+                      index === stepsBeforeGroup.length - 1 &&
+                      groupedSteps.length > 0
+                    ) {
+                      setCurrentStepId(groupedSteps[0].id)
+                    } else {
+                      setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+                    }
+                  }}
+                  templateConfig={flow?.config?.templateConfig}
+                />
+                <AddStepButton
+                  // hide all add button steps if is readonly
+                  isHidden={isReadOnlyEditor}
+                  // show empty action if no action step exists
+                  showEmptyAction={hasNoActionSteps && !groupedSteps.length}
+                  // Disable add button steps if first action is not set up
+                  isDisabled={
+                    (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
+                    !groupedSteps.length
                   }
-                }}
-                templateConfig={flow?.config?.templateConfig}
-              />
-              <AddStepButton
-                // hide all add button steps if is readonly
-                // hide in-between add button steps if first action is absent
-                isHidden={
-                  isReadOnlyEditor ||
-                  (isFirstActionAbsent && index !== steps.length - 1)
-                }
-                // Disable all add button steps if first action is absent
-                isDisabled={isFirstActionAbsent}
-                isLastStep={index === steps.length - 1}
-                stepId={step.id}
-              />
-            </Fragment>
-          ))}
+                  isLastStep={index === steps.length - 1}
+                  stepId={step.id}
+                />
+              </Fragment>
+            )
+          })}
           {groupedSteps.length > 0 && (
             <FlowStepGroup
               iconUrl={flowStepGroupIconUrl}
