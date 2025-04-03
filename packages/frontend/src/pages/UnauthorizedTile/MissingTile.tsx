@@ -1,10 +1,16 @@
 import { Image, Stack, Text, VStack } from '@chakra-ui/react'
+import { Link } from '@opengovsg/design-system-react'
 
 import spreadsheetImg from '@/assets/spreadsheet.png'
+import * as URLS from '@/config/urls'
 
 import styles from './UnauthorizedTile.module.css'
 
-function UnauthorizedTile(): JSX.Element {
+interface MissingTileProps {
+  title: string
+}
+
+export function MissingTile({ title }: MissingTileProps): JSX.Element {
   return (
     <Stack
       direction={{ base: 'column', md: 'row' }}
@@ -28,27 +34,17 @@ function UnauthorizedTile(): JSX.Element {
           textAlign={{ base: 'center', md: 'left' }}
           fontWeight="normal"
         >
-          Your{' '}
-          <Text
-            bgGradient="linear(to-r, primary.400, primary.500)"
-            backgroundClip="text"
-            as="span"
-            className={styles.flicker}
-            fontWeight="bold"
-          >
-            Tiles
-          </Text>{' '}
-          link is invalid or has expired.
+          {title}
         </Text>
-        <Text
+        <Link
           textStyle="h6"
           textAlign={{ base: 'center', md: 'left' }}
           fontWeight="normal"
+          href={URLS.TILES}
         >
-          Please request a new link from the tile owner.
-        </Text>
+          Back to your Tiles
+        </Link>
       </VStack>
     </Stack>
   )
 }
-export default UnauthorizedTile

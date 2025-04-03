@@ -1,5 +1,6 @@
-import { NotFoundError } from 'objection'
+import { NotFoundError as ObjectionNotFoundError } from 'objection'
 
+import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import logger from '@/helpers/logger'
@@ -48,11 +49,11 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
     // TODO: remove keys from rows to reduce payload size
   } catch (e) {
     logger.error(e)
-    if (e instanceof NotFoundError) {
+    if (e instanceof ObjectionNotFoundError) {
       if (context.tilesViewKey) {
         throw new InvalidTileViewKeyError(tableId, context.tilesViewKey)
       }
-      throw new Error('Table not found')
+      throw new NotFoundError('Table does not exist or you do not have access.')
     }
     if (e.message.includes(DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE)) {
       throw new RateLimitedError(

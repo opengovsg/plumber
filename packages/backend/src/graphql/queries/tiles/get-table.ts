@@ -1,5 +1,6 @@
-import { NotFoundError } from 'objection'
+import { NotFoundError as ObjectionNotFoundError } from 'objection'
 
+import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import logger from '@/helpers/logger'
 import TableMetadata from '@/models/table-metadata'
@@ -29,11 +30,11 @@ const getTable: QueryResolvers['getTable'] = async (
     return table
   } catch (e) {
     logger.error(e)
-    if (e instanceof NotFoundError) {
+    if (e instanceof ObjectionNotFoundError) {
       if (context.tilesViewKey) {
         throw new InvalidTileViewKeyError(tableId, context.tilesViewKey)
       }
-      throw new Error('Table not found')
+      throw new NotFoundError('Table does not exist or you do not have access.')
     }
     throw new Error('Error fetching table')
   }
