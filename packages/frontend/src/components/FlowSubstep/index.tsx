@@ -112,7 +112,15 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const { flags } = useContext(LaunchDarklyContext)
   const editorContext = useContext(EditorContext)
   const formContext = useFormContext()
-  const { isDirty } = formContext.formState
+  /*
+   * NOTE: we use dirtyFields instead of isDirty because dirtyFields only tracks
+   * fields that are currently different from their default values, whereas
+   * isDirty tracks if the form values have changed at all from the default values
+   * — even if you change a field back to its original value.
+   */
+  const { dirtyFields } = formContext.formState
+  const isDirty = Object.keys(dirtyFields).length > 0
+
   const [validationStatus, setValidationStatus] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
   )
