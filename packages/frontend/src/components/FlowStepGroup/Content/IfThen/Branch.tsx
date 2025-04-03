@@ -46,7 +46,7 @@ interface BranchProps {
 }
 
 export default function Branch(props: BranchProps) {
-  const { addStep, branchSteps, groupedSteps, stepsBeforeGroup } = props
+  const { addStep, branchSteps, stepsBeforeGroup } = props
 
   const {
     currentStepId,
@@ -156,17 +156,6 @@ export default function Branch(props: BranchProps) {
                 setCurrentStepId(null)
                 setCurrentStepIndex(null)
                 onDrawerClose()
-              }}
-              onContinue={() => {
-                // FIXME (kevinkim-ogp): this doesn't seem correct
-                if (
-                  index === stepsBeforeGroup.length - 1 &&
-                  groupedSteps.length > 0
-                ) {
-                  setCurrentStepId(groupedSteps[0][0].id)
-                } else {
-                  setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
-                }
               }}
               onChange={onUpdateStep}
             />

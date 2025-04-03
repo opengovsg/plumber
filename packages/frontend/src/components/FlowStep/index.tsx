@@ -23,7 +23,7 @@ type FlowStepProps = {
   index?: number
   onOpen: () => void
   onClose: () => void
-  onContinue?: () => void
+  onChange: (step: IStep) => void
   shouldHighlight?: boolean
 }
 
