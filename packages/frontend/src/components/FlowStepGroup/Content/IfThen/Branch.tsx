@@ -94,7 +94,14 @@ export default function Branch(props: BranchProps) {
       setCurrentStepId(ifThenRemaining[0])
     }
     closeDeleteConfirmation()
-  }, [closeDeleteConfirmation, deleteStep, branchSteps, setCurrentStepId])
+    onDrawerClose()
+  }, [
+    branchSteps,
+    deleteStep,
+    onDrawerClose,
+    closeDeleteConfirmation,
+    setCurrentStepId,
+  ])
 
   return (
     <Flex key={branchSteps[0].id} {...branchStyles.container}>
