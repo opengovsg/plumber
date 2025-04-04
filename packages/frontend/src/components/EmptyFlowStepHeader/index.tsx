@@ -1,7 +1,9 @@
 import { BiPlus, BiSolidBolt } from 'react-icons/bi'
 import { Flex, Icon, Text } from '@chakra-ui/react'
+import { useIsMobile } from '@opengovsg/design-system-react'
 
 interface EmptyFlowStepHeaderProps {
+  isDrawerOpen: boolean
   isTrigger: boolean
   onModalOpen: () => void
 }
@@ -9,11 +11,12 @@ interface EmptyFlowStepHeaderProps {
 export default function EmptyFlowStepHeader(
   props: EmptyFlowStepHeaderProps,
 ): JSX.Element {
-  const { isTrigger, onModalOpen } = props
+  const { isDrawerOpen, isTrigger, onModalOpen } = props
+  const isMobile = useIsMobile()
 
   return (
     <Flex
-      w="full"
+      // w="full"
       borderWidth="1px"
       borderColor="base.divider.medium"
       borderRadius="lg"
@@ -31,6 +34,15 @@ export default function EmptyFlowStepHeader(
       _active={{
         bg: 'interaction.muted.neutral.active',
       }}
+      w={
+        isDrawerOpen
+          ? isMobile
+            ? '0px'
+            : '100%'
+          : isMobile
+          ? '100vw'
+          : '55rem'
+      }
     >
       <Icon as={isTrigger ? BiSolidBolt : BiPlus} boxSize={6} />
       <Text textStyle="subhead-1">

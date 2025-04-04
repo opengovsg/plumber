@@ -183,16 +183,27 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const hasExactlyOneEmptyActionStep =
     nonIfThenActionSteps.length === 1 && !nonIfThenActionSteps[0].appKey
 
+  // Open the drawer on initial load only if trigger and steps are set up
+  useEffect(() => {
+    const areStepsEmpty = stepsBeforeGroup.every(
+      (step) => step.appKey === null && step.key === null,
+    )
+    console.log('areStepsEmpty', areStepsEmpty)
+    if (!areStepsEmpty) {
+      onDrawerOpen()
+      setCurrentStepId(stepsBeforeGroup[0].id)
+    }
+  }, [onDrawerOpen, stepsBeforeGroup])
+
   // Disables last add step button but show empty action instead
   const hasNoActionSteps = nonIfThenActionSteps.length === 0
 
   // Open the drawer on load
-  useEffect(() => {
-    if (appsWithActions && !isDrawerOpen) {
-      onDrawerOpen()
-      setCurrentStepId(stepsBeforeGroup[0].id)
-    }
-  }, [])
+  // useEffect(() => {
+  //   if (appsWithActions && !isDrawerOpen) {
+  //     onDrawerOpen()
+  //   }
+  // }, [])
 
   if (!appsWithActions || !groupingActions) {
     return (

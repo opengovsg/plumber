@@ -8,7 +8,7 @@ import type {
 import { type MouseEventHandler, useCallback, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
+import { Box, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox, useIsMobile } from '@opengovsg/design-system-react'
 
 import FlowStepHeader from '@/components/FlowStepHeader'
@@ -50,6 +50,7 @@ export default function FlowStep(
     isDrawerOpen,
     isLastStep,
   } = props
+
   const {
     isOpen: isModalOpen,
     onOpen: onModalOpen,
@@ -75,13 +76,6 @@ export default function FlowStep(
     [actionsOrTriggers, step?.key],
   )
 
-  // const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
-  // const [currentSubstep, setCurrentSubstep] = useState<number | null>(
-  //   // OK to set to 1, even if a step has _no_ substeps, everything will just be
-  //   // collapsed due to matching logic below.
-  //   cannotChooseApp ? 1 : 0,
-  // )
-
   const isDeletable =
     displayOverrides?.disableDelete === true ? false : !readOnly
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
@@ -91,7 +85,6 @@ export default function FlowStep(
     async (e) => {
       e.stopPropagation()
       await deleteStep({ variables: { input: { ids: [step.id] } } })
-      // setCurrentSubstep(0)
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
       onClose()
@@ -111,10 +104,6 @@ export default function FlowStep(
   // and has a help message (once tested successfully, the template step app key is removed)
   const shouldShowInfobox: boolean =
     stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
-
-  if (!apps) {
-    return <CircularProgress isIndeterminate my={2} />
-  }
 
   return (
     <>
@@ -144,6 +133,7 @@ export default function FlowStep(
 
         {!app || !selectedActionOrTrigger ? (
           <EmptyFlowStepHeader
+            isDrawerOpen={isDrawerOpen}
             isTrigger={isTrigger}
             onModalOpen={onModalOpen}
           />
