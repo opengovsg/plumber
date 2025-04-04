@@ -188,12 +188,12 @@ export default function Editor(props: EditorProps): React.ReactElement {
     const areStepsEmpty = stepsBeforeGroup.every(
       (step) => step.appKey === null && step.key === null,
     )
-    console.log('areStepsEmpty', areStepsEmpty)
+
     if (!areStepsEmpty) {
       onDrawerOpen()
       setCurrentStepId(stepsBeforeGroup[0].id)
     }
-  }, [onDrawerOpen, stepsBeforeGroup])
+  }, [])
 
   // Disables last add step button but show empty action instead
   const hasNoActionSteps = nonIfThenActionSteps.length === 0
