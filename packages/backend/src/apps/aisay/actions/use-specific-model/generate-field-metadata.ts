@@ -6,6 +6,11 @@ export interface FieldValue {
   order?: number
 }
 
+/**
+ * NOTE: content is the raw extraction value
+ * value can be a post proceed value depending on data type
+ * e.g. date content "10 May 2025" value "2025-05-10"
+ */
 interface SubFieldMetadata {
   value: Record<string, FieldValue>
   content?: { label: string; type: string }
@@ -68,15 +73,40 @@ export const createSimpleFieldMetadata = (field: string) => {
   }
 }
 
+export const createObjectFieldMetadata = (
+  field: string,
+  fieldValue: FieldValue,
+): SubFieldMetadata => {
+  const subFieldValues: Record<string, FieldValue> = {}
+
+  Object.keys(fieldValue).forEach((subFieldKey) => {
+    subFieldValues[subFieldKey] = {
+      value: {
+        label: `${splitByCapital(field)} - ${splitByCapital(subFieldKey)}`,
+      },
+      ...DEFAULT_FIELD_PROPERTIES,
+    }
+  })
+
+  return {
+    value: subFieldValues,
+    ...DEFAULT_FIELD_PROPERTIES,
+  }
+}
+
 export const generateFieldMetadata = (fields: IJSONValue) => {
   const fieldsMetadata: Record<string, IDataOutMetadata> = {}
 
   Object.keys(fields).forEach((field) => {
     const fieldValue = (fields as unknown as Record<string, FieldValue>)[field]
 
-    fieldsMetadata[field] = Array.isArray(fieldValue.value)
-      ? createArrayFieldMetadata(field, fieldValue)
-      : createSimpleFieldMetadata(field)
+    if (Array.isArray(fieldValue.value)) {
+      fieldsMetadata[field] = createArrayFieldMetadata(field, fieldValue)
+    } else if (fieldValue.value && typeof fieldValue.value === 'object') {
+      fieldsMetadata[field] = createObjectFieldMetadata(field, fieldValue.value)
+    } else {
+      fieldsMetadata[field] = createSimpleFieldMetadata(field)
+    }
   })
   return fieldsMetadata
 }
