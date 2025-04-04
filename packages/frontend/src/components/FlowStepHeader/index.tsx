@@ -3,7 +3,6 @@ import {
   type MouseEventHandler,
   useCallback,
   useContext,
-  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -33,6 +32,7 @@ import { EditorContext } from '@/contexts/Editor'
 import MenuAlertDialog from '../MenuAlertDialog'
 
 import { flowStepHeaderStyles } from './styles'
+import { getHeaderWidth } from './utils'
 
 interface FlowStepHeaderProps {
   iconUrl?: string
@@ -72,21 +72,6 @@ export default function FlowStepHeader(
   } = props
 
   const { isDrawerOpen, isMobile } = useContext(EditorContext)
-
-  const width = useMemo(() => {
-    if (isDrawerOpen) {
-      if (isMobile) {
-        return '0px'
-      }
-      return '100%'
-    }
-
-    if (isMobile) {
-      return '100%'
-    }
-
-    return isNested ? 'full' : '55rem'
-  }, [isDrawerOpen, isMobile, isNested])
 
   const handleClick = useCallback(() => {
     if (collapsed) {
@@ -136,7 +121,7 @@ export default function FlowStepHeader(
             shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
           }
           boxSize={isNested ? 8 : 10}
-          w={width}
+          w={getHeaderWidth(isDrawerOpen, isMobile, isNested)}
         >
           <Icon boxSize={6} color="yellow.200" as={BiSolidErrorCircle} />
           <Text textStyle="body-2" color="base.content.medium" p={0} ml={1.5}>
@@ -151,7 +136,7 @@ export default function FlowStepHeader(
           shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
         }
         borderTopRadius={!isCompleted ? 'none' : 'lg'}
-        w={width}
+        w={getHeaderWidth(isDrawerOpen, isMobile, isNested)}
       >
         {/* Top header */}
         <Flex
