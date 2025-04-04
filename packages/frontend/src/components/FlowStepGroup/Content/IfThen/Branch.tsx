@@ -160,7 +160,9 @@ export default function Branch(props: BranchProps) {
               onChange={onUpdateStep}
             />
             <HoverAddStepButton
-              onClick={() => addStep(step.id, step?.appKey, step?.key)}
+              onClick={(appKey, eventKey) => {
+                addStep(step.id, appKey, eventKey)
+              }}
               isDisabled={isEditorReadOnly}
               isDrawerOpen={isDrawerOpen}
               isLastStep={index === branchSteps.length - 1}

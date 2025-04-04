@@ -1,9 +1,9 @@
 import { BiPlus } from 'react-icons/bi'
-import { Divider, Flex } from '@chakra-ui/react'
+import { Divider, Flex, useDisclosure } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 interface CompactAddStepButtonProps {
-  onClick: () => void
+  onClick: (appKey: string, actionKey: string) => void
   isDisabled: boolean
   isDrawerOpen: boolean
   isLastStep: boolean
@@ -13,6 +13,12 @@ export function HoverAddStepButton(
   props: CompactAddStepButtonProps,
 ): JSX.Element {
   const { onClick, isDisabled, isLastStep } = props
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
+  const handleSubmit = (appKey: string, actionKey: string) => {
+    onClick(appKey, actionKey)
+    onClose()
+  }
 
   return (
     <Flex
@@ -50,7 +56,7 @@ export function HoverAddStepButton(
           opacity={0}
           transition="all 0.2s ease-in-out"
           w="full"
-          onClick={onClick}
+          onClick={onOpen}
           isDisabled={isDisabled}
           variant="clear"
           size="xs"

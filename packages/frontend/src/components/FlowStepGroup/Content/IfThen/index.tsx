@@ -29,7 +29,12 @@ export default function IfThen(props: IfThenProps): JSX.Element {
   const { groupedSteps, stepsBeforeGroup, addStep } = props
 
   const { depth } = useContext(BranchContext)
-  const { flowId, readOnly: isEditorReadOnly } = useContext(EditorContext)
+  const {
+    flowId,
+    readOnly: isEditorReadOnly,
+    setCurrentStepId,
+    onDrawerOpen,
+  } = useContext(EditorContext)
 
   const numBranches = groupedSteps.length
 
@@ -83,7 +88,19 @@ export default function IfThen(props: IfThenProps): JSX.Element {
         },
       },
     })
-  }, [isAddingBranch, createStep, groupedSteps, flowId, depth, numBranches])
+
+    setCurrentStepId(branchStep.data.createStep.id)
+    onDrawerOpen()
+  }, [
+    isAddingBranch,
+    groupedSteps,
+    createStep,
+    flowId,
+    depth,
+    numBranches,
+    onDrawerOpen,
+    setCurrentStepId,
+  ])
 
   return (
     <Flex flexDir="column" alignItems="center" gap={4} w="100%" mt={2}>
