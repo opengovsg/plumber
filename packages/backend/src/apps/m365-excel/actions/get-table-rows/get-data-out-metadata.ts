@@ -10,7 +10,6 @@ async function getDataOutMetadata(
     return null
   }
 
-  // Parse the data first to get proper type information
   const dataOut = dataOutSchema.parse(rawDataOut)
 
   const metadata: IDataOutMetadata = {
