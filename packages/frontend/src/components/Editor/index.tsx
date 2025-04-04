@@ -41,6 +41,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     onCreateStep,
     onDrawerClose,
     onDrawerOpen,
+    onUpdateStep,
     setCurrentStepId,
     setCurrentStepIndex,
   } = useContext(EditorContext)
@@ -190,6 +191,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
+                isDeletable={step.type !== 'trigger'}
                 isLastStep={index === steps.length - 1}
                 index={index + 1}
                 collapsed={
@@ -207,19 +209,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
                   setCurrentStepIndex(null)
                   onDrawerClose()
                 }}
-                onContinue={() => {
-                  if (
-                    index === stepsBeforeGroup.length - 1 &&
-                    groupedSteps.length > 0
-                  ) {
-                    setCurrentStepId(groupedSteps[0][0].id)
-                  } else {
-                    setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
-                  }
-                }}
-                shouldHighlight={
-                  groupedSteps.length > 0 && groupedSteps[0][0].id === step.id
-                }
+                onChange={onUpdateStep}
               />
               <AddStepButton
                 // hide all add button steps if is readonly
