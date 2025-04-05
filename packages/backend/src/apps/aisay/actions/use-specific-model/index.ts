@@ -1,5 +1,6 @@
 import { IJSONArray, IRawAction } from '@plumber/types'
 
+import appConfig from '@/config/app'
 import StepError from '@/errors/step'
 
 import { getToken } from '../../auth/get-token'
@@ -84,7 +85,7 @@ const action: IRawAction = {
       // and with a document size of less than 9 MB
       // Step 2: Call the model to get the output
       const aisayRes = await $.http.request({
-        url: 'https://stg.ai.ff.gov.sg/query',
+        url: `${appConfig.aisayApiUrl}/query`,
         method: 'POST',
         headers: {
           Accept: 'application/json',
