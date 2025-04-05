@@ -1,12 +1,19 @@
-import type { IFieldDropdown, IFieldDropdownOption } from '@plumber/types'
+import type {
+  IFieldDropdown,
+  IFieldDropdownOption,
+  TDataOutMetadatumType,
+} from '@plumber/types'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { useController, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
 import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
+import { StepExecutionsContext } from '@/contexts/StepExecutions'
+
+import extractVariablesAsItems from '../MultiSelect/helpers/extract-variables-as-items'
 
 import AddNewOptionModal, { useCreateNewOption } from './AddNewOptionModal'
 
@@ -24,6 +31,7 @@ export interface ControlledAutocompleteProps {
   placeholder?: string
   addNewOption?: IFieldDropdown['addNewOption']
   isSearchable?: boolean
+  variableTypes?: TDataOutMetadatumType[]
 }
 
 const formComboboxOptions = (
@@ -64,12 +72,19 @@ function ControlledAutocomplete(
     placeholder,
     addNewOption,
     isSearchable,
+    variableTypes = null,
   } = props
+  const { priorExecutionSteps } = useContext(StepExecutionsContext)
 
-  const items = useMemo(
-    () => formComboboxOptions(options, showOptionValue),
-    [options, showOptionValue],
-  )
+  /**
+   * allow extraction of specific variables to a dropdown, e.g., files from FormSG
+   */
+  const items = useMemo(() => {
+    if (variableTypes) {
+      return extractVariablesAsItems(priorExecutionSteps, variableTypes)
+    }
+    return formComboboxOptions(options, showOptionValue)
+  }, [variableTypes, options, showOptionValue, priorExecutionSteps])
 
   // Do not support freeSolo if there are numerical options. Since no use case
   // for it yet and it makes things more complex.

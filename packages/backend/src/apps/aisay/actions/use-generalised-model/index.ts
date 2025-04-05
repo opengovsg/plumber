@@ -1,14 +1,15 @@
-import { IJSONArray, IRawAction } from '@plumber/types'
+import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
 import { getToken } from '../../auth/get-token'
 import { parseError } from '../../common/error-parser'
-import { getAttachmentsFromS3, getValidationError } from '../../common/utils'
+import { generalisedModelSchema } from '../../common/schema'
+import { getAttachmentFromS3, getValidationError } from '../../common/utils'
 
 import getDataOutMetadata from './get-data-out-metadata'
-import { requestSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Extract data from all document types',
@@ -17,8 +18,8 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'File',
-      key: 'attachments',
-      type: 'multiselect' as const,
+      key: 'file',
+      type: 'dropdown',
       required: true,
       variables: true,
       variableTypes: ['file'],
@@ -44,16 +45,13 @@ const action: IRawAction = {
     },
   ],
   doesFileProcessing: (step: Step) => {
-    return (
-      step.parameters.attachments &&
-      (step.parameters.attachments as IJSONArray).length > 0
-    )
+    return step.parameters.file && step.parameters.file !== ''
   },
   getDataOutMetadata,
 
   async run($) {
-    const { attachments, infoToExtract } = $.step.parameters as {
-      attachments?: IJSONArray
+    const { file, infoToExtract } = $.step.parameters as {
+      file: string
       infoToExtract: Array<{ infoToExtract: string }>
     }
 
@@ -66,7 +64,7 @@ const action: IRawAction = {
       )
     }
 
-    const result = requestSchema.safeParse({ attachments, infoToExtract })
+    const result = generalisedModelSchema.safeParse({ file, infoToExtract })
     if (!result.success) {
       const { stepErrorName, stepErrorSolution } = getValidationError(result)
 
@@ -79,26 +77,12 @@ const action: IRawAction = {
     }
 
     try {
-      /**
-       * FIXME (kevinkim-ogp): should only accept one attachment
-       * use a different selector on the frontend or update the
-       * multi-select to only allow one attachment
-       */
-      // Pre-call get attachments from S3 first
-      const attachmentFiles = await getAttachmentsFromS3(
-        result.data.attachments,
-        $.flow.id,
-      )
-      const attachment = attachmentFiles[0]
+      // get attachment from S3 first
+      const attachment = await getAttachmentFromS3(result.data.file, $.flow.id)
 
       // Step 1: get AWS Cognito access token
       const token = await getToken($)
 
-      /**
-       * TODO (kevinkim-ogp): first iteration of AISAY will only support synchronous calls
-       * - add a check to ensure that the attachment is less than 9 MB (7 MB to be safe)
-       * - add a check to ensure that the call to the model is less than 29 seconds
-       */
       // Step 2: Call the model to get the output
       const res = await $.http.request({
         url: `${$.app.baseUrl}/query`,
@@ -116,7 +100,7 @@ const action: IRawAction = {
 
       $.setActionItem({ raw: { ...res.data } })
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       const { stepErrorName, stepErrorSolution } = parseError(err)
       throw new StepError(
         stepErrorName,

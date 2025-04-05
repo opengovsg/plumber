@@ -1,15 +1,16 @@
-import { IJSONArray, IRawAction } from '@plumber/types'
+import { IRawAction } from '@plumber/types'
 
 import appConfig from '@/config/app'
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
 import { getToken } from '../../auth/get-token'
 import { parseError } from '../../common/error-parser'
-import { getAttachmentsFromS3, getValidationError } from '../../common/utils'
+import { specificModelSchema } from '../../common/schema'
+import { getAttachmentFromS3, getValidationError } from '../../common/utils'
 
 import getDataOutMetadata from './get-data-out-metadata'
-import { requestSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Extract data from specific document types',
@@ -19,8 +20,8 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'File',
-      key: 'attachments',
-      type: 'multiselect' as const,
+      key: 'file',
+      type: 'dropdown',
       required: true,
       variables: true,
       variableTypes: ['file'],
@@ -41,16 +42,13 @@ const action: IRawAction = {
     },
   ],
   doesFileProcessing: (step: Step) => {
-    return (
-      step.parameters.attachments &&
-      (step.parameters.attachments as IJSONArray).length > 0
-    )
+    return step.parameters.file && step.parameters.file !== ''
   },
   getDataOutMetadata,
 
   async run($) {
-    const { attachments, documentType } = $.step.parameters as {
-      attachments?: IJSONArray
+    const { file, documentType } = $.step.parameters as {
+      file: string
       documentType: string
     }
 
@@ -63,7 +61,7 @@ const action: IRawAction = {
       )
     }
 
-    const result = requestSchema.safeParse({ attachments, documentType })
+    const result = specificModelSchema.safeParse({ file, documentType })
     if (!result.success) {
       const { stepErrorName, stepErrorSolution } = getValidationError(result)
 
@@ -76,19 +74,12 @@ const action: IRawAction = {
     }
 
     try {
-      // Pre-call get attachments from S3 first
-      const attachmentFiles = await getAttachmentsFromS3(
-        result.data.attachments,
-        $.flow.id,
-      )
-      const attachment = attachmentFiles[0]
+      // get attachment from S3 first
+      const attachment = await getAttachmentFromS3(result.data.file, $.flow.id)
 
       // Step 1: get AWS Cognito access token
       const token = await getToken($)
 
-      // Assuming we do a synchronous call to the model
-      // which needs to be less than 29 seconds
-      // and with a document size of less than 9 MB
       // Step 2: Call the model to get the output
       const aisayRes = await $.http.request({
         url: `${appConfig.aisayApiUrl}/query`,
@@ -108,7 +99,7 @@ const action: IRawAction = {
         raw: { ...aisayRes.data, documentType: result.data.documentType },
       })
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       const { stepErrorName, stepErrorSolution } = parseError(err)
 
       throw new StepError(

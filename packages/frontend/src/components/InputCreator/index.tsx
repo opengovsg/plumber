@@ -103,6 +103,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         addNewOption={schema.addNewOption}
         label={label}
         placeholder={placeholder}
+        variableTypes={schema.variableTypes}
       />
     )
   }
