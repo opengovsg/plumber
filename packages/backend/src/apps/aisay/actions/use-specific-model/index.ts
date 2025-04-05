@@ -1,18 +1,13 @@
 import { IJSONArray, IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
-import { getObjectFromS3Id } from '@/helpers/s3'
 
 import { getToken } from '../../auth/get-token'
 import { parseError } from '../../common/error-parser'
-import { getValidationError } from '../../common/utils'
+import { getAttachmentsFromS3, getValidationError } from '../../common/utils'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema } from './schema'
-
-const uint8ArrayToBase64 = (uint8Array: Uint8Array) => {
-  return Buffer.from(uint8Array).toString('base64')
-}
 
 const action: IRawAction = {
   name: 'Use specific model',
@@ -75,13 +70,9 @@ const action: IRawAction = {
 
     try {
       // Pre-call get attachments from S3 first
-      const attachmentFiles = await Promise.all(
-        result.data.attachments?.map(async (attachment) => {
-          // We verify the flowId here to ensure that the attachment is from the same flow and not
-          // maliciously/ manually injected by another user who does not have access to this attachment
-          const obj = await getObjectFromS3Id(attachment, { flowId: $.flow.id })
-          return { fileName: obj.name, data: uint8ArrayToBase64(obj.data) }
-        }),
+      const attachmentFiles = await getAttachmentsFromS3(
+        result.data.attachments,
+        $.flow.id,
       )
       const attachment = attachmentFiles[0]
 
