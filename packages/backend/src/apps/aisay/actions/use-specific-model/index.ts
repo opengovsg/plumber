@@ -54,7 +54,7 @@ const action: IRawAction = {
       documentType: string
     }
 
-    if (!$.auth.data.clientId || !$.auth.data.clientSecret) {
+    if (!$.auth.data?.clientId || !$.auth.data?.clientSecret) {
       throw new StepError(
         'Missing client ID or client secret',
         'Please check the client ID and client secret',
