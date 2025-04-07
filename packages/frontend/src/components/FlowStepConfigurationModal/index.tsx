@@ -48,7 +48,8 @@ function FlowStepConfigurationModalContent({
   }
   if (
     currentScreen === 'choose-connection' ||
-    currentScreen === 'add-connection'
+    currentScreen === 'add-connection' ||
+    currentScreen === 'configure-excel-connection'
   ) {
     return <ChooseAndAddConnection onClose={onClose} />
   }
