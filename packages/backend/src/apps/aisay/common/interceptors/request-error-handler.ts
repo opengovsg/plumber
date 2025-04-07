@@ -8,6 +8,29 @@ type ThrowingHandler = (
   ...args: Parameters<IApp['requestErrorHandler']>
 ) => never
 
+// handle rate limiting
+const handle429: ThrowingHandler = function ($, error) {
+  const retryAfterMs =
+    parseRetryAfterToMs(error.response?.headers?.['retry-after']) ?? 'default'
+
+  logger.error('Received HTTP 429 from AISAY', {
+    event: 'aisay-http-429',
+    clientId: $.auth.data.clientId,
+    baseUrl: error.response.config.baseURL,
+    url: error.response.config.url,
+    flowId: $.flow?.id,
+    stepId: $.step?.id,
+    executionId: $.execution?.id,
+    retryAfterMs: error.response?.headers?.['retry-after'],
+  })
+
+  throw new RetriableError({
+    error: 'Rate limited by AISAY.',
+    delayInMs: retryAfterMs,
+    delayType: 'queue',
+  })
+}
+
 // Retry failures
 const handle503: ThrowingHandler = function ($, error) {
   const status = error.response.status
@@ -34,6 +57,8 @@ const handle503: ThrowingHandler = function ($, error) {
 
 const errorHandler: IApp['requestErrorHandler'] = async function ($, error) {
   switch (error.response.status) {
+    case 429:
+      return handle429($, error)
     case 503:
       return handle503($, error)
   }

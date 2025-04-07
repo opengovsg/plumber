@@ -97,6 +97,24 @@ describe('AISAY request error handlers', () => {
     vi.restoreAllMocks()
   })
 
+  it('logs an error and jams the entire queue on 429', async () => {
+    mockAxiosAdapterToThrowOnce(429, { 'retry-after': 123 })
+    await http
+      .get('/test-url')
+      .then(() => {
+        expect.unreachable()
+      })
+      .catch((error): void => {
+        expect(error).toBeInstanceOf(RetriableError)
+        expect(error.delayType).toEqual('queue')
+        expect(error.message).toEqual('Rate limited by AISAY.')
+      })
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.stringContaining('HTTP 429'),
+      expect.objectContaining({ event: 'aisay-http-429' }),
+    )
+  })
+
   it('logs a warning and throws a RetriableError with default step delay on 503', async () => {
     mockAxiosAdapterToThrowOnce(503)
     await http
