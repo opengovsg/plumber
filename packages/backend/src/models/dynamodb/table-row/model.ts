@@ -39,6 +39,10 @@ export const TableRow = new Entity(
         default: () => Date.now(),
         set: () => Date.now(),
       },
+      skString1: {
+        type: 'string',
+        required: false,
+      },
     },
     indexes: {
       byRowId: {
@@ -62,6 +66,17 @@ export const TableRow = new Entity(
           composite: ['createdAt'],
         },
       },
+      byGsiString1: {
+        index: 'gsiString1',
+        pk: {
+          field: 'tableId',
+          composite: ['tableId'],
+        },
+        sk: {
+          field: 'skString1',
+          composite: ['skString1'],
+        },
+      },
     },
   },
   {
@@ -69,3 +84,15 @@ export const TableRow = new Entity(
     table: tableName,
   },
 )
+
+export function getSkKeyValue(
+  indexName: string,
+  value: unknown,
+): { [key: string]: unknown } {
+  switch (indexName) {
+    case 'gsiString1':
+      return { skString1: value.toString() }
+    default:
+      return {}
+  }
+}
