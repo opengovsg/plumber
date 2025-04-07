@@ -2,6 +2,7 @@ import { IJSONArray, IRawAction } from '@plumber/types'
 
 import appConfig from '@/config/app'
 import StepError from '@/errors/step'
+import Step from '@/models/step'
 
 import { getToken } from '../../auth/get-token'
 import { parseError } from '../../common/error-parser'
@@ -40,6 +41,12 @@ const action: IRawAction = {
       required: true,
     },
   ],
+  doesFileProcessing: (step: Step) => {
+    return (
+      step.parameters.attachments &&
+      (step.parameters.attachments as IJSONArray).length > 0
+    )
+  },
   getDataOutMetadata,
 
   async run($) {
