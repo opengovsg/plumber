@@ -2,11 +2,17 @@ import { CreateEntityItem } from 'electrodb'
 
 import { TableRow } from './model'
 
+export type TableRowIndexName = 'gsiString1' | 'createdAtIndex'
+
 export type TableRowItem = CreateEntityItem<typeof TableRow>
 export type CreateRowInput = Pick<TableRowItem, 'tableId' | 'data'>
 export type CreateRowsInput = {
   tableId: string
   dataArray: Array<TableRowItem['data']>
+  gsi?: {
+    indexName: TableRowIndexName
+    columnIdToMap: string
+  }
 }
 export type UpdateRowInput = Pick<TableRowItem, 'tableId' | 'rowId' | 'data'>
 

@@ -4,6 +4,8 @@ import client, { tableName } from '@/config/dynamodb'
 
 import { autoMarshallDataObj } from '../helpers'
 
+import type { TableRowIndexName } from './types'
+
 export const TableRow = new Entity(
   {
     model: {
@@ -86,7 +88,7 @@ export const TableRow = new Entity(
 )
 
 export function getSkKeyValue(
-  indexName: string,
+  indexName: TableRowIndexName,
   value: unknown,
 ): { [key: string]: unknown } {
   switch (indexName) {
