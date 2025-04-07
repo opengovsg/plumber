@@ -64,8 +64,7 @@ export default function ChooseAndAddConnection(
   const { modalState, patchModalState, step, prevStepId } = useContext(
     FlowStepConfigurationContext,
   )
-  const { currentScreen, selectedApp, selectedEvent, selectedConnectionId } =
-    modalState
+  const { currentScreen, selectedApp, selectedEvent } = modalState
 
   const {
     data,
@@ -100,7 +99,50 @@ export default function ChooseAndAddConnection(
     [selectedApp, selectedEvent, refetch, patchModalState],
   )
 
-  // Add a new connection for verifying and registering of connection
+  // If the step is not provided, create a new step; else update the existing step
+  const onCreateOrUpdateStep = useCallback(
+    async (connectionId: string) => {
+      if (!selectedApp || !selectedEvent || !connectionId) {
+        return
+      }
+
+      patchModalState({ isLoading: true })
+      try {
+        if (prevStepId) {
+          await onCreateStep(
+            prevStepId,
+            selectedApp.key,
+            selectedEvent.key,
+            connectionId,
+          )
+        } else if (step) {
+          await onUpdateStep({
+            ...step,
+            appKey: selectedApp.key,
+            key: selectedEvent.key,
+            connection: {
+              id: connectionId,
+            },
+          })
+        }
+        onClose()
+      } finally {
+        patchModalState({ isLoading: false })
+      }
+    },
+    [
+      prevStepId,
+      step,
+      selectedApp,
+      selectedEvent,
+      onClose,
+      onCreateStep,
+      onUpdateStep,
+      patchModalState,
+    ],
+  )
+
+  // Add a new connection, create or update the step and close the modal immediately
   const handleAddConnection = useCallback(
     async (response: Record<string, any>) => {
       const newConnectionId = response?.createConnection?.id as
@@ -108,60 +150,11 @@ export default function ChooseAndAddConnection(
         | undefined
 
       if (newConnectionId) {
-        if (!selectedApp || !selectedEvent) {
-          return
-        }
-
-        handleConnectionChange(newConnectionId, true)
-        patchModalState({
-          selectedConnectionId: newConnectionId,
-          currentScreen: 'choose-connection',
-        })
+        await onCreateOrUpdateStep(newConnectionId)
       }
     },
-    [handleConnectionChange, selectedApp, selectedEvent, patchModalState],
+    [onCreateOrUpdateStep],
   )
-
-  // If the step is not provided, create a new step; else update the existing step
-  const handleSubmit = useCallback(async () => {
-    if (!selectedApp || !selectedEvent || !selectedConnectionId) {
-      return
-    }
-
-    patchModalState({ isLoading: true })
-    try {
-      if (prevStepId) {
-        await onCreateStep(
-          prevStepId,
-          selectedApp.key,
-          selectedEvent.key,
-          selectedConnectionId,
-        )
-      } else if (step) {
-        await onUpdateStep({
-          ...step,
-          appKey: selectedApp.key,
-          key: selectedEvent.key,
-          connection: {
-            id: selectedConnectionId,
-          },
-        })
-      }
-      onClose()
-    } finally {
-      patchModalState({ isLoading: false })
-    }
-  }, [
-    selectedApp,
-    selectedEvent,
-    selectedConnectionId,
-    patchModalState,
-    prevStepId,
-    step,
-    onCreateStep,
-    onUpdateStep,
-    onClose,
-  ])
 
   if (!flowId) {
     return <InvalidModalScreen />
@@ -173,7 +166,7 @@ export default function ChooseAndAddConnection(
         appConnectionsLoading={appConnectionsLoading}
         connectionOptions={connectionOptions}
         handleConnectionChange={handleConnectionChange}
-        handleSubmit={handleSubmit}
+        onCreateOrUpdateStep={onCreateOrUpdateStep}
       />
     )
   }
@@ -194,7 +187,7 @@ export default function ChooseAndAddConnection(
     return (
       <ConfigureExcelConnection
         onBack={() => patchModalState({ currentScreen: 'choose-event' })}
-        handleSubmit={handleSubmit}
+        onCreateOrUpdateStep={onCreateOrUpdateStep}
       />
     )
   }

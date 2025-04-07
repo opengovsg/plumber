@@ -24,7 +24,6 @@ type ChooseConnectionSubstepProps = {
 type ConnectionLink = {
   url: string
   text: string
-  isExternal: boolean
 }
 
 interface ConnectionStatus {
@@ -110,8 +109,7 @@ function ChooseConnectionSubstep(
       if (application.key === 'formsg') {
         connectionLink = {
           url: formLinkGenerator(connectionOption),
-          text: 'View form',
-          isExternal: true,
+          text: '(View form)',
         }
       }
 
@@ -145,7 +143,6 @@ function ChooseConnectionSubstep(
             {connectionStatus.connectionLink && (
               <Link
                 href={connectionStatus.connectionLink.url}
-                isExternal={connectionStatus.connectionLink.isExternal}
                 target="_blank"
                 ml={2}
               >

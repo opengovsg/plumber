@@ -68,7 +68,7 @@ function SuccessfulConnectionContent({
   handleSubmit: () => void
 }) {
   return (
-    <Flex flexDir="column" gap={3} mb={4}>
+    <Flex flexDir="column" gap={3}>
       <Text fontSize="sm" ml={4}>
         {`1. Find the `}
         <Text as="span" textDecoration="underline">
@@ -80,7 +80,7 @@ function SuccessfulConnectionContent({
         {`2. Place your Excel files in this folder to start using them`}
       </Text>
 
-      <Button isFullWidth onClick={handleSubmit}>
+      <Button isFullWidth onClick={handleSubmit} mt={4}>
         Ok, got it!
       </Button>
     </Flex>
@@ -97,7 +97,7 @@ function ConfigurationConnectionContent({
   isLoading: boolean
 }) {
   return (
-    <Flex flexDir="column" gap={3} mb={4}>
+    <Flex flexDir="column" gap={3}>
       <Text>How it works:</Text>
       <Text fontSize="sm" ml={4}>
         {`1. We'll create a folder named `}
@@ -114,6 +114,7 @@ function ConfigurationConnectionContent({
         size="lg"
         onClick={onRegisterConnection}
         isLoading={isLoading}
+        mt={4}
       >
         Connect
       </Button>
@@ -123,7 +124,7 @@ function ConfigurationConnectionContent({
 
 interface ConfigureExcelConnectionProps {
   onBack: () => void
-  handleSubmit: () => void
+  onCreateOrUpdateStep: (connectionId: string) => void
 }
 
 /**
@@ -134,7 +135,7 @@ interface ConfigureExcelConnectionProps {
 export default function ConfigureExcelConnection(
   props: ConfigureExcelConnectionProps,
 ) {
-  const { onBack, handleSubmit } = props
+  const { onBack, onCreateOrUpdateStep } = props
   const { flowId } = useContext(EditorContext)
   const { modalState, step } = useContext(FlowStepConfigurationContext)
   const { selectedApp, selectedConnectionId } = modalState
@@ -186,7 +187,7 @@ export default function ConfigureExcelConnection(
 
   return (
     <>
-      <ModalHeader>
+      <ModalHeader pt={0}>
         {!isConnectionValid && (!step?.key || !step?.appKey) && (
           <Button
             variant="clear"
@@ -211,13 +212,13 @@ export default function ConfigureExcelConnection(
           />
         )}
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={6} size="xs" />
 
       <ModalBody>
         {isConnectionValid ? (
           <SuccessfulConnectionContent
             userEmail={currentUser?.email ?? ''}
-            handleSubmit={handleSubmit}
+            handleSubmit={() => onCreateOrUpdateStep(selectedConnectionId)}
           />
         ) : (
           <ConfigurationConnectionContent

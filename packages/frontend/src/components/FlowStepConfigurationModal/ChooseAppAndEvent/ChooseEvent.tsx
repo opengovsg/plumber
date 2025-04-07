@@ -73,7 +73,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
 
   return (
     <>
-      <ModalHeader>
+      <ModalHeader pt={0}>
         <Flex gap={2} flexDir="column" alignItems="flex-start">
           <Button
             variant="clear"
@@ -89,7 +89,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
           <Text textStyle="body-1">{selectedApp.description}</Text>
         </Flex>
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={6} size="xs" />
 
       {/* Returns second level modal view of triggers or actions: if an app has multiple
        * triggers or actions, it will be shown as a list of items */}

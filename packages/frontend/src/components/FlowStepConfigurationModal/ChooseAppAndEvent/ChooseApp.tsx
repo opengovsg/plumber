@@ -77,19 +77,21 @@ export default function ChooseApp(props: ChooseAppProps) {
 
   return (
     <>
-      <ModalHeader>
+      <ModalHeader pt={0}>
         <Flex gap={2} flexDir="column" alignItems="flex-start">
-          <Text textStyle="h3-semibold" pt={4}>
+          <Text textStyle="h3-semibold">
             {isTrigger
               ? 'Choose how you want your workflow to start'
               : 'Add a step'}
           </Text>
-          <Text textStyle="body-1">
-            These are actions that you can add to your workflow.
-          </Text>
+          {!isTrigger && (
+            <Text textStyle="body-1">
+              These are actions that you can add to your workflow.
+            </Text>
+          )}
         </Flex>
       </ModalHeader>
-      <ModalCloseButton mt={4} size="xs" />
+      <ModalCloseButton mt={6} size="xs" />
 
       {/* Returns first level modal view of apps: if an app only has one trigger or action,
        * it will be shown as a single item. Else, it will be shown as an expandable item

@@ -23,7 +23,7 @@ interface ChooseConnectionProps {
   appConnectionsLoading: boolean
   connectionOptions: ConnectionDropdownOption[]
   handleConnectionChange: (value: string, shouldRefetch: boolean) => void
-  handleSubmit: () => void
+  onCreateOrUpdateStep: (connectionId: string) => void
 }
 
 export default function ChooseConnection(
@@ -33,7 +33,7 @@ export default function ChooseConnection(
     appConnectionsLoading,
     connectionOptions,
     handleConnectionChange,
-    handleSubmit,
+    onCreateOrUpdateStep,
   } = props
   const { readOnly, flowId } = useContext(EditorContext)
 
@@ -112,7 +112,7 @@ export default function ChooseConnection(
   return (
     <>
       {/* Hide back button only if step has both the key and appKey */}
-      <ModalHeader>
+      <ModalHeader pt={0}>
         {(!step?.key || !step?.appKey) && (
           <Button
             variant="clear"
@@ -133,9 +133,9 @@ export default function ChooseConnection(
           }
         />
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={6} size="xs" />
 
-      <ModalBody mb={4}>
+      <ModalBody>
         <Flex flexDir="column" alignItems="center" gap={6}>
           <Flex w="100%" flexDir="column" gap={4}>
             <ChooseConnectionDropdown
@@ -149,7 +149,7 @@ export default function ChooseConnection(
               }
             />
             <SetConnectionButton
-              onNextStep={handleSubmit}
+              onNextStep={() => onCreateOrUpdateStep(selectedConnectionId)}
               onRegisterConnection={onRegisterConnection}
               readOnly={readOnly}
               supportsConnectionRegistration={supportsConnectionRegistration}
