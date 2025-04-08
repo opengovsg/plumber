@@ -20,18 +20,17 @@ const action: IRawAction = {
     {
       label: 'File',
       key: 'attachments',
-      description: 'Use file from previous steps',
       type: 'multiselect' as const,
       required: true,
       variables: true,
       variableTypes: ['file'],
     },
     {
-      label: 'Document Type',
+      label: 'Document type',
       key: 'documentType',
       type: 'dropdown',
       options: [
-        { label: 'Bank Statement', value: 'BANK_STATEMENT' },
+        { label: 'Bank statement', value: 'BANK_STATEMENT' },
         { label: 'Cheque', value: 'CHEQUE' },
         { label: 'Invoice', value: 'INVOICE' },
         { label: 'Passport', value: 'PASSPORT' },
