@@ -517,6 +517,15 @@ input CreateStepInput {
   previousStep: PreviousStepInput
 }
 
+input StepTemplateConfigInput {
+  appEventKey: String
+}
+
+input StepConfigInput {
+  stepName: String
+  templateConfig: StepTemplateConfigInput
+}
+
 input UpdateStepInput {
   id: String
   previousStepId: String
@@ -527,6 +536,7 @@ input UpdateStepInput {
   parameters: JSONObject
   previousStep: PreviousStepInput
   status: String
+  config: StepConfigInput
 }
 
 input DeleteStepInput {
@@ -608,6 +618,7 @@ type Step {
 
 type StepConfig {
   templateConfig: StepTemplateConfig
+  stepName: String
 }
 
 type StepTemplateConfig {

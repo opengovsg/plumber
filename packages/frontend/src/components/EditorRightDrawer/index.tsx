@@ -1,10 +1,11 @@
 import { IFlow } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { Box, CloseButton, Flex } from '@chakra-ui/react'
 
 import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
 import { EditorContext } from '@/contexts/Editor'
+import { EditableTypography } from '@/exports/components'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import Step from './Step'
@@ -26,10 +27,12 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     currentStepIndex,
     isDrawerOpen,
     isMobile,
+    readOnly: isReadOnlyEditor,
     onDrawerClose,
     onDrawerOpen,
     setCurrentStepId,
     setCurrentStepIndex,
+    onUpdateStep,
   } = useContext(EditorContext)
 
   const step = useMemo(() => {
@@ -37,6 +40,19 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
   }, [currentStepId, steps])
 
   const { caption } = useStepMetadata(allApps, step)
+
+  const onStepRename = useCallback(
+    async (value: string) => {
+      await onUpdateStep({
+        ...step,
+        config: {
+          ...step.config,
+          stepName: value,
+        },
+      })
+    },
+    [onUpdateStep, step],
+  )
 
   if (!currentStepId || !step) {
     return null
@@ -64,11 +80,23 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
         w="full"
         px="4"
       >
-        <Box>{caption}</Box>
+        {isReadOnlyEditor ? (
+          <Box>{caption}</Box>
+        ) : (
+          <EditableTypography
+            variant="body1"
+            onConfirm={onStepRename}
+            noWrap
+            sx={{ display: 'flex', flex: 1, maxWidth: '30vw', ml: 1 }}
+          >
+            {caption}
+          </EditableTypography>
+        )}
+
         <CloseButton
           onClick={() => {
-            setCurrentStepId(null)
             onDrawerClose()
+            setCurrentStepId(null)
           }}
           position="absolute"
           right="4"

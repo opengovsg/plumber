@@ -42,7 +42,9 @@ export function useStepMetadata(
 
   // define caption description based on app and step
   let caption = ''
-  if (selectedActionOrTrigger?.name) {
+  if (step?.config?.stepName) {
+    caption = step?.config?.stepName
+  } else if (selectedActionOrTrigger?.name) {
     caption = `${step?.position ? `${step.position}. ` : ''}${
       selectedActionOrTrigger?.name
     }`
