@@ -27,7 +27,10 @@ export interface DeleteRowsInput {
   tableId: string
   rowIds: string[]
 }
-export type TableRowOutput = Pick<TableRowItem, 'rowId' | 'data'>
+export type TableRowOutput = Pick<
+  TableRowItem,
+  'rowId' | 'data' | 'createdAt' | 'updatedAt'
+>
 
 export enum TableRowFilterOperator {
   Equals = 'equals',

@@ -9,7 +9,11 @@ import {
   generateMockTableColumns,
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
-import { createTableRow, TableRowFilter } from '@/models/dynamodb/table-row'
+import {
+  createTableRow,
+  TableRowFilter,
+  TableRowFilterOperator,
+} from '@/models/dynamodb/table-row'
 import * as tableFunctions from '@/models/dynamodb/table-row/functions'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
@@ -83,11 +87,19 @@ describe('tiles create row action', () => {
           filters: [
             {
               columnId: dummyColumnIds[0],
-              operator: 'equals',
+              operator: TableRowFilterOperator.Equals,
               value: originalData[dummyColumnIds[0]],
+            },
+            {
+              columnId: dummyColumnIds[1],
+              operator: TableRowFilterOperator.LessThan,
+              value: originalData[dummyColumnIds[1]],
             },
           ] as TableRowFilter[],
         },
+      },
+      execution: {
+        id: '789',
       },
       app: {
         name: tiles.name,
@@ -157,6 +169,96 @@ describe('tiles create row action', () => {
       filters: $.step.parameters.filters,
       scanLimit: 100,
       order: 'desc',
+    })
+  })
+
+  describe('GSI filter', () => {
+    it('should call getTableRows with extracted GSI filter', async () => {
+      await TableColumnMetadata.query()
+        .patch({
+          config: {
+            gsi: {
+              indexName: 'gsiString1',
+              status: 'ready',
+              type: 'string',
+            },
+          },
+        })
+        .where({ id: dummyColumnIds[0] })
+      const getTableRowsSpy = vi
+        .spyOn(tableFunctions, 'getTableRows')
+        .mockResolvedValueOnce({
+          rows: [],
+          stringifiedCursor: undefined,
+        })
+      $.step.parameters.returnLastRow = true
+      await findSingleRowAction.run($)
+      expect(getTableRowsSpy).toHaveBeenCalledWith({
+        tableId: $.step.parameters.tableId,
+        filters: [($.step.parameters.filters as any[])[1]],
+        gsi: {
+          indexName: 'gsiString1',
+          filter: ($.step.parameters.filters as any[])[0],
+        },
+        scanLimit: 100,
+        order: 'desc',
+      })
+    })
+
+    it('should not call getTableRows with GSI filter if status is not ready', async () => {
+      await TableColumnMetadata.query()
+        .patch({
+          config: {
+            gsi: {
+              indexName: 'gsiString1',
+              status: 'pending',
+              type: 'string',
+            },
+          },
+        })
+        .where({ id: dummyColumnIds[0] })
+      const getTableRowsSpy = vi
+        .spyOn(tableFunctions, 'getTableRows')
+        .mockResolvedValueOnce({
+          rows: [],
+          stringifiedCursor: undefined,
+        })
+      $.step.parameters.returnLastRow = true
+      await findSingleRowAction.run($)
+      expect(getTableRowsSpy).toHaveBeenCalledWith({
+        tableId: $.step.parameters.tableId,
+        filters: $.step.parameters.filters as any[],
+        scanLimit: 100,
+        order: 'desc',
+      })
+    })
+
+    it('should not call getTableRows with GSI filter if operator is not supported', async () => {
+      await TableColumnMetadata.query()
+        .patch({
+          config: {
+            gsi: {
+              indexName: 'gsiString1',
+              status: 'ready',
+              type: 'string',
+            },
+          },
+        })
+        .where({ id: dummyColumnIds[1] })
+      const getTableRowsSpy = vi
+        .spyOn(tableFunctions, 'getTableRows')
+        .mockResolvedValueOnce({
+          rows: [],
+          stringifiedCursor: undefined,
+        })
+      $.step.parameters.returnLastRow = true
+      await findSingleRowAction.run($)
+      expect(getTableRowsSpy).toHaveBeenCalledWith({
+        tableId: $.step.parameters.tableId,
+        filters: $.step.parameters.filters as any[],
+        scanLimit: 100,
+        order: 'desc',
+      })
     })
   })
 })

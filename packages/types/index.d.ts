@@ -882,6 +882,11 @@ export interface IStepError {
 // Tiles
 export interface ITableColumnConfig {
   width?: number
+  gsi?: {
+    indexName: string
+    type: 'string' | 'number'
+    status: 'pending' | 'ready' | 'error'
+  }
 }
 
 export interface ITableColumnMetadata {
