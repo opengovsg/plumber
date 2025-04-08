@@ -117,8 +117,6 @@ export default function FlowStepHeader(
     [onModalOpen],
   )
 
-  console.log('isDrawerOpen', isDrawerOpen)
-
   return (
     <>
       <Box

@@ -43,8 +43,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
     onClose: onDrawerClose,
   } = useDisclosure()
 
-  console.log('isDrawerOpen', isDrawerOpen)
-
   const { flow, steps: rawSteps, isNested } = props
 
   const {

@@ -122,6 +122,15 @@ export default function FlowStep(
                 borderBottomLeftRadius: '0',
                 borderBottomRightRadius: '0',
               }}
+              w={
+                isDrawerOpen
+                  ? isMobile
+                    ? '0px'
+                    : '100%'
+                  : isMobile
+                  ? '100vw'
+                  : '55rem'
+              }
             >
               <MarkdownRenderer
                 source={templateStepHelpMessage}
