@@ -19,23 +19,21 @@ const action: IRawAction = {
     {
       label: 'File',
       key: 'attachments',
-      description: 'Use files from previous steps',
       type: 'multiselect' as const,
       required: true,
       variables: true,
       variableTypes: ['file'],
     },
     {
-      label: 'Info To Extract',
+      label: 'Info to extract',
       key: 'infoToExtract',
       type: 'multirow' as const,
       required: true,
-      description: 'Add info to extract here.',
       variables: true,
       addRowButtonText: 'Add',
       subFields: [
         {
-          placeholder: 'Info To Extract',
+          placeholder: 'Info to extract',
           key: 'infoToExtract',
           type: 'string' as const,
           required: true,
