@@ -24,7 +24,7 @@ interface FlowStepGroupProps {
 }
 
 export default function FlowStepGroup(props: FlowStepGroupProps) {
-  const { groupedSteps, stepsBeforeGroup, addStep, children } = props
+  const { groupedSteps, stepsBeforeGroup, children } = props
   const { isDrawerOpen, isMobile } = useContext(EditorContext)
 
   const { stepGroupType, stepGroupCaption } = useMemo(() => {
@@ -88,7 +88,6 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
           <IfThen
             groupedSteps={groupedSteps}
             stepsBeforeGroup={stepsBeforeGroup}
-            addStep={addStep}
           />
         ) : (
           <Error />

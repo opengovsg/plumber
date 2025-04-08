@@ -46,13 +46,14 @@ interface BranchProps {
 }
 
 export default function Branch(props: BranchProps) {
-  const { addStep, branchSteps, stepsBeforeGroup } = props
+  const { branchSteps, stepsBeforeGroup } = props
 
   const {
     currentStepId,
     isDrawerOpen,
     isMobile,
     readOnly: isEditorReadOnly,
+    onCreateStep,
     onDrawerClose,
     onDrawerOpen,
     onUpdateStep,
@@ -168,7 +169,7 @@ export default function Branch(props: BranchProps) {
             />
             <HoverAddStepButton
               onClick={(appKey, eventKey) => {
-                addStep(step.id, appKey, eventKey)
+                onCreateStep(step.id, appKey, eventKey)
               }}
               isDisabled={isEditorReadOnly}
               isDrawerOpen={isDrawerOpen}

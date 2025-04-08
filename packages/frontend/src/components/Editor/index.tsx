@@ -104,13 +104,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
     return groupStepIdx === -1
       ? [steps, []]
       : [steps.slice(0, groupStepIdx), branchesWithSteps]
-  }, [
-    groupingActions,
-    // updateHandlerFactory creates a new array, so referential equality is OK.
-    // FIXME (ogp-weeloong): Maybe we can optimize our caching strategy to avoid
-    // creating new arrays.
-    steps,
-  ])
+  }, [groupingActions, steps])
+
   const flowStepGroupIconUrl = useMemo(() => {
     if (groupedSteps.length === 0) {
       return undefined

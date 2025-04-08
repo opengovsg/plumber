@@ -18,15 +18,10 @@ import { ifThenStyles } from './styles'
 interface IfThenProps {
   groupedSteps: IStep[][]
   stepsBeforeGroup: IStep[]
-  addStep: (
-    previousStepId: string,
-    appKey: string,
-    eventKey: string,
-  ) => Promise<void>
 }
 
 export default function IfThen(props: IfThenProps): JSX.Element {
-  const { groupedSteps, stepsBeforeGroup, addStep } = props
+  const { groupedSteps, stepsBeforeGroup } = props
 
   const { depth } = useContext(BranchContext)
   const {
@@ -109,7 +104,6 @@ export default function IfThen(props: IfThenProps): JSX.Element {
           return (
             <Branch
               key={branchSteps[0].id}
-              addStep={addStep}
               branchSteps={branchSteps}
               groupedSteps={groupedSteps}
               stepsBeforeGroup={stepsBeforeGroup}
