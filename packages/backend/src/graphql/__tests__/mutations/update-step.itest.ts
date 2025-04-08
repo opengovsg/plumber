@@ -108,6 +108,7 @@ describe('updateStep mutation', () => {
       connectionId: mockConnectionId,
       parameters: { updatedParam: 'newValue' },
       status: 'completed',
+      config: {},
     })
   })
 
@@ -126,6 +127,7 @@ describe('updateStep mutation', () => {
       connectionId,
       parameters: { testParam: 'value' },
       status: 'completed',
+      config: {},
     })
   })
 
@@ -211,6 +213,7 @@ describe('updateStep mutation', () => {
       connectionId: mockConnectionId,
       parameters: { testParam: 'value' },
       status: 'incomplete',
+      config: {},
     })
   })
 
@@ -228,6 +231,84 @@ describe('updateStep mutation', () => {
       connectionId: mockConnectionId,
       parameters: { testParam: 'value' },
       status: 'incomplete',
+      config: {},
     })
+  })
+
+  it('should update step name', async () => {
+    const input = {
+      ...genericInputParams,
+      config: { stepName: 'Updated Step Name' },
+    }
+
+    await updateStep(null, { input }, context)
+
+    expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
+      key: 'sendTransactionalEmail',
+      appKey: 'postman',
+      connectionId: mockConnectionId,
+      parameters: { testParam: 'value' },
+      status: 'completed',
+      config: { stepName: 'Updated Step Name' },
+    })
+  })
+
+  it('updating step name should not update template config', async () => {
+    // Override the steps query to return template config
+    context.currentUser.$relatedQuery = vi
+      .fn()
+      .mockImplementation((relation) => {
+        if (relation === 'steps') {
+          return {
+            findOne: vi.fn().mockResolvedValue({
+              id: mockStepId,
+              key: 'sendTransactionalEmail',
+              appKey: 'postman',
+              status: 'completed',
+              config: {
+                stepName: 'some-step-name',
+                templateConfig: { appEventKey: 'existingAppEventKey' },
+              },
+            }),
+          }
+        }
+        if (relation === 'connections') {
+          return {
+            findOne: vi.fn().mockResolvedValue({ id: mockConnectionId }),
+          }
+        }
+        return {
+          findOne: vi.fn().mockResolvedValue(null),
+        }
+      })
+
+    const input = {
+      ...genericInputParams,
+      config: { stepName: 'Updated Step Name' },
+    }
+
+    await updateStep(null, { input }, context)
+
+    expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
+      key: 'sendTransactionalEmail',
+      appKey: 'postman',
+      connectionId: mockConnectionId,
+      parameters: { testParam: 'value' },
+      status: 'completed',
+      config: {
+        stepName: 'Updated Step Name',
+        templateConfig: { appEventKey: 'existingAppEventKey' },
+      },
+    })
+
+    // Verify the existing templateConfig was preserved in the result
+    expect(
+      patchAndFetchByIdSpy.mock.results[0].value.config.templateConfig,
+    ).toEqual({
+      appEventKey: 'existingAppEventKey',
+    })
+    expect(patchAndFetchByIdSpy.mock.results[0].value.config.stepName).toEqual(
+      'Updated Step Name',
+    )
   })
 })
