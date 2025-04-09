@@ -809,5 +809,37 @@ describe('dynamodb table row functions', () => {
         updatedData[dummyColumnIds[0]],
       )
     })
+
+    it('should update sort key when patching row', async () => {
+      const data = generateMockTableRowData({
+        columnIds: dummyColumnIds,
+      })
+      const originalRow = await createTableRow({ tableId: dummyTable.id, data })
+      const patchData = {
+        set: {
+          [dummyColumnIds[0]]: 'patched',
+        },
+      }
+      await patchTableRow({
+        tableId: dummyTable.id,
+        patchData,
+        rowId: originalRow.rowId,
+        gsis: [
+          {
+            indexName: 'gsiString1',
+            columnIdToMap: dummyColumnIds[0],
+          },
+        ],
+      })
+      const patchedRow = await TableRow.query
+        .byRowId({
+          tableId: dummyTable.id,
+          rowId: originalRow.rowId,
+        })
+        .go({
+          ignoreOwnership: true,
+        })
+      expect(patchedRow.data[0].skString1).toEqual('patched')
+    })
   })
 })

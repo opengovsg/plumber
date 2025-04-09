@@ -5,7 +5,7 @@ import logger from '@/helpers/logger'
 
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
 
-import { constructDataWithGsis, TableRow } from './model'
+import { constructDataWithGsis, getGsiSortKey, TableRow } from './model'
 import {
   type CreateRowInput,
   type CreateRowsInput,
@@ -268,30 +268,35 @@ export const patchTableRow = async ({
   rowId,
   tableId,
   patchData,
+  gsis,
 }: PatchRowInput): Promise<TableRowItem> => {
   try {
     const patchOperation = TableRow.patch({
       tableId,
       rowId,
-    }).data(({ data }, { set, add, subtract }) => {
+    }).data((row, { set, add, subtract }) => {
       // Handle set operations
       Object.entries(patchData.set || {}).forEach(
         ([key, value]: [string, string]) => {
-          set(data[key], value ? autoMarshallNumberStrings(value) : '')
+          set(row.data[key], value ? autoMarshallNumberStrings(value) : null)
+          const sortKey = getGsiSortKey(gsis, key)
+          if (sortKey) {
+            set(row[sortKey as keyof typeof row], value?.toString() || null)
+          }
         },
       )
 
       // Handle add operations
       Object.entries(patchData.add || {}).forEach(
         ([key, value]: [string, string]) => {
-          add(data[key], autoMarshallNumberStrings(value))
+          add(row.data[key], autoMarshallNumberStrings(value))
         },
       )
 
       // Handle subtract operations
       Object.entries(patchData.subtract || {}).forEach(
         ([key, value]: [string, string]) => {
-          subtract(data[key], autoMarshallNumberStrings(value))
+          subtract(row.data[key], autoMarshallNumberStrings(value))
         },
       )
     })

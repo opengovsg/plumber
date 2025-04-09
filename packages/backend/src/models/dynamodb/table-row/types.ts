@@ -39,6 +39,7 @@ export type PatchRowInput = Pick<TableRowItem, 'tableId' | 'rowId'> & {
     add?: TableRowItem['data']
     subtract?: TableRowItem['data']
   }
+  gsis?: GsiOptions[]
 }
 export interface DeleteRowsInput {
   tableId: string

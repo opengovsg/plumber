@@ -111,3 +111,16 @@ export function constructDataWithGsis(
   }
   return dataWithGsi
 }
+
+export function getGsiSortKey(
+  gsis: GsiOptions[],
+  columnId: string,
+): string | undefined {
+  const correspondingGsi = gsis.find((gsi) => gsi.columnIdToMap === columnId)
+  switch (correspondingGsi?.indexName) {
+    case 'gsiString1':
+      return 'skString1'
+    default:
+      return undefined
+  }
+}
