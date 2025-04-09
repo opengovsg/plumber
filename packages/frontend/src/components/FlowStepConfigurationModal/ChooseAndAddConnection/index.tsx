@@ -142,20 +142,6 @@ export default function ChooseAndAddConnection(
     ],
   )
 
-  // Add a new connection, create or update the step and close the modal immediately
-  const handleAddConnection = useCallback(
-    async (response: Record<string, any>) => {
-      const newConnectionId = response?.createConnection?.id as
-        | string
-        | undefined
-
-      if (newConnectionId) {
-        await onCreateOrUpdateStep(newConnectionId)
-      }
-    },
-    [onCreateOrUpdateStep],
-  )
-
   if (!flowId) {
     return <InvalidModalScreen />
   }
@@ -173,8 +159,8 @@ export default function ChooseAndAddConnection(
   if (selectedApp && currentScreen === 'add-connection') {
     return (
       <AddConnection
-        onSubmit={handleAddConnection}
-        onBack={() => patchModalState({ currentScreen: 'choose-connection' })}
+        handleConnectionChange={handleConnectionChange}
+        onCreateOrUpdateStep={onCreateOrUpdateStep}
       />
     )
   }

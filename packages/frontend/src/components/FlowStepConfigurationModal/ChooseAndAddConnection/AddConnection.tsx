@@ -20,13 +20,17 @@ import Form from '../../Form'
 import { infoboxMdComponents } from '../../MarkdownRenderer/CustomMarkdownComponents'
 import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import { useConnectionVerification } from '../hooks/useConnectionRegistration'
 import InvalidModalScreen from '../InvalidModalScreen'
 
 import ConnectionHeader from './ConnectionHeader'
 
 type AddConnectionProps = {
-  onSubmit: (response: Record<string, unknown>) => void
-  onBack: () => void
+  handleConnectionChange: (
+    connectionId: string,
+    shouldRefetch: boolean,
+  ) => Promise<void>
+  onCreateOrUpdateStep: (connectionId: string) => Promise<void>
 }
 
 type Response = {
@@ -34,10 +38,11 @@ type Response = {
 }
 
 export default function AddConnection(props: AddConnectionProps): JSX.Element {
-  const { onSubmit, onBack } = props
-  const {
-    modalState: { selectedApp },
-  } = useContext(FlowStepConfigurationContext)
+  const { handleConnectionChange, onCreateOrUpdateStep } = props
+  const { modalState, patchModalState } = useContext(
+    FlowStepConfigurationContext,
+  )
+  const { selectedApp } = modalState
   const { name, authDocUrl, key, auth } = selectedApp || {}
 
   const [error, setError] = useState<IJSONObject | null>(null)
@@ -60,6 +65,57 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
       )
     }
   }, [])
+
+  const supportsConnectionRegistration =
+    !!selectedApp?.auth?.connectionRegistrationType
+
+  const { onRegisterConnection, testConnection } = useConnectionVerification({
+    supportsConnectionRegistration,
+  })
+
+  /**
+   * Test connection first for apps that support connection registration
+   * If connection is not verified, redirect to choose-connection screen to connect
+   * If connection is verified, register connection and create step
+   *
+   * For apps without connection registration, create step directly
+   */
+  const handleAddConnection = useCallback(
+    async (response: Record<string, any>) => {
+      const newConnectionId = response?.createConnection?.id as
+        | string
+        | undefined
+
+      if (newConnectionId) {
+        patchModalState({ isLoading: true })
+        if (supportsConnectionRegistration) {
+          const testResult = await testConnection(newConnectionId)
+          // If connection is not verified and has an error message
+          if (!testResult?.registrationVerified && !!testResult?.message) {
+            await handleConnectionChange(newConnectionId, true)
+            patchModalState({
+              selectedConnectionId: newConnectionId,
+              currentScreen: 'choose-connection',
+              isLoading: false,
+            })
+            return
+          } else {
+            await onRegisterConnection(newConnectionId)
+          }
+        }
+        // Create or update step at the end
+        await onCreateOrUpdateStep(newConnectionId)
+      }
+    },
+    [
+      handleConnectionChange,
+      onCreateOrUpdateStep,
+      onRegisterConnection,
+      patchModalState,
+      supportsConnectionRegistration,
+      testConnection,
+    ],
+  )
 
   const submitHandler: SubmitHandler<FieldValues> = useCallback(
     async (data) => {
@@ -95,14 +151,16 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
         stepIndex++
 
         if (stepIndex === steps.length) {
-          onSubmit(response)
+          await handleAddConnection(response)
         }
       }
 
       setInProgress(false)
     },
-    [key, steps, onSubmit],
+    [key, steps, handleAddConnection],
   )
+
+  const onBack = () => patchModalState({ currentScreen: 'choose-connection' })
 
   if (!selectedApp) {
     return <InvalidModalScreen />
@@ -129,7 +187,7 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
           DEFAULT_ADD_CONNECTION_LABEL
         }
       />
-      <ModalCloseButton mt={6} size="xs" />
+      <ModalCloseButton mt={2} size="xs" />
 
       <ModalBody mt={2}>
         {auth?.connectionType !== 'user-added' ? (
