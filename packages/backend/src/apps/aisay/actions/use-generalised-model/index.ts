@@ -11,7 +11,7 @@ import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema } from './schema'
 
 const action: IRawAction = {
-  name: 'Use generalised model',
+  name: 'Extract data from all document types',
   key: 'useGeneralisedModel',
   description: 'Optimised for standard and non-standard documents',
   arguments: [
