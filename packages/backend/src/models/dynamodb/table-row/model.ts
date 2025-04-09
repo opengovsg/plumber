@@ -115,7 +115,7 @@ export function constructDataWithGsis(
 export function getGsiSortKey(
   gsis: GsiOptions[],
   columnId: string,
-): string | undefined {
+): 'skString1' | undefined {
   const correspondingGsi = gsis.find((gsi) => gsi.columnIdToMap === columnId)
   switch (correspondingGsi?.indexName) {
     case 'gsiString1':

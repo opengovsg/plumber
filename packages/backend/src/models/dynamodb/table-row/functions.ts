@@ -281,7 +281,7 @@ export const patchTableRow = async ({
           set(row.data[key], value ? autoMarshallNumberStrings(value) : null)
           const sortKey = getGsiSortKey(gsis, key)
           if (sortKey) {
-            set(row[sortKey as keyof typeof row], value?.toString() || null)
+            set(row[sortKey], value ? value.toString() : null)
           }
         },
       )
