@@ -12,10 +12,10 @@ import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema } from './schema'
 
 const action: IRawAction = {
-  name: 'Use specific model',
+  name: 'Extract data from specific document types',
   key: 'useSpecificModel',
   description:
-    'For documents with standard formats: Receipt, Invoices, Quotation, Bank Statement, Transfer Advice, Passport, Cheque',
+    'Optimised for bank statements, invoices, cheques, passports and receipts.',
   arguments: [
     {
       label: 'File',
