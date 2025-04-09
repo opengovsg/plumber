@@ -9,7 +9,7 @@ import {
 import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
 
-import { TableRowFilterOperator } from '../../table-row'
+import { TableRow, TableRowFilterOperator } from '../../table-row'
 import {
   createTableRow,
   createTableRows,
@@ -549,7 +549,7 @@ describe('dynamodb table row functions', () => {
     })
   })
 
-  describe('GSI', () => {
+  describe('GSI - read', () => {
     beforeEach(async () => {
       const dataArray = []
       for (let i = 0; i < 1000; i++) {
@@ -563,10 +563,12 @@ describe('dynamodb table row functions', () => {
       await createTableRows({
         tableId: dummyTable.id,
         dataArray,
-        gsi: {
-          indexName: 'gsiString1',
-          columnIdToMap: dummyColumnIds[0],
-        },
+        gsis: [
+          {
+            indexName: 'gsiString1',
+            columnIdToMap: dummyColumnIds[0],
+          },
+        ],
       })
     })
     it('should get the correct rows with equals operator using GSI', async () => {
@@ -614,10 +616,12 @@ describe('dynamodb table row functions', () => {
       await createTableRows({
         tableId: dummyTable.id,
         dataArray,
-        gsi: {
-          indexName: 'gsiString1',
-          columnIdToMap: dummyColumnIds[0],
-        },
+        gsis: [
+          {
+            indexName: 'gsiString1',
+            columnIdToMap: dummyColumnIds[0],
+          },
+        ],
       })
       const { rows } = await getTableRows({
         tableId: dummyTable.id,
@@ -719,6 +723,91 @@ describe('dynamodb table row functions', () => {
       })
       expect(rows).toHaveLength(500)
       expect(rows[0].data[dummyColumnIds[1]]).toEqual(0)
+    })
+  })
+
+  describe('GSI - write', () => {
+    it('should write into the sort key when creating single row', async () => {
+      const data = generateMockTableRowData({
+        columnIds: dummyColumnIds,
+      })
+      const insertedRow = await createTableRow({
+        tableId: dummyTable.id,
+        data,
+        gsis: [
+          {
+            indexName: 'gsiString1',
+            columnIdToMap: dummyColumnIds[0],
+          },
+        ],
+      })
+      const row = await TableRow.query
+        .byRowId({ tableId: dummyTable.id, rowId: insertedRow.rowId })
+        .go({
+          ignoreOwnership: true,
+        })
+      expect(row.data[0].skString1).toEqual(data[dummyColumnIds[0]])
+    })
+
+    it('should write into the sort key when creating multiple rows', async () => {
+      const dataArray = []
+      for (let i = 0; i < 1000; i++) {
+        const data = generateMockTableRowData({
+          columnIds: dummyColumnIds,
+        })
+        dataArray.push(data)
+      }
+      await createTableRows({
+        tableId: dummyTable.id,
+        dataArray,
+        gsis: [
+          {
+            indexName: 'gsiString1',
+            columnIdToMap: dummyColumnIds[0],
+          },
+        ],
+      })
+      const rows = await TableRow.query
+        .byCreatedAt({
+          tableId: dummyTable.id,
+        })
+        .go({
+          pages: 'all',
+        })
+      expect(rows.data).toHaveLength(1000)
+      for (const row of rows.data) {
+        expect(row.skString1).toEqual(row.data[dummyColumnIds[0]])
+      }
+    })
+
+    it('should update sort key when updating row', async () => {
+      const data = generateMockTableRowData({
+        columnIds: dummyColumnIds,
+      })
+      const row = await createTableRow({ tableId: dummyTable.id, data })
+      const updatedData = { ...data, [dummyColumnIds[0]]: 'updated' }
+      await updateTableRow({
+        tableId: dummyTable.id,
+        rowId: row.rowId,
+        data: updatedData,
+        gsis: [
+          {
+            indexName: 'gsiString1',
+            columnIdToMap: dummyColumnIds[0],
+          },
+        ],
+      })
+      const updatedRow = await TableRow.query
+        .byRowId({
+          tableId: dummyTable.id,
+          rowId: row.rowId,
+        })
+        .go({
+          ignoreOwnership: true,
+        })
+      expect(updatedRow.data[0].skString1).toEqual(
+        updatedData[dummyColumnIds[0]],
+      )
     })
   })
 })

@@ -12,17 +12,26 @@ export const GSIS = [
 export type TableRowIndexName = (typeof GSIS)[number]['gsi'] | 'createdAtIndex'
 export type TableRowSortKeyName = (typeof GSIS)[number]['sk']
 
+export type GsiOptions = {
+  indexName: TableRowIndexName
+  columnIdToMap: string
+}
+
 export type TableRowItem = CreateEntityItem<typeof TableRow>
-export type CreateRowInput = Pick<TableRowItem, 'tableId' | 'data'>
+export type CreateRowInput = Pick<TableRowItem, 'tableId' | 'data'> & {
+  gsis?: GsiOptions[]
+}
 export type CreateRowsInput = {
   tableId: string
   dataArray: Array<TableRowItem['data']>
-  gsi?: {
-    indexName: TableRowIndexName
-    columnIdToMap: string
-  }
+  gsis?: GsiOptions[]
 }
-export type UpdateRowInput = Pick<TableRowItem, 'tableId' | 'rowId' | 'data'>
+export type UpdateRowInput = Pick<
+  TableRowItem,
+  'tableId' | 'rowId' | 'data'
+> & {
+  gsis?: GsiOptions[]
+}
 
 export type PatchRowInput = Pick<TableRowItem, 'tableId' | 'rowId'> & {
   patchData: {

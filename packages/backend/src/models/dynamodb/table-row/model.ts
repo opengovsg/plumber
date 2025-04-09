@@ -4,7 +4,7 @@ import client, { tableName } from '@/config/dynamodb'
 
 import { autoMarshallDataObj } from '../helpers'
 
-import type { TableRowIndexName } from './types'
+import type { GsiOptions } from './types'
 
 export const TableRow = new Entity(
   {
@@ -87,14 +87,27 @@ export const TableRow = new Entity(
   },
 )
 
-export function getSkKeyValue(
-  indexName: TableRowIndexName,
-  value: unknown,
-): { [key: string]: unknown } {
-  switch (indexName) {
-    case 'gsiString1':
-      return { skString1: value.toString() }
-    default:
-      return {}
+interface DataWithGsi {
+  data: Record<string, string | number | null>
+  [key: string]: string | number | null | unknown
+}
+
+export function constructDataWithGsis(
+  data: Record<string, string | number | null>,
+  gsis?: GsiOptions[],
+): DataWithGsi {
+  if (!gsis) {
+    return { data }
   }
+  const dataWithGsi: DataWithGsi = { data }
+  for (const gsi of gsis) {
+    switch (gsi.indexName) {
+      case 'gsiString1':
+        dataWithGsi.skString1 = data[gsi.columnIdToMap]?.toString() || ''
+        break
+      default:
+        break
+    }
+  }
+  return dataWithGsi
 }

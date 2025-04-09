@@ -5,7 +5,7 @@ import logger from '@/helpers/logger'
 
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
 
-import { getSkKeyValue, TableRow } from './model'
+import { constructDataWithGsis, TableRow } from './model'
 import {
   type CreateRowInput,
   type CreateRowsInput,
@@ -202,12 +202,13 @@ const addFiltersToQuery = (
 export const createTableRow = async ({
   tableId,
   data,
+  gsis,
 }: CreateRowInput): Promise<TableRowItem> => {
   try {
     const res = await TableRow.create({
       tableId,
       rowId: randomUUID(),
-      data,
+      ...constructDataWithGsis(data, gsis),
     }).go({ ignoreOwnership: true })
     return res.data
   } catch (e: unknown) {
@@ -218,17 +219,16 @@ export const createTableRow = async ({
 export const createTableRows = async ({
   tableId,
   dataArray,
-  gsi,
+  gsis,
 }: CreateRowsInput): Promise<string[]> => {
   try {
     const rows = dataArray.map((data, i) => {
       return {
         tableId,
         rowId: randomUUID(),
-        data,
         // manually bumping the createdAt timestamp to ensure that row order is preserved
         createdAt: Date.now() + i,
-        ...(gsi ? getSkKeyValue(gsi.indexName, data[gsi.columnIdToMap]) : {}),
+        ...constructDataWithGsis(data, gsis),
       }
     })
     await _batchCreate(rows)
@@ -245,15 +245,14 @@ export const updateTableRow = async ({
   rowId,
   tableId,
   data,
+  gsis,
 }: UpdateRowInput): Promise<void> => {
   try {
     await TableRow.patch({
       tableId,
       rowId,
     })
-      .set({
-        data,
-      })
+      .set(constructDataWithGsis(data, gsis))
       .go({
         ignoreOwnership: true,
       })
