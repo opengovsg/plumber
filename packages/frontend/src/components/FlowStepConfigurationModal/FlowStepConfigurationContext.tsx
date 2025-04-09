@@ -33,6 +33,7 @@ export type ModalScreen =
   | 'choose-event'
   | 'choose-connection'
   | 'add-connection'
+  | 'configure-excel-connection'
 
 export type ModalState = {
   currentScreen: ModalScreen
