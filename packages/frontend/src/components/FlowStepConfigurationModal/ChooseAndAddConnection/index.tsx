@@ -6,11 +6,13 @@ import { useQuery } from '@apollo/client'
 import { EditorContext } from '@/contexts/Editor'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 
+import { EXCEL_APP_KEY } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
 
 import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
+import ConfigureExcelConnection from './ConfigureExcelConnection'
 
 interface ChooseAndAddConnectionProps {
   onClose: () => void
@@ -84,7 +86,6 @@ export default function ChooseAndAddConnection(
     return options
   }, [data])
 
-  // This updates the mock step to be verified and registered
   const handleConnectionChange = useCallback(
     async (connectionId: string, shouldRefetch: boolean) => {
       if (!selectedApp || !selectedEvent) {
@@ -99,7 +100,7 @@ export default function ChooseAndAddConnection(
     [selectedApp, selectedEvent, refetch, patchModalState],
   )
 
-  // Add a new connection and update the mock step for verifying and registering of connection
+  // Add a new connection for verifying and registering of connection
   const handleAddConnection = useCallback(
     async (response: Record<string, any>) => {
       const newConnectionId = response?.createConnection?.id as
@@ -181,6 +182,19 @@ export default function ChooseAndAddConnection(
       <AddConnection
         onSubmit={handleAddConnection}
         onBack={() => patchModalState({ currentScreen: 'choose-connection' })}
+      />
+    )
+  }
+
+  if (
+    selectedApp?.key === EXCEL_APP_KEY &&
+    selectedEvent &&
+    currentScreen === 'configure-excel-connection'
+  ) {
+    return (
+      <ConfigureExcelConnection
+        onBack={() => patchModalState({ currentScreen: 'choose-event' })}
+        handleSubmit={handleSubmit}
       />
     )
   }

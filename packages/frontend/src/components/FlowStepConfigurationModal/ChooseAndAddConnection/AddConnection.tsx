@@ -18,11 +18,11 @@ import { getOpenerOrigin } from '@/helpers/window'
 
 import Form from '../../Form'
 import { infoboxMdComponents } from '../../MarkdownRenderer/CustomMarkdownComponents'
+import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
 
 import ConnectionHeader from './ConnectionHeader'
-import { DEFAULT_ADD_CONNECTION_LABEL } from './constants'
 
 type AddConnectionProps = {
   onSubmit: (response: Record<string, unknown>) => void
