@@ -387,7 +387,6 @@ export const getTableRows = async ({
       includeTimestamps: !!gsi,
       indexUsed: gsi?.indexName ?? 'createdAtIndex',
     })
-  console.log({ ProjectionExpression, ExpressionAttributeNames })
   const tableRows = []
 
   let remainingScanLimit = scanLimit ?? Infinity
