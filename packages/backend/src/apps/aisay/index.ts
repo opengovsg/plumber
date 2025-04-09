@@ -7,7 +7,7 @@ const app: IApp = {
   name: 'AISAY',
   key: 'aisay',
   description:
-    'AI-powered document reader that automates the extraction and validation of data',
+    'Extract data from documents such as invoices, bank statements, cheques, and more',
   iconUrl: '{BASE_URL}/apps/aisay/assets/favicon.svg',
   authDocUrl: '',
   auth,

@@ -13,8 +13,7 @@ import { requestSchema } from './schema'
 const action: IRawAction = {
   name: 'Use generalised model',
   key: 'useGeneralisedModel',
-  description:
-    'For interpretation of documents with standard or non-standard formats',
+  description: 'Optimised for standard and non-standard documents',
   arguments: [
     {
       label: 'File',
@@ -25,15 +24,17 @@ const action: IRawAction = {
       variableTypes: ['file'],
     },
     {
-      label: 'Info to extract',
+      label: 'Prompts',
+      description:
+        'Enter prompts to specify how the data should be interpreted and extracted',
       key: 'infoToExtract',
       type: 'multirow' as const,
       required: true,
       variables: true,
-      addRowButtonText: 'Add',
+      addRowButtonText: 'Add prompt',
       subFields: [
         {
-          placeholder: 'Info to extract',
+          placeholder: 'E.g. Return the price of individual line items',
           key: 'infoToExtract',
           type: 'string' as const,
           required: true,
