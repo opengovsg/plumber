@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import createRows from '@/graphql/mutations/tiles/create-rows'
-import { getTableRows } from '@/models/dynamodb/table-row/functions'
+import * as tableFunctions from '@/models/dynamodb/table-row/functions'
+import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -14,6 +15,7 @@ import {
   generateMockTableRowData,
 } from './table.mock'
 
+const createTableRowsSpy = vi.spyOn(tableFunctions, 'createTableRows')
 describe('create row mutation', () => {
   let context: Context
   let dummyTable: TableMetadata
@@ -56,7 +58,7 @@ describe('create row mutation', () => {
       context,
     )
 
-    const { rows } = await getTableRows({
+    const { rows } = await tableFunctions.getTableRows({
       tableId: dummyTable.id,
       columnIds: dummyColumnIds,
     })
@@ -81,7 +83,7 @@ describe('create row mutation', () => {
       context,
     )
 
-    const { rows } = await getTableRows({
+    const { rows } = await tableFunctions.getTableRows({
       tableId: dummyTable.id,
       columnIds: dummyColumnIds,
     })
@@ -120,5 +122,42 @@ describe('create row mutation', () => {
         context,
       ),
     ).rejects.toThrow(ForbiddenError)
+  })
+
+  describe('GSI', () => {
+    beforeEach(async () => {
+      await TableColumnMetadata.query()
+        .patch({
+          config: {
+            gsi: { status: 'ready', indexName: 'gsiString1', type: 'string' },
+          },
+        })
+        .where({ id: dummyColumnIds[0] })
+    })
+    it('should call createTableRows with gsis', async () => {
+      await createRows(
+        null,
+        {
+          input: {
+            tableId: dummyTable.id,
+            dataArray: [
+              { [dummyColumnIds[0]]: null },
+              { [dummyColumnIds[0]]: '' },
+              { [dummyColumnIds[0]]: 'test2' },
+            ],
+          },
+        },
+        context,
+      )
+      expect(createTableRowsSpy).toHaveBeenCalledWith({
+        tableId: dummyTable.id,
+        dataArray: [
+          { [dummyColumnIds[0]]: null },
+          { [dummyColumnIds[0]]: '' },
+          { [dummyColumnIds[0]]: 'test2' },
+        ],
+        gsis: [{ indexName: 'gsiString1', columnIdToMap: dummyColumnIds[0] }],
+      })
+    })
   })
 })

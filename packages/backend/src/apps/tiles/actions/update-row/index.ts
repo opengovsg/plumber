@@ -137,6 +137,7 @@ const action: IRawAction = {
      */
     const columns = await TableColumnMetadata.getColumns(tableId, $)
     const columnIds = columns.map((c) => c.id)
+    const gsis = TableColumnMetadata.getGsisFromColumns(columns)
 
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
@@ -166,7 +167,10 @@ const action: IRawAction = {
 
     const patchData = {
       ...rowData.reduce(
-        (acc, { columnId, cellValue, operator }) => {
+        (
+          acc: PatchRowInput['patchData'],
+          { columnId, cellValue, operator },
+        ) => {
           // Check that the column still exists
           if (columnIds.includes(columnId)) {
             switch (operator) {
@@ -195,6 +199,7 @@ const action: IRawAction = {
         tableId,
         rowId,
         patchData,
+        gsis,
       })
 
       const updatedRowData = stripInvalidKeys({

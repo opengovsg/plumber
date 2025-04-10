@@ -3,6 +3,7 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 import { createTableRow } from '@/models/dynamodb/table-row/functions'
 import TableCollaborator from '@/models/table-collaborators'
+import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 
 import { CreateRowOutput } from '../../types'
@@ -94,7 +95,9 @@ const action: IRawAction = {
       rowData: { columnId: string; cellValue: string }[]
     }
 
-    const table = await TableMetadata.query().findById(tableId)
+    const table = await TableMetadata.query()
+      .withGraphFetched('columns')
+      .findById(tableId)
     if (!table) {
       throw new StepError(
         'Tile not found',
@@ -124,7 +127,9 @@ const action: IRawAction = {
       )
     }
 
-    const newRow = await createTableRow({ tableId, data: rowDataObject })
+    const gsis = TableColumnMetadata.getGsisFromColumns(table.columns)
+
+    const newRow = await createTableRow({ tableId, data: rowDataObject, gsis })
 
     $.setActionItem({
       raw: {

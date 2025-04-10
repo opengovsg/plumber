@@ -9,12 +9,16 @@ import {
   generateMockTableColumns,
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
+import * as tableFunctions from '@/models/dynamodb/table-row/functions'
+import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import tiles from '../..'
 import createRowAction from '../../actions/create-row'
+
+const createTableRowSpy = vi.spyOn(tableFunctions, 'createTableRow')
 
 describe('tiles create row action', () => {
   let context: Context
@@ -92,5 +96,34 @@ describe('tiles create row action', () => {
       })
       .where({ id: $.step.parameters.tableId })
     await expect(createRowAction.run($)).rejects.toThrow(StepError)
+  })
+
+  describe('GSI', () => {
+    beforeEach(async () => {
+      await TableColumnMetadata.query()
+        .patch({
+          config: {
+            gsi: {
+              status: 'ready',
+              indexName: 'gsiString1',
+              type: 'string',
+            },
+          },
+        })
+        .where({ id: dummyColumnIds[0] })
+    })
+
+    it('should call create row with GSI', async () => {
+      await expect(createRowAction.run($)).resolves.toBeUndefined()
+      const data = ($.step.parameters.rowData as any[]).reduce((acc, row) => {
+        acc[row.columnId] = row.cellValue
+        return acc
+      }, {})
+      expect(createTableRowSpy).toHaveBeenCalledWith({
+        tableId: dummyTable.id,
+        data,
+        gsis: [{ indexName: 'gsiString1', columnIdToMap: dummyColumnIds[0] }],
+      })
+    })
   })
 })
