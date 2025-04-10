@@ -841,5 +841,117 @@ describe('dynamodb table row functions', () => {
         })
       expect(patchedRow.data[0].skString1).toEqual('patched')
     })
+
+    it.for([
+      ['empty string', ''],
+      ['null', null],
+      ['undefined', undefined],
+    ])(
+      'should remove sort key when patching a row if value is %s',
+      { concurrent: false },
+      async ([_description, value]: [string, string | null | undefined]) => {
+        const data = generateMockTableRowData({
+          columnIds: dummyColumnIds,
+        })
+        const originalRow = await createTableRow({
+          tableId: dummyTable.id,
+          data,
+        })
+        const patchData = {
+          set: {
+            [dummyColumnIds[0]]: value,
+          },
+        }
+        await patchTableRow({
+          tableId: dummyTable.id,
+          patchData,
+          rowId: originalRow.rowId,
+          gsis: [
+            {
+              indexName: 'gsiString1',
+              columnIdToMap: dummyColumnIds[0],
+            },
+          ],
+        })
+        const patchedRow = await TableRow.query
+          .byRowId({
+            tableId: dummyTable.id,
+            rowId: originalRow.rowId,
+          })
+          .go({
+            ignoreOwnership: true,
+          })
+        expect(patchedRow.data[0].skString1).toBeUndefined()
+      },
+    )
+
+    it.for([
+      ['empty string', ''],
+      ['null', null],
+      ['undefined', undefined],
+    ])(
+      'should not have sort key when creating a row if value is %s',
+      { concurrent: false },
+      async ([_description, value]: [string, string | null | undefined]) => {
+        const data = generateMockTableRowData({
+          columnIds: dummyColumnIds,
+        })
+        const row = await createTableRow({ tableId: dummyTable.id, data })
+        await createTableRow({
+          tableId: dummyTable.id,
+          data: { ...data, [dummyColumnIds[0]]: value },
+          gsis: [
+            {
+              indexName: 'gsiString1',
+              columnIdToMap: dummyColumnIds[0],
+            },
+          ],
+        })
+        const updatedRow = await TableRow.query
+          .byRowId({
+            tableId: dummyTable.id,
+            rowId: row.rowId,
+          })
+          .go({
+            ignoreOwnership: true,
+          })
+        expect(updatedRow.data[0].skString1).toBeUndefined()
+      },
+    )
+
+    it.for([
+      ['empty string', ''],
+      ['null', null],
+      ['undefined', undefined],
+    ])(
+      'should not have sort key when updating a row if value is %s',
+      { concurrent: false },
+      async ([_description, value]: [string, string | null | undefined]) => {
+        const data = generateMockTableRowData({
+          columnIds: dummyColumnIds,
+        })
+        const row = await createTableRow({ tableId: dummyTable.id, data })
+        await updateTableRow({
+          tableId: dummyTable.id,
+          rowId: row.rowId,
+          data: { ...data, [dummyColumnIds[0]]: value },
+          gsis: [
+            {
+              indexName: 'gsiString1',
+              columnIdToMap: dummyColumnIds[0],
+            },
+          ],
+        })
+        const updatedRow = await TableRow.query
+          .byRowId({
+            tableId: dummyTable.id,
+            rowId: row.rowId,
+          })
+          .go({
+            ignoreOwnership: true,
+          })
+        expect(updatedRow.data[0].skString1).toBeUndefined()
+      },
+    )
   })
 })

@@ -92,18 +92,29 @@ interface DataWithGsi {
   [key: string]: string | number | null | unknown
 }
 
+export function castGsiValue(value: string | number | null): string | null {
+  if (value == null || value === '') {
+    return undefined
+  }
+  return value.toString()
+}
+
 export function constructDataWithGsis(
   data: Record<string, string | number | null>,
   gsis?: GsiOptions[],
 ): DataWithGsi {
+  const dataWithoutNullish = Object.fromEntries(
+    Object.entries(data).filter(([_, value]) => value != null),
+  )
   if (!gsis) {
-    return { data }
+    return { data: dataWithoutNullish }
   }
-  const dataWithGsi: DataWithGsi = { data }
+  const dataWithGsi: DataWithGsi = { data: dataWithoutNullish }
   for (const gsi of gsis) {
+    const value = data[gsi.columnIdToMap]
     switch (gsi.indexName) {
       case 'gsiString1':
-        dataWithGsi.skString1 = data[gsi.columnIdToMap]?.toString() || ''
+        dataWithGsi.skString1 = castGsiValue(value)
         break
       default:
         break
