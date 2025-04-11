@@ -8,12 +8,16 @@ import { Button, Link } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
+import useAuthentication from '@/hooks/useAuthentication'
 
 import {
   type ConnectionDropdownOption,
   optionGenerator,
 } from '../FlowStepConfigurationModal/ChooseAndAddConnection'
-import { APP_ALLOWING_EMPTY_CONNECTION } from '../FlowStepConfigurationModal/constants'
+import {
+  APP_ALLOWING_EMPTY_CONNECTION,
+  EXCEL_APP_KEY,
+} from '../FlowStepConfigurationModal/constants'
 
 type ChooseConnectionSubstepProps = {
   step: IStep
@@ -46,12 +50,17 @@ const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
   return `https://form.gov.sg/${formId}`
 }
 
+const excelFolderLinkGenerator = (userEmail: string) => {
+  return `https://gccprod-my.sharepoint.com/shared?id=%2Fsites%2FGOVTECH%2Dplumber%2FShared%20Documents%2F${userEmail}&listurl=https%3A%2F%2Fgccprod%2Esharepoint%2Ecom%2Fsites%2FGOVTECH%2Dplumber%2FShared%20Documents`
+}
+
 function ChooseConnectionSubstep(
   props: ChooseConnectionSubstepProps,
 ): React.ReactElement {
   const { step, application, onReconnect } = props
   const { connection } = step
   const editorContext = useContext(EditorContext)
+  const { currentUser } = useAuthentication()
 
   const supportsConnectionRegistration =
     !!application.auth?.connectionRegistrationType
@@ -111,6 +120,11 @@ function ChooseConnectionSubstep(
         connectionLink = {
           url: formLinkGenerator(connectionOption),
           text: '(View form)',
+        }
+      } else if (application.key === EXCEL_APP_KEY) {
+        connectionLink = {
+          url: excelFolderLinkGenerator(currentUser?.email ?? ''),
+          text: '(View folder)',
         }
       }
 

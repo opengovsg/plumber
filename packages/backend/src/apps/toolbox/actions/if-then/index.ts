@@ -19,8 +19,7 @@ function shouldTakeBranch($: IGlobalVariable): boolean {
 const action: IRawAction = {
   name: 'If-then',
   key: ACTION_KEY,
-  description:
-    'Creates different sub-pipes that will execute if specified conditions are met',
+  description: 'Run different actions based off certain conditions',
   groupsLaterSteps: true,
   arguments: [
     {
