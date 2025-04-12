@@ -22,7 +22,8 @@ describe('getTableRows getDataOutMetadata', () => {
 
     expect(result).toEqual({
       rowsFound: {
-        label: 'No. of rows found',
+        label: 'Number of rows found',
+        order: 2,
       },
     })
   })
@@ -49,7 +50,10 @@ describe('getTableRows getDataOutMetadata', () => {
             },
           },
         ]),
-        columns: ['Column1', 'Column2'],
+        columns: {
+          Column1: { id: 'Column1', value: 'value1, value3', order: 1 },
+          Column2: { id: 'Column2', value: 'value2, value4', order: 2 },
+        },
         numRows: 2,
       },
     } as unknown as IExecutionStep
@@ -58,22 +62,33 @@ describe('getTableRows getDataOutMetadata', () => {
 
     expect(result).toEqual({
       rows: {
-        label: 'Data rows',
-        displayedValue: '2 rows',
+        label: 'List of row(s) found',
+        displayedValue: 'Preview 2 row(s)',
+        order: 1,
+        type: 'array',
       },
       rowsFound: {
-        label: 'No. of rows found',
+        label: 'Number of rows found',
+        order: 2,
       },
-      columns: [
-        {
-          label: 'Column1',
-          displayedValue: '',
+      columns: {
+        Column1: {
+          id: { type: 'hidden' },
+          value: {
+            label: 'Column1',
+            order: 3,
+          },
+          order: { type: 'hidden' },
         },
-        {
-          label: 'Column2',
-          displayedValue: '',
+        Column2: {
+          id: { type: 'hidden' },
+          value: {
+            label: 'Column2',
+            order: 4,
+          },
+          order: { type: 'hidden' },
         },
-      ],
+      },
     })
   })
 
@@ -90,13 +105,16 @@ describe('getTableRows getDataOutMetadata', () => {
 
     expect(result).toEqual({
       rowsFound: {
-        label: 'No. of rows found',
+        label: 'Number of rows found',
+        order: 2,
       },
       rows: {
-        label: 'Data rows',
-        displayedValue: '1 rows',
+        label: 'List of row(s) found',
+        displayedValue: 'Preview 1 row(s)',
+        order: 1,
+        type: 'array',
       },
-      columns: [],
+      columns: {},
     })
   })
 

@@ -15,7 +15,8 @@ async function getDataOutMetadata(
 
   const metadata: IDataOutMetadata = {
     rowsFound: {
-      label: 'No. of rows found',
+      label: 'Number of rows found',
+      order: 2,
     },
   }
 
@@ -23,19 +24,28 @@ async function getDataOutMetadata(
     return metadata
   }
 
-  // At this point TypeScript knows we're in the second branch of the union
   metadata.rows = {
-    label: 'Data rows',
-    displayedValue: `${dataOut.rowsFound} rows`,
+    label: 'List of row(s) found',
+    displayedValue: `Preview ${dataOut.rowsFound} row(s)`,
+    type: 'array',
+    order: 1,
   }
 
-  const columnMetadata: IDataOutMetadata = []
+  const columnMetadata: IDataOutMetadata = {}
   if ('columns' in dataOut) {
-    dataOut.columns.forEach((column: string) => {
-      columnMetadata.push({
-        label: column,
-        displayedValue: '',
-      })
+    /**
+     * NOTE: Excel does not allow duplicate column names in tables,
+     * don't need to worry about using column names as the unique identifier.
+     */
+    Object.entries(dataOut.columns).forEach(([name, { order }]) => {
+      columnMetadata[name] = {
+        id: { type: 'hidden' },
+        value: {
+          label: name,
+          order: order ? order + 2 : null,
+        },
+        order: { type: 'hidden' },
+      }
     })
   }
 
@@ -46,7 +56,7 @@ export default getDataOutMetadata
 
 // Example dataOut: {
 //   // rows is a stringified array of objects, where each object is a row of data
-//   rows: '[{"tableRowIndex":0,"sheetRowNumber":2,"row":{"436f6c756D6E31":{"value":"abc","columnName":"Column1"},"436F6C756D6E32":{"value":"123","columnName":"Column2"}}},{"tableRowIndex":3,"sheetRowNumber":5,"row":{"436F6C756D6E31":{"value":"abc","columnName":"Column1"},"436F6C756D6E32":{"value":"111","columnName":"Column2"}}}]',
-//   columns: [ 'Column1', 'Column2' ],
+//   rows: '[{"id": "0-2","tableRowIndex":0,"sheetRowNumber":2,"row":{"436f6c756D6E31":{"value":"abc","columnName":"Column1"},"436F6C756D6E32":{"value":"123","columnName":"Column2"}}},{"id": "3-5","tableRowIndex":3,"sheetRowNumber":5,"row":{"436F6C756D6E31":{"value":"abc","columnName":"Column1"},"436F6C756D6E32":{"value":"111","columnName":"Column2"}}}]',
+//   columns: {"Column1": {"id": "Column1", "order":1, value: "Column1"}, "Column2": {"id": "Column2", "order":2, value: "Column2"}},
 //   rowsFound: 2
 // }

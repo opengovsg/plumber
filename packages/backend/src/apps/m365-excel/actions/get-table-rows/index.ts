@@ -1,3 +1,4 @@
+// dummy commit for do not merge branch
 import type { IRawAction } from '@plumber/types'
 
 import z from 'zod'
@@ -151,17 +152,19 @@ const action: IRawAction = {
     }
 
     const rowsToReturn: {
+      id: string
       tableRowIndex: number
       sheetRowNumber: number
-      row: Record<string, { value?: string; columnName?: string }>
+      rowData: Record<string, { value?: string; columnName?: string }>
     }[] = []
 
     for (const [rowIndex, row] of rows.entries()) {
       if (row[columnIndex] === lookupValue) {
         rowsToReturn.push({
+          id: `${rowIndex}-${rowIndex + headerSheetRowIndex + 2}`,
           tableRowIndex: rowIndex,
           sheetRowNumber: rowIndex + headerSheetRowIndex + 2,
-          row: convertRowToHexEncodedRowRecord({
+          rowData: convertRowToHexEncodedRowRecord({
             row,
             columns,
           }),
@@ -173,6 +176,8 @@ const action: IRawAction = {
       $.setActionItem({
         raw: {
           rowsFound: 0,
+          rows: JSON.stringify([]),
+          columns: {},
         } satisfies DataOut,
       })
 
@@ -182,11 +187,34 @@ const action: IRawAction = {
     // Max limit of 500 rows
     const slicedRows = rowsToReturn.slice(0, GET_TABLE_ROWS_LIMIT)
 
+    const consolidatedColumns = columns.reduce((acc, column, currentIndex) => {
+      const values: string[] = []
+      for (const row of slicedRows) {
+        const rowData = Object.entries(row.rowData).find(([key, value]) => {
+          if (value.columnName === column) {
+            return value.value
+          }
+        })
+
+        const value = rowData?.[1].value
+        if (value) {
+          values.push(value)
+        }
+      }
+      acc[column] = {
+        id: column,
+        value: values.join(', '),
+        order: columns.indexOf(column) + 1,
+      }
+      return acc
+    }, {} as Record<string, { id: string; value: string; order: number }>)
+    console.log('consolidatedColumns', consolidatedColumns)
+
     $.setActionItem({
       raw: {
         rowsFound: slicedRows.length,
         rows: JSON.stringify(slicedRows),
-        columns,
+        columns: consolidatedColumns,
       } satisfies DataOut,
     })
   },
