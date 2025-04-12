@@ -167,7 +167,7 @@ const action: IRawAction = {
         executionId: $.execution.id,
         stepId: $.step.id,
         app: $.app.name,
-        action: 'find-single-row',
+        action: 'find-multiple-rows',
         error: e,
       })
       throw new StepError(
@@ -194,28 +194,54 @@ const action: IRawAction = {
       $.setActionItem({
         raw: {
           rowsFound: 0,
-          rows: JSON.stringify([]),
+          rows: JSON.stringify({
+            rowData: JSON.stringify([]),
+            columns: {},
+          }),
           columns: {},
         } satisfies FindMultipleRowsOutput,
       })
       return
     }
 
-    /**
-     * We use raw row data instead of mapped column names as we want them to
-     * be distinct in data_out
-     */
-    const columnsToReturn: Record<string, string> = {}
-    columns.forEach((c) => {
-      columnsToReturn[c.name] = c.id
-    })
+    // NOTE: there are 2 types of column data that we return
+    // 1. column name and id for use in for-each
+    const columnData: Record<string, string> = {
+      'Row ID': 'rowId',
+    }
+    columns
+      .sort((a, b) => a.position - b.position)
+      .forEach((c) => {
+        columnData[c.name] = c.id
+      })
+
+    // 2. column data that combines all the values of all rows into a single string
+    const consolidatedColumns = columns.reduce((acc, column) => {
+      const values: string[] = []
+      for (const row of rows) {
+        const value = row.data[column.id]
+        if (value) {
+          values.push(value)
+        }
+      }
+      acc[column.name] = {
+        id: column.id,
+        value: values.join(', '),
+      }
+      return acc
+    }, {} as Record<string, { id: string; value: string }>)
+
     const slicedRows = rows.slice(0, FIND_MULTIPLE_ROWS_LIMIT)
 
     $.setActionItem({
       raw: {
         rowsFound: slicedRows.length,
-        rows: JSON.stringify(slicedRows),
-        columns: columnsToReturn,
+        rows: JSON.stringify({
+          rowData: JSON.stringify(slicedRows),
+          columns: columnData,
+        }),
+        columns: consolidatedColumns,
+        rowId: 'rowId',
       } satisfies FindMultipleRowsOutput,
     })
   },
