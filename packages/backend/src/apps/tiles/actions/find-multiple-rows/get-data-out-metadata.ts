@@ -53,7 +53,6 @@ async function getDataOutMetadata(
       }
     })
   }
-  console.log('columnMetadata', columnMetadata)
 
   return { ...metadata, columns: columnMetadata }
 }
