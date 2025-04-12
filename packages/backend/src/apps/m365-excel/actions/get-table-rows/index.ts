@@ -187,10 +187,10 @@ const action: IRawAction = {
     // Max limit of 500 rows
     const slicedRows = rowsToReturn.slice(0, GET_TABLE_ROWS_LIMIT)
 
-    const consolidatedColumns = columns.reduce((acc, column, currentIndex) => {
+    const consolidatedColumns = columns.reduce((acc, column) => {
       const values: string[] = []
       for (const row of slicedRows) {
-        const rowData = Object.entries(row.rowData).find(([key, value]) => {
+        const rowData = Object.entries(row.rowData).find(([_, value]) => {
           if (value.columnName === column) {
             return value.value
           }
