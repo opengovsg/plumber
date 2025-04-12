@@ -29,36 +29,17 @@ export default function MultiRowResultVariables(
       }
     }
 
-    /**
-     * NOTE (kevinkim-ogp): for initial user tests, we do not show column names in the variable output to reduce confusion for users.
-     * Enable this only if required, otherwise remove before release
-     */
-
-    // const columns = variables
-    //   .filter((v) => v.name.includes('columns'))
-    //   .map((variable) =>
-    //     step.appKey === 'tiles' ? variable.label : variable.value,
-    //   )
-
-    // const columnsVariable = {
-    //   name: 'columns',
-    //   label: 'Columns',
-    //   value: columns.join(', '),
-    //   type: 'text' as TDataOutMetadatumType,
-    //   order: 1,
-    //   displayedValue: columns.join(', '),
-    // } as Variable
-
     const variablesWithModal = variables.filter(
       (v) => v.name.split('.').pop() === 'rows',
     )
 
+    /**
+     * NOTE (kevinkim-ogp): we can disable column names in the variable output to reduce confusion for users
+     */
     const variableListVariables = [
-      // columnsVariable,
       ...variables.filter(
         (v) =>
-          v.name.split('.').pop() === 'rowsFound' &&
-          !v.name.includes('columns'),
+          v.name.split('.').pop() === 'rowsFound' || v.name.includes('columns'),
       ),
     ]
 
