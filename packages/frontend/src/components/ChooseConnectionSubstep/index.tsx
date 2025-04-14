@@ -139,8 +139,9 @@ function ChooseConnectionSubstep(
     connection,
     testResultLoading,
     isTestStepValid,
-    testConnectionData?.testConnection?.message,
     application.key,
+    testConnectionData?.testConnection?.message,
+    currentUser?.email,
   ])
 
   return (

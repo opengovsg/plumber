@@ -19,7 +19,7 @@ export default function ToolboxEvent(props: ToolboxEventProps): JSX.Element {
   const { action, isDisabled, onSelectAppEvent } = props
   return (
     <TouchableTooltip
-      label={isDisabled ? 'This can only be used in the last step' : ''}
+      label={isDisabled ? 'This can only be used as the last step' : ''}
       placement="bottom"
       openDelay={100}
       closeDelay={100}
