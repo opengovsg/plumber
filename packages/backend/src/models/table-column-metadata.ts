@@ -61,7 +61,7 @@ class TableColumnMetadata extends Base {
   ): GsiOptions[] => {
     return columns
       .map((column) => {
-        if (column.config?.gsi?.status === 'ready') {
+        if (column.config?.gsi) {
           return {
             indexName: column.config.gsi.indexName as TableRowIndexName,
             columnIdToMap: column.id,

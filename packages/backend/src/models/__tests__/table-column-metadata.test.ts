@@ -4,7 +4,7 @@ import TableColumnMetadata from '../table-column-metadata'
 
 describe('TableColumnMetadata', () => {
   describe('getGsisFromColumns', () => {
-    it('returns GSI options for columns with ready GSI status', () => {
+    it('returns GSI options for columns of any status', () => {
       const columns = [
         {
           id: '1',
@@ -28,18 +28,22 @@ describe('TableColumnMetadata', () => {
           columnIdToMap: '1',
         },
         {
+          indexName: 'index2',
+          columnIdToMap: '2',
+        },
+        {
           indexName: 'index3',
           columnIdToMap: '3',
         },
       ])
     })
 
-    it('returns empty array when no columns have ready GSI status', () => {
+    it('returns empty array when no columns have GSI of any status', () => {
       const columns = [
         {
           id: '1',
           config: {
-            gsi: { status: 'pending', indexName: 'gsi1', type: 'string' },
+            width: 120,
           },
         },
         {
