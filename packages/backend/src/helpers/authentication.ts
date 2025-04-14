@@ -103,8 +103,11 @@ const authentication = shield(
       // Not OTP, but no real reason to be looser than OTP.
       loginWithSgid: rateLimitRule({ window: '1s', max: 5 }),
       loginWithSelectedSgid: rateLimitRule({ window: '1s', max: 5 }),
+      // Only admins can access admin mutations, we dont want to default it in '*'
       admin: isAdminOperation,
     },
+    // This is not needed since it's already added above
+    // but adding it here in case we want to make more granular in the future
     AdminMutation: isAdminOperation,
   },
   {

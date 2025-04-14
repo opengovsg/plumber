@@ -1,4 +1,7 @@
-import type { MutationResolvers } from './__generated__/types.generated'
+import type {
+  AdminMutation,
+  MutationResolvers,
+} from './__generated__/types.generated'
 import bulkRetryExecutions from './mutations/bulk-retry-executions'
 import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
@@ -86,5 +89,5 @@ export default {
   // This is a special stub that enables us to group all our admin-related
   // mutations into a special AdminMutation object; each "mutations" is handled by field
   // resolvers defined in @/graphql/admin/mutations.
-  admin: () => ({}),
+  admin: () => ({} as AdminMutation),
 } satisfies MutationResolvers

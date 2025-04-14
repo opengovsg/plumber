@@ -1,4 +1,5 @@
-import { flattenJsonb } from '@/helpers/knex-jsonb-flatten'
+import { DataPropertyNames } from 'objection'
+
 import { GSIS } from '@/models/dynamodb/table-row'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
@@ -37,17 +38,14 @@ const createTable: AdminMutationResolvers['addGsi'] = async (
   }
 
   await TableColumnMetadata.query()
-    .patch(
-      flattenJsonb({
-        config: {
-          gsi: {
-            indexName: correspondingGsi.gsi,
-            type: correspondingGsi.type,
-            status: 'pending',
-          },
-        },
-      }),
-    )
+    .patch({
+      ['config:gsi' as DataPropertyNames<TableColumnMetadata>]: {
+        indexName: correspondingGsi.gsi,
+        type: correspondingGsi.type,
+        status: 'pending',
+        patchFrom: new Date().toISOString(),
+      },
+    })
     .where({ id: columnId })
 
   return true
