@@ -1,18 +1,35 @@
 export const parseError = (error: Error | any) => {
-  let stepErrorName = 'Failed to call model'
-  let stepErrorSolution = 'Please try again.'
-
-  if (
-    error.response.data.message === `Request Too Long` ||
-    error.message === 'File too large'
-  ) {
-    stepErrorName = 'Request too long'
-    stepErrorSolution = 'Please try again with a smaller file.'
+  if (!error.response || !error.response.status) {
+    return {
+      stepErrorName: 'Failed to process document',
+      stepErrorSolution: 'Please try again.',
+    }
   }
 
-  if (error.response.data.message.includes('Quota exceeded')) {
-    stepErrorName = 'Quota exceeded'
-    stepErrorSolution = 'Please contact AISAY to increase your quota.'
+  const responseStatus = error.response.status
+  let stepErrorName = 'Failed to process document'
+  let stepErrorSolution = 'Please try again.'
+
+  switch (responseStatus) {
+    case 400:
+      stepErrorName = 'Invalid request'
+      stepErrorSolution = 'Please try again.'
+      break
+    case 413:
+      stepErrorName = 'File too large'
+      stepErrorSolution = 'Please try again with a smaller file.'
+
+      break
+    case 429:
+      stepErrorName = 'Too many requests'
+      stepErrorSolution = 'Please try again later.'
+      break
+    case 503:
+      stepErrorName = 'Service unavailable'
+      stepErrorSolution = 'Please try again later.'
+      break
+    default:
+      break
   }
 
   return { stepErrorName, stepErrorSolution }
