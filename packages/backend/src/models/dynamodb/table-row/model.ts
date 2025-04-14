@@ -4,7 +4,7 @@ import client, { tableName } from '@/config/dynamodb'
 
 import { autoMarshallDataObj } from '../helpers'
 
-import type { GsiOptions } from './types'
+import { GsiOptions, GSIS, TableRowSortKeyName } from './types'
 
 export const TableRow = new Entity(
   {
@@ -126,12 +126,10 @@ export function constructDataWithGsis(
 export function getGsiSortKey(
   gsis: GsiOptions[],
   columnId: string,
-): 'skString1' | undefined {
+): TableRowSortKeyName | undefined {
   const correspondingGsi = gsis.find((gsi) => gsi.columnIdToMap === columnId)
-  switch (correspondingGsi?.indexName) {
-    case 'gsiString1':
-      return 'skString1'
-    default:
-      return undefined
-  }
+  const correspondingSk = GSIS.find(
+    (g) => g.gsi === correspondingGsi?.indexName,
+  )
+  return correspondingSk?.sk
 }
