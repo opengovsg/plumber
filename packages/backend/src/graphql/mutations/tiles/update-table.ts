@@ -1,3 +1,4 @@
+import { DataPropertyNames } from 'objection'
 import pLimit from 'p-limit'
 import { z } from 'zod'
 
@@ -75,11 +76,15 @@ const updateTable: MutationResolvers['updateTable'] = async (
       // we're setting a concurrency limit of 5.
       await Promise.all(
         modifiedColumns.map(async (column) => {
-          const { id, ...rest } = column
+          const { id, config, ...rest } = column
           return limit(() =>
             table
               .$relatedQuery('columns', trx)
-              .patchAndFetchById(id, rest)
+              .patchAndFetchById(id, {
+                ...rest,
+                ['config:width' as DataPropertyNames<TableColumnMetadata>]:
+                  config?.width,
+              })
               .throwIfNotFound(),
           )
         }),

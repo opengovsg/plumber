@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import updateTable from '@/graphql/mutations/tiles/update-table'
+import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -159,6 +160,42 @@ describe('update table mutation', () => {
         context,
       )
       expect(updatedTable.columns[0].config.width).toBe(100)
+    })
+
+    it('should modify column widths without overwriting other config', async () => {
+      await TableColumnMetadata.query()
+        .patch({
+          config: {
+            gsi: {
+              indexName: 'gsiString1',
+              type: 'string',
+              status: 'pending',
+            },
+          },
+        })
+        .where({ id: dummyColumnId })
+      const updatedTable = await updateTable(
+        null,
+        {
+          input: {
+            id: dummyTable.id,
+            addedColumns: [],
+            modifiedColumns: [
+              {
+                id: dummyColumnId,
+                name: 'New Column Name',
+                config: {
+                  width: 100,
+                },
+              },
+            ],
+            deletedColumns: [],
+          },
+        },
+        context,
+      )
+      expect(updatedTable.columns[0].config.width).toBe(100)
+      expect(updatedTable.columns[0].config.gsi.indexName).toBe('gsiString1')
     })
 
     it('should fail if column does not exist', async () => {
