@@ -82,4 +82,9 @@ export default {
   deleteUploadedFile,
   generatePresignedUrl,
   ...tilesMutationResolvers,
+
+  // This is a special stub that enables us to group all our admin-related
+  // mutations into a special AdminMutation object; each "mutations" is handled by field
+  // resolvers defined in @/graphql/admin/mutations.
+  admin: () => ({}),
 } satisfies MutationResolvers

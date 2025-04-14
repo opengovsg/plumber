@@ -103,7 +103,9 @@ const authentication = shield(
       // Not OTP, but no real reason to be looser than OTP.
       loginWithSgid: rateLimitRule({ window: '1s', max: 5 }),
       loginWithSelectedSgid: rateLimitRule({ window: '1s', max: 5 }),
+      admin: isAdminOperation,
     },
+    AdminMutation: isAdminOperation,
   },
   {
     allowExternalErrors: true,
