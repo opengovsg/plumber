@@ -16,7 +16,7 @@ async function getDataOutMetadata(
   return {
     quota: {
       label: 'Quota',
-      type: 'doNotDisplay',
+      isHidden: true,
     },
     documentType: {
       label: 'Document Type',
