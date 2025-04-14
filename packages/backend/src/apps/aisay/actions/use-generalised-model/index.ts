@@ -1,6 +1,5 @@
 import { IJSONArray, IRawAction } from '@plumber/types'
 
-import appConfig from '@/config/app'
 import StepError from '@/errors/step'
 import Step from '@/models/step'
 
@@ -101,7 +100,7 @@ const action: IRawAction = {
        */
       // Step 2: Call the model to get the output
       const res = await $.http.request({
-        url: `${appConfig.aisayApiUrl}/query`,
+        url: `${$.app.baseUrl}/query`,
         method: 'POST',
         headers: {
           Accept: 'application/json',

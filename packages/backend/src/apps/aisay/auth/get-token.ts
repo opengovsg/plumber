@@ -1,10 +1,10 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import appConfig from '@/config/app'
+import { aisayUrlConfig } from '../common/url-config'
 
 export const getToken = async ($: IGlobalVariable) => {
   const getTokenRes = await $.http.request({
-    url: appConfig.aisayGetTokenUrl,
+    url: aisayUrlConfig.getTokenUrl,
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

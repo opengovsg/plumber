@@ -29,22 +29,6 @@ const auth: IUserAddedConnectionAuth = {
 
   verifyCredentials,
   isStillVerified,
-  connectionRegistrationType: 'global' as const,
-  verifyConnectionRegistration: async ($) => {
-    try {
-      await verifyCredentials($)
-      return {
-        registrationVerified: true,
-        message: 'Connection verified',
-      }
-    } catch (err) {
-      return {
-        registrationVerified: false,
-        message:
-          'Invalid connection. Check your client ID and client secret again.',
-      }
-    }
-  },
 }
 
 export default auth

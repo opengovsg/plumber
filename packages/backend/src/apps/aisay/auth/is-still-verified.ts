@@ -1,6 +1,6 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import verifyCredentials from '../../custom-api/auth/verify-credentials'
+import verifyCredentials from './verify-credentials'
 
 const isStillVerified = async ($: IGlobalVariable) => {
   await verifyCredentials($)
