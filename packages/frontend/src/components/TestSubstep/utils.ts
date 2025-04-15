@@ -5,6 +5,7 @@ import { Variable } from '@/helpers/variables'
 export interface Column {
   key: string
   label: string
+  order?: number | null
 }
 interface RowValue {
   columnName: string
@@ -12,7 +13,8 @@ interface RowValue {
 }
 
 export interface DataRow {
-  id: string
+  id?: string
+  rowId?: string
   data: Record<string, string>
   row?: Record<string, RowValue>
 }
@@ -31,20 +33,22 @@ export const isMultiRowStep = (step: IStep) => {
 }
 
 export const processColumns = (
-  rowsObj: any,
+  rawColumns: any,
   isTilesStep: boolean,
+  rowsObj?: any,
 ): Column[] => {
   const parsedColumns: Column[] = []
-  const columns = isTilesStep ? rowsObj.columns : rowsObj?.[0].rowData
-  Object.keys(columns).forEach((key) => {
-    if (key !== 'Row ID') {
-      parsedColumns.push({
-        key: isTilesStep ? columns[key] : columns[key].columnName,
-        label: isTilesStep ? key : columns[key].columnName,
-      })
-    }
+  // special handling for Tiles step to get the column ids
+  const columnIds = isTilesStep ? rowsObj?.columns : {}
+
+  rawColumns.forEach((c: any) => {
+    parsedColumns.push({
+      key: isTilesStep ? columnIds[c.label] : c.label,
+      label: c.label,
+      order: isTilesStep ? c.value ?? null : c.order ?? null,
+    })
   })
-  return parsedColumns
+  return parsedColumns.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 }
 
 export const processData = (
@@ -55,6 +59,7 @@ export const processData = (
     (v) => v.name.split('.').pop() === 'rowsFound',
   )
 
+  const rawColumns = variables?.filter((v) => v.name.includes('columns'))
   const rawRowsObj = variables?.find((v) => v.name.split('.').pop() === 'rows')
 
   if (!rawRowsObj) {
@@ -67,7 +72,7 @@ export const processData = (
 
   const rowsObj = JSON.parse(rawRowsObj.value as string)
   const dataRows = processDataRows(rowsObj, isTilesStep)
-  const columns = processColumns(rowsObj, isTilesStep)
+  const columns = processColumns(rawColumns, isTilesStep, rowsObj)
 
   return {
     rowsFound: rowsFoundObj?.value as string,
@@ -81,7 +86,7 @@ export const processDataRows = (
   isTilesStep: boolean,
 ): DataRow[] => {
   if (isTilesStep) {
-    return JSON.parse(rowsObj?.rowData as string)
+    return rowsObj?.rowData
   }
 
   return (

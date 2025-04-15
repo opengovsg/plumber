@@ -153,7 +153,7 @@ export default function TestMultiRowResultModal(
               <Tbody>
                 {dataRows.map((row, index) => (
                   <TableRow
-                    key={row.id}
+                    key={row.id || row.rowId}
                     row={row}
                     index={index}
                     columns={columns}

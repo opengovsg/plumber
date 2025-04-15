@@ -205,6 +205,7 @@ const action: IRawAction = {
 
     // 2. column data that combines all the values of all rows into a single string
     const consolidatedColumns = columns.reduce((acc, column) => {
+      columnData[column.name] = column.id
       const values: string[] = []
       for (const row of rows) {
         const value = row.data[column.id]
@@ -215,6 +216,7 @@ const action: IRawAction = {
       acc.push({
         id: column.id,
         name: column.name,
+        order: column.position + 1,
         value: values.join(', '),
       })
       return acc
