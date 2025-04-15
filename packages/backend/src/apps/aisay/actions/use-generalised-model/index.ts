@@ -28,7 +28,7 @@ const action: IRawAction = {
       label: 'Prompts',
       description:
         'Enter prompts to specify how the data should be interpreted and extracted',
-      key: 'infoToExtract',
+      key: 'prompts',
       type: 'multirow' as const,
       required: true,
       variables: true,
@@ -36,7 +36,7 @@ const action: IRawAction = {
       subFields: [
         {
           placeholder: 'E.g. Return the price of individual line items',
-          key: 'infoToExtract',
+          key: 'prompt',
           type: 'string' as const,
           required: true,
           variables: false,
@@ -50,9 +50,9 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
-    const { file, infoToExtract } = $.step.parameters as {
+    const { file, prompts } = $.step.parameters as {
       file: string
-      infoToExtract: Array<{ infoToExtract: string }>
+      prompts: Array<{ prompt: string }>
     }
 
     if (!$.auth.data?.clientId || !$.auth.data?.clientSecret) {
@@ -64,7 +64,7 @@ const action: IRawAction = {
       )
     }
 
-    const result = generalisedModelSchema.safeParse({ file, infoToExtract })
+    const result = generalisedModelSchema.safeParse({ file, prompts })
     if (!result.success) {
       const { stepErrorName, stepErrorSolution } = getValidationError(result)
 
@@ -93,7 +93,7 @@ const action: IRawAction = {
           Authorization: `Bearer ${token}`,
         },
         data: {
-          gpt_query: result.data.infoToExtract,
+          gpt_query: result.data.prompts,
           image: attachment.data,
         },
       })

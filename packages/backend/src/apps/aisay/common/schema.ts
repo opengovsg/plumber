@@ -26,18 +26,16 @@ export const fileSchema = z.string().transform((value, context) => {
 
 export const generalisedModelSchema = z.object({
   file: fileSchema,
-  infoToExtract: z
-    .array(z.object({ infoToExtract: z.string() }))
-    .transform((array) => {
-      const result: Record<string, { description: string; type: string }> = {}
-      array.forEach((a, index) => {
-        result[`additionalProp${index}`] = {
-          description: `Extract the ${a.infoToExtract}`,
-          type: 'string',
-        }
-      })
-      return result
-    }),
+  prompts: z.array(z.object({ prompt: z.string() })).transform((array) => {
+    const result: Record<string, { description: string; type: string }> = {}
+    array.forEach((a, index) => {
+      result[`additionalProp${index}`] = {
+        description: `Extract the ${a.prompt}`,
+        type: 'string',
+      }
+    })
+    return result
+  }),
 })
 
 export const documentTypeEnum = z.enum(DOCUMENT_TYPES as [string, ...string[]])

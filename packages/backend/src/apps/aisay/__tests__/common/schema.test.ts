@@ -12,12 +12,12 @@ describe('AISAY schema', () => {
   beforeEach(() => {
     generalisedModelPayload = {
       file: 's3:plumber-test-bucket:123456/789abc/plumber-logo.jpg',
-      infoToExtract: [
+      prompts: [
         {
-          infoToExtract: 'What is your name?',
+          prompt: 'What is your name?',
         },
         {
-          infoToExtract: 'What is your age?',
+          prompt: 'What is your age?',
         },
       ],
     }
@@ -36,13 +36,13 @@ describe('AISAY schema', () => {
         result.data.file ===
           's3:plumber-test-bucket:123456/789abc/plumber-logo.jpg',
       )
-      assert(Object.keys(result.data.infoToExtract).length === 2)
+      assert(Object.keys(result.data.prompts).length === 2)
       assert(
-        result.data.infoToExtract['additionalProp0'].description ===
+        result.data.prompts['additionalProp0'].description ===
           'Extract the What is your name?',
       )
       assert(
-        result.data.infoToExtract['additionalProp1'].description ===
+        result.data.prompts['additionalProp1'].description ===
           'Extract the What is your age?',
       )
     })
