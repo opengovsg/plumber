@@ -172,7 +172,10 @@ describe('findMultipleRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 500,
-        rows: expect.stringMatching(/^\{.*\}$/),
+        rows: expect.objectContaining({
+          rowData: expect.any(Array),
+          columns: expect.any(Object),
+        }),
         columns: expect.objectContaining({
           'Test Column 0': expect.objectContaining({
             id: expect.any(String),
@@ -198,16 +201,11 @@ describe('findMultipleRowsAction', () => {
       }),
     })
 
-    expect(() => {
-      JSON.parse(($.setActionItem as any).mock.calls[0][0].raw.rows)
-    }).not.toThrow()
+    const rows = ($.setActionItem as any).mock.calls[0][0].raw.rows
 
-    const parsedRows = JSON.parse(
-      ($.setActionItem as any).mock.calls[0][0].raw.rows,
-    )
-    const parsedRowData = JSON.parse(parsedRows.rowData)
-    expect(parsedRowData).toHaveLength(500)
-    expect(parsedRowData[0].rowId).toBe('row0')
-    expect(parsedRowData[499].rowId).toBe('row499')
+    const rowData = rows.rowData
+    expect(rowData).toHaveLength(500)
+    expect(rowData[0].rowId).toBe('row0')
+    expect(rowData[499].rowId).toBe('row499')
   })
 })
