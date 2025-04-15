@@ -8,7 +8,8 @@ export const fileSchema = z.string().transform((value, context) => {
   if (!parseS3Id(value)) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `${value} is not a S3 ID.`,
+      message: `No file was provided`,
+      fatal: true,
     })
     return z.NEVER
   }
