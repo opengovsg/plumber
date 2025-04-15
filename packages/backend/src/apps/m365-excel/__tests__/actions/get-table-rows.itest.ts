@@ -121,6 +121,8 @@ describe('getTableRowsAction', () => {
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
+        columns: {},
+        rows: [],
         rowsFound: 0,
       },
     })
@@ -132,14 +134,25 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 2, // Two rows match 'test-value'
-        columns: ['Column1', 'Column2'],
-        rows: expect.any(String),
+        columns: {
+          Column1: {
+            id: 'Column1',
+            value: 'test-value, test-value',
+            order: 1,
+          },
+          Column2: {
+            id: 'Column2',
+            value: 'data2, data3',
+            order: 2,
+          },
+        },
+        rows: expect.any(Array),
       }),
     })
 
     // Verify the rowData contains the expected rows
     const call = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    const rowData = JSON.parse(call.raw.rows)
+    const rowData = call.raw.rows
 
     expect(rowData).toHaveLength(2)
     expect(rowData[0].tableRowIndex).toBe(1)
@@ -165,6 +178,8 @@ describe('getTableRowsAction', () => {
     // Should not find any matches due to case sensitivity
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
+        columns: {},
+        rows: [],
         rowsFound: 0,
       },
     })
@@ -189,8 +204,19 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 1,
-        columns: ['Column1', 'Column2'],
-        rows: expect.any(String),
+        columns: {
+          Column1: {
+            id: 'Column1',
+            value: 'TEST-VALUE',
+            order: 1,
+          },
+          Column2: {
+            id: 'Column2',
+            value: 'data2',
+            order: 2,
+          },
+        },
+        rows: expect.any(Array),
       }),
     })
   })
@@ -212,14 +238,38 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 500, // Should be limited to 500 rows
-        columns: ['Column1', 'Column2'],
-        rows: expect.any(String),
+        columns: {
+          Column1: {
+            id: 'Column1',
+            value: `test-value, ${Array.from(
+              { length: 499 },
+              (_) => `test-value`,
+            ).join(', ')}`,
+            order: 1,
+          },
+          Column2: {
+            id: 'Column2',
+            value: `data1, ${Array.from(
+              { length: 499 },
+              (_, i) => `data${i + 2}`,
+            ).join(', ')}`,
+            order: 2,
+          },
+        },
+        rows: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(String),
+            rowData: expect.any(Object),
+            sheetRowNumber: expect.any(Number),
+            tableRowIndex: expect.any(Number),
+          }),
+        ]),
       }),
     })
 
     // Verify the rowData contains exactly 500 rows
     const call = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    const rowData = JSON.parse(call.raw.rows)
+    const rowData = call.raw.rows
     expect(rowData).toHaveLength(500)
 
     // Verify the first and last rows are correct
