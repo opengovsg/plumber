@@ -101,7 +101,10 @@ const process = (
       ? [
           {
             name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
-            value: data.join(', '),
+            value:
+              typeof data[0] === 'object'
+                ? JSON.stringify(data) // special handling for m365 multi row
+                : data.join(', '),
             label: label ?? parentKey,
             displayedValue,
             type,

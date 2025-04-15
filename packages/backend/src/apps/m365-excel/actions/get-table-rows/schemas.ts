@@ -26,5 +26,20 @@ export const dataOutSchema = z.object({
       z.object({ id: z.string(), value: z.string(), order: z.number() }),
     )
     .optional(),
-  rows: z.string().optional(),
+  rows: z
+    .array(
+      z.object({
+        id: z.string(),
+        tableRowIndex: z.number(),
+        sheetRowNumber: z.number(),
+        rowData: z.record(
+          z.string(),
+          z.object({
+            value: z.string(),
+            columnName: z.string(),
+          }),
+        ),
+      }),
+    )
+    .optional(),
 })

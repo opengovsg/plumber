@@ -176,7 +176,7 @@ const action: IRawAction = {
       $.setActionItem({
         raw: {
           rowsFound: 0,
-          rows: JSON.stringify([]),
+          rows: [],
           columns: {},
         } satisfies DataOut,
       })
@@ -208,12 +208,11 @@ const action: IRawAction = {
       }
       return acc
     }, {} as Record<string, { id: string; value: string; order: number }>)
-    console.log('consolidatedColumns', consolidatedColumns)
 
     $.setActionItem({
       raw: {
         rowsFound: slicedRows.length,
-        rows: JSON.stringify(slicedRows),
+        rows: slicedRows,
         columns: consolidatedColumns,
       } satisfies DataOut,
     })

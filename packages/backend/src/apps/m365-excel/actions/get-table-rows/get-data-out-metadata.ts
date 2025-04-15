@@ -39,12 +39,12 @@ async function getDataOutMetadata(
      */
     Object.entries(dataOut.columns).forEach(([name, { order }]) => {
       columnMetadata[name] = {
-        id: { type: 'hidden' },
+        id: { isHidden: true },
         value: {
           label: name,
           order: order ? order + 2 : null,
         },
-        order: { type: 'hidden' },
+        order: { isHidden: true },
       }
     })
   }
@@ -55,8 +55,8 @@ async function getDataOutMetadata(
 export default getDataOutMetadata
 
 // Example dataOut: {
-//   // rows is a stringified array of objects, where each object is a row of data
-//   rows: '[{"id": "0-2","tableRowIndex":0,"sheetRowNumber":2,"row":{"436f6c756D6E31":{"value":"abc","columnName":"Column1"},"436F6C756D6E32":{"value":"123","columnName":"Column2"}}},{"id": "3-5","tableRowIndex":3,"sheetRowNumber":5,"row":{"436F6C756D6E31":{"value":"abc","columnName":"Column1"},"436F6C756D6E32":{"value":"111","columnName":"Column2"}}}]',
+//   // rows is an array of objects, where each object is a row of data
+//   rows: [{"id": "0-2","tableRowIndex":0,"sheetRowNumber":2,"row":{"436f6c756D6E31":{"value":"abc","columnName":"Column1"},"436F6C756D6E32":{"value":"123","columnName":"Column2"}}},{"id": "3-5","tableRowIndex":3,"sheetRowNumber":5,"row":{"436F6C756D6E31":{"value":"abc","columnName":"Column1"},"436F6C756D6E32":{"value":"111","columnName":"Column2"}}}],
 //   columns: {"Column1": {"id": "Column1", "order":1, value: "Column1"}, "Column2": {"id": "Column2", "order":2, value: "Column2"}},
 //   rowsFound: 2
 // }

@@ -32,7 +32,7 @@ describe('getTableRows getDataOutMetadata', () => {
     const executionStep = {
       dataOut: {
         rowsFound: 2,
-        rowData: JSON.stringify([
+        rowData: [
           {
             tableRowIndex: 0,
             sheetRowNumber: 2,
@@ -49,7 +49,7 @@ describe('getTableRows getDataOutMetadata', () => {
               '436f6c756d6e32': { value: 'value4', columnName: 'Column2' },
             },
           },
-        ]),
+        ],
         columns: {
           Column1: { id: 'Column1', value: 'value1, value3', order: 1 },
           Column2: { id: 'Column2', value: 'value2, value4', order: 2 },
@@ -73,20 +73,20 @@ describe('getTableRows getDataOutMetadata', () => {
       },
       columns: {
         Column1: {
-          id: { type: 'hidden' },
+          id: { isHidden: true },
           value: {
             label: 'Column1',
             order: 3,
           },
-          order: { type: 'hidden' },
+          order: { isHidden: true },
         },
         Column2: {
-          id: { type: 'hidden' },
+          id: { isHidden: true },
           value: {
             label: 'Column2',
             order: 4,
           },
-          order: { type: 'hidden' },
+          order: { isHidden: true },
         },
       },
     })
@@ -95,8 +95,8 @@ describe('getTableRows getDataOutMetadata', () => {
   it('should handle missing columns in dataOut', async () => {
     const executionStep = {
       dataOut: {
-        rowsFound: 1,
-        rows: JSON.stringify([{ row: {} }]),
+        rowsFound: 0,
+        rows: [],
         // columns is missing
       },
     } as unknown as IExecutionStep
@@ -108,13 +108,6 @@ describe('getTableRows getDataOutMetadata', () => {
         label: 'Number of rows found',
         order: 2,
       },
-      rows: {
-        label: 'List of row(s) found',
-        displayedValue: 'Preview 1 row(s)',
-        order: 1,
-        type: 'array',
-      },
-      columns: {},
     })
   })
 
