@@ -194,10 +194,10 @@ const action: IRawAction = {
       $.setActionItem({
         raw: {
           rowsFound: 0,
-          rows: JSON.stringify({
-            rowData: JSON.stringify([]),
+          rows: {
+            rowData: [],
             columns: {},
-          }),
+          },
           columns: {},
         } satisfies FindMultipleRowsOutput,
       })
@@ -236,10 +236,10 @@ const action: IRawAction = {
     $.setActionItem({
       raw: {
         rowsFound: slicedRows.length,
-        rows: JSON.stringify({
-          rowData: JSON.stringify(slicedRows),
+        rows: {
+          rowData: slicedRows,
           columns: columnData,
-        }),
+        },
         columns: consolidatedColumns,
         rowId: 'rowId',
       } satisfies FindMultipleRowsOutput,

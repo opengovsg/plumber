@@ -11,7 +11,10 @@ export interface FindSingleRowOutput extends IJSONObject {
 export interface FindMultipleRowsOutput extends IJSONObject {
   rowsFound: number
   columns?: Record<string, { id: string; value: string }>
-  rows?: string | TableRowOutput[]
+  rows?: {
+    rowData: TableRowOutput[]
+    columns: Record<string, string>
+  }
 }
 
 export interface CreateRowOutput extends IJSONObject {
