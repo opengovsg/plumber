@@ -59,7 +59,7 @@ export default function ToolboxEvent(props: ToolboxEventProps): JSX.Element {
                 action.key as keyof typeof TOOLBOX_ACTION_TO_ICON_MAP
               ] ?? BiQuestionMark
             }
-            color="primary.500"
+            color={isDisabled ? 'base.content.default' : 'primary.500'}
           />
 
           <Flex flexDir="column" gap={1}>
