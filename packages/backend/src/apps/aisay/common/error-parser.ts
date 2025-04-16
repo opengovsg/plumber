@@ -1,7 +1,6 @@
 export const parseError = (error: Error | any) => {
   const responseStatus = error?.response?.status || 'default'
-  let stepErrorName =
-    error?.response?.data?.message || 'Failed to process document'
+  let stepErrorName = 'Failed to process document'
   let stepErrorSolution = 'Please try again.'
 
   switch (responseStatus) {
