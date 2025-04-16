@@ -1,4 +1,4 @@
-import { type IAction, IApp, ITrigger } from '@plumber/types'
+import type { IAction, IApp, ITrigger } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
 import { BiArrowFromRight, BiChevronRight } from 'react-icons/bi'
@@ -14,12 +14,19 @@ import {
 import { Badge, ModalCloseButton } from '@opengovsg/design-system-react'
 import { groupBy } from 'lodash'
 
-import { getAppFlag } from '@/config/flags'
+import { getAppActionFlag, getAppFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+  useIfThenInitializer,
+  useIsIfThenSelectable,
+} from '@/helpers/toolbox'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 
 import FeedbackFooter from './FeedbackFooter'
+import ToolboxEvent from './ToolboxEvent'
 
 const OTHERS_CATEGORY = 'Other'
 
@@ -31,10 +38,12 @@ interface ChooseAppProps {
 export default function ChooseApp(props: ChooseAppProps) {
   const { apps, onSelectAppEvent } = props
   const launchDarkly = useContext(LaunchDarklyContext)
-  const { patchModalState, isTrigger } = useContext(
+  const { patchModalState, isTrigger, isLastStep } = useContext(
     FlowStepConfigurationContext,
   )
-  const isLoading = launchDarkly.isLoading
+
+  const [_, isInitializingIfThen] = useIfThenInitializer()
+  const isLoading = launchDarkly.isLoading || isInitializingIfThen
 
   const onSelectApp = useCallback(
     (app: IApp) => {
@@ -45,6 +54,30 @@ export default function ChooseApp(props: ChooseAppProps) {
     },
     [patchModalState],
   )
+
+  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
+  const filteredToolboxActions = useMemo(() => {
+    if (isLoading || !launchDarkly.flags) {
+      return []
+    }
+
+    const ldToolboxAppFlag = getAppFlag(TOOLBOX_APP_KEY)
+    if (!launchDarkly.flags[ldToolboxAppFlag]) {
+      return []
+    }
+
+    const toolboxActions =
+      apps?.find((app) => app.key === TOOLBOX_APP_KEY)?.actions ?? []
+    return toolboxActions.filter((action) => {
+      // Filter away actions hidden behind feature flags
+      if (isLoading || !launchDarkly.flags) {
+        return true
+      }
+
+      const ldToolboxActionFlag = getAppActionFlag(TOOLBOX_APP_KEY, action.key)
+      return launchDarkly.flags[ldToolboxActionFlag] ?? true
+    })
+  }, [apps, isLoading, launchDarkly.flags])
 
   // Combine filtering and grouping logic into a single operation
   const groupedApps = useMemo(() => {
@@ -107,10 +140,10 @@ export default function ChooseApp(props: ChooseAppProps) {
             linear-gradient(rgba(255, 255, 255, 0), white 70%) center bottom,
 
             /* Shadow TOP */
-            radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) center top,
+            radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0)) center top,
 
             /* Shadow BOTTOM */
-            radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) center bottom
+            radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0)) center bottom
           `,
           backgroundRepeat: 'no-repeat',
           backgroundSize: '100% 40px, 100% 40px, 100% 14px, 100% 14px',
@@ -138,6 +171,21 @@ export default function ChooseApp(props: ChooseAppProps) {
 
                 <Flex flexDir="column" gap={3}>
                   {apps.map((app) => {
+                    // For toolbox app specifically, show all the toolbox actions
+                    if (app.key === TOOLBOX_APP_KEY) {
+                      return filteredToolboxActions.map((action) => (
+                        <ToolboxEvent
+                          key={action.key}
+                          action={action}
+                          onSelectAppEvent={() => onSelectAppEvent(app, action)}
+                          isDisabled={
+                            action.key === TOOLBOX_ACTIONS.IfThen &&
+                            !isIfThenSelectable
+                          }
+                        />
+                      ))
+                    }
+
                     const triggersOrActions = isTrigger
                       ? app.triggers
                       : app.actions
