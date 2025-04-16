@@ -206,54 +206,55 @@ export default function Table(): JSX.Element {
   const virtualRows = rowVirtualizer.getVirtualItems()
 
   return (
-    <Box position="relative">
-      <Flex
-        overflow="auto"
-        w="100%"
-        ref={parentRef}
-        minH="300px"
-        flexDir="column"
-        position="relative"
-        // so that search bar results dont get blocked by header or footer
-        scrollPaddingTop={ROW_HEIGHT.HEADER + 'px'}
-        scrollPaddingBottom={ROW_HEIGHT.FOOTER + ROW_HEIGHT.DEFAULT + 'px'}
-        // so highlighted element doesnt get blocked by checkbox column
-        scrollPaddingLeft={60}
-        onClick={onBlurClick}
-        className={styles.table}
-      >
+    <ContextMenuContextProvider
+      removeRows={removeRows}
+      rowSelection={rowSelection}
+      clearRowSelection={() => setRowSelection({})}
+    >
+      <Box position="relative">
         <Flex
+          overflow="auto"
+          w="100%"
+          ref={parentRef}
+          minH="300px"
           flexDir="column"
-          w="fit-content"
-          minW="100%"
-          flex={1}
-          ref={containerRef}
+          position="relative"
+          // so that search bar results dont get blocked by header or footer
+          scrollPaddingTop={ROW_HEIGHT.HEADER + 'px'}
+          scrollPaddingBottom={ROW_HEIGHT.FOOTER + ROW_HEIGHT.DEFAULT + 'px'}
+          // so highlighted element doesnt get blocked by checkbox column
+          scrollPaddingLeft={60}
+          onClick={onBlurClick}
+          className={styles.table}
         >
           <Flex
-            bgColor={HEADER_COLOR.DEFAULT}
-            alignItems="stretch"
-            position="sticky"
-            top={0}
-            h={`${ROW_HEIGHT.HEADER}px`}
-            maxH={`${ROW_HEIGHT.HEADER}px`}
-            zIndex={Z_INDEX.FOOTER}
-            borderTopWidth="1px"
-            borderBottomWidth="1px"
-            borderColor={BORDER_COLOR.DEFAULT}
-            marginBottom="1px"
-            fontWeight="bold"
+            flexDir="column"
+            w="fit-content"
+            minW="100%"
+            flex={1}
+            ref={containerRef}
           >
-            <TableHeader
-              setColumnOrder={setColumnOrder}
-              headers={table.getFlatHeaders()}
-              tableState={table.getState()}
-            />
-          </Flex>
-          <ContextMenuContextProvider
-            removeRows={removeRows}
-            rowSelection={rowSelection}
-            clearRowSelection={() => setRowSelection({})}
-          >
+            <Flex
+              bgColor={HEADER_COLOR.DEFAULT}
+              alignItems="stretch"
+              position="sticky"
+              top={0}
+              h={`${ROW_HEIGHT.HEADER}px`}
+              maxH={`${ROW_HEIGHT.HEADER}px`}
+              zIndex={Z_INDEX.FOOTER}
+              borderTopWidth="1px"
+              borderBottomWidth="1px"
+              borderColor={BORDER_COLOR.DEFAULT}
+              marginBottom="1px"
+              fontWeight="bold"
+            >
+              <TableHeader
+                setColumnOrder={setColumnOrder}
+                headers={table.getFlatHeaders()}
+                tableState={table.getState()}
+              />
+            </Flex>
+
             <Box h={rowVirtualizer.getTotalSize()} ref={childRef}>
               {virtualRows.map((virtualRow) => {
                 const row = rows[virtualRow.index] as Row<GenericRowData>
@@ -271,23 +272,22 @@ export default function Table(): JSX.Element {
                 }
               })}
             </Box>
-          </ContextMenuContextProvider>
-        </Flex>
-        {mode === 'edit' && (
-          <TableRow
-            tableMeta={table.options.meta as TableMeta<GenericRowData>}
-            row={newRow}
-            stickyBottom
+          </Flex>
+          {mode === 'edit' && (
+            <TableRow
+              tableMeta={table.options.meta as TableMeta<GenericRowData>}
+              row={newRow}
+              stickyBottom
+            />
+          )}
+          <TableFooter
+            rowCount={rows.length}
+            rowSelection={rowSelection}
+            parentRef={parentRef}
           />
-        )}
-        <TableFooter
-          removeRows={removeRows}
-          rowCount={rows.length}
-          rowSelection={rowSelection}
-          parentRef={parentRef}
-        />
-      </Flex>
-      <SearchBar table={table} rowVirtualizer={rowVirtualizer} />
-    </Box>
+        </Flex>
+        <SearchBar table={table} rowVirtualizer={rowVirtualizer} />
+      </Box>
+    </ContextMenuContextProvider>
   )
 }

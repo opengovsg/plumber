@@ -20,7 +20,7 @@ import DeleteRowsModal from '../components/TableFooter/DeleteRowsModal'
 
 interface ContextMenuContextProps {
   onRightClick: (rowId: string, pos: [number, number]) => void
-  onDeleteRows: (rowIdsToDelete: string[]) => void
+  onDeleteRows: () => void
 }
 
 const ContextMenuContext = createContext<ContextMenuContextProps | null>(null)
@@ -72,6 +72,11 @@ export const ContextMenuContextProvider = ({
     [clearRowSelection, rowsSelected],
   )
 
+  const onDeleteRows = useCallback(() => {
+    setRowIdsSelected(rowsSelected)
+    setIsDeleteModalOpen(true)
+  }, [rowsSelected])
+
   const onRowIdCopy = useCallback(
     (rowId: string) => {
       navigator.clipboard.writeText(rowId)
@@ -84,7 +89,7 @@ export const ContextMenuContextProvider = ({
     <ContextMenuContext.Provider
       value={{
         onRightClick,
-        onDeleteRows: () => setIsDeleteModalOpen(true),
+        onDeleteRows,
       }}
     >
       {children}
