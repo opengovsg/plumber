@@ -1,7 +1,7 @@
 import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
 
 import { useContext } from 'react'
-import { Flex, Modal, ModalContent, ModalOverlay, Text } from '@chakra-ui/react'
+import { Flex, Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
 
 import { useIfThenInitializer } from '@/helpers/toolbox'
 
@@ -31,7 +31,7 @@ function FlowStepConfigurationModalContent({
 }: {
   onClose: () => void
 }): JSX.Element {
-  const { modalState, step } = useContext(FlowStepConfigurationContext)
+  const { modalState } = useContext(FlowStepConfigurationContext)
   const { currentScreen, isLoading } = modalState
   const [_, isInitializingIfThen] = useIfThenInitializer()
 
@@ -39,7 +39,6 @@ function FlowStepConfigurationModalContent({
     return (
       <Flex flexDir="column" alignItems="center" gap={6} my={12}>
         <PrimarySpinner margin="auto" fontSize="4xl" />
-        <Text>{step ? 'Updating step...' : 'Adding step...'}</Text>
       </Flex>
     )
   }
@@ -91,6 +90,7 @@ export default function FlowStepConfigurationModal(
           h="auto"
           overflow="hidden"
           borderRadius="lg"
+          py={8}
         >
           <FlowStepConfigurationModalContent onClose={onClose} />
         </ModalContent>
