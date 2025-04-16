@@ -1,5 +1,6 @@
 import { ITableMetadata } from '@plumber/types'
 
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
@@ -43,12 +44,14 @@ export default function Tile(): JSX.Element | null {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
         }
       : undefined,
-    onCompleted: () => {
-      // only start fetching rows after table metadata is loaded
-      refetch()
-    },
   })
   const ownRole = getTableData?.getTable?.role
+
+  useEffect(() => {
+    if (isGetTableCalled) {
+      refetch()
+    }
+  }, [isGetTableCalled, refetch])
 
   // On first load, show loading spinner
   if (isTableLoading && !isGetTableCalled) {

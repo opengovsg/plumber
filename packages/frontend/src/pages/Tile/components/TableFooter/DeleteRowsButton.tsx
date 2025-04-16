@@ -1,30 +1,18 @@
-import { useState } from 'react'
 import { BiTrash } from 'react-icons/bi'
 import { Button } from '@chakra-ui/react'
 
 import { ROW_HEIGHT } from '@/pages/Tile/constants'
 
+import { useContextMenuContext } from '../../contexts/ContextMenuContext'
 import { useTableContext } from '../../contexts/TableContext'
 
-import DeleteRowsModal from './DeleteRowsModal'
-
-interface DeleteRowsButtonProps {
-  rowSelection: Record<string, boolean>
-  removeRows: (rowIds: string[]) => void
-}
-
-export default function DeleteRowsButton({
-  rowSelection,
-  removeRows,
-}: DeleteRowsButtonProps) {
+export default function DeleteRowsButton() {
   const { mode } = useTableContext()
+  const { onDeleteRows } = useContextMenuContext()
+
   const isViewMode = mode === 'view'
 
-  const rowsSelected = Object.keys(rowSelection)
-
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-
-  if (isViewMode || !rowsSelected.length) {
+  if (isViewMode) {
     return null
   }
 
@@ -42,18 +30,10 @@ export default function DeleteRowsButton({
         h="100%"
         colorScheme="critical"
         leftIcon={<BiTrash />}
-        onClick={() => setIsDialogOpen(true)}
+        onClick={() => onDeleteRows()}
       >
-        Delete
+        Delete rows
       </Button>
-      {/* lazy load the dialog */}
-      {isDialogOpen && (
-        <DeleteRowsModal
-          rowIdsToDelete={rowsSelected}
-          removeRows={removeRows}
-          onClose={() => setIsDialogOpen(false)}
-        />
-      )}
     </div>
   )
 }

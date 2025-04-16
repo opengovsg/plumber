@@ -9,18 +9,12 @@ import DeleteRowsButton from './DeleteRowsButton'
 import RowCount from './RowCount'
 
 interface TableFooterProps {
-  removeRows: (rows: string[]) => void
   rowCount: number
   rowSelection: Record<string, boolean>
   parentRef: React.RefObject<HTMLDivElement>
 }
 
-function TableFooter({
-  removeRows,
-  rowCount,
-  rowSelection,
-  parentRef,
-}: TableFooterProps) {
+function TableFooter({ rowCount, rowSelection, parentRef }: TableFooterProps) {
   return (
     <Flex
       w="100%"
@@ -38,7 +32,7 @@ function TableFooter({
     >
       <Flex>
         <RowCount rowCount={rowCount} rowSelection={rowSelection} />
-        <DeleteRowsButton rowSelection={rowSelection} removeRows={removeRows} />
+        {Object.keys(rowSelection).length > 0 && <DeleteRowsButton />}
       </Flex>
       <Flex>
         <Button
