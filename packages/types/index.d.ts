@@ -302,6 +302,7 @@ export interface IFieldDropdown extends IBaseField {
   value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
+  variableTypes?: TDataOutMetadatumType[]
 }
 
 export type DropdownAddNewId =

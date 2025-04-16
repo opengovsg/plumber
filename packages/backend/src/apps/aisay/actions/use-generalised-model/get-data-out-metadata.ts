@@ -1,6 +1,6 @@
 import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
-import { getInfoToExtract } from '../../common/info-to-extract'
+import { getPrompts } from '../../common/get-prompts'
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
@@ -11,23 +11,29 @@ async function getDataOutMetadata(
     return null
   }
 
-  const infoToExtract = await getInfoToExtract(stepId)
+  const prompts = await getPrompts(stepId)
 
   const fieldsMetadata: Record<string, IDataOutMetadata> = {}
   Object.keys(dataOut.fields).forEach((key) => {
     const index = parseInt(key.split('additionalProp')[1])
-    const fieldName = infoToExtract[index]
+    const fieldName = prompts[index]
     fieldsMetadata[key] = {
       label: fieldName,
     }
   })
 
+  const otherMetadata: Record<string, IDataOutMetadata> = {}
+  Object.keys(dataOut).forEach((key) => {
+    if (key !== 'fields') {
+      otherMetadata[key] = {
+        isHidden: true,
+      }
+    }
+  })
+
   return {
-    quota: {
-      label: 'Quota',
-      isHidden: true,
-    },
     fields: fieldsMetadata,
+    ...otherMetadata,
   }
 }
 
