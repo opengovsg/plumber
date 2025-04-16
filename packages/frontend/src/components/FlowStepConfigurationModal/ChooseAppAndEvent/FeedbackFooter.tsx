@@ -5,7 +5,7 @@ import * as URLS from '@/config/urls'
 
 export default function FeedbackFooter() {
   return (
-    <ModalFooter justifyContent="center" gap={2}>
+    <ModalFooter justifyContent="center" gap={2} pb={0}>
       <Text textStyle="caption-1">{`Can't find what you need? Let us know`}</Text>
       <Link
         href={URLS.FEEDBACK_FORM_LINK}
