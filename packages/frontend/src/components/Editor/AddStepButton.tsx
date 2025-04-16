@@ -56,7 +56,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
           <Divider orientation="vertical" borderColor="base.divider.strong" />
         </Box>
         <TouchableTooltip
-          label={isDisabled ? 'Add your first action first' : 'Add step'}
+          label={isDisabled ? '' : 'Add step'}
           placement="right"
           display={isDisabled && !isLastStep ? 'none' : 'flex'}
           marginX="auto"
@@ -70,6 +70,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
             size="xs"
             color="interaction.sub.default"
             borderRadius="full"
+            pointerEvents={isDisabled ? 'none' : 'auto'}
             _hover={{
               bg: 'interaction.muted.neutral.hover',
             }}
