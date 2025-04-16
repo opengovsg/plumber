@@ -12,14 +12,28 @@ import {
   DISALLOWED_IP_RESOLVED_ERROR,
   RECURSIVE_WEBHOOK_ERROR_NAME,
 } from '../../common/check-urls'
+import { CUSTOM_API_TIMEOUT } from '../../common/constants'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
   isUrlAllowed: vi.fn(() => true),
+  stepQueryResult: vi.fn(() => ({
+    config: {},
+  })),
 }))
 
 vi.mock('../../common/ip-resolver', () => ({
   isUrlAllowed: mocks.isUrlAllowed,
+}))
+
+vi.mock('@/models/step', () => ({
+  default: {
+    query: () => ({
+      findById: () => ({
+        throwIfNotFound: mocks.stepQueryResult,
+      }),
+    }),
+  },
 }))
 
 describe('make http request', () => {
@@ -55,7 +69,7 @@ describe('make http request', () => {
     $.step.parameters.url = 'http://test.local/endpoint?1234'
     mocks.httpRequest.mockReturnValue('mock response')
 
-    await makeRequestAction.run($).catch(() => null)
+    await makeRequestAction.run($).catch((): void => null)
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: $.step.parameters.url,
@@ -75,7 +89,7 @@ describe('make http request', () => {
     ]
     mocks.httpRequest.mockReturnValue('mock response')
 
-    await makeRequestAction.run($).catch(() => null)
+    await makeRequestAction.run($).catch((): void => null)
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: $.step.parameters.url,
@@ -227,6 +241,98 @@ describe('make http request', () => {
     await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
   })
 
+  it('should include timeout in the request config', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+    mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+    await makeRequestAction.run($)
+
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timeout: CUSTOM_API_TIMEOUT,
+      }),
+    )
+  })
+
+  it('should use admin override timeout if set', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+
+    // Set up the mock for this specific test
+    mocks.stepQueryResult.mockResolvedValueOnce({
+      config: {
+        adminOverride: {
+          customApiTimeout: 360000,
+        },
+      },
+    })
+    mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+    await makeRequestAction.run($)
+
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timeout: 360000,
+      }),
+    )
+  })
+
+  it.each(['not a number', '33', undefined, null])(
+    'should use default timeout if admin override is %s',
+    async (testOverride: any) => {
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'http://test.local/endpoint'
+
+      mocks.stepQueryResult.mockResolvedValueOnce({
+        config: {
+          adminOverride: {
+            customApiTimeout: testOverride,
+          },
+        },
+      })
+      mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+      await makeRequestAction.run($)
+
+      expect(mocks.httpRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          timeout: CUSTOM_API_TIMEOUT,
+        }),
+      )
+    },
+  )
+
+  it('should throw step error if request times out', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+    const testTimeout = 1000
+    mocks.stepQueryResult.mockResolvedValueOnce({
+      config: {
+        adminOverride: {
+          customApiTimeout: testTimeout,
+        },
+      },
+    })
+
+    // Simulate a long-running request by delaying the response
+    mocks.httpRequest.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          const timeoutError = new Error(
+            `HTTP request exceeded timeout of ${testTimeout / 1000}s`,
+          )
+          setTimeout(() => {
+            reject(timeoutError)
+          }, 2000) // 2 seconds delay
+        }),
+    )
+
+    await expect(makeRequestAction.run($)).rejects.toThrow(
+      `HTTP request exceeded timeout of ${testTimeout / 1000}s`,
+    )
+  }, 5000)
+
   describe('tests that data is valid JSON', () => {
     // NOTE: caters for existing users that are sending strings in the data field
     it.each(['[1, 2, 3]', 'meep meep'])(
@@ -238,7 +344,7 @@ describe('make http request', () => {
 
         mocks.httpRequest.mockReturnValue('mock response')
 
-        await makeRequestAction.run($).catch(() => null)
+        await makeRequestAction.run($).catch((): void => null)
         expect(mocks.httpRequest).toHaveBeenCalledWith(
           expect.objectContaining({
             url: $.step.parameters.url,
@@ -266,7 +372,7 @@ describe('make http request', () => {
         $.step.parameters.url = 'http://test.local/endpoint?1234'
         mocks.httpRequest.mockReturnValue('mock response')
 
-        await makeRequestAction.run($).catch(() => null)
+        await makeRequestAction.run($).catch((): void => null)
         expect(mocks.httpRequest).toHaveBeenCalledWith(
           expect.objectContaining({
             url: $.step.parameters.url,

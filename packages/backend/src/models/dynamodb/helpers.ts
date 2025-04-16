@@ -4,6 +4,9 @@ import RetriableError from '@/errors/retriable-error'
 
 import TableColumnMetadata from '../table-column-metadata'
 
+export const DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE =
+  'Throughput exceeds the current capacity'
+
 export function handleDynamoDBError(error: unknown): never {
   console.error(error)
   if (error instanceof ElectroError) {
@@ -19,7 +22,7 @@ export function handleDynamoDBError(error: unknown): never {
       throw new Error('DynamoDB Validation Error: ' + message)
     }
     if (error.code < 5000) {
-      if (message.includes('Throughput exceeds the current capacity')) {
+      if (message.includes(DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE)) {
         // retry on throughput exceeded
         throw new RetriableError({
           error: message,

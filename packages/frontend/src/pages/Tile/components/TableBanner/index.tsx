@@ -9,7 +9,7 @@ import ImportExportToolbar from './ImportExportToolbar'
 import RefreshButton from './RefreshButton'
 
 function TableBanner() {
-  const { tableName, role, isFetching } = useTableContext()
+  const { tableName, role } = useTableContext()
 
   return (
     <Flex
@@ -25,7 +25,7 @@ function TableBanner() {
         <EditMode />
       </Flex>
       <Flex gap={2}>
-        {isFetching && <RefreshButton />}
+        <RefreshButton />
         <ImportExportToolbar />
       </Flex>
     </Flex>

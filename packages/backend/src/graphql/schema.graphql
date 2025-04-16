@@ -195,6 +195,7 @@ type ActionSubstepArgument {
   source: ActionSubstepArgumentSource
   hiddenIf: FieldVisibilityCondition
   addRowButtonText: String
+  tooltipText: String
 
   # Only for dropdown
   addNewOption: DropdownAddNewOption

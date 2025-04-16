@@ -269,6 +269,7 @@ export interface IBaseField {
   docUrl?: string
   clickToCopy?: boolean
   variables?: boolean
+  tooltipText?: string
 
   /**
    * Allows hiding a field if other fields' values don't fulfill some condition
@@ -301,6 +302,7 @@ export interface IFieldDropdown extends IBaseField {
   value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
+  variableTypes?: TDataOutMetadatumType[]
 }
 
 export type DropdownAddNewId =

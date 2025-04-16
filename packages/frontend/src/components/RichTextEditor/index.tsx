@@ -263,6 +263,7 @@ interface RichTextEditorProps {
   variablesEnabled?: boolean
   isRich?: boolean
   isSingleLine?: boolean
+  tooltipText?: string
 }
 const RichTextEditor = ({
   required,
@@ -275,6 +276,7 @@ const RichTextEditor = ({
   variablesEnabled,
   isRich,
   isSingleLine,
+  tooltipText,
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
 
@@ -284,6 +286,7 @@ const RichTextEditor = ({
         <FormLabel
           isRequired={required}
           description={description}
+          tooltipText={tooltipText}
           style={{ whiteSpace: 'pre-wrap' }}
         >
           {label}

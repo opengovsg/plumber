@@ -1,0 +1,7 @@
+export const DOCUMENT_TYPES = [
+  'BANK_STATEMENT',
+  'CHEQUE',
+  'INVOICE',
+  'PASSPORT',
+  'RECEIPT',
+]

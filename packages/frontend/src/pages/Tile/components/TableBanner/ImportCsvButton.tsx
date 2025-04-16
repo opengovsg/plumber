@@ -30,7 +30,6 @@ import { SetRequired } from 'type-fest'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { CREATE_ROWS } from '@/graphql/mutations/tiles/create-rows'
-import { GET_ALL_ROWS } from '@/graphql/queries/tiles/get-all-rows'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
@@ -135,7 +134,7 @@ export const ImportCsvModalContent = ({
   onPostImport?: () => void
   onBack?: () => void
 }) => {
-  const { tableId, tableColumns } = useTableContext()
+  const { tableId, tableColumns, refetch } = useTableContext()
   const { createColumns } = useUpdateTable()
   const [createRows] = useMutation(CREATE_ROWS)
   const [getTableData] = useLazyQuery<{
@@ -266,12 +265,10 @@ export const ImportCsvModalContent = ({
                 dataArray: chunkedData[i],
               },
             },
-            refetchQueries:
-              i === chunkedData.length - 1 && !onPreImport
-                ? [GET_ALL_ROWS]
-                : undefined,
-            awaitRefetchQueries: true,
           })
+          if (i === chunkedData.length - 1 && !onPreImport) {
+            await refetch()
+          }
           setRowsImported((i + 1) * CHUNK_SIZE)
         }
       }
@@ -292,6 +289,7 @@ export const ImportCsvModalContent = ({
     mapDataToColumnIds,
     onPostImport,
     onPreImport,
+    refetch,
     result,
     tableColumns,
     tableId,

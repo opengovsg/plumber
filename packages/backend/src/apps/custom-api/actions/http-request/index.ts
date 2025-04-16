@@ -4,11 +4,13 @@ import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
+import Step from '@/models/step'
 
 import {
   DISALLOWED_IP_RESOLVED_ERROR,
   RECURSIVE_WEBHOOK_ERROR_NAME,
 } from '../../common/check-urls'
+import { CUSTOM_API_TIMEOUT } from '../../common/constants'
 
 import { requestSchema } from './schema'
 
@@ -97,6 +99,16 @@ const action: IRawAction = {
     const data = $.step.parameters.data as string
     const url = $.step.parameters.url as string
 
+    // Check if the step has an admin override for the timeout
+    // There may be certain custom apis that need more time to respond
+    // for e.g., Google Apps Script API which can run for up to 360 seconds
+    const step = await Step.query().findById($.step.id).throwIfNotFound()
+    const customTimeoutRaw = step.config?.adminOverride?.customApiTimeout
+    const timeout =
+      typeof customTimeoutRaw === 'number'
+        ? customTimeoutRaw
+        : CUSTOM_API_TIMEOUT
+
     try {
       const parsedS = requestSchema.parse($.step.parameters)
       const { customHeaders, data: parsedData } = parsedS
@@ -107,6 +119,7 @@ const action: IRawAction = {
         data: parsedData,
         maxRedirects: 0,
         headers: customHeaders,
+        timeout,
         //  overwriting this to allow redirects to resolve
         validateStatus: (status) =>
           (status >= 200 && status < 300) ||
@@ -168,6 +181,16 @@ const action: IRawAction = {
           'If you think this is a mistake, please contact us.',
           $.step.position,
           $.app.name,
+        )
+      }
+
+      if (err.message === `timeout of ${timeout}ms exceeded`) {
+        throw new StepError(
+          `HTTP request exceeded timeout of ${timeout / 1000}s`,
+          'The request took too long to respond.',
+          $.step.position,
+          $.app.name,
+          err,
         )
       }
 

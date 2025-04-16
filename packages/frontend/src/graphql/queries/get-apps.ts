@@ -192,6 +192,7 @@ export const GET_APPS = gql`
             addRowButtonText
             showOptionValue
             customStyle
+            tooltipText
             value
             options {
               label

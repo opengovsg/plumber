@@ -1,5 +1,6 @@
 import type { IApp } from '@plumber/types'
 
+import aisayApp from '@/apps/aisay'
 import calculatorApp from '@/apps/calculator'
 import customApiApp from '@/apps/custom-api'
 import delayApp from '@/apps/delay'
@@ -49,6 +50,7 @@ export const ACTION_APPS_RANKING = [
   postmanSmsApp.key,
   telegramBotApp.key,
   slackApp.key,
+  aisayApp.key,
   customApiApp.key,
   vaultWorkspaceApp.key,
   twilioApp.key,

@@ -30,6 +30,8 @@ interface TableContextProps {
   collaborators?: ITableCollaborator[]
   role?: string
   isFetching: boolean
+  isThroughputError: boolean
+  refetch: () => Promise<void>
 }
 
 const TableContext = createContext<TableContextProps | undefined>(undefined)
@@ -55,6 +57,8 @@ interface TableContextProviderProps {
   // If null, the tile is accessed by a shareable link
   role?: string
   isFetching: boolean
+  isThroughputError: boolean
+  refetch: () => Promise<void>
 }
 
 export const TableContextProvider = ({
@@ -67,6 +71,8 @@ export const TableContextProvider = ({
   collaborators,
   role,
   isFetching,
+  isThroughputError,
+  refetch,
 }: TableContextProviderProps) => {
   const flattenedData = useMemo(() => flattenRows(tableRows), [tableRows])
   const filteredDataRef = useRef<GenericRowData[]>([])
@@ -91,6 +97,8 @@ export const TableContextProvider = ({
         collaborators,
         role,
         isFetching,
+        isThroughputError,
+        refetch,
       }}
     >
       {children}
