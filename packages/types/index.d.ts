@@ -886,6 +886,7 @@ export interface ITableColumnConfig {
     indexName: string
     type: 'string' | 'number'
     status: 'pending' | 'ready' | 'error'
+    patchFrom?: string
   }
 }
 

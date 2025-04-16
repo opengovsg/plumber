@@ -120,7 +120,8 @@ type Mutation {
 }
 
 type AdminMutation {
-  addGsi(input: AddGsiInput!): Boolean
+  addGsi(input: AddGsiInput!): Boolean!
+  patchGsiRows(input: PatchGsiRowsInput!): PatchGsiRowsResult!
 }
 
 """
@@ -852,6 +853,19 @@ input AddGsiInput {
   tableId: ID!
   columnId: ID!
   indexName: String!
+}
+
+input PatchGsiRowsInput {
+  tableId: ID!
+  columnId: ID!
+  limit: Int
+  returnCount: Boolean
+}
+
+type PatchGsiRowsResult {
+  numRowsPatched: Int!
+  numRowsLeftToPatch: Int
+  hasMore: Boolean!
 }
 
 # End Tiles row types

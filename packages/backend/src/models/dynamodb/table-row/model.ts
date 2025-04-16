@@ -36,7 +36,7 @@ export const TableRow = new Entity(
       },
       updatedAt: {
         type: 'number',
-        watch: '*',
+        watch: ['data'],
         required: true,
         default: () => Date.now(),
         set: () => Date.now(),
