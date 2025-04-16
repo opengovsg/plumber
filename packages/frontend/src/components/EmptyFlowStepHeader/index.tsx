@@ -1,4 +1,4 @@
-import { BiRun, BiSolidBolt } from 'react-icons/bi'
+import { BiPlus, BiSolidBolt } from 'react-icons/bi'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 
 interface EmptyFlowStepHeaderProps {
@@ -32,11 +32,9 @@ export default function EmptyFlowStepHeader(
         bg: 'interaction.muted.neutral.active',
       }}
     >
-      <Icon as={isTrigger ? BiSolidBolt : BiRun} boxSize={6} />
+      <Icon as={isTrigger ? BiSolidBolt : BiPlus} boxSize={6} />
       <Text textStyle="subhead-1">
-        {isTrigger
-          ? 'Choose how you want your workflow to start'
-          : 'Choose an action'}
+        {isTrigger ? 'Choose how you want your workflow to start' : 'Add step'}
       </Text>
     </Flex>
   )

@@ -7,12 +7,6 @@ import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
 
 import { getAppActionFlag, getAppTriggerFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import {
-  TOOLBOX_ACTIONS,
-  TOOLBOX_APP_KEY,
-  useIfThenInitializer,
-  useIsIfThenSelectable,
-} from '@/helpers/toolbox'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
@@ -28,15 +22,12 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
 
   const launchDarkly = useContext(LaunchDarklyContext)
 
-  const { modalState, isTrigger, isLastStep, patchModalState } = useContext(
+  const { modalState, isTrigger, patchModalState } = useContext(
     FlowStepConfigurationContext,
   )
   const { selectedApp } = modalState
 
-  const [_, isInitializingIfThen] = useIfThenInitializer()
-  const isLoading = launchDarkly.isLoading || isInitializingIfThen
-
-  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
+  const isLoading = launchDarkly.isLoading
 
   const filteredTriggersOrActions = useMemo(() => {
     if (!selectedApp) {
@@ -97,36 +88,26 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
         <Flex flexDir="column" gap={3}>
           {filteredTriggersOrActions?.map(
             (triggerOrAction: ITrigger | IAction) => {
-              const isIfThen =
-                selectedApp.key === TOOLBOX_APP_KEY &&
-                triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
-              const isDisabled = isIfThen && !isIfThenSelectable
-
               return (
                 <Box
                   key={triggerOrAction.key}
                   p={4}
                   borderWidth="1px"
                   borderRadius="lg"
-                  onClick={() =>
-                    !isDisabled &&
-                    onSelectAppEvent(selectedApp, triggerOrAction)
-                  }
-                  opacity={isDisabled ? 0.5 : 1}
+                  onClick={() => onSelectAppEvent(selectedApp, triggerOrAction)}
+                  opacity={1}
                   _hover={{
                     bg: 'interaction.muted.neutral.hover',
-                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    cursor: 'pointer',
                   }}
                   _active={{
                     bg: 'interaction.muted.neutral.active',
                   }}
                   _focus={{
                     outline: 'none',
-                    boxShadow: isDisabled
-                      ? 'none'
-                      : '0 0 0 2px var(--chakra-colors-primary-500)',
+                    boxShadow: '0 0 0 2px var(--chakra-colors-primary-500)',
                   }}
-                  tabIndex={isDisabled ? -1 : 0} // Make focusable unless disabled
+                  tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       onSelectAppEvent(selectedApp, triggerOrAction)
@@ -134,11 +115,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
                   }}
                 >
                   <Text textStyle="subhead-1">{triggerOrAction.name}</Text>
-                  <Text textStyle="body-2">
-                    {isDisabled
-                      ? 'This can only be used in the last step'
-                      : triggerOrAction.description}
-                  </Text>
+                  <Text textStyle="body-2">{triggerOrAction.description}</Text>
                 </Box>
               )
             },

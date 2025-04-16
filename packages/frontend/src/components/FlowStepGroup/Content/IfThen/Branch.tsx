@@ -136,6 +136,7 @@ export default function Branch(props: BranchProps): JSX.Element {
           isLoading={isDeletingBranch}
           isDisabled={isEditorReadOnly}
           ml="auto"
+          colorScheme="secondary"
         />
       </Flex>
       {/*

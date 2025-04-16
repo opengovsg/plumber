@@ -7,6 +7,7 @@ import triggers from './triggers'
 const app: IApp = {
   name: 'FormSG',
   key: 'formsg',
+  description: 'Workflow starts when a new form response is received',
   iconUrl: '{BASE_URL}/apps/formsg/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/triggers/formsg',
   baseUrl: 'https://form.gov.sg',
