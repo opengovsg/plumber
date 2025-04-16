@@ -29,6 +29,10 @@ const auth: IUserAddedConnectionAuth = {
 
   verifyCredentials,
   isStillVerified,
+  connectionModalLabel: {
+    chooseConnectionLabel: 'Connect your AISAY account',
+    addConnectionLabel: 'Add new account',
+  },
 }
 
 export default auth

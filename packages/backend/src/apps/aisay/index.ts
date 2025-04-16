@@ -19,10 +19,6 @@ const app: IApp = {
   primaryColor: '0059F7',
   actions,
   requestErrorHandler,
-  substepLabels: {
-    connectionStepLabel: 'Connect your AISAY account',
-    addConnectionLabel: 'Add new AISAY connection',
-  },
   queue,
 }
 
