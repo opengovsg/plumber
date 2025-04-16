@@ -4,6 +4,7 @@ import StepError from '@/errors/step'
 import Step from '@/models/step'
 
 import { getToken } from '../../auth/get-token'
+import { parseError } from '../../common/error-parser'
 import { getAttachmentsFromS3, getValidationError } from '../../common/utils'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -56,7 +57,7 @@ const action: IRawAction = {
       infoToExtract: Array<{ infoToExtract: string }>
     }
 
-    if (!$.auth.data.clientId || !$.auth.data.clientSecret) {
+    if (!$.auth.data?.clientId || !$.auth.data?.clientSecret) {
       throw new StepError(
         'Missing client ID or client secret',
         'Please check the client ID and client secret',
@@ -116,21 +117,13 @@ const action: IRawAction = {
       $.setActionItem({ raw: { ...res.data } })
     } catch (err) {
       console.error(err)
-      if (err.response.data.message === `Request Too Long`) {
-        throw new StepError(
-          'File too large',
-          'Please try again with a smaller file.',
-          $.step.position,
-          $.app.name,
-        )
-      } else {
-        throw new StepError(
-          'Failed to call generalised model',
-          'Please try again.',
-          $.step.position,
-          $.app.name,
-        )
-      }
+      const { stepErrorName, stepErrorSolution } = parseError(err)
+      throw new StepError(
+        stepErrorName,
+        stepErrorSolution,
+        $.step.position,
+        $.app.name,
+      )
     }
   },
 } satisfies IRawAction

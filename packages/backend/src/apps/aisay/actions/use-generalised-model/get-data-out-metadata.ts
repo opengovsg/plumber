@@ -25,6 +25,7 @@ async function getDataOutMetadata(
   return {
     quota: {
       label: 'Quota',
+      isHidden: true,
     },
     fields: fieldsMetadata,
   }
