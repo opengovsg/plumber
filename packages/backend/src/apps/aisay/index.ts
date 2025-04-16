@@ -9,7 +9,6 @@ import queue from './queue'
 const app: IApp = {
   name: 'AISAY',
   key: 'aisay',
-  category: 'others',
   description:
     'Extract data from documents such as invoices, bank statements, cheques, and more',
   iconUrl: '{BASE_URL}/apps/aisay/assets/favicon.svg',
