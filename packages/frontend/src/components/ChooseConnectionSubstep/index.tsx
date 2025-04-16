@@ -24,7 +24,6 @@ type ChooseConnectionSubstepProps = {
 type ConnectionLink = {
   url: string
   text: string
-  isExternal: boolean
 }
 
 interface ConnectionStatus {
@@ -64,16 +63,10 @@ function ChooseConnectionSubstep(
       connectionId: connection?.id,
       flowId: supportsConnectionRegistration ? step.flowId : undefined,
     },
-    // cache-first to prevent the test connection from being called multiple times
-    fetchPolicy: 'cache-first',
     skip: !connection?.id,
   })
 
   const isTestStepValid = useMemo(() => {
-    if (application.key === APP_ALLOWING_EMPTY_CONNECTION) {
-      return true
-    }
-
     if (testResultLoading || !testConnectionData?.testConnection) {
       return null
     }
@@ -84,13 +77,20 @@ function ChooseConnectionSubstep(
       return false
     }
     return true
-  }, [application.key, testConnectionData, testResultLoading])
+  }, [testConnectionData, testResultLoading])
 
   const connectionStatus: ConnectionStatus = useMemo(() => {
     if (!connection) {
-      return {
-        text: 'Not connected',
-        color: 'yellow.200',
+      if (application.key === APP_ALLOWING_EMPTY_CONNECTION) {
+        return {
+          text: 'No connection',
+          color: 'green.500',
+        }
+      } else {
+        return {
+          text: 'Not connected',
+          color: 'yellow.200',
+        }
       }
     } else if (testResultLoading) {
       return {
@@ -110,8 +110,7 @@ function ChooseConnectionSubstep(
       if (application.key === 'formsg') {
         connectionLink = {
           url: formLinkGenerator(connectionOption),
-          text: 'View form',
-          isExternal: true,
+          text: '(View form)',
         }
       }
 
@@ -145,7 +144,6 @@ function ChooseConnectionSubstep(
             {connectionStatus.connectionLink && (
               <Link
                 href={connectionStatus.connectionLink.url}
-                isExternal={connectionStatus.connectionLink.isExternal}
                 target="_blank"
                 ml={2}
               >

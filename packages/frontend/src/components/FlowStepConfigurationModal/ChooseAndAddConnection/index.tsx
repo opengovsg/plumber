@@ -64,8 +64,7 @@ export default function ChooseAndAddConnection(
   const { modalState, patchModalState, step, prevStepId } = useContext(
     FlowStepConfigurationContext,
   )
-  const { currentScreen, selectedApp, selectedEvent, selectedConnectionId } =
-    modalState
+  const { currentScreen, selectedApp, selectedEvent } = modalState
 
   const {
     data,
@@ -100,68 +99,48 @@ export default function ChooseAndAddConnection(
     [selectedApp, selectedEvent, refetch, patchModalState],
   )
 
-  // Add a new connection for verifying and registering of connection
-  const handleAddConnection = useCallback(
-    async (response: Record<string, any>) => {
-      const newConnectionId = response?.createConnection?.id as
-        | string
-        | undefined
+  // If the step is not provided, create a new step; else update the existing step
+  const onCreateOrUpdateStep = useCallback(
+    async (connectionId: string) => {
+      if (!selectedApp || !selectedEvent || !connectionId) {
+        return
+      }
 
-      if (newConnectionId) {
-        if (!selectedApp || !selectedEvent) {
-          return
+      patchModalState({ isLoading: true })
+      try {
+        if (prevStepId) {
+          await onCreateStep(
+            prevStepId,
+            selectedApp.key,
+            selectedEvent.key,
+            connectionId,
+          )
+        } else if (step) {
+          await onUpdateStep({
+            ...step,
+            appKey: selectedApp.key,
+            key: selectedEvent.key,
+            connection: {
+              id: connectionId,
+            },
+          })
         }
-
-        handleConnectionChange(newConnectionId, true)
-        patchModalState({
-          selectedConnectionId: newConnectionId,
-          currentScreen: 'choose-connection',
-        })
+        onClose()
+      } finally {
+        patchModalState({ isLoading: false })
       }
     },
-    [handleConnectionChange, selectedApp, selectedEvent, patchModalState],
+    [
+      prevStepId,
+      step,
+      selectedApp,
+      selectedEvent,
+      onClose,
+      onCreateStep,
+      onUpdateStep,
+      patchModalState,
+    ],
   )
-
-  // If the step is not provided, create a new step; else update the existing step
-  const handleSubmit = useCallback(async () => {
-    if (!selectedApp || !selectedEvent || !selectedConnectionId) {
-      return
-    }
-
-    patchModalState({ isLoading: true })
-    try {
-      if (prevStepId) {
-        await onCreateStep(
-          prevStepId,
-          selectedApp.key,
-          selectedEvent.key,
-          selectedConnectionId,
-        )
-      } else if (step) {
-        await onUpdateStep({
-          ...step,
-          appKey: selectedApp.key,
-          key: selectedEvent.key,
-          connection: {
-            id: selectedConnectionId,
-          },
-        })
-      }
-      onClose()
-    } finally {
-      patchModalState({ isLoading: false })
-    }
-  }, [
-    selectedApp,
-    selectedEvent,
-    selectedConnectionId,
-    patchModalState,
-    prevStepId,
-    step,
-    onCreateStep,
-    onUpdateStep,
-    onClose,
-  ])
 
   if (!flowId) {
     return <InvalidModalScreen />
@@ -173,15 +152,15 @@ export default function ChooseAndAddConnection(
         appConnectionsLoading={appConnectionsLoading}
         connectionOptions={connectionOptions}
         handleConnectionChange={handleConnectionChange}
-        handleSubmit={handleSubmit}
+        onCreateOrUpdateStep={onCreateOrUpdateStep}
       />
     )
   }
   if (selectedApp && currentScreen === 'add-connection') {
     return (
       <AddConnection
-        onSubmit={handleAddConnection}
-        onBack={() => patchModalState({ currentScreen: 'choose-connection' })}
+        handleConnectionChange={handleConnectionChange}
+        onCreateOrUpdateStep={onCreateOrUpdateStep}
       />
     )
   }
@@ -194,7 +173,7 @@ export default function ChooseAndAddConnection(
     return (
       <ConfigureExcelConnection
         onBack={() => patchModalState({ currentScreen: 'choose-event' })}
-        handleSubmit={handleSubmit}
+        onCreateOrUpdateStep={onCreateOrUpdateStep}
       />
     )
   }

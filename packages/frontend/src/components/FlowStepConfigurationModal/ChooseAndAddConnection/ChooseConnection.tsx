@@ -1,14 +1,9 @@
-import type { ITestConnectionOutput } from '@plumber/types'
-
-import { useCallback, useContext } from 'react'
+import { useContext } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
-import { useMutation, useQuery } from '@apollo/client'
 import { Flex, ModalBody, ModalHeader } from '@chakra-ui/react'
 import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
-import { REGISTER_CONNECTION } from '@/graphql/mutations/register-connection'
-import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
 import { DEFAULT_CHOOSE_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
@@ -22,8 +17,11 @@ import { ConnectionDropdownOption } from '.'
 interface ChooseConnectionProps {
   appConnectionsLoading: boolean
   connectionOptions: ConnectionDropdownOption[]
-  handleConnectionChange: (value: string, shouldRefetch: boolean) => void
-  handleSubmit: () => void
+  handleConnectionChange: (
+    value: string,
+    shouldRefetch: boolean,
+  ) => Promise<void>
+  onCreateOrUpdateStep: (connectionId: string) => Promise<void>
 }
 
 export default function ChooseConnection(
@@ -33,56 +31,15 @@ export default function ChooseConnection(
     appConnectionsLoading,
     connectionOptions,
     handleConnectionChange,
-    handleSubmit,
+    onCreateOrUpdateStep,
   } = props
-  const { readOnly, flowId } = useContext(EditorContext)
+  const { readOnly } = useContext(EditorContext)
 
   const { modalState, patchModalState, step } = useContext(
     FlowStepConfigurationContext,
   )
   const { selectedApp, selectedConnectionId } = modalState
-
-  const supportsConnectionRegistration =
-    !!selectedApp?.auth?.connectionRegistrationType
-
   const connectionModalLabel = selectedApp?.auth?.connectionModalLabel
-
-  const {
-    loading: testResultLoading,
-    refetch: retestConnection,
-    data: testConnectionData,
-  } = useQuery<{
-    testConnection: ITestConnectionOutput
-  }>(TEST_CONNECTION, {
-    variables: {
-      connectionId: selectedConnectionId,
-      flowId: supportsConnectionRegistration ? flowId : undefined,
-    },
-    skip: !selectedConnectionId,
-  })
-
-  const [registerConnection, { loading: registerConnectionLoading }] =
-    useMutation(REGISTER_CONNECTION)
-
-  const onRegisterConnection = useCallback(async () => {
-    if (selectedConnectionId && supportsConnectionRegistration) {
-      await registerConnection({
-        variables: {
-          input: {
-            connectionId: selectedConnectionId,
-            flowId,
-          },
-        },
-      })
-      await retestConnection()
-    }
-  }, [
-    selectedConnectionId,
-    supportsConnectionRegistration,
-    registerConnection,
-    flowId,
-    retestConnection,
-  ])
 
   const onBack = () => {
     if (!selectedApp) {
@@ -112,7 +69,7 @@ export default function ChooseConnection(
   return (
     <>
       {/* Hide back button only if step has both the key and appKey */}
-      <ModalHeader>
+      <ModalHeader pt={0}>
         {(!step?.key || !step?.appKey) && (
           <Button
             variant="clear"
@@ -135,7 +92,7 @@ export default function ChooseConnection(
       </ModalHeader>
       <ModalCloseButton mt={2} size="xs" />
 
-      <ModalBody mb={4}>
+      <ModalBody>
         <Flex flexDir="column" alignItems="center" gap={6}>
           <Flex w="100%" flexDir="column" gap={4}>
             <ChooseConnectionDropdown
@@ -149,13 +106,10 @@ export default function ChooseConnection(
               }
             />
             <SetConnectionButton
-              onNextStep={handleSubmit}
-              onRegisterConnection={onRegisterConnection}
+              onNextStep={async () =>
+                await onCreateOrUpdateStep(selectedConnectionId)
+              }
               readOnly={readOnly}
-              supportsConnectionRegistration={supportsConnectionRegistration}
-              testResult={testConnectionData?.testConnection}
-              testResultLoading={testResultLoading}
-              registerConnectionLoading={registerConnectionLoading}
               isNewStep={!step?.appKey || !step?.key}
             />
           </Flex>

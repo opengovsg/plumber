@@ -73,7 +73,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
 
   return (
     <>
-      <ModalHeader>
+      <ModalHeader pt={0}>
         <Flex gap={2} flexDir="column" alignItems="flex-start">
           <Button
             variant="clear"

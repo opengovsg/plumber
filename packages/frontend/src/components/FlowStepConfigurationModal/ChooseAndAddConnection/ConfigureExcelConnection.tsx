@@ -1,8 +1,7 @@
-import type { IApp, ITestConnectionOutput } from '@plumber/types'
+import type { IApp } from '@plumber/types'
 
-import { useCallback, useContext, useMemo, useState } from 'react'
+import { useContext, useMemo } from 'react'
 import { BiChevronLeft, BiQuestionMark, BiRightArrowAlt } from 'react-icons/bi'
-import { useMutation, useQuery } from '@apollo/client'
 import {
   Flex,
   Icon,
@@ -14,12 +13,10 @@ import {
 import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
 
 import microsoftFolder from '@/assets/microsoft-folder.svg'
-import { EditorContext } from '@/contexts/Editor'
-import { REGISTER_CONNECTION } from '@/graphql/mutations/register-connection'
-import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 import useAuthentication from '@/hooks/useAuthentication'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import { useConnectionVerification } from '../hooks/useConnectionRegistration'
 
 import ConnectionHeader from './ConnectionHeader'
 
@@ -65,10 +62,10 @@ function SuccessfulConnectionContent({
   handleSubmit,
 }: {
   userEmail: string
-  handleSubmit: () => void
+  handleSubmit: () => Promise<void>
 }) {
   return (
-    <Flex flexDir="column" gap={3} mb={4}>
+    <Flex flexDir="column" gap={3}>
       <Text fontSize="sm" ml={4}>
         {`1. Find the `}
         <Text as="span" textDecoration="underline">
@@ -80,7 +77,7 @@ function SuccessfulConnectionContent({
         {`2. Place your Excel files in this folder to start using them`}
       </Text>
 
-      <Button isFullWidth onClick={handleSubmit}>
+      <Button isFullWidth onClick={handleSubmit} mt={4}>
         Ok, got it!
       </Button>
     </Flex>
@@ -93,11 +90,11 @@ function ConfigurationConnectionContent({
   isLoading,
 }: {
   userEmail: string
-  onRegisterConnection: () => void
+  onRegisterConnection: () => Promise<void>
   isLoading: boolean
 }) {
   return (
-    <Flex flexDir="column" gap={3} mb={4}>
+    <Flex flexDir="column" gap={3}>
       <Text>How it works:</Text>
       <Text fontSize="sm" ml={4}>
         {`1. We'll create a folder named `}
@@ -114,6 +111,7 @@ function ConfigurationConnectionContent({
         size="lg"
         onClick={onRegisterConnection}
         isLoading={isLoading}
+        mt={4}
       >
         Connect
       </Button>
@@ -123,7 +121,7 @@ function ConfigurationConnectionContent({
 
 interface ConfigureExcelConnectionProps {
   onBack: () => void
-  handleSubmit: () => void
+  onCreateOrUpdateStep: (connectionId: string) => Promise<void>
 }
 
 /**
@@ -134,59 +132,38 @@ interface ConfigureExcelConnectionProps {
 export default function ConfigureExcelConnection(
   props: ConfigureExcelConnectionProps,
 ) {
-  const { onBack, handleSubmit } = props
-  const { flowId } = useContext(EditorContext)
+  const { onBack, onCreateOrUpdateStep } = props
   const { modalState, step } = useContext(FlowStepConfigurationContext)
   const { selectedApp, selectedConnectionId } = modalState
   const connectionModalLabel = selectedApp?.auth?.connectionModalLabel
-
-  const [isRegistered, setIsRegistered] = useState(false) // track connection registration
   const { currentUser } = useAuthentication()
 
-  const { loading: testResultLoading, data: testConnectionData } = useQuery<{
-    testConnection: ITestConnectionOutput
-  }>(TEST_CONNECTION, {
-    variables: {
-      connectionId: selectedConnectionId,
-      flowId,
-    },
-    skip: !selectedConnectionId || !isRegistered, // skip if not registered yet
+  const {
+    testResult,
+    testResultLoading,
+    registerConnectionLoading,
+    onRegisterConnection,
+  } = useConnectionVerification({
+    supportsConnectionRegistration: true, // Excel always supports connection registration
   })
-
-  const [registerConnection, { loading: registerConnectionLoading }] =
-    useMutation(REGISTER_CONNECTION)
-
-  const onRegisterConnection = useCallback(async () => {
-    if (selectedConnectionId) {
-      await registerConnection({
-        variables: {
-          input: {
-            connectionId: selectedConnectionId,
-            flowId,
-          },
-        },
-      })
-      setIsRegistered(true)
-    }
-  }, [flowId, selectedConnectionId, registerConnection])
 
   // Determine if the connection test was successful
   const isConnectionValid = useMemo(() => {
-    if (testResultLoading || !testConnectionData?.testConnection) {
+    if (testResultLoading || !testResult) {
       return false
     }
     if (
-      testConnectionData?.testConnection?.connectionVerified === false ||
-      testConnectionData?.testConnection?.registrationVerified === false
+      testResult?.connectionVerified === false ||
+      testResult?.registrationVerified === false
     ) {
       return false
     }
     return true
-  }, [testConnectionData?.testConnection, testResultLoading])
+  }, [testResult, testResultLoading])
 
   return (
     <>
-      <ModalHeader>
+      <ModalHeader pt={0}>
         {!isConnectionValid && (!step?.key || !step?.appKey) && (
           <Button
             variant="clear"
@@ -217,12 +194,16 @@ export default function ConfigureExcelConnection(
         {isConnectionValid ? (
           <SuccessfulConnectionContent
             userEmail={currentUser?.email ?? ''}
-            handleSubmit={handleSubmit}
+            handleSubmit={async () =>
+              await onCreateOrUpdateStep(selectedConnectionId)
+            }
           />
         ) : (
           <ConfigurationConnectionContent
             userEmail={currentUser?.email ?? ''}
-            onRegisterConnection={onRegisterConnection}
+            onRegisterConnection={async () =>
+              await onRegisterConnection(selectedConnectionId)
+            }
             isLoading={registerConnectionLoading}
           />
         )}

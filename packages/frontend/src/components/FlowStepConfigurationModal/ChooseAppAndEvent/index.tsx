@@ -121,7 +121,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
           })
         }
       }
-      // For a better visual experience, delay the closing of the modal
       patchModalState({ isLoading: false })
       onClose()
     },
