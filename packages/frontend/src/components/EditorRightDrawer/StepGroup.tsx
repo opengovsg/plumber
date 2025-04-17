@@ -49,7 +49,7 @@ function getStepContent(steps: IStep[]): {
 const ifThenHelpMessage = 'Customise what happens in each of your branches.'
 
 export default function StepGroup(props: StepGroupProps) {
-  const { flow, steps, collapsed, setCurrentStepId } = props
+  const { flow, steps, collapsed, setCurrentStepId, onClose } = props
   const isTemplatedFlow = !!flow.config?.templateConfig?.templateId
   const { StepContent, isStepGroupCompleted } = useMemo(
     () => getStepContent(steps),
@@ -78,6 +78,7 @@ export default function StepGroup(props: StepGroupProps) {
         flow={flow}
         steps={steps}
         setCurrentStepId={setCurrentStepId}
+        onClose={onClose}
       />
     </Flex>
   )

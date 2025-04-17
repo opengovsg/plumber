@@ -131,7 +131,10 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
             steps={groupedSteps}
             collapsed={currentStepId !== groupedSteps[0].id}
             onOpen={() => setCurrentStepId(groupedSteps[0].id)}
-            onClose={() => setCurrentStepId(null)}
+            onClose={() => {
+              setCurrentStepId(null)
+              onDrawerClose()
+            }}
             setCurrentStepId={setCurrentStepId}
           />
         )}
