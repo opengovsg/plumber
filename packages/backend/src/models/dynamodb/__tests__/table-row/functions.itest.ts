@@ -543,7 +543,7 @@ describe('dynamodb table row functions', () => {
       const updatedRow = await patchTableRow({
         tableId: dummyTable.id,
         rowId: row.rowId,
-        patchData: { [dummyColumnIds[0]]: '123' },
+        patchData: { set: { [dummyColumnIds[0]]: '123' } },
       })
       expect(updatedRow.updatedAt).toBeGreaterThan(row.updatedAt)
     })

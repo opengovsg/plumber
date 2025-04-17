@@ -91,7 +91,7 @@ const patchGsiRows: AdminMutationResolvers['patchGsiRows'] = async (
    * We update with a concurrency of 10 to prevent overloading the partition
    * and server
    */
-  const updateLimit = pLimit(100)
+  const updateLimit = pLimit(10)
 
   await Promise.all(
     /**

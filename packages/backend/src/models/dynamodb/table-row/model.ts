@@ -36,10 +36,19 @@ export const TableRow = new Entity(
       },
       updatedAt: {
         type: 'number',
-        watch: ['data'],
+        watch: '*',
         required: true,
         default: () => Date.now(),
-        set: () => Date.now(),
+        set: (_, changeObject) => {
+          /**
+           * We only update the updatedAt if the data is being updated
+           * This is to prevent updating the updatedAt when patching GSI
+           */
+          const keys = Object.keys(changeObject)
+          if (keys.some((key) => key === 'data' || key.startsWith('data.'))) {
+            return Date.now()
+          }
+        },
       },
       skString1: {
         type: 'string',
