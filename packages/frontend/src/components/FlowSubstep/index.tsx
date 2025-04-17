@@ -243,7 +243,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
                 !validationStatus || editorContext.readOnly || isSaving
               }
             >
-              Complete step
+              Check step
             </Button>
           </Stack>
         </Box>
