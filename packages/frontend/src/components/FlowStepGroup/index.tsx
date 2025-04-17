@@ -70,7 +70,19 @@ function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
     >
       {/* Show infobox only if the step group is incomplete and from a template */}
       {!isStepGroupCompleted && isTemplatedFlow && (
-        <Box boxShadow={collapsed ? undefined : 'sm'} borderRadius="lg">
+        <Box
+          boxShadow={collapsed ? undefined : 'sm'}
+          borderRadius="lg"
+          w={
+            isDrawerOpen
+              ? isMobile
+                ? '0px'
+                : '100%'
+              : isMobile
+              ? '100vw'
+              : '55rem'
+          }
+        >
           <Infobox
             icon={<BiInfoCircle />}
             variant="secondary"

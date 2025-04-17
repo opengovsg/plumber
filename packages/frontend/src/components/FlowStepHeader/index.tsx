@@ -41,7 +41,7 @@ const Collapse = chakra(CollapseWithHiddenOverflow)
 interface FlowStepHeaderProps {
   iconUrl?: string
   caption: string
-  hintAboveCaption: string
+  hintAboveCaption: string | null
   isCompleted?: boolean
   isDrawerOpen: boolean
   onDelete?: MouseEventHandler
