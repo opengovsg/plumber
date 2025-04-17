@@ -198,7 +198,10 @@ describe('tiles create row action', () => {
         filters: [($.step.parameters.filters as any[])[1]],
         gsi: {
           indexName: 'gsiString1',
-          filter: ($.step.parameters.filters as any[])[0],
+          filter: {
+            ...($.step.parameters.filters as any[])[0],
+            columnId: 'skString1',
+          },
         },
         scanLimit: 100,
         order: 'desc',
