@@ -1,17 +1,26 @@
 import type { IAction, IApp, ITrigger } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
-import { BiArrowFromRight, BiChevronRight } from 'react-icons/bi'
+import { useCallback, useContext, useMemo, useState } from 'react'
+import {
+  BiArrowFromRight,
+  BiChevronRight,
+  BiSearch,
+  BiSolidXCircle,
+} from 'react-icons/bi'
 import {
   Box,
   Flex,
   Icon,
   Image,
+  InputGroup,
+  InputLeftElement,
+  InputRightElement,
   ModalBody,
   ModalHeader,
   Text,
 } from '@chakra-ui/react'
-import { Badge, ModalCloseButton } from '@opengovsg/design-system-react'
+import { Badge, Input, ModalCloseButton } from '@opengovsg/design-system-react'
+import fuzzysort from 'fuzzysort'
 import { groupBy } from 'lodash'
 
 import { getAppActionFlag, getAppFlag } from '@/config/flags'
@@ -26,6 +35,7 @@ import {
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 
 import FeedbackFooter from './FeedbackFooter'
+import { HighlightedText } from './HighlightedText'
 import ToolboxEvent from './ToolboxEvent'
 
 const OTHERS_CATEGORY = 'Other'
@@ -44,6 +54,8 @@ export default function ChooseApp(props: ChooseAppProps) {
 
   const [_, isInitializingIfThen] = useIfThenInitializer()
   const isLoading = launchDarkly.isLoading || isInitializingIfThen
+
+  const [searchQuery, setSearchQuery] = useState('')
 
   const onSelectApp = useCallback(
     (app: IApp) => {
@@ -68,7 +80,7 @@ export default function ChooseApp(props: ChooseAppProps) {
 
     const toolboxActions =
       apps?.find((app) => app.key === TOOLBOX_APP_KEY)?.actions ?? []
-    return toolboxActions.filter((action) => {
+    const filteredToolboxActions = toolboxActions.filter((action) => {
       // Filter away actions hidden behind feature flags
       if (isLoading || !launchDarkly.flags) {
         return true
@@ -77,7 +89,17 @@ export default function ChooseApp(props: ChooseAppProps) {
       const ldToolboxActionFlag = getAppActionFlag(TOOLBOX_APP_KEY, action.key)
       return launchDarkly.flags[ldToolboxActionFlag] ?? true
     })
-  }, [apps, isLoading, launchDarkly.flags])
+
+    const fuzzySearchToolboxActions = fuzzysort
+      .go(searchQuery, filteredToolboxActions, {
+        all: true,
+        keys: ['name', 'description'],
+        threshold: -1000,
+      })
+      .map((result) => result.obj)
+
+    return fuzzySearchToolboxActions
+  }, [apps, isLoading, launchDarkly.flags, searchQuery])
 
   // Combine filtering and grouping logic into a single operation
   const groupedApps = useMemo(() => {
@@ -90,9 +112,29 @@ export default function ChooseApp(props: ChooseAppProps) {
       return launchDarkly.flags[ldAppFlag] ?? true
     })
 
+    // Note: Separate toolbox app from other apps because we filter toolbox actions separately
+    const toolboxApp = filteredApps.find((app) => app.key === TOOLBOX_APP_KEY)
+    const nonToolboxApps = filteredApps.filter(
+      (app) => app.key !== TOOLBOX_APP_KEY,
+    )
+
+    const fuzzySearchApps = fuzzysort
+      .go(searchQuery, nonToolboxApps, {
+        all: true,
+        keys: ['name', 'description'],
+        threshold: -1000,
+      })
+      .map((result) => result.obj)
+
+    // Add toolbox app back if there are toolbox actions after search and filter
+    const remainingApps =
+      toolboxApp && filteredToolboxActions.length > 0
+        ? [...fuzzySearchApps, toolboxApp]
+        : fuzzySearchApps
+
     // Group the filtered apps
     const grouped = groupBy(
-      filteredApps,
+      remainingApps,
       (app) => app.category || OTHERS_CATEGORY,
     )
 
@@ -106,7 +148,7 @@ export default function ChooseApp(props: ChooseAppProps) {
       }
       return a[0].localeCompare(b[0])
     })
-  }, [apps, launchDarkly.flags, isLoading])
+  }, [apps, launchDarkly.flags, isLoading, searchQuery, filteredToolboxActions])
 
   return (
     <>
@@ -151,6 +193,36 @@ export default function ChooseApp(props: ChooseAppProps) {
         }}
       >
         <Flex flexDir="column" gap={6}>
+          {/* Search bar only appears for actions until we have many more triggers */}
+          {!isTrigger && (
+            <InputGroup>
+              <InputLeftElement pointerEvents="none">
+                <Icon as={BiSearch} color="base.content.medium" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search for apps..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                _focus={{
+                  borderColor: 'primary.500',
+                  boxShadow: '0 0 0 1px var(--chakra-colors-primary-500)',
+                }}
+                autoFocus
+              />
+              <InputRightElement>
+                {searchQuery && (
+                  <Icon
+                    as={BiSolidXCircle}
+                    cursor="pointer"
+                    opacity={0.6}
+                    _hover={{ opacity: 1 }}
+                    onClick={() => setSearchQuery('')}
+                  />
+                )}
+              </InputRightElement>
+            </InputGroup>
+          )}
+
           {groupedApps && groupedApps.length === 0 ? (
             <Flex
               justifyContent="center"
@@ -182,6 +254,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                             action.key === TOOLBOX_ACTIONS.IfThen &&
                             !isIfThenSelectable
                           }
+                          searchQuery={searchQuery}
                         />
                       ))
                     }
@@ -250,7 +323,10 @@ export default function ChooseApp(props: ChooseAppProps) {
 
                           <Flex flexDir="column" gap={1}>
                             <Flex gap={2}>
-                              <Text textStyle="subhead-1">{app.name}</Text>
+                              <HighlightedText
+                                searchQuery={searchQuery}
+                                textToHighlight={app.name}
+                              />
                               {app.isNewApp && (
                                 <Badge
                                   bgColor="interaction.muted.main.active"
@@ -260,7 +336,12 @@ export default function ChooseApp(props: ChooseAppProps) {
                                 </Badge>
                               )}
                             </Flex>
-                            <Text textStyle="body-2">{app.description}</Text>
+                            <Text textStyle="body-2">
+                              <HighlightedText
+                                searchQuery={searchQuery}
+                                textToHighlight={app.description ?? ''}
+                              />
+                            </Text>
                           </Flex>
                         </Flex>
 
