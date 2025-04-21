@@ -9,7 +9,7 @@ import queue from './queue'
 const app: IApp = {
   name: 'SMS by Postman',
   key: 'postman-sms',
-  description: "Send SMSes using your agency's Postman v2 account",
+  description: 'Send SMSes via Postman',
   iconUrl: '{BASE_URL}/apps/postman-sms/assets/favicon.svg',
   beforeRequest,
   requestErrorHandler,
@@ -20,6 +20,7 @@ const app: IApp = {
   auth,
   actions,
   queue,
+  category: 'communication',
 }
 
 export default app

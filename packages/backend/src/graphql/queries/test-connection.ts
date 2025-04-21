@@ -19,27 +19,18 @@ const testConnection: QueryResolvers['testConnection'] = async (
   const app = apps[connection.key]
   let $ = await globalVariable({ connection, app })
 
-  let step
-  if (params.stepId) {
-    // when stepId is supplied, we check that the verify that the webhook url is
-    // properly set as well
-    step = await context.currentUser
-      .$relatedQuery('steps')
-      .withGraphFetched({
-        connection: true,
-        flow: true,
-      })
-      .findById(params.stepId)
+  if (params.flowId) {
+    // flowId is supplied when testing within the pipe editor
+    // it's used for formsg webhook verification for now
+    const flow = await context.currentUser
+      .$relatedQuery('flows')
+      .findById(params.flowId)
       .throwIfNotFound()
-    if (step.connectionId !== params.connectionId) {
-      throw new Error('Connection does not match step')
-    }
 
     $ = await globalVariable({
       connection,
       app,
-      step,
-      flow: step.flow,
+      flow,
       user: context.currentUser,
     })
   }
@@ -52,7 +43,7 @@ const testConnection: QueryResolvers['testConnection'] = async (
     isStillVerified = false
     logger.error(`Error verifying CONNECTION ID: ${params.connectionId}`, {
       event: 'test-connection',
-      stepId: params.stepId,
+      flowId: params.flowId,
       errMessage: err.message,
       errStack: err.stack,
     })
@@ -63,7 +54,8 @@ const testConnection: QueryResolvers['testConnection'] = async (
     verified: isStillVerified,
   })
 
-  if (!isStillVerified || !params.stepId) {
+  // if testing outside of the editor, it does not verify registration (e.g. setting of webhook url)
+  if (!isStillVerified || !params.flowId) {
     return { connectionVerified: isStillVerified }
   }
 

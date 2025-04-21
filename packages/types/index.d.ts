@@ -516,11 +516,10 @@ export interface IApp {
   description?: string
   isNewApp?: boolean
   substepLabels?: {
-    connectionStepLabel?: string // for step accordion label
     settingsStepLabel?: string // for step accordion label: app level
-    addConnectionLabel?: string // for adding connection in choose connection dropdown
   }
   demoVideoDetails?: DemoVideoDetails
+  category?: AppCategory
 
   /**
    * A callback that is invoked if there's an error for any HTTP request this
@@ -555,6 +554,8 @@ export interface IApp {
   setupMessage?: SetupMessage
 }
 
+export type AppCategory = 'data' | 'communication' | 'logic' | 'others'
+
 export type TBeforeRequest = (
   $: IGlobalVariable,
   requestConfig: InternalAxiosRequestConfig,
@@ -576,6 +577,11 @@ export interface DynamicDataOutput {
 export type AuthConnectionType = 'user-added' | 'system-added'
 export type ConnectionRegistrationType = 'global' | 'per-step'
 
+type IConnectionModalLabel = {
+  chooseConnectionLabel?: string
+  addConnectionLabel?: string
+}
+
 interface IBaseAuth {
   connectionType: AuthConnectionType
 
@@ -594,6 +600,7 @@ interface IBaseAuth {
   verifyConnectionRegistration?(
     $: IGlobalVariable,
   ): Promise<IVerifyConnectionRegistrationOutput>
+  connectionModalLabel?: IConnectionModalLabel
 }
 
 interface IUserAddedConnectionAuth extends IBaseAuth {

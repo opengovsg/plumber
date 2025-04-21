@@ -11,6 +11,7 @@ import queue from './queue'
 const app: IApp = {
   name: 'M365 Excel',
   key: 'm365-excel',
+  description: 'Create, find or update a row in a table',
   iconUrl: '{BASE_URL}/apps/m365-excel/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
   baseUrl: 'https://www.office.com',
@@ -23,14 +24,12 @@ const app: IApp = {
   dynamicData,
   getTransferDetails,
   queue,
-  substepLabels: {
-    connectionStepLabel: 'Connect to M365 Excel',
-  },
   setupMessage: {
     variant: 'warning',
     messageBody:
       'There is a cap on total disk space and Excel actions across all Plumber users. To prevent disruption to your workflow, contact us if you have large files or need more than 100 Excel actions per hour.\n\nRead [our guide](https://guide.plumber.gov.sg/user-guides/actions/m365-excel) for more information.',
   },
+  category: 'data',
 }
 
 export default app
