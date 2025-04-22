@@ -83,7 +83,9 @@ describe('updateStep mutation', () => {
         }
         if (relation === 'connections') {
           return {
-            findOne: vi.fn().mockResolvedValue({ id: mockConnectionId }),
+            findOne: vi
+              .fn()
+              .mockResolvedValue({ id: mockConnectionId, key: 'postman' }),
           }
         }
         return {
