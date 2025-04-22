@@ -115,6 +115,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
 
   const handleSubmit = async (val: any) => {
     await onUpdateStep(val as IStep)
+    expandNextStep()
   }
 
   const expandNextStep = useCallback(() => {
@@ -223,8 +224,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
                           substep={substep}
                           onExpand={() => toggleSubstep(index)}
                           onCollapse={() => toggleSubstep(index)}
-                          onSubmit={expandNextStep}
-                          onChange={handleSubmit}
+                          onSubmit={handleSubmit}
                           step={step}
                           settingsLabel={
                             selectedActionOrTrigger?.settingsStepLabel ??

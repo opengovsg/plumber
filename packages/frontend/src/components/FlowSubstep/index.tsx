@@ -25,12 +25,7 @@ type FlowSubstepProps = {
   expanded?: boolean
   onExpand: () => void
   onCollapse: () => void
-  onChange: ({ step }: { step: IStep }) => void
-  onSubmit: (
-    type?: string,
-    currentStep?: IStep,
-    status?: string,
-  ) => Promise<{ data?: { updateStep?: any } } | void> | void
+  onSubmit: (val: any) => Promise<void>
   step: IStep
   settingsLabel?: string
   selectedActionOrTrigger?: ITrigger | IAction
@@ -188,9 +183,9 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       return
     }
     if (!argsToDisplay || argsToDisplay.length === 0) {
-      onSubmit()
+      onSubmit(formContext.getValues() as IStep)
     }
-  }, [argsToDisplay, expanded, onSubmit])
+  }, [argsToDisplay, expanded, formContext, onSubmit])
 
   if (!argsToDisplay || argsToDisplay.length === 0) {
     return <></>
@@ -236,8 +231,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
               {isDirty ? 'Save' : 'Saved'}
             </Button>
             <Button
-              onClick={() => onSubmit()}
-              type="submit"
+              onClick={() => onSubmit(formContext.getValues() as IStep)}
               data-test="flow-substep-continue-button"
               isDisabled={
                 !validationStatus || editorContext.readOnly || isSaving
