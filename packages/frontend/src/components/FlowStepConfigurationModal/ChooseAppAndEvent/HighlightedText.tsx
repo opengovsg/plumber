@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { chakra } from '@chakra-ui/react'
+import { chakra, Mark } from '@chakra-ui/react'
 import fuzzysort from 'fuzzysort'
 
 interface HighlightedTextProps {
@@ -21,9 +21,9 @@ export const HighlightedText = ({
       return textToHighlight
     }
     return fuzzysort.highlight(result, (match, i) => (
-      <chakra.mark key={i} bg="primary.100" borderRadius="sm">
+      <Mark key={i} bg="primary.100" borderRadius="sm">
         {match}
-      </chakra.mark>
+      </Mark>
     ))
   }, [searchQuery, textToHighlight])
 

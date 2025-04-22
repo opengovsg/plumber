@@ -67,8 +67,19 @@ export default function ChooseApp(props: ChooseAppProps) {
     [patchModalState],
   )
 
+  const handleSelectOption = useCallback(
+    (app: IApp, singleTriggerOrAction: ITrigger | IAction | null) => {
+      if (singleTriggerOrAction) {
+        onSelectAppEvent(app, singleTriggerOrAction)
+      } else {
+        onSelectApp(app)
+      }
+    },
+    [onSelectApp, onSelectAppEvent],
+  )
+
   const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
-  const filteredToolboxActions = useMemo(() => {
+  const toolboxActionsToDisplay = useMemo(() => {
     if (isLoading || !launchDarkly.flags) {
       return []
     }
@@ -128,7 +139,7 @@ export default function ChooseApp(props: ChooseAppProps) {
 
     // Add toolbox app back if there are toolbox actions after search and filter
     const remainingApps =
-      toolboxApp && filteredToolboxActions.length > 0
+      toolboxApp && toolboxActionsToDisplay.length > 0
         ? [...fuzzySearchApps, toolboxApp]
         : fuzzySearchApps
 
@@ -148,7 +159,13 @@ export default function ChooseApp(props: ChooseAppProps) {
       }
       return a[0].localeCompare(b[0])
     })
-  }, [apps, launchDarkly.flags, isLoading, searchQuery, filteredToolboxActions])
+  }, [
+    apps,
+    launchDarkly.flags,
+    isLoading,
+    searchQuery,
+    toolboxActionsToDisplay,
+  ])
 
   return (
     <>
@@ -163,6 +180,36 @@ export default function ChooseApp(props: ChooseAppProps) {
             <Text textStyle="body-1">
               These are actions that you can add to your workflow.
             </Text>
+          )}
+
+          {/* Search bar only appears for actions until we have many more triggers */}
+          {!isTrigger && (
+            <InputGroup>
+              <InputLeftElement pointerEvents="none">
+                <Icon as={BiSearch} color="base.content.medium" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search for apps..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                _focus={{
+                  borderColor: 'primary.500',
+                  boxShadow: '0 0 0 1px var(--chakra-colors-primary-500)',
+                }}
+                autoFocus
+              />
+              <InputRightElement>
+                {searchQuery && (
+                  <Icon
+                    as={BiSolidXCircle}
+                    cursor="pointer"
+                    opacity={0.6}
+                    _hover={{ opacity: 1 }}
+                    onClick={() => setSearchQuery('')}
+                  />
+                )}
+              </InputRightElement>
+            </InputGroup>
           )}
         </Flex>
       </ModalHeader>
@@ -193,36 +240,6 @@ export default function ChooseApp(props: ChooseAppProps) {
         }}
       >
         <Flex flexDir="column" gap={6}>
-          {/* Search bar only appears for actions until we have many more triggers */}
-          {!isTrigger && (
-            <InputGroup>
-              <InputLeftElement pointerEvents="none">
-                <Icon as={BiSearch} color="base.content.medium" />
-              </InputLeftElement>
-              <Input
-                placeholder="Search for apps..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                _focus={{
-                  borderColor: 'primary.500',
-                  boxShadow: '0 0 0 1px var(--chakra-colors-primary-500)',
-                }}
-                autoFocus
-              />
-              <InputRightElement>
-                {searchQuery && (
-                  <Icon
-                    as={BiSolidXCircle}
-                    cursor="pointer"
-                    opacity={0.6}
-                    _hover={{ opacity: 1 }}
-                    onClick={() => setSearchQuery('')}
-                  />
-                )}
-              </InputRightElement>
-            </InputGroup>
-          )}
-
           {groupedApps && groupedApps.length === 0 ? (
             <Flex
               justifyContent="center"
@@ -245,7 +262,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                   {apps.map((app) => {
                     // For toolbox app specifically, show all the toolbox actions
                     if (app.key === TOOLBOX_APP_KEY) {
-                      return filteredToolboxActions.map((action) => (
+                      return toolboxActionsToDisplay.map((action) => (
                         <ToolboxEvent
                           key={action.key}
                           action={action}
@@ -274,13 +291,9 @@ export default function ChooseApp(props: ChooseAppProps) {
                         borderWidth="1px"
                         borderColor="base.divider.medium"
                         borderRadius="lg"
-                        onClick={() => {
-                          if (singleTriggerOrAction) {
-                            onSelectAppEvent(app, singleTriggerOrAction)
-                          } else {
-                            onSelectApp(app)
-                          }
-                        }}
+                        onClick={() =>
+                          handleSelectOption(app, singleTriggerOrAction)
+                        }
                         justifyContent="space-between"
                         alignItems="center"
                         _hover={{
@@ -298,11 +311,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
-                            if (singleTriggerOrAction) {
-                              onSelectAppEvent(app, singleTriggerOrAction)
-                            } else {
-                              onSelectApp(app)
-                            }
+                            handleSelectOption(app, singleTriggerOrAction)
                           }
                         }}
                       >
