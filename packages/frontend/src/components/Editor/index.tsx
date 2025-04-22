@@ -48,7 +48,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const {
     readOnly: isReadOnlyEditor,
     currentStepId,
-    onUpdateStep,
     setCurrentStepId,
     allApps,
   } = useContext(EditorContext)
@@ -298,8 +297,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
               flow={flow}
               steps={groupedSteps}
               collapsed={currentStepId !== groupedSteps[0].id}
-              onOpen={() => setCurrentStepId(groupedSteps[0].id)}
-              onClose={() => setCurrentStepId(null)}
+              onOpen={() => {
+                setCurrentStepId(groupedSteps[0].id)
+                onDrawerOpen()
+              }}
+              onClose={() => {
+                setCurrentStepId(null)
+                onDrawerClose()
+              }}
               setCurrentStepId={setCurrentStepId}
             />
           )}

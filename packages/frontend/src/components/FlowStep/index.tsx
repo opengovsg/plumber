@@ -8,7 +8,7 @@ import type {
 import { type MouseEventHandler, useCallback, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import { Box, Flex, useDisclosure } from '@chakra-ui/react'
+import { Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox, useIsMobile } from '@opengovsg/design-system-react'
 
 import FlowStepHeader from '@/components/FlowStepHeader'
@@ -43,7 +43,6 @@ export default function FlowStep(
   const {
     step,
     collapsed,
-    onChange,
     onOpen,
     onClose,
     templateConfig,
@@ -60,7 +59,7 @@ export default function FlowStep(
   const isMobile = useIsMobile()
   const { readOnly } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
-  const { app, apps, caption, isTrigger } = useStepMetadata(step)
+  const { app, caption, isTrigger } = useStepMetadata(step)
 
   const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
     () => (isTrigger ? app?.triggers : app?.actions) || [],
@@ -114,7 +113,12 @@ export default function FlowStep(
         w="100%"
       >
         {shouldShowInfobox && (
-          <Box boxShadow={collapsed ? undefined : 'sm'} borderRadius="lg">
+          <Flex
+            boxShadow={collapsed ? undefined : 'sm'}
+            borderRadius="lg"
+            justifyContent="center"
+            w="100%"
+          >
             <Infobox
               icon={<BiInfoCircle />}
               variant="secondary"
@@ -137,7 +141,7 @@ export default function FlowStep(
                 components={infoboxMdComponents}
               />
             </Infobox>
-          </Box>
+          </Flex>
         )}
 
         {!app || !selectedActionOrTrigger ? (
