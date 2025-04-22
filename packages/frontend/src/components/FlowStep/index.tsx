@@ -30,7 +30,7 @@ type FlowStepProps = {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, collapsed, isLastStep, onOpen, onClose } = props
+  const { step, collapsed, isLastStep, isNested, onOpen, onClose } = props
 
   const {
     isOpen: isModalOpen,
@@ -65,7 +65,9 @@ export default function FlowStep(
   )
 
   const isDeletable =
-    displayOverrides?.disableDelete === true ? false : !readOnly
+    displayOverrides?.disableDelete === true
+      ? false
+      : !isTrigger && !readOnly && props.isDeletable
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
     fetchPolicy: 'no-cache', // intentionally re-fetch the pipe to ensure the step is removed
@@ -95,6 +97,7 @@ export default function FlowStep(
       >
         {!app || !selectedActionOrTrigger ? (
           <EmptyFlowStepHeader
+            isNested={isNested}
             isTrigger={isTrigger}
             onModalOpen={onModalOpen}
           />
@@ -110,6 +113,7 @@ export default function FlowStep(
             isDrawerOpen={isDrawerOpen}
             onDelete={isDeletable ? onDelete : undefined}
             isDeleting={isDeletable ? isDeletingStep : undefined}
+            isNested={isNested}
             onOpen={onOpen}
             onClose={onClose}
             collapsed={collapsed ?? true}

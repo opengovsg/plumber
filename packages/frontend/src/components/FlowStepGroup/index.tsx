@@ -5,7 +5,7 @@ import { BiArrowFromRight } from 'react-icons/bi'
 import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
-import { getFlowStepWidth } from '@/helpers/editor'
+import { getFlowStepHeaderWidth } from '@/helpers/editor'
 
 import Error from './Content/Error'
 import IfThen from './Content/IfThen'
@@ -44,12 +44,9 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
       <Flex
         {...flowStepGroupStyles.container}
         display={isMobile ? 'block' : 'flex'}
-        w={getFlowStepWidth(isDrawerOpen, isMobile)}
+        w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
       >
-        <Box
-          {...flowStepGroupStyles.header}
-          w={getFlowStepWidth(isDrawerOpen, isMobile)}
-        >
+        <Box {...flowStepGroupStyles.header} w="full">
           <Flex
             px={4}
             pt={4}

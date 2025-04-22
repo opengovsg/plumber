@@ -188,6 +188,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 step={step}
                 isDeletable={step.type !== 'trigger'}
                 isLastStep={index === steps.length - 1}
+                isNested={isNested}
                 index={index + 1}
                 collapsed={
                   !isDrawerOpen && currentStepId === step.id
@@ -237,7 +238,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
           flowStepGroupIconUrl={flowStepGroupIconUrl}
           index={currentStepIndex}
           isLastStep={currentStepIndex === steps.length - 1}
-          isNested={isNested}
           steps={steps}
         />
       </StepExecutionsToIncludeProvider>

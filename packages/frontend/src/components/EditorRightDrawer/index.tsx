@@ -14,7 +14,6 @@ interface EditorRightDrawerProps {
   flowStepGroupIconUrl?: string
   index: number | null
   isLastStep: boolean
-  isNested?: boolean
   steps: any[]
 }
 

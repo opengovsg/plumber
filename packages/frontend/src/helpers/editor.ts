@@ -1,6 +1,18 @@
-export const getFlowStepWidth = (isDrawerOpen: boolean, isMobile: boolean) => {
+export const getFlowStepHeaderWidth = (
+  isDrawerOpen: boolean,
+  isMobile?: boolean,
+  isNested?: boolean,
+) => {
   if (isDrawerOpen) {
-    return isMobile ? '0px' : '100%'
+    if (isMobile) {
+      return '0px'
+    }
+    return '100%'
   }
-  return isMobile ? '100vw' : '55%'
+
+  if (isMobile) {
+    return '100%'
+  }
+
+  return isNested ? 'full' : '55%'
 }

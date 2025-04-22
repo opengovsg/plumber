@@ -6,12 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import {
-  BiArrowFromRight,
-  BiHelpCircle,
-  BiSolidErrorCircle,
-  BiTrashAlt,
-} from 'react-icons/bi'
+import { BiArrowFromRight, BiHelpCircle, BiTrashAlt } from 'react-icons/bi'
 import {
   Box,
   Flex,
@@ -28,11 +23,11 @@ import { IconButton } from '@opengovsg/design-system-react'
 
 import DemoVideoModalContent from '@/components/FlowRow/DemoVideoModalContent'
 import { EditorContext } from '@/contexts/Editor'
+import { getFlowStepHeaderWidth } from '@/helpers/editor'
 
 import MenuAlertDialog from '../MenuAlertDialog'
 
 import { flowStepHeaderStyles } from './styles'
-import { getHeaderWidth } from './utils'
 
 interface FlowStepHeaderProps {
   iconUrl?: string
@@ -59,7 +54,6 @@ export default function FlowStepHeader(
   const {
     iconUrl,
     caption,
-    isCompleted,
     isNested,
     onDelete,
     isDeleting,
@@ -114,29 +108,30 @@ export default function FlowStepHeader(
 
   return (
     <>
-      {!isCompleted && (
+      {/* TODO: will be added back in test step accordion revamp */}
+      {/* {!isCompleted && (
         <Flex
           {...flowStepHeaderStyles.incompleteContainer}
           borderColor={
             shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
           }
           boxSize={isNested ? 8 : 10}
-          w={getHeaderWidth(isDrawerOpen, isMobile, isNested)}
+          w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
         >
           <Icon boxSize={6} color="yellow.200" as={BiSolidErrorCircle} />
           <Text textStyle="body-2" color="base.content.medium" p={0} ml={1.5}>
             Update this step with the latest data
           </Text>
         </Flex>
-      )}
+      )} */}
       <Flex
         {...flowStepHeaderStyles.container}
-        borderTopWidth={isCompleted ? '1px' : 0}
+        borderTopWidth={'1px'}
         borderColor={
           shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
         }
-        borderTopRadius={!isCompleted ? 'none' : 'lg'}
-        w={getHeaderWidth(isDrawerOpen, isMobile, isNested)}
+        borderTopRadius={'lg'}
+        w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
       >
         {/* Top header */}
         <Flex
