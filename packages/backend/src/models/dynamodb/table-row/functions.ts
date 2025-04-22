@@ -5,17 +5,18 @@ import logger from '@/helpers/logger'
 
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
 
-import { TableRow } from './model'
+import { getSkKeyValue, TableRow } from './model'
 import {
-  CreateRowInput,
-  CreateRowsInput,
-  DeleteRowsInput,
-  PatchRowInput,
-  TableRowFilter,
+  type CreateRowInput,
+  type CreateRowsInput,
+  type DeleteRowsInput,
+  type PatchRowInput,
+  type TableRowFilter,
   TableRowFilterOperator,
-  TableRowItem,
-  TableRowOutput,
-  UpdateRowInput,
+  type TableRowIndexName,
+  type TableRowItem,
+  type TableRowOutput,
+  type UpdateRowInput,
 } from './types'
 
 const MAX_RETRIES = 8
@@ -78,11 +79,13 @@ export const _batchCreate = async (
 const generateProjectionExpressions = ({
   columnIds = [],
   filters = [],
-  indexUsed = 'byCreatedAt',
+  indexUsed = 'createdAtIndex',
+  includeTimestamps = false,
 }: {
   columnIds?: string[]
   filters?: TableRowFilter[]
-  indexUsed?: 'byCreatedAt' | 'byRowId'
+  indexUsed?: TableRowIndexName | 'byRowId'
+  includeTimestamps?: boolean
 }): {
   ProjectionExpression: string
   ExpressionAttributeNames: Record<string, string>
@@ -90,6 +93,8 @@ const generateProjectionExpressions = ({
   const ProjectionExpression = [
     'rowId',
     ...columnIds.map((_id, i) => `#data.#col${i}`),
+    ...(indexUsed === 'gsiString1' ? ['skString1'] : []),
+    ...(includeTimestamps ? ['createdAt', 'updatedAt'] : []),
   ].join(',')
   // #pk has to be mapped since it's used by electrodb
   // #data has to be mapped since it's a reserved word
@@ -101,6 +106,9 @@ const generateProjectionExpressions = ({
   if (indexUsed === 'byRowId') {
     ExpressionAttributeNames['#sk1'] = 'rowId'
   }
+  if (indexUsed === 'gsiString1') {
+    ExpressionAttributeNames['#sk1'] = 'skString1'
+  }
   // Add attribute name mapping for column name projection
   columnIds.forEach((id: string, i: number) => {
     ExpressionAttributeNames[`#col${i}`] = id
@@ -111,6 +119,38 @@ const generateProjectionExpressions = ({
       filter.columnId
   })
   return { ProjectionExpression, ExpressionAttributeNames }
+}
+
+const addGsiSortKeyToQuery = (
+  query: ReturnType<typeof TableRow.query.byGsiString1>,
+  filter: TableRowFilter,
+) => {
+  const { columnId, operator, value } = filter
+  switch (operator) {
+    case TableRowFilterOperator.BeginsWith:
+      query.begins({ [columnId]: value })
+      return
+    case TableRowFilterOperator.GreaterThan:
+      query.gt({ [columnId]: value })
+      return
+    case TableRowFilterOperator.GreaterThanOrEquals:
+      query.gte({ [columnId]: value })
+      return
+    case TableRowFilterOperator.LessThan:
+      query.lt({ [columnId]: value })
+      return
+    case TableRowFilterOperator.LessThanOrEquals:
+      query.lte({ [columnId]: value })
+      return
+    case TableRowFilterOperator.IsEmpty:
+      query.where((row, { notExists }) =>
+        notExists(row[columnId as keyof typeof row]),
+      )
+      break
+    // equals is handled outside of this function
+    case TableRowFilterOperator.Equals:
+      return
+  }
 }
 
 const addFiltersToQuery = (
@@ -159,10 +199,6 @@ const addFiltersToQuery = (
   }
 }
 
-/**
- * External functions
- */
-
 export const createTableRow = async ({
   tableId,
   data,
@@ -182,15 +218,19 @@ export const createTableRow = async ({
 export const createTableRows = async ({
   tableId,
   dataArray,
+  gsi,
 }: CreateRowsInput): Promise<string[]> => {
   try {
-    const rows = dataArray.map((data, i) => ({
-      tableId,
-      rowId: randomUUID(),
-      data,
-      // manually bumping the createdAt timestamp to ensure that row order is preserved
-      createdAt: Date.now() + i,
-    }))
+    const rows = dataArray.map((data, i) => {
+      return {
+        tableId,
+        rowId: randomUUID(),
+        data,
+        // manually bumping the createdAt timestamp to ensure that row order is preserved
+        createdAt: Date.now() + i,
+        ...(gsi ? getSkKeyValue(gsi.indexName, data[gsi.columnIdToMap]) : {}),
+      }
+    })
     await _batchCreate(rows)
     return rows.map((row) => row.rowId)
   } catch (e: unknown) {
@@ -311,6 +351,8 @@ export const getTableRows = async ({
   order = 'asc',
   stringifiedCursor,
   scanLimit,
+  gsi,
+  includeTimestamps = false,
 }: {
   tableId: string
   columnIds?: string[]
@@ -325,6 +367,11 @@ export const getTableRows = async ({
    * Optional limit on the total number of rows scanned.
    */
   scanLimit?: number
+  gsi?: {
+    indexName: TableRowIndexName
+    filter: TableRowFilter
+  }
+  includeTimestamps?: boolean
 }): Promise<{
   rows: TableRowOutput[]
   stringifiedCursor?: string
@@ -332,26 +379,44 @@ export const getTableRows = async ({
   if (stringifiedCursor && scanLimit) {
     throw new Error('stringifiedCursor and scanLimit cannot both be provided')
   }
+  // need to use ProjectionExpression to select nested attributes
 
-  try {
-    // need to use ProjectionExpression to select nested attributes
-    const { ProjectionExpression, ExpressionAttributeNames } =
-      generateProjectionExpressions({
-        columnIds,
-        filters,
-        indexUsed: 'byCreatedAt',
+  const { ProjectionExpression, ExpressionAttributeNames } =
+    generateProjectionExpressions({
+      columnIds,
+      filters,
+      includeTimestamps,
+      indexUsed: gsi?.indexName ?? 'createdAtIndex',
+    })
+  const tableRows = []
+
+  let remainingScanLimit = scanLimit ?? Infinity
+  let cursor: any =
+    stringifiedCursor && stringifiedCursor !== 'start'
+      ? JSON.parse(stringifiedCursor)
+      : null
+
+  let query
+  switch (gsi?.indexName) {
+    case 'gsiString1':
+      query = TableRow.query.byGsiString1({
+        tableId,
+        ...(gsi.filter.operator === TableRowFilterOperator.Equals
+          ? { skString1: gsi.filter.value }
+          : {}),
       })
-    const tableRows = []
-    let remainingScanLimit = scanLimit ?? Infinity
-    let cursor: any =
-      stringifiedCursor && stringifiedCursor !== 'start'
-        ? JSON.parse(stringifiedCursor)
-        : null
+      addGsiSortKeyToQuery(query, gsi.filter)
+      break
+    case 'createdAtIndex':
+    default:
+      query = TableRow.query.byCreatedAt({ tableId })
+      break
+  }
+  if (filters?.length) {
+    addFiltersToQuery(query, filters)
+  }
+  try {
     do {
-      const query = TableRow.query.byCreatedAt({ tableId })
-      if (filters?.length) {
-        addFiltersToQuery(query, filters)
-      }
       const response = await query.go({
         order,
         pages: 'all', // this is ignored, we need to paginate manually

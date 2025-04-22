@@ -548,4 +548,154 @@ describe('dynamodb table row functions', () => {
       expect(updatedRow.updatedAt).toBeGreaterThan(row.updatedAt)
     })
   })
+
+  describe('GSI', () => {
+    it('should get the correct rows with equals operator using GSI', async () => {
+      const dataArray = []
+      for (let i = 0; i < 1000; i++) {
+        const data = generateMockTableRowData({
+          columnIds: dummyColumnIds,
+        })
+        // force the first column to have a deterministic value
+        data[dummyColumnIds[0]] = `${i}`
+        dataArray.push(data)
+      }
+      await createTableRows({
+        tableId: dummyTable.id,
+        dataArray,
+        gsi: {
+          indexName: 'gsiString1',
+          columnIdToMap: dummyColumnIds[0],
+        },
+      })
+      const { rows } = await getTableRows({
+        tableId: dummyTable.id,
+        gsi: {
+          indexName: 'gsiString1',
+          filter: {
+            columnId: 'skString1',
+            operator: TableRowFilterOperator.Equals,
+            value: '5',
+          },
+        },
+        includeTimestamps: true,
+        scanLimit: 1, // this is to ensure that we are using the index and not scanning all rows
+      })
+      expect(rows).toHaveLength(1)
+    })
+
+    it('should get the correct rows with begins with operator using GSI', async () => {
+      const dataArray = []
+      for (let i = 0; i < 1000; i++) {
+        const data = generateMockTableRowData({
+          columnIds: dummyColumnIds,
+        })
+        // force the first column to have a deterministic value
+        data[dummyColumnIds[0]] = `${i}`
+        dataArray.push(data)
+      }
+      await createTableRows({
+        tableId: dummyTable.id,
+        dataArray,
+        gsi: {
+          indexName: 'gsiString1',
+          columnIdToMap: dummyColumnIds[0],
+        },
+      })
+      const { rows } = await getTableRows({
+        tableId: dummyTable.id,
+        gsi: {
+          indexName: 'gsiString1',
+          filter: {
+            columnId: 'skString1',
+            operator: TableRowFilterOperator.BeginsWith,
+            value: '4',
+          },
+        },
+        includeTimestamps: true,
+        scanLimit: 111, // this is to ensure that we are using the index and not scanning all rows
+      })
+      expect(rows).toHaveLength(111)
+    })
+
+    it('should automatically convert numbers to strings when using GSI', async () => {
+      const dataArray = []
+      for (let i = 0; i < 1000; i++) {
+        const data = generateMockTableRowData({
+          columnIds: dummyColumnIds,
+        })
+        // force the first column to have a deterministic value
+        data[dummyColumnIds[0]] = i as unknown as string
+        dataArray.push(data)
+      }
+      await createTableRows({
+        tableId: dummyTable.id,
+        dataArray,
+        gsi: {
+          indexName: 'gsiString1',
+          columnIdToMap: dummyColumnIds[0],
+        },
+      })
+      const { rows } = await getTableRows({
+        tableId: dummyTable.id,
+        gsi: {
+          indexName: 'gsiString1',
+          filter: {
+            columnId: 'skString1',
+            operator: TableRowFilterOperator.GreaterThan,
+            value: '500',
+          },
+        },
+        includeTimestamps: true,
+        scanLimit: 1000,
+      })
+      expect(rows).toHaveLength(552)
+    })
+
+    it('should work with filters', async () => {
+      const dataArray = []
+      for (let i = 0; i < 1000; i++) {
+        const data = generateMockTableRowData({
+          columnIds: dummyColumnIds,
+        })
+        data[dummyColumnIds[0]] = i % 2 === 0 ? 'even' : 'odd'
+        data[dummyColumnIds[1]] = `${i}`
+        dataArray.push(data)
+      }
+      await createTableRows({
+        tableId: dummyTable.id,
+        dataArray,
+        gsi: {
+          indexName: 'gsiString1',
+          columnIdToMap: dummyColumnIds[0],
+        },
+      })
+      const { rows } = await getTableRows({
+        tableId: dummyTable.id,
+        gsi: {
+          indexName: 'gsiString1',
+          filter: {
+            columnId: 'skString1',
+            operator: TableRowFilterOperator.Equals,
+            value: 'even',
+          },
+        },
+        filters: [
+          {
+            columnId: dummyColumnIds[1],
+            operator: TableRowFilterOperator.GreaterThan,
+            value: '500',
+          },
+          {
+            columnId: dummyColumnIds[1],
+            operator: TableRowFilterOperator.LessThanOrEquals,
+            value: '700',
+          },
+        ],
+        columnIds: dummyColumnIds,
+        scanLimit: 500,
+      })
+      expect(rows).toHaveLength(100)
+    })
+  })
 })
