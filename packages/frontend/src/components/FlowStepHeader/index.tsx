@@ -30,6 +30,7 @@ import {
 import { IconButton, useIsMobile } from '@opengovsg/design-system-react'
 
 import DemoVideoModalContent from '@/components/FlowRow/DemoVideoModalContent'
+import { getFlowStepWidth } from '@/helpers/editor'
 
 import MenuAlertDialog from '../MenuAlertDialog'
 
@@ -128,15 +129,7 @@ export default function FlowStepHeader(
         bg="white"
         overflow="hidden"
         data-test="flow-step" // adding to identify element for e2e testing
-        w={
-          isDrawerOpen
-            ? isMobile
-              ? '0px'
-              : '100%'
-            : isMobile
-            ? '100vw'
-            : '55rem'
-        }
+        w={getFlowStepWidth(isDrawerOpen, isMobile)}
       >
         {/*
          * Top header

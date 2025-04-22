@@ -95,7 +95,6 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     collapsed,
     onChange,
     onContinue,
-    onOpen,
     templateConfig,
   } = props
 
@@ -105,7 +104,7 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { testExecutionSteps } = useContext(EditorContext)
+  const { onDrawerClose, testExecutionSteps } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
   const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
@@ -171,6 +170,11 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
       setCurrentSubstep(cannotChooseApp ? 1 : 0)
     }
   }, [cannotChooseApp, index])
+
+  // this ensures that we do not have an empty drawer
+  if (!step.appKey && !step.key) {
+    onDrawerClose()
+  }
 
   if (!apps) {
     return <CircularProgress isIndeterminate my={2} />
@@ -259,10 +263,7 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
       </Flex>
       {isModalOpen && (
         <FlowStepConfigurationModal
-          onClose={() => {
-            onModalClose()
-            onOpen() // to open the flowstep upon updating of the step
-          }}
+          onClose={onModalClose}
           isTrigger={isTrigger}
           isLastStep={isLastStep}
           step={step}

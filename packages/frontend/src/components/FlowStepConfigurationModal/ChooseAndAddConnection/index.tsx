@@ -60,7 +60,8 @@ export default function ChooseAndAddConnection(
   props: ChooseAndAddConnectionProps,
 ) {
   const { onClose } = props
-  const { flowId, onCreateStep, onUpdateStep } = useContext(EditorContext)
+  const { flowId, onCreateStep, onDrawerOpen, onUpdateStep } =
+    useContext(EditorContext)
   const { modalState, patchModalState, step, prevStepId } = useContext(
     FlowStepConfigurationContext,
   )
@@ -128,17 +129,19 @@ export default function ChooseAndAddConnection(
         onClose()
       } finally {
         patchModalState({ isLoading: false })
+        onDrawerOpen()
       }
     },
     [
-      prevStepId,
-      step,
       selectedApp,
       selectedEvent,
+      patchModalState,
+      prevStepId,
+      step,
       onClose,
       onCreateStep,
       onUpdateStep,
-      patchModalState,
+      onDrawerOpen,
     ],
   )
 

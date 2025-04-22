@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react'
 import { useMutation } from '@apollo/client'
-import { Center, Flex, useDisclosure } from '@chakra-ui/react'
+import { Center, Flex } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
@@ -37,17 +37,15 @@ type EditorProps = {
 export default function Editor(props: EditorProps): React.ReactElement {
   const [updateStep] = useMutation(UPDATE_STEP)
   const isMobile = useIsMobile()
-  const {
-    isOpen: isDrawerOpen,
-    onOpen: onDrawerOpen,
-    onClose: onDrawerClose,
-  } = useDisclosure()
 
   const { flow, steps: rawSteps, isNested } = props
 
   const {
     readOnly: isReadOnlyEditor,
+    isDrawerOpen,
     currentStepId,
+    onDrawerOpen,
+    onDrawerClose,
     setCurrentStepId,
     allApps,
   } = useContext(EditorContext)
@@ -190,17 +188,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
       onDrawerOpen()
       setCurrentStepId(stepsBeforeGroup[0].id)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Disables last add step button but show empty action instead
   const hasNoActionSteps = nonIfThenActionSteps.length === 0
-
-  // Open the drawer on load
-  // useEffect(() => {
-  //   if (appsWithActions && !isDrawerOpen) {
-  //     onDrawerOpen()
-  //   }
-  // }, [])
 
   if (!appsWithActions || !groupingActions) {
     return (

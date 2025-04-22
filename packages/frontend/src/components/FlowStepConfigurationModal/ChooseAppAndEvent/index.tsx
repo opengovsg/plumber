@@ -25,7 +25,8 @@ type ChooseAppAndEventProps = {
 export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
   const { onClose } = props
 
-  const { onUpdateStep, onCreateStep, allApps } = useContext(EditorContext)
+  const { onUpdateStep, onCreateStep, allApps, onDrawerOpen } =
+    useContext(EditorContext)
 
   const { modalState, patchModalState, prevStepId, isTrigger, step } =
     useContext(FlowStepConfigurationContext)
@@ -123,16 +124,19 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       }
       patchModalState({ isLoading: false })
       onClose()
+      onDrawerOpen()
     },
     [
+      excelConnection?.verified,
+      excelConnection?.id,
       patchModalState,
       prevStepId,
       step,
+      onClose,
+      onDrawerOpen,
       onCreateStep,
       initializeIfThen,
       onUpdateStep,
-      onClose,
-      excelConnection,
     ],
   )
 

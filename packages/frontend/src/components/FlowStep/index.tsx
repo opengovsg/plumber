@@ -17,6 +17,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { getFlowStepWidth } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
@@ -126,15 +127,7 @@ export default function FlowStep(
                 borderBottomLeftRadius: '0',
                 borderBottomRightRadius: '0',
               }}
-              w={
-                isDrawerOpen
-                  ? isMobile
-                    ? '0px'
-                    : '100%'
-                  : isMobile
-                  ? '100vw'
-                  : '55rem'
-              }
+              w={getFlowStepWidth(isDrawerOpen, isMobile)}
             >
               <MarkdownRenderer
                 source={templateStepHelpMessage}
@@ -146,7 +139,6 @@ export default function FlowStep(
 
         {!app || !selectedActionOrTrigger ? (
           <EmptyFlowStepHeader
-            isDrawerOpen={isDrawerOpen}
             isTrigger={isTrigger}
             onModalOpen={onModalOpen}
           />
@@ -176,10 +168,7 @@ export default function FlowStep(
 
       {isModalOpen && (
         <FlowStepConfigurationModal
-          onClose={() => {
-            onModalClose()
-            onOpen() // to open the flowstep upon updating of the step
-          }}
+          onClose={onModalClose}
           isTrigger={isTrigger}
           isLastStep={isLastStep}
           step={step}
