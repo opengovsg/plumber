@@ -26,6 +26,7 @@ export async function createDynamoDBTable() {
         { AttributeName: 'tableId', AttributeType: 'S' },
         { AttributeName: 'rowId', AttributeType: 'S' },
         { AttributeName: 'createdAt', AttributeType: 'N' },
+        { AttributeName: 'skString1', AttributeType: 'S' },
       ],
       BillingMode: 'PAY_PER_REQUEST',
       LocalSecondaryIndexes: [
@@ -36,6 +37,18 @@ export async function createDynamoDBTable() {
             { AttributeName: 'createdAt', KeyType: 'RANGE' },
           ],
           Projection: { ProjectionType: 'ALL' },
+        },
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: 'gsiString1',
+          KeySchema: [
+            { AttributeName: 'tableId', KeyType: 'HASH' },
+            { AttributeName: 'skString1', KeyType: 'RANGE' },
+          ],
+          Projection: {
+            ProjectionType: 'ALL',
+          },
         },
       ],
       KeySchema: [
