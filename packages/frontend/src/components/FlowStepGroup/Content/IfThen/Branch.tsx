@@ -34,12 +34,6 @@ import { HoverAddStepButton } from './HoverAddStepButton'
 import { branchStyles } from './styles'
 
 interface BranchProps {
-  addStep: (
-    previousStepId: string,
-    appKey: string,
-    eventKey: string,
-    connectionId?: string,
-  ) => Promise<IStep>
   branchSteps: IStep[]
   groupedSteps: IStep[][]
   stepsBeforeGroup: IStep[]
@@ -53,7 +47,6 @@ export default function Branch(props: BranchProps) {
     isDrawerOpen,
     isMobile,
     readOnly: isEditorReadOnly,
-    onCreateStep,
     onDrawerClose,
     onDrawerOpen,
     onUpdateStep,
@@ -168,12 +161,10 @@ export default function Branch(props: BranchProps) {
               onChange={onUpdateStep}
             />
             <HoverAddStepButton
-              onClick={(appKey, eventKey) => {
-                onCreateStep(step.id, appKey, eventKey)
-              }}
               isDisabled={isEditorReadOnly}
               isDrawerOpen={isDrawerOpen}
               isLastStep={index === branchSteps.length - 1}
+              prevStepId={step.id}
             />
           </Fragment>
         )
