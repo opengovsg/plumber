@@ -59,7 +59,9 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
           </Button>
         </ModalHeader>
         <Flex p={8} overflowY="auto">
-          <Editor flow={flow} steps={steps} isNested={true} />
+          <EditorProvider flowId={flowId} readOnly={readOnly}>
+            <Editor flow={flow} steps={steps} isNested={true} />
+          </EditorProvider>
         </Flex>
       </ModalContent>
     </Modal>
