@@ -1,10 +1,10 @@
 import { IFlow, IStep } from '@plumber/types'
 
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import { Box, CloseButton, Flex } from '@chakra-ui/react'
-import { useIsMobile } from '@opengovsg/design-system-react'
 
 import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
+import { EditorContext } from '@/contexts/Editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import Step from './Step'
@@ -14,16 +14,11 @@ interface EditorRightDrawerProps {
   flow: IFlow
   flowStepGroupIconUrl?: string
   index: number | null
-  isDrawerOpen: boolean
   isLastStep: boolean
   isNested?: boolean
-  onDrawerClose: () => void
-  onDrawerOpen: () => void
   onStepChange: (step: IStep) => void
-  currentStepId: string | null
   currentStepIndex: number | null
   groupedSteps: IStep[]
-  setCurrentStepId: (stepId: string | null) => void
   setCurrentStepIndex: (stepIndex: number) => void
   steps: any[]
 }
@@ -33,31 +28,29 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     flow,
     flowStepGroupIconUrl,
     index,
-    isDrawerOpen,
     isLastStep,
     isNested,
-    onDrawerClose,
-    onDrawerOpen,
     onStepChange,
-    currentStepId,
     currentStepIndex,
     groupedSteps,
-    setCurrentStepId,
     setCurrentStepIndex,
     steps,
   } = props
 
-  const isMobile = useIsMobile()
+  const {
+    currentStepId,
+    isDrawerOpen,
+    isMobile,
+    onDrawerClose,
+    onDrawerOpen,
+    setCurrentStepId,
+  } = useContext(EditorContext)
 
   const step = useMemo(() => {
     return steps.find((step) => step.id === currentStepId)
   }, [currentStepId, steps])
 
-  const { caption } = useStepMetadata(step)
-
-  const isIfThenStep = useMemo(() => {
-    return step?.appKey === 'toolbox' && step?.key === 'ifThen'
-  }, [step])
+  const { caption, isIfThenStep } = useStepMetadata(step)
 
   const showStep = useMemo(
     () => !isIfThenStep || (isIfThenStep && isNested),
@@ -93,7 +86,14 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
         px="4"
       >
         <Box>{caption}</Box>
-        <CloseButton onClick={onDrawerClose} position="absolute" right="4" />
+        <CloseButton
+          onClick={() => {
+            setCurrentStepId(null)
+            onDrawerClose()
+          }}
+          position="absolute"
+          right="4"
+        />
       </Flex>
       <Flex
         height="calc(100% - 1.5rem)"
@@ -135,7 +135,6 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
               setCurrentStepId(null)
               onDrawerClose()
             }}
-            setCurrentStepId={setCurrentStepId}
           />
         )}
       </Flex>

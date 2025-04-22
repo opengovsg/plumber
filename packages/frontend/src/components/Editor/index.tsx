@@ -306,16 +306,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
           flow={flow}
           flowStepGroupIconUrl={flowStepGroupIconUrl}
           index={currentStepIndex}
-          isDrawerOpen={isDrawerOpen}
           isLastStep={currentStepIndex === steps.length - 1}
           isNested={isNested}
-          onDrawerClose={onDrawerClose}
-          onDrawerOpen={onDrawerOpen}
           onStepChange={onStepChange}
-          currentStepId={currentStepId}
           currentStepIndex={currentStepIndex}
           groupedSteps={groupedSteps}
-          setCurrentStepId={setCurrentStepId}
           setCurrentStepIndex={setCurrentStepIndex}
           steps={steps}
         />

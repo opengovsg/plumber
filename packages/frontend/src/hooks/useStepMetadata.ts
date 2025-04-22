@@ -10,6 +10,7 @@ interface UseStepMetadataResult {
   apps: IApp[]
   selectedActionOrTrigger: IAction | ITrigger | undefined
   caption: string
+  isIfThenStep: boolean
   isTrigger: boolean
   substeps: ISubstep[]
 }
@@ -19,6 +20,10 @@ export function useStepMetadata(
 ): UseStepMetadataResult {
   const { data } = useQuery(GET_APPS)
   const isTrigger = useMemo(() => step?.type === 'trigger', [step])
+  const isIfThenStep = useMemo(
+    () => step?.appKey === 'toolbox' && step?.key === 'ifThen',
+    [step],
+  )
 
   const apps: IApp[] = data?.getApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
@@ -65,6 +70,7 @@ export function useStepMetadata(
     apps,
     selectedActionOrTrigger,
     caption,
+    isIfThenStep,
     isTrigger,
     substeps,
   }
