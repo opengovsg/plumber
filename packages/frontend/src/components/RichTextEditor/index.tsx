@@ -212,6 +212,20 @@ const Editor = ({
     onClose: closeSuggestions,
   } = useDisclosure()
 
+  useEffect(() => {
+    // NOTE: added during ui revamp when removing Collapse
+    // this updates the editor content when the initial value changes
+    if (editor && initialValue !== undefined) {
+      // queueMicrotask function schedules the content update to run after the current synchronous code has completed,
+      // but before the next render cycle
+      queueMicrotask(() => {
+        let newContent = substituteOldTemplates(initialValue, varInfo)
+        newContent = newContent.replaceAll('\n', '<br>')
+        editor.commands.setContent(newContent)
+      })
+    }
+  }, [editor, initialValue, varInfo])
+
   return (
     <Popover
       autoFocus={false}
