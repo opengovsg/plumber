@@ -1,13 +1,6 @@
 import type { IFlowTemplateConfig, IStep, ISubstep } from '@plumber/types'
 
-import {
-  Fragment,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { Fragment, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
@@ -16,7 +9,6 @@ import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowSubstep from '@/components/FlowSubstep'
 import Form from '@/components/Form'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
-import TestSubstep from '@/components/TestSubstep'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclude'
@@ -38,7 +30,7 @@ type StepProps = {
 }
 
 export default function Step(props: StepProps): React.ReactElement | null {
-  const { index, step, isLastStep, onContinue, templateConfig } = props
+  const { step, isLastStep, templateConfig } = props
 
   const {
     isOpen: isModalOpen,
@@ -48,8 +40,6 @@ export default function Step(props: StepProps): React.ReactElement | null {
 
   const { allApps, onDrawerClose, onUpdateStep, testExecutionSteps } =
     useContext(EditorContext)
-
-  const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
 
   // This includes all steps that run even after the current step, but within the same branch.
   const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
@@ -70,12 +60,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
 
   const handleSubmit = async (val: any) => {
     await onUpdateStep(val as IStep)
-    expandNextStep()
   }
-
-  const expandNextStep = useCallback(() => {
-    setCurrentSubstep((currentSubstep) => (currentSubstep ?? 0) + 1)
-  }, [])
 
   const stepValidationSchema = useMemo(
     () => generateValidationSchema(substeps),
@@ -94,15 +79,6 @@ export default function Step(props: StepProps): React.ReactElement | null {
   // and has a help message (once tested successfully, the template step app key is removed)
   const shouldShowInfobox: boolean =
     stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
-
-  const toggleSubstep = (substepIndex: number) =>
-    setCurrentSubstep((value) => (value !== substepIndex ? substepIndex : null))
-
-  useEffect(() => {
-    if (index !== null) {
-      setCurrentSubstep(0)
-    }
-  }, [index])
 
   // this ensures that we do not have an empty drawer
   if (!step.appKey && !step.key) {
@@ -141,59 +117,38 @@ export default function Step(props: StepProps): React.ReactElement | null {
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}
           >
-            {/* Place ChooseConnectionSubstep outside the accordion structure */}
-            {substeps?.some(
-              (substep: ISubstep) => substep.key === 'chooseConnection',
-            ) &&
-              app && (
-                <ChooseConnectionSubstep
-                  step={step}
-                  application={app}
-                  onReconnect={onModalOpen}
-                />
+            <Fragment>
+              {/* Place ChooseConnectionSubstep outside the accordion structure */}
+              {substeps?.some(
+                (substep: ISubstep) => substep.key === 'chooseConnection',
+              ) &&
+                app && (
+                  <ChooseConnectionSubstep
+                    step={step}
+                    application={app}
+                    onReconnect={onModalOpen}
+                  />
+                )}
+
+              {substeps?.map(
+                (substep) =>
+                  substep.key &&
+                  ((step.appKey === 'webhook' && step?.webhookUrl) ||
+                    ['chooseConnection', 'testStep'].includes(substep.key) ===
+                      false) && (
+                    <FlowSubstep
+                      key={substep.key}
+                      substep={substep}
+                      step={step}
+                      selectedActionOrTrigger={selectedActionOrTrigger}
+                    />
+                  ),
               )}
-
-            {/* Render the remaining substeps as accordions */}
-            {substeps?.length > 0 &&
-              substeps
-                .filter((substep) => substep.key !== 'chooseConnection')
-                .map((substep: ISubstep, index: number) => {
-                  return (
-                    <Fragment key={`${substep?.name}-${index}`}>
-                      {substep.key === 'testStep' && (
-                        <TestSubstep
-                          expanded={currentSubstep === index}
-                          substep={substep}
-                          onExpand={() => toggleSubstep(index)}
-                          onCollapse={() => toggleSubstep(index)}
-                          onChange={handleSubmit}
-                          onContinue={onContinue}
-                          step={step}
-                          selectedActionOrTrigger={selectedActionOrTrigger}
-                        />
-                      )}
-
-                      {substep.key && substep.key !== 'testStep' && (
-                        <FlowSubstep
-                          expanded={currentSubstep === index}
-                          substep={substep}
-                          onExpand={() => toggleSubstep(index)}
-                          onCollapse={() => toggleSubstep(index)}
-                          onSubmit={handleSubmit}
-                          step={step}
-                          settingsLabel={
-                            selectedActionOrTrigger?.settingsStepLabel ??
-                            app?.substepLabels?.settingsStepLabel
-                          }
-                          selectedActionOrTrigger={selectedActionOrTrigger}
-                        />
-                      )}
-                    </Fragment>
-                  )
-                })}
+            </Fragment>
           </Form>
         </StepExecutionsProvider>
       </Flex>
+
       {isModalOpen && (
         <FlowStepConfigurationModal
           onClose={onModalClose}

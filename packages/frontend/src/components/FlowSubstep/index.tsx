@@ -14,7 +14,6 @@ import { validateSubstep } from '@/helpers/editor'
 
 type FlowSubstepProps = {
   substep: ISubstep
-  onChange: ({ step }: { step: IStep }) => void
   step: IStep
   selectedActionOrTrigger?: ITrigger | IAction
 }
@@ -33,7 +32,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const { arguments: args } = substep
   const toast = useToast()
   const [isSaving, setIsSaving] = useState(false)
-  const [validationStatus, setValidationStatus] = useState<boolean>(
+  const [isValid, setIsValid] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
   )
 
@@ -62,7 +61,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   useEffect(() => {
     function validate(step: unknown) {
       const validationResult = validateSubstep(substep, step as IStep)
-      setValidationStatus(validationResult)
+      setIsValid(validationResult)
     }
     const subscription = formContext.watch(validate)
 
@@ -131,7 +130,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         handleSaveAndTest={handleSaveAndTest}
         onTestResultOpen={onTestResultOpen}
         onTestResultClose={onTestResultClose}
-        validationStatus={validationStatus}
+        isValid={isValid}
       />
     </Box>
   )

@@ -26,8 +26,8 @@ interface FlowStepTestControllerProps {
   isDirty: boolean
   isSaving: boolean
   isTestResultOpen: boolean
+  isValid: boolean
   step: IStep
-  validationStatus: boolean
   handleSave: () => void
   handleSaveAndTest: () => void
   onTestResultOpen: () => void
@@ -41,8 +41,8 @@ export default function FlowStepTestController(
     isDirty,
     isSaving,
     isTestResultOpen,
+    isValid,
     step,
-    validationStatus,
     handleSave,
     handleSaveAndTest,
     onTestResultOpen,
@@ -199,7 +199,7 @@ export default function FlowStepTestController(
                 onClick={handleSaveAndTest}
                 type="submit"
                 data-test="flow-substep-continue-button"
-                isDisabled={!validationStatus || readOnly || isSaving}
+                isDisabled={!isValid || readOnly || isSaving}
                 isLoading={isTestExecuting}
               >
                 Check step
