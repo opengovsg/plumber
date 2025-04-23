@@ -66,7 +66,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
       flexDir="column"
       position="relative"
       width={
-        isDrawerOpen ? (isMobile ? '100vw' : isNested ? '40rem' : '55rem') : '0'
+        isDrawerOpen ? (isMobile ? '100vw' : isNested ? '55%' : '55%') : '0'
       }
       bg="white"
       py="4"

@@ -80,7 +80,7 @@ function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
                 : '100%'
               : isMobile
               ? '100vw'
-              : '55rem'
+              : '55%'
           }
         >
           <Infobox
