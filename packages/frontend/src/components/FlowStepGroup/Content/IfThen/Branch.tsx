@@ -126,7 +126,6 @@ export default function Branch(props: BranchProps) {
                 aria-label="Delete branch"
                 colorScheme="secondary"
                 icon={<BiTrashAlt />}
-                colorScheme="secondary"
                 isLoading={isDeletingBranch}
                 isDisabled={isDeletingBranch}
               />

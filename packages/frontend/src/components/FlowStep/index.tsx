@@ -1,26 +1,28 @@
-import type { IAction, IStep, ITrigger } from '@plumber/types'
+import type { IStep } from '@plumber/types'
 
-import { type MouseEventHandler, useCallback, useContext, useMemo } from 'react'
-import { useMutation } from '@apollo/client'
-import { Flex, useDisclosure } from '@chakra-ui/react'
+import { useCallback, useContext, useMemo } from 'react'
+import { CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 
-import FlowStepHeader from '@/components/FlowStepHeader'
 import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
-import { DELETE_STEP } from '@/graphql/mutations/delete-step'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
-import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
+import { matchParamsToDataIn } from '../FlowSubstep/utils'
+
+import StepAppIcon from './components/StepAppIcon'
+import StepCaptionAndDemo from './components/StepCaptionAndDemo'
+import StepDeleteButton from './components/StepDeleteButton'
+import TestAgainInfobox from './components/TestAgainInfobox'
+import FlowStepWrapper from './FlowStepWrapper'
+import { flowStepStyles } from './styles'
 
 type FlowStepProps = {
-  collapsed?: boolean
   step: IStep
   isDeletable?: boolean
   isLastStep: boolean
   isNested?: boolean
-  index?: number
   onOpen: () => void
   onClose: () => void
   onChange: (step: IStep) => void
@@ -30,7 +32,7 @@ type FlowStepProps = {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, collapsed, isLastStep, isNested, onOpen, onClose } = props
+  const { step, isLastStep, isNested, onOpen, onClose } = props
 
   const {
     isOpen: isModalOpen,
@@ -44,85 +46,81 @@ export default function FlowStep(
     isDrawerOpen,
     isMobile,
     readOnly,
-    setCurrentStepId,
-    setCurrentStepIndex,
+    testExecutionSteps,
+    varInfoMap,
   } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
-  const { app, caption, isTrigger } = useStepMetadata(allApps, step)
-
-  const actionsOrTriggers: Array<ITrigger | IAction> = useMemo(
-    () => (isTrigger ? app?.triggers : app?.actions) || [],
-    [app?.actions, app?.triggers, isTrigger],
-  )
-
-  const selectedActionOrTrigger = useMemo(
-    () =>
-      actionsOrTriggers.find(
-        (actionOrTrigger: IAction | ITrigger) =>
-          actionOrTrigger.key === step?.key,
-      ),
-    [actionsOrTriggers, step?.key],
-  )
+  const { app, caption, isCompleted, isTrigger, selectedActionOrTrigger } =
+    useStepMetadata(allApps, step)
 
   const isDeletable =
     displayOverrides?.disableDelete === true
       ? false
       : !readOnly && props.isDeletable
 
-  const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
-    refetchQueries: [GET_FLOW],
-    fetchPolicy: 'no-cache', // intentionally re-fetch the pipe to ensure the step is removed
-  })
-  const onDelete = useCallback<MouseEventHandler>(
-    async (e) => {
-      e.stopPropagation()
-      await deleteStep({ variables: { input: { ids: [step.id] } } })
-      // NOTE: this ensures that the drawer is closed and step headers
-      // return to the original width when the drawer is closed
-      onClose()
-      setCurrentStepId(null)
-      setCurrentStepIndex(null)
-    },
-    [deleteStep, step.id, onClose, setCurrentStepId, setCurrentStepIndex],
-  )
+  const shouldTestStepAgain = useMemo(() => {
+    const testResult = testExecutionSteps.find((ts) => ts.stepId === step.id)
+    if (!testResult) {
+      return false
+    }
+    return !matchParamsToDataIn(testResult?.dataIn, step.parameters, varInfoMap)
+  }, [testExecutionSteps, step, varInfoMap])
 
   const shouldHighlight = currentStepId === step.id
 
+  const handleClick = useCallback(() => {
+    if (!app) {
+      onModalOpen()
+      return
+    }
+    if (isDrawerOpen && currentStepId === step.id) {
+      onClose()
+    } else {
+      onOpen()
+    }
+  }, [app, isDrawerOpen, currentStepId, step.id, onModalOpen, onClose, onOpen])
+
+  if (!allApps) {
+    return <CircularProgress isIndeterminate my={2} />
+  }
+
   return (
-    <>
+    <FlowStepWrapper>
+      {shouldTestStepAgain && (
+        <TestAgainInfobox
+          isNested={isNested}
+          shouldHighlight={shouldHighlight}
+        />
+      )}
       <Flex
-        alignItems="center"
-        display={isMobile ? 'block' : 'flex'}
-        flexDir="column"
-        w="100%"
+        {...flowStepStyles.container}
+        borderTopWidth={shouldTestStepAgain ? 0 : '1px'}
+        borderColor={
+          shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
+        }
+        borderTopRadius={shouldTestStepAgain ? 'none' : 'lg'}
+        w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
       >
-        {!app || !selectedActionOrTrigger ? (
-          <EmptyFlowStepHeader
+        <Flex
+          {...flowStepStyles.topHeader}
+          py={isNested ? 2 : 4}
+          onClick={handleClick}
+        >
+          <StepAppIcon
+            isCompleted={isCompleted}
             isNested={isNested}
-            isTrigger={isTrigger}
-            onModalOpen={onModalOpen}
+            shouldTestStepAgain={shouldTestStepAgain}
+            app={app}
           />
-        ) : (
-          <FlowStepHeader
-            iconUrl={app?.iconUrl}
-            caption={displayOverrides?.caption ?? caption}
-            hintAboveCaption={
-              displayOverrides?.hintAboveCaption ??
-              (isTrigger ? 'When' : 'Then')
-            }
-            isCompleted={step.status === 'completed'}
-            isDrawerOpen={isDrawerOpen}
-            onDelete={isDeletable ? onDelete : undefined}
-            isDeleting={isDeletable ? isDeletingStep : undefined}
-            isNested={isNested}
-            onOpen={onOpen}
-            onClose={onClose}
-            collapsed={collapsed ?? true}
-            demoVideoUrl={app?.demoVideoDetails?.url}
-            demoVideoTitle={app?.demoVideoDetails?.title}
-            shouldHighlight={shouldHighlight}
-          />
-        )}
+          <StepCaptionAndDemo app={app} caption={caption} />
+          {isDeletable && (
+            <StepDeleteButton
+              isNested={isNested}
+              onClose={onClose}
+              step={step}
+            />
+          )}
+        </Flex>
       </Flex>
 
       {isModalOpen && (
@@ -135,6 +133,6 @@ export default function FlowStep(
           event={selectedActionOrTrigger}
         />
       )}
-    </>
+    </FlowStepWrapper>
   )
 }
