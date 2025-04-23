@@ -1,112 +1,42 @@
-import type {
-  IAction,
-  IField,
-  IJSONObject,
-  IJSONValue,
-  IStep,
-  ISubstep,
-  ITrigger,
-} from '@plumber/types'
+import type { IAction, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
-import { Box, Collapse, Stack } from '@chakra-ui/react'
-import { Button, useToast } from '@opengovsg/design-system-react'
+import { Box, Stack, useDisclosure } from '@chakra-ui/react'
+import { useToast } from '@opengovsg/design-system-react'
 
-// import FlowSubstepTitle from '@/components/FlowSubstepTitle'
+import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
 import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { isFieldHidden } from '@/helpers/isFieldHidden'
+import { validateSubstep } from '@/helpers/editor'
 
 type FlowSubstepProps = {
   substep: ISubstep
-  expanded?: boolean
-  onExpand: () => void
-  onCollapse: () => void
-  onSubmit: (val: any) => Promise<void>
+  onChange: ({ step }: { step: IStep }) => void
   step: IStep
-  settingsLabel?: string
   selectedActionOrTrigger?: ITrigger | IAction
 }
 
-function isValidArgValue(value: IJSONValue): boolean {
-  // `false` and 0 are valid values, only null, undefined and empty string are invalid
-  return value != null && value !== ''
-}
-
-function validateSubstep(substep: ISubstep, step: IStep): boolean {
-  if (!substep) {
-    return true
-  }
-
-  const args: IField[] = substep.arguments || []
-
-  return args.every((arg) => {
-    if (
-      arg.required === false ||
-      isFieldHidden(arg.hiddenIf, step.parameters)
-    ) {
-      return true
-    }
-
-    // Edge case: multirow doesn't have a value; it has nested fields instead.
-    if (arg.type === 'multirow') {
-      const rows = (step.parameters[arg.key] ?? []) as IJSONObject[]
-      if (rows.length === 0) {
-        return false
-      }
-
-      //
-      // For each required subfield in the multirow, check that every row has a
-      // value for it.
-      //
-      for (const subField of arg.subFields) {
-        // Ignore optional subfield
-        // (required is true by default, so we strict equality against false)
-        if (subField.required === false) {
-          continue
-        }
-
-        for (const row of rows) {
-          // Ignore subfield if it's hidden in this particular row
-          if (isFieldHidden(subField.hiddenIf, row)) {
-            continue
-          }
-
-          if (!isValidArgValue(row[subField.key])) {
-            return false
-          }
-        }
-      }
-
-      return true
-    }
-
-    return isValidArgValue(step.parameters[arg.key])
-  })
-}
-
 function FlowSubstep(props: FlowSubstepProps): JSX.Element {
+  const { substep, step, selectedActionOrTrigger } = props
+  const { flags } = useContext(LaunchDarklyContext)
+  const formContext = useFormContext()
+  const { readOnly, executeTestStep, onUpdateStep } = useContext(EditorContext)
   const {
-    substep,
-    expanded = false,
-    // onExpand,
-    // onCollapse,
-    onSubmit,
-    step,
-    // settingsLabel,
-    selectedActionOrTrigger,
-  } = props
+    isOpen: isTestResultOpen,
+    onOpen: onTestResultOpen,
+    onClose: onTestResultClose,
+  } = useDisclosure()
 
   const { arguments: args } = substep
   const toast = useToast()
   const [isSaving, setIsSaving] = useState(false)
+  const [validationStatus, setValidationStatus] = useState<boolean>(
+    validateSubstep(substep, formContext.getValues() as IStep),
+  )
 
-  const { flags } = useContext(LaunchDarklyContext)
-  const editorContext = useContext(EditorContext)
-  const formContext = useFormContext()
   /*
    * NOTE: we use dirtyFields instead of isDirty because dirtyFields only tracks
    * fields that are currently different from their default values, whereas
@@ -115,10 +45,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
    */
   const { dirtyFields } = formContext.formState
   const isDirty = Object.keys(dirtyFields).length > 0
-
-  const [validationStatus, setValidationStatus] = useState<boolean>(
-    validateSubstep(substep, formContext.getValues() as IStep),
-  )
 
   // filter inputs hidden behind feature flags based on timestamp
   const argsToDisplay = useMemo(
@@ -143,17 +69,14 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     return () => subscription.unsubscribe()
   }, [substep, formContext.watch, formContext])
 
-  // const onToggle = expanded ? onCollapse : onExpand
-
   // NOTE: this is meant to avoid users losing progress
   // we validate the substeps so that the header reflects the correct status
-
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     try {
       setIsSaving(true)
       const currentStep = formContext.getValues() as IStep
       const isValid = validateSubstep(substep, currentStep)
-      const result = await editorContext.onUpdateStep({
+      const result = await onUpdateStep({
         ...currentStep,
         status: isValid ? 'completed' : 'incomplete',
       })
@@ -175,74 +98,42 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [formContext, onUpdateStep, substep, toast])
 
-  // Skip to the next step if the substep is meant to be hidden
-  useEffect(() => {
-    if (!expanded) {
-      return
-    }
-    if (!argsToDisplay || argsToDisplay.length === 0) {
-      onSubmit(formContext.getValues() as IStep)
-    }
-  }, [argsToDisplay, expanded, formContext, onSubmit])
-
-  if (!argsToDisplay || argsToDisplay.length === 0) {
-    return <></>
-  }
+  const handleSaveAndTest = useCallback(async () => {
+    await handleSave()
+    await executeTestStep()
+    onTestResultOpen()
+  }, [handleSave, executeTestStep, onTestResultOpen])
 
   return (
-    <>
-      {/* <FlowSubstepTitle
-        expanded={expanded}
-        onClick={onToggle}
-        title={settingsLabel ?? name}
-        valid={validationStatus}
-      /> */}
-      <Collapse in={expanded} unmountOnExit style={{ overflow: 'initial' }}>
-        <Box p="1rem 1rem 1.5rem">
-          <Stack w="100%" spacing={4}>
-            {argsToDisplay.map((argument) => (
-              <InputCreator
-                key={argument.key}
-                schema={argument}
-                namePrefix="parameters"
-                stepId={step.id}
-                disabled={editorContext.readOnly || isSaving}
-              />
-            ))}
-          </Stack>
+    <Box position="relative" display="flex" flexDirection="column">
+      <Box flex="1" overflowY="auto" p="1rem 1rem">
+        <Stack w="100%" spacing={4}>
+          {argsToDisplay?.map((argument) => (
+            <InputCreator
+              key={argument.key}
+              schema={argument}
+              namePrefix="parameters"
+              stepId={step.id}
+              disabled={readOnly || isSaving}
+            />
+          ))}
+        </Stack>
+      </Box>
 
-          <Stack
-            direction="row"
-            spacing={4}
-            mt={4}
-            justify="flex-end"
-            borderTop="1px solid"
-            borderTopColor="base.divider.medium"
-            pt={4}
-          >
-            <Button
-              isDisabled={editorContext.readOnly || isSaving || !isDirty}
-              isLoading={isSaving}
-              variant="clear"
-              onClick={handleSave}
-            >
-              {isDirty ? 'Save' : 'Saved'}
-            </Button>
-            <Button
-              onClick={() => onSubmit(formContext.getValues() as IStep)}
-              data-test="flow-substep-continue-button"
-              isDisabled={
-                !validationStatus || editorContext.readOnly || isSaving
-              }
-            >
-              Check step
-            </Button>
-          </Stack>
-        </Box>
-      </Collapse>
-    </>
+      <FlowStepTestController
+        isDirty={isDirty}
+        isSaving={isSaving}
+        isTestResultOpen={isTestResultOpen}
+        step={step}
+        handleSave={handleSave}
+        handleSaveAndTest={handleSaveAndTest}
+        onTestResultOpen={onTestResultOpen}
+        onTestResultClose={onTestResultClose}
+        validationStatus={validationStatus}
+      />
+    </Box>
   )
 }
 

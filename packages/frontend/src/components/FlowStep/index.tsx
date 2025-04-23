@@ -9,7 +9,7 @@ import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
-import { matchParamsToDataIn } from '../FlowSubstep/utils'
+import { matchParamsToDataIn } from '../FlowStepTestController/utils'
 
 import StepAppIcon from './components/StepAppIcon'
 import StepCaptionAndDemo from './components/StepCaptionAndDemo'
