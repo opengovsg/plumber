@@ -214,17 +214,16 @@ const Editor = ({
 
   useEffect(() => {
     // NOTE: added during ui revamp when removing Collapse
-    // this updates the editor content when the initial value changes
-    if (editor) {
-      // queueMicrotask function schedules the content update to run after the current synchronous code has completed,
-      // but before the next render cycle
-      queueMicrotask(() => {
-        let newContent = substituteOldTemplates(initialValue, varInfo)
-        newContent = newContent.replaceAll('\n', '<br>')
-        editor.commands.setContent(newContent)
-      })
+    if (!editor) {
+      return
     }
-  }, [editor, initialValue, varInfo])
+
+    // Only update if the content is different to avoid unnecessary updates
+    const currentContent = isRich ? editor.getHTML() : editor.getText()
+    if (currentContent !== initialValue) {
+      editor.commands.setContent(content)
+    }
+  }, [editor, initialValue, content, isRich])
 
   return (
     <Popover
