@@ -18,6 +18,7 @@ async function getDataOutMetadata(
   const metadata: IDataOutMetadata = {
     rowId: {
       label: 'Row ID',
+      type: 'tile_row_id',
       order: 2,
     },
     rowsFound: {
