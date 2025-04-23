@@ -25,8 +25,13 @@ type ChooseAppAndEventProps = {
 export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
   const { onClose } = props
 
-  const { onUpdateStep, onCreateStep, allApps, onDrawerOpen } =
-    useContext(EditorContext)
+  const {
+    onUpdateStep,
+    onCreateStep,
+    allApps,
+    onDrawerOpen,
+    setCurrentStepId,
+  } = useContext(EditorContext)
 
   const { modalState, patchModalState, prevStepId, isTrigger, step } =
     useContext(FlowStepConfigurationContext)
@@ -97,13 +102,15 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       // If the app has no connections, create or update a new step and close the modal
       // Exception: M365 will auto connect if verified once...
       patchModalState({ isLoading: true })
+      let newStepId = null
       if (prevStepId) {
-        await onCreateStep(
+        const createdStep = await onCreateStep(
           prevStepId,
           app.key,
           triggerOrAction.key,
           excelConnection?.id || undefined,
         )
+        newStepId = createdStep.id
       } else if (step) {
         // account for the if-then edge case
         if (
@@ -112,7 +119,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
         ) {
           await initializeIfThen(step)
         } else {
-          await onUpdateStep({
+          const updatedStep = await onUpdateStep({
             ...step,
             appKey: app.key,
             key: triggerOrAction.key,
@@ -120,11 +127,13 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
               id: excelConnection?.id || undefined,
             },
           })
+          newStepId = updatedStep.id
         }
       }
       patchModalState({ isLoading: false })
       onClose()
       onDrawerOpen()
+      setCurrentStepId(newStepId)
     },
     [
       excelConnection?.verified,
@@ -137,6 +146,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       onCreateStep,
       initializeIfThen,
       onUpdateStep,
+      setCurrentStepId,
     ],
   )
 
