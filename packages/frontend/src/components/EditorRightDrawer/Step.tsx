@@ -10,11 +10,7 @@ import {
 } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
-import { yupResolver } from '@hookform/resolvers/yup'
 import { Infobox } from '@opengovsg/design-system-react'
-import type { BaseSchema } from 'yup'
-import * as yup from 'yup'
-import type { ObjectShape } from 'yup/lib/object'
 
 import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowSubstep from '@/components/FlowSubstep'
@@ -24,6 +20,7 @@ import TestSubstep from '@/components/TestSubstep'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclude'
+import { generateValidationSchema } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
@@ -38,50 +35,6 @@ type StepProps = {
   onContinue?: () => void
   onOpen: () => void
   templateConfig?: IFlowTemplateConfig
-}
-
-// FIXME (ogp-weeloong): remove this; not needed since we already do validation in FlowSubstep.
-function generateValidationSchema(substeps: ISubstep[]) {
-  const fieldValidations = substeps?.reduce(
-    (allValidations, { arguments: args }) => {
-      if (!args || !Array.isArray(args)) {
-        return allValidations
-      }
-
-      const substepArgumentValidations: Record<string, BaseSchema> = {}
-
-      for (const arg of args) {
-        const { key, required, hiddenIf } = arg
-
-        // base validation for the field if not exists
-        if (!substepArgumentValidations[key]) {
-          substepArgumentValidations[key] = yup.mixed()
-        }
-
-        if (typeof substepArgumentValidations[key] === 'object') {
-          // if the field is required and not conditionally hidden, add the
-          // required validation
-          if (required && !hiddenIf) {
-            substepArgumentValidations[key] = substepArgumentValidations[
-              key
-            ].required(`${key} is required.`)
-          }
-        }
-      }
-
-      return {
-        ...allValidations,
-        ...substepArgumentValidations,
-      }
-    },
-    {} as ObjectShape,
-  )
-
-  const validationSchema = yup.object({
-    parameters: yup.object(fieldValidations),
-  })
-
-  return yupResolver(validationSchema)
 }
 
 export default function Step(props: StepProps): React.ReactElement | null {
