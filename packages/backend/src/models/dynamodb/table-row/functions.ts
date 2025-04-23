@@ -5,7 +5,12 @@ import logger from '@/helpers/logger'
 
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
 
-import { getSkKeyValue, TableRow } from './model'
+import {
+  castGsiValue,
+  constructDataWithGsis,
+  getGsiSortKey,
+  TableRow,
+} from './model'
 import {
   type CreateRowInput,
   type CreateRowsInput,
@@ -202,12 +207,13 @@ const addFiltersToQuery = (
 export const createTableRow = async ({
   tableId,
   data,
+  gsis = [],
 }: CreateRowInput): Promise<TableRowItem> => {
   try {
     const res = await TableRow.create({
       tableId,
       rowId: randomUUID(),
-      data,
+      ...constructDataWithGsis(data, gsis),
     }).go({ ignoreOwnership: true })
     return res.data
   } catch (e: unknown) {
@@ -218,17 +224,16 @@ export const createTableRow = async ({
 export const createTableRows = async ({
   tableId,
   dataArray,
-  gsi,
+  gsis = [],
 }: CreateRowsInput): Promise<string[]> => {
   try {
     const rows = dataArray.map((data, i) => {
       return {
         tableId,
         rowId: randomUUID(),
-        data,
         // manually bumping the createdAt timestamp to ensure that row order is preserved
         createdAt: Date.now() + i,
-        ...(gsi ? getSkKeyValue(gsi.indexName, data[gsi.columnIdToMap]) : {}),
+        ...constructDataWithGsis(data, gsis),
       }
     })
     await _batchCreate(rows)
@@ -245,15 +250,14 @@ export const updateTableRow = async ({
   rowId,
   tableId,
   data,
+  gsis = [],
 }: UpdateRowInput): Promise<void> => {
   try {
     await TableRow.patch({
       tableId,
       rowId,
     })
-      .set({
-        data,
-      })
+      .set(constructDataWithGsis(data, gsis))
       .go({
         ignoreOwnership: true,
       })
@@ -269,30 +273,39 @@ export const patchTableRow = async ({
   rowId,
   tableId,
   patchData,
+  gsis = [],
 }: PatchRowInput): Promise<TableRowItem> => {
   try {
     const patchOperation = TableRow.patch({
       tableId,
       rowId,
-    }).data(({ data }, { set, add, subtract }) => {
+    }).data((row, { set, add, subtract, remove }) => {
       // Handle set operations
       Object.entries(patchData.set || {}).forEach(
         ([key, value]: [string, string]) => {
-          set(data[key], value ? autoMarshallNumberStrings(value) : '')
+          set(row.data[key], value ? autoMarshallNumberStrings(value) : null)
+          const sortKey = getGsiSortKey(gsis, key)
+          if (sortKey) {
+            if (castGsiValue(value)) {
+              set(row[sortKey], castGsiValue(value))
+            } else {
+              remove(row[sortKey])
+            }
+          }
         },
       )
 
       // Handle add operations
       Object.entries(patchData.add || {}).forEach(
         ([key, value]: [string, string]) => {
-          add(data[key], autoMarshallNumberStrings(value))
+          add(row.data[key], autoMarshallNumberStrings(value))
         },
       )
 
       // Handle subtract operations
       Object.entries(patchData.subtract || {}).forEach(
         ([key, value]: [string, string]) => {
-          subtract(data[key], autoMarshallNumberStrings(value))
+          subtract(row.data[key], autoMarshallNumberStrings(value))
         },
       )
     })

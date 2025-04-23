@@ -4,7 +4,7 @@ import client, { tableName } from '@/config/dynamodb'
 
 import { autoMarshallDataObj } from '../helpers'
 
-import type { TableRowIndexName } from './types'
+import type { GsiOptions } from './types'
 
 export const TableRow = new Entity(
   {
@@ -87,14 +87,51 @@ export const TableRow = new Entity(
   },
 )
 
-export function getSkKeyValue(
-  indexName: TableRowIndexName,
-  value: unknown,
-): { [key: string]: unknown } {
-  switch (indexName) {
+interface DataWithGsi {
+  data: Record<string, string | number | null>
+  [key: string]: string | number | null | unknown
+}
+
+export function castGsiValue(value: string | number | null): string | null {
+  if (value == null || value === '') {
+    return undefined
+  }
+  return value.toString()
+}
+
+export function constructDataWithGsis(
+  data: Record<string, string | number | null>,
+  gsis?: GsiOptions[],
+): DataWithGsi {
+  const dataWithoutNullish = Object.fromEntries(
+    Object.entries(data).filter(([_, value]) => value != null),
+  )
+  if (!gsis) {
+    return { data: dataWithoutNullish }
+  }
+  const dataWithGsi: DataWithGsi = { data: dataWithoutNullish }
+  for (const gsi of gsis) {
+    const value = data[gsi.columnIdToMap]
+    switch (gsi.indexName) {
+      case 'gsiString1':
+        dataWithGsi.skString1 = castGsiValue(value)
+        break
+      default:
+        break
+    }
+  }
+  return dataWithGsi
+}
+
+export function getGsiSortKey(
+  gsis: GsiOptions[],
+  columnId: string,
+): 'skString1' | undefined {
+  const correspondingGsi = gsis.find((gsi) => gsi.columnIdToMap === columnId)
+  switch (correspondingGsi?.indexName) {
     case 'gsiString1':
-      return { skString1: value.toString() }
+      return 'skString1'
     default:
-      return {}
+      return undefined
   }
 }
