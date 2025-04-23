@@ -1,5 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
+import IntermediateStepError from '@/errors/intermediate-step-error'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import {
@@ -144,78 +145,90 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
-    const { tableId, filters, returnLastRow } = $.step.parameters as {
-      tableId: string
-      filters: TableRowFilter[]
-      returnLastRow: boolean | undefined
-    }
-
-    const step = await Step.query().findById($.step.id).throwIfNotFound()
-    /**
-     * Check for columns first, there will not be any columns if the tile has been deleted.
-     */
-    const columns = await TableColumnMetadata.getColumns(tableId, $)
-
-    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
-
-    // Check that filters are valid
     try {
-      validateFilters(filters, columns)
-    } catch (e) {
-      logger.error({
-        message: 'Invalid filters',
-        executionId: $.execution.id,
-        stepId: $.step.id,
-        app: $.app.name,
-        action: 'find-single-row',
-        error: e,
+      const {
+        tableId,
+        filters: rawFilters,
+        returnLastRow,
+      } = $.step.parameters as {
+        tableId: string
+        filters: TableRowFilter[]
+        returnLastRow: boolean | undefined
+      }
+
+      const step = await Step.query().findById($.step.id).throwIfNotFound()
+      /**
+       * Check for columns first, there will not be any columns if the tile has been deleted.
+       */
+      const columns = await TableColumnMetadata.getColumns(tableId, $)
+
+      await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
+
+      // Check that filters are valid and extract the GSI filter if it exists
+      const { filters, gsi } = validateFilters(rawFilters, columns)
+
+      // Retrieve the manual scan limit override, converting it to a number.
+      // If the conversion results in NaN, we set scanLimit to undefined.
+      const scanLimitRaw = +step.config?.adminOverride?.tileScanLimit
+      const scanLimit = isNaN(scanLimitRaw) ? undefined : scanLimitRaw
+
+      const { rows } = await getTableRows({
+        tableId,
+        filters,
+        order: returnLastRow ? 'desc' : 'asc',
+        scanLimit,
+        gsi,
       })
-      throw new StepError(
-        'Invalid filters',
-        'One or more filters are invalid. Please check that the columns in your filters still exist',
-        $.step.position,
-        $.app.name,
-      )
-    }
-    // Retrieve the manual scan limit override, converting it to a number.
-    // If the conversion results in NaN, we set scanLimit to undefined.
-    const scanLimitRaw = +step.config?.adminOverride?.tileScanLimit
-    const scanLimit = isNaN(scanLimitRaw) ? undefined : scanLimitRaw
 
-    const { rows } = await getTableRows({
-      tableId,
-      filters,
-      order: returnLastRow ? 'desc' : 'asc',
-      scanLimit,
-    })
+      if (!rows || !rows.length) {
+        $.setActionItem({
+          raw: {
+            rowsFound: 0,
+          } satisfies FindSingleRowOutput,
+        })
+        return
+      }
+      const rowIdToUse = rows[0].rowId
 
-    if (!rows || !rows.length) {
+      /**
+       * We use raw row data instead of mapped column names as we want them to
+       * be distinct in data_out
+       */
+      const rowToReturn = await getRawRowById({
+        tableId,
+        rowId: rowIdToUse,
+        columnIds: columns.map((c) => c.id),
+      })
+
       $.setActionItem({
         raw: {
-          rowsFound: 0,
+          rowsFound: rows.length,
+          rowId: rowIdToUse,
+          row: rowToReturn.data,
         } satisfies FindSingleRowOutput,
       })
-      return
+    } catch (e) {
+      logger.error({
+        message: 'Find single row error',
+        executionId: $.execution?.id,
+        stepId: $.step.id,
+        app: $.app.name,
+        error: e,
+      })
+      if (e instanceof IntermediateStepError) {
+        throw StepError.fromIntermediateStepError(e, {
+          position: $.step.position,
+          appName: $.app.name,
+        })
+      }
+      throw new StepError(
+        'Find single row error',
+        'An error occurred while finding the single row',
+        $.step.position,
+        $.app.name,
+        e,
+      )
     }
-    const rowIdToUse = rows[0].rowId
-
-    /**
-     * We use raw row data instead of mapped column names as we want them to
-     * be distinct in data_out
-     */
-    const rowToReturn = await getRawRowById({
-      tableId,
-      rowId: rowIdToUse,
-      columnIds: columns.map((c) => c.id),
-    })
-
-    $.setActionItem({
-      raw: {
-        rowsFound: rows.length,
-        rowId: rowIdToUse,
-        row: rowToReturn.data,
-      } satisfies FindSingleRowOutput,
-    })
   },
 }
 

@@ -550,14 +550,14 @@ describe('dynamodb table row functions', () => {
   })
 
   describe('GSI', () => {
-    it('should get the correct rows with equals operator using GSI', async () => {
+    beforeEach(async () => {
       const dataArray = []
       for (let i = 0; i < 1000; i++) {
         const data = generateMockTableRowData({
           columnIds: dummyColumnIds,
         })
-        // force the first column to have a deterministic value
-        data[dummyColumnIds[0]] = `${i}`
+        data[dummyColumnIds[0]] = i % 2 === 0 ? `even${i}` : `odd${i}`
+        data[dummyColumnIds[1]] = `${i}`
         dataArray.push(data)
       }
       await createTableRows({
@@ -568,6 +568,8 @@ describe('dynamodb table row functions', () => {
           columnIdToMap: dummyColumnIds[0],
         },
       })
+    })
+    it('should get the correct rows with equals operator using GSI', async () => {
       const { rows } = await getTableRows({
         tableId: dummyTable.id,
         gsi: {
@@ -575,33 +577,15 @@ describe('dynamodb table row functions', () => {
           filter: {
             columnId: 'skString1',
             operator: TableRowFilterOperator.Equals,
-            value: '5',
+            value: 'odd5',
           },
         },
-        includeTimestamps: true,
         scanLimit: 1, // this is to ensure that we are using the index and not scanning all rows
       })
       expect(rows).toHaveLength(1)
     })
 
     it('should get the correct rows with begins with operator using GSI', async () => {
-      const dataArray = []
-      for (let i = 0; i < 1000; i++) {
-        const data = generateMockTableRowData({
-          columnIds: dummyColumnIds,
-        })
-        // force the first column to have a deterministic value
-        data[dummyColumnIds[0]] = `${i}`
-        dataArray.push(data)
-      }
-      await createTableRows({
-        tableId: dummyTable.id,
-        dataArray,
-        gsi: {
-          indexName: 'gsiString1',
-          columnIdToMap: dummyColumnIds[0],
-        },
-      })
       const { rows } = await getTableRows({
         tableId: dummyTable.id,
         gsi: {
@@ -609,13 +593,12 @@ describe('dynamodb table row functions', () => {
           filter: {
             columnId: 'skString1',
             operator: TableRowFilterOperator.BeginsWith,
-            value: '4',
+            value: 'even4',
           },
         },
-        includeTimestamps: true,
-        scanLimit: 111, // this is to ensure that we are using the index and not scanning all rows
+        scanLimit: 56, // this is to ensure that we are using the index and not scanning all rows
       })
-      expect(rows).toHaveLength(111)
+      expect(rows).toHaveLength(56)
     })
 
     it('should automatically convert numbers to strings when using GSI', async () => {
@@ -642,41 +625,23 @@ describe('dynamodb table row functions', () => {
           indexName: 'gsiString1',
           filter: {
             columnId: 'skString1',
-            operator: TableRowFilterOperator.GreaterThan,
+            operator: TableRowFilterOperator.Equals,
             value: '500',
           },
         },
-        includeTimestamps: true,
-        scanLimit: 1000,
+        scanLimit: 1,
       })
-      expect(rows).toHaveLength(552)
+      expect(rows).toHaveLength(1)
     })
 
     it('should work with filters', async () => {
-      const dataArray = []
-      for (let i = 0; i < 1000; i++) {
-        const data = generateMockTableRowData({
-          columnIds: dummyColumnIds,
-        })
-        data[dummyColumnIds[0]] = i % 2 === 0 ? 'even' : 'odd'
-        data[dummyColumnIds[1]] = `${i}`
-        dataArray.push(data)
-      }
-      await createTableRows({
-        tableId: dummyTable.id,
-        dataArray,
-        gsi: {
-          indexName: 'gsiString1',
-          columnIdToMap: dummyColumnIds[0],
-        },
-      })
       const { rows } = await getTableRows({
         tableId: dummyTable.id,
         gsi: {
           indexName: 'gsiString1',
           filter: {
             columnId: 'skString1',
-            operator: TableRowFilterOperator.Equals,
+            operator: TableRowFilterOperator.BeginsWith,
             value: 'even',
           },
         },
@@ -692,10 +657,68 @@ describe('dynamodb table row functions', () => {
             value: '700',
           },
         ],
-        columnIds: dummyColumnIds,
         scanLimit: 500,
       })
       expect(rows).toHaveLength(100)
+    })
+
+    it('should work with specified columnIds', async () => {
+      const { rows } = await getTableRows({
+        tableId: dummyTable.id,
+        gsi: {
+          indexName: 'gsiString1',
+          filter: {
+            columnId: 'skString1',
+            operator: TableRowFilterOperator.BeginsWith,
+            value: 'even',
+          },
+        },
+        columnIds: dummyColumnIds,
+        scanLimit: 1000,
+      })
+      expect(rows[0].data).toHaveProperty(dummyColumnIds[0])
+      expect(rows[0].data).toHaveProperty(dummyColumnIds[1])
+      expect(rows[0].data).toHaveProperty(dummyColumnIds[2])
+    })
+
+    it('should respect the sort direction (desc - most recent row)', async () => {
+      const { rows } = await getTableRows({
+        tableId: dummyTable.id,
+        gsi: {
+          indexName: 'gsiString1',
+          filter: {
+            columnId: 'skString1',
+            operator: TableRowFilterOperator.BeginsWith,
+            value: 'even',
+          },
+        },
+        columnIds: [dummyColumnIds[1]],
+        // returns most recent row
+        order: 'desc',
+        scanLimit: 500,
+      })
+      expect(rows).toHaveLength(500)
+      expect(rows[0].data[dummyColumnIds[1]]).toEqual(998)
+    })
+
+    it('should respect the sort direction (asc - oldest row)', async () => {
+      const { rows } = await getTableRows({
+        tableId: dummyTable.id,
+        gsi: {
+          indexName: 'gsiString1',
+          filter: {
+            columnId: 'skString1',
+            operator: TableRowFilterOperator.BeginsWith,
+            value: 'even',
+          },
+        },
+        columnIds: [dummyColumnIds[1]],
+        // returns oldest row
+        order: 'asc',
+        scanLimit: 500,
+      })
+      expect(rows).toHaveLength(500)
+      expect(rows[0].data[dummyColumnIds[1]]).toEqual(0)
     })
   })
 })

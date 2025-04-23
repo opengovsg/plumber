@@ -1,7 +1,6 @@
 import { IJSONObject, IStepError } from '@plumber/types'
 
 import HttpError from './http'
-import IntermediateStepError from './intermediate-step-error'
 
 //
 // Some generic solutions for common errors
@@ -10,39 +9,28 @@ export enum GenericSolution {
   ReconfigureInvalidField = 'Click on set up action and reconfigure the invalid field. Error could also result from the variables used in the field.',
 }
 
-export default class StepError extends Error {
+export default class IntermediateStepError extends Error {
+  solution: string
+  error?: HttpError
+  extraProperties?: Record<string, unknown>
+
   constructor(
     name: string,
     solution: string,
-    position: number,
-    appName: string,
     error?: HttpError,
     extraProperties?: Record<string, unknown>,
   ) {
-    const stepError: IStepError = {
+    const stepError: Partial<IStepError> = {
       name,
       solution,
-      position,
-      appName,
       details: error?.details as IJSONObject,
       ...extraProperties,
     }
     const computedMessage = JSON.stringify(stepError)
     super(computedMessage, { cause: error })
-    this.name = this.constructor.name
-  }
-
-  static fromIntermediateStepError(
-    error: IntermediateStepError,
-    { position, appName }: { position: number; appName: string },
-  ) {
-    return new StepError(
-      error.name,
-      error.solution,
-      position,
-      appName,
-      error.error,
-      error.extraProperties,
-    )
+    this.solution = solution
+    this.error = error
+    this.extraProperties = extraProperties
+    this.name = name
   }
 }

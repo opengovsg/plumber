@@ -352,7 +352,6 @@ export const getTableRows = async ({
   stringifiedCursor,
   scanLimit,
   gsi,
-  includeTimestamps = false,
 }: {
   tableId: string
   columnIds?: string[]
@@ -371,7 +370,6 @@ export const getTableRows = async ({
     indexName: TableRowIndexName
     filter: TableRowFilter
   }
-  includeTimestamps?: boolean
 }): Promise<{
   rows: TableRowOutput[]
   stringifiedCursor?: string
@@ -385,7 +383,8 @@ export const getTableRows = async ({
     generateProjectionExpressions({
       columnIds,
       filters,
-      includeTimestamps,
+      // if we're using a GSI, we need to include the timestamps to sort later on
+      includeTimestamps: !!gsi,
       indexUsed: gsi?.indexName ?? 'createdAtIndex',
     })
   const tableRows = []
@@ -443,8 +442,21 @@ export const getTableRows = async ({
       // loop only if cursor is
     } while (cursor && !stringifiedCursor && remainingScanLimit > 0)
 
+    /**
+     * When using GSI's we do the sorting ourselves
+     */
+    const sortedRows = gsi
+      ? tableRows.sort((a, b) => {
+          return order === 'asc'
+            ? // we sort by earliest createdAt first
+              a.createdAt - b.createdAt
+            : // we sort by latest createdAt first
+              b.createdAt - a.createdAt
+        })
+      : tableRows
+
     return {
-      rows: tableRows.map((row) => ({
+      rows: sortedRows.map((row) => ({
         ...row,
         data: row.data || {}, // data can be undefined if values are empty
       })),

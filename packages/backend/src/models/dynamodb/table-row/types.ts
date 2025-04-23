@@ -2,7 +2,15 @@ import { CreateEntityItem } from 'electrodb'
 
 import { TableRow } from './model'
 
-export type TableRowIndexName = 'gsiString1' | 'createdAtIndex'
+export const GSIS = [
+  {
+    gsi: 'gsiString1',
+    sk: 'skString1',
+    type: 'string',
+  },
+] as const
+export type TableRowIndexName = (typeof GSIS)[number]['gsi'] | 'createdAtIndex'
+export type TableRowSortKeyName = (typeof GSIS)[number]['sk']
 
 export type TableRowItem = CreateEntityItem<typeof TableRow>
 export type CreateRowInput = Pick<TableRowItem, 'tableId' | 'data'>
@@ -27,7 +35,10 @@ export interface DeleteRowsInput {
   tableId: string
   rowIds: string[]
 }
-export type TableRowOutput = Pick<TableRowItem, 'rowId' | 'data'>
+export type TableRowOutput = Pick<
+  TableRowItem,
+  'rowId' | 'data' | 'createdAt' | 'updatedAt'
+>
 
 export enum TableRowFilterOperator {
   Equals = 'equals',
