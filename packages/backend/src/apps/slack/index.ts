@@ -10,6 +10,7 @@ import dynamicData from './dynamic-data'
 const app: IApp = {
   name: 'Slack',
   key: 'slack',
+  description: 'Send or find a message in a channel',
   iconUrl: '{BASE_URL}/apps/slack/assets/favicon.svg',
   authDocUrl: 'https://guide.plumber.gov.sg/user-guides/actions/slack',
   baseUrl: 'https://slack.com',
@@ -20,6 +21,7 @@ const app: IApp = {
   actions,
   dynamicData,
   queue: getGenericAppQueue('SLACK'),
+  category: 'communication',
 }
 
 export default app

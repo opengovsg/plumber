@@ -20,10 +20,9 @@ export const GET_APPS = gql`
       connectionCount
       description
       isNewApp
+      category
       substepLabels {
-        connectionStepLabel
         settingsStepLabel
-        addConnectionLabel
       }
       setupMessage {
         variant
@@ -78,6 +77,10 @@ export const GET_APPS = gql`
               value
             }
           }
+        }
+        connectionModalLabel {
+          chooseConnectionLabel
+          addConnectionLabel
         }
       }
       triggers {

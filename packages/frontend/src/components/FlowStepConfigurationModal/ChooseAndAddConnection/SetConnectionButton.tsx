@@ -1,44 +1,65 @@
-import { ITestConnectionOutput } from '@plumber/types'
-
-import { useCallback, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { Alert, AlertIcon } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
+import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import { useConnectionVerification } from '../hooks/useConnectionRegistration'
+
 interface SetConnectionButtonProps {
-  onNextStep: () => void
-  onRegisterConnection: () => void
+  onNextStep: () => Promise<void>
   readOnly: boolean
-  supportsConnectionRegistration: boolean
-  testResult: ITestConnectionOutput | undefined
-  testResultLoading: boolean
-  registerConnectionLoading: boolean
+  isNewStep: boolean
 }
 
 const SetConnectionButton = ({
   onNextStep,
   readOnly,
-  onRegisterConnection,
-  supportsConnectionRegistration,
-  testResult,
-  testResultLoading,
-  registerConnectionLoading,
+  isNewStep,
 }: SetConnectionButtonProps) => {
-  const onSubmit = useCallback(() => {
+  const { modalState } = useContext(FlowStepConfigurationContext)
+  const { selectedApp, selectedConnectionId } = modalState
+  const supportsConnectionRegistration =
+    !!selectedApp?.auth?.connectionRegistrationType
+
+  const {
+    testResult,
+    testResultLoading,
+    registerConnectionLoading,
+    testConnection,
+    onRegisterConnection,
+  } = useConnectionVerification({
+    supportsConnectionRegistration,
+  })
+
+  // Load test result for initial connection if present
+  useEffect(() => {
+    async function testInitialConnection() {
+      await testConnection(selectedConnectionId)
+    }
+    if (selectedConnectionId) {
+      testInitialConnection()
+    }
+  }, [selectedConnectionId, testConnection])
+
+  const onSubmit = useCallback(async () => {
     if (
       supportsConnectionRegistration &&
       testResult &&
       !testResult.registrationVerified
     ) {
-      onRegisterConnection()
+      await onRegisterConnection(selectedConnectionId)
     } else {
-      onNextStep()
+      await onNextStep()
     }
   }, [
     onNextStep,
     onRegisterConnection,
+    selectedConnectionId,
     supportsConnectionRegistration,
     testResult,
   ])
+
+  const stepActionText = isNewStep ? 'Add step' : 'Save and continue'
 
   const buttonText = useMemo(() => {
     if (testResultLoading) {
@@ -46,7 +67,7 @@ const SetConnectionButton = ({
     }
 
     if (!testResult) {
-      return 'Continue'
+      return stepActionText
     }
 
     if (registerConnectionLoading) {
@@ -58,20 +79,21 @@ const SetConnectionButton = ({
     }
 
     if (!supportsConnectionRegistration) {
-      return readOnly ? 'Connection verified' : 'Continue'
+      return readOnly ? 'Connection verified' : stepActionText
     }
 
     if (!testResult.registrationVerified) {
       return readOnly ? 'Not connected' : 'Connect'
     }
 
-    return 'Continue'
+    return stepActionText
   }, [
     readOnly,
     testResultLoading,
     testResult,
     supportsConnectionRegistration,
     registerConnectionLoading,
+    stepActionText,
   ])
 
   return (

@@ -250,6 +250,7 @@ export default function FlowStepHeader(
                 variant="clear"
                 aria-label="Delete Step"
                 icon={<BiTrashAlt />}
+                colorScheme="secondary"
               />
             </Flex>
           )}

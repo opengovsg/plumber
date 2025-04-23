@@ -27,6 +27,9 @@ const auth: IUserAddedConnectionAuth = {
 
   verifyCredentials,
   isStillVerified,
+  connectionModalLabel: {
+    chooseConnectionLabel: 'Connect to LetterSG',
+  },
 }
 
 export default auth

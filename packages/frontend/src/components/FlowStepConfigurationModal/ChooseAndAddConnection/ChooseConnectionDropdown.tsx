@@ -1,23 +1,22 @@
-import { IApp } from '@plumber/types'
+import { type IApp } from '@plumber/types'
 
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { FormControl } from '@chakra-ui/react'
 import { FormLabel } from '@opengovsg/design-system-react'
 
-import AddAppConnection from '@/components/AddAppConnection'
 import { SingleSelect } from '@/components/SingleSelect'
 
-type ConnectionDropdownOption = {
-  label: string
-  value: string
-  icon?: React.ElementType
-}
+import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
+
+import { ConnectionDropdownOption } from '.'
+
 interface ChooseConnectionDropdownProps {
   isDisabled: boolean
   connectionOptions: ConnectionDropdownOption[]
   onChange: (value: string, shouldRefetch: boolean) => void
   value: string | undefined
   application: IApp
+  onAddNewConnection: () => void
 }
 
 function ChooseConnectionDropdown({
@@ -26,25 +25,11 @@ function ChooseConnectionDropdown({
   onChange,
   value,
   application,
+  onAddNewConnection,
 }: ChooseConnectionDropdownProps) {
-  const [showAddConnectionDialog, setShowAddConnectionDialog] = useState(false)
-
   const onSelectionChange = useCallback(
     (value: string) => {
       onChange(value, false)
-    },
-    [onChange],
-  )
-
-  const handleAddConnectionClose = useCallback(
-    (response: Record<string, any>) => {
-      setShowAddConnectionDialog(false)
-      const newConnectionId = response?.createConnection?.id as
-        | string
-        | undefined
-      if (newConnectionId) {
-        onChange(newConnectionId, true)
-      }
     },
     [onChange],
   )
@@ -68,20 +53,16 @@ function ChooseConnectionDropdown({
             application?.auth?.connectionType === 'user-added'
               ? {
                   type: 'modal',
-                  label: 'Add new connection',
-                  onSelected: () => setShowAddConnectionDialog(true),
+                  label:
+                    application?.auth?.connectionModalLabel
+                      ?.addConnectionLabel ?? DEFAULT_ADD_CONNECTION_LABEL,
+                  onSelected: onAddNewConnection,
                   isCreating: false,
                 }
               : undefined
           }
         />
       </FormControl>
-      {application && showAddConnectionDialog && (
-        <AddAppConnection
-          onClose={handleAddConnectionClose}
-          application={application}
-        />
-      )}
     </>
   )
 }

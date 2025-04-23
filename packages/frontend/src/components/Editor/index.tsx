@@ -1,115 +1,36 @@
 import type { IApp, IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useContext, useMemo, useState } from 'react'
-import { BiPlus } from 'react-icons/bi'
-import { useMutation, useQuery } from '@apollo/client'
-import {
-  AbsoluteCenter,
-  Box,
-  Center,
-  CircularProgress,
-  Divider,
-  Flex,
-} from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
-import { Rating } from 'lens-widget'
+import { Fragment, useContext, useMemo } from 'react'
+import { Center, Flex } from '@chakra-ui/react'
 
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
-import appConfig from '@/config/app'
 import { EditorContext } from '@/contexts/Editor'
 import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
-import { CREATE_STEP } from '@/graphql/mutations/create-step'
-import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
-import { UPDATE_STEP } from '@/graphql/mutations/update-step'
-import { GET_APPS } from '@/graphql/queries/get-apps'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
-import useAuthentication from '@/hooks/useAuthentication'
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
-interface AddStepButtonProps {
-  onClick: () => void
-  isDisabled: boolean
-  isLastStep: boolean
-}
+import PrimarySpinner from '../PrimarySpinner'
 
-function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { onClick, isDisabled, isLastStep } = props
-
-  return (
-    <Box pos="relative" h={24}>
-      {/* Top vertical line */}
-      <Box h="1.875rem">
-        <Divider orientation="vertical" borderColor="base.divider.strong" />
-      </Box>
-      {/* Bottom vertical line */}
-      {!isLastStep && (
-        <Box mt={9} h="1.875rem">
-          <Divider orientation="vertical" borderColor="base.divider.strong" />
-        </Box>
-      )}
-      <AbsoluteCenter>
-        <IconButton
-          onClick={onClick}
-          isDisabled={isDisabled}
-          aria-label="Add Step"
-          icon={<BiPlus />}
-          variant="outline"
-          size="xs"
-        />
-      </AbsoluteCenter>
-    </Box>
-  )
-}
-
-function updateHandlerFactory(flowId: string, previousStepId: string) {
-  return function createStepUpdateHandler(cache: any, mutationResult: any) {
-    const { data } = mutationResult
-    const { createStep: createdStep } = data
-    const { getFlow: flow } = cache.readQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-    })
-    const steps = flow.steps.reduce((steps: any[], currentStep: any) => {
-      if (currentStep.id === previousStepId) {
-        return [...steps, currentStep, createdStep]
-      }
-
-      return [...steps, currentStep]
-    }, [])
-
-    cache.writeQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-      data: { getFlow: { ...flow, steps } },
-    })
-  }
-}
+import { AddStepButton } from './AddStepButton'
 
 type EditorProps = {
   flow: IFlow
   steps: IStep[]
 }
 
-export default function Editor(props: EditorProps): React.ReactElement {
-  const [updateStep] = useMutation(UPDATE_STEP)
-  const [createStep, { loading: creationInProgress }] = useMutation(
-    CREATE_STEP,
-    { refetchQueries: [GET_FLOW] },
-  )
-
+export default function Editor(props: EditorProps) {
   const { flow, steps: rawSteps } = props
-  const showSurvey = flow.active && flow.config?.showSurvey
-  const { currentUser } = useAuthentication()
 
-  const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
-  const onFlowConfigUpdate = useCallback(async () => {
-    await updateFlowConfig({
-      variables: { input: { id: flow.id, showSurvey: false } },
-    })
-  }, [updateFlowConfig, flow.id])
+  const {
+    readOnly: isReadOnlyEditor,
+    currentStepId,
+    onUpdateStep,
+    setCurrentStepId,
+    allApps,
+  } = useContext(EditorContext)
 
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
@@ -124,78 +45,23 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [flow, rawSteps],
   )
 
-  const [currentStepId, setCurrentStepId] = useState<string | null>(
-    steps[0]?.id,
-  )
-
-  const { readOnly: isReadOnlyEditor } = useContext(EditorContext)
-
-  const onStepChange = useCallback(
-    (step: IStep) => {
-      const mutationInput: Record<string, unknown> = {
-        id: step.id,
-        key: step.key,
-        parameters: step.parameters,
-        connection: {
-          id: step.connection?.id,
-        },
-        flow: {
-          id: flow.id,
-        },
-      }
-
-      if (step.appKey) {
-        mutationInput.appKey = step.appKey
-      }
-
-      updateStep({
-        variables: { input: mutationInput },
-      })
-    },
-    [updateStep, flow.id],
-  )
-
-  const addStep = useCallback(
-    async (previousStepId: string) => {
-      const mutationInput = {
-        previousStep: {
-          id: previousStepId,
-        },
-        flow: {
-          id: flow.id,
-        },
-      }
-
-      const createdStep = await createStep({
-        variables: { input: mutationInput },
-        update: updateHandlerFactory(flow.id, previousStepId),
-      })
-      const createdStepId = createdStep.data.createStep.id
-
-      setCurrentStepId(createdStepId)
-    },
-    [createStep, flow.id],
-  )
-
-  // FIXME (ogp-weeloong): optimize this a bit further by omitting query.
-  const { data } = useQuery(GET_APPS)
-  const apps: IApp[] = data?.getApps?.filter(
+  const appsWithActions: IApp[] = allApps.filter(
     (app: IApp) => !!app.actions?.length,
   )
 
   const groupingActions = useMemo(() => {
-    if (!apps) {
+    if (!appsWithActions) {
       return null
     }
 
     return new Set(
-      apps?.flatMap((app) =>
+      appsWithActions?.flatMap((app) =>
         app.actions
           ?.filter((action) => action.groupsLaterSteps)
           ?.map((action) => `${app.key}-${action.key}`),
       ) ?? [],
     )
-  }, [apps])
+  }, [appsWithActions])
 
   const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
     if (!groupingActions) {
@@ -229,8 +95,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
     if (groupedSteps.length === 0) {
       return undefined
     }
-    return apps.find((app) => app.key === groupedSteps[0].appKey)?.iconUrl
-  }, [apps, groupedSteps])
+    return appsWithActions.find((app) => app.key === groupedSteps[0].appKey)
+      ?.iconUrl
+  }, [appsWithActions, groupedSteps])
 
   //
   // Compute which steps are eligible for variable extraction.
@@ -256,10 +123,23 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [parentStepExecutionsToInclude, stepsBeforeGroup],
   )
 
-  if (!apps) {
+  const nonIfThenActionSteps = stepsBeforeGroup.filter(
+    (step) =>
+      step.type === 'action' &&
+      step.appKey !== TOOLBOX_APP_KEY &&
+      step.key !== TOOLBOX_ACTIONS.IfThen,
+  )
+  // Disables last add step and hide in-between add step buttons
+  const hasExactlyOneEmptyActionStep =
+    nonIfThenActionSteps.length === 1 && !nonIfThenActionSteps[0].appKey
+
+  // Disables last add step button but show empty action instead
+  const hasNoActionSteps = nonIfThenActionSteps.length === 0
+
+  if (!appsWithActions || !groupingActions) {
     return (
-      <Center w="full" h="100vh">
-        <CircularProgress isIndeterminate my={2} />
+      <Center height="100vh" position="fixed" width="full" top={0} left={0}>
+        <PrimarySpinner fontSize="4xl" />
       </Center>
     )
   }
@@ -270,39 +150,52 @@ export default function Editor(props: EditorProps): React.ReactElement {
         flexDir="column"
         alignItems="center"
         py={3}
+        pb={24}
         w="53.25rem"
         maxW="full"
       >
         <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-          {stepsBeforeGroup.map((step, index) => (
-            <Fragment key={`${step.id}-${index}`}>
-              <FlowStep
-                step={step}
-                isLastStep={index === steps.length - 1}
-                index={index + 1}
-                collapsed={currentStepId !== step.id}
-                onOpen={() => setCurrentStepId(step.id)}
-                onClose={() => setCurrentStepId(null)}
-                onChange={onStepChange}
-                onContinue={() => {
-                  if (
-                    index === stepsBeforeGroup.length - 1 &&
-                    groupedSteps.length > 0
-                  ) {
-                    setCurrentStepId(groupedSteps[0].id)
-                  } else {
-                    setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+          {stepsBeforeGroup.map((step, index) => {
+            return (
+              <Fragment key={`${step.id}-${index}`}>
+                <FlowStep
+                  step={step}
+                  isLastStep={index === steps.length - 1}
+                  index={index + 1}
+                  collapsed={currentStepId !== step.id}
+                  onOpen={() => setCurrentStepId(step.id)}
+                  onClose={() => {
+                    setCurrentStepId(null)
+                  }}
+                  onChange={onUpdateStep}
+                  onContinue={() => {
+                    if (
+                      index === stepsBeforeGroup.length - 1 &&
+                      groupedSteps.length > 0
+                    ) {
+                      setCurrentStepId(groupedSteps[0].id)
+                    } else {
+                      setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
+                    }
+                  }}
+                  templateConfig={flow?.config?.templateConfig}
+                />
+                <AddStepButton
+                  // hide all add button steps if is readonly
+                  isHidden={isReadOnlyEditor}
+                  // show empty action if no action step exists
+                  showEmptyAction={hasNoActionSteps && !groupedSteps.length}
+                  // Disable add button steps if first action is not set up
+                  isDisabled={
+                    (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
+                    !groupedSteps.length
                   }
-                }}
-                templateConfig={flow?.config?.templateConfig}
-              />
-              <AddStepButton
-                onClick={() => addStep(step.id)}
-                isDisabled={creationInProgress || isReadOnlyEditor}
-                isLastStep={index === steps.length - 1}
-              />
-            </Fragment>
-          ))}
+                  isLastStep={index === steps.length - 1}
+                  stepId={step.id}
+                />
+              </Fragment>
+            )
+          })}
           {groupedSteps.length > 0 && (
             <FlowStepGroup
               iconUrl={flowStepGroupIconUrl}
@@ -311,24 +204,10 @@ export default function Editor(props: EditorProps): React.ReactElement {
               collapsed={currentStepId !== groupedSteps[0].id}
               onOpen={() => setCurrentStepId(groupedSteps[0].id)}
               onClose={() => setCurrentStepId(null)}
-              setCurrentStepId={setCurrentStepId}
             />
           )}
         </StepExecutionsToIncludeProvider>
       </Flex>
-
-      {showSurvey && (
-        <Rating
-          clientKey={appConfig.lensSurveyClientKey}
-          brandColour="#cf1a68"
-          attributes={[
-            `FlowId: ${flow.id}`,
-            `UserEmail: ${currentUser?.email}`,
-          ]}
-          onSubmit={onFlowConfigUpdate}
-          onClose={onFlowConfigUpdate}
-        />
-      )}
     </Flex>
   )
 }

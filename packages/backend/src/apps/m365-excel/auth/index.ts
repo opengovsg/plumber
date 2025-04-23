@@ -16,6 +16,9 @@ const auth: ISystemAddedConnectionAuth = {
   isStillVerified,
   registerConnection,
   verifyConnectionRegistration,
+  connectionModalLabel: {
+    chooseConnectionLabel: 'Connect to M365 Excel',
+  },
 }
 
 export default auth

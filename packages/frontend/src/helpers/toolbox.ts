@@ -128,7 +128,7 @@ export function areAllIfThenBranchesCompleted(
 
 /**
  * Helper hook to check if If-then action should be selectable; supports edge
- * case in ChooseAppAndEventSubstep.
+ * case in ChooseEvent component.
  *
  * If-then should only be selectable if:
  * - We're the last step.
@@ -164,7 +164,7 @@ export function useIsIfThenSelectable({
  * "Choose App & Event" substep.
  */
 export function useIfThenInitializer(): [
-  (currStep: IStep) => Promise<void>,
+  (currStep: IStep) => Promise<IStep>,
   boolean,
 ] {
   const [isInitializing, setIsInitializing] = useState(false)
@@ -192,7 +192,7 @@ export function useIfThenInitializer(): [
             appKey: TOOLBOX_APP_KEY,
             key: TOOLBOX_ACTIONS.IfThen,
             flow: {
-              id: currStep.flow.id,
+              id: currStep.flowId,
             },
             parameters: {
               branchName: 'Branch 1',
@@ -213,7 +213,7 @@ export function useIfThenInitializer(): [
               id: currStep.id,
             },
             flow: {
-              id: currStep.flow.id,
+              id: currStep.flowId,
             },
             parameters: {
               depth,
@@ -240,7 +240,7 @@ export function useIfThenInitializer(): [
               id: currStep.id,
             },
             flow: {
-              id: currStep.flow.id,
+              id: currStep.flowId,
             },
           },
         },
@@ -252,7 +252,7 @@ export function useIfThenInitializer(): [
               id: secondBranch.data.createStep.id,
             },
             flow: {
-              id: currStep.flow.id,
+              id: currStep.flowId,
             },
           },
         },
@@ -262,6 +262,7 @@ export function useIfThenInitializer(): [
       await client.refetchQueries({ include: [GET_FLOW] })
 
       setIsInitializing(false)
+      return currStep
     },
     [createStep, depth, updateStep],
   )

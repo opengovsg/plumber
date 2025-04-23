@@ -44,14 +44,13 @@ interface FlowStepGroupProps {
   onOpen: () => void
   onClose: () => void
   collapsed: boolean
-  setCurrentStepId: (stepId: string) => void
 }
 
 const ifThenHelpMessage = 'Customise what happens in each of your branches.'
 
 function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
-  const { iconUrl, flow, steps, onOpen, onClose, collapsed, setCurrentStepId } =
-    props
+  const { iconUrl, flow, steps, collapsed, onOpen, onClose } = props
+
   const isTemplatedFlow = !!flow.config?.templateConfig?.templateId
 
   const { StepContent, hintAboveCaption, caption, isStepGroupCompleted } =
@@ -85,11 +84,7 @@ function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
         isCompleted={isStepGroupCompleted}
         isInfoboxPresent={!isStepGroupCompleted}
       >
-        <StepContent
-          flow={flow}
-          steps={steps}
-          setCurrentStepId={setCurrentStepId}
-        />
+        <StepContent flow={flow} steps={steps} />
       </FlowStepHeader>
     </Flex>
   )
