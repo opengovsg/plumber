@@ -206,9 +206,7 @@ const action: IRawAction = {
 
     // NOTE: there are 2 types of column data that we return
     // 1. column name and id for use in for-each
-    const columnData: Record<string, string> = {
-      'Row ID': 'rowId',
-    }
+    const columnData: Record<string, string> = {}
     columns
       .sort((a, b) => a.position - b.position)
       .forEach((c) => {
@@ -241,7 +239,6 @@ const action: IRawAction = {
           columns: columnData,
         },
         columns: consolidatedColumns,
-        rowId: 'rowId',
       } satisfies FindMultipleRowsOutput,
     })
   },

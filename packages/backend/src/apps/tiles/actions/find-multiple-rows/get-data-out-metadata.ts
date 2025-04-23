@@ -34,11 +34,6 @@ async function getDataOutMetadata(
       label: 'Number of rows found',
       order: 2,
     },
-    rowId: {
-      label: 'Row ID',
-      value: 'rowId',
-      displayedValue: ' ',
-    },
   }
 
   const columnMetadata: IDataOutMetadata = {}
