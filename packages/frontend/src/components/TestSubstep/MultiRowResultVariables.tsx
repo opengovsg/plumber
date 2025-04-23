@@ -21,30 +21,36 @@ export default function MultiRowResultVariables(
 ): JSX.Element {
   const { step, variables, onModalOpen } = props
 
+  const isRowsVar = (v: Variable) => v.name.split('.').pop() === 'rows'
+  const isRowsFoundVar = (v: Variable) =>
+    v.name.split('.').pop() === 'rowsFound'
+  const isColumnsVar = (v: Variable) => v.name.includes('columns')
+
   const { variablesWithModal, variableListVariables } = useMemo(() => {
-    if (!variables || variables.length === 0) {
+    if (!variables?.length) {
+      return { variablesWithModal: [], variableListVariables: [] }
+    }
+
+    const rowsVariable = variables.find(isRowsVar)
+    const rowsFoundVariable = variables.find(isRowsFoundVar)
+    const numRowsFound = rowsFoundVariable?.value || 0
+
+    const columnVariables = variables.filter(isColumnsVar)
+    const rowsFoundVariables = variables.filter(isRowsFoundVar)
+
+    const variableListVariables = [...rowsFoundVariables, ...columnVariables]
+
+    if (numRowsFound === 0) {
       return {
         variablesWithModal: [],
-        variableListVariables: [],
+        variableListVariables: rowsVariable
+          ? [rowsVariable, ...variableListVariables]
+          : variableListVariables,
       }
     }
 
-    const variablesWithModal = variables.filter(
-      (v) => v.name.split('.').pop() === 'rows',
-    )
-
-    /**
-     * NOTE (kevinkim-ogp): we can disable column names in the variable output to reduce confusion for users
-     */
-    const variableListVariables = [
-      ...variables.filter(
-        (v) =>
-          v.name.split('.').pop() === 'rowsFound' || v.name.includes('columns'),
-      ),
-    ]
-
     return {
-      variablesWithModal,
+      variablesWithModal: rowsVariable ? [rowsVariable] : [],
       variableListVariables,
     }
   }, [variables])
