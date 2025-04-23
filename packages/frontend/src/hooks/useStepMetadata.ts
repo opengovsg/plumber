@@ -6,6 +6,7 @@ interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
   caption: string
+  isCompleted: boolean
   isIfThenStep: boolean
   isTrigger: boolean
   position: number
@@ -17,6 +18,7 @@ export function useStepMetadata(
   allApps: IApp[],
   step: IStep | undefined,
 ): UseStepMetadataResult {
+  const isCompleted = useMemo(() => step?.status === 'completed', [step])
   const isTrigger = useMemo(() => step?.type === 'trigger', [step])
   const isIfThenStep = useMemo(
     () => step?.appKey === 'toolbox' && step?.key === 'ifThen',
@@ -73,6 +75,7 @@ export function useStepMetadata(
     app,
     selectedActionOrTrigger,
     caption,
+    isCompleted,
     isIfThenStep,
     isTrigger,
     position: step?.position ?? 0,
