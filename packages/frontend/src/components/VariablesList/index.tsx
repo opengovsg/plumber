@@ -21,13 +21,13 @@ function VariableTag({
       case 'file':
         return {
           label: 'File',
-          tooltip: 'This variable can be used as an attachment to an email',
+          tooltip:
+            'This variable can be used as an attachment in Email by Postman action.',
         }
       case 'tile_row_id':
         return {
           label: 'Tile Row ID',
-          tooltip:
-            'This variable can be used to update the corresponding row in Tile',
+          tooltip: `This variable can be used in Tile's Update Single Row action`,
         }
       default:
         return {
