@@ -2,6 +2,7 @@ import { IGlobalVariable, ITableColumnConfig } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
+import type { GsiOptions, TableRowIndexName } from './dynamodb/table-row/types'
 import Base from './base'
 import TableMetadata from './table-metadata'
 
@@ -53,6 +54,21 @@ class TableColumnMetadata extends Base {
       )
     }
     return columns
+  }
+
+  static getGsisFromColumns = (
+    columns: TableColumnMetadata[],
+  ): GsiOptions[] => {
+    return columns
+      .map((column) => {
+        if (column.config?.gsi) {
+          return {
+            indexName: column.config.gsi.indexName as TableRowIndexName,
+            columnIdToMap: column.id,
+          }
+        }
+      })
+      .filter(Boolean)
   }
 }
 

@@ -15,6 +15,7 @@ import {
   type CreateRowInput,
   type CreateRowsInput,
   type DeleteRowsInput,
+  GSIS,
   type PatchRowInput,
   type TableRowFilter,
   TableRowFilterOperator,
@@ -95,10 +96,11 @@ const generateProjectionExpressions = ({
   ProjectionExpression: string
   ExpressionAttributeNames: Record<string, string>
 } => {
+  const gsiUsed = GSIS.find((g) => g.gsi === indexUsed)
   const ProjectionExpression = [
     'rowId',
     ...columnIds.map((_id, i) => `#data.#col${i}`),
-    ...(indexUsed === 'gsiString1' ? ['skString1'] : []),
+    ...(gsiUsed ? [gsiUsed.sk] : []),
     ...(includeTimestamps ? ['createdAt', 'updatedAt'] : []),
   ].join(',')
   // #pk has to be mapped since it's used by electrodb
@@ -111,8 +113,8 @@ const generateProjectionExpressions = ({
   if (indexUsed === 'byRowId') {
     ExpressionAttributeNames['#sk1'] = 'rowId'
   }
-  if (indexUsed === 'gsiString1') {
-    ExpressionAttributeNames['#sk1'] = 'skString1'
+  if (gsiUsed) {
+    ExpressionAttributeNames['#sk1'] = gsiUsed.sk
   }
   // Add attribute name mapping for column name projection
   columnIds.forEach((id: string, i: number) => {

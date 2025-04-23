@@ -10,6 +10,7 @@ import {
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import { createTableRow } from '@/models/dynamodb/table-row'
+import * as tableFunctions from '@/models/dynamodb/table-row/functions'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
@@ -17,6 +18,8 @@ import Context from '@/types/express/context'
 
 import tiles from '../..'
 import updateRowAction from '../../actions/update-row'
+
+const patchTableRowSpy = vi.spyOn(tableFunctions, 'patchTableRow')
 
 describe('tiles update row action', () => {
   let context: Context
@@ -139,6 +142,35 @@ describe('tiles update row action', () => {
           [dummyColumnIds[0]]: 123,
         },
       },
+    })
+  })
+
+  describe('GSI', () => {
+    beforeEach(async () => {
+      await TableColumnMetadata.query()
+        .patch({
+          config: {
+            gsi: { status: 'ready', indexName: 'gsiString1', type: 'string' },
+          },
+        })
+        .where({ id: dummyColumnIds[0] })
+    })
+
+    it('should update row with GSI', async () => {
+      await expect(updateRowAction.run($)).resolves.toBeUndefined()
+      expect(patchTableRowSpy).toHaveBeenCalledWith({
+        tableId: dummyTable.id,
+        rowId: $.step.parameters.rowId,
+        patchData: {
+          subtract: {},
+          add: {},
+          set: ($.step.parameters.rowData as any[]).reduce((acc, row) => {
+            acc[row.columnId] = row.cellValue
+            return acc
+          }, {} as Record<string, string>),
+        },
+        gsis: [{ indexName: 'gsiString1', columnIdToMap: dummyColumnIds[0] }],
+      })
     })
   })
 })
