@@ -265,6 +265,7 @@ describe('updateStep mutation', () => {
               key: 'sendTransactionalEmail',
               appKey: 'postman',
               status: 'completed',
+              connection: { id: mockConnectionId },
               config: {
                 stepName: 'some-step-name',
                 templateConfig: { appEventKey: 'existingAppEventKey' },
@@ -274,7 +275,9 @@ describe('updateStep mutation', () => {
         }
         if (relation === 'connections') {
           return {
-            findOne: vi.fn().mockResolvedValue({ id: mockConnectionId }),
+            findOne: vi
+              .fn()
+              .mockResolvedValue({ id: mockConnectionId, key: 'postman' }),
           }
         }
         return {
