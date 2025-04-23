@@ -59,8 +59,8 @@ export function validateFilters(
         columnId: filter.columnId,
       })
       throw new IntermediateStepError(
-        'Invalid columnId',
-        'One or more filters are invalid. Please check that the columns in your filters still exist',
+        'Invalid lookup column(s)',
+        'One of the lookup columns in your filters might have been deleted. Please check that the columns still exist in your Tile.',
       )
     }
     if (column.config?.gsi?.status === 'ready') {
