@@ -180,12 +180,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 isDeletable={true}
                 isLastStep={index === steps.length - 1}
                 isNested={isNested}
-                index={index + 1}
-                collapsed={
-                  !isDrawerOpen && currentStepId === step.id
-                    ? true
-                    : currentStepId !== step.id
-                }
                 onOpen={() => {
                   setCurrentStepId(step.id)
                   setCurrentStepIndex(index)

@@ -42,7 +42,6 @@ export default function Branch(props: BranchProps) {
   const { branchSteps, stepsBeforeGroup } = props
 
   const {
-    currentStepId,
     isDrawerOpen,
     isMobile,
     readOnly: isEditorReadOnly,
@@ -125,6 +124,7 @@ export default function Branch(props: BranchProps) {
                 }}
                 variant="clear"
                 aria-label="Delete branch"
+                colorScheme="secondary"
                 icon={<BiTrashAlt />}
                 colorScheme="secondary"
                 isLoading={isDeletingBranch}
@@ -142,12 +142,6 @@ export default function Branch(props: BranchProps) {
               isDeletable={index !== 0}
               isNested={true}
               isLastStep={index === branchSteps.length - 1}
-              // FIXME (kevinkim-ogp): this is a temporary solution to ensure the step is collapsed when the drawer is closed
-              collapsed={
-                !isDrawerOpen && currentStepId === step.id
-                  ? true
-                  : currentStepId !== step.id
-              }
               onOpen={() => {
                 setCurrentStepId(step.id)
                 setCurrentStepIndex(stepsBeforeGroup.length + index)
