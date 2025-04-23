@@ -4,6 +4,8 @@ import { BiFilterAlt, BiGitRepoForked, BiQuestionMark } from 'react-icons/bi'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
 
+import { HighlightedText } from './HighlightedText'
+
 const TOOLBOX_ACTION_TO_ICON_MAP = {
   onlyContinueIf: BiFilterAlt,
   ifThen: BiGitRepoForked,
@@ -13,10 +15,11 @@ interface ToolboxEventProps {
   action: IAction
   onSelectAppEvent: () => void
   isDisabled: boolean
+  searchQuery: string
 }
 
 export default function ToolboxEvent(props: ToolboxEventProps): JSX.Element {
-  const { action, isDisabled, onSelectAppEvent } = props
+  const { action, isDisabled, onSelectAppEvent, searchQuery } = props
   return (
     <TouchableTooltip
       label={isDisabled ? 'This can only be used as the last step' : ''}
@@ -63,8 +66,16 @@ export default function ToolboxEvent(props: ToolboxEventProps): JSX.Element {
           />
 
           <Flex flexDir="column" gap={1}>
-            <Text textStyle="subhead-1">{action.name}</Text>
-            <Text textStyle="body-2">{action.description}</Text>
+            <HighlightedText
+              searchQuery={searchQuery}
+              textToHighlight={action.name}
+            />
+            <Text textStyle="body-2">
+              <HighlightedText
+                searchQuery={searchQuery}
+                textToHighlight={action.description ?? ''}
+              />
+            </Text>
           </Flex>
         </Flex>
       </Flex>
