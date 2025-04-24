@@ -103,9 +103,11 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
 
     return (
       <Box w="100%">
-        <Infobox variant="info">
-          <Text>{isMock && getMockDataMessage(selectedActionOrTrigger)}</Text>
-        </Infobox>
+        {isMock && (
+          <Infobox variant="info">
+            <Text>{getMockDataMessage(selectedActionOrTrigger)}</Text>
+          </Infobox>
+        )}
         <VariablesList variables={variables} />
       </Box>
     )
