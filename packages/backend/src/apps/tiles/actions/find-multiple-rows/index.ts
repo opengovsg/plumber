@@ -190,20 +190,6 @@ const action: IRawAction = {
       scanLimit,
     })
 
-    if (!rows || !rows.length) {
-      $.setActionItem({
-        raw: {
-          rowsFound: 0,
-          rows: {
-            rowData: [],
-            columns: {},
-          },
-          columns: {},
-        } satisfies FindMultipleRowsOutput,
-      })
-      return
-    }
-
     // NOTE: there are 2 types of column data that we return
     // 1. column name and id for use in for-each
     const columnData: Record<string, string> = {}
