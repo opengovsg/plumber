@@ -62,7 +62,7 @@ export const processData = (
   const rawColumns = variables?.filter((v) => v.name.includes('columns'))
   const rawRowsObj = variables?.find((v) => v.name.split('.').pop() === 'rows')
 
-  if (!rawRowsObj) {
+  if (!rawRowsObj || !rawRowsObj.value) {
     return {
       rowsFound: '0',
       dataRows: [],
