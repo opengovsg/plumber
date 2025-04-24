@@ -47,7 +47,6 @@ export default function Branch(props: BranchProps) {
     readOnly: isEditorReadOnly,
     onDrawerClose,
     onDrawerOpen,
-    onUpdateStep,
     setCurrentStepId,
     setCurrentStepIndex,
   } = useContext(EditorContext)
@@ -151,7 +150,6 @@ export default function Branch(props: BranchProps) {
                 setCurrentStepIndex(null)
                 onDrawerClose()
               }}
-              onChange={onUpdateStep}
             />
             <HoverAddStepButton
               isDisabled={isEditorReadOnly}

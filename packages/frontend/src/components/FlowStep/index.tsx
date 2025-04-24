@@ -25,8 +25,6 @@ type FlowStepProps = {
   isNested?: boolean
   onOpen: () => void
   onClose: () => void
-  onChange: (step: IStep) => void
-  shouldHighlight?: boolean
 }
 
 export default function FlowStep(

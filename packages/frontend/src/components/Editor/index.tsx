@@ -37,7 +37,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
     currentStepIndex,
     onDrawerClose,
     onDrawerOpen,
-    onUpdateStep,
     setCurrentStepId,
     setCurrentStepIndex,
   } = useContext(EditorContext)
@@ -190,7 +189,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
                   setCurrentStepIndex(null)
                   onDrawerClose()
                 }}
-                onChange={onUpdateStep}
               />
               <AddStepButton
                 // hide all add button steps if is readonly
