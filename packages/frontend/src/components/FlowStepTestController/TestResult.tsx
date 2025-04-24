@@ -104,12 +104,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     return (
       <Box w="100%">
         <Infobox variant="info">
-          <Text>
-            {isMock && getMockDataMessage(selectedActionOrTrigger)}
-            {
-              ' You can use the test data below as variables in your subsequent actions.'
-            }
-          </Text>
+          <Text>{isMock && getMockDataMessage(selectedActionOrTrigger)}</Text>
         </Infobox>
         <VariablesList variables={variables} />
       </Box>
