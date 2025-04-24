@@ -121,7 +121,18 @@ describe('getTableRowsAction', () => {
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        columns: {},
+        columns: {
+          Column1: {
+            id: 'Column1',
+            value: '',
+            order: 1,
+          },
+          Column2: {
+            id: 'Column2',
+            value: '',
+            order: 2,
+          },
+        },
         rows: [],
         rowsFound: 0,
       },
@@ -178,7 +189,18 @@ describe('getTableRowsAction', () => {
     // Should not find any matches due to case sensitivity
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        columns: {},
+        columns: {
+          Column1: {
+            id: 'Column1',
+            value: '',
+            order: 1,
+          },
+          Column2: {
+            id: 'Column2',
+            value: '',
+            order: 2,
+          },
+        },
         rows: [],
         rowsFound: 0,
       },

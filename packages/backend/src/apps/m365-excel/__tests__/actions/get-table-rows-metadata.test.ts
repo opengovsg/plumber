@@ -21,10 +21,17 @@ describe('getTableRows getDataOutMetadata', () => {
     const result = await getDataOutMetadata(executionStep)
 
     expect(result).toEqual({
+      rows: {
+        label: 'List of row(s) found',
+        displayedValue: 'Preview 0 row(s)',
+        order: 1,
+        type: 'array',
+      },
       rowsFound: {
         label: 'Number of rows found',
         order: 2,
       },
+      columns: {},
     })
   })
 
@@ -104,10 +111,17 @@ describe('getTableRows getDataOutMetadata', () => {
     const result = await getDataOutMetadata(executionStep)
 
     expect(result).toEqual({
+      rows: {
+        label: 'List of row(s) found',
+        displayedValue: 'Preview 0 row(s)',
+        order: 1,
+        type: 'array',
+      },
       rowsFound: {
         label: 'Number of rows found',
         order: 2,
       },
+      columns: {},
     })
   })
 
