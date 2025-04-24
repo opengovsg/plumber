@@ -26,6 +26,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import escapeHtml from 'escape-html'
 
+import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import {
   extractVariables,
@@ -212,11 +213,11 @@ const Editor = ({
       isLazy
       lazyBehavior="unmount"
       onClose={closeSuggestions}
-      isOpen={isSuggestionsOpen && variablesEnabled}
+      isOpen={isSuggestionsOpen && variablesEnabled && editable}
     >
       <div
         className="editor"
-        onClick={openSuggestions}
+        onClick={() => editable && openSuggestions()}
         onBlur={(e) => {
           // Focus might shift to menu bar or other children, where we do _not_
           // want to close our popper.
@@ -258,7 +259,6 @@ interface RichTextEditorProps {
   name: string
   label?: string
   description?: string
-  disabled?: boolean
   placeholder?: string
   variablesEnabled?: boolean
   isRich?: boolean
@@ -271,7 +271,6 @@ const RichTextEditor = ({
   name,
   label,
   description,
-  disabled,
   placeholder,
   variablesEnabled,
   isRich,
@@ -279,6 +278,7 @@ const RichTextEditor = ({
   tooltipText,
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
+  const { readOnly } = useContext(EditorContext)
 
   return (
     <FormControl flex={1} data-test="text-input-group">
@@ -302,7 +302,7 @@ const RichTextEditor = ({
           <Editor
             onChange={onChange}
             initialValue={value}
-            editable={!disabled}
+            editable={!readOnly}
             placeholder={placeholder}
             variablesEnabled={variablesEnabled}
             isRich={isRich}

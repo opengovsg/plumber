@@ -166,7 +166,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
                 schema={argument}
                 namePrefix="parameters"
                 stepId={step.id}
-                disabled={editorContext.readOnly}
               />
             ))}
           </Stack>

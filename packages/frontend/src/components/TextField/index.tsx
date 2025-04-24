@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useContext } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { BiCopy } from 'react-icons/bi'
 import Markdown from 'react-markdown'
@@ -10,6 +10,8 @@ import {
   Textarea,
 } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
+
+import { EditorContext } from '@/contexts/Editor'
 
 type TextFieldProps = {
   shouldUnregister?: boolean
@@ -48,6 +50,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
   } = props
 
   const SelectedComponent = multiline ? Textarea : Input
+  const { readOnly: disabled } = useContext(EditorContext)
 
   return (
     <Controller
@@ -88,7 +91,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
                 controllerOnBlur()
                 onBlur?.(...args)
               }}
-              isReadOnly={readOnly}
+              isReadOnly={readOnly || disabled}
             />
             {clickToCopy && (
               <InputRightElement>

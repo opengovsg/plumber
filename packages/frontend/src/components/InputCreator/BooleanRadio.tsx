@@ -1,5 +1,6 @@
 import type { IFieldBooleanRadioOptions } from '@plumber/types'
 
+import { useContext } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { FormControl, RadioGroup, Stack } from '@chakra-ui/react'
@@ -8,6 +9,8 @@ import {
   FormLabel,
   Radio,
 } from '@opengovsg/design-system-react'
+
+import { EditorContext } from '@/contexts/Editor'
 
 interface BooleanRadioProps {
   name: string
@@ -55,6 +58,7 @@ export default function BooleanRadio(props: BooleanRadioProps) {
   } = props
   const { control } = useFormContext()
   const [firstOption, secondOption] = options ?? defaultLabelOptions
+  const { readOnly } = useContext(EditorContext)
 
   return (
     <Controller
@@ -69,7 +73,7 @@ export default function BooleanRadio(props: BooleanRadioProps) {
         const isError = Boolean(isTouched && !!error)
 
         return (
-          <FormControl isInvalid={isError}>
+          <FormControl isInvalid={isError} isReadOnly={readOnly}>
             {label && (
               <FormLabel
                 isRequired={required}
