@@ -172,18 +172,6 @@ const action: IRawAction = {
       }
     }
 
-    if (rowsToReturn.length === 0) {
-      $.setActionItem({
-        raw: {
-          rowsFound: 0,
-          rows: [],
-          columns: {},
-        } satisfies DataOut,
-      })
-
-      return
-    }
-
     // Max limit of 500 rows
     const slicedRows = rowsToReturn.slice(0, GET_TABLE_ROWS_LIMIT)
 

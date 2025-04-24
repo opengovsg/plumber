@@ -20,10 +20,6 @@ async function getDataOutMetadata(
     },
   }
 
-  if (dataOut.rowsFound === 0) {
-    return metadata
-  }
-
   metadata.rows = {
     label: 'List of row(s) found',
     displayedValue: `Preview ${dataOut.rowsFound} row(s)`,
