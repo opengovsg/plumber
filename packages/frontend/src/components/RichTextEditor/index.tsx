@@ -221,7 +221,9 @@ const Editor = ({
     // Only update if the content is different to avoid unnecessary updates
     const currentContent = isRich ? editor.getHTML() : editor.getText()
     if (currentContent !== initialValue) {
-      editor.commands.setContent(content)
+      queueMicrotask(() => {
+        editor.commands.setContent(content)
+      })
     }
   }, [editor, initialValue, content, isRich])
 
