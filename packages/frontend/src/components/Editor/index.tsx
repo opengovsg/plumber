@@ -1,13 +1,6 @@
 import type { IApp, IFlow, IStep } from '@plumber/types'
 
-import {
-  Fragment,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { Fragment, useCallback, useContext, useEffect, useMemo } from 'react'
 import { useMutation } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
@@ -44,9 +37,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
     readOnly: isReadOnlyEditor,
     isDrawerOpen,
     currentStepId,
+    currentStepIndex,
     onDrawerOpen,
     onDrawerClose,
     setCurrentStepId,
+    setCurrentStepIndex,
     allApps,
   } = useContext(EditorContext)
 
@@ -62,8 +57,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
       })),
     [flow, rawSteps],
   )
-
-  const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
 
   const onStepChange = useCallback(
     (step: IStep) => {
@@ -309,9 +302,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           isLastStep={currentStepIndex === steps.length - 1}
           isNested={isNested}
           onStepChange={onStepChange}
-          currentStepIndex={currentStepIndex}
           groupedSteps={groupedSteps}
-          setCurrentStepIndex={setCurrentStepIndex}
           steps={steps}
         />
       </StepExecutionsToIncludeProvider>

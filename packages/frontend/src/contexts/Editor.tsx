@@ -32,9 +32,11 @@ interface IEditorContextValue {
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
+  currentStepIndex: number | null
   isDrawerOpen: boolean
   isMobile: boolean
   setCurrentStepId: (stepId: string | null) => void
+  setCurrentStepIndex: (stepIndex: number | null) => void
   onCreateStep: (
     previousStepId: string,
     appKey: string,
@@ -52,9 +54,11 @@ export const EditorContext = createContext<IEditorContextValue>({
   readOnly: false,
   testExecutionSteps: [],
   currentStepId: null,
+  currentStepIndex: null,
   isDrawerOpen: false,
   isMobile: false,
   setCurrentStepId: () => null,
+  setCurrentStepIndex: () => null,
   onDrawerOpen: () => null,
   onDrawerClose: () => null,
   onCreateStep: () => Promise.resolve({} as IStep),
@@ -121,6 +125,7 @@ export const EditorProvider = ({
   const isMobile = useIsMobile()
 
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
+  const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
   const allApps = getAppsData?.getApps ?? []
@@ -255,9 +260,11 @@ export const EditorProvider = ({
         readOnly,
         testExecutionSteps,
         currentStepId,
+        currentStepIndex,
         isDrawerOpen,
         isMobile,
         setCurrentStepId,
+        setCurrentStepIndex,
         onDrawerOpen,
         onDrawerClose,
         onCreateStep,

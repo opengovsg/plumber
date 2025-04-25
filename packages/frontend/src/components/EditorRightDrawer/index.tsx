@@ -17,9 +17,7 @@ interface EditorRightDrawerProps {
   isLastStep: boolean
   isNested?: boolean
   onStepChange: (step: IStep) => void
-  currentStepIndex: number | null
   groupedSteps: IStep[]
-  setCurrentStepIndex: (stepIndex: number) => void
   steps: any[]
 }
 
@@ -31,19 +29,19 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     isLastStep,
     isNested,
     onStepChange,
-    currentStepIndex,
     groupedSteps,
-    setCurrentStepIndex,
     steps,
   } = props
 
   const {
     currentStepId,
+    currentStepIndex,
     isDrawerOpen,
     isMobile,
     onDrawerClose,
     onDrawerOpen,
     setCurrentStepId,
+    setCurrentStepIndex,
   } = useContext(EditorContext)
 
   const step = useMemo(() => {
