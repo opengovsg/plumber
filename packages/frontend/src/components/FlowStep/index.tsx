@@ -58,7 +58,8 @@ export default function FlowStep(
   } = useDisclosure()
 
   const isMobile = useIsMobile()
-  const { readOnly } = useContext(EditorContext)
+  const { readOnly, setCurrentStepId, setCurrentStepIndex } =
+    useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const { app, caption, isTrigger } = useStepMetadata(step)
 
@@ -80,6 +81,7 @@ export default function FlowStep(
     displayOverrides?.disableDelete === true ? false : !readOnly
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
+    fetchPolicy: 'no-cache', // intentionally re-fetch the pipe to ensure the step is removed
   })
   const onDelete = useCallback<MouseEventHandler>(
     async (e) => {
@@ -88,8 +90,10 @@ export default function FlowStep(
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
       onClose()
+      setCurrentStepId(null)
+      setCurrentStepIndex(null)
     },
-    [deleteStep, step.id, onClose],
+    [deleteStep, step.id, onClose, setCurrentStepId, setCurrentStepIndex],
   )
 
   // generate help message only if template config exists

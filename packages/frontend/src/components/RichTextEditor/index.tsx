@@ -214,6 +214,7 @@ const Editor = ({
 
   useEffect(() => {
     // NOTE: added during ui revamp when removing Collapse
+    // ensures that fields get reset properly when step is changed
     if (!editor) {
       return
     }

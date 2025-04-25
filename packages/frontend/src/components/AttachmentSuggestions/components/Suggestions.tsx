@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   Box,
   Collapse,
@@ -20,23 +21,16 @@ import Checkbox, { type CheckboxVariable } from './Checkbox'
 import TagList from './TagList'
 
 interface SuggestionsProps {
+  allOptions: (CheckboxVariable | AttachmentConfigInput)[]
   currentTab: number
   isSuggestionsOpen: boolean
   isUploading: boolean
   loading: boolean
-  selectedNames: string[]
-  selectedOptions: (CheckboxVariable | AttachmentConfigInput)[]
   suggestions: StepWithVariables[]
   values: any
   closeSuggestions: () => void
-  onChange: (...event: any[]) => void
   onDelete: (e: React.MouseEvent, file: Variable) => void
-  onSuggestionClick: (
-    variable: Variable,
-    checked: boolean,
-    onChange: (...event: any[]) => void,
-    value: any,
-  ) => void
+  onSuggestionClick: (variable: Variable, checked: boolean) => void
   openSuggestions: () => void
   processFile: (file: File) => void
   setCurrentTab: (tab: number) => void
@@ -44,16 +38,14 @@ interface SuggestionsProps {
 
 export default function Suggestions(props: SuggestionsProps) {
   const {
+    allOptions,
     currentTab,
     isSuggestionsOpen,
     isUploading,
     loading,
-    selectedNames,
-    selectedOptions,
     suggestions,
     values,
     closeSuggestions,
-    onChange,
     onDelete,
     onSuggestionClick,
     openSuggestions,
@@ -61,16 +53,11 @@ export default function Suggestions(props: SuggestionsProps) {
     setCurrentTab,
   } = props
 
-  const SuggestionsRightPanel = ({
-    onChange,
-    values,
-  }: {
-    onChange: (...event: any[]) => void
-    values: any
-  }) => {
+  const SuggestionsRightPanel = ({ values }: { values: any }) => {
     if (suggestions.length === 0) {
       return <Text style={noVariablesTextStyles}>No variables available</Text>
     }
+
     return (
       <>
         {suggestions.map((option: StepWithVariables, index: number) => {
@@ -93,17 +80,21 @@ export default function Suggestions(props: SuggestionsProps) {
                 )}
                 <Box data-test="attachment-group" maxH={64} overflowY="auto">
                   {output?.map((variable) => {
+                    const { name } = variable
                     return (
                       <Checkbox
-                        key={variable.name}
+                        key={name}
                         variable={{
                           ...variable,
                           source: option.name,
                         }}
                         allowDelete={addNew}
-                        isChecked={selectedNames.includes(variable.name)}
+                        isChecked={
+                          values.includes(name) ||
+                          values.includes(`{{${name}}}`)
+                        }
                         onClick={(variable, checked) => {
-                          onSuggestionClick(variable, checked, onChange, values)
+                          onSuggestionClick(variable, checked)
                         }}
                         onDelete={onDelete}
                       />
@@ -117,6 +108,13 @@ export default function Suggestions(props: SuggestionsProps) {
       </>
     )
   }
+
+  const tags = useMemo(() => {
+    return allOptions.filter(
+      (option) =>
+        values.includes(option.name) || values.includes(`{{${option.name}}}`),
+    )
+  }, [allOptions, values])
 
   return (
     <ChakraPopover
@@ -134,9 +132,9 @@ export default function Suggestions(props: SuggestionsProps) {
           <Box sx={boxStyles} onClick={openSuggestions}>
             <TagList
               onClick={(option) => {
-                onSuggestionClick(option, false, onChange, values)
+                onSuggestionClick(option, false)
               }}
-              selectedOptions={selectedOptions}
+              tags={tags}
             />
             <PopoverContent w="100%" motionProps={POPOVER_MOTION_PROPS}>
               {loading ? (
@@ -147,12 +145,7 @@ export default function Suggestions(props: SuggestionsProps) {
                   leftPanelData={suggestions}
                   currentTab={currentTab}
                   onTabChange={setCurrentTab}
-                  rightPanel={
-                    <SuggestionsRightPanel
-                      onChange={onChange}
-                      values={values}
-                    />
-                  }
+                  rightPanel={<SuggestionsRightPanel values={values} />}
                 />
               )}
             </PopoverContent>
