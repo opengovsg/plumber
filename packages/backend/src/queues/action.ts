@@ -138,6 +138,6 @@ export async function getActionJob(
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM: gracefully closing all action queues')
   const allQueues = [mainActionQueue, ...Object.values(actionQueuesByName)]
-  await Promise.all(allQueues.map((q) => q.close()))
+  await Promise.all(allQueues.map((q) => q?.close()))
   logger.info('SIGTERM: all action queues closed')
 })

@@ -43,6 +43,6 @@ for (const [appKey, app] of Object.entries(apps)) {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM: gracefully closing all action workers')
   const allWorkers = [mainActionWorker, ...Object.values(appActionWorkers)]
-  await Promise.all(allWorkers.map((w) => w.close()))
+  await Promise.all(allWorkers.map((w) => w?.close()))
   logger.info('SIGTERM: all action workers closed')
 })
