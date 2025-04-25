@@ -72,30 +72,41 @@ export default async (request: IRequest, response: Response) => {
 
   const testRun = !flow.active
   const triggerStep = await flow.getTriggerStep()
-  const triggerCommand = await triggerStep.getTriggerCommand()
-  const app = await triggerStep.getApp()
-  const isWebhookApp = app.key === 'webhook' || app.key === 'formsg'
 
-  // Allow all webhook test runs to work
-  if (testRun && !isWebhookApp) {
+  const triggerApp = await triggerStep?.getApp()
+
+  if (!triggerApp) {
+    logger.info(`Trigger app not set up for flow ${flowId}`)
     return response.sendStatus(404)
   }
 
+  const isWebhookApp =
+    triggerApp.key === 'webhook' || triggerApp.key === 'formsg'
+
+  if (!isWebhookApp) {
+    logger.info(`Invalid trigger app for flow${flowId}`)
+    return response.sendStatus(404)
+  }
+
+  const triggerCommand = await triggerStep?.getTriggerCommand()
   // If trigger event is not selected, this should also return 404
   if (triggerCommand?.type !== 'webhook') {
+    logger.info(
+      `Trigger command not found or is not webhook type for flow${flowId}`,
+    )
     return response.sendStatus(404)
   }
 
-  if (app.auth?.verifyWebhook) {
+  if (triggerApp.auth?.verifyWebhook) {
     const $ = await globalVariable({
       flow,
       connection: await triggerStep.$relatedQuery('connection'),
-      app,
+      app: triggerApp,
       step: triggerStep,
       request,
     })
 
-    const verified = await app.auth.verifyWebhook($)
+    const verified = await triggerApp.auth.verifyWebhook($)
 
     if (!verified) {
       return response.sendStatus(401)
@@ -131,7 +142,7 @@ export default async (request: IRequest, response: Response) => {
     flowId,
     executionId,
     stepId: triggerStep.id,
-    appKey: app.key,
+    appKey: triggerApp.key,
     testRun,
   })
 
