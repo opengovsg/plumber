@@ -31,9 +31,5 @@ export function makeActionQueue(
     }
   })
 
-  process.on('SIGTERM', async () => {
-    await queue.close()
-  })
-
   return queue
 }

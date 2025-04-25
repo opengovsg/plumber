@@ -7,6 +7,7 @@ import {
 } from '@taskforcesh/bullmq-pro'
 
 import apps from '@/apps'
+import logger from '@/helpers/logger'
 import { makeActionQueue } from '@/queues/helpers/make-action-queue'
 
 //
@@ -133,3 +134,10 @@ export async function getActionJob(
   const { queueName, bullMqJobId } = parseActionJobId(actionJobId)
   return await actionQueuesByName[queueName].getJob(bullMqJobId)
 }
+
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM: gracefully closing all action queues')
+  const allQueues = [mainActionQueue, ...Object.values(actionQueuesByName)]
+  await Promise.all(allQueues.map((q) => q.close()))
+  logger.info('SIGTERM: all action queues closed')
+})
