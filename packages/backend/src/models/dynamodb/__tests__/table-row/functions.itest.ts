@@ -856,6 +856,12 @@ describe('dynamodb table row functions', () => {
         const originalRow = await createTableRow({
           tableId: dummyTable.id,
           data,
+          gsis: [
+            {
+              indexName: 'gsiString1',
+              columnIdToMap: dummyColumnIds[0],
+            },
+          ],
         })
         const patchData = {
           set: {
@@ -896,8 +902,7 @@ describe('dynamodb table row functions', () => {
         const data = generateMockTableRowData({
           columnIds: dummyColumnIds,
         })
-        const row = await createTableRow({ tableId: dummyTable.id, data })
-        await createTableRow({
+        const row = await createTableRow({
           tableId: dummyTable.id,
           data: { ...data, [dummyColumnIds[0]]: value },
           gsis: [
@@ -930,7 +935,11 @@ describe('dynamodb table row functions', () => {
         const data = generateMockTableRowData({
           columnIds: dummyColumnIds,
         })
-        const row = await createTableRow({ tableId: dummyTable.id, data })
+        const row = await createTableRow({
+          tableId: dummyTable.id,
+          data,
+          gsis: [{ indexName: 'gsiString1', columnIdToMap: dummyColumnIds[0] }],
+        })
         await updateTableRow({
           tableId: dummyTable.id,
           rowId: row.rowId,
