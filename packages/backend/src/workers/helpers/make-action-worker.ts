@@ -290,9 +290,5 @@ export function makeActionWorker(
     })
   })
 
-  process.on('SIGTERM', async () => {
-    await worker.close()
-  })
-
   return worker
 }
