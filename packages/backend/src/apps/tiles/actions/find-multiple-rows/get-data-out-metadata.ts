@@ -38,9 +38,10 @@ async function getDataOutMetadata(
 
   const columnMetadata: IDataOutMetadata = {}
   if (dataOut.columns) {
-    Object.entries(dataOut.columns).forEach(([name, { id }]) => {
-      columnMetadata[name] = {
+    Object.entries(dataOut.columns).forEach(([id, { name }]) => {
+      columnMetadata[id] = {
         id: { isHidden: true },
+        name: { isHidden: true },
         value: {
           label: name,
           order: columnOrder[id] ? columnOrder[id] + 2 : null,

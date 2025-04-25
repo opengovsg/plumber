@@ -8,9 +8,15 @@ export interface FindSingleRowOutput extends IJSONObject {
   row?: Record<string, string | number>
 }
 
+export type TileColumnMetadata = {
+  id: string
+  name: string
+  value: string
+}
+
 export interface FindMultipleRowsOutput extends IJSONObject {
   rowsFound: number
-  columns?: Record<string, { id: string; value: string }>
+  columns?: Record<string, TileColumnMetadata>
   rows?: {
     rowData: TableRowOutput[]
     columns: Record<string, string>

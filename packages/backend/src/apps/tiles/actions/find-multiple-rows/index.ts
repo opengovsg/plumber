@@ -13,7 +13,7 @@ import TableColumnMetadata from '@/models/table-column-metadata'
 
 import { FIND_MULTIPLE_ROWS_LIMIT } from '../../common/constants'
 import { validateFilters } from '../../common/validate-filters'
-import { FindMultipleRowsOutput } from '../../types'
+import { FindMultipleRowsOutput, TileColumnMetadata } from '../../types'
 
 import getDataOutMetadata from './get-data-out-metadata'
 
@@ -196,7 +196,7 @@ const action: IRawAction = {
     columns
       .sort((a, b) => a.position - b.position)
       .forEach((c) => {
-        columnData[c.name] = c.id
+        columnData[c.id] = c.name
       })
 
     // 2. column data that combines all the values of all rows into a single string
@@ -208,12 +208,13 @@ const action: IRawAction = {
           values.push(value)
         }
       }
-      acc[column.name] = {
+      acc[column.id] = {
         id: column.id,
+        name: column.name,
         value: values.join(', '),
       }
       return acc
-    }, {} as Record<string, { id: string; value: string }>)
+    }, {} as Record<string, TileColumnMetadata>)
 
     const slicedRows = rows.slice(0, FIND_MULTIPLE_ROWS_LIMIT)
 
