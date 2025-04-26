@@ -32,12 +32,7 @@ import {
   TOOLBOX_APP_KEY,
   useIfThenInitializer,
 } from '@/helpers/toolbox'
-import {
-  extractVariables,
-  filterVariables,
-  StepWithVariables,
-  VISIBLE_VARIABLE_TYPES,
-} from '@/helpers/variables'
+import { extractVariables, StepWithVariables } from '@/helpers/variables'
 
 import { LaunchDarklyContext } from './LaunchDarkly'
 
@@ -181,13 +176,7 @@ export const EditorProvider = ({
   )
 
   const [stepsWithVars, varInfoMap] = useMemo(() => {
-    const stepsWithVars = filterVariables(
-      extractVariables(testExecutionSteps),
-      (variable) => {
-        const variableType = variable.type ?? 'text'
-        return VISIBLE_VARIABLE_TYPES.includes(variableType)
-      },
-    )
+    const stepsWithVars = extractVariables(testExecutionSteps)
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
   }, [testExecutionSteps])

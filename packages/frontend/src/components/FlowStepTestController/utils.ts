@@ -60,6 +60,31 @@ export const matchParamsToDataIn = (
     }
     const lastTest = dataIn[key]
 
+    // NOTE: special handling for postman attachments, which is an array of objects
+    // with s3 ids instead of string values
+    if (key === 'attachments') {
+      if (Array.isArray(paramValue) && Array.isArray(lastTest)) {
+        if (paramValue.length !== lastTest.length) {
+          return false
+        }
+
+        return paramValue.every((attachment, index) => {
+          const lastTestAttachment = lastTest[index]
+          // manually uploaded attachments will have the same value
+          if (attachment === lastTestAttachment) {
+            return true
+          }
+
+          // attachments from FormSG will be using the s3 id
+          const lastTestFilename = String(lastTestAttachment).split('/').pop()
+          return (
+            simpleSubstitute(String(attachment), varInfoMap) ===
+            lastTestFilename
+          )
+        })
+      }
+    }
+
     // Handle arrays and objects using deep comparison
     if (Array.isArray(paramValue) || typeof paramValue === 'object') {
       return deepCompare(paramValue, lastTest, varInfoMap)
