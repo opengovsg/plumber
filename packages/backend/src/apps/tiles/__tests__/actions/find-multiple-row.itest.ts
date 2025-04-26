@@ -174,30 +174,51 @@ describe('findMultipleRowsAction', () => {
         rowsFound: 500,
         rows: expect.objectContaining({
           rowData: expect.any(Array),
-          columns: expect.any(Object),
+          columns: expect.arrayContaining([
+            expect.objectContaining({
+              id: dummyColumnIds[0],
+              name: 'Test Column 0',
+            }),
+            expect.objectContaining({
+              id: dummyColumnIds[1],
+              name: 'Test Column 1',
+            }),
+            expect.objectContaining({
+              id: dummyColumnIds[2],
+              name: 'Test Column 2',
+            }),
+            expect.objectContaining({
+              id: dummyColumnIds[3],
+              name: 'Test Column 3',
+            }),
+            expect.objectContaining({
+              id: dummyColumnIds[4],
+              name: 'Test Column 4',
+            }),
+          ]),
         }),
-        columns: expect.objectContaining({
-          'Test Column 0': expect.objectContaining({
-            id: expect.any(String),
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            id: dummyColumnIds[1],
+            name: 'Test Column 1',
             value: expect.any(String),
           }),
-          'Test Column 1': expect.objectContaining({
-            id: expect.any(String),
+          expect.objectContaining({
+            id: dummyColumnIds[2],
+            name: 'Test Column 2',
             value: expect.any(String),
           }),
-          'Test Column 2': expect.objectContaining({
-            id: expect.any(String),
+          expect.objectContaining({
+            id: dummyColumnIds[3],
+            name: 'Test Column 3',
             value: expect.any(String),
           }),
-          'Test Column 3': expect.objectContaining({
-            id: expect.any(String),
+          expect.objectContaining({
+            id: dummyColumnIds[4],
+            name: 'Test Column 4',
             value: expect.any(String),
           }),
-          'Test Column 4': expect.objectContaining({
-            id: expect.any(String),
-            value: expect.any(String),
-          }),
-        }),
+        ]),
       }),
     })
 

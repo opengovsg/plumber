@@ -192,11 +192,15 @@ const action: IRawAction = {
 
     // NOTE: there are 2 types of column data that we return
     // 1. column name and id for use in for-each
-    const columnData: Record<string, string> = {}
+    // use an array to preserve the order of the columns
+    const columnData: Record<string, string>[] = []
     columns
       .sort((a, b) => a.position - b.position)
       .forEach((c) => {
-        columnData[c.id] = c.name
+        columnData.push({
+          id: c.id,
+          name: c.name,
+        })
       })
 
     // 2. column data that combines all the values of all rows into a single string
@@ -208,13 +212,13 @@ const action: IRawAction = {
           values.push(value)
         }
       }
-      acc[column.id] = {
+      acc.push({
         id: column.id,
         name: column.name,
         value: values.join(', '),
-      }
+      })
       return acc
-    }, {} as Record<string, TileColumnMetadata>)
+    }, [] as TileColumnMetadata[])
 
     const slicedRows = rows.slice(0, FIND_MULTIPLE_ROWS_LIMIT)
 
