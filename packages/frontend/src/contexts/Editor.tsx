@@ -1,4 +1,4 @@
-import type { IApp, IExecutionStep, IStep } from '@plumber/types'
+import type { IApp, IExecutionStep, IFlow, IStep } from '@plumber/types'
 
 import {
   createContext,
@@ -33,6 +33,7 @@ interface IEditorContextValue {
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
   currentStepIndex: number | null
+  hasIfThen: boolean
   isDrawerOpen: boolean
   isMobile: boolean
   onDrawerOpen: () => void
@@ -53,6 +54,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   flowId: '',
   currentStepId: null,
   currentStepIndex: null,
+  hasIfThen: false,
   isDrawerOpen: false,
   isMobile: false,
   readOnly: false,
@@ -70,6 +72,7 @@ type EditorProviderProps = {
   children: ReactNode
   readOnly: boolean
   flowId: string
+  flow: IFlow
 }
 
 /**
@@ -115,6 +118,7 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 
 export const EditorProvider = ({
   readOnly,
+  flow,
   flowId,
   children,
 }: EditorProviderProps) => {
@@ -128,6 +132,9 @@ export const EditorProvider = ({
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
+  const hasIfThen = flow?.steps.some(
+    (step: IStep) => step.key === TOOLBOX_ACTIONS.IfThen,
+  )
 
   const allApps = getAppsData?.getApps ?? []
 
@@ -263,6 +270,7 @@ export const EditorProvider = ({
         allApps,
         currentStepId,
         currentStepIndex,
+        hasIfThen,
         isDrawerOpen,
         isMobile,
         onDrawerOpen,
