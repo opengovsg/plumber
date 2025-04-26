@@ -212,22 +212,6 @@ const Editor = ({
     onClose: closeSuggestions,
   } = useDisclosure()
 
-  useEffect(() => {
-    // NOTE: added during ui revamp when removing Collapse
-    // ensures that fields get reset properly when step is changed
-    if (!editor) {
-      return
-    }
-
-    // Only update if the content is different to avoid unnecessary updates
-    const currentContent = isRich ? editor.getHTML() : editor.getText()
-    if (currentContent !== initialValue) {
-      queueMicrotask(() => {
-        editor.commands.setContent(content)
-      })
-    }
-  }, [editor, initialValue, content, isRich])
-
   return (
     <Popover
       autoFocus={false}
