@@ -31,7 +31,7 @@ describe('getTableRows getDataOutMetadata', () => {
         label: 'Number of rows found',
         order: 2,
       },
-      columns: {},
+      columns: [],
     })
   })
 
@@ -57,10 +57,18 @@ describe('getTableRows getDataOutMetadata', () => {
             },
           },
         ],
-        columns: {
-          Column1: { id: 'Column1', value: 'value1, value3', order: 1 },
-          Column2: { id: 'Column2', value: 'value2, value4', order: 2 },
-        },
+        columns: [
+          {
+            id: Buffer.from('Column1').toString('hex'),
+            name: 'Column1',
+            value: 'value1, value3',
+          },
+          {
+            id: Buffer.from('Column2').toString('hex'),
+            name: 'Column2',
+            value: 'value2, value4',
+          },
+        ],
         numRows: 2,
       },
     } as unknown as IExecutionStep
@@ -78,24 +86,22 @@ describe('getTableRows getDataOutMetadata', () => {
         label: 'Number of rows found',
         order: 2,
       },
-      columns: {
-        Column1: {
+      columns: [
+        {
           id: { isHidden: true },
+          name: { isHidden: true },
           value: {
             label: 'Column1',
-            order: 3,
           },
-          order: { isHidden: true },
         },
-        Column2: {
+        {
           id: { isHidden: true },
+          name: { isHidden: true },
           value: {
             label: 'Column2',
-            order: 4,
           },
-          order: { isHidden: true },
         },
-      },
+      ],
     })
   })
 
@@ -121,7 +127,7 @@ describe('getTableRows getDataOutMetadata', () => {
         label: 'Number of rows found',
         order: 2,
       },
-      columns: {},
+      columns: [],
     })
   })
 

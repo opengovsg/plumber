@@ -121,18 +121,18 @@ describe('getTableRowsAction', () => {
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        columns: {
-          Column1: {
-            id: 'Column1',
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            id: Buffer.from('Column1').toString('hex'),
+            name: 'Column1',
             value: '',
-            order: 1,
-          },
-          Column2: {
-            id: 'Column2',
+          }),
+          expect.objectContaining({
+            id: Buffer.from('Column2').toString('hex'),
+            name: 'Column2',
             value: '',
-            order: 2,
-          },
-        },
+          }),
+        ]),
         rows: [],
         rowsFound: 0,
       },
@@ -145,18 +145,18 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 2, // Two rows match 'test-value'
-        columns: {
-          Column1: {
-            id: 'Column1',
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            id: Buffer.from('Column1').toString('hex'),
+            name: 'Column1',
             value: 'test-value, test-value',
-            order: 1,
-          },
-          Column2: {
-            id: 'Column2',
+          }),
+          expect.objectContaining({
+            id: Buffer.from('Column2').toString('hex'),
+            name: 'Column2',
             value: 'data2, data3',
-            order: 2,
-          },
-        },
+          }),
+        ]),
         rows: expect.any(Array),
       }),
     })
@@ -189,18 +189,18 @@ describe('getTableRowsAction', () => {
     // Should not find any matches due to case sensitivity
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        columns: {
-          Column1: {
-            id: 'Column1',
+        columns: [
+          {
+            id: Buffer.from('Column1').toString('hex'),
+            name: 'Column1',
             value: '',
-            order: 1,
           },
-          Column2: {
-            id: 'Column2',
+          {
+            id: Buffer.from('Column2').toString('hex'),
+            name: 'Column2',
             value: '',
-            order: 2,
           },
-        },
+        ],
         rows: [],
         rowsFound: 0,
       },
@@ -226,18 +226,18 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 1,
-        columns: {
-          Column1: {
-            id: 'Column1',
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            id: Buffer.from('Column1').toString('hex'),
+            name: 'Column1',
             value: 'TEST-VALUE',
-            order: 1,
-          },
-          Column2: {
-            id: 'Column2',
+          }),
+          expect.objectContaining({
+            id: Buffer.from('Column2').toString('hex'),
+            name: 'Column2',
             value: 'data2',
-            order: 2,
-          },
-        },
+          }),
+        ]),
         rows: expect.any(Array),
       }),
     })
@@ -260,24 +260,24 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 500, // Should be limited to 500 rows
-        columns: {
-          Column1: {
-            id: 'Column1',
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            id: Buffer.from('Column1').toString('hex'),
+            name: 'Column1',
             value: `test-value, ${Array.from(
               { length: 499 },
               (_) => `test-value`,
             ).join(', ')}`,
-            order: 1,
-          },
-          Column2: {
-            id: 'Column2',
+          }),
+          expect.objectContaining({
+            id: Buffer.from('Column2').toString('hex'),
+            name: 'Column2',
             value: `data1, ${Array.from(
               { length: 499 },
               (_, i) => `data${i + 2}`,
             ).join(', ')}`,
-            order: 2,
-          },
-        },
+          }),
+        ]),
         rows: expect.arrayContaining([
           expect.objectContaining({
             id: expect.any(String),

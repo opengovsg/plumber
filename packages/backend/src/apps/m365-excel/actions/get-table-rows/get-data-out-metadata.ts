@@ -27,21 +27,14 @@ async function getDataOutMetadata(
     order: 1,
   }
 
-  const columnMetadata: IDataOutMetadata = {}
+  const columnMetadata: IDataOutMetadata = []
   if ('columns' in dataOut) {
-    /**
-     * NOTE: Excel does not allow duplicate column names in tables,
-     * don't need to worry about using column names as the unique identifier.
-     */
-    Object.entries(dataOut.columns).forEach(([name, { order }]) => {
-      columnMetadata[name] = {
+    dataOut.columns.forEach(({ name }) => {
+      columnMetadata.push({
         id: { isHidden: true },
-        value: {
-          label: name,
-          order: order ? order + 2 : null,
-        },
-        order: { isHidden: true },
-      }
+        name: { isHidden: true },
+        value: { label: name },
+      })
     })
   }
 

@@ -189,13 +189,16 @@ const action: IRawAction = {
           values.push(value)
         }
       }
-      acc[column] = {
-        id: column,
+
+      acc.push({
+        // NOTE: convert column to hex to avoid special characters
+        // such as '.' that may affect lodash get
+        id: Buffer.from(column).toString('hex'),
+        name: column,
         value: values.join(', '),
-        order: columns.indexOf(column) + 1,
-      }
+      })
       return acc
-    }, {} as Record<string, { id: string; value: string; order: number }>)
+    }, [])
 
     $.setActionItem({
       raw: {
