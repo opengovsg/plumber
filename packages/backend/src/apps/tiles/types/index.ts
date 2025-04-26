@@ -12,7 +12,6 @@ export type TileColumnMetadata = {
   id: string
   name: string
   value: string
-  order: number | null
 }
 
 export interface FindMultipleRowsOutput extends IJSONObject {
