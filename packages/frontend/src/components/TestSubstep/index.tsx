@@ -224,8 +224,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
         <TestMultiRowResultModal
           isOpen={isModalOpen}
           onClose={onModalClose}
-          step={step}
-          variables={testVariables}
+          currentExecutionStep={currentExecutionStep}
         />
       )}
     </>

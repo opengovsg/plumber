@@ -1,6 +1,5 @@
-import { IStep } from '@plumber/types'
+import { IExecutionStep } from '@plumber/types'
 
-import { useMemo } from 'react'
 import {
   Flex,
   Modal,
@@ -19,7 +18,6 @@ import {
   Tr,
 } from '@chakra-ui/react'
 
-import { Variable } from '@/helpers/variables'
 import { BORDER_COLOR, FONT_SIZE, ROW_COLOR } from '@/pages/Tile/constants'
 
 import { Column, DataRow, processData } from './utils'
@@ -27,8 +25,7 @@ import { Column, DataRow, processData } from './utils'
 interface TestMultiRowResultModalProps {
   isOpen: boolean
   onClose: () => void
-  variables: Variable[] | null
-  step: IStep
+  currentExecutionStep?: IExecutionStep
 }
 
 const TableHeader = ({ columns }: { columns: Column[] }) => (
@@ -38,7 +35,7 @@ const TableHeader = ({ columns }: { columns: Column[] }) => (
     bg="var(--chakra-colors-primary-50)"
     zIndex={1}
   >
-    <Tr>
+    <Tr key="header-row">
       <Th borderRightWidth="1px" borderColor={BORDER_COLOR.DEFAULT} />
       {columns?.map((c, colIndex) => (
         <Th
@@ -53,7 +50,6 @@ const TableHeader = ({ columns }: { columns: Column[] }) => (
             textOverflow="ellipsis"
             maxW="100%"
             textStyle="subhead-2"
-            userSelect="none"
             textTransform="none"
           >
             {c.label}
@@ -100,18 +96,12 @@ const TableRow = ({
 export default function TestMultiRowResultModal(
   props: TestMultiRowResultModalProps,
 ) {
-  const { isOpen, onClose, variables, step } = props
+  const { isOpen, onClose, currentExecutionStep } = props
 
-  const isTilesStep = useMemo(() => step.appKey === 'tiles', [step.appKey])
-
-  const { rowsFound, dataRows, columns } = useMemo(
-    () => processData(variables, isTilesStep),
-    [variables, isTilesStep],
-  )
-
-  if (!variables) {
+  if (!currentExecutionStep) {
     return null
   }
+  const { rowsFound, dataRows, columns } = processData(currentExecutionStep)
 
   return (
     <Modal
@@ -142,7 +132,7 @@ export default function TestMultiRowResultModal(
         <ModalBody>
           <TableContainer
             my={2}
-            maxH="calc(80vh - 100px)"
+            maxH="calc(75vh - 100px)"
             overflowY="auto"
             border="1px solid"
             borderColor={BORDER_COLOR.DEFAULT}

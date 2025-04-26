@@ -1,6 +1,4 @@
-import { IStep } from '@plumber/types'
-
-import { Variable } from '@/helpers/variables'
+import { IExecutionStep, IStep } from '@plumber/types'
 
 export interface Column {
   key: string
@@ -25,6 +23,11 @@ export interface ProcessedData {
   columns: Column[]
 }
 
+interface TilesRowsData {
+  rowData: Array<{ rowId: string; data: Record<string, string> }>
+  columns: Array<{ id: string; name: string }>
+}
+
 export const isMultiRowStep = (step: IStep) => {
   return (
     (step.appKey === 'tiles' && step.key === 'findMultipleRows') ||
@@ -32,69 +35,50 @@ export const isMultiRowStep = (step: IStep) => {
   )
 }
 
-export const processColumns = (
-  rawColumns: any,
-  isTilesStep: boolean,
-  rowsObj?: any,
-): Column[] => {
-  const parsedColumns: Column[] = []
-  // special handling for Tiles step to get the column ids
-  const columnIds = isTilesStep ? rowsObj?.columns : {}
+export const processColumns = (rawColumns: unknown): Column[] => {
+  if (!Array.isArray(rawColumns)) {
+    return []
+  }
 
-  rawColumns.forEach((c: any) => {
-    parsedColumns.push({
-      key: isTilesStep ? columnIds[c.label] : c.label,
-      label: c.label,
-      order: isTilesStep ? c.value ?? null : c.order ?? null,
-    })
-  })
-  return parsedColumns.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  return rawColumns
+    .map((column: { id: string; name: string }, index: number) => ({
+      key: column.id,
+      label: column.name,
+      order: index,
+    }))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 }
 
-export const processData = (
-  variables: Variable[] | null,
-  isTilesStep: boolean,
-): ProcessedData => {
-  const rowsFoundObj = variables?.find(
-    (v) => v.name.split('.').pop() === 'rowsFound',
-  )
+export const processData = (executionStep: IExecutionStep): ProcessedData => {
+  const isTilesStep = executionStep.appKey === 'tiles'
+  const rowsFound = String(executionStep.dataOut?.rowsFound ?? '0')
+  const rawColumns = executionStep.dataOut?.columns
+  const rowsObj = executionStep.dataOut?.rows as unknown as
+    | TilesRowsData
+    | undefined
 
-  const rawColumns = variables?.filter((v) => v.name.includes('columns'))
-  const rawRowsObj = variables?.find((v) => v.name.split('.').pop() === 'rows')
-
-  if (!rawRowsObj || !rawRowsObj.value) {
+  if (!rowsObj) {
     return {
-      rowsFound: '0',
+      rowsFound,
       dataRows: [],
       columns: [],
     }
   }
 
-  const rowsObj = JSON.parse(rawRowsObj.value as string)
-  const dataRows = processDataRows(rowsObj, isTilesStep)
-  const columns = processColumns(rawColumns, isTilesStep, rowsObj)
-
   return {
-    rowsFound: rowsFoundObj?.value as string,
-    dataRows,
-    columns,
+    rowsFound,
+    dataRows: isTilesStep ? rowsObj.rowData : processDataRows(rowsObj),
+    columns: processColumns(rawColumns),
   }
 }
 
-export const processDataRows = (
-  rowsObj: any,
-  isTilesStep: boolean,
-): DataRow[] => {
-  if (isTilesStep) {
-    return rowsObj?.rowData
-  }
-
+export const processDataRows = (rowsObj: any): DataRow[] => {
   return (
     rowsObj?.map((r: Record<string, Record<string, RowValue>>) => ({
       id: r.id,
       data: Object.fromEntries(
-        Object.values(r.rowData as Record<string, RowValue>).map(
-          ({ columnName, value }) => [columnName, value],
+        Object.entries(r.rowData as Record<string, RowValue>).map(
+          ([key, value]) => [key, value.value],
         ),
       ),
     })) || []
