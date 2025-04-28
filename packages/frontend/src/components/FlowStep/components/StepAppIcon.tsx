@@ -21,6 +21,8 @@ export default function StepAppIcon(props: AppIconProps) {
   const { app, isCompleted, isNested, isTestSuccessful, shouldTestStepAgain } =
     props
 
+  const showBadge = isCompleted || shouldTestStepAgain || !isTestSuccessful
+
   return (
     <Flex {...flowStepStyles.appIconWrapper} boxSize={isNested ? 6 : 8}>
       {/* App icon */}
@@ -39,7 +41,7 @@ export default function StepAppIcon(props: AppIconProps) {
       {/*
        * Step completion status badge
        */}
-      {(isCompleted || shouldTestStepAgain) && (
+      {showBadge && (
         <Flex
           position="absolute"
           top={0}
@@ -51,20 +53,21 @@ export default function StepAppIcon(props: AppIconProps) {
         >
           {shouldTestStepAgain ? (
             <Icon boxSize="full" color="yellow.200" as={BiSolidErrorCircle} />
-          ) : isTestSuccessful ? (
-            isCompleted && (
+          ) : !isTestSuccessful ? (
+            <Icon
+              boxSize="full"
+              color="interaction.critical.default"
+              as={BiSolidErrorCircle}
+            />
+          ) : (
+            isCompleted &&
+            isTestSuccessful && (
               <Icon
                 boxSize="full"
                 color="interaction.success.default"
                 as={BiSolidCheckCircle}
               />
             )
-          ) : (
-            <Icon
-              boxSize="full"
-              color="interaction.critical.default"
-              as={BiSolidErrorCircle}
-            />
           )}
         </Flex>
       )}
