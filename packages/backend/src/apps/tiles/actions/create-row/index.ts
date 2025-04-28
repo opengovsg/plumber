@@ -41,7 +41,7 @@ const action: IRawAction = {
     {
       label: 'New row data',
       key: 'rowData',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       hiddenIf: {
         fieldKey: 'tableId',
@@ -74,6 +74,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2 },
         },
         {
           placeholder: 'Value',
@@ -81,6 +82,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: false,
           variables: true,
+          customStyle: { flex: 3 },
         },
       ],
     },
