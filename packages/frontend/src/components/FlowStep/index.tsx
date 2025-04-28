@@ -56,12 +56,19 @@ export default function FlowStep(
       ? false
       : !readOnly && props.isDeletable
 
-  const shouldTestStepAgain = useMemo(() => {
+  const { shouldTestStepAgain, isTestSuccessful } = useMemo(() => {
     const testResult = testExecutionSteps.find((ts) => ts.stepId === step.id)
     if (!testResult) {
-      return false
+      return { shouldTestStepAgain: false, isTestSuccessful: false }
     }
-    return !matchParamsToDataIn(testResult?.dataIn, step.parameters, varInfoMap)
+    return {
+      shouldTestStepAgain: !matchParamsToDataIn(
+        testResult?.dataIn,
+        step.parameters,
+        varInfoMap,
+      ),
+      isTestSuccessful: testResult.status === 'success',
+    }
   }, [testExecutionSteps, step, varInfoMap])
 
   const shouldHighlight = currentStepId === step.id
@@ -107,6 +114,7 @@ export default function FlowStep(
           <StepAppIcon
             isCompleted={isCompleted}
             isNested={isNested}
+            isTestSuccessful={isTestSuccessful}
             shouldTestStepAgain={shouldTestStepAgain}
             app={app}
           />

@@ -13,11 +13,13 @@ interface AppIconProps {
   app?: IApp
   isCompleted?: boolean
   isNested?: boolean
+  isTestSuccessful?: boolean
   shouldTestStepAgain?: boolean
 }
 
 export default function StepAppIcon(props: AppIconProps) {
-  const { app, isCompleted, isNested, shouldTestStepAgain } = props
+  const { app, isCompleted, isNested, isTestSuccessful, shouldTestStepAgain } =
+    props
 
   return (
     <Flex {...flowStepStyles.appIconWrapper} boxSize={isNested ? 6 : 8}>
@@ -49,7 +51,7 @@ export default function StepAppIcon(props: AppIconProps) {
         >
           {shouldTestStepAgain ? (
             <Icon boxSize="full" color="yellow.200" as={BiSolidErrorCircle} />
-          ) : (
+          ) : isTestSuccessful ? (
             isCompleted && (
               <Icon
                 boxSize="full"
@@ -57,6 +59,12 @@ export default function StepAppIcon(props: AppIconProps) {
                 as={BiSolidCheckCircle}
               />
             )
+          ) : (
+            <Icon
+              boxSize="full"
+              color="interaction.critical.default"
+              as={BiSolidErrorCircle}
+            />
           )}
         </Flex>
       )}
