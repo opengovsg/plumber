@@ -21,7 +21,8 @@ export default function StepAppIcon(props: AppIconProps) {
   const { app, isCompleted, isNested, isTestSuccessful, shouldTestStepAgain } =
     props
 
-  const showBadge = isCompleted || shouldTestStepAgain || !isTestSuccessful
+  const showBadge =
+    isCompleted || shouldTestStepAgain || isTestSuccessful === false
 
   return (
     <Flex {...flowStepStyles.appIconWrapper} boxSize={isNested ? 6 : 8}>
