@@ -68,7 +68,7 @@ const action: IRawAction = {
     {
       label: 'Personalised fields',
       key: 'letterParams',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       description:
         'Specify values for each personalised field in your template.',
@@ -95,6 +95,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2 },
         },
         {
           placeholder: 'Value',
@@ -102,6 +103,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
+          customStyle: { flex: 3 },
         },
       ],
     },
