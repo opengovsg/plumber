@@ -18,12 +18,9 @@ export function useStepMetadata(
   allApps: IApp[],
   step: IStep | undefined,
 ): UseStepMetadataResult {
-  const isCompleted = useMemo(() => step?.status === 'completed', [step])
-  const isTrigger = useMemo(() => step?.type === 'trigger', [step])
-  const isIfThenStep = useMemo(
-    () => step?.appKey === 'toolbox' && step?.key === 'ifThen',
-    [step],
-  )
+  const isCompleted = step?.status === 'completed'
+  const isTrigger = step?.type === 'trigger'
+  const isIfThenStep = step?.appKey === 'toolbox' && step?.key === 'ifThen'
 
   const apps: IApp[] = allApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
