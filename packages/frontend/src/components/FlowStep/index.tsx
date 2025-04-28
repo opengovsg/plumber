@@ -59,7 +59,10 @@ export default function FlowStep(
   const { shouldTestStepAgain, isTestSuccessful } = useMemo(() => {
     const testResult = testExecutionSteps.find((ts) => ts.stepId === step.id)
     if (!testResult) {
-      return { shouldTestStepAgain: false, isTestSuccessful: false }
+      return {
+        shouldTestStepAgain: false,
+        isTestSuccessful: testResult,
+      }
     }
     return {
       shouldTestStepAgain: !matchParamsToDataIn(

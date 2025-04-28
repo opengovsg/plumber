@@ -53,7 +53,7 @@ export default function StepAppIcon(props: AppIconProps) {
         >
           {shouldTestStepAgain ? (
             <Icon boxSize="full" color="yellow.200" as={BiSolidErrorCircle} />
-          ) : !isTestSuccessful ? (
+          ) : isTestSuccessful === false ? (
             <Icon
               boxSize="full"
               color="interaction.critical.default"
