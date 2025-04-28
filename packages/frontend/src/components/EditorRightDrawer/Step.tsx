@@ -1,4 +1,4 @@
-import type { IFlowTemplateConfig, IStep, ISubstep } from '@plumber/types'
+import type { IFlowTemplateConfig, IStep } from '@plumber/types'
 
 import { Fragment, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
@@ -53,10 +53,8 @@ export default function Step(props: StepProps): React.ReactElement | null {
     [step.position, stepExecutionsToInclude, testExecutionSteps],
   )
 
-  const { app, isTrigger, selectedActionOrTrigger, substeps } = useStepMetadata(
-    allApps,
-    step,
-  )
+  const { app, hasConnection, isTrigger, selectedActionOrTrigger, substeps } =
+    useStepMetadata(allApps, step)
 
   const handleSubmit = async (val: any) => {
     await onUpdateStep(val as IStep)
@@ -119,16 +117,13 @@ export default function Step(props: StepProps): React.ReactElement | null {
           >
             <Fragment>
               {/* Place ChooseConnectionSubstep outside the accordion structure */}
-              {substeps?.some(
-                (substep: ISubstep) => substep.key === 'chooseConnection',
-              ) &&
-                app && (
-                  <ChooseConnectionSubstep
-                    step={step}
-                    application={app}
-                    onReconnect={onModalOpen}
-                  />
-                )}
+              {hasConnection && app && (
+                <ChooseConnectionSubstep
+                  step={step}
+                  application={app}
+                  onReconnect={onModalOpen}
+                />
+              )}
 
               {substeps?.map(
                 (substep) =>
@@ -138,6 +133,8 @@ export default function Step(props: StepProps): React.ReactElement | null {
                       false) && (
                     <FlowSubstep
                       key={substep.key}
+                      hasConnection={hasConnection}
+                      isTrigger={isTrigger}
                       substep={substep}
                       step={step}
                       selectedActionOrTrigger={selectedActionOrTrigger}

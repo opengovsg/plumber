@@ -5,6 +5,7 @@ import { useFormContext } from 'react-hook-form'
 import { Box, Stack, useDisclosure } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
+import { EDITOR_MARGIN_TOP } from '@/components/Editor/constants'
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
 import { getInputFlag } from '@/config/flags'
@@ -13,13 +14,16 @@ import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { validateSubstep } from '@/helpers/editor'
 
 type FlowSubstepProps = {
+  hasConnection: boolean
+  isTrigger: boolean
   substep: ISubstep
   step: IStep
   selectedActionOrTrigger?: ITrigger | IAction
 }
 
 function FlowSubstep(props: FlowSubstepProps): JSX.Element {
-  const { substep, step, selectedActionOrTrigger } = props
+  const { hasConnection, isTrigger, substep, step, selectedActionOrTrigger } =
+    props
   const { flags } = useContext(LaunchDarklyContext)
   const formContext = useFormContext()
   const { readOnly, executeTestStep, onUpdateStep } = useContext(EditorContext)
@@ -54,7 +58,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         }
         const flag = getInputFlag(selectedActionOrTrigger?.key ?? '', arg.key)
         return !flags[flag] || +step.createdAt <= flags[flag]
-      }),
+      }) || [],
     [args, flags, step.createdAt, selectedActionOrTrigger],
   )
 
@@ -105,21 +109,35 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     onTestResultOpen()
   }, [handleSave, executeTestStep, onTestResultOpen])
 
+  const getContainerHeight = useCallback(() => {
+    if (hasConnection) {
+      return `calc(100vh - ${EDITOR_MARGIN_TOP} - 57px - 76px)`
+    }
+    return `calc(100vh - ${EDITOR_MARGIN_TOP} - 57px)`
+  }, [hasConnection])
+
   return (
-    <Box position="relative" display="flex" flexDirection="column">
-      <Box flex="1" overflowY="auto" p="1rem 1rem">
-        <Stack w="100%" spacing={4}>
-          {argsToDisplay?.map((argument) => (
-            <InputCreator
-              key={argument.key}
-              schema={argument}
-              namePrefix="parameters"
-              stepId={step.id}
-              disabled={readOnly || isSaving}
-            />
-          ))}
-        </Stack>
-      </Box>
+    <Box
+      position="relative"
+      display="flex"
+      flexDirection="column"
+      h={isTrigger ? undefined : getContainerHeight()}
+    >
+      {(!isTrigger || argsToDisplay?.length > 0) && (
+        <Box flex="1" overflowY="auto" p="1rem 1rem">
+          <Stack w="100%" spacing={4}>
+            {argsToDisplay?.map((argument) => (
+              <InputCreator
+                key={argument.key}
+                schema={argument}
+                namePrefix="parameters"
+                stepId={step.id}
+                disabled={readOnly || isSaving}
+              />
+            ))}
+          </Stack>
+        </Box>
+      )}
 
       <FlowStepTestController
         isDirty={isDirty}

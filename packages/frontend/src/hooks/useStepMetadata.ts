@@ -6,6 +6,7 @@ interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
   caption: string
+  hasConnection: boolean
   isCompleted: boolean
   isIfThenStep: boolean
   isTrigger: boolean
@@ -63,15 +64,16 @@ export function useStepMetadata(
     caption = 'This step happens after the previous step'
   }
 
-  const substeps = useMemo(
-    () => selectedActionOrTrigger?.substeps || [],
-    [selectedActionOrTrigger],
+  const substeps = selectedActionOrTrigger?.substeps || []
+  const hasConnection = substeps?.some(
+    (substep: ISubstep) => substep.key === 'chooseConnection',
   )
 
   return {
     app,
     selectedActionOrTrigger,
     caption,
+    hasConnection,
     isCompleted,
     isIfThenStep,
     isTrigger,
