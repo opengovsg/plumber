@@ -1,7 +1,7 @@
 import { IStep } from '@plumber/types'
 
 import { useContext } from 'react'
-import { CloseButton, Flex } from '@chakra-ui/react'
+import { CloseButton, Flex, Text } from '@chakra-ui/react'
 
 import EditableInput from '@/components/EditableInput'
 import { EditorContext } from '@/contexts/Editor'
@@ -22,7 +22,7 @@ export default function StepHeader(props: StepHeaderProps) {
     setCurrentStepId,
   } = useContext(EditorContext)
 
-  const { caption: initialStepName } = useStepMetadata(allApps, step)
+  const { position, stepName: initialStepName } = useStepMetadata(allApps, step)
 
   const onSave = async (value: string) => {
     await onUpdateStep({
@@ -47,6 +47,7 @@ export default function StepHeader(props: StepHeaderProps) {
       px="4"
       height="2rem"
     >
+      {position && <Text whiteSpace="pre-wrap">{position}. </Text>}
       <EditableInput
         value={initialStepName}
         onSave={onSave}

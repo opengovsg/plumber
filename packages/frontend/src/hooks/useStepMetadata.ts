@@ -8,6 +8,8 @@ interface UseStepMetadataResult {
   caption: string
   isIfThenStep: boolean
   isTrigger: boolean
+  position: number
+  stepName: string
   substeps: ISubstep[]
 }
 
@@ -43,7 +45,7 @@ export function useStepMetadata(
   // define caption description based on app and step
   let caption = ''
   if (step?.config?.stepName) {
-    caption = step?.config?.stepName
+    caption = `${step.position}. ${step.config.stepName}`
   } else if (selectedActionOrTrigger?.name) {
     caption = `${step?.position ? `${step.position}. ` : ''}${
       selectedActionOrTrigger?.name
@@ -73,6 +75,8 @@ export function useStepMetadata(
     caption,
     isIfThenStep,
     isTrigger,
+    position: step?.position ?? 0,
+    stepName: step?.config?.stepName ?? selectedActionOrTrigger?.name ?? '',
     substeps,
   }
 }
