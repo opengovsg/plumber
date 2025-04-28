@@ -45,7 +45,7 @@ const action: IRawAction = {
     {
       label: 'Conditions',
       key: 'conditions',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       description:
         'Every condition has to be satisfied for this branch to be taken.',
