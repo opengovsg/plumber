@@ -32,7 +32,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     <Flex
       flexDir="column"
       position="relative"
-      width={isDrawerOpen ? (isMobile ? '100vw' : '55%') : '0'}
+      width={isDrawerOpen ? (isMobile ? '100vw' : '60%') : '0'}
       bg="white"
       py="4"
       borderRadius="lg"
