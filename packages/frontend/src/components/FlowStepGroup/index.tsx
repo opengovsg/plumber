@@ -46,7 +46,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
         display={isMobile ? 'block' : 'flex'}
         w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
       >
-        <Box {...flowStepGroupStyles.header} w="full">
+        <Box {...flowStepGroupStyles.header} w="100%">
           <Flex
             px={4}
             pt={4}
