@@ -6,7 +6,7 @@ import { TouchableTooltip } from '@opengovsg/design-system-react'
 
 import { HighlightedText } from './HighlightedText'
 
-const TOOLBOX_ACTION_TO_ICON_MAP = {
+export const TOOLBOX_ACTION_TO_ICON_MAP = {
   onlyContinueIf: BiFilterAlt,
   ifThen: BiGitRepoForked,
 }

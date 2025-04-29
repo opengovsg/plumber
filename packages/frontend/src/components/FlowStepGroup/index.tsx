@@ -1,11 +1,13 @@
 import { IStep } from '@plumber/types'
 
 import { ReactNode, useContext, useMemo } from 'react'
-import { BiArrowFromRight } from 'react-icons/bi'
-import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react'
+import { BiQuestionMark } from 'react-icons/bi'
+import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
+
+import { TOOLBOX_ACTION_TO_ICON_MAP } from '../FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
 
 import Error from './Content/Error'
 import IfThen from './Content/IfThen'
@@ -33,7 +35,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
 
     if (groupedSteps[0]?.[0]?.key === 'ifThen') {
       stepGroupType = 'ifThen'
-      stepGroupCaption = 'Conditional logic'
+      stepGroupCaption = 'If-then'
     }
     return { stepGroupType, stepGroupCaption }
   }, [groupedSteps])
@@ -58,17 +60,14 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
           >
             <Flex {...flowStepGroupStyles.iconWrapper}>
               {/* App icon */}
-              <Image
-                src={groupedSteps[0]?.[0]?.iconUrl}
+              <Icon
                 boxSize={8}
-                fit="contain"
-                fallback={
-                  <Icon
-                    boxSize={6}
-                    as={BiArrowFromRight}
-                    color="base.content.default"
-                  />
+                as={
+                  TOOLBOX_ACTION_TO_ICON_MAP[
+                    stepGroupType as keyof typeof TOOLBOX_ACTION_TO_ICON_MAP
+                  ] ?? BiQuestionMark
                 }
+                color={'primary.500'}
               />
             </Flex>
             <Flex direction="column" align="start">
