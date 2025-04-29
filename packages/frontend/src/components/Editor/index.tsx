@@ -186,7 +186,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
                 step={step}
-                isDeletable={step.type !== 'trigger'}
+                isDeletable={true}
                 isLastStep={index === steps.length - 1}
                 isNested={isNested}
                 index={index + 1}

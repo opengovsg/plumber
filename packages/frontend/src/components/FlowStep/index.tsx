@@ -67,7 +67,8 @@ export default function FlowStep(
   const isDeletable =
     displayOverrides?.disableDelete === true
       ? false
-      : !isTrigger && !readOnly && props.isDeletable
+      : !readOnly && props.isDeletable
+
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
     fetchPolicy: 'no-cache', // intentionally re-fetch the pipe to ensure the step is removed
