@@ -34,6 +34,8 @@ import { getFlowStepWidth } from '@/helpers/editor'
 
 import MenuAlertDialog from '../MenuAlertDialog'
 
+import { stepHeaderBoxStyles } from './style'
+
 // Chakra's `Collapse` sets `overflow: hidden` by default, which causes dropdown
 // menu items to be hidden. We override overflow by making `Collapse` a Chakra
 // element.
@@ -121,13 +123,9 @@ export default function FlowStepHeader(
   return (
     <>
       <Box
-        borderWidth="1px"
+        {...stepHeaderBoxStyles}
         borderColor={collapsed ? 'base.divider.medium' : 'base.content.brand'}
-        borderRadius="lg"
         borderTopRadius={isInfoboxPresent ? 'none' : 'lg'}
-        p={0}
-        bg="white"
-        overflow="hidden"
         data-test="flow-step" // adding to identify element for e2e testing
         w={getFlowStepWidth(isDrawerOpen, isMobile)}
       >
@@ -255,6 +253,8 @@ export default function FlowStepHeader(
                 aria-label="Delete Step"
                 icon={<BiTrashAlt />}
                 colorScheme="secondary"
+                className={isMobile ? undefined : 'hover-remove-button'}
+                visibility={isMobile ? 'visible' : 'hidden'}
               />
             </Flex>
           )}
