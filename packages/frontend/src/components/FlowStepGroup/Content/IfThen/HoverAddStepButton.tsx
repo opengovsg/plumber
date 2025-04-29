@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { Divider, Flex, useDisclosure } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
@@ -16,6 +17,7 @@ export function HoverAddStepButton(
 ): JSX.Element {
   const { isDisabled, isLastStep, prevStepId } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const [isHovered, setIsHovered] = useState(false)
 
   return (
     <>
@@ -23,41 +25,35 @@ export function HoverAddStepButton(
         role="group"
         w="full"
         pos="relative"
-        h={6}
+        h={isHovered ? 8 : 6}
         alignItems="center"
         justifyContent="center"
         direction="row"
-        transition="all 0.2s ease-in-out"
-        _hover={{
-          cursor: 'pointer',
-          '& .add-button': {
-            opacity: 1,
-            transform: 'scale(1)',
-          },
-          h: 8,
-          my: 1,
-          borderRadius: 'lg',
-        }}
+        m={1}
         pointerEvents={isDisabled ? 'none' : 'auto'}
+        transition="all 0.3s ease"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {/* vertical line */}
         {!isLastStep && (
-          <Flex h="1.5rem" opacity={1} _groupHover={{ display: 'none' }}>
+          <Flex h="2rem" opacity={1} _groupHover={{ display: 'none' }}>
             <Divider orientation="vertical" borderColor="base.divider.strong" />
           </Flex>
         )}
-        {!isDisabled && (
+        {!isDisabled && isHovered && (
           <Button
             aria-label="Add Step"
             className="add-button"
             position="absolute"
-            opacity={0}
-            transition="all 0.2s ease-in-out"
+            opacity={1}
+            transition="height 0.2s ease-in-out"
             w="full"
             onClick={onOpen}
             isDisabled={isDisabled}
             variant="clear"
             size="xs"
+            borderRadius="lg"
           >
             <BiPlus />
           </Button>
