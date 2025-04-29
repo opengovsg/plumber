@@ -81,6 +81,7 @@ export default function FlowStepTestController(
       isLoading={isTestExecuting}
       colorScheme="black"
       size="sm"
+      isDisabled={!isValid}
     >
       Check step again
     </Button>
@@ -159,7 +160,7 @@ export default function FlowStepTestController(
                       >
                         {!isLastTestExecutionCurrent && !isDirty
                           ? 'Saved'
-                          : 'Save'}
+                          : 'Save without checking'}
                       </Button>
                       <CheckAgainButton />
                     </Flex>
