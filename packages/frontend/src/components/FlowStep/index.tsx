@@ -8,6 +8,7 @@ import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
+import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { matchParamsToDataIn } from '../FlowStepTestController/utils'
 
@@ -94,44 +95,53 @@ export default function FlowStep(
 
   return (
     <FlowStepWrapper>
-      {shouldTestStepAgain && (
-        <TestAgainInfobox
+      {!app || !selectedActionOrTrigger ? (
+        <EmptyFlowStepHeader
           isNested={isNested}
-          shouldHighlight={shouldHighlight}
+          isTrigger={isTrigger}
+          onModalOpen={onModalOpen}
         />
-      )}
-      <Flex
-        {...flowStepStyles.container}
-        borderTopWidth={shouldTestStepAgain ? 0 : '1px'}
-        borderColor={
-          shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
-        }
-        borderTopRadius={shouldTestStepAgain ? 'none' : 'lg'}
-        w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
-      >
-        <Flex
-          {...flowStepStyles.topHeader}
-          py={isNested ? 2 : 4}
-          onClick={handleClick}
-        >
-          <StepAppIcon
-            isCompleted={isCompleted}
-            isNested={isNested}
-            isTestSuccessful={isTestSuccessful}
-            shouldTestStepAgain={shouldTestStepAgain}
-            app={app}
-          />
-          <StepCaptionAndDemo app={app} caption={caption} />
-          {isDeletable && (
-            <StepDeleteButton
+      ) : (
+        <>
+          {shouldTestStepAgain && (
+            <TestAgainInfobox
               isNested={isNested}
-              onClose={onClose}
-              step={step}
+              shouldHighlight={shouldHighlight}
             />
           )}
-        </Flex>
-      </Flex>
-
+          <Flex
+            {...flowStepStyles.container}
+            borderTopWidth={shouldTestStepAgain ? 0 : '1px'}
+            borderColor={
+              shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
+            }
+            borderTopRadius={shouldTestStepAgain ? 'none' : 'lg'}
+            w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
+          >
+            <Flex
+              {...flowStepStyles.topHeader}
+              py={isNested ? 2 : 4}
+              onClick={handleClick}
+            >
+              <StepAppIcon
+                isCompleted={isCompleted}
+                isNested={isNested}
+                isTestSuccessful={isTestSuccessful}
+                shouldTestStepAgain={shouldTestStepAgain}
+                app={app}
+              />
+              <StepCaptionAndDemo app={app} caption={caption} />
+              {isDeletable && (
+                <StepDeleteButton
+                  isNested={isNested}
+                  onClose={onClose}
+                  step={step}
+                />
+              )}
+            </Flex>
+          </Flex>
+        </>
+      )}
       {isModalOpen && (
         <FlowStepConfigurationModal
           onClose={onModalClose}

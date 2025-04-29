@@ -9,6 +9,12 @@ export const flowStepStyles = {
     justifyContent: 'center',
     overflow: 'hidden',
     p: 0,
+    _hover: {
+      bg: 'interaction.muted.neutral.hover',
+      '& .hover-remove-button': {
+        visibility: 'visible',
+      },
+    },
   },
   incompleteContainer: {
     alignItems: 'center',

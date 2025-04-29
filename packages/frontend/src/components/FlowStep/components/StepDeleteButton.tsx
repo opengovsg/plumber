@@ -4,7 +4,7 @@ import { MouseEventHandler, useCallback, useRef } from 'react'
 import { BiTrashAlt } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Flex, useDisclosure } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
+import { IconButton, useIsMobile } from '@opengovsg/design-system-react'
 
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
@@ -25,6 +25,7 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
     onOpen: onDialogOpen,
     onClose: onDialogClose,
   } = useDisclosure()
+  const isMobile = useIsMobile()
 
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
@@ -60,6 +61,8 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
           icon={<BiTrashAlt />}
           minHeight={isNested ? 6 : 8}
           minWidth={isNested ? 6 : 8}
+          className={isMobile ? undefined : 'hover-remove-button'}
+          visibility={isMobile ? 'visible' : 'hidden'}
         />
       </Flex>
 
