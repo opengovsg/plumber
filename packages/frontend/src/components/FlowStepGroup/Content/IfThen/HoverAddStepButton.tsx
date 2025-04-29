@@ -25,11 +25,12 @@ export function HoverAddStepButton(
         role="group"
         w="full"
         pos="relative"
-        h={isHovered ? 8 : 6}
+        h={isHovered ? 8 : isLastStep ? 4 : 6}
         alignItems="center"
         justifyContent="center"
         direction="row"
         m={1}
+        mb={isLastStep ? 0 : 1}
         pointerEvents={isDisabled ? 'none' : 'auto'}
         transition="all 0.3s ease"
         onMouseEnter={() => setIsHovered(true)}
