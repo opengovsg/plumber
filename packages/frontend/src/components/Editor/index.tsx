@@ -1,6 +1,6 @@
 import type { IApp, IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useContext, useEffect, useMemo } from 'react'
+import { Fragment, useCallback, useContext, useMemo } from 'react'
 import { useMutation } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
@@ -170,19 +170,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
   // Disables last add step and hide in-between add step buttons
   const hasExactlyOneEmptyActionStep =
     nonIfThenActionSteps.length === 1 && !nonIfThenActionSteps[0].appKey
-
-  // Open the drawer on initial load only if trigger and steps are set up
-  useEffect(() => {
-    const areStepsEmpty = stepsBeforeGroup.every(
-      (step) => step.appKey === null && step.key === null,
-    )
-
-    if (!areStepsEmpty) {
-      onDrawerOpen()
-      setCurrentStepId(stepsBeforeGroup[0].id)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // Disables last add step button but show empty action instead
   const hasNoActionSteps = nonIfThenActionSteps.length === 0
