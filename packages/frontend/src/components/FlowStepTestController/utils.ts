@@ -85,6 +85,14 @@ export const matchParamsToDataIn = (
       }
     }
 
+    // NOTE: special handling for inputs that allow a single file
+    if (key === 'file') {
+      const lastTestFilename = String(lastTest).split('/').pop()
+      return (
+        simpleSubstitute(String(paramValue), varInfoMap) === lastTestFilename
+      )
+    }
+
     // Handle arrays and objects using deep comparison
     if (Array.isArray(paramValue) || typeof paramValue === 'object') {
       return deepCompare(paramValue, lastTest, varInfoMap)
