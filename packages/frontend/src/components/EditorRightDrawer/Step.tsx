@@ -203,6 +203,7 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
 
         <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
           <Form
+            key={step.id}
             defaultValues={step}
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}

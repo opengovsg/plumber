@@ -37,13 +37,8 @@ export default function Form(props: FormProps): React.ReactElement {
   })
 
   React.useEffect(() => {
-    form.reset(defaultValues, {
-      keepDirty: false, // Ensure form is not marked as dirty
-      keepErrors: false, // Clear any existing errors
-      keepTouched: false, // Clear touched state
-      keepIsSubmitted: false, // Clear submission state
-      keepIsValid: false, // Revalidate form
-    })
+    form.reset(defaultValues)
+    form.trigger()
   }, [defaultValues, form])
 
   return (
