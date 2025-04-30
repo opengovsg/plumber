@@ -80,8 +80,8 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
-  const isWebhookApp =
-    triggerApp.key === 'webhook' || triggerApp.key === 'formsg'
+  const isFormsgApp = triggerApp.key === 'formsg'
+  const isWebhookApp = triggerApp.key === 'webhook' || isFormsgApp
 
   if (!isWebhookApp) {
     logger.info(`Invalid trigger app for flow${flowId}`)
@@ -127,11 +127,19 @@ export default async (request: IRequest, response: Response) => {
   const triggerItem: ITriggerItem = {
     raw: payload,
     meta: {
-      internalId: randomUUID(),
+      internalId:
+        isFormsgApp && payload?.submissionId
+          ? payload.submissionId
+          : randomUUID(),
     },
   }
 
-  const { executionId } = await processTrigger({
+  /**
+   * NOTE: special case for when FormSG calls Plumber's webhook twice for payment forms.
+   * Plumber will still return a 200 status code, so that FormSG does not auto-retry,
+   * but Plumber not enqueue the job.
+   */
+  const { executionId, shouldExecute } = await processTrigger({
     flowId,
     stepId: triggerStep.id,
     triggerItem,
@@ -146,7 +154,7 @@ export default async (request: IRequest, response: Response) => {
     testRun,
   })
 
-  if (testRun) {
+  if (testRun || !shouldExecute) {
     return response.sendStatus(200)
   }
 

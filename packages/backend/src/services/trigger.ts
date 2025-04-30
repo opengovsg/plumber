@@ -1,5 +1,6 @@
 import { IJSONObject, ITriggerItem } from '@plumber/types'
 
+import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import Step from '@/models/step'
 
@@ -16,6 +17,32 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
   const { flowId, stepId, triggerItem, error, testRun } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
+
+  let shouldExecute = true
+  if (step.appKey === 'formsg' && !testRun) {
+    const execution = await Execution.query()
+      .where({
+        flow_id: flowId,
+        test_run: false,
+        internal_id: triggerItem?.meta.internalId,
+      })
+      .first()
+
+    if (execution && execution.internalId === triggerItem?.meta.internalId) {
+      logger.error(
+        `FormSG: ${triggerItem?.raw.formId} - submissionId: ${triggerItem?.meta.internalId} already exists in execution: ${execution.id}`,
+      )
+      shouldExecute = false
+
+      return {
+        flowId,
+        stepId,
+        executionId: execution.id,
+        executionStep: null,
+        shouldExecute,
+      }
+    }
+  }
 
   const execution = await Execution.query().insert({
     flowId,
@@ -36,5 +63,11 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
       metadata: triggerItem?.isMock ? { isMock: true } : {},
     })
 
-  return { flowId, stepId, executionId: execution.id, executionStep }
+  return {
+    flowId,
+    stepId,
+    executionId: execution.id,
+    executionStep,
+    shouldExecute,
+  }
 }
