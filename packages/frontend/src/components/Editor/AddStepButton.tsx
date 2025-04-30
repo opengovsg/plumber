@@ -20,7 +20,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
   // If in between add button is disabled, we hide it
   if (isHidden || (isDisabled && !isLastStep)) {
     return (
-      <Box pos="relative" h={24} display="flex" justifyContent="center">
+      <Box pos="relative" h={20} display="flex" justifyContent="center">
         {/* dont show line if last step, leave box for padding */}
         {!isLastStep && (
           <Divider orientation="vertical" borderColor="base.divider.strong" />
@@ -37,6 +37,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
         flexDir="column"
         alignItems="center"
         alignSelf="stretch"
+        h={20}
       >
         {/* Show empty action instead of add button */}
         {showEmptyAction && (
@@ -45,13 +46,13 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
             <Divider
               orientation="vertical"
               borderColor="base.divider.strong"
-              h={20}
+              h={24}
             />
             <EmptyFlowStepHeader isTrigger={false} onModalOpen={onOpen} />
           </>
         )}
         {/* Top vertical line */}
-        <Box h={5}>
+        <Box h={6}>
           <Divider orientation="vertical" borderColor="base.divider.strong" />
         </Box>
         <TouchableTooltip
@@ -81,7 +82,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
         </TouchableTooltip>
         {/* Bottom vertical line */}
         {!isLastStep && (
-          <Box h={5}>
+          <Box h={6}>
             <Divider orientation="vertical" borderColor="base.divider.strong" />
           </Box>
         )}

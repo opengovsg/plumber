@@ -50,7 +50,7 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
     <>
       <Flex ml="auto">
         <IconButton
-          boxSize={isNested ? 8 : 10}
+          boxSize={isNested ? 6 : 8}
           onClick={(event) => {
             onDialogOpen()
             event.stopPropagation()
