@@ -110,22 +110,10 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     onTestResultOpen()
   }, [handleSave, executeTestStep, onTestResultOpen])
 
-  const getContainerHeight = useCallback(() => {
-    if (hasConnection) {
-      return `calc(100vh - ${EDITOR_MARGIN_TOP} - 57px - 76px)`
-    }
-    return `calc(100vh - ${EDITOR_MARGIN_TOP} - 57px)`
-  }, [hasConnection])
-
   return (
-    <Box
-      position="relative"
-      display="flex"
-      flexDirection="column"
-      h={isTrigger ? undefined : getContainerHeight()}
-    >
+    <Box position="relative" display="flex" flexDirection="column">
       {(!isTrigger || argsToDisplay?.length > 0) && (
-        <Box flex="1" overflowY="auto" p="1rem 1rem">
+        <Box flex="1" p="1rem 1rem">
           <Stack w="100%" spacing={4}>
             {argsToDisplay?.map((argument) => (
               <InputCreator

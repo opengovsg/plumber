@@ -146,7 +146,7 @@ export default function FlowStepTestController(
                   >
                     <Text>{getInfoboxText()}</Text>
                     <Box ml={2}>
-                      {isTestResultOpen ? <BiChevronUp /> : <BiChevronDown />}
+                      {isTestResultOpen ? <BiChevronDown /> : <BiChevronUp />}
                     </Box>
                   </Flex>
                   {shouldShowSaveButton ? (
