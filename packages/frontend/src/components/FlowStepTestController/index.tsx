@@ -198,7 +198,6 @@ export default function FlowStepTestController(
               )}
               <Button
                 onClick={handleSaveAndTest}
-                type="submit"
                 data-test="flow-substep-continue-button"
                 isDisabled={!isValid || readOnly || isSaving}
                 isLoading={isTestExecuting}
