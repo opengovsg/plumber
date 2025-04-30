@@ -5,13 +5,14 @@ import { useFormContext } from 'react-hook-form'
 import { Box, Stack, useDisclosure } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
-import { EDITOR_MARGIN_TOP } from '@/components/Editor/constants'
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
 import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { validateSubstep } from '@/helpers/editor'
+
+import { EDITOR_MARGIN_TOP } from '../Editor/constants'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -78,10 +79,10 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     try {
       setIsSaving(true)
       const currentStep = formContext.getValues() as IStep
-      const isValid = validateSubstep(substep, currentStep)
+      const isSubStepValid = validateSubstep(substep, currentStep)
       const result = await onUpdateStep({
         ...currentStep,
-        status: isValid ? 'completed' : 'incomplete',
+        status: isSubStepValid ? 'completed' : 'incomplete',
       })
 
       if (!result) {

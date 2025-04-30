@@ -1,6 +1,6 @@
 import type { IFlowTemplateConfig, IStep } from '@plumber/types'
 
-import { Fragment, useContext, useMemo } from 'react'
+import { Fragment, useCallback, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
@@ -22,10 +22,6 @@ import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponent
 type StepProps = {
   step: IStep
   isLastStep: boolean
-  index?: number | null
-  onClose: () => void
-  onContinue?: () => void
-  onOpen: () => void
   templateConfig?: IFlowTemplateConfig
 }
 
@@ -56,9 +52,12 @@ export default function Step(props: StepProps): React.ReactElement | null {
   const { app, hasConnection, isTrigger, selectedActionOrTrigger, substeps } =
     useStepMetadata(allApps, step)
 
-  const handleSubmit = async (val: any) => {
-    await onUpdateStep(val as IStep)
-  }
+  const handleSubmit = useCallback(
+    (val: any) => {
+      onUpdateStep(val as IStep)
+    },
+    [onUpdateStep],
+  )
 
   const stepValidationSchema = useMemo(
     () => generateValidationSchema(substeps),
@@ -91,7 +90,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
     <>
       <Flex w="100%" flexDir="column">
         {shouldShowInfobox && (
-          <Box boxShadow="sm" borderRadius="lg">
+          <Box borderRadius="lg">
             <Infobox
               icon={<BiInfoCircle />}
               variant="secondary"

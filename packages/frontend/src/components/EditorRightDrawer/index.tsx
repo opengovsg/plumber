@@ -26,7 +26,6 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     isDrawerOpen,
     isMobile,
     onDrawerClose,
-    onDrawerOpen,
     setCurrentStepId,
     setCurrentStepIndex,
   } = useContext(EditorContext)
@@ -76,8 +75,6 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
               onDrawerClose()
             }
           }}
-          onOpen={onDrawerOpen}
-          onClose={onDrawerClose}
           templateConfig={flow?.config?.templateConfig}
         />
       </Flex>
