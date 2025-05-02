@@ -6,24 +6,19 @@ import type {
 } from '@plumber/types'
 
 import { type MouseEventHandler, useCallback, useContext, useMemo } from 'react'
-import { BiInfoCircle } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Flex, useDisclosure } from '@chakra-ui/react'
-import { Infobox, useIsMobile } from '@opengovsg/design-system-react'
 
 import FlowStepHeader from '@/components/FlowStepHeader'
-import MarkdownRenderer from '@/components/MarkdownRenderer'
 import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { getFlowStepWidth } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
-import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 type FlowStepProps = {
   collapsed?: boolean
@@ -33,7 +28,6 @@ type FlowStepProps = {
   index?: number
   onOpen: () => void
   onClose: () => void
-  onChange: (step: IStep) => void
   onContinue?: () => void
   templateConfig?: IFlowTemplateConfig
 }
@@ -57,8 +51,7 @@ export default function FlowStep(
     onClose: onModalClose,
   } = useDisclosure()
 
-  const isMobile = useIsMobile()
-  const { readOnly, setCurrentStepId, setCurrentStepIndex } =
+  const { isMobile, readOnly, setCurrentStepId, setCurrentStepIndex } =
     useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const { app, caption, isTrigger } = useStepMetadata(step)
@@ -117,30 +110,6 @@ export default function FlowStep(
         flexDir="column"
         w="100%"
       >
-        {shouldShowInfobox && (
-          <Flex
-            boxShadow={collapsed ? undefined : 'sm'}
-            borderRadius="lg"
-            justifyContent="center"
-            w="100%"
-          >
-            <Infobox
-              icon={<BiInfoCircle />}
-              variant="secondary"
-              style={{
-                borderBottomLeftRadius: '0',
-                borderBottomRightRadius: '0',
-              }}
-              w={getFlowStepWidth(isDrawerOpen, isMobile)}
-            >
-              <MarkdownRenderer
-                source={templateStepHelpMessage}
-                components={infoboxMdComponents}
-              />
-            </Infobox>
-          </Flex>
-        )}
-
         {!app || !selectedActionOrTrigger ? (
           <EmptyFlowStepHeader
             isTrigger={isTrigger}
@@ -164,9 +133,7 @@ export default function FlowStep(
             demoVideoUrl={app?.demoVideoDetails?.url}
             demoVideoTitle={app?.demoVideoDetails?.title}
             isInfoboxPresent={shouldShowInfobox}
-          >
-            {null}
-          </FlowStepHeader>
+          />
         )}
       </Flex>
 

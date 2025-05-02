@@ -1,9 +1,7 @@
 import type { IApp, IFlow, IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useContext, useMemo } from 'react'
-import { useMutation } from '@apollo/client'
+import { Fragment, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
-import { useIsMobile } from '@opengovsg/design-system-react'
 
 import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
 import EditorRightDrawer from '@/components/EditorRightDrawer'
@@ -14,7 +12,6 @@ import {
   StepExecutionsToIncludeContext,
   StepExecutionsToIncludeProvider,
 } from '@/contexts/StepExecutionsToInclude'
-import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
@@ -28,14 +25,12 @@ type EditorProps = {
 }
 
 export default function Editor(props: EditorProps): React.ReactElement {
-  const [updateStep] = useMutation(UPDATE_STEP)
-  const isMobile = useIsMobile()
-
   const { flow, steps: rawSteps, isNested } = props
 
   const {
     readOnly: isReadOnlyEditor,
     isDrawerOpen,
+    isMobile,
     currentStepId,
     currentStepIndex,
     onDrawerOpen,
@@ -56,31 +51,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
         flowId: flow.id,
       })),
     [flow, rawSteps],
-  )
-
-  const onStepChange = useCallback(
-    (step: IStep) => {
-      const mutationInput: Record<string, unknown> = {
-        id: step.id,
-        key: step.key,
-        parameters: step.parameters,
-        connection: {
-          id: step.connection?.id,
-        },
-        flow: {
-          id: flow.id,
-        },
-      }
-
-      if (step.appKey) {
-        mutationInput.appKey = step.appKey
-      }
-
-      updateStep({
-        variables: { input: mutationInput },
-      })
-    },
-    [updateStep, flow.id],
   )
 
   const appsWithActions: IApp[] = allApps.filter(
@@ -234,7 +204,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
                   setCurrentStepIndex(null)
                   onDrawerClose()
                 }}
-                onChange={onStepChange}
                 onContinue={() => {
                   if (
                     index === stepsBeforeGroup.length - 1 &&
@@ -288,7 +257,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
           index={currentStepIndex}
           isLastStep={currentStepIndex === steps.length - 1}
           isNested={isNested}
-          onStepChange={onStepChange}
           groupedSteps={groupedSteps}
           steps={steps}
         />

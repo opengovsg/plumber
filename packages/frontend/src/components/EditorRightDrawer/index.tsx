@@ -16,7 +16,6 @@ interface EditorRightDrawerProps {
   index: number | null
   isLastStep: boolean
   isNested?: boolean
-  onStepChange: (step: IStep) => void
   groupedSteps: IStep[]
   steps: any[]
 }
@@ -28,7 +27,6 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     index,
     isLastStep,
     isNested,
-    onStepChange,
     groupedSteps,
     steps,
   } = props
@@ -105,8 +103,6 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
             index={index}
             step={step}
             isLastStep={index === steps.length - 1}
-            collapsed={true}
-            onChange={onStepChange}
             onContinue={() => {
               if (!isLastStep && currentStepIndex !== null) {
                 const nextStepIndex = currentStepIndex + 1

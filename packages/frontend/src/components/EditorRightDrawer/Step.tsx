@@ -31,12 +31,10 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
-type FlowStepProps = {
-  collapsed?: boolean
+type StepProps = {
   step: IStep
   isLastStep: boolean
   index?: number | null
-  onChange: (step: IStep) => void
   onClose: () => void
   onContinue?: () => void
   onOpen: () => void
@@ -87,16 +85,8 @@ function generateValidationSchema(substeps: ISubstep[]) {
   return yupResolver(validationSchema)
 }
 
-export default function Step(props: FlowStepProps): React.ReactElement | null {
-  const {
-    index,
-    step,
-    isLastStep,
-    collapsed,
-    onChange,
-    onContinue,
-    templateConfig,
-  } = props
+export default function Step(props: StepProps): React.ReactElement | null {
+  const { index, step, isLastStep, onContinue, templateConfig } = props
 
   const {
     isOpen: isModalOpen,
@@ -104,7 +94,8 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { onDrawerClose, testExecutionSteps } = useContext(EditorContext)
+  const { onDrawerClose, onUpdateStep, testExecutionSteps } =
+    useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
   const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
@@ -129,20 +120,13 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
   const { app, apps, isTrigger, selectedActionOrTrigger, substeps } =
     useStepMetadata(step)
 
-  const handleChange = useCallback(
-    ({ step }: { step: IStep }) => {
-      onChange(step)
-    },
-    [onChange],
-  )
+  const handleSubmit = (val: any) => {
+    onUpdateStep(val as IStep)
+  }
 
   const expandNextStep = useCallback(() => {
     setCurrentSubstep((currentSubstep) => (currentSubstep ?? 0) + 1)
   }, [])
-
-  const handleSubmit = (val: any) => {
-    handleChange({ step: val as IStep })
-  }
 
   const stepValidationSchema = useMemo(
     () => generateValidationSchema(substeps),
@@ -184,7 +168,7 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
     <>
       <Flex w="100%" flexDir="column">
         {shouldShowInfobox && (
-          <Box boxShadow={collapsed ? undefined : 'sm'} borderRadius="lg">
+          <Box boxShadow="sm" borderRadius="lg">
             <Infobox
               icon={<BiInfoCircle />}
               variant="secondary"
@@ -233,7 +217,7 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
                           substep={substep}
                           onExpand={() => toggleSubstep(index)}
                           onCollapse={() => toggleSubstep(index)}
-                          onChange={handleChange}
+                          onChange={handleSubmit}
                           onContinue={onContinue}
                           step={step}
                           selectedActionOrTrigger={selectedActionOrTrigger}
@@ -247,7 +231,7 @@ export default function Step(props: FlowStepProps): React.ReactElement | null {
                           onExpand={() => toggleSubstep(index)}
                           onCollapse={() => toggleSubstep(index)}
                           onSubmit={expandNextStep}
-                          onChange={handleChange}
+                          onChange={handleSubmit}
                           step={step}
                           settingsLabel={
                             selectedActionOrTrigger?.settingsStepLabel ??

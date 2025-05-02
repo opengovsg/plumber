@@ -1,7 +1,6 @@
 import {
   type MouseEvent,
   type MouseEventHandler,
-  type ReactNode,
   useCallback,
   useRef,
   useState,
@@ -15,8 +14,6 @@ import {
 } from 'react-icons/bi'
 import {
   Box,
-  chakra,
-  Collapse as CollapseWithHiddenOverflow,
   Flex,
   Icon,
   Image,
@@ -36,11 +33,6 @@ import MenuAlertDialog from '../MenuAlertDialog'
 
 import { stepHeaderBoxStyles } from './style'
 
-// Chakra's `Collapse` sets `overflow: hidden` by default, which causes dropdown
-// menu items to be hidden. We override overflow by making `Collapse` a Chakra
-// element.
-const Collapse = chakra(CollapseWithHiddenOverflow)
-
 interface FlowStepHeaderProps {
   iconUrl?: string
   caption: string
@@ -52,7 +44,6 @@ interface FlowStepHeaderProps {
   onOpen: () => void
   onClose: () => void
   collapsed: boolean
-  children: ReactNode
   demoVideoUrl?: string
   demoVideoTitle?: string
   isInfoboxPresent?: boolean
@@ -74,7 +65,6 @@ export default function FlowStepHeader(
     onOpen,
     onClose,
     collapsed,
-    children,
     demoVideoUrl,
     demoVideoTitle,
     isInfoboxPresent,
@@ -259,19 +249,6 @@ export default function FlowStepHeader(
             </Flex>
           )}
         </Flex>
-
-        {/*
-         * Step contents
-         */}
-        <Collapse
-          in={!collapsed}
-          unmountOnExit
-          overflow={collapsed ? 'hidden' : 'initial !important'}
-        >
-          <Box borderTopWidth={1} p={0}>
-            {children}
-          </Box>
-        </Collapse>
       </Box>
 
       {isModalOpen && hasDemoVideo && (

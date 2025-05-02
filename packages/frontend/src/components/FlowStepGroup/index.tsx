@@ -6,6 +6,7 @@ import { Box, Flex } from '@chakra-ui/react'
 import { Infobox, useIsMobile } from '@opengovsg/design-system-react'
 
 import FlowStepHeader from '@/components/FlowStepHeader'
+import { getFlowStepWidth } from '@/helpers/editor'
 import { areAllIfThenBranchesCompleted, isIfThenStep } from '@/helpers/toolbox'
 
 import Error from './Content/Error'
@@ -73,15 +74,7 @@ function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
         <Box
           boxShadow={collapsed ? undefined : 'sm'}
           borderRadius="lg"
-          w={
-            isDrawerOpen
-              ? isMobile
-                ? '0px'
-                : '100%'
-              : isMobile
-              ? '100vw'
-              : '55%'
-          }
+          w={getFlowStepWidth(isDrawerOpen, isMobile)}
         >
           <Infobox
             icon={<BiInfoCircle />}
@@ -106,9 +99,7 @@ function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
         isCompleted={isStepGroupCompleted}
         isDrawerOpen={isDrawerOpen}
         isInfoboxPresent={!isStepGroupCompleted}
-      >
-        {null}
-      </FlowStepHeader>
+      />
     </Flex>
   )
 }
