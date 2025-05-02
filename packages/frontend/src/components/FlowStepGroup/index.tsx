@@ -1,6 +1,6 @@
 import { IStep } from '@plumber/types'
 
-import { ReactNode, useContext, useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 
@@ -16,17 +16,10 @@ import { flowStepGroupStyles } from './styles'
 interface FlowStepGroupProps {
   stepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
-  addStep: (
-    previousStepId: string,
-    appKey: string,
-    eventKey: string,
-    connectionId?: string,
-  ) => Promise<IStep>
-  children: ReactNode
 }
 
 export default function FlowStepGroup(props: FlowStepGroupProps) {
-  const { groupedSteps, stepsBeforeGroup, children } = props
+  const { groupedSteps, stepsBeforeGroup } = props
   const { isDrawerOpen, isMobile } = useContext(EditorContext)
 
   const { stepGroupType, stepGroupCaption } = useMemo(() => {
@@ -79,7 +72,6 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
             </Flex>
           </Flex>
         </Box>
-        {children}
         {stepGroupType === 'ifThen' ? (
           <IfThen
             groupedSteps={groupedSteps}

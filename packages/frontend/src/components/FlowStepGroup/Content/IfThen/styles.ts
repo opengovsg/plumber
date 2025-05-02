@@ -38,3 +38,26 @@ export const branchStyles = {
     w: '100%',
   },
 }
+
+export const hoverAddStepButtonStyles = {
+  container: {
+    role: 'group',
+    w: 'full',
+    pos: 'relative' as FlexProps['pos'],
+    alignItems: 'center',
+    justifyContent: 'center',
+    direction: 'row' as FlexProps['direction'],
+    m: 1,
+    mb: 0,
+    transition: 'all 0.3s ease',
+  },
+  button: {
+    pos: 'absolute' as FlexProps['pos'],
+    opacity: 1,
+    transition: 'height 0.2s ease-in-out',
+    w: 'full',
+    variant: 'clear',
+    size: 'xs',
+    borderRadius: 'lg',
+  },
+}

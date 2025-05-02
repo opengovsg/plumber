@@ -5,7 +5,9 @@ import { Button } from '@opengovsg/design-system-react'
 
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 
-interface CompactAddStepButtonProps {
+import { hoverAddStepButtonStyles as styles } from './styles'
+
+interface HoverAddStepButtonProps {
   isDisabled: boolean
   isDrawerOpen: boolean
   isLastStep: boolean
@@ -13,7 +15,7 @@ interface CompactAddStepButtonProps {
 }
 
 export function HoverAddStepButton(
-  props: CompactAddStepButtonProps,
+  props: HoverAddStepButtonProps,
 ): JSX.Element {
   const { isDisabled, isLastStep, prevStepId } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -22,17 +24,10 @@ export function HoverAddStepButton(
   return (
     <>
       <Flex
-        role="group"
-        w="full"
-        pos="relative"
+        {...styles.container}
         h={isHovered ? 8 : isLastStep ? 4 : 6}
-        alignItems="center"
-        justifyContent="center"
-        direction="row"
-        m={1}
         mb={isLastStep ? 0 : 1}
         pointerEvents={isDisabled ? 'none' : 'auto'}
-        transition="all 0.3s ease"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -44,17 +39,11 @@ export function HoverAddStepButton(
         )}
         {!isDisabled && isHovered && (
           <Button
+            {...styles.button}
             aria-label="Add Step"
             className="add-button"
-            position="absolute"
-            opacity={1}
-            transition="height 0.2s ease-in-out"
-            w="full"
             onClick={onOpen}
             isDisabled={isDisabled}
-            variant="clear"
-            size="xs"
-            borderRadius="lg"
           >
             <BiPlus />
           </Button>

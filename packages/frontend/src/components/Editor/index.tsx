@@ -38,7 +38,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
     isMobile,
     currentStepId,
     currentStepIndex,
-    onCreateStep,
     onDrawerClose,
     onDrawerOpen,
     onUpdateStep,
@@ -226,10 +225,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
             <FlowStepGroup
               stepsBeforeGroup={stepsBeforeGroup}
               groupedSteps={groupedSteps}
-              addStep={onCreateStep}
-            >
-              {null}
-            </FlowStepGroup>
+            />
           )}
         </Flex>
 
