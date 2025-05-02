@@ -305,7 +305,9 @@ export const EditorProvider = ({
     {
       context: { autoSnackbar: false },
       awaitRefetchQueries: true,
-      refetchQueries: [GET_TEST_EXECUTION_STEPS, GET_FLOW],
+      // NOTE: removed GET_FLOW to prevent screen flicker on test
+      // need to add back if we enable FLOW testing
+      refetchQueries: [GET_TEST_EXECUTION_STEPS],
       update(cache, { data }) {
         // If last execution step is successful, it means the test run is successful
         // Update the step status to completed without refreshing

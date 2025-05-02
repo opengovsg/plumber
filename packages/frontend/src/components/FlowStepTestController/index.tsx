@@ -74,38 +74,43 @@ export default function FlowStepTestController(
     )
   }, [currentTestExecutionStep, formContext, varInfoMap])
 
-  const CheckAgainButton = () => (
-    <Button
-      variant="clear"
-      onClick={handleSaveAndTest}
-      isLoading={isTestExecuting}
-      colorScheme="black"
-      size="sm"
-      isDisabled={!isValid}
-    >
-      Check step again
-    </Button>
+  const CheckAgainButton = useMemo(
+    () => (
+      <Button
+        variant="clear"
+        onClick={handleSaveAndTest}
+        isLoading={isTestExecuting}
+        colorScheme="black"
+        size="sm"
+        isDisabled={!isValid}
+      >
+        Check step again
+      </Button>
+    ),
+    [handleSaveAndTest, isTestExecuting, isValid],
   )
 
-  const getInfoboxVariant = () => {
+  const [infoBoxVariant, infoBoxText] = useMemo(() => {
     if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
-      return 'warning'
+      return ['warning', 'Previous result']
     }
-    return isTestSuccessful ? 'success' : 'error'
-  }
 
-  const getInfoboxText = () => {
-    if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
-      return 'Previous result'
+    if (isTestSuccessful) {
+      return ['success', 'Step was set up successfully!']
     }
-    return isTestSuccessful
-      ? 'Step was set up successfully!'
-      : 'Failed to set up step'
-  }
 
-  const shouldShowSaveButton =
-    !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
-  const shouldShowTestResults = currentTestExecutionStep && !lastErrorDetails
+    return ['error', 'Failed to set up step']
+  }, [isLastTestExecutionCurrent, isTestSuccessful, isDirty])
+
+  const shouldShowSaveButton = useMemo(
+    () => !isLastTestExecutionCurrent || (isTestSuccessful && isDirty),
+    [isLastTestExecutionCurrent, isTestSuccessful, isDirty],
+  )
+
+  const shouldShowTestResults = useMemo(
+    () => currentTestExecutionStep && !lastErrorDetails,
+    [currentTestExecutionStep, lastErrorDetails],
+  )
 
   return (
     <Stack {...flowStepTestControllerStyles.container}>
@@ -126,7 +131,7 @@ export default function FlowStepTestController(
           <VStack w="100%">
             <HStack w="100%">
               <Infobox
-                variant={getInfoboxVariant()}
+                variant={infoBoxVariant}
                 borderBottomRadius={isTestResultOpen ? 0 : undefined}
                 {...flowStepTestControllerStyles.testedInfobox}
               >
@@ -144,7 +149,7 @@ export default function FlowStepTestController(
                     }
                     cursor="pointer"
                   >
-                    <Text>{getInfoboxText()}</Text>
+                    <Text>{infoBoxText}</Text>
                     <Box ml={2}>
                       {isTestResultOpen ? <BiChevronDown /> : <BiChevronUp />}
                     </Box>
@@ -162,10 +167,10 @@ export default function FlowStepTestController(
                           ? 'Saved'
                           : 'Save without checking'}
                       </Button>
-                      <CheckAgainButton />
+                      {CheckAgainButton}
                     </Flex>
                   ) : (
-                    <CheckAgainButton />
+                    CheckAgainButton
                   )}
                 </Flex>
               </Infobox>

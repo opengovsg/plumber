@@ -12,8 +12,6 @@ import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { validateSubstep } from '@/helpers/editor'
 
-import { EDITOR_MARGIN_TOP } from '../Editor/constants'
-
 type FlowSubstepProps = {
   hasConnection: boolean
   isTrigger: boolean
@@ -23,8 +21,7 @@ type FlowSubstepProps = {
 }
 
 function FlowSubstep(props: FlowSubstepProps): JSX.Element {
-  const { hasConnection, isTrigger, substep, step, selectedActionOrTrigger } =
-    props
+  const { isTrigger, substep, step, selectedActionOrTrigger } = props
   const { flags } = useContext(LaunchDarklyContext)
   const formContext = useFormContext()
   const { readOnly, executeTestStep, onUpdateStep } = useContext(EditorContext)
