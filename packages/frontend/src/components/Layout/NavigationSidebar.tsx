@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 import { Link, matchPath, useLocation } from 'react-router-dom'
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Divider, Text } from '@chakra-ui/react'
 import {
   Badge,
   SidebarContainer,
@@ -22,7 +22,7 @@ function NavigationSidebarItem({
 }: NavigationSidebarItemProps): JSX.Element {
   const { pathname } = useLocation()
 
-  const { to, Icon: icon, text, otherLinks } = link
+  const { to, Icon: icon, text, otherLinks, isExternal } = link
   const selected = [to, ...(otherLinks || [])].some((link) =>
     matchPath(link, pathname),
   )
@@ -34,7 +34,8 @@ function NavigationSidebarItem({
       icon={icon}
       as={Link}
       to={to}
-      onClick={closeDrawer}
+      target={isExternal ? '_blank' : undefined}
+      onClick={isExternal ? undefined : closeDrawer}
       isActive={!!selected}
       color="base.content.default"
       _hover={{
@@ -69,23 +70,31 @@ export default function NavigationSidebar() {
   return (
     // top sidebar items
     <SidebarContainer variant="sticky">
-      {links.map(
-        (link, index) =>
-          !link.isBottom && (
-            <NavigationSidebarItem
-              key={index}
-              link={link}
-              closeDrawer={closeDrawer}
-            />
-          ),
-      )}
+      <Box p={0}>
+        {links.map(
+          (link, index) =>
+            !link.isBottom && (
+              <NavigationSidebarItem
+                key={index}
+                link={link}
+                closeDrawer={closeDrawer}
+              />
+            ),
+        )}
+      </Box>
+
+      <Text
+        p={4}
+        display={{ sm: 'none', lg: 'block' }}
+        ml={{ sm: 0, lg: 2 }}
+        textStyle="caption-3"
+      >
+        Resources
+      </Text>
+      <Divider my={2} hideFrom="lg" hideBelow="sm" />
 
       {/* bottom sidebar items */}
-      <Box
-        position="fixed"
-        bottom={2}
-        w={{ base: 'calc(100% - 2rem)', sm: 'inherit' }}
-      >
+      <Box>
         {links.map(
           (link, index) =>
             link.isBottom && (
