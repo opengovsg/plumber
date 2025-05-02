@@ -226,7 +226,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
               isDisabled={editorContext.readOnly || isSaving || !isDirty}
               isLoading={isSaving}
               variant="clear"
-              onClick={() => handleSave()}
+              onClick={handleSave}
             >
               {isDirty ? 'Save' : 'Saved'}
             </Button>
