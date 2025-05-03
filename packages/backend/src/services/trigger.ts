@@ -18,32 +18,60 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
 
-  let shouldExecute = true
   if (step.appKey === 'formsg' && !testRun) {
-    const execution = await Execution.query()
-      .where({
-        flow_id: flowId,
-        test_run: false,
-        internal_id: triggerItem?.meta.internalId,
-      })
-      .first()
+    /**
+     * NOTE: we use an advisory lock to prevent race conditions and ensure idempotency
+     * when handling concurrent requests.
+     * The lock is based on a composite key: flowId and internalId (FormSG submissionId),
+     * ensuring that only one execution is created per FormSG submission.
+     */
+    const formId = triggerItem?.raw.formId
+    const submissionId = triggerItem?.meta.internalId
 
-    if (execution && execution.internalId === triggerItem?.meta.internalId) {
-      logger.error(
-        `FormSG: ${triggerItem?.raw.formId} - submissionId: ${triggerItem?.meta.internalId} already exists in execution: ${execution.id}`,
+    const lockAcquired = await Execution.knex()
+      .raw(
+        'SELECT pg_try_advisory_xact_lock(hashtext(?), hashtext(?)) as acquired',
+        [flowId, submissionId || ''],
       )
-      shouldExecute = false
+      .then((result) => result.rows[0].acquired)
 
+    if (lockAcquired) {
+      const execution = await Execution.query()
+        .where({
+          flow_id: flowId,
+          test_run: false,
+          internal_id: submissionId,
+        })
+        .first()
+
+      if (execution && execution.internalId === submissionId) {
+        logger.error(
+          `FormSG: ${formId} - submissionId: ${submissionId} already exists in execution: ${execution.id}`,
+        )
+
+        return {
+          flowId,
+          stepId,
+          executionId: execution.id,
+          executionStep: null,
+          shouldExecute: false,
+        }
+      }
+    } else {
+      logger.error(
+        `FormSG: ${formId} - submissionId: ${submissionId} is already being processed`,
+      )
       return {
         flowId,
         stepId,
-        executionId: execution.id,
+        executionId: null,
         executionStep: null,
-        shouldExecute,
+        shouldExecute: false,
       }
     }
   }
 
+  // non-FormSG triggers or test runs proceed without advisory lock
   const execution = await Execution.query().insert({
     flowId,
     testRun,
@@ -68,6 +96,6 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
     stepId,
     executionId: execution.id,
     executionStep,
-    shouldExecute,
+    shouldExecute: true,
   }
 }
