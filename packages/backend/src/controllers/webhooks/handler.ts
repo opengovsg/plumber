@@ -70,6 +70,7 @@ export default async (request: IRequest, response: Response) => {
     }
   }
 
+  let internalId: string = randomUUID()
   const testRun = !flow.active
   const triggerStep = await flow.getTriggerStep()
 
@@ -106,11 +107,13 @@ export default async (request: IRequest, response: Response) => {
       request,
     })
 
-    const verified = await triggerApp.auth.verifyWebhook($)
+    const { verified, internalId: newInternalId } =
+      await triggerApp.auth.verifyWebhook($)
 
     if (!verified) {
       return response.sendStatus(401)
     }
+    internalId = newInternalId
   }
 
   // in case trigger type is 'webhook'
@@ -127,10 +130,7 @@ export default async (request: IRequest, response: Response) => {
   const triggerItem: ITriggerItem = {
     raw: payload,
     meta: {
-      internalId:
-        isFormsgApp && payload?.submissionId
-          ? payload.submissionId
-          : randomUUID(),
+      internalId,
     },
   }
 
