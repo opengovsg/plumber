@@ -12,6 +12,16 @@ import { NricFilter } from '../../triggers/new-submission'
 LuxonSettings.defaultZone = 'Asia/Singapore'
 LuxonSettings.defaultLocale = 'en-SG'
 
+const SUCCESS_DECRYPT_RESPONSE = {
+  verified: true,
+  internalId: 'submissionId',
+}
+
+const FAILED_DECRYPT_RESPONSE = {
+  verified: false,
+  internalId: null as string | null,
+}
+
 // mocks hoisted here so that they can be used in import mocks
 const mocks = vi.hoisted(() => {
   const webhooksAuthenticate = vi.fn()
@@ -128,7 +138,9 @@ describe('decrypt form response', () => {
 
     it('should fail if no request in global variable', async () => {
       delete $.request
-      await expect(decryptFormResponse($)).resolves.toEqual(false)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        FAILED_DECRYPT_RESPONSE,
+      )
       expect(mocks.consoleError).toHaveBeenCalledWith(
         'No trigger item provided',
       )
@@ -138,7 +150,9 @@ describe('decrypt form response', () => {
       mocks.webhooksAuthenticate.mockImplementationOnce(() => {
         throw new Error('error')
       })
-      await expect(decryptFormResponse($)).resolves.toEqual(false)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        FAILED_DECRYPT_RESPONSE,
+      )
       expect(mocks.webhooksAuthenticate).toHaveBeenCalledTimes(1)
       expect(mocks.consoleError).toHaveBeenCalledWith(
         'Unable to verify formsg signature',
@@ -147,7 +161,9 @@ describe('decrypt form response', () => {
 
     it('should fail and give warning if no connection exists', async () => {
       delete $.auth.data
-      await expect(decryptFormResponse($)).resolves.toEqual(false)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        FAILED_DECRYPT_RESPONSE,
+      )
       expect(mocks.consoleWarn).toHaveBeenCalledWith(
         'Form is not connected to any pipe after pipe is transferred',
         {
@@ -161,7 +177,9 @@ describe('decrypt form response', () => {
 
     it('should fail if unable to decrypt form response', async () => {
       mockDecryptedSubmission(null)
-      await expect(decryptFormResponse($)).resolves.toEqual(false)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        FAILED_DECRYPT_RESPONSE,
+      )
       expect(decryptMock).toHaveBeenCalledTimes(1)
       expect(mocks.consoleError).toHaveBeenCalledWith(
         'Unable to decrypt formsg response',
@@ -170,7 +188,9 @@ describe('decrypt form response', () => {
 
     it('should extract submission ID', async () => {
       mockDecryptedSubmission({ responses: [] })
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect($.request.body).toEqual(
         expect.objectContaining({
           submissionId: 'submissionId',
@@ -180,7 +200,9 @@ describe('decrypt form response', () => {
 
     it('should extract submission time as a ISO 8601 SGT formatted string', async () => {
       mockDecryptedSubmission({ responses: [] })
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect($.request.body).toEqual(
         expect.objectContaining({
           submissionTime: '2023-07-06T18:26:27.505+08:00',
@@ -205,7 +227,9 @@ describe('decrypt form response', () => {
           },
         ],
       })
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect($.request.body).toEqual(
         expect.objectContaining({
           fields: {
@@ -260,7 +284,9 @@ describe('decrypt form response', () => {
       })
 
       it('should handle nric filter - do nothing', async () => {
-        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        await expect(decryptFormResponse($)).resolves.toEqual(
+          SUCCESS_DECRYPT_RESPONSE,
+        )
         expect($.request.body).toEqual(
           expect.objectContaining({
             fields: {
@@ -294,7 +320,9 @@ describe('decrypt form response', () => {
 
       it('it should handle nric filter - remove', async () => {
         $.step.parameters.nricFilter = NricFilter.Remove
-        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        await expect(decryptFormResponse($)).resolves.toEqual(
+          SUCCESS_DECRYPT_RESPONSE,
+        )
         expect($.request.body).toEqual(
           expect.objectContaining({
             fields: {
@@ -314,7 +342,9 @@ describe('decrypt form response', () => {
 
       it('it should handle nric filter - hash', async () => {
         $.step.parameters.nricFilter = NricFilter.Hash
-        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        await expect(decryptFormResponse($)).resolves.toEqual(
+          SUCCESS_DECRYPT_RESPONSE,
+        )
         expect($.request.body).toEqual(
           expect.objectContaining({
             fields: {
@@ -348,7 +378,9 @@ describe('decrypt form response', () => {
 
       it('it should handle nric filter - mask', async () => {
         $.step.parameters.nricFilter = NricFilter.Mask
-        await expect(decryptFormResponse($)).resolves.toEqual(true)
+        await expect(decryptFormResponse($)).resolves.toEqual(
+          SUCCESS_DECRYPT_RESPONSE,
+        )
         expect($.request.body).toEqual(
           expect.objectContaining({
             fields: {
@@ -398,7 +430,9 @@ describe('decrypt form response', () => {
           cpUen: '987654321Z',
         },
       })
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect($.request.body).toEqual(
         expect.objectContaining({
           verifiedSubmitterInfo: {
@@ -428,7 +462,9 @@ describe('decrypt form response', () => {
           },
         ],
       })
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect($.request.body).toEqual(
         expect.objectContaining({
           fields: {
@@ -474,7 +510,9 @@ describe('decrypt form response', () => {
           },
         ],
       })
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect($.request.body).toEqual(
         expect.objectContaining({
           fields: {
@@ -508,7 +546,9 @@ describe('decrypt form response', () => {
     it('attachment decryption function not called if pipe does not process files', async () => {
       $.flow.hasFileProcessingActions = false
       mocks.cryptoDecrypt.mockReturnValueOnce({ responses: [] })
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect(mocks.cryptoDecryptWithAttachments).not.toBeCalled()
     })
 
@@ -518,7 +558,9 @@ describe('decrypt form response', () => {
         attachments: {},
         content: { responses: [] },
       })
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect(mocks.cryptoDecrypt).not.toBeCalled()
     })
   })
@@ -529,7 +571,9 @@ describe('decrypt form response', () => {
       mocks.cryptoDecrypt.mockReturnValueOnce({ responses: [] })
       mocks.parseFormEnv.mockReturnValue('staging')
 
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
 
       expect(mocks.parseFormEnv).toBeCalled()
       expect(mocks.getSdk).toBeCalledWith('staging')
@@ -563,7 +607,9 @@ describe('decrypt form response', () => {
         ],
       })
 
-      await expect(decryptFormResponse($)).resolves.toEqual(true)
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
       expect($.request.body).toEqual(
         expect.objectContaining({
           fields: {

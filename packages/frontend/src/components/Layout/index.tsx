@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react'
-import { BiBookOpen, BiHistory, BiSolidGrid, BiTable } from 'react-icons/bi'
+import {
+  BiBookOpen,
+  BiBookReader,
+  BiHistory,
+  BiSolidGrid,
+  BiTable,
+} from 'react-icons/bi'
 import { Box, Divider, Show } from '@chakra-ui/react'
 
 import AppBar from '@/components/AppBar'
@@ -26,6 +32,7 @@ export type DrawerLink = {
   otherLinks?: string[]
   isBottom?: boolean
   badge?: string
+  isExternal?: boolean
 }
 
 const drawerLinks = [
@@ -55,7 +62,14 @@ const drawerLinks = [
     text: 'Templates',
     to: URLS.TEMPLATES,
     isBottom: true,
+  },
+  {
+    Icon: BiBookReader,
+    text: 'Learn',
+    to: URLS.LEARN_LINK,
+    isBottom: true,
     badge: 'New',
+    isExternal: true,
   },
 ]
 

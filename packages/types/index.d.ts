@@ -589,7 +589,9 @@ interface IBaseAuth {
   verifyCredentials?($: IGlobalVariable): Promise<void>
   isStillVerified?($: IGlobalVariable): Promise<boolean>
   refreshToken?($: IGlobalVariable): Promise<void>
-  verifyWebhook?($: IGlobalVariable): Promise<boolean>
+  verifyWebhook?(
+    $: IGlobalVariable,
+  ): Promise<{ verified: boolean; internalId: string | null }>
   isRefreshTokenRequested?: boolean
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
