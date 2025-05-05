@@ -22,6 +22,7 @@ import {
   type TableRowIndexName,
   type TableRowItem,
   type TableRowOutput,
+  TableRowSortKeyName,
   type UpdateRowInput,
 } from './types'
 
@@ -255,11 +256,26 @@ export const updateTableRow = async ({
   gsis = [],
 }: UpdateRowInput): Promise<void> => {
   try {
+    const { data: dataWithoutNullish, ...rest } = constructDataWithGsis(
+      data,
+      gsis,
+    )
     await TableRow.patch({
       tableId,
       rowId,
     })
-      .set(constructDataWithGsis(data, gsis))
+      .data((row, { set, remove }) => {
+        set(row.data, dataWithoutNullish)
+        Object.entries(rest || {}).forEach(
+          ([sortKey, value]: [TableRowSortKeyName, string]) => {
+            if (value != null) {
+              set(row[sortKey], value)
+            } else {
+              remove(row[sortKey])
+            }
+          },
+        )
+      })
       .go({
         ignoreOwnership: true,
       })
@@ -288,7 +304,7 @@ export const patchTableRow = async ({
           set(row.data[key], value ? autoMarshallNumberStrings(value) : null)
           const sortKey = getGsiSortKey(gsis, key)
           if (sortKey) {
-            if (castGsiValue(value)) {
+            if (castGsiValue(value) != null) {
               set(row[sortKey], castGsiValue(value))
             } else {
               remove(row[sortKey])
@@ -301,6 +317,11 @@ export const patchTableRow = async ({
       Object.entries(patchData.add || {}).forEach(
         ([key, value]: [string, string]) => {
           add(row.data[key], autoMarshallNumberStrings(value))
+          // since we only support string sks for now, we need to remove the sort key
+          const sortKey = getGsiSortKey(gsis, key)
+          if (sortKey) {
+            remove(row[sortKey])
+          }
         },
       )
 
@@ -308,6 +329,11 @@ export const patchTableRow = async ({
       Object.entries(patchData.subtract || {}).forEach(
         ([key, value]: [string, string]) => {
           subtract(row.data[key], autoMarshallNumberStrings(value))
+          // since we only support string sks for now, we need to remove the sort key
+          const sortKey = getGsiSortKey(gsis, key)
+          if (sortKey) {
+            remove(row[sortKey])
+          }
         },
       )
     })
