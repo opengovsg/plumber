@@ -115,6 +115,12 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
+  # Admin mutations
+  admin: AdminMutation!
+}
+
+type AdminMutation {
+  addGsi(input: AddGsiInput!): Boolean
 }
 
 """
@@ -762,6 +768,13 @@ input DeleteTableInput {
 
 type TableColumnConfig {
   width: Int
+  gsi: TableColumnGsiConfig
+}
+
+type TableColumnGsiConfig {
+  indexName: String!
+  type: String!
+  status: String!
 }
 
 type TableColumnMetadata {
@@ -834,6 +847,13 @@ input DeleteTableRowsInput {
   tableId: ID!
   rowIds: [ID!]!
 }
+
+input AddGsiInput {
+  tableId: ID!
+  columnId: ID!
+  indexName: String!
+}
+
 # End Tiles row types
 
 type AppHealth {
