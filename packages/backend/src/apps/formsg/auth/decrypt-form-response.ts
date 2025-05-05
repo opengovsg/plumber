@@ -57,10 +57,10 @@ export function filterNric($: IGlobalVariable, value: string): string | null {
 
 export async function decryptFormResponse(
   $: IGlobalVariable,
-): Promise<boolean> {
+): Promise<{ verified: boolean; internalId: string | null }> {
   if (!$.request) {
     logger.error('No trigger item provided')
-    return false
+    return { verified: false, internalId: null }
   }
 
   // Note: this could occur due to pipe transfer since connection becomes null
@@ -71,7 +71,7 @@ export async function decryptFormResponse(
       stepId: $.step.id,
       userId: $.user.id,
     })
-    return false
+    return { verified: false, internalId: null }
   }
 
   const formSgSdk = getSdk(parseFormEnv($))
@@ -88,7 +88,7 @@ export async function decryptFormResponse(
     )
   } catch (e) {
     logger.error('Unable to verify formsg signature')
-    return false
+    return { verified: false, internalId: null }
   }
 
   const formSecretKey = $.auth.data.privateKey as string
@@ -187,10 +187,10 @@ export async function decryptFormResponse(
     delete $.request.headers
     delete $.request.query
 
-    return true
+    return { verified: true, internalId: data.submissionId }
   } else {
     // Could not decrypt the submission
     logger.error('Unable to decrypt formsg response')
-    return false
+    return { verified: false, internalId: null }
   }
 }
