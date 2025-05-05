@@ -49,6 +49,7 @@ export default function StepHeader(props: StepHeaderProps) {
     >
       {position && <Text whiteSpace="pre-wrap">{position}. </Text>}
       <EditableInput
+        key={step.id}
         value={initialStepName}
         onSave={onSave}
         readOnly={isReadOnlyEditor}
