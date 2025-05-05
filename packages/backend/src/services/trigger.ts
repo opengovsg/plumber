@@ -18,7 +18,7 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
 
-  if (step.appKey === 'formsg' && !testRun) {
+  if (!testRun && step.appKey === 'formsg' && triggerItem?.meta.internalId) {
     /**
      * NOTE: we use an advisory lock to prevent race conditions and ensure idempotency
      * when handling concurrent requests.
@@ -26,7 +26,7 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
      * ensuring that only one execution is created per FormSG submission.
      */
     const formId = triggerItem?.raw.formId
-    const submissionId = triggerItem?.meta.internalId
+    const submissionId = triggerItem.meta.internalId
 
     const lockAcquired = await Execution.knex()
       .raw(
