@@ -14,6 +14,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  tiles-postgres:
+    image: postgres:16.6-bookworm
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=plumber_tiles_dev
+    ports:
+      - 5431:5432
+    volumes:
+      - plumber-tiles-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
   redis:
     image: redis:6.2.0-alpine
     ports:
@@ -75,3 +90,4 @@ volumes:
   plumber-redis:
   plumber-minio:
   plumber-dynamodb:
+  plumber-tiles-postgres:
