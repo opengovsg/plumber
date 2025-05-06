@@ -18,9 +18,11 @@ async function getDataOutMetadata(
   const metadata: IDataOutMetadata = {
     rowId: {
       label: 'Row ID',
+      order: 2,
     },
     rowsFound: {
       label: 'Rows found',
+      order: 1,
     },
   }
   const rowData = (dataOut as FindSingleRowOutput).row
