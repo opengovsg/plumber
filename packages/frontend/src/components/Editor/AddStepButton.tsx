@@ -1,9 +1,14 @@
+import { useContext, useRef } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { Box, Divider, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 
+import { EditorContext } from '@/contexts/Editor'
+
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
+
+import UnsavedChangesAlert from './UnsavedChangesAlert'
 
 interface AddStepButtonProps {
   isHidden: boolean
@@ -15,7 +20,22 @@ interface AddStepButtonProps {
 
 export function AddStepButton(props: AddStepButtonProps): JSX.Element {
   const { isHidden, isLastStep, stepId, isDisabled, showEmptyAction } = props
+  const cancelRef = useRef(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const {
+    isOpen: isWarningOpen,
+    onOpen: onWarningOpen,
+    onClose: onWarningClose,
+  } = useDisclosure()
+  const { shouldWarnOnLeave } = useContext(EditorContext)
+
+  const handleOpen = () => {
+    if (shouldWarnOnLeave) {
+      onWarningOpen()
+    } else {
+      onOpen()
+    }
+  }
 
   return (
     <Box
@@ -42,7 +62,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
                 borderColor="base.divider.strong"
                 h={20}
               />
-              <EmptyFlowStepHeader isTrigger={false} onModalOpen={onOpen} />
+              <EmptyFlowStepHeader isTrigger={false} onModalOpen={handleOpen} />
             </>
           )}
           {/* Top vertical line */}
@@ -56,7 +76,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
             marginX="auto"
           >
             <IconButton
-              onClick={onOpen}
+              onClick={handleOpen}
               aria-label="Add Step"
               isDisabled={isDisabled || showEmptyAction}
               icon={<BiPlus />}
@@ -95,6 +115,13 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
           )}
         </>
       )}
+
+      <UnsavedChangesAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={onOpen}
+      />
     </Box>
   )
 }

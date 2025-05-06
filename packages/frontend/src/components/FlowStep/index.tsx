@@ -65,6 +65,7 @@ export default function FlowStep(
     onDrawerOpen,
     setCurrentStepId,
     setCurrentStepIndex,
+    setShouldWarnOnLeave,
   } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const { app, caption, isCompleted, isTrigger, selectedActionOrTrigger } =
@@ -130,6 +131,21 @@ export default function FlowStep(
     setCurrentStepIndex,
   ])
 
+  const handleLeave = () => {
+    if (currentStepId === step.id) {
+      setCurrentStepId(null)
+      setCurrentStepIndex(null)
+      setShouldWarnOnLeave(false)
+      onDrawerClose()
+    } else if (!app || !selectedActionOrTrigger) {
+      setShouldWarnOnLeave(false)
+      onModalOpen()
+    } else {
+      setCurrentStepId(step.id)
+      setCurrentStepIndex(index)
+    }
+  }
+
   const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)
 
   // generate help message only if template config exists
@@ -160,7 +176,13 @@ export default function FlowStep(
         <EmptyFlowStepHeader
           isNested={isNested}
           isTrigger={isTrigger}
-          onModalOpen={onModalOpen}
+          onModalOpen={() => {
+            if (shouldWarnOnLeave) {
+              onWarningOpen()
+            } else {
+              onModalOpen()
+            }
+          }}
         />
       ) : (
         <>
@@ -241,10 +263,7 @@ export default function FlowStep(
         cancelRef={cancelRef}
         isOpen={isWarningOpen}
         onClose={onWarningClose}
-        onLeave={() => {
-          setCurrentStepId(step.id)
-          setCurrentStepIndex(index)
-        }}
+        onLeave={handleLeave}
       />
     </FlowStepWrapper>
   )
