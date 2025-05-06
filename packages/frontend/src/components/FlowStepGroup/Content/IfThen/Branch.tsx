@@ -46,9 +46,7 @@ export default function Branch(props: BranchProps) {
     isMobile,
     readOnly: isEditorReadOnly,
     onDrawerClose,
-    onDrawerOpen,
     setCurrentStepId,
-    setCurrentStepIndex,
   } = useContext(EditorContext)
 
   // Handle branch deletion
@@ -137,19 +135,10 @@ export default function Branch(props: BranchProps) {
           <Fragment key={`${step.id}-${stepsBeforeGroup.length + index}`}>
             <FlowStep
               step={step}
+              index={stepsBeforeGroup.length + index}
               isDeletable={index !== 0}
               isNested={true}
               isLastStep={index === branchSteps.length - 1}
-              onOpen={() => {
-                setCurrentStepId(step.id)
-                setCurrentStepIndex(stepsBeforeGroup.length + index)
-                onDrawerOpen()
-              }}
-              onClose={() => {
-                setCurrentStepId(null)
-                setCurrentStepIndex(null)
-                onDrawerClose()
-              }}
             />
             <HoverAddStepButton
               isDisabled={isEditorReadOnly}

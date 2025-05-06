@@ -24,7 +24,8 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const { isTrigger, substep, step, selectedActionOrTrigger } = props
   const { flags } = useContext(LaunchDarklyContext)
   const formContext = useFormContext()
-  const { readOnly, executeTestStep, onUpdateStep } = useContext(EditorContext)
+  const { readOnly, executeTestStep, onUpdateStep, setShouldWarnOnLeave } =
+    useContext(EditorContext)
   const {
     isOpen: isTestResultOpen,
     onOpen: onTestResultOpen,
@@ -46,6 +47,9 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
    */
   const { dirtyFields } = formContext.formState
   const isDirty = Object.keys(dirtyFields).length > 0
+  useEffect(() => {
+    setShouldWarnOnLeave(isDirty)
+  }, [isDirty, setShouldWarnOnLeave])
 
   // filter inputs hidden behind feature flags based on timestamp
   const argsToDisplay = useMemo(
