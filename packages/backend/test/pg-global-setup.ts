@@ -25,7 +25,7 @@ export async function setup() {
   )
 
   const config = await import('../knexfile')
-  const client = knex(config.default as any)
+  const client = knex(config.default)
 
   // manually running migrations since the programmatic API doesn't work
   // see issue here: https://github.com/knex/knex/issues/5323

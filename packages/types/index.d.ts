@@ -915,6 +915,11 @@ export interface ITableCollaborator {
   role: ITableCollabRole
 }
 
+export interface ITableRowCsv {
+  rowId: string
+  data: string
+}
+
 export interface ITableRow {
   rowId: string
   data: Record<string, IJSONPrimitive>

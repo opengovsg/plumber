@@ -1,4 +1,4 @@
-import { createTableRows } from '@/models/tiles/dynamodb/table-row'
+import { getTableOperations } from '@/models/tiles/factory'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -23,20 +23,36 @@ const createTable: MutationResolvers['createTable'] = async (
   params,
   context,
 ) => {
-  const { name: tableName, isBlank: isBlankTable } = params.input
+  const {
+    name: tableName,
+    isBlank: isBlankTable,
+    databaseType = 'pg',
+  } = params.input
 
   if (!tableName) {
     throw new Error('Table name is required')
   }
 
+  const tableOperations = getTableOperations(databaseType)
+
+  // TODO: should i wrap this in a transaction?
   const table = await context.currentUser.$relatedQuery('tables').insertGraph({
     name: tableName,
     role: 'owner',
+    db: databaseType,
     columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
   })
 
+  await tableOperations.createTable(
+    table.id,
+    isBlankTable ? [] : table.columns.map((column) => column.id),
+  )
+
   if (!isBlankTable) {
-    await createTableRows({ tableId: table.id, dataArray: PLACEHOLDER_ROWS })
+    await tableOperations.createTableRows({
+      tableId: table.id,
+      dataArray: PLACEHOLDER_ROWS,
+    })
   }
 
   return table

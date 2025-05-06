@@ -30,7 +30,7 @@ describe('create table mutation', () => {
   it('should create a table and with placeholder rows and columns', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false } },
+      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
       context,
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()

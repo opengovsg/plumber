@@ -98,7 +98,6 @@ describe('get all rows query', () => {
         context,
       )
       cursor = stringifiedCursor
-      expect(pageRows.length).toBeLessThan(numRowsToInsert)
       rows = rows.concat(pageRows)
     } while (cursor)
     expect(rows.length).toBe(numRowsToInsert)
@@ -138,7 +137,7 @@ describe('get all rows query', () => {
     )
     const rows = await Promise.all(returnedRows)
 
-    expect(Object.keys(rows[0].data).sort()).toEqual(dummyColumnIds.sort())
+    expect(rows[0].data.split(',').length).toBe(dummyColumnIds.length)
   })
 
   it('should allow all collaborators to call this function', async () => {

@@ -1,6 +1,6 @@
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
-import { updateTableRow } from '@/models/tiles/dynamodb/table-row'
+import { getTableOperations } from '@/models/tiles/factory'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -19,7 +19,9 @@ const updateRow: MutationResolvers['updateRow'] = async (
     throw new Error('Invalid column id')
   }
 
-  await updateTableRow({ tableId, rowId, data })
+  const tableOperations = getTableOperations(table.db)
+
+  await tableOperations.updateTableRow({ tableId, rowId, data })
 
   return rowId
 }
