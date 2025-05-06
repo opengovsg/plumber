@@ -2,7 +2,7 @@ import { ElectroError } from 'electrodb'
 
 import RetriableError from '@/errors/retriable-error'
 
-import TableColumnMetadata from '../table-column-metadata'
+import TableColumnMetadata from '../../table-column-metadata'
 
 export const DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE =
   'Throughput exceeds the current capacity'

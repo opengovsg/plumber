@@ -9,9 +9,9 @@ import {
   generateMockTableColumns,
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
-import { createTableRow } from '@/models/dynamodb/table-row'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
+import { createTableRow } from '@/models/tiles/dynamodb/table-row'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 

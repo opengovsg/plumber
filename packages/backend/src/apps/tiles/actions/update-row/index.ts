@@ -1,13 +1,14 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
+import TableCollaborator from '@/models/table-collaborators'
+import TableColumnMetadata from '@/models/table-column-metadata'
 import {
   autoMarshallNumberStrings,
   stripInvalidKeys,
-} from '@/models/dynamodb/helpers'
-import { PatchRowInput, patchTableRow } from '@/models/dynamodb/table-row'
-import TableCollaborator from '@/models/table-collaborators'
-import TableColumnMetadata from '@/models/table-column-metadata'
+} from '@/models/tiles/dynamodb/helpers'
+import { patchTableRow } from '@/models/tiles/dynamodb/table-row'
+import { PatchRowInput } from '@/models/tiles/types'
 
 import { UpdateRowOutput } from '../../types'
 

@@ -14,8 +14,8 @@ import type {
   FlowConfig,
   StepConfig,
 } from '@/graphql/__generated__/types.generated'
-import { createTableRows } from '@/models/dynamodb/table-row'
 import Flow from '@/models/flow'
+import { createTableRows } from '@/models/tiles/dynamodb/table-row'
 import User from '@/models/user'
 
 import logger from './logger'

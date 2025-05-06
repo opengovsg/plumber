@@ -4,9 +4,9 @@ import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import logger from '@/helpers/logger'
-import { DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE } from '@/models/dynamodb/helpers'
-import { getTableRows } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
+import { DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE } from '@/models/tiles/dynamodb/helpers'
+import { getTableRows } from '@/models/tiles/dynamodb/table-row'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
 

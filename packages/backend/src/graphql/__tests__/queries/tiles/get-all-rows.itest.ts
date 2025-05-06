@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import getAllRows from '@/graphql/queries/tiles/get-all-rows'
-import { createTableRow } from '@/models/dynamodb/table-row'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
+import { createTableRow } from '@/models/tiles/dynamodb/table-row'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
