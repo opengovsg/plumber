@@ -1,4 +1,4 @@
-import type { IFlow, IStep } from '@plumber/types'
+import type { IStep } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
@@ -25,7 +25,6 @@ import FlowStepWrapper from './FlowStepWrapper'
 import { flowStepStyles } from './styles'
 
 type FlowStepProps = {
-  flow: IFlow
   step: IStep
   isDeletable?: boolean
   isLastStep: boolean
@@ -37,7 +36,7 @@ type FlowStepProps = {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { flow, step, isLastStep, isNested, onOpen, onClose } = props
+  const { step, isLastStep, isNested, onOpen, onClose } = props
 
   const {
     isOpen: isModalOpen,
@@ -50,6 +49,7 @@ export default function FlowStep(
     currentStepId,
     isDrawerOpen,
     isMobile,
+    flow,
     readOnly,
     testExecutionSteps,
     varInfoMap,

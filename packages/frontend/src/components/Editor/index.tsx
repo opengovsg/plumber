@@ -1,4 +1,4 @@
-import type { IApp, IFlow, IStep } from '@plumber/types'
+import type { IApp, IStep } from '@plumber/types'
 
 import { Fragment, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
@@ -20,13 +20,11 @@ import { AddStepButton } from './AddStepButton'
 import { editorStyles } from './styles'
 
 type EditorProps = {
-  flow: IFlow
-  steps: IStep[]
   isNested?: boolean
 }
 
 export default function Editor(props: EditorProps): React.ReactElement {
-  const { flow, steps: rawSteps, isNested } = props
+  const { isNested } = props
 
   const {
     allApps,
@@ -35,12 +33,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
     isMobile,
     currentStepId,
     currentStepIndex,
+    flow,
     onDrawerClose,
     onDrawerOpen,
     setCurrentStepId,
     setCurrentStepIndex,
   } = useContext(EditorContext)
 
+  const rawSteps = flow.steps
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
     // non-undefined. We do it here instead of fetching in GraphQL since all
@@ -175,7 +175,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
           {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
-                flow={flow}
                 step={step}
                 isDeletable={true}
                 isLastStep={index === steps.length - 1}

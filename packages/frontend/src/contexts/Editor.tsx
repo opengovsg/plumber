@@ -39,6 +39,7 @@ import { LaunchDarklyContext } from './LaunchDarkly'
 interface IEditorContextValue {
   flow: IFlow
   flowId: string
+  flow: IFlow
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
@@ -68,6 +69,7 @@ interface IEditorContextValue {
 export const EditorContext = createContext<IEditorContextValue>({
   flow: {} as IFlow,
   flowId: '',
+  flow: {} as IFlow,
   currentStepId: null,
   currentStepIndex: null,
   hasIfThen: false,

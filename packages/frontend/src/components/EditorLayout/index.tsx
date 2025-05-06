@@ -223,7 +223,7 @@ export default function EditorLayout() {
           overflowY="auto"
         >
           <EditorProvider readOnly={isEditorReadOnly} flow={flow}>
-            <Editor flow={flow} steps={flow.steps} />
+            <Editor />
             {flow.active && flow.config?.showSurvey && <LensSurvey />}
           </EditorProvider>
         </Container>
