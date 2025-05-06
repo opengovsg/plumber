@@ -3,9 +3,10 @@ import { type IFlow, type IStep } from '@plumber/types'
 import { type FunctionComponent, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { Box, Flex } from '@chakra-ui/react'
-import { Infobox } from '@opengovsg/design-system-react'
+import { Infobox, useIsMobile } from '@opengovsg/design-system-react'
 
 import FlowStepHeader from '@/components/FlowStepHeader'
+import { getFlowStepWidth } from '@/helpers/editor'
 import { areAllIfThenBranchesCompleted, isIfThenStep } from '@/helpers/toolbox'
 
 import Error from './Content/Error'
@@ -44,23 +45,37 @@ interface FlowStepGroupProps {
   onOpen: () => void
   onClose: () => void
   collapsed: boolean
+  setCurrentStepId: (stepId: string) => void
+  isDrawerOpen: boolean
 }
 
 const ifThenHelpMessage = 'Customise what happens in each of your branches.'
 
 function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
-  const { iconUrl, flow, steps, collapsed, onOpen, onClose } = props
-
+  const { iconUrl, flow, steps, onOpen, onClose, collapsed, isDrawerOpen } =
+    props
   const isTemplatedFlow = !!flow.config?.templateConfig?.templateId
+  const isMobile = useIsMobile()
 
-  const { StepContent, hintAboveCaption, caption, isStepGroupCompleted } =
-    useMemo(() => getStepContent(steps), [steps])
+  const { hintAboveCaption, caption, isStepGroupCompleted } = useMemo(
+    () => getStepContent(steps),
+    [steps],
+  )
 
   return (
-    <Flex w="100%" flexDir="column">
+    <Flex
+      w="100%"
+      display={isMobile ? 'block' : 'flex'}
+      flexDir="column"
+      alignItems="center"
+    >
       {/* Show infobox only if the step group is incomplete and from a template */}
       {!isStepGroupCompleted && isTemplatedFlow && (
-        <Box boxShadow={collapsed ? undefined : 'sm'} borderRadius="lg">
+        <Box
+          boxShadow={collapsed ? undefined : 'sm'}
+          borderRadius="lg"
+          w={getFlowStepWidth(isDrawerOpen, isMobile)}
+        >
           <Infobox
             icon={<BiInfoCircle />}
             variant="secondary"
@@ -82,10 +97,9 @@ function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
         onClose={onClose}
         collapsed={collapsed ?? false}
         isCompleted={isStepGroupCompleted}
+        isDrawerOpen={isDrawerOpen}
         isInfoboxPresent={!isStepGroupCompleted}
-      >
-        <StepContent flow={flow} steps={steps} />
-      </FlowStepHeader>
+      />
     </Flex>
   )
 }

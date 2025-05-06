@@ -1,12 +1,12 @@
 import { Tag, TagCloseButton, TagLabel, Tooltip } from '@chakra-ui/react'
 
 interface TagsProps {
-  selectedOptions: any[]
+  tags: any[]
   onClick: (option: any) => void
 }
 
 function TagList(props: TagsProps) {
-  const { onClick, selectedOptions } = props
+  const { onClick, tags } = props
 
   const getLabel = (option: any, tooltip?: boolean) => {
     const { displayedValue, label, source, uploaded } = option
@@ -18,14 +18,14 @@ function TagList(props: TagsProps) {
     return uploaded ? `[Uploaded] ${displayedValue}` : `[${source}] ${label}`
   }
 
-  if (selectedOptions.length === 0) {
+  if (tags.length === 0) {
     return <></>
   }
 
   return (
     <>
-      {selectedOptions?.map((option) => {
-        const { label, value } = option
+      {tags?.map((tag) => {
+        const { label, value } = tag
         return (
           <Tag
             key={`${label}-${value}`}
@@ -37,12 +37,12 @@ function TagList(props: TagsProps) {
             maxW="200px"
             flex="0 1 auto"
           >
-            <Tooltip hasArrow label={getLabel(option, true)}>
+            <Tooltip hasArrow label={getLabel(tag, true)}>
               <TagLabel isTruncated flex="1 1 auto" minW="0">
-                {getLabel(option)}
+                {getLabel(tag)}
               </TagLabel>
             </Tooltip>
-            <TagCloseButton onClick={() => onClick(option)} />
+            <TagCloseButton onClick={() => onClick(tag)} />
           </Tag>
         )
       })}

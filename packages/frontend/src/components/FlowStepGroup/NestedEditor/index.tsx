@@ -3,7 +3,7 @@ import { type IFlow, type IStep } from '@plumber/types'
 import { useContext } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
 import {
-  Box,
+  Flex,
   Modal,
   ModalContent,
   ModalHeader,
@@ -34,12 +34,14 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
       closeOnEsc={false}
       closeOnOverlayClick={false}
       motionPreset="none"
+      isCentered
     >
       <ModalOverlay />
       <ModalContent
         bg="base.canvas.brand-subtle"
-        mt={{ base: 0, lg: 16 }}
+        m={{ base: 0, lg: 16 }}
         borderRadius="lg"
+        height="calc(100vh - 8rem)"
       >
         <ModalHeader display="flex" justifyContent="center">
           <Button
@@ -56,13 +58,11 @@ export default function NestedEditor(props: NestedEditorProps): JSX.Element {
             Back to pipe
           </Button>
         </ModalHeader>
-        <Box p={8}>
-          {/* We wrap this nested editor in an EditorProvider to ensure currentStepId
-            is of a different scope than the parent editor. */}
+        <Flex p={8} overflowY="auto">
           <EditorProvider flowId={flowId} readOnly={readOnly}>
-            <Editor flow={flow} steps={steps} />
+            <Editor flow={flow} steps={steps} isNested={true} />
           </EditorProvider>
-        </Box>
+        </Flex>
       </ModalContent>
     </Modal>
   )

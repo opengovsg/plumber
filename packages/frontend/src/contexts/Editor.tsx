@@ -8,7 +8,8 @@ import {
   useState,
 } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
-import { Center } from '@chakra-ui/react'
+import { Center, useDisclosure } from '@chakra-ui/react'
+import { useIsMobile } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
@@ -31,13 +32,19 @@ interface IEditorContextValue {
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
+  currentStepIndex: number | null
+  isDrawerOpen: boolean
+  isMobile: boolean
   setCurrentStepId: (stepId: string | null) => void
+  setCurrentStepIndex: (stepIndex: number | null) => void
   onCreateStep: (
     previousStepId: string,
     appKey: string,
     eventKey: string,
     connectionId?: string,
   ) => Promise<IStep>
+  onDrawerOpen: () => void
+  onDrawerClose: () => void
   onUpdateStep: (step: IStep) => Promise<IStep>
   allApps: IApp[]
 }
@@ -47,7 +54,13 @@ export const EditorContext = createContext<IEditorContextValue>({
   readOnly: false,
   testExecutionSteps: [],
   currentStepId: null,
+  currentStepIndex: null,
+  isDrawerOpen: false,
+  isMobile: false,
   setCurrentStepId: () => null,
+  setCurrentStepIndex: () => null,
+  onDrawerOpen: () => null,
+  onDrawerClose: () => null,
   onCreateStep: () => Promise.resolve({} as IStep),
   onUpdateStep: () => Promise.resolve({} as IStep),
   allApps: [],
@@ -109,7 +122,10 @@ export const EditorProvider = ({
   const { flags } = useContext(LaunchDarklyContext)
   const shouldUseSingleStepTest = !flags?.[SINGLE_STEP_TEST_KILL_SWITCH]
 
+  const isMobile = useIsMobile()
+
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
+  const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
   const allApps = getAppsData?.getApps ?? []
@@ -126,6 +142,15 @@ export const EditorProvider = ({
   )
 
   const testExecutionSteps = data?.getTestExecutionSteps ?? []
+
+  /**
+   * Right drawer state
+   */
+  const {
+    isOpen: isDrawerOpen,
+    onOpen: onDrawerOpen,
+    onClose: onDrawerClose,
+  } = useDisclosure()
 
   /**
    * CreateStep mutation
@@ -235,7 +260,13 @@ export const EditorProvider = ({
         readOnly,
         testExecutionSteps,
         currentStepId,
+        currentStepIndex,
+        isDrawerOpen,
+        isMobile,
         setCurrentStepId,
+        setCurrentStepIndex,
+        onDrawerOpen,
+        onDrawerClose,
         onCreateStep,
         onUpdateStep,
         allApps,
