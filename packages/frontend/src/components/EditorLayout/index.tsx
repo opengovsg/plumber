@@ -1,6 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BiChevronLeft, BiCog, BiInfoCircle } from 'react-icons/bi'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
@@ -116,6 +116,20 @@ export default function EditorLayout() {
     () => flow?.steps.some((step) => step.status === 'incomplete'),
     [flow?.steps],
   )
+
+  // warn user of unsaved changes when they try to close or reload the browser
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!shouldWarnOnLeave) {
+        return
+      }
+      e.preventDefault()
+      e.returnValue = '' // legacy but still required by some browsers
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [shouldWarnOnLeave])
 
   // navigate user to not found page if flow does not belong to the user
   if (
