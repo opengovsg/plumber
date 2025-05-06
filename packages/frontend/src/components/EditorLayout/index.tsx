@@ -1,10 +1,18 @@
 import type { IFlow } from '@plumber/types'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { BiChevronLeft, BiCog, BiInfoCircle } from 'react-icons/bi'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
-import { Box, Flex, HStack, Icon, Skeleton, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Flex,
+  HStack,
+  Icon,
+  Skeleton,
+  Text,
+  useDisclosure,
+} from '@chakra-ui/react'
 import {
   Button,
   IconButton,
@@ -25,18 +33,28 @@ import { GET_FLOW } from '@/graphql/queries/get-flow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
+import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 
 import EditorSnackbar from './EditorSnackbar'
 import { LensSurvey } from './LensSurvey'
 
 export default function EditorLayout() {
+  const cancelRef = useRef(null)
   const { flowId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const isMobile = useIsMobile()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
     refetchQueries: [GET_FLOW],
   })
+  const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
+  const {
+    isOpen: isWarningOpen,
+    onOpen: onWarningOpen,
+    onClose: onWarningClose,
+  } = useDisclosure()
+
   const { data, loading, error } = useQuery(GET_FLOW, {
     variables: { id: flowId },
   })
@@ -136,7 +154,18 @@ export default function EditorLayout() {
           borderColor="base.divider.subtle"
         >
           <Flex flex={1} alignItems="center">
-            <Box as={Link} to={URLS.FLOWS} mt={1} mr={3}>
+            <Box
+              as={Link}
+              to={URLS.FLOWS}
+              mt={1}
+              mr={3}
+              onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                if (shouldWarnOnLeave) {
+                  e.preventDefault()
+                  onWarningOpen()
+                }
+              }}
+            >
               <Icon
                 boxSize={6}
                 color="interaction.support.disabled-content"
@@ -222,7 +251,12 @@ export default function EditorLayout() {
           flex={1}
           overflowY="auto"
         >
-          <EditorProvider readOnly={isEditorReadOnly} flow={flow}>
+          <EditorProvider
+            readOnly={isEditorReadOnly}
+            flow={flow}
+            shouldWarnOnLeave={shouldWarnOnLeave}
+            setShouldWarnOnLeave={setShouldWarnOnLeave}
+          >
             <Editor />
             {flow.active && flow.config?.showSurvey && <LensSurvey />}
           </EditorProvider>
@@ -240,6 +274,13 @@ export default function EditorLayout() {
           demoVideoDetails={demoVideoDetails}
         />
       )}
+
+      <UnsavedChangesAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={() => navigate(URLS.FLOWS)}
+      />
     </>
   )
 }

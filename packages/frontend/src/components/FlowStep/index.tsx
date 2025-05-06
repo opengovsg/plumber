@@ -1,6 +1,6 @@
 import type { IStep } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo, useRef } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
@@ -12,6 +12,7 @@ import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
+import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { matchParamsToDataIn } from '../FlowStepTestController/utils'
@@ -26,17 +27,17 @@ import { flowStepStyles } from './styles'
 
 type FlowStepProps = {
   step: IStep
+  index: number
   isDeletable?: boolean
   isLastStep: boolean
   isNested?: boolean
-  onOpen: () => void
-  onClose: () => void
 }
 
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, isLastStep, isNested, onOpen, onClose } = props
+  const { step, index, isLastStep, isNested } = props
+  const cancelRef = useRef(null)
 
   const {
     isOpen: isModalOpen,
@@ -45,14 +46,25 @@ export default function FlowStep(
   } = useDisclosure()
 
   const {
+    isOpen: isWarningOpen,
+    onOpen: onWarningOpen,
+    onClose: onWarningClose,
+  } = useDisclosure()
+
+  const {
     allApps,
     currentStepId,
+    flow,
     isDrawerOpen,
     isMobile,
-    flow,
     readOnly,
+    shouldWarnOnLeave,
     testExecutionSteps,
     varInfoMap,
+    onDrawerClose,
+    onDrawerOpen,
+    setCurrentStepId,
+    setCurrentStepIndex,
   } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const { app, caption, isCompleted, isTrigger, selectedActionOrTrigger } =
@@ -88,12 +100,35 @@ export default function FlowStep(
       onModalOpen()
       return
     }
-    if (isDrawerOpen && currentStepId === step.id) {
-      onClose()
-    } else {
-      onOpen()
+
+    if (shouldWarnOnLeave) {
+      onWarningOpen()
+      return
     }
-  }, [app, isDrawerOpen, currentStepId, step.id, onModalOpen, onClose, onOpen])
+
+    if (isDrawerOpen && currentStepId === step.id) {
+      setCurrentStepId(null)
+      setCurrentStepIndex(null)
+      onDrawerClose()
+    } else {
+      setCurrentStepId(step.id)
+      setCurrentStepIndex(index)
+      onDrawerOpen()
+    }
+  }, [
+    app,
+    currentStepId,
+    index,
+    isDrawerOpen,
+    shouldWarnOnLeave,
+    step.id,
+    onDrawerClose,
+    onDrawerOpen,
+    onModalOpen,
+    onWarningOpen,
+    setCurrentStepId,
+    setCurrentStepIndex,
+  ])
 
   const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)
 
@@ -185,11 +220,7 @@ export default function FlowStep(
               />
               <StepCaptionAndDemo app={app} caption={caption} />
               {isDeletable && (
-                <StepDeleteButton
-                  isNested={isNested}
-                  onClose={onClose}
-                  step={step}
-                />
+                <StepDeleteButton isNested={isNested} step={step} />
               )}
             </Flex>
           </Flex>
@@ -205,6 +236,16 @@ export default function FlowStep(
           event={selectedActionOrTrigger}
         />
       )}
+
+      <UnsavedChangesAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={() => {
+          setCurrentStepId(step.id)
+          setCurrentStepIndex(index)
+        }}
+      />
     </FlowStepWrapper>
   )
 }

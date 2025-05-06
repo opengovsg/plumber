@@ -34,10 +34,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
     currentStepId,
     currentStepIndex,
     flow,
-    onDrawerClose,
-    onDrawerOpen,
-    setCurrentStepId,
-    setCurrentStepIndex,
   } = useContext(EditorContext)
 
   const rawSteps = flow.steps
@@ -177,18 +173,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
               <FlowStep
                 step={step}
                 isDeletable={true}
+                index={index}
                 isLastStep={index === steps.length - 1}
                 isNested={isNested}
-                onOpen={() => {
-                  setCurrentStepId(step.id)
-                  setCurrentStepIndex(index)
-                  onDrawerOpen()
-                }}
-                onClose={() => {
-                  setCurrentStepId(null)
-                  setCurrentStepIndex(null)
-                  onDrawerClose()
-                }}
               />
               <AddStepButton
                 // hide all add button steps if is readonly
