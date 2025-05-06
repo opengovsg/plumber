@@ -3,6 +3,8 @@ import type { IApp, IFlow, IStep } from '@plumber/types'
 import { Fragment, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
 
+import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
+import EditorRightDrawer from '@/components/EditorRightDrawer'
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
 import { EditorContext } from '@/contexts/Editor'
@@ -19,16 +21,22 @@ import { AddStepButton } from './AddStepButton'
 type EditorProps = {
   flow: IFlow
   steps: IStep[]
+  isNested?: boolean
 }
 
-export default function Editor(props: EditorProps) {
-  const { flow, steps: rawSteps } = props
+export default function Editor(props: EditorProps): React.ReactElement {
+  const { flow, steps: rawSteps, isNested } = props
 
   const {
     readOnly: isReadOnlyEditor,
+    isDrawerOpen,
+    isMobile,
     currentStepId,
-    onUpdateStep,
+    currentStepIndex,
+    onDrawerOpen,
+    onDrawerClose,
     setCurrentStepId,
+    setCurrentStepIndex,
     allApps,
   } = useContext(EditorContext)
 
@@ -144,70 +152,115 @@ export default function Editor(props: EditorProps) {
     )
   }
 
+  const getStepPadding = () => {
+    if (isDrawerOpen) {
+      if (isMobile) {
+        return 0
+      }
+      if (isNested) {
+        return '3rem'
+      }
+      return '5rem'
+    }
+    return 0
+  }
+
   return (
-    <Flex w="full" justifyContent="center">
-      <Flex
-        flexDir="column"
-        alignItems="center"
-        py={3}
-        pb={24}
-        w="53.25rem"
-        maxW="full"
-      >
-        <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-          {stepsBeforeGroup.map((step, index) => {
-            return (
-              <Fragment key={`${step.id}-${index}`}>
-                <FlowStep
-                  step={step}
-                  isLastStep={index === steps.length - 1}
-                  index={index + 1}
-                  collapsed={currentStepId !== step.id}
-                  onOpen={() => setCurrentStepId(step.id)}
-                  onClose={() => {
-                    setCurrentStepId(null)
-                  }}
-                  onChange={onUpdateStep}
-                  onContinue={() => {
-                    if (
-                      index === stepsBeforeGroup.length - 1 &&
-                      groupedSteps.length > 0
-                    ) {
-                      setCurrentStepId(groupedSteps[0].id)
-                    } else {
-                      setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
-                    }
-                  }}
-                  templateConfig={flow?.config?.templateConfig}
-                />
-                <AddStepButton
-                  // hide all add button steps if is readonly
-                  isHidden={isReadOnlyEditor}
-                  // show empty action if no action step exists
-                  showEmptyAction={hasNoActionSteps && !groupedSteps.length}
-                  // Disable add button steps if first action is not set up
-                  isDisabled={
-                    (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
-                    !groupedSteps.length
+    <Flex w="full" justifyContent={isDrawerOpen ? 'space-between' : 'center'}>
+      <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
+        <Flex
+          display="block"
+          flexDir="column"
+          flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
+          height={isNested ? undefined : EDITOR_MAX_HEIGHT}
+          minH="100%"
+          w="100%"
+          maxW="full"
+          alignItems="center"
+          overflowY="auto"
+          py={3}
+          px={getStepPadding()}
+          transition="width 0.3s ease-in-out, transform 0.3s ease-in-out"
+        >
+          {stepsBeforeGroup.map((step, index) => (
+            <Fragment key={`${step.id}-${index}`}>
+              <FlowStep
+                step={step}
+                isDrawerOpen={isDrawerOpen}
+                isLastStep={index === steps.length - 1}
+                index={index + 1}
+                collapsed={
+                  !isDrawerOpen && currentStepId === step.id
+                    ? true
+                    : currentStepId !== step.id
+                }
+                onOpen={() => {
+                  setCurrentStepId(step.id)
+                  setCurrentStepIndex(index)
+                  onDrawerOpen()
+                }}
+                onClose={() => {
+                  setCurrentStepId(null)
+                  setCurrentStepIndex(null)
+                  onDrawerClose()
+                }}
+                onContinue={() => {
+                  if (
+                    index === stepsBeforeGroup.length - 1 &&
+                    groupedSteps.length > 0
+                  ) {
+                    setCurrentStepId(groupedSteps[0].id)
+                  } else {
+                    setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
                   }
-                  isLastStep={index === steps.length - 1}
-                  stepId={step.id}
-                />
-              </Fragment>
-            )
-          })}
+                }}
+                templateConfig={flow?.config?.templateConfig}
+              />
+              <AddStepButton
+                // hide all add button steps if is readonly
+                isHidden={isReadOnlyEditor}
+                // show empty action if no action step exists
+                showEmptyAction={hasNoActionSteps && !groupedSteps.length}
+                // Disable add button steps if first action is not set up
+                isDisabled={
+                  (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
+                  !groupedSteps.length
+                }
+                isLastStep={index === steps.length - 1}
+                stepId={step.id}
+              />
+            </Fragment>
+          ))}
           {groupedSteps.length > 0 && (
             <FlowStepGroup
               iconUrl={flowStepGroupIconUrl}
+              isDrawerOpen={isDrawerOpen}
               flow={flow}
               steps={groupedSteps}
               collapsed={currentStepId !== groupedSteps[0].id}
-              onOpen={() => setCurrentStepId(groupedSteps[0].id)}
-              onClose={() => setCurrentStepId(null)}
+              onOpen={() => {
+                setCurrentStepId(groupedSteps[0].id)
+                onDrawerOpen()
+              }}
+              onClose={() => {
+                setCurrentStepId(null)
+                onDrawerClose()
+              }}
+              setCurrentStepId={setCurrentStepId}
             />
           )}
-        </StepExecutionsToIncludeProvider>
-      </Flex>
+        </Flex>
+
+        <EditorRightDrawer
+          flow={flow}
+          flowStepGroupIconUrl={flowStepGroupIconUrl}
+          index={currentStepIndex}
+          isLastStep={currentStepIndex === steps.length - 1}
+          isNested={isNested}
+          groupedSteps={groupedSteps}
+          steps={steps}
+        />
+      </StepExecutionsToIncludeProvider>
     </Flex>
   )
 }
