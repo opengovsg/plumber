@@ -38,10 +38,11 @@ import { BranchContext } from './BranchContext'
 interface BranchProps {
   flow: IFlow
   steps: IStep[]
+  onClose: () => void
 }
 
 export default function Branch(props: BranchProps): JSX.Element {
-  const { flow, steps } = props
+  const { flow, steps, onClose } = props
   const {
     isOpen: editorIsOpen,
     onOpen: openEditor,
@@ -103,7 +104,17 @@ export default function Branch(props: BranchProps): JSX.Element {
       setCurrentStepId(ifThenRemaining[0])
     }
     closeDeleteConfirmation()
-  }, [closeDeleteConfirmation, deleteStep, flow, steps, setCurrentStepId])
+    if (ifThenRemaining.length === 0) {
+      onClose()
+    }
+  }, [
+    closeDeleteConfirmation,
+    deleteStep,
+    flow,
+    steps,
+    setCurrentStepId,
+    onClose,
+  ])
 
   return (
     <>

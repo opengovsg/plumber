@@ -1,7 +1,6 @@
 import {
   type MouseEvent,
   type MouseEventHandler,
-  type ReactNode,
   useCallback,
   useRef,
   useState,
@@ -15,8 +14,6 @@ import {
 } from 'react-icons/bi'
 import {
   Box,
-  chakra,
-  Collapse as CollapseWithHiddenOverflow,
   Flex,
   Icon,
   Image,
@@ -27,28 +24,26 @@ import {
   Tooltip,
   useDisclosure,
 } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
+import { IconButton, useIsMobile } from '@opengovsg/design-system-react'
 
 import DemoVideoModalContent from '@/components/FlowRow/DemoVideoModalContent'
+import { getFlowStepWidth } from '@/helpers/editor'
 
 import MenuAlertDialog from '../MenuAlertDialog'
 
-// Chakra's `Collapse` sets `overflow: hidden` by default, which causes dropdown
-// menu items to be hidden. We override overflow by making `Collapse` a Chakra
-// element.
-const Collapse = chakra(CollapseWithHiddenOverflow)
+import { stepHeaderBoxStyles } from './style'
 
 interface FlowStepHeaderProps {
   iconUrl?: string
   caption: string
-  hintAboveCaption: string
+  hintAboveCaption: string | null
   isCompleted?: boolean
+  isDrawerOpen: boolean
   onDelete?: MouseEventHandler
   isDeleting?: boolean
   onOpen: () => void
   onClose: () => void
   collapsed: boolean
-  children: ReactNode
   demoVideoUrl?: string
   demoVideoTitle?: string
   isInfoboxPresent?: boolean
@@ -64,16 +59,17 @@ export default function FlowStepHeader(
     caption,
     hintAboveCaption,
     isCompleted,
+    isDrawerOpen,
     onDelete,
     isDeleting,
     onOpen,
     onClose,
     collapsed,
-    children,
     demoVideoUrl,
     demoVideoTitle,
     isInfoboxPresent,
   } = props
+  const isMobile = useIsMobile()
 
   const handleClick = useCallback(() => {
     if (collapsed) {
@@ -117,15 +113,11 @@ export default function FlowStepHeader(
   return (
     <>
       <Box
-        w="full"
-        borderWidth="1px"
-        borderColor="base.divider.medium"
-        borderRadius="lg"
+        {...stepHeaderBoxStyles}
+        borderColor={collapsed ? 'base.divider.medium' : 'base.content.brand'}
         borderTopRadius={isInfoboxPresent ? 'none' : 'lg'}
-        p={0}
-        bg="white"
-        boxShadow={collapsed ? undefined : 'sm'}
         data-test="flow-step" // adding to identify element for e2e testing
+        w={getFlowStepWidth(isDrawerOpen, isMobile)}
       >
         {/*
          * Top header
@@ -251,23 +243,12 @@ export default function FlowStepHeader(
                 aria-label="Delete Step"
                 icon={<BiTrashAlt />}
                 colorScheme="secondary"
+                className={isMobile ? undefined : 'hover-remove-button'}
+                visibility={isMobile ? 'visible' : 'hidden'}
               />
             </Flex>
           )}
         </Flex>
-
-        {/*
-         * Step contents
-         */}
-        <Collapse
-          in={!collapsed}
-          unmountOnExit
-          overflow={collapsed ? 'hidden' : 'initial !important'}
-        >
-          <Box borderTopWidth={1} p={0}>
-            {children}
-          </Box>
-        </Collapse>
       </Box>
 
       {isModalOpen && hasDemoVideo && (
