@@ -52,7 +52,7 @@ export interface IConnection {
  * 'array' is currently used only in formSG checkbox field but
  * will be extended to for-each feature handling
  */
-export type TDataOutMetadatumType = 'text' | 'file' | 'array'
+export type TDataOutMetadatumType = 'text' | 'file' | 'array' | 'tile_row_id'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array
@@ -339,6 +339,7 @@ export interface IFieldDropdownOption {
 export interface IFieldText extends IBaseField {
   type: 'string'
   value?: string
+  variableTypes?: TDataOutMetadatumType[]
 
   // Not applicable if field has variables.
   autoComplete?: AutoCompleteValue
@@ -353,6 +354,7 @@ export interface IFieldAttachment extends IBaseField {
 export interface IFieldMultiline extends IBaseField {
   type: 'multiline'
   value?: string
+  variableTypes?: TDataOutMetadatumType[]
 
   // Not applicable if field has variables.
   autoComplete?: AutoCompleteValue
