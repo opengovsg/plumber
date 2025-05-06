@@ -11,6 +11,7 @@ function recipientStringToArray(value: string) {
     .split(',')
     .map((e) => e.trim())
     .filter((e) => e?.length > 0)
+    .map((e) => e.toLowerCase())
   // dedupe the array
   return uniq(recipientArray)
 }
