@@ -1,32 +1,26 @@
-import type { IFlowTemplateConfig, IStep } from '@plumber/types'
+import type { IStep } from '@plumber/types'
 
 import { Fragment, useCallback, useContext, useMemo } from 'react'
-import { BiInfoCircle } from 'react-icons/bi'
-import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
-import { Infobox } from '@opengovsg/design-system-react'
+import { CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 
 import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowSubstep from '@/components/FlowSubstep'
 import Form from '@/components/Form'
-import MarkdownRenderer from '@/components/MarkdownRenderer'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclude'
 import { generateValidationSchema } from '@/helpers/editor'
-import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
-import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 type StepProps = {
   step: IStep
   isLastStep: boolean
-  templateConfig?: IFlowTemplateConfig
 }
 
 export default function Step(props: StepProps): React.ReactElement | null {
-  const { step, isLastStep, templateConfig } = props
+  const { step, isLastStep } = props
 
   const {
     isOpen: isModalOpen,
@@ -64,19 +58,6 @@ export default function Step(props: StepProps): React.ReactElement | null {
     [substeps],
   )
 
-  // generate help message only if template config exists
-  const stepAppEventKey = `${step?.appKey}_${step?.key}`
-  const templateStepAppEventKey = step.config.templateConfig?.appEventKey
-  const templateStepHelpMessage = replacePlaceholdersForHelpMessage(
-    templateStepAppEventKey,
-    templateConfig,
-  )
-
-  // Only show if the template step app key matches the current step app key
-  // and has a help message (once tested successfully, the template step app key is removed)
-  const shouldShowInfobox: boolean =
-    stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
-
   // this ensures that we do not have an empty drawer
   if (!step.appKey && !step.key) {
     onDrawerClose()
@@ -89,24 +70,6 @@ export default function Step(props: StepProps): React.ReactElement | null {
   return (
     <>
       <Flex w="100%" flexDir="column">
-        {shouldShowInfobox && (
-          <Box borderRadius="lg">
-            <Infobox
-              icon={<BiInfoCircle />}
-              variant="secondary"
-              style={{
-                borderBottomLeftRadius: '0',
-                borderBottomRightRadius: '0',
-              }}
-            >
-              <MarkdownRenderer
-                source={templateStepHelpMessage}
-                components={infoboxMdComponents}
-              />
-            </Infobox>
-          </Box>
-        )}
-
         <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
           <Form
             key={step.id}

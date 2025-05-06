@@ -1,5 +1,3 @@
-import { IFlow } from '@plumber/types'
-
 import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
 
@@ -10,25 +8,15 @@ import Step from './Step'
 import StepHeader from './StepHeader'
 
 interface EditorRightDrawerProps {
-  flow: IFlow
   flowStepGroupIconUrl?: string
   index: number | null
-  isLastStep: boolean
   steps: any[]
 }
 
 export default function EditorRightDrawer(props: EditorRightDrawerProps) {
-  const { flow, index, isLastStep, steps } = props
+  const { index, steps } = props
 
-  const {
-    currentStepId,
-    currentStepIndex,
-    isDrawerOpen,
-    isMobile,
-    onDrawerClose,
-    setCurrentStepId,
-    setCurrentStepIndex,
-  } = useContext(EditorContext)
+  const { currentStepId, isDrawerOpen, isMobile } = useContext(EditorContext)
 
   const step = useMemo(() => {
     return steps.find((step) => step.id === currentStepId)
@@ -61,22 +49,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
         px="4"
         top="2.5rem"
       >
-        <Step
-          index={index}
-          step={step}
-          isLastStep={index === steps.length - 1}
-          onContinue={() => {
-            if (!isLastStep && currentStepIndex !== null) {
-              const nextStepIndex = currentStepIndex + 1
-              const nextStepId = steps[nextStepIndex]?.id
-              setCurrentStepId(nextStepId)
-              setCurrentStepIndex(nextStepIndex)
-            } else if (isLastStep) {
-              onDrawerClose()
-            }
-          }}
-          templateConfig={flow?.config?.templateConfig}
-        />
+        <Step step={step} isLastStep={index === steps.length - 1} />
       </Flex>
     </Flex>
   )

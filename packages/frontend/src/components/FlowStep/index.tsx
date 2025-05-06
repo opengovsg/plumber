@@ -1,16 +1,21 @@
-import type { IStep } from '@plumber/types'
+import type { IFlow, IStep } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
-import { CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
+import { BiInfoCircle } from 'react-icons/bi'
+import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
+import { Infobox } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
+import { MarkdownRenderer } from '@/exports/components'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
+import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { matchParamsToDataIn } from '../FlowStepTestController/utils'
+import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 import StepAppIcon from './components/StepAppIcon'
 import StepCaptionAndDemo from './components/StepCaptionAndDemo'
@@ -20,6 +25,7 @@ import FlowStepWrapper from './FlowStepWrapper'
 import { flowStepStyles } from './styles'
 
 type FlowStepProps = {
+  flow: IFlow
   step: IStep
   isDeletable?: boolean
   isLastStep: boolean
@@ -31,7 +37,7 @@ type FlowStepProps = {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, isLastStep, isNested, onOpen, onClose } = props
+  const { flow, step, isLastStep, isNested, onOpen, onClose } = props
 
   const {
     isOpen: isModalOpen,
@@ -89,6 +95,26 @@ export default function FlowStep(
     }
   }, [app, isDrawerOpen, currentStepId, step.id, onModalOpen, onClose, onOpen])
 
+  const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)
+
+  // generate help message only if template config exists
+  const stepAppEventKey = `${step?.appKey}_${step?.key}`
+  const templateStepAppEventKey = step.config.templateConfig?.appEventKey
+  const templateStepHelpMessage = replacePlaceholdersForHelpMessage(
+    templateStepAppEventKey,
+    flow?.config?.templateConfig,
+  )
+
+  // Only show if the template step app key matches the current step app key
+  // and has a help message (once tested successfully, the template step app key is removed)
+  const shouldShowTemplateMsg: boolean =
+    stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
+
+  // NOTE: there will only be 1 infobox shown at a time
+  // there will not be a situation where both are shown as template messages
+  // are removed once user executes a successful test
+  const hasInfoBox = shouldTestStepAgain || shouldShowTemplateMsg
+
   if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />
   }
@@ -109,14 +135,41 @@ export default function FlowStep(
               shouldHighlight={shouldHighlight}
             />
           )}
+          {shouldShowTemplateMsg && (
+            <Box
+              borderColor={
+                shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
+              }
+              borderRadius="lg"
+              borderWidth="1px"
+              borderBottomRadius="none"
+              borderBottomWidth={0}
+              w={headerWidth}
+            >
+              <Infobox
+                icon={<BiInfoCircle />}
+                variant="secondary"
+                style={{
+                  borderBottomLeftRadius: '0',
+                  borderBottomRightRadius: '0',
+                }}
+              >
+                <MarkdownRenderer
+                  source={templateStepHelpMessage}
+                  components={infoboxMdComponents}
+                />
+              </Infobox>
+            </Box>
+          )}
           <Flex
             {...flowStepStyles.container}
-            borderTopWidth={shouldTestStepAgain ? 0 : '1px'}
+            borderTopWidth={hasInfoBox ? 0 : '1px'}
             borderColor={
               shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
             }
-            borderTopRadius={shouldTestStepAgain ? 'none' : 'lg'}
-            w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
+            borderTopRadius={hasInfoBox ? 'none' : 'lg'}
+            h={isNested ? '48px' : '64px'}
+            w={headerWidth}
           >
             <Flex
               {...flowStepStyles.topHeader}

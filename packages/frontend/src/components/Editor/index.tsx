@@ -175,6 +175,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
               <FlowStep
+                flow={flow}
                 step={step}
                 isDeletable={true}
                 isLastStep={index === steps.length - 1}
@@ -214,10 +215,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
         </Flex>
 
         <EditorRightDrawer
-          flow={flow}
           flowStepGroupIconUrl={flowStepGroupIconUrl}
           index={currentStepIndex}
-          isLastStep={currentStepIndex === steps.length - 1}
           steps={steps}
         />
       </StepExecutionsToIncludeProvider>
