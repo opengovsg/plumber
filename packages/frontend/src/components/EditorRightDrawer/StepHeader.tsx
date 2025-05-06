@@ -1,11 +1,13 @@
 import { IStep } from '@plumber/types'
 
-import { useContext } from 'react'
-import { CloseButton, Flex, Text } from '@chakra-ui/react'
+import { useContext, useRef } from 'react'
+import { CloseButton, Flex, Text, useDisclosure } from '@chakra-ui/react'
 
 import EditableInput from '@/components/EditableInput'
 import { EditorContext } from '@/contexts/Editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
+
+import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 
 interface StepHeaderProps {
   step: IStep
@@ -13,16 +15,38 @@ interface StepHeaderProps {
 
 export default function StepHeader(props: StepHeaderProps) {
   const { step } = props
+  const cancelRef = useRef(null)
+  const {
+    isOpen: isWarningOpen,
+    onOpen: onWarningOpen,
+    onClose: onWarningClose,
+  } = useDisclosure()
 
   const {
     allApps,
     readOnly: isReadOnlyEditor,
+    shouldWarnOnLeave,
     onDrawerClose,
     onUpdateStep,
     setCurrentStepId,
+    setShouldWarnOnLeave,
   } = useContext(EditorContext)
 
   const { position, stepName: initialStepName } = useStepMetadata(allApps, step)
+
+  const handleClose = () => {
+    if (shouldWarnOnLeave) {
+      onWarningOpen()
+    } else {
+      handleLeave()
+    }
+  }
+
+  const handleLeave = () => {
+    onDrawerClose()
+    setCurrentStepId(null)
+    setShouldWarnOnLeave(false)
+  }
 
   const onSave = async (value: string) => {
     await onUpdateStep({
@@ -57,13 +81,12 @@ export default function StepHeader(props: StepHeaderProps) {
         />
       </Flex>
 
-      <CloseButton
-        onClick={() => {
-          onDrawerClose()
-          setCurrentStepId(null)
-        }}
-        position="absolute"
-        right="4"
+      <CloseButton onClick={handleClose} position="absolute" right="4" />
+      <UnsavedChangesAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={handleLeave}
       />
     </Flex>
   )
