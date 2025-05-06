@@ -31,7 +31,9 @@ const updateStep: MutationResolvers['updateStep'] = async (
     }
 
     const shouldInvalidate =
-      step.key !== input.key || step.appKey !== input.appKey
+      step.key !== input.key ||
+      step.appKey !== input.appKey ||
+      input.status === 'incomplete'
 
     return await Step.query(trx)
       .patchAndFetchById(input.id, {
