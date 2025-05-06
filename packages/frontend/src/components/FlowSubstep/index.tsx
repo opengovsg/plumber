@@ -11,7 +11,7 @@ import type {
 import { useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Box, Collapse, Stack } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import { Button, useToast } from '@opengovsg/design-system-react'
 
 import FlowSubstepTitle from '@/components/FlowSubstepTitle'
 import InputCreator from '@/components/InputCreator'
@@ -25,8 +25,7 @@ type FlowSubstepProps = {
   expanded?: boolean
   onExpand: () => void
   onCollapse: () => void
-  onChange: ({ step }: { step: IStep }) => void
-  onSubmit: () => void
+  onSubmit: (val: any) => Promise<void>
   step: IStep
   settingsLabel?: string
   selectedActionOrTrigger?: ITrigger | IAction
@@ -102,10 +101,21 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   } = props
 
   const { name, arguments: args } = substep
+  const toast = useToast()
+  const [isSaving, setIsSaving] = useState(false)
 
   const { flags } = useContext(LaunchDarklyContext)
   const editorContext = useContext(EditorContext)
   const formContext = useFormContext()
+  /*
+   * NOTE: we use dirtyFields instead of isDirty because dirtyFields only tracks
+   * fields that are currently different from their default values, whereas
+   * isDirty tracks if the form values have changed at all from the default values
+   * — even if you change a field back to its original value.
+   */
+  const { dirtyFields } = formContext.formState
+  const isDirty = Object.keys(dirtyFields).length > 0
+
   const [validationStatus, setValidationStatus] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
   )
@@ -135,15 +145,47 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   const onToggle = expanded ? onCollapse : onExpand
 
+  // NOTE: this is meant to avoid users losing progress
+  // we validate the substeps so that the header reflects the correct status
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      const currentStep = formContext.getValues() as IStep
+      const isValid = validateSubstep(substep, currentStep)
+      const result = await editorContext.onUpdateStep({
+        ...currentStep,
+        status: isValid ? 'completed' : 'incomplete',
+      })
+
+      if (!result) {
+        throw new Error('Failed to save step')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error saving step',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   // Skip to the next step if the substep is meant to be hidden
   useEffect(() => {
     if (!expanded) {
       return
     }
     if (!argsToDisplay || argsToDisplay.length === 0) {
-      onSubmit()
+      onSubmit(formContext.getValues() as IStep)
     }
-  }, [argsToDisplay, expanded, onSubmit])
+  }, [argsToDisplay, expanded, formContext, onSubmit])
 
   if (!argsToDisplay || argsToDisplay.length === 0) {
     return <></>
@@ -166,21 +208,38 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
                 schema={argument}
                 namePrefix="parameters"
                 stepId={step.id}
-                disabled={editorContext.readOnly}
+                disabled={editorContext.readOnly || isSaving}
               />
             ))}
           </Stack>
 
-          <Button
-            isFullWidth
-            onClick={onSubmit}
+          <Stack
+            direction="row"
+            spacing={4}
             mt={4}
-            isDisabled={!validationStatus || editorContext.readOnly}
-            type="submit"
-            data-test="flow-substep-continue-button"
+            justify="flex-end"
+            borderTop="1px solid"
+            borderTopColor="base.divider.medium"
+            pt={4}
           >
-            Save and continue
-          </Button>
+            <Button
+              isDisabled={editorContext.readOnly || isSaving || !isDirty}
+              isLoading={isSaving}
+              variant="clear"
+              onClick={handleSave}
+            >
+              {isDirty ? 'Save' : 'Saved'}
+            </Button>
+            <Button
+              onClick={() => onSubmit(formContext.getValues() as IStep)}
+              data-test="flow-substep-continue-button"
+              isDisabled={
+                !validationStatus || editorContext.readOnly || isSaving
+              }
+            >
+              Check step
+            </Button>
+          </Stack>
         </Box>
       </Collapse>
     </>
