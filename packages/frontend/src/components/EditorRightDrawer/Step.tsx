@@ -22,7 +22,6 @@ import Form from '@/components/Form'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import TestSubstep from '@/components/TestSubstep'
 import { EditorContext } from '@/contexts/Editor'
-import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
 import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclude'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
@@ -96,14 +95,8 @@ export default function Step(props: StepProps): React.ReactElement | null {
 
   const { onDrawerClose, onUpdateStep, testExecutionSteps } =
     useContext(EditorContext)
-  const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
 
-  const cannotChooseApp = displayOverrides?.disableActionChanges ?? false
-  const [currentSubstep, setCurrentSubstep] = useState<number | null>(
-    // OK to set to 1, even if a step has _no_ substeps, everything will just be
-    // collapsed due to matching logic below.
-    cannotChooseApp ? 1 : 0,
-  )
+  const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
 
   // This includes all steps that run even after the current step, but within the same branch.
   const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
@@ -151,9 +144,9 @@ export default function Step(props: StepProps): React.ReactElement | null {
 
   useEffect(() => {
     if (index !== null) {
-      setCurrentSubstep(cannotChooseApp ? 1 : 0)
+      setCurrentSubstep(0)
     }
-  }, [cannotChooseApp, index])
+  }, [index])
 
   // this ensures that we do not have an empty drawer
   if (!step.appKey && !step.key) {
