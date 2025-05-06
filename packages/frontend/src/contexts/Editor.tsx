@@ -230,6 +230,7 @@ export const EditorProvider = ({
         flow: {
           id: flowId,
         },
+        ...(step.status !== undefined && { status: step.status }),
       }
 
       if (step.appKey) {
