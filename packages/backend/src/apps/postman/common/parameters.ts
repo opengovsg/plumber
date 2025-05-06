@@ -9,9 +9,8 @@ import { parseS3Id } from '@/helpers/s3'
 function recipientStringToArray(value: string) {
   const recipientArray = value
     .split(',')
-    .map((e) => e.trim())
+    .map((e) => e.trim().toLowerCase())
     .filter((e) => e?.length > 0)
-    .map((e) => e.toLowerCase())
   // dedupe the array
   return uniq(recipientArray)
 }
