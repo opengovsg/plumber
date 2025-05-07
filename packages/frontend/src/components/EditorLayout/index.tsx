@@ -10,10 +10,11 @@ import {
   IconButton,
   Spinner,
   TouchableTooltip,
+  useIsMobile,
 } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
-import EditableTypography from '@/components/EditableTypography'
+import EditableInput from '@/components/EditableInput'
 import Editor from '@/components/Editor'
 import DemoFlowModal from '@/components/FlowRow/DemoFlowModal'
 import * as URLS from '@/config/urls'
@@ -31,6 +32,7 @@ import { LensSurvey } from './LensSurvey'
 export default function EditorLayout() {
   const { flowId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
+  const isMobile = useIsMobile()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
     refetchQueries: [GET_FLOW],
@@ -134,7 +136,7 @@ export default function EditorLayout() {
           borderColor="base.divider.subtle"
         >
           <Flex flex={1} alignItems="center">
-            <Box as={Link} to={URLS.FLOWS} mt={1}>
+            <Box as={Link} to={URLS.FLOWS} mt={1} mr={3}>
               <Icon
                 boxSize={6}
                 color="interaction.support.disabled-content"
@@ -142,33 +144,35 @@ export default function EditorLayout() {
               ></Icon>
             </Box>
 
-            {!loading && (
-              <EditableTypography
-                variant="body1"
-                onConfirm={onFlowNameUpdate}
-                noWrap
-                sx={{ display: 'flex', flex: 1, maxWidth: '30vw', ml: 1 }}
-              >
-                {flow?.name}
-              </EditableTypography>
-            )}
+            <Flex>
+              {!loading && (
+                <EditableInput
+                  value={flow?.name}
+                  onSave={onFlowNameUpdate}
+                  readOnly={isEditorReadOnly}
+                  width={isMobile ? '40%' : undefined}
+                />
+              )}
+            </Flex>
           </Flex>
 
-          <TouchableTooltip label="Guide" aria-label="guide tooltip">
-            <IconButton
-              as={Link}
-              to={URLS.GUIDE_LINK}
-              target="_blank"
-              variant="clear"
-              aria-label="guide"
-              icon={<BiInfoCircle />}
-              colorScheme="secondary"
-              _hover={{
-                color: 'primary.500',
-                bg: 'interaction.muted.main.hover',
-              }}
-            />
-          </TouchableTooltip>
+          {!isMobile && (
+            <TouchableTooltip label="Guide" aria-label="guide tooltip">
+              <IconButton
+                as={Link}
+                to={URLS.GUIDE_LINK}
+                target="_blank"
+                variant="clear"
+                aria-label="guide"
+                icon={<BiInfoCircle />}
+                colorScheme="secondary"
+                _hover={{
+                  color: 'primary.500',
+                  bg: 'interaction.muted.main.hover',
+                }}
+              />
+            </TouchableTooltip>
+          )}
 
           <TouchableTooltip label="Settings" aria-label="settings tooltip">
             <IconButton

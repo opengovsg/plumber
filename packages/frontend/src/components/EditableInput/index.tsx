@@ -102,7 +102,11 @@ export default function EditableInput({
       whiteSpace="nowrap"
       maxW={isMobile ? '80%' : '100%'}
     >
-      <Text textOverflow="ellipsis" overflow="hidden">
+      <Text
+        textOverflow="ellipsis"
+        overflow="hidden"
+        w={isMobile ? width : 'auto'}
+      >
         {initialValue}
       </Text>
       {!readOnly && (
