@@ -15,6 +15,12 @@ export const GET_TEST_EXECUTION_STEPS = gql`
       step {
         id
         position
+        config {
+          templateConfig {
+            appEventKey
+          }
+          stepName
+        }
       }
       status
       appKey
