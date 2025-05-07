@@ -1,4 +1,4 @@
-import type { IApp, IExecutionStep, IStep } from '@plumber/types'
+import type { IApp, IExecutionStep, IFlow, IStep } from '@plumber/types'
 
 import {
   createContext,
@@ -28,13 +28,17 @@ import {
 import { LaunchDarklyContext } from './LaunchDarkly'
 
 interface IEditorContextValue {
+  flow: IFlow
   flowId: string
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
   currentStepIndex: number | null
+  hasIfThen: boolean
   isDrawerOpen: boolean
   isMobile: boolean
+  onDrawerOpen: () => void
+  onDrawerClose: () => void
   setCurrentStepId: (stepId: string | null) => void
   setCurrentStepIndex: (stepIndex: number | null) => void
   onCreateStep: (
@@ -43,33 +47,33 @@ interface IEditorContextValue {
     eventKey: string,
     connectionId?: string,
   ) => Promise<IStep>
-  onDrawerOpen: () => void
-  onDrawerClose: () => void
   onUpdateStep: (step: IStep) => Promise<IStep>
   allApps: IApp[]
 }
 
 export const EditorContext = createContext<IEditorContextValue>({
+  flow: {} as IFlow,
   flowId: '',
-  readOnly: false,
-  testExecutionSteps: [],
   currentStepId: null,
   currentStepIndex: null,
+  hasIfThen: false,
   isDrawerOpen: false,
   isMobile: false,
+  readOnly: false,
+  testExecutionSteps: [],
+  onCreateStep: () => Promise.resolve({} as IStep),
+  onDrawerClose: () => null,
+  onDrawerOpen: () => null,
+  onUpdateStep: () => Promise.resolve({} as IStep),
   setCurrentStepId: () => null,
   setCurrentStepIndex: () => null,
-  onDrawerOpen: () => null,
-  onDrawerClose: () => null,
-  onCreateStep: () => Promise.resolve({} as IStep),
-  onUpdateStep: () => Promise.resolve({} as IStep),
   allApps: [],
 })
 
 type EditorProviderProps = {
   children: ReactNode
   readOnly: boolean
-  flowId: string
+  flow: IFlow
 }
 
 /**
@@ -115,7 +119,7 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 
 export const EditorProvider = ({
   readOnly,
-  flowId,
+  flow,
   children,
 }: EditorProviderProps) => {
   // TODO: remove this kill switch once Single Step Testing is stable
@@ -124,10 +128,15 @@ export const EditorProvider = ({
 
   const isMobile = useIsMobile()
 
+  const flowId = flow.id
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
+  const hasIfThen = flow?.steps.some(
+    (step: IStep) => step.key === TOOLBOX_ACTIONS.IfThen,
+  )
+
   const allApps = getAppsData?.getApps ?? []
 
   const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
@@ -205,7 +214,9 @@ export const EditorProvider = ({
             ...completeStep,
             flowId: flowId,
           }
-          return await initializeIfThen(completeStepWithFlow)
+          return (await initializeIfThen(
+            completeStepWithFlow,
+          )) as unknown as IStep
         }
       }
 
@@ -257,20 +268,22 @@ export const EditorProvider = ({
   return (
     <EditorContext.Provider
       value={{
+        allApps,
+        currentStepId,
+        currentStepIndex,
+        hasIfThen,
+        isDrawerOpen,
+        isMobile,
+        onDrawerOpen,
+        onDrawerClose,
+        flow,
         flowId,
         readOnly,
         testExecutionSteps,
-        currentStepId,
-        currentStepIndex,
-        isDrawerOpen,
-        isMobile,
-        setCurrentStepId,
-        setCurrentStepIndex,
-        onDrawerOpen,
-        onDrawerClose,
         onCreateStep,
         onUpdateStep,
-        allApps,
+        setCurrentStepId,
+        setCurrentStepIndex,
       }}
     >
       {children}

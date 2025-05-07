@@ -1,4 +1,4 @@
-import { IFlow, IStep } from '@plumber/types'
+import { IFlow } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
 import { Box, CloseButton, Flex } from '@chakra-ui/react'
@@ -8,30 +8,20 @@ import { EditorContext } from '@/contexts/Editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import Step from './Step'
-import StepGroup from './StepGroup'
 
 interface EditorRightDrawerProps {
   flow: IFlow
   flowStepGroupIconUrl?: string
   index: number | null
   isLastStep: boolean
-  isNested?: boolean
-  groupedSteps: IStep[]
   steps: any[]
 }
 
 export default function EditorRightDrawer(props: EditorRightDrawerProps) {
-  const {
-    flow,
-    flowStepGroupIconUrl,
-    index,
-    isLastStep,
-    isNested,
-    groupedSteps,
-    steps,
-  } = props
+  const { flow, index, isLastStep, steps } = props
 
   const {
+    allApps,
     currentStepId,
     currentStepIndex,
     isDrawerOpen,
@@ -46,12 +36,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     return steps.find((step) => step.id === currentStepId)
   }, [currentStepId, steps])
 
-  const { caption, isIfThenStep } = useStepMetadata(step)
-
-  const showStep = useMemo(
-    () => !isIfThenStep || (isIfThenStep && isNested),
-    [isIfThenStep, isNested],
-  )
+  const { caption } = useStepMetadata(allApps, step)
 
   if (!currentStepId || !step) {
     return null
@@ -61,9 +46,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     <Flex
       flexDir="column"
       position="relative"
-      width={
-        isDrawerOpen ? (isMobile ? '100vw' : isNested ? '55%' : '55%') : '0'
-      }
+      width={isDrawerOpen ? (isMobile ? '100vw' : '55%') : '0'}
       bg="white"
       py="4"
       borderRadius="lg"
@@ -98,39 +81,24 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
         px="4"
         top="2rem"
       >
-        {showStep && (
-          <Step
-            index={index}
-            step={step}
-            isLastStep={index === steps.length - 1}
-            onContinue={() => {
-              if (!isLastStep && currentStepIndex !== null) {
-                const nextStepIndex = currentStepIndex + 1
-                const nextStepId = steps[nextStepIndex]?.id
-                setCurrentStepId(nextStepId)
-                setCurrentStepIndex(nextStepIndex)
-              } else if (isLastStep) {
-                onDrawerClose()
-              }
-            }}
-            onClose={onDrawerClose}
-            onOpen={onDrawerOpen}
-            templateConfig={flow?.config?.templateConfig}
-          />
-        )}
-        {groupedSteps.length > 0 && isIfThenStep && (
-          <StepGroup
-            iconUrl={flowStepGroupIconUrl}
-            flow={flow}
-            steps={groupedSteps}
-            collapsed={currentStepId !== groupedSteps[0].id}
-            onOpen={() => setCurrentStepId(groupedSteps[0].id)}
-            onClose={() => {
-              setCurrentStepId(null)
+        <Step
+          index={index}
+          step={step}
+          isLastStep={index === steps.length - 1}
+          onContinue={() => {
+            if (!isLastStep && currentStepIndex !== null) {
+              const nextStepIndex = currentStepIndex + 1
+              const nextStepId = steps[nextStepIndex]?.id
+              setCurrentStepId(nextStepId)
+              setCurrentStepIndex(nextStepIndex)
+            } else if (isLastStep) {
               onDrawerClose()
-            }}
-          />
-        )}
+            }
+          }}
+          onOpen={onDrawerOpen}
+          onClose={onDrawerClose}
+          templateConfig={flow?.config?.templateConfig}
+        />
       </Flex>
     </Flex>
   )
