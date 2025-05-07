@@ -28,6 +28,7 @@ import {
 import { LaunchDarklyContext } from './LaunchDarkly'
 
 interface IEditorContextValue {
+  flow: IFlow
   flowId: string
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
@@ -51,6 +52,7 @@ interface IEditorContextValue {
 }
 
 export const EditorContext = createContext<IEditorContextValue>({
+  flow: {} as IFlow,
   flowId: '',
   currentStepId: null,
   currentStepIndex: null,
@@ -71,7 +73,6 @@ export const EditorContext = createContext<IEditorContextValue>({
 type EditorProviderProps = {
   children: ReactNode
   readOnly: boolean
-  flowId: string
   flow: IFlow
 }
 
@@ -119,7 +120,6 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 export const EditorProvider = ({
   readOnly,
   flow,
-  flowId,
   children,
 }: EditorProviderProps) => {
   // TODO: remove this kill switch once Single Step Testing is stable
@@ -128,6 +128,7 @@ export const EditorProvider = ({
 
   const isMobile = useIsMobile()
 
+  const flowId = flow.id
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
 
@@ -275,6 +276,7 @@ export const EditorProvider = ({
         isMobile,
         onDrawerOpen,
         onDrawerClose,
+        flow,
         flowId,
         readOnly,
         testExecutionSteps,

@@ -16,10 +16,15 @@ export const ifThenStyles = {
     w: 'full',
     _hover: {
       bg: 'interaction.muted.neutral.hover',
-      cursor: 'pointer',
     },
     _active: {
       bg: 'interaction.muted.neutral.active',
+    },
+    _disabled: {
+      borderColor: 'base.divider.light',
+      color: 'base.content.medium',
+      cursor: 'not-allowed',
+      _hover: { bg: 'white' },
     },
   },
 }

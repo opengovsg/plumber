@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
-import { Divider, Flex, useDisclosure } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import { Divider, Flex, IconButton, useDisclosure } from '@chakra-ui/react'
 
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 
@@ -38,15 +37,13 @@ export function HoverAddStepButton(
           </Flex>
         )}
         {!isDisabled && isHovered && (
-          <Button
+          <IconButton
             {...styles.button}
             aria-label="Add Step"
-            className="add-button"
             onClick={onOpen}
             isDisabled={isDisabled}
-          >
-            <BiPlus />
-          </Button>
+            icon={<BiPlus />}
+          />
         )}
       </Flex>
 

@@ -99,13 +99,12 @@ export default function IfThen(props: IfThenProps): JSX.Element {
 
   return (
     <Flex flexDir="column" alignItems="center" gap={4} w="100%" mt={2}>
-      <Flex direction="column" w="100%" px={4} gap={4}>
+      <Flex flexDir="column" w="100%" px={4} gap={4}>
         {groupedSteps.map((branchSteps) => {
           return (
             <Branch
               key={branchSteps[0].id}
               branchSteps={branchSteps}
-              groupedSteps={groupedSteps}
               stepsBeforeGroup={stepsBeforeGroup}
             />
           )
@@ -117,7 +116,6 @@ export default function IfThen(props: IfThenProps): JSX.Element {
           isDisabled={isEditorReadOnly}
           leftIcon={<BiPlus />}
           {...ifThenStyles.addBranchButton}
-          pointerEvents={isEditorReadOnly ? 'none' : 'auto'}
         >
           Add branch
         </Button>

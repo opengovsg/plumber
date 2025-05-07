@@ -12,7 +12,6 @@ export const flowStepGroupStyles = {
 
   header: {
     borderRadius: 'lg',
-    // borderTopRadius: 'lg',
     p: 0,
     bg: 'white',
     overflow: 'hidden',

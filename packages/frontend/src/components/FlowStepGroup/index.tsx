@@ -60,7 +60,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
                     stepGroupType as keyof typeof TOOLBOX_ACTION_TO_ICON_MAP
                   ] ?? BiQuestionMark
                 }
-                color={'primary.500'}
+                color="primary.500"
               />
             </Flex>
             <Flex direction="column" align="start">

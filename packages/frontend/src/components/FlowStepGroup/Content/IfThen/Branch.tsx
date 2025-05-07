@@ -35,7 +35,6 @@ import { branchStyles } from './styles'
 
 interface BranchProps {
   branchSteps: IStep[]
-  groupedSteps: IStep[][]
   stepsBeforeGroup: IStep[]
 }
 
