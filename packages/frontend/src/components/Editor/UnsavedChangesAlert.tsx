@@ -41,10 +41,10 @@ export default function UnsavedChangesAlert({
     >
       <AlertDialogOverlay>
         <AlertDialogContent>
-          <AlertDialogHeader>Unsaved changes</AlertDialogHeader>
+          <AlertDialogHeader>You have unsaved changes</AlertDialogHeader>
 
           <AlertDialogBody>
-            You have unsaved changes. Are you sure you want to navigate away?
+            Are you sure you want to leave? Your changes will be lost.
           </AlertDialogBody>
 
           <AlertDialogFooter>
@@ -54,10 +54,10 @@ export default function UnsavedChangesAlert({
               variant="clear"
               colorScheme="secondary"
             >
-              Stay
+              Continue editing
             </Button>
             <Button colorScheme="critical" onClick={handleLeave} ml={3}>
-              Leave
+              Discard changes
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
