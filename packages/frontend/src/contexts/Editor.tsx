@@ -94,6 +94,7 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
       iconUrl: null,
       webhookUrl: null,
       config: {
+        stepName: null,
         templateConfig: {
           appEventKey: null,
         },
@@ -240,6 +241,9 @@ export const EditorProvider = ({
         },
         flow: {
           id: flowId,
+        },
+        config: {
+          stepName: step.config?.stepName,
         },
         ...(step.status !== undefined && { status: step.status }),
       }

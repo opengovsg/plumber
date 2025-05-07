@@ -27,6 +27,7 @@ export const GET_FLOW = gql`
         }
         parameters
         config {
+          stepName
           templateConfig {
             appEventKey
           }

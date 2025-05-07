@@ -518,6 +518,10 @@ input CreateStepInput {
   previousStep: PreviousStepInput
 }
 
+input StepConfigInput {
+  stepName: String
+}
+
 input UpdateStepInput {
   id: String
   previousStepId: String
@@ -528,6 +532,7 @@ input UpdateStepInput {
   parameters: JSONObject
   previousStep: PreviousStepInput
   status: String
+  config: StepConfigInput
 }
 
 input DeleteStepInput {
@@ -609,6 +614,7 @@ type Step {
 
 type StepConfig {
   templateConfig: StepTemplateConfig
+  stepName: String
 }
 
 type StepTemplateConfig {

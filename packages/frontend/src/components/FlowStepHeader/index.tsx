@@ -168,9 +168,16 @@ export default function FlowStepHeader(
             />
           </Flex>
           {/*  Captions */}
-          <Flex direction="column" align="start">
-            <Flex alignItems="center" gap={2}>
-              <Text textStyle="subhead-1" color="base.content.default">
+          <Flex direction="column" align="start" maxW="80%">
+            <Flex alignItems="center" gap={2} maxW="100%">
+              <Text
+                textStyle="subhead-1"
+                color="base.content.default"
+                whiteSpace="nowrap"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                maxW="100%"
+              >
                 {caption}
               </Text>
               {hasDemoVideo && (
