@@ -134,6 +134,7 @@ export interface IExecution {
 }
 
 export interface IStepConfig {
+  stepName?: string
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
 }

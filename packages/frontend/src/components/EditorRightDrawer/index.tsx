@@ -1,13 +1,13 @@
 import { IFlow } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
-import { Box, CloseButton, Flex } from '@chakra-ui/react'
+import { Flex } from '@chakra-ui/react'
 
 import { EDITOR_MAX_HEIGHT } from '@/components/Editor/constants'
 import { EditorContext } from '@/contexts/Editor'
-import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import Step from './Step'
+import StepHeader from './StepHeader'
 
 interface EditorRightDrawerProps {
   flow: IFlow
@@ -21,7 +21,6 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
   const { flow, index, isLastStep, steps } = props
 
   const {
-    allApps,
     currentStepId,
     currentStepIndex,
     isDrawerOpen,
@@ -35,8 +34,6 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
   const step = useMemo(() => {
     return steps.find((step) => step.id === currentStepId)
   }, [currentStepId, steps])
-
-  const { caption } = useStepMetadata(allApps, step)
 
   if (!currentStepId || !step) {
     return null
@@ -57,29 +54,13 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
       maxHeight={EDITOR_MAX_HEIGHT}
       overflowY="auto"
     >
-      <Flex
-        alignItems="center"
-        justifyContent="space-between"
-        position="fixed"
-        w="full"
-        px="4"
-      >
-        <Box>{caption}</Box>
-        <CloseButton
-          onClick={() => {
-            setCurrentStepId(null)
-            onDrawerClose()
-          }}
-          position="absolute"
-          right="4"
-        />
-      </Flex>
+      <StepHeader step={step} />
       <Flex
         height="calc(100% - 1.5rem)"
         overflowY="auto"
         position="relative"
         px="4"
-        top="2rem"
+        top="2.5rem"
       >
         <Step
           index={index}
