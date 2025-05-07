@@ -3,17 +3,18 @@ import { BiPlus, BiSolidBolt } from 'react-icons/bi'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
-import { getFlowStepWidth } from '@/helpers/editor'
+import { getFlowStepHeaderWidth } from '@/helpers/editor'
 
 interface EmptyFlowStepHeaderProps {
   isTrigger: boolean
   onModalOpen: () => void
+  isNested?: boolean
 }
 
 export default function EmptyFlowStepHeader(
   props: EmptyFlowStepHeaderProps,
 ): JSX.Element {
-  const { isTrigger, onModalOpen } = props
+  const { isTrigger, onModalOpen, isNested } = props
   const { isDrawerOpen, isMobile } = useContext(EditorContext)
 
   return (
@@ -24,7 +25,7 @@ export default function EmptyFlowStepHeader(
       bg="white"
       p={4}
       pl={8}
-      h="96px"
+      h={isNested ? '48px' : '64px'}
       alignItems="center"
       gap={4}
       onClick={onModalOpen}
@@ -35,7 +36,7 @@ export default function EmptyFlowStepHeader(
       _active={{
         bg: 'interaction.muted.neutral.active',
       }}
-      w={getFlowStepWidth(isDrawerOpen, isMobile)}
+      w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
     >
       <Icon as={isTrigger ? BiSolidBolt : BiPlus} boxSize={6} />
       <Text textStyle="subhead-1">

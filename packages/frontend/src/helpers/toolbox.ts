@@ -5,6 +5,7 @@ import { useMutation } from '@apollo/client'
 
 import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
 import { NESTED_IFTHEN_FEATURE_FLAG } from '@/config/flags'
+import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
@@ -144,9 +145,10 @@ export function useIsIfThenSelectable({
   isLastStep: boolean
 }): boolean {
   const { depth } = useContext(BranchContext)
+  const { hasIfThen } = useContext(EditorContext)
   const { flags: ldFlags } = useContext(LaunchDarklyContext)
 
-  if (!isLastStep) {
+  if (!isLastStep || hasIfThen) {
     return false
   }
 
