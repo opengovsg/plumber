@@ -93,7 +93,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { onDrawerClose, onUpdateStep, testExecutionSteps } =
+  const { allApps, onDrawerClose, onUpdateStep, testExecutionSteps } =
     useContext(EditorContext)
 
   const [currentSubstep, setCurrentSubstep] = useState<number | null>(0)
@@ -110,8 +110,10 @@ export default function Step(props: StepProps): React.ReactElement | null {
     [step.position, stepExecutionsToInclude, testExecutionSteps],
   )
 
-  const { app, apps, isTrigger, selectedActionOrTrigger, substeps } =
-    useStepMetadata(step)
+  const { app, isTrigger, selectedActionOrTrigger, substeps } = useStepMetadata(
+    allApps,
+    step,
+  )
 
   const handleSubmit = async (val: any) => {
     await onUpdateStep(val as IStep)
@@ -154,7 +156,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
     onDrawerClose()
   }
 
-  if (!apps) {
+  if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />
   }
 
