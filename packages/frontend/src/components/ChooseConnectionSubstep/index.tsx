@@ -145,7 +145,7 @@ function ChooseConnectionSubstep(
   ])
 
   return (
-    <Flex w="100%" p="1rem 1rem 1.5rem" flexDir="column" gap={4}>
+    <Flex w="100%" p="16px 0px" flexDir="column" gap={4}>
       <Flex justifyContent="space-between" alignItems="baseline">
         <Flex alignItems="baseline" gap={2}>
           <Icon
