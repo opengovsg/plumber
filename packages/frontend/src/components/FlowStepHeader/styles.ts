@@ -37,6 +37,7 @@ export const flowStepHeaderStyles = {
     alignItems: 'center',
     borderColor: 'base.divider.strong',
     borderWidth: 0,
+    flexShrink: 0,
     justifyContent: 'center',
     mr: 4,
     position: 'relative' as FlexProps['position'],

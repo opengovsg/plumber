@@ -36,8 +36,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
       input.status === 'incomplete'
 
     const stepName = input?.config?.stepName ?? step?.config?.stepName
-    const templateConfig =
-      input?.config?.templateConfig ?? step?.config?.templateConfig
+    const existingConfig = step?.config ?? {}
 
     const updatedStep = await Step.query(trx)
       .patchAndFetchById(input.id, {
@@ -47,8 +46,8 @@ const updateStep: MutationResolvers['updateStep'] = async (
         parameters: input.parameters,
         status: shouldInvalidate ? 'incomplete' : step.status,
         config: {
+          ...existingConfig,
           ...(stepName ? { stepName } : {}),
-          ...(templateConfig ? { templateConfig: { ...templateConfig } } : {}),
         },
       })
       .withGraphFetched('connection')

@@ -517,13 +517,8 @@ input CreateStepInput {
   previousStep: PreviousStepInput
 }
 
-input StepTemplateConfigInput {
-  appEventKey: String
-}
-
 input StepConfigInput {
   stepName: String
-  templateConfig: StepTemplateConfigInput
 }
 
 input UpdateStepInput {

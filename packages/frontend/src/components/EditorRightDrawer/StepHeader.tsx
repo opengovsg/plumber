@@ -47,13 +47,15 @@ export default function StepHeader(props: StepHeaderProps) {
       px="4"
       height="2rem"
     >
-      {position && <Text whiteSpace="pre-wrap">{position}. </Text>}
-      <EditableInput
-        key={step.id}
-        value={initialStepName}
-        onSave={onSave}
-        readOnly={isReadOnlyEditor}
-      />
+      <Flex alignItems="center" maxW="100%">
+        {position && <Text whiteSpace="pre-wrap">{position}. </Text>}
+        <EditableInput
+          key={step.id}
+          value={initialStepName}
+          onSave={onSave}
+          readOnly={isReadOnlyEditor}
+        />
+      </Flex>
 
       <CloseButton
         onClick={() => {

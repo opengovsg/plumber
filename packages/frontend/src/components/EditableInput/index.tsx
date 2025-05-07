@@ -58,7 +58,7 @@ export default function EditableInput({
   }
 
   const editModeContent = (
-    <>
+    <Flex width="100%">
       <Input
         autoFocus
         w={width}
@@ -86,7 +86,7 @@ export default function EditableInput({
         variant="clear"
         colorScheme="secondary"
       />
-    </>
+    </Flex>
   )
 
   const readOnlyContent = (
@@ -100,6 +100,7 @@ export default function EditableInput({
         }
       }}
       whiteSpace="nowrap"
+      maxW={isMobile ? '80%' : '100%'}
     >
       <Text textOverflow="ellipsis" overflow="hidden">
         {initialValue}
@@ -145,11 +146,7 @@ export default function EditableInput({
       gap={3}
       cursor={readOnly ? 'default' : 'pointer'}
       role="group"
-      maxW={{
-        base: 'calc(100vw - 240px)',
-        md: 'calc(100vw - 500px)',
-      }}
-      flex={1}
+      width="100%"
     >
       {wrappedChildren}
     </Flex>
