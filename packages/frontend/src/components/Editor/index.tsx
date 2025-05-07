@@ -7,10 +7,7 @@ import EditorRightDrawer from '@/components/EditorRightDrawer'
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
 import { EditorContext } from '@/contexts/Editor'
-import {
-  StepExecutionsToIncludeContext,
-  StepExecutionsToIncludeProvider,
-} from '@/contexts/StepExecutionsToInclude'
+import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
 import {
   extractBranchesWithSteps,
   TOOLBOX_ACTIONS,
@@ -120,10 +117,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
   // we include some grouped steps as there is no longer a nested editor
   // we identify the group by checking if the current step id is in the group
   //
-  const parentStepExecutionsToInclude = useContext(
-    StepExecutionsToIncludeContext,
-  )
-
   const groupStepsToInclude = useMemo(
     () =>
       groupedSteps.filter((group) =>
@@ -135,11 +128,10 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const stepExecutionsToInclude = useMemo(
     () =>
       new Set([
-        ...parentStepExecutionsToInclude,
         ...stepsBeforeGroup.map((step) => step.id),
         ...groupStepsToInclude.flatMap((step) => step.map((s) => s.id)),
       ]),
-    [parentStepExecutionsToInclude, stepsBeforeGroup, groupStepsToInclude],
+    [stepsBeforeGroup, groupStepsToInclude],
   )
 
   const nonIfThenActionSteps = stepsBeforeGroup.filter(
