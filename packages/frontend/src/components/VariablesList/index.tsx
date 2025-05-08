@@ -58,16 +58,18 @@ function VariableTag({
 function VariableItem({
   variable,
   onClick,
+  isLast,
 }: {
   variable: Variable
   onClick?: (variable: Variable) => void
+  isLast?: boolean
 }): JSX.Element {
   return (
     <Box
       key={`suggestion-${variable.name}`}
       data-test="variable-suggestion-item"
       padding={onClick ? '0.5rem 1rem' : '1rem'}
-      borderBottom={onClick ? undefined : '1px solid #EDEDED'}
+      borderBottom={onClick || isLast ? undefined : '1px solid #EDEDED'}
       _hover={
         onClick
           ? {
@@ -133,6 +135,7 @@ export default function VariablesList(props: VariablesListProps) {
           key={`variable-${variable.name}-${index}`}
           variable={variable}
           onClick={onClick}
+          isLast={index === variables.length - 1}
         />
       ))}
     </Box>
