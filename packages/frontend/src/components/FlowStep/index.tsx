@@ -15,7 +15,6 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
-import { matchParamsToDataIn } from '../FlowStepTestController/utils'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 import StepAppIcon from './components/StepAppIcon'
@@ -24,6 +23,7 @@ import StepDeleteButton from './components/StepDeleteButton'
 import TestAgainInfobox from './components/TestAgainInfobox'
 import FlowStepWrapper from './FlowStepWrapper'
 import { flowStepStyles } from './styles'
+import { hasMissingStepReference } from './utils'
 
 type FlowStepProps = {
   step: IStep
@@ -60,7 +60,6 @@ export default function FlowStep(
     readOnly,
     shouldWarnOnLeave,
     testExecutionSteps,
-    varInfoMap,
     onDrawerClose,
     onDrawerOpen,
     setCurrentStepId,
@@ -84,15 +83,16 @@ export default function FlowStep(
         isTestSuccessful: testResult,
       }
     }
+    const shouldTestStepAgain = hasMissingStepReference(
+      step.parameters,
+      new Set(testExecutionSteps.map((ts) => ts.stepId)),
+    )
+
     return {
-      shouldTestStepAgain: !matchParamsToDataIn(
-        testResult?.dataIn,
-        step.parameters,
-        varInfoMap,
-      ),
+      shouldTestStepAgain,
       isTestSuccessful: testResult.status === 'success',
     }
-  }, [testExecutionSteps, step, varInfoMap])
+  }, [testExecutionSteps, step])
 
   const shouldHighlight = currentStepId === step.id
 
@@ -164,7 +164,7 @@ export default function FlowStep(
   // NOTE: there will only be 1 infobox shown at a time
   // there will not be a situation where both are shown as template messages
   // are removed once user executes a successful test
-  const hasInfoBox = shouldShowTemplateMsg
+  const hasInfoBox = shouldShowTemplateMsg || shouldTestStepAgain
 
   if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />
@@ -186,12 +186,12 @@ export default function FlowStep(
         />
       ) : (
         <>
-          {/* {shouldTestStepAgain && (
+          {shouldTestStepAgain && (
             <TestAgainInfobox
               isNested={isNested}
               shouldHighlight={shouldHighlight}
             />
-          )} */}
+          )}
           {shouldShowTemplateMsg && (
             <Box
               borderColor={
@@ -237,7 +237,7 @@ export default function FlowStep(
                 isCompleted={isCompleted}
                 isNested={isNested}
                 isTestSuccessful={isTestSuccessful}
-                // shouldTestStepAgain={shouldTestStepAgain}
+                shouldTestStepAgain={shouldTestStepAgain}
                 app={app}
                 step={step}
               />
