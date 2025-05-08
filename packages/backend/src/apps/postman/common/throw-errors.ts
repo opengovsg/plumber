@@ -102,7 +102,7 @@ export function throwPostmanStepError({
     case 'INVALID-ATTACHMENT':
       throw new StepError(
         'Unsupported attachment file type',
-        'Click on set up action and check that the attachment type is supported by postman. Please check the supported types at [this link](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
+        'Click on set up action and check that the attachment type is supported by postman. Please check the supported types at [this link](https://postman-v1.guides.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
         position,
         appName,
         error,
