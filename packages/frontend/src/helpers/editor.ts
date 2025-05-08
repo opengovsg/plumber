@@ -29,7 +29,7 @@ export const getFlowStepHeaderWidth = (
     return '100%'
   }
 
-  return isNested ? 'full' : '55%'
+  return isNested ? 'full' : '600px'
 }
 
 function isValidArgValue(value: IJSONValue): boolean {
