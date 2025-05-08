@@ -60,7 +60,7 @@ export async function generateMockStep(
   parameters?: Record<string, any>,
   config?: Record<string, any>,
 ) {
-  await Step.query().insert({
+  return await Step.query().insert({
     key,
     appKey,
     type,

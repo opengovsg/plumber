@@ -7,6 +7,7 @@ import { Box, Flex, HStack, Stack, Text, VStack } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
+import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import ErrorResult from '../ErrorResult'
@@ -53,6 +54,7 @@ export default function FlowStepTestController(
     currentTestExecutionStep,
     readOnly,
     isTestExecuting,
+    testExecutionSteps,
     varInfoMap,
   } = useContext(EditorContext)
   const formContext = useFormContext()
@@ -90,9 +92,14 @@ export default function FlowStepTestController(
     testVariables,
   })
 
+  const { shouldTestStepAgain } = useMemo(() => {
+    return validateStepParams(step, testExecutionSteps)
+  }, [testExecutionSteps, step])
+
   const shouldShowSaveButton =
     !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
-  const shouldShowTestResults = currentTestExecutionStep && !lastErrorDetails
+  const shouldShowTestResults =
+    currentTestExecutionStep && !lastErrorDetails && !shouldTestStepAgain
 
   useEffect(() => {
     if (!containerRef.current) {

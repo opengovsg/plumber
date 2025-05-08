@@ -1,11 +1,16 @@
 import { IJSONObject } from '@plumber/types'
 
-import { GLOBAL_VARIABLE_REGEX } from '../RichTextEditor/utils'
+const VARIABLE_REGEX =
+  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/
+const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 
-export function hasMissingStepReference(
-  obj: IJSONObject,
-  stepMap: Set<string>,
-) {
+/**
+ * NOTE: this function is used to check if a step references another step.
+ * @param obj parameters of a step
+ * @param stepMap map of step id(s) that are being deleted
+ * @returns this returns whether parameters are referencing a step that is being deleted
+ */
+export function hasStepReference(obj: IJSONObject, stepMap: Set<string>) {
   const missing = new Set()
 
   function traverse(value: any) {
@@ -20,7 +25,7 @@ export function hasMissingStepReference(
       while ((match = regex.exec(value)) !== null) {
         try {
           const stepId = match[1].split('.')[1]
-          if (!stepMap.has(stepId)) {
+          if (stepMap.has(stepId)) {
             missing.add(stepId)
           }
         } catch (error) {

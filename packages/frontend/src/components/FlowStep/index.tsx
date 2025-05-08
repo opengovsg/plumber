@@ -10,6 +10,7 @@ import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { MarkdownRenderer } from '@/exports/components'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
+import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
@@ -23,7 +24,6 @@ import StepDeleteButton from './components/StepDeleteButton'
 import TestAgainInfobox from './components/TestAgainInfobox'
 import FlowStepWrapper from './FlowStepWrapper'
 import { flowStepStyles } from './styles'
-import { hasMissingStepReference } from './utils'
 
 type FlowStepProps = {
   step: IStep
@@ -75,24 +75,10 @@ export default function FlowStep(
       ? false
       : !readOnly && props.isDeletable
 
-  const { shouldTestStepAgain, isTestSuccessful } = useMemo(() => {
-    const testResult = testExecutionSteps.find((ts) => ts.stepId === step.id)
-    if (!testResult) {
-      return {
-        shouldTestStepAgain: false,
-        isTestSuccessful: testResult,
-      }
-    }
-    const shouldTestStepAgain = hasMissingStepReference(
-      step.parameters,
-      new Set(testExecutionSteps.map((ts) => ts.stepId)),
-    )
-
-    return {
-      shouldTestStepAgain,
-      isTestSuccessful: testResult.status === 'success',
-    }
-  }, [testExecutionSteps, step])
+  const { shouldTestStepAgain, isTestSuccessful } = useMemo(
+    () => validateStepParams(step, testExecutionSteps),
+    [step, testExecutionSteps],
+  )
 
   const shouldHighlight = currentStepId === step.id
 

@@ -67,7 +67,7 @@ vi.mock('@/helpers/get-test-execution-steps', () => ({
 }))
 
 describe('Get test execution steps mutation', () => {
-  it('filter out execution steps that belong to incomplete steps', async () => {
+  it('should return all execution steps', async () => {
     const result = await getTestExecutionSteps(
       {},
       { flowId: 'flow-id' },
@@ -76,6 +76,7 @@ describe('Get test execution steps mutation', () => {
     expect(result.map((r) => r.stepId)).toEqual([
       'step-id-1',
       'step-id-2',
+      'step-id-3',
       'step-id-4',
     ])
   })
