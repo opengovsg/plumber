@@ -1,6 +1,4 @@
-import { IGlobalVariable, ITableColumnConfig } from '@plumber/types'
-
-import StepError from '@/errors/step'
+import { ITableColumnConfig } from '@plumber/types'
 
 import Base from './base'
 import TableMetadata from './table-metadata'
@@ -36,24 +34,6 @@ class TableColumnMetadata extends Base {
       },
     },
   })
-
-  static getColumns = async (tableId: string, $?: IGlobalVariable) => {
-    const columns = await TableColumnMetadata.query()
-      .where({
-        table_id: tableId,
-      })
-      .orderBy('position')
-
-    if (columns.length === 0) {
-      throw new StepError(
-        'Tile not found',
-        'Tile may have been deleted. Please check your tile.',
-        $.step.position,
-        $.app.name,
-      )
-    }
-    return columns
-  }
 }
 
 export default TableColumnMetadata
