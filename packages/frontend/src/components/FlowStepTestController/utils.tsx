@@ -138,7 +138,7 @@ export function getInfoBoxDetails({
   testVariables: Variable[] | null
 }): [InfoboxProps['variant'], React.ReactNode] {
   if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
-    return ['warning', 'Previous result']
+    return ['unstyled', 'Previous result']
   }
 
   if (isTestSuccessful) {

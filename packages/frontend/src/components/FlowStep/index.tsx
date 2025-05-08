@@ -164,7 +164,7 @@ export default function FlowStep(
   // NOTE: there will only be 1 infobox shown at a time
   // there will not be a situation where both are shown as template messages
   // are removed once user executes a successful test
-  const hasInfoBox = shouldTestStepAgain || shouldShowTemplateMsg
+  const hasInfoBox = shouldShowTemplateMsg
 
   if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />
@@ -186,12 +186,12 @@ export default function FlowStep(
         />
       ) : (
         <>
-          {shouldTestStepAgain && (
+          {/* {shouldTestStepAgain && (
             <TestAgainInfobox
               isNested={isNested}
               shouldHighlight={shouldHighlight}
             />
-          )}
+          )} */}
           {shouldShowTemplateMsg && (
             <Box
               borderColor={
@@ -237,7 +237,7 @@ export default function FlowStep(
                 isCompleted={isCompleted}
                 isNested={isNested}
                 isTestSuccessful={isTestSuccessful}
-                shouldTestStepAgain={shouldTestStepAgain}
+                // shouldTestStepAgain={shouldTestStepAgain}
                 app={app}
                 step={step}
               />

@@ -81,22 +81,6 @@ export default function FlowStepTestController(
     )
   }, [currentTestExecutionStep, formContext, varInfoMap])
 
-  const CheckAgainButton = useMemo(
-    () => (
-      <Button
-        variant="clear"
-        onClick={handleSaveAndTest}
-        isLoading={isTestExecuting}
-        colorScheme="black"
-        size="sm"
-        isDisabled={!isValid}
-      >
-        Check step again
-      </Button>
-    ),
-    [handleSaveAndTest, isTestExecuting, isValid],
-  )
-
   const [infoBoxVariant, infoBoxText] = getInfoBoxDetails({
     isDirty,
     isIfThenStep,
@@ -170,6 +154,22 @@ export default function FlowStepTestController(
     return collapseDirection === 'up' ? <BiChevronUp /> : <BiChevronDown />
   }
 
+  const CheckAgainButton = useMemo(
+    () => (
+      <Button
+        variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
+        onClick={handleSaveAndTest}
+        isLoading={isTestExecuting}
+        colorScheme={infoBoxVariant === 'unstyled' ? 'primary' : 'black'}
+        size="sm"
+        isDisabled={!isValid}
+      >
+        Check step again
+      </Button>
+    ),
+    [handleSaveAndTest, infoBoxVariant, isTestExecuting, isValid],
+  )
+
   return (
     <Stack {...flowStepTestControllerStyles.container} ref={containerRef}>
       <VStack w="100%">
@@ -192,6 +192,7 @@ export default function FlowStepTestController(
                 {...flowStepTestControllerStyles.testedInfobox}
                 variant={infoBoxVariant}
                 borderBottomRadius={isTestResultOpen ? 0 : undefined}
+                icon={infoBoxVariant === 'unstyled' ? <></> : null}
               >
                 <Flex
                   justifyContent="space-between"
@@ -205,7 +206,9 @@ export default function FlowStepTestController(
                   ) : (
                     <Button
                       variant="clear"
-                      colorScheme="green"
+                      colorScheme={
+                        infoBoxVariant === 'unstyled' ? 'primary' : 'green'
+                      }
                       size="sm"
                       onClick={() =>
                         isTestResultOpen
