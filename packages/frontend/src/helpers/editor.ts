@@ -6,11 +6,13 @@ import {
   ISubstep,
 } from '@plumber/types'
 
+import { BiQuestionMark } from 'react-icons/bi'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
 import type { ObjectShape } from 'yup/lib/object'
 
+import { TOOLBOX_ACTION_TO_ICON_MAP } from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
 
 export const getFlowStepHeaderWidth = (
@@ -131,4 +133,16 @@ export function generateValidationSchema(substeps: ISubstep[]) {
   })
 
   return yupResolver(validationSchema)
+}
+
+export function getToolboxIcon(key?: string | null) {
+  if (!key) {
+    return BiQuestionMark
+  }
+
+  return (
+    TOOLBOX_ACTION_TO_ICON_MAP[
+      key as keyof typeof TOOLBOX_ACTION_TO_ICON_MAP
+    ] ?? BiQuestionMark
+  )
 }
