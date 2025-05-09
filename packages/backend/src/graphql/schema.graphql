@@ -807,6 +807,7 @@ input DeleteTableCollaboratorInput {
 
 type TableMetadata {
   id: ID!
+  databaseType: DatabaseType!
   name: String!
   columns: [TableColumnMetadata!]
   lastAccessedAt: String!

@@ -6,6 +6,7 @@ export const GET_TABLE = gql`
       id
       name
       viewOnlyKey
+      databaseType
       columns {
         id
         name

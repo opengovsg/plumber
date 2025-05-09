@@ -903,6 +903,7 @@ export interface ITableColumnMetadata {
 export interface ITableMetadata {
   id: string
   name: string
+  databaseType: DatabaseType
   columns: ITableColumnMetadata[]
   lastAccessedAt: string
   viewOnlyKey?: string

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Flex,
+  FormControl,
   Modal,
   ModalBody,
   ModalContent,
@@ -16,6 +17,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import {
+  Badge,
   Button,
   FormLabel,
   Input,
@@ -23,7 +25,9 @@ import {
   Tile,
 } from '@opengovsg/design-system-react'
 
+import { SingleSelect } from '@/components/SingleSelect'
 import * as URLS from '@/config/urls'
+import { DatabaseType } from '@/graphql/__generated__/graphql'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
 import { ImportCsvModalContent } from '@/pages/Tile/components/TableBanner/ImportCsvButton'
 import { TableContextProvider } from '@/pages/Tile/contexts/TableContext'
@@ -33,12 +37,16 @@ type TILE_CREATE_MODE = 'import' | 'new'
 const CreateTileForm = ({
   tableName,
   setTableName,
+  databaseType,
+  setDatabaseType,
   onSubmit,
   isSubmitting,
   onImportNext,
 }: {
   tableName: string
   setTableName: (tableName: string) => void
+  databaseType: DatabaseType
+  setDatabaseType: (databaseType: DatabaseType) => void
   onSubmit: () => Promise<void>
   isSubmitting: boolean
   onImportNext: () => void
@@ -49,41 +57,55 @@ const CreateTileForm = ({
     <>
       <ModalHeader>Create a Tile</ModalHeader>
       <ModalCloseButton />
-      <ModalBody>
-        <FormLabel isRequired>Enter a name for your new tile</FormLabel>
-        <Input
-          value={tableName}
-          onChange={(e) => setTableName(e.target.value)}
-        />
-        <FormLabel mt={8} isRequired>
-          How do you want to start?
-        </FormLabel>
-        <Flex gap={4}>
-          <Tile
-            icon={BiSpreadsheet}
-            flex={1}
-            onClick={() => setCreateMode('import')}
-            isSelected={createMode === 'import'}
-          >
-            <Text textStyle="h5" mt={4}>
-              Import CSV
-            </Text>
-            <Text textStyle="body-2">
-              Start with data that you have already collected
-            </Text>
-          </Tile>
-          <Tile
-            icon={BiTable}
-            flex={1}
-            onClick={() => setCreateMode('new')}
-            isSelected={createMode === 'new'}
-          >
-            <Text textStyle="h5" mt={4}>
-              Start from scratch
-            </Text>
-            <Text textStyle="body-2">Start with a blank database</Text>
-          </Tile>
-        </Flex>
+      <ModalBody gap={8} display="flex" flexDirection="column">
+        <FormControl>
+          <FormLabel isRequired>Enter a name for your new tile</FormLabel>
+          <Input
+            value={tableName}
+            onChange={(e) => setTableName(e.target.value)}
+          />
+        </FormControl>
+        <FormControl>
+          <FormLabel>Select version</FormLabel>
+          <SingleSelect
+            items={[
+              {
+                label: 'Tiles v2 (PostgreSQL)',
+                value: DatabaseType.Pg,
+                badge: <Badge>NEW</Badge>,
+              },
+              { label: 'Tiles v1 (DynamoDB)', value: DatabaseType.Ddb },
+            ]}
+            value={databaseType}
+            onChange={(value) => setDatabaseType(value as DatabaseType)}
+            name="databaseType"
+          />
+        </FormControl>
+        <FormControl>
+          <FormLabel isRequired>How do you want to start?</FormLabel>
+          <Flex gap={4} direction={{ base: 'column', sm: 'row' }}>
+            <Tile
+              icon={BiSpreadsheet}
+              flex={1}
+              onClick={() => setCreateMode('import')}
+              isSelected={createMode === 'import'}
+            >
+              <Text textStyle="h5">Import CSV</Text>
+              <Text textStyle="body-2">
+                Start with data that you have already collected
+              </Text>
+            </Tile>
+            <Tile
+              icon={BiTable}
+              flex={1}
+              onClick={() => setCreateMode('new')}
+              isSelected={createMode === 'new'}
+            >
+              <Text textStyle="h5">Start from scratch</Text>
+              <Text textStyle="body-2">Start with a blank database</Text>
+            </Tile>
+          </Flex>
+        </FormControl>
       </ModalBody>
       <ModalFooter>
         <Button
@@ -104,6 +126,9 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
   const [tableName, setTableName] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [tableData, setTableData] = useState<ITableMetadata | null>(null)
+  const [databaseType, setDatabaseType] = useState<DatabaseType>(
+    DatabaseType.Pg,
+  )
 
   const [createTableMutation, { loading }] = useMutation<{
     createTable: ITableMetadata
@@ -116,6 +141,7 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
           input: {
             name: tableName,
             isBlank,
+            databaseType,
           },
         },
       })
@@ -125,7 +151,7 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
       setTableData(data.createTable)
       return data.createTable
     },
-    [createTableMutation, tableName],
+    [createTableMutation, databaseType, tableName],
   )
 
   const navigateToTile = useCallback(
@@ -155,6 +181,7 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
       <ModalContent>
         {showImportModal ? (
           <TableContextProvider
+            databaseType={databaseType}
             tableName={tableName}
             tableId={tableData ? tableData.id : ''}
             tableColumns={[]}
@@ -174,6 +201,8 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
           <CreateTileForm
             tableName={tableName}
             setTableName={setTableName}
+            setDatabaseType={setDatabaseType}
+            databaseType={databaseType}
             onSubmit={onSubmit}
             isSubmitting={loading}
             onImportNext={() => setShowImportModal(true)}
