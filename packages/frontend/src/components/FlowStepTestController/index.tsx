@@ -169,12 +169,12 @@ export default function FlowStepTestController(
         isLoading={isTestExecuting}
         colorScheme={infoBoxVariant === 'unstyled' ? 'primary' : 'black'}
         size="sm"
-        isDisabled={!isValid}
+        isDisabled={!isValid || readOnly}
       >
         Check step again
       </Button>
     ),
-    [handleSaveAndTest, infoBoxVariant, isTestExecuting, isValid],
+    [handleSaveAndTest, infoBoxVariant, isTestExecuting, isValid, readOnly],
   )
 
   return (
