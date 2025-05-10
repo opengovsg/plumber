@@ -1,6 +1,6 @@
 import { CreateEntityItem } from 'electrodb'
 
-import { TableRow } from './dynamodb/table-row/model'
+import { TableRow } from '../dynamodb/table-row/model'
 
 export type TableRowItem = CreateEntityItem<typeof TableRow>
 export type CreateRowInput = Pick<TableRowItem, 'tableId' | 'data'>

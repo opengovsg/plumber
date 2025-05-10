@@ -122,6 +122,7 @@ describe('get all rows query', () => {
     data[randomUUID()] = 'test'
     const rowToInsert = {
       tableId: dummyTable.id,
+      // TODO: use ulid for new tiles
       rowId: randomUUID(),
       data,
     }

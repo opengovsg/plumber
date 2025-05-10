@@ -1,5 +1,5 @@
-import { randomUUID } from 'crypto'
 import { Knex } from 'knex'
+import { monotonicFactory, ulid } from 'ulid'
 
 import { tilesClient } from '@/config/tiles-database'
 import logger from '@/helpers/logger'
@@ -24,11 +24,12 @@ export const createTableRow = async ({
   tableId,
   data,
 }: CreateRowInput): Promise<TableRowItem> => {
+  const ulid = monotonicFactory()
   try {
     const res = await tilesClient(tableId)
       .insert({
         ...data,
-        rowId: randomUUID(),
+        rowId: ulid(),
       })
       .returning('*')
     return res[0]
@@ -44,7 +45,7 @@ export const createTableRows = async ({
 }: CreateRowsInput): Promise<string[]> => {
   try {
     const rows = dataArray.map((data, i) => ({
-      rowId: randomUUID(),
+      rowId: ulid(),
       ...data,
       // manually bumping the createdAt timestamp to ensure that row order is preserved
       createdAt: new Date(Date.now() + i),
@@ -231,7 +232,7 @@ export const getTableRows = async ({
   }
   try {
     const tableRows = []
-    const stream = query.orderBy('createdAt', order).stream()
+    const stream = query.orderBy('rowId', order).stream()
     for await (const row of stream) {
       const { rowId, ...rest } = row
       tableRows.push({ rowId, data: rest })
