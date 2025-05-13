@@ -1,8 +1,8 @@
 export const WORKER_CONCURRENCY = {
   'm365-excel': 3,
-  postman: 3,
-  'postman-sms': 3,
-  slack: 3,
-  'telegram-bot': 3,
+  postman: 10,
+  'postman-sms': 10,
+  slack: 1,
+  'telegram-bot': 1,
   tiles: 3,
 }
