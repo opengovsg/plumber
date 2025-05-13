@@ -1,3 +1,5 @@
+import { IStep } from '@plumber/types'
+
 import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
 
@@ -10,7 +12,7 @@ import StepHeader from './StepHeader'
 interface EditorRightDrawerProps {
   flowStepGroupIconUrl?: string
   index: number | null
-  steps: any[]
+  steps: IStep[]
 }
 
 export default function EditorRightDrawer(props: EditorRightDrawerProps) {

@@ -90,6 +90,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
               {substeps?.map(
                 (substep) =>
                   substep.key &&
+                  // NOTE: webhook trigger is a special case where we want to show the step configuration immediately
                   ((step.appKey === 'webhook' && step?.webhookUrl) ||
                     ['chooseConnection', 'testStep'].includes(substep.key) ===
                       false) && (
