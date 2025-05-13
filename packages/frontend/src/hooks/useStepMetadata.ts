@@ -2,6 +2,8 @@ import { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { useMemo } from 'react'
 
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
+
 interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
@@ -50,6 +52,13 @@ export function useStepMetadata(
     caption = `${step?.position ? `${step.position}. ` : ''}${
       selectedActionOrTrigger?.name
     }`
+
+    if (
+      step?.key === TOOLBOX_ACTIONS.IfThen &&
+      step?.appKey === TOOLBOX_APP_KEY
+    ) {
+      caption = `${step.position}. Condition`
+    }
   } else if (app?.name) {
     caption = `${step?.position ? `${step.position}. ` : ''}${app.name}`
   } else if (isTrigger) {
