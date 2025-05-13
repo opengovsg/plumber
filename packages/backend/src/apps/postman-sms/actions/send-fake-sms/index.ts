@@ -5,7 +5,6 @@ import { ZodError } from 'zod'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
-import logger from '@/helpers/logger'
 import { ensureZodObjectKey, firstZodParseError } from '@/helpers/zod-utils'
 
 import { authDataSchema } from '../../auth/schema'
@@ -76,11 +75,6 @@ const action = {
         },
       )
 
-      logger.error('Postman send single SMS response changed', {
-        event: 'api-response-change',
-        appName: 'postman-sms',
-        eventName: 'sendSms',
-      })
       $.setActionItem({
         raw: {
           // Signal to the user that an SMS has at least been created by now.
