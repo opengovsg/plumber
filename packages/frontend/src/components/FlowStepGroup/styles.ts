@@ -4,6 +4,7 @@ export const flowStepGroupStyles = {
   container: {
     flexDir: 'column' as FlexProps['flexDir'],
     alignItems: 'center',
+    background: 'white',
     borderWidth: '1px',
     borderColor: 'base.divider.medium',
     borderRadius: 'lg',
