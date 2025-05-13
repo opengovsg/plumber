@@ -5,6 +5,7 @@ import {
   MouseEventHandler,
   useCallback,
   useContext,
+  useMemo,
   useRef,
 } from 'react'
 import { BiTrash } from 'react-icons/bi'
@@ -32,6 +33,7 @@ import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { HoverAddStepButton } from './HoverAddStepButton'
 import { branchStyles } from './styles'
+import { allowAddStep } from './utils'
 
 interface BranchProps {
   branchSteps: IStep[]
@@ -92,6 +94,8 @@ export default function Branch(props: BranchProps) {
     setCurrentStepId,
   ])
 
+  const canAddStep = useMemo(() => allowAddStep(branchSteps), [branchSteps])
+
   return (
     <Flex key={branchSteps[0].id} {...branchStyles.container}>
       <Box
@@ -141,7 +145,7 @@ export default function Branch(props: BranchProps) {
               isLastStep={index === branchSteps.length - 1}
             />
             <HoverAddStepButton
-              isDisabled={isEditorReadOnly}
+              isDisabled={isEditorReadOnly || !canAddStep}
               isDrawerOpen={isDrawerOpen}
               isLastStep={index === branchSteps.length - 1}
               prevStepId={step.id}
