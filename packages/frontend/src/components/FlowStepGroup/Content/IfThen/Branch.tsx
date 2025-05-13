@@ -29,7 +29,6 @@ import FlowStep from '@/components/FlowStep'
 import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { HoverAddStepButton } from './HoverAddStepButton'
 import { branchStyles } from './styles'
@@ -74,16 +73,7 @@ export default function Branch(props: BranchProps) {
       variables: { input: { ids: idsToDelete } },
     })
 
-    // prevents accordion from collapsing when deleting the first branch
-    const ifThenRemaining = branchSteps
-      .filter(
-        (step) =>
-          step.key === TOOLBOX_ACTIONS.IfThen && !idsToDelete.includes(step.id),
-      )
-      .map((step) => step.id)
-    if (ifThenRemaining.length > 0) {
-      setCurrentStepId(ifThenRemaining[0])
-    }
+    setCurrentStepId(null)
     closeDeleteConfirmation()
     onDrawerClose()
   }, [
