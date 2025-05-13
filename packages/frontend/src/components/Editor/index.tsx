@@ -1,4 +1,4 @@
-import type { IApp, IFlow, IStep } from '@plumber/types'
+import type { IApp, IStep } from '@plumber/types'
 
 import { Fragment, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
@@ -20,13 +20,11 @@ import { AddStepButton } from './AddStepButton'
 import { editorStyles } from './styles'
 
 type EditorProps = {
-  flow: IFlow
-  steps: IStep[]
   isNested?: boolean
 }
 
 export default function Editor(props: EditorProps): React.ReactElement {
-  const { flow, steps: rawSteps, isNested } = props
+  const { isNested } = props
 
   const {
     allApps,
@@ -35,13 +33,14 @@ export default function Editor(props: EditorProps): React.ReactElement {
     isMobile,
     currentStepId,
     currentStepIndex,
+    flow,
     onDrawerClose,
     onDrawerOpen,
-    onUpdateStep,
     setCurrentStepId,
     setCurrentStepIndex,
   } = useContext(EditorContext)
 
+  const rawSteps = flow.steps
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
     // non-undefined. We do it here instead of fetching in GraphQL since all
@@ -180,12 +179,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 isDeletable={true}
                 isLastStep={index === steps.length - 1}
                 isNested={isNested}
-                index={index + 1}
-                collapsed={
-                  !isDrawerOpen && currentStepId === step.id
-                    ? true
-                    : currentStepId !== step.id
-                }
                 onOpen={() => {
                   setCurrentStepId(step.id)
                   setCurrentStepIndex(index)
@@ -196,7 +189,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
                   setCurrentStepIndex(null)
                   onDrawerClose()
                 }}
-                onChange={onUpdateStep}
               />
               <AddStepButton
                 // hide all add button steps if is readonly
@@ -222,10 +214,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
         </Flex>
 
         <EditorRightDrawer
-          flow={flow}
           flowStepGroupIconUrl={flowStepGroupIconUrl}
           index={currentStepIndex}
-          isLastStep={currentStepIndex === steps.length - 1}
           steps={steps}
         />
       </StepExecutionsToIncludeProvider>
