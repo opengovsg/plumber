@@ -1,5 +1,9 @@
 import { IJSONObject } from '@plumber/types'
 
+import { Text } from '@chakra-ui/react'
+
+import { Variable } from '@/helpers/variables'
+
 import { simpleSubstitute, VariableInfoMap } from '../RichTextEditor/utils'
 
 const deepCompare = (a: any, b: any, varInfoMap: VariableInfoMap): boolean => {
@@ -115,4 +119,51 @@ export const matchParamsToDataIn = (
     const substitutedParamValue = simpleSubstitute(paramValue, varInfoMap)
     return substitutedParamValue === lastTest
   })
+}
+
+export function getInfoBoxDetails({
+  isDirty,
+  isIfThenStep,
+  isLastTestExecutionCurrent,
+  isTestSuccessful,
+  stepId,
+  testVariables,
+}: {
+  isDirty: boolean
+  isIfThenStep: boolean
+  isLastTestExecutionCurrent: boolean
+  isTestSuccessful: boolean
+  stepId: string
+  testVariables: Variable[] | null
+}): [string, React.ReactNode] {
+  if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
+    return ['warning', 'Previous result']
+  }
+
+  if (isTestSuccessful) {
+    // Edge case for If-then
+    if (isIfThenStep) {
+      const isConditionMet = testVariables?.[0]?.value as boolean
+
+      if (isConditionMet) {
+        return [
+          'success',
+          <Text key={`${stepId}-if-then-success-text`}>
+            Based on your sample data, it meets the conditions that you have set
+            up and your pipe <Text as="b">would have</Text> continued.
+          </Text>,
+        ]
+      }
+      return [
+        'warning',
+        <Text key={`${stepId}-if-then-warning-text`}>
+          Based on your sample data, it does not meet the conditions you have
+          set up and your pipe <Text as="b">would not have</Text> continued.
+        </Text>,
+      ]
+    }
+    return ['success', 'Step was set up successfully!']
+  }
+
+  return ['error', 'Failed to set up step']
 }

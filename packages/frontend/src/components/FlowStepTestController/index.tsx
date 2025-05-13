@@ -15,7 +15,7 @@ import WebhookUrlInfo from '../WebhookUrlInfo'
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
-import { matchParamsToDataIn } from './utils'
+import { getInfoBoxDetails, matchParamsToDataIn } from './utils'
 
 const defaultTriggerInstructions: ITriggerInstructions = {
   beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
@@ -57,7 +57,10 @@ export default function FlowStepTestController(
   } = useContext(EditorContext)
   const formContext = useFormContext()
 
-  const { selectedActionOrTrigger } = useStepMetadata(allApps, step)
+  const { isIfThenStep, selectedActionOrTrigger } = useStepMetadata(
+    allApps,
+    step,
+  )
   const {
     isTestSuccessful,
     lastErrorDetails,
@@ -90,27 +93,18 @@ export default function FlowStepTestController(
     [handleSaveAndTest, isTestExecuting, isValid],
   )
 
-  const [infoBoxVariant, infoBoxText] = useMemo(() => {
-    if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
-      return ['warning', 'Previous result']
-    }
+  const [infoBoxVariant, infoBoxText] = getInfoBoxDetails({
+    isDirty,
+    isIfThenStep,
+    isLastTestExecutionCurrent,
+    isTestSuccessful,
+    stepId: step.id,
+    testVariables,
+  })
 
-    if (isTestSuccessful) {
-      return ['success', 'Step was set up successfully!']
-    }
-
-    return ['error', 'Failed to set up step']
-  }, [isLastTestExecutionCurrent, isTestSuccessful, isDirty])
-
-  const shouldShowSaveButton = useMemo(
-    () => !isLastTestExecutionCurrent || (isTestSuccessful && isDirty),
-    [isLastTestExecutionCurrent, isTestSuccessful, isDirty],
-  )
-
-  const shouldShowTestResults = useMemo(
-    () => currentTestExecutionStep && !lastErrorDetails,
-    [currentTestExecutionStep, lastErrorDetails],
-  )
+  const shouldShowSaveButton =
+    !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
+  const shouldShowTestResults = currentTestExecutionStep && !lastErrorDetails
 
   return (
     <Stack {...flowStepTestControllerStyles.container}>
@@ -140,21 +134,27 @@ export default function FlowStepTestController(
                   alignItems="center"
                   w="100%"
                 >
-                  <Button
-                    variant="clear"
-                    colorScheme="green"
-                    size="sm"
-                    onClick={() =>
-                      isTestResultOpen
-                        ? onTestResultClose()
-                        : onTestResultOpen()
-                    }
-                  >
-                    <Text color="base.content.default">{infoBoxText}</Text>
-                    <Box ml={2} color="base.content.default">
-                      {isTestResultOpen ? <BiChevronDown /> : <BiChevronUp />}
-                    </Box>
-                  </Button>
+                  {isIfThenStep ? (
+                    // NOTE: special handling for If-then
+                    // do not need button as there are no variables to display
+                    <Text>{infoBoxText}</Text>
+                  ) : (
+                    <Button
+                      variant="clear"
+                      colorScheme="green"
+                      size="sm"
+                      onClick={() =>
+                        isTestResultOpen
+                          ? onTestResultClose()
+                          : onTestResultOpen()
+                      }
+                    >
+                      <Text color="base.content.default">{infoBoxText}</Text>
+                      <Box ml={2} color="base.content.default">
+                        {isTestResultOpen ? <BiChevronDown /> : <BiChevronUp />}
+                      </Box>
+                    </Button>
+                  )}
                   {shouldShowSaveButton ? (
                     <Flex gap={2}>
                       <Button
