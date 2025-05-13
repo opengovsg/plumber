@@ -42,13 +42,11 @@ export default function Branch(props: BranchProps) {
   const { branchSteps, stepsBeforeGroup } = props
 
   const {
-    currentStepId,
     isDrawerOpen,
     isMobile,
     readOnly: isEditorReadOnly,
     onDrawerClose,
     onDrawerOpen,
-    onUpdateStep,
     setCurrentStepId,
     setCurrentStepIndex,
   } = useContext(EditorContext)
@@ -125,8 +123,8 @@ export default function Branch(props: BranchProps) {
                 }}
                 variant="clear"
                 aria-label="Delete branch"
-                icon={<BiTrashAlt />}
                 colorScheme="secondary"
+                icon={<BiTrashAlt />}
                 isLoading={isDeletingBranch}
                 isDisabled={isDeletingBranch}
               />
@@ -142,12 +140,6 @@ export default function Branch(props: BranchProps) {
               isDeletable={index !== 0}
               isNested={true}
               isLastStep={index === branchSteps.length - 1}
-              // FIXME (kevinkim-ogp): this is a temporary solution to ensure the step is collapsed when the drawer is closed
-              collapsed={
-                !isDrawerOpen && currentStepId === step.id
-                  ? true
-                  : currentStepId !== step.id
-              }
               onOpen={() => {
                 setCurrentStepId(step.id)
                 setCurrentStepIndex(stepsBeforeGroup.length + index)
@@ -158,7 +150,6 @@ export default function Branch(props: BranchProps) {
                 setCurrentStepIndex(null)
                 onDrawerClose()
               }}
-              onChange={onUpdateStep}
             />
             <HoverAddStepButton
               isDisabled={isEditorReadOnly}

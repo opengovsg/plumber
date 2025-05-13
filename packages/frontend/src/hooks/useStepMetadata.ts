@@ -6,6 +6,8 @@ interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
   caption: string
+  hasConnection: boolean
+  isCompleted: boolean
   isIfThenStep: boolean
   isTrigger: boolean
   position: number
@@ -17,11 +19,9 @@ export function useStepMetadata(
   allApps: IApp[],
   step: IStep | undefined,
 ): UseStepMetadataResult {
-  const isTrigger = useMemo(() => step?.type === 'trigger', [step])
-  const isIfThenStep = useMemo(
-    () => step?.appKey === 'toolbox' && step?.key === 'ifThen',
-    [step],
-  )
+  const isCompleted = step?.status === 'completed'
+  const isTrigger = step?.type === 'trigger'
+  const isIfThenStep = step?.appKey === 'toolbox' && step?.key === 'ifThen'
 
   const apps: IApp[] = allApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
@@ -64,15 +64,17 @@ export function useStepMetadata(
     caption = 'This step happens after the previous step'
   }
 
-  const substeps = useMemo(
-    () => selectedActionOrTrigger?.substeps || [],
-    [selectedActionOrTrigger],
+  const substeps = selectedActionOrTrigger?.substeps || []
+  const hasConnection = substeps?.some(
+    (substep: ISubstep) => substep.key === 'chooseConnection',
   )
 
   return {
     app,
     selectedActionOrTrigger,
     caption,
+    hasConnection,
+    isCompleted,
     isIfThenStep,
     isTrigger,
     position: step?.position ?? 0,

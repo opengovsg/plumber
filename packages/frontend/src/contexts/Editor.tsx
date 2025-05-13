@@ -5,6 +5,7 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useMemo,
   useState,
 } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
@@ -12,9 +13,16 @@ import { Center, useDisclosure } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
+import {
+  genVariableInfoMap,
+  VariableInfoMap,
+} from '@/components/RichTextEditor/utils'
 import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
+import { ExecutionStep } from '@/graphql/__generated__/graphql'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
+import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
@@ -24,6 +32,7 @@ import {
   TOOLBOX_APP_KEY,
   useIfThenInitializer,
 } from '@/helpers/toolbox'
+import { extractVariables, StepWithVariables } from '@/helpers/variables'
 
 import { LaunchDarklyContext } from './LaunchDarkly'
 
@@ -35,8 +44,13 @@ interface IEditorContextValue {
   currentStepId: string | null
   currentStepIndex: number | null
   hasIfThen: boolean
+  currentTestExecutionStep: IExecutionStep | null
   isDrawerOpen: boolean
   isMobile: boolean
+  isTestExecuting: boolean
+  stepsWithVars: StepWithVariables[]
+  varInfoMap: VariableInfoMap
+  executeTestStep: () => Promise<void>
   onDrawerOpen: () => void
   onDrawerClose: () => void
   setCurrentStepId: (stepId: string | null) => void
@@ -57,14 +71,19 @@ export const EditorContext = createContext<IEditorContextValue>({
   currentStepId: null,
   currentStepIndex: null,
   hasIfThen: false,
+  currentTestExecutionStep: null,
   isDrawerOpen: false,
   isMobile: false,
+  isTestExecuting: false,
+  stepsWithVars: [],
   readOnly: false,
   testExecutionSteps: [],
+  varInfoMap: new Map(),
   onCreateStep: () => Promise.resolve({} as IStep),
   onDrawerClose: () => null,
   onDrawerOpen: () => null,
   onUpdateStep: () => Promise.resolve({} as IStep),
+  executeTestStep: () => Promise.resolve(),
   setCurrentStepId: () => null,
   setCurrentStepIndex: () => null,
   allApps: [],
@@ -151,7 +170,24 @@ export const EditorProvider = ({
     },
   )
 
-  const testExecutionSteps = data?.getTestExecutionSteps ?? []
+  const testExecutionSteps = useMemo(
+    () => data?.getTestExecutionSteps ?? [],
+    [data],
+  )
+
+  const [stepsWithVars, varInfoMap] = useMemo(() => {
+    const stepsWithVars = extractVariables(testExecutionSteps)
+    const info = genVariableInfoMap(stepsWithVars)
+    return [stepsWithVars, info]
+  }, [testExecutionSteps])
+
+  const currentTestExecutionStep = useMemo(
+    () =>
+      testExecutionSteps.find(
+        (executionStep) => executionStep.stepId === currentStepId,
+      ) ?? null,
+    [testExecutionSteps, currentStepId],
+  )
 
   /**
    * Right drawer state
@@ -261,6 +297,51 @@ export const EditorProvider = ({
     [updateStep, flowId],
   )
 
+  /**
+   * Test execution step
+   */
+  const [executeStep, { loading: isTestExecuting }] = useMutation(
+    shouldUseSingleStepTest ? EXECUTE_STEP : EXECUTE_FLOW,
+    {
+      context: { autoSnackbar: false },
+      awaitRefetchQueries: true,
+      refetchQueries: [GET_TEST_EXECUTION_STEPS, GET_FLOW],
+      update(cache, { data }) {
+        // If last execution step is successful, it means the test run is successful
+        // Update the step status to completed without refreshing
+        const lastExecutionStep: ExecutionStep = shouldUseSingleStepTest
+          ? data?.executeStep
+          : data?.executeFlow
+        if (lastExecutionStep.status === 'success') {
+          const stepCache = cache.identify({
+            __typename: 'Step',
+            id: currentStepId,
+          })
+          cache.modify({
+            id: stepCache,
+            fields: {
+              status: () => 'completed',
+            },
+          })
+        }
+      },
+    },
+  )
+
+  const executeTestStep = useCallback(async () => {
+    try {
+      await executeStep({
+        variables: {
+          input: {
+            stepId: currentStepId,
+          },
+        },
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  }, [executeStep, currentStepId])
+
   if (isLoadingAllApps) {
     return (
       <Center height="100vh" position="fixed" width="full" top={0} left={0}>
@@ -278,13 +359,18 @@ export const EditorProvider = ({
         hasIfThen,
         isDrawerOpen,
         isMobile,
-        onDrawerOpen,
-        onDrawerClose,
         flow,
         flowId,
+        currentTestExecutionStep,
+        isTestExecuting,
         readOnly,
+        stepsWithVars,
         testExecutionSteps,
+        varInfoMap,
+        executeTestStep,
         onCreateStep,
+        onDrawerOpen,
+        onDrawerClose,
         onUpdateStep,
         setCurrentStepId,
         setCurrentStepIndex,

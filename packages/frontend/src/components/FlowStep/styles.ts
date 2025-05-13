@@ -1,6 +1,6 @@
 import { FlexProps } from '@chakra-ui/react'
 
-export const flowStepHeaderStyles = {
+export const flowStepStyles = {
   container: {
     alignItems: 'center',
     bg: 'white',
@@ -32,12 +32,20 @@ export const flowStepHeaderStyles = {
     borderRadius: 'inherit',
     px: 4,
     w: 'full',
+    _hover: {
+      bg: 'interaction.muted.neutral.hover',
+      cursor: 'pointer',
+      borderBottomRadius: 'inherit',
+    },
+    _active: {
+      bg: 'interaction.muted.neutral.active',
+      borderBottomRadius: 'inherit',
+    },
   },
   appIconWrapper: {
     alignItems: 'center',
     borderColor: 'base.divider.strong',
     borderWidth: 0,
-    flexShrink: 0,
     justifyContent: 'center',
     mr: 4,
     position: 'relative' as FlexProps['position'],

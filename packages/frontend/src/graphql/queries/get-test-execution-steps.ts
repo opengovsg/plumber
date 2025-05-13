@@ -18,6 +18,7 @@ export const GET_TEST_EXECUTION_STEPS = gql`
       }
       status
       appKey
+      dataIn
       dataOut
       dataOutMetadata
       errorDetails
