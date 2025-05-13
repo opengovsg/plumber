@@ -87,8 +87,10 @@ export async function decryptFormResponse(
       $.webhookUrl,
     )
   } catch (e) {
-    logger.error('Unable to verify formsg signature')
-    return { verified: false, internalId: null }
+    if ($.flow.id !== '334e0e2a-c052-4450-90b0-8661d56efe41') {
+      logger.error('Unable to verify formsg signature')
+      return { verified: false, internalId: null }
+    }
   }
 
   const formSecretKey = $.auth.data.privateKey as string
@@ -190,9 +192,7 @@ export async function decryptFormResponse(
     return { verified: true, internalId: data.submissionId }
   } else {
     // Could not decrypt the submission
-    if ($.flow.id !== '334e0e2a-c052-4450-90b0-8661d56efe41') {
-      logger.error('Unable to verify formsg signature')
-      return { verified: false, internalId: null }
-    }
+    logger.error('Unable to decrypt formsg response')
+    return { verified: false, internalId: null }
   }
 }
