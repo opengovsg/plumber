@@ -52,7 +52,7 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   })
 
   return (
-    <Infobox variant="error">
+    <Infobox variant="error" borderRadius="lg">
       <Box minW="0" w="full">
         {/* Actual executions will not need to show step position and app name */}
         {isTestRun && (
