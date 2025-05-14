@@ -92,13 +92,11 @@ export function throwPostmanStepError({
     }
     case 'RATE-LIMITED':
       // this will be auto-retried later on
-      throw new StepError(
-        'Rate limit exceeded',
-        'Too many emails are being sent. Please wait for a while before retrying.',
-        position,
-        appName,
-        error,
-      )
+      throw new RetriableError({
+        error: error.details,
+        delayInMs: 'default',
+        delayType: 'queue',
+      })
     case 'INVALID-ATTACHMENT':
       throw new StepError(
         'Unsupported attachment file type',
