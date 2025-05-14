@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
 
 import sendTransactionalEmail from '../../actions/send-transactional-email'
 
@@ -139,15 +138,6 @@ describe('send transactional email', () => {
       errorStatusCode: 400,
       errorStatusText: 'Bad Request',
       stepErrorName: 'Unsupported attachment file type',
-    },
-    {
-      postmanResponseData: {
-        code: 'rate_limit',
-        message: 'Too many requests. Please try again later.',
-      },
-      errorStatusCode: 429,
-      errorStatusText: 'Bad Request',
-      stepErrorName: 'Too many requests',
     },
   ])(
     'should throw step error for different postman errors',
@@ -337,7 +327,9 @@ describe('send transactional email', () => {
         } as AxiosError),
       )
 
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(StepError)
+    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      RetriableError,
+    )
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'BLACKLISTED', 'RATE-LIMITED'],
