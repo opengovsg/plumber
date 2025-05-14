@@ -61,6 +61,7 @@ export const verifyFormCreds = async (
   const prefix = env !== 'prod' ? `[${env.toUpperCase()}] ` : ''
   await $.auth.set({
     screenName: `${prefix}${formId} - ${formTitle}`,
+    env,
   })
 }
 
