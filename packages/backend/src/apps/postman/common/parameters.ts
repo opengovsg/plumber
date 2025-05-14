@@ -9,7 +9,7 @@ import { parseS3Id } from '@/helpers/s3'
 function recipientStringToArray(value: string) {
   const recipientArray = value
     .split(',')
-    .map((e) => e.trim())
+    .map((e) => e.trim().toLowerCase())
     .filter((e) => e?.length > 0)
   // dedupe the array
   return uniq(recipientArray)
@@ -82,7 +82,7 @@ export const transactionalEmailFields: IField[] = [
     label: 'Attachments',
     key: 'attachments',
     description:
-      'Check supported file types [here](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).\nPlease note that the maximum file size for each file is 2MB, and the total size of all attachments cannot exceed 10MB.',
+      'Check supported file types [here](https://postman-v1.guides.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).\nPlease note that the maximum file size for each file is 2MB, and the total size of all attachments cannot exceed 10MB.',
     type: 'attachment' as const,
     required: false,
     variables: true,

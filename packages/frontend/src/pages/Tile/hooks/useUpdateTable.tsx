@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { type SetOptional } from 'type-fest'
 
+import { UpdateTableMutation } from '@/graphql/__generated__/graphql'
 import { UPDATE_TABLE } from '@/graphql/mutations/tiles/update-table'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
@@ -22,10 +23,6 @@ interface UpdateTableInput {
   }
 }
 
-interface UpdateTableOutput {
-  createRow: string
-}
-
 export function useUpdateTable() {
   const { tableId } = useTableContext()
   const [isUpdatingTableName, setIsUpdatingTableName] = useState(false)
@@ -33,7 +30,7 @@ export function useUpdateTable() {
   const [isUpdatingColumns, setIsUpdatingColumns] = useState(false)
   const [isDeletingColumns, setIsDeletingColumns] = useState(false)
 
-  const [updateTable] = useMutation<UpdateTableOutput, UpdateTableInput>(
+  const [updateTable] = useMutation<UpdateTableMutation, UpdateTableInput>(
     UPDATE_TABLE,
     {
       awaitRefetchQueries: true,

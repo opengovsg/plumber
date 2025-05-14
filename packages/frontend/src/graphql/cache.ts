@@ -10,6 +10,17 @@ export const cacheConfig = {
     App: {
       keyFields: ['key'],
     },
+    // prevent apollo client from complaining about cache data loss
+    // for use when updating table (columns/names/etc)
+    TableMetadata: {
+      fields: {
+        columns: {
+          merge(_existing = [], incoming: any[]) {
+            return incoming // Replace existing with incoming
+          },
+        },
+      },
+    },
     Mutation: {
       mutationType: true,
       fields: {

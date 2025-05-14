@@ -82,7 +82,7 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
 
       {/* Right Panel --> Data Selector */}
       <Box flexGrow={1} w="50%">
-        <PanelHeader>{headers.left}</PanelHeader>
+        <PanelHeader>{headers.right}</PanelHeader>
         <Divider borderColor="base.divider.medium" />
         {rightPanel}
       </Box>

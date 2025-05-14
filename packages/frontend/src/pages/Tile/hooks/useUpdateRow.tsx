@@ -21,7 +21,7 @@ interface UpdateRowOutput {
 export function useUpdateRow(
   setData: Dispatch<SetStateAction<GenericRowData[]>>,
 ) {
-  const { tableId } = useTableContext()
+  const { tableId, tableColumns } = useTableContext()
   const [rowsUpdating, setRowsUpdating] = useState<Record<string, boolean>>({})
 
   const [updateRowMutation] = useMutation<UpdateRowOutput, UpdateRowInput>(
@@ -45,6 +45,12 @@ export function useUpdateRow(
   const updateRow = useCallback(
     async (updatedRow: GenericRowData) => {
       const { rowId, ...data } = updatedRow
+      // delete keys from data that are not in the table (recently deleted columns)
+      Object.keys(data).forEach((key) => {
+        if (!tableColumns.some((column) => column.id === key)) {
+          delete data[key]
+        }
+      })
       setRowsUpdating((oldState) => {
         oldState[rowId] = true
         return { ...oldState }
@@ -64,7 +70,7 @@ export function useUpdateRow(
         },
       })
     },
-    [setData, tableId, updateRowMutation],
+    [setData, tableId, tableColumns, updateRowMutation],
   )
   return {
     rowsUpdating,

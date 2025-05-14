@@ -159,4 +159,21 @@ describe('tiles create row action', () => {
       order: 'desc',
     })
   })
+
+  it('should return an empty columns if no rows are found', async () => {
+    const filters = $.step.parameters.filters as TableRowFilter[]
+    filters[0].value = 'not a valid value'
+    await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+    const emptyRow = dummyColumnIds.reduce((acc, c) => {
+      acc[c] = ''
+      return acc
+    }, {} as Record<string, string>)
+    expect($.setActionItem).toBeCalledWith({
+      raw: {
+        rowsFound: 0,
+        rowId: '',
+        row: emptyRow,
+      },
+    })
+  })
 })

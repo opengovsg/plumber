@@ -23,11 +23,7 @@ import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
 import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
-import {
-  extractVariables,
-  filterVariables,
-  VISIBLE_VARIABLE_TYPES,
-} from '@/helpers/variables'
+import { extractVariables } from '@/helpers/variables'
 
 import FlowSubstepTitle from '../FlowSubstepTitle'
 
@@ -118,13 +114,7 @@ function TestSubstep(props: TestSubstepProps): JSX.Element {
     if (!currentExecutionStep) {
       return null
     }
-    const stepWithVariables = filterVariables(
-      extractVariables([currentExecutionStep]),
-      (variable) => {
-        const variableType = variable.type ?? 'text'
-        return VISIBLE_VARIABLE_TYPES.includes(variableType)
-      },
-    )
+    const stepWithVariables = extractVariables([currentExecutionStep])
     if (stepWithVariables.length > 0) {
       return stepWithVariables[0].output
     }

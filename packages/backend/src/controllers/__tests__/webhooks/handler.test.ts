@@ -29,7 +29,10 @@ const mocks = vi.hoisted(() => {
         })),
       })),
     },
-    processTrigger: vi.fn(() => ({ executionId: 'execution-id' })),
+    processTrigger: vi.fn(() => ({
+      executionId: 'execution-id',
+      shouldExecute: true,
+    })),
     enqueueActionJob: vi.fn(),
   }
 })
@@ -200,5 +203,19 @@ describe('webhook handler', () => {
         expect(mocks.response.sendStatus).toHaveReturnedWith(200)
       },
     )
+
+    it('should not enqueue job when processTrigger returns shouldExecute: false', async () => {
+      mocks.flow.active = true
+      mocks.processTrigger.mockResolvedValueOnce({
+        executionId: 'execution-id',
+        shouldExecute: false,
+      })
+
+      await webhookHandler(request, mocks.response)
+
+      expect(mocks.processTrigger).toHaveBeenCalledOnce()
+      expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
+      expect(mocks.response.sendStatus).toHaveReturnedWith(200)
+    })
   })
 })

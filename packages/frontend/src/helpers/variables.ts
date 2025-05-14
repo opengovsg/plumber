@@ -8,7 +8,11 @@ import type {
 import get from 'lodash.get'
 
 // these are the variable types to display on the frontend (make visible)
-export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = ['text', 'array']
+export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
+  'text',
+  'array',
+  'tile_row_id',
+]
 
 export interface StepWithVariables {
   id: string

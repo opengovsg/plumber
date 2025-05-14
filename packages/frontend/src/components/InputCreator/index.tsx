@@ -136,6 +136,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           isSingleLine={parentType === 'multicol'}
           variablesEnabled
           tooltipText={tooltipText}
+          variableTypes={schema.variableTypes}
         />
       )
     }

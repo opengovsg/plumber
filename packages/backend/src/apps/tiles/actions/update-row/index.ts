@@ -48,6 +48,7 @@ const action: IRawAction = {
         fieldKey: 'tableId',
         op: 'is_empty',
       },
+      variableTypes: ['tile_row_id'],
     },
     {
       label: 'Row data',

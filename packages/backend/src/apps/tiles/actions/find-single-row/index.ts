@@ -190,9 +190,16 @@ const action: IRawAction = {
     })
 
     if (!rows || !rows.length) {
+      const emptyRow = columns.reduce((acc, c) => {
+        acc[c.id] = ''
+        return acc
+      }, {} as Record<string, string>)
+
       $.setActionItem({
         raw: {
           rowsFound: 0,
+          rowId: '',
+          row: emptyRow,
         } satisfies FindSingleRowOutput,
       })
       return

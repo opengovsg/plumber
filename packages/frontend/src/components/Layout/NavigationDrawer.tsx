@@ -33,13 +33,8 @@ export default function NavigationDrawer() {
       <Drawer placement="left" onClose={closeDrawer} isOpen={isDrawerOpen}>
         <DrawerOverlay />
         <DrawerContent>
-          <DrawerCloseButton
-            pos="relative"
-            mt={8}
-            ml={4}
-            color="base.content.strong"
-          />
-          <DrawerBody p={4}>
+          <DrawerCloseButton pos="absolute" color="base.content.strong" />
+          <DrawerBody p={4} mt={6}>
             <NavigationSidebar />
           </DrawerBody>
         </DrawerContent>

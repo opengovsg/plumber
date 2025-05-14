@@ -38,16 +38,8 @@ interface ConnectionStatus {
 }
 
 const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
-  const { label, description: formId } = connectionOption
-  if (label.startsWith('[')) {
-    const endIndex = label.indexOf(']')
-    const env = label.substring(1, endIndex)
-    // Only add subodmain for STAGING and UAT
-    if (env === 'STAGING' || env === 'UAT') {
-      return `https://${env}.form.gov.sg/${formId}`
-    }
-  }
-  return `https://form.gov.sg/${formId}`
+  const { description: formId, env } = connectionOption
+  return `https://${env === 'prod' ? '' : `${env}.`}form.gov.sg/${formId}`
 }
 
 const excelFolderLinkGenerator = (userEmail: string) => {
