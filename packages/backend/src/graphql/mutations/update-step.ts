@@ -47,7 +47,8 @@ const updateStep: MutationResolvers['updateStep'] = async (
         status: shouldInvalidate ? 'incomplete' : step.status,
         config: {
           ...existingConfig,
-          ...(stepName ? { stepName } : {}),
+          // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
+          ...(stepName !== undefined ? { stepName } : {}),
         },
       })
       .withGraphFetched('connection')

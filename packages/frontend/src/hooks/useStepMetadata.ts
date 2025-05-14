@@ -8,6 +8,7 @@ interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
   caption: string
+  defaultCaption?: string
   hasConnection: boolean
   isCompleted: boolean
   isIfThenStep: boolean
@@ -46,12 +47,11 @@ export function useStepMetadata(
 
   // define caption description based on app and step
   let caption = ''
+  let defaultCaption = selectedActionOrTrigger?.name
   if (step?.config?.stepName) {
     caption = `${step.position}. ${step.config.stepName}`
-  } else if (selectedActionOrTrigger?.name) {
-    caption = `${step?.position ? `${step.position}. ` : ''}${
-      selectedActionOrTrigger?.name
-    }`
+  } else if (defaultCaption) {
+    caption = `${step?.position ? `${step.position}. ` : ''}${defaultCaption}`
 
     if (isIfThenStep) {
       caption = `${step?.position}. Condition`
@@ -66,6 +66,10 @@ export function useStepMetadata(
     caption = 'This step happens after the previous step'
   }
 
+  if (isIfThenStep) {
+    defaultCaption = 'Condition'
+  }
+
   const substeps = selectedActionOrTrigger?.substeps || []
   const hasConnection = substeps?.some(
     (substep: ISubstep) => substep.key === 'chooseConnection',
@@ -75,12 +79,16 @@ export function useStepMetadata(
     app,
     selectedActionOrTrigger,
     caption,
+    defaultCaption,
     hasConnection,
     isCompleted,
     isIfThenStep,
     isTrigger,
     position: step?.position ?? 0,
-    stepName: step?.config?.stepName ?? selectedActionOrTrigger?.name ?? '',
+    stepName:
+      step?.config?.stepName && step?.config?.stepName !== ''
+        ? step.config.stepName
+        : defaultCaption ?? '',
     substeps,
   }
 }
