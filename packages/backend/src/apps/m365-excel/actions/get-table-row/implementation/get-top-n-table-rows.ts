@@ -57,8 +57,8 @@ export default async function getTopNTableRows(
 
   if (rangeParseResult.success === false) {
     throw new StepError(
-      'Received invalid table range data',
-      'Double check your Excel file and retry the step if needed',
+      'Invalid table range',
+      'Check your Excel file and try again',
       $.step.position,
       $.app.name,
     )
