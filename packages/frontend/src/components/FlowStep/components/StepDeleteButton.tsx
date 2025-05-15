@@ -1,7 +1,7 @@
 import { IStep } from '@plumber/types'
 
 import { MouseEventHandler, useCallback, useRef } from 'react'
-import { BiTrashAlt } from 'react-icons/bi'
+import { BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Flex, useDisclosure } from '@chakra-ui/react'
 import { IconButton, useIsMobile } from '@opengovsg/design-system-react'
@@ -50,7 +50,7 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
     <>
       <Flex ml="auto">
         <IconButton
-          boxSize={isNested ? 8 : 10}
+          boxSize={isNested ? 6 : 8}
           onClick={(event) => {
             onDialogOpen()
             event.stopPropagation()
@@ -58,7 +58,7 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
           variant="clear"
           aria-label="Delete Step"
           colorScheme="secondary"
-          icon={<BiTrashAlt />}
+          icon={<BiTrash />}
           minHeight={isNested ? 6 : 8}
           minWidth={isNested ? 6 : 8}
           className={isMobile ? undefined : 'hover-remove-button'}

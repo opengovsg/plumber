@@ -138,6 +138,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                             icon={<BiTrash />}
                             isDisabled={isEditorReadOnly}
                             onClick={() => remove(index)}
+                            colorScheme="secondary"
                           />
                         )}
                       </Flex>
