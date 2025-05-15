@@ -106,7 +106,7 @@ export default function Branch(props: BranchProps) {
         mb={2}
         role="group"
       >
-        <Flex alignItems="center" borderRadius="inherit" w="full">
+        <Flex alignItems="center" borderRadius="inherit" w="full" h={8}>
           {/* Branch name */}
           <Text textStyle="subhead-1" color="base.content.default">
             {branchSteps[0].parameters.branchName as string}

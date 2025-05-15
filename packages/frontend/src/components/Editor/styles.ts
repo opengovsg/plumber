@@ -12,7 +12,7 @@ export const editorStyles = {
     minH: '100%',
     maxW: 'full',
     overflowY: 'auto' as FlexProps['overflowY'],
-    py: '40px',
+    py: 10,
     px: 0,
     transition: 'width 0.3s ease-in-out, transform 0.3s ease-in-out',
     w: '100%',

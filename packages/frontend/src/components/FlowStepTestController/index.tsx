@@ -150,12 +150,10 @@ export default function FlowStepTestController(
                         : onTestResultOpen()
                     }
                   >
-                    <Flex alignItems="center" cursor="pointer">
-                      <Text color="base.content.default">{infoBoxText}</Text>
-                      <Box ml={2} color="base.content.default">
-                        {isTestResultOpen ? <BiChevronDown /> : <BiChevronUp />}
-                      </Box>
-                    </Flex>
+                    <Text color="base.content.default">{infoBoxText}</Text>
+                    <Box ml={2} color="base.content.default">
+                      {isTestResultOpen ? <BiChevronDown /> : <BiChevronUp />}
+                    </Box>
                   </Button>
                   {shouldShowSaveButton ? (
                     <Flex gap={2}>
