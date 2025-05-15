@@ -1,5 +1,7 @@
 import './RichTextEditor.scss'
 
+import { TDataOutMetadatumType } from '@plumber/types'
+
 import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import {
@@ -83,6 +85,7 @@ interface EditorProps {
   variablesEnabled?: boolean
   isRich?: boolean
   isSingleLine?: boolean
+  variableTypes?: TDataOutMetadatumType[]
 }
 const Editor = ({
   onChange,
@@ -92,6 +95,7 @@ const Editor = ({
   variablesEnabled,
   isRich,
   isSingleLine,
+  variableTypes,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
 
@@ -100,12 +104,16 @@ const Editor = ({
       extractVariables(priorExecutionSteps),
       (variable) => {
         const variableType = variable.type ?? 'text'
-        return VISIBLE_VARIABLE_TYPES.includes(variableType)
+        if (variableTypes) {
+          return variableTypes.includes(variableType)
+        } else {
+          return VISIBLE_VARIABLE_TYPES.includes(variableType)
+        }
       },
     )
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
-  }, [priorExecutionSteps])
+  }, [priorExecutionSteps, variableTypes])
 
   const extensions: Array<any> = [
     Placeholder.configure({
@@ -264,6 +272,7 @@ interface RichTextEditorProps {
   isRich?: boolean
   isSingleLine?: boolean
   tooltipText?: string
+  variableTypes?: TDataOutMetadatumType[]
 }
 const RichTextEditor = ({
   required,
@@ -277,6 +286,7 @@ const RichTextEditor = ({
   isRich,
   isSingleLine,
   tooltipText,
+  variableTypes,
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
 
@@ -307,6 +317,7 @@ const RichTextEditor = ({
             variablesEnabled={variablesEnabled}
             isRich={isRich}
             isSingleLine={isSingleLine}
+            variableTypes={variableTypes}
           />
         )}
       />

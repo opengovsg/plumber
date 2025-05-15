@@ -115,6 +115,7 @@ describe('verify credentials', () => {
       ).resolves.toBeUndefined()
       expect($.auth.set).toHaveBeenCalledWith({
         screenName: '6443b3ce39eb170011772f98 - Test Form',
+        env: 'prod',
       })
     })
 
