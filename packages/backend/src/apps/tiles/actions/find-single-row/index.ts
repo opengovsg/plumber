@@ -46,7 +46,7 @@ const action: IRawAction = {
       description:
         'If multiple rows meet the conditions, the oldest entry will be returned',
       key: 'filters',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       hiddenIf: {
         fieldKey: 'tableId',
@@ -74,6 +74,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 1 },
         },
         {
           placeholder: 'Condition',
@@ -104,6 +105,7 @@ const action: IRawAction = {
               value: TableRowFilterOperator.IsEmpty,
             },
           ],
+          customStyle: { flex: 1 },
         },
         {
           placeholder: 'Value',
@@ -116,6 +118,7 @@ const action: IRawAction = {
             op: 'equals',
             fieldValue: TableRowFilterOperator.IsEmpty,
           },
+          customStyle: { flex: 2 },
         },
       ],
     },

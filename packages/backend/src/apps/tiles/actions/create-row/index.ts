@@ -41,7 +41,7 @@ const action: IRawAction = {
     {
       label: 'New row data',
       key: 'rowData',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       hiddenIf: {
         fieldKey: 'tableId',
@@ -49,7 +49,7 @@ const action: IRawAction = {
       },
       subFields: [
         {
-          placeholder: 'Select a column or type to create one',
+          placeholder: 'Select or type to create a column',
           key: 'columnId',
           type: 'dropdown' as const,
           required: true,
@@ -74,6 +74,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2 },
         },
         {
           placeholder: 'Value',
@@ -81,6 +82,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: false,
           variables: true,
+          customStyle: { flex: 3 },
         },
       ],
     },
