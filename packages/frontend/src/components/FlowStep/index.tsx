@@ -61,8 +61,14 @@ export default function FlowStep(
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
-  const { app, caption, isCompleted, isTrigger, selectedActionOrTrigger } =
-    useStepMetadata(allApps, step)
+  const {
+    app,
+    caption,
+    isCompleted,
+    isTrigger,
+    selectedActionOrTrigger,
+    substeps,
+  } = useStepMetadata(allApps, step)
 
   const {
     cancelRef,
@@ -81,8 +87,8 @@ export default function FlowStep(
       : !readOnly && props.isDeletable
 
   const { shouldTestStepAgain, isTestSuccessful } = useMemo(
-    () => validateStepParams(step, testExecutionSteps),
-    [step, testExecutionSteps],
+    () => validateStepParams(step, testExecutionSteps, substeps),
+    [step, substeps, testExecutionSteps],
   )
 
   const shouldHighlight = currentStepId === step.id
