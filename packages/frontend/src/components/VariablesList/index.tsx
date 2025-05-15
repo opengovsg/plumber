@@ -1,7 +1,13 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useMemo } from 'react'
-import { Box, Tag, Text, Tooltip } from '@chakra-ui/react'
+import {
+  Box,
+  type SystemStyleObject,
+  Tag,
+  Text,
+  Tooltip,
+} from '@chakra-ui/react'
 
 import { type Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
@@ -114,6 +120,7 @@ function VariableItem({
 interface VariablesListProps {
   variables: Variable[]
   onClick?: (variable: Variable) => void
+  customStyles?: SystemStyleObject
 }
 
 export default function VariablesList(props: VariablesListProps) {
@@ -129,6 +136,7 @@ export default function VariablesList(props: VariablesListProps) {
       maxH={64}
       overflowY="auto"
       p={onClick ? undefined : '1rem'}
+      sx={props.customStyles}
     >
       {variables.map((variable, index) => (
         <VariableItem

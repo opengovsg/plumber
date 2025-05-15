@@ -68,7 +68,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
             <Text>{getMockDataMessage(selectedActionOrTrigger)}</Text>
           </Infobox>
         )}
-        <VariablesList variables={variables} />
+        <VariablesList variables={variables} customStyles={{ py: 0, px: 2 }} />
       </Box>
     )
   }
