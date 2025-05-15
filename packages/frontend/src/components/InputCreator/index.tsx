@@ -137,6 +137,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           variablesEnabled
           tooltipText={tooltipText}
           variableTypes={schema.variableTypes}
+          parentType={parentType}
         />
       )
     }

@@ -81,7 +81,7 @@ const action: IRawAction = {
     {
       label: 'Metadata',
       key: 'metadata',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: false,
       subFields: [
         {
@@ -90,6 +90,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
+          customStyle: { flex: 2 },
         },
         {
           placeholder: 'Value',
@@ -97,6 +98,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
+          customStyle: { flex: 3 },
         },
       ],
     },

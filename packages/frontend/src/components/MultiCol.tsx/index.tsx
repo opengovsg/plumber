@@ -28,7 +28,7 @@ export default function MultiCol(props: MultiColProps) {
 
   const isMobile = useBreakpointValue({ base: true, sm: false })
   return (
-    <Flex flexDir={isMobile ? 'column' : 'row'} gap={2}>
+    <Flex flexDir={isMobile ? 'column' : 'row'} gap={2} alignItems="center">
       {subFields.map((subF) => {
         return (
           <div

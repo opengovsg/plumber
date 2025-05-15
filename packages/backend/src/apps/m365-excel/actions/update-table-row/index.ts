@@ -38,7 +38,7 @@ const action: IRawAction = {
       label: 'Row data',
       description:
         'Enter the data to update the row with. Columns not specified will not be updated',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       subFields: [
         {
@@ -66,6 +66,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2 },
         },
         {
           key: 'value' as const,
@@ -73,6 +74,7 @@ const action: IRawAction = {
           required: true,
           variables: true,
           placeholder: 'Value to write',
+          customStyle: { flex: 3 },
         },
       ],
     },
