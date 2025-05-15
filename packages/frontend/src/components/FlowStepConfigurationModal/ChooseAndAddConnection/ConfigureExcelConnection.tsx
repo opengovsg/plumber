@@ -1,7 +1,7 @@
 import type { IApp } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
-import { BiChevronLeft, BiQuestionMark, BiRightArrowAlt } from 'react-icons/bi'
+import { BiQuestionMark, BiRightArrowAlt } from 'react-icons/bi'
 import {
   Flex,
   Icon,
@@ -15,6 +15,7 @@ import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
 import microsoftFolder from '@/assets/microsoft-folder.svg'
 import useAuthentication from '@/hooks/useAuthentication'
 
+import BackButton from '../BackButton'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useConnectionVerification } from '../hooks/useConnectionRegistration'
 
@@ -165,16 +166,7 @@ export default function ConfigureExcelConnection(
     <>
       <ModalHeader pt={0}>
         {!isConnectionValid && (!step?.key || !step?.appKey) && (
-          <Button
-            variant="clear"
-            colorScheme="secondary"
-            size="xs"
-            onClick={onBack}
-            leftIcon={<BiChevronLeft />}
-            ml={-4}
-          >
-            Back
-          </Button>
+          <BackButton onBack={onBack} />
         )}
         {isConnectionValid ? (
           <SuccessfulConnectionHeader iconUrl={selectedApp?.iconUrl ?? ''} />

@@ -2,7 +2,6 @@ import type { IField, IJSONObject } from '@plumber/types'
 
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { FieldValues, SubmitHandler } from 'react-hook-form'
-import { BiChevronLeft } from 'react-icons/bi'
 import { Flex, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
 import {
   Button,
@@ -18,6 +17,7 @@ import { getOpenerOrigin } from '@/helpers/window'
 
 import Form from '../../Form'
 import { infoboxMdComponents } from '../../MarkdownRenderer/CustomMarkdownComponents'
+import BackButton from '../BackButton'
 import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useConnectionVerification } from '../hooks/useConnectionRegistration'
@@ -169,16 +169,7 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
   return (
     <>
       <ModalHeader pt={0}>
-        <Button
-          variant="clear"
-          colorScheme="secondary"
-          size="xs"
-          onClick={onBack}
-          leftIcon={<BiChevronLeft />}
-          ml={-4}
-        >
-          Back
-        </Button>
+        <BackButton onBack={onBack} />
       </ModalHeader>
       <ConnectionHeader
         selectedApp={selectedApp}
