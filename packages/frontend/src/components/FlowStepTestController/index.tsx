@@ -3,7 +3,15 @@ import { IBaseTrigger, IStep, ITriggerInstructions } from '@plumber/types'
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
-import { Box, Flex, HStack, Stack, Text, VStack } from '@chakra-ui/react'
+import {
+  Box,
+  Flex,
+  HStack,
+  Stack,
+  Text,
+  Tooltip,
+  VStack,
+} from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -35,6 +43,22 @@ interface FlowStepTestControllerProps {
   onTestResultOpen: () => void
   onTestResultClose: () => void
 }
+
+type CheckStepTooltipProps = {
+  isDisabled: boolean
+  children: React.ReactNode
+}
+
+const CheckStepTooltip = (props: CheckStepTooltipProps) => (
+  <Tooltip
+    label="Complete required fields to check step"
+    aria-label="check step tooltip"
+    isDisabled={props.isDisabled}
+    hasArrow
+  >
+    {props.children}
+  </Tooltip>
+)
 
 export default function FlowStepTestController(
   props: FlowStepTestControllerProps,
@@ -97,6 +121,7 @@ export default function FlowStepTestController(
     return validateStepParams(step, testExecutionSteps, substeps)
   }, [testExecutionSteps, step, substeps])
 
+  const shouldAllowCheckStep = !(!isValid || readOnly || isSaving)
   const shouldShowSaveButton =
     !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
   const shouldShowTestResults =
@@ -160,6 +185,7 @@ export default function FlowStepTestController(
 
   const CheckAgainButton = useMemo(
     () => (
+      <CheckStepTooltip isDisabled={!(!isValid || readOnly)}>
       <Button
         variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
         onClick={handleSaveAndTest}
@@ -170,6 +196,7 @@ export default function FlowStepTestController(
       >
         Check step again
       </Button>
+      </CheckStepTooltip>
     ),
     [handleSaveAndTest, infoBoxVariant, isTestExecuting, isValid, readOnly],
   )
@@ -280,14 +307,16 @@ export default function FlowStepTestController(
                     {isDirty ? 'Save' : 'Saved'}
                   </Button>
                 )}
+                <CheckStepTooltip isDisabled={shouldAllowCheckStep}>
                 <Button
                   onClick={handleSaveAndTest}
                   data-test="flow-substep-continue-button"
-                  isDisabled={!isValid || readOnly || isSaving}
+                    isDisabled={!shouldAllowCheckStep}
                   isLoading={isTestExecuting}
                 >
                   Check step
                 </Button>
+                </CheckStepTooltip>
               </HStack>
             </VStack>
           )}
