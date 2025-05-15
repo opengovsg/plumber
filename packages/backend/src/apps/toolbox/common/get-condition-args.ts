@@ -1,4 +1,4 @@
-import type { IField } from '@plumber/types'
+import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
 
 interface GetConditionArgsOptions {
   usePlaceholders: boolean
@@ -8,7 +8,7 @@ interface GetConditionArgsOptions {
 // onlyContinueIf.
 export default function getConditionArgs({
   usePlaceholders,
-}: GetConditionArgsOptions): IField[] {
+}: GetConditionArgsOptions): IFieldMultiRowMultiColSubField[] {
   const labelPropName = usePlaceholders ? 'placeholder' : 'label'
 
   return [
@@ -18,6 +18,7 @@ export default function getConditionArgs({
       type: 'string' as const,
       required: true,
       variables: true,
+      customStyle: { flex: 3 },
     },
     {
       [labelPropName]: 'Is or is not',
@@ -30,6 +31,7 @@ export default function getConditionArgs({
         { label: 'Is', value: 'is' },
         { label: 'Is not', value: 'not' },
       ],
+      customStyle: { flex: 2 },
     },
     {
       [labelPropName]: 'Condition',
@@ -73,6 +75,7 @@ export default function getConditionArgs({
           description: 'Used for dates',
         },
       ],
+      customStyle: { flex: 2 },
     },
     {
       [labelPropName]: 'Value',
@@ -85,6 +88,7 @@ export default function getConditionArgs({
         op: 'equals',
         fieldValue: 'empty',
       },
+      customStyle: { flex: 3 },
     },
   ]
 }

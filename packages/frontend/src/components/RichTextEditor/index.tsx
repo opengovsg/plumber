@@ -41,7 +41,11 @@ import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
 import { StepVariable } from './StepVariablePlugin'
 import Suggestions from './Suggestions'
-import { genVariableInfoMap, substituteOldTemplates } from './utils'
+import {
+  genVariableInfoMap,
+  getPopoverPlacement,
+  substituteOldTemplates,
+} from './utils'
 
 const RICH_TEXT_EXTENSIONS = [
   Document.configure({
@@ -86,6 +90,7 @@ interface EditorProps {
   isRich?: boolean
   isSingleLine?: boolean
   variableTypes?: TDataOutMetadatumType[]
+  parentType?: string
 }
 const Editor = ({
   onChange,
@@ -96,6 +101,7 @@ const Editor = ({
   isRich,
   isSingleLine,
   variableTypes,
+  parentType,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
 
@@ -216,11 +222,12 @@ const Editor = ({
     <Popover
       autoFocus={false}
       gutter={0}
-      matchWidth={true}
+      matchWidth={parentType === 'multicol' ? false : true}
       isLazy
       lazyBehavior="unmount"
       onClose={closeSuggestions}
       isOpen={isSuggestionsOpen && variablesEnabled}
+      placement={getPopoverPlacement(editor)}
     >
       <div
         className="editor"
@@ -240,6 +247,7 @@ const Editor = ({
             <EditorContent className="editor__content" editor={editor} />
             <PopoverContent
               w="100%"
+              maxWidth={parentType === 'multicol' ? 'fit-content' : undefined}
               motionProps={POPOVER_MOTION_PROPS}
               onFocus={(e) => {
                 // Go back to previous focus when clicking on suggestions to resume typing
@@ -273,6 +281,7 @@ interface RichTextEditorProps {
   isSingleLine?: boolean
   tooltipText?: string
   variableTypes?: TDataOutMetadatumType[]
+  parentType?: string
 }
 const RichTextEditor = ({
   required,
@@ -287,6 +296,7 @@ const RichTextEditor = ({
   isSingleLine,
   tooltipText,
   variableTypes,
+  parentType,
 }: RichTextEditorProps) => {
   const { control } = useFormContext()
 
@@ -318,6 +328,7 @@ const RichTextEditor = ({
             isRich={isRich}
             isSingleLine={isSingleLine}
             variableTypes={variableTypes}
+            parentType={parentType}
           />
         )}
       />

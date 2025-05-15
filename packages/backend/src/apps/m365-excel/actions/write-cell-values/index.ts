@@ -61,7 +61,7 @@ const action: IRawAction = {
     {
       label: 'Values',
       key: 'cells',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       // We need to make 1 separate request for each cell, so limit to 3 as a
       // balance between convenience and API quota usage.
@@ -74,6 +74,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
+          customStyle: { flex: 1 },
         },
         {
           label: 'Value',
@@ -81,6 +82,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: false,
           variables: true,
+          customStyle: { flex: 1 },
         },
       ],
     },

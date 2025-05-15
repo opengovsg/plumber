@@ -1,3 +1,5 @@
+import { PlacementWithLogical } from '@chakra-ui/react'
+import { Editor } from '@tiptap/react'
 import { HTMLElement, Node, parse, TextNode } from 'node-html-parser'
 
 import type { StepWithVariables } from '@/helpers/variables'
@@ -127,4 +129,24 @@ export function substituteOldTemplates(
   const originalElem = parse(original)
   const substitutedDom = recursiveSubstitute(originalElem, varInfo)
   return substitutedDom.outerHTML
+}
+
+export function getPopoverPlacement(
+  editor: Editor | null,
+): PlacementWithLogical {
+  if (typeof window === 'undefined' || editor == null) {
+    return 'bottom-start'
+  }
+
+  const editorElement = editor?.view.dom as globalThis.HTMLElement
+  if (!editorElement) {
+    return 'bottom-start'
+  }
+
+  const rect = editorElement.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  const spaceAbove = rect.top
+
+  // If there's more space above than below, show the popover above
+  return spaceAbove > spaceBelow ? 'top-start' : 'bottom-start'
 }
