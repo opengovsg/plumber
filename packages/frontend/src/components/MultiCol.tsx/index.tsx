@@ -51,6 +51,7 @@ export default function MultiCol(props: MultiColProps) {
           icon={<BiTrash />}
           isDisabled={isEditorReadOnly}
           onClick={() => remove?.(index)}
+          colorScheme="secondary"
         />
       )}
     </Flex>

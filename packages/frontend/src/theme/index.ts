@@ -24,6 +24,9 @@ export const theme = extendTheme(
             transform: 'scale(0.9)',
           },
         },
+        body: {
+          fontFeatureSettings: 'inherit',
+        },
       },
     },
     Form: {

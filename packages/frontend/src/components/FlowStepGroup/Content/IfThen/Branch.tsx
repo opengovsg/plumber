@@ -7,7 +7,7 @@ import {
   useContext,
   useRef,
 } from 'react'
-import { BiTrashAlt } from 'react-icons/bi'
+import { BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   AlertDialog,
@@ -106,7 +106,7 @@ export default function Branch(props: BranchProps) {
         mb={2}
         role="group"
       >
-        <Flex alignItems="center" borderRadius="inherit" w="full">
+        <Flex alignItems="center" borderRadius="inherit" w="full" h={8}>
           {/* Branch name */}
           <Text textStyle="subhead-1" color="base.content.default">
             {branchSteps[0].parameters.branchName as string}
@@ -124,7 +124,7 @@ export default function Branch(props: BranchProps) {
                 variant="clear"
                 aria-label="Delete branch"
                 colorScheme="secondary"
-                icon={<BiTrashAlt />}
+                icon={<BiTrash />}
                 isLoading={isDeletingBranch}
                 isDisabled={isDeletingBranch}
               />
