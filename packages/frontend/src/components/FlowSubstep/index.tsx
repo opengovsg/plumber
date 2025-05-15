@@ -91,6 +91,12 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       if (!result) {
         throw new Error('Failed to save step')
       }
+      toast({
+        title: 'Step saved successfully!',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      })
     } catch (error) {
       toast({
         title: 'Error saving step',
