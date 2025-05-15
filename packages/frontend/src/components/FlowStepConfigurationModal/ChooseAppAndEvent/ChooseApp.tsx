@@ -170,7 +170,12 @@ export default function ChooseApp(props: ChooseAppProps) {
   return (
     <>
       <ModalHeader pt={0}>
-        <Flex gap={2} flexDir="column" alignItems="flex-start">
+        <Flex
+          gap={2}
+          flexDir="column"
+          alignItems="flex-start"
+          w={isTrigger ? '90%' : '100%'}
+        >
           <Text textStyle="h3-semibold">
             {isTrigger
               ? 'Choose how you want your workflow to start'
