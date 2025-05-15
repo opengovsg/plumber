@@ -223,7 +223,7 @@ const Editor = ({
   return (
     <Popover
       autoFocus={false}
-      gutter={0}
+      gutter={2}
       matchWidth={isMulticol ? false : true}
       isLazy
       lazyBehavior="unmount"
