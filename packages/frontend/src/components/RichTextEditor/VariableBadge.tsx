@@ -22,7 +22,7 @@ export const VariableBadge = ({ node }: { node: Node }) => {
       <TouchableTooltip
         label={
           isEmpty && !isTemplate && !isRowId
-            ? 'Data is missing for this variable, please test previous steps and reselect the variable'
+            ? 'This is a missing variable, check your previous steps and reselect a variable'
             : ''
         }
         aria-label="variable badge tooltip"
