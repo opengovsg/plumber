@@ -186,16 +186,16 @@ export default function FlowStepTestController(
   const CheckAgainButton = useMemo(
     () => (
       <CheckStepTooltip isDisabled={!(!isValid || readOnly)}>
-      <Button
-        variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
-        onClick={handleSaveAndTest}
-        isLoading={isTestExecuting}
-        colorScheme={infoBoxVariant === 'unstyled' ? 'primary' : 'black'}
-        size="sm"
-        isDisabled={!isValid || readOnly}
-      >
-        Check step again
-      </Button>
+        <Button
+          variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
+          onClick={handleSaveAndTest}
+          isLoading={isTestExecuting}
+          colorScheme={infoBoxVariant === 'unstyled' ? 'primary' : 'black'}
+          size="sm"
+          isDisabled={!isValid || readOnly}
+        >
+          Check step again
+        </Button>
       </CheckStepTooltip>
     ),
     [handleSaveAndTest, infoBoxVariant, isTestExecuting, isValid, readOnly],
@@ -308,14 +308,14 @@ export default function FlowStepTestController(
                   </Button>
                 )}
                 <CheckStepTooltip isDisabled={shouldAllowCheckStep}>
-                <Button
-                  onClick={handleSaveAndTest}
-                  data-test="flow-substep-continue-button"
+                  <Button
+                    onClick={handleSaveAndTest}
+                    data-test="flow-substep-continue-button"
                     isDisabled={!shouldAllowCheckStep}
-                  isLoading={isTestExecuting}
-                >
-                  Check step
-                </Button>
+                    isLoading={isTestExecuting}
+                  >
+                    Check step
+                  </Button>
                 </CheckStepTooltip>
               </HStack>
             </VStack>

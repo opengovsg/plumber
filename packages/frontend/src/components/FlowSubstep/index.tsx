@@ -78,7 +78,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   // NOTE: this is meant to avoid users losing progress
   // we validate the substeps so that the header reflects the correct status
-  const handleSave = useCallback(async () => {
+  const saveStep = useCallback(async () => {
     try {
       setIsSaving(true)
       const currentStep = formContext.getValues() as IStep
@@ -91,12 +91,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       if (!result) {
         throw new Error('Failed to save step')
       }
-      toast({
-        title: 'Step saved successfully!',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      })
     } catch (error) {
       toast({
         title: 'Error saving step',
@@ -113,13 +107,23 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     }
   }, [formContext, onUpdateStep, substep, toast])
 
+  const handleSave = useCallback(async () => {
+    await saveStep()
+    toast({
+      title: 'Step saved successfully!',
+      status: 'success',
+      duration: 5000,
+      isClosable: true,
+    })
+  }, [saveStep, toast])
+
   const handleSaveAndTest = useCallback(async () => {
-    await handleSave()
+    await saveStep()
     await executeTestStep()
     if (!isIfThenStep(step)) {
       onTestResultOpen()
     }
-  }, [handleSave, executeTestStep, onTestResultOpen, step])
+  }, [saveStep, executeTestStep, step, onTestResultOpen])
 
   return (
     <Box position="relative" display="flex" flexDirection="column">
