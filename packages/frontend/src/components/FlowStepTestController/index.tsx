@@ -241,6 +241,8 @@ export default function FlowStepTestController(
                         colorScheme={
                           infoBoxVariant === 'unstyled' ? 'black' : 'green'
                         }
+                        px={2}
+                        ml={infoBoxVariant === 'unstyled' ? -1 : -0.5}
                         size="sm"
                         onClick={() =>
                           isTestResultOpen
