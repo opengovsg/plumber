@@ -16,13 +16,76 @@ const msGraphResponseSchema = z
     headerSheetRowIndex: response.rowIndex,
   }))
 
+// Can get more info e.g. formulas, numberFormat, text for possible date manipulation but too complex for now
+const msGraphRangeResponseSchema = z
+  .object({
+    rowCount: z.number(),
+    rowIndex: z.number(),
+    values: z.array(z.array(z.coerce.string())), // first row is the header
+  })
+  .transform((response) => ({
+    rowCount: response.rowCount,
+    headerSheetRowIndex: response.rowIndex,
+    headerRowValues: response.values[0],
+    rowValues: response.values.slice(1),
+  }))
+
 interface GetTopNTableRowsResult {
   columns: string[]
   rows: string[][]
   headerSheetRowIndex: number
 }
 
+/**
+ * Using range endpoint to get both the header row and data rows
+ * instead of headerRowRange and rows to avoid extra API call
+ * Also, rows endpoint uses pagination so the query takes longer for large tables
+ *
+ * Considered using columns API but there is no headerSheetRowIndex returned so
+ * an extra API call has to be made to retrieve it
+ * Reference: https://learn.microsoft.com/en-us/graph/api/table-range?view=graph-rest-1.0&tabs=http
+ */
 export default async function getTopNTableRows(
+  $: IGlobalVariable,
+  session: WorkbookSession,
+  tableId: string,
+  n: number,
+): Promise<GetTopNTableRowsResult> {
+  const rangeParseResult = msGraphRangeResponseSchema.safeParse(
+    (await session.request(`/tables/${tableId}/range`, 'get')).data,
+  )
+
+  if (rangeParseResult.success === false) {
+    throw new StepError(
+      'Invalid table range',
+      'Check your Excel file and try again',
+      $.step.position,
+      $.app.name,
+    )
+  }
+
+  const { rowCount, headerSheetRowIndex, headerRowValues, rowValues } =
+    rangeParseResult.data
+
+  // rowCount includes the header row
+  if (rowCount > n) {
+    throw new StepError(
+      `Your Excel table has more than ${n.toLocaleString()} rows.`,
+      `Reduce the number of rows and try again.`,
+      $.step.position,
+      $.app.name,
+    )
+  }
+
+  return {
+    columns: headerRowValues,
+    rows: rowValues,
+    headerSheetRowIndex,
+  }
+}
+
+// Old method in case we need to rollback fast
+export async function getTopNTableRowsOld(
   // Typically, we should avoid making $ viral though the codebase, but this is
   // an exception because getTopNTableRows is not a common helper function.
   $: IGlobalVariable,
