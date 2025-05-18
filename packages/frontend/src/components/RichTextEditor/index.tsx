@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
   useDisclosure,
 } from '@chakra-ui/react'
-import { FormLabel } from '@opengovsg/design-system-react'
+import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
 import Document from '@tiptap/extension-document'
 import Hardbreak from '@tiptap/extension-hard-break'
 import Link from '@tiptap/extension-link'
@@ -104,6 +104,8 @@ const Editor = ({
   parentType,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
+  const isMobile = useIsMobile()
+  const isMulticol = parentType === 'multicol'
 
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
@@ -222,7 +224,7 @@ const Editor = ({
     <Popover
       autoFocus={false}
       gutter={0}
-      matchWidth={parentType === 'multicol' ? false : true}
+      matchWidth={isMulticol ? false : true}
       isLazy
       lazyBehavior="unmount"
       onClose={closeSuggestions}
@@ -246,8 +248,7 @@ const Editor = ({
             {isRich && <MenuBar editor={editor} variableMap={varInfo} />}
             <EditorContent className="editor__content" editor={editor} />
             <PopoverContent
-              w="100%"
-              maxWidth={parentType === 'multicol' ? 'fit-content' : undefined}
+              w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
               motionProps={POPOVER_MOTION_PROPS}
               onFocus={(e) => {
                 // Go back to previous focus when clicking on suggestions to resume typing
