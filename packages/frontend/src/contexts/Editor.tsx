@@ -48,6 +48,7 @@ interface IEditorContextValue {
   isDrawerOpen: boolean
   isMobile: boolean
   isTestExecuting: boolean
+  shouldWarnOnLeave: boolean
   stepsWithVars: StepWithVariables[]
   varInfoMap: VariableInfoMap
   executeTestStep: () => Promise<void>
@@ -55,6 +56,7 @@ interface IEditorContextValue {
   onDrawerClose: () => void
   setCurrentStepId: (stepId: string | null) => void
   setCurrentStepIndex: (stepIndex: number | null) => void
+  setShouldWarnOnLeave: (shouldWarnOnLeave: boolean) => void
   onCreateStep: (
     previousStepId: string,
     appKey: string,
@@ -75,6 +77,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   isDrawerOpen: false,
   isMobile: false,
   isTestExecuting: false,
+  shouldWarnOnLeave: false,
   stepsWithVars: [],
   readOnly: false,
   testExecutionSteps: [],
@@ -86,6 +89,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   executeTestStep: () => Promise.resolve(),
   setCurrentStepId: () => null,
   setCurrentStepIndex: () => null,
+  setShouldWarnOnLeave: () => null,
   allApps: [],
 })
 
@@ -93,6 +97,8 @@ type EditorProviderProps = {
   children: ReactNode
   readOnly: boolean
   flow: IFlow
+  shouldWarnOnLeave: boolean
+  setShouldWarnOnLeave: (shouldWarnOnLeave: boolean) => void
 }
 
 /**
@@ -140,6 +146,8 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 export const EditorProvider = ({
   readOnly,
   flow,
+  shouldWarnOnLeave,
+  setShouldWarnOnLeave,
   children,
 }: EditorProviderProps) => {
   // TODO: remove this kill switch once Single Step Testing is stable
@@ -364,6 +372,7 @@ export const EditorProvider = ({
         currentTestExecutionStep,
         isTestExecuting,
         readOnly,
+        shouldWarnOnLeave,
         stepsWithVars,
         testExecutionSteps,
         varInfoMap,
@@ -374,6 +383,7 @@ export const EditorProvider = ({
         onUpdateStep,
         setCurrentStepId,
         setCurrentStepIndex,
+        setShouldWarnOnLeave,
       }}
     >
       {children}

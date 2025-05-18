@@ -1,31 +1,38 @@
 import { IStep } from '@plumber/types'
 
-import { MouseEventHandler, useCallback, useRef } from 'react'
+import { MouseEventHandler, useCallback, useContext, useRef } from 'react'
 import { BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Flex, useDisclosure } from '@chakra-ui/react'
-import { IconButton, useIsMobile } from '@opengovsg/design-system-react'
+import { IconButton } from '@opengovsg/design-system-react'
 
 import MenuAlertDialog from '@/components/MenuAlertDialog'
+import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 
 interface StepDeleteButtonProps {
   isNested?: boolean
-  onClose: () => void
   isDeletingStep?: boolean
   step: IStep
 }
 
 export default function StepDeleteButton(props: StepDeleteButtonProps) {
-  const { isNested, onClose, step } = props
+  const { isNested, step } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
   const {
     isOpen: isDialogOpen,
     onOpen: onDialogOpen,
     onClose: onDialogClose,
   } = useDisclosure()
-  const isMobile = useIsMobile()
+
+  const {
+    isMobile,
+    onDrawerClose,
+    setCurrentStepId,
+    setCurrentStepIndex,
+    setShouldWarnOnLeave,
+  } = useContext(EditorContext)
 
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
@@ -37,9 +44,19 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
       await deleteStep({ variables: { input: { ids: [step.id] } } })
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
-      onClose()
+      setCurrentStepId(null)
+      setCurrentStepIndex(null)
+      setShouldWarnOnLeave(false)
+      onDrawerClose()
     },
-    [deleteStep, step.id, onClose],
+    [
+      step.id,
+      deleteStep,
+      onDrawerClose,
+      setCurrentStepId,
+      setCurrentStepIndex,
+      setShouldWarnOnLeave,
+    ],
   )
 
   if (!step.id) {

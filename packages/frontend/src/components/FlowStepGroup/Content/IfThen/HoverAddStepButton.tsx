@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useContext, useRef, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { Divider, Flex, IconButton, useDisclosure } from '@chakra-ui/react'
 
+import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
+import { EditorContext } from '@/contexts/Editor'
 
 import { hoverAddStepButtonStyles as styles } from './styles'
 
@@ -17,8 +19,23 @@ export function HoverAddStepButton(
   props: HoverAddStepButtonProps,
 ): JSX.Element {
   const { isDisabled, isLastStep, prevStepId } = props
+  const cancelRef = useRef(null)
+  const { shouldWarnOnLeave } = useContext(EditorContext)
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const {
+    isOpen: isWarningOpen,
+    onOpen: onWarningOpen,
+    onClose: onWarningClose,
+  } = useDisclosure()
   const [isHovered, setIsHovered] = useState(false)
+
+  const handleOpen = () => {
+    if (shouldWarnOnLeave) {
+      onWarningOpen()
+    } else {
+      onOpen()
+    }
+  }
 
   return (
     <>
@@ -40,7 +57,7 @@ export function HoverAddStepButton(
           <IconButton
             {...styles.button}
             aria-label="Add Step"
-            onClick={onOpen}
+            onClick={handleOpen}
             isDisabled={isDisabled}
             icon={<BiPlus />}
           />
@@ -55,6 +72,13 @@ export function HoverAddStepButton(
           prevStepId={prevStepId}
         />
       )}
+
+      <UnsavedChangesAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={onOpen}
+      />
     </>
   )
 }

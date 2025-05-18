@@ -1,10 +1,18 @@
 import type { IFlow } from '@plumber/types'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BiChevronLeft, BiCog, BiInfoCircle } from 'react-icons/bi'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
-import { Box, Flex, HStack, Icon, Skeleton, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Flex,
+  HStack,
+  Icon,
+  Skeleton,
+  Text,
+  useDisclosure,
+} from '@chakra-ui/react'
 import {
   Button,
   IconButton,
@@ -25,18 +33,29 @@ import { GET_FLOW } from '@/graphql/queries/get-flow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
+import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 
 import EditorSnackbar from './EditorSnackbar'
 import { LensSurvey } from './LensSurvey'
 
 export default function EditorLayout() {
+  const cancelRef = useRef(null)
   const { flowId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const isMobile = useIsMobile()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
     refetchQueries: [GET_FLOW],
   })
+  const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
+  const [leaveToUrl, setLeaveToUrl] = useState(URLS.FLOWS)
+  const {
+    isOpen: isWarningOpen,
+    onOpen: onWarningOpen,
+    onClose: onWarningClose,
+  } = useDisclosure()
+
   const { data, loading, error } = useQuery(GET_FLOW, {
     variables: { id: flowId },
   })
@@ -93,11 +112,35 @@ export default function EditorLayout() {
     [flow?.id, flowId, updateFlowStatus],
   )
 
+  const handleWarnOnLeave = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+      if (shouldWarnOnLeave) {
+        e.preventDefault()
+        onWarningOpen()
+      }
+    },
+    [shouldWarnOnLeave, onWarningOpen],
+  )
+
   // disallow user from publishing pipe if any step is incomplete
   const isFlowIncomplete = useMemo(
     () => flow?.steps.some((step) => step.status === 'incomplete'),
     [flow?.steps],
   )
+
+  // warn user of unsaved changes when they try to close or reload the browser
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!shouldWarnOnLeave) {
+        return
+      }
+      e.preventDefault()
+      e.returnValue = '' // legacy but still required by some browsers
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [shouldWarnOnLeave])
 
   // navigate user to not found page if flow does not belong to the user
   if (
@@ -136,7 +179,13 @@ export default function EditorLayout() {
           borderColor="base.divider.subtle"
         >
           <Flex flex={1} alignItems="center">
-            <Box as={Link} to={URLS.FLOWS} mt={1} mr={3}>
+            <Box
+              as={Link}
+              to={URLS.FLOWS}
+              mt={1}
+              mr={3}
+              onClick={handleWarnOnLeave}
+            >
               <Icon
                 boxSize={6}
                 color="interaction.support.disabled-content"
@@ -186,6 +235,10 @@ export default function EditorLayout() {
                 color: 'primary.500',
                 bg: 'interaction.muted.main.hover',
               }}
+              onClick={(e) => {
+                setLeaveToUrl(URLS.FLOW_EDITOR_NOTIFICATIONS(flowId))
+                handleWarnOnLeave(e)
+              }}
             />
           </TouchableTooltip>
 
@@ -222,7 +275,12 @@ export default function EditorLayout() {
           flex={1}
           overflowY="auto"
         >
-          <EditorProvider readOnly={isEditorReadOnly} flow={flow}>
+          <EditorProvider
+            readOnly={isEditorReadOnly}
+            flow={flow}
+            shouldWarnOnLeave={shouldWarnOnLeave}
+            setShouldWarnOnLeave={setShouldWarnOnLeave}
+          >
             <Editor />
             {flow.active && flow.config?.showSurvey && <LensSurvey />}
           </EditorProvider>
@@ -240,6 +298,13 @@ export default function EditorLayout() {
           demoVideoDetails={demoVideoDetails}
         />
       )}
+
+      <UnsavedChangesAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={() => navigate(leaveToUrl)}
+      />
     </>
   )
 }
