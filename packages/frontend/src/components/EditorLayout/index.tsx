@@ -49,6 +49,7 @@ export default function EditorLayout() {
     refetchQueries: [GET_FLOW],
   })
   const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
+  const [leaveToUrl, setLeaveToUrl] = useState(URLS.FLOWS)
   const {
     isOpen: isWarningOpen,
     onOpen: onWarningOpen,
@@ -109,6 +110,16 @@ export default function EditorLayout() {
       })
     },
     [flow?.id, flowId, updateFlowStatus],
+  )
+
+  const handleWarnOnLeave = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+      if (shouldWarnOnLeave) {
+        e.preventDefault()
+        onWarningOpen()
+      }
+    },
+    [shouldWarnOnLeave, onWarningOpen],
   )
 
   // disallow user from publishing pipe if any step is incomplete
@@ -173,12 +184,7 @@ export default function EditorLayout() {
               to={URLS.FLOWS}
               mt={1}
               mr={3}
-              onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                if (shouldWarnOnLeave) {
-                  e.preventDefault()
-                  onWarningOpen()
-                }
-              }}
+              onClick={handleWarnOnLeave}
             >
               <Icon
                 boxSize={6}
@@ -228,6 +234,10 @@ export default function EditorLayout() {
               _hover={{
                 color: 'primary.500',
                 bg: 'interaction.muted.main.hover',
+              }}
+              onClick={(e) => {
+                setLeaveToUrl(URLS.FLOW_EDITOR_NOTIFICATIONS(flowId))
+                handleWarnOnLeave(e)
               }}
             />
           </TouchableTooltip>
@@ -293,7 +303,7 @@ export default function EditorLayout() {
         cancelRef={cancelRef}
         isOpen={isWarningOpen}
         onClose={onWarningClose}
-        onLeave={() => navigate(URLS.FLOWS)}
+        onLeave={() => navigate(leaveToUrl)}
       />
     </>
   )
