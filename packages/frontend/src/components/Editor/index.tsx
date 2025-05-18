@@ -17,6 +17,7 @@ import {
 import PrimarySpinner from '../PrimarySpinner'
 
 import { AddStepButton } from './AddStepButton'
+import { EDITOR_RIGHT_DRAWER_WIDTH } from './constants'
 import { editorStyles } from './styles'
 
 type EditorProps = {
@@ -161,12 +162,15 @@ export default function Editor(props: EditorProps): React.ReactElement {
   }
 
   return (
-    <Flex w="full" justifyContent={isDrawerOpen ? 'space-between' : 'center'}>
+    <Flex w="full" justifyContent="center" overflowX="hidden">
       <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
         <Flex
           {...editorStyles.container}
           flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
           px={getStepPadding()}
+          maxWidth={`calc(100% - ${
+            isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
+          })`}
         >
           {stepsBeforeGroup.map((step, index) => (
             <Fragment key={`${step.id}-${index}`}>
@@ -200,11 +204,25 @@ export default function Editor(props: EditorProps): React.ReactElement {
           )}
         </Flex>
 
-        <EditorRightDrawer
-          flowStepGroupIconUrl={flowStepGroupIconUrl}
-          index={currentStepIndex}
-          steps={steps}
-        />
+        <Flex
+          {...editorStyles.rightDrawerContainer}
+          w={
+            isDrawerOpen
+              ? isMobile
+                ? '100vw'
+                : EDITOR_RIGHT_DRAWER_WIDTH
+              : '0'
+          }
+          visibility={isDrawerOpen ? 'visible' : 'hidden'}
+          opacity={isDrawerOpen ? 1 : 0}
+          transform={isDrawerOpen ? 'translateX(0)' : 'translateX(100%)'}
+        >
+          <EditorRightDrawer
+            flowStepGroupIconUrl={flowStepGroupIconUrl}
+            index={currentStepIndex}
+            steps={steps}
+          />
+        </Flex>
       </StepExecutionsToIncludeProvider>
     </Flex>
   )
