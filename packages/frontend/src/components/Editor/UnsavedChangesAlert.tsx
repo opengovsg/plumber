@@ -13,7 +13,6 @@ export interface UnsavedChangesAlertProps {
   isOpen: boolean
   onClose: () => void
   onLeave?: () => void
-  onStay?: () => void
 }
 
 export default function UnsavedChangesAlert({
@@ -21,15 +20,9 @@ export default function UnsavedChangesAlert({
   isOpen,
   onClose,
   onLeave,
-  onStay,
 }: UnsavedChangesAlertProps): React.ReactElement {
   const handleLeave = () => {
     onLeave?.()
-    onClose()
-  }
-
-  const handleStay = () => {
-    onStay?.()
     onClose()
   }
 
@@ -50,7 +43,7 @@ export default function UnsavedChangesAlert({
           <AlertDialogFooter>
             <Button
               ref={cancelRef}
-              onClick={handleStay}
+              onClick={onClose}
               variant="clear"
               colorScheme="secondary"
             >
