@@ -57,7 +57,6 @@ export function HoverAddStepButton(
           <IconButton
             {...styles.button}
             aria-label="Add Step"
-            className="add-button"
             onClick={handleOpen}
             isDisabled={isDisabled}
             icon={<BiPlus />}
