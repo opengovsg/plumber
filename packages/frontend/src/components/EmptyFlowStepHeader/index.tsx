@@ -17,7 +17,7 @@ export default function EmptyFlowStepHeader(
   props: EmptyFlowStepHeaderProps,
 ): JSX.Element {
   const { isTrigger, onModalOpen, isNested } = props
-  const { isDrawerOpen, isMobile, isNewPipe } = useContext(EditorContext)
+  const { isDrawerOpen, isMobile, isEmptyPipe } = useContext(EditorContext)
 
   return (
     <Flex
@@ -38,7 +38,7 @@ export default function EmptyFlowStepHeader(
         bg: 'interaction.muted.neutral.active',
       }}
       w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
-      sx={isNewPipe && isTrigger ? pulsingBoxStyles : {}}
+      sx={isEmptyPipe && isTrigger ? pulsingBoxStyles : {}}
     >
       <Icon
         as={isTrigger ? BiSolidBolt : BiPlus}

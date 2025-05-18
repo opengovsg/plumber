@@ -47,7 +47,7 @@ interface IEditorContextValue {
   currentTestExecutionStep: IExecutionStep | null
   isDrawerOpen: boolean
   isMobile: boolean
-  isNewPipe: boolean
+  isEmptyPipe: boolean
   isTestExecuting: boolean
   shouldWarnOnLeave: boolean
   stepsWithVars: StepWithVariables[]
@@ -79,7 +79,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   currentTestExecutionStep: null,
   isDrawerOpen: false,
   isMobile: false,
-  isNewPipe: false,
+  isEmptyPipe: false,
   isTestExecuting: false,
   shouldWarnOnLeave: false,
   stepsWithVars: [],
@@ -170,9 +170,8 @@ export const EditorProvider = ({
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
 
   const steps = flow?.steps ?? []
-  const isNewPipe =
-    steps.length === 2 &&
-    steps.every((s) => s.key === null && s.appKey === null)
+  const isEmptyPipe =
+    steps.length <= 2 && steps.every((s) => s.key === null && s.appKey === null)
 
   const hasIfThen = flow?.steps.some(
     (step: IStep) => step.key === TOOLBOX_ACTIONS.IfThen,
@@ -388,7 +387,7 @@ export const EditorProvider = ({
         hasIfThen,
         isDrawerOpen,
         isMobile,
-        isNewPipe,
+        isEmptyPipe,
         flow,
         flowId,
         currentTestExecutionStep,
