@@ -5,6 +5,8 @@ import { Flex, Icon, Text } from '@chakra-ui/react'
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
 
+import { pulsingBoxStyles } from './styles'
+
 interface EmptyFlowStepHeaderProps {
   isTrigger: boolean
   onModalOpen: () => void
@@ -15,7 +17,7 @@ export default function EmptyFlowStepHeader(
   props: EmptyFlowStepHeaderProps,
 ): JSX.Element {
   const { isTrigger, onModalOpen, isNested } = props
-  const { isDrawerOpen, isMobile } = useContext(EditorContext)
+  const { isDrawerOpen, isMobile, isNewPipe } = useContext(EditorContext)
 
   return (
     <Flex
@@ -36,6 +38,7 @@ export default function EmptyFlowStepHeader(
         bg: 'interaction.muted.neutral.active',
       }}
       w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
+      sx={isNewPipe && isTrigger ? pulsingBoxStyles : {}}
     >
       <Icon
         as={isTrigger ? BiSolidBolt : BiPlus}
