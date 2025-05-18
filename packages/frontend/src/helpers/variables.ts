@@ -160,8 +160,9 @@ export function extractVariables(
         return {
           id: executionStep.stepId,
           name: `${executionStep.step.position}. ${
+            executionStep.step?.config?.stepName ||
             (executionStep.appKey || '').charAt(0)?.toUpperCase() +
-            executionStep.appKey?.slice(1)
+              executionStep.appKey?.slice(1)
           }`,
           output: variables,
         }
