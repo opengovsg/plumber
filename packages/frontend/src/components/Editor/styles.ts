@@ -1,7 +1,6 @@
 import { FlexProps } from '@chakra-ui/react'
 
-export const EDITOR_MARGIN_TOP = '61px'
-export const EDITOR_MAX_HEIGHT = `calc(100vh - ${EDITOR_MARGIN_TOP})`
+import { EDITOR_MAX_HEIGHT } from './constants'
 
 export const editorStyles = {
   container: {
@@ -14,7 +13,19 @@ export const editorStyles = {
     overflowY: 'auto' as FlexProps['overflowY'],
     py: 10,
     px: 0,
-    transition: 'width 0.3s ease-in-out, transform 0.3s ease-in-out',
+    transition: 'transform 0.4s cubic-bezier(0.3, 0, 0.2, 1)',
     w: '100%',
+  },
+  rightDrawerContainer: {
+    flexDir: 'column' as FlexProps['flexDir'],
+    position: 'relative' as FlexProps['position'],
+    bg: 'white',
+    borderRadius: 'lg',
+    boxShadow: 'lg',
+    opacity: 0,
+    maxHeight: EDITOR_MAX_HEIGHT,
+    h: EDITOR_MAX_HEIGHT,
+    overflowY: 'auto' as FlexProps['overflowY'],
+    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
   },
 }
