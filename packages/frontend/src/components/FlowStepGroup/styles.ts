@@ -8,6 +8,7 @@ export const flowStepGroupStyles = {
     borderColor: 'base.divider.medium',
     borderRadius: 'lg',
     borderTopRadius: 'lg',
+    bg: 'white',
   },
 
   header: {
