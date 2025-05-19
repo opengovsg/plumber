@@ -85,10 +85,9 @@ export function useStepMetadata(
     isIfThenStep,
     isTrigger,
     position: step?.position ?? 0,
-    stepName:
-      step?.config?.stepName && step?.config?.stepName !== ''
-        ? step.config.stepName
-        : defaultCaption ?? '',
+    stepName: step?.config?.stepName
+      ? step.config.stepName
+      : defaultCaption ?? '',
     substeps,
   }
 }

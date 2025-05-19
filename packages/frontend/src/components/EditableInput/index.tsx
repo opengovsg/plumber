@@ -48,9 +48,8 @@ export default function EditableInput({
     ) {
       resetField()
     } else {
-      const valueToSave = trimmedValue === '' ? '' : trimmedValue
       setIsUpdating(true)
-      await onSave(valueToSave)
+      await onSave(trimmedValue)
       setIsUpdating(false)
       setIsEditing(false)
     }
