@@ -5,6 +5,7 @@ import {
   MouseEventHandler,
   useCallback,
   useContext,
+  useMemo,
   useRef,
 } from 'react'
 import { BiTrash } from 'react-icons/bi'
@@ -28,10 +29,10 @@ import FlowStep from '@/components/FlowStep'
 import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { HoverAddStepButton } from './HoverAddStepButton'
 import { branchStyles } from './styles'
+import { allowAddStep } from './utils'
 
 interface BranchProps {
   branchSteps: IStep[]
@@ -72,16 +73,7 @@ export default function Branch(props: BranchProps) {
       variables: { input: { ids: idsToDelete } },
     })
 
-    // prevents accordion from collapsing when deleting the first branch
-    const ifThenRemaining = branchSteps
-      .filter(
-        (step) =>
-          step.key === TOOLBOX_ACTIONS.IfThen && !idsToDelete.includes(step.id),
-      )
-      .map((step) => step.id)
-    if (ifThenRemaining.length > 0) {
-      setCurrentStepId(ifThenRemaining[0])
-    }
+    setCurrentStepId(null)
     closeDeleteConfirmation()
     onDrawerClose()
   }, [
@@ -91,6 +83,8 @@ export default function Branch(props: BranchProps) {
     closeDeleteConfirmation,
     setCurrentStepId,
   ])
+
+  const canAddStep = useMemo(() => allowAddStep(branchSteps), [branchSteps])
 
   return (
     <Flex key={branchSteps[0].id} {...branchStyles.container}>
@@ -141,7 +135,7 @@ export default function Branch(props: BranchProps) {
               isLastStep={index === branchSteps.length - 1}
             />
             <HoverAddStepButton
-              isDisabled={isEditorReadOnly}
+              isDisabled={isEditorReadOnly || !canAddStep}
               isDrawerOpen={isDrawerOpen}
               isLastStep={index === branchSteps.length - 1}
               prevStepId={step.id}
