@@ -1,6 +1,6 @@
 import type { IStep } from '@plumber/types'
 
-import { useCallback, useContext, useMemo, useRef } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
@@ -12,6 +12,7 @@ import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
 import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
@@ -37,18 +38,11 @@ export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
   const { step, index, isLastStep, isNested } = props
-  const cancelRef = useRef(null)
 
   const {
     isOpen: isModalOpen,
     onOpen: onModalOpen,
     onClose: onModalClose,
-  } = useDisclosure()
-
-  const {
-    isOpen: isWarningOpen,
-    onOpen: onWarningOpen,
-    onClose: onWarningClose,
   } = useDisclosure()
 
   const {
@@ -69,6 +63,17 @@ export default function FlowStep(
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const { app, caption, isCompleted, isTrigger, selectedActionOrTrigger } =
     useStepMetadata(allApps, step)
+
+  const {
+    cancelRef,
+    isWarningOpen,
+    onWarningOpen,
+    onWarningClose,
+    handleProceed,
+    handleLeave: discardChanges,
+  } = useUnsavedChanges({
+    onProceed: onModalOpen,
+  })
 
   const isDeletable =
     displayOverrides?.disableDelete === true
@@ -117,7 +122,7 @@ export default function FlowStep(
     setCurrentStepIndex,
   ])
 
-  const handleLeave = () => {
+  const onLeave = () => {
     if (currentStepId === step.id) {
       setCurrentStepId(null)
       setCurrentStepIndex(null)
@@ -125,7 +130,7 @@ export default function FlowStep(
       onDrawerClose()
     } else if (!app || !selectedActionOrTrigger) {
       setShouldWarnOnLeave(false)
-      onModalOpen()
+      discardChanges()
     } else {
       setCurrentStepId(step.id)
       setCurrentStepIndex(index)
@@ -162,13 +167,7 @@ export default function FlowStep(
         <EmptyFlowStepHeader
           isNested={isNested}
           isTrigger={isTrigger}
-          onModalOpen={() => {
-            if (shouldWarnOnLeave) {
-              onWarningOpen()
-            } else {
-              onModalOpen()
-            }
-          }}
+          onModalOpen={handleProceed}
         />
       ) : (
         <>
@@ -250,7 +249,7 @@ export default function FlowStep(
         cancelRef={cancelRef}
         isOpen={isWarningOpen}
         onClose={onWarningClose}
-        onLeave={handleLeave}
+        onLeave={onLeave}
       />
     </FlowStepWrapper>
   )

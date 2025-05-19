@@ -49,8 +49,9 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const { dirtyFields } = formContext.formState
   const isDirty = Object.keys(dirtyFields).length > 0
   useEffect(() => {
+    onTestResultClose()
     setShouldWarnOnLeave(isDirty)
-  }, [isDirty, setShouldWarnOnLeave])
+  }, [isDirty, onTestResultClose, setShouldWarnOnLeave])
 
   // filter inputs hidden behind feature flags based on timestamp
   const argsToDisplay = useMemo(
