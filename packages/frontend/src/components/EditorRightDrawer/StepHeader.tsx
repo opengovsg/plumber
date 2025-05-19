@@ -32,7 +32,11 @@ export default function StepHeader(props: StepHeaderProps) {
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
 
-  const { position, stepName: initialStepName } = useStepMetadata(allApps, step)
+  const {
+    defaultCaption,
+    position,
+    stepName: initialStepName,
+  } = useStepMetadata(allApps, step)
 
   const handleClose = () => {
     if (shouldWarnOnLeave) {
@@ -78,6 +82,8 @@ export default function StepHeader(props: StepHeaderProps) {
           value={initialStepName}
           onSave={onSave}
           readOnly={isReadOnlyEditor}
+          placeholder={defaultCaption}
+          allowEmpty={true}
         />
       </Flex>
 

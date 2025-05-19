@@ -13,6 +13,8 @@ interface EditableInputProps {
   editModeWrapper?: (children: React.ReactNode) => React.ReactNode
   readOnlyWrapper?: (children: React.ReactNode) => React.ReactNode
   componentWrapper?: (children: React.ReactNode) => React.ReactNode
+  allowEmpty?: boolean
+  placeholder?: string
 }
 
 export default function EditableInput({
@@ -24,6 +26,8 @@ export default function EditableInput({
   editModeWrapper,
   readOnlyWrapper,
   componentWrapper,
+  placeholder,
+  allowEmpty = false,
 }: EditableInputProps) {
   const isMobile = useIsMobile()
 
@@ -38,11 +42,14 @@ export default function EditableInput({
 
   const handleSave = async () => {
     const trimmedValue = inputValue.trim()
-    if (!trimmedValue.length || trimmedValue.length > maxLength) {
+    if (
+      !allowEmpty &&
+      (!trimmedValue.length || trimmedValue.length > maxLength)
+    ) {
       resetField()
     } else {
       setIsUpdating(true)
-      await onSave(inputValue)
+      await onSave(trimmedValue)
       setIsUpdating(false)
       setIsEditing(false)
     }
@@ -67,6 +74,7 @@ export default function EditableInput({
         value={inputValue}
         onKeyDown={handleKeyDown}
         onChange={(e) => setInputValue(e.target.value)}
+        placeholder={placeholder}
       />
       <IconButton
         ml={3}
