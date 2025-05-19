@@ -1,9 +1,8 @@
-import { useContext, useRef } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { Box, Divider, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 
-import { EditorContext } from '@/contexts/Editor'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
@@ -20,22 +19,17 @@ interface AddStepButtonProps {
 
 export function AddStepButton(props: AddStepButtonProps): JSX.Element {
   const { isHidden, isLastStep, stepId, isDisabled, showEmptyAction } = props
-  const cancelRef = useRef(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const {
-    isOpen: isWarningOpen,
-    onOpen: onWarningOpen,
-    onClose: onWarningClose,
-  } = useDisclosure()
-  const { shouldWarnOnLeave } = useContext(EditorContext)
 
-  const handleOpen = () => {
-    if (shouldWarnOnLeave) {
-      onWarningOpen()
-    } else {
-      onOpen()
-    }
-  }
+  const {
+    cancelRef,
+    isWarningOpen,
+    onWarningClose,
+    handleProceed,
+    handleLeave,
+  } = useUnsavedChanges({
+    onProceed: onOpen,
+  })
 
   return (
     <Box
@@ -62,7 +56,10 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
                 borderColor="base.divider.strong"
                 h={20}
               />
-              <EmptyFlowStepHeader isTrigger={false} onModalOpen={handleOpen} />
+              <EmptyFlowStepHeader
+                isTrigger={false}
+                onModalOpen={handleProceed}
+              />
             </>
           )}
           {/* Top vertical line */}
@@ -76,7 +73,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
             marginX="auto"
           >
             <IconButton
-              onClick={handleOpen}
+              onClick={handleProceed}
               aria-label="Add Step"
               isDisabled={isDisabled || showEmptyAction}
               icon={<BiPlus />}
@@ -120,7 +117,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
         cancelRef={cancelRef}
         isOpen={isWarningOpen}
         onClose={onWarningClose}
-        onLeave={onOpen}
+        onLeave={handleLeave}
       />
     </Box>
   )

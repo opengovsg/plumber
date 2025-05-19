@@ -65,6 +65,8 @@ interface IEditorContextValue {
   ) => Promise<IStep>
   onUpdateStep: (step: IStep) => Promise<IStep>
   allApps: IApp[]
+  resetForm: () => void
+  resetTimestamp: number
 }
 
 export const EditorContext = createContext<IEditorContextValue>({
@@ -91,6 +93,8 @@ export const EditorContext = createContext<IEditorContextValue>({
   setCurrentStepIndex: () => null,
   setShouldWarnOnLeave: () => null,
   allApps: [],
+  resetForm: () => null,
+  resetTimestamp: 0,
 })
 
 type EditorProviderProps = {
@@ -159,6 +163,7 @@ export const EditorProvider = ({
   const flowId = flow.id
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
+  const [resetTimestamp, setResetTimestamp] = useState<number>(Date.now())
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
   const hasIfThen = flow?.steps.some(
@@ -350,6 +355,11 @@ export const EditorProvider = ({
     }
   }, [executeStep, currentStepId])
 
+  // Force the Form to remount by changing its key when discarding changes
+  const resetForm = useCallback(() => {
+    setResetTimestamp(Date.now())
+  }, [])
+
   if (isLoadingAllApps) {
     return (
       <Center height="100vh" position="fixed" width="full" top={0} left={0}>
@@ -384,6 +394,8 @@ export const EditorProvider = ({
         setCurrentStepId,
         setCurrentStepIndex,
         setShouldWarnOnLeave,
+        resetForm,
+        resetTimestamp,
       }}
     >
       {children}

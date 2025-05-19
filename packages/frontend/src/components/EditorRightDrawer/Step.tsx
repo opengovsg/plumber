@@ -28,8 +28,13 @@ export default function Step(props: StepProps): React.ReactElement | null {
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { allApps, onDrawerClose, onUpdateStep, testExecutionSteps } =
-    useContext(EditorContext)
+  const {
+    allApps,
+    onDrawerClose,
+    onUpdateStep,
+    testExecutionSteps,
+    resetTimestamp,
+  } = useContext(EditorContext)
 
   // This includes all steps that run even after the current step, but within the same branch.
   const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
@@ -72,7 +77,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
       <Flex w="100%" flexDir="column">
         <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
           <Form
-            key={step.id}
+            key={`${step.id}-${resetTimestamp}`}
             defaultValues={step}
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}
