@@ -1,6 +1,7 @@
 import { IJSONObject } from '@plumber/types'
 
 import { Text } from '@chakra-ui/react'
+import { InfoboxProps } from '@opengovsg/design-system-react'
 
 import { Variable } from '@/helpers/variables'
 
@@ -135,7 +136,7 @@ export function getInfoBoxDetails({
   isTestSuccessful: boolean
   stepId: string
   testVariables: Variable[] | null
-}): [string, React.ReactNode] {
+}): [InfoboxProps['variant'], React.ReactNode] {
   if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
     return ['warning', 'Previous result']
   }
