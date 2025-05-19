@@ -38,6 +38,7 @@ interface FlowStepTestControllerProps {
   isTestResultOpen: boolean
   isValid: boolean
   step: IStep
+  hasDeletedVars: boolean
   handleSave: () => void
   handleSaveAndTest: () => void
   onTestResultOpen: () => void
@@ -46,12 +47,17 @@ interface FlowStepTestControllerProps {
 
 type CheckStepTooltipProps = {
   isDisabled: boolean
+  hasDeletedVars?: boolean
   children: React.ReactNode
 }
 
 const CheckStepTooltip = (props: CheckStepTooltipProps) => (
   <Tooltip
-    label="Complete required fields to check step"
+    label={
+      props.hasDeletedVars
+        ? 'Remove variables from deleted steps to check step'
+        : 'Complete required fields to check step'
+    }
     aria-label="check step tooltip"
     isDisabled={props.isDisabled}
     hasArrow
@@ -69,6 +75,7 @@ export default function FlowStepTestController(
     isTestResultOpen,
     isValid,
     step,
+    hasDeletedVars,
     handleSave,
     handleSaveAndTest,
     onTestResultOpen,
@@ -185,7 +192,10 @@ export default function FlowStepTestController(
 
   const CheckAgainButton = useMemo(
     () => (
-      <CheckStepTooltip isDisabled={!(!isValid || readOnly)}>
+      <CheckStepTooltip
+        hasDeletedVars={hasDeletedVars}
+        isDisabled={!(!isValid || readOnly)}
+      >
         <Button
           variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
           onClick={handleSaveAndTest}
@@ -198,7 +208,14 @@ export default function FlowStepTestController(
         </Button>
       </CheckStepTooltip>
     ),
-    [handleSaveAndTest, infoBoxVariant, isTestExecuting, isValid, readOnly],
+    [
+      handleSaveAndTest,
+      hasDeletedVars,
+      infoBoxVariant,
+      isTestExecuting,
+      isValid,
+      readOnly,
+    ],
   )
 
   return (
@@ -309,7 +326,10 @@ export default function FlowStepTestController(
                     {isDirty ? 'Save' : 'Saved'}
                   </Button>
                 )}
-                <CheckStepTooltip isDisabled={shouldAllowCheckStep}>
+                <CheckStepTooltip
+                  hasDeletedVars={hasDeletedVars}
+                  isDisabled={shouldAllowCheckStep}
+                >
                   <Button
                     onClick={handleSaveAndTest}
                     data-test="flow-substep-continue-button"

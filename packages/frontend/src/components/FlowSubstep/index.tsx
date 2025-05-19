@@ -12,6 +12,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { validateSubstep } from '@/helpers/editor'
 import { isIfThenStep } from '@/helpers/toolbox'
+import { hasMissingStepReference } from '@/helpers/validateStepParams'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -25,8 +26,13 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const { isTrigger, substep, step, selectedActionOrTrigger } = props
   const { flags } = useContext(LaunchDarklyContext)
   const formContext = useFormContext()
-  const { readOnly, executeTestStep, onUpdateStep, setShouldWarnOnLeave } =
-    useContext(EditorContext)
+  const {
+    readOnly,
+    executeTestStep,
+    onUpdateStep,
+    setShouldWarnOnLeave,
+    testExecutionSteps,
+  } = useContext(EditorContext)
   const {
     isOpen: isTestResultOpen,
     onOpen: onTestResultOpen,
@@ -39,6 +45,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const [isValid, setIsValid] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
   )
+  const [hasDeletedVars, setHasDeletedVars] = useState(false)
 
   /*
    * NOTE: we use dirtyFields instead of isDirty because dirtyFields only tracks
@@ -68,13 +75,19 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   useEffect(() => {
     function validate(step: unknown) {
-      const validationResult = validateSubstep(substep, step as IStep)
-      setIsValid(validationResult)
+      const typedStep = step as IStep
+      const validationResult = validateSubstep(substep, typedStep)
+      const hasMissingRef = hasMissingStepReference(
+        typedStep?.parameters,
+        new Set(testExecutionSteps.map((ts) => ts.stepId)),
+      )
+      setIsValid(validationResult && !hasMissingRef)
+      setHasDeletedVars(hasMissingRef)
     }
     const subscription = formContext.watch(validate)
 
     return () => subscription.unsubscribe()
-  }, [substep, formContext.watch, formContext])
+  }, [substep, formContext.watch, formContext, testExecutionSteps])
 
   // NOTE: this is meant to avoid users losing progress
   // we validate the substeps so that the header reflects the correct status
@@ -153,6 +166,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         onTestResultOpen={onTestResultOpen}
         onTestResultClose={onTestResultClose}
         isValid={isValid}
+        hasDeletedVars={hasDeletedVars}
       />
     </Box>
   )
