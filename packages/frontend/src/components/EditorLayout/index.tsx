@@ -194,14 +194,12 @@ export default function EditorLayout() {
             </Box>
 
             <Flex>
-              {!loading && (
-                <EditableInput
-                  value={flow?.name}
-                  onSave={onFlowNameUpdate}
-                  readOnly={isEditorReadOnly}
-                  width={isMobile ? '40%' : undefined}
-                />
-              )}
+              <EditableInput
+                value={flow?.name}
+                onSave={onFlowNameUpdate}
+                readOnly={loading}
+                width={isMobile ? '40%' : undefined}
+              />
             </Flex>
           </Flex>
 
