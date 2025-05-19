@@ -292,7 +292,10 @@ export const EditorProvider = ({
           id: flowId,
         },
         config: {
-          stepName: step.config?.stepName,
+          // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
+          ...(step.config?.stepName !== undefined && {
+            stepName: step.config?.stepName,
+          }),
         },
         ...(step.status !== undefined && { status: step.status }),
       }
