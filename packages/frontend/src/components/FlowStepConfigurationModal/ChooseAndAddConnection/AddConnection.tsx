@@ -178,7 +178,7 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
           DEFAULT_ADD_CONNECTION_LABEL
         }
       />
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
 
       <ModalBody mt={2}>
         {auth?.connectionType !== 'user-added' ? (

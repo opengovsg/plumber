@@ -218,7 +218,7 @@ export default function ChooseApp(props: ChooseAppProps) {
           )}
         </Flex>
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
 
       {/* Returns first level modal view of apps: if an app only has one trigger or action,
        * it will be shown as a single item. Else, it will be shown as an expandable item

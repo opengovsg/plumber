@@ -79,7 +79,7 @@ export default function ChooseConnection(
           }
         />
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
 
       <ModalBody>
         <Flex flexDir="column" alignItems="center" gap={6}>
