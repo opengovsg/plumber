@@ -1,6 +1,6 @@
 import { IBaseTrigger, IStep, ITriggerInstructions } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 import { Box, Flex, HStack, Stack, Text, VStack } from '@chakra-ui/react'
@@ -67,6 +67,10 @@ export default function FlowStepTestController(
     isWebhookSubstep,
     testVariables,
   } = useTestDetails(step, currentTestExecutionStep)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [collapseDirection, setCollapseDirection] = useState<'up' | 'down'>(
+    'down',
+  )
 
   const isLastTestExecutionCurrent = useMemo(() => {
     const formValues = formContext.getValues()
@@ -106,8 +110,59 @@ export default function FlowStepTestController(
     !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
   const shouldShowTestResults = currentTestExecutionStep && !lastErrorDetails
 
+  useEffect(() => {
+    if (!containerRef.current) {
+      return
+    }
+
+    const updateCollapseDirection = () => {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) {
+        return
+      }
+
+      // Get the content height from the test variables
+      const contentHeight = testVariables?.length
+        ? testVariables.length * 40
+        : 0
+      const minContentHeight = 108 // Minimum height to consider for content
+
+      const spaceBelow = window.innerHeight - 61 - rect.bottom
+      const spaceAbove = rect.top + 61 + 32
+
+      // If content is small enough, always collapse downward
+      if (contentHeight < minContentHeight) {
+        setCollapseDirection('down')
+
+        if (spaceBelow < 0) {
+          setCollapseDirection('up')
+          return
+        }
+        return
+      }
+
+      setCollapseDirection(spaceAbove > spaceBelow ? 'up' : 'down')
+    }
+
+    updateCollapseDirection()
+    window.addEventListener('resize', updateCollapseDirection)
+    window.addEventListener('scroll', updateCollapseDirection)
+
+    return () => {
+      window.removeEventListener('resize', updateCollapseDirection)
+      window.removeEventListener('scroll', updateCollapseDirection)
+    }
+  }, [testVariables])
+
+  const getChevronIcon = () => {
+    if (isTestResultOpen) {
+      return collapseDirection === 'up' ? <BiChevronDown /> : <BiChevronUp />
+    }
+    return collapseDirection === 'up' ? <BiChevronUp /> : <BiChevronDown />
+  }
+
   return (
-    <Stack {...flowStepTestControllerStyles.container}>
+    <Stack {...flowStepTestControllerStyles.container} ref={containerRef}>
       <VStack w="100%">
         {isWebhookSubstep && (
           <VStack w="100%">
@@ -151,7 +206,7 @@ export default function FlowStepTestController(
                     >
                       <Text color="base.content.default">{infoBoxText}</Text>
                       <Box ml={2} color="base.content.default">
-                        {isTestResultOpen ? <BiChevronDown /> : <BiChevronUp />}
+                        {getChevronIcon()}
                       </Box>
                     </Button>
                   )}
