@@ -162,14 +162,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
   }
 
   return (
-    <Flex
-      w="full"
-      justifyContent="center"
-      overflowX="hidden"
-      backgroundImage="/pipebg.svg"
-      backgroundRepeat="repeat"
-      backgroundSize="auto"
-    >
+    <Flex w="full" justifyContent="center" overflowX="hidden">
       <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
         <Flex
           {...editorStyles.container}
