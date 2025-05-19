@@ -88,6 +88,7 @@ export default function FlowStepTestController(
     isIfThenStep,
     isLastTestExecutionCurrent,
     isTestSuccessful,
+    isTestExecuting,
     stepId: step.id,
     testVariables,
   })
@@ -222,11 +223,14 @@ export default function FlowStepTestController(
                           ? onTestResultClose()
                           : onTestResultOpen()
                       }
+                      isDisabled={isTestExecuting}
                     >
                       <Text color="base.content.default">{infoBoxText}</Text>
-                      <Box ml={2} color="base.content.default">
-                        {getChevronIcon()}
-                      </Box>
+                      {!isTestExecuting && (
+                        <Box ml={2} color="base.content.default">
+                          {getChevronIcon()}
+                        </Box>
+                      )}
                     </Button>
                   )}
                   {shouldShowSaveButton ? (

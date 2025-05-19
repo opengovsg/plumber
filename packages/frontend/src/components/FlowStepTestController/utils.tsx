@@ -127,6 +127,7 @@ export function getInfoBoxDetails({
   isIfThenStep,
   isLastTestExecutionCurrent,
   isTestSuccessful,
+  isTestExecuting,
   stepId,
   testVariables,
 }: {
@@ -134,9 +135,14 @@ export function getInfoBoxDetails({
   isIfThenStep: boolean
   isLastTestExecutionCurrent: boolean
   isTestSuccessful: boolean
+  isTestExecuting: boolean
   stepId: string
   testVariables: Variable[] | null
 }): [InfoboxProps['variant'], React.ReactNode] {
+  if (isTestExecuting) {
+    return ['unstyled', 'Checking step...']
+  }
+
   if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
     return ['unstyled', 'Previous result']
   }
