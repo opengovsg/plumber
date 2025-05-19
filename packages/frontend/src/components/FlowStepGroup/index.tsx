@@ -1,13 +1,10 @@
 import { IStep } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
-import { getFlowStepHeaderWidth } from '@/helpers/editor'
-
-import { TOOLBOX_ACTION_TO_ICON_MAP } from '../FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
+import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
 
 import Error from './Content/Error'
 import IfThen from './Content/IfThen'
@@ -55,11 +52,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
               {/* App icon */}
               <Icon
                 boxSize={8}
-                as={
-                  TOOLBOX_ACTION_TO_ICON_MAP[
-                    stepGroupType as keyof typeof TOOLBOX_ACTION_TO_ICON_MAP
-                  ] ?? BiQuestionMark
-                }
+                as={getToolboxIcon(stepGroupType)}
                 color="primary.500"
               />
             </Flex>

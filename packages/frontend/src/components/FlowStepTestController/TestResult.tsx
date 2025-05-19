@@ -4,7 +4,6 @@ import { Box, Collapse, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
 import VariablesList from '@/components/VariablesList'
-import { isIfThenStep } from '@/helpers/toolbox'
 import type { Variable } from '@/helpers/variables'
 
 function getNoOutputMessage(
@@ -70,35 +69,6 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
           </Box>
         </Infobox>
       )
-    }
-
-    // Edge case for If-then
-    //
-    // FIXME (ogp-weeloong): Revamp UI to allow special handling for
-    // toolbox actions in an isolated codepath.
-    if (isIfThenStep(step)) {
-      const isConditionMet = variables[0].value as boolean
-
-      if (isConditionMet) {
-        return (
-          <Infobox variant="success" w="full">
-            <Text>
-              Based on your sample data, it meets the conditions that you have
-              set up and your pipe <Text as="b">would have</Text> continued.
-            </Text>
-          </Infobox>
-        )
-      } else {
-        return (
-          <Infobox variant="warning" w="full">
-            <Text>
-              Based on your sample data, it does not meet the conditions you
-              have set up and your pipe <Text as="b">would not have</Text>{' '}
-              continued.
-            </Text>
-          </Infobox>
-        )
-      }
     }
 
     return (

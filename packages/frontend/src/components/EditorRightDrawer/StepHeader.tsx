@@ -72,7 +72,7 @@ export default function StepHeader(props: StepHeaderProps) {
       height="2rem"
     >
       <Flex alignItems="center" maxW="100%">
-        {position && <Text whiteSpace="pre-wrap">{position}. </Text>}
+        {position && <Text whiteSpace="pre-wrap">{position}.&nbsp;</Text>}
         <EditableInput
           key={step.id}
           value={initialStepName}

@@ -1,4 +1,4 @@
-import { IApp } from '@plumber/types'
+import { IApp, IStep } from '@plumber/types'
 
 import {
   BiArrowFromRight,
@@ -6,6 +6,9 @@ import {
   BiSolidErrorCircle,
 } from 'react-icons/bi'
 import { Flex, Icon, Image } from '@chakra-ui/react'
+
+import { getToolboxIcon } from '@/helpers/editor'
+import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
 import { flowStepStyles } from '../styles'
 
@@ -15,30 +18,52 @@ interface AppIconProps {
   isNested?: boolean
   isTestSuccessful?: boolean
   shouldTestStepAgain?: boolean
+  step?: IStep
 }
 
 export default function StepAppIcon(props: AppIconProps) {
-  const { app, isCompleted, isNested, isTestSuccessful, shouldTestStepAgain } =
-    props
+  const {
+    app,
+    isCompleted,
+    isNested,
+    isTestSuccessful,
+    shouldTestStepAgain,
+    step,
+  } = props
 
   const showBadge =
     isCompleted || shouldTestStepAgain || isTestSuccessful === false
 
+  const boxSize = isNested ? 6 : 8
+  const FallbackIcon = (
+    <Icon
+      boxSize={boxSize}
+      as={BiArrowFromRight}
+      color="base.content.default"
+    />
+  )
+
   return (
-    <Flex {...flowStepStyles.appIconWrapper} boxSize={isNested ? 6 : 8}>
+    <Flex {...flowStepStyles.appIconWrapper} boxSize={boxSize}>
       {/* App icon */}
-      <Image
-        src={app?.iconUrl}
-        boxSize={isNested ? 6 : 8}
-        fit="contain"
-        fallback={
+      {app ? (
+        app?.key === TOOLBOX_APP_KEY ? (
           <Icon
-            boxSize={6}
-            as={BiArrowFromRight}
-            color="base.content.default"
+            boxSize={boxSize}
+            as={getToolboxIcon(step?.key)}
+            color="primary.500"
           />
-        }
-      />
+        ) : (
+          <Image
+            src={app?.iconUrl}
+            boxSize={boxSize}
+            fit="contain"
+            fallback={FallbackIcon}
+          />
+        )
+      ) : (
+        FallbackIcon
+      )}
       {/*
        * Step completion status badge
        */}
