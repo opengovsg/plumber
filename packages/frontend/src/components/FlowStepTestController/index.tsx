@@ -7,6 +7,7 @@ import { Box, Flex, HStack, Stack, Text, VStack } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
+import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import ErrorResult from '../ErrorResult'
@@ -53,6 +54,7 @@ export default function FlowStepTestController(
     currentTestExecutionStep,
     readOnly,
     isTestExecuting,
+    testExecutionSteps,
     varInfoMap,
   } = useContext(EditorContext)
   const formContext = useFormContext()
@@ -81,34 +83,24 @@ export default function FlowStepTestController(
     )
   }, [currentTestExecutionStep, formContext, varInfoMap])
 
-  const CheckAgainButton = useMemo(
-    () => (
-      <Button
-        variant="clear"
-        onClick={handleSaveAndTest}
-        isLoading={isTestExecuting}
-        colorScheme="black"
-        size="sm"
-        isDisabled={!isValid}
-      >
-        Check step again
-      </Button>
-    ),
-    [handleSaveAndTest, isTestExecuting, isValid],
-  )
-
   const [infoBoxVariant, infoBoxText] = getInfoBoxDetails({
     isDirty,
     isIfThenStep,
     isLastTestExecutionCurrent,
     isTestSuccessful,
+    isTestExecuting,
     stepId: step.id,
     testVariables,
   })
 
+  const { shouldTestStepAgain } = useMemo(() => {
+    return validateStepParams(step, testExecutionSteps)
+  }, [testExecutionSteps, step])
+
   const shouldShowSaveButton =
     !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
-  const shouldShowTestResults = currentTestExecutionStep && !lastErrorDetails
+  const shouldShowTestResults =
+    currentTestExecutionStep && !lastErrorDetails && !shouldTestStepAgain
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -170,6 +162,22 @@ export default function FlowStepTestController(
     return collapseDirection === 'up' ? <BiChevronUp /> : <BiChevronDown />
   }
 
+  const CheckAgainButton = useMemo(
+    () => (
+      <Button
+        variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
+        onClick={handleSaveAndTest}
+        isLoading={isTestExecuting}
+        colorScheme={infoBoxVariant === 'unstyled' ? 'primary' : 'black'}
+        size="sm"
+        isDisabled={!isValid || readOnly}
+      >
+        Check step again
+      </Button>
+    ),
+    [handleSaveAndTest, infoBoxVariant, isTestExecuting, isValid, readOnly],
+  )
+
   return (
     <Stack {...flowStepTestControllerStyles.container} ref={containerRef}>
       <VStack w="100%">
@@ -192,6 +200,7 @@ export default function FlowStepTestController(
                 {...flowStepTestControllerStyles.testedInfobox}
                 variant={infoBoxVariant}
                 borderBottomRadius={isTestResultOpen ? 0 : undefined}
+                icon={infoBoxVariant === 'unstyled' ? <></> : null}
               >
                 <Flex
                   justifyContent="space-between"
@@ -205,18 +214,23 @@ export default function FlowStepTestController(
                   ) : (
                     <Button
                       variant="clear"
-                      colorScheme="green"
+                      colorScheme={
+                        infoBoxVariant === 'unstyled' ? 'primary' : 'green'
+                      }
                       size="sm"
                       onClick={() =>
                         isTestResultOpen
                           ? onTestResultClose()
                           : onTestResultOpen()
                       }
+                      isDisabled={isTestExecuting}
                     >
                       <Text color="base.content.default">{infoBoxText}</Text>
-                      <Box ml={2} color="base.content.default">
-                        {getChevronIcon()}
-                      </Box>
+                      {!isTestExecuting && (
+                        <Box ml={2} color="base.content.default">
+                          {getChevronIcon()}
+                        </Box>
+                      )}
                     </Button>
                   )}
                   {shouldShowSaveButton ? (
