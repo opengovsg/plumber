@@ -11,6 +11,7 @@ import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { validateSubstep } from '@/helpers/editor'
+import { isIfThenStep } from '@/helpers/toolbox'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -108,8 +109,10 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const handleSaveAndTest = useCallback(async () => {
     await handleSave()
     await executeTestStep()
-    onTestResultOpen()
-  }, [handleSave, executeTestStep, onTestResultOpen])
+    if (!isIfThenStep(step)) {
+      onTestResultOpen()
+    }
+  }, [handleSave, executeTestStep, onTestResultOpen, step])
 
   return (
     <Box position="relative" display="flex" flexDirection="column">

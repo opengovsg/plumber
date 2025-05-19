@@ -8,9 +8,13 @@ import { IconButton } from '@opengovsg/design-system-react'
 
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { EditorContext } from '@/contexts/Editor'
+import client from '@/graphql/client'
+import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
+
+import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
 
 interface StepDeleteButtonProps {
   isNested?: boolean
@@ -28,6 +32,7 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
   } = useDisclosure()
 
   const {
+    flow,
     isMobile,
     onDrawerClose,
     setCurrentStepId,
@@ -40,13 +45,38 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
    * check which steps are using variables from steps that have been deleted
    */
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
-    refetchQueries: [GET_FLOW, GET_TEST_EXECUTION_STEPS],
+    fetchPolicy: 'no-cache',
+  })
+  const [createStep, { loading: isCreatingStep }] = useMutation(CREATE_STEP, {
+    fetchPolicy: 'no-cache',
   })
 
   const onDelete = useCallback<MouseEventHandler>(
     async (e) => {
       e.stopPropagation()
+
       await deleteStep({ variables: { input: { ids: [step.id] } } })
+      const { previousStep, nextStep } = findAdjacentSteps(
+        flow?.steps,
+        step.position,
+      )
+
+      // NOTE: delete before creating to avoid race condition and ensure position is correct
+      if (shouldCreateEmptyStep(previousStep, nextStep)) {
+        await createStep({
+          variables: {
+            input: {
+              previousStep: { id: previousStep?.id },
+              flow: { id: flow.id },
+            },
+          },
+        })
+      }
+
+      await client.refetchQueries({
+        include: [GET_FLOW, GET_TEST_EXECUTION_STEPS],
+      })
+
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
       setCurrentStepId(null)
@@ -55,12 +85,14 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
       onDrawerClose()
     },
     [
-      step.id,
+      flow,
+      step,
       deleteStep,
-      onDrawerClose,
       setCurrentStepId,
       setCurrentStepIndex,
       setShouldWarnOnLeave,
+      onDrawerClose,
+      createStep,
     ],
   )
 
@@ -95,7 +127,7 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
         dialogHeader="Step"
         dialogType="delete"
         onClick={onDelete}
-        isLoading={isDeletingStep}
+        isLoading={isDeletingStep || isCreatingStep}
       />
     </>
   )
