@@ -57,7 +57,7 @@ export default function FlowStepTestController(
   } = useContext(EditorContext)
   const formContext = useFormContext()
 
-  const { isIfThenStep, selectedActionOrTrigger } = useStepMetadata(
+  const { isIfThenStep, isTrigger, selectedActionOrTrigger } = useStepMetadata(
     allApps,
     step,
   )
@@ -130,7 +130,11 @@ export default function FlowStepTestController(
       const spaceBelow = window.innerHeight - 61 - rect.bottom
       const spaceAbove = rect.top + 61 + 32
 
-      // If content is small enough, always collapse downward
+      if (isTrigger) {
+        setCollapseDirection('down')
+        return
+      }
+
       if (contentHeight < minContentHeight) {
         setCollapseDirection('down')
 
@@ -138,6 +142,11 @@ export default function FlowStepTestController(
           setCollapseDirection('up')
           return
         }
+        return
+      }
+
+      if (spaceBelow < 0) {
+        setCollapseDirection('up')
         return
       }
 
@@ -152,7 +161,7 @@ export default function FlowStepTestController(
       window.removeEventListener('resize', updateCollapseDirection)
       window.removeEventListener('scroll', updateCollapseDirection)
     }
-  }, [testVariables])
+  }, [isTrigger, testVariables])
 
   const getChevronIcon = () => {
     if (isTestResultOpen) {
