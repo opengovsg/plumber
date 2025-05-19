@@ -46,17 +46,7 @@ interface TestResultsProps {
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
-  const {
-    step,
-    selectedActionOrTrigger,
-    variables,
-    isMock = false,
-    isOpen,
-  } = props
-
-  if (step.status !== 'completed') {
-    return <></>
-  }
+  const { selectedActionOrTrigger, variables, isMock = false, isOpen } = props
 
   const Content = () => {
     // No data only happens if user hasn't executed yet, or step returned null.

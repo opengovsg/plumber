@@ -10,6 +10,7 @@ import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 
 interface StepDeleteButtonProps {
   isNested?: boolean
@@ -34,8 +35,12 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
 
+  /**
+   * NOTE: refetch test execution steps when deleting a step so that we can
+   * check which steps are using variables from steps that have been deleted
+   */
   const [deleteStep, { loading: isDeletingStep }] = useMutation(DELETE_STEP, {
-    refetchQueries: [GET_FLOW],
+    refetchQueries: [GET_FLOW, GET_TEST_EXECUTION_STEPS],
   })
 
   const onDelete = useCallback<MouseEventHandler>(

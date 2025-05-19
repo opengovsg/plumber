@@ -10,12 +10,12 @@ import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { MarkdownRenderer } from '@/exports/components'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
+import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
-import { matchParamsToDataIn } from '../FlowStepTestController/utils'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
 import StepAppIcon from './components/StepAppIcon'
@@ -60,7 +60,6 @@ export default function FlowStep(
     readOnly,
     shouldWarnOnLeave,
     testExecutionSteps,
-    varInfoMap,
     onDrawerClose,
     onDrawerOpen,
     setCurrentStepId,
@@ -76,23 +75,10 @@ export default function FlowStep(
       ? false
       : !readOnly && props.isDeletable
 
-  const { shouldTestStepAgain, isTestSuccessful } = useMemo(() => {
-    const testResult = testExecutionSteps.find((ts) => ts.stepId === step.id)
-    if (!testResult) {
-      return {
-        shouldTestStepAgain: false,
-        isTestSuccessful: testResult,
-      }
-    }
-    return {
-      shouldTestStepAgain: !matchParamsToDataIn(
-        testResult?.dataIn,
-        step.parameters,
-        varInfoMap,
-      ),
-      isTestSuccessful: testResult.status === 'success',
-    }
-  }, [testExecutionSteps, step, varInfoMap])
+  const { shouldTestStepAgain, isTestSuccessful } = useMemo(
+    () => validateStepParams(step, testExecutionSteps),
+    [step, testExecutionSteps],
+  )
 
   const shouldHighlight = currentStepId === step.id
 
@@ -164,7 +150,7 @@ export default function FlowStep(
   // NOTE: there will only be 1 infobox shown at a time
   // there will not be a situation where both are shown as template messages
   // are removed once user executes a successful test
-  const hasInfoBox = shouldTestStepAgain || shouldShowTemplateMsg
+  const hasInfoBox = shouldShowTemplateMsg || shouldTestStepAgain
 
   if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />

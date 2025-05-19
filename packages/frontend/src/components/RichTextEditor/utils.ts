@@ -14,7 +14,7 @@ export type VariableInfoMap = Map<
 
 const VARIABLE_REGEX =
   /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/
-const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
+export const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 /**
  * Used to generate substituted string for hyperlink checking
  */
