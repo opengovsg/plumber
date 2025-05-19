@@ -164,7 +164,7 @@ export default function ConfigureExcelConnection(
 
   return (
     <>
-      <ModalHeader pt={0}>
+      <ModalHeader pt={0} mt={-4}>
         {!isConnectionValid && (!step?.key || !step?.appKey) && (
           <BackButton onBack={onBack} />
         )}

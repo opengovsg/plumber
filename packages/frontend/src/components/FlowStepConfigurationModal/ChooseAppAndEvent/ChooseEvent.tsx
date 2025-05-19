@@ -64,7 +64,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
 
   return (
     <>
-      <ModalHeader pt={0}>
+      <ModalHeader pt={0} mt={-4}>
         <Flex gap={2} flexDir="column" alignItems="flex-start">
           <BackButton onBack={onBack} />
           <Text textStyle="h3-semibold">{selectedApp.name}</Text>

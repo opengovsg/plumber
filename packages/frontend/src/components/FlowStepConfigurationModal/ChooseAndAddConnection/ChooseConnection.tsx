@@ -69,7 +69,7 @@ export default function ChooseConnection(
   return (
     <>
       {/* Hide back button only if step has both the key and appKey */}
-      <ModalHeader pt={0}>
+      <ModalHeader pt={0} mt={-4}>
         {(!step?.key || !step?.appKey) && <BackButton onBack={onBack} />}
         <ConnectionHeader
           selectedApp={selectedApp}

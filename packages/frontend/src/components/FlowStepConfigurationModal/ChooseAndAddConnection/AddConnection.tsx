@@ -168,7 +168,7 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
 
   return (
     <>
-      <ModalHeader pt={0}>
+      <ModalHeader pt={0} mt={-4}>
         <BackButton onBack={onBack} />
       </ModalHeader>
       <ConnectionHeader
