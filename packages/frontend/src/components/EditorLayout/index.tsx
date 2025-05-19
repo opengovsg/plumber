@@ -46,24 +46,7 @@ export default function EditorLayout() {
   const isMobile = useIsMobile()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
-    update(cache, { data }) {
-      const flow = cache.readQuery<{ getFlow: IFlow }>({
-        query: GET_FLOW,
-        variables: { id: flowId },
-      })
-      if (flow?.getFlow) {
-        cache.writeQuery({
-          query: GET_FLOW,
-          variables: { id: flowId },
-          data: {
-            getFlow: {
-              ...flow.getFlow,
-              active: data.updateFlowStatus.active,
-            },
-          },
-        })
-      }
-    },
+    refetchQueries: [GET_FLOW],
   })
   const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
   const [leaveToUrl, setLeaveToUrl] = useState(URLS.FLOWS)
