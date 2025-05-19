@@ -45,8 +45,8 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
             alignItems="center"
             borderRadius="inherit"
             w="full"
-            borderLeftWidth={isDrawerOpen ? 0 : '1px'}
-            borderRightWidth={isDrawerOpen ? 0 : '1px'}
+            borderLeftWidth={0}
+            borderRightWidth={0}
           >
             <Flex {...flowStepGroupStyles.iconWrapper}>
               {/* App icon */}
