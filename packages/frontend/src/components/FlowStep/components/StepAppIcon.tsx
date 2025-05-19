@@ -44,7 +44,7 @@ export default function StepAppIcon(props: AppIconProps) {
   )
 
   return (
-    <Flex {...flowStepStyles.appIconWrapper} boxSize={boxSize}>
+    <Flex {...flowStepStyles.appIconWrapper} boxSize={boxSize} flexShrink={0}>
       {/* App icon */}
       {app ? (
         app?.key === TOOLBOX_APP_KEY ? (

@@ -4,6 +4,7 @@ import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
+import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import Step from './Step'
 import StepHeader from './StepHeader'
@@ -17,11 +18,12 @@ interface EditorRightDrawerProps {
 export default function EditorRightDrawer(props: EditorRightDrawerProps) {
   const { index, steps } = props
 
-  const { currentStepId } = useContext(EditorContext)
+  const { allApps, currentStepId } = useContext(EditorContext)
 
   const step = useMemo(() => {
     return steps.find((step) => step.id === currentStepId)
   }, [currentStepId, steps])
+  const { hasConnection } = useStepMetadata(allApps, step)
 
   if (!currentStepId || !step) {
     return null
@@ -36,6 +38,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
         overflowX="hidden"
         position="relative"
         px="4"
+        pt={hasConnection ? 0 : 4}
         top="2.5rem"
       >
         <Step step={step} isLastStep={index === steps.length - 1} />
