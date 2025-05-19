@@ -125,9 +125,9 @@ export default function FlowStepTestController(
           <VStack w="100%">
             <HStack w="100%">
               <Infobox
+                {...flowStepTestControllerStyles.testedInfobox}
                 variant={infoBoxVariant}
                 borderBottomRadius={isTestResultOpen ? 0 : undefined}
-                {...flowStepTestControllerStyles.testedInfobox}
               >
                 <Flex
                   justifyContent="space-between"
