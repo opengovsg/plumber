@@ -239,6 +239,7 @@ export default function FlowStep(
                 isTestSuccessful={isTestSuccessful}
                 shouldTestStepAgain={shouldTestStepAgain}
                 app={app}
+                step={step}
               />
               <StepCaptionAndDemo app={app} caption={caption} />
               {isDeletable && (

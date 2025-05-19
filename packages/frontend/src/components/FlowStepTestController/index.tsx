@@ -1,6 +1,6 @@
 import { IBaseTrigger, IStep, ITriggerInstructions } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 import { Box, Flex, HStack, Stack, Text, VStack } from '@chakra-ui/react'
@@ -15,7 +15,7 @@ import WebhookUrlInfo from '../WebhookUrlInfo'
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
-import { matchParamsToDataIn } from './utils'
+import { getInfoBoxDetails, matchParamsToDataIn } from './utils'
 
 const defaultTriggerInstructions: ITriggerInstructions = {
   beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
@@ -57,13 +57,20 @@ export default function FlowStepTestController(
   } = useContext(EditorContext)
   const formContext = useFormContext()
 
-  const { selectedActionOrTrigger } = useStepMetadata(allApps, step)
+  const { isIfThenStep, isTrigger, selectedActionOrTrigger } = useStepMetadata(
+    allApps,
+    step,
+  )
   const {
     isTestSuccessful,
     lastErrorDetails,
     isWebhookSubstep,
     testVariables,
   } = useTestDetails(step, currentTestExecutionStep)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [collapseDirection, setCollapseDirection] = useState<'up' | 'down'>(
+    'down',
+  )
 
   const isLastTestExecutionCurrent = useMemo(() => {
     const formValues = formContext.getValues()
@@ -90,30 +97,81 @@ export default function FlowStepTestController(
     [handleSaveAndTest, isTestExecuting, isValid],
   )
 
-  const [infoBoxVariant, infoBoxText] = useMemo(() => {
-    if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
-      return ['warning', 'Previous result']
+  const [infoBoxVariant, infoBoxText] = getInfoBoxDetails({
+    isDirty,
+    isIfThenStep,
+    isLastTestExecutionCurrent,
+    isTestSuccessful,
+    stepId: step.id,
+    testVariables,
+  })
+
+  const shouldShowSaveButton =
+    !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
+  const shouldShowTestResults = currentTestExecutionStep && !lastErrorDetails
+
+  useEffect(() => {
+    if (!containerRef.current) {
+      return
     }
 
-    if (isTestSuccessful) {
-      return ['success', 'Step was set up successfully!']
+    const updateCollapseDirection = () => {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) {
+        return
+      }
+
+      // Get the content height from the test variables
+      const contentHeight = testVariables?.length
+        ? testVariables.length * 40
+        : 0
+      const minContentHeight = 108 // Minimum height to consider for content
+
+      const spaceBelow = window.innerHeight - 61 - rect.bottom
+      const spaceAbove = rect.top + 61 + 32
+
+      if (isTrigger) {
+        setCollapseDirection('down')
+        return
+      }
+
+      if (contentHeight < minContentHeight) {
+        setCollapseDirection('down')
+
+        if (spaceBelow < 0) {
+          setCollapseDirection('up')
+          return
+        }
+        return
+      }
+
+      if (spaceBelow < 0) {
+        setCollapseDirection('up')
+        return
+      }
+
+      setCollapseDirection(spaceAbove > spaceBelow ? 'up' : 'down')
     }
 
-    return ['error', 'Failed to set up step']
-  }, [isLastTestExecutionCurrent, isTestSuccessful, isDirty])
+    updateCollapseDirection()
+    window.addEventListener('resize', updateCollapseDirection)
+    window.addEventListener('scroll', updateCollapseDirection)
 
-  const shouldShowSaveButton = useMemo(
-    () => !isLastTestExecutionCurrent || (isTestSuccessful && isDirty),
-    [isLastTestExecutionCurrent, isTestSuccessful, isDirty],
-  )
+    return () => {
+      window.removeEventListener('resize', updateCollapseDirection)
+      window.removeEventListener('scroll', updateCollapseDirection)
+    }
+  }, [isTrigger, testVariables])
 
-  const shouldShowTestResults = useMemo(
-    () => currentTestExecutionStep && !lastErrorDetails,
-    [currentTestExecutionStep, lastErrorDetails],
-  )
+  const getChevronIcon = () => {
+    if (isTestResultOpen) {
+      return collapseDirection === 'up' ? <BiChevronDown /> : <BiChevronUp />
+    }
+    return collapseDirection === 'up' ? <BiChevronUp /> : <BiChevronDown />
+  }
 
   return (
-    <Stack {...flowStepTestControllerStyles.container}>
+    <Stack {...flowStepTestControllerStyles.container} ref={containerRef}>
       <VStack w="100%">
         {isWebhookSubstep && (
           <VStack w="100%">
@@ -131,30 +189,36 @@ export default function FlowStepTestController(
           <VStack w="100%">
             <HStack w="100%">
               <Infobox
+                {...flowStepTestControllerStyles.testedInfobox}
                 variant={infoBoxVariant}
                 borderBottomRadius={isTestResultOpen ? 0 : undefined}
-                {...flowStepTestControllerStyles.testedInfobox}
               >
                 <Flex
                   justifyContent="space-between"
                   alignItems="center"
                   w="100%"
                 >
-                  <Button
-                    variant="clear"
-                    colorScheme="green"
-                    size="sm"
-                    onClick={() =>
-                      isTestResultOpen
-                        ? onTestResultClose()
-                        : onTestResultOpen()
-                    }
-                  >
-                    <Text color="base.content.default">{infoBoxText}</Text>
-                    <Box ml={2} color="base.content.default">
-                      {isTestResultOpen ? <BiChevronDown /> : <BiChevronUp />}
-                    </Box>
-                  </Button>
+                  {isIfThenStep ? (
+                    // NOTE: special handling for If-then
+                    // do not need button as there are no variables to display
+                    <Text>{infoBoxText}</Text>
+                  ) : (
+                    <Button
+                      variant="clear"
+                      colorScheme="green"
+                      size="sm"
+                      onClick={() =>
+                        isTestResultOpen
+                          ? onTestResultClose()
+                          : onTestResultOpen()
+                      }
+                    >
+                      <Text color="base.content.default">{infoBoxText}</Text>
+                      <Box ml={2} color="base.content.default">
+                        {getChevronIcon()}
+                      </Box>
+                    </Button>
+                  )}
                   {shouldShowSaveButton ? (
                     <Flex gap={2}>
                       <Button
