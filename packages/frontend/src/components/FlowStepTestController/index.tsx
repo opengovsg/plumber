@@ -215,7 +215,7 @@ export default function FlowStepTestController(
                     <Button
                       variant="clear"
                       colorScheme={
-                        infoBoxVariant === 'unstyled' ? 'primary' : 'green'
+                        infoBoxVariant === 'unstyled' ? 'black' : 'green'
                       }
                       size="sm"
                       onClick={() =>

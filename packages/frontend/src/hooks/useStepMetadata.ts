@@ -2,6 +2,8 @@ import { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { useMemo } from 'react'
 
+import { isIfThenStep as checkIfThenStep } from '@/helpers/toolbox'
+
 interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
@@ -21,7 +23,7 @@ export function useStepMetadata(
 ): UseStepMetadataResult {
   const isCompleted = step?.status === 'completed'
   const isTrigger = step?.type === 'trigger'
-  const isIfThenStep = step?.appKey === 'toolbox' && step?.key === 'ifThen'
+  const isIfThenStep = step ? checkIfThenStep(step) : false
 
   const apps: IApp[] = allApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
@@ -50,6 +52,10 @@ export function useStepMetadata(
     caption = `${step?.position ? `${step.position}. ` : ''}${
       selectedActionOrTrigger?.name
     }`
+
+    if (isIfThenStep) {
+      caption = `${step?.position}. Condition`
+    }
   } else if (app?.name) {
     caption = `${step?.position ? `${step.position}. ` : ''}${app.name}`
   } else if (isTrigger) {
