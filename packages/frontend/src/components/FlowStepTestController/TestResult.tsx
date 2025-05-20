@@ -6,6 +6,8 @@ import { Infobox } from '@opengovsg/design-system-react'
 import VariablesList from '@/components/VariablesList'
 import type { Variable } from '@/helpers/variables'
 
+import { getIfThenOutput } from './utils'
+
 function getNoOutputMessage(
   selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
 ): string | null {
@@ -43,10 +45,18 @@ interface TestResultsProps {
   variables: Variable[] | null
   isMock?: boolean
   isOpen: boolean
+  isIfThenStep?: boolean
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
-  const { selectedActionOrTrigger, variables, isMock = false, isOpen } = props
+  const {
+    selectedActionOrTrigger,
+    variables,
+    isMock = false,
+    isOpen,
+    isIfThenStep,
+    step,
+  } = props
 
   const Content = () => {
     // No data only happens if user hasn't executed yet, or step returned null.
@@ -57,6 +67,16 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
             <Text fontWeight="600">{`We couldn't find any data from your last test`}</Text>
             <Text mt={0.5}>{getNoOutputMessage(selectedActionOrTrigger)}</Text>
           </Box>
+        </Infobox>
+      )
+    }
+
+    if (isIfThenStep) {
+      const isConditionMet = variables?.[0]?.value as boolean
+      const [variant, message] = getIfThenOutput(isConditionMet, step.id)
+      return (
+        <Infobox variant={variant} width="full">
+          <Box>{message}</Box>
         </Infobox>
       )
     }

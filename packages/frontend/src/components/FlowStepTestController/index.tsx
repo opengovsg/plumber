@@ -248,7 +248,7 @@ export default function FlowStepTestController(
                     alignItems="center"
                     w="100%"
                   >
-                    {isIfThenStep ? (
+                    {isIfThenStep && isLastTestExecutionCurrent ? (
                       // NOTE: special handling for If-then
                       // do not need button as there are no variables to display
                       <Text>{infoBoxText}</Text>
@@ -303,6 +303,7 @@ export default function FlowStepTestController(
                 variables={testVariables}
                 isMock={currentTestExecutionStep?.metadata?.isMock}
                 isOpen={isTestResultOpen}
+                isIfThenStep={isIfThenStep}
               />
             </VStack>
           ) : (
