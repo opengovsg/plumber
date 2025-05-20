@@ -59,10 +59,8 @@ export default function FlowStepTestController(
   } = useContext(EditorContext)
   const formContext = useFormContext()
 
-  const { isIfThenStep, isTrigger, selectedActionOrTrigger } = useStepMetadata(
-    allApps,
-    step,
-  )
+  const { isIfThenStep, isTrigger, selectedActionOrTrigger, substeps } =
+    useStepMetadata(allApps, step)
   const {
     isTestSuccessful,
     lastErrorDetails,
@@ -94,8 +92,8 @@ export default function FlowStepTestController(
   })
 
   const { shouldTestStepAgain } = useMemo(() => {
-    return validateStepParams(step, testExecutionSteps)
-  }, [testExecutionSteps, step])
+    return validateStepParams(step, testExecutionSteps, substeps)
+  }, [testExecutionSteps, step, substeps])
 
   const shouldShowSaveButton =
     !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
