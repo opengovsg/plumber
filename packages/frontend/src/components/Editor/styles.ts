@@ -22,7 +22,7 @@ export const editorStyles = {
     bg: 'white',
     borderRadius: 'none',
     borderLeft: '1px',
-    borderColor: 'base.content.medium',
+    borderColor: 'base.divider.medium',
     boxShadow: 'lg',
     opacity: 0,
     maxHeight: EDITOR_MAX_HEIGHT,
