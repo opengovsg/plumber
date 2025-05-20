@@ -4,7 +4,7 @@ import { GLOBAL_VARIABLE_REGEX } from '@/components/RichTextEditor/utils'
 
 export function hasMissingStepReference(
   obj: IJSONObject,
-  stepMap: Set<string>,
+  stepIdSet: Set<string>,
 ) {
   const missing = new Set()
 
@@ -20,7 +20,7 @@ export function hasMissingStepReference(
       while ((match = regex.exec(value)) !== null) {
         try {
           const stepId = match[1].split('.')[1]
-          if (!stepMap.has(stepId)) {
+          if (!stepIdSet.has(stepId)) {
             missing.add(stepId)
           }
         } catch (error) {
