@@ -12,7 +12,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
 import { isIfThenStep } from '@/helpers/toolbox'
-import { hasMissingStepReference } from '@/helpers/validateStepParams'
+import { validateStepParams } from '@/helpers/validateStepParams'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -77,9 +77,10 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     function validate(step: unknown) {
       const typedStep = step as IStep
       const validationResult = validateSubstep(substep, typedStep)
-      const hasMissingRef = hasMissingStepReference(
-        typedStep?.parameters,
-        new Set(testExecutionSteps.map((ts) => ts.stepId)),
+      const { shouldTestStepAgain: hasMissingRef } = validateStepParams(
+        typedStep,
+        testExecutionSteps,
+        [substep],
       )
       setIsValid(validationResult && !hasMissingRef)
       setHasDeletedVars(hasMissingRef)
