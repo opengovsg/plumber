@@ -52,7 +52,12 @@ export default async function getTopNTableRows(
   n: number,
 ): Promise<GetTopNTableRowsResult> {
   const rangeParseResult = msGraphRangeResponseSchema.safeParse(
-    (await session.request(`/tables/${tableId}/range`, 'get')).data,
+    (
+      await session.request(
+        `/tables/${tableId}/range?$select=values,rowCount,rowIndex`,
+        'get',
+      )
+    ).data,
   )
 
   if (rangeParseResult.success === false) {
