@@ -167,7 +167,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
       justifyContent="center"
       overflowX="hidden"
       sx={{
-        backgroundImage: 'radial-gradient(#f5f5f5 3px, transparent 3px)',
+        backgroundImage: 'radial-gradient(#f5f5f5 2px, transparent 2px)',
         backgroundSize: '30px 30px',
       }}
     >
