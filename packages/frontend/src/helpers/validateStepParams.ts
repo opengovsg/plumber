@@ -1,4 +1,4 @@
-import { IExecutionStep, IJSONObject, IStep } from '@plumber/types'
+import { IExecutionStep, IJSONObject, IStep, ISubstep } from '@plumber/types'
 
 import { GLOBAL_VARIABLE_REGEX } from '@/components/RichTextEditor/utils'
 
@@ -38,6 +38,7 @@ function hasMissingStepReference(obj: IJSONObject, stepMap: Set<string>) {
 export const validateStepParams = (
   step: IStep,
   testExecutionSteps: IExecutionStep[],
+  substeps: ISubstep[],
 ) => {
   const testResult = testExecutionSteps.find((ts) => ts.stepId === step.id)
   if (!testResult) {
@@ -46,8 +47,23 @@ export const validateStepParams = (
       isTestSuccessful: testResult,
     }
   }
+
+  /**
+   * FOR BACKWARD COMPATIBILITY
+   * old UI allowed users to change events without changing the app
+   * which resulted in additional parameters being stored in the step parameters.
+   * we need to filter out these additional parameters to avoid validation errors.
+   */
+  const stepArgs = substeps.find((s) => s.key === 'setUpAction')?.arguments
+  const stepParamKeys = stepArgs?.map((arg) => arg.key) || []
+  const filteredParams = Object.fromEntries(
+    Object.entries(step.parameters).filter(([key]) =>
+      stepParamKeys.includes(key),
+    ),
+  )
+
   const shouldTestStepAgain = hasMissingStepReference(
-    step.parameters,
+    filteredParams,
     new Set(testExecutionSteps.map((ts) => ts.stepId)),
   )
 
