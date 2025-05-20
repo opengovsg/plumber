@@ -1,3 +1,4 @@
+import { FieldValues, UseFormGetValues } from 'react-hook-form'
 import { PlacementWithLogical } from '@chakra-ui/react'
 import { Editor } from '@tiptap/react'
 import { HTMLElement, Node, parse, TextNode } from 'node-html-parser'
@@ -149,4 +150,16 @@ export function getPopoverPlacement(
 
   // If there's more space above than below, show the popover above
   return spaceAbove > spaceBelow ? 'top-start' : 'bottom-start'
+}
+
+export const checkAutoFocus = (
+  name: string,
+  getValues: UseFormGetValues<FieldValues>,
+  autoFocusProp?: boolean,
+) => {
+  const pathParts = name.split('.')
+  const fieldParentPath = pathParts.slice(0, -1).join('.')
+  const rowData = getValues(fieldParentPath)
+  const isNewRow = rowData?.isNew
+  return { shouldAutoFocus: isNewRow && autoFocusProp, isNewRow, rowData }
 }

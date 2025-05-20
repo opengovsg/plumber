@@ -43,6 +43,7 @@ import ImageResize from './ResizableImageExtension'
 import { StepVariable } from './StepVariablePlugin'
 import Suggestions from './Suggestions'
 import {
+  checkAutoFocus,
   genVariableInfoMap,
   getPopoverPlacement,
   substituteOldTemplates,
@@ -92,6 +93,7 @@ interface EditorProps {
   isSingleLine?: boolean
   variableTypes?: TDataOutMetadatumType[]
   parentType?: string
+  autoFocus?: boolean
 }
 const Editor = ({
   onChange,
@@ -103,6 +105,7 @@ const Editor = ({
   isSingleLine,
   variableTypes,
   parentType,
+  autoFocus = false,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const isMobile = useIsMobile()
@@ -171,6 +174,7 @@ const Editor = ({
   const editor = useEditor({
     extensions,
     content,
+    autofocus: autoFocus,
     onUpdate: ({ editor }) => {
       if (editor.isEmpty) {
         // this is when content of the editor is empty
@@ -292,6 +296,7 @@ interface RichTextEditorProps {
   tooltipText?: string
   variableTypes?: TDataOutMetadatumType[]
   parentType?: string
+  autoFocus?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -307,8 +312,21 @@ const RichTextEditor = ({
   tooltipText,
   variableTypes,
   parentType,
+  autoFocus,
 }: RichTextEditorProps) => {
-  const { control } = useFormContext()
+  const { control, getValues } = useFormContext()
+  const { shouldAutoFocus, isNewRow, rowData } = checkAutoFocus(
+    name,
+    getValues,
+    autoFocus,
+  )
+
+  // Clear the isNew flag after focusing
+  useEffect(() => {
+    if (isNewRow && rowData) {
+      delete rowData.isNew
+    }
+  }, [isNewRow, rowData])
 
   return (
     <FormControl flex={1} data-test="text-input-group">
@@ -339,6 +357,7 @@ const RichTextEditor = ({
             isSingleLine={isSingleLine}
             variableTypes={variableTypes}
             parentType={parentType}
+            autoFocus={shouldAutoFocus}
           />
         )}
       />
