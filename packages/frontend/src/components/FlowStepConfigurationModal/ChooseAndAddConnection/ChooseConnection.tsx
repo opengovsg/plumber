@@ -1,10 +1,10 @@
 import { useContext } from 'react'
-import { BiChevronLeft } from 'react-icons/bi'
 import { Flex, ModalBody, ModalHeader } from '@chakra-ui/react'
-import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
+import { ModalCloseButton } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 
+import BackButton from '../BackButton'
 import { DEFAULT_CHOOSE_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
@@ -69,19 +69,8 @@ export default function ChooseConnection(
   return (
     <>
       {/* Hide back button only if step has both the key and appKey */}
-      <ModalHeader pt={0}>
-        {(!step?.key || !step?.appKey) && (
-          <Button
-            variant="clear"
-            colorScheme="secondary"
-            size="xs"
-            onClick={onBack}
-            leftIcon={<BiChevronLeft />}
-            ml={-4}
-          >
-            Back
-          </Button>
-        )}
+      <ModalHeader pt={0} mt={-4}>
+        {(!step?.key || !step?.appKey) && <BackButton onBack={onBack} />}
         <ConnectionHeader
           selectedApp={selectedApp}
           headerText={
@@ -90,7 +79,7 @@ export default function ChooseConnection(
           }
         />
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
 
       <ModalBody>
         <Flex flexDir="column" alignItems="center" gap={6}>

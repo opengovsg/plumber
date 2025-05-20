@@ -38,7 +38,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
       flexDir="column"
       alignItems="center"
       alignSelf="stretch"
-      h={showEmptyAction ? undefined : 20}
+      h={showEmptyAction ? undefined : isHidden ? 12 : 20}
     >
       {isHidden || (isDisabled && !isLastStep) ? (
         !isLastStep && (

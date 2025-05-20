@@ -8,6 +8,7 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import Step from './Step'
 import StepHeader from './StepHeader'
+import { editorRightDrawerStyles as styles } from './styles'
 
 interface EditorRightDrawerProps {
   flowStepGroupIconUrl?: string
@@ -32,15 +33,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
   return (
     <Flex flexDir="column" w="100%" py="4" overflowY="auto" h="100%">
       <StepHeader step={step} />
-      <Flex
-        height="calc(100% - 1.5rem)"
-        overflowY="auto"
-        overflowX="hidden"
-        position="relative"
-        px="4"
-        pt={hasConnection ? 0 : 4}
-        top="2.5rem"
-      >
+      <Flex {...styles.stepContentsWrapper} pt={hasConnection ? 0 : 4}>
         <Step step={step} isLastStep={index === steps.length - 1} />
       </Flex>
     </Flex>
