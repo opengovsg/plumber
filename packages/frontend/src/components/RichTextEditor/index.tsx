@@ -10,6 +10,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Portal,
   useDisclosure,
 } from '@chakra-ui/react'
 import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
@@ -247,21 +248,23 @@ const Editor = ({
           <Box>
             {isRich && <MenuBar editor={editor} variableMap={varInfo} />}
             <EditorContent className="editor__content" editor={editor} />
-            <PopoverContent
-              w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
-              motionProps={POPOVER_MOTION_PROPS}
-              onFocus={(e) => {
-                // Go back to previous focus when clicking on suggestions to resume typing
-                if (e.relatedTarget instanceof HTMLElement) {
-                  e.relatedTarget?.focus()
-                }
-              }}
-            >
-              <Suggestions
-                data={stepsWithVariables}
-                onSuggestionClick={handleVariableClick}
-              />
-            </PopoverContent>
+            <Portal>
+              <PopoverContent
+                w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
+                motionProps={POPOVER_MOTION_PROPS}
+                onFocus={(e) => {
+                  // Go back to previous focus when clicking on suggestions to resume typing
+                  if (e.relatedTarget instanceof HTMLElement) {
+                    e.relatedTarget?.focus()
+                  }
+                }}
+              >
+                <Suggestions
+                  data={stepsWithVariables}
+                  onSuggestionClick={handleVariableClick}
+                />
+              </PopoverContent>
+            </Portal>
           </Box>
         </PopoverTrigger>
       </div>
