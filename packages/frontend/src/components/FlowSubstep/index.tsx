@@ -10,7 +10,7 @@ import InputCreator from '@/components/InputCreator'
 import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { validateSubstep } from '@/helpers/editor'
+import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
 import { isIfThenStep } from '@/helpers/toolbox'
 import { hasMissingStepReference } from '@/helpers/validateStepParams'
 
@@ -54,7 +54,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
    * — even if you change a field back to its original value.
    */
   const { dirtyFields } = formContext.formState
-  const isDirty = Object.keys(dirtyFields).length > 0
+  const isDirty = hasDirtyFields(dirtyFields)
   useEffect(() => {
     onTestResultClose()
     setShouldWarnOnLeave(isDirty)
