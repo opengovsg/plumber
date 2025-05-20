@@ -9,6 +9,8 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 
+import { editorRightDrawerStyles as styles } from './styles'
+
 interface StepHeaderProps {
   step: IStep
 }
@@ -67,14 +69,7 @@ export default function StepHeader(props: StepHeaderProps) {
   }
 
   return (
-    <Flex
-      alignItems="center"
-      justifyContent="space-between"
-      position="fixed"
-      w="full"
-      px="4"
-      height="2rem"
-    >
+    <Flex {...styles.stepHeader}>
       <Flex alignItems="center" maxW="100%">
         {position && <Text whiteSpace="pre-wrap">{position}.&nbsp;</Text>}
         <EditableInput

@@ -176,7 +176,7 @@ export default function EditorLayout() {
           py={2}
           px={8}
           borderBottom="1px solid"
-          borderColor="base.divider.subtle"
+          borderColor="base.divider.medium"
         >
           <Flex flex={1} alignItems="center">
             <Box
