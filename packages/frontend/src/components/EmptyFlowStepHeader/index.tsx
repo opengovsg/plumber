@@ -24,7 +24,6 @@ export default function EmptyFlowStepHeader(
       borderRadius="lg"
       bg="white"
       p={4}
-      pl={8}
       h={isNested ? '48px' : '64px'}
       alignItems="center"
       gap={4}
@@ -38,7 +37,11 @@ export default function EmptyFlowStepHeader(
       }}
       w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)}
     >
-      <Icon as={isTrigger ? BiSolidBolt : BiPlus} boxSize={6} />
+      <Icon
+        as={isTrigger ? BiSolidBolt : BiPlus}
+        boxSize={6}
+        color="interaction.sub.default"
+      />
       <Text textStyle="subhead-1">
         {isTrigger ? 'Choose how you want your workflow to start' : 'Add step'}
       </Text>

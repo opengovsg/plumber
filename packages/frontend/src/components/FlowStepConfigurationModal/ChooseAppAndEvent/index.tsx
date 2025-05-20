@@ -120,7 +120,9 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
           app.key === TOOLBOX_APP_KEY &&
           triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
         ) {
-          await initializeIfThen(step)
+          const ifThen = await initializeIfThen(step)
+          newStepId = ifThen.id
+          newStepIndex = ifThen.position - 1
         } else {
           const updatedStep = await onUpdateStep({
             ...step,
