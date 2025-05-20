@@ -63,7 +63,7 @@ export const fields: TransformSpec['fields'] = [
           label: sentenceCase(op),
           value: op,
         })),
-        customStyle: { flex: 1 },
+        customStyle: { flex: 2 },
       },
       {
         placeholder: 'Amount of time to add or subtract (number)',
@@ -71,7 +71,7 @@ export const fields: TransformSpec['fields'] = [
         type: 'string' as const,
         required: true,
         variables: true,
-        customStyle: { flex: 2 },
+        customStyle: { flex: 4 },
       },
       {
         placeholder: 'Unit of time to add or subtract',
@@ -84,7 +84,7 @@ export const fields: TransformSpec['fields'] = [
           label: sentenceCase(unit),
           value: unit,
         })),
-        customStyle: { flex: 2 },
+        customStyle: { flex: 3 },
       },
     ],
   },
