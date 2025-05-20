@@ -234,11 +234,17 @@ const Editor = ({
     >
       <div
         className="editor"
-        onClick={openSuggestions}
+        onClick={(e) => {
+          e.stopPropagation()
+          openSuggestions()
+        }}
         onBlur={(e) => {
           // Focus might shift to menu bar or other children, where we do _not_
           // want to close our popper.
-          if (e.currentTarget.contains(e.relatedTarget)) {
+          if (
+            e.currentTarget.contains(e.relatedTarget) ||
+            e.relatedTarget?.closest('.chakra-popover__content')
+          ) {
             return
           }
           closeSuggestions()
