@@ -171,7 +171,7 @@ describe('tiles create row action', () => {
     expect($.setActionItem).toBeCalledWith({
       raw: {
         rowsFound: 0,
-        rowId: '',
+        rowId: ' ',
         row: emptyRow,
       },
     })

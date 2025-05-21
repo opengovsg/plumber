@@ -12,16 +12,13 @@ export const VariableBadge = ({ node }: { node: Node }) => {
   const isTemplate = String(node.attrs.id).includes(
     PLACEHOLDER_TEMPLATE_STEP_ID,
   )
-  const isRowId =
-    String(node.attrs.id).split('.').pop() === 'rowId' &&
-    String(node.attrs.label) === 'Row ID'
 
   return (
     <NodeViewWrapper>
       {/* Only show tooltip if value is empty and not a template */}
       <TouchableTooltip
         label={
-          isEmpty && !isTemplate && !isRowId
+          isEmpty && !isTemplate
             ? 'This is a missing variable, check your previous steps and reselect a variable'
             : ''
         }
