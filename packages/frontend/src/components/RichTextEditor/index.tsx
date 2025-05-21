@@ -252,8 +252,10 @@ const Editor = ({
         onBlur={(e) => {
           // Focus might shift to menu bar or other children, where we do _not_
           // want to close our popper.
+          const editorContainer =
+            e.currentTarget.closest('.single-line-editor') || e.currentTarget
           if (
-            e.currentTarget.contains(e.relatedTarget) ||
+            editorContainer.contains(e.relatedTarget) ||
             e.relatedTarget?.closest('.chakra-popover__content')
           ) {
             return
