@@ -198,7 +198,7 @@ const action: IRawAction = {
       $.setActionItem({
         raw: {
           rowsFound: 0,
-          // NOTE: intentionally return whitespace so that a solid pull is shown
+          // NOTE: intentionally return whitespace so that a solid pill is shown
           rowId: ' ',
           row: emptyRow,
         } satisfies FindSingleRowOutput,
