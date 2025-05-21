@@ -47,24 +47,30 @@ interface FlowStepTestControllerProps {
 
 type CheckStepTooltipProps = {
   isDisabled: boolean
+  isReadOnly: boolean
   hasDeletedVars?: boolean
   children: React.ReactNode
 }
 
-const CheckStepTooltip = (props: CheckStepTooltipProps) => (
-  <Tooltip
-    label={
-      props.hasDeletedVars
-        ? 'Remove variables from deleted steps to check step'
-        : 'Complete required fields to check step'
-    }
-    aria-label="check step tooltip"
-    isDisabled={props.isDisabled}
-    hasArrow
-  >
-    {props.children}
-  </Tooltip>
-)
+const CheckStepTooltip = (props: CheckStepTooltipProps) => {
+  const { children, hasDeletedVars, isDisabled, isReadOnly } = props
+  return (
+    <Tooltip
+      label={
+        isReadOnly
+          ? 'Unpublish your pipe to check step'
+          : hasDeletedVars
+          ? 'Remove variables from deleted steps to check step'
+          : 'Complete required fields to check step'
+      }
+      aria-label="check step tooltip"
+      isDisabled={isDisabled}
+      hasArrow
+    >
+      {children}
+    </Tooltip>
+  )
+}
 
 export default function FlowStepTestController(
   props: FlowStepTestControllerProps,
@@ -194,7 +200,8 @@ export default function FlowStepTestController(
     () => (
       <CheckStepTooltip
         hasDeletedVars={hasDeletedVars}
-        isDisabled={!(!isValid || readOnly)}
+        isDisabled={isValid && !readOnly}
+        isReadOnly={readOnly}
       >
         <Button
           variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
@@ -330,6 +337,7 @@ export default function FlowStepTestController(
                 <CheckStepTooltip
                   hasDeletedVars={hasDeletedVars}
                   isDisabled={shouldAllowCheckStep}
+                  isReadOnly={readOnly}
                 >
                   <Button
                     onClick={handleSaveAndTest}
