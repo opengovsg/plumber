@@ -1,8 +1,7 @@
 import { IApp } from '@plumber/types'
 
-import { getGenericAppQueue } from '@/queues/helpers/get-generic-app-queue'
-
 import actions from './actions'
+import queue from './queue'
 
 const app: IApp = {
   name: 'Email by Postman',
@@ -21,7 +20,7 @@ const app: IApp = {
     url: 'https://demo.arcade.software/VppMAbGKfFXFEsKxnKiw?embed&show_copy_link=true',
     title: 'Setting up Email by Postman',
   },
-  queue: getGenericAppQueue('POSTMAN_EMAIL'),
+  queue,
   category: 'communication',
 }
 
