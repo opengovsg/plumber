@@ -2,7 +2,10 @@ import { IExecutionStep, IJSONObject, IStep, ISubstep } from '@plumber/types'
 
 import { GLOBAL_VARIABLE_REGEX } from '@/components/RichTextEditor/utils'
 
-function hasMissingStepReference(obj: IJSONObject, stepMap: Set<string>) {
+export function hasMissingStepReference(
+  obj: IJSONObject,
+  stepIdSet: Set<string>,
+) {
   const missing = new Set()
 
   function traverse(value: any) {
@@ -17,7 +20,7 @@ function hasMissingStepReference(obj: IJSONObject, stepMap: Set<string>) {
       while ((match = regex.exec(value)) !== null) {
         try {
           const stepId = match[1].split('.')[1]
-          if (!stepMap.has(stepId)) {
+          if (!stepIdSet.has(stepId)) {
             missing.add(stepId)
           }
         } catch (error) {

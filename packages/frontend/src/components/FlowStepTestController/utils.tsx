@@ -151,26 +151,32 @@ export function getInfoBoxDetails({
     // Edge case for If-then
     if (isIfThenStep) {
       const isConditionMet = testVariables?.[0]?.value as boolean
-
-      if (isConditionMet) {
-        return [
-          'success',
-          <Text key={`${stepId}-if-then-success-text`}>
-            Based on your sample data, it meets the conditions that you have set
-            up and your pipe <Text as="b">would have</Text> continued.
-          </Text>,
-        ]
-      }
-      return [
-        'warning',
-        <Text key={`${stepId}-if-then-warning-text`}>
-          Based on your sample data, it does not meet the conditions you have
-          set up and your pipe <Text as="b">would not have</Text> continued.
-        </Text>,
-      ]
+      return getIfThenOutput(isConditionMet, stepId)
     }
     return ['success', 'Step was set up successfully!']
   }
 
   return ['error', 'Failed to set up step']
+}
+
+export function getIfThenOutput(
+  isConditionMet: boolean,
+  stepId: string,
+): [InfoboxProps['variant'], React.ReactNode] {
+  if (isConditionMet) {
+    return [
+      'success',
+      <Text key={`${stepId}-if-then-success-text`}>
+        Based on your sample data, it meets the conditions that you have set up
+        and your pipe <Text as="b">would have</Text> continued.
+      </Text>,
+    ]
+  }
+  return [
+    'warning',
+    <Text key={`${stepId}-if-then-warning-text`}>
+      Based on your sample data, it does not meet the conditions you have set up
+      and your pipe <Text as="b">would not have</Text> continued.
+    </Text>,
+  ]
 }
