@@ -38,7 +38,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
       flexDir="column"
       alignItems="center"
       alignSelf="stretch"
-      h={showEmptyAction ? undefined : isHidden ? 12 : 20}
+      h={showEmptyAction ? undefined : isHidden ? 12 : 16}
     >
       {isHidden || (isDisabled && !isLastStep) ? (
         !isLastStep && (
@@ -54,7 +54,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
               <Divider
                 orientation="vertical"
                 borderColor="base.divider.strong"
-                h={20}
+                h={12}
               />
               <EmptyFlowStepHeader
                 isTrigger={false}
