@@ -255,7 +255,7 @@ const Editor = ({
         }}
       >
         <PopoverTrigger>
-          <Box>
+          <Box className={isMulticol ? 'single-line-editor' : undefined}>
             {isRich && <MenuBar editor={editor} variableMap={varInfo} />}
             <EditorContent className="editor__content" editor={editor} />
             <Portal>
