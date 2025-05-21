@@ -218,7 +218,9 @@ const Editor = ({
       editor?.commands.focus()
 
       if (isMulticol && editor) {
-        singleLineEditorScroll(editor)
+        requestAnimationFrame(() => {
+          singleLineEditorScroll(editor)
+        })
       }
     },
     [editor, isMulticol],

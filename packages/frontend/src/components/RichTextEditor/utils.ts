@@ -175,35 +175,29 @@ export const singleLineEditorScroll = (editor: Editor) => {
     return
   }
 
-  setTimeout(() => {
-    const singleLineEditor = editor.view.dom.closest(
-      '.single-line-editor',
-    ) as HTMLElement
-    if (singleLineEditor) {
-      // Get the current cursor position
-      const pos = editor.state.selection.$head.pos
-      let targetVariable = findClosestVariableNode(
-        editor,
-        pos,
-        singleLineEditor,
-      )
+  const singleLineEditor = editor.view.dom.closest(
+    '.single-line-editor',
+  ) as HTMLElement
+  if (singleLineEditor) {
+    // Get the current cursor position
+    const pos = editor.state.selection.$head.pos
+    let targetVariable = findClosestVariableNode(editor, pos, singleLineEditor)
 
-      // If we still haven't found it, fall back to the last variable
-      if (!targetVariable) {
-        const variables = Array.from(
-          singleLineEditor.getElementsByClassName('node-variable'),
-        ) as HTMLElement[]
-        if (variables.length > 0) {
-          targetVariable = variables[variables.length - 1]
-        }
-      }
-
-      // Scroll to the target variable if found
-      if (targetVariable) {
-        scrollVariableIntoView(targetVariable, singleLineEditor)
+    // If we still haven't found it, fall back to the last variable
+    if (!targetVariable) {
+      const variables = Array.from(
+        singleLineEditor.getElementsByClassName('node-variable'),
+      ) as HTMLElement[]
+      if (variables.length > 0) {
+        targetVariable = variables[variables.length - 1]
       }
     }
-  }, 10)
+
+    // Scroll to the target variable if found
+    if (targetVariable) {
+      scrollVariableIntoView(targetVariable, singleLineEditor)
+    }
+  }
 }
 
 export function findClosestVariableNode(
