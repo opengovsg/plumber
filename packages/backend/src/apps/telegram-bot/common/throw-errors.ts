@@ -79,7 +79,7 @@ export async function throwSendMessageError(
       } else if (errorString.includes('chat not found')) {
         throw new StepError(
           'Incorrect bot configuration',
-          'Click on set up action and check that a valid chat ID is used. Otherwise, remove and re-add the bot into the group. Make sure that you send a message to the bot before the bot can send messages to you.',
+          'Check that a valid chat ID is used. Otherwise, remove and re-add the bot into the group. Make sure that you send a message to the bot before the bot can send messages to you.',
           position,
           appName,
           err,
@@ -87,7 +87,7 @@ export async function throwSendMessageError(
       } else if (errorString.includes('message thread not found')) {
         throw new StepError(
           'Incorrect topic configuration',
-          'Click on set up action and check that a valid topic ID is used.',
+          'Check that a valid topic ID is used.',
           position,
           appName,
           err,

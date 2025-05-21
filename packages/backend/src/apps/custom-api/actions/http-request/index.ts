@@ -159,7 +159,7 @@ const action: IRawAction = {
       if (err instanceof ZodError) {
         const firstError = fromZodError(err).details[0]
         throw new StepError(
-          `${firstError.message} under set up action`,
+          `${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
           $.step.position,
           $.app.name,

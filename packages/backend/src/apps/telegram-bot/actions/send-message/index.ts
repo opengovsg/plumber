@@ -70,7 +70,7 @@ const action: IRawAction = {
     if (!messageText) {
       throw new StepError(
         'Empty message text',
-        'Click on set up action and check that the message text is not empty, especially if variables are used.',
+        'Check that the message text is not empty, especially if variables are used.',
         $.step.position,
         $.app.name,
       )
