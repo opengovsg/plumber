@@ -47,7 +47,7 @@ const action: IRawAction = {
     if (isNaN(delayTimestamp)) {
       throw new StepError(
         'Invalid timestamp entered',
-        'Click on set up action and check that the date or time entered is of a valid format.',
+        'Check that the date or time entered is of a valid format.',
         $.step.position,
         $.app.name,
       )
@@ -56,7 +56,7 @@ const action: IRawAction = {
     if (delayTimestamp < DateTime.now().toMillis()) {
       throw new StepError(
         'Delay until timestamp entered is in the past',
-        'Click on set up action and check that the date and time entered is not in the past.',
+        'Check that the date and time entered is not in the past.',
         $.step.position,
         $.app.name,
       )

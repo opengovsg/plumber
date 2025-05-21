@@ -6,7 +6,7 @@ import HttpError from './http'
 // Some generic solutions for common errors
 //
 export enum GenericSolution {
-  ReconfigureInvalidField = 'Click on set up action and reconfigure the invalid field. Error could also result from the variables used in the field.',
+  ReconfigureInvalidField = 'Reconfigure the invalid field and try again. Error could also result from the variables used in the field.',
 }
 
 export default class StepError extends Error {

@@ -147,7 +147,7 @@ const action: IRawAction = {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
         throw new StepError(
-          `${firstError.message} under set up action`,
+          `${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
           $.step.position,
           $.app.name,
@@ -161,7 +161,7 @@ const action: IRawAction = {
             `Personalised field(s) not specified${
               missingFields.length === 0 ? '' : `: ${missingFields.join(', ')}`
             }`,
-            'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
+            'Check that you have entered all the fields and values in the letter parameters.',
             $.step.position,
             $.app.name,
           )

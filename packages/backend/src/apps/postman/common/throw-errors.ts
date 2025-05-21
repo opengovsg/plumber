@@ -102,7 +102,7 @@ export function throwPostmanStepError({
     case 'INVALID-ATTACHMENT':
       throw new StepError(
         'Unsupported attachment file type',
-        'Click on set up action and check that the attachment type is supported by postman. Please check the supported types at [this link](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
+        'Check that the attachment type is supported by postman. Please check the supported types at [this link](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
         position,
         appName,
         error,
@@ -110,7 +110,7 @@ export function throwPostmanStepError({
     case 'ATTACHMENT-SIZE-EXCEEDED':
       throw new StepError(
         'Total attachment size exceeded',
-        'Click on set up action and check that the attachments do not exceed 10MB in total.',
+        'Check that the attachments do not exceed 10MB in total.',
         position,
         appName,
         error,
