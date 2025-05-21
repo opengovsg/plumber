@@ -18,7 +18,7 @@ export default function getConditionArgs({
       type: 'string' as const,
       required: true,
       variables: true,
-      customStyle: { flex: 3 },
+      customStyle: { flex: 3, minWidth: 0, maxWidth: '30%' },
     },
     {
       [labelPropName]: 'Is or is not',
@@ -88,7 +88,7 @@ export default function getConditionArgs({
         op: 'equals',
         fieldValue: 'empty',
       },
-      customStyle: { flex: 3 },
+      customStyle: { flex: 3, minWidth: 0, maxWidth: '30%' },
     },
   ]
 }

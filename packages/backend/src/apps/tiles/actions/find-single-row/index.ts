@@ -118,7 +118,7 @@ const action: IRawAction = {
             op: 'equals',
             fieldValue: TableRowFilterOperator.IsEmpty,
           },
-          customStyle: { flex: 2 },
+          customStyle: { flex: 2, minWidth: 0, maxWidth: '50%' },
         },
       ],
     },

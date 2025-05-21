@@ -71,7 +71,7 @@ export const fields: TransformSpec['fields'] = [
         type: 'string' as const,
         required: true,
         variables: true,
-        customStyle: { flex: 4 },
+        customStyle: { flex: 4, minWidth: 0, maxWidth: '44%' },
       },
       {
         placeholder: 'Unit of time to add or subtract',
