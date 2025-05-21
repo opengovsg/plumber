@@ -151,21 +151,19 @@ export default function Editor(props: EditorProps): React.ReactElement {
     )
   }
 
-  const getStepPadding = () => {
-    if (isDrawerOpen) {
-      if (isMobile) {
-        return 0
-      }
-      return '5rem'
-    }
-    return 0
-  }
+  const leftStepPadding = isDrawerOpen ? (isMobile ? 0 : '5rem') : 0
+  const rightDrawerTransform = isDrawerOpen
+    ? 'translateX(0)'
+    : 'translateX(100%)'
+  const rightDrawerWidth = isDrawerOpen
+    ? isMobile
+      ? '100vw'
+      : EDITOR_RIGHT_DRAWER_WIDTH
+    : '0'
 
   return (
     <Flex
-      w="full"
-      justifyContent="center"
-      overflowX="hidden"
+      {...editorStyles.editorWrapper}
       sx={{
         backgroundImage: 'radial-gradient(#f5f5f5 2px, transparent 2px)',
         backgroundSize: '30px 30px',
@@ -173,9 +171,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
     >
       <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
         <Flex
-          {...editorStyles.container}
+          {...editorStyles.stepHeaderContainer}
           flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
-          px={getStepPadding()}
+          px={leftStepPadding}
           maxWidth={`calc(100% - ${
             isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
           })`}
@@ -211,19 +209,19 @@ export default function Editor(props: EditorProps): React.ReactElement {
             />
           )}
         </Flex>
-
+        {/** HACKFIX (kevinkim-ogp): to ensure that the transitions are smooth */}
+        <Flex
+          {...editorStyles.dummyRightContainer}
+          w={rightDrawerWidth}
+          transform={rightDrawerTransform}
+        />
         <Flex
           {...editorStyles.rightDrawerContainer}
-          w={
-            isDrawerOpen
-              ? isMobile
-                ? '100vw'
-                : EDITOR_RIGHT_DRAWER_WIDTH
-              : '0'
-          }
+          w={rightDrawerWidth}
           visibility={isDrawerOpen ? 'visible' : 'hidden'}
           opacity={isDrawerOpen ? 1 : 0}
-          transform={isDrawerOpen ? 'translateX(0)' : 'translateX(100%)'}
+          transform={rightDrawerTransform}
+          borderLeft={isDrawerOpen ? '1px solid base.divider.medium' : 'none'}
         >
           <EditorRightDrawer
             flowStepGroupIconUrl={flowStepGroupIconUrl}
