@@ -518,9 +518,6 @@ export interface IApp {
   connections?: IConnection[]
   description?: string
   isNewApp?: boolean
-  substepLabels?: {
-    settingsStepLabel?: string // for step accordion label: app level
-  }
   demoVideoDetails?: DemoVideoDetails
   category?: AppCategory
 
@@ -656,7 +653,6 @@ export interface IBaseTrigger {
   pollInterval?: number
   description: string
   webhookTriggerInstructions?: ITriggerInstructions
-  settingsStepLabel?: string // for step accordion label: event level
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
@@ -723,7 +719,6 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  settingsStepLabel?: string // for step accordion label: event level
   run?(
     $: IGlobalVariable,
     metadata?: NextStepMetadata,
