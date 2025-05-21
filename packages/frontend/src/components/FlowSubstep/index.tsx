@@ -126,7 +126,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     toast({
       title: 'Step saved successfully!',
       status: 'success',
-      duration: 5000,
+      duration: 2000,
       isClosable: true,
     })
   }, [saveStep, toast])

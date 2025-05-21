@@ -128,7 +128,7 @@ export default function FlowStepTestController(
     return validateStepParams(step, testExecutionSteps, substeps)
   }, [testExecutionSteps, step, substeps])
 
-  const shouldAllowCheckStep = !(!isValid || readOnly || isSaving)
+  const shouldAllowCheckStep = isValid && !readOnly && !isSaving
   const shouldShowSaveButton =
     !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
   const shouldShowTestResults =
