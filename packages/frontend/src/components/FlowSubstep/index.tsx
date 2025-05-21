@@ -10,8 +10,9 @@ import InputCreator from '@/components/InputCreator'
 import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { validateSubstep } from '@/helpers/editor'
+import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
 import { isIfThenStep } from '@/helpers/toolbox'
+import { validateStepParams } from '@/helpers/validateStepParams'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -25,8 +26,13 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const { isTrigger, substep, step, selectedActionOrTrigger } = props
   const { flags } = useContext(LaunchDarklyContext)
   const formContext = useFormContext()
-  const { readOnly, executeTestStep, onUpdateStep, setShouldWarnOnLeave } =
-    useContext(EditorContext)
+  const {
+    readOnly,
+    executeTestStep,
+    onUpdateStep,
+    setShouldWarnOnLeave,
+    testExecutionSteps,
+  } = useContext(EditorContext)
   const {
     isOpen: isTestResultOpen,
     onOpen: onTestResultOpen,
@@ -39,6 +45,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const [isValid, setIsValid] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
   )
+  const [hasDeletedVars, setHasDeletedVars] = useState(false)
 
   /*
    * NOTE: we use dirtyFields instead of isDirty because dirtyFields only tracks
@@ -47,7 +54,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
    * — even if you change a field back to its original value.
    */
   const { dirtyFields } = formContext.formState
-  const isDirty = Object.keys(dirtyFields).length > 0
+  const isDirty = hasDirtyFields(dirtyFields)
   useEffect(() => {
     onTestResultClose()
     setShouldWarnOnLeave(isDirty)
@@ -68,17 +75,24 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   useEffect(() => {
     function validate(step: unknown) {
-      const validationResult = validateSubstep(substep, step as IStep)
-      setIsValid(validationResult)
+      const typedStep = step as IStep
+      const validationResult = validateSubstep(substep, typedStep)
+      const { shouldTestStepAgain: hasMissingRef } = validateStepParams(
+        typedStep,
+        testExecutionSteps,
+        [substep],
+      )
+      setIsValid(validationResult && !hasMissingRef)
+      setHasDeletedVars(hasMissingRef)
     }
     const subscription = formContext.watch(validate)
 
     return () => subscription.unsubscribe()
-  }, [substep, formContext.watch, formContext])
+  }, [substep, formContext.watch, formContext, testExecutionSteps])
 
   // NOTE: this is meant to avoid users losing progress
   // we validate the substeps so that the header reflects the correct status
-  const handleSave = useCallback(async () => {
+  const saveStep = useCallback(async () => {
     try {
       setIsSaving(true)
       const currentStep = formContext.getValues() as IStep
@@ -107,13 +121,23 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     }
   }, [formContext, onUpdateStep, substep, toast])
 
+  const handleSave = useCallback(async () => {
+    await saveStep()
+    toast({
+      title: 'Step saved successfully!',
+      status: 'success',
+      duration: 2000,
+      isClosable: true,
+    })
+  }, [saveStep, toast])
+
   const handleSaveAndTest = useCallback(async () => {
-    await handleSave()
+    await saveStep()
     await executeTestStep()
     if (!isIfThenStep(step)) {
       onTestResultOpen()
     }
-  }, [handleSave, executeTestStep, onTestResultOpen, step])
+  }, [saveStep, executeTestStep, step, onTestResultOpen])
 
   return (
     <Box position="relative" display="flex" flexDirection="column">
@@ -143,6 +167,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         onTestResultOpen={onTestResultOpen}
         onTestResultClose={onTestResultClose}
         isValid={isValid}
+        hasDeletedVars={hasDeletedVars}
       />
     </Box>
   )

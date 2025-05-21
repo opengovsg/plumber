@@ -146,3 +146,20 @@ export function getToolboxIcon(key?: string | null) {
     ] ?? BiQuestionMark
   )
 }
+
+// NOTE: check if any fields are dirty recursively
+// there may be arrays added for multirow inputs that have been deleted
+// and still reside as empty objects in dirtyFields
+export const hasDirtyFields = (fields: Record<string, any>): boolean => {
+  return Object.entries(fields).some(([_, value]) => {
+    // If value is true, the field is dirty
+    if (value === true) {
+      return true
+    }
+    // If value is an object (including arrays), recurse
+    if (value && typeof value === 'object') {
+      return hasDirtyFields(value)
+    }
+    return false
+  })
+}

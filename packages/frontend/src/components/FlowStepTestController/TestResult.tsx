@@ -6,6 +6,8 @@ import { Infobox } from '@opengovsg/design-system-react'
 import VariablesList from '@/components/VariablesList'
 import type { Variable } from '@/helpers/variables'
 
+import { getIfThenOutput } from './utils'
+
 function getNoOutputMessage(
   selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
 ): string | null {
@@ -43,10 +45,18 @@ interface TestResultsProps {
   variables: Variable[] | null
   isMock?: boolean
   isOpen: boolean
+  isIfThenStep?: boolean
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
-  const { selectedActionOrTrigger, variables, isMock = false, isOpen } = props
+  const {
+    selectedActionOrTrigger,
+    variables,
+    isMock = false,
+    isOpen,
+    isIfThenStep,
+    step,
+  } = props
 
   const Content = () => {
     // No data only happens if user hasn't executed yet, or step returned null.
@@ -61,6 +71,16 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
       )
     }
 
+    if (isIfThenStep) {
+      const isConditionMet = variables?.[0]?.value as boolean
+      const [variant, message] = getIfThenOutput(isConditionMet, step.id)
+      return (
+        <Infobox variant={variant} width="full">
+          <Box>{message}</Box>
+        </Infobox>
+      )
+    }
+
     return (
       <Box w="100%">
         {isMock && (
@@ -68,7 +88,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
             <Text>{getMockDataMessage(selectedActionOrTrigger)}</Text>
           </Infobox>
         )}
-        <VariablesList variables={variables} />
+        <VariablesList variables={variables} customStyles={{ py: 0, px: 2 }} />
       </Box>
     )
   }
