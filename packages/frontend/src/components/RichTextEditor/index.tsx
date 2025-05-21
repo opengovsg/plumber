@@ -46,6 +46,7 @@ import {
   checkAutoFocus,
   genVariableInfoMap,
   getPopoverPlacement,
+  singleLineEditorScroll,
   substituteOldTemplates,
 } from './utils'
 
@@ -215,8 +216,12 @@ const Editor = ({
         },
       })
       editor?.commands.focus()
+
+      if (isMulticol && editor) {
+        singleLineEditorScroll(editor)
+      }
     },
-    [editor],
+    [editor, isMulticol],
   )
 
   const {
