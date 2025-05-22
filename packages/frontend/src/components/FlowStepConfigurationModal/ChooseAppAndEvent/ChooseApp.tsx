@@ -360,7 +360,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                         </Flex>
 
                         {triggersOrActions && triggersOrActions?.length > 1 && (
-                          <Icon as={BiChevronRight} />
+                          <Icon as={BiChevronRight} boxSize={5} />
                         )}
                       </Flex>
                     )

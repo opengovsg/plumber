@@ -95,6 +95,8 @@ function useDynamicData(
     },
     skip: shouldSkipQuery,
     notifyOnNetworkStatusChange: true,
+    fetchPolicy: 'cache-first',
+    nextFetchPolicy: 'cache-only',
   })
 
   // Refetch if any of our watched form fields changes.
