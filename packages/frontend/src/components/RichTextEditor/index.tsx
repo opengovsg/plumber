@@ -10,6 +10,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Portal,
   useDisclosure,
 } from '@chakra-ui/react'
 import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
@@ -42,6 +43,7 @@ import ImageResize from './ResizableImageExtension'
 import { StepVariable } from './StepVariablePlugin'
 import Suggestions from './Suggestions'
 import {
+  checkAutoFocus,
   genVariableInfoMap,
   getPopoverPlacement,
   substituteOldTemplates,
@@ -91,6 +93,7 @@ interface EditorProps {
   isSingleLine?: boolean
   variableTypes?: TDataOutMetadatumType[]
   parentType?: string
+  autoFocus?: boolean
 }
 const Editor = ({
   onChange,
@@ -102,6 +105,7 @@ const Editor = ({
   isSingleLine,
   variableTypes,
   parentType,
+  autoFocus = false,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const isMobile = useIsMobile()
@@ -170,6 +174,7 @@ const Editor = ({
   const editor = useEditor({
     extensions,
     content,
+    autofocus: autoFocus,
     onUpdate: ({ editor }) => {
       if (editor.isEmpty) {
         // this is when content of the editor is empty
@@ -233,11 +238,17 @@ const Editor = ({
     >
       <div
         className="editor"
-        onClick={openSuggestions}
+        onClick={(e) => {
+          e.stopPropagation()
+          openSuggestions()
+        }}
         onBlur={(e) => {
           // Focus might shift to menu bar or other children, where we do _not_
           // want to close our popper.
-          if (e.currentTarget.contains(e.relatedTarget)) {
+          if (
+            e.currentTarget.contains(e.relatedTarget) ||
+            e.relatedTarget?.closest('.chakra-popover__content')
+          ) {
             return
           }
           closeSuggestions()
@@ -247,21 +258,23 @@ const Editor = ({
           <Box>
             {isRich && <MenuBar editor={editor} variableMap={varInfo} />}
             <EditorContent className="editor__content" editor={editor} />
-            <PopoverContent
-              w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
-              motionProps={POPOVER_MOTION_PROPS}
-              onFocus={(e) => {
-                // Go back to previous focus when clicking on suggestions to resume typing
-                if (e.relatedTarget instanceof HTMLElement) {
-                  e.relatedTarget?.focus()
-                }
-              }}
-            >
-              <Suggestions
-                data={stepsWithVariables}
-                onSuggestionClick={handleVariableClick}
-              />
-            </PopoverContent>
+            <Portal>
+              <PopoverContent
+                w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
+                motionProps={POPOVER_MOTION_PROPS}
+                onFocus={(e) => {
+                  // Go back to previous focus when clicking on suggestions to resume typing
+                  if (e.relatedTarget instanceof HTMLElement) {
+                    e.relatedTarget?.focus()
+                  }
+                }}
+              >
+                <Suggestions
+                  data={stepsWithVariables}
+                  onSuggestionClick={handleVariableClick}
+                />
+              </PopoverContent>
+            </Portal>
           </Box>
         </PopoverTrigger>
       </div>
@@ -283,6 +296,7 @@ interface RichTextEditorProps {
   tooltipText?: string
   variableTypes?: TDataOutMetadatumType[]
   parentType?: string
+  autoFocus?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -298,8 +312,21 @@ const RichTextEditor = ({
   tooltipText,
   variableTypes,
   parentType,
+  autoFocus,
 }: RichTextEditorProps) => {
-  const { control } = useFormContext()
+  const { control, getValues } = useFormContext()
+  const { shouldAutoFocus, isNewRow, rowData } = checkAutoFocus(
+    name,
+    getValues,
+    autoFocus,
+  )
+
+  // Clear the isNew flag after focusing
+  useEffect(() => {
+    if (isNewRow && rowData) {
+      delete rowData.isNew
+    }
+  }, [isNewRow, rowData])
 
   return (
     <FormControl flex={1} data-test="text-input-group">
@@ -330,6 +357,7 @@ const RichTextEditor = ({
             isSingleLine={isSingleLine}
             variableTypes={variableTypes}
             parentType={parentType}
+            autoFocus={shouldAutoFocus}
           />
         )}
       />
