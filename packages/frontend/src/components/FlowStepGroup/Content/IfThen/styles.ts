@@ -32,10 +32,8 @@ export const ifThenStyles = {
 export const branchStyles = {
   container: {
     alignItems: 'center',
-    bg: 'white',
-    borderColor: 'base.divider.medium',
+    bg: '#f8f9f9',
     borderRadius: 'lg',
-    borderWidth: '1px',
     direction: 'column' as FlexProps['direction'],
     overflow: 'hidden',
     px: 4,

@@ -92,7 +92,6 @@ export default function Branch(props: BranchProps) {
         borderWidth="1px"
         border="none"
         p={0}
-        bg="white"
         overflow="hidden"
         w={isDrawerOpen ? (isMobile ? '0px' : '100%') : '100%'}
         mb={2}
