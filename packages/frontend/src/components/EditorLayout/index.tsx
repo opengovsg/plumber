@@ -124,7 +124,9 @@ export default function EditorLayout() {
 
   // disallow user from publishing pipe if any step is incomplete
   const isFlowIncomplete = useMemo(
-    () => flow?.steps.some((step) => step.status === 'incomplete'),
+    () =>
+      flow?.steps.length < 2 ||
+      flow?.steps.some((step) => step.status === 'incomplete'),
     [flow?.steps],
   )
 

@@ -63,8 +63,16 @@ function MultiRow(props: MultiRowProps): JSX.Element {
   })
 
   const handleAddRow = useCallback(() => {
-    append(newRowDefaultValue)
-  }, [append, newRowDefaultValue])
+    // NOTE: only need to use this flag to focus on the rte
+    // if the first column is a variable-enabled string field
+    const firstColIsRte =
+      subFields?.[0]?.type === 'string' && subFields?.[0]?.variables
+    if (firstColIsRte) {
+      append({ ...newRowDefaultValue, isNew: true })
+    } else {
+      append(newRowDefaultValue)
+    }
+  }, [append, newRowDefaultValue, subFields])
 
   return (
     // Use Controller's defaultValue to introduce 1 blank row by default. We

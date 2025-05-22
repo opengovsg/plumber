@@ -29,7 +29,8 @@ export default function MultiCol(props: MultiColProps) {
   const isMobile = useBreakpointValue({ base: true, sm: false })
   return (
     <Flex flexDir={isMobile ? 'column' : 'row'} gap={2} alignItems="center">
-      {subFields.map((subF) => {
+      {subFields.map((subF, subFIndex) => {
+        const { type, variables } = subF
         return (
           <div
             key={`${name}.${subF.key}`}
@@ -39,6 +40,7 @@ export default function MultiCol(props: MultiColProps) {
               schema={subF}
               namePrefix={name}
               parentType="multicol"
+              autoFocus={subFIndex === 0 && type === 'string' && variables}
               {...forwardedInputCreatorProps}
             />
           </div>
