@@ -21,9 +21,6 @@ export const GET_APPS = gql`
       description
       isNewApp
       category
-      substepLabels {
-        settingsStepLabel
-      }
       setupMessage {
         variant
         messageBody
@@ -89,7 +86,6 @@ export const GET_APPS = gql`
         type
         pollInterval
         description
-        settingsStepLabel
         setupMessage {
           variant
           messageBody
@@ -172,7 +168,6 @@ export const GET_APPS = gql`
         name
         key
         description
-        settingsStepLabel
         setupMessage {
           variant
           messageBody

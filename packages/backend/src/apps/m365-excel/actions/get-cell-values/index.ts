@@ -15,7 +15,6 @@ const action: IRawAction = {
   name: 'Get cell values',
   key: 'getCellValues',
   description: 'Gets cell value(s) in your Excel spreadsheet',
-  settingsStepLabel: 'Set up cell(s) to get',
   arguments: [
     {
       key: 'fileId',
