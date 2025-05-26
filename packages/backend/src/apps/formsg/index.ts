@@ -17,9 +17,6 @@ const app: IApp = {
   auth,
   triggers,
   actions: [],
-  substepLabels: {
-    settingsStepLabel: 'Other settings',
-  },
   demoVideoDetails: {
     url: 'https://demo.arcade.software/6cWULLTHkTH4XsSB1rs1?embed&show_copy_link=true',
     title: 'Setting up FormSG',

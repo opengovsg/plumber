@@ -42,7 +42,6 @@ const action: IRawAction = {
   name: 'Create table row',
   key: 'createTableRow',
   description: 'Creates a new row in your Excel table',
-  settingsStepLabel: 'Set up row to create',
   arguments: [
     {
       key: 'fileId',
