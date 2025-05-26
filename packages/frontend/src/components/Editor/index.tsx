@@ -221,7 +221,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
           visibility={isDrawerOpen ? 'visible' : 'hidden'}
           opacity={isDrawerOpen ? 1 : 0}
           transform={rightDrawerTransform}
-          borderLeft={isDrawerOpen ? '1px solid base.divider.medium' : 'none'}
         >
           <EditorRightDrawer
             flowStepGroupIconUrl={flowStepGroupIconUrl}
