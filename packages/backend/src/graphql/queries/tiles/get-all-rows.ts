@@ -15,7 +15,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
   params,
   context,
 ) => {
-  const { tableId } = params
+  const { tableId, stringifiedCursor } = params
 
   try {
     const table = context.tilesViewKey
@@ -43,10 +43,15 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
 
     const columnIds = table.columns.map((column) => column.id)
 
-    const { rows } = await tableOperations.getTableRows({
-      tableId,
-      columnIds,
-    })
+    const { rows, stringifiedCursor: newStringifiedCursor } =
+      await tableOperations.getTableRows({
+        tableId,
+        columnIds,
+        // If table is postgres, we set pagination limit
+        // If table is dynamodb, the pagination size is based on dynamodb query limits
+        scanLimit: table.db === 'pg' ? 10000 : undefined,
+        stringifiedCursor,
+      })
 
     // Convert data object to csv to minimize payload size
     rows.forEach((row) => {
@@ -56,6 +61,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
     return {
       rows,
       columnIds,
+      stringifiedCursor: newStringifiedCursor,
     }
   } catch (e) {
     logger.error(e)

@@ -221,6 +221,7 @@ export const getTableRows = async ({
   filters,
   order = 'asc',
   scanLimit,
+  stringifiedCursor,
 }: {
   tableId: string
   columnIds?: string[]
@@ -230,8 +231,10 @@ export const getTableRows = async ({
    * Optional limit on the total number of rows scanned.
    */
   scanLimit?: number
+  stringifiedCursor?: string
 }): Promise<{
   rows: TableRowOutput[]
+  stringifiedCursor: string | null
 }> => {
   const query = tilesClient(tableId).select(['rowId', ...(columnIds ?? [])])
   if (filters) {
@@ -239,6 +242,10 @@ export const getTableRows = async ({
   }
   if (scanLimit) {
     query.limit(scanLimit)
+  }
+  const offset = stringifiedCursor ? +stringifiedCursor : 0
+  if (offset) {
+    query.offset(offset)
   }
   try {
     const tableRows = []
@@ -249,6 +256,8 @@ export const getTableRows = async ({
     }
     return {
       rows: tableRows,
+      stringifiedCursor:
+        tableRows.length === scanLimit ? (offset + scanLimit).toString() : null,
     }
   } catch (e: unknown) {
     logger.error(e)
