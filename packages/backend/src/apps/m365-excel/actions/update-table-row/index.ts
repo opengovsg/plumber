@@ -74,7 +74,7 @@ const action: IRawAction = {
           required: true,
           variables: true,
           placeholder: 'Value to write',
-          customStyle: { flex: 3 },
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],
     },

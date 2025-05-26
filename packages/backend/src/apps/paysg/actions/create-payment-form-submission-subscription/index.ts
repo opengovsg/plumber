@@ -112,7 +112,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
-          customStyle: { flex: 1 },
+          customStyle: { flex: 1, minWidth: 0, maxWidth: '50%' },
         },
         {
           placeholder: 'Answer',
@@ -120,7 +120,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
-          customStyle: { flex: 1 },
+          customStyle: { flex: 1, minWidth: 0, maxWidth: '50%' },
         },
       ],
     },

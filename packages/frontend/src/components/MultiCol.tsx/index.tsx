@@ -34,7 +34,7 @@ export default function MultiCol(props: MultiColProps) {
         return (
           <div
             key={`${name}.${subF.key}`}
-            style={isMobile ? { flex: 1 } : subF.customStyle}
+            style={isMobile ? { flex: 1, width: '100%' } : subF.customStyle}
           >
             <InputCreator
               schema={subF}

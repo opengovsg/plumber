@@ -74,7 +74,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
-          customStyle: { flex: 1 },
+          customStyle: { flex: 1, minWidth: 0, maxWidth: '50%' },
         },
         {
           label: 'Value',
@@ -82,7 +82,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: false,
           variables: true,
-          customStyle: { flex: 1 },
+          customStyle: { flex: 1, minWidth: 0, maxWidth: '50%' },
         },
       ],
     },
