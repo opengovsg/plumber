@@ -197,6 +197,14 @@ const Editor = ({
       transformPastedHTML: (html) => {
         return substituteOldTemplates(html, varInfo)
       },
+      handleKeyDown: (view, event) => {
+        // Prevent new lines in single line mode
+        if (isSingleLine && event.key === 'Enter') {
+          event.preventDefault()
+          return true
+        }
+        return false
+      },
     },
   })
   useEffect(() => {
