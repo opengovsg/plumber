@@ -1,9 +1,15 @@
 import { FlexProps } from '@chakra-ui/react'
 
-import { EDITOR_MAX_HEIGHT } from './constants'
+import { EDITOR_MAX_HEIGHT, EDITOR_RIGHT_DRAWER_WIDTH } from './constants'
 
 export const editorStyles = {
-  container: {
+  editorWrapper: {
+    w: 'full',
+    overflowX: 'hidden' as FlexProps['overflowX'],
+    justifyContent: 'center',
+    pos: 'relative' as FlexProps['pos'],
+  },
+  stepHeaderContainer: {
     display: 'block',
     flexDir: 'column' as FlexProps['flexDir'],
     alignItems: 'center',
@@ -16,18 +22,27 @@ export const editorStyles = {
     transition: 'transform 0.4s cubic-bezier(0.3, 0, 0.2, 1)',
     w: '100%',
   },
+  dummyRightContainer: {
+    pos: 'relative' as FlexProps['pos'],
+    maxHeight: EDITOR_MAX_HEIGHT,
+    h: EDITOR_MAX_HEIGHT,
+    overflow: 'hidden' as FlexProps['overflow'],
+    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: 'none',
+  },
   rightDrawerContainer: {
     flexDir: 'column' as FlexProps['flexDir'],
-    position: 'relative' as FlexProps['position'],
+    position: 'absolute' as FlexProps['position'],
     bg: 'white',
     borderRadius: 'none',
-    borderLeft: '1px',
-    borderColor: 'base.divider.medium',
-    boxShadow: 'lg',
+    borderLeftWidth: '1px',
+    borderLeftColor: 'base.divider.medium',
     opacity: 0,
+    right: 0,
+    minWidth: EDITOR_RIGHT_DRAWER_WIDTH,
     maxHeight: EDITOR_MAX_HEIGHT,
     h: EDITOR_MAX_HEIGHT,
     overflowY: 'auto' as FlexProps['overflowY'],
-    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+    transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
   },
 }
