@@ -21,6 +21,7 @@ export default function EmptyFlowStepHeader(
 
   return (
     <Flex
+      data-test="flow-step"
       borderWidth="1px"
       borderColor="base.divider.medium"
       borderRadius="lg"

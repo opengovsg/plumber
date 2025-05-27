@@ -210,6 +210,7 @@ export default function FlowStep(
             </Box>
           )}
           <Flex
+            data-test="flow-step"
             {...flowStepStyles.container}
             borderTopWidth={hasInfoBox ? 0 : '1px'}
             borderColor={

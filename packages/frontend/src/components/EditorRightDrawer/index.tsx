@@ -31,7 +31,14 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
   }
 
   return (
-    <Flex flexDir="column" w="100%" py="4" overflowY="auto" h="100%">
+    <Flex
+      data-test="editor-right-drawer"
+      flexDir="column"
+      w="100%"
+      py="4"
+      overflowY="auto"
+      h="100%"
+    >
       <StepHeader step={step} />
       <Flex {...styles.stepContentsWrapper} pt={hasConnection ? 0 : 4}>
         <Step step={step} isLastStep={index === steps.length - 1} />
