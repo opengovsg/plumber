@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Components } from 'react-markdown'
 import { Box, Image, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
 import { AnimationConfigWithData } from 'lottie-web'
 import { RequireExactlyOne } from 'type-fest'
@@ -18,6 +19,26 @@ export interface AnnouncementItemProps {
   title: string
   details: string
   multimedia?: AnnouncementItemMultimedia
+}
+
+const mdComponents: Components = {
+  li: ({ node, ...props }) => {
+    // Check if this is a top-level <ul>
+    const isTopLevel =
+      !node.position?.start?.offset || node.position.start.column === 1
+
+    return (
+      <li
+        {...props}
+        style={{
+          listStyleType: isTopLevel ? 'none' : 'disc',
+          lineHeight: '1.75',
+          paddingLeft: isTopLevel ? '0' : '0.5rem',
+          marginLeft: isTopLevel ? '-1rem' : '0rem',
+        }}
+      />
+    )
+  },
 }
 
 export default function AnnouncementItem(props: AnnouncementItemProps) {
@@ -48,12 +69,12 @@ export default function AnnouncementItem(props: AnnouncementItemProps) {
   return (
     <>
       {displayedMultimedia && <Box>{displayedMultimedia}</Box>}
-      <ModalHeader>
+      <ModalHeader mb={displayedMultimedia ? 0 : 2}>
         <Text textStyle="h4">{title}</Text>
       </ModalHeader>
 
       <ModalBody>
-        <MarkdownRenderer source={details}></MarkdownRenderer>
+        <MarkdownRenderer source={details} components={mdComponents} />
       </ModalBody>
     </>
   )

@@ -7,7 +7,7 @@ import {
   ModalFooter,
   ModalOverlay,
 } from '@chakra-ui/react'
-import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
+import { Button } from '@opengovsg/design-system-react'
 import { AnimatePresence } from 'framer-motion'
 
 import AnnouncementItem from './AnnouncementItem'
@@ -19,7 +19,7 @@ const ITEMS_LENGTH = ANNOUNCEMENT_ITEM_LIST.length
 export const LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY =
   'announcement-modal-last-opened'
 
-export const LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP = '2025-05-26'
+export const LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP = '2025-05-27'
 
 interface AnnouncementModalProps {
   isOpen: boolean
@@ -34,17 +34,20 @@ export default function AnnouncementModal(props: AnnouncementModalProps) {
   const isLastAnnouncement = currActiveIdx === ITEMS_LENGTH - 1
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} autoFocus={false}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      autoFocus={false}
+      closeOnOverlayClick={false}
+    >
       <ModalOverlay />
       <ModalContent
         borderRadius="lg"
         display="flex"
         flexDirection="column"
-        h="80vh"
+        h="630px"
       >
-        <ModalCloseButton boxSize={5} zIndex={1} mr={-4} mt={-2} />
-
-        <Box flexGrow={1} overflow="hidden">
+        <Box flexGrow={1} overflow="scroll">
           <AnimatePresence mode="wait">
             <MotionBox
               key={currActiveIdx}
