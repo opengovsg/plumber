@@ -2,6 +2,7 @@ import { type IGlobalVariable } from '@plumber/types'
 
 import z from 'zod'
 
+import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 
 import WorkbookSession from '../../../common/workbook-session'
@@ -45,47 +46,65 @@ interface GetTopNTableRowsResult {
  * an extra API call has to be made to retrieve it
  * Reference: https://learn.microsoft.com/en-us/graph/api/table-range?view=graph-rest-1.0&tabs=http
  */
-export default async function getTopNTableRows(
+export async function getTopNTableRows(
   $: IGlobalVariable,
   session: WorkbookSession,
   tableId: string,
   n: number,
 ): Promise<GetTopNTableRowsResult> {
-  const rangeParseResult = msGraphRangeResponseSchema.safeParse(
-    (
-      await session.request(
-        `/tables/${tableId}/range?$select=values,rowCount,rowIndex`,
-        'get',
+  try {
+    const rangeParseResult = msGraphRangeResponseSchema.safeParse(
+      (
+        await session.request(
+          `/tables/${tableId}/range?$select=values,rowCount,rowIndex`,
+          'get',
+        )
+      ).data,
+    )
+
+    if (rangeParseResult.success === false) {
+      throw new StepError(
+        'Invalid table range',
+        'Check your Excel file and try again',
+        $.step.position,
+        $.app.name,
       )
-    ).data,
-  )
+    }
 
-  if (rangeParseResult.success === false) {
-    throw new StepError(
-      'Invalid table range',
-      'Check your Excel file and try again',
-      $.step.position,
-      $.app.name,
-    )
-  }
+    const { rowCount, headerSheetRowIndex, headerRowValues, rowValues } =
+      rangeParseResult.data
 
-  const { rowCount, headerSheetRowIndex, headerRowValues, rowValues } =
-    rangeParseResult.data
+    // rowCount includes the header row
+    if (rowCount > n) {
+      throw new StepError(
+        `Your Excel table has more than ${n.toLocaleString()} rows.`,
+        `Reduce the number of rows and try again.`,
+        $.step.position,
+        $.app.name,
+      )
+    }
 
-  // rowCount includes the header row
-  if (rowCount > n) {
-    throw new StepError(
-      `Your Excel table has more than ${n.toLocaleString()} rows.`,
-      `Reduce the number of rows and try again.`,
-      $.step.position,
-      $.app.name,
-    )
-  }
-
-  return {
-    columns: headerRowValues,
-    rows: rowValues,
-    headerSheetRowIndex,
+    return {
+      columns: headerRowValues,
+      rows: rowValues,
+      headerSheetRowIndex,
+    }
+  } catch (error) {
+    if (error instanceof HttpError) {
+      if (
+        error.response.status === 400 &&
+        error.response.data.error.code === 'RangeExceedsLimit'
+      ) {
+        throw new StepError(
+          'Your Excel table is too large',
+          'Reduce the number of rows or columns and try again.',
+          $.step.position,
+          $.app.name,
+          error,
+        )
+      }
+    }
+    throw error
   }
 }
 
@@ -154,3 +173,5 @@ export async function getTopNTableRowsOld(
     headerSheetRowIndex: tableRows.headerSheetRowIndex,
   }
 }
+
+export default getTopNTableRows
