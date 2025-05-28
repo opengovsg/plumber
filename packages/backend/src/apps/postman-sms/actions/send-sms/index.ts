@@ -93,7 +93,7 @@ const action = {
     if (parsedResponse.success) {
       $.setActionItem({
         raw: {
-          message: response.data,
+          message: parsedResponse.data,
         },
       })
 
