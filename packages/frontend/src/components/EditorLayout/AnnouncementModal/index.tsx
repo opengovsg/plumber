@@ -7,7 +7,11 @@ import {
   ModalFooter,
   ModalOverlay,
 } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
+import {
+  Button,
+  ModalCloseButton,
+  useIsMobile,
+} from '@opengovsg/design-system-react'
 import { AnimatePresence } from 'framer-motion'
 
 import AnnouncementItem from './AnnouncementItem'
@@ -19,7 +23,7 @@ const ITEMS_LENGTH = ANNOUNCEMENT_ITEM_LIST.length
 export const LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY =
   'announcement-modal-last-opened'
 
-export const LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP = '2025-05-27'
+export const LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP = '2025-05-28'
 
 interface AnnouncementModalProps {
   isOpen: boolean
@@ -32,6 +36,7 @@ export default function AnnouncementModal(props: AnnouncementModalProps) {
   const currAnnouncement = ANNOUNCEMENT_ITEM_LIST[currActiveIdx]
   const isFirstAnnouncement = currActiveIdx === 0
   const isLastAnnouncement = currActiveIdx === ITEMS_LENGTH - 1
+  const isMobile = useIsMobile()
 
   return (
     <Modal
@@ -39,6 +44,7 @@ export default function AnnouncementModal(props: AnnouncementModalProps) {
       onClose={onClose}
       autoFocus={false}
       closeOnOverlayClick={false}
+      closeOnEsc={false}
     >
       <ModalOverlay />
       <ModalContent
@@ -47,14 +53,16 @@ export default function AnnouncementModal(props: AnnouncementModalProps) {
         flexDirection="column"
         h="630px"
       >
-        <Box flexGrow={1} overflow="scroll">
+        <ModalCloseButton size="xs" zIndex={1} mr={-4} mt={-2} />
+
+        <Box flexGrow={1} overflow={isMobile ? 'scroll' : 'none'}>
           <AnimatePresence mode="wait">
             <MotionBox
               key={currActiveIdx}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.1 }}
             >
               <AnnouncementItem {...currAnnouncement} />
             </MotionBox>
