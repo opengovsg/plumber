@@ -1,9 +1,7 @@
 import type { IRawAction } from '@plumber/types'
 
 import { DateTime } from 'luxon'
-import { ZodError } from 'zod'
 
-import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 import { ensureZodObjectKey, firstZodParseError } from '@/helpers/zod-utils'
@@ -56,89 +54,63 @@ const action = {
   getDataOutMetadata,
 
   async run($) {
-    try {
-      const parsedParams = fieldSchema.parse($.step.parameters)
-      const authData = authDataSchema.parse($.auth.data)
-
-      const response = await $.http.post(
-        '/campaigns/:campaignId/messages',
-        {
-          recipient: parsedParams.recipient,
-          language: 'english',
-          values: {
-            body: parsedParams.message,
-          },
-        },
-        {
-          urlPathParams: {
-            campaignId: authData.campaignId,
-          },
-        },
-      )
-      const parsedResponse = postmanMessageSchema.safeParse(response.data)
-
-      if (parsedResponse.success) {
-        $.setActionItem({
-          raw: {
-            message: parsedResponse.data,
-          },
-        })
-
-        return
-      }
-
-      //
-      // Edge case: If we're here, then Postman's response has somehow changed
-      // without us knowing about it.
-      //
-      // We'll allow the step to succeed as SMS has already been sent out, but
-      // we don't expose any of the response data because we have no clue what
-      // it contains now; we don't want to return gibberish to prevent the user
-      // into a false sense of correctness.
-      //
-
-      logger.error('Postman send single SMS response changed', {
-        event: 'api-response-change',
-        appName: 'postman-sms',
-        eventName: 'sendSms',
-      })
-      $.setActionItem({
-        raw: {
-          // Signal to the user that an SMS has at least been created by now.
-          createdAt: DateTime.now().toISO(),
-        },
-      })
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new StepError(
-          `Configuration problem: '${firstZodParseError(error)}'`,
-          GenericSolution.ReconfigureInvalidField,
-          $.step.position,
-          $.app.name,
-        )
-      }
-
-      // This happens if user did not create a template in the format we expect.
-      if (
-        error instanceof HttpError &&
-        error.response.status === 400 &&
-        error.response.data.error?.code === 'parameter_invalid'
-      ) {
-        throw new StepError(
-          'Campaign template was not set up correctly',
-          'Ensure that you have followed the instructions in our guide to set up your campaign template.',
-          $.step.position,
-          $.app.name,
-        )
-      }
-
+    const parsedParams = fieldSchema.safeParse($.step.parameters)
+    if (parsedParams.success === false) {
       throw new StepError(
-        'Error sending SMS',
-        error.message,
+        `Configuration problem: ${firstZodParseError(parsedParams.error)}`,
+        GenericSolution.ReconfigureInvalidField,
         $.step.position,
         $.app.name,
       )
     }
+    const authData = authDataSchema.safeParse($.auth.data)
+    if (authData.success === false) {
+      throw new StepError(
+        `Invalid connection data: ${firstZodParseError(authData.error)}`,
+        GenericSolution.MalformedConnectionData,
+        $.step.position,
+        $.app.name,
+      )
+    }
+
+    const response = await $.http.post(
+      '/campaigns/:campaignId/messages',
+      {
+        recipient: parsedParams.data.recipient,
+        language: 'english',
+        values: {
+          body: parsedParams.data.message,
+        },
+      },
+      {
+        urlPathParams: {
+          campaignId: authData.data.campaignId,
+        },
+      },
+    )
+    const parsedResponse = postmanMessageSchema.safeParse(response.data)
+
+    if (parsedResponse.success) {
+      $.setActionItem({
+        raw: {
+          message: response.data,
+        },
+      })
+
+      return
+    }
+
+    logger.error('Postman send single SMS response changed', {
+      event: 'api-response-change',
+      appName: 'postman-sms',
+      eventName: 'sendSms',
+    })
+    $.setActionItem({
+      raw: {
+        // Signal to the user that an SMS has at least been created by now.
+        createdAt: DateTime.now().toISO(),
+      },
+    })
   },
 } satisfies IRawAction
 

@@ -13,6 +13,22 @@ import ExecutionStep from '@/models/execution-step'
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
 import { parseRetryAfterToMs } from '../parse-retry-after-to-ms'
 
+/**
+ * For queue and group delays, we need to manually check for max attempts ourselves
+ * because throwing RateLimitError is not a real error.
+ * Also, it does not increase attemptsMade so we need to use attemptsStarted
+ * to check if we've reached the max attempts.
+ */
+function checkIfAttemptsExhausted(
+  attemptsStarted: number,
+  maxAttempts: number,
+  executionError: RetriableError,
+): void | never {
+  if (attemptsStarted >= maxAttempts) {
+    throw new UnrecoverableError(JSON.stringify(executionError))
+  }
+}
+
 function handleRetriableError(
   executionError: RetriableError,
   context: HandleFailedStepAndThrowParams['context'],
@@ -22,6 +38,11 @@ function handleRetriableError(
 
   switch (delayType) {
     case 'queue':
+      checkIfAttemptsExhausted(
+        job.attemptsStarted,
+        MAXIMUM_JOB_ATTEMPTS,
+        executionError,
+      )
       if (isQueueDelayable) {
         worker.rateLimit(delayInMs)
         throw WorkerPro.RateLimitError()
@@ -35,6 +56,11 @@ function handleRetriableError(
       // off a small alert.
       throw executionError
     case 'group': {
+      checkIfAttemptsExhausted(
+        job.attemptsStarted,
+        MAXIMUM_JOB_ATTEMPTS,
+        executionError,
+      )
       const groupId = job.opts?.group?.id
       if (groupId) {
         worker.rateLimitGroup(job, delayInMs)
