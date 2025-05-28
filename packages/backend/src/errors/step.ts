@@ -7,6 +7,7 @@ import HttpError from './http'
 //
 export enum GenericSolution {
   ReconfigureInvalidField = 'Click on set up action and reconfigure the invalid field. Error could also result from the variables used in the field.',
+  MalformedConnectionData = 'Please reconnect and try again.',
 }
 
 export default class StepError extends Error {
