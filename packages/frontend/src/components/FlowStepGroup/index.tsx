@@ -6,6 +6,8 @@ import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
 
+import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
+
 import Error from './Content/Error'
 import IfThen from './Content/IfThen'
 import { flowStepGroupStyles } from './styles'
@@ -31,12 +33,17 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
   }, [groupedSteps])
 
   return (
-    <Flex w="100%" alignItems="center" justifyContent="center">
+    <Flex
+      w="100%"
+      alignItems="center"
+      justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
+    >
       {/* FIXME (kevinkim-ogp): above is a temporary wrapper to ensure the flow step group is centered when drawer is closed */}
       <Flex
         {...flowStepGroupStyles.container}
         display={isMobile ? 'block' : 'flex'}
         w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
+        minW={MIN_FLOW_STEP_WIDTH}
       >
         <Box {...flowStepGroupStyles.header} w="100%">
           <Flex

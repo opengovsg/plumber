@@ -5,9 +5,9 @@ import { useFormContext } from 'react-hook-form'
 import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 import {
   Box,
-  Flex,
+  Grid,
+  GridItem,
   HStack,
-  Stack,
   Text,
   Tooltip,
   VStack,
@@ -91,6 +91,7 @@ export default function FlowStepTestController(
     allApps,
     currentTestExecutionStep,
     readOnly,
+    isMobile,
     isTestExecuting,
     testExecutionSteps,
     varInfoMap,
@@ -204,14 +205,20 @@ export default function FlowStepTestController(
         isReadOnly={readOnly}
       >
         <Button
-          variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
+          variant={
+            infoBoxVariant === 'unstyled'
+              ? undefined
+              : isMobile
+              ? 'outline'
+              : 'clear'
+          }
           onClick={handleSaveAndTest}
           isLoading={isTestExecuting}
           colorScheme={infoBoxVariant === 'unstyled' ? 'primary' : 'black'}
           size="sm"
           isDisabled={!isValid || readOnly}
         >
-          Check step again
+          <Text noOfLines={1}>Check step again</Text>
         </Button>
       </CheckStepTooltip>
     ),
@@ -239,22 +246,39 @@ export default function FlowStepTestController(
           />
         </VStack>
       )}
-      <Stack {...flowStepTestControllerStyles.container} ref={containerRef}>
-        <VStack w="100%">
-          {shouldShowTestResults ? (
-            <VStack w="100%">
-              <HStack w="100%">
-                <Infobox
-                  {...flowStepTestControllerStyles.testedInfobox}
-                  variant={infoBoxVariant}
-                  borderBottomRadius={isTestResultOpen ? 0 : undefined}
-                  icon={infoBoxVariant === 'unstyled' ? <></> : null}
+      <VStack
+        {...flowStepTestControllerStyles.container}
+        ref={containerRef}
+        w="100%"
+      >
+        {shouldShowTestResults ? (
+          <VStack w="100%">
+            <HStack w="100%">
+              <Infobox
+                {...flowStepTestControllerStyles.testedInfobox}
+                variant={infoBoxVariant}
+                borderBottomRadius={isTestResultOpen ? 0 : undefined}
+                icon={infoBoxVariant === 'unstyled' ? <></> : null}
+              >
+                <Grid
+                  justifyContent="space-between"
+                  alignItems="center"
+                  w="100%"
+                  templateAreas={{
+                    base: `
+                      "test-result"
+                      "save-button"
+                      "check-button"
+                    `,
+                    md: `"test-result save-button check-button"`,
+                  }}
+                  gridTemplateColumns={{
+                    base: '1fr',
+                    md: '1fr auto auto',
+                  }}
+                  rowGap={2}
                 >
-                  <Flex
-                    justifyContent="space-between"
-                    alignItems="center"
-                    w="100%"
-                  >
+                  <GridItem area="test-result">
                     {isIfThenStep && isLastTestExecutionCurrent ? (
                       // NOTE: special handling for If-then
                       // do not need button as there are no variables to display
@@ -275,7 +299,13 @@ export default function FlowStepTestController(
                         }
                         isDisabled={isTestExecuting}
                       >
-                        <Text color="base.content.default">{infoBoxText}</Text>
+                        <Text
+                          color="base.content.default"
+                          noOfLines={1}
+                          textAlign="left"
+                        >
+                          {infoBoxText}
+                        </Text>
                         {!isTestExecuting && (
                           <Box ml={2} color="base.content.default">
                             {getChevronIcon()}
@@ -283,76 +313,80 @@ export default function FlowStepTestController(
                         )}
                       </Button>
                     )}
-                    {shouldShowSaveButton ? (
-                      <Flex gap={2}>
+                  </GridItem>
+                  {shouldShowSaveButton ? (
+                    <>
+                      <GridItem area="save-button">
                         <Button
-                          variant="clear"
+                          variant={isMobile ? 'outline' : 'clear'}
                           size="sm"
                           colorScheme="black"
                           onClick={handleSave}
                           isDisabled={!isLastTestExecutionCurrent && !isDirty}
+                          mr={2}
                         >
-                          {!isLastTestExecutionCurrent && !isDirty
-                            ? 'Saved'
-                            : 'Save without checking'}
+                          <Text noOfLines={1}>
+                            {!isLastTestExecutionCurrent && !isDirty
+                              ? 'Saved'
+                              : 'Save without checking'}
+                          </Text>
                         </Button>
+                      </GridItem>
+                      <GridItem area="check-button">
                         {CheckAgainButton}
-                      </Flex>
-                    ) : (
-                      CheckAgainButton
-                    )}
-                  </Flex>
-                </Infobox>
-              </HStack>
-              <TestResult
-                step={step}
-                selectedActionOrTrigger={selectedActionOrTrigger}
-                variables={testVariables}
-                isMock={currentTestExecutionStep?.metadata?.isMock}
-                isOpen={isTestResultOpen}
-                isIfThenStep={isIfThenStep}
-              />
-            </VStack>
-          ) : (
-            <VStack w="100%" gap={2}>
-              {lastErrorDetails && (
-                <Box w="100%">
-                  <ErrorResult
-                    errorDetails={lastErrorDetails}
-                    isTestRun={true}
-                  />
-                </Box>
-              )}
-              <HStack w="100%" justifyContent="flex-end">
-                {!step.webhookUrl && (
-                  <Button
-                    isDisabled={readOnly || isSaving || !isDirty}
-                    isLoading={isSaving}
-                    variant="clear"
-                    onClick={handleSave}
-                  >
-                    {isDirty ? 'Save' : 'Saved'}
-                  </Button>
-                )}
-                <CheckStepTooltip
-                  hasDeletedVars={hasDeletedVars}
-                  isDisabled={shouldAllowCheckStep}
-                  isReadOnly={readOnly}
+                      </GridItem>
+                    </>
+                  ) : (
+                    <GridItem area="check-button">{CheckAgainButton}</GridItem>
+                  )}
+                </Grid>
+              </Infobox>
+            </HStack>
+            <TestResult
+              step={step}
+              selectedActionOrTrigger={selectedActionOrTrigger}
+              variables={testVariables}
+              isMock={currentTestExecutionStep?.metadata?.isMock}
+              isOpen={isTestResultOpen}
+              isIfThenStep={isIfThenStep}
+            />
+          </VStack>
+        ) : (
+          <VStack w="100%" gap={2}>
+            {lastErrorDetails && (
+              <Box w="100%">
+                <ErrorResult errorDetails={lastErrorDetails} isTestRun={true} />
+              </Box>
+            )}
+            <HStack w="100%" justifyContent="flex-end">
+              {!step.webhookUrl && (
+                <Button
+                  isDisabled={readOnly || isSaving || !isDirty}
+                  isLoading={isSaving}
+                  variant="clear"
+                  onClick={handleSave}
                 >
-                  <Button
-                    onClick={handleSaveAndTest}
-                    data-test="flow-substep-continue-button"
-                    isDisabled={!shouldAllowCheckStep}
-                    isLoading={isTestExecuting}
-                  >
-                    Check step
-                  </Button>
-                </CheckStepTooltip>
-              </HStack>
-            </VStack>
-          )}
-        </VStack>
-      </Stack>
+                  {isDirty ? 'Save' : 'Saved'}
+                </Button>
+              )}
+              <CheckStepTooltip
+                hasDeletedVars={hasDeletedVars}
+                isDisabled={shouldAllowCheckStep}
+                isReadOnly={readOnly}
+              >
+                <Button
+                  onClick={handleSaveAndTest}
+                  data-test="flow-substep-continue-button"
+                  isDisabled={!shouldAllowCheckStep}
+                  isLoading={isTestExecuting}
+                >
+                  Check step
+                </Button>
+              </CheckStepTooltip>
+            </HStack>
+          </VStack>
+        )}
+      </VStack>
     </>
   )
 }

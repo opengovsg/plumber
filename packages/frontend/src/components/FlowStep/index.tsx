@@ -168,7 +168,7 @@ export default function FlowStep(
   }
 
   return (
-    <FlowStepWrapper>
+    <FlowStepWrapper isNested={isNested}>
       {!app || !selectedActionOrTrigger ? (
         <EmptyFlowStepHeader
           isNested={isNested}

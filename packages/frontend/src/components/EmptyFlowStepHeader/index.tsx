@@ -46,7 +46,7 @@ export default function EmptyFlowStepHeader(
         boxSize={6}
         color="interaction.sub.default"
       />
-      <Text textStyle="subhead-1">
+      <Text textStyle="subhead-1" noOfLines={1}>
         {isTrigger ? 'Choose how you want your workflow to start' : 'Add step'}
       </Text>
     </Flex>

@@ -9,6 +9,7 @@ export const flowStepTestControllerStyles = {
     borderTop: '1px solid',
     borderTopColor: 'base.divider.medium',
     bg: 'white',
+    backgroundClip: 'border-box',
     position: 'sticky' as PositionProps['position'],
     bottom: 0,
     zIndex: 1,
