@@ -18,7 +18,10 @@ import {
   getDefaultReplyTo,
 } from '../../common/parameters-helper'
 import { sendBlacklistEmail } from '../../common/send-blacklist-email'
-import { sendInvalidAttachmentsEmail } from '../../common/send-invalid-attachments-email'
+import {
+  createInvalidAttachmentsMessage,
+  sendInvalidAttachmentsEmail,
+} from '../../common/send-invalid-attachments-email'
 import { throwPostmanStepError } from '../../common/throw-errors'
 
 const action: IRawAction = {
@@ -74,7 +77,7 @@ const action: IRawAction = {
       )
     }
 
-    const { attachmentFiles, invalidAttachments, submissionId } =
+    const { attachmentFiles, invalidAttachments, submissionId, formId } =
       await filterAttachments(result.data.attachments, $)
 
     let recipientsToSend = result.data.destinationEmail
@@ -158,17 +161,38 @@ const action: IRawAction = {
       (_, i) => dataOut.status[i] === 'BLACKLISTED',
     )
 
+    const defaultSendEmailParams = {
+      flowId: $.flow.id,
+      flowName: $.flow.name,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+    }
+    const hasInvalidAttachments = invalidAttachments.length > 0
+    const formAdminLink = `https://form.gov.sg/admin/form/${formId}/results`
+    const invalidAttachmentParams = {
+      hasInvalidAttachments,
+      submissionId,
+      invalidAttachments,
+      formAdminLink,
+    }
+
     /**
      * Send blacklist notification email if any
+     * If there are any invalid attachments, it will be included in this email
      */
     if (blacklistedRecipients.length > 0 && !$.execution.testRun) {
       try {
+        let invalidAttachmentBody = null
+        if (hasInvalidAttachments) {
+          invalidAttachmentBody = createInvalidAttachmentsMessage({
+            ...defaultSendEmailParams,
+            ...invalidAttachmentParams,
+          })
+        }
         await sendBlacklistEmail({
-          flowId: $.flow.id,
-          flowName: $.flow.name,
-          userEmail: $.user.email,
-          executionId: $.execution.id,
+          ...defaultSendEmailParams,
           blacklistedRecipients,
+          ...(invalidAttachmentBody && { invalidAttachmentBody }),
         })
       } catch (e) {
         logger.error(e)
@@ -182,17 +206,21 @@ const action: IRawAction = {
       }
     }
 
-    let formAdminLink: string | null = null
-    if (invalidAttachments.length > 0 && !isPartialRetry) {
-      const res = await sendInvalidAttachmentsEmail({
-        flowName: $.flow.name,
-        flowId: $.flow.id,
-        userEmail: $.user.email,
-        executionId: $.execution.id,
-        submissionId,
-        invalidAttachments,
+    /**
+     * Send invalid attachments notification email if no blacklisted recipients
+     * Do not send on partial retry as we would have already sent this once with the blacklist email
+     */
+    if (
+      hasInvalidAttachments &&
+      !isPartialRetry &&
+      blacklistedRecipients.length === 0 &&
+      !$.execution.testRun
+    ) {
+      await sendInvalidAttachmentsEmail({
+        ...defaultSendEmailParams,
+        ...invalidAttachmentParams,
       })
-      formAdminLink = res.formAdminLink
+
       logger.warn({
         message: 'Invalid attachments',
         flowId: $.flow.id,

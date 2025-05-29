@@ -13,6 +13,7 @@ interface SendBlacklistEmailProps {
   userEmail: string
   executionId: string
   blacklistedRecipients: string[]
+  invalidAttachmentBody?: string
 }
 
 interface BlacklistEmailProps {
@@ -20,6 +21,7 @@ interface BlacklistEmailProps {
   userEmail: string
   executionId: string
   blacklistedRecipients: string[]
+  invalidAttachmentBody?: string
 }
 
 type BlacklistEmailFormProps = Omit<BlacklistEmailProps, 'flowName'>
@@ -47,11 +49,11 @@ export function createRequestBlacklistFormLink({
 }
 
 function createBodyErrorMessage(props: BlacklistEmailProps): string {
-  const { flowName, blacklistedRecipients } = props
+  const { flowName, blacklistedRecipients, invalidAttachmentBody } = props
 
   const formLink = createRequestBlacklistFormLink(props)
 
-  const bodyMessage = `
+  let bodyMessage = `
     Dear fellow plumber,
     <br>
     <br>
@@ -71,6 +73,13 @@ function createBodyErrorMessage(props: BlacklistEmailProps): string {
       <li>Wait for an email confirmation from us (1-2 working days) for further instructions.</li>
     </ol>
     <br>
+    `
+
+  if (invalidAttachmentBody) {
+    bodyMessage += invalidAttachmentBody
+  }
+
+  bodyMessage += `
     Regards,
     <br>
     Plumber team
@@ -118,6 +127,7 @@ export async function sendBlacklistEmail({
   userEmail,
   executionId,
   blacklistedRecipients,
+  invalidAttachmentBody,
 }: SendBlacklistEmailProps) {
   const truncatedFlowName = truncateFlowName(flowName)
   const filteredBlacklist = await filterNotifiedEmails(
@@ -136,6 +146,7 @@ export async function sendBlacklistEmail({
       userEmail,
       executionId,
       blacklistedRecipients: filteredBlacklist,
+      invalidAttachmentBody,
     }),
     recipient: userEmail,
     replyTo: 'support@plumber.gov.sg',

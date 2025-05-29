@@ -4,22 +4,22 @@ import ExecutionStep from '@/models/execution-step'
 
 interface SendInvalidAttachmentsEmailProps {
   flowName: string
-  flowId: string
   userEmail: string
   executionId: string
   submissionId: string
   invalidAttachments: string[]
-}
-
-interface CreateMessageProps extends SendInvalidAttachmentsEmailProps {
   formAdminLink: string
 }
 
-function createFormAdminLink({ formId }: { formId: string }) {
-  return `https://form.gov.sg/admin/form/${formId}/results`
+interface CreateMessageProps {
+  flowName: string
+  invalidAttachments: string[]
+  executionId: string
+  submissionId: string
+  formAdminLink: string
 }
 
-async function getFormId(executionId: string) {
+export async function getFormId(executionId: string) {
   const formData = await ExecutionStep.query()
     .where('execution_id', executionId)
     .where('app_key', 'formsg')
@@ -29,7 +29,7 @@ async function getFormId(executionId: string) {
   return String(formData?.dataOut?.formId)
 }
 
-async function createMessage(props: CreateMessageProps) {
+export function createInvalidAttachmentsMessage(props: CreateMessageProps) {
   const {
     flowName,
     invalidAttachments,
@@ -39,9 +39,6 @@ async function createMessage(props: CreateMessageProps) {
   } = props
 
   const bodyMessage = `
-    Dear fellow plumber,
-    <br>
-    <br>
     We have detected that your pipe <strong>${flowName}</strong> has attempted to send an email with one or more attachments that are not supported:
     <ul>
         ${invalidAttachments.map((a) => `<li>${a}</li>`).join('\n')}
@@ -55,9 +52,7 @@ async function createMessage(props: CreateMessageProps) {
     <ul>
       <li>If you require the attachment(s), log in to your <a href="${formAdminLink}">form</a> to download them for this submission.</li>
     </ul>
-    Regards,
-    <br>
-    Plumber team
+
   `
   return bodyMessage
 }
@@ -65,11 +60,22 @@ async function createMessage(props: CreateMessageProps) {
 export async function sendInvalidAttachmentsEmail(
   props: SendInvalidAttachmentsEmailProps,
 ) {
-  const { flowName, userEmail } = props
+  const { flowName, userEmail, formAdminLink } = props
   const truncatedFlowName = truncateFlowName(flowName)
-  const formId = await getFormId(props.executionId)
-  const formAdminLink = createFormAdminLink({ formId })
-  const bodyMessage = await createMessage({ ...props, formAdminLink })
+  const bodyContent = await createInvalidAttachmentsMessage({
+    ...props,
+    formAdminLink,
+  })
+
+  const bodyMessage = `
+    Dear fellow plumber,
+    <br>
+    <br>
+    ${bodyContent}
+    Regards,
+    <br>
+    Plumber team
+  `
 
   await sendEmail({
     subject: `Plumber: Invalid attachments detected on ${truncatedFlowName}`,
