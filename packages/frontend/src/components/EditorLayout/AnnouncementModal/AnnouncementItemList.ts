@@ -44,7 +44,7 @@ export const ANNOUNCEMENT_ITEM_LIST: AnnouncementItemProps[] = [
       
 
     - ☝️ &nbsp;**One time setup**
-      * Created a one-time connection to your M365 account — no repeated connecting needed
+      * Created a one-time connection to your M365 account — no repeated connection needed
     `,
   },
 ]
