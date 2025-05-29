@@ -67,6 +67,14 @@ worker.on('failed', (job, err) => {
   )
 })
 
+worker.on('ready', () => {
+  logger.info('Flow worker is ready!')
+})
+
+worker.on('closed', () => {
+  logger.info('Flow worker is closed!')
+})
+
 worker.on('error', (err) => {
   if (!err) {
     logger.error('Worker undefined error')
