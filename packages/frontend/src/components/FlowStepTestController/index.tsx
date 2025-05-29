@@ -205,7 +205,13 @@ export default function FlowStepTestController(
         isReadOnly={readOnly}
       >
         <Button
-          variant={infoBoxVariant === 'unstyled' ? undefined : 'clear'}
+          variant={
+            infoBoxVariant === 'unstyled'
+              ? undefined
+              : isMobile
+              ? 'outline'
+              : 'clear'
+          }
           onClick={handleSaveAndTest}
           isLoading={isTestExecuting}
           colorScheme={infoBoxVariant === 'unstyled' ? 'primary' : 'black'}
