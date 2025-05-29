@@ -13,7 +13,6 @@ import {
 } from '@chakra-ui/react'
 import { Button, FormLabel, Input } from '@opengovsg/design-system-react'
 
-import { DatabaseType } from '@/graphql/__generated__/graphql'
 import client from '@/graphql/client'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
 import { UPDATE_TABLE } from '@/graphql/mutations/tiles/update-table'
@@ -50,7 +49,6 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
                 input: {
                   name: inputValue.trim(),
                   isBlank: true,
-                  databaseType: DatabaseType.Pg,
                 },
               },
             })

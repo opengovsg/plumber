@@ -17,7 +17,6 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import {
-  Badge,
   Button,
   FormLabel,
   Input,
@@ -25,7 +24,6 @@ import {
   Tile,
 } from '@opengovsg/design-system-react'
 
-import { SingleSelect } from '@/components/SingleSelect'
 import * as URLS from '@/config/urls'
 import { DatabaseType } from '@/graphql/__generated__/graphql'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
@@ -37,16 +35,12 @@ type TILE_CREATE_MODE = 'import' | 'new'
 const CreateTileForm = ({
   tableName,
   setTableName,
-  databaseType,
-  setDatabaseType,
   onSubmit,
   isSubmitting,
   onImportNext,
 }: {
   tableName: string
   setTableName: (tableName: string) => void
-  databaseType: DatabaseType
-  setDatabaseType: (databaseType: DatabaseType) => void
   onSubmit: () => Promise<void>
   isSubmitting: boolean
   onImportNext: () => void
@@ -63,22 +57,6 @@ const CreateTileForm = ({
           <Input
             value={tableName}
             onChange={(e) => setTableName(e.target.value)}
-          />
-        </FormControl>
-        <FormControl>
-          <FormLabel>Select version</FormLabel>
-          <SingleSelect
-            items={[
-              {
-                label: 'Tiles v2 (PostgreSQL)',
-                value: DatabaseType.Pg,
-                badge: <Badge>NEW</Badge>,
-              },
-              { label: 'Tiles v1 (DynamoDB)', value: DatabaseType.Ddb },
-            ]}
-            value={databaseType}
-            onChange={(value) => setDatabaseType(value as DatabaseType)}
-            name="databaseType"
           />
         </FormControl>
         <FormControl>
@@ -126,9 +104,6 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
   const [tableName, setTableName] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [tableData, setTableData] = useState<ITableMetadata | null>(null)
-  const [databaseType, setDatabaseType] = useState<DatabaseType>(
-    DatabaseType.Pg,
-  )
 
   const [createTableMutation, { loading }] = useMutation<{
     createTable: ITableMetadata
@@ -141,7 +116,6 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
           input: {
             name: tableName,
             isBlank,
-            databaseType,
           },
         },
       })
@@ -151,7 +125,7 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
       setTableData(data.createTable)
       return data.createTable
     },
-    [createTableMutation, databaseType, tableName],
+    [createTableMutation, tableName],
   )
 
   const navigateToTile = useCallback(
@@ -181,8 +155,9 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
       <ModalContent>
         {showImportModal ? (
           <TableContextProvider
-            databaseType={databaseType}
             tableName={tableName}
+            // this doesnt matter for empty tables
+            databaseType={DatabaseType.Ddb}
             tableId={tableData ? tableData.id : ''}
             tableColumns={[]}
             tableRows={[]}
@@ -201,8 +176,6 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
           <CreateTileForm
             tableName={tableName}
             setTableName={setTableName}
-            setDatabaseType={setDatabaseType}
-            databaseType={databaseType}
             onSubmit={onSubmit}
             isSubmitting={loading}
             onImportNext={() => setShowImportModal(true)}

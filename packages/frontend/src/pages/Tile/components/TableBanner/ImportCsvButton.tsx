@@ -47,8 +47,11 @@ type IMPORT_STATUS =
   | 'completed'
   | 'error'
 
-// 2 MB in bytes
-const MAX_FILE_SIZE = 2 * 1000 * 1000
+// 5 MB in bytes
+const MAX_FILE_SIZE = {
+  [DatabaseType.Pg]: 5 * 1000 * 1000,
+  [DatabaseType.Ddb]: 2 * 1000 * 1000,
+}
 // Add row chunk size
 const CHUNK_SIZE = {
   [DatabaseType.Pg]: 1000,
@@ -322,7 +325,7 @@ export const ImportCsvModalContent = ({
           existing values.
         </Text>
         <Attachment
-          maxSize={MAX_FILE_SIZE}
+          maxSize={MAX_FILE_SIZE[databaseType]}
           onChange={setFile}
           title="Upload CSV"
           name="file-upload"
