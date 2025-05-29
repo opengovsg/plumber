@@ -47,36 +47,65 @@ export function getPostmanErrorStatus(
   }
 }
 
+function getInvalidAttachmentSolution({
+  invalidAttachments,
+  formAdminLink,
+}: {
+  invalidAttachments: string[]
+  formAdminLink: string | null
+}) {
+  return `The following attachment(s) are not supported by Postman and have been removed from the email:
+  \n${invalidAttachments.map((attachment) => `**${attachment}**`).join('\n\n')}
+  \nIf you require the attachment(s), log in to your [form](${formAdminLink}) to download them for this submission.
+  `
+}
+
 export function throwPostmanStepError({
   $,
   status,
   error,
   isPartialSuccess,
   blacklistedRecipients,
+  invalidAttachments,
+  formAdminLink,
 }: {
   $: IGlobalVariable
   status: PostmanEmailSendStatus
   error: HttpError
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
+  invalidAttachments: string[]
+  formAdminLink: string | null
 }) {
   const position = $.step.position
   const appName = $.app.name
 
+  const hasInvalidAttachments = invalidAttachments.length > 0
+  const invalidAttachmentsSolution = getInvalidAttachmentSolution({
+    invalidAttachments,
+    formAdminLink,
+  })
+
   switch (status) {
     case 'BLACKLISTED': {
-      const name = 'Blacklisted recipient email'
+      let name = 'Blacklisted recipient email'
       const formLink = createRequestBlacklistFormLink({
         userEmail: $.user.email,
         executionId: $.execution.id,
         blacklistedRecipients,
       })
-      const solution = `The following email addresses have been blacklisted by Postman:
+      let solution = `The following email addresses have been blacklisted by Postman:
          \n${blacklistedRecipients
            .map((recipient) => `**${recipient}**`)
            .join('\n\n')}
          \nIf you believe that they are valid and active, please [use this form](${formLink}) to request for removal from blacklist and try again.
         `
+
+      if (hasInvalidAttachments) {
+        name += ` and invalid attachment(s)`
+        solution += `\n\n&nbsp;\n\n${invalidAttachmentsSolution}`
+      }
+
       if (isPartialSuccess) {
         throw new PartialStepError({
           name,
@@ -129,6 +158,23 @@ export function throwPostmanStepError({
         })
       }
 
+      // NOTE: as we perform a best effort filter on the attachments being sent,
+      // we keep the INVALID-ATTACHMENT error above in case we miss out any file types
+      if (hasInvalidAttachments) {
+        const name = 'Invalid attachment(s)'
+        const solution = getInvalidAttachmentSolution({
+          invalidAttachments,
+          formAdminLink,
+        })
+
+        throw new PartialStepError({
+          name,
+          solution,
+          position,
+          appName,
+          partialRetry: { buttonMessage: '' }, // nothing to retry
+        })
+      }
       throw new StepError(
         'Something went wrong',
         'Please contact plumber@open.gov.sg for assistance.',
