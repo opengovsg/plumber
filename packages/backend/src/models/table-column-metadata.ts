@@ -32,7 +32,7 @@ class TableColumnMetadata extends Base {
       modelClass: TableMetadata,
       join: {
         from: `${this.tableName}.table_id`,
-        to: `${TableColumnMetadata.tableName}.id`,
+        to: `${TableMetadata.tableName}.id`,
       },
     },
   })

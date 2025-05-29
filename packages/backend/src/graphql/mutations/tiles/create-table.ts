@@ -1,3 +1,4 @@
+import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
@@ -35,18 +36,23 @@ const createTable: MutationResolvers['createTable'] = async (
 
   const tableOperations = getTableOperations(databaseType)
 
-  // TODO: should i wrap this in a transaction?
-  const table = await context.currentUser.$relatedQuery('tables').insertGraph({
-    name: tableName,
-    role: 'owner',
-    db: databaseType,
-    columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
-  })
+  const table = await TableMetadata.transaction(async (trx) => {
+    const pendingTable = await context.currentUser
+      .$relatedQuery('tables', trx)
+      .insertGraph({
+        name: tableName,
+        role: 'owner',
+        db: databaseType,
+        columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
+      })
 
-  await tableOperations.createTable(
-    table.id,
-    isBlankTable ? [] : table.columns.map((column) => column.id),
-  )
+    await tableOperations.createTable(
+      pendingTable.id,
+      isBlankTable ? [] : pendingTable.columns.map((column) => column.id),
+    )
+
+    return pendingTable
+  })
 
   if (!isBlankTable) {
     await tableOperations.createTableRows({
