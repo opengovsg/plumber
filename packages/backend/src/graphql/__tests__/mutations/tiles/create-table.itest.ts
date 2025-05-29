@@ -43,13 +43,13 @@ describe('create table mutation', () => {
   it('should be able create tables with the same name', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false } },
+      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
       context,
     )
 
     const table2 = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false } },
+      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
       context,
     )
     expect(table.name).toBe('Test Table')
@@ -58,7 +58,11 @@ describe('create table mutation', () => {
 
   it('should throw an error when table name is empty', async () => {
     await expect(
-      createTable(null, { input: { name: '', isBlank: false } }, context),
+      createTable(
+        null,
+        { input: { name: '', isBlank: false, databaseType: 'ddb' } },
+        context,
+      ),
     ).rejects.toThrow()
   })
 })
