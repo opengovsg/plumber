@@ -35,6 +35,10 @@ import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
 import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 
+import AnnouncementModal, {
+  LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP,
+  LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY,
+} from './AnnouncementModal'
 import EditorSnackbar from './EditorSnackbar'
 import { LensSurvey } from './LensSurvey'
 
@@ -65,6 +69,22 @@ export default function EditorLayout() {
     searchParams.delete('showDemo')
     setSearchParams(searchParams, { replace: true })
   }, [searchParams, setSearchParams])
+
+  // for loading announcement modal
+  const [localLatestTimestamp, setLocalLatestTimestamp] = useState(
+    localStorage.getItem(LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY),
+  )
+
+  const handleCloseAnnouncementModal = useCallback(() => {
+    localStorage.setItem(
+      LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY,
+      LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP,
+    )
+    setLocalLatestTimestamp(LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP)
+  }, [])
+
+  const shouldOpenAnnouncementModal =
+    localLatestTimestamp !== LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP
 
   // phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
@@ -291,6 +311,13 @@ export default function EditorLayout() {
         isOpen={!!flow?.active}
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       ></EditorSnackbar>
+
+      {shouldOpenAnnouncementModal && (
+        <AnnouncementModal
+          isOpen={shouldOpenAnnouncementModal}
+          onClose={handleCloseAnnouncementModal}
+        />
+      )}
 
       {shouldOpenDemoModal && (
         <DemoFlowModal
