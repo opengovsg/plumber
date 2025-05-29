@@ -752,7 +752,6 @@ enum DatabaseType {
 input CreateTableInput {
   name: String!
   isBlank: Boolean!
-  databaseType: DatabaseType
 }
 
 input TableColumnConfigInput {
