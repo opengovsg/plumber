@@ -350,11 +350,13 @@ describe('send transactional email', () => {
     })
   })
 
-  it('should retry on 502, 504, 520', async () => {
+  it('should retry on 500, 502, 504, 520, 524', async () => {
     const recipients = [
       'recipient1@open.gov.sg',
       'recipient2@open.gov.sg',
       'recipient3@open.gov.sg',
+      'recipient4@open.gov.sg',
+      'recipient5@open.gov.sg',
     ]
     $.step.parameters.destinationEmail = recipients.join(',')
     $.http.post = vi
@@ -387,11 +389,72 @@ describe('send transactional email', () => {
           },
         } as AxiosError),
       )
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: '<html>cloudflare error</html>',
+            status: 520,
+            statusText: 'Web server is returning an unknown error',
+          },
+        } as AxiosError),
+      )
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: '<html>cloudflare error</html>',
+            status: 524,
+            statusText: 'A timeout occurred',
+          },
+        } as AxiosError),
+      )
 
     await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        status: ['ACCEPTED', 'ERROR', 'INTERMITTENT-ERROR'],
+        status: [
+          'ACCEPTED',
+          'INTERMITTENT-ERROR',
+          'INTERMITTENT-ERROR',
+          'INTERMITTENT-ERROR',
+          'INTERMITTENT-ERROR',
+        ],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+  })
+
+  it('should retry on socket hang up', async () => {
+    const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.http.post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          params: {
+            body: 'test body',
+            subject: 'test subject',
+            from: 'jack',
+            reply_to: 'replyTo@open.gov.sg',
+          },
+        },
+      })
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: 'socket hang up',
+            status: 400,
+            statusText: 'socket hang up',
+          },
+        } as AxiosError),
+      )
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'ERROR'],
         recipient: recipients,
         subject: 'test subject',
         body: 'test body',
