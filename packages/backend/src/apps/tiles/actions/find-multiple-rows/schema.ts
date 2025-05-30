@@ -1,0 +1,28 @@
+import { z } from 'zod'
+
+const tableRowOutputSchema = z.object({
+  rowId: z.string(),
+  data: z.record(z.string(), z.string().or(z.number())),
+})
+
+export const dataOutSchema = z.object({
+  rowsFound: z.number(),
+  columns: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      value: z.string(),
+    }),
+  ),
+  rows: z
+    .object({
+      rowData: z.array(tableRowOutputSchema),
+      columns: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+        }),
+      ),
+    })
+    .optional(),
+})
