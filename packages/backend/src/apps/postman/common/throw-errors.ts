@@ -16,7 +16,7 @@ type PostmanApiErrorData = {
 // These are HTTP error codes returned by Cloudflare, which likely indicate
 // that Postman's origin server did not receive the request.
 // Until this is fixed, we will retry these requests on behalf of the user
-const POSTMAN_RETRIABLE_HTTP_CODES = [502, 504, 520]
+const POSTMAN_RETRIABLE_HTTP_CODES = [502, 504, 520, 524]
 
 export function getPostmanErrorStatus(
   error: HttpError,
@@ -121,6 +121,14 @@ export function throwPostmanStepError({
       })
     case 'ERROR':
     default:
+      if (error.message === 'socket hang up') {
+        throw new RetriableError({
+          error: `Retrying ${error.message} from Postman`,
+          delayInMs: 'default',
+          delayType: 'step',
+        })
+      }
+
       throw new StepError(
         'Something went wrong',
         'Please contact plumber@open.gov.sg for assistance.',

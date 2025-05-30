@@ -21,32 +21,53 @@ const handle429: ThrowingHandler = (_, error): never => {
   })
 }
 
+const handle500and502and503: ThrowingHandler = (_, error): never => {
+  const status = error.response.status
+  throw new RetriableError({
+    error: `Retrying HTTP ${status} from Postman SMS`,
+    delayType: 'step',
+    delayInMs: 'default',
+  })
+}
+
 const requestErrorHandler: IApp['requestErrorHandler'] = async function (
   $,
   error,
 ) {
-  if (error.response.status === 429) {
-    return handle429($, error)
-  }
+  switch (error.response.status) {
+    case 429:
+      return handle429($, error)
+    case 500:
+    case 502:
+    case 503:
+      return handle500and502and503($, error)
+    default:
+      if (error.message === 'read ETIMEDOUT') {
+        throw new RetriableError({
+          error: `Retrying ${error.message} from Postman SMS`,
+          // pausing the entire queue here is not a good idea because we wont be able to fully utilize
+          // the throughput that the campaign supports, so we throw step error here instead of group
+          delayType: 'step',
+          delayInMs: 'default',
+        })
+      }
 
-  if (
-    error.response.status === 400 &&
-    error.response.data.error?.code === 'parameter_invalid'
-  ) {
-    throw new StepError(
-      'Campaign template was not set up correctly',
-      'Ensure that you have followed the instructions in our guide to set up your campaign template.',
-      $.step.position,
-      $.app.name,
-    )
-  }
+      if (error.response.data.error?.code === 'parameter_invalid') {
+        throw new StepError(
+          'Campaign template was not set up correctly',
+          'Ensure that you have followed the instructions in our guide to set up your campaign template.',
+          $.step.position,
+          $.app.name,
+        )
+      }
 
-  throw new StepError(
-    'Error sending SMS',
-    error.message,
-    $.step.position,
-    $.app.name,
-  )
+      throw new StepError(
+        'Error sending SMS',
+        error.message,
+        $.step.position,
+        $.app.name,
+      )
+  }
 }
 
 export default requestErrorHandler
