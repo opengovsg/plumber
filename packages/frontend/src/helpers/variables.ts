@@ -124,6 +124,21 @@ const process = (
         })
   }
 
+  // special handling for Tiles multiple row
+  // we do not do not join like strings as it contains objects and do not flatmap the data as we want to use it as a whole
+  if (type === 'array') {
+    return [
+      {
+        name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
+        value: JSON.stringify(data),
+        label: label ?? parentKey,
+        displayedValue,
+        type,
+        order,
+      },
+    ]
+  }
+
   /**
    * handle objects here
    */

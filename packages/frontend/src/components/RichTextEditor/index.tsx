@@ -213,7 +213,9 @@ const Editor = ({
         attrs: {
           id: variable.name,
           label: variable.label,
-          value: variable.value,
+          value: variable.displayedValue
+            ? variable.displayedValue
+            : variable.value,
         },
       })
       editor?.commands.focus()
