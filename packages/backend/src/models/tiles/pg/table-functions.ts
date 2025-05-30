@@ -1,6 +1,7 @@
 import { tilesClient } from '@/config/tiles-database'
 
 export function createTable(tableId: string, columnIds: string[]) {
+  console.log('createTable', tableId, columnIds)
   return tilesClient.schema.createTable(tableId, (table) => {
     table.string('rowId').primary()
     columnIds.forEach((columnId) => {

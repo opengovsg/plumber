@@ -55,6 +55,8 @@ const createTable: MutationResolvers['createTable'] = async (
         columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
       })
 
+    console.log('here')
+
     await tableOperations.createTable(
       pendingTable.id,
       isBlankTable ? [] : pendingTable.columns.map((column) => column.id),
