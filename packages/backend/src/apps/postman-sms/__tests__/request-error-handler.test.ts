@@ -73,19 +73,43 @@ describe('Postman SMS request error handler', () => {
   })
 
   describe('Other errors', () => {
-    it('throws StepError with generic error message', async () => {
+    it.each([500, 502, 503])('should retry on %s', async (status) => {
       const axiosError = {
         isAxiosError: true,
         name: 'AxiosError',
         message: 'Internal server error',
         response: {
-          status: 500,
+          status,
         },
       } as unknown as AxiosError
 
       const error = new HttpError(axiosError)
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler($, error)).rejects.toThrow(
+        RetriableError,
+      )
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        delayType: 'step',
+        delayInMs: 3000,
+      })
+    })
+
+    it('should retry on read ETIMEDOUT', async () => {
+      const axiosError = {
+        isAxiosError: true,
+        name: 'AxiosError',
+        message: 'read ETIMEDOUT',
+      } as unknown as AxiosError
+
+      const error = new HttpError(axiosError)
+
+      await expect(requestErrorHandler($, error)).rejects.toThrow(
+        RetriableError,
+      )
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        delayType: 'step',
+        delayInMs: 3000,
+      })
     })
   })
 })
