@@ -189,46 +189,26 @@ const action: IRawAction = {
       scanLimit,
     })
 
-    // NOTE: there are 2 types of column data that we return
-    // 1. column name and id for use in for-each
-    // use an array to preserve the order of the columns
-    const columnData: Record<string, string>[] = []
+    const columnData: TileColumnMetadata[] = []
     columns
       .sort((a, b) => a.position - b.position)
       .forEach((c) => {
         columnData.push({
           id: c.id,
           name: c.name,
+          value: `data.rows.*.data.${c.id}`,
         })
       })
-
-    // 2. column data that combines all the values of all rows into a single string
-    const consolidatedColumns = columns.reduce((acc, column) => {
-      const values: string[] = []
-      for (const row of rows) {
-        const value = row.data[column.id]
-        if (value) {
-          values.push(value)
-        }
-      }
-      acc.push({
-        id: column.id,
-        name: column.name,
-        value: values.join(', '),
-      })
-      return acc
-    }, [] as TileColumnMetadata[])
 
     const slicedRows = rows.slice(0, FIND_MULTIPLE_ROWS_LIMIT)
 
     $.setActionItem({
       raw: {
         rowsFound: slicedRows.length,
-        rows: {
-          rowData: slicedRows,
+        data: {
+          rows: slicedRows,
           columns: columnData,
         },
-        columns: consolidatedColumns,
       } satisfies FindMultipleRowsOutput,
     })
   },
