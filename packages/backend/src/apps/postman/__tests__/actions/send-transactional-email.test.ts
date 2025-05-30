@@ -350,7 +350,7 @@ describe('send transactional email', () => {
     })
   })
 
-  it('should retry on 502, 504, 520, 524', async () => {
+  it('should retry on 500, 502, 504, 520, 524', async () => {
     const recipients = [
       'recipient1@open.gov.sg',
       'recipient2@open.gov.sg',
@@ -413,7 +413,7 @@ describe('send transactional email', () => {
       raw: {
         status: [
           'ACCEPTED',
-          'ERROR',
+          'INTERMITTENT-ERROR',
           'INTERMITTENT-ERROR',
           'INTERMITTENT-ERROR',
           'INTERMITTENT-ERROR',

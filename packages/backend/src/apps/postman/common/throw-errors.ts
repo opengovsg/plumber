@@ -16,7 +16,7 @@ type PostmanApiErrorData = {
 // These are HTTP error codes returned by Cloudflare, which likely indicate
 // that Postman's origin server did not receive the request.
 // Until this is fixed, we will retry these requests on behalf of the user
-const POSTMAN_RETRIABLE_HTTP_CODES = [502, 504, 520, 524]
+const POSTMAN_RETRIABLE_HTTP_CODES = [500, 502, 504, 520, 524]
 
 export function getPostmanErrorStatus(
   error: HttpError,
