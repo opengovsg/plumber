@@ -1,0 +1,1 @@
+export const FIND_MULTIPLE_ROWS_LIMIT = 500
