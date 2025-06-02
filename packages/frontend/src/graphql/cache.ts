@@ -10,6 +10,15 @@ export const cacheConfig = {
     App: {
       keyFields: ['key'],
     },
+    Flow: {
+      fields: {
+        config: {
+          merge(_existing = [], incoming: any[]) {
+            return incoming // Replace existing with incoming
+          },
+        },
+      },
+    },
     // prevent apollo client from complaining about cache data loss
     // for use when updating table (columns/names/etc)
     TableMetadata: {
