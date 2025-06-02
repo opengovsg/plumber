@@ -278,6 +278,14 @@ export function makeActionWorker(
     }
   })
 
+  worker.on('ready', () => {
+    logger.info(`[${queueName}] Worker is ready!`)
+  })
+
+  worker.on('closed', () => {
+    logger.info(`[${queueName}] Worker is closed!`)
+  })
+
   worker.on('error', (err) => {
     if (!err) {
       logger.error(`[${queueName}] Worker had undefined error`)

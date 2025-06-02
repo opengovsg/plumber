@@ -66,6 +66,14 @@ worker.on('failed', (job, err) => {
   )
 })
 
+worker.on('ready', () => {
+  logger.info('Trigger worker is ready!')
+})
+
+worker.on('closed', () => {
+  logger.info('Trigger worker is closed!')
+})
+
 worker.on('error', (err) => {
   if (!err) {
     logger.error('Worker undefined error')
