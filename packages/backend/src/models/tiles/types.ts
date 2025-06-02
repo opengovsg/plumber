@@ -22,6 +22,10 @@ export interface DeleteRowsInput {
   rowIds: string[]
 }
 export type TableRowOutput = Pick<TableRowItem, 'rowId' | 'data'>
+export type TableRowOutputWithTimestamps = TableRowOutput & {
+  createdAt: number
+  updatedAt: number
+}
 
 export enum TableRowFilterOperator {
   Equals = 'equals',
@@ -64,7 +68,8 @@ export interface TableOperations {
     tableId: string
     rowId: string
     columnIds?: string[]
-  }): Promise<TableRowOutput | null>
+    includeTimestamps?: boolean
+  }): Promise<TableRowOutput | TableRowOutputWithTimestamps | null>
 
   createTable(tableId: string, columnIds: string[]): Promise<void>
   createTableColumns(tableId: string, columnIds: string[]): Promise<void>

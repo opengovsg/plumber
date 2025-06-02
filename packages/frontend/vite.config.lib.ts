@@ -17,6 +17,7 @@ export default defineConfig({
   build: {
     outDir: 'dist/lib',
     copyPublicDir: false,
+
     lib: {
       name: 'frontend',
       entry: {
