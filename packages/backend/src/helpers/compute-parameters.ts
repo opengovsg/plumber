@@ -1,7 +1,7 @@
 import type { IAction } from '@plumber/types'
 
-import { map } from 'lodash'
 import get from 'lodash.get'
+import map from 'lodash/map'
 
 import ExecutionStep from '@/models/execution-step'
 
