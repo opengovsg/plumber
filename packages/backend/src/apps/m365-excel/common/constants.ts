@@ -10,3 +10,5 @@ export const MS_GRAPH_OAUTH_BASE_URL = 'https://login.microsoftonline.com'
  */
 export const TABLE_ID_REGEX = /^\{[a-zA-Z0-9-]+\}$/ // this include start and end braces
 export const FILE_ID_REGEX = /^[a-zA-Z0-9-]+$/
+
+export const GET_TABLE_ROWS_LIMIT = 500
