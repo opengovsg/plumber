@@ -25,7 +25,14 @@ type ChooseAppAndEventProps = {
 export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
   const { onClose } = props
 
-  const { onUpdateStep, onCreateStep, allApps } = useContext(EditorContext)
+  const {
+    onUpdateStep,
+    onCreateStep,
+    allApps,
+    onDrawerOpen,
+    setCurrentStepId,
+    setCurrentStepIndex,
+  } = useContext(EditorContext)
 
   const { modalState, patchModalState, prevStepId, isTrigger, step } =
     useContext(FlowStepConfigurationContext)
@@ -96,22 +103,28 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       // If the app has no connections, create or update a new step and close the modal
       // Exception: M365 will auto connect if verified once...
       patchModalState({ isLoading: true })
+      let newStepId = null
+      let newStepIndex = null
       if (prevStepId) {
-        await onCreateStep(
+        const createdStep = await onCreateStep(
           prevStepId,
           app.key,
           triggerOrAction.key,
           excelConnection?.id || undefined,
         )
+        newStepId = createdStep.id
+        newStepIndex = createdStep.position - 1
       } else if (step) {
         // account for the if-then edge case
         if (
           app.key === TOOLBOX_APP_KEY &&
           triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
         ) {
-          await initializeIfThen(step)
+          const ifThen = await initializeIfThen(step)
+          newStepId = ifThen.id
+          newStepIndex = ifThen.position - 1
         } else {
-          await onUpdateStep({
+          const updatedStep = await onUpdateStep({
             ...step,
             appKey: app.key,
             key: triggerOrAction.key,
@@ -119,20 +132,29 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
               id: excelConnection?.id || undefined,
             },
           })
+          newStepId = updatedStep.id
+          newStepIndex = updatedStep.position - 1
         }
       }
       patchModalState({ isLoading: false })
       onClose()
+      onDrawerOpen()
+      setCurrentStepId(newStepId)
+      setCurrentStepIndex(newStepIndex)
     },
     [
+      excelConnection?.verified,
+      excelConnection?.id,
       patchModalState,
       prevStepId,
       step,
+      onClose,
+      onDrawerOpen,
+      setCurrentStepId,
+      setCurrentStepIndex,
       onCreateStep,
       initializeIfThen,
       onUpdateStep,
-      onClose,
-      excelConnection,
     ],
   )
 

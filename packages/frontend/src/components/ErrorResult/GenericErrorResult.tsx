@@ -20,7 +20,7 @@ export default function GenericErrorResult(props: GenericErrorResultProps) {
   }, [])
 
   return (
-    <Infobox variant="error">
+    <Infobox variant="error" borderRadius="lg">
       <Box minW="0" w="full">
         <Text mb={0.5} textStyle="subhead-1">
           We could not test this step

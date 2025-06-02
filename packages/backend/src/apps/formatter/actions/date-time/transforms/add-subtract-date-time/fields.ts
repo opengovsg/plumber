@@ -49,7 +49,7 @@ export const fields: TransformSpec['fields'] = [
   {
     label: 'Specify the amount of time you want to add or subtract',
     key: ensureZodObjectKey(fieldSchema.sourceType(), 'addSubtractDateTimeOps'),
-    type: 'multirow' as const,
+    type: 'multirow-multicol' as const,
     required: true,
     subFields: [
       {
@@ -63,6 +63,7 @@ export const fields: TransformSpec['fields'] = [
           label: sentenceCase(op),
           value: op,
         })),
+        customStyle: { flex: 2 },
       },
       {
         placeholder: 'Amount of time to add or subtract (number)',
@@ -70,6 +71,7 @@ export const fields: TransformSpec['fields'] = [
         type: 'string' as const,
         required: true,
         variables: true,
+        customStyle: { flex: 4, minWidth: 0, maxWidth: '44%' },
       },
       {
         placeholder: 'Unit of time to add or subtract',
@@ -82,6 +84,7 @@ export const fields: TransformSpec['fields'] = [
           label: sentenceCase(unit),
           value: unit,
         })),
+        customStyle: { flex: 3 },
       },
     ],
   },

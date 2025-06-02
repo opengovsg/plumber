@@ -13,9 +13,6 @@ const app: IApp = {
   apiBaseUrl: '',
   primaryColor: '000000',
   actions,
-  substepLabels: {
-    settingsStepLabel: 'Set up formatter',
-  },
   category: 'data',
 }
 

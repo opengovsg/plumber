@@ -19,7 +19,7 @@ const action: IRawAction = {
     } catch (err) {
       throw new StepError(
         err.message,
-        'Click on set up action and check that one of valid options in the condition dropdown is being selected.',
+        'Check that one of valid options in the condition dropdown is being selected.',
         $.step.position,
         $.app.name,
       )

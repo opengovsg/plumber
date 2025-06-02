@@ -1,13 +1,14 @@
-import { type IFlow, type IStep } from '@plumber/types'
+import { IStep } from '@plumber/types'
 
 import {
-  type MouseEventHandler,
+  Fragment,
+  MouseEventHandler,
   useCallback,
   useContext,
   useMemo,
   useRef,
 } from 'react'
-import { BiSolidCheckCircle, BiTrashAlt } from 'react-icons/bi'
+import { BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   AlertDialog,
@@ -16,60 +17,40 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogOverlay,
+  Box,
+  Button,
   Flex,
-  Icon,
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
-import { Button, IconButton } from '@opengovsg/design-system-react'
+import { IconButton } from '@opengovsg/design-system-react'
 
-import NestedEditor from '@/components/FlowStepGroup/NestedEditor'
+import FlowStep from '@/components/FlowStep'
 import { EditorContext } from '@/contexts/Editor'
-import {
-  type StepDisplayOverridesContextData,
-  StepDisplayOverridesProvider,
-} from '@/contexts/StepDisplayOverrides'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { isIfThenBranchCompleted, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
-import { BranchContext } from './BranchContext'
+import { HoverAddStepButton } from './HoverAddStepButton'
+import { branchStyles } from './styles'
+import { allowAddStep } from './utils'
 
 interface BranchProps {
-  flow: IFlow
-  steps: IStep[]
+  branchSteps: IStep[]
+  stepsBeforeGroup: IStep[]
 }
 
-export default function Branch(props: BranchProps): JSX.Element {
-  const { flow, steps } = props
+export default function Branch(props: BranchProps) {
+  const { branchSteps, stepsBeforeGroup } = props
+
   const {
-    isOpen: editorIsOpen,
-    onOpen: openEditor,
-    onClose: closeEditor,
-  } = useDisclosure()
-  const { depth } = useContext(BranchContext)
-  const { readOnly: isEditorReadOnly, setCurrentStepId } =
-    useContext(EditorContext)
-  const branchName = steps[0].parameters.branchName as string
+    isDrawerOpen,
+    isMobile,
+    readOnly: isEditorReadOnly,
+    onDrawerClose,
+    setCurrentStepId,
+  } = useContext(EditorContext)
 
-  const initialStep = steps[0]
-  const initialStepDisplayOverride = useMemo<StepDisplayOverridesContextData>(
-    () => ({
-      [initialStep.id]: {
-        hintAboveCaption: 'If-then',
-        // Only the 1st branch can have an undefined name.
-        caption: (initialStep.parameters.branchName as string) ?? 'Branch 1',
-        disableActionChanges: true,
-        disableDelete: true,
-      },
-    }),
-    [initialStep.id, initialStep.parameters.branchName],
-  )
-  const isCompleted = useMemo(() => isIfThenBranchCompleted(steps), [steps])
-
-  //
   // Handle branch deletion
-  //
   const {
     isOpen: deleteConfirmationIsOpen,
     onOpen: openDeleteConfirmationImpl,
@@ -87,61 +68,86 @@ export default function Branch(props: BranchProps): JSX.Element {
     [openDeleteConfirmationImpl],
   )
   const deleteBranch = useCallback(async () => {
-    const idsToDelete = steps.map((step) => step.id)
+    const idsToDelete = branchSteps.map((step) => step.id)
     await deleteStep({
       variables: { input: { ids: idsToDelete } },
     })
 
-    // prevents accordion from collapsing when deleting the first branch
-    const ifThenRemaining = flow.steps
-      .filter(
-        (step) =>
-          step.key === TOOLBOX_ACTIONS.IfThen && !idsToDelete.includes(step.id),
-      )
-      .map((step) => step.id)
-    if (ifThenRemaining.length > 0) {
-      setCurrentStepId(ifThenRemaining[0])
-    }
+    setCurrentStepId(null)
     closeDeleteConfirmation()
-  }, [closeDeleteConfirmation, deleteStep, flow, steps, setCurrentStepId])
+    onDrawerClose()
+  }, [
+    branchSteps,
+    deleteStep,
+    onDrawerClose,
+    closeDeleteConfirmation,
+    setCurrentStepId,
+  ])
+
+  const canAddStep = useMemo(() => allowAddStep(branchSteps), [branchSteps])
 
   return (
-    <>
-      {/*
-       * Branch row
-       */}
-      <Flex
-        onClick={openEditor}
-        h={16}
-        w="full"
-        alignItems="center"
-        px={4}
-        _hover={{ bg: 'interaction.muted.neutral.hover', cursor: 'pointer' }}
-        _active={{ bg: 'interaction.muted.neutral.active' }}
+    <Flex key={branchSteps[0].id} {...branchStyles.container}>
+      <Box
+        borderWidth="1px"
+        border="none"
+        p={0}
+        overflow="hidden"
+        w={isDrawerOpen ? (isMobile ? '0px' : '100%') : '100%'}
+        mb={2}
+        role="group"
       >
-        <Text textStyle="subhead-1">{branchName}</Text>
-        {isCompleted && (
-          <Icon
-            ml={1}
-            boxSize={4}
-            color="interaction.success.default"
-            as={BiSolidCheckCircle}
-          />
-        )}
-        <IconButton
-          onClick={openDeleteConfirmation}
-          variant="clear"
-          aria-label="Delete Branch"
-          icon={<BiTrashAlt />}
-          isLoading={isDeletingBranch}
-          isDisabled={isEditorReadOnly}
-          ml="auto"
-          colorScheme="secondary"
-        />
-      </Flex>
-      {/*
-       * Delete Confirmation Modal
-       */}
+        <Flex alignItems="center" borderRadius="inherit" w="full" h={8}>
+          {/* Branch name */}
+          <Text
+            textStyle="subhead-1"
+            color="base.content.default"
+            noOfLines={1}
+          >
+            {branchSteps[0].parameters.branchName as string}
+          </Text>
+
+          {/* Delete branch button */}
+          {!isEditorReadOnly && (
+            <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
+              <IconButton
+                boxSize={8}
+                onClick={(event) => {
+                  openDeleteConfirmation(event)
+                  event.stopPropagation()
+                }}
+                variant="clear"
+                aria-label="Delete branch"
+                colorScheme="secondary"
+                icon={<BiTrash />}
+                isLoading={isDeletingBranch}
+                isDisabled={isDeletingBranch}
+              />
+            </Flex>
+          )}
+        </Flex>
+      </Box>
+      {branchSteps.map((step, index) => {
+        return (
+          <Fragment key={`${step.id}-${stepsBeforeGroup.length + index}`}>
+            <FlowStep
+              step={step}
+              index={stepsBeforeGroup.length + index}
+              isDeletable={index !== 0}
+              isNested={true}
+              isLastStep={index === branchSteps.length - 1}
+            />
+            <HoverAddStepButton
+              isDisabled={isEditorReadOnly || !canAddStep}
+              isDrawerOpen={isDrawerOpen}
+              isLastStep={index === branchSteps.length - 1}
+              prevStepId={step.id}
+            />
+          </Fragment>
+        )
+      })}
+
+      {/* Delete Confirmation Modal */}
       <AlertDialog
         isOpen={deleteConfirmationIsOpen}
         leastDestructiveRef={cancelDeleteButton}
@@ -149,7 +155,9 @@ export default function Branch(props: BranchProps): JSX.Element {
       >
         <AlertDialogOverlay>
           <AlertDialogContent>
-            <AlertDialogHeader>Delete {branchName}</AlertDialogHeader>
+            <AlertDialogHeader>
+              Delete {branchSteps[0].parameters.branchName as string}
+            </AlertDialogHeader>
             <AlertDialogBody>
               Are you sure you want to delete this branch? This action cannot be
               undone.
@@ -170,20 +178,6 @@ export default function Branch(props: BranchProps): JSX.Element {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-      {/*
-       * Nexted branch editor (pops up in modal)
-       */}
-      {/* Nested If-thens should have depth = depth + 1 */}
-      <BranchContext.Provider value={{ depth: depth + 1 }}>
-        <StepDisplayOverridesProvider value={initialStepDisplayOverride}>
-          <NestedEditor
-            onClose={closeEditor}
-            isOpen={editorIsOpen}
-            flow={flow}
-            steps={steps}
-          />
-        </StepDisplayOverridesProvider>
-      </BranchContext.Provider>
-    </>
+    </Flex>
   )
 }

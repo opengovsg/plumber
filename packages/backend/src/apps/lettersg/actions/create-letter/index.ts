@@ -68,7 +68,7 @@ const action: IRawAction = {
     {
       label: 'Personalised fields',
       key: 'letterParams',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       description:
         'Specify values for each personalised field in your template.',
@@ -95,6 +95,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2 },
         },
         {
           placeholder: 'Value',
@@ -102,6 +103,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],
     },
@@ -145,7 +147,7 @@ const action: IRawAction = {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
         throw new StepError(
-          `${firstError.message} under set up action`,
+          `${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
           $.step.position,
           $.app.name,
@@ -159,7 +161,7 @@ const action: IRawAction = {
             `Personalised field(s) not specified${
               missingFields.length === 0 ? '' : `: ${missingFields.join(', ')}`
             }`,
-            'Click on set up action and check that you have entered all the fields and values in the letter parameters.',
+            'Check that you have entered all the fields and values in the letter parameters.',
             $.step.position,
             $.app.name,
           )

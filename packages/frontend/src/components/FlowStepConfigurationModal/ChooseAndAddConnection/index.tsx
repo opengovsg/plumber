@@ -64,7 +64,14 @@ export default function ChooseAndAddConnection(
   props: ChooseAndAddConnectionProps,
 ) {
   const { onClose } = props
-  const { flowId, onCreateStep, onUpdateStep } = useContext(EditorContext)
+  const {
+    flowId,
+    onCreateStep,
+    onDrawerOpen,
+    onUpdateStep,
+    setCurrentStepId,
+    setCurrentStepIndex,
+  } = useContext(EditorContext)
   const { modalState, patchModalState, step, prevStepId } = useContext(
     FlowStepConfigurationContext,
   )
@@ -111,16 +118,20 @@ export default function ChooseAndAddConnection(
       }
 
       patchModalState({ isLoading: true })
+      let newStepId = null
+      let newStepIndex = null
       try {
         if (prevStepId) {
-          await onCreateStep(
+          const createdStep = await onCreateStep(
             prevStepId,
             selectedApp.key,
             selectedEvent.key,
             connectionId,
           )
+          newStepId = createdStep.id
+          newStepIndex = createdStep.position - 1
         } else if (step) {
-          await onUpdateStep({
+          const updatedStep = await onUpdateStep({
             ...step,
             appKey: selectedApp.key,
             key: selectedEvent.key,
@@ -128,21 +139,29 @@ export default function ChooseAndAddConnection(
               id: connectionId,
             },
           })
+          newStepId = updatedStep.id
+          newStepIndex = updatedStep.position - 1
         }
         onClose()
       } finally {
         patchModalState({ isLoading: false })
+        onDrawerOpen()
+        setCurrentStepId(newStepId)
+        setCurrentStepIndex(newStepIndex)
       }
     },
     [
-      prevStepId,
-      step,
       selectedApp,
       selectedEvent,
+      patchModalState,
+      prevStepId,
+      step,
       onClose,
       onCreateStep,
       onUpdateStep,
-      patchModalState,
+      onDrawerOpen,
+      setCurrentStepId,
+      setCurrentStepIndex,
     ],
   )
 

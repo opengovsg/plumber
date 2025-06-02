@@ -1,7 +1,13 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useMemo } from 'react'
-import { Box, Tag, Text, Tooltip } from '@chakra-ui/react'
+import {
+  Box,
+  type SystemStyleObject,
+  Tag,
+  Text,
+  Tooltip,
+} from '@chakra-ui/react'
 
 import { type Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
@@ -58,16 +64,18 @@ function VariableTag({
 function VariableItem({
   variable,
   onClick,
+  isLast,
 }: {
   variable: Variable
   onClick?: (variable: Variable) => void
+  isLast?: boolean
 }): JSX.Element {
   return (
     <Box
       key={`suggestion-${variable.name}`}
       data-test="variable-suggestion-item"
       padding={onClick ? '0.5rem 1rem' : '1rem'}
-      borderBottom={onClick ? undefined : '1px solid #EDEDED'}
+      borderBottom={onClick || isLast ? undefined : '1px solid #EDEDED'}
       _hover={
         onClick
           ? {
@@ -112,6 +120,7 @@ function VariableItem({
 interface VariablesListProps {
   variables: Variable[]
   onClick?: (variable: Variable) => void
+  customStyles?: SystemStyleObject
 }
 
 export default function VariablesList(props: VariablesListProps) {
@@ -127,12 +136,14 @@ export default function VariablesList(props: VariablesListProps) {
       maxH={64}
       overflowY="auto"
       p={onClick ? undefined : '1rem'}
+      sx={props.customStyles}
     >
       {variables.map((variable, index) => (
         <VariableItem
           key={`variable-${variable.name}-${index}`}
           variable={variable}
           onClick={onClick}
+          isLast={index === variables.length - 1}
         />
       ))}
     </Box>

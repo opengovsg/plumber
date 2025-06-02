@@ -1,13 +1,13 @@
 import { type IAction, IApp, ITrigger } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
-import { BiChevronLeft } from 'react-icons/bi'
 import { Box, Flex, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
-import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
+import { ModalCloseButton } from '@opengovsg/design-system-react'
 
 import { getAppActionFlag, getAppTriggerFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
+import BackButton from '../BackButton'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
 
@@ -64,23 +64,14 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
 
   return (
     <>
-      <ModalHeader pt={0}>
+      <ModalHeader pt={0} mt={-4}>
         <Flex gap={2} flexDir="column" alignItems="flex-start">
-          <Button
-            variant="clear"
-            colorScheme="secondary"
-            size="xs"
-            onClick={onBack}
-            leftIcon={<BiChevronLeft />}
-            ml={-4}
-          >
-            Back
-          </Button>
+          <BackButton onBack={onBack} />
           <Text textStyle="h3-semibold">{selectedApp.name}</Text>
           <Text textStyle="body-1">{selectedApp.description}</Text>
         </Flex>
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
 
       {/* Returns second level modal view of triggers or actions: if an app has multiple
        * triggers or actions, it will be shown as a list of items */}

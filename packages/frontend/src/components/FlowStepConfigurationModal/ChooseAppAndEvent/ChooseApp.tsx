@@ -170,7 +170,12 @@ export default function ChooseApp(props: ChooseAppProps) {
   return (
     <>
       <ModalHeader pt={0}>
-        <Flex gap={2} flexDir="column" alignItems="flex-start">
+        <Flex
+          gap={2}
+          flexDir="column"
+          alignItems="flex-start"
+          w={isTrigger ? '90%' : '100%'}
+        >
           <Text textStyle="h3-semibold">
             {isTrigger
               ? 'Choose how you want your workflow to start'
@@ -213,7 +218,7 @@ export default function ChooseApp(props: ChooseAppProps) {
           )}
         </Flex>
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" />
+      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
 
       {/* Returns first level modal view of apps: if an app only has one trigger or action,
        * it will be shown as a single item. Else, it will be shown as an expandable item
@@ -355,7 +360,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                         </Flex>
 
                         {triggersOrActions && triggersOrActions?.length > 1 && (
-                          <Icon as={BiChevronRight} />
+                          <Icon as={BiChevronRight} boxSize={5} />
                         )}
                       </Flex>
                     )

@@ -28,7 +28,6 @@ const action: IRawAction = {
   name: 'Update table row',
   key: 'updateTableRow',
   description: 'Updates a single row of data in your Excel table',
-  settingsStepLabel: 'Set up row to update',
   arguments: [
     // We're doing an update based on results of our getTableRow action, so just
     // re-use its arguments.
@@ -38,7 +37,7 @@ const action: IRawAction = {
       label: 'Row data',
       description:
         'Enter the data to update the row with. Columns not specified will not be updated',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       subFields: [
         {
@@ -66,6 +65,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2 },
         },
         {
           key: 'value' as const,
@@ -73,6 +73,7 @@ const action: IRawAction = {
           required: true,
           variables: true,
           placeholder: 'Value to write',
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],
     },

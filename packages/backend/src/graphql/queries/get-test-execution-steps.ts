@@ -26,10 +26,8 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
   // to ensure we dont show variables from other step/events.
   // However, we will show errors regardless as the step may have never been
   // successfully tested before
-  const completedStepsIds = flow.steps
-    .filter((step) => step.status === 'completed')
-    .map((step) => step.id)
-  const completedStepIdsSet = new Set(completedStepsIds)
+  const flowStepIds = flow.steps.map((step) => step.id)
+  const completedStepIdsSet = new Set(flowStepIds)
   const filteredTestExecutionSteps = testExecutionSteps.filter(
     (executionStep) => {
       if (executionStep.isFailed) {

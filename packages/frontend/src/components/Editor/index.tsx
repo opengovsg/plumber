@@ -1,37 +1,43 @@
-import type { IApp, IFlow, IStep } from '@plumber/types'
+import type { IApp, IStep } from '@plumber/types'
 
 import { Fragment, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
 
+import EditorRightDrawer from '@/components/EditorRightDrawer'
 import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
 import { EditorContext } from '@/contexts/Editor'
+import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
 import {
-  StepExecutionsToIncludeContext,
-  StepExecutionsToIncludeProvider,
-} from '@/contexts/StepExecutionsToInclude'
-import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
+  extractBranchesWithSteps,
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
 
 import { AddStepButton } from './AddStepButton'
+import { EDITOR_RIGHT_DRAWER_WIDTH } from './constants'
+import { editorStyles } from './styles'
 
 type EditorProps = {
-  flow: IFlow
-  steps: IStep[]
+  isNested?: boolean
 }
 
-export default function Editor(props: EditorProps) {
-  const { flow, steps: rawSteps } = props
+export default function Editor(props: EditorProps): React.ReactElement {
+  const { isNested } = props
 
   const {
-    readOnly: isReadOnlyEditor,
-    currentStepId,
-    onUpdateStep,
-    setCurrentStepId,
     allApps,
+    readOnly: isReadOnlyEditor,
+    isDrawerOpen,
+    isMobile,
+    currentStepId,
+    currentStepIndex,
+    flow,
   } = useContext(EditorContext)
 
+  const rawSteps = flow.steps
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
     // non-undefined. We do it here instead of fetching in GraphQL since all
@@ -81,21 +87,22 @@ export default function Editor(props: EditorProps) {
       }
       return groupingActions.has(`${step.appKey}-${step.key}`)
     })
+
+    let branchesWithSteps: IStep[][] = []
+    if (groupStepIdx !== -1) {
+      branchesWithSteps = extractBranchesWithSteps(steps.slice(groupStepIdx), 0)
+    }
+
     return groupStepIdx === -1
       ? [steps, []]
-      : [steps.slice(0, groupStepIdx), steps.slice(groupStepIdx)]
-  }, [
-    groupingActions,
-    // updateHandlerFactory creates a new array, so referential equality is OK.
-    // FIXME (ogp-weeloong): Maybe we can optimize our caching strategy to avoid
-    // creating new arrays.
-    steps,
-  ])
+      : [steps.slice(0, groupStepIdx), branchesWithSteps]
+  }, [groupingActions, steps])
+
   const flowStepGroupIconUrl = useMemo(() => {
     if (groupedSteps.length === 0) {
       return undefined
     }
-    return appsWithActions.find((app) => app.key === groupedSteps[0].appKey)
+    return appsWithActions.find((app) => app.key === groupedSteps[0][0].appKey)
       ?.iconUrl
   }, [appsWithActions, groupedSteps])
 
@@ -103,24 +110,24 @@ export default function Editor(props: EditorProps) {
   // Compute which steps are eligible for variable extraction.
   //
   // Note:
-  // We don't include grouped steps inside `stepExecutionsToInclude` by default,
-  // since some groups may not want to extract variables from _all_ steps in the
-  // group (e.g. If-then only wants to extract from steps in the current branch).
+  // we include some grouped steps as there is no longer a nested editor
+  // we identify the group by checking if the current step id is in the group
   //
-  // Instead, we expect step-grouping actions to instantiate a nested Editor with
-  // the appropriate subarray of steps in the group; we will then handle merging
-  // stepExecutionsToInclude between the parent Editor and the nested Editor.
-  //
-  const parentStepExecutionsToInclude = useContext(
-    StepExecutionsToIncludeContext,
+  const groupStepsToInclude = useMemo(
+    () =>
+      groupedSteps.filter((group) =>
+        group.some((step) => step.id === currentStepId),
+      ),
+    [currentStepId, groupedSteps],
   )
+
   const stepExecutionsToInclude = useMemo(
     () =>
       new Set([
-        ...parentStepExecutionsToInclude,
         ...stepsBeforeGroup.map((step) => step.id),
+        ...groupStepsToInclude.flatMap((step) => step.map((s) => s.id)),
       ]),
-    [parentStepExecutionsToInclude, stepsBeforeGroup],
+    [stepsBeforeGroup, groupStepsToInclude],
   )
 
   const nonIfThenActionSteps = stepsBeforeGroup.filter(
@@ -144,70 +151,84 @@ export default function Editor(props: EditorProps) {
     )
   }
 
+  const leftStepPadding = isDrawerOpen ? (isMobile ? 0 : '5rem') : 0
+  const rightDrawerTransform = isDrawerOpen
+    ? 'translateX(0)'
+    : 'translateX(100%)'
+  const rightDrawerWidth = isDrawerOpen
+    ? isMobile
+      ? '100vw'
+      : EDITOR_RIGHT_DRAWER_WIDTH
+    : '0'
+
   return (
-    <Flex w="full" justifyContent="center">
-      <Flex
-        flexDir="column"
-        alignItems="center"
-        py={3}
-        pb={24}
-        w="53.25rem"
-        maxW="full"
-      >
-        <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-          {stepsBeforeGroup.map((step, index) => {
-            return (
-              <Fragment key={`${step.id}-${index}`}>
-                <FlowStep
-                  step={step}
-                  isLastStep={index === steps.length - 1}
-                  index={index + 1}
-                  collapsed={currentStepId !== step.id}
-                  onOpen={() => setCurrentStepId(step.id)}
-                  onClose={() => {
-                    setCurrentStepId(null)
-                  }}
-                  onChange={onUpdateStep}
-                  onContinue={() => {
-                    if (
-                      index === stepsBeforeGroup.length - 1 &&
-                      groupedSteps.length > 0
-                    ) {
-                      setCurrentStepId(groupedSteps[0].id)
-                    } else {
-                      setCurrentStepId(stepsBeforeGroup[index + 1]?.id)
-                    }
-                  }}
-                  templateConfig={flow?.config?.templateConfig}
-                />
-                <AddStepButton
-                  // hide all add button steps if is readonly
-                  isHidden={isReadOnlyEditor}
-                  // show empty action if no action step exists
-                  showEmptyAction={hasNoActionSteps && !groupedSteps.length}
-                  // Disable add button steps if first action is not set up
-                  isDisabled={
-                    (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
-                    !groupedSteps.length
-                  }
-                  isLastStep={index === steps.length - 1}
-                  stepId={step.id}
-                />
-              </Fragment>
-            )
-          })}
+    <Flex
+      {...editorStyles.editorWrapper}
+      sx={{
+        backgroundImage: 'radial-gradient(#f5f5f5 2px, transparent 2px)',
+        backgroundSize: '30px 30px',
+      }}
+    >
+      <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
+        <Flex
+          {...editorStyles.stepHeaderContainer}
+          flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
+          px={leftStepPadding}
+          maxWidth={`calc(100% - ${
+            isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
+          })`}
+        >
+          {stepsBeforeGroup.map((step, index) => (
+            <Fragment key={`${step.id}-${index}`}>
+              <FlowStep
+                step={step}
+                isDeletable={true}
+                index={index}
+                isLastStep={index === steps.length - 1}
+                isNested={isNested}
+              />
+              <AddStepButton
+                // hide all add button steps if is readonly
+                isHidden={isReadOnlyEditor}
+                // show empty action if no action step exists
+                showEmptyAction={hasNoActionSteps && !groupedSteps.length}
+                // Disable add button steps if first action is not set up
+                isDisabled={
+                  (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
+                  !groupedSteps.length
+                }
+                isLastStep={index === steps.length - 1}
+                stepId={step.id}
+              />
+            </Fragment>
+          ))}
           {groupedSteps.length > 0 && (
             <FlowStepGroup
-              iconUrl={flowStepGroupIconUrl}
-              flow={flow}
-              steps={groupedSteps}
-              collapsed={currentStepId !== groupedSteps[0].id}
-              onOpen={() => setCurrentStepId(groupedSteps[0].id)}
-              onClose={() => setCurrentStepId(null)}
+              stepsBeforeGroup={stepsBeforeGroup}
+              groupedSteps={groupedSteps}
             />
           )}
-        </StepExecutionsToIncludeProvider>
-      </Flex>
+        </Flex>
+        {/** HACKFIX (kevinkim-ogp): to ensure that the transitions are smooth */}
+        <Flex
+          {...editorStyles.dummyRightContainer}
+          w={rightDrawerWidth}
+          transform={rightDrawerTransform}
+        />
+        <Flex
+          {...editorStyles.rightDrawerContainer}
+          w={rightDrawerWidth}
+          visibility={isDrawerOpen ? 'visible' : 'hidden'}
+          opacity={isDrawerOpen ? 1 : 0}
+          transform={rightDrawerTransform}
+        >
+          <EditorRightDrawer
+            flowStepGroupIconUrl={flowStepGroupIconUrl}
+            index={currentStepIndex}
+            steps={steps}
+          />
+        </Flex>
+      </StepExecutionsToIncludeProvider>
     </Flex>
   )
 }
