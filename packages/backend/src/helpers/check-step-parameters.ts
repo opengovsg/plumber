@@ -1,7 +1,7 @@
 import { IJSONObject } from '@plumber/types'
 
 const VARIABLE_REGEX =
-  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/
+  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\w* -]+)+}})/
 const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 
 /**
