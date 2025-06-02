@@ -21,9 +21,9 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
 import ErrorResult from '../ErrorResult'
+import { isMultiRowStep } from '../MultiRowResultVariables/utils'
 import WebhookUrlInfo from '../WebhookUrlInfo'
 
-import { isMultiRowStep } from '../MultiRowResultVariables/utils'
 import { flowStepTestControllerStyles } from './styles'
 import TestMultiRowResultModal from './TestMultiRowResultModal'
 import TestResult from './TestResult'
@@ -239,6 +239,7 @@ export default function FlowStepTestController(
       handleSaveAndTest,
       hasDeletedVars,
       infoBoxVariant,
+      isMobile,
       isTestExecuting,
       isValid,
       readOnly,
