@@ -20,7 +20,7 @@ import {
 
 import { BORDER_COLOR, FONT_SIZE, ROW_COLOR } from '@/pages/Tile/constants'
 
-import { Column, DataRow, processData } from './multiRowResultUtils'
+import { Column, DataRow, processData } from '../MultiRowResultVariables/utils'
 
 interface TestMultiRowResultModalProps {
   isOpen: boolean

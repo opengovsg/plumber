@@ -75,12 +75,13 @@ export function VariableItem({
   isLast?: boolean
   withIcon?: IconType
 }): JSX.Element {
+  const shouldShowBottomBorder = !withIcon && (onClick || isLast)
   return (
     <Box
       key={`suggestion-${variable.name}`}
       data-test="variable-suggestion-item"
       padding={onClick ? '0.5rem 1rem' : '1rem'}
-      borderBottom={onClick || isLast ? undefined : '1px solid #EDEDED'}
+      borderBottom={shouldShowBottomBorder ? undefined : '1px solid #EDEDED'}
       _hover={
         onClick
           ? {

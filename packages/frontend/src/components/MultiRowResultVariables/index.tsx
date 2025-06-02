@@ -83,8 +83,12 @@ export default function MultiRowResultVariables(
       {variableListVariables.length > 0 &&
         variableListVariables
           .filter((v): v is Variable => 'label' in v && 'type' in v)
-          .map((v) => (
-            <VariableItem key={`variable-${v.id}-${v.name}`} variable={v} />
+          .map((v, index) => (
+            <VariableItem
+              key={`variable-${v.id}-${v.name}`}
+              variable={v}
+              isLast={index === variableListVariables.length - 1}
+            />
           ))}
     </Box>
   )

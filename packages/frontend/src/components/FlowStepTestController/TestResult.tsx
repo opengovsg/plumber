@@ -6,8 +6,9 @@ import { Infobox } from '@opengovsg/design-system-react'
 import VariablesList from '@/components/VariablesList'
 import type { Variable } from '@/helpers/variables'
 
-import { isMultiRowStep } from './multiRowResultUtils'
-import MultiRowResultVariables from './MultiRowResultVariables'
+import MultiRowResultVariables from '../MultiRowResultVariables'
+import { isMultiRowStep } from '../MultiRowResultVariables/utils'
+
 import { getIfThenOutput } from './utils'
 
 function getNoOutputMessage(
