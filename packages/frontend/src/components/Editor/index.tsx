@@ -8,11 +8,7 @@ import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
-import {
-  extractBranchesWithSteps,
-  TOOLBOX_ACTIONS,
-  TOOLBOX_APP_KEY,
-} from '@/helpers/toolbox'
+import { extractBranchesWithSteps, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
 
@@ -131,10 +127,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
   )
 
   const nonIfThenActionSteps = stepsBeforeGroup.filter(
-    (step) =>
-      step.type === 'action' &&
-      step.appKey !== TOOLBOX_APP_KEY &&
-      step.key !== TOOLBOX_ACTIONS.IfThen,
+    (step) => step.type === 'action' && step.key !== TOOLBOX_ACTIONS.IfThen,
   )
   // Disables last add step and hide in-between add step buttons
   const hasExactlyOneEmptyActionStep =
