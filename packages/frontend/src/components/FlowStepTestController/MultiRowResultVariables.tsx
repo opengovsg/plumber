@@ -8,6 +8,8 @@ import { Variable } from '@/helpers/variables'
 
 import { VariableItem } from '../VariablesList'
 
+import { getColumnValues } from './utils'
+
 interface TestMultiRowResultProps {
   step: IStep
   selectedActionOrTrigger: ITrigger | IAction | undefined
@@ -21,21 +23,20 @@ export default function MultiRowResultVariables(
 ): JSX.Element {
   const { step, variables, onModalOpen } = props
 
-  const isRowsVar = (v: Variable) => v.name.split('.').pop() === 'rows'
+  const isDataVar = (v: Variable) => v.name.split('.').pop() === 'data'
   const isRowsFoundVar = (v: Variable) =>
     v.name.split('.').pop() === 'rowsFound'
-  const isColumnsVar = (v: Variable) => v.name.includes('columns')
 
   const { variablesWithModal, variableListVariables } = useMemo(() => {
     if (!variables?.length) {
       return { variablesWithModal: [], variableListVariables: [] }
     }
 
-    const rowsVariable = variables.find(isRowsVar)
+    const dataVariable = variables.find(isDataVar)
     const rowsFoundVariable = variables.find(isRowsFoundVar)
     const numRowsFound = rowsFoundVariable?.value || 0
 
-    const columnVariables = variables.filter(isColumnsVar)
+    const columnVariables = dataVariable ? getColumnValues(dataVariable) : []
     const rowsFoundVariables = variables.filter(isRowsFoundVar)
 
     const variableListVariables = [...rowsFoundVariables, ...columnVariables]
@@ -43,14 +44,14 @@ export default function MultiRowResultVariables(
     if (numRowsFound === 0) {
       return {
         variablesWithModal: [],
-        variableListVariables: rowsVariable
-          ? [rowsVariable, ...variableListVariables]
+        variableListVariables: dataVariable
+          ? [dataVariable, ...variableListVariables]
           : variableListVariables,
       }
     }
 
     return {
-      variablesWithModal: rowsVariable ? [rowsVariable] : [],
+      variablesWithModal: dataVariable ? [dataVariable] : [],
       variableListVariables,
     }
   }, [variables])
@@ -83,11 +84,7 @@ export default function MultiRowResultVariables(
         variableListVariables
           .filter((v): v is Variable => 'label' in v && 'type' in v)
           .map((v) => (
-            <VariableItem
-              key={`variable-${v.name}`}
-              variable={v}
-              onClick={onModalOpen}
-            />
+            <VariableItem key={`variable-${v.id}-${v.name}`} variable={v} />
           ))}
     </Box>
   )

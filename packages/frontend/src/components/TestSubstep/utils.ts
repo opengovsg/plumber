@@ -1,5 +1,7 @@
 import { IExecutionStep, IStep } from '@plumber/types'
 
+import { Variable } from '@/helpers/variables'
+
 export interface Column {
   key: string
   label: string
@@ -24,7 +26,7 @@ export interface ProcessedData {
 }
 
 interface TilesRowsData {
-  rowData: Array<{ rowId: string; data: Record<string, string> }>
+  rows: Array<{ rowId: string; data: Record<string, string> }>
   columns: Array<{ id: string; name: string }>
 }
 
@@ -50,10 +52,8 @@ export const processColumns = (rawColumns: unknown): Column[] => {
 }
 
 export const processData = (executionStep: IExecutionStep): ProcessedData => {
-  const isTilesStep = executionStep.appKey === 'tiles'
   const rowsFound = String(executionStep.dataOut?.rowsFound ?? '0')
-  const rawColumns = executionStep.dataOut?.columns
-  const rowsObj = executionStep.dataOut?.rows as unknown as
+  const rowsObj = executionStep.dataOut?.data as unknown as
     | TilesRowsData
     | undefined
 
@@ -67,8 +67,8 @@ export const processData = (executionStep: IExecutionStep): ProcessedData => {
 
   return {
     rowsFound,
-    dataRows: isTilesStep ? rowsObj.rowData : processDataRows(rowsObj),
-    columns: processColumns(rawColumns),
+    dataRows: rowsObj.rows,
+    columns: processColumns(rowsObj.columns),
   }
 }
 
@@ -83,4 +83,35 @@ export const processDataRows = (rowsObj: any): DataRow[] => {
       ),
     })) || []
   )
+}
+
+export const getColumnValues = (rowData: Variable | undefined) => {
+  if (!rowData) {
+    return []
+  }
+  const rowDataObj = JSON.parse(rowData.value as string)
+  const { rows, columns } = rowDataObj
+  const columnVariables = columns.map(
+    (column: { id: string; name: string }) => {
+      const rowValues: string[] = []
+      rows.forEach((row: { data: Record<string, string> }) => {
+        /**
+         * NOTE: do not push empty values as we do not want to cause any errors
+         * that may arise from having empty values.
+         */
+        if (row.data[column.id]) {
+          rowValues.push(row.data[column.id])
+        }
+      })
+
+      return {
+        ...column,
+        label: column.name,
+        value: rowValues.join(', '),
+        type: 'string',
+      }
+    },
+  )
+
+  return columnVariables
 }
