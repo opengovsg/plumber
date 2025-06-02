@@ -23,7 +23,7 @@ import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
 
-import { isMultiRowStep } from './multiRowResultUtils'
+import { isMultiRowStep } from '../MultiRowResultVariables/utils'
 import { flowStepTestControllerStyles } from './styles'
 import TestMultiRowResultModal from './TestMultiRowResultModal'
 import TestResult from './TestResult'

@@ -52,7 +52,12 @@ export interface IConnection {
  * 'array' is currently used only in formSG checkbox field but
  * will be extended to for-each feature handling
  */
-export type TDataOutMetadatumType = 'text' | 'file' | 'array' | 'tile_row_id'
+export type TDataOutMetadatumType =
+  | 'text'
+  | 'file'
+  | 'array'
+  | 'tile_row_id'
+  | 'multiple-row-object'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array

@@ -11,6 +11,7 @@ import get from 'lodash.get'
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
   'text',
   'array',
+  'multiple-row-object',
   'tile_row_id',
 ]
 
