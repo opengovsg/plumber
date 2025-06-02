@@ -10,6 +10,7 @@ import {
   HStack,
   Text,
   Tooltip,
+  useDisclosure,
   VStack,
 } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
@@ -22,7 +23,9 @@ import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
 
+import { isMultiRowStep } from './multiRowResultUtils'
 import { flowStepTestControllerStyles } from './styles'
+import TestMultiRowResultModal from './TestMultiRowResultModal'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
 import { getInfoBoxDetails, matchParamsToDataIn } from './utils'
@@ -96,10 +99,16 @@ export default function FlowStepTestController(
     testExecutionSteps,
     varInfoMap,
   } = useContext(EditorContext)
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+  } = useDisclosure()
   const formContext = useFormContext()
 
   const { isIfThenStep, isTrigger, selectedActionOrTrigger, substeps } =
     useStepMetadata(allApps, step)
+
   const {
     isTestSuccessful,
     lastErrorDetails,
@@ -349,6 +358,7 @@ export default function FlowStepTestController(
               isMock={currentTestExecutionStep?.metadata?.isMock}
               isOpen={isTestResultOpen}
               isIfThenStep={isIfThenStep}
+              onModalOpen={onModalOpen}
             />
           </VStack>
         ) : (
@@ -387,6 +397,13 @@ export default function FlowStepTestController(
           </VStack>
         )}
       </VStack>
+      {isMultiRowStep(step) && (
+        <TestMultiRowResultModal
+          isOpen={isModalOpen}
+          onClose={onModalClose}
+          currentExecutionStep={currentTestExecutionStep}
+        />
+      )}
     </>
   )
 }

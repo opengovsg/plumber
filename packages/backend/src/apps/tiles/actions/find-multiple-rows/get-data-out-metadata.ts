@@ -37,6 +37,7 @@ async function getDataOutMetadata(
       })
     })
   }
+
   return { ...metadata, columns: columnMetadata }
 }
 

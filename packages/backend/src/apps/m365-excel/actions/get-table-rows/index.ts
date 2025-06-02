@@ -1,4 +1,3 @@
-// dummy commit for do not merge branch
 import type { IRawAction } from '@plumber/types'
 
 import z from 'zod'
@@ -21,7 +20,6 @@ const action: IRawAction = {
   name: 'Find table rows',
   key: 'getTableRows',
   description: 'Gets multiple rows of data from your Excel table',
-  settingsStepLabel: 'Set up rows to get',
   arguments: [
     {
       key: 'fileId',

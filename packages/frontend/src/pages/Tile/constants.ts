@@ -57,3 +57,8 @@ export const CELL_BOX_SHADOW = {
   DEFAULT: '0 0 2px 1px var(--chakra-colors-secondary-400)',
   HOVER: '0 0 0 1px var(--chakra-colors-primary-400)',
 }
+
+export const FONT_SIZE = {
+  DEFAULT: '0.875rem',
+  SMALL: '0.75rem',
+}
