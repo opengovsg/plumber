@@ -73,7 +73,7 @@ describe('Postman SMS request error handler', () => {
   })
 
   describe('Other errors', () => {
-    it.each([500, 502, 503])('should retry on %s', async (status) => {
+    it.each([500, 502, 503, 520, 524])('should retry on %s', async (status) => {
       const axiosError = {
         isAxiosError: true,
         name: 'AxiosError',

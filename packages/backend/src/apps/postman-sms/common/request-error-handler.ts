@@ -21,7 +21,7 @@ const handle429: ThrowingHandler = (_, error): never => {
   })
 }
 
-const handle500and502and503: ThrowingHandler = (_, error): never => {
+const handle5xxErrors: ThrowingHandler = (_, error): never => {
   const status = error.response.status
   throw new RetriableError({
     error: `Retrying HTTP ${status} from Postman SMS`,
@@ -40,7 +40,9 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
     case 500:
     case 502:
     case 503:
-      return handle500and502and503($, error)
+    case 520: // Cloudflare-specific error
+    case 524: // Cloudflare-specific error
+      return handle5xxErrors($, error)
     default:
       if (error.message === 'read ETIMEDOUT') {
         throw new RetriableError({
