@@ -31,6 +31,8 @@ export interface Variable {
    */
   name: string
   value: unknown
+  // NOTE: used in some variables as unique key
+  id?: string
 }
 
 function sortVariables(variables: Variable[]): void {
@@ -125,8 +127,9 @@ const process = (
 
   // special handling for Tiles multiple row
   // we do not do not join like strings as it contains objects and do not flatmap the data as we want to use it as a whole
-  if (type === 'array') {
-    return [
+  if (type === 'multiple-row-object') {
+    const { columns, rows } = data
+    const outputVars = [
       {
         name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
         value: JSON.stringify(data),
@@ -136,6 +139,36 @@ const process = (
         order,
       },
     ]
+
+    /**
+     * NOTE: we dynamically obtain the values for each column since we are not
+     * storing the values in the dataOut.
+     */
+    const columnVariables = columns.map(
+      (column: { id: string; name: string; value?: string }) => {
+        const rowValues: string[] = []
+        rows.forEach((row: { data: Record<string, string> }) => {
+          /**
+           * NOTE: do not push empty values as we do not want to cause any errors
+           * that may arise from having empty values.
+           */
+          if (row.data[column.id]) {
+            rowValues.push(row.data[column.id])
+          }
+        })
+
+        return {
+          ...column,
+          name: `step.${stepId}.${column.value}`,
+          label: column.name,
+          displayedValue: rowValues.join(', '),
+          value: rowValues.join(', '),
+          type: 'text',
+        }
+      },
+    )
+
+    return [...outputVars, ...columnVariables]
   }
 
   /**
