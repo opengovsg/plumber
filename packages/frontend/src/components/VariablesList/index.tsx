@@ -1,6 +1,7 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useMemo } from 'react'
+import { IconType } from 'react-icons/lib'
 import {
   Accordion,
   AccordionButton,
@@ -8,6 +9,8 @@ import {
   AccordionItem,
   AccordionPanel,
   Box,
+  Flex,
+  Icon,
   type SystemStyleObject,
   Tag,
   Text,
@@ -66,14 +69,16 @@ function VariableTag({
   )
 }
 
-function VariableItem({
+export function VariableItem({
   variable,
   onClick,
   isLast,
+  withIcon,
 }: {
   variable: Variable
   onClick?: (variable: Variable) => void
   isLast?: boolean
+  withIcon?: IconType
 }): JSX.Element {
   return (
     <Box
@@ -115,9 +120,16 @@ function VariableItem({
       >
         {variable.label ?? variable.name} <VariableTag type={variable.type} />
       </Text>
-      <Text textStyle="body-2" color="base.content.medium">
-        {variable.displayedValue ?? variable.value?.toString() ?? ''}
-      </Text>
+      <Flex alignItems="center" gap={2}>
+        <Text
+          textStyle="body-2"
+          color="base.content.medium"
+          textDecoration={withIcon ? 'underline' : undefined}
+        >
+          {variable.displayedValue ?? variable.value?.toString() ?? ''}
+        </Text>
+        {withIcon && <Icon as={withIcon} />}
+      </Flex>
     </Box>
   )
 }
@@ -163,7 +175,7 @@ export default function VariablesList(props: VariablesListProps) {
     >
       {defaultVariables.map((variable, index) => (
         <VariableItem
-          key={`variable-${variable.name}-${index}`}
+          key={`variable-${variable.name}`}
           variable={variable}
           onClick={onClick}
           isLast={index === defaultVariables.length - 1}

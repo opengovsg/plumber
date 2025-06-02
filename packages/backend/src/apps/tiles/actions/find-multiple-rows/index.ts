@@ -21,7 +21,6 @@ const action: IRawAction = {
   name: 'Find multiple rows',
   key: 'findMultipleRows',
   description: 'Gets data of multiple rows from your tile',
-  settingsStepLabel: 'Set up rows to find',
   arguments: [
     {
       label: 'Select Tile',
