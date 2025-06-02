@@ -1,4 +1,4 @@
-import { useCallback, useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { Flex, Skeleton, Stack, Text } from '@chakra-ui/react'
 import { Menu, useToast } from '@opengovsg/design-system-react'
@@ -31,6 +31,7 @@ export default function Notifications() {
     flow?.config?.errorConfig?.notificationFrequency ?? DEFAULT_FREQUENCY
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const toast = useToast()
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   const onFlowConfigUpdate = useCallback(
     async (frequency: Frequency) => {
@@ -119,7 +120,20 @@ export default function Notifications() {
           </Menu.Button>
           <Menu.List>
             {frequencyOptions.map((option, index) => (
-              <Menu.Item key={index} onClick={() => handleClick(option.value)}>
+              <Menu.Item
+                key={index}
+                onClick={() => handleClick(option.value)}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                sx={{
+                  bg:
+                    hoveredIndex === index ||
+                    (hoveredIndex === null && option.label === frequencyLabel)
+                      ? 'interaction.tinted.main.hover'
+                      : 'transparent',
+                  color: 'base.content.default',
+                }}
+              >
                 {option.label}
               </Menu.Item>
             ))}

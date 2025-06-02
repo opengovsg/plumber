@@ -21,7 +21,6 @@ const action: IRawAction = {
   name: 'Find single row',
   key: 'findSingleRow',
   description: 'Gets data of a single row from your tile',
-  settingsStepLabel: 'Set up row to find',
   arguments: [
     {
       label: 'Select Tile',
@@ -46,7 +45,7 @@ const action: IRawAction = {
       description:
         'If multiple rows meet the conditions, the oldest entry will be returned',
       key: 'filters',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       hiddenIf: {
         fieldKey: 'tableId',
@@ -74,6 +73,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 1 },
         },
         {
           placeholder: 'Condition',
@@ -104,6 +104,7 @@ const action: IRawAction = {
               value: TableRowFilterOperator.IsEmpty,
             },
           ],
+          customStyle: { flex: 1 },
         },
         {
           placeholder: 'Value',
@@ -116,6 +117,7 @@ const action: IRawAction = {
             op: 'equals',
             fieldValue: TableRowFilterOperator.IsEmpty,
           },
+          customStyle: { flex: 2, minWidth: 0, maxWidth: '50%' },
         },
       ],
     },

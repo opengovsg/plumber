@@ -103,7 +103,7 @@ const action: IRawAction = {
       label: 'Additional responses',
       description: 'These will be included in reports exported from PaySG',
       key: 'responses',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: false,
       subFields: [
         {
@@ -112,6 +112,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
+          customStyle: { flex: 1, minWidth: 0, maxWidth: '50%' },
         },
         {
           placeholder: 'Answer',
@@ -119,6 +120,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: true,
+          customStyle: { flex: 1, minWidth: 0, maxWidth: '50%' },
         },
       ],
     },

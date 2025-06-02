@@ -49,7 +49,7 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
   return (
     <Flex w="100%" boxShadow="sm">
       {/* Left Panel --> Step Selector */}
-      <Box flexGrow={1}>
+      <Box flexGrow={1} w="50%">
         <PanelHeader>{headers.left}</PanelHeader>
         <Divider borderColor="base.divider.medium" />
         <Box h={64} overflowY="auto">
@@ -70,6 +70,9 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
                 backgroundColor: 'secondary.50',
                 cursor: 'pointer',
               }}
+              textOverflow="ellipsis"
+              overflow="hidden"
+              whiteSpace="nowrap"
             >
               {option.name}
             </Text>

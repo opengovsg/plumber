@@ -1,93 +1,86 @@
-import { type IFlow, type IStep } from '@plumber/types'
+import { IStep } from '@plumber/types'
 
-import { type FunctionComponent, useMemo } from 'react'
-import { BiInfoCircle } from 'react-icons/bi'
-import { Box, Flex } from '@chakra-ui/react'
-import { Infobox } from '@opengovsg/design-system-react'
+import { useContext, useMemo } from 'react'
+import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 
-import FlowStepHeader from '@/components/FlowStepHeader'
-import { areAllIfThenBranchesCompleted, isIfThenStep } from '@/helpers/toolbox'
+import { EditorContext } from '@/contexts/Editor'
+import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
+
+import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 
 import Error from './Content/Error'
 import IfThen from './Content/IfThen'
-import { type ContentProps } from './Content/types'
-
-function getStepContent(steps: IStep[]): {
-  StepContent: FunctionComponent<ContentProps>
-  hintAboveCaption: string
-  caption: string
-  isStepGroupCompleted?: boolean
-} {
-  const [mainStep] = steps
-
-  // FIXME (ogp-weeloong): Maybe figure out a better way to do dispatch...?
-  if (isIfThenStep(mainStep)) {
-    return {
-      StepContent: IfThen,
-      hintAboveCaption: 'Then',
-      caption: 'If-then',
-      isStepGroupCompleted: areAllIfThenBranchesCompleted(steps, 0),
-    }
-  }
-
-  return {
-    StepContent: Error,
-    hintAboveCaption: 'Error',
-    caption: `Unknown action ${mainStep.appKey}-${mainStep.key}`,
-  }
-}
+import { flowStepGroupStyles } from './styles'
 
 interface FlowStepGroupProps {
-  iconUrl?: string
-  flow: IFlow
-  steps: IStep[]
-  onOpen: () => void
-  onClose: () => void
-  collapsed: boolean
+  stepsBeforeGroup: IStep[]
+  groupedSteps: IStep[][]
 }
 
-const ifThenHelpMessage = 'Customise what happens in each of your branches.'
+export default function FlowStepGroup(props: FlowStepGroupProps) {
+  const { groupedSteps, stepsBeforeGroup } = props
+  const { isDrawerOpen, isMobile } = useContext(EditorContext)
 
-function FlowStepGroup(props: FlowStepGroupProps): JSX.Element {
-  const { iconUrl, flow, steps, collapsed, onOpen, onClose } = props
+  const { stepGroupType, stepGroupCaption } = useMemo(() => {
+    let stepGroupType: string | null = null
+    let stepGroupCaption: string | null = null
 
-  const isTemplatedFlow = !!flow.config?.templateConfig?.templateId
-
-  const { StepContent, hintAboveCaption, caption, isStepGroupCompleted } =
-    useMemo(() => getStepContent(steps), [steps])
+    if (groupedSteps[0]?.[0]?.key === 'ifThen') {
+      stepGroupType = 'ifThen'
+      stepGroupCaption = 'If-then'
+    }
+    return { stepGroupType, stepGroupCaption }
+  }, [groupedSteps])
 
   return (
-    <Flex w="100%" flexDir="column">
-      {/* Show infobox only if the step group is incomplete and from a template */}
-      {!isStepGroupCompleted && isTemplatedFlow && (
-        <Box boxShadow={collapsed ? undefined : 'sm'} borderRadius="lg">
-          <Infobox
-            icon={<BiInfoCircle />}
-            variant="secondary"
-            style={{
-              borderBottomLeftRadius: '0',
-              borderBottomRightRadius: '0',
-            }}
-          >
-            {ifThenHelpMessage}
-          </Infobox>
-        </Box>
-      )}
-
-      <FlowStepHeader
-        iconUrl={iconUrl}
-        caption={caption}
-        hintAboveCaption={hintAboveCaption}
-        onOpen={onOpen}
-        onClose={onClose}
-        collapsed={collapsed ?? false}
-        isCompleted={isStepGroupCompleted}
-        isInfoboxPresent={!isStepGroupCompleted}
+    <Flex
+      w="100%"
+      alignItems="center"
+      justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
+    >
+      {/* FIXME (kevinkim-ogp): above is a temporary wrapper to ensure the flow step group is centered when drawer is closed */}
+      <Flex
+        {...flowStepGroupStyles.container}
+        display={isMobile ? 'block' : 'flex'}
+        w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
+        minW={MIN_FLOW_STEP_WIDTH}
       >
-        <StepContent flow={flow} steps={steps} />
-      </FlowStepHeader>
+        <Box {...flowStepGroupStyles.header} w="100%">
+          <Flex
+            px={4}
+            pt={4}
+            alignItems="center"
+            borderRadius="inherit"
+            w="full"
+            borderLeftWidth={0}
+            borderRightWidth={0}
+          >
+            <Flex {...flowStepGroupStyles.iconWrapper}>
+              {/* App icon */}
+              <Icon
+                boxSize={8}
+                as={getToolboxIcon(stepGroupType)}
+                color="primary.500"
+              />
+            </Flex>
+            <Flex direction="column" align="start">
+              <Flex alignItems="center" gap={2}>
+                <Text textStyle="subhead-1" color="base.content.default">
+                  {stepGroupCaption}
+                </Text>
+              </Flex>
+            </Flex>
+          </Flex>
+        </Box>
+        {stepGroupType === 'ifThen' ? (
+          <IfThen
+            groupedSteps={groupedSteps}
+            stepsBeforeGroup={stepsBeforeGroup}
+          />
+        ) : (
+          <Error />
+        )}
+      </Flex>
     </Flex>
   )
 }
-
-export default FlowStepGroup

@@ -1,6 +1,6 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
-import { memo, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useContext, useRef, useState } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { useQuery } from '@apollo/client'
@@ -11,20 +11,15 @@ import { HIDE_POSTMAN_UPLOAD_ATTACHMENT_FLAG } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import {
-  extractVariables,
-  filterVariables,
-  StepWithVariables,
-  type Variable,
-} from '@/helpers/variables'
+import { type Variable } from '@/helpers/variables'
 import { useS3Operations } from '@/hooks/useS3Operations'
 
 import MenuAlertDialog from '../MenuAlertDialog'
 
 import { CheckboxVariable } from './components/Checkbox'
 import Suggestions from './components/Suggestions'
-import { useAttachmentSelection } from './hooks/useAttachmentSelection'
-import { reformatToCheckboxVariables, validateFiles } from './utils'
+import { useAttachmentOptions } from './hooks/useAttachmentOptions'
+import { validateFiles } from './utils'
 
 interface AttachmentSuggestionsProps {
   name: string
@@ -42,7 +37,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     description,
     label,
     variableTypes = null,
-    defaultValue,
+    defaultValue = [],
   } = props
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const cancelRef = useRef<HTMLButtonElement>(null)
@@ -57,13 +52,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
 
   const flowId = getValues('flowId')
 
-  const {
-    selectedOptions,
-    setSelectedOptions,
-    selectedFile,
-    setSelectedFile,
-    onSuggestionClick,
-  } = useAttachmentSelection(setError)
+  const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
 
   const {
     isOpen: isDialogOpen,
@@ -85,6 +74,39 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     variables: { id: flowId },
   })
 
+  const onSuggestionClick = useCallback(
+    (
+      variable: CheckboxVariable,
+      checked: boolean,
+      onChange: (value: any) => void,
+    ) => {
+      // NOTE: we use name instead of value to accommodate variables
+      // We also add curly braces to check for attachments that are variables
+      const { name: filename, uploaded } = variable
+      const nameToCheck = uploaded ? filename : `{{${filename}}}`
+      const currentValues = getValues(name) ?? []
+
+      if (!checked) {
+        onChange?.(currentValues.filter((v: string) => v !== nameToCheck))
+      } else {
+        const { isValid, error } = validateFiles(variable, getValues(name))
+        if (!isValid) {
+          setError(name, { type: 'invalidFile', message: error })
+        } else {
+          onChange?.(currentValues.concat(nameToCheck))
+        }
+      }
+    },
+    [getValues, name, setError],
+  )
+
+  const { options, suggestions, uploadedItems } = useAttachmentOptions(
+    flowData,
+    hideUploadAttachments,
+    priorExecutionSteps,
+    variableTypes,
+  )
+
   useOutsideClick({
     ref: wrapperRef,
     handler: () => {
@@ -93,70 +115,6 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
       }
     },
   })
-
-  const uploadedItems = useMemo(() => {
-    const attachmentsConfig = flowData?.getFlow?.config?.attachments ?? []
-    return reformatToCheckboxVariables(attachmentsConfig)
-  }, [flowData])
-
-  const suggestions = useMemo(() => {
-    const selectedNames = getValues(name)
-
-    const filteredVars = filterVariables(
-      extractVariables(priorExecutionSteps),
-      (variable: Variable) => {
-        const variableType = variable.type ?? 'text'
-        return variableTypes?.includes(variableType) ?? false
-      },
-    ).map((v) => ({
-      ...v,
-      // NOTE: add the source to display in the tag
-      output: v.output.map((o) => ({ ...o, source: v.name })),
-    }))
-
-    const selectedFromVars = filteredVars.reduce(
-      (acc: CheckboxVariable[], v) => {
-        const { output } = v
-        acc.push(
-          ...output.filter((item: CheckboxVariable) => {
-            if (item.uploaded) {
-              return selectedNames?.includes(item.displayedValue)
-            }
-
-            return selectedNames?.includes(`{{${item.name}}}`)
-          }),
-        )
-        return acc
-      },
-      [],
-    )
-
-    setSelectedOptions([
-      ...selectedFromVars,
-      ...uploadedItems.filter((item) => selectedNames?.includes(item.name)),
-    ])
-    return [
-      ...filteredVars,
-      !hideUploadAttachments && {
-        id: 'uploaded',
-        name: 'Uploaded attachments',
-        output: uploadedItems,
-        addNew: true,
-      },
-    ].filter(Boolean) as StepWithVariables[]
-  }, [
-    getValues,
-    hideUploadAttachments,
-    name,
-    priorExecutionSteps,
-    setSelectedOptions,
-    uploadedItems,
-    variableTypes,
-  ])
-
-  const selectedNames = useMemo(() => {
-    return selectedOptions.map((option) => option.name as string)
-  }, [selectedOptions])
 
   const { deleteUploadedFile, isDeleting, uploadToS3, isUploading } =
     useS3Operations(name, getValues, refetchFlow, uploadedItems, {
@@ -183,17 +141,14 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
 
   const processFile = useCallback(
     async (file: File) => {
-      const { isValid, error } = validateFiles(file, selectedOptions)
+      const { isValid, error } = validateFiles(file, getValues(name))
       if (!isValid) {
-        setError(name, {
-          type: 'invalidFile',
-          message: error,
-        })
+        setError(name, { type: 'invalidFile', message: error })
       } else {
         await uploadToS3(file, flowId)
       }
     },
-    [flowId, name, selectedOptions, setError, uploadToS3],
+    [flowId, getValues, name, setError, uploadToS3],
   )
 
   return (
@@ -222,18 +177,18 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
               </FormLabel>
             )}
             <Suggestions
+              allOptions={options}
               currentTab={currentTab}
               isSuggestionsOpen={isSuggestionsOpen}
               isUploading={isUploading}
               loading={loading}
-              selectedNames={selectedNames}
-              selectedOptions={selectedOptions}
               suggestions={suggestions}
               values={values}
               closeSuggestions={closeSuggestions}
-              onChange={onChange}
               onDelete={onDelete}
-              onSuggestionClick={onSuggestionClick}
+              onSuggestionClick={(variable, checked) =>
+                onSuggestionClick(variable, checked, onChange)
+              }
               openSuggestions={openSuggestions}
               processFile={processFile}
               setCurrentTab={setCurrentTab}

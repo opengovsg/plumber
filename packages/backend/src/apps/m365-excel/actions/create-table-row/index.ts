@@ -42,7 +42,6 @@ const action: IRawAction = {
   name: 'Create table row',
   key: 'createTableRow',
   description: 'Creates a new row in your Excel table',
-  settingsStepLabel: 'Set up row to create',
   arguments: [
     {
       key: 'fileId',
@@ -88,7 +87,7 @@ const action: IRawAction = {
     {
       label: 'New row data',
       key: 'columnValues',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       subFields: [
         {
@@ -116,6 +115,7 @@ const action: IRawAction = {
               },
             ],
           },
+          customStyle: { flex: 2 },
         },
         {
           key: 'value' as const,
@@ -123,6 +123,7 @@ const action: IRawAction = {
           required: true,
           variables: true,
           placeholder: 'Value',
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],
     },

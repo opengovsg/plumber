@@ -28,17 +28,19 @@ export default function MultiCol(props: MultiColProps) {
 
   const isMobile = useBreakpointValue({ base: true, sm: false })
   return (
-    <Flex flexDir={isMobile ? 'column' : 'row'} gap={2}>
-      {subFields.map((subF) => {
+    <Flex flexDir={isMobile ? 'column' : 'row'} gap={2} alignItems="center">
+      {subFields.map((subF, subFIndex) => {
+        const { type, variables } = subF
         return (
           <div
             key={`${name}.${subF.key}`}
-            style={isMobile ? { flex: 1 } : subF.customStyle}
+            style={isMobile ? { flex: 1, width: '100%' } : subF.customStyle}
           >
             <InputCreator
               schema={subF}
               namePrefix={name}
               parentType="multicol"
+              autoFocus={subFIndex === 0 && type === 'string' && variables}
               {...forwardedInputCreatorProps}
             />
           </div>
@@ -51,6 +53,7 @@ export default function MultiCol(props: MultiColProps) {
           icon={<BiTrash />}
           isDisabled={isEditorReadOnly}
           onClick={() => remove?.(index)}
+          colorScheme="secondary"
         />
       )}
     </Flex>

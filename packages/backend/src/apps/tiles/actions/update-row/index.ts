@@ -17,7 +17,6 @@ const action: IRawAction = {
   name: 'Update single row',
   key: 'updateSingleRow',
   description: 'Updates a single row in your tile',
-  settingsStepLabel: 'Set up row to update',
   arguments: [
     {
       label: 'Select Tile',
@@ -110,7 +109,7 @@ const action: IRawAction = {
           type: 'string' as const,
           required: false,
           variables: true,
-          customStyle: { flex: 3, minWidth: 0 },
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '50%' },
         },
       ],
     },

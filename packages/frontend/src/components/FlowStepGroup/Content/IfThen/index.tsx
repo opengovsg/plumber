@@ -1,33 +1,37 @@
-import { Fragment, useCallback, useContext, useMemo } from 'react'
+import { IStep } from '@plumber/types'
+
+import { useCallback, useContext } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import { Divider, Flex } from '@chakra-ui/react'
+import { Flex } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import {
-  extractBranchesWithSteps,
-  TOOLBOX_ACTIONS,
-  TOOLBOX_APP_KEY,
-} from '@/helpers/toolbox'
-
-import { ContentProps } from '../types'
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
 import Branch from './Branch'
 import { BranchContext } from './BranchContext'
+import { ifThenStyles } from './styles'
 
-export default function IfThen(props: ContentProps): JSX.Element {
-  const { flow, steps } = props
+interface IfThenProps {
+  groupedSteps: IStep[][]
+  stepsBeforeGroup: IStep[]
+}
+
+export default function IfThen(props: IfThenProps): JSX.Element {
+  const { groupedSteps, stepsBeforeGroup } = props
 
   const { depth } = useContext(BranchContext)
-  const { readOnly: isEditorReadOnly } = useContext(EditorContext)
-  const branchesWithSteps = useMemo(
-    () => extractBranchesWithSteps(steps, depth),
-    [steps, depth],
-  )
-  const numBranches = branchesWithSteps.length
+  const {
+    flowId,
+    readOnly: isEditorReadOnly,
+    setCurrentStepId,
+    onDrawerOpen,
+  } = useContext(EditorContext)
+
+  const numBranches = groupedSteps.length
 
   //
   // Handle branch creation
@@ -43,16 +47,19 @@ export default function IfThen(props: ContentProps): JSX.Element {
       return
     }
 
+    const lastGroup = groupedSteps[groupedSteps.length - 1]
+    const lastStep = lastGroup[lastGroup.length - 1]
+
     const branchStep = await createStep({
       variables: {
         input: {
           key: TOOLBOX_ACTIONS.IfThen,
           appKey: TOOLBOX_APP_KEY,
           previousStep: {
-            id: steps[steps.length - 1].id,
+            id: lastStep.id,
           },
           flow: {
-            id: flow.id,
+            id: flowId,
           },
           parameters: {
             depth,
@@ -71,33 +78,48 @@ export default function IfThen(props: ContentProps): JSX.Element {
             id: branchStep.data.createStep.id,
           },
           flow: {
-            id: flow.id,
+            id: flowId,
           },
         },
       },
     })
-  }, [isAddingBranch, createStep, steps, flow.id, depth, numBranches])
+
+    setCurrentStepId(branchStep.data.createStep.id)
+    onDrawerOpen()
+  }, [
+    isAddingBranch,
+    groupedSteps,
+    createStep,
+    flowId,
+    depth,
+    numBranches,
+    onDrawerOpen,
+    setCurrentStepId,
+  ])
 
   return (
-    <Flex flexDir="column">
-      {branchesWithSteps.map((branchSteps, index) => (
-        <Fragment key={branchSteps[0].id}>
-          <Branch flow={flow} steps={branchSteps} />
-          {index < branchesWithSteps.length - 1 && (
-            <Divider borderColor="base.divider.medium" />
-          )}
-        </Fragment>
-      ))}
-      <Button
-        onClick={onAddBranch}
-        isDisabled={isEditorReadOnly}
-        leftIcon={<BiPlus />}
-        m={4}
-        variant="outline"
-        w="fit-content"
-      >
-        Add branch
-      </Button>
+    <Flex flexDir="column" alignItems="center" gap={4} w="100%" mt={2}>
+      <Flex flexDir="column" w="100%" px={4} gap={4}>
+        {groupedSteps.map((branchSteps) => {
+          return (
+            <Branch
+              key={branchSteps[0].id}
+              branchSteps={branchSteps}
+              stepsBeforeGroup={stepsBeforeGroup}
+            />
+          )
+        })}
+      </Flex>
+      <Flex w="100%" px={4} pb={4}>
+        <Button
+          onClick={onAddBranch}
+          isDisabled={isEditorReadOnly}
+          leftIcon={<BiPlus />}
+          {...ifThenStyles.addBranchButton}
+        >
+          Add branch
+        </Button>
+      </Flex>
     </Flex>
   )
 }
