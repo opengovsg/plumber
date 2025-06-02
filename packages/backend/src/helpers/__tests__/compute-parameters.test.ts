@@ -349,4 +349,82 @@ describe('compute parameters', () => {
     const result = computeParameters(params, executionStep)
     expect(result).toEqual(expected)
   })
+
+  it.each([
+    {
+      testDescription: 'wildcard on empty array',
+      params: `empty!! {{step.${randomStepID}.emptyArrayProp.*}}`,
+      expected: 'empty!! ',
+    },
+    {
+      testDescription: 'wildcard on array of values',
+      params: `{{step.${randomStepID}.arrayProp.*}}`,
+      expected: 'array value 1, hehe, array value 3',
+    },
+    {
+      testDescription: 'wildcard on array of objects to get strings',
+      params: `wildcard get strings {{step.${randomStepID}.arrayOfObjectsProp.*.stringProp}}`,
+      expected:
+        'wildcard get strings string value 1 in array of objects, string value 2 in array of objects',
+    },
+    {
+      testDescription: 'wildcard on array of objects to get numbers',
+      params: `wildcard get numbers {{step.${randomStepID}.arrayOfObjectsProp.*.numberProp}}`,
+      expected: 'wildcard get numbers 456, 789',
+    },
+    {
+      testDescription: 'wildcard on both strings and numbers',
+      params: `wildcard get strings and numbers {{step.${randomStepID}.arrayOfObjectsProp.*.stringProp}} {{step.${randomStepID}.arrayOfObjectsProp.*.numberProp}}`,
+      expected:
+        'wildcard get strings and numbers string value 1 in array of objects, string value 2 in array of objects 456, 789',
+    },
+    {
+      testDescription: 'wildcard on non-existent key',
+      params: `non-existent key! {{step.${randomStepID}.non-existent-key.*}}`,
+      expected: 'non-existent key! ',
+    },
+    {
+      testDescription: 'prop name with wildcard',
+      params: `prop with wildcard {{step.${randomStepID}.stringWith*}}`,
+      expected: 'prop with wildcard string value',
+    },
+    {
+      testDescription: 'prop name with space and wildcard',
+      params: `prop with space and wildcard! {{step.${randomStepID}.string with *}}`,
+      expected: `prop with space and wildcard! string value 2`,
+    },
+    {
+      testDescription: 'wildcard on a string',
+      params: `wildcard on a string!! {{step.${randomStepID}.stringProp.*}}`,
+      expected: 'wildcard on a string!! string value',
+    },
+  ])('should handle $testDescription', ({ params, expected }) => {
+    const executionSteps = [
+      {
+        stepId: randomStepID,
+        dataOut: {
+          stringProp: 'string value',
+          numberProp: 123,
+          'space separated prop': 'space separated value',
+          arrayProp: ['array value 1', 'hehe', 'array value 3'],
+          emptyArrayProp: [],
+          arrayOfObjectsProp: [
+            {
+              stringProp: 'string value 1 in array of objects',
+              numberProp: 456,
+            },
+            {
+              stringProp: 'string value 2 in array of objects',
+              numberProp: 789,
+            },
+          ],
+          'stringWith*': 'string value',
+          'string with *': 'string value 2',
+        },
+      } as unknown as ExecutionStep,
+    ]
+
+    const result = computeParameters({ params }, executionSteps)
+    expect(result).toEqual({ params: expected })
+  })
 })

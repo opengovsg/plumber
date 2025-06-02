@@ -1,13 +1,24 @@
 import type { IAction } from '@plumber/types'
 
+import { map } from 'lodash'
 import get from 'lodash.get'
 
 import ExecutionStep from '@/models/execution-step'
 
 import Step from '../models/step'
 
+const GET_ALL_SEPARATOR = ','
+
 const variableRegExp =
-  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/g
+  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\w* -]+)+}})/g
+
+function splitAndJoinAroundWildcard(arr: string[]) {
+  const wildcardIndex = arr.indexOf('*')
+  return {
+    before: arr.slice(0, wildcardIndex).join('.'),
+    after: arr.slice(wildcardIndex + 1).join('.'),
+  }
+}
 
 function findAndSubstituteVariables(
   // i.e. the `key` corresponding to this variable's form field in defineAction
@@ -60,6 +71,24 @@ function findAndSubstituteVariables(
           return executionStep.stepId === stepId
         })
         const data = executionStep?.dataOut
+
+        // wildcard intent is to get values from an array in dataOut
+        if (keyPaths.includes('*')) {
+          const { before, after } = splitAndJoinAroundWildcard(keyPaths)
+          const base = get(data, before)
+
+          if (!base) {
+            return ''
+          }
+
+          const values = after
+            ? map(base as Record<string, unknown>, after)
+            : Array.isArray(base)
+            ? base
+            : [base]
+
+          return values.join(`${GET_ALL_SEPARATOR} `)
+        }
 
         const keyPath = keyPaths.join('.') // for lodash get to work
         const dataValue = get(data, keyPath)
