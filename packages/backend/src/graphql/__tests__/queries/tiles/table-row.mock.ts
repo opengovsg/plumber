@@ -19,12 +19,14 @@ export async function insertMockTableRows(
 
   const tableOperations = getTableOperations(databaseType)
   const chunks = chunk(rows, 100)
+  const rowIds = []
   for (const dataArray of chunks) {
-    await tableOperations.createTableRows({
+    const addedRowsIds = await tableOperations.createTableRows({
       tableId,
       dataArray,
     })
+    rowIds.push(...addedRowsIds)
   }
 
-  return rows.map((r) => r.rowId)
+  return rowIds
 }

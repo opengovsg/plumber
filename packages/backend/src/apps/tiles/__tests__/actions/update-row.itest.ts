@@ -11,7 +11,6 @@ import {
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
-import { createTableRow } from '@/models/tiles/dynamodb/table-row'
 import { getTableOperations } from '@/models/tiles/factory'
 import { DatabaseType } from '@/models/tiles/types'
 import User from '@/models/user'
@@ -51,7 +50,8 @@ describe.each([['ddb'], ['pg']])(
         columnIds: dummyColumnIds,
       })
 
-      const rowToUpdate = await createTableRow({
+      const tableOperations = getTableOperations(databaseType)
+      const rowToUpdate = await tableOperations.createTableRow({
         tableId: dummyTable.id,
         data: originalData,
       })

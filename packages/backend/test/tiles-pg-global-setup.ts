@@ -19,7 +19,7 @@ export async function setup() {
 
   process.env.TILES_POSTGRES_PORT = postgresContainer.getPort().toString()
   console.info(
-    `Tiles PostgreSQL container started at port ${process.env.POSTGRES_PORT}`,
+    `Tiles PostgreSQL container started at port ${process.env.TILES_POSTGRES_PORT}`,
   )
 }
 
