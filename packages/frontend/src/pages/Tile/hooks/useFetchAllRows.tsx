@@ -19,7 +19,7 @@ const convertCsvRowToObject = (
   row: ITableRowCsv,
   columnIds: string[],
 ): ITableRow => {
-  const dataArray = row.data.split(',')
+  const dataArray = JSON.parse(row.data)
 
   if (dataArray.length !== columnIds.length) {
     console.warn(

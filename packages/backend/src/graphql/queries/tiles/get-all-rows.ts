@@ -50,7 +50,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
 
     // Convert data object to csv to minimize payload size
     rows.forEach((row) => {
-      row.data = columnIds.map((columnId) => row.data[columnId]).join(',')
+      row.data = JSON.stringify(columnIds.map((columnId) => row.data[columnId]))
     })
 
     return {
