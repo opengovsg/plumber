@@ -17,7 +17,7 @@ describe('create table mutation', () => {
   it('should create a blank table', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: true } },
+      { input: { name: 'Test Table', isBlank: true, databaseType: 'ddb' } },
       context,
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()
@@ -58,11 +58,7 @@ describe('create table mutation', () => {
 
   it('should throw an error when table name is empty', async () => {
     await expect(
-      createTable(
-        null,
-        { input: { name: '', isBlank: false, databaseType: 'ddb' } },
-        context,
-      ),
+      createTable(null, { input: { name: '', isBlank: false } }, context),
     ).rejects.toThrow()
   })
 })
