@@ -45,7 +45,6 @@ const createTable: MutationResolvers['createTable'] = async (
 
   const tableOperations = getTableOperations(databaseType)
 
-  console.log(tableOperations)
   const table = await TableMetadata.transaction(async (trx) => {
     const pendingTable = await context.currentUser
       .$relatedQuery('tables', trx)

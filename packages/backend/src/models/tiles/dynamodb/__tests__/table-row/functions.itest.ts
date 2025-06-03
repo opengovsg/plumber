@@ -30,12 +30,14 @@ describe('dynamodb table row functions', () => {
 
     const mockTable = await generateMockTable({
       userId: context.currentUser.id,
+      databaseType: 'ddb',
     })
     dummyTable = mockTable.table
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
       numColumns: 5,
+      databaseType: 'ddb',
     })
   })
 

@@ -306,7 +306,7 @@ describe('table-row-functions', () => {
             },
           },
         }),
-      ).rejects.toThrow('Row cannot be patched')
+      ).rejects.toThrow()
 
       await expect(
         patchTableRow({

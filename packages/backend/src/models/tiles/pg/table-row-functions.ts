@@ -150,7 +150,7 @@ export const patchTableRow = async ({
 
     const res = await query.update('updatedAt', new Date()).returning('*')
     if (res.length === 0) {
-      throw new Error('Row cannot be patched')
+      throw new Error('No rows to patch')
     }
     return formatTableRow(res[0], tableId)
   } catch (e: unknown) {

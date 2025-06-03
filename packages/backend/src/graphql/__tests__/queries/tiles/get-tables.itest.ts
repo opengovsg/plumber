@@ -16,10 +16,13 @@ describe('get tables query', () => {
   beforeEach(async () => {
     context = await generateMockContext()
   })
-  it('should return array of tables belonging to users', async () => {
+  it('should return array of tables belonging to users regardless of database type', async () => {
     const numTables = 5
     for (let i = 0; i < numTables; i++) {
-      await generateMockTable({ userId: context.currentUser.id })
+      await generateMockTable({
+        userId: context.currentUser.id,
+        databaseType: i % 2 ? 'ddb' : 'pg',
+      })
     }
     const { edges, pageInfo } = await getTables(
       null,
@@ -47,7 +50,10 @@ describe('get tables query', () => {
   it('should throw an error if collaborator does not exist or is soft deleted', async () => {
     const numTables = 5
     for (let i = 0; i < numTables; i++) {
-      await generateMockTable({ userId: context.currentUser.id })
+      await generateMockTable({
+        userId: context.currentUser.id,
+        databaseType: i % 2 ? 'ddb' : 'pg',
+      })
     }
     const { edges, pageInfo } = await getTables(
       null,
@@ -75,7 +81,10 @@ describe('get tables query', () => {
   it('should filter by name', async () => {
     const numTables = 5
     for (let i = 0; i < numTables; i++) {
-      await generateMockTable({ userId: context.currentUser.id })
+      await generateMockTable({
+        userId: context.currentUser.id,
+        databaseType: i % 2 ? 'ddb' : 'pg',
+      })
     }
     const { edges } = await getTables(
       null,
@@ -97,7 +106,10 @@ describe('get tables query', () => {
   it('should paginate tables', async () => {
     const numTables = 5
     for (let i = 0; i < numTables; i++) {
-      await generateMockTable({ userId: context.currentUser.id })
+      await generateMockTable({
+        userId: context.currentUser.id,
+        databaseType: i % 2 ? 'ddb' : 'pg',
+      })
     }
     const { edges: firstPage, pageInfo: firstPageInfo } = await getTables(
       null,
@@ -123,7 +135,10 @@ describe('get tables query', () => {
   it('should return the corresponding roles of each user', async () => {
     const numTables = 5
     for (let i = 0; i < numTables; i++) {
-      await generateMockTable({ userId: context.currentUser.id })
+      await generateMockTable({
+        userId: context.currentUser.id,
+        databaseType: i % 2 ? 'ddb' : 'pg',
+      })
     }
     const { edges } = await getTables(null, { limit: 10, offset: 0 }, context)
     const tables = edges.map((edge) => edge.node)

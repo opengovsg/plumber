@@ -12,8 +12,9 @@ import {
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import { createTableRow } from '@/models/tiles/dynamodb/table-row'
-import * as tableFunctions from '@/models/tiles/dynamodb/table-row/functions'
-import { TableRowFilter } from '@/models/tiles/types'
+import * as ddbTableRowFunctions from '@/models/tiles/dynamodb/table-row/functions'
+import * as pgTableRowFunctions from '@/models/tiles/pg/table-row-functions'
+import { DatabaseType, TableRowFilter } from '@/models/tiles/types'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
@@ -38,126 +39,139 @@ vi.mock('@/models/step', () => ({
   },
 }))
 
-describe('tiles create row action', () => {
-  let context: Context
-  let dummyTable: TableMetadata
-  let dummyColumnIds: string[]
-  let editor: User
-  let viewer: User
-  let $: IGlobalVariable
+describe.each([['ddb'], ['pg']])(
+  'tiles create row action: %s',
+  (databaseType: DatabaseType) => {
+    let context: Context
+    let dummyTable: TableMetadata
+    let dummyColumnIds: string[]
+    let editor: User
+    let viewer: User
+    let $: IGlobalVariable
 
-  beforeEach(async () => {
-    context = await generateMockContext()
+    beforeEach(async () => {
+      context = await generateMockContext()
 
-    const mockTable = await generateMockTable({
-      userId: context.currentUser.id,
-    })
-    dummyTable = mockTable.table
-    editor = mockTable.editor
-    viewer = mockTable.viewer
-
-    dummyColumnIds = await generateMockTableColumns({
-      tableId: dummyTable.id,
-      numColumns: 5,
-    })
-
-    const originalData = generateMockTableRowData({ columnIds: dummyColumnIds })
-
-    await createTableRow({
-      tableId: dummyTable.id,
-      data: originalData,
-    })
-
-    $ = {
-      user: context.currentUser,
-      flow: {
-        id: '123',
+      const mockTable = await generateMockTable({
         userId: context.currentUser.id,
-      },
-      step: {
-        id: '456',
-        appKey: tiles.name,
-        key: findSingleRowAction.key,
-        position: 2,
-        parameters: {
-          tableId: dummyTable.id,
-          filters: [
-            {
-              columnId: dummyColumnIds[0],
-              operator: 'equals',
-              value: originalData[dummyColumnIds[0]],
-            },
-          ] as TableRowFilter[],
+        databaseType,
+      })
+      dummyTable = mockTable.table
+      editor = mockTable.editor
+      viewer = mockTable.viewer
+
+      dummyColumnIds = await generateMockTableColumns({
+        tableId: dummyTable.id,
+        numColumns: 5,
+        databaseType,
+      })
+
+      const originalData = generateMockTableRowData({
+        columnIds: dummyColumnIds,
+      })
+
+      await createTableRow({
+        tableId: dummyTable.id,
+        data: originalData,
+      })
+
+      $ = {
+        user: context.currentUser,
+        flow: {
+          id: '123',
+          userId: context.currentUser.id,
         },
-      },
-      app: {
-        name: tiles.name,
-      },
-      setActionItem: vi.fn(),
-    } as unknown as IGlobalVariable
-  })
-
-  it('should allow owners to find single row', async () => {
-    await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
-    expect($.setActionItem).toBeCalled()
-  })
-
-  it('should allow editors to find single row', async () => {
-    $.user = editor
-    await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
-    expect($.setActionItem).toBeCalled()
-  })
-
-  it('should not allow viewers to find single row', async () => {
-    $.user = viewer
-    await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
-  })
-
-  it('should throw correct error if Tile deleted', async () => {
-    $.user = editor
-    await TableMetadata.query()
-      .patch({
-        deletedAt: new Date().toISOString(),
-      })
-      .where({ id: $.step.parameters.tableId })
-    await TableColumnMetadata.query()
-      .patch({
-        deletedAt: new Date().toISOString(),
-      })
-      .where({ table_id: $.step.parameters.tableId })
-    await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
-  })
-
-  it('should call getTableRows with scan limit if exists in step config', async () => {
-    const getTableRowsSpy = vi
-      .spyOn(tableFunctions, 'getTableRows')
-      .mockResolvedValueOnce({
-        rows: [],
-        stringifiedCursor: undefined,
-      })
-    await findSingleRowAction.run($)
-    expect(getTableRowsSpy).toHaveBeenCalledWith({
-      tableId: $.step.parameters.tableId,
-      filters: $.step.parameters.filters,
-      scanLimit: 100,
-      order: 'asc',
+        step: {
+          id: '456',
+          appKey: tiles.name,
+          key: findSingleRowAction.key,
+          position: 2,
+          parameters: {
+            tableId: dummyTable.id,
+            filters: [
+              {
+                columnId: dummyColumnIds[0],
+                operator: 'equals',
+                value: originalData[dummyColumnIds[0]],
+              },
+            ] as TableRowFilter[],
+          },
+        },
+        app: {
+          name: tiles.name,
+        },
+        setActionItem: vi.fn(),
+      } as unknown as IGlobalVariable
     })
-  })
 
-  it('should call getTableRows with scan limit and order', async () => {
-    const getTableRowsSpy = vi
-      .spyOn(tableFunctions, 'getTableRows')
-      .mockResolvedValueOnce({
-        rows: [],
-        stringifiedCursor: undefined,
-      })
-    $.step.parameters.returnLastRow = true
-    await findSingleRowAction.run($)
-    expect(getTableRowsSpy).toHaveBeenCalledWith({
-      tableId: $.step.parameters.tableId,
-      filters: $.step.parameters.filters,
-      scanLimit: 100,
-      order: 'desc',
+    it('should allow owners to find single row', async () => {
+      await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+      expect($.setActionItem).toBeCalled()
     })
-  })
-})
+
+    it('should allow editors to find single row', async () => {
+      $.user = editor
+      await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+      expect($.setActionItem).toBeCalled()
+    })
+
+    it('should not allow viewers to find single row', async () => {
+      $.user = viewer
+      await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+    })
+
+    it('should throw correct error if Tile deleted', async () => {
+      $.user = editor
+      await TableMetadata.query()
+        .patch({
+          deletedAt: new Date().toISOString(),
+        })
+        .where({ id: $.step.parameters.tableId })
+      await TableColumnMetadata.query()
+        .patch({
+          deletedAt: new Date().toISOString(),
+        })
+        .where({ table_id: $.step.parameters.tableId })
+      await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+    })
+
+    it('should call getTableRows with scan limit if exists in step config', async () => {
+      const getTableRowsSpy = vi
+        .spyOn(
+          databaseType === 'ddb' ? ddbTableRowFunctions : pgTableRowFunctions,
+          'getTableRows',
+        )
+        .mockResolvedValueOnce({
+          rows: [],
+          stringifiedCursor: undefined,
+        })
+      await findSingleRowAction.run($)
+      expect(getTableRowsSpy).toHaveBeenCalledWith({
+        tableId: $.step.parameters.tableId,
+        filters: $.step.parameters.filters,
+        scanLimit: 100,
+        order: 'asc',
+      })
+    })
+
+    it('should call getTableRows with scan limit and order', async () => {
+      const getTableRowsSpy = vi
+        .spyOn(
+          databaseType === 'ddb' ? ddbTableRowFunctions : pgTableRowFunctions,
+          'getTableRows',
+        )
+        .mockResolvedValueOnce({
+          rows: [],
+          stringifiedCursor: undefined,
+        })
+      $.step.parameters.returnLastRow = true
+      await findSingleRowAction.run($)
+      expect(getTableRowsSpy).toHaveBeenCalledWith({
+        tableId: $.step.parameters.tableId,
+        filters: $.step.parameters.filters,
+        scanLimit: 100,
+        order: 'desc',
+      })
+    })
+  },
+)
