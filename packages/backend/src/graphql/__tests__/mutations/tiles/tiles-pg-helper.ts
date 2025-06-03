@@ -10,3 +10,7 @@ export async function checkIfTableHasColumn(
 ) {
   return tilesClient.schema.hasColumn(tableId, columnName)
 }
+
+export async function selectAllRows(tableId: string) {
+  return tilesClient(tableId).select('*')
+}
