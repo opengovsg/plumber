@@ -30,6 +30,7 @@ import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-s
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
+  useForEachInitializer,
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
@@ -224,6 +225,7 @@ export const EditorProvider = ({
 
   const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
 
+  const [initializeForEach] = useForEachInitializer()
   const [initializeIfThen] = useIfThenInitializer()
 
   // Add a step to the flow with the given appKey and eventKey
@@ -254,8 +256,8 @@ export const EditorProvider = ({
       const newStep = createdStep.data.createStep
       setCurrentStepId(newStep.id)
 
-      // account for the if-then edge case
-      if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
+      // account for the for-each and if-then
+      if (appKey === TOOLBOX_APP_KEY) {
         // Get the complete step data from the cache
         const { getFlow: updatedFlow } = client.readQuery({
           query: GET_FLOW,
@@ -271,15 +273,21 @@ export const EditorProvider = ({
             ...completeStep,
             flowId: flowId,
           }
-          return (await initializeIfThen(
-            completeStepWithFlow,
-          )) as unknown as IStep
+          if (eventKey === TOOLBOX_ACTIONS.IfThen) {
+            return (await initializeIfThen(
+              completeStepWithFlow,
+            )) as unknown as IStep
+          }
+
+          if (eventKey === TOOLBOX_ACTIONS.ForEach) {
+            await initializeForEach(completeStepWithFlow)
+          }
         }
       }
 
       return newStep as IStep
     },
-    [createStep, flowId, initializeIfThen, setCurrentStepId],
+    [createStep, flowId, initializeForEach, initializeIfThen],
   )
 
   /**

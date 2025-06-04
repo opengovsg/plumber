@@ -29,6 +29,7 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
   useIfThenInitializer,
+  useIsForEachSelectable,
   useIsIfThenSelectable,
 } from '@/helpers/toolbox'
 
@@ -78,6 +79,7 @@ export default function ChooseApp(props: ChooseAppProps) {
     [onSelectApp, onSelectAppEvent],
   )
 
+  const isForEachSelectable = useIsForEachSelectable({ isLastStep })
   const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const toolboxActionsToDisplay = useMemo(() => {
     if (isLoading || !launchDarkly.flags) {
@@ -273,8 +275,10 @@ export default function ChooseApp(props: ChooseAppProps) {
                           action={action}
                           onSelectAppEvent={() => onSelectAppEvent(app, action)}
                           isDisabled={
-                            action.key === TOOLBOX_ACTIONS.IfThen &&
-                            !isIfThenSelectable
+                            (action.key === TOOLBOX_ACTIONS.IfThen &&
+                              !isIfThenSelectable) ||
+                            (action.key === TOOLBOX_ACTIONS.ForEach &&
+                              !isForEachSelectable)
                           }
                           searchQuery={searchQuery}
                         />
