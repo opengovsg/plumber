@@ -5,7 +5,6 @@ import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
-import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
 import { PostmanEmailSendStatus } from './data-out-validator'
 import { createRequestBlacklistFormLink } from './send-blacklist-email'
 
@@ -129,8 +128,8 @@ export function throwPostmanStepError({
       })
     case 'INVALID-ATTACHMENT':
       throw new StepError(
-        'Unsupported attachment file type',
-        `Check that the attachment type is supported by postman. Please check the supported types at [this link](${POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL}).`,
+        'Password-protected attachment(s)',
+        `Check that the attachment(s) are not password-protected.`,
         position,
         appName,
         error,
@@ -159,8 +158,8 @@ export function throwPostmanStepError({
         })
       }
 
-      // NOTE: as we perform a best effort filter on the attachments being sent,
-      // we keep the INVALID-ATTACHMENT error above in case we miss out any file types
+      // NOTE: we keep the INVALID-ATTACHMENT error as Postman may reject
+      // attachments that are password-protected
       if (hasInvalidAttachments) {
         const name = 'Invalid attachment(s)'
         const solution = getInvalidAttachmentSolution({

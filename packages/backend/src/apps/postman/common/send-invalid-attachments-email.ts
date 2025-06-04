@@ -78,7 +78,7 @@ export async function sendInvalidAttachmentsEmail(
   `
 
   await sendEmail({
-    subject: `Plumber: Invalid attachments detected on ${truncatedFlowName}`,
+    subject: `Plumber: Unsupported attachment(s) detected on ${truncatedFlowName}`,
     body: bodyMessage,
     recipient: userEmail,
     replyTo: 'support@plumber.gov.sg',
