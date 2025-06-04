@@ -28,6 +28,8 @@ import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
+  isForEachStep,
+  isIfThenStep,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
   useForEachInitializer,
@@ -44,6 +46,7 @@ interface IEditorContextValue {
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
   currentStepIndex: number | null
+  hasForEach: boolean
   hasIfThen: boolean
   currentTestExecutionStep: IExecutionStep | null
   isDrawerOpen: boolean
@@ -76,6 +79,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   flowId: '',
   currentStepId: null,
   currentStepIndex: null,
+  hasForEach: false,
   hasIfThen: false,
   currentTestExecutionStep: null,
   isDrawerOpen: false,
@@ -174,9 +178,8 @@ export const EditorProvider = ({
   const isEmptyPipe =
     steps.length <= 2 && steps.every((s) => s.key === null && s.appKey === null)
 
-  const hasIfThen = flow?.steps.some(
-    (step: IStep) => step.key === TOOLBOX_ACTIONS.IfThen,
-  )
+  const hasForEach = flow?.steps.some((step) => isForEachStep(step))
+  const hasIfThen = flow?.steps.some((step: IStep) => isIfThenStep(step))
 
   const allApps = getAppsData?.getApps ?? []
 
@@ -392,6 +395,7 @@ export const EditorProvider = ({
         allApps,
         currentStepId,
         currentStepIndex,
+        hasForEach,
         hasIfThen,
         isDrawerOpen,
         isMobile,
