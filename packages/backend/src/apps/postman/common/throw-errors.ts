@@ -5,6 +5,7 @@ import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
+import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
 import { PostmanEmailSendStatus } from './data-out-validator'
 import { createRequestBlacklistFormLink } from './send-blacklist-email'
 
@@ -129,7 +130,7 @@ export function throwPostmanStepError({
     case 'INVALID-ATTACHMENT':
       throw new StepError(
         'Unsupported attachment file type',
-        'Check that the attachment type is supported by postman. Please check the supported types at [this link](https://postman-v1.guides.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
+        `Check that the attachment type is supported by postman. Please check the supported types at [this link](${POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL}).`,
         position,
         appName,
         error,

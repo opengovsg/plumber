@@ -33,3 +33,6 @@ export const POSTMAN_ACCEPTED_EXTENSIONS = [
   'wmv',
   'xlsx',
 ]
+
+export const POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL =
+  'https://postman-v1.guides.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types'
