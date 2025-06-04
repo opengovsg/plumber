@@ -153,7 +153,7 @@ describe('send transactional email', () => {
       },
       errorStatusCode: 400,
       errorStatusText: 'Bad Request',
-      stepErrorName: 'Unsupported attachment file type',
+      stepErrorName: 'Password-protected attachment(s)',
     },
   ])(
     'should throw step error for different postman errors',
