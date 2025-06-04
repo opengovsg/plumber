@@ -30,9 +30,10 @@ import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 
+import { allowAddStep } from '../utils'
+
 import { HoverAddStepButton } from './HoverAddStepButton'
 import { branchStyles } from './styles'
-import { allowAddStep } from './utils'
 
 interface BranchProps {
   branchSteps: IStep[]

@@ -16,6 +16,7 @@ export const TOOLBOX_APP_KEY = 'toolbox'
 
 export enum TOOLBOX_ACTIONS {
   IfThen = 'ifThen',
+  ForEach = 'forEach',
 }
 
 //
@@ -270,4 +271,79 @@ export function useIfThenInitializer(): [
   )
 
   return [initialize, isInitializing]
+}
+
+//
+// Helpers for For-each
+//
+export function isForEachStep(step: IStep): boolean {
+  return step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.ForEach
+}
+
+export function useForEachInitializer(): [
+  (currStep: IStep) => Promise<void>,
+  boolean,
+] {
+  const [isInitializing, setIsInitializing] = useState(false)
+  const [createStep] = useMutation(CREATE_STEP, { fetchPolicy: 'no-cache' })
+
+  const initialize = useCallback(
+    async (currStep: IStep) => {
+      setIsInitializing(true)
+
+      // create 1 empty step in the loop
+      const newForEachStep = await createStep({
+        variables: {
+          input: {
+            previousStep: {
+              id: currStep.id,
+            },
+            flow: {
+              id: currStep.flowId,
+            },
+          },
+        },
+      })
+
+      // Refetch only after completion of all initialization steps.
+      await client.refetchQueries({ include: [GET_FLOW] })
+
+      setIsInitializing(false)
+      return newForEachStep.data.createStep
+    },
+    [createStep],
+  )
+
+  return [initialize, isInitializing]
+}
+
+/**
+ * Helper hook to check if For-each action should be selectable; supports edge
+ * case in ChooseEvent component.
+ *
+ * For-each should only be selectable if:
+ * - We're the last step.
+ * - We are not inside a for-each action.
+ * - We are not inside an if-then action.
+ * - There is no if-then action in the flow,
+ *
+ * Using many consts as purpose of the conditions may not be immediately
+ * apparent.
+ */
+export function useIsForEachSelectable({
+  isLastStep,
+}: {
+  isLastStep: boolean
+}): boolean {
+  const { hasIfThen, flow } = useContext(EditorContext)
+
+  const hasForEach = flow?.steps?.some(
+    (step: IStep) => step.key === TOOLBOX_ACTIONS.ForEach,
+  )
+
+  if (hasForEach || hasIfThen || !isLastStep) {
+    return false
+  }
+
+  return true
 }
