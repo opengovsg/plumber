@@ -22,10 +22,12 @@ export const GET_FLOW = gql`
           createdAt
           formattedData {
             screenName
+            env
           }
         }
         parameters
         config {
+          stepName
           templateConfig {
             appEventKey
           }

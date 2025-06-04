@@ -70,36 +70,50 @@ export default async (request: IRequest, response: Response) => {
     }
   }
 
+  let internalId: string = randomUUID()
   const testRun = !flow.active
   const triggerStep = await flow.getTriggerStep()
-  const triggerCommand = await triggerStep.getTriggerCommand()
-  const app = await triggerStep.getApp()
-  const isWebhookApp = app.key === 'webhook' || app.key === 'formsg'
 
-  // Allow all webhook test runs to work
-  if (testRun && !isWebhookApp) {
+  const triggerApp = await triggerStep?.getApp()
+
+  if (!triggerApp) {
+    logger.info(`Trigger app not set up for flow ${flowId}`)
     return response.sendStatus(404)
   }
 
+  const isFormsgApp = triggerApp.key === 'formsg'
+  const isWebhookApp = triggerApp.key === 'webhook' || isFormsgApp
+
+  if (!isWebhookApp) {
+    logger.info(`Invalid trigger app for flow${flowId}`)
+    return response.sendStatus(404)
+  }
+
+  const triggerCommand = await triggerStep?.getTriggerCommand()
   // If trigger event is not selected, this should also return 404
   if (triggerCommand?.type !== 'webhook') {
+    logger.info(
+      `Trigger command not found or is not webhook type for flow${flowId}`,
+    )
     return response.sendStatus(404)
   }
 
-  if (app.auth?.verifyWebhook) {
+  if (triggerApp.auth?.verifyWebhook) {
     const $ = await globalVariable({
       flow,
       connection: await triggerStep.$relatedQuery('connection'),
-      app,
+      app: triggerApp,
       step: triggerStep,
       request,
     })
 
-    const verified = await app.auth.verifyWebhook($)
+    const { verified, internalId: newInternalId } =
+      await triggerApp.auth.verifyWebhook($)
 
     if (!verified) {
       return response.sendStatus(401)
     }
+    internalId = newInternalId
   }
 
   // in case trigger type is 'webhook'
@@ -116,11 +130,16 @@ export default async (request: IRequest, response: Response) => {
   const triggerItem: ITriggerItem = {
     raw: payload,
     meta: {
-      internalId: randomUUID(),
+      internalId,
     },
   }
 
-  const { executionId } = await processTrigger({
+  /**
+   * NOTE: special case for when FormSG calls Plumber's webhook twice for payment forms.
+   * Plumber will still return a 200 status code, so that FormSG does not auto-retry,
+   * but Plumber not enqueue the job.
+   */
+  const { executionId, shouldExecute } = await processTrigger({
     flowId,
     stepId: triggerStep.id,
     triggerItem,
@@ -131,11 +150,11 @@ export default async (request: IRequest, response: Response) => {
     flowId,
     executionId,
     stepId: triggerStep.id,
-    appKey: app.key,
+    appKey: triggerApp.key,
     testRun,
   })
 
-  if (testRun) {
+  if (testRun || !shouldExecute) {
     return response.sendStatus(200)
   }
 

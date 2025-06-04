@@ -17,6 +17,7 @@ export type InputCreatorProps = {
   namePrefix?: string
   stepId?: string
   parentType?: string
+  autoFocus?: boolean
 }
 
 type RawOption = {
@@ -28,7 +29,7 @@ const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
   options?.map(({ name, value }) => ({ label: name as string, value: value }))
 
 export default function InputCreator(props: InputCreatorProps): JSX.Element {
-  const { schema, namePrefix, stepId, parentType } = props
+  const { schema, namePrefix, stepId, parentType, autoFocus } = props
 
   const {
     key: name,
@@ -133,6 +134,9 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           isSingleLine={parentType === 'multicol'}
           variablesEnabled
           tooltipText={tooltipText}
+          variableTypes={schema.variableTypes}
+          parentType={parentType}
+          autoFocus={autoFocus}
         />
       )
     }

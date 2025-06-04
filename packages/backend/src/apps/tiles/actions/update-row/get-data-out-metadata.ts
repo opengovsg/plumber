@@ -18,6 +18,12 @@ async function getDataOutMetadata(
   const metadata: IDataOutMetadata = {
     rowId: {
       label: 'Row ID',
+      type: 'tile_row_id',
+      order: 0,
+    },
+    updated: {
+      label: 'Updated?',
+      order: 1,
     },
   }
   const rowData = (dataOut as UpdateRowOutput).row

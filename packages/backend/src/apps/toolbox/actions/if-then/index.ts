@@ -45,7 +45,7 @@ const action: IRawAction = {
     {
       label: 'Conditions',
       key: 'conditions',
-      type: 'multirow' as const,
+      type: 'multirow-multicol' as const,
       required: true,
       description:
         'Every condition has to be satisfied for this branch to be taken.',
@@ -60,7 +60,7 @@ const action: IRawAction = {
     } catch (err) {
       throw new StepError(
         err.message,
-        'Click on set up action and check that the condition has been configured properly.',
+        'Check that the condition has been configured properly.',
         $.step.position,
         $.app.name,
       )

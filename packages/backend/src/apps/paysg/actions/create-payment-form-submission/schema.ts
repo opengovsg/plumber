@@ -83,16 +83,18 @@ export const requestSchema = z.object({
     .max(500, { message: 'Description cannot be more than 500 characters' })
     .transform((value) => value || undefined)
     .optional(),
-  responses: z.array(
-    z.object({
-      question: z
-        .string({ invalid_type_error: 'Empty question' })
-        .trim()
-        .min(1, { message: 'Empty question' }),
-      answer: z
-        .string({ invalid_type_error: 'Empty answer' })
-        .trim()
-        .min(1, { message: 'Empty answer' }),
-    }),
-  ),
+  responses: z
+    .array(
+      z.object({
+        question: z
+          .string({ invalid_type_error: 'Empty question' })
+          .trim()
+          .min(1, { message: 'Empty question' }),
+        answer: z
+          .string({ invalid_type_error: 'Empty answer' })
+          .trim()
+          .min(1, { message: 'Empty answer' }),
+      }),
+    )
+    .default([]),
 })

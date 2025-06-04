@@ -37,15 +37,18 @@ const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
   logError: vi.fn(),
   authDataParseResult: vi.fn(() => ({
-    env: 'test',
-    campaignId: 'test-campaign',
-    apiKey: 'test-api-key',
+    success: true,
+    data: {
+      env: 'test',
+      campaignId: 'test-campaign',
+      apiKey: 'test-api-key',
+    },
   })),
 }))
 
 vi.mock('../auth/schema', () => ({
   authDataSchema: {
-    parse: mocks.authDataParseResult,
+    safeParse: mocks.authDataParseResult,
   },
 }))
 
@@ -57,11 +60,14 @@ vi.mock('@/helpers/logger', () => ({
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.default.create = (createConfig) =>
-    actualAxios.default.create({
+  const mockCreate: typeof actualAxios.default.create = (createConfig) => {
+    const instance = actualAxios.default.create({
       ...createConfig,
       adapter: mocks.axiosRequestAdapter,
     })
+
+    return instance
+  }
 
   return {
     default: {
@@ -112,9 +118,12 @@ describe('Send SMS Action', () => {
 
   it('uses the campaign ID in auth data', async () => {
     mocks.authDataParseResult.mockReturnValue({
-      env: 'test',
-      campaignId: 'my-campaign-id',
-      apiKey: 'test-key',
+      success: true,
+      data: {
+        env: 'test',
+        campaignId: 'my-campaign-id',
+        apiKey: 'test-key',
+      },
     })
     await sendSmsAction.run($)
 

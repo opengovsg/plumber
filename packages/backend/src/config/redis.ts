@@ -1,5 +1,7 @@
 import ioRedis from 'ioredis'
 
+import logger from '@/helpers/logger'
+
 import appConfig from './app'
 
 // Maximum of 16; be careful when adding!
@@ -13,6 +15,7 @@ export const REDIS_DB_INDEX = {
 
 function reconnectOnError(err: Error) {
   const targetError = 'READONLY'
+  logger.error('Redis connection error', err)
   if (err.message.includes(targetError)) {
     // Only reconnect when the error contains "READONLY"
     // during node failover, this is thrown: 149: -READONLY You can't write against a read only replica.

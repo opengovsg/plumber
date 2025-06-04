@@ -1,19 +1,28 @@
-import type { IApp, IExecutionStep, IStep } from '@plumber/types'
+import type { IApp, IExecutionStep, IFlow, IStep } from '@plumber/types'
 
 import {
   createContext,
   ReactNode,
   useCallback,
   useContext,
+  useMemo,
   useState,
 } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
-import { Center } from '@chakra-ui/react'
+import { Center, useDisclosure } from '@chakra-ui/react'
+import { useIsMobile } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
+import {
+  genVariableInfoMap,
+  VariableInfoMap,
+} from '@/components/RichTextEditor/utils'
 import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
+import { ExecutionStep } from '@/graphql/__generated__/graphql'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
+import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
@@ -23,15 +32,32 @@ import {
   TOOLBOX_APP_KEY,
   useIfThenInitializer,
 } from '@/helpers/toolbox'
+import { extractVariables, StepWithVariables } from '@/helpers/variables'
 
 import { LaunchDarklyContext } from './LaunchDarkly'
 
 interface IEditorContextValue {
+  flow: IFlow
   flowId: string
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
+  currentStepIndex: number | null
+  hasIfThen: boolean
+  currentTestExecutionStep: IExecutionStep | null
+  isDrawerOpen: boolean
+  isMobile: boolean
+  isEmptyPipe: boolean
+  isTestExecuting: boolean
+  shouldWarnOnLeave: boolean
+  stepsWithVars: StepWithVariables[]
+  varInfoMap: VariableInfoMap
+  executeTestStep: () => Promise<void>
+  onDrawerOpen: () => void
+  onDrawerClose: () => void
   setCurrentStepId: (stepId: string | null) => void
+  setCurrentStepIndex: (stepIndex: number | null) => void
+  setShouldWarnOnLeave: (shouldWarnOnLeave: boolean) => void
   onCreateStep: (
     previousStepId: string,
     appKey: string,
@@ -40,23 +66,45 @@ interface IEditorContextValue {
   ) => Promise<IStep>
   onUpdateStep: (step: IStep) => Promise<IStep>
   allApps: IApp[]
+  resetForm: () => void
+  resetTimestamp: number
 }
 
 export const EditorContext = createContext<IEditorContextValue>({
+  flow: {} as IFlow,
   flowId: '',
+  currentStepId: null,
+  currentStepIndex: null,
+  hasIfThen: false,
+  currentTestExecutionStep: null,
+  isDrawerOpen: false,
+  isMobile: false,
+  isEmptyPipe: false,
+  isTestExecuting: false,
+  shouldWarnOnLeave: false,
+  stepsWithVars: [],
   readOnly: false,
   testExecutionSteps: [],
-  currentStepId: null,
-  setCurrentStepId: () => null,
+  varInfoMap: new Map(),
   onCreateStep: () => Promise.resolve({} as IStep),
+  onDrawerClose: () => null,
+  onDrawerOpen: () => null,
   onUpdateStep: () => Promise.resolve({} as IStep),
+  executeTestStep: () => Promise.resolve(),
+  setCurrentStepId: () => null,
+  setCurrentStepIndex: () => null,
+  setShouldWarnOnLeave: () => null,
   allApps: [],
+  resetForm: () => null,
+  resetTimestamp: 0,
 })
 
 type EditorProviderProps = {
   children: ReactNode
   readOnly: boolean
-  flowId: string
+  flow: IFlow
+  shouldWarnOnLeave: boolean
+  setShouldWarnOnLeave: (shouldWarnOnLeave: boolean) => void
 }
 
 /**
@@ -77,6 +125,7 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
       iconUrl: null,
       webhookUrl: null,
       config: {
+        stepName: null,
         templateConfig: {
           appEventKey: null,
         },
@@ -102,16 +151,32 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 
 export const EditorProvider = ({
   readOnly,
-  flowId,
+  flow,
+  shouldWarnOnLeave,
+  setShouldWarnOnLeave,
   children,
 }: EditorProviderProps) => {
   // TODO: remove this kill switch once Single Step Testing is stable
   const { flags } = useContext(LaunchDarklyContext)
   const shouldUseSingleStepTest = !flags?.[SINGLE_STEP_TEST_KILL_SWITCH]
 
+  const isMobile = useIsMobile()
+
+  const flowId = flow.id
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
+  const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
+  const [resetTimestamp, setResetTimestamp] = useState<number>(Date.now())
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
+
+  const steps = flow?.steps ?? []
+  const isEmptyPipe =
+    steps.length <= 2 && steps.every((s) => s.key === null && s.appKey === null)
+
+  const hasIfThen = flow?.steps.some(
+    (step: IStep) => step.key === TOOLBOX_ACTIONS.IfThen,
+  )
+
   const allApps = getAppsData?.getApps ?? []
 
   const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
@@ -125,7 +190,33 @@ export const EditorProvider = ({
     },
   )
 
-  const testExecutionSteps = data?.getTestExecutionSteps ?? []
+  const testExecutionSteps = useMemo(
+    () => data?.getTestExecutionSteps ?? [],
+    [data],
+  )
+
+  const [stepsWithVars, varInfoMap] = useMemo(() => {
+    const stepsWithVars = extractVariables(testExecutionSteps)
+    const info = genVariableInfoMap(stepsWithVars)
+    return [stepsWithVars, info]
+  }, [testExecutionSteps])
+
+  const currentTestExecutionStep = useMemo(
+    () =>
+      testExecutionSteps.find(
+        (executionStep) => executionStep.stepId === currentStepId,
+      ) ?? null,
+    [testExecutionSteps, currentStepId],
+  )
+
+  /**
+   * Right drawer state
+   */
+  const {
+    isOpen: isDrawerOpen,
+    onOpen: onDrawerOpen,
+    onClose: onDrawerClose,
+  } = useDisclosure()
 
   /**
    * CreateStep mutation
@@ -180,7 +271,9 @@ export const EditorProvider = ({
             ...completeStep,
             flowId: flowId,
           }
-          return await initializeIfThen(completeStepWithFlow)
+          return (await initializeIfThen(
+            completeStepWithFlow,
+          )) as unknown as IStep
         }
       }
 
@@ -205,6 +298,13 @@ export const EditorProvider = ({
         flow: {
           id: flowId,
         },
+        config: {
+          // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
+          ...(step.config?.stepName !== undefined && {
+            stepName: step.config?.stepName,
+          }),
+        },
+        ...(step.status !== undefined && { status: step.status }),
       }
 
       if (step.appKey) {
@@ -220,6 +320,56 @@ export const EditorProvider = ({
     [updateStep, flowId],
   )
 
+  /**
+   * Test execution step
+   */
+  const [executeStep, { loading: isTestExecuting }] = useMutation(
+    shouldUseSingleStepTest ? EXECUTE_STEP : EXECUTE_FLOW,
+    {
+      context: { autoSnackbar: false },
+      awaitRefetchQueries: true,
+      refetchQueries: [GET_TEST_EXECUTION_STEPS, GET_FLOW],
+      update(cache, { data }) {
+        // If last execution step is successful, it means the test run is successful
+        // Update the step status to completed without refreshing
+        const lastExecutionStep: ExecutionStep = shouldUseSingleStepTest
+          ? data?.executeStep
+          : data?.executeFlow
+        if (lastExecutionStep.status === 'success') {
+          const stepCache = cache.identify({
+            __typename: 'Step',
+            id: currentStepId,
+          })
+          cache.modify({
+            id: stepCache,
+            fields: {
+              status: () => 'completed',
+            },
+          })
+        }
+      },
+    },
+  )
+
+  const executeTestStep = useCallback(async () => {
+    try {
+      await executeStep({
+        variables: {
+          input: {
+            stepId: currentStepId,
+          },
+        },
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  }, [executeStep, currentStepId])
+
+  // Force the Form to remount by changing its key when discarding changes
+  const resetForm = useCallback(() => {
+    setResetTimestamp(Date.now())
+  }, [])
+
   if (isLoadingAllApps) {
     return (
       <Center height="100vh" position="fixed" width="full" top={0} left={0}>
@@ -231,14 +381,32 @@ export const EditorProvider = ({
   return (
     <EditorContext.Provider
       value={{
-        flowId,
-        readOnly,
-        testExecutionSteps,
-        currentStepId,
-        setCurrentStepId,
-        onCreateStep,
-        onUpdateStep,
         allApps,
+        currentStepId,
+        currentStepIndex,
+        hasIfThen,
+        isDrawerOpen,
+        isMobile,
+        isEmptyPipe,
+        flow,
+        flowId,
+        currentTestExecutionStep,
+        isTestExecuting,
+        readOnly,
+        shouldWarnOnLeave,
+        stepsWithVars,
+        testExecutionSteps,
+        varInfoMap,
+        executeTestStep,
+        onCreateStep,
+        onDrawerOpen,
+        onDrawerClose,
+        onUpdateStep,
+        setCurrentStepId,
+        setCurrentStepIndex,
+        setShouldWarnOnLeave,
+        resetForm,
+        resetTimestamp,
       }}
     >
       {children}

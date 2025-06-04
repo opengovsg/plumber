@@ -16,7 +16,7 @@ type PostmanApiErrorData = {
 // These are HTTP error codes returned by Cloudflare, which likely indicate
 // that Postman's origin server did not receive the request.
 // Until this is fixed, we will retry these requests on behalf of the user
-const POSTMAN_RETRIABLE_HTTP_CODES = [502, 504, 520]
+const POSTMAN_RETRIABLE_HTTP_CODES = [500, 502, 504, 520, 524]
 
 export function getPostmanErrorStatus(
   error: HttpError,
@@ -92,17 +92,15 @@ export function throwPostmanStepError({
     }
     case 'RATE-LIMITED':
       // this will be auto-retried later on
-      throw new StepError(
-        'Rate limit exceeded',
-        'Too many emails are being sent. Please wait for a while before retrying.',
-        position,
-        appName,
-        error,
-      )
+      throw new RetriableError({
+        error: error.details,
+        delayInMs: 'default',
+        delayType: 'queue',
+      })
     case 'INVALID-ATTACHMENT':
       throw new StepError(
         'Unsupported attachment file type',
-        'Click on set up action and check that the attachment type is supported by postman. Please check the supported types at [this link](https://guide.postman.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
+        'Check that the attachment type is supported by postman. Please check the supported types at [this link](https://postman-v1.guides.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
         position,
         appName,
         error,
@@ -110,7 +108,7 @@ export function throwPostmanStepError({
     case 'ATTACHMENT-SIZE-EXCEEDED':
       throw new StepError(
         'Total attachment size exceeded',
-        'Click on set up action and check that the attachments do not exceed 10MB in total.',
+        'Check that the attachments do not exceed 10MB in total.',
         position,
         appName,
         error,
@@ -123,6 +121,14 @@ export function throwPostmanStepError({
       })
     case 'ERROR':
     default:
+      if (error.message === 'socket hang up') {
+        throw new RetriableError({
+          error: `Retrying ${error.message} from Postman`,
+          delayInMs: 'default',
+          delayType: 'step',
+        })
+      }
+
       throw new StepError(
         'Something went wrong',
         'Please contact plumber@open.gov.sg for assistance.',

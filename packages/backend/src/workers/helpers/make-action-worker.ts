@@ -278,6 +278,14 @@ export function makeActionWorker(
     }
   })
 
+  worker.on('ready', () => {
+    logger.info(`[${queueName}] Worker is ready!`)
+  })
+
+  worker.on('closed', () => {
+    logger.info(`[${queueName}] Worker is closed!`)
+  })
+
   worker.on('error', (err) => {
     if (!err) {
       logger.error(`[${queueName}] Worker had undefined error`)
@@ -288,10 +296,6 @@ export function makeActionWorker(
       err: err.stack,
       queueName,
     })
-  })
-
-  process.on('SIGTERM', async () => {
-    await worker.close()
   })
 
   return worker

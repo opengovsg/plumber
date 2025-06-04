@@ -52,7 +52,7 @@ const action: IRawAction = {
     if (isNaN(Number(delayForValue))) {
       throw new StepError(
         'Invalid delay for value entered',
-        'Click on set up action and check that the value is a valid number.',
+        'Check that the value is a valid number.',
         $.step.position,
         $.app.name,
       )

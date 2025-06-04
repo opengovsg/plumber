@@ -1,4 +1,5 @@
 import apps from '@/apps'
+import logger from '@/helpers/logger'
 import {
   appActionQueues,
   MAIN_ACTION_QUEUE_NAME,
@@ -38,3 +39,10 @@ for (const [appKey, app] of Object.entries(apps)) {
     queueConfig: app.queue,
   })
 }
+
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM: gracefully closing all action workers')
+  const allWorkers = [mainActionWorker, ...Object.values(appActionWorkers)]
+  await Promise.all(allWorkers.map((w) => w?.close()))
+  logger.info('SIGTERM: all action workers closed')
+})

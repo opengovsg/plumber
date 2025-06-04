@@ -11,6 +11,7 @@ export const GET_APP_CONNECTIONS = gql`
         flowCount
         formattedData {
           screenName
+          env
         }
         createdAt
       }

@@ -22,7 +22,8 @@ export async function generateColumnNameMetadata(
   columns.forEach((column) => {
     columnMetadata[column.id] = {
       label: column.name,
-      order: column.position,
+      // + 2 to ensure that the rowId an rowCount come first
+      order: column.position + 2,
     }
   })
   return { [parentKey]: columnMetadata }

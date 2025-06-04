@@ -52,7 +52,7 @@ export interface IConnection {
  * 'array' is currently used only in formSG checkbox field but
  * will be extended to for-each feature handling
  */
-export type TDataOutMetadatumType = 'text' | 'file' | 'array'
+export type TDataOutMetadatumType = 'text' | 'file' | 'array' | 'tile_row_id'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array
@@ -134,6 +134,7 @@ export interface IExecution {
 }
 
 export interface IStepConfig {
+  stepName?: string
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
 }
@@ -339,6 +340,7 @@ export interface IFieldDropdownOption {
 export interface IFieldText extends IBaseField {
   type: 'string'
   value?: string
+  variableTypes?: TDataOutMetadatumType[]
 
   // Not applicable if field has variables.
   autoComplete?: AutoCompleteValue
@@ -353,6 +355,7 @@ export interface IFieldAttachment extends IBaseField {
 export interface IFieldMultiline extends IBaseField {
   type: 'multiline'
   value?: string
+  variableTypes?: TDataOutMetadatumType[]
 
   // Not applicable if field has variables.
   autoComplete?: AutoCompleteValue
@@ -515,9 +518,6 @@ export interface IApp {
   connections?: IConnection[]
   description?: string
   isNewApp?: boolean
-  substepLabels?: {
-    settingsStepLabel?: string // for step accordion label: app level
-  }
   demoVideoDetails?: DemoVideoDetails
   category?: AppCategory
 
@@ -589,7 +589,9 @@ interface IBaseAuth {
   verifyCredentials?($: IGlobalVariable): Promise<void>
   isStillVerified?($: IGlobalVariable): Promise<boolean>
   refreshToken?($: IGlobalVariable): Promise<void>
-  verifyWebhook?($: IGlobalVariable): Promise<boolean>
+  verifyWebhook?(
+    $: IGlobalVariable,
+  ): Promise<{ verified: boolean; internalId: string | null }>
   isRefreshTokenRequested?: boolean
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
@@ -651,7 +653,6 @@ export interface IBaseTrigger {
   pollInterval?: number
   description: string
   webhookTriggerInstructions?: ITriggerInstructions
-  settingsStepLabel?: string // for step accordion label: event level
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?($: IGlobalVariable): Promise<void>
@@ -718,7 +719,6 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  settingsStepLabel?: string // for step accordion label: event level
   run?(
     $: IGlobalVariable,
     metadata?: NextStepMetadata,

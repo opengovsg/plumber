@@ -13,6 +13,12 @@ export const UPDATE_STEP = graphql(`
       connection {
         id
       }
+      config {
+        stepName
+        templateConfig {
+          appEventKey
+        }
+      }
     }
   }
 `)
