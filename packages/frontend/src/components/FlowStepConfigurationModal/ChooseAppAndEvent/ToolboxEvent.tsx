@@ -1,6 +1,7 @@
 import type { IAction } from '@plumber/types'
 
 import { BiFilterAlt, BiGitRepoForked, BiQuestionMark } from 'react-icons/bi'
+import { SlLoop } from 'react-icons/sl'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
 
@@ -9,6 +10,7 @@ import { HighlightedText } from './HighlightedText'
 export const TOOLBOX_ACTION_TO_ICON_MAP = {
   onlyContinueIf: BiFilterAlt,
   ifThen: BiGitRepoForked,
+  forEach: SlLoop,
 }
 
 interface ToolboxEventProps {
