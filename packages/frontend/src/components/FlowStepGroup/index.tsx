@@ -68,7 +68,6 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
       alignItems="center"
       justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
     >
-      {/* FIXME (kevinkim-ogp): above is a temporary wrapper to ensure the flow step group is centered when drawer is closed */}
       <Flex
         {...flowStepGroupStyles.container}
         display={isMobile ? 'block' : 'flex'}
