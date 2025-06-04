@@ -45,10 +45,14 @@ function updateStepVariables(
     if (Array.isArray(value)) {
       return {
         ...result,
-        [key]: value.map((item) => {
+        [key]: value.flatMap((item) => {
+          // HACKFIX (kevinkim-ogp): remove uploaded attachments from the duplicated flow
+          if (typeof item === 'string' && item.startsWith('s3:')) {
+            return []
+          }
           // could be a string or an object: attachments array would contain strings but conditions would contain objects
           if (typeof item === 'string') {
-            return updateStepIdForKey(item, oldToNewStepIdsMap)
+            return [updateStepIdForKey(item, oldToNewStepIdsMap)]
           }
           return updateStepVariables(item as IJSONObject, oldToNewStepIdsMap)
         }),
@@ -92,6 +96,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     delete prevConfig['duplicateCount']
     delete prevConfig['templateConfig']
     delete prevConfig['showSurvey']
+    delete prevConfig['attachments']
 
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
