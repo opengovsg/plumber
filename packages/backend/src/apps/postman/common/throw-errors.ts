@@ -150,7 +150,7 @@ export function throwPostmanStepError({
       })
     case 'ERROR':
     default:
-      if (error.message === 'socket hang up') {
+      if (error?.message === 'socket hang up') {
         throw new RetriableError({
           error: `Retrying ${error.message} from Postman`,
           delayInMs: 'default',
