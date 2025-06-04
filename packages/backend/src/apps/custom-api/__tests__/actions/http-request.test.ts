@@ -349,7 +349,7 @@ describe('make http request', () => {
           expect.objectContaining({
             url: $.step.parameters.url,
             method: $.step.parameters.method,
-            data: $.step.parameters.data,
+            data: $.step.parameters.data as any,
           }),
         )
       },
@@ -377,7 +377,7 @@ describe('make http request', () => {
           expect.objectContaining({
             url: $.step.parameters.url,
             method: $.step.parameters.method,
-            data: $.step.parameters.data,
+            data: $.step.parameters.data as any,
           }),
         )
       },
