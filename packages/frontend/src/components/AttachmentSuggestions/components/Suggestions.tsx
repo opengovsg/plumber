@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import {
   Box,
   Collapse,
@@ -11,6 +11,7 @@ import {
 import FileUpload from '@/components/FileUpload'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import SuggestionsWrapper from '@/components/SuggestionsWrapper'
+import { EditorContext } from '@/contexts/Editor'
 import { StepWithVariables, Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
@@ -53,6 +54,8 @@ export default function Suggestions(props: SuggestionsProps) {
     setCurrentTab,
   } = props
 
+  const { readOnly } = useContext(EditorContext)
+
   const SuggestionsRightPanel = ({ values }: { values: any }) => {
     if (suggestions.length === 0) {
       return <Text style={noVariablesTextStyles}>No variables available</Text>
@@ -73,7 +76,7 @@ export default function Suggestions(props: SuggestionsProps) {
                   <FileUpload
                     accept={ACCEPTED_FILE_TYPES.join(',')}
                     buttonType="textButton"
-                    disabled={isUploading}
+                    disabled={isUploading || readOnly}
                     loading={isUploading}
                     processFile={processFile}
                   />
@@ -88,7 +91,7 @@ export default function Suggestions(props: SuggestionsProps) {
                           ...variable,
                           source: option.name,
                         }}
-                        allowDelete={addNew}
+                        allowDelete={addNew && !readOnly}
                         isChecked={
                           values.includes(name) ||
                           values.includes(`{{${name}}}`)
@@ -127,9 +130,12 @@ export default function Suggestions(props: SuggestionsProps) {
       isOpen={isSuggestionsOpen}
       onClose={closeSuggestions}
     >
-      <div style={divWrapperStyles} onClick={openSuggestions}>
+      <div
+        style={divWrapperStyles}
+        onClick={() => !readOnly && openSuggestions()}
+      >
         <PopoverTrigger>
-          <Box sx={boxStyles} onClick={openSuggestions}>
+          <Box sx={boxStyles} onClick={() => !readOnly && openSuggestions()}>
             <TagList
               onClick={(option) => {
                 onSuggestionClick(option, false)

@@ -73,7 +73,7 @@ export default function BooleanRadio(props: BooleanRadioProps) {
         const isError = Boolean(isTouched && !!error)
 
         return (
-          <FormControl isInvalid={isError} isReadOnly={readOnly}>
+          <FormControl isInvalid={isError}>
             {label && (
               <FormLabel
                 isRequired={required}
@@ -90,7 +90,7 @@ export default function BooleanRadio(props: BooleanRadioProps) {
             <RadioGroup
               onChange={
                 (selectedValue) =>
-                  onChange(convertStringToBoolean(selectedValue)) // store null in db for backwards compat
+                  !readOnly && onChange(convertStringToBoolean(selectedValue)) // store null in db for backwards compat
               }
               // value will be empty if not provided on backend, null if user did not select
               value={value === '' ? value : convertBooleanToString(value)}

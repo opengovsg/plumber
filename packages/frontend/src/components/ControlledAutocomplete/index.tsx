@@ -172,7 +172,7 @@ function ControlledAutocomplete(
             colorScheme="secondary"
             isClearable={!required}
             items={items}
-            onChange={fieldOnChange}
+            onChange={() => !readOnly && fieldOnChange}
             value={fieldValue ?? defaultValue}
             placeholder={placeholder}
             ref={ref}
@@ -180,7 +180,6 @@ function ControlledAutocomplete(
             onRefresh={onRefresh}
             isRefreshLoading={loading}
             freeSolo={freeSolo}
-            isReadOnly={isCreatingNewOption || readOnly}
             isSearchable={isSearchable}
             addNew={
               addNewOption
