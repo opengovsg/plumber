@@ -22,6 +22,8 @@ export const dataOutSchema = z.object({
   rowsFound: z.number(),
   data: z.object({
     rows: z.array(z.object({ data: z.record(z.string(), z.string()) })),
-    columns: z.array(z.object({ id: z.string(), name: z.string() })),
+    columns: z.array(
+      z.object({ id: z.string(), name: z.string(), value: z.string() }),
+    ),
   }),
 })
