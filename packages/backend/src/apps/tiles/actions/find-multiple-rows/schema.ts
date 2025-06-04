@@ -14,6 +14,7 @@ export const dataOutSchema = z.object({
         z.object({
           id: z.string(),
           name: z.string(),
+          value: z.string(),
         }),
       ),
     })
