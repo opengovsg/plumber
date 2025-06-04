@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { FormControl, Input, Stack } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
 import FileUpload from '@/components/FileUpload'
+import { EditorContext } from '@/contexts/Editor'
 import { usePreventDrop } from '@/hooks/useDisableDragDrop'
 
 const SECRET_KEY_REGEX = /^[a-zA-Z0-9/+]+={0,2}$/
@@ -29,6 +30,7 @@ function DragDropInput(props: DragDropInputProps) {
     required,
     ...inputProps
   } = props
+  const { readOnly } = useContext(EditorContext)
   const [dragging, setDragging] = useState(false)
 
   // Disable drag drop anywhere else
@@ -107,7 +109,7 @@ function DragDropInput(props: DragDropInputProps) {
       }) => {
         return (
           <>
-            <FormControl isInvalid={!!error}>
+            <FormControl isInvalid={!!error} isReadOnly={readOnly}>
               {label && (
                 <FormLabel
                   isRequired={required}
@@ -138,10 +140,10 @@ function DragDropInput(props: DragDropInputProps) {
                     : undefined)}
                   type="password"
                   onChange={(...args) => controllerOnChange(...args)}
-                  onDragEnter={handleDragEnter}
-                  onDragLeave={handleDragLeave}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
+                  onDragEnter={readOnly ? undefined : handleDragEnter}
+                  onDragLeave={readOnly ? undefined : handleDragLeave}
+                  onDragOver={readOnly ? undefined : handleDragOver}
+                  onDrop={readOnly ? undefined : handleDrop}
                   placeholder={
                     dragging
                       ? 'Drop your file here'
@@ -149,7 +151,11 @@ function DragDropInput(props: DragDropInputProps) {
                   }
                   transition="padding 0.2s ease-out"
                 />
-                <FileUpload accept="text/plain" processFile={processFile} />
+                <FileUpload
+                  accept="text/plain"
+                  processFile={processFile}
+                  disabled={readOnly}
+                />
               </Stack>
               {error && <FormErrorMessage>{error?.message}</FormErrorMessage>}
             </FormControl>

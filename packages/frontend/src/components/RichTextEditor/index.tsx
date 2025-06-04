@@ -29,6 +29,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import escapeHtml from 'escape-html'
 
+import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import {
   extractVariables,
@@ -240,14 +241,16 @@ const Editor = ({
       isLazy
       lazyBehavior="unmount"
       onClose={closeSuggestions}
-      isOpen={isSuggestionsOpen && variablesEnabled}
+      isOpen={isSuggestionsOpen && variablesEnabled && editable}
       placement={getPopoverPlacement(editor)}
     >
       <div
         className="editor"
         onClick={(e) => {
-          e.stopPropagation()
-          openSuggestions()
+          if (editable) {
+            e.stopPropagation()
+            openSuggestions()
+          }
         }}
         onBlur={(e) => {
           // Focus might shift to menu bar or other children, where we do _not_
@@ -297,7 +300,6 @@ interface RichTextEditorProps {
   name: string
   label?: string
   description?: string
-  disabled?: boolean
   placeholder?: string
   variablesEnabled?: boolean
   isRich?: boolean
@@ -313,7 +315,6 @@ const RichTextEditor = ({
   name,
   label,
   description,
-  disabled,
   placeholder,
   variablesEnabled,
   isRich,
@@ -323,6 +324,7 @@ const RichTextEditor = ({
   parentType,
   autoFocus,
 }: RichTextEditorProps) => {
+  const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
   const { shouldAutoFocus, isNewRow, rowData } = checkAutoFocus(
     name,
@@ -359,7 +361,7 @@ const RichTextEditor = ({
           <Editor
             onChange={onChange}
             initialValue={value}
-            editable={!disabled}
+            editable={!readOnly}
             placeholder={placeholder}
             variablesEnabled={variablesEnabled}
             isRich={isRich}

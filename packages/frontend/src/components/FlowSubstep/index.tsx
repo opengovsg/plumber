@@ -27,7 +27,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const { flags } = useContext(LaunchDarklyContext)
   const formContext = useFormContext()
   const {
-    readOnly,
     executeTestStep,
     onUpdateStep,
     setShouldWarnOnLeave,
@@ -150,7 +149,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
                 schema={argument}
                 namePrefix="parameters"
                 stepId={step.id}
-                disabled={readOnly || isSaving}
               />
             ))}
           </Stack>

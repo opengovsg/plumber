@@ -10,6 +10,7 @@ import {
   MultiSelect as DSMultiSelect,
 } from '@opengovsg/design-system-react'
 
+import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 
 import extractVariablesAsItems from './helpers/extract-variables-as-items'
@@ -38,6 +39,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
   } = props
   const { control } = useFormContext()
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
+  const { readOnly } = useContext(EditorContext)
 
   const items = useMemo(
     () => extractVariablesAsItems(priorExecutionSteps, variableTypes),
@@ -91,6 +93,7 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
               //      changed.
               onChange(newValues.sort())
             }
+            isReadOnly={readOnly}
           />
           {error && <FormErrorMessage>{error.message}</FormErrorMessage>}
         </FormControl>

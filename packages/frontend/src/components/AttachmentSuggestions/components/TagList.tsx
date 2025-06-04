@@ -1,4 +1,7 @@
+import { useContext } from 'react'
 import { Tag, TagCloseButton, TagLabel, Tooltip } from '@chakra-ui/react'
+
+import { EditorContext } from '@/contexts/Editor'
 
 interface TagsProps {
   tags: any[]
@@ -7,6 +10,7 @@ interface TagsProps {
 
 function TagList(props: TagsProps) {
   const { onClick, tags } = props
+  const { readOnly } = useContext(EditorContext)
 
   const getLabel = (option: any, tooltip?: boolean) => {
     const { displayedValue, label, source, uploaded } = option
@@ -36,13 +40,17 @@ function TagList(props: TagsProps) {
             minW="40px"
             maxW="200px"
             flex="0 1 auto"
+            h="100%"
           >
             <Tooltip hasArrow label={getLabel(tag, true)}>
               <TagLabel isTruncated flex="1 1 auto" minW="0">
                 {getLabel(tag)}
               </TagLabel>
             </Tooltip>
-            <TagCloseButton onClick={() => onClick(tag)} />
+            <TagCloseButton
+              onClick={() => !readOnly && onClick(tag)}
+              isDisabled={readOnly}
+            />
           </Tag>
         )
       })}
