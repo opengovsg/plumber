@@ -1,5 +1,5 @@
-import { deleteTableRows } from '@/models/dynamodb/table-row'
 import TableCollaborator from '@/models/table-collaborators'
+import { deleteTableRows } from '@/models/tiles/dynamodb/table-row'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 

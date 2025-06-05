@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import createTable from '@/graphql/mutations/tiles/create-table'
-import { getTableRowCount } from '@/models/dynamodb/table-row'
+import { getTableRowCount } from '@/models/tiles/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 import { generateMockContext } from './table.mock'

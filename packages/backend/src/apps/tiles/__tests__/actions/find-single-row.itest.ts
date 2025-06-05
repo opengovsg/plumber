@@ -9,10 +9,11 @@ import {
   generateMockTableColumns,
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
-import { createTableRow, TableRowFilter } from '@/models/dynamodb/table-row'
-import * as tableFunctions from '@/models/dynamodb/table-row/functions'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
+import { createTableRow } from '@/models/tiles/dynamodb/table-row'
+import * as tableFunctions from '@/models/tiles/dynamodb/table-row/functions'
+import { TableRowFilter } from '@/models/tiles/types'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 

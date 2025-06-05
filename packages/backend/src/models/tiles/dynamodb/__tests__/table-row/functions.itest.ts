@@ -7,9 +7,9 @@ import {
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import TableMetadata from '@/models/table-metadata'
+import { TableRowFilterOperator } from '@/models/tiles/types'
 import Context from '@/types/express/context'
 
-import { TableRowFilterOperator } from '../../table-row'
 import {
   createTableRow,
   createTableRows,

@@ -1,9 +1,9 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
-import { createTableRow } from '@/models/dynamodb/table-row/functions'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
+import { createTableRow } from '@/models/tiles/dynamodb/table-row/functions'
 
 import { CreateRowOutput } from '../../types'
 

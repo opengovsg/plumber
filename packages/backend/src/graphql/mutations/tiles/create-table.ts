@@ -1,4 +1,4 @@
-import { createTableRows } from '@/models/dynamodb/table-row'
+import { createTableRows } from '@/models/tiles/dynamodb/table-row'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
