@@ -235,22 +235,20 @@ const Editor = ({
 
   return (
     <Popover
-      autoFocus={false}
+      autoFocus={editable ? false : true}
       gutter={2}
       matchWidth={isMulticol ? false : true}
       isLazy
       lazyBehavior="unmount"
       onClose={closeSuggestions}
-      isOpen={isSuggestionsOpen && variablesEnabled && editable}
+      isOpen={isSuggestionsOpen && variablesEnabled}
       placement={getPopoverPlacement(editor)}
     >
       <div
         className="editor"
         onClick={(e) => {
-          if (editable) {
-            e.stopPropagation()
-            openSuggestions()
-          }
+          e.stopPropagation()
+          openSuggestions()
         }}
         onBlur={(e) => {
           // Focus might shift to menu bar or other children, where we do _not_
@@ -280,10 +278,14 @@ const Editor = ({
                     e.relatedTarget?.focus()
                   }
                 }}
+                _focus={{
+                  boxShadow: 'none',
+                  borderColor: 'inherit',
+                }}
               >
                 <Suggestions
                   data={stepsWithVariables}
-                  onSuggestionClick={handleVariableClick}
+                  onSuggestionClick={(v) => editable && handleVariableClick(v)}
                 />
               </PopoverContent>
             </Portal>
