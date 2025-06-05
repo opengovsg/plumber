@@ -20,7 +20,7 @@ async function getDataOutMetadata(
     data: {
       label: 'List of row(s) found',
       displayedValue: `Preview ${dataOut.rowsFound} row(s)`,
-      type: 'multiple-row-object',
+      type: 'table',
       order: 1,
     },
   }
