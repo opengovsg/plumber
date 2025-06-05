@@ -57,7 +57,7 @@ export type TDataOutMetadatumType =
   | 'file'
   | 'array'
   | 'tile_row_id'
-  | 'multiple-row-object'
+  | 'table'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array

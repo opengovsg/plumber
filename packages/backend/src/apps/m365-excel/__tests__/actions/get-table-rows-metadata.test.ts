@@ -72,7 +72,7 @@ describe('getTableRows getDataOutMetadata', () => {
         label: 'List of row(s) found',
         displayedValue: 'Preview 0 row(s)',
         order: 1,
-        type: 'multiple-row-object',
+        type: 'table',
       },
     })
   })
@@ -89,7 +89,7 @@ describe('getTableRows getDataOutMetadata', () => {
         label: 'List of row(s) found',
         displayedValue: 'Preview 2 row(s)',
         order: 1,
-        type: 'multiple-row-object',
+        type: 'table',
       },
     })
   })

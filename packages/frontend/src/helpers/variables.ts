@@ -13,7 +13,7 @@ import { RawColumn, RawRow } from '@/components/MultiRowResultVariables/utils'
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
   'text',
   'array',
-  'multiple-row-object',
+  'table',
   'tile_row_id',
 ]
 
@@ -130,7 +130,7 @@ const process = (
 
   // special handling for multiple row objects from Tiles and M365 Excel
   // we do not do not join like strings as it contains objects and do not flatmap the data as we want to use it as a whole
-  if (type === 'multiple-row-object') {
+  if (type === 'table') {
     const { columns, rows } = data
     const outputVars = [
       {
