@@ -1,6 +1,6 @@
-import { createTableRow } from '@/models/dynamodb/table-row'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
+import { createTableRow } from '@/models/tiles/dynamodb/table-row'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { _batchCreate } from '@/models/dynamodb/table-row'
+import { _batchCreate } from '@/models/tiles/dynamodb/table-row'
 
 import { generateMockTableRowData } from '../../mutations/tiles/table.mock'
 

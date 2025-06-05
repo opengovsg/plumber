@@ -3,9 +3,6 @@ import { randomUUID } from 'crypto'
 
 import logger from '@/helpers/logger'
 
-import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
-
-import { TableRow } from './model'
 import {
   CreateRowInput,
   CreateRowsInput,
@@ -16,7 +13,10 @@ import {
   TableRowItem,
   TableRowOutput,
   UpdateRowInput,
-} from './types'
+} from '../../types'
+import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
+
+import { TableRow } from './model'
 
 const MAX_RETRIES = 8
 const EXPONENTIAL_BACKOFF_BASE_DELAY = 1000 // 1 second

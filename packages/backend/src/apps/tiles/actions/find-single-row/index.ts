@@ -2,14 +2,11 @@ import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
-import {
-  getRawRowById,
-  getTableRows,
-  TableRowFilter,
-} from '@/models/dynamodb/table-row'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
+import { getRawRowById, getTableRows } from '@/models/tiles/dynamodb/table-row'
+import { TableRowFilter } from '@/models/tiles/types'
 
 import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
 import { validateFilters } from '../../common/validate-filters'

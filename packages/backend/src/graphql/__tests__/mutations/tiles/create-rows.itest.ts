@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import createRows from '@/graphql/mutations/tiles/create-rows'
-import { getTableRows } from '@/models/dynamodb/table-row/functions'
 import TableMetadata from '@/models/table-metadata'
+import { getTableRows } from '@/models/tiles/dynamodb/table-row/functions'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
