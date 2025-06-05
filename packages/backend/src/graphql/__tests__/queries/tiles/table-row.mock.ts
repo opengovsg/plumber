@@ -13,6 +13,7 @@ export async function insertMockTableRows(
   for (let i = 0; i < numRowsToInsert; i++) {
     rows.push({
       tableId,
+      // use ulid for new tiles
       rowId: randomUUID(),
       data: generateMockTableRowData({ columnIds }),
     })
