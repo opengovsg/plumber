@@ -2,32 +2,32 @@ import { IExecutionStep, IStep } from '@plumber/types'
 
 import { Variable } from '@/helpers/variables'
 
-export interface Column {
+import { ExecutionStepDataOutSchema, VariableToRowDataSchema } from './schema'
+
+interface RawColumn {
+  id: string
+  name: string
+  value: string
+}
+
+interface RawRow {
+  data: Record<string, string | number>
+  rowId?: string // only Tiles will have this
+}
+
+export interface ProcessedColumn {
   key: string
   label: string
   order?: number | null
 }
-interface RowValue {
-  columnName: string
-  value: string
-}
-
-export interface DataRow {
+export interface ProcessedRow extends RawRow {
   id?: string
-  rowId?: string
-  data: Record<string, string>
-  row?: Record<string, RowValue>
 }
 
 export interface ProcessedData {
   rowsFound: string
-  dataRows: DataRow[]
-  columns: Column[]
-}
-
-interface TilesRowsData {
-  rows: Array<{ rowId: string; data: Record<string, string> }>
-  columns: Array<{ id: string; name: string }>
+  dataRows: ProcessedRow[]
+  columns: ProcessedColumn[]
 }
 
 export const isMultiRowStep = (step: IStep) => {
@@ -37,13 +37,13 @@ export const isMultiRowStep = (step: IStep) => {
   )
 }
 
-export const processColumns = (rawColumns: unknown): Column[] => {
+export const processColumns = (rawColumns: RawColumn[]): ProcessedColumn[] => {
   if (!Array.isArray(rawColumns)) {
     return []
   }
 
   return rawColumns
-    .map((column: { id: string; name: string }, index: number) => ({
+    .map((column: RawColumn, index: number) => ({
       key: column.id,
       label: column.name,
       order: index,
@@ -52,49 +52,37 @@ export const processColumns = (rawColumns: unknown): Column[] => {
 }
 
 export const processData = (executionStep: IExecutionStep): ProcessedData => {
-  const rowsFound = String(executionStep.dataOut?.rowsFound ?? '0')
-  const rowsObj = executionStep.dataOut?.data as unknown as
-    | TilesRowsData
-    | undefined
+  try {
+    const dataOut = ExecutionStepDataOutSchema.parse(executionStep.dataOut)
+    const rowsFound = String(dataOut.rowsFound)
 
-  if (!rowsObj) {
     return {
       rowsFound,
+      dataRows: dataOut.data.rows,
+      columns: processColumns(dataOut.data.columns),
+    }
+  } catch (error) {
+    console.error('Failed to validate execution step data:', error)
+    return {
+      rowsFound: '0',
       dataRows: [],
       columns: [],
     }
   }
-
-  return {
-    rowsFound,
-    dataRows: rowsObj.rows,
-    columns: processColumns(rowsObj.columns),
-  }
 }
 
-export const processDataRows = (rowsObj: any): DataRow[] => {
-  return (
-    rowsObj?.map((r: Record<string, Record<string, RowValue>>) => ({
-      id: r.id,
-      data: Object.fromEntries(
-        Object.entries(r.rowData as Record<string, RowValue>).map(
-          ([key, value]) => [key, value.value],
-        ),
-      ),
-    })) || []
-  )
-}
-
-export const getColumnValues = (rowData: Variable | undefined) => {
-  if (!rowData) {
+export const getColumnValues = (dataVariable: Variable | undefined) => {
+  if (!dataVariable) {
     return []
   }
-  const rowDataObj = JSON.parse(rowData.value as string)
-  const { rows, columns } = rowDataObj
-  const columnVariables = columns.map(
-    (column: { id: string; name: string }) => {
-      const rowValues: string[] = []
-      rows.forEach((row: { data: Record<string, string> }) => {
+
+  try {
+    const rowDataObj = VariableToRowDataSchema.parse(dataVariable)
+
+    const { rows, columns } = rowDataObj
+    const columnVariables = columns.map((column: RawColumn) => {
+      const rowValues: (string | number)[] = []
+      rows.forEach((row: RawRow) => {
         /**
          * NOTE: do not push empty values as we do not want to cause any errors
          * that may arise from having empty values.
@@ -110,8 +98,11 @@ export const getColumnValues = (rowData: Variable | undefined) => {
         value: rowValues.join(', '),
         type: 'string',
       }
-    },
-  )
+    })
 
-  return columnVariables
+    return columnVariables
+  } catch (error) {
+    console.error('Failed to validate or parse row data:', error)
+    return []
+  }
 }
