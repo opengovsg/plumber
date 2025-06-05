@@ -8,6 +8,10 @@ import Context from '@/types/express/context'
 
 import m365Excel from '../..'
 import getTableRowsAction from '../../actions/get-table-rows'
+import { HexEncodedRowObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
+
+const getHexEncodedColumnName = (columnName: string) =>
+  Buffer.from(columnName).toString('hex')
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
@@ -16,7 +20,7 @@ const mocks = vi.hoisted(() => ({
     request: vi.fn(),
   },
   getTopNTableRows: vi.fn(),
-  convertRowToHexEncodedRowRecord: vi.fn(),
+  convertRowToHexKeyedObject: vi.fn(),
   validateDynamicFieldsAndThrowError: vi.fn(),
 }))
 
@@ -83,17 +87,19 @@ describe('getTableRowsAction', () => {
     })
 
     // Setup hex-encoded row record mock
-    mocks.convertRowToHexEncodedRowRecord.mockImplementation(
+    mocks.convertRowToHexKeyedObject.mockImplementation(
       ({ row, columns }: { row: string[]; columns: string[] }) => {
         // Create a simple mock implementation that converts the row to a record
-        const result: Record<string, { value: string; columnName: string }> = {}
-        columns.forEach((col: string, index: number) => {
-          const hexKey = Buffer.from(col).toString('hex')
-          result[hexKey] = {
-            value: row[index],
-            columnName: col,
-          }
-        })
+        const result: HexEncodedRowObject = Object.create(null)
+
+        for (const [cellIndex, cell] of row.entries()) {
+          const cellColumnName = columns[cellIndex]
+          const hexEncodedColumnName =
+            Buffer.from(cellColumnName).toString('hex')
+
+          result[hexEncodedColumnName] = cell
+        }
+
         return result
       },
     )
@@ -121,19 +127,21 @@ describe('getTableRowsAction', () => {
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        columns: expect.arrayContaining([
-          expect.objectContaining({
-            id: Buffer.from('Column1').toString('hex'),
-            name: 'Column1',
-            value: '',
-          }),
-          expect.objectContaining({
-            id: Buffer.from('Column2').toString('hex'),
-            name: 'Column2',
-            value: '',
-          }),
-        ]),
-        rows: [],
+        data: {
+          columns: expect.arrayContaining([
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column1'),
+              name: 'Column1',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
+            }),
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column2'),
+              name: 'Column2',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
+            }),
+          ]),
+          rows: [],
+        },
         rowsFound: 0,
       },
     })
@@ -145,31 +153,50 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 2, // Two rows match 'test-value'
-        columns: expect.arrayContaining([
-          expect.objectContaining({
-            id: Buffer.from('Column1').toString('hex'),
-            name: 'Column1',
-            value: 'test-value, test-value',
-          }),
-          expect.objectContaining({
-            id: Buffer.from('Column2').toString('hex'),
-            name: 'Column2',
-            value: 'data2, data3',
-          }),
-        ]),
-        rows: expect.any(Array),
+        data: {
+          columns: expect.arrayContaining([
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column1'),
+              name: 'Column1',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
+            }),
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column2'),
+              name: 'Column2',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
+            }),
+          ]),
+          rows: expect.arrayContaining([
+            expect.objectContaining({
+              data: {
+                [getHexEncodedColumnName('Column1')]: 'test-value',
+                [getHexEncodedColumnName('Column2')]: 'data2',
+              },
+            }),
+            expect.objectContaining({
+              data: {
+                [getHexEncodedColumnName('Column1')]: 'test-value',
+                [getHexEncodedColumnName('Column2')]: 'data3',
+              },
+            }),
+          ]),
+        },
       }),
     })
 
     // Verify the rowData contains the expected rows
     const call = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    const rowData = call.raw.rows
+    const rowData = call.raw.data.rows
 
     expect(rowData).toHaveLength(2)
-    expect(rowData[0].tableRowIndex).toBe(1)
-    expect(rowData[0].sheetRowNumber).toBe(3) // headerSheetRowIndex(0) + rowIndex(1) + 2
-    expect(rowData[1].tableRowIndex).toBe(2)
-    expect(rowData[1].sheetRowNumber).toBe(4) // headerSheetRowIndex(0) + rowIndex(2) + 2
+    expect(rowData[0].data[getHexEncodedColumnName('Column1')]).toBe(
+      'test-value',
+    )
+    expect(rowData[0].data[getHexEncodedColumnName('Column2')]).toBe('data2')
+    expect(rowData[1].data[getHexEncodedColumnName('Column1')]).toBe(
+      'test-value',
+    )
+    expect(rowData[1].data[getHexEncodedColumnName('Column2')]).toBe('data3')
   })
 
   it('should handle invalid parameters', async () => {
@@ -189,19 +216,22 @@ describe('getTableRowsAction', () => {
     // Should not find any matches due to case sensitivity
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        columns: [
-          {
-            id: Buffer.from('Column1').toString('hex'),
-            name: 'Column1',
-            value: '',
-          },
-          {
-            id: Buffer.from('Column2').toString('hex'),
-            name: 'Column2',
-            value: '',
-          },
-        ],
-        rows: [],
+        data: {
+          columns: [
+            {
+              id: getHexEncodedColumnName('Column1'),
+              name: 'Column1',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
+            },
+            {
+              id: getHexEncodedColumnName('Column2'),
+              name: 'Column2',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
+            },
+          ],
+          rows: [],
+        },
+
         rowsFound: 0,
       },
     })
@@ -226,19 +256,28 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 1,
-        columns: expect.arrayContaining([
-          expect.objectContaining({
-            id: Buffer.from('Column1').toString('hex'),
-            name: 'Column1',
-            value: 'TEST-VALUE',
-          }),
-          expect.objectContaining({
-            id: Buffer.from('Column2').toString('hex'),
-            name: 'Column2',
-            value: 'data2',
-          }),
-        ]),
-        rows: expect.any(Array),
+        data: {
+          rows: expect.arrayContaining([
+            expect.objectContaining({
+              data: {
+                [getHexEncodedColumnName('Column1')]: 'TEST-VALUE',
+                [getHexEncodedColumnName('Column2')]: 'data2',
+              },
+            }),
+          ]),
+          columns: expect.arrayContaining([
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column1'),
+              name: 'Column1',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
+            }),
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column2'),
+              name: 'Column2',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
+            }),
+          ]),
+        },
       }),
     })
   })
@@ -260,44 +299,48 @@ describe('getTableRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 500, // Should be limited to 500 rows
-        columns: expect.arrayContaining([
-          expect.objectContaining({
-            id: Buffer.from('Column1').toString('hex'),
-            name: 'Column1',
-            value: `test-value, ${Array.from(
-              { length: 499 },
-              (_) => `test-value`,
-            ).join(', ')}`,
-          }),
-          expect.objectContaining({
-            id: Buffer.from('Column2').toString('hex'),
-            name: 'Column2',
-            value: `data1, ${Array.from(
-              { length: 499 },
-              (_, i) => `data${i + 2}`,
-            ).join(', ')}`,
-          }),
-        ]),
-        rows: expect.arrayContaining([
-          expect.objectContaining({
-            id: expect.any(String),
-            rowData: expect.any(Object),
-            sheetRowNumber: expect.any(Number),
-            tableRowIndex: expect.any(Number),
-          }),
-        ]),
+        data: {
+          columns: expect.arrayContaining([
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column1'),
+              name: 'Column1',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
+            }),
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column2'),
+              name: 'Column2',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
+            }),
+          ]),
+          rows: expect.arrayContaining(
+            Array.from({ length: 500 }, (_, i) =>
+              expect.objectContaining({
+                data: {
+                  [getHexEncodedColumnName('Column1')]: 'test-value',
+                  [getHexEncodedColumnName('Column2')]: `data${i + 1}`,
+                },
+              }),
+            ),
+          ),
+        },
       }),
     })
 
     // Verify the rowData contains exactly 500 rows
     const call = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    const rowData = call.raw.rows
+    const rowData = call.raw.data.rows
     expect(rowData).toHaveLength(500)
 
     // Verify the first and last rows are correct
-    expect(rowData[0].tableRowIndex).toBe(0)
-    expect(rowData[0].sheetRowNumber).toBe(2) // headerSheetRowIndex(0) + rowIndex(0) + 2
-    expect(rowData[499].tableRowIndex).toBe(499)
-    expect(rowData[499].sheetRowNumber).toBe(501) // headerSheetRowIndex(0) + rowIndex(499) + 2
+    expect(rowData[0].data[getHexEncodedColumnName('Column1')]).toBe(
+      'test-value',
+    )
+    expect(rowData[0].data[getHexEncodedColumnName('Column2')]).toBe('data1')
+    expect(rowData[499].data[getHexEncodedColumnName('Column1')]).toBe(
+      'test-value',
+    )
+    expect(rowData[499].data[getHexEncodedColumnName('Column2')]).toBe(
+      'data500',
+    )
   })
 })
