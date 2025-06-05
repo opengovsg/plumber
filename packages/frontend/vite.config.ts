@@ -9,6 +9,10 @@ import viteTsconfigPaths from 'vite-tsconfig-paths'
 export default defineConfig({
   // loadVersion injects package.json version into import.meta.env.PACKAGE_VERSION
   plugins: [react(), viteTsconfigPaths(), loadVersion()],
+  build: {
+    // disable inline images since we don't allow them in csp
+    assetsInlineLimit: 0,
+  },
   server: {
     open: 'http://localhost:3001',
     port: 3001,
