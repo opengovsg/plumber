@@ -7,22 +7,14 @@ const tableRowOutputSchema = z.object({
 
 export const dataOutSchema = z.object({
   rowsFound: z.number(),
-  columns: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        value: z.string(),
-      }),
-    )
-    .optional(),
-  rows: z
+  data: z
     .object({
-      rowData: z.array(tableRowOutputSchema),
+      rows: z.array(tableRowOutputSchema),
       columns: z.array(
         z.object({
           id: z.string(),
           name: z.string(),
+          value: z.string(),
         }),
       ),
     })
