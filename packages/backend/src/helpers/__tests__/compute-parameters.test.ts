@@ -15,6 +15,10 @@ const executionSteps = [
       numberProp: 123,
       'space separated prop': 'space separated value',
       arrayProp: ['array value 1', 'hehe', 'array value 3'], // for-each intro
+      tableProp: {
+        rows: [{ data: { name: 'John' } }],
+        columns: [{ id: 'name', name: 'Name', value: 'name' }],
+      },
     },
   } as unknown as ExecutionStep,
 ]
@@ -147,6 +151,15 @@ describe('compute parameters', () => {
             key2: 'array value 1, hehe, array value 3 and more...',
           },
         },
+      },
+    },
+    {
+      testDescription: 'entire object',
+      params: {
+        param1: `{{step.${randomStepID}.tableProp}}`,
+      },
+      expected: {
+        param1: JSON.stringify(executionSteps[0].dataOut.tableProp),
       },
     },
   ])(

@@ -70,6 +70,8 @@ function findAndSubstituteVariables(
           ? preprocessVariable(parameterKey, dataValue)
           : Array.isArray(dataValue)
           ? dataValue.join(', ')
+          : typeof dataValue === 'object'
+          ? JSON.stringify(dataValue)
           : dataValue
       }
 
