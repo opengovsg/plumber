@@ -136,8 +136,10 @@ export default function FlowStepTestController(
   }, [testExecutionSteps, step, substeps])
 
   const shouldAllowCheckStep = isValid && !readOnly && !isSaving
+
+  // TODO: figure out what isLastTestExectionCurrent is for
   const shouldShowSaveButton =
-    !isLastTestExecutionCurrent || (isTestSuccessful && isDirty)
+    !readOnly && (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty))
   const shouldShowTestResults =
     currentTestExecutionStep && !lastErrorDetails && !shouldTestStepAgain
 
@@ -229,6 +231,7 @@ export default function FlowStepTestController(
       isTestExecuting,
       isValid,
       readOnly,
+      isMobile,
     ],
   )
 
