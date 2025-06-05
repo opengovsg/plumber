@@ -7,6 +7,8 @@ import type {
 
 import get from 'lodash.get'
 
+import { RawColumn, RawRow } from '@/components/MultiRowResultVariables/utils'
+
 // these are the variable types to display on the frontend (make visible)
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
   'text',
@@ -126,7 +128,7 @@ const process = (
         })
   }
 
-  // special handling for Tiles multiple row
+  // special handling for multiple row objects from Tiles and M365 Excel
   // we do not do not join like strings as it contains objects and do not flatmap the data as we want to use it as a whole
   if (type === 'multiple-row-object') {
     const { columns, rows } = data
@@ -145,29 +147,27 @@ const process = (
      * NOTE: we dynamically obtain the values for each column since we are not
      * storing the values in the dataOut.
      */
-    const columnVariables = columns.map(
-      (column: { id: string; name: string; value?: string }) => {
-        const rowValues: string[] = []
-        rows.forEach((row: { data: Record<string, string> }) => {
-          /**
-           * NOTE: do not push empty values as we do not want to cause any errors
-           * that may arise from having empty values.
-           */
-          if (row.data[column.id]) {
-            rowValues.push(row.data[column.id])
-          }
-        })
-
-        return {
-          ...column,
-          name: `step.${stepId}.${column.value}`,
-          label: column.name,
-          displayedValue: rowValues.join(', '),
-          value: rowValues.join(', '),
-          type: 'text',
+    const columnVariables = columns.map((column: RawColumn) => {
+      const rowValues: (string | number)[] = []
+      rows.forEach((row: RawRow) => {
+        /**
+         * NOTE: do not push empty values as we do not want to cause any errors
+         * that may arise from having empty values.
+         */
+        if (row.data[column.id]) {
+          rowValues.push(row.data[column.id])
         }
-      },
-    )
+      })
+
+      return {
+        ...column,
+        name: `step.${stepId}.${column.value}`,
+        label: column.name,
+        displayedValue: rowValues.join(', '),
+        value: rowValues.join(', '),
+        type: 'text',
+      }
+    })
 
     return [...outputVars, ...columnVariables]
   }

@@ -4,13 +4,13 @@ import { Variable } from '@/helpers/variables'
 
 import { ExecutionStepDataOutSchema, VariableToRowDataSchema } from './schema'
 
-interface RawColumn {
+export interface RawColumn {
   id: string
   name: string
   value: string
 }
 
-interface RawRow {
+export interface RawRow {
   data: Record<string, string | number>
   rowId?: string // only Tiles will have this
 }
