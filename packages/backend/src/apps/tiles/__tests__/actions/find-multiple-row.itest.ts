@@ -172,61 +172,48 @@ describe('findMultipleRowsAction', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
         rowsFound: 500,
-        rows: expect.objectContaining({
-          rowData: expect.any(Array),
+        data: expect.objectContaining({
+          rows: expect.arrayContaining([
+            expect.objectContaining({
+              data: expect.any(Object),
+              rowId: expect.any(String),
+            }),
+          ]),
           columns: expect.arrayContaining([
             expect.objectContaining({
               id: dummyColumnIds[0],
               name: 'Test Column 0',
+              value: `data.rows.*.data.${dummyColumnIds[0]}`,
             }),
             expect.objectContaining({
               id: dummyColumnIds[1],
               name: 'Test Column 1',
+              value: `data.rows.*.data.${dummyColumnIds[1]}`,
             }),
             expect.objectContaining({
               id: dummyColumnIds[2],
               name: 'Test Column 2',
+              value: `data.rows.*.data.${dummyColumnIds[2]}`,
             }),
             expect.objectContaining({
               id: dummyColumnIds[3],
               name: 'Test Column 3',
+              value: `data.rows.*.data.${dummyColumnIds[3]}`,
             }),
             expect.objectContaining({
               id: dummyColumnIds[4],
               name: 'Test Column 4',
+              value: `data.rows.*.data.${dummyColumnIds[4]}`,
             }),
           ]),
         }),
-        columns: expect.arrayContaining([
-          expect.objectContaining({
-            id: dummyColumnIds[1],
-            name: 'Test Column 1',
-            value: expect.any(String),
-          }),
-          expect.objectContaining({
-            id: dummyColumnIds[2],
-            name: 'Test Column 2',
-            value: expect.any(String),
-          }),
-          expect.objectContaining({
-            id: dummyColumnIds[3],
-            name: 'Test Column 3',
-            value: expect.any(String),
-          }),
-          expect.objectContaining({
-            id: dummyColumnIds[4],
-            name: 'Test Column 4',
-            value: expect.any(String),
-          }),
-        ]),
       }),
     })
 
-    const rows = ($.setActionItem as any).mock.calls[0][0].raw.rows
+    const rows = ($.setActionItem as any).mock.calls[0][0].raw.data.rows
 
-    const rowData = rows.rowData
-    expect(rowData).toHaveLength(500)
-    expect(rowData[0].rowId).toBe('row0')
-    expect(rowData[499].rowId).toBe('row499')
+    expect(rows).toHaveLength(500)
+    expect(rows[0].rowId).toBe('row0')
+    expect(rows[499].rowId).toBe('row499')
   })
 })

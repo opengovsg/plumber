@@ -1,7 +1,5 @@
 import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
-import { TileColumnMetadata } from '../../types'
-
 import { dataOutSchema } from './schema'
 
 async function getDataOutMetadata(
@@ -15,10 +13,10 @@ async function getDataOutMetadata(
   const dataOut = dataOutSchema.parse(rawDataOut)
 
   const metadata: IDataOutMetadata = {
-    rows: {
+    data: {
       label: 'List of row(s) found',
       displayedValue: `Preview ${dataOut.rowsFound} row(s)`,
-      type: 'array',
+      type: 'multiple-row-object',
       order: 1,
     },
     rowsFound: {
@@ -27,18 +25,7 @@ async function getDataOutMetadata(
     },
   }
 
-  const columnMetadata: IDataOutMetadata = []
-  if (dataOut.columns) {
-    dataOut.columns.forEach((column: TileColumnMetadata) => {
-      columnMetadata.push({
-        id: { isHidden: true },
-        name: { isHidden: true },
-        value: { label: column.name },
-      })
-    })
-  }
-
-  return { ...metadata, columns: columnMetadata }
+  return { ...metadata }
 }
 
 export default getDataOutMetadata
