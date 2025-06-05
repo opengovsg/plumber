@@ -4,6 +4,40 @@ import { describe, expect, it, vi } from 'vitest'
 
 import getDataOutMetadata from '../../actions/get-table-rows/get-data-out-metadata'
 
+const DEFAULT_SUCCESS_EXECUTION_STEP = {
+  dataOut: {
+    rowsFound: 2,
+    data: {
+      rows: [
+        {
+          data: {
+            '436f6c756d6e31': 'value1',
+            '436f6c756d6e32': 'value2',
+          },
+        },
+        {
+          data: {
+            '436f6c756d6e31': 'value3',
+            '436f6c756d6e32': 'value4',
+          },
+        },
+      ],
+      columns: [
+        {
+          id: '436f6c756d6e31',
+          name: 'Column1',
+          value: `data.rows.*.${Buffer.from('Column1').toString('hex')}`,
+        },
+        {
+          id: '436f6c756d6e32',
+          name: 'Column2',
+          value: `data.rows.*.${Buffer.from('Column2').toString('hex')}`,
+        },
+      ],
+    },
+  },
+} as unknown as IExecutionStep
+
 describe('getTableRows getDataOutMetadata', () => {
   it('should return null if no dataOut is provided', async () => {
     const executionStep = { dataOut: null } as unknown as IExecutionStep
@@ -15,93 +49,48 @@ describe('getTableRows getDataOutMetadata', () => {
     const executionStep = {
       dataOut: {
         rowsFound: 0,
+        data: {
+          rows: [],
+          columns: [
+            {
+              id: '436f6c756d6e31',
+              name: 'Column1',
+              value: `data.rows.*.${Buffer.from('Column1').toString('hex')}`,
+            },
+          ],
+        },
       },
     } as unknown as IExecutionStep
-
     const result = await getDataOutMetadata(executionStep)
 
     expect(result).toEqual({
-      rows: {
-        label: 'List of row(s) found',
-        displayedValue: 'Preview 0 row(s)',
-        order: 1,
-        type: 'array',
-      },
       rowsFound: {
         label: 'Number of rows found',
         order: 2,
       },
-      columns: [],
+      data: {
+        label: 'List of row(s) found',
+        displayedValue: 'Preview 0 row(s)',
+        order: 1,
+        type: 'multiple-row-object',
+      },
     })
   })
 
   it('should return metadata for foundRows: true with row data', async () => {
-    const executionStep = {
-      dataOut: {
-        rowsFound: 2,
-        rowData: [
-          {
-            tableRowIndex: 0,
-            sheetRowNumber: 2,
-            row: {
-              '436f6c756d6e31': { value: 'value1', columnName: 'Column1' },
-              '436f6c756d6e32': { value: 'value2', columnName: 'Column2' },
-            },
-          },
-          {
-            tableRowIndex: 1,
-            sheetRowNumber: 3,
-            row: {
-              '436f6c756d6e31': { value: 'value3', columnName: 'Column1' },
-              '436f6c756d6e32': { value: 'value4', columnName: 'Column2' },
-            },
-          },
-        ],
-        columns: [
-          {
-            id: Buffer.from('Column1').toString('hex'),
-            name: 'Column1',
-            value: 'value1, value3',
-          },
-          {
-            id: Buffer.from('Column2').toString('hex'),
-            name: 'Column2',
-            value: 'value2, value4',
-          },
-        ],
-        numRows: 2,
-      },
-    } as unknown as IExecutionStep
-
-    const result = await getDataOutMetadata(executionStep)
+    const result = await getDataOutMetadata(DEFAULT_SUCCESS_EXECUTION_STEP)
 
     expect(result).toEqual({
-      rows: {
-        label: 'List of row(s) found',
-        displayedValue: 'Preview 2 row(s)',
-        order: 1,
-        type: 'array',
-      },
       rowsFound: {
         label: 'Number of rows found',
         order: 2,
       },
-      columns: [
-        {
-          id: { isHidden: true },
-          name: { isHidden: true },
-          value: {
-            label: 'Column1',
-          },
-        },
-        {
-          id: { isHidden: true },
-          name: { isHidden: true },
-          value: {
-            label: 'Column2',
-          },
-        },
-      ],
+      data: {
+        label: 'List of row(s) found',
+        displayedValue: 'Preview 2 row(s)',
+        order: 1,
+        type: 'multiple-row-object',
+      },
     })
   })
 
@@ -109,26 +98,14 @@ describe('getTableRows getDataOutMetadata', () => {
     const executionStep = {
       dataOut: {
         rowsFound: 0,
-        rows: [],
-        // columns is missing
+        data: {
+          rows: [],
+          // columns is missing
+        },
       },
     } as unknown as IExecutionStep
 
-    const result = await getDataOutMetadata(executionStep)
-
-    expect(result).toEqual({
-      rows: {
-        label: 'List of row(s) found',
-        displayedValue: 'Preview 0 row(s)',
-        order: 1,
-        type: 'array',
-      },
-      rowsFound: {
-        label: 'Number of rows found',
-        order: 2,
-      },
-      columns: [],
-    })
+    await expect(getDataOutMetadata(executionStep)).rejects.toThrow()
   })
 
   it('should handle invalid dataOut format gracefully', async () => {

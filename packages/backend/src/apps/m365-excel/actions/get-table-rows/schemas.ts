@@ -20,29 +20,10 @@ export const parametersSchema = z.object({
 
 export const dataOutSchema = z.object({
   rowsFound: z.number(),
-  columns: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        value: z.string(),
-      }),
-    )
-    .optional(),
-  rows: z
-    .array(
-      z.object({
-        id: z.string(),
-        tableRowIndex: z.number(),
-        sheetRowNumber: z.number(),
-        rowData: z.record(
-          z.string(),
-          z.object({
-            value: z.string(),
-            columnName: z.string(),
-          }),
-        ),
-      }),
-    )
-    .optional(),
+  data: z.object({
+    rows: z.array(z.object({ data: z.record(z.string(), z.string()) })),
+    columns: z.array(
+      z.object({ id: z.string(), name: z.string(), value: z.string() }),
+    ),
+  }),
 })
