@@ -16,10 +16,9 @@ export type TileColumnMetadata = {
 
 export interface FindMultipleRowsOutput extends IJSONObject {
   rowsFound: number
-  columns: TileColumnMetadata[]
-  rows?: {
-    rowData: TableRowOutput[]
-    columns: Record<string, string>[]
+  data?: {
+    rows: TableRowOutput[]
+    columns: TileColumnMetadata[]
   }
 }
 
