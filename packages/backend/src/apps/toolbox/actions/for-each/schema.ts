@@ -60,18 +60,8 @@ export const inputSchema = z
     }
 
     // Handle checkbox input (comma-separated values)
-    const items = trimmed.split(',')
-
-    if (items.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'No valid items found in comma-separated input',
-      })
-      return z.NEVER
-    }
-
     return {
       type: 'checkbox' as const,
-      items,
+      items: trimmed.split(','),
     }
   })

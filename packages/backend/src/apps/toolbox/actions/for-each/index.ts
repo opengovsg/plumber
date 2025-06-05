@@ -29,7 +29,7 @@ const action: IRawAction = {
     const { items: rawItems } = $.step.parameters
     const parsedResult = inputSchema.safeParse(rawItems)
 
-    if (!parsedResult.success) {
+    if (parsedResult.success === false) {
       throw new StepError(
         'Invalid input list',
         'Select a valid input list',
