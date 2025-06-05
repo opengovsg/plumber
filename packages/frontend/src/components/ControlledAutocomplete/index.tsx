@@ -93,12 +93,13 @@ function ControlledAutocomplete(
   const freeSolo = useMemo(() => {
     if (
       options.length &&
-      options.every((option) => typeof option.value !== 'string')
+      options.every((option) => typeof option.value !== 'string') &&
+      !readOnly
     ) {
       return false
     }
     return rawFreeSolo
-  }, [options, rawFreeSolo])
+  }, [options, rawFreeSolo, readOnly])
 
   /**
    * useController is used here instead of the Controller component
@@ -182,7 +183,7 @@ function ControlledAutocomplete(
             freeSolo={freeSolo}
             isSearchable={isSearchable}
             addNew={
-              addNewOption
+              addNewOption && !readOnly
                 ? {
                     type: addNewOption.type,
                     label: addNewOption.label,
