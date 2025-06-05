@@ -172,7 +172,7 @@ function ControlledAutocomplete(
             colorScheme="secondary"
             isClearable={!required}
             items={items}
-            onChange={() => !readOnly && fieldOnChange}
+            onChange={(e) => !readOnly && fieldOnChange(e)}
             value={fieldValue ?? defaultValue}
             placeholder={placeholder}
             ref={ref}
