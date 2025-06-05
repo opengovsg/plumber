@@ -17,6 +17,7 @@ class TableMetadata extends Base {
    */
   role?: ITableCollabRole
   lastAccessedAt?: Date
+  db: 'pg' | 'ddb'
 
   static tableName = 'table_metadata'
 
