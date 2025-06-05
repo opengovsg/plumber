@@ -1,5 +1,9 @@
 import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
+import { FOR_EACH_INPUT_SOURCE } from '../../common/constants'
+
+import { dataOutSchema } from './schema'
+
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
@@ -8,10 +12,62 @@ async function getDataOutMetadata(
     return null
   }
 
-  return {
+  const dataOut = dataOutSchema.parse(rawDataOut)
+  const { inputSource, items } = dataOut
+
+  const baseMetadata = {
     iterations: {
       label: 'Number of items',
+      order: 1,
     },
+
+    // hidden fields
+    inputSource: {
+      isHidden: true,
+    },
+  }
+
+  if (inputSource === FOR_EACH_INPUT_SOURCE.CHECKBOX) {
+    return {
+      ...baseMetadata,
+      // NOTE: arrayValue is only used when it is a checkbox
+      items: { isHidden: true },
+      arrayValue: {
+        label: 'Array value',
+        type: 'text',
+        displayedValue: dataOut.items[0],
+      },
+    }
+  }
+
+  if (
+    inputSource === FOR_EACH_INPUT_SOURCE.M365_EXCEL ||
+    inputSource === FOR_EACH_INPUT_SOURCE.TILES
+  ) {
+    const columnsMetadata = items.columns.map((column, index) => ({
+      id: { isHidden: true },
+      name: { isHidden: true },
+      value: {
+        label: column.name,
+        displayedValue: ' ',
+        order: index + 2,
+      },
+    }))
+
+    const rowsMetadata = items.rows.map(() => ({
+      rowId: { isHidden: true },
+      data: {
+        isHidden: true,
+      },
+    }))
+
+    return {
+      ...baseMetadata,
+      items: {
+        columns: columnsMetadata,
+        rows: rowsMetadata,
+      },
+    }
   }
 }
 
