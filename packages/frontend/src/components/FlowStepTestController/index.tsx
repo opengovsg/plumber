@@ -112,6 +112,9 @@ export default function FlowStepTestController(
     'down',
   )
 
+  // isLastTestExecutionCurrent is used to determine if the last test execution corresponds
+  // to the values in the form.
+  // isLastTestExecutionCurrent is false if the form values are saved but not tested
   const isLastTestExecutionCurrent = useMemo(() => {
     const formValues = formContext.getValues()
     return matchParamsToDataIn(
@@ -137,7 +140,6 @@ export default function FlowStepTestController(
 
   const shouldAllowCheckStep = isValid && !readOnly && !isSaving
 
-  // TODO: figure out what isLastTestExectionCurrent is for
   const shouldShowSaveButton =
     !readOnly && (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty))
   const shouldShowTestResults =
@@ -325,13 +327,11 @@ export default function FlowStepTestController(
                           size="sm"
                           colorScheme="black"
                           onClick={handleSave}
-                          isDisabled={!isLastTestExecutionCurrent && !isDirty}
+                          isDisabled={!isDirty}
                           mr={2}
                         >
                           <Text noOfLines={1}>
-                            {!isLastTestExecutionCurrent && !isDirty
-                              ? 'Saved'
-                              : 'Save without checking'}
+                            {!isDirty ? 'Saved' : 'Save without checking'}
                           </Text>
                         </Button>
                       </GridItem>
