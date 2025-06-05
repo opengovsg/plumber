@@ -237,9 +237,10 @@ const dialogPlaceholders: Partial<Record<MenuLabels, string>> = {
 interface MenuBarProps {
   editor: Editor | null
   variableMap: VariableInfoMap
+  editable: boolean
 }
 
-export const MenuBar = ({ editor, variableMap }: MenuBarProps) => {
+export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
   const {
     isOpen: isDialogOpen,
     onClose,
@@ -329,12 +330,21 @@ export const MenuBar = ({ editor, variableMap }: MenuBarProps) => {
       <div className="editor__header">
         {menuButtons.map(({ onClick, label, icon, isActive }, index) => {
           if (!onClick) {
-            return <div className="divider" key={`${label}${index}`} />
+            return (
+              <div
+                className="divider"
+                style={{
+                  opacity: editable ? 1 : 0.5,
+                }}
+                key={`${label}${index}`}
+              />
+            )
           }
           return (
             <button
               key={`${label}${index}`}
               title={label}
+              disabled={!editable}
               style={{
                 borderRadius: '0.25rem',
                 width: 'auto',
@@ -342,6 +352,8 @@ export const MenuBar = ({ editor, variableMap }: MenuBarProps) => {
                 backgroundColor: isActive?.(editor)
                   ? 'rgba(0,0,0,0.1)'
                   : 'transparent',
+                opacity: editable ? 1 : 0.5,
+                cursor: editable ? 'pointer' : 'default',
               }}
               className={`menu-item${isActive?.(editor) ? ' is-active' : ''}`}
               onClick={() => {

@@ -88,7 +88,7 @@ const RICH_TEXT_EXTENSIONS = [
 interface EditorProps {
   onChange: (...event: any[]) => void
   initialValue: string
-  editable?: boolean
+  editable: boolean
   placeholder?: string
   variablesEnabled?: boolean
   isRich?: boolean
@@ -266,7 +266,13 @@ const Editor = ({
       >
         <PopoverTrigger>
           <Box className={isMulticol ? 'single-line-editor' : undefined}>
-            {isRich && <MenuBar editor={editor} variableMap={varInfo} />}
+            {isRich && (
+              <MenuBar
+                editor={editor}
+                variableMap={varInfo}
+                editable={editable ?? false}
+              />
+            )}
             <EditorContent className="editor__content" editor={editor} />
             <Portal>
               <PopoverContent
