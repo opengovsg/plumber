@@ -3,6 +3,7 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 
 import getDataOutMetadata from './get-data-out-metadata'
+import { inputSchema } from './schema'
 
 const action: IRawAction = {
   name: 'For each',
@@ -14,35 +15,21 @@ const action: IRawAction = {
       label: 'Choose items',
       description:
         'Supported items include rows in Tiles/M365 Excel and FormSG checkboxes',
-      key: 'forEachInputList',
+      key: 'items',
       type: 'string' as const,
       required: true,
       variables: true,
-      variableTypes: ['array', 'multiple-row-object'],
+      variableTypes: ['array', 'table'],
     },
   ],
 
   getDataOutMetadata,
 
   async run($) {
-    const { forEachInputList } = $.step.parameters as {
-      forEachInputList: string
-    }
+    const { items: rawItems } = $.step.parameters
+    const parsedResult = inputSchema.safeParse(rawItems)
 
-    try {
-      const isJsonString =
-        forEachInputList.includes('[') || forEachInputList.includes('{')
-      const inputList = isJsonString
-        ? JSON.parse(forEachInputList)
-        : forEachInputList.split(',').map((item) => item.trim())
-
-      $.setActionItem({
-        raw: {
-          iterations: isJsonString ? inputList.rows.length : inputList.length,
-        },
-      })
-    } catch (err) {
-      console.error(err)
+    if (!parsedResult.success) {
       throw new StepError(
         'Invalid input list',
         'Select a valid input list',
@@ -50,6 +37,13 @@ const action: IRawAction = {
         $.app.name,
       )
     }
+
+    const { type, items } = parsedResult.data
+    $.setActionItem({
+      raw: {
+        iterations: type === 'checkbox' ? items.length : items.rows.length,
+      },
+    })
   },
 }
 
