@@ -20,7 +20,11 @@ import {
 
 import { BORDER_COLOR, FONT_SIZE, ROW_COLOR } from '@/pages/Tile/constants'
 
-import { Column, DataRow, processData } from '../MultiRowResultVariables/utils'
+import {
+  processData,
+  ProcessedColumn,
+  ProcessedRow,
+} from '../MultiRowResultVariables/utils'
 
 interface TestMultiRowResultModalProps {
   isOpen: boolean
@@ -28,7 +32,7 @@ interface TestMultiRowResultModalProps {
   currentExecutionStep?: IExecutionStep | null
 }
 
-const TableHeader = ({ columns }: { columns: Column[] }) => (
+const TableHeader = ({ columns }: { columns: ProcessedColumn[] }) => (
   <Thead
     position="sticky"
     top={0}
@@ -65,9 +69,9 @@ const TableRow = ({
   index,
   columns,
 }: {
-  row: DataRow
+  row: ProcessedRow
   index: number
-  columns: Column[]
+  columns: ProcessedColumn[]
 }) => (
   <Tr
     backgroundColor={index % 2 ? ROW_COLOR.EVEN : ROW_COLOR.ODD}
