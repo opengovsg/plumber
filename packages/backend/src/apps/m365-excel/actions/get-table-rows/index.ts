@@ -7,7 +7,7 @@ import StepError from '@/errors/step'
 import { GET_TABLE_ROWS_LIMIT } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
 import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
-import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
+import { convertRowToHexKeyedObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
 import WorkbookSession from '../../common/workbook-session'
 import { MAX_ROWS } from '../get-table-row/implementation'
 
@@ -132,14 +132,14 @@ const action: IRawAction = {
     })
 
     const session = await WorkbookSession.acquire($, fileId)
-    const { columns, rows, headerSheetRowIndex } = await getTopNTableRows(
+    const { columns: rawColumns, rows } = await getTopNTableRows(
       $,
       session,
       tableId,
       MAX_ROWS,
     )
 
-    const columnIndex = columns.indexOf(lookupColumn)
+    const columnIndex = rawColumns.indexOf(lookupColumn)
     if (columnIndex === -1) {
       throw new StepError(
         `Column "${lookupColumn}" does not exist in your table.`,
@@ -149,23 +149,12 @@ const action: IRawAction = {
       )
     }
 
-    const rowsToReturn: {
-      id: string
-      tableRowIndex: number
-      sheetRowNumber: number
-      rowData: Record<string, { value?: string; columnName?: string }>
-    }[] = []
+    const rowsToReturn: { data: Record<string, string> }[] = []
 
-    for (const [rowIndex, row] of rows.entries()) {
+    for (const [_, row] of rows.entries()) {
       if (row[columnIndex] === lookupValue) {
         rowsToReturn.push({
-          id: `${rowIndex}-${rowIndex + headerSheetRowIndex + 2}`,
-          tableRowIndex: rowIndex,
-          sheetRowNumber: rowIndex + headerSheetRowIndex + 2,
-          rowData: convertRowToHexEncodedRowRecord({
-            row,
-            columns,
-          }),
+          data: convertRowToHexKeyedObject({ row, columns: rawColumns }),
         })
       }
     }
@@ -173,36 +162,20 @@ const action: IRawAction = {
     // Max limit of 500 rows
     const slicedRows = rowsToReturn.slice(0, GET_TABLE_ROWS_LIMIT)
 
-    const consolidatedColumns = columns.reduce((acc, column) => {
-      const values: string[] = []
-      for (const row of slicedRows) {
-        const rowData = Object.entries(row.rowData).find(([_, value]) => {
-          if (value.columnName === column) {
-            return value.value
-          }
-        })
-
-        const value = rowData?.[1].value
-        if (value) {
-          values.push(value)
-        }
-      }
-
-      acc.push({
-        // NOTE: convert column to hex to avoid special characters
-        // such as '.' that may affect lodash get
-        id: Buffer.from(column).toString('hex'),
-        name: column,
-        value: values.join(', '),
-      })
-      return acc
-    }, [])
-
     $.setActionItem({
       raw: {
         rowsFound: slicedRows.length,
-        rows: slicedRows,
-        columns: consolidatedColumns,
+        data: {
+          rows: slicedRows,
+          columns: rawColumns.map((c) => {
+            const hexEncodedColumnName = Buffer.from(c).toString('hex')
+            return {
+              id: hexEncodedColumnName,
+              name: c,
+              value: `data.rows.*.data.${hexEncodedColumnName}`,
+            }
+          }),
+        },
       } satisfies DataOut,
     })
   },
