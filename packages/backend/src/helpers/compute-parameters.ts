@@ -9,11 +9,31 @@ import Step from '../models/step'
 
 const GET_ALL_SEPARATOR = ','
 
-const variableRegExp =
-  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\w* -]+)+}})/g
+export const VARIABLE_REGEX =
+  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.(?:[\w -]+|\*))+}})/
+
+function isVariableValid(path: string) {
+  const rawPath = path.replace(/^{{step\.[^}]+?\./, '').replace(/}}$/, '')
+  const segments = rawPath.split('.')
+  const wildcardCount = segments.filter((s) => s === '*').length
+
+  if (
+    wildcardCount > 1 ||
+    segments[0] === '*' ||
+    segments[segments.length - 1] === '*'
+  ) {
+    return false
+  }
+
+  return true
+}
 
 function splitAndJoinAroundWildcard(arr: string[]) {
   const wildcardIndex = arr.indexOf('*')
+  if (wildcardIndex === -1) {
+    console.error("Wildcard '*' not found in array")
+    return { before: arr.join('.'), after: '' }
+  }
   return {
     before: arr.slice(0, wildcardIndex).join('.'),
     after: arr.slice(wildcardIndex + 1).join('.'),
@@ -59,11 +79,15 @@ function findAndSubstituteVariables(
     return rawValue
   }
 
-  const parts = rawValue.split(variableRegExp)
+  const parts = rawValue.split(VARIABLE_REGEX)
 
   return parts
     .map((part: string) => {
-      const isVariable = part.match(variableRegExp)
+      if (!isVariableValid(part)) {
+        return part
+      }
+
+      const isVariable = part.match(VARIABLE_REGEX)
       if (isVariable) {
         const stepIdAndKeyPath = part.replace(/{{step.|}}/g, '') as string
         const [stepId, ...keyPaths] = stepIdAndKeyPath.split('.')
@@ -79,6 +103,9 @@ function findAndSubstituteVariables(
 
           if (!base) {
             return ''
+          }
+          if (typeof base === 'string') {
+            return base
           }
 
           const values = after
