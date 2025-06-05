@@ -24,7 +24,8 @@ const postMessage = async ($: IGlobalVariable) => {
   }
 
   if (sendAsBot) {
-    data.username = botName
+    // somehow slack doesn't recognise '0' as a valid username
+    data.username = !botName || botName === '0' ? 'Plumber' : botName
     try {
       // challenging the input to check if it is a URL!
       new URL(botIcon)
