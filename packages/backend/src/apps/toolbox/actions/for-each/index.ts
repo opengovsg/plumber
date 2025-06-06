@@ -55,8 +55,8 @@ const action: IRawAction = {
             items: items,
             inputSource: 'checkbox',
             // NOTE: this is specifically for checkboxes
-            // multiple-row data is handled differently in processInput
-            arrayValue: `items.${FOR_EACH_ITERATION_KEY}`,
+            // table data is handled differently in processInput
+            item: `items.${FOR_EACH_ITERATION_KEY}`,
           },
         })
         return
