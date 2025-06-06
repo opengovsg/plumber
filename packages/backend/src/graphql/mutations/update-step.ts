@@ -31,17 +31,28 @@ const updateStep: MutationResolvers['updateStep'] = async (
     }
 
     const shouldInvalidate =
-      step.key !== input.key || step.appKey !== input.appKey
+      step.key !== input.key ||
+      step.appKey !== input.appKey ||
+      input.status === 'incomplete'
 
-    return await Step.query(trx)
+    const stepName = input?.config?.stepName ?? step?.config?.stepName
+    const existingConfig = step?.config ?? {}
+
+    const updatedStep = await Step.query(trx)
       .patchAndFetchById(input.id, {
         key: input.key,
         appKey: input.appKey,
         connectionId: input.connection.id,
         parameters: input.parameters,
         status: shouldInvalidate ? 'incomplete' : step.status,
+        config: {
+          ...existingConfig,
+          // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
+          ...(stepName !== undefined ? { stepName } : {}),
+        },
       })
       .withGraphFetched('connection')
+    return updatedStep
   })
 
   return step

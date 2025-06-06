@@ -1,8 +1,19 @@
 import { raw } from 'objection'
 
+import { hasStepReference } from '@/helpers/check-step-parameters'
 import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
+
+function getStepsToInvalidate(steps: Step[], deletedIds: Set<string>) {
+  const stepsToInvalidate = []
+  for (const s of steps) {
+    if (hasStepReference(s.parameters, deletedIds)) {
+      stepsToInvalidate.push(s.id)
+    }
+  }
+  return stepsToInvalidate
+}
 
 const deleteStep: MutationResolvers['deleteStep'] = async (
   _parent,
@@ -34,6 +45,23 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     // We only support deleting single trigger steps or contiguous action steps.
     //
     if (steps.length === 1 && steps[0].type === 'trigger') {
+      const deletedStepId = steps[0].id
+
+      // check for steps whose parameters reference the deletedStepId
+      const allSteps = await flow
+        .$relatedQuery('steps', trx)
+        .where('id', '!=', deletedStepId)
+        .orderBy('position', 'asc')
+      const stepsToInvalidate = getStepsToInvalidate(
+        allSteps,
+        new Set([deletedStepId]),
+      )
+
+      // invalidate steps that reference the deleted steps
+      await Step.query(trx).findByIds(stepsToInvalidate).patch({
+        status: 'incomplete',
+      })
+
       // we delete and add a new trigger upon deletion to preserve past execution steps' context
       await steps[0].$query().delete()
       await flow.$relatedQuery('steps', trx).insert({
@@ -56,6 +84,18 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
       }
 
       const stepIds = steps.map((step) => step.id)
+
+      // check for steps whose parameters reference the deletedStepId
+      const allSteps = await flow
+        .$relatedQuery('steps', trx)
+        .whereNotIn('id', stepIds)
+        .orderBy('position', 'asc')
+      const stepsToInvalidate = getStepsToInvalidate(allSteps, new Set(stepIds))
+
+      // invalidate steps that reference the deleted steps
+      await Step.query(trx).findByIds(stepsToInvalidate).patch({
+        status: 'incomplete',
+      })
 
       /**
        * NOTE: do not delete execution steps

@@ -1,5 +1,4 @@
 export const QUEUE_CONCURRENCY = {
-  POSTMAN_EMAIL: 3,
   SLACK: 3,
   TELEGRAM: 3,
 }

@@ -16,8 +16,8 @@ export type InputCreatorProps = {
   schema: IField
   namePrefix?: string
   stepId?: string
-  disabled?: boolean
   parentType?: string
+  autoFocus?: boolean
 }
 
 type RawOption = {
@@ -29,7 +29,7 @@ const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
   options?.map(({ name, value }) => ({ label: name as string, value: value }))
 
 export default function InputCreator(props: InputCreatorProps): JSX.Element {
-  const { schema, namePrefix, stepId, disabled, parentType } = props
+  const { schema, namePrefix, stepId, parentType, autoFocus } = props
 
   const {
     key: name,
@@ -115,7 +115,6 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         required={required}
         label={label}
         description={description}
-        disabled={disabled}
         placeholder={placeholder}
         variablesEnabled={variables}
         isRich
@@ -131,12 +130,13 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           required={required}
           label={label}
           description={description}
-          disabled={disabled}
           placeholder={placeholder}
           isSingleLine={parentType === 'multicol'}
           variablesEnabled
           tooltipText={tooltipText}
           variableTypes={schema.variableTypes}
+          parentType={parentType}
+          autoFocus={autoFocus}
         />
       )
     }
@@ -146,7 +146,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         defaultValue={value}
         required={required}
         placeholder={placeholder}
-        readOnly={readOnly || disabled}
+        readOnly={readOnly}
         name={computedName}
         label={label}
         multiline={type === 'multiline'}
@@ -192,7 +192,6 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         type={type}
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
-        disabled={disabled}
       />
     )
   }

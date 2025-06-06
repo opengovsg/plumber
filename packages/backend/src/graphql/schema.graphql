@@ -154,7 +154,6 @@ type Action {
   name: String
   key: String
   description: String
-  settingsStepLabel: String
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
   substeps: [ActionSubstep]
@@ -230,7 +229,6 @@ type App {
   connections: [Connection]
   description: String
   isNewApp: Boolean
-  substepLabels: StepLabel
   setupMessage: SetupMessage
   demoVideoDetails: DemoVideoDetails
   category: AppCategory
@@ -246,10 +244,6 @@ enum AppCategory {
 type DemoVideoDetails {
   url: String!
   title: String!
-}
-
-type StepLabel {
-  settingsStepLabel: String
 }
 
 type ConnectionModalLabel {
@@ -518,6 +512,10 @@ input CreateStepInput {
   previousStep: PreviousStepInput
 }
 
+input StepConfigInput {
+  stepName: String
+}
+
 input UpdateStepInput {
   id: String
   previousStepId: String
@@ -527,6 +525,8 @@ input UpdateStepInput {
   flow: StepFlowInput
   parameters: JSONObject
   previousStep: PreviousStepInput
+  status: String
+  config: StepConfigInput
 }
 
 input DeleteStepInput {
@@ -608,6 +608,7 @@ type Step {
 
 type StepConfig {
   templateConfig: StepTemplateConfig
+  stepName: String
 }
 
 type StepTemplateConfig {
@@ -646,7 +647,6 @@ type Trigger {
   type: String
   setupMessage: SetupMessage
   webhookTriggerInstructions: TriggerInstructions
-  settingsStepLabel: String
   substeps: [TriggerSubstep]
 }
 

@@ -23,7 +23,7 @@ function Suggestions(props: SuggestionsProps) {
   if (isEmpty) {
     return (
       <Text p={4} opacity={0.5} textStyle="body-1" color="base.content.medium">
-        No variables available
+        No variables available - complete earlier steps to use them here
       </Text>
     )
   }

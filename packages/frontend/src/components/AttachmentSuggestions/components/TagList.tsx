@@ -1,12 +1,16 @@
+import { useContext } from 'react'
 import { Tag, TagCloseButton, TagLabel, Tooltip } from '@chakra-ui/react'
 
+import { EditorContext } from '@/contexts/Editor'
+
 interface TagsProps {
-  selectedOptions: any[]
+  tags: any[]
   onClick: (option: any) => void
 }
 
 function TagList(props: TagsProps) {
-  const { onClick, selectedOptions } = props
+  const { onClick, tags } = props
+  const { readOnly } = useContext(EditorContext)
 
   const getLabel = (option: any, tooltip?: boolean) => {
     const { displayedValue, label, source, uploaded } = option
@@ -18,14 +22,14 @@ function TagList(props: TagsProps) {
     return uploaded ? `[Uploaded] ${displayedValue}` : `[${source}] ${label}`
   }
 
-  if (selectedOptions.length === 0) {
+  if (tags.length === 0) {
     return <></>
   }
 
   return (
     <>
-      {selectedOptions?.map((option) => {
-        const { label, value } = option
+      {tags?.map((tag) => {
+        const { label, value } = tag
         return (
           <Tag
             key={`${label}-${value}`}
@@ -36,13 +40,17 @@ function TagList(props: TagsProps) {
             minW="40px"
             maxW="200px"
             flex="0 1 auto"
+            h="100%"
           >
-            <Tooltip hasArrow label={getLabel(option, true)}>
+            <Tooltip hasArrow label={getLabel(tag, true)}>
               <TagLabel isTruncated flex="1 1 auto" minW="0">
-                {getLabel(option)}
+                {getLabel(tag)}
               </TagLabel>
             </Tooltip>
-            <TagCloseButton onClick={() => onClick(option)} />
+            <TagCloseButton
+              onClick={() => !readOnly && onClick(tag)}
+              isDisabled={readOnly}
+            />
           </Tag>
         )
       })}

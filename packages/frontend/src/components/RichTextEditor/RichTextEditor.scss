@@ -284,3 +284,31 @@
     }
   }
 }
+
+.single-line-editor {
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  // NOTE: below is to make sure the scrollbar adopts the editor's border radius
+  border-radius: inherit;
+  mask-image: linear-gradient(to right, black 100%, black 100%);
+  -webkit-mask-image: linear-gradient(to right, black 100%, black 100%);
+
+  // NOTE: forcefully hide the scrollbar so that it does not
+  // cause misalignment with the height of the multirow
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .editor__content {
+    min-width: min-content;
+  }
+
+  .ProseMirror {
+    width: 100%;
+    white-space: nowrap;
+  }
+}

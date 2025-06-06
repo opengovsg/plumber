@@ -11,6 +11,7 @@ import { Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
 import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
+import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 
 import extractVariablesAsItems from '../MultiSelect/helpers/extract-variables-as-items'
@@ -74,6 +75,7 @@ function ControlledAutocomplete(
     isSearchable,
     variableTypes = null,
   } = props
+  const { readOnly } = useContext(EditorContext)
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
 
   /**
@@ -170,7 +172,7 @@ function ControlledAutocomplete(
             colorScheme="secondary"
             isClearable={!required}
             items={items}
-            onChange={fieldOnChange}
+            onChange={() => !readOnly && fieldOnChange}
             value={fieldValue ?? defaultValue}
             placeholder={placeholder}
             ref={ref}
@@ -178,7 +180,6 @@ function ControlledAutocomplete(
             onRefresh={onRefresh}
             isRefreshLoading={loading}
             freeSolo={freeSolo}
-            isReadOnly={isCreatingNewOption}
             isSearchable={isSearchable}
             addNew={
               addNewOption

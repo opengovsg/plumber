@@ -1,3 +1,4 @@
+import { useContext, useMemo } from 'react'
 import {
   Box,
   Collapse,
@@ -10,6 +11,7 @@ import {
 import FileUpload from '@/components/FileUpload'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import SuggestionsWrapper from '@/components/SuggestionsWrapper'
+import { EditorContext } from '@/contexts/Editor'
 import { StepWithVariables, Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
@@ -20,23 +22,16 @@ import Checkbox, { type CheckboxVariable } from './Checkbox'
 import TagList from './TagList'
 
 interface SuggestionsProps {
+  allOptions: (CheckboxVariable | AttachmentConfigInput)[]
   currentTab: number
   isSuggestionsOpen: boolean
   isUploading: boolean
   loading: boolean
-  selectedNames: string[]
-  selectedOptions: (CheckboxVariable | AttachmentConfigInput)[]
   suggestions: StepWithVariables[]
   values: any
   closeSuggestions: () => void
-  onChange: (...event: any[]) => void
   onDelete: (e: React.MouseEvent, file: Variable) => void
-  onSuggestionClick: (
-    variable: Variable,
-    checked: boolean,
-    onChange: (...event: any[]) => void,
-    value: any,
-  ) => void
+  onSuggestionClick: (variable: Variable, checked: boolean) => void
   openSuggestions: () => void
   processFile: (file: File) => void
   setCurrentTab: (tab: number) => void
@@ -44,16 +39,14 @@ interface SuggestionsProps {
 
 export default function Suggestions(props: SuggestionsProps) {
   const {
+    allOptions,
     currentTab,
     isSuggestionsOpen,
     isUploading,
     loading,
-    selectedNames,
-    selectedOptions,
     suggestions,
     values,
     closeSuggestions,
-    onChange,
     onDelete,
     onSuggestionClick,
     openSuggestions,
@@ -61,16 +54,13 @@ export default function Suggestions(props: SuggestionsProps) {
     setCurrentTab,
   } = props
 
-  const SuggestionsRightPanel = ({
-    onChange,
-    values,
-  }: {
-    onChange: (...event: any[]) => void
-    values: any
-  }) => {
+  const { readOnly } = useContext(EditorContext)
+
+  const SuggestionsRightPanel = ({ values }: { values: any }) => {
     if (suggestions.length === 0) {
       return <Text style={noVariablesTextStyles}>No variables available</Text>
     }
+
     return (
       <>
         {suggestions.map((option: StepWithVariables, index: number) => {
@@ -86,24 +76,28 @@ export default function Suggestions(props: SuggestionsProps) {
                   <FileUpload
                     accept={ACCEPTED_FILE_TYPES.join(',')}
                     buttonType="textButton"
-                    disabled={isUploading}
+                    disabled={isUploading || readOnly}
                     loading={isUploading}
                     processFile={processFile}
                   />
                 )}
                 <Box data-test="attachment-group" maxH={64} overflowY="auto">
                   {output?.map((variable) => {
+                    const { name } = variable
                     return (
                       <Checkbox
-                        key={variable.name}
+                        key={name}
                         variable={{
                           ...variable,
                           source: option.name,
                         }}
-                        allowDelete={addNew}
-                        isChecked={selectedNames.includes(variable.name)}
+                        allowDelete={addNew && !readOnly}
+                        isChecked={
+                          values.includes(name) ||
+                          values.includes(`{{${name}}}`)
+                        }
                         onClick={(variable, checked) => {
-                          onSuggestionClick(variable, checked, onChange, values)
+                          onSuggestionClick(variable, checked)
                         }}
                         onDelete={onDelete}
                       />
@@ -118,6 +112,13 @@ export default function Suggestions(props: SuggestionsProps) {
     )
   }
 
+  const tags = useMemo(() => {
+    return allOptions.filter(
+      (option) =>
+        values.includes(option.name) || values.includes(`{{${option.name}}}`),
+    )
+  }, [allOptions, values])
+
   return (
     <ChakraPopover
       autoFocus={false}
@@ -129,14 +130,17 @@ export default function Suggestions(props: SuggestionsProps) {
       isOpen={isSuggestionsOpen}
       onClose={closeSuggestions}
     >
-      <div style={divWrapperStyles} onClick={openSuggestions}>
+      <div
+        style={divWrapperStyles}
+        onClick={() => !readOnly && openSuggestions()}
+      >
         <PopoverTrigger>
-          <Box sx={boxStyles} onClick={openSuggestions}>
+          <Box sx={boxStyles} onClick={() => !readOnly && openSuggestions()}>
             <TagList
               onClick={(option) => {
-                onSuggestionClick(option, false, onChange, values)
+                onSuggestionClick(option, false)
               }}
-              selectedOptions={selectedOptions}
+              tags={tags}
             />
             <PopoverContent w="100%" motionProps={POPOVER_MOTION_PROPS}>
               {loading ? (
@@ -147,12 +151,7 @@ export default function Suggestions(props: SuggestionsProps) {
                   leftPanelData={suggestions}
                   currentTab={currentTab}
                   onTabChange={setCurrentTab}
-                  rightPanel={
-                    <SuggestionsRightPanel
-                      onChange={onChange}
-                      values={values}
-                    />
-                  }
+                  rightPanel={<SuggestionsRightPanel values={values} />}
                 />
               )}
             </PopoverContent>
