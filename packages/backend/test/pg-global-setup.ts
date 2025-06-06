@@ -24,8 +24,8 @@ export async function setup() {
     `PostgreSQL container started at port ${process.env.POSTGRES_PORT}`,
   )
 
-  const config = await import('../knexfile')
-  const client = knex(config.default as any)
+  const config = await (await import('../knexfile')).default
+  const client = knex(config)
 
   // manually running migrations since the programmatic API doesn't work
   // see issue here: https://github.com/knex/knex/issues/5323

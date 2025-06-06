@@ -17,7 +17,7 @@ describe('create table mutation', () => {
   it('should create a blank table', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: true } },
+      { input: { name: 'Test Table', isBlank: true, databaseType: 'ddb' } },
       context,
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()
@@ -30,7 +30,7 @@ describe('create table mutation', () => {
   it('should create a table and with placeholder rows and columns', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false } },
+      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
       context,
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()
@@ -43,13 +43,13 @@ describe('create table mutation', () => {
   it('should be able create tables with the same name', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false } },
+      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
       context,
     )
 
     const table2 = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false } },
+      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
       context,
     )
     expect(table.name).toBe('Test Table')

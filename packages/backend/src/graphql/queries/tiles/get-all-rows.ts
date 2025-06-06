@@ -6,7 +6,7 @@ import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import logger from '@/helpers/logger'
 import TableMetadata from '@/models/table-metadata'
 import { DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE } from '@/models/tiles/dynamodb/helpers'
-import { getTableRows } from '@/models/tiles/dynamodb/table-row'
+import { getTableOperations } from '@/models/tiles/factory'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
 
@@ -15,7 +15,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
   params,
   context,
 ) => {
-  const { tableId, stringifiedCursor } = params
+  const { tableId } = params
 
   try {
     const table = context.tilesViewKey
@@ -39,14 +39,24 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
       })
     }
 
+    const tableOperations = getTableOperations(table.db)
+
     const columnIds = table.columns.map((column) => column.id)
 
-    return await getTableRows({
+    const { rows } = await tableOperations.getTableRows({
       tableId,
       columnIds,
-      stringifiedCursor: stringifiedCursor ?? 'start',
     })
-    // TODO: remove keys from rows to reduce payload size
+
+    // Convert data object to csv to minimize payload size
+    rows.forEach((row) => {
+      row.data = JSON.stringify(columnIds.map((columnId) => row.data[columnId]))
+    })
+
+    return {
+      rows,
+      columnIds,
+    }
   } catch (e) {
     logger.error(e)
     if (e instanceof ObjectionNotFoundError) {

@@ -1,4 +1,5 @@
-import { createTableRows } from '@/models/tiles/dynamodb/table-row'
+import TableMetadata from '@/models/table-metadata'
+import { getTableOperations } from '@/models/tiles/factory'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -23,20 +24,41 @@ const createTable: MutationResolvers['createTable'] = async (
   params,
   context,
 ) => {
-  const { name: tableName, isBlank: isBlankTable } = params.input
+  const {
+    name: tableName,
+    isBlank: isBlankTable,
+    databaseType = 'pg',
+  } = params.input
 
   if (!tableName) {
     throw new Error('Table name is required')
   }
 
-  const table = await context.currentUser.$relatedQuery('tables').insertGraph({
-    name: tableName,
-    role: 'owner',
-    columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
+  const tableOperations = getTableOperations(databaseType)
+
+  const table = await TableMetadata.transaction(async (trx) => {
+    const pendingTable = await context.currentUser
+      .$relatedQuery('tables', trx)
+      .insertGraph({
+        name: tableName,
+        role: 'owner',
+        db: databaseType,
+        columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
+      })
+
+    await tableOperations.createTable(
+      pendingTable.id,
+      isBlankTable ? [] : pendingTable.columns.map((column) => column.id),
+    )
+
+    return pendingTable
   })
 
   if (!isBlankTable) {
-    await createTableRows({ tableId: table.id, dataArray: PLACEHOLDER_ROWS })
+    await tableOperations.createTableRows({
+      tableId: table.id,
+      dataArray: PLACEHOLDER_ROWS,
+    })
   }
 
   return table
