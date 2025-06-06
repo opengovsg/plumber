@@ -88,7 +88,7 @@ const RICH_TEXT_EXTENSIONS = [
 interface EditorProps {
   onChange: (...event: any[]) => void
   initialValue: string
-  editable?: boolean
+  editable: boolean
   placeholder?: string
   variablesEnabled?: boolean
   isRich?: boolean
@@ -235,22 +235,20 @@ const Editor = ({
 
   return (
     <Popover
-      autoFocus={false}
+      autoFocus={editable ? false : true}
       gutter={2}
       matchWidth={isMulticol ? false : true}
       isLazy
       lazyBehavior="unmount"
       onClose={closeSuggestions}
-      isOpen={isSuggestionsOpen && variablesEnabled && editable}
+      isOpen={isSuggestionsOpen && variablesEnabled}
       placement={getPopoverPlacement(editor)}
     >
       <div
         className="editor"
         onClick={(e) => {
-          if (editable) {
-            e.stopPropagation()
-            openSuggestions()
-          }
+          e.stopPropagation()
+          openSuggestions()
         }}
         onBlur={(e) => {
           // Focus might shift to menu bar or other children, where we do _not_
@@ -268,7 +266,13 @@ const Editor = ({
       >
         <PopoverTrigger>
           <Box className={isMulticol ? 'single-line-editor' : undefined}>
-            {isRich && <MenuBar editor={editor} variableMap={varInfo} />}
+            {isRich && (
+              <MenuBar
+                editor={editor}
+                variableMap={varInfo}
+                editable={editable ?? false}
+              />
+            )}
             <EditorContent className="editor__content" editor={editor} />
             <Portal>
               <PopoverContent
@@ -280,10 +284,14 @@ const Editor = ({
                     e.relatedTarget?.focus()
                   }
                 }}
+                _focus={{
+                  boxShadow: 'none',
+                  borderColor: 'inherit',
+                }}
               >
                 <Suggestions
                   data={stepsWithVariables}
-                  onSuggestionClick={handleVariableClick}
+                  onSuggestionClick={(v) => editable && handleVariableClick(v)}
                 />
               </PopoverContent>
             </Portal>

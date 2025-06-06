@@ -97,7 +97,7 @@ export default function Suggestions(props: SuggestionsProps) {
                           values.includes(`{{${name}}}`)
                         }
                         onClick={(variable, checked) => {
-                          onSuggestionClick(variable, checked)
+                          !readOnly && onSuggestionClick(variable, checked)
                         }}
                         onDelete={onDelete}
                       />
@@ -121,7 +121,7 @@ export default function Suggestions(props: SuggestionsProps) {
 
   return (
     <ChakraPopover
-      autoFocus={false}
+      autoFocus={readOnly ? true : false}
       gutter={0}
       matchWidth={true}
       isLazy
@@ -130,15 +130,12 @@ export default function Suggestions(props: SuggestionsProps) {
       isOpen={isSuggestionsOpen}
       onClose={closeSuggestions}
     >
-      <div
-        style={divWrapperStyles}
-        onClick={() => !readOnly && openSuggestions()}
-      >
+      <div style={divWrapperStyles} onClick={openSuggestions}>
         <PopoverTrigger>
-          <Box sx={boxStyles} onClick={() => !readOnly && openSuggestions()}>
+          <Box sx={boxStyles} onClick={openSuggestions}>
             <TagList
               onClick={(option) => {
-                onSuggestionClick(option, false)
+                !readOnly && onSuggestionClick(option, false)
               }}
               tags={tags}
             />
