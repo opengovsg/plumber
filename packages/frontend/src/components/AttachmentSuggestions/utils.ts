@@ -138,6 +138,7 @@ export function reformatToCheckboxVariables(
       size,
       updatedAt,
       uploaded: true,
+      isCollapsedByDefault: false,
     }
   })
 }
