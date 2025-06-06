@@ -1,4 +1,4 @@
-import { assert, beforeEach, describe, it } from 'vitest'
+import { assert, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   generalisedModelSchema,
@@ -51,6 +51,36 @@ describe('AISAY schema', () => {
       generalisedModelPayload.file = '123'
       const result = generalisedModelSchema.safeParse(generalisedModelPayload)
       assert(result.success === false)
+    })
+
+    describe('should validate the model type', () => {
+      it('should return null if is default model type', () => {
+        generalisedModelPayload.modelType = 'standard'
+        const result = generalisedModelSchema.safeParse(generalisedModelPayload)
+        assert(result.success === true)
+        expect(result.data.modelType).toBeNull()
+      })
+
+      it('should return the model type if is not default model type', () => {
+        generalisedModelPayload.modelType = 'DOC_EXTRACTION_V2'
+        const result = generalisedModelSchema.safeParse(generalisedModelPayload)
+        assert(result.success === true)
+        expect(result.data.modelType).toEqual({ DOC_EXTRACTION_V2: {} })
+      })
+
+      it('should return null if model type is not a valid model type', () => {
+        generalisedModelPayload.modelType = 'INVALID_MODEL_TYPE'
+        const result = generalisedModelSchema.safeParse(generalisedModelPayload)
+        assert(result.success === true)
+        expect(result.data.modelType).toBeNull()
+      })
+
+      it('should return null if no model type provided (for backward compatibility)', () => {
+        delete generalisedModelPayload.modelType
+        const result = generalisedModelSchema.safeParse(generalisedModelPayload)
+        assert(result.success === true)
+        expect(result.data.modelType).toBeNull()
+      })
     })
   })
 

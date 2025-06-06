@@ -2,7 +2,11 @@ import { z } from 'zod'
 
 import { parseS3Id } from '@/helpers/s3'
 
-import { DOCUMENT_TYPES } from './constants'
+import {
+  DEFAULT_GENERALISED_MODEL_TYPE,
+  DOCUMENT_TYPES,
+  GENERALISED_MODEL_OPTIONS,
+} from './constants'
 
 export const fileSchema = z.string().transform((value, context) => {
   if (!value) {
@@ -36,6 +40,23 @@ export const generalisedModelSchema = z.object({
     })
     return result
   }),
+  modelType: z
+    .string()
+    .optional()
+    .transform((value) => {
+      if (!value) {
+        return null
+      }
+
+      const allowedValues = GENERALISED_MODEL_OPTIONS.map(
+        (option) => option.value,
+      ).filter((value) => value !== DEFAULT_GENERALISED_MODEL_TYPE)
+
+      if (!allowedValues.includes(value)) {
+        return null
+      }
+      return { [value]: {} }
+    }),
 })
 
 export const documentTypeEnum = z.enum(DOCUMENT_TYPES as [string, ...string[]])
