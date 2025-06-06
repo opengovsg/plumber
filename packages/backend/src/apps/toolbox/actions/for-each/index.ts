@@ -7,7 +7,10 @@ import {
 } from '@/apps/toolbox/common/get-for-each-variables'
 import StepError from '@/errors/step'
 
-import { FOR_EACH_ITERATION_KEY } from '../../common/constants'
+import {
+  FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_ITERATION_KEY,
+} from '../../common/constants'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { inputSchema } from './schema'
@@ -53,7 +56,7 @@ const action: IRawAction = {
           raw: {
             iterations: items.length,
             items: items,
-            inputSource: 'checkbox',
+            inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
             // NOTE: this is specifically for checkboxes
             // table data is handled differently in processInput
             item: `items.${FOR_EACH_ITERATION_KEY}`,
@@ -82,13 +85,6 @@ const action: IRawAction = {
         $.app.name,
       )
     }
-
-    const { type, items } = parsedResult.data
-    $.setActionItem({
-      raw: {
-        iterations: type === 'checkbox' ? items.length : items.rows.length,
-      },
-    })
   },
 }
 
