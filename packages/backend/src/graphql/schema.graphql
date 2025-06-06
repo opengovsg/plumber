@@ -743,10 +743,16 @@ type PaginatedExecutionSteps {
   pageInfo: PageInfo!
 }
 
+enum DatabaseType {
+  pg
+  ddb
+}
+
 # Tiles types
 input CreateTableInput {
   name: String!
   isBlank: Boolean!
+  databaseType: DatabaseType
 }
 
 input TableColumnConfigInput {
@@ -820,6 +826,7 @@ type PaginatedTables {
 
 type GetTableRowsResult {
   rows: Any!
+  columnIds: [String!]!
   stringifiedCursor: String
 }
 

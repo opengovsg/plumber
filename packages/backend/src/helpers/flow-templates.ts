@@ -191,6 +191,7 @@ export async function createFlowFromTemplate(
           role: 'owner',
           columns: columnsToInsert,
         })
+
         tableId = table.id
 
         // obtain a map of column name to the column id for easy replacement
@@ -200,6 +201,8 @@ export async function createFlowFromTemplate(
 
         // replace column names with column ids for each row data and create table rows
         const newRowData = replaceColumnNamesWithIds(rowData, columnNameToIdMap)
+
+        // TODO: tiles-v2: use table operations to create rows
         await createTableRows({ tableId, dataArray: newRowData })
       } catch (e) {
         logger.error(e)

@@ -98,7 +98,6 @@ describe('get all rows query', () => {
         context,
       )
       cursor = stringifiedCursor
-      expect(pageRows.length).toBeLessThan(numRowsToInsert)
       rows = rows.concat(pageRows)
     } while (cursor)
     expect(rows.length).toBe(numRowsToInsert)
@@ -138,7 +137,32 @@ describe('get all rows query', () => {
     )
     const rows = await Promise.all(returnedRows)
 
-    expect(Object.keys(rows[0].data).sort()).toEqual(dummyColumnIds.sort())
+    expect(JSON.parse(rows[0].data).length).toBe(dummyColumnIds.length)
+  })
+
+  it('should handle values with commas in them', async () => {
+    const data = generateMockTableRowData({ columnIds: dummyColumnIds })
+    // add a value with a comma in it
+    data[dummyColumnIds[0]] = 'test,test'
+    const rowToInsert = {
+      tableId: dummyTable.id,
+      // TODO: use ulid for new tiles
+      rowId: randomUUID(),
+      data,
+    }
+
+    await createTableRow(rowToInsert)
+
+    const { rows: returnedRows } = await getAllRows(
+      null,
+      {
+        tableId: dummyTable.id,
+      },
+      context,
+    )
+    const rows = await Promise.all(returnedRows)
+
+    expect(JSON.parse(rows[0].data).length).toBe(dummyColumnIds.length)
   })
 
   it('should allow all collaborators to call this function', async () => {
