@@ -27,7 +27,7 @@ const createTable: MutationResolvers['createTable'] = async (
   const {
     name: tableName,
     isBlank: isBlankTable,
-    databaseType = 'pg',
+    databaseType = 'ddb',
   } = params.input
 
   if (!tableName) {

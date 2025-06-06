@@ -3,7 +3,7 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
-import { createTableRow } from '@/models/tiles/dynamodb/table-row/functions'
+import { getTableOperations } from '@/models/tiles/factory'
 
 import { CreateRowOutput } from '../../types'
 
@@ -125,7 +125,12 @@ const action: IRawAction = {
       )
     }
 
-    const newRow = await createTableRow({ tableId, data: rowDataObject })
+    const tableOperations = getTableOperations(table.db)
+
+    const newRow = await tableOperations.createTableRow({
+      tableId,
+      data: rowDataObject,
+    })
 
     $.setActionItem({
       raw: {
