@@ -30,10 +30,10 @@ async function getDataOutMetadata(
   if (inputSource === FOR_EACH_INPUT_SOURCE.CHECKBOX) {
     return {
       ...baseMetadata,
-      // NOTE: arrayValue is only used when it is a checkbox
+      // NOTE: item is only used when it is a checkbox
       items: { isHidden: true },
-      arrayValue: {
-        label: 'Array value',
+      item: {
+        label: 'Item',
         type: 'text',
         displayedValue: dataOut.items[0],
       },
