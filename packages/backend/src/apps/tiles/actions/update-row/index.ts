@@ -2,12 +2,12 @@ import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 import TableCollaborator from '@/models/table-collaborators'
-import TableColumnMetadata from '@/models/table-column-metadata'
+import TableMetadata from '@/models/table-metadata'
 import {
   autoMarshallNumberStrings,
   stripInvalidKeys,
 } from '@/models/tiles/dynamodb/helpers'
-import { patchTableRow } from '@/models/tiles/dynamodb/table-row'
+import { getTableOperations } from '@/models/tiles/factory'
 import { PatchRowInput } from '@/models/tiles/types'
 
 import { UpdateRowOutput } from '../../types'
@@ -136,8 +136,20 @@ const action: IRawAction = {
     /**
      * Check for columns first, there will not be any columns if the tile has been deleted.
      */
-    const columns = await TableColumnMetadata.getColumns(tableId, $)
-    const columnIds = columns.map((c) => c.id)
+    const table = await TableMetadata.query()
+      .findById(tableId)
+      .withGraphFetched('columns')
+
+    if (!table) {
+      throw new StepError(
+        'Tile not found',
+        'Tile may have been deleted. Please check your tile.',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
+    const columnIds = table.columns.map((c) => c.id)
 
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
@@ -164,6 +176,8 @@ const action: IRawAction = {
         )
       }
     }
+
+    const tableOperations = getTableOperations(table.db)
 
     const patchData = {
       ...rowData.reduce(
@@ -192,7 +206,7 @@ const action: IRawAction = {
     }
 
     try {
-      const updatedRow = await patchTableRow({
+      const updatedRow = await tableOperations.patchTableRow({
         tableId,
         rowId,
         patchData,

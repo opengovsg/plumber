@@ -16,6 +16,17 @@ import {
   UpdateRowInput,
 } from '../types'
 
+function formatTableRow(
+  row: Record<string, string>,
+  tableId: string,
+): TableRowItem | null {
+  if (!row) {
+    return null
+  }
+  const { rowId, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = row
+  return { rowId, data: rest, tableId }
+}
+
 /**
  * External functions
  */
@@ -32,7 +43,8 @@ export const createTableRow = async ({
         rowId: ulid(),
       })
       .returning('*')
-    return res[0]
+
+    return formatTableRow(res[0], tableId)
   } catch (e: unknown) {
     logger.error(e)
     throw e
@@ -83,12 +95,12 @@ export const updateTableRow = async ({
  * This atomically updates the data object for keys that are changed
  */
 export const patchTableRow = async ({
-  rowId,
+  rowId: rowIdToUse,
   tableId,
   patchData,
 }: PatchRowInput): Promise<TableRowItem> => {
   try {
-    const query = tilesClient(tableId).where({ rowId })
+    const query = tilesClient(tableId).where({ rowId: rowIdToUse })
 
     Object.entries(patchData.set || {}).forEach(
       ([key, value]: [string, string]) => {
@@ -131,7 +143,7 @@ export const patchTableRow = async ({
     )
 
     const res = await query.update('updatedAt', new Date()).returning('*')
-    return res[0]
+    return formatTableRow(res[0], tableId)
   } catch (e: unknown) {
     logger.error(e)
     throw e
@@ -221,9 +233,7 @@ export const getTableRows = async ({
 }): Promise<{
   rows: TableRowOutput[]
 }> => {
-  const query = tilesClient(tableId).select(
-    columnIds ? ['rowId', ...columnIds] : ['*'],
-  )
+  const query = tilesClient(tableId).select(['rowId', ...(columnIds ?? [])])
   if (filters) {
     addFiltersToQuery(query, filters)
   }
@@ -251,7 +261,7 @@ export const getTableRows = async ({
  */
 export const getRawRowById = async ({
   tableId,
-  rowId,
+  rowId: rowIdToUse,
   columnIds,
 }: {
   tableId: string
@@ -261,11 +271,14 @@ export const getRawRowById = async ({
   try {
     const res = await tilesClient(tableId)
       .where({
-        rowId,
+        rowId: rowIdToUse,
       })
       .select(columnIds ? ['rowId', ...columnIds] : ['*'])
       .first()
-    return res
+    if (!res) {
+      return null
+    }
+    return formatTableRow(res, tableId)
   } catch (e: unknown) {
     logger.error(e)
     throw e

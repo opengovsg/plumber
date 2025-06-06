@@ -4,8 +4,8 @@ import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
-import TableColumnMetadata from '@/models/table-column-metadata'
-import { getRawRowById, getTableRows } from '@/models/tiles/dynamodb/table-row'
+import TableMetadata from '@/models/table-metadata'
+import { getTableOperations } from '@/models/tiles/factory'
 import { TableRowFilter, TableRowFilterOperator } from '@/models/tiles/types'
 
 import { validateFilters } from '../../common/validate-filters'
@@ -150,13 +150,25 @@ const action: IRawAction = {
     /**
      * Check for columns first, there will not be any columns if the tile has been deleted.
      */
-    const columns = await TableColumnMetadata.getColumns(tableId, $)
+
+    const table = await TableMetadata.query()
+      .findById(tableId)
+      .withGraphFetched('columns')
+
+    if (!table) {
+      throw new StepError(
+        'Tile not found',
+        'Tile may have been deleted. Please check your tile.',
+        $.step.position,
+        $.app.name,
+      )
+    }
 
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
     // Check that filters are valid
     try {
-      validateFilters(filters, columns)
+      validateFilters(filters, table.columns)
     } catch (e) {
       logger.error({
         message: 'Invalid filters',
@@ -178,7 +190,9 @@ const action: IRawAction = {
     const scanLimitRaw = +step.config?.adminOverride?.tileScanLimit
     const scanLimit = isNaN(scanLimitRaw) ? undefined : scanLimitRaw
 
-    const { rows } = await getTableRows({
+    const tableOperations = getTableOperations(table.db)
+
+    const { rows } = await tableOperations.getTableRows({
       tableId,
       filters,
       order: returnLastRow ? 'desc' : 'asc',
@@ -199,10 +213,10 @@ const action: IRawAction = {
      * We use raw row data instead of mapped column names as we want them to
      * be distinct in data_out
      */
-    const rowToReturn = await getRawRowById({
+    const rowToReturn = await tableOperations.getRawRowById({
       tableId,
       rowId: rowIdToUse,
-      columnIds: columns.map((c) => c.id),
+      columnIds: table.columns.map((c) => c.id),
     })
 
     $.setActionItem({
