@@ -126,6 +126,7 @@ export interface IExecutionStep {
 
 export interface IExecutionStepMetadata {
   isMock?: boolean
+  iteration?: number
 }
 
 export interface IExecution {
@@ -715,6 +716,7 @@ export interface IActionRunResult {
   nextStep?:
     | { command: 'jump-to-step'; stepId: IStep['id'] }
     | { command: 'stop-execution' }
+    | { command: 'start-for-each'; stepId: IStep['id'] }
   nextStepMetadata?: NextStepMetadata
 }
 

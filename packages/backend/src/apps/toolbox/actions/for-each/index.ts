@@ -50,22 +50,21 @@ const action: IRawAction = {
     }
 
     try {
+      let output = {}
       const { items, inputSource, iterations } = parsedResult.data
       if (
         inputSource === FOR_EACH_INPUT_SOURCE.STRING_ARRAY &&
         Array.isArray(items) &&
         isCheckboxItems(items)
       ) {
-        $.setActionItem({
-          raw: {
-            iterations: items.length,
-            items: items,
-            inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
-            // NOTE: this is specifically for checkboxes
-            // table data is handled differently in processInput
-            item: `items.${FOR_EACH_ITERATION_KEY}`,
-          },
-        })
+        output = {
+          iterations: items.length,
+          items: items,
+          inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
+          // NOTE: this is specifically for checkboxes
+          // table data is handled differently in processInput
+          item: `items.${FOR_EACH_ITERATION_KEY}`,
+        }
         return
       } else if (
         inputSource === FOR_EACH_INPUT_SOURCE.M365_EXCEL ||
@@ -73,13 +72,19 @@ const action: IRawAction = {
       ) {
         const processedItems = processItems(items as MultipleRowObject)
 
-        $.setActionItem({
-          raw: {
-            iterations: iterations,
-            items: processedItems,
-            inputSource,
-          },
-        })
+        output = {
+          iterations: iterations,
+          items: processedItems,
+          inputSource,
+        }
+      }
+
+      $.setActionItem({ raw: output })
+      return {
+        nextStep: {
+          command: 'start-for-each',
+          stepId: $.step.id,
+        },
       }
     } catch (err) {
       console.error(err)
