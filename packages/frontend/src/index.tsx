@@ -6,7 +6,7 @@ import { datadogRum } from '@datadog/browser-rum'
 import { MotionConfig } from 'framer-motion'
 
 import ApolloProvider from '@/components/ApolloProvider'
-import IntlProvider from '@/components/IntlProvider'
+import TimezoneProvider from '@/components/IntlProvider'
 import router from '@/components/Router'
 import ThemeProvider from '@/components/ThemeProvider'
 import appConfig from '@/config/app'
@@ -43,11 +43,11 @@ root.render(
     <MotionConfig reducedMotion="always">
       <ApolloProvider>
         <AuthenticationProvider>
-          <IntlProvider>
+          <TimezoneProvider>
             <LaunchDarklyProvider>
               <RouterProvider router={router} />
             </LaunchDarklyProvider>
-          </IntlProvider>
+          </TimezoneProvider>
         </AuthenticationProvider>
       </ApolloProvider>
     </MotionConfig>

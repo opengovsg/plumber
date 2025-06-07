@@ -2,23 +2,25 @@ import type { IApp, IField, IJSONObject } from '@plumber/types'
 
 import * as React from 'react'
 import { FieldValues, SubmitHandler } from 'react-hook-form'
-import LoadingButton from '@mui/lab/LoadingButton'
-import Alert from '@mui/material/Alert'
-import Dialog from '@mui/material/Dialog'
-import DialogContent from '@mui/material/DialogContent'
-import DialogContentText from '@mui/material/DialogContentText'
-import DialogTitle from '@mui/material/DialogTitle'
-import { Infobox } from '@opengovsg/design-system-react'
+import {
+  Alert,
+  AlertIcon,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  VStack,
+} from '@chakra-ui/react'
+import { Button, Infobox, Link } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
 import { getOpenerOrigin } from '@/helpers/window'
-import useFormatMessage from '@/hooks/useFormatMessage'
 
-import { generateExternalLink } from '../../helpers/translation-values'
-
-import { Form } from './style'
+import Form from '../Form'
 
 type AddAppConnectionProps = {
   onClose: (response: Record<string, unknown>) => void
@@ -30,12 +32,15 @@ type Response = {
   [key: string]: any
 }
 
+/**
+ * TODO: deprecate this component, we only need to support the callback route
+ * /app/:appKey/connections/add
+ */
 export default function AddAppConnection(
   props: AddAppConnectionProps,
 ): React.ReactElement {
   const { application, connectionId, onClose } = props
   const { name, authDocUrl, key, auth } = application
-  const formatMessage = useFormatMessage()
   const [error, setError] = React.useState<IJSONObject | null>(null)
   const [inProgress, setInProgress] = React.useState(false)
   const hasConnection = Boolean(connectionId)
@@ -107,68 +112,85 @@ export default function AddAppConnection(
 
   if (auth?.connectionType !== 'user-added') {
     return (
-      <Dialog open={true} onClose={onClose}>
-        <DialogTitle>Error</DialogTitle>
-        <DialogContent>
-          <Infobox variant="error">Connections are not supported</Infobox>
-        </DialogContent>
-      </Dialog>
+      <Modal isOpen={true} onClose={() => onClose({})}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Error</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={8}>
+            <Infobox variant="error">
+              Editing this connection is not supported
+            </Infobox>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     )
   }
 
   return (
-    <Dialog open={true} onClose={onClose} data-test="add-app-connection-dialog">
-      <DialogTitle>
-        {hasConnection
-          ? formatMessage('app.reconnectConnection')
-          : formatMessage('app.addConnection')}
-      </DialogTitle>
+    <Modal
+      isOpen={true}
+      onClose={() => onClose({})}
+      data-test="add-app-connection-dialog"
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          {hasConnection ? 'Edit connection' : 'Add connection'}
+        </ModalHeader>
+        <ModalCloseButton />
 
-      {authDocUrl && (
-        <Alert severity="info" sx={{ fontWeight: 300 }}>
-          {formatMessage('addAppConnection.callToDocs', {
-            appName: name,
-            docsLink: generateExternalLink(authDocUrl),
-          })}
-        </Alert>
-      )}
+        {authDocUrl && (
+          <Alert status="info" fontWeight="300" px={8}>
+            <AlertIcon />
+            Visit our
+            <Link isExternal href={authDocUrl} target="_blank" mx={1}>
+              guide
+            </Link>
+            to learn more about how to connect {name}.
+          </Alert>
+        )}
 
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mt: 1, fontWeight: 500, wordBreak: 'break-all' }}
-        >
-          <>
-            {error.message}
-            {error.details && (
-              <pre style={{ whiteSpace: 'pre-wrap' }}>
-                {JSON.stringify(error.details, null, 2)}
-              </pre>
-            )}
-          </>
-        </Alert>
-      )}
+        {error && (
+          <Alert
+            status="error"
+            mt={1}
+            fontWeight="500"
+            wordBreak="break-all"
+            px={8}
+          >
+            <AlertIcon />
+            <>
+              {error.message}
+              {error.details && (
+                <pre style={{ whiteSpace: 'pre-wrap' }}>
+                  {JSON.stringify(error.details, null, 2)}
+                </pre>
+              )}
+            </>
+          </Alert>
+        )}
 
-      <DialogContent>
-        <DialogContentText tabIndex={-1} component="div">
+        <ModalBody>
           <Form onSubmit={submitHandler}>
-            {auth?.fields?.map((field: IField) => (
-              <InputCreator key={field.key} schema={field} />
-            ))}
+            <VStack gap={2} pt={4} pb={8} alignItems="flex-start">
+              {auth?.fields?.map((field: IField) => (
+                <InputCreator key={field.key} schema={field} />
+              ))}
 
-            <LoadingButton
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{ boxShadow: 2 }}
-              loading={inProgress}
-              data-test="create-connection-button"
-            >
-              {formatMessage('addAppConnection.submit')}
-            </LoadingButton>
+              <Button
+                type="submit"
+                variant="solid"
+                colorScheme="primary"
+                isLoading={inProgress}
+                data-test="create-connection-button"
+              >
+                Connect
+              </Button>
+            </VStack>
           </Form>
-        </DialogContentText>
-      </DialogContent>
-    </Dialog>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   )
 }

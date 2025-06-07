@@ -10,7 +10,6 @@ import EditorRoutes from '@/pages/Editor/routes'
 import Execution from '@/pages/Execution'
 import Executions from '@/pages/Executions'
 import ExecutionsForFlow from '@/pages/ExecutionsForFlow'
-import Flow from '@/pages/Flow'
 import Flows from '@/pages/Flows'
 import Login from '@/pages/Login'
 import SgidCallback from '@/pages/SgidCallback'
@@ -67,15 +66,6 @@ export default createRoutesFromElements(
       element={
         <Layout>
           <Flows />
-        </Layout>
-      }
-    />
-
-    <Route
-      path={URLS.FLOW_PATTERN}
-      element={
-        <Layout>
-          <Flow />
         </Layout>
       }
     />

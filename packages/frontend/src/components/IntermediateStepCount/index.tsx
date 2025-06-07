@@ -1,7 +1,5 @@
 import * as React from 'react'
-import Typography from '@mui/material/Typography'
-
-import { Container } from './style'
+import { Box, Text } from '@chakra-ui/react'
 
 type IntermediateStepCountProps = {
   count: number
@@ -9,14 +7,24 @@ type IntermediateStepCountProps = {
 
 export default function IntermediateStepCount(
   props: IntermediateStepCountProps,
-) {
+): React.ReactElement {
   const { count } = props
 
   return (
-    <Container>
-      <Typography variant="subtitle1" sx={{}}>
+    <Box
+      bg="gray.100"
+      borderRadius="md"
+      h={8}
+      w={8}
+      minW={8}
+      maxW={8}
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Text textStyle="caption-1" color="text.secondary">
         +{count}
-      </Typography>
-    </Container>
+      </Text>
+    </Box>
   )
 }

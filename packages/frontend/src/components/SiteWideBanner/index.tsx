@@ -1,6 +1,5 @@
 import { useCallback, useContext, useEffect, useState } from 'react'
-import CloseIcon from '@mui/icons-material/Close'
-import { Box, IconButton } from '@mui/material'
+import { Box, CloseButton } from '@chakra-ui/react'
 
 import { BANNER_TEXT_FLAG } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
@@ -39,16 +38,16 @@ const SiteWideBanner = (): JSX.Element | null => {
   }
   return (
     <Box
+      maxW="100vw"
+      p="0.5rem 3rem"
+      textAlign="center"
+      bg="primary.700"
+      color="white"
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      position="relative"
       sx={{
-        maxWidth: '100vw',
-        padding: '0.5rem 3rem',
-        textAlign: 'center',
-        backgroundColor: 'primary.dark',
-        color: 'white',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
         a: {
           color: 'white',
           marginX: '4px',
@@ -57,19 +56,14 @@ const SiteWideBanner = (): JSX.Element | null => {
       }}
     >
       {bannerMessage}
-      <IconButton
-        size="small"
+      <CloseButton
+        cursor="pointer"
+        position="absolute"
+        variant="ghost"
+        size="sm"
         onClick={closeBanner}
-        sx={{
-          position: 'absolute',
-          right: '1rem',
-          color: 'white',
-          padding: 0,
-          height: 'calc(100% - 1rem)',
-        }}
-      >
-        <CloseIcon fontSize="small" />
-      </IconButton>
+        right="1rem"
+      />
     </Box>
   )
 }

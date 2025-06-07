@@ -1,36 +1,30 @@
-import * as React from 'react'
-import type { AvatarProps } from '@mui/material/Avatar'
-import Avatar from '@mui/material/Avatar'
+import { useState } from 'react'
+import { BiQuestionMark } from 'react-icons/bi'
+import { Avatar, AvatarProps, Icon } from '@chakra-ui/react'
 
-type AppIconProps = {
-  name?: string
+export interface IAppIconProps extends Omit<AvatarProps, 'src'> {
   url?: string
-  color?: string
-  variant?: AvatarProps['variant']
 }
 
-const inlineImgStyle: React.CSSProperties = {
-  objectFit: 'contain',
-}
-
-export default function AppIcon(
-  props: AppIconProps & AvatarProps,
-): React.ReactElement {
-  const { name, url, color, sx = {}, variant = 'square', ...restProps } = props
-
-  const initialLetter = name?.[0]
+function AppIcon(props: IAppIconProps): React.ReactElement {
+  const { name, url, color, ...avatarProps } = props
+  const [isLoaded, setIsLoaded] = useState(url ? false : true)
 
   return (
     <Avatar
-      component="span"
-      variant={variant}
-      sx={{ bgcolor: color, display: 'flex', width: 50, height: 50, ...sx }}
-      imgProps={{ style: inlineImgStyle }}
+      icon={<Icon as={BiQuestionMark} />}
+      onLoad={() => {
+        setIsLoaded(true)
+      }}
+      display={isLoaded ? 'flex' : 'none'}
       src={url}
-      alt={name}
-      {...restProps}
-    >
-      {initialLetter}
-    </Avatar>
+      name={name}
+      bg={color}
+      borderRadius="md"
+      size="md"
+      {...avatarProps}
+    />
   )
 }
+
+export default AppIcon
