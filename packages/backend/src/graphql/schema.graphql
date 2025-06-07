@@ -327,6 +327,7 @@ type ExecutionStep {
 
 type ExecutionStepMetadata {
   isMock: Boolean
+  iteration: Int
 }
 
 type Field {

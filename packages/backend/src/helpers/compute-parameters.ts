@@ -8,6 +8,10 @@ import Step from '../models/step'
 
 const variableRegExp =
   /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/g
+import {
+  computeForEachParameters,
+  ForEachContext,
+} from './compute-for-each-parameters'
 
 function findAndSubstituteVariables(
   // i.e. the `key` corresponding to this variable's form field in defineAction
@@ -16,7 +20,7 @@ function findAndSubstituteVariables(
   rawValue: unknown,
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
-  isForEachStep?: boolean,
+  forEachContext?: ForEachContext,
 ): unknown {
   if (Array.isArray(rawValue)) {
     return rawValue.map((element) =>
@@ -25,7 +29,7 @@ function findAndSubstituteVariables(
         element,
         executionSteps,
         preprocessVariable,
-        isForEachStep,
+        forEachContext,
       ),
     )
   }
@@ -40,7 +44,7 @@ function findAndSubstituteVariables(
           v,
           executionSteps,
           preprocessVariable,
-          isForEachStep,
+          forEachContext,
         ),
       }),
       {},
@@ -52,6 +56,7 @@ function findAndSubstituteVariables(
   }
 
   const parts = rawValue.split(variableRegExp)
+  const { isForEachStep, stepIsInForEach } = forEachContext || {}
 
   const substitutedParts = parts.map((part: string) => {
     const isVariable = part.match(variableRegExp)
@@ -64,7 +69,17 @@ function findAndSubstituteVariables(
       const data = executionStep?.dataOut
 
       const keyPath = keyPaths.join('.') // for lodash get to work
-      const dataValue = get(data, keyPath)
+      let dataValue = get(data, keyPath)
+      if (stepIsInForEach) {
+        dataValue = computeForEachParameters({
+          data,
+          keyPath,
+          executionSteps,
+          executionStep,
+          stepId,
+          forEachContext,
+        })
+      }
 
       // NOTE: dataValue could be an array if it is not processed on variables.ts
       // which is the case for formSG checkbox only, this is to deal with forEach next time
@@ -108,13 +123,13 @@ export default function computeParameters(
   parameters: Step['parameters'],
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
-  isForEachStep?: boolean,
+  forEachContext?: ForEachContext,
 ): Step['parameters'] {
   return findAndSubstituteVariables(
     '', // Dummy initial value; will never be used.
     parameters,
     executionSteps,
     preprocessVariable,
-    isForEachStep,
+    forEachContext,
   ) as Step['parameters']
 }
