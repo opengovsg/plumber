@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import cronTimes from '@/apps/scheduler/common/cron-times'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from '@/apps/toolbox/common/constants'
 import updateFlowStatus from '@/graphql/mutations/update-flow-status'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
@@ -85,6 +89,21 @@ describe('updateFlowStatus', () => {
 
     await expect(updateFlowStatus({}, params, context)).rejects.toThrow(
       'Step positions are out of order. Please contact support@plumber.gov.sg for help.',
+    )
+  })
+
+  it('throws an error when activating a flow with more than one for-each step', async () => {
+    fakeFlow.active = false
+    fakeFlow.steps = [
+      { position: 1 },
+      { position: 2, appKey: TOOLBOX_APP_KEY, key: TOOLBOX_ACTIONS.FOR_EACH },
+      { position: 3, appKey: TOOLBOX_APP_KEY, key: TOOLBOX_ACTIONS.FOR_EACH },
+    ]
+
+    const params = { input: { id: fakeFlow.id, active: true } }
+
+    await expect(updateFlowStatus({}, params, context)).rejects.toThrow(
+      'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
     )
   })
 
