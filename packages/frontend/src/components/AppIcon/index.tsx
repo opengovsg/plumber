@@ -16,6 +16,9 @@ function AppIcon(props: IAppIconProps): React.ReactElement {
       onLoad={() => {
         setIsLoaded(true)
       }}
+      onError={() => {
+        setIsLoaded(true)
+      }}
       display={isLoaded ? 'flex' : 'none'}
       src={url}
       name={name}
