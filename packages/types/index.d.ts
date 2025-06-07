@@ -118,6 +118,7 @@ export interface IExecutionStep {
   createdAt: string
   updatedAt: string
   metadata: IExecutionStepMetadata
+  key: string
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
