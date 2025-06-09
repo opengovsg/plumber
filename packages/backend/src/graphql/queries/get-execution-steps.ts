@@ -19,15 +19,35 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
   const executionSteps = execution
     .$relatedQuery('executionSteps')
     .with('latest_steps', (builder) => {
+      /**
+       * NOTE: there is a known issue with knex where 'groupBy' are placed at the end of the 'unionAll' query.
+       * the workaround is to unionAll both queries with 'true' to wrap the subequery.
+       */
       builder
-        .select(
-          'step_id',
-          raw('max(created_at) as max_created_at'),
-          raw('min(created_at) as min_created_at'),
-        )
-        .from('execution_steps')
-        .groupBy('step_id')
-        .where('execution_id', '=', execution.id)
+        .unionAll((qb) => {
+          qb.select(
+            'step_id',
+            raw('max(created_at) as max_created_at'),
+            raw('min(created_at) as min_created_at'),
+          )
+            .from('execution_steps')
+            .groupBy('step_id')
+            .where('execution_id', '=', execution.id)
+            .where(raw("metadata = '{}'::jsonb"))
+            .withSoftDeleted()
+        }, true)
+        .unionAll((qb) => {
+          qb.select(
+            'step_id',
+            raw('max(created_at) as max_created_at'),
+            raw('min(created_at) as min_created_at'),
+          )
+            .from('execution_steps')
+            .groupBy('step_id', raw("metadata->>'iteration'"))
+            .where('execution_id', '=', execution.id)
+            .where(raw("metadata != '{}'::jsonb"))
+            .withSoftDeleted()
+        }, true)
         .withSoftDeleted()
     })
     .join('latest_steps', (builder) => {
