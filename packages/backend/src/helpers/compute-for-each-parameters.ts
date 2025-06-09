@@ -99,7 +99,7 @@ export function computeForEachParameters({
 
   let dataValue: IJSONValue = keyPath
   let forEachKeyPath = get(data, keyPath)
-  const currentStepIndex = stepPositions[executionStep?.stepId]
+  const currentStepIndex = stepPositions?.[executionStep?.stepId] || -1
 
   // handling of checkboxes which is just a flat array
   forEachKeyPath = String(forEachKeyPath).replace(
@@ -111,14 +111,14 @@ export function computeForEachParameters({
     executionStep.appKey === TOOLBOX_APP_KEY &&
     executionStep.key === TOOLBOX_ACTIONS.FOR_EACH
   ) {
-    dataValue = get(data, forEachKeyPath as string)
+    dataValue = get(data, forEachKeyPath as string) || ''
   } else if (currentStepIndex > forEachStepIndex) {
     // find the specific execution step for the same iteration
     const iterationExecutionStep = executionSteps.find(
       (es) =>
         es.stepId === stepId && es.metadata.iteration === metadata?.iteration,
     )
-    dataValue = get(iterationExecutionStep?.dataOut, keyPath)
+    dataValue = get(iterationExecutionStep?.dataOut, keyPath) || ''
   }
   return dataValue
 }
