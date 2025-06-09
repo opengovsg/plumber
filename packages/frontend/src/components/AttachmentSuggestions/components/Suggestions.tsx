@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import {
   Box,
   Collapse,
@@ -11,6 +11,7 @@ import {
 import FileUpload from '@/components/FileUpload'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import SuggestionsWrapper from '@/components/SuggestionsWrapper'
+import { EditorContext } from '@/contexts/Editor'
 import { StepWithVariables, Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
@@ -53,6 +54,8 @@ export default function Suggestions(props: SuggestionsProps) {
     setCurrentTab,
   } = props
 
+  const { readOnly } = useContext(EditorContext)
+
   const SuggestionsRightPanel = ({ values }: { values: any }) => {
     if (suggestions.length === 0) {
       return <Text style={noVariablesTextStyles}>No variables available</Text>
@@ -73,7 +76,7 @@ export default function Suggestions(props: SuggestionsProps) {
                   <FileUpload
                     accept={ACCEPTED_FILE_TYPES.join(',')}
                     buttonType="textButton"
-                    disabled={isUploading}
+                    disabled={isUploading || readOnly}
                     loading={isUploading}
                     processFile={processFile}
                   />
@@ -88,13 +91,13 @@ export default function Suggestions(props: SuggestionsProps) {
                           ...variable,
                           source: option.name,
                         }}
-                        allowDelete={addNew}
+                        allowDelete={addNew && !readOnly}
                         isChecked={
                           values.includes(name) ||
                           values.includes(`{{${name}}}`)
                         }
                         onClick={(variable, checked) => {
-                          onSuggestionClick(variable, checked)
+                          !readOnly && onSuggestionClick(variable, checked)
                         }}
                         onDelete={onDelete}
                       />
@@ -118,7 +121,7 @@ export default function Suggestions(props: SuggestionsProps) {
 
   return (
     <ChakraPopover
-      autoFocus={false}
+      autoFocus={readOnly ? true : false}
       gutter={0}
       matchWidth={true}
       isLazy
@@ -132,7 +135,7 @@ export default function Suggestions(props: SuggestionsProps) {
           <Box sx={boxStyles} onClick={openSuggestions}>
             <TagList
               onClick={(option) => {
-                onSuggestionClick(option, false)
+                !readOnly && onSuggestionClick(option, false)
               }}
               tags={tags}
             />
