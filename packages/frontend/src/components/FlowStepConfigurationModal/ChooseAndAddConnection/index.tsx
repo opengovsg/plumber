@@ -140,7 +140,7 @@ export default function ChooseAndAddConnection(
             },
           })
           newStepId = updatedStep.id
-          newStepIndex = updatedStep.position - 1
+          newStepIndex = Math.max(1, updatedStep.position - 1)
         }
         onClose()
       } finally {

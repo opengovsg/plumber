@@ -28,13 +28,8 @@ export default function Step(props: StepProps): React.ReactElement | null {
     onClose: onModalClose,
   } = useDisclosure()
 
-  const {
-    allApps,
-    onDrawerClose,
-    onUpdateStep,
-    testExecutionSteps,
-    resetTimestamp,
-  } = useContext(EditorContext)
+  const { allApps, onUpdateStep, testExecutionSteps, resetTimestamp } =
+    useContext(EditorContext)
 
   // This includes all steps that run even after the current step, but within the same branch.
   const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
@@ -62,11 +57,6 @@ export default function Step(props: StepProps): React.ReactElement | null {
     () => generateValidationSchema(substeps),
     [substeps],
   )
-
-  // this ensures that we do not have an empty drawer
-  if (!step.appKey && !step.key) {
-    onDrawerClose()
-  }
 
   if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />
