@@ -636,4 +636,186 @@ describe('decrypt form response', () => {
       )
     })
   })
+
+  describe('null character sanitisation', () => {
+    it('should handle normal answer field with null characters', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'textField',
+            fieldType: 'text',
+            question: 'What is your name?',
+            answer: 'John\u0000 Tan\u0000',
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            textField: {
+              fieldType: 'text',
+              question: 'What is your name?',
+              answer: 'John Tan',
+              order: 1,
+            },
+          },
+        }),
+      )
+    })
+
+    it('should handle 1D array field answerArray', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'checkboxField',
+            fieldType: 'checkbox',
+            question: 'What are your hobbies?',
+            answerArray: ['reading', 'gaming', 'coding'],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            checkboxField: {
+              fieldType: 'checkbox',
+              question: 'What are your hobbies?',
+              answerArray: ['reading', 'gaming', 'coding'],
+              order: 1,
+            },
+          },
+        }),
+      )
+    })
+
+    it('should handle 2D array field answerArray', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'tableField',
+            fieldType: 'table',
+            question: 'What are your hobbies and when do you do them?',
+            answerArray: [
+              ['reading', 'night'],
+              ['gaming', 'weekend'],
+              ['coding', 'day'],
+            ],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            tableField: {
+              fieldType: 'table',
+              question: 'What are your hobbies and when do you do them?',
+              answerArray: [
+                ['reading', 'night'],
+                ['gaming', 'weekend'],
+                ['coding', 'day'],
+              ],
+              order: 1,
+            },
+          },
+        }),
+      )
+    })
+
+    it('should handle answerArray with null characters', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'checkboxField',
+            fieldType: 'checkbox',
+            question: 'What are your hobbies?',
+            answerArray: [
+              'reading\u0000',
+              '\u0000gaming\u0000',
+              '\u0000coding',
+            ],
+          },
+          {
+            _id: 'tableField',
+            fieldType: 'table',
+            question: 'What are your hobbies and when do you do them?',
+            answerArray: [
+              ['reading\u0000', 'night\u0000'],
+              ['gaming\u0000', 'weekend\u0000\u0000\u0000'],
+            ],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            checkboxField: {
+              fieldType: 'checkbox',
+              question: 'What are your hobbies?',
+              answerArray: ['reading', 'gaming', 'coding'],
+              order: 1,
+            },
+            tableField: {
+              fieldType: 'table',
+              question: 'What are your hobbies and when do you do them?',
+              answerArray: [
+                ['reading', 'night'],
+                ['gaming', 'weekend'],
+              ],
+              order: 2,
+            },
+          },
+        }),
+      )
+    })
+
+    it('should handle empty answerArray', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'checkboxField',
+            fieldType: 'checkbox',
+            question: 'What are your hobbies?',
+            answerArray: [],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            checkboxField: {
+              fieldType: 'checkbox',
+              question: 'What are your hobbies?',
+              answerArray: [],
+              order: 1,
+            },
+          },
+        }),
+      )
+    })
+  })
 })
