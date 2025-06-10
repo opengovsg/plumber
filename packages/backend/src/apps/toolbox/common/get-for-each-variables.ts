@@ -1,8 +1,6 @@
 import { FOR_EACH_INPUT_SOURCE, FOR_EACH_ITERATION_KEY } from './constants'
 
-type InputSource =
-  | FOR_EACH_INPUT_SOURCE.M365_EXCEL
-  | FOR_EACH_INPUT_SOURCE.TILES
+type InputSource = FOR_EACH_INPUT_SOURCE | null
 
 interface ProcessedInput {
   iterations: number
@@ -32,9 +30,12 @@ export function isCheckboxItems(items: string[]): boolean {
   return Array.isArray(items) && items.every((item) => typeof item === 'string')
 }
 
-function processColumns(data: MultipleRowObject): ProcessedColumn[] {
+function processColumns(data: MultipleRowObject): {
+  inputSource: InputSource
+  processedColumns: ProcessedColumn[]
+} {
   const processedColumns: ProcessedColumn[] = []
-  // NOTE: only tiles will have rowId
+  let inputSource = null
 
   data.columns.forEach((column: any) => {
     processedColumns.push({
@@ -44,19 +45,24 @@ function processColumns(data: MultipleRowObject): ProcessedColumn[] {
     })
   })
 
-  return processedColumns
+  // NOTE: only tiles will have rowId
+  if (data.rows[0]?.rowId) {
+    processedColumns.push({
+      id: 'rowId',
+      name: 'Row ID',
+      value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
+    })
+    inputSource = FOR_EACH_INPUT_SOURCE.TILES
+  } else if (data.rows.length > 0) {
+    inputSource = FOR_EACH_INPUT_SOURCE.M365_EXCEL
+  }
+
+  return { inputSource, processedColumns }
 }
 
 export function processItems(items: MultipleRowObject): ProcessedInput {
   let iterations = items.rows.length
-  const processedColumns = processColumns(items)
-  const inputSource =
-    items.rows.length === 0
-      ? null
-      : items.rows[0]?.rowId
-      ? FOR_EACH_INPUT_SOURCE.TILES
-      : FOR_EACH_INPUT_SOURCE.M365_EXCEL
-
+  const { inputSource, processedColumns } = processColumns(items)
   const processedItems = {
     rows: items.rows,
     columns: processedColumns,

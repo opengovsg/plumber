@@ -51,6 +51,7 @@ async function getDataOutMetadata(
         label: column.name,
         displayedValue: ' ',
         order: index + 2,
+        type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
       },
     }))
 
