@@ -1,9 +1,10 @@
-import { IExecutionStep, IJSONObject } from '@plumber/types'
+import { IExecutionStep } from '@plumber/types'
 
 import { randomUUID } from 'crypto'
 import { describe, expect, it } from 'vitest'
 
 import {
+  FOR_EACH_ITERATION_KEY,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
@@ -480,13 +481,10 @@ describe('computeForEachParameters', () => {
   })
 
   it('should handle missing forEachContext gracefully', () => {
-    const data: IJSONObject = {
-      stringProp: 'test string',
-    }
-    const keyPath = 'stringProp'
+    const keyPath = `items.columns.${FOR_EACH_ITERATION_KEY}.value`
     const executionStep = mockExecutionStepsCheckbox[2]
     const result = computeForEachParameters({
-      data,
+      data: executionStep.dataOut,
       keyPath,
       executionSteps: mockExecutionStepsCheckbox,
       executionStep,
@@ -495,5 +493,24 @@ describe('computeForEachParameters', () => {
     })
 
     expect(result).toBe(keyPath) // returns keyPath when context is missing
+  })
+
+  it('should handle undefined metadata.iteration gracefully', () => {
+    const keyPath = `items.columns.${FOR_EACH_ITERATION_KEY}.value`
+    const executionStep = mockExecutionStepsTable[1] // for-each step
+
+    const result = computeForEachParameters({
+      data: executionStep.dataOut,
+      keyPath,
+      executionSteps: mockExecutionStepsTable,
+      executionStep,
+      stepId: randomForEachStepId,
+      forEachContext: {
+        ...baseForEachContext,
+        executionStepMetadata: {},
+      },
+    })
+
+    expect(result).toBe('')
   })
 })

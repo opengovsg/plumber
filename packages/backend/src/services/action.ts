@@ -212,7 +212,7 @@ export const processAction = async (options: ProcessActionOptions) => {
       const firstStepInForEach = await step.getNextStep()
 
       // testing for-each step should not enqueue any jobs
-      if (!testRun) {
+      if (!testRun && firstStepInForEach) {
         await enqueueFirstForEachStep({
           iterations,
           firstStepInForEach,

@@ -101,11 +101,21 @@ export function computeForEachParameters({
   let forEachKeyPath = get(data, keyPath)
   const currentStepIndex = stepPositions?.[executionStep?.stepId] || -1
 
-  // handling of checkboxes which is just a flat array
-  forEachKeyPath = String(forEachKeyPath).replace(
-    FOR_EACH_ITERATION_KEY,
-    `${testRun ? 0 : metadata?.iteration - 1}`,
-  )
+  if (testRun) {
+    forEachKeyPath = String(forEachKeyPath).replace(FOR_EACH_ITERATION_KEY, '0')
+  } else if (metadata?.iteration) {
+    forEachKeyPath = String(forEachKeyPath).replace(
+      FOR_EACH_ITERATION_KEY,
+      `${metadata.iteration - 1}`,
+    )
+  }
+
+  if (testRun || metadata?.iteration) {
+    forEachKeyPath = String(forEachKeyPath).replace(
+      FOR_EACH_ITERATION_KEY,
+      `${testRun ? 0 : metadata.iteration - 1}`,
+    )
+  }
 
   if (
     executionStep.appKey === TOOLBOX_APP_KEY &&
