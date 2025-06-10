@@ -6,6 +6,23 @@
 then
 `k6 run formsg.js`
 
+### Build k6 with extensions
+Since we are using k6 plugins, we need to use xk6 to build k6 with extensions.
+
+We are using the following extensions:
+- postgres
+- dotenv
+- dashboard
+
+```
+docker run --rm -it -e GOOS=darwin -u "$(id -u):$(id -g)" -v "${PWD}:/xk6" \
+  grafana/xk6 build \
+  --with github.com/grafana/xk6-sql@latest \
+  --with github.com/grafana/xk6-sql-driver-postgres@latest \
+  --with github.com/grafana/xk6-dashboard@latest\
+  --with github.com/szkiba/xk6-dotenv@latest
+```
+
 ### To run with dashboard
 
 `./k6 run --out dashboard=open webhook.js`
