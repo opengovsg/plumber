@@ -101,15 +101,6 @@ export function computeForEachParameters({
   let forEachKeyPath = get(data, keyPath)
   const currentStepIndex = stepPositions?.[executionStep?.stepId] || -1
 
-  if (testRun) {
-    forEachKeyPath = String(forEachKeyPath).replace(FOR_EACH_ITERATION_KEY, '0')
-  } else if (metadata?.iteration) {
-    forEachKeyPath = String(forEachKeyPath).replace(
-      FOR_EACH_ITERATION_KEY,
-      `${metadata.iteration - 1}`,
-    )
-  }
-
   if (testRun || metadata?.iteration) {
     forEachKeyPath = String(forEachKeyPath).replace(
       FOR_EACH_ITERATION_KEY,
