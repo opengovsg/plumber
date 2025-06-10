@@ -39,10 +39,7 @@ const useDeleteConfirmation = (
       await deleteStep({
         variables: { input: { ids: idsToDelete } },
       })
-    } else if (type === TOOLBOX_ACTIONS.IfThen) {
-      if (!branchSteps) {
-        return
-      }
+    } else if (type === TOOLBOX_ACTIONS.IfThen && branchSteps) {
       const idsToDelete = branchSteps.map((step) => step.id)
       await deleteStep({
         variables: { input: { ids: idsToDelete } },
