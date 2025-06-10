@@ -35,7 +35,7 @@ async function getDataOutMetadata(
       item: {
         label: 'Item',
         type: 'text',
-        displayedValue: dataOut.items[0],
+        displayedValue: dataOut.items[0] ?? '',
       },
     }
   }
