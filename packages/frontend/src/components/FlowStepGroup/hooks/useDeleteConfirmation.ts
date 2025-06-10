@@ -35,7 +35,6 @@ const useDeleteConfirmation = (type: string, groupedSteps: IStep[][]) => {
       await deleteStep({
         variables: { input: { ids: idsToDelete } },
       })
-      onClose()
     } else {
       // TODO: refactor branch deletion
     }
