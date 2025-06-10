@@ -247,7 +247,7 @@ interface IFieldComparativeVisibilityCondition {
   op: Extract<FieldVisibilityOp, 'equals' | 'not_equals'>
 
   fieldKey: string
-  fieldValue: string
+  fieldValue?: IJSONPrimitive
 }
 
 export type IFieldVisibilityCondition =

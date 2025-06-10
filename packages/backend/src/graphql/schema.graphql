@@ -137,7 +137,7 @@ enum FieldVisibilityOp {
 type FieldVisibilityCondition {
   op: FieldVisibilityOp!
   fieldKey: String
-  fieldValue: String
+  fieldValue: JSONPrimitive
 }
 
 enum SetupMessageVariant {
@@ -559,6 +559,7 @@ input BulkRetryExecutionsInput {
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSONObject
+scalar JSONPrimitive
 scalar Any
 
 input PreviousStepInput {

@@ -37,10 +37,10 @@ const config: CodegenConfig = {
             output: 'type-fest#JsonObject',
           },
         },
-        JSON: {
+        JSONPrimitive: {
           type: {
-            input: 'type-fest#JsonValue',
-            output: 'type-fest#JsonValue',
+            input: 'type-fest#JsonPrimitive',
+            output: 'type-fest#JsonPrimitive',
           },
         },
         Any: {
@@ -117,7 +117,7 @@ const config: CodegenConfig = {
         scalars: {
           // Use type-fest's JSON types in generated code, as they're nice.
           JSONObject: 'type-fest#JsonObject',
-          JSON: 'type-fest#JsonValue',
+          JSONPrimitive: 'type-fest#JsonPrimitive',
           Any: 'any',
         },
       },
