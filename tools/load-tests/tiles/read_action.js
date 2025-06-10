@@ -34,7 +34,7 @@ export default function () {
   const result = db.exec(`
     SELECT * FROM "public"."load_test_table_1" WHERE "column1" = 'row${Math.floor(
       Math.random() * 1000,
-    )}-col1';;
+    )}-col1';
   `)
   // const result = db.exec(`
   //   SELECT 1 FROM "public"."load_test_table_${exec.vu.idInInstance}";

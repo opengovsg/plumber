@@ -122,8 +122,6 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should throw an error when creating a row with invalid keys', async () => {
-      mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
-
       const invalidData = generateMockTableRowData({
         columnIds: [...dummyColumnIds, 'invalid_column_id'],
       })
@@ -142,7 +140,6 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should allow collaborators with edit rights to call this function', async () => {
-      mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
       context.currentUser = editor
       await expect(
         createRow(
@@ -159,7 +156,6 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should throw an error if user does not have edit access', async () => {
-      mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
       context.currentUser = viewer
       await expect(
         createRow(

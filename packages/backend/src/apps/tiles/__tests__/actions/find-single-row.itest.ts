@@ -40,7 +40,7 @@ vi.mock('@/models/step', () => ({
 }))
 
 describe.each([['ddb'], ['pg']])(
-  'tiles create row action: %s',
+  'tiles find single row action: %s',
   (databaseType: DatabaseType) => {
     let context: Context
     let dummyTable: TableMetadata
