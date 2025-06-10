@@ -22,6 +22,7 @@ describe('delete table collaborators', () => {
 
     const mockTable = await generateMockTable({
       userId: context.currentUser.id,
+      databaseType: 'ddb',
     })
     dummyTable = mockTable.table
     editor = mockTable.editor

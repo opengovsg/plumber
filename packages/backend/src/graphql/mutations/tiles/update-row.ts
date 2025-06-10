@@ -13,13 +13,24 @@ const updateRow: MutationResolvers['updateRow'] = async (
 
   await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
-  const table = await TableMetadata.query().findById(tableId).throwIfNotFound()
+  const table = await TableMetadata.query()
+    .findById(tableId)
+    .throwIfNotFound()
+    .withGraphFetched('columns')
 
   if (!(await table.validateRows([data]))) {
     throw new Error('Invalid column id')
   }
 
   const tableOperations = getTableOperations(table.db)
+
+  // Set unspecified columns to null
+  const columnIds = table.columns.map((column) => column.id)
+  for (const column of columnIds) {
+    if (!(column in data)) {
+      data[column] = null
+    }
+  }
 
   await tableOperations.updateTableRow({ tableId, rowId, data })
 

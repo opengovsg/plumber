@@ -13,6 +13,7 @@ import {
   TableRowFilterOperator,
   TableRowItem,
   TableRowOutput,
+  TableRowOutputWithTimestamps,
   UpdateRowInput,
 } from '../types'
 
@@ -35,7 +36,6 @@ export const createTableRow = async ({
   tableId,
   data,
 }: CreateRowInput): Promise<TableRowItem> => {
-  const ulid = monotonicFactory()
   try {
     const res = await tilesClient(tableId)
       .insert({
@@ -56,11 +56,12 @@ export const createTableRows = async ({
   dataArray,
 }: CreateRowsInput): Promise<string[]> => {
   try {
-    const rows = dataArray.map((data, i) => ({
+    const ulid = monotonicFactory()
+    const rows = dataArray.map((data) => ({
       rowId: ulid(),
       ...data,
-      // manually bumping the createdAt timestamp to ensure that row order is preserved
-      createdAt: new Date(Date.now() + i),
+      // no need to manually bump the createdAt timestamp as the rowId is already sorted
+      createdAt: new Date(),
     }))
     const res = await tilesClient(tableId).insert(rows).returning(['rowId'])
     return res.map((row) => row.rowId)
@@ -79,12 +80,17 @@ export const updateTableRow = async ({
   data,
 }: UpdateRowInput): Promise<void> => {
   try {
-    await tilesClient(tableId)
+    const res = await tilesClient(tableId)
       .where({
         rowId,
       })
       .update(data)
       .update('updatedAt', new Date())
+      .returning('rowId')
+    if (res.length === 0) {
+      throw new Error('Row not found')
+    }
+    return
   } catch (e: unknown) {
     logger.error(e)
     throw e
@@ -143,6 +149,9 @@ export const patchTableRow = async ({
     )
 
     const res = await query.update('updatedAt', new Date()).returning('*')
+    if (res.length === 0) {
+      throw new Error('No rows to patch')
+    }
     return formatTableRow(res[0], tableId)
   } catch (e: unknown) {
     logger.error(e)
@@ -272,22 +281,36 @@ export const getRawRowById = async ({
   tableId,
   rowId: rowIdToUse,
   columnIds,
+  includeTimestamps = false,
 }: {
   tableId: string
   rowId: string
   columnIds?: string[]
-}): Promise<TableRowOutput | null> => {
+  includeTimestamps?: boolean
+}): Promise<TableRowOutput | TableRowOutputWithTimestamps | null> => {
   try {
+    const columnsToSelect = columnIds ? ['rowId', ...columnIds] : ['*']
+    if (includeTimestamps && columnIds) {
+      columnsToSelect.push('createdAt', 'updatedAt')
+    }
     const res = await tilesClient(tableId)
       .where({
         rowId: rowIdToUse,
       })
-      .select(columnIds ? ['rowId', ...columnIds] : ['*'])
+      .select(columnsToSelect)
       .first()
     if (!res) {
       return null
     }
-    return formatTableRow(res, tableId)
+    const formattedRow = formatTableRow(res, tableId)
+    if (includeTimestamps && formattedRow) {
+      return {
+        ...formattedRow,
+        createdAt: res.createdAt,
+        updatedAt: res.updatedAt,
+      }
+    }
+    return formattedRow
   } catch (e: unknown) {
     logger.error(e)
     throw e

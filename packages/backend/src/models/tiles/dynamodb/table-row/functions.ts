@@ -12,6 +12,7 @@ import {
   TableRowFilterOperator,
   TableRowItem,
   TableRowOutput,
+  TableRowOutputWithTimestamps,
   UpdateRowInput,
 } from '../../types'
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
@@ -399,14 +400,23 @@ export const getRawRowById = async ({
   tableId,
   rowId,
   columnIds,
+  includeTimestamps = false,
 }: {
   tableId: string
   rowId: string
   columnIds?: string[]
-}): Promise<TableRowOutput | null> => {
+  includeTimestamps?: boolean
+}): Promise<TableRowOutput | TableRowOutputWithTimestamps | null> => {
   try {
+    const columnIdsToSelect =
+      columnIds && includeTimestamps
+        ? [...columnIds, 'createdAt', 'updatedAt']
+        : columnIds
     const { ProjectionExpression, ExpressionAttributeNames } =
-      generateProjectionExpressions({ columnIds, indexUsed: 'byRowId' })
+      generateProjectionExpressions({
+        columnIds: columnIdsToSelect,
+        indexUsed: 'byRowId',
+      })
     const response = await TableRow.query.byRowId({ tableId, rowId }).go({
       ignoreOwnership: true,
       params: {

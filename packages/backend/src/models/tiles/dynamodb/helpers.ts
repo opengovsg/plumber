@@ -71,11 +71,13 @@ export function autoMarshallNumberStrings(value: string): string | number {
 }
 
 export function autoMarshallDataObj(
-  dataObj: Record<string, string>,
+  dataObj: Record<string, string | number>,
 ): Record<string, string | number> {
   const newObj: Record<string, string | number> = {}
   for (const key in dataObj) {
-    newObj[key] = autoMarshallNumberStrings(dataObj[key])
+    const value = dataObj[key]
+    newObj[key] =
+      typeof value === 'string' ? autoMarshallNumberStrings(value) : value
   }
   return newObj
 }

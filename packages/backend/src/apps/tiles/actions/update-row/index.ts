@@ -4,6 +4,7 @@ import StepError from '@/errors/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import {
+  autoMarshallDataObj,
   autoMarshallNumberStrings,
   stripInvalidKeys,
 } from '@/models/tiles/dynamodb/helpers'
@@ -181,7 +182,10 @@ const action: IRawAction = {
 
     const patchData = {
       ...rowData.reduce(
-        (acc, { columnId, cellValue, operator }) => {
+        (
+          acc: PatchRowInput['patchData'],
+          { columnId, cellValue, operator },
+        ) => {
           // Check that the column still exists
           if (columnIds.includes(columnId)) {
             switch (operator) {
@@ -219,7 +223,7 @@ const action: IRawAction = {
 
       $.setActionItem({
         raw: {
-          row: updatedRowData,
+          row: autoMarshallDataObj(updatedRowData),
           rowId,
           updated: true,
         } satisfies UpdateRowOutput,
@@ -227,7 +231,16 @@ const action: IRawAction = {
     } catch (e) {
       if (e instanceof Error) {
         if (e.message.includes('The conditional request failed')) {
-          // This means the corresponding row does not exist
+          // This means the corresponding row does not exist for ddb
+          $.setActionItem({
+            raw: {
+              updated: false,
+            } satisfies UpdateRowOutput,
+          })
+          return
+        }
+        if (e.message.includes('No rows to patch')) {
+          // This means the corresponding row does not exist for pg
           $.setActionItem({
             raw: {
               updated: false,

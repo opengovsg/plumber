@@ -1,6 +1,7 @@
 import pLimit from 'p-limit'
 import { z } from 'zod'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
@@ -105,6 +106,13 @@ const updateTable: MutationResolvers['updateTable'] = async (
       // There needs to be at least one column left
       if (columns.length <= deletedColumns.length) {
         throw new Error('Cannot delete all columns')
+      }
+      if (
+        deletedColumns.some(
+          (columnId) => !columns.some((c) => c.id === columnId),
+        )
+      ) {
+        throw new BadUserInputError('Column does not exist')
       }
       await table
         .$relatedQuery('columns')

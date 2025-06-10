@@ -1,6 +1,8 @@
-import { randomUUID } from 'crypto'
+import { chunk } from 'lodash'
 
 import { _batchCreate } from '@/models/tiles/dynamodb/table-row'
+import { getTableOperations } from '@/models/tiles/factory'
+import { DatabaseType } from '@/models/tiles/types'
 
 import { generateMockTableRowData } from '../../mutations/tiles/table.mock'
 
@@ -8,18 +10,23 @@ export async function insertMockTableRows(
   tableId: string,
   numRowsToInsert: number,
   columnIds: string[],
+  databaseType: DatabaseType,
 ): Promise<string[]> {
   const rows = []
   for (let i = 0; i < numRowsToInsert; i++) {
-    rows.push({
-      tableId,
-      // use ulid for new tiles
-      rowId: randomUUID(),
-      data: generateMockTableRowData({ columnIds }),
-    })
+    rows.push(generateMockTableRowData({ columnIds }))
   }
 
-  await _batchCreate(rows)
+  const tableOperations = getTableOperations(databaseType)
+  const chunks = chunk(rows, 100)
+  const rowIds = []
+  for (const dataArray of chunks) {
+    const addedRowsIds = await tableOperations.createTableRows({
+      tableId,
+      dataArray,
+    })
+    rowIds.push(...addedRowsIds)
+  }
 
-  return rows.map((r) => r.rowId)
+  return rowIds
 }

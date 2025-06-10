@@ -4,6 +4,9 @@ import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
+import { createTableColumns } from '@/models/tiles/pg/table-column-functions'
+import { createTable } from '@/models/tiles/pg/table-functions'
+import { DatabaseType } from '@/models/tiles/types'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
@@ -18,8 +21,10 @@ export async function generateMockContext(): Promise<Context> {
 
 export async function generateMockTable({
   userId,
+  databaseType,
 }: {
   userId: string
+  databaseType: DatabaseType
 }): Promise<{
   table: TableMetadata
   owner: User
@@ -32,6 +37,7 @@ export async function generateMockTable({
   const table = await currentUser.$relatedQuery('tables').insert({
     name: 'Test Table',
     role: 'owner',
+    db: databaseType,
   })
   await TableCollaborator.query().insert([
     {
@@ -45,6 +51,11 @@ export async function generateMockTable({
       role: 'viewer',
     },
   ])
+
+  if (databaseType === 'pg') {
+    await createTable(table.id, [])
+  }
+
   return {
     table,
     owner: currentUser,
@@ -106,9 +117,11 @@ export async function generateMockStep({
 export async function generateMockTableColumns({
   tableId,
   numColumns = 5,
+  databaseType,
 }: {
   tableId: string
   numColumns?: number
+  databaseType: DatabaseType
 }): Promise<string[]> {
   const promises = []
   for (let i = 0; i < numColumns; i++) {
@@ -123,7 +136,11 @@ export async function generateMockTableColumns({
       }),
     )
   }
-  return (await Promise.all(promises)).map((column) => column.id)
+  const columnIds = (await Promise.all(promises)).map((column) => column.id)
+  if (databaseType === 'pg') {
+    await createTableColumns(tableId, columnIds)
+  }
+  return columnIds
 }
 
 export function generateMockTableRowData({

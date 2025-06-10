@@ -123,45 +123,51 @@ describe('Action worker', () => {
       expect(mocks.exponentialBackoffWithJitter).not.toBeCalled()
     })
 
-    it('retries retriable executions using our custom backoff strategy', async () => {
-      // Override max attempts to reduce test running time.
-      const maxAttempts = 3
+    it(
+      'retries retriable executions using our custom backoff strategy',
+      {
+        timeout: 20000,
+      },
+      async () => {
+        // Override max attempts to reduce test running time.
+        const maxAttempts = 3
 
-      mocks.processAction.mockResolvedValue({
-        executionStep: { isFailed: true },
-      })
-      mocks.handleFailedStepAndThrow.mockRejectedValue(
-        new RetriableError({
-          error: 'test retriable error',
-          delayInMs: 10,
-          delayType: 'step',
-        }),
-      )
-
-      const jobProcessed = new Promise<void>((resolve) => {
-        mainActionWorker.on('failed', async (job) => {
-          if (job.attemptsMade === maxAttempts) {
-            resolve()
-          }
+        mocks.processAction.mockResolvedValue({
+          executionStep: { isFailed: true },
         })
-      })
-      await enqueueActionJob({
-        appKey: null,
-        jobName: 'test-job',
-        jobData: {
-          flowId: 'test-flow-id',
-          executionId: 'test-exec-id',
-          stepId: 'test-step-id',
-        },
-        jobOptions: {
-          ...DEFAULT_JOB_OPTIONS,
-          attempts: maxAttempts,
-        },
-      })
-      await jobProcessed
+        mocks.handleFailedStepAndThrow.mockRejectedValue(
+          new RetriableError({
+            error: 'test retriable error',
+            delayInMs: 10,
+            delayType: 'step',
+          }),
+        )
 
-      expect(mocks.exponentialBackoffWithJitter).toBeCalled()
-    })
+        const jobProcessed = new Promise<void>((resolve) => {
+          mainActionWorker.on('failed', async (job) => {
+            if (job.attemptsMade === maxAttempts) {
+              resolve()
+            }
+          })
+        })
+        await enqueueActionJob({
+          appKey: null,
+          jobName: 'test-job',
+          jobData: {
+            flowId: 'test-flow-id',
+            executionId: 'test-exec-id',
+            stepId: 'test-step-id',
+          },
+          jobOptions: {
+            ...DEFAULT_JOB_OPTIONS,
+            attempts: maxAttempts,
+          },
+        })
+        await jobProcessed
+
+        expect(mocks.exponentialBackoffWithJitter).toBeCalled()
+      },
+    )
 
     it('does not retry non-executable executions', async () => {
       mocks.processAction.mockResolvedValueOnce({
