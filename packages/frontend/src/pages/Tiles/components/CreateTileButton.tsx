@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Flex,
+  FormControl,
   Modal,
   ModalBody,
   ModalContent,
@@ -24,6 +25,7 @@ import {
 } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
+import { DatabaseType } from '@/graphql/__generated__/graphql'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
 import { ImportCsvModalContent } from '@/pages/Tile/components/TableBanner/ImportCsvButton'
 import { TableContextProvider } from '@/pages/Tile/contexts/TableContext'
@@ -49,41 +51,39 @@ const CreateTileForm = ({
     <>
       <ModalHeader>Create a Tile</ModalHeader>
       <ModalCloseButton />
-      <ModalBody>
-        <FormLabel isRequired>Enter a name for your new tile</FormLabel>
-        <Input
-          value={tableName}
-          onChange={(e) => setTableName(e.target.value)}
-        />
-        <FormLabel mt={8} isRequired>
-          How do you want to start?
-        </FormLabel>
-        <Flex gap={4}>
-          <Tile
-            icon={BiSpreadsheet}
-            flex={1}
-            onClick={() => setCreateMode('import')}
-            isSelected={createMode === 'import'}
-          >
-            <Text textStyle="h5" mt={4}>
-              Import CSV
-            </Text>
-            <Text textStyle="body-2">
-              Start with data that you have already collected
-            </Text>
-          </Tile>
-          <Tile
-            icon={BiTable}
-            flex={1}
-            onClick={() => setCreateMode('new')}
-            isSelected={createMode === 'new'}
-          >
-            <Text textStyle="h5" mt={4}>
-              Start from scratch
-            </Text>
-            <Text textStyle="body-2">Start with a blank database</Text>
-          </Tile>
-        </Flex>
+      <ModalBody gap={8} display="flex" flexDirection="column">
+        <FormControl>
+          <FormLabel isRequired>Enter a name for your new tile</FormLabel>
+          <Input
+            value={tableName}
+            onChange={(e) => setTableName(e.target.value)}
+          />
+        </FormControl>
+        <FormControl>
+          <FormLabel isRequired>How do you want to start?</FormLabel>
+          <Flex gap={4} direction={{ base: 'column', sm: 'row' }}>
+            <Tile
+              icon={BiSpreadsheet}
+              flex={1}
+              onClick={() => setCreateMode('import')}
+              isSelected={createMode === 'import'}
+            >
+              <Text textStyle="h5">Import CSV</Text>
+              <Text textStyle="body-2">
+                Start with data that you have already collected
+              </Text>
+            </Tile>
+            <Tile
+              icon={BiTable}
+              flex={1}
+              onClick={() => setCreateMode('new')}
+              isSelected={createMode === 'new'}
+            >
+              <Text textStyle="h5">Start from scratch</Text>
+              <Text textStyle="body-2">Start with a blank database</Text>
+            </Tile>
+          </Flex>
+        </FormControl>
       </ModalBody>
       <ModalFooter>
         <Button
@@ -156,6 +156,8 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
         {showImportModal ? (
           <TableContextProvider
             tableName={tableName}
+            // this doesnt matter for empty tables
+            databaseType={DatabaseType.Ddb}
             tableId={tableData ? tableData.id : ''}
             tableColumns={[]}
             tableRows={[]}

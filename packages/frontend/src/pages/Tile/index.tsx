@@ -80,13 +80,14 @@ export default function Tile(): JSX.Element | null {
     return null
   }
 
-  const { id, name, columns, viewOnlyKey, collaborators } =
+  const { id, name, columns, viewOnlyKey, collaborators, databaseType } =
     getTableData.getTable
 
   return (
     <TableContextProvider
       tableName={name}
       tableId={id}
+      databaseType={databaseType}
       tableColumns={columns}
       tableRows={rows}
       viewOnlyKey={viewOnlyKey}

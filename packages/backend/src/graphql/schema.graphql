@@ -773,7 +773,6 @@ enum DatabaseType {
 input CreateTableInput {
   name: String!
   isBlank: Boolean!
-  databaseType: DatabaseType
 }
 
 input TableColumnConfigInput {
@@ -828,6 +827,7 @@ input DeleteTableCollaboratorInput {
 
 type TableMetadata {
   id: ID!
+  databaseType: DatabaseType!
   name: String!
   columns: [TableColumnMetadata!]
   lastAccessedAt: String!

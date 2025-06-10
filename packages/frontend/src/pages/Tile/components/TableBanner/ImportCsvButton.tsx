@@ -29,6 +29,7 @@ import Papa, { ParseMeta, ParseResult } from 'papaparse'
 import { SetRequired } from 'type-fest'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
+import { DatabaseType } from '@/graphql/__generated__/graphql'
 import { CREATE_ROWS } from '@/graphql/mutations/tiles/create-rows'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
@@ -46,10 +47,16 @@ type IMPORT_STATUS =
   | 'completed'
   | 'error'
 
-// 2 MB in bytes
-const MAX_FILE_SIZE = 2 * 1000 * 1000
+// 5 MB in bytes
+const MAX_FILE_SIZE = {
+  [DatabaseType.Pg]: 5 * 1000 * 1000,
+  [DatabaseType.Ddb]: 2 * 1000 * 1000,
+}
 // Add row chunk size
-const CHUNK_SIZE = 100
+const CHUNK_SIZE = {
+  [DatabaseType.Pg]: 1000,
+  [DatabaseType.Ddb]: 100,
+}
 
 const ImportStatus = ({
   columnsToCreate,
@@ -134,7 +141,7 @@ export const ImportCsvModalContent = ({
   onPostImport?: () => void
   onBack?: () => void
 }) => {
-  const { tableId, tableColumns, refetch } = useTableContext()
+  const { tableId, tableColumns, refetch, databaseType } = useTableContext()
   const { createColumns } = useUpdateTable()
   const [createRows] = useMutation(CREATE_ROWS)
   const [getTableData] = useLazyQuery<{
@@ -255,7 +262,7 @@ export const ImportCsvModalContent = ({
         setImportStatus('importing')
         setRowsToImport(mappedData.length)
         setRowsImported(0)
-        const chunkedData = chunk(mappedData, CHUNK_SIZE)
+        const chunkedData = chunk(mappedData, CHUNK_SIZE[databaseType])
 
         for (let i = 0; i < chunkedData.length; i++) {
           await createRows({
@@ -269,7 +276,7 @@ export const ImportCsvModalContent = ({
           if (i === chunkedData.length - 1 && !onPreImport) {
             await refetch()
           }
-          setRowsImported((i + 1) * CHUNK_SIZE)
+          setRowsImported((i + 1) * CHUNK_SIZE[databaseType])
         }
       }
       setImportStatus('completed')
@@ -291,6 +298,7 @@ export const ImportCsvModalContent = ({
     onPreImport,
     refetch,
     result,
+    databaseType,
     tableColumns,
     tableId,
   ])
@@ -317,7 +325,7 @@ export const ImportCsvModalContent = ({
           existing values.
         </Text>
         <Attachment
-          maxSize={MAX_FILE_SIZE}
+          maxSize={MAX_FILE_SIZE[databaseType]}
           onChange={setFile}
           title="Upload CSV"
           name="file-upload"

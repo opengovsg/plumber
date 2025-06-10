@@ -1,10 +1,14 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createTable from '@/graphql/mutations/tiles/create-table'
 import { getTableRowCount } from '@/models/tiles/dynamodb/table-row'
 import Context from '@/types/express/context'
 
 import { generateMockContext } from './table.mock'
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: vi.fn().mockResolvedValue('ddb'),
+}))
 
 describe('create table mutation', () => {
   let context: Context
@@ -17,7 +21,7 @@ describe('create table mutation', () => {
   it('should create a blank table', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: true, databaseType: 'ddb' } },
+      { input: { name: 'Test Table', isBlank: true } },
       context,
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()
@@ -30,7 +34,7 @@ describe('create table mutation', () => {
   it('should create a table and with placeholder rows and columns', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
+      { input: { name: 'Test Table', isBlank: false } },
       context,
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()
@@ -43,13 +47,13 @@ describe('create table mutation', () => {
   it('should be able create tables with the same name', async () => {
     const table = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
+      { input: { name: 'Test Table', isBlank: false } },
       context,
     )
 
     const table2 = await createTable(
       null,
-      { input: { name: 'Test Table', isBlank: false, databaseType: 'ddb' } },
+      { input: { name: 'Test Table', isBlank: false } },
       context,
     )
     expect(table.name).toBe('Test Table')

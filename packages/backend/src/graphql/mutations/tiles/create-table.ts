@@ -1,7 +1,8 @@
+import { MutationResolvers } from '@/graphql/__generated__/types.generated'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
-
-import type { MutationResolvers } from '../../__generated__/types.generated'
+import { type DatabaseType } from '@/models/tiles/types'
 
 const PLACEHOLDER_COLUMNS = [
   {
@@ -19,20 +20,28 @@ const PLACEHOLDER_COLUMNS = [
 ]
 const PLACEHOLDER_ROWS = new Array(5).fill({})
 
+// DELETE THIS FLAG ONCE IT'S NO LONGER IN USE
+const DATABASE_TYPE_LD_FLAG_KEY = 'tiles-database-type'
+
 const createTable: MutationResolvers['createTable'] = async (
   _parent,
   params,
   context,
 ) => {
-  const {
-    name: tableName,
-    isBlank: isBlankTable,
-    databaseType = 'ddb',
-  } = params.input
+  const { name: tableName, isBlank: isBlankTable } = params.input
 
   if (!tableName) {
     throw new Error('Table name is required')
   }
+
+  /**
+   * Check which database type user is allowed to create
+   */
+  const databaseType = (await getLdFlagValue(
+    DATABASE_TYPE_LD_FLAG_KEY,
+    context.currentUser.email,
+    'ddb',
+  )) as DatabaseType
 
   const tableOperations = getTableOperations(databaseType)
 
