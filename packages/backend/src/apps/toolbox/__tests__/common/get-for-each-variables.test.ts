@@ -93,6 +93,11 @@ describe('get-for-each-variables', () => {
           name: 'Column 2',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.col2`,
         },
+        {
+          id: 'rowId',
+          name: 'Row ID',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
+        },
       ])
     })
 
@@ -173,7 +178,13 @@ describe('get-for-each-variables', () => {
       expect(result.iterations).toBe(1)
       expect(result.inputSource).toBe('tiles')
       expect(result.processedItems.rows).toEqual(mockData.rows)
-      expect(result.processedItems.columns).toEqual([])
+      expect(result.processedItems.columns).toEqual([
+        {
+          id: 'rowId',
+          name: 'Row ID',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
+        },
+      ])
     })
 
     it('should handle single row', () => {
@@ -198,6 +209,11 @@ describe('get-for-each-variables', () => {
           id: 'single-col',
           name: 'Single Column',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.single-col`,
+        },
+        {
+          id: 'rowId',
+          name: 'Row ID',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
         },
       ])
     })
