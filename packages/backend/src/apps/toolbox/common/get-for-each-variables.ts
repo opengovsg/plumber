@@ -26,6 +26,10 @@ export interface MultipleRowObject {
   }[]
 }
 
+const ULID_REGEX = /^[0-9A-HJKMNP-TV-Z]{26}$/i
+const UUID_REGEX =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+
 export function isCheckboxItems(items: string[]): boolean {
   return Array.isArray(items) && items.every((item) => typeof item === 'string')
 }
@@ -38,6 +42,14 @@ function processColumns(data: MultipleRowObject): {
   let inputSource = null
 
   data.columns.forEach((column: any) => {
+    // NOTE: we cam tell if its a tile column by its column id
+    // tiles will either have uuid or ulid as column id
+    if (ULID_REGEX.test(column.id) || UUID_REGEX.test(column.id)) {
+      inputSource = FOR_EACH_INPUT_SOURCE.TILES
+    } else {
+      inputSource = FOR_EACH_INPUT_SOURCE.M365_EXCEL
+    }
+
     processedColumns.push({
       id: column.id,
       name: column.name,
@@ -46,15 +58,12 @@ function processColumns(data: MultipleRowObject): {
   })
 
   // NOTE: only tiles will have rowId
-  if (data.rows[0]?.rowId) {
+  if (inputSource === FOR_EACH_INPUT_SOURCE.TILES) {
     processedColumns.push({
       id: 'rowId',
       name: 'Row ID',
       value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
     })
-    inputSource = FOR_EACH_INPUT_SOURCE.TILES
-  } else if (data.rows.length > 0) {
-    inputSource = FOR_EACH_INPUT_SOURCE.M365_EXCEL
   }
 
   return { inputSource, processedColumns }
