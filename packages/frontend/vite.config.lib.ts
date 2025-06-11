@@ -15,6 +15,8 @@ export default defineConfig({
     }),
   ],
   build: {
+    // disable inline images since we don't allow them in csp
+    assetsInlineLimit: 0,
     outDir: 'dist/lib',
     copyPublicDir: false,
     lib: {

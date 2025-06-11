@@ -38,7 +38,7 @@ const action: IRawAction = {
       label: 'Send as a bot?',
       key: 'sendAsBot',
       type: 'boolean-radio' as const,
-      required: false,
+      required: true,
       value: false,
       description:
         'If you choose no, this message will appear to come from you. Direct messages are always sent by bots.',
@@ -47,11 +47,16 @@ const action: IRawAction = {
       label: 'Bot name',
       key: 'botName',
       type: 'string' as const,
-      required: true,
+      required: false,
       value: 'Plumber',
       description:
         'Specify the bot name which appears as a bold username above the message inside Slack. Defaults to Plumber.',
       variables: true,
+      hiddenIf: {
+        fieldKey: 'sendAsBot',
+        op: 'equals',
+        fieldValue: false,
+      },
     },
     {
       label: 'Bot icon',
@@ -61,6 +66,11 @@ const action: IRawAction = {
       description:
         'Either an image url or an emoji available to your team (surrounded by :). For example, https://example.com/icon_256.png or :robot_face:',
       variables: true,
+      hiddenIf: {
+        fieldKey: 'sendAsBot',
+        op: 'equals',
+        fieldValue: false,
+      },
     },
   ],
 

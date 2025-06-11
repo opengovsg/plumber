@@ -10,6 +10,7 @@ export const UPDATE_STEP = graphql(`
       webhookUrl
       parameters
       status
+      position
       connection {
         id
       }

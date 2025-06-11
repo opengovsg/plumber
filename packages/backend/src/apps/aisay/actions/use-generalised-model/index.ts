@@ -5,6 +5,10 @@ import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
 import { getToken } from '../../auth/get-token'
+import {
+  DEFAULT_GENERALISED_MODEL_TYPE,
+  GENERALISED_MODEL_OPTIONS,
+} from '../../common/constants'
 import { parseError } from '../../common/error-parser'
 import { generalisedModelSchema } from '../../common/schema'
 import { getAttachmentFromS3, getValidationError } from '../../common/utils'
@@ -16,6 +20,16 @@ const action: IRawAction = {
   key: 'useGeneralisedModel',
   description: 'Optimised for standard and non-standard documents',
   arguments: [
+    {
+      label: 'Model type',
+      key: 'modelType',
+      type: 'dropdown',
+      required: true,
+      variables: false,
+      showOptionValue: false,
+      options: GENERALISED_MODEL_OPTIONS,
+      value: DEFAULT_GENERALISED_MODEL_TYPE,
+    },
     {
       label: 'File',
       key: 'file',
@@ -50,21 +64,7 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
-    const { file, prompts } = $.step.parameters as {
-      file: string
-      prompts: Array<{ prompt: string }>
-    }
-
-    if (!$.auth.data?.clientId || !$.auth.data?.clientSecret) {
-      throw new StepError(
-        'Missing client ID or client secret',
-        'Please check the client ID and client secret',
-        $.step.position,
-        $.app.name,
-      )
-    }
-
-    const result = generalisedModelSchema.safeParse({ file, prompts })
+    const result = generalisedModelSchema.safeParse($.step.parameters)
     if (!result.success) {
       const { stepErrorName, stepErrorSolution } = getValidationError(result)
 
@@ -76,9 +76,20 @@ const action: IRawAction = {
       )
     }
 
+    if (!$.auth.data?.clientId || !$.auth.data?.clientSecret) {
+      throw new StepError(
+        'Missing client ID or client secret',
+        'Please check the client ID and client secret',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
     try {
+      const { file, prompts, modelType } = result.data
+
       // get attachment from S3 first
-      const attachment = await getAttachmentFromS3(result.data.file, $.flow.id)
+      const attachment = await getAttachmentFromS3(file, $.flow.id)
 
       // Step 1: get AWS Cognito access token
       const token = await getToken($)
@@ -93,7 +104,8 @@ const action: IRawAction = {
           Authorization: `Bearer ${token}`,
         },
         data: {
-          gpt_query: result.data.prompts,
+          ...(modelType && { additional_features: modelType }),
+          gpt_query: prompts,
           image: attachment.data,
         },
       })
