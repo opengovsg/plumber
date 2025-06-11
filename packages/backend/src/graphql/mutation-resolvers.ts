@@ -10,7 +10,6 @@ import deleteFlow from './mutations/delete-flow'
 import deleteStep from './mutations/delete-step'
 import deleteUploadedFile from './mutations/delete-uploaded-file'
 import duplicateFlow from './mutations/duplicate-flow'
-import executeFlow from './mutations/execute-flow'
 import executeStep from './mutations/execute-step'
 import generateAuthUrl from './mutations/generate-auth-url'
 import generatePresignedUrl from './mutations/generate-presigned-url'
@@ -63,7 +62,6 @@ export default {
   updateFlow,
   updateFlowStatus,
   updateFlowConfig,
-  executeFlow,
   executeStep,
   deleteFlow,
   createStep,
