@@ -6,6 +6,10 @@ import {
   type WorkerProOptions,
 } from '@taskforcesh/bullmq-pro'
 
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from '@/apps/toolbox/common/constants'
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
@@ -23,6 +27,7 @@ import {
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import { enqueueActionJob, makeActionJobId } from '@/queues/action'
@@ -157,7 +162,30 @@ export function makeActionWorker(
           })
         }
 
-        if (!nextStep) {
+        /**
+         * FOR-EACH SPECIAL CASE
+         * 1. nextStep is null for the for-each execution step
+         * 2. execution with for-each is only a success if all iterations are a success
+         */
+        const isForEach =
+          currStep.appKey === TOOLBOX_APP_KEY &&
+          currStep.key === TOOLBOX_ACTIONS.FOR_EACH
+
+        if (!nextStep && !isForEach) {
+          if (nextStepMetadata?.isLastIteration) {
+            const executionSteps = await ExecutionStep.query().where({
+              execution_id: executionId,
+            })
+
+            const areAllStepsSuccessful = executionSteps.every(
+              (step) => step.status === 'success',
+            )
+            if (!areAllStepsSuccessful) {
+              await Execution.setStatus(executionId, 'failure')
+              return
+            }
+          }
+
           await Execution.setStatus(executionId, 'success')
           return
         }
