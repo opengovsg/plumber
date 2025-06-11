@@ -49,7 +49,11 @@ async function enqueueFirstForEachStep({
           flowId: flowId,
           executionId: executionId,
           stepId: firstStepInForEach.id,
-          metadata: { ...metadata, iteration: i + 1 },
+          metadata: {
+            ...metadata,
+            iteration: i + 1,
+            ...(i === iterations - 1 && { isLastIteration: true }),
+          },
         },
         jobOptions: {
           ...DEFAULT_JOB_OPTIONS,
@@ -201,7 +205,7 @@ export const processAction = async (options: ProcessActionOptions) => {
       const dataOut = $.actionOutput.data?.raw ?? null
       const iterations = Math.min(
         FOR_EACH_MAX_ITERATIONS,
-        Number(dataOut.iterations ?? 0),
+        Number(dataOut?.iterations ?? 0),
       )
 
       // NOTE: unlikely that iterations will be negative, but just in case
