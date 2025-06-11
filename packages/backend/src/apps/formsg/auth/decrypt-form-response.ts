@@ -114,6 +114,26 @@ export async function decryptFormResponse(
 
     for (const [index, formField] of submission.responses.entries()) {
       const { _id, ...rest } = formField
+      // perform null character sanitisation for all answer fields so that it can be inserted into the DB
+      if (rest.answer) {
+        rest.answer = rest.answer.replaceAll('\u0000', '')
+      }
+
+      if (rest.answerArray && rest.answerArray.length > 0) {
+        // Could be an array of strings (checkbox/address field) or a 2-D array of strings (table field)
+        if (
+          formField.fieldType === 'table' &&
+          Array.isArray(rest.answerArray[0])
+        ) {
+          rest.answerArray = (rest.answerArray as string[][]).map((row) =>
+            row.map((column) => column.replaceAll('\u0000', '')),
+          )
+        } else {
+          rest.answerArray = (rest.answerArray as string[]).map((answer) =>
+            answer.replaceAll('\u0000', ''),
+          )
+        }
+      }
 
       if (rest.fieldType === 'nric' && !!rest.answer) {
         const filteredAnswer = filterNric($, rest.answer)
