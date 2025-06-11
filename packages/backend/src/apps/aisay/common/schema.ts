@@ -40,17 +40,23 @@ export const generalisedModelSchema = z.object({
     })
     return result
   }),
+  /**
+   * NOTE: the custom model type is indicated by the 'additonal_features' field in the request body
+   * 1. this function returns null when using the standard model as it is not required by default.
+   * 2. it is only included when using the vision generalised model.
+   * API doc: https://app.swaggerhub.com/apis-docs/DAMIENSKTWORK/bgp-aisay_document_extraction_api/1.0.11#/DocumentParserRequestS3GenericV2
+   */
   modelType: z
     .string()
     .optional()
     .transform((value) => {
-      if (!value) {
+      if (!value || value === DEFAULT_GENERALISED_MODEL_TYPE) {
         return null
       }
 
       const allowedValues = GENERALISED_MODEL_OPTIONS.map(
         (option) => option.value,
-      ).filter((value) => value !== DEFAULT_GENERALISED_MODEL_TYPE)
+      )
 
       if (!allowedValues.includes(value)) {
         return null
