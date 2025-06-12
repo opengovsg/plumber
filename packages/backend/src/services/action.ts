@@ -91,8 +91,10 @@ export const processAction = async (options: ProcessActionOptions) => {
     .findById(executionId)
     .throwIfNotFound()
 
-  const { forEachStepIndex, isForEachStep, stepIsInForEach, stepPositions } =
-    getForEachContext(flow, step)
+  const { forEachStepIndex, stepPositions, isForEachStep } = getForEachContext(
+    flow,
+    step,
+  )
 
   const $ = await globalVariable({
     flow,
@@ -118,7 +120,6 @@ export const processAction = async (options: ProcessActionOptions) => {
     {
       testRun,
       executionStepMetadata: metadata,
-      stepIsInForEach,
       forEachStepIndex,
       stepPositions,
       isForEachStep,

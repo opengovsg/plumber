@@ -56,7 +56,8 @@ function findAndSubstituteVariables(
   }
 
   const parts = rawValue.split(variableRegExp)
-  const { isForEachStep, stepIsInForEach } = forEachContext || {}
+  const { forEachStepIndex, stepPositions, isForEachStep } =
+    forEachContext || {}
 
   const substitutedParts = parts.map((part: string) => {
     const isVariable = part.match(variableRegExp)
@@ -67,6 +68,8 @@ function findAndSubstituteVariables(
         return executionStep.stepId === stepId
       })
       const data = executionStep?.dataOut
+      const stepIsInForEach =
+        forEachStepIndex > -1 && stepPositions?.[stepId] >= forEachStepIndex
 
       const keyPath = keyPaths.join('.') // for lodash get to work
       let dataValue = get(data, keyPath)

@@ -20,7 +20,7 @@ export type ForEachContext = {
   executionStepMetadata: NextStepMetadata
   forEachStepIndex: number
   isForEachStep: boolean
-  stepIsInForEach: boolean
+
   stepPositions: Record<string, number>
 }
 
@@ -29,12 +29,9 @@ export function getForEachContext(
   step: IStep,
 ): {
   forEachStepIndex: number
-  stepIsInForEach: boolean
   stepPositions: Record<string, number>
   isForEachStep: boolean
 } {
-  let stepIsInForEach = false
-  const stepPosition = step.position
   const isForEachStep =
     step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH
   const forEachSteps = flow.steps.filter(
@@ -45,14 +42,9 @@ export function getForEachContext(
   if (forEachSteps.length === 0 || forEachSteps.length > 1) {
     return {
       forEachStepIndex: -1,
-      stepIsInForEach,
       stepPositions: {},
       isForEachStep,
     }
-  }
-
-  if (stepPosition > forEachSteps[0].position) {
-    stepIsInForEach = true
   }
 
   const stepPositions = flow.steps.reduce((acc, step) => {
@@ -62,7 +54,6 @@ export function getForEachContext(
 
   return {
     forEachStepIndex: forEachSteps[0].position,
-    stepIsInForEach,
     stepPositions,
     isForEachStep,
   }
@@ -121,5 +112,6 @@ export function computeForEachParameters({
     )
     dataValue = get(iterationExecutionStep?.dataOut, keyPath) || ''
   }
+
   return dataValue
 }
