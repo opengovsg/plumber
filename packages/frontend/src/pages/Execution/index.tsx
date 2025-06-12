@@ -12,8 +12,7 @@ import ExecutionHeader from '@/components/ExecutionHeader'
 import ExecutionStep from '@/components/ExecutionStep'
 import { GET_EXECUTION } from '@/graphql/queries/get-execution'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
-
-import { processExecutionSteps } from '../../helpers/processExecutionSteps'
+import processExecutionSteps from '@/helpers/processExecutionSteps'
 
 type ExecutionParams = {
   executionId: string

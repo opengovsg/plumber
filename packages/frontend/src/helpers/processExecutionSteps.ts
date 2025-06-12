@@ -8,7 +8,9 @@ export type GroupedSteps = Array<{
   status: string
 }>
 
-export const processExecutionSteps = (executionSteps: IExecutionStep[]) => {
+export default function processExecutionSteps(
+  executionSteps: IExecutionStep[],
+) {
   const groupingStepIndex = executionSteps?.findIndex(
     (s) => s.appKey === TOOLBOX_APP_KEY && s.key === TOOLBOX_ACTIONS.ForEach,
   )
@@ -16,7 +18,7 @@ export const processExecutionSteps = (executionSteps: IExecutionStep[]) => {
   if (groupingStepIndex && groupingStepIndex === -1) {
     return {
       groupingStep: {} as IExecutionStep,
-      groupStats: { success: 0, failure: 0 },
+      groupStats: { success: 0, failure: 0, waiting: 0 },
       groupedSteps: [] as GroupedSteps,
       hasGrouping: false,
       stepsBeforeGroup: executionSteps,
@@ -47,7 +49,24 @@ export const processExecutionSteps = (executionSteps: IExecutionStep[]) => {
       }
 
       iterationGroup.steps.push(step)
-      iterationGroup.status = step.status === 'success' ? 'success' : 'failure'
+      iterationGroup.status = 'waiting'
+      if (step.status === 'failure') {
+        iterationGroup.status = 'failure'
+      }
+      const isGroupComplete = iterationGroup.steps.find(
+        (s) => s.metadata.isLastStep,
+      )
+
+      if (isGroupComplete) {
+        const isGroupSuccess = iterationGroup.steps.every(
+          (s) => s.status === 'success',
+        )
+        if (isGroupSuccess) {
+          iterationGroup.status = 'success'
+        } else {
+          iterationGroup.status = 'failure'
+        }
+      }
     }
   })
 
@@ -61,7 +80,7 @@ export const processExecutionSteps = (executionSteps: IExecutionStep[]) => {
         (counts[iteration.status as keyof typeof counts] || 0) + 1
       return counts
     },
-    { success: 0, failure: 0 },
+    { success: 0, failure: 0, waiting: 0 },
   )
 
   return {

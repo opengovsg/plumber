@@ -1,35 +1,54 @@
+// import { IExecution } from '@plumber/types'
+
 import { useMemo } from 'react'
-import { FaCheck, FaTimes } from 'react-icons/fa'
-import { Flex, Icon, Tag } from '@chakra-ui/react'
+import { Flex, Tag } from '@chakra-ui/react'
 
 import { SingleSelect } from '@/components/SingleSelect'
 import { type GroupedSteps } from '@/helpers/processExecutionSteps'
 
+// import { RetryAllButton } from '../ExecutionStep/components/RetryAllButton'
+import { GroupStatusType } from './GroupStatusFilter'
+
 interface IterationSelectorProps {
+  // canRetryAll: boolean
+  // execution: IExecution
   groupedSteps: GroupedSteps
   selectedIteration: string
   setSelectedIteration: (iteration: string) => void
 }
 
 export default function IterationSelector({
+  // canRetryAll,
+  // execution,
   groupedSteps,
   selectedIteration,
   setSelectedIteration,
 }: IterationSelectorProps) {
-  const selectedIterationStep = groupedSteps[Number(selectedIteration)]
-  const isSelectedIterationSuccessful =
-    selectedIterationStep?.status === 'success'
-
   const items = useMemo(() => {
     return groupedSteps.map(({ iteration, status }) => ({
-      label: `Iteration ${iteration}`,
+      label: (
+        <Flex alignItems="center" gap={4}>
+          Item {iteration}
+          <Tag
+            colorScheme={
+              status === GroupStatusType.Waiting
+                ? 'gray'
+                : status === GroupStatusType.Success
+                ? 'success'
+                : 'critical'
+            }
+            size="xs"
+            borderRadius="md"
+          >
+            {status === GroupStatusType.Waiting
+              ? 'Waiting'
+              : status === GroupStatusType.Success
+              ? 'Success'
+              : 'Failure'}
+          </Tag>
+        </Flex>
+      ),
       value: iteration.toString(),
-      badge:
-        status === 'success' ? (
-          <Icon as={FaCheck} color="green" ml={4} />
-        ) : (
-          <Icon as={FaTimes} color="red" ml={4} />
-        ),
     }))
   }, [groupedSteps])
 
@@ -45,12 +64,8 @@ export default function IterationSelector({
         isClearable={false}
         colorScheme="secondary"
       />
-      <Tag
-        colorScheme={isSelectedIterationSuccessful ? 'success' : 'critical'}
-        size="lg"
-      >
-        {isSelectedIterationSuccessful ? 'Success' : 'Failure'}
-      </Tag>
+      {/* TODO: add retry buttons */}
+      {/* {canRetryAll && <RetryAllButton execution={execution} type="iteration" />} */}
     </Flex>
   )
 }
