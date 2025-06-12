@@ -91,10 +91,11 @@ export const processAction = async (options: ProcessActionOptions) => {
     .findById(executionId)
     .throwIfNotFound()
 
-  const { forEachStepIndex, stepPositions, isForEachStep } = getForEachContext(
-    flow,
-    step,
-  )
+  const { forEachStepIndex, stepPositions, lastStepId, isForEachStep } =
+    getForEachContext(flow, step)
+  if (forEachStepIndex > -1 && lastStepId === stepId) {
+    metadata.isLastStep = true
+  }
 
   const $ = await globalVariable({
     flow,

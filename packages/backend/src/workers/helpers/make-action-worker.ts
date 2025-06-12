@@ -179,7 +179,10 @@ export function makeActionWorker(
         }
 
         if (!nextStep) {
-          if (nextStepMetadata?.isLastIteration) {
+          if (
+            nextStepMetadata?.isLastIteration &&
+            nextStepMetadata?.isLastStep
+          ) {
             const executionSteps = await ExecutionStep.query().where({
               execution_id: executionId,
             })
