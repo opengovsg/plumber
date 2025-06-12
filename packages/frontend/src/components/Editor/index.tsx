@@ -109,19 +109,21 @@ export default function Editor(props: EditorProps): React.ReactElement {
   // we include some grouped steps as there is no longer a nested editor
   // we identify the group by checking if the current step id is in the group
   //
-  const groupStepsToInclude = useMemo(
-    () =>
-      groupedSteps.filter((group) =>
-        group.some((step) => step.id === currentStepId),
-      ),
-    [currentStepId, groupedSteps],
-  )
+  const groupStepsToInclude = useMemo(() => {
+    const stepPosition = flow.steps.findIndex(
+      (step) => step.id === currentStepId,
+    )
+
+    return groupedSteps.flatMap((group) =>
+      group.filter((step) => step.position <= stepPosition),
+    )
+  }, [currentStepId, flow.steps, groupedSteps])
 
   const stepExecutionsToInclude = useMemo(
     () =>
       new Set([
         ...stepsBeforeGroup.map((step) => step.id),
-        ...groupStepsToInclude.flatMap((step) => step.map((s) => s.id)),
+        ...groupStepsToInclude.map((s) => s.id),
       ]),
     [stepsBeforeGroup, groupStepsToInclude],
   )
