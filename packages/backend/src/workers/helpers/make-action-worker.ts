@@ -163,8 +163,8 @@ export function makeActionWorker(
         }
 
         const isForEach =
-          currStep.appKey === TOOLBOX_APP_KEY &&
-          currStep.key === TOOLBOX_ACTIONS.FOR_EACH
+          currStep?.appKey === TOOLBOX_APP_KEY &&
+          currStep?.key === TOOLBOX_ACTIONS.FOR_EACH
 
         /**
          * FOR-EACH SPECIAL CASE

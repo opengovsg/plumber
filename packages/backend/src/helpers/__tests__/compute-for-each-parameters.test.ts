@@ -303,6 +303,7 @@ describe('getForEachContext', () => {
     expect(context).toEqual({
       forEachStepIndex: -1,
       stepPositions: {},
+      lastStepId: '',
     })
   })
 
@@ -333,7 +334,12 @@ describe('getForEachContext', () => {
     const context = getForEachContext(flowWithMultipleForEach)
 
     expect(context.forEachStepIndex).toBe(2)
-    // expect(context.stepIsInForEach).toBe(true)
+    expect(context.stepPositions).toEqual({
+      [flowWithMultipleForEach.steps[0].id]: 1,
+      [flowWithMultipleForEach.steps[1].id]: 2,
+      [flowWithMultipleForEach.steps[2].id]: 3,
+    })
+    expect(context.lastStepId).toBe(flowWithMultipleForEach.steps[2].id)
   })
 
   it('should return correct context when step is before for-each', () => {
