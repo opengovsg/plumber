@@ -179,19 +179,23 @@ export function makeActionWorker(
         }
 
         if (!nextStep) {
-          if (
-            nextStepMetadata?.isLastIteration &&
-            nextStepMetadata?.isLastStep
-          ) {
-            const executionSteps = await ExecutionStep.query().where({
-              execution_id: executionId,
-            })
+          if (nextStepMetadata?.iteration) {
+            if (
+              nextStepMetadata?.isLastIteration &&
+              nextStepMetadata?.isLastStep
+            ) {
+              const executionSteps = await ExecutionStep.query().where({
+                execution_id: executionId,
+              })
 
-            const areAllStepsSuccessful = executionSteps.every(
-              (step) => step.status === 'success',
-            )
-            if (!areAllStepsSuccessful) {
-              await Execution.setStatus(executionId, 'failure')
+              const areAllStepsSuccessful = executionSteps.every(
+                (step) => step.status === 'success',
+              )
+              if (!areAllStepsSuccessful) {
+                await Execution.setStatus(executionId, 'failure')
+                return
+              }
+            } else {
               return
             }
           }
