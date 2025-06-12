@@ -16,8 +16,6 @@ export const SINGLE_STEP_TEST_KILL_SWITCH = 'single_step_test_kill_switch'
 export const BULK_RETRY_EXECUTIONS_FLAG = 'bulk-retry-failed-executions-v1'
 export const SGID_FEATURE_FLAG = 'sgid-login'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
-export const HIDE_POSTMAN_UPLOAD_ATTACHMENT_FLAG =
-  'hide-postman-upload-attachment'
 
 /**
  * App/events flags
