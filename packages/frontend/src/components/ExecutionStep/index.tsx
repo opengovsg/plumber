@@ -40,12 +40,11 @@ export default function ExecutionStep({
   executionStep,
   isInForEach,
 }: ExecutionStepProps): React.ReactElement | null {
-  const { appKey, jobId, key, errorDetails, status } = executionStep
+  const { appKey, jobId, errorDetails, status } = executionStep
 
   const { app, appName, statusIcon, hasError, isPartialSuccess, canRetry } =
     useExecutionStepStatus({
       appKey,
-      stepKey: key,
       status,
       errorDetails,
       execution,
