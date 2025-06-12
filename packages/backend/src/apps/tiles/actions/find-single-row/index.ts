@@ -82,9 +82,6 @@ const action: IRawAction = {
     }
 
     const step = await Step.query().findById($.step.id).throwIfNotFound()
-    /**
-     * Check for columns first, there will not be any columns if the tile has been deleted.
-     */
 
     const table = await TableMetadata.query()
       .findById(tableId)
