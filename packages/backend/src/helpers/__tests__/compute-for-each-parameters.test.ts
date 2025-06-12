@@ -298,11 +298,10 @@ describe('getForEachContext', () => {
       ],
     } as unknown as Flow
 
-    const context = getForEachContext(flowWithoutForEach, 1)
+    const context = getForEachContext(flowWithoutForEach)
 
     expect(context).toEqual({
       forEachStepIndex: -1,
-      stepIsInForEach: false,
       stepPositions: {},
     })
   })
@@ -331,28 +330,26 @@ describe('getForEachContext', () => {
       ],
     } as unknown as Flow
 
-    const context = getForEachContext(flowWithMultipleForEach, 3)
+    const context = getForEachContext(flowWithMultipleForEach)
 
     expect(context.forEachStepIndex).toBe(2)
-    expect(context.stepIsInForEach).toBe(true)
+    // expect(context.stepIsInForEach).toBe(true)
   })
 
   it('should return correct context when step is before for-each', () => {
-    const context = getForEachContext(mockFlow, 1)
+    const context = getForEachContext(mockFlow)
 
     expect(context.forEachStepIndex).toBe(2)
-    expect(context.stepIsInForEach).toBe(false)
   })
 
   it('should return correct context when step is after for-each', () => {
-    const context = getForEachContext(mockFlow, 3)
+    const context = getForEachContext(mockFlow)
 
     expect(context.forEachStepIndex).toBe(2)
-    expect(context.stepIsInForEach).toBe(true)
   })
 
   it('should return correct step positions', () => {
-    const context = getForEachContext(mockFlow, 1)
+    const context = getForEachContext(mockFlow)
 
     expect(context.stepPositions).toEqual({
       [mockFlow.steps[0].id]: 1,
@@ -369,7 +366,6 @@ describe('computeForEachParameters', () => {
     testRun: false,
     executionStepMetadata: { iteration: baseIteration },
     forEachStepIndex: 2,
-    stepIsInForEach: true,
     stepPositions: {
       [mockFlow.steps[0].id]: 1,
       [mockFlow.steps[1].id]: 2,
