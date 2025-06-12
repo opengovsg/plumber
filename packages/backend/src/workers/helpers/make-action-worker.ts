@@ -162,16 +162,23 @@ export function makeActionWorker(
           })
         }
 
-        /**
-         * FOR-EACH SPECIAL CASE
-         * 1. nextStep is null for the for-each execution step
-         * 2. execution with for-each is only a success if all iterations are a success
-         */
         const isForEach =
           currStep.appKey === TOOLBOX_APP_KEY &&
           currStep.key === TOOLBOX_ACTIONS.FOR_EACH
 
-        if (!nextStep && !isForEach) {
+        /**
+         * FOR-EACH SPECIAL CASE
+         * 1. nextStep is null for the for-each execution step, return if its not the last iteration
+         *    so that we do not prematurely set the execution status to success and it can be
+         *    reflected accurately as waiting
+         * 2. if any iteration fails, the execution is set to failed
+         * 3. if all iterations are successful, the execution is set to success
+         */
+        if (!nextStep && isForEach) {
+          return
+        }
+
+        if (!nextStep) {
           if (nextStepMetadata?.isLastIteration) {
             const executionSteps = await ExecutionStep.query().where({
               execution_id: executionId,
