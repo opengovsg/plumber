@@ -1,5 +1,7 @@
 import { IExecutionStepMetadata, IJSONObject } from '@plumber/types'
 
+import { raw } from 'objection'
+
 import appConfig from '@/config/app'
 
 import Base from './base'
@@ -80,6 +82,68 @@ class ExecutionStep extends Base {
     }
 
     return `${appConfig.baseUrl}/apps/${this.appKey}/assets/favicon.svg`
+  }
+
+  static async getForEachExecutionSteps(executionId: string) {
+    return ExecutionStep.query()
+      .with('latest_steps', (builder) => {
+        /**
+         * NOTE: there is a known issue with knex where 'groupBy' are placed at the end of the 'unionAll' query.
+         * the workaround is to unionAll both queries with 'true' to wrap the subequery.
+         */
+        builder
+          .unionAll((qb) => {
+            qb.select(
+              'step_id',
+              raw('max(created_at) as max_created_at'),
+              raw('min(created_at) as min_created_at'),
+            )
+              .from('execution_steps')
+              .groupBy('step_id')
+              .where('execution_id', '=', executionId)
+              .where(raw("metadata = '{}'::jsonb"))
+              .withSoftDeleted()
+          }, true)
+          .unionAll((qb) => {
+            qb.select(
+              'step_id',
+              raw('max(created_at) as max_created_at'),
+              raw('min(created_at) as min_created_at'),
+            )
+              .from('execution_steps')
+              .groupBy('step_id', raw("metadata->>'iteration'"))
+              .where('execution_id', '=', executionId)
+              .where(raw("metadata != '{}'::jsonb"))
+              .withSoftDeleted()
+          }, true)
+          .withSoftDeleted()
+      })
+      .join('latest_steps', (builder) => {
+        builder
+          .on('execution_steps.step_id', '=', 'latest_steps.step_id')
+          .andOn(
+            'execution_steps.created_at',
+            '=',
+            'latest_steps.max_created_at',
+          )
+      })
+      .select('execution_steps.*', 'min_created_at')
+      .withSoftDeleted()
+      .orderBy('min_created_at', 'asc')
+  }
+
+  static async getForEachExecutionState(executionId: string) {
+    const executionSteps = await ExecutionStep.getForEachExecutionSteps(
+      executionId,
+    )
+    return {
+      hasLastIterationRun: executionSteps.some(
+        (step) => step.metadata?.isLastIteration && step.metadata?.isLastStep,
+      ),
+      areAllStepsSuccessful: executionSteps.every(
+        (step) => step.status === 'success',
+      ),
+    }
   }
 }
 

@@ -114,8 +114,8 @@ export function computeForEachParameters({
   }
 
   if (
-    executionStep.appKey === TOOLBOX_APP_KEY &&
-    executionStep.key === TOOLBOX_ACTIONS.FOR_EACH
+    executionStep?.appKey === TOOLBOX_APP_KEY &&
+    executionStep?.key === TOOLBOX_ACTIONS.FOR_EACH
   ) {
     dataValue = get(data, forEachKeyPath as string) || ''
   } else if (currentStepIndex > forEachStepIndex) {

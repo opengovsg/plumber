@@ -168,35 +168,50 @@ export function makeActionWorker(
 
         /**
          * FOR-EACH SPECIAL CASE
-         * 1. nextStep is null for the for-each execution step, return if its not the last iteration
-         *    so that we do not prematurely set the execution status to success and it can be
-         *    reflected accurately as waiting
-         * 2. if any iteration fails, the execution is set to failed
-         * 3. if all iterations are successful, the execution is set to success
+         * nextStep is null for the for-each execution step, return if its not the last iteration
+         * so that we do not prematurely set the execution status to success and it can be
+         * reflected accurately as waiting
          */
         if (!nextStep && isForEach) {
           return
         }
 
         if (!nextStep) {
+          /**
+           * FOR-EACH SPECIAL CASE
+           * default state is null (waiting for all iterations to execute)
+           * if any iteration fails, the execution is immediately set to failure
+           * if all iterations are successful, the execution is set to success
+           */
           if (nextStepMetadata?.iteration) {
+            const { hasLastIterationRun, areAllStepsSuccessful } =
+              await ExecutionStep.getForEachExecutionState(executionId)
+
+            // end of the execution: all iterations ran successfully up to the last iteration and last step
             if (
               nextStepMetadata?.isLastIteration &&
               nextStepMetadata?.isLastStep
             ) {
-              const executionSteps = await ExecutionStep.query().where({
-                execution_id: executionId,
-              })
-
-              const areAllStepsSuccessful = executionSteps.every(
-                (step) => step.status === 'success',
-              )
               if (!areAllStepsSuccessful) {
                 await Execution.setStatus(executionId, 'failure')
                 return
               }
             } else {
-              return
+              // handle failures and retries
+              if (nextStepMetadata?.isLastStep) {
+                if (!areAllStepsSuccessful) {
+                  await Execution.setStatus(executionId, 'failure')
+                  return
+                }
+
+                // if the last iteration has not run, it means this flow is still executing
+                // we return early to preserve the waiting state of the execution
+                if (!hasLastIterationRun) {
+                  return
+                }
+              } else {
+                return
+              }
             }
           }
 
