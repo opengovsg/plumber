@@ -10,7 +10,7 @@ export type ComboboxItem<T = string> =
        */
       value: T
       /** Label to render on input when selected. `value` will be used if this is not provided */
-      label?: string
+      label?: string | JSX.Element
       /** Description to render below label if provided */
       description?: string
       /** Whether item is disabled */

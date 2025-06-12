@@ -3,17 +3,18 @@ import type { IApp, IExecution } from '@plumber/types'
 import { useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 
+import { GroupStatusType } from '@/components/ExecutionGroup/GroupStatusFilter'
 import { GET_APP } from '@/graphql/queries/get-app'
 
 import {
   failureIcon,
   partialIcon,
   successIcon,
+  waitingIcon,
 } from '../components/StatusIcons'
 
 export interface UseExecutionStepStatusProps {
   appKey: string
-  stepKey: string
   status?: string
   errorDetails?: any
   execution?: IExecution
@@ -33,7 +34,6 @@ export interface UseExecutionStepStatusReturn {
 
 export function useExecutionStepStatus({
   appKey,
-  //   stepKey,  // TODO: get more specific app name
   status,
   errorDetails,
   execution,
@@ -57,8 +57,11 @@ export function useExecutionStepStatus({
     if (isStepSuccessful) {
       return successIcon
     }
+    if (status === GroupStatusType.Waiting) {
+      return waitingIcon
+    }
     return failureIcon
-  }, [isPartialSuccess, isStepSuccessful])
+  }, [isPartialSuccess, isStepSuccessful, status])
 
   return {
     app,

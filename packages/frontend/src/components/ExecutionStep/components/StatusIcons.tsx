@@ -1,4 +1,5 @@
 import { BiSolidCheckCircle, BiSolidErrorCircle } from 'react-icons/bi'
+import { CgSandClock } from 'react-icons/cg'
 import { Icon } from '@chakra-ui/react'
 
 const successIcon = (
@@ -24,4 +25,8 @@ const partialIcon = (
   />
 )
 
-export { failureIcon, partialIcon, successIcon }
+const waitingIcon = (
+  <Icon boxSize={6} as={CgSandClock} color="interaction.warning.default" />
+)
+
+export { failureIcon, partialIcon, successIcon, waitingIcon }

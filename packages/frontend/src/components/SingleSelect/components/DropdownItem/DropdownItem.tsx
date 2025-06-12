@@ -58,10 +58,14 @@ export const DropdownItem = ({
               whiteSpace="nowrap"
               overflowX="hidden"
             >
-              <DropdownItemTextHighlighter
-                inputValue={inputValue ?? ''}
-                textToHighlight={label}
-              />
+              {typeof label === 'string' ? (
+                <DropdownItemTextHighlighter
+                  inputValue={inputValue ?? ''}
+                  textToHighlight={label}
+                />
+              ) : (
+                label
+              )}
             </Text>
             {badge}
           </Flex>
