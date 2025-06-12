@@ -172,6 +172,20 @@ export const processAction = async (options: ProcessActionOptions) => {
       ? 'success'
       : 'failure'
 
+  /**
+   * FOR-EACH + IF-THEN SPECIAL CASE
+   * when there are if-then actions in the for-each, not all steps may run so the lastStep check may not work
+   * if-then uses stop-execution to terminate the flow, so we need to set the isLastStep to true
+   * so that the execution status is set to success
+   */
+  if (
+    !testRun &&
+    forEachStepIndex > -1 &&
+    runResult.nextStep?.command === 'stop-execution'
+  ) {
+    metadata.isLastStep = true
+  }
+
   const executionStep = await execution
     .$relatedQuery('executionSteps')
     .insertAndFetch({
