@@ -328,6 +328,8 @@ type ExecutionStep {
 type ExecutionStepMetadata {
   isMock: Boolean
   iteration: Int
+  isLastIteration: Boolean
+  isLastStep: Boolean
 }
 
 type Field {

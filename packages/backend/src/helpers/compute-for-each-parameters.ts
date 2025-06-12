@@ -31,6 +31,7 @@ export function getForEachContext(
   forEachStepIndex: number
   stepPositions: Record<string, number>
   isForEachStep: boolean
+  lastStepId: string
 } {
   const isForEachStep =
     step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH
@@ -44,18 +45,31 @@ export function getForEachContext(
       forEachStepIndex: -1,
       stepPositions: {},
       isForEachStep,
+      lastStepId: '',
     }
   }
 
-  const stepPositions = flow.steps.reduce((acc, step) => {
-    acc[step.id] = step.position
-    return acc
-  }, {} as Record<string, number>)
+  const { stepPositions, lastStepId } = flow.steps.reduce(
+    (acc, step) => {
+      acc.stepPositions[step.id] = step.position
+      if (step.position > acc.maxPosition) {
+        acc.maxPosition = step.position
+        acc.lastStepId = step.id
+      }
+      return acc
+    },
+    {
+      stepPositions: {} as Record<string, number>,
+      maxPosition: -1,
+      lastStepId: '',
+    },
+  )
 
   return {
     forEachStepIndex: forEachSteps[0].position,
     stepPositions,
     isForEachStep,
+    lastStepId,
   }
 }
 
