@@ -1,3 +1,5 @@
+import type { TestRunStepMetadata } from '@plumber/types'
+
 import EarlyExitError from '@/errors/early-exit'
 import HttpError from '@/errors/http'
 import globalVariable from '@/helpers/global-variable'
@@ -6,6 +8,7 @@ import Flow from '@/models/flow'
 type ProcessFlowOptions = {
   flowId: string
   testRun?: boolean
+  testRunMetadata?: TestRunStepMetadata
 }
 
 // TODO(ian): change this function name, it's actually processing trigger
@@ -29,7 +32,7 @@ export const processFlow = async (options: ProcessFlowOptions) => {
   try {
     // why not check if test run here?
     if (triggerCommand.type === 'webhook' && !flow.active) {
-      await triggerCommand.testRun($)
+      await triggerCommand.testRun($, options.testRunMetadata)
     } else {
       await triggerCommand.run($)
     }

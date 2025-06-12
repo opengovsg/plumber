@@ -2,13 +2,30 @@ import {
   IDataOutMetadata,
   IDataOutMetadatum,
   IExecutionStep,
+  IGlobalVariable,
   IJSONObject,
 } from '@plumber/types'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ADDRESS_LABELS } from '../../common/constants'
 import trigger from '../../triggers/new-submission'
+
+const pushTriggerItemMock = vi.fn()
+const getLastExecutionStepMock = vi.fn()
+
+const mocks = vi.hoisted(() => ({
+  getMockData: vi.fn(),
+  getFormDetailsFromGlobalVariable: vi.fn(),
+}))
+
+vi.mock('../../triggers/new-submission/get-mock-data', () => ({
+  default: mocks.getMockData,
+}))
+
+vi.mock('../../common/webhook-settings', () => ({
+  getFormDetailsFromGlobalVariable: mocks.getFormDetailsFromGlobalVariable,
+}))
 
 describe('new submission trigger', () => {
   let executionStep: IExecutionStep
@@ -42,6 +59,117 @@ describe('new submission trigger', () => {
     } as unknown as IExecutionStep
   })
 
+  describe('testRun', () => {
+    const $ = {
+      auth: { data: { formId: '123' } },
+      user: { email: 'test@test.com' },
+      pushTriggerItem: pushTriggerItemMock,
+      getLastExecutionStep: getLastExecutionStepMock,
+    } as unknown as IGlobalVariable
+
+    const mockData = {
+      formId: '123',
+      responses: {
+        mockTextFieldId: {
+          question: 'What is your name?',
+          answer: 'herp derp',
+        },
+      },
+    }
+
+    const actualData = {
+      formId: '123',
+      responses: {
+        textFieldId: {
+          question: 'What is your age?',
+          answer: 10,
+        },
+      },
+    }
+
+    beforeEach(() => {
+      mocks.getMockData.mockResolvedValue(mockData)
+      mocks.getFormDetailsFromGlobalVariable.mockReturnValue({
+        formId: '123',
+      })
+    })
+
+    afterEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('should use mock data if preferMock is true and there is no past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      await trigger.testRun($, { preferMock: true })
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+        },
+        isMock: true,
+      })
+    })
+
+    it('should use mock data if preferMock is true even though there is past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      await trigger.testRun($, { preferMock: true })
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+        },
+        isMock: true,
+      })
+    })
+
+    it('should use mock data if testRunMetadata is undefined and there is no past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      await trigger.testRun($, undefined)
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+        },
+        isMock: true,
+      })
+    })
+
+    it('should use last test submission if testRunMetadata is undefined and there is past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      await trigger.testRun($, undefined)
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: actualData,
+        meta: {
+          internalId: '',
+        },
+        isMock: false,
+      })
+    })
+
+    it('should use last test submission if preferMock is false and there is past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      await trigger.testRun($, { preferMock: false })
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: actualData,
+        meta: {
+          internalId: '',
+        },
+        isMock: false,
+      })
+    })
+
+    it('should use mock data if preferMock is false and there is no past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      await trigger.testRun($, { preferMock: false })
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+        },
+        isMock: true,
+      })
+    })
+  })
   describe('dataOut metadata', () => {
     it('ensures that only question, answer and answerArray props are visible', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)

@@ -9,7 +9,7 @@ const executeStep: MutationResolvers['executeStep'] = async (
   params,
   context,
 ) => {
-  const { stepId } = params.input
+  const { stepId, testRunMetadata } = params.input
 
   // Just checking for permissions here
   const stepToTest = await context.currentUser
@@ -20,6 +20,7 @@ const executeStep: MutationResolvers['executeStep'] = async (
 
   const { executionStep, executionId } = await testStep({
     stepId: stepToTest.id,
+    testRunMetadata,
   })
 
   // Update flow to use the new test execution

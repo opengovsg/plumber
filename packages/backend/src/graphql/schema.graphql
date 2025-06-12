@@ -475,6 +475,7 @@ input UpdateFlowConfigInput {
 
 input ExecuteStepInput {
   stepId: String!
+  testRunMetadata: JSONObject
 }
 
 input DeleteFlowInput {

@@ -99,6 +99,7 @@ const globalVariable = async (
         await step?.getLastExecutionStep({
           executionId: options?.sameExecution ? execution.id : undefined,
           testRunOnly: options?.testRunOnly,
+          additionalFilter: options?.additionalFilter,
         })
       )?.toJSON()
     },

@@ -1,3 +1,5 @@
+import type { TestRunStepMetadata } from '@plumber/types'
+
 import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
@@ -9,6 +11,7 @@ import { processTrigger } from '@/services/trigger'
 
 interface TestStepOptions {
   stepId: string
+  testRunMetadata?: TestRunStepMetadata
 }
 
 interface TestStepResult {
@@ -112,6 +115,7 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
     const { data, error: triggerError } = await processFlow({
       flowId: flow.id,
       testRun: true,
+      testRunMetadata: options.testRunMetadata,
     })
 
     const hasTriggerStepFailed = !!triggerError
