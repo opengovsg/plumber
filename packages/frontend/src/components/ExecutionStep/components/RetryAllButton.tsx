@@ -9,35 +9,64 @@ import { Button, Spinner, useToast } from '@opengovsg/design-system-react'
 import { BULK_RETRY_EXECUTIONS_FLAG } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { BULK_RETRY_EXECUTIONS } from '@/graphql/mutations/bulk-retry-executions'
+import { BULK_RETRY_ITERATIONS } from '@/graphql/mutations/bulk-retry-iterations'
 
 interface RetryAllButtonProps {
   execution: IExecution
+  type?: 'execution' | 'iteration'
 }
 
-export const RetryAllButton = ({ execution }: RetryAllButtonProps) => {
+export const RetryAllButton = ({ execution, type }: RetryAllButtonProps) => {
   const flowId = execution.flow?.id
+  const executionId = execution.id
   const { flags } = useContext(LaunchDarklyContext)
   const toast = useToast()
   const [isBulkRetrying, setIsBulkRetrying] = useState(false)
   const [hasBulkRetried, setHasBulkRetried] = useState(false)
   const [bulkRetryExecutions] = useMutation(BULK_RETRY_EXECUTIONS)
-  const onBulkRetryExecutions = useCallback(async () => {
-    setIsBulkRetrying(true)
+  const [bulkRetryIterations] = useMutation(BULK_RETRY_ITERATIONS)
+  const onBulkRetry = useCallback(async () => {
     try {
-      const result = await bulkRetryExecutions({
-        variables: {
-          input: {
-            flowId: flowId ?? '',
+      let message = `Plumber has started retrying all ${
+        type === 'execution'
+          ? 'failures for this pipe'
+          : 'failed items for this execution'
+      } . Please check this page after a while to see updated status.`
+
+      if (type === 'execution') {
+        const result = await bulkRetryExecutions({
+          variables: {
+            input: {
+              flowId: flowId ?? '',
+            },
           },
-        },
-      })
-      let message =
-        'Plumber has started retrying all failures for this pipe. Please check the executions page after a while to see updated status.'
-      if (result.data?.bulkRetryExecutions?.numFailedExecutions === 0) {
-        message = 'Plumber did not find any failed executions to retry.'
-      } else if (!result.data?.bulkRetryExecutions?.allSuccessfullyRetried) {
-        message =
-          'Plumber was unable to retry some failed executions. Please manually retry the failed step.'
+        })
+        if (result.data?.bulkRetryExecutions?.numFailedExecutions === 0) {
+          message = 'Plumber did not find any failed executions to retry.'
+        } else if (!result.data?.bulkRetryExecutions?.allSuccessfullyRetried) {
+          message =
+            'Plumber was unable to retry some failed executions. Please manually retry the failed step.'
+        }
+      } else {
+        if (!flowId || !executionId) {
+          throw new Error('Flow ID or execution ID is required')
+        }
+
+        const result = await bulkRetryIterations({
+          variables: {
+            input: {
+              flowId: flowId,
+              executionId: executionId,
+            },
+          },
+        })
+
+        if (result.data?.bulkRetryIterations?.numFailedIterations === 0) {
+          message = 'Plumber did not find any failed items to retry.'
+        } else if (!result.data?.bulkRetryIterations?.allSuccessfullyRetried) {
+          message =
+            'Plumber was unable to retry some failed items. Please manually retry the failed items.'
+        }
       }
 
       toast({
@@ -51,7 +80,14 @@ export const RetryAllButton = ({ execution }: RetryAllButtonProps) => {
       setIsBulkRetrying(false)
       setHasBulkRetried(true)
     }
-  }, [flowId, bulkRetryExecutions, toast])
+  }, [
+    type,
+    toast,
+    bulkRetryExecutions,
+    flowId,
+    executionId,
+    bulkRetryIterations,
+  ])
 
   if (!flags?.[BULK_RETRY_EXECUTIONS_FLAG]) {
     return null
@@ -65,9 +101,11 @@ export const RetryAllButton = ({ execution }: RetryAllButtonProps) => {
       isDisabled={hasBulkRetried}
       spinner={<Spinner fontSize={24} />}
       size="md"
-      onClick={onBulkRetryExecutions}
+      onClick={onBulkRetry}
     >
-      Retry all failures for this pipe
+      {type === 'execution'
+        ? 'Retry all failures for this pipe'
+        : 'Retry all failures'}
     </Button>
   )
 }
