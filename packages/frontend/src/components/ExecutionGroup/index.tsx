@@ -133,6 +133,8 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
             <>
               <IterationSelector
                 iterationMap={iterationMap}
+                canRetryAll={groupStats.failure > 0}
+                execution={execution}
                 selectedIteration={selectedIteration}
                 setSelectedIteration={setSelectedIteration}
                 iterationSteps={iterationSteps}
