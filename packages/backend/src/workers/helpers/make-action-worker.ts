@@ -184,34 +184,26 @@ export function makeActionWorker(
            * if all iterations are successful, the execution is set to success
            */
           if (nextStepMetadata?.iteration) {
-            const { hasLastIterationRun, areAllStepsSuccessful } =
-              await ExecutionStep.getForEachExecutionState(executionId)
+            // only need to check at the last step to set the execution status
+            if (nextStepMetadata?.isLastStep) {
+              const { hasLastIterationRun, areAllStepsSuccessful } =
+                await ExecutionStep.getForEachExecutionState(executionId)
 
-            // end of the execution: all iterations ran successfully up to the last iteration and last step
-            if (
-              nextStepMetadata?.isLastIteration &&
-              nextStepMetadata?.isLastStep
-            ) {
-              if (!areAllStepsSuccessful) {
-                await Execution.setStatus(executionId, 'failure')
-                return
-              }
-            } else {
-              // handle failures and retries
-              if (nextStepMetadata?.isLastStep) {
+              // end of the execution: all iterations ran successfully up to the last iteration and last step
+              if (nextStepMetadata?.isLastIteration) {
                 if (!areAllStepsSuccessful) {
                   await Execution.setStatus(executionId, 'failure')
                   return
                 }
+              }
 
-                // if the last iteration has not run, it means this flow is still executing
-                // we return early to preserve the waiting state of the execution
-                if (!hasLastIterationRun) {
-                  return
-                }
-              } else {
+              // if the last iteration has not run, it means this flow is still executing
+              // we return early to preserve the waiting state of the execution
+              if (!hasLastIterationRun) {
                 return
               }
+            } else {
+              return
             }
           }
 
