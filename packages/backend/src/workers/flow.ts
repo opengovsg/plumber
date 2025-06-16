@@ -7,8 +7,15 @@ import {
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
+import flowQueue from '@/queues/flow'
 import triggerQueue from '@/queues/trigger'
 import { processFlow } from '@/services/flow'
+
+import {
+  acquireCoordinationLock,
+  calculateDelays,
+  moveJobToTriggerQueue,
+} from './helpers/buffer-scheduleded-jobs'
 
 export const worker = new WorkerPro(
   'flow',
@@ -16,6 +23,37 @@ export const worker = new WorkerPro(
     const { flowId } = job.data
 
     const flow = await Flow.query().findById(flowId).throwIfNotFound()
+    const isRepeatingJob = job.opts.repeat
+
+    if (isRepeatingJob) {
+      // only need to buffer jobs if there are other jobs scheduled to run at the same time
+      const currentJobTimestamp = job.id.split(':').pop()
+      const gotLock = await acquireCoordinationLock(currentJobTimestamp)
+      if (gotLock) {
+        const repeatableJobs = await flowQueue.getRepeatableJobs()
+
+        // only get jobs that are meant to execute at the same time
+        // do not include the current job as it will automatically be handled by the worker
+        const jobsWithSameTimestamp = repeatableJobs.filter(
+          (r) => r.next === Number(currentJobTimestamp) && r.id !== flowId,
+        )
+
+        if (jobsWithSameTimestamp.length > 0) {
+          const delays = calculateDelays(
+            jobsWithSameTimestamp.length + 1,
+          ).slice(1)
+
+          for (let i = 0; i < jobsWithSameTimestamp.length; i++) {
+            const job = jobsWithSameTimestamp[i]
+            await moveJobToTriggerQueue(job.id, delays[i])
+          }
+        }
+      } else {
+        // do nothing when there is no lock, the repeatable job has already been added to the trigger queue
+        return
+      }
+    }
+
     const triggerStep = await flow.getTriggerStep()
 
     const { data, error } = await processFlow({ flowId })
