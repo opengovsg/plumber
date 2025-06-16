@@ -12,8 +12,12 @@ async function getDataOutMetadata(
     return null
   }
 
-  const dataOut = dataOutSchema.parse(rawDataOut)
-  const { inputSource, items } = dataOut
+  const dataOut = dataOutSchema.safeParse(rawDataOut)
+  if (dataOut.success === false) {
+    console.error(dataOut.error)
+    return null
+  }
+  const { inputSource, items } = dataOut.data
 
   const baseMetadata = {
     iterations: {
@@ -35,7 +39,7 @@ async function getDataOutMetadata(
       item: {
         label: 'Item',
         type: 'text',
-        displayedValue: dataOut.items[0] ?? '',
+        displayedValue: items[0] ?? '',
       },
     }
   }
