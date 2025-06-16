@@ -42,7 +42,7 @@ function processColumns(data: MultipleRowObject): {
   let inputSource = null
 
   data.columns.forEach((column: any) => {
-    // NOTE: we cam tell if its a tile column by its column id
+    // NOTE: we can tell if its a tile column by its column id
     // tiles will either have uuid or ulid as column id
     if (ULID_REGEX.test(column.id) || UUID_REGEX.test(column.id)) {
       inputSource = FOR_EACH_INPUT_SOURCE.TILES
