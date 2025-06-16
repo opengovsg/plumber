@@ -554,7 +554,7 @@ describe('getDataOutMetadata', () => {
   })
 
   describe('when inputSource is unrecognized', () => {
-    it('should throw an error for unknown input source', async () => {
+    it('should return null for unknown input source', async () => {
       const dataOut = {
         iterations: 1,
         inputSource: 'unknown-source',
@@ -565,7 +565,7 @@ describe('getDataOutMetadata', () => {
       await expect(getDataOutMetadata(executionStep)).resolves.toBeNull()
     })
 
-    it('should throw an error when inputSource is null', async () => {
+    it('should return null when inputSource is null', async () => {
       const dataOut = {
         iterations: 1,
         inputSource: null as any,
@@ -577,7 +577,7 @@ describe('getDataOutMetadata', () => {
   })
 
   describe('schema validation edge cases', () => {
-    it('should handle dataOut that fails schema validation', async () => {
+    it('should return null when dataOut fails schema validation', async () => {
       const dataOut = {
         // missing required fields
         invalidField: 'invalid',
