@@ -1,9 +1,8 @@
-import IORedis from 'ioredis'
-
 import {
   SCHEDULER_DEFAULT_INTERVAL_IN_MS,
   SCHEDULER_MAX_DELAY_IN_MS,
 } from '@/apps/scheduler/common/constants'
+import { createRedisClient } from '@/config/redis'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
@@ -12,13 +11,19 @@ import Flow from '@/models/flow'
 import triggerQueue from '@/queues/trigger'
 import { processFlow } from '@/services/flow'
 
-const redis = new IORedis()
+const redisClient = createRedisClient()
 
 export async function acquireCoordinationLock(
   timestamp: string,
 ): Promise<boolean> {
   const key = `buffer-lock:${timestamp}`
-  const lock = await redis.set(key, '1', 'PX', SCHEDULER_MAX_DELAY_IN_MS, 'NX')
+  const lock = await redisClient.set(
+    key,
+    '1',
+    'PX',
+    SCHEDULER_MAX_DELAY_IN_MS,
+    'NX',
+  )
   return lock === 'OK'
 }
 
