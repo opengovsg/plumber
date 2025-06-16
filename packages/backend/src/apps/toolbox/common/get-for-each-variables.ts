@@ -1,4 +1,7 @@
-import { FOR_EACH_INPUT_SOURCE, FOR_EACH_ITERATION_KEY } from './constants'
+import {
+  FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_ITERATION_KEY,
+} from '@/apps/toolbox/common/constants'
 
 interface ProcessedColumn {
   id: string
