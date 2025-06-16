@@ -7,6 +7,16 @@ import { Variable } from '@/helpers/variables'
 
 import { simpleSubstitute, VariableInfoMap } from '../RichTextEditor/utils'
 
+interface TableData {
+  columns?: { name: string }[]
+  rows?: unknown[]
+}
+
+const STEP_ID_REGEX =
+  /step\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+
+const getTableData = (data: unknown): TableData => data as TableData
+
 const deepCompare = (a: any, b: any, varInfoMap: VariableInfoMap): boolean => {
   if (a === b) {
     return true
@@ -96,6 +106,32 @@ export const matchParamsToDataIn = (
       return (
         simpleSubstitute(String(paramValue), varInfoMap) === lastTestFilename
       )
+    }
+
+    // NOTE: special handling for for-each step
+    if (key === 'items') {
+      const match = String(paramValue).match(STEP_ID_REGEX)
+      const searchKey = match?.[0]
+      if (!searchKey) {
+        return false
+      }
+
+      const tableData = getTableData(lastTest)
+      const varRowsFound = varInfoMap.get(
+        `{{${searchKey}.rowsFound}}`,
+      )?.testRunValue
+
+      if (Number(varRowsFound) !== Number(tableData.rows?.length)) {
+        return false
+      }
+
+      const lastTestColumns = tableData.columns?.map((c) => c.name) ?? []
+      const varInfo = Array.from(varInfoMap.entries())
+        .filter(([key]) => key.includes(`${searchKey}.data`))
+        .map(([, value]) => value)
+      const varColumns = new Set(varInfo.map((item) => item.label))
+
+      return lastTestColumns.every((label) => varColumns.has(label))
     }
 
     // Handle arrays and objects using deep comparison
