@@ -6,7 +6,7 @@ import {
   acquireCoordinationLock,
   calculateDelays,
   moveJobToTriggerQueue,
-} from '../helpers/buffer-scheduleded-jobs'
+} from '../helpers/buffer-scheduled-jobs'
 
 const mocks = vi.hoisted(() => ({
   redisSet: vi.fn(),

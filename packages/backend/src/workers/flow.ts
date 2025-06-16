@@ -15,7 +15,7 @@ import {
   acquireCoordinationLock,
   calculateDelays,
   moveJobToTriggerQueue,
-} from './helpers/buffer-scheduleded-jobs'
+} from './helpers/buffer-scheduled-jobs'
 
 export const worker = new WorkerPro(
   'flow',
