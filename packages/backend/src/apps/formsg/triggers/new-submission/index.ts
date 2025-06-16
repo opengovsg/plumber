@@ -112,13 +112,17 @@ const trigger: IRawTrigger = {
       ? await getMockData($)
       : lastSubmittedTestExecutionStep?.dataOut
 
+    const lastTestSubmissionDate = lastSubmittedTestExecutionStep?.createdAt
+      ? new Date(lastSubmittedTestExecutionStep.createdAt).toISOString()
+      : undefined
     // if different or no form is detected, use mock data
     await $.pushTriggerItem({
       raw: testData,
       meta: {
         internalId: '',
+        isMock: shouldUseMockData,
+        lastTestSubmissionDate,
       },
-      isMock: shouldUseMockData,
     })
   },
 }

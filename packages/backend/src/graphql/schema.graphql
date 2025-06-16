@@ -320,6 +320,7 @@ type ExecutionStep {
 
 type ExecutionStepMetadata {
   isMock: Boolean
+  lastTestSubmissionDate: String
 }
 
 type Field {

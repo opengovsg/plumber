@@ -127,6 +127,7 @@ export interface IExecutionStep {
 
 export interface IExecutionStepMetadata {
   isMock?: boolean
+  lastTestSubmissionDate?: string
 }
 
 export interface IExecution {
@@ -633,8 +634,8 @@ export interface ITriggerItem {
   raw: IJSONObject
   meta: {
     internalId: string
+    [key: string]: unknown
   }
-  isMock?: boolean
 }
 
 export type ITriggerInstructions = Partial<{

@@ -79,6 +79,9 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
     ...(error && { status: 'failure' }),
   })
 
+  // We store all metadata except internalId
+  const { internalId: _, ...metadataToStore } = triggerItem?.meta ?? {}
+
   const executionStep = await execution
     .$relatedQuery('executionSteps')
     .insertAndFetch({
@@ -88,7 +91,7 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
       dataOut: !error ? triggerItem?.raw : null,
       errorDetails: error,
       appKey: step.appKey,
-      metadata: triggerItem?.isMock ? { isMock: true } : {},
+      metadata: metadataToStore ?? {},
     })
 
   return {

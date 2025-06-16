@@ -105,20 +105,25 @@ describe('new submission trigger', () => {
         raw: mockData,
         meta: {
           internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
         },
-        isMock: true,
       })
     })
 
     it('should use mock data if preferMock is true even though there is past submission', async () => {
-      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
       await trigger.testRun($, { preferMock: true })
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: mockData,
         meta: {
           internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: '2025-06-16 07:06:30.155+00',
         },
-        isMock: true,
       })
     })
 
@@ -129,32 +134,41 @@ describe('new submission trigger', () => {
         raw: mockData,
         meta: {
           internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
         },
-        isMock: true,
       })
     })
 
     it('should use last test submission if testRunMetadata is undefined and there is past submission', async () => {
-      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
       await trigger.testRun($, undefined)
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: actualData,
         meta: {
           internalId: '',
+          isMock: false,
+          lastTestSubmissionDate: '2025-06-16 07:06:30.155+00',
         },
-        isMock: false,
       })
     })
 
     it('should use last test submission if preferMock is false and there is past submission', async () => {
-      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
       await trigger.testRun($, { preferMock: false })
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: actualData,
         meta: {
           internalId: '',
+          isMock: false,
+          lastTestSubmissionDate: '2025-06-16 07:06:30.155+00',
         },
-        isMock: false,
       })
     })
 
@@ -165,8 +179,9 @@ describe('new submission trigger', () => {
         raw: mockData,
         meta: {
           internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
         },
-        isMock: true,
       })
     })
   })
