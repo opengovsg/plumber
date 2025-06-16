@@ -2,16 +2,16 @@ import type { IAction } from '@plumber/types'
 
 import get from 'lodash.get'
 
+import {
+  computeForEachParameters,
+  ForEachContext,
+} from '@/helpers/compute-for-each-parameters'
 import ExecutionStep from '@/models/execution-step'
 
 import Step from '../models/step'
 
 const variableRegExp =
   /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/g
-import {
-  computeForEachParameters,
-  ForEachContext,
-} from './compute-for-each-parameters'
 
 function findAndSubstituteVariables(
   // i.e. the `key` corresponding to this variable's form field in defineAction
