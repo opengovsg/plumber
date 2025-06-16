@@ -4,7 +4,6 @@ import { DateTime } from 'luxon'
 
 import cronTimes from '../../common/cron-times'
 import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
-import getInternalId from '../../common/get-internal-id'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
 import getDataOutMetadata from '../get-data-out-metadata'
 
@@ -54,7 +53,7 @@ const trigger: IRawTrigger = {
     const dataItem = {
       raw: dateTimeObjectRepresentation,
       meta: {
-        internalId: getInternalId(dateTime),
+        internalId: dateTime.toMillis().toString(),
       },
     }
 
