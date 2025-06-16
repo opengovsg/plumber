@@ -93,7 +93,7 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   const { forEachStepIndex, stepPositions, lastStepId, isForEachStep } =
     getForEachContext(flow, step)
-  if (!testRun && forEachStepIndex > -1 && lastStepId === stepId) {
+  if (!testRun && forEachStepIndex > -1 && lastStepId === stepId && metadata) {
     metadata.isLastStep = true
   }
 
@@ -181,7 +181,8 @@ export const processAction = async (options: ProcessActionOptions) => {
   if (
     !testRun &&
     forEachStepIndex > -1 &&
-    runResult.nextStep?.command === 'stop-execution'
+    runResult.nextStep?.command === 'stop-execution' &&
+    metadata
   ) {
     metadata.isLastStep = true
   }
