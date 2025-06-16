@@ -38,24 +38,27 @@ function processColumns(data: MultipleRowObject): {
   inputSource: InputSource
   processedColumns: ProcessedColumn[]
 } {
-  const processedColumns: ProcessedColumn[] = []
-  let inputSource = null
-
-  data.columns.forEach((column: any) => {
-    // NOTE: we can tell if its a tile column by its column id
-    // tiles will either have uuid or ulid as column id
-    if (ULID_REGEX.test(column.id) || UUID_REGEX.test(column.id)) {
-      inputSource = FOR_EACH_INPUT_SOURCE.TILES
-    } else {
-      inputSource = FOR_EACH_INPUT_SOURCE.M365_EXCEL
+  if (data.columns.length === 0) {
+    return {
+      inputSource: null,
+      processedColumns: [],
     }
+  }
 
-    processedColumns.push({
-      id: column.id,
-      name: column.name,
-      value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${column.id}`,
-    })
-  })
+  // NOTE: we can tell if its a tile column by its column id
+  // tiles will either have uuid or ulid as column id
+  const hasTileColumn = data.columns.every(
+    (column: any) => ULID_REGEX.test(column.id) || UUID_REGEX.test(column.id),
+  )
+  const inputSource = hasTileColumn
+    ? FOR_EACH_INPUT_SOURCE.TILES
+    : FOR_EACH_INPUT_SOURCE.M365_EXCEL
+
+  const processedColumns = data.columns.map((column: any) => ({
+    id: column.id,
+    name: column.name,
+    value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${column.id}`,
+  }))
 
   // NOTE: only tiles will have rowId
   if (inputSource === FOR_EACH_INPUT_SOURCE.TILES) {
