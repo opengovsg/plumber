@@ -1,11 +1,11 @@
 import { randomUUID } from 'crypto'
 import { describe, expect, it } from 'vitest'
 
-import { FOR_EACH_ITERATION_KEY } from '../../common/constants'
+import { FOR_EACH_ITERATION_KEY } from '@/apps/toolbox/common/constants'
 import {
   isCheckboxItems,
   processItems,
-} from '../../common/get-for-each-variables'
+} from '@/apps/toolbox/common/get-for-each-variables'
 
 describe('get-for-each-variables', () => {
   describe('isCheckboxItems', () => {
@@ -74,8 +74,8 @@ describe('get-for-each-variables', () => {
           },
         ],
         columns: [
-          { id: col1Id, name: 'Column 1' },
-          { id: col2Id, name: 'Column 2' },
+          { id: col1Id, name: 'Column 1', value: `data.rows.*.data.${col1Id}` },
+          { id: col2Id, name: 'Column 2', value: `data.rows.*.data.${col2Id}` },
         ],
       }
 
@@ -118,8 +118,8 @@ describe('get-for-each-variables', () => {
           },
         ],
         columns: [
-          { id: col1Id, name: 'Column 1' },
-          { id: col2Id, name: 'Column 2' },
+          { id: col1Id, name: 'Column 1', value: `data.rows.*.data.${col1Id}` },
+          { id: col2Id, name: 'Column 2', value: `data.rows.*.data.${col2Id}` },
         ],
       }
 
@@ -164,8 +164,16 @@ describe('get-for-each-variables', () => {
           },
         ],
         columns: [
-          { id: 'col1', name: 'Excel Column 1' },
-          { id: 'col2', name: 'Excel Column 2' },
+          {
+            id: 'col1',
+            name: 'Excel Column 1',
+            value: `data.rows.*.data.col1`,
+          },
+          {
+            id: 'col2',
+            name: 'Excel Column 2',
+            value: `data.rows.*.data.col2`,
+          },
         ],
       }
 
@@ -192,7 +200,9 @@ describe('get-for-each-variables', () => {
       const col1Id = randomUUID()
       const mockData = {
         rows: [] as any[],
-        columns: [{ id: col1Id, name: 'Column 1' }],
+        columns: [
+          { id: col1Id, name: 'Column 1', value: `data.rows.*.data.${col1Id}` },
+        ],
       }
 
       const result = processItems(mockData)
@@ -217,7 +227,9 @@ describe('get-for-each-variables', () => {
     it('should handle empty rows', () => {
       const mockData = {
         rows: [] as any[],
-        columns: [{ id: 'col1', name: 'Column 1' }],
+        columns: [
+          { id: 'col1', name: 'Column 1', value: `data.rows.*.data.col1` },
+        ],
       }
 
       const result = processItems(mockData)
@@ -264,7 +276,13 @@ describe('get-for-each-variables', () => {
             rowId: 'single-row',
           },
         ],
-        columns: [{ id: colId, name: 'Single Column' }],
+        columns: [
+          {
+            id: colId,
+            name: 'Single Column',
+            value: `data.rows.*.data.${colId}`,
+          },
+        ],
       }
 
       const result = processItems(mockData)
@@ -290,7 +308,13 @@ describe('get-for-each-variables', () => {
       const uuidCol = randomUUID()
       const tilesData = {
         rows: [{ data: { [uuidCol]: 'test' }, rowId: 'test' }],
-        columns: [{ id: uuidCol, name: 'UUID Column' }],
+        columns: [
+          {
+            id: uuidCol,
+            name: 'UUID Column',
+            value: `data.rows.*.data.${uuidCol}`,
+          },
+        ],
       }
       expect(processItems(tilesData).inputSource).toBe('tiles')
 
@@ -298,14 +322,26 @@ describe('get-for-each-variables', () => {
       const ulidCol = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
       const ulidData = {
         rows: [{ data: { [ulidCol]: 'test' }, rowId: 'test' }],
-        columns: [{ id: ulidCol, name: 'ULID Column' }],
+        columns: [
+          {
+            id: ulidCol,
+            name: 'ULID Column',
+            value: `data.rows.*.data.${ulidCol}`,
+          },
+        ],
       }
       expect(processItems(ulidData).inputSource).toBe('tiles')
 
       // Test with m365-excel (regular column IDs)
       const excelData = {
         rows: [{ data: { col1: 'test' } }],
-        columns: [{ id: 'col1', name: 'Regular Column' }],
+        columns: [
+          {
+            id: 'col1',
+            name: 'Regular Column',
+            value: `data.rows.*.data.col1`,
+          },
+        ],
       }
       expect(processItems(excelData).inputSource).toBe('m365-excel')
     })
