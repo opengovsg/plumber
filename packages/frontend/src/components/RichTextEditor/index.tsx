@@ -47,6 +47,7 @@ import {
   checkAutoFocus,
   genVariableInfoMap,
   getPopoverPlacement,
+  GLOBAL_VARIABLE_REGEX,
   singleLineEditorScroll,
   substituteOldTemplates,
 } from './utils'
@@ -96,6 +97,7 @@ interface EditorProps {
   variableTypes?: TDataOutMetadatumType[]
   parentType?: string
   autoFocus?: boolean
+  singleVariableSelection?: boolean
 }
 const Editor = ({
   onChange,
@@ -107,6 +109,7 @@ const Editor = ({
   isSingleLine,
   variableTypes,
   parentType,
+  singleVariableSelection,
   autoFocus = false,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
@@ -208,6 +211,12 @@ const Editor = ({
 
   const handleVariableClick = useCallback(
     (variable: Variable) => {
+      if (
+        singleVariableSelection &&
+        editor?.getText().match(GLOBAL_VARIABLE_REGEX)
+      ) {
+        return
+      }
       editor?.commands.insertContent({
         type: StepVariable.name,
         attrs: {
@@ -226,7 +235,7 @@ const Editor = ({
         })
       }
     },
-    [editor, isMulticol],
+    [editor, isMulticol, singleVariableSelection],
   )
 
   const {
@@ -275,7 +284,15 @@ const Editor = ({
                 editable={editable ?? false}
               />
             )}
-            <EditorContent className="editor__content" editor={editor} />
+            <EditorContent
+              className="editor__content"
+              editor={editor}
+              onKeyDown={(e) => {
+                if (singleVariableSelection) {
+                  e.preventDefault()
+                }
+              }}
+            />
             <Portal>
               <PopoverContent
                 w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
@@ -318,6 +335,7 @@ interface RichTextEditorProps {
   variableTypes?: TDataOutMetadatumType[]
   parentType?: string
   autoFocus?: boolean
+  singleVariableSelection?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -333,6 +351,7 @@ const RichTextEditor = ({
   variableTypes,
   parentType,
   autoFocus,
+  singleVariableSelection,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -379,6 +398,7 @@ const RichTextEditor = ({
             variableTypes={variableTypes}
             parentType={parentType}
             autoFocus={shouldAutoFocus}
+            singleVariableSelection={singleVariableSelection}
           />
         )}
       />

@@ -48,6 +48,7 @@ const action: IRawAction = {
         op: 'is_empty',
       },
       variableTypes: ['tile_row_id'],
+      singleVariableSelection: true,
     },
     {
       label: 'Row data',
