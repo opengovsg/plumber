@@ -196,6 +196,9 @@ type ActionSubstepArgument {
   addRowButtonText: String
   tooltipText: String
 
+  # Only for string and multiline
+  singleVariableSelection: Boolean
+
   # Only for dropdown
   addNewOption: DropdownAddNewOption
 

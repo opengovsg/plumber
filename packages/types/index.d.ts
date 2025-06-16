@@ -349,6 +349,9 @@ export interface IFieldText extends IBaseField {
 
   // Not applicable if field has variables.
   autoComplete?: AutoCompleteValue
+
+  // To only allow selection of one variable
+  singleVariableSelection?: boolean
 }
 
 export interface IFieldAttachment extends IBaseField {
@@ -364,6 +367,9 @@ export interface IFieldMultiline extends IBaseField {
 
   // Not applicable if field has variables.
   autoComplete?: AutoCompleteValue
+
+  // To only allow selection of one variable
+  singleVariableSelection?: boolean
 }
 
 export interface IFieldMultiSelect extends IBaseField {
