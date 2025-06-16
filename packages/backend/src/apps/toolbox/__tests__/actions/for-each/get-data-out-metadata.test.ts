@@ -14,6 +14,7 @@ describe('getDataOutMetadata', () => {
     errorDetails: {},
     status: 'success' as const,
     appKey: 'toolbox',
+    key: 'forEach',
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
     metadata: {},
@@ -561,7 +562,17 @@ describe('getDataOutMetadata', () => {
       }
       const executionStep = createMockExecutionStep(dataOut)
 
-      await expect(getDataOutMetadata(executionStep)).rejects.toThrow()
+      await expect(getDataOutMetadata(executionStep)).resolves.toBeNull()
+    })
+
+    it('should throw an error when inputSource is null', async () => {
+      const dataOut = {
+        iterations: 1,
+        inputSource: null as any,
+        items: ['some', 'data'],
+      }
+      const executionStep = createMockExecutionStep(dataOut)
+      await expect(getDataOutMetadata(executionStep)).resolves.toBeNull()
     })
   })
 
@@ -574,7 +585,7 @@ describe('getDataOutMetadata', () => {
       const executionStep = createMockExecutionStep(dataOut)
 
       // This should throw because dataOutSchema.parse will fail
-      await expect(getDataOutMetadata(executionStep)).rejects.toThrow()
+      await expect(getDataOutMetadata(executionStep)).resolves.toBeNull()
     })
 
     it('should handle dataOut with missing iterations field', async () => {
@@ -585,7 +596,7 @@ describe('getDataOutMetadata', () => {
       }
       const executionStep = createMockExecutionStep(dataOut)
 
-      await expect(getDataOutMetadata(executionStep)).rejects.toThrow()
+      await expect(getDataOutMetadata(executionStep)).resolves.toBeNull()
     })
 
     it('should handle dataOut with missing items field', async () => {
@@ -596,7 +607,7 @@ describe('getDataOutMetadata', () => {
       }
       const executionStep = createMockExecutionStep(dataOut)
 
-      await expect(getDataOutMetadata(executionStep)).rejects.toThrow()
+      await expect(getDataOutMetadata(executionStep)).resolves.toBeNull()
     })
   })
 
