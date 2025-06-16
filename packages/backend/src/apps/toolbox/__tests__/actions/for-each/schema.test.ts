@@ -4,8 +4,8 @@ import { inputSchema } from '../../../actions/for-each/schema'
 
 describe('inputSchema', () => {
   describe('table input format', () => {
-    it('should parse valid table input', () => {
-      const validTableInput = JSON.stringify({
+    it('should handle valid table input', () => {
+      const validTableInput = {
         rows: [
           {
             data: { name: 'John', age: 25 },
@@ -19,7 +19,7 @@ describe('inputSchema', () => {
           { id: 'name', name: 'Name', value: 'name' },
           { id: 'age', name: 'Age', value: 'age' },
         ],
-      })
+      }
 
       const result = inputSchema.safeParse(validTableInput)
 
@@ -37,8 +37,8 @@ describe('inputSchema', () => {
       }
     })
 
-    it('should parse table input without rowId', () => {
-      const validTableInput = JSON.stringify({
+    it('should handle table input without rowId', () => {
+      const validTableInput = {
         rows: [
           {
             data: { name: 'Alice', score: 95.5 },
@@ -48,7 +48,7 @@ describe('inputSchema', () => {
           { id: 'name', name: 'Name', value: 'name' },
           { id: 'score', name: 'Score', value: 'score' },
         ],
-      })
+      }
 
       const result = inputSchema.safeParse(validTableInput)
 
@@ -61,76 +61,56 @@ describe('inputSchema', () => {
       }
     })
 
-    it('should trim whitespace before processing', () => {
-      const validTableInput = JSON.stringify({
-        rows: [{ data: { name: 'John' } }],
-        columns: [{ id: 'name', name: 'Name', value: 'name' }],
-      })
-
-      const result = inputSchema.safeParse(`  ${validTableInput}  `)
-
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.type).toBe('table')
-      }
-    })
-
     it('should reject table input with missing rows', () => {
-      const invalidTableInput = JSON.stringify({
+      const invalidTableInput = {
         columns: [{ id: 'name', name: 'Name', value: 'name' }],
-      })
+      }
 
       const result = inputSchema.safeParse(invalidTableInput)
 
       expect(result.success).toBe(false)
       if (result.success === false) {
-        expect(result.error.issues[0].message).toBe(
-          'Invalid table format: must have rows and columns',
-        )
+        expect(result.error.issues[0].message).toBe('Invalid input')
       }
     })
 
     it('should reject table input with missing columns', () => {
-      const invalidTableInput = JSON.stringify({
+      const invalidTableInput = {
         rows: [
           {
             data: { name: 'John' },
           },
         ],
-      })
+      }
 
       const result = inputSchema.safeParse(invalidTableInput)
 
       expect(result.success).toBe(false)
       if (result.success === false) {
-        expect((result as any).error.issues[0].message).toBe(
-          'Invalid table format: must have rows and columns',
-        )
+        expect(result.error.issues[0].message).toBe('Invalid input')
       }
     })
 
     it('should reject table input with invalid row structure', () => {
-      const invalidTableInput = JSON.stringify({
+      const invalidTableInput = {
         rows: [
           {
             invalidField: 'test',
           },
         ],
         columns: [{ id: 'name', name: 'Name', value: 'name' }],
-      })
+      }
 
       const result = inputSchema.safeParse(invalidTableInput)
 
       expect(result.success).toBe(false)
       if (result.success === false) {
-        expect(result.error.issues[0].message).toBe(
-          'Invalid table format: must have rows and columns',
-        )
+        expect(result.error.issues[0].message).toBe('Invalid input')
       }
     })
 
     it('should reject table input with invalid column structure', () => {
-      const invalidTableInput = JSON.stringify({
+      const invalidTableInput = {
         rows: [
           {
             data: { name: 'John' },
@@ -139,35 +119,42 @@ describe('inputSchema', () => {
         columns: [
           { id: 'name', name: 'Name' }, // missing 'value' field
         ],
-      })
+      }
 
       const result = inputSchema.safeParse(invalidTableInput)
 
       expect(result.success).toBe(false)
       if (result.success === false) {
-        expect(result.error.issues[0].message).toBe(
-          'Invalid table format: must have rows and columns',
-        )
+        expect(result.error.issues[0].message).toBe('Invalid input')
       }
     })
 
     it.each([
-      '{ "rows": [invalid json',
-      '{"item1": value1, "item2": "value2"}',
-      'item1,item2}',
-    ])('should reject malformed JSON', (malformedJson) => {
-      const result = inputSchema.safeParse(malformedJson)
+      {
+        input: '{ "rows": [invalid json',
+        error: 'Invalid input',
+      },
+      {
+        input: '{"item1": value1, "item2": "value2"}',
+        error: 'Invalid input',
+      },
+      {
+        input: 'item1,item2}',
+        error: 'Invalid input',
+      },
+    ])('should reject malformed JSON', ({ input, error }) => {
+      const result = inputSchema.safeParse(input)
 
       expect(result.success).toBe(false)
       if (result.success === false) {
-        expect(result.error.issues[0].message).toBe('Invalid JSON format')
+        expect(result.error.issues[0].message).toBe(error)
       }
     })
   })
 
   describe('checkbox input format', () => {
-    it('should parse single item', () => {
-      const result = inputSchema.safeParse('item1')
+    it('should handle single item', () => {
+      const result = inputSchema.safeParse(['item1'])
 
       expect(result.success).toBe(true)
       if (result.success) {
@@ -176,8 +163,8 @@ describe('inputSchema', () => {
       }
     })
 
-    it('should parse multiple comma-separated items', () => {
-      const result = inputSchema.safeParse('item1,item2,item3')
+    it('should handle multiple comma-separated items', () => {
+      const result = inputSchema.safeParse(['item1', 'item2', 'item3'])
 
       expect(result.success).toBe(true)
       if (result.success) {
@@ -187,7 +174,7 @@ describe('inputSchema', () => {
     })
 
     it('should handle items with spaces', () => {
-      const result = inputSchema.safeParse('item 1, item 2 , item 3')
+      const result = inputSchema.safeParse(['item 1', ' item 2 ', ' item 3'])
 
       expect(result.success).toBe(true)
       if (result.success) {
@@ -197,7 +184,7 @@ describe('inputSchema', () => {
     })
 
     it('should handle empty items in comma-separated list', () => {
-      const result = inputSchema.safeParse('item1,,item3')
+      const result = inputSchema.safeParse(['item1', '', 'item3'])
 
       expect(result.success).toBe(true)
       if (result.success) {
@@ -206,23 +193,22 @@ describe('inputSchema', () => {
       }
     })
 
-    it('should trim whitespace for checkbox input', () => {
-      const result = inputSchema.safeParse('  item1,item2  ')
+    it('should not trim whitespace for checkbox items', () => {
+      const result = inputSchema.safeParse(['  item1', 'item2  '])
 
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.type).toBe('checkbox')
-        expect(result.data.items).toEqual(['item1', 'item2'])
+        expect(result.data.items).toEqual(['  item1', 'item2  '])
       }
     })
 
-    it('should handle single comma (results in two empty items)', () => {
+    it('should reject single comma', () => {
       const result = inputSchema.safeParse(',')
 
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.type).toBe('checkbox')
-        expect(result.data.items).toEqual(['', ''])
+      expect(result.success).toBe(false)
+      if (result.success == false) {
+        expect(result.error.issues[0].message).toBe('Invalid input')
       }
     })
   })
@@ -233,7 +219,7 @@ describe('inputSchema', () => {
 
       expect(result.success).toBe(false)
       if (result.success === false) {
-        expect(result.error.issues[0].message).toBe('Input cannot be empty')
+        expect(result.error.issues[0].message).toBe('Invalid input')
       }
     })
 
@@ -242,7 +228,7 @@ describe('inputSchema', () => {
 
       expect(result.success).toBe(false)
       if (result.success === false) {
-        expect(result.error.issues[0].message).toBe('Input cannot be empty')
+        expect(result.error.issues[0].message).toBe('Invalid input')
       }
     })
   })

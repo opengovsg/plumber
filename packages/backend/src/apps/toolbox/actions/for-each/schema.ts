@@ -19,12 +19,9 @@ const tableInputSchema = z.object({
 
 // Create a discriminated union based on input format
 export const inputSchema = z
-  .string()
-  .min(1, 'Input cannot be empty')
-  .transform((str, ctx) => {
-    const trimmed = str.trim()
-
-    if (trimmed.length === 0) {
+  .union([z.array(z.any()), tableInputSchema])
+  .transform((data, ctx) => {
+    if (!data || (Array.isArray(data) && data.length === 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Input cannot be empty',
@@ -32,36 +29,15 @@ export const inputSchema = z
       return z.NEVER
     }
 
-    // Handle table input (JSON object)
-    if (trimmed.startsWith('{') || trimmed.endsWith('}')) {
-      try {
-        const parsed = JSON.parse(trimmed)
-        const result = tableInputSchema.safeParse(parsed)
-
-        if (!result.success) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Invalid table format: must have rows and columns',
-          })
-          return z.NEVER
-        }
-
-        return {
-          type: 'table' as const,
-          items: result.data,
-        }
-      } catch (error) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Invalid JSON format',
-        })
-        return z.NEVER
+    if (Array.isArray(data)) {
+      return {
+        type: 'checkbox' as const,
+        items: data,
       }
-    }
-
-    // Handle checkbox input (comma-separated values)
-    return {
-      type: 'checkbox' as const,
-      items: trimmed.split(','),
+    } else {
+      return {
+        type: 'table' as const,
+        items: data,
+      }
     }
   })
