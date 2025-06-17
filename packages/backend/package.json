@@ -84,7 +84,7 @@
     "zod-validation-error": "1.5.0"
   },
   "devDependencies": {
-    "@testcontainers/postgresql": "^10.2.1",
+    "@testcontainers/postgresql": "^11.0.3",
     "@types/bcrypt": "^5.0.0",
     "@types/big.js": "6.2.2",
     "@types/bull": "^3.15.8",
@@ -100,7 +100,7 @@
     "@types/multer": "1.4.12",
     "@types/pg": "^8.6.1",
     "nodemon": "^3.1.10",
-    "testcontainers": "^10.2.1",
+    "testcontainers": "^11.0.3",
     "ts-node": "^10.9.1",
     "tsc-alias": "^1.8.6",
     "tsconfig-paths": "^4.2.0",
