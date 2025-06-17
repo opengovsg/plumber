@@ -21,7 +21,7 @@ async function getDataOutMetadata(
 
   const baseMetadata = {
     iterations: {
-      label: 'Number of items',
+      label: 'Items',
       order: 1,
     },
 
@@ -53,7 +53,10 @@ async function getDataOutMetadata(
       name: { isHidden: true },
       value: {
         label: column.name,
-        displayedValue: ' ',
+        displayedValue:
+          column.id === 'rowId'
+            ? items?.rows?.[0]?.rowId
+            : items?.rows?.[0]?.data?.[column.id] ?? ' ',
         order: index + 2,
         type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
       },

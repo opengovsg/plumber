@@ -51,7 +51,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -80,7 +80,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -109,7 +109,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -139,7 +139,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -187,7 +187,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -200,7 +200,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Full Name',
-                displayedValue: ' ',
+                displayedValue: 'John Doe',
                 order: 2,
                 type: 'text',
               },
@@ -210,7 +210,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Email Address',
-                displayedValue: ' ',
+                displayedValue: 'john@example.com',
                 order: 3,
                 type: 'text',
               },
@@ -251,7 +251,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -296,7 +296,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -309,7 +309,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Task Name',
-                displayedValue: ' ',
+                displayedValue: 'Complete project',
                 order: 2,
                 type: 'text',
               },
@@ -359,7 +359,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -372,7 +372,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Title',
-                displayedValue: ' ',
+                displayedValue: 'Task 1',
                 order: 2,
                 type: 'text',
               },
@@ -382,7 +382,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Status',
-                displayedValue: ' ',
+                displayedValue: 'In Progress',
                 order: 3,
                 type: 'text',
               },
@@ -428,7 +428,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -441,7 +441,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Name',
-                displayedValue: ' ',
+                displayedValue: 'Test Item',
                 order: 2,
                 type: 'text',
               },
@@ -451,7 +451,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Row ID',
-                displayedValue: ' ',
+                displayedValue: 'tile-row-123',
                 order: 3,
                 type: 'tile_row_id', // Special type for rowId
               },
@@ -503,7 +503,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -516,7 +516,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Priority',
-                displayedValue: ' ',
+                displayedValue: 'High',
                 order: 2,
                 type: 'text',
               },
@@ -526,7 +526,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Row ID',
-                displayedValue: ' ',
+                displayedValue: 'tile-456',
                 order: 3,
                 type: 'tile_row_id',
               },
@@ -536,7 +536,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Description',
-                displayedValue: ' ',
+                displayedValue: 'Important task',
                 order: 4,
                 type: 'text',
               },
@@ -678,7 +678,7 @@ describe('getDataOutMetadata', () => {
 
       expect(result).toEqual({
         iterations: {
-          label: 'Number of items',
+          label: 'Items',
           order: 1,
         },
         inputSource: {
@@ -691,7 +691,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Number',
-                displayedValue: ' ',
+                displayedValue: 42,
                 order: 2,
                 type: 'text',
               },
@@ -701,7 +701,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Text',
-                displayedValue: ' ',
+                displayedValue: 'Hello',
                 order: 3,
                 type: 'text',
               },
