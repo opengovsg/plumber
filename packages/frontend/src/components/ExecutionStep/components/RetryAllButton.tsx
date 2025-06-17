@@ -27,6 +27,7 @@ export const RetryAllButton = ({ execution, type }: RetryAllButtonProps) => {
   const [bulkRetryIterations] = useMutation(BULK_RETRY_ITERATIONS)
   const onBulkRetry = useCallback(async () => {
     try {
+      setIsBulkRetrying(true)
       let message = `Plumber has started retrying all ${
         type === 'execution'
           ? 'failures for this pipe'

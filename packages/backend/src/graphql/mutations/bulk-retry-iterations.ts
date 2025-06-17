@@ -192,7 +192,7 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
           ...defaultLoggerMetadata,
           oldJobData: job.data,
           oldJobId: job.id,
-          newJobId: '123',
+          newJobId: newJob.id,
         })
       } catch (error) {
         logger.error('Bulk retrying iterations - ERROR', {
