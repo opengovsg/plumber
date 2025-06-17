@@ -1,4 +1,4 @@
-import { IJSONObject } from '@plumber/types'
+import { IExecutionStep, IJSONObject, IStep } from '@plumber/types'
 
 import { Text } from '@chakra-ui/react'
 import { InfoboxProps } from '@opengovsg/design-system-react'
@@ -223,4 +223,22 @@ export function getIfThenOutput(
       and your pipe <Text as="b">would not have</Text> continued.
     </Text>,
   ]
+}
+
+function getForEachIterationCount(
+  testExecutionSteps: IExecutionStep[],
+  stepId: string,
+): number {
+  const executionStep = testExecutionSteps.find(
+    (step) => step.stepId === stepId,
+  )
+  return Number(executionStep?.dataOut?.iterations) ?? 0
+}
+
+export function getForEachDataMessage(
+  testExecutionSteps: IExecutionStep[],
+  step: IStep,
+): string {
+  const numberOfItems = getForEachIterationCount(testExecutionSteps, step.id)
+  return `This for-each action will run the following steps on ${numberOfItems} items. Responses below use the first item as a sample.`
 }
