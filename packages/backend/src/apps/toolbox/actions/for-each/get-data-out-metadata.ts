@@ -22,7 +22,7 @@ async function getDataOutMetadata(
   const baseMetadata = {
     iterations: {
       label: 'Items',
-      order: 1,
+      isHidden: true,
     },
 
     // hidden fields
@@ -57,7 +57,7 @@ async function getDataOutMetadata(
           column.id === 'rowId'
             ? items?.rows?.[0]?.rowId
             : items?.rows?.[0]?.data?.[column.id] ?? ' ',
-        order: index + 2,
+        order: index + 1,
         type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
       },
     }))
