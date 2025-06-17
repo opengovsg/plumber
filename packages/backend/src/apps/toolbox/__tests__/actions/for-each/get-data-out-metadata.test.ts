@@ -52,7 +52,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -81,7 +81,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -110,7 +110,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -140,7 +140,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -188,7 +188,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -201,7 +201,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Full Name',
                 displayedValue: 'John Doe',
-                order: 2,
+                order: 1,
                 type: 'text',
               },
             },
@@ -211,7 +211,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Email Address',
                 displayedValue: 'john@example.com',
-                order: 3,
+                order: 2,
                 type: 'text',
               },
             },
@@ -252,7 +252,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -265,7 +265,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Column 1',
                 displayedValue: ' ',
-                order: 2,
+                order: 1,
                 type: 'text',
               },
             },
@@ -297,7 +297,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -310,7 +310,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Task Name',
                 displayedValue: 'Complete project',
-                order: 2,
+                order: 1,
                 type: 'text',
               },
             },
@@ -360,7 +360,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -373,7 +373,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Title',
                 displayedValue: 'Task 1',
-                order: 2,
+                order: 1,
                 type: 'text',
               },
             },
@@ -383,7 +383,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Status',
                 displayedValue: 'In Progress',
-                order: 3,
+                order: 2,
                 type: 'text',
               },
             },
@@ -429,7 +429,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -442,7 +442,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Name',
                 displayedValue: 'Test Item',
-                order: 2,
+                order: 1,
                 type: 'text',
               },
             },
@@ -452,7 +452,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Row ID',
                 displayedValue: 'tile-row-123',
-                order: 3,
+                order: 2,
                 type: 'tile_row_id', // Special type for rowId
               },
             },
@@ -504,7 +504,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -517,7 +517,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Priority',
                 displayedValue: 'High',
-                order: 2,
+                order: 1,
                 type: 'text',
               },
             },
@@ -527,7 +527,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Row ID',
                 displayedValue: 'tile-456',
-                order: 3,
+                order: 2,
                 type: 'tile_row_id',
               },
             },
@@ -537,7 +537,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Description',
                 displayedValue: 'Important task',
-                order: 4,
+                order: 3,
                 type: 'text',
               },
             },
@@ -642,9 +642,9 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result?.items?.columns).toHaveLength(3)
-      expect(result?.items?.columns?.[0]?.value?.order).toBe(2)
-      expect(result?.items?.columns?.[1]?.value?.order).toBe(3)
-      expect(result?.items?.columns?.[2]?.value?.order).toBe(4)
+      expect(result?.items?.columns?.[0]?.value?.order).toBe(1)
+      expect(result?.items?.columns?.[1]?.value?.order).toBe(2)
+      expect(result?.items?.columns?.[2]?.value?.order).toBe(3)
     })
   })
 
@@ -679,7 +679,7 @@ describe('getDataOutMetadata', () => {
       expect(result).toEqual({
         iterations: {
           label: 'Items',
-          order: 1,
+          isHidden: true,
         },
         inputSource: {
           isHidden: true,
@@ -692,7 +692,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Number',
                 displayedValue: 42,
-                order: 2,
+                order: 1,
                 type: 'text',
               },
             },
@@ -702,7 +702,7 @@ describe('getDataOutMetadata', () => {
               value: {
                 label: 'Text',
                 displayedValue: 'Hello',
-                order: 3,
+                order: 2,
                 type: 'text',
               },
             },
