@@ -32,7 +32,7 @@ export const RetryAllButton = ({ execution, type }: RetryAllButtonProps) => {
         type === 'execution'
           ? 'failures for this pipe'
           : 'failed items for this execution'
-      } . Please check this page after a while to see updated status.`
+      }. Please check this page after a while to see updated status.`
 
       if (type === 'execution') {
         const result = await bulkRetryExecutions({
