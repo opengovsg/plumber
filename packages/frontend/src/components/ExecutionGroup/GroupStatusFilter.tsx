@@ -74,17 +74,16 @@ export default function GroupStatusFilter({
   }, [groupStats])
 
   return (
-    <>
-      <SingleSelect
-        items={items}
-        isSearchable={false}
-        onChange={(value) => setStatusFilter(value as GroupStatusType)}
-        value={statusFilter}
-        name="groupStatus"
-        placeholder="Status"
-        isClearable={false}
-        colorScheme="secondary"
-      />
-    </>
+    <SingleSelect
+      items={items}
+      isSearchable={false}
+      onChange={(value) => setStatusFilter(value as GroupStatusType)}
+      value={statusFilter}
+      name="groupStatus"
+      placeholder="Status"
+      isClearable={false}
+      colorScheme="secondary"
+      isBorderless={true}
+    />
   )
 }
