@@ -19,6 +19,8 @@ import Tiles from '@/pages/Tiles'
 import Transfers from '@/pages/Transfers'
 import TransfersLayout from '@/pages/Transfers/layouts/TransfersLayout'
 import { InvalidTileLink } from '@/pages/UnauthorizedTile'
+import HumanResource from '@/pages/Landing/UseCases/HumanResource'
+
 
 const Landing = lazy(() => import('@/pages/Landing'))
 const Tile = lazy(() => import('@/pages/Tile'))
@@ -173,5 +175,14 @@ export default createRoutesFromElements(
         </Layout>
       }
     />
+
+    <Route 
+      path="/Landing/UseCases/HumanResource"
+      element={
+      <HumanResource />
+      } 
+    />
+
+
   </Route>,
 )
