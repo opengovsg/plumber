@@ -16,6 +16,7 @@ export default function TemplateTile({ template }: TemplateTileProps) {
   const navigate = useNavigate()
 
   const isDemoTemplate = tags?.some((tag) => tag === 'demo')
+  const isNewTemplate = tags?.some((tag) => tag === 'new')
 
   return (
     <Tile
@@ -25,9 +26,9 @@ export default function TemplateTile({ template }: TemplateTileProps) {
         </Box>
       )}
       badge={
-        isDemoTemplate ? (
+        isDemoTemplate || isNewTemplate ? (
           <Badge bg="primary.100" color="primary.500">
-            Demo included
+            {isDemoTemplate ? 'Demo included' : 'New'}
           </Badge>
         ) : undefined
       }
