@@ -110,6 +110,14 @@ export const matchParamsToDataIn = (
 
     // NOTE: special handling for for-each step
     if (key === 'items') {
+      // FormSG checkbox
+      if (Array.isArray(lastTest)) {
+        return (
+          simpleSubstitute(String(paramValue), varInfoMap) ===
+          lastTest.join(', ')
+        )
+      }
+
       const match = String(paramValue).match(STEP_ID_REGEX)
       const searchKey = match?.[0]
       if (!searchKey) {
