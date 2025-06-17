@@ -85,7 +85,7 @@ describe('For each action', () => {
   describe('checkbox input', () => {
     it('should handle valid checkbox input', async () => {
       const checkboxItems = ['item1', 'item2', 'item3']
-      $.step.parameters.items = 'item1,item2,item3'
+      $.step.parameters.items = ['item1', 'item2', 'item3']
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
@@ -109,8 +109,8 @@ describe('For each action', () => {
     })
 
     it('should handle checkbox input with whitespace', async () => {
-      const checkboxItems = ['item1', 'item2', 'item3']
-      $.step.parameters.items = '  item1,item2,item3  '
+      const checkboxItems = ['   item1', 'item2', 'item3']
+      $.step.parameters.items = ['   item1', 'item2', 'item3']
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
@@ -128,7 +128,7 @@ describe('For each action', () => {
 
     it('should handle single checkbox item', async () => {
       const checkboxItems = ['single-item']
-      $.step.parameters.items = 'single-item'
+      $.step.parameters.items = ['single-item']
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
@@ -145,7 +145,7 @@ describe('For each action', () => {
     })
 
     it('should throw error when checkbox items validation fails', async () => {
-      $.step.parameters.items = ''
+      $.step.parameters.items = 'item1,item2,item3'
 
       await expect(action.run($)).rejects.toThrow(StepError)
       await expect(action.run($)).rejects.toThrow('Invalid input list')
@@ -185,7 +185,7 @@ describe('For each action', () => {
     }
 
     it('should handle valid table input (Tiles)', async () => {
-      $.step.parameters.items = JSON.stringify(validTableData)
+      $.step.parameters.items = validTableData
 
       const processedResult = {
         processedItems: {
@@ -222,7 +222,7 @@ describe('For each action', () => {
         rows: validTableData.rows.map((row) => ({ data: row.data })), // No rowId for Excel
       }
 
-      $.step.parameters.items = JSON.stringify(excelData)
+      $.step.parameters.items = excelData
 
       const processedResult = {
         processedItems: {
@@ -253,7 +253,7 @@ describe('For each action', () => {
         columns: validTableData.columns,
       }
 
-      $.step.parameters.items = JSON.stringify(emptyTableData)
+      $.step.parameters.items = emptyTableData
 
       const processedResult = {
         processedItems: {
