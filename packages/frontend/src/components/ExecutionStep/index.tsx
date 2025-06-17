@@ -75,9 +75,11 @@ export default function ExecutionStep({
           </HStack>
           <HStack>
             {!isInForEach && canRetry && (
-              <RetryAllButton execution={execution} />
+              <>
+                <RetryAllButton execution={execution} />
+                <RetryButton executionStepId={executionStep.id} />
+              </>
             )}
-            {canRetry && <RetryButton executionStepId={executionStep.id} />}
           </HStack>
         </HStack>
 
