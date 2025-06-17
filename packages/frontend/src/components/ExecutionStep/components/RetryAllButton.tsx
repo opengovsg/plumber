@@ -106,7 +106,7 @@ export const RetryAllButton = ({ execution, type }: RetryAllButtonProps) => {
     >
       {type === 'execution'
         ? 'Retry all failures for this pipe'
-        : 'Retry all failures'}
+        : 'Retry all failed items'}
     </Button>
   )
 }
