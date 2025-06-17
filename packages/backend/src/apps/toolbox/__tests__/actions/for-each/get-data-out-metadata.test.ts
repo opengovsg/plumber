@@ -402,6 +402,66 @@ describe('getDataOutMetadata', () => {
       })
     })
 
+    it('should return metadata for Tiles input with empty rows', async () => {
+      const dataOut = {
+        iterations: 0,
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+        items: {
+          columns: [
+            {
+              id: 'name',
+              name: 'Name',
+              value: 'items.rows.__ITERATION__.data.name',
+            },
+            {
+              id: 'rowId',
+              name: 'Row ID',
+              value: 'items.rows.__ITERATION__.rowId',
+            },
+          ],
+          rows: [] as any[],
+        },
+      }
+      const executionStep = createMockExecutionStep(dataOut)
+
+      const result = await getDataOutMetadata(executionStep)
+
+      expect(result).toEqual({
+        iterations: {
+          label: 'Items',
+          isHidden: true,
+        },
+        inputSource: {
+          isHidden: true,
+        },
+        items: {
+          columns: [
+            {
+              id: { isHidden: true },
+              name: { isHidden: true },
+              value: {
+                label: 'Name',
+                displayedValue: ' ',
+                order: 1,
+                type: 'text',
+              },
+            },
+            {
+              id: { isHidden: true },
+              name: { isHidden: true },
+              value: {
+                label: 'Row ID',
+                displayedValue: ' ',
+                order: 2,
+                type: 'tile_row_id',
+              },
+            },
+          ],
+          rows: [],
+        },
+      })
+    })
+
     it('should return metadata for Tiles input with rowId column', async () => {
       const dataOut = {
         iterations: 1,
