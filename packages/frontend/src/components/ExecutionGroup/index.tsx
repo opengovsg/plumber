@@ -1,6 +1,6 @@
 import type { IExecution, IExecutionStep } from '@plumber/types'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Card, CardBody, Flex, Grid, HStack, Text } from '@chakra-ui/react'
 import get from 'lodash/get'
 
@@ -45,34 +45,53 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
   )
 
   const iterationsToShow = useMemo(() => {
+    if (!groupedSteps?.length) {
+      return []
+    }
+
     let filteredSteps: GroupedSteps = groupedSteps
     if (statusFilter !== GroupStatusType.All) {
       filteredSteps = groupedSteps.filter(
         (iteration) => iteration.status === statusFilter,
       )
     }
-
-    setSelectedIteration(filteredSteps[0]?.iteration.toString() ?? '1')
     return filteredSteps
   }, [groupedSteps, statusFilter])
 
+  useEffect(() => {
+    if (iterationsToShow.length > 0) {
+      // Check if current selection is still valid
+      const currentIterationExists = iterationsToShow.some(
+        (iteration) => iteration.iteration.toString() === selectedIteration,
+      )
+
+      if (!currentIterationExists) {
+        setSelectedIteration(iterationsToShow[0].iteration.toString())
+      }
+    }
+  }, [iterationsToShow, selectedIteration])
+
   const selectedIterationStep = useMemo(() => {
-    return get(groupedSteps, Number(selectedIteration) - 1)
+    const index = Number(selectedIteration) - 1
+    if (isNaN(index) || index < 0 || index >= (groupedSteps?.length ?? 0)) {
+      return null
+    }
+    return get(groupedSteps, index)
   }, [groupedSteps, selectedIteration])
 
   const { app, appName, statusIcon } = useExecutionStepStatus({
-    appKey: groupingStep.appKey,
-    status: !execution.status
+    appKey: groupingStep?.appKey ?? '',
+    status: !execution?.status
       ? GroupStatusType.Waiting
       : allIterationsSuccessful
       ? GroupStatusType.Success
       : GroupStatusType.Failure,
     errorDetails: hasError ? {} : null,
     execution,
-    jobId: groupingStep.jobId,
+    jobId: groupingStep?.jobId,
   })
 
-  if (!app) {
+  if (!execution || !groupingStep || !groupedSteps || !app) {
     return null
   }
 
