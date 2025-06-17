@@ -2,7 +2,6 @@ import type { IExecution, IExecutionStep } from '@plumber/types'
 
 import { useEffect, useMemo, useState } from 'react'
 import { Card, CardBody, Flex, Grid, HStack, Text } from '@chakra-ui/react'
-import get from 'lodash/get'
 
 import { ExecutionStep } from '@/exports/components'
 import { type GroupedSteps } from '@/helpers/processExecutionSteps'
@@ -72,11 +71,11 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
   }, [iterationsToShow, selectedIteration])
 
   const selectedIterationStep = useMemo(() => {
-    const index = Number(selectedIteration) - 1
-    if (isNaN(index) || index < 0 || index >= (groupedSteps?.length ?? 0)) {
-      return null
-    }
-    return get(groupedSteps, index)
+    return (
+      groupedSteps?.find(
+        (iteration) => iteration.iteration.toString() === selectedIteration,
+      ) ?? null
+    )
   }, [groupedSteps, selectedIteration])
 
   const { app, appName, statusIcon } = useExecutionStepStatus({
