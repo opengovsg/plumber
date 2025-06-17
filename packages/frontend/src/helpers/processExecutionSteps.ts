@@ -8,19 +8,28 @@ export type GroupedSteps = Array<{
   status: string
 }>
 
+const DEFAULT_EMPTY_RESULT = {
+  groupingStep: {} as IExecutionStep,
+  groupStats: { success: 0, failure: 0, waiting: 0 },
+  groupedSteps: [] as GroupedSteps,
+  hasGrouping: false,
+  stepsBeforeGroup: [],
+}
+
 export default function processExecutionSteps(
   executionSteps: IExecutionStep[],
 ) {
+  if (!executionSteps?.length) {
+    return DEFAULT_EMPTY_RESULT
+  }
+
   const groupingStepIndex = executionSteps?.findIndex(
     (s) => s.appKey === TOOLBOX_APP_KEY && s.key === TOOLBOX_ACTIONS.ForEach,
   )
 
-  if (groupingStepIndex && groupingStepIndex === -1) {
+  if (groupingStepIndex === -1) {
     return {
-      groupingStep: {} as IExecutionStep,
-      groupStats: { success: 0, failure: 0, waiting: 0 },
-      groupedSteps: [] as GroupedSteps,
-      hasGrouping: false,
+      ...DEFAULT_EMPTY_RESULT,
       stepsBeforeGroup: executionSteps,
     }
   }
@@ -86,7 +95,7 @@ export default function processExecutionSteps(
   return {
     groupingStep,
     groupStats,
-    hasGrouping: groupingStepIndex && groupingStepIndex !== -1,
+    hasGrouping: groupingStepIndex !== -1,
     groupedSteps,
     stepsBeforeGroup,
   }
