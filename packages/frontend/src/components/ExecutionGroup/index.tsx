@@ -59,16 +59,9 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
 
   useEffect(() => {
     if (iterationsToShow.length > 0) {
-      // Check if current selection is still valid
-      const currentIterationExists = iterationsToShow.some(
-        (iteration) => iteration.iteration.toString() === selectedIteration,
-      )
-
-      if (!currentIterationExists) {
-        setSelectedIteration(iterationsToShow[0].iteration.toString())
-      }
+      setSelectedIteration(iterationsToShow[0].iteration.toString())
     }
-  }, [iterationsToShow, selectedIteration])
+  }, [iterationsToShow])
 
   const selectedIterationStep = useMemo(() => {
     return (
