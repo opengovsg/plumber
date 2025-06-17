@@ -8,13 +8,12 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
-import Flow from '@/models/flow'
-
 import {
   computeForEachParameters,
   ForEachContext,
   getForEachContext,
-} from '../compute-for-each-parameters'
+} from '@/helpers/compute-for-each-parameters'
+import Flow from '@/models/flow'
 
 const triggerId = randomUUID()
 const randomForEachStepId = randomUUID()
@@ -298,12 +297,16 @@ describe('getForEachContext', () => {
       ],
     } as unknown as Flow
 
-    const context = getForEachContext(flowWithoutForEach)
+    const context = getForEachContext(
+      flowWithoutForEach,
+      flowWithoutForEach.steps[0],
+    )
 
     expect(context).toEqual({
       forEachStepIndex: -1,
       stepPositions: {},
       lastStepId: '',
+      isForEachStep: false,
     })
   })
 
@@ -331,7 +334,10 @@ describe('getForEachContext', () => {
       ],
     } as unknown as Flow
 
-    const context = getForEachContext(flowWithMultipleForEach)
+    const context = getForEachContext(
+      flowWithMultipleForEach,
+      flowWithMultipleForEach.steps[1],
+    )
 
     expect(context.forEachStepIndex).toBe(2)
     expect(context.stepPositions).toEqual({
@@ -340,22 +346,24 @@ describe('getForEachContext', () => {
       [flowWithMultipleForEach.steps[2].id]: 3,
     })
     expect(context.lastStepId).toBe(flowWithMultipleForEach.steps[2].id)
+    expect(context.isForEachStep).toBe(true)
   })
 
   it('should return correct context when step is before for-each', () => {
-    const context = getForEachContext(mockFlow)
+    const context = getForEachContext(mockFlow, mockFlow.steps[0])
 
     expect(context.forEachStepIndex).toBe(2)
   })
 
   it('should return correct context when step is after for-each', () => {
-    const context = getForEachContext(mockFlow)
+    const context = getForEachContext(mockFlow, mockFlow.steps[2])
 
     expect(context.forEachStepIndex).toBe(2)
+    expect(context.isForEachStep).toBe(false)
   })
 
   it('should return correct step positions', () => {
-    const context = getForEachContext(mockFlow)
+    const context = getForEachContext(mockFlow, mockFlow.steps[1])
 
     expect(context.stepPositions).toEqual({
       [mockFlow.steps[0].id]: 1,
@@ -364,6 +372,19 @@ describe('getForEachContext', () => {
       [mockFlow.steps[3].id]: 4,
     })
   })
+
+  it.each([
+    { step: mockFlow.steps[0], expected: false },
+    { step: mockFlow.steps[1], expected: true },
+    { step: mockFlow.steps[2], expected: false },
+    { step: mockFlow.steps[3], expected: false },
+  ])(
+    'should return correct isForEachStep for step %s',
+    ({ step, expected }) => {
+      const context = getForEachContext(mockFlow, step)
+      expect(context.isForEachStep).toBe(expected)
+    },
+  )
 })
 
 describe('computeForEachParameters', () => {
@@ -378,6 +399,7 @@ describe('computeForEachParameters', () => {
       [mockFlow.steps[2].id]: 3,
       [mockFlow.steps[3].id]: 4,
     },
+    isForEachStep: false,
   }
 
   it.each([
