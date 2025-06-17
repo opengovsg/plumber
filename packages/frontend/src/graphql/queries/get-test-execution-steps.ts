@@ -30,6 +30,7 @@ export const GET_TEST_EXECUTION_STEPS = gql`
       errorDetails
       metadata {
         isMock
+        lastTestSubmissionDate
       }
     }
   }

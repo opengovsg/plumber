@@ -5,14 +5,20 @@ import { useFormContext } from 'react-hook-form'
 import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 import {
   Box,
-  Grid,
-  GridItem,
+  Flex,
   HStack,
+  Icon,
   Text,
   Tooltip,
   VStack,
 } from '@chakra-ui/react'
-import { Button, Infobox } from '@opengovsg/design-system-react'
+import {
+  Button,
+  BxsCheckCircle,
+  BxsErrorCircle,
+  BxsInfoCircle,
+  Infobox,
+} from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
@@ -22,6 +28,7 @@ import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
 
+import { CheckAgainButton } from './CheckAgainButton'
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
@@ -40,7 +47,7 @@ interface FlowStepTestControllerProps {
   step: IStep
   hasDeletedVars: boolean
   handleSave: () => void
-  handleSaveAndTest: () => void
+  handleSaveAndTest: (testRunMetadata?: Record<string, unknown>) => void
   onTestResultOpen: () => void
   onTestResultClose: () => void
 }
@@ -91,7 +98,6 @@ export default function FlowStepTestController(
     allApps,
     currentTestExecutionStep,
     readOnly,
-    isMobile,
     isTestExecuting,
     testExecutionSteps,
     varInfoMap,
@@ -133,6 +139,26 @@ export default function FlowStepTestController(
     stepId: step.id,
     testVariables,
   })
+
+  const infoBoxIcon = useMemo(() => {
+    const props = {
+      fontSize: '2xl',
+      marginRight: 1,
+      display: 'flex',
+    }
+    if (infoBoxVariant === 'unstyled') {
+      return <></>
+    }
+    if (infoBoxVariant === 'error') {
+      return <Icon as={BxsErrorCircle} color="red.500" {...props} />
+    }
+    if (infoBoxVariant === 'success') {
+      return <Icon as={BxsCheckCircle} color="green.500" {...props} />
+    }
+    return <Icon as={BxsInfoCircle} color="blue.500" {...props} />
+  }, [infoBoxVariant])
+
+  const isStepUnchecked = infoBoxVariant === 'unstyled'
 
   const { shouldTestStepAgain } = useMemo(() => {
     return validateStepParams(step, testExecutionSteps, substeps)
@@ -201,42 +227,6 @@ export default function FlowStepTestController(
     return collapseDirection === 'up' ? <BiChevronUp /> : <BiChevronDown />
   }
 
-  const CheckAgainButton = useMemo(
-    () => (
-      <CheckStepTooltip
-        hasDeletedVars={hasDeletedVars}
-        isDisabled={isValid && !readOnly}
-        isReadOnly={readOnly}
-      >
-        <Button
-          variant={
-            infoBoxVariant === 'unstyled'
-              ? undefined
-              : isMobile
-              ? 'outline'
-              : 'clear'
-          }
-          onClick={handleSaveAndTest}
-          isLoading={isTestExecuting}
-          colorScheme={infoBoxVariant === 'unstyled' ? 'primary' : 'black'}
-          size="sm"
-          isDisabled={!isValid || readOnly}
-        >
-          <Text noOfLines={1}>Check step again</Text>
-        </Button>
-      </CheckStepTooltip>
-    ),
-    [
-      handleSaveAndTest,
-      hasDeletedVars,
-      infoBoxVariant,
-      isTestExecuting,
-      isValid,
-      readOnly,
-      isMobile,
-    ],
-  )
-
   return (
     <>
       {isWebhookSubstep && (
@@ -258,93 +248,93 @@ export default function FlowStepTestController(
       >
         {shouldShowTestResults ? (
           <VStack w="100%">
-            <HStack w="100%">
-              <Infobox
-                {...flowStepTestControllerStyles.testedInfobox}
-                variant={infoBoxVariant}
-                borderBottomRadius={isTestResultOpen ? 0 : undefined}
-                icon={infoBoxVariant === 'unstyled' ? <></> : null}
+            <Infobox
+              position="relative"
+              {...flowStepTestControllerStyles.testedInfobox}
+              variant={infoBoxVariant}
+              borderBottomRadius={isTestResultOpen ? 0 : undefined}
+              icon={<></>}
+            >
+              <Flex
+                justifyContent="space-between"
+                alignItems={{ base: 'flex-start', lg: 'center' }}
+                flexDirection={{ base: 'column', lg: 'row' }}
+                gap={{ base: 2, lg: 1 }}
+                flex={1}
+                maxW="100%"
               >
-                <Grid
-                  justifyContent="space-between"
-                  alignItems="center"
-                  w="100%"
-                  templateAreas={{
-                    base: `
-                      "test-result"
-                      "save-button"
-                      "check-button"
-                    `,
-                    md: `"test-result save-button check-button"`,
-                  }}
-                  gridTemplateColumns={{
-                    base: '1fr',
-                    md: '1fr auto auto',
-                  }}
-                  rowGap={2}
-                >
-                  <GridItem area="test-result">
-                    {isIfThenStep && isLastTestExecutionCurrent ? (
-                      // NOTE: special handling for If-then
-                      // do not need button as there are no variables to display
-                      <Text>{infoBoxText}</Text>
-                    ) : (
-                      <Button
-                        variant="clear"
-                        colorScheme={
-                          infoBoxVariant === 'unstyled' ? 'black' : 'green'
-                        }
-                        px={2}
-                        ml={infoBoxVariant === 'unstyled' ? -1 : -0.5}
-                        size="sm"
-                        onClick={() =>
-                          isTestResultOpen
-                            ? onTestResultClose()
-                            : onTestResultOpen()
-                        }
-                        isDisabled={isTestExecuting}
-                      >
-                        <Text
-                          color="base.content.default"
-                          noOfLines={1}
-                          textAlign="left"
-                        >
-                          {infoBoxText}
-                        </Text>
-                        {!isTestExecuting && (
-                          <Box ml={2} color="base.content.default">
-                            {getChevronIcon()}
-                          </Box>
-                        )}
-                      </Button>
-                    )}
-                  </GridItem>
-                  {shouldShowSaveButton ? (
-                    <>
-                      <GridItem area="save-button">
-                        <Button
-                          variant={isMobile ? 'outline' : 'clear'}
-                          size="sm"
-                          colorScheme="black"
-                          onClick={handleSave}
-                          isDisabled={!isDirty}
-                          mr={2}
-                        >
-                          <Text noOfLines={1}>
-                            {!isDirty ? 'Saved' : 'Save without checking'}
-                          </Text>
-                        </Button>
-                      </GridItem>
-                      <GridItem area="check-button">
-                        {CheckAgainButton}
-                      </GridItem>
-                    </>
+                <Flex alignItems="center" flex={1}>
+                  {infoBoxIcon}
+                  {isIfThenStep && isLastTestExecutionCurrent ? (
+                    // NOTE: special handling for If-then
+                    // do not need button as there are no variables to display
+                    <Text>{infoBoxText}</Text>
                   ) : (
-                    <GridItem area="check-button">{CheckAgainButton}</GridItem>
+                    <Button
+                      variant="clear"
+                      colorScheme={isStepUnchecked ? 'black' : 'green'}
+                      px={2}
+                      size="sm"
+                      flexShrink={1}
+                      onClick={() =>
+                        isTestResultOpen
+                          ? onTestResultClose()
+                          : onTestResultOpen()
+                      }
+                      isDisabled={isTestExecuting}
+                    >
+                      <Text
+                        color="base.content.default"
+                        noOfLines={1}
+                        textAlign="left"
+                      >
+                        {infoBoxText}
+                      </Text>
+                      {!isTestExecuting && (
+                        <Box ml={2} color="base.content.default">
+                          {getChevronIcon()}
+                        </Box>
+                      )}
+                    </Button>
                   )}
-                </Grid>
-              </Infobox>
-            </HStack>
+                </Flex>
+                {shouldShowSaveButton ? (
+                  <Flex>
+                    <Button
+                      variant="outline"
+                      // cant use responsive value for variant for some reason
+                      // so we have to use borderWidth instead
+                      borderWidth={{ base: '1px', lg: 0 }}
+                      size="sm"
+                      colorScheme="black"
+                      onClick={handleSave}
+                      isDisabled={!isDirty}
+                      mr={2}
+                      w="auto"
+                    >
+                      {!isDirty ? 'Saved' : 'Save without checking'}
+                    </Button>
+                    <CheckAgainButton
+                      isUnstyledInfobox={isStepUnchecked}
+                      onClick={handleSaveAndTest}
+                      isLoading={isTestExecuting}
+                      isDisabled={!isValid || readOnly}
+                      step={step}
+                      executionStepMetadata={currentTestExecutionStep?.metadata}
+                    />
+                  </Flex>
+                ) : (
+                  <CheckAgainButton
+                    isUnstyledInfobox={isStepUnchecked}
+                    onClick={handleSaveAndTest}
+                    isLoading={isTestExecuting}
+                    isDisabled={!isValid || readOnly}
+                    step={step}
+                    executionStepMetadata={currentTestExecutionStep?.metadata}
+                  />
+                )}
+              </Flex>
+            </Infobox>
             <TestResult
               step={step}
               selectedActionOrTrigger={selectedActionOrTrigger}
@@ -378,7 +368,7 @@ export default function FlowStepTestController(
                 isReadOnly={readOnly}
               >
                 <Button
-                  onClick={handleSaveAndTest}
+                  onClick={() => handleSaveAndTest()}
                   data-test="flow-substep-continue-button"
                   isDisabled={!shouldAllowCheckStep}
                   isLoading={isTestExecuting}

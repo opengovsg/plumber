@@ -41,7 +41,7 @@ interface IEditorContextValue {
   shouldWarnOnLeave: boolean
   stepsWithVars: StepWithVariables[]
   varInfoMap: VariableInfoMap
-  executeTestStep: () => Promise<void>
+  executeTestStep: (testRunMetadata?: Record<string, unknown>) => Promise<void>
   onDrawerOpen: () => void
   onDrawerClose: () => void
   setCurrentStepId: (stepId: string | null) => void
@@ -332,19 +332,23 @@ export const EditorProvider = ({
     },
   )
 
-  const executeTestStep = useCallback(async () => {
-    try {
-      await executeStep({
-        variables: {
-          input: {
-            stepId: currentStepId,
+  const executeTestStep = useCallback(
+    async (testRunMetadata?: Record<string, unknown>) => {
+      try {
+        await executeStep({
+          variables: {
+            input: {
+              stepId: currentStepId,
+              testRunMetadata,
+            },
           },
-        },
-      })
-    } catch (e) {
-      console.error(e)
-    }
-  }, [executeStep, currentStepId])
+        })
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    [executeStep, currentStepId],
+  )
 
   // Force the Form to remount by changing its key when discarding changes
   const resetForm = useCallback(() => {
