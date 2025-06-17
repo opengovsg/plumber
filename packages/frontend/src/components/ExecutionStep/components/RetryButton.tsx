@@ -15,7 +15,7 @@ const retryIcon = <Icon boxSize={6} as={BiRedo} />
 
 const RetryButton = ({
   executionStepId,
-  customButtonText = 'Retry',
+  customButtonText,
 }: RetryButtonProps) => {
   const [isRetrySuccessful, setIsRetrySuccessful] = useState<boolean | null>(
     null,
@@ -52,7 +52,7 @@ const RetryButton = ({
         leftIcon={retryIcon}
         onClick={() => retryExecutionStep()}
       >
-        {customButtonText}
+        {customButtonText ?? 'Retry'}
       </Button>
     )
   } else {
