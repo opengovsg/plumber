@@ -112,9 +112,15 @@ const trigger: IRawTrigger = {
       ? await getMockData($)
       : lastSubmittedTestExecutionStep?.dataOut
 
-    const lastTestSubmissionDate = lastSubmittedTestExecutionStep?.createdAt
-      ? new Date(lastSubmittedTestExecutionStep.createdAt).toISOString()
+    // If for some reason the submission time is not available, use the createdAt time
+    const lastFormSubmissionTime =
+      (lastSubmittedTestExecutionStep?.dataOut?.submissionTime as string) ??
+      lastSubmittedTestExecutionStep?.createdAt
+
+    const lastTestSubmissionDate = lastFormSubmissionTime
+      ? new Date(lastFormSubmissionTime).toISOString()
       : undefined
+
     // if different or no form is detected, use mock data
     await $.pushTriggerItem({
       raw: testData,
