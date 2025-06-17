@@ -21,6 +21,7 @@ import StepError from '@/errors/step'
 export const COMMON_S3_BUCKET = appConfig.s3CommonBucket
 export const COMMON_S3_MOCK_FOLDER_PREFIX = `s3:${COMMON_S3_BUCKET}:mock/`
 
+const MALWARE_SCAN_TAG_KEY = 'GuardDutyMalwareScanStatus'
 export const MALWARE_SCAN_STATUS = {
   THREATS_FOUND: 'THREATS_FOUND',
   NO_THREATS_FOUND: 'NO_THREATS_FOUND',
@@ -144,6 +145,11 @@ export async function getPresignedUrl(
     Key: objectKey,
     ContentType: contentType,
     Metadata: metadata,
+    // There's no guard duty scanning in dev environment
+    // so we just tag the object as scanned
+    Tagging: appConfig.isDev
+      ? `${MALWARE_SCAN_TAG_KEY}=${MALWARE_SCAN_STATUS.NO_THREATS_FOUND}`
+      : undefined,
   })
 
   const presignedUrl = await getSignedUrl(s3Client, putObjectCommand, {
@@ -280,7 +286,7 @@ export async function checkObjectScanStatus(bucket: string, objectKey: string) {
     return { isValid: false, scanStatus: MALWARE_SCAN_STATUS.PENDING }
   }
   const scanStatus = TagSet.find(
-    (obj) => obj.Key === 'GuardDutyMalwareScanStatus',
+    (obj) => obj.Key === MALWARE_SCAN_TAG_KEY,
   )?.Value
 
   if (scanStatus === MALWARE_SCAN_SUCCESS) {
