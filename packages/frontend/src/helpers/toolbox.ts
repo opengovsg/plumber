@@ -4,9 +4,6 @@ import { useCallback, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 
 import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
-import { NESTED_IFTHEN_FEATURE_FLAG } from '@/config/flags'
-import { EditorContext } from '@/contexts/Editor'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
@@ -126,40 +123,6 @@ export function areAllIfThenBranchesCompleted(
 ): boolean {
   const branches = extractBranchesWithSteps(allBranches, depth)
   return branches.every(isIfThenBranchCompleted)
-}
-
-/**
- * Helper hook to check if If-then action should be selectable; supports edge
- * case in ChooseEvent component.
- *
- * If-then should only be selectable if:
- * - We're the last step.
- * - We are not inside a branch (unless we're whitelisted for nested
- *   branches via LD).
- *
- * Using many consts as purpose of the conditions may not be immediately
- * apparent.
- */
-export function useIsIfThenSelectable({
-  isLastStep,
-}: {
-  isLastStep: boolean
-}): boolean {
-  const { depth } = useContext(BranchContext)
-  const { hasIfThen } = useContext(EditorContext)
-  const { flags: ldFlags } = useContext(LaunchDarklyContext)
-
-  if (!isLastStep || hasIfThen) {
-    return false
-  }
-
-  const canUseNestedBranch = ldFlags?.[NESTED_IFTHEN_FEATURE_FLAG] ?? false
-  if (canUseNestedBranch) {
-    return true
-  }
-
-  const isNestedBranch = depth > 0
-  return !isNestedBranch
 }
 
 /**
@@ -315,35 +278,4 @@ export function useForEachInitializer(): [
   )
 
   return [initialize, isInitializing]
-}
-
-/**
- * Helper hook to check if For-each action should be selectable; supports edge
- * case in ChooseEvent component.
- *
- * For-each should only be selectable if:
- * - We're the last step.
- * - We are not inside a for-each action.
- * - We are not inside an if-then action.
- * - There is no if-then action in the flow,
- *
- * Using many consts as purpose of the conditions may not be immediately
- * apparent.
- */
-export function useIsForEachSelectable({
-  isLastStep,
-}: {
-  isLastStep: boolean
-}): boolean {
-  const { hasIfThen, flow } = useContext(EditorContext)
-
-  const hasForEach = flow?.steps?.some(
-    (step: IStep) => step.key === TOOLBOX_ACTIONS.ForEach,
-  )
-
-  if (hasForEach || hasIfThen || !isLastStep) {
-    return false
-  }
-
-  return true
 }
