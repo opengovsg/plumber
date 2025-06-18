@@ -23,9 +23,10 @@ function VariableTag({
   const { label, tooltip } = useMemo(() => {
     switch (type) {
       case 'array':
+      case 'table':
         return {
           label: 'List',
-          tooltip: 'This variable can be used in for-each loops (coming soon!)',
+          tooltip: 'This variable can be used in the For-each action',
         }
       case 'file':
         return {
