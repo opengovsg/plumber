@@ -124,28 +124,34 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
           </HStack>
         </HStack>
         <Flex p={4} pt={0} direction="column" gap={4}>
-          <IterationSelector
-            groupedSteps={iterationsToShow}
-            selectedIteration={selectedIteration}
-            setSelectedIteration={setSelectedIteration}
-          />
-          <Grid mb={{ base: '16px', sm: '40px' }} rowGap={6}>
-            {selectedIterationStep &&
-              selectedIterationStep.steps.map(
-                (step: IExecutionStep, index: number) => {
-                  return (
-                    <ExecutionStep
-                      key={step.id}
-                      execution={execution}
-                      executionStep={step}
-                      index={index + 1 + numStepsBeforeGroup}
-                      page={page}
-                      isInForEach={true}
-                    />
-                  )
-                },
-              )}
-          </Grid>
+          {groupedSteps.length > 0 ? (
+            <>
+              <IterationSelector
+                groupedSteps={iterationsToShow}
+                selectedIteration={selectedIteration}
+                setSelectedIteration={setSelectedIteration}
+              />
+              <Grid mb={{ base: '16px', sm: '40px' }} rowGap={6}>
+                {selectedIterationStep &&
+                  selectedIterationStep.steps.map(
+                    (step: IExecutionStep, index: number) => {
+                      return (
+                        <ExecutionStep
+                          key={step.id}
+                          execution={execution}
+                          executionStep={step}
+                          index={index + 1 + numStepsBeforeGroup}
+                          page={page}
+                          isInForEach={true}
+                        />
+                      )
+                    },
+                  )}
+              </Grid>
+            </>
+          ) : (
+            <Text>No items were available to perform actions on.</Text>
+          )}
         </Flex>
       </CardBody>
     </Card>
