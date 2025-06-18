@@ -6,12 +6,12 @@ import {
   getRawRowById,
   getTableRows,
   TableRowFilter,
-  TableRowFilterOperator,
 } from '@/models/dynamodb/table-row'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 
+import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
 import { validateFilters } from '../../common/validate-filters'
 import { FindSingleRowOutput } from '../../types'
 
@@ -51,75 +51,7 @@ const action: IRawAction = {
         fieldKey: 'tableId',
         op: 'is_empty',
       },
-      subFields: [
-        {
-          placeholder: 'Column',
-          key: 'columnId',
-          type: 'dropdown' as const,
-          required: true,
-          variables: false,
-          showOptionValue: false,
-          source: {
-            type: 'query' as const,
-            name: 'getDynamicData' as const,
-            arguments: [
-              {
-                name: 'key',
-                value: 'listColumns',
-              },
-              {
-                name: 'parameters.tableId',
-                value: '{parameters.tableId}',
-              },
-            ],
-          },
-          customStyle: { flex: 1 },
-        },
-        {
-          placeholder: 'Condition',
-          key: 'operator',
-          type: 'dropdown' as const,
-          required: true,
-          variables: false,
-          showOptionValue: false,
-          options: [
-            { label: 'Equals to', value: TableRowFilterOperator.Equals },
-            {
-              label: 'Greater than ',
-              value: TableRowFilterOperator.GreaterThan,
-            },
-            {
-              label: 'Greater than or equals to',
-              value: TableRowFilterOperator.GreaterThanOrEquals,
-            },
-            { label: 'Less than', value: TableRowFilterOperator.LessThan },
-            {
-              label: 'Less than or equals to',
-              value: TableRowFilterOperator.LessThanOrEquals,
-            },
-            { label: 'Begins with', value: TableRowFilterOperator.BeginsWith },
-            { label: 'Contains', value: TableRowFilterOperator.Contains },
-            {
-              label: 'Is empty',
-              value: TableRowFilterOperator.IsEmpty,
-            },
-          ],
-          customStyle: { flex: 1 },
-        },
-        {
-          placeholder: 'Value',
-          key: 'value',
-          type: 'string' as const,
-          required: true,
-          variables: true,
-          hiddenIf: {
-            fieldKey: 'operator',
-            op: 'equals',
-            fieldValue: TableRowFilterOperator.IsEmpty,
-          },
-          customStyle: { flex: 2, minWidth: 0, maxWidth: '50%' },
-        },
-      ],
+      subFields: LOOKUP_CONDITIONS_SUBFIELDS,
     },
     {
       label: 'Return most recent row instead?',
