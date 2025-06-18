@@ -8,8 +8,6 @@ import { Variable } from '@/helpers/variables'
 
 import { VariableItem } from '../VariablesList'
 
-import { getColumnValues } from './utils'
-
 interface TestMultiRowResultProps {
   step: IStep
   selectedActionOrTrigger: ITrigger | IAction | undefined
@@ -36,10 +34,12 @@ export default function MultiRowResultVariables(
     const rowsFoundVariable = variables.find(isRowsFoundVar)
     const numRowsFound = rowsFoundVariable?.value || 0
 
-    const columnVariables = dataVariable ? getColumnValues(dataVariable) : []
+    // NOTE: do not expose the column variables as there is not real use case
+    // for users at this point.
+    // const columnVariables = dataVariable ? getColumnValues(dataVariable) : []
     const rowsFoundVariables = variables.filter(isRowsFoundVar)
 
-    const variableListVariables = [...rowsFoundVariables, ...columnVariables]
+    const variableListVariables = [...rowsFoundVariables]
 
     if (numRowsFound === 0) {
       return {
