@@ -24,6 +24,7 @@ export default function FlowAppIcons(props: FlowAppIconsProps) {
         url={firstStep.iconUrl}
         h={8}
         w={8}
+        isTrigger={true}
       />
 
       {intermeaditeStepCount > 0 && (

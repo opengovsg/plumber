@@ -6,7 +6,7 @@ import { datadogRum } from '@datadog/browser-rum'
 import { MotionConfig } from 'framer-motion'
 
 import ApolloProvider from '@/components/ApolloProvider'
-import TimezoneProvider from '@/components/IntlProvider'
+import TimezoneProvider from '@/components/TimezoneProvider'
 import router from '@/components/Router'
 import ThemeProvider from '@/components/ThemeProvider'
 import appConfig from '@/config/app'

@@ -12,7 +12,8 @@ export default function IntermediateStepCount(
 
   return (
     <Box
-      bg="gray.100"
+      border="1px solid"
+      borderColor="gray.300"
       borderRadius="md"
       h={8}
       w={8}

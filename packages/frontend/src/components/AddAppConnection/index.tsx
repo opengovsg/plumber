@@ -173,7 +173,7 @@ export default function AddAppConnection(
 
         <ModalBody>
           <Form onSubmit={submitHandler}>
-            <VStack gap={2} pt={4} pb={8} alignItems="flex-start">
+            <VStack gap={4} pt={4} pb={8} alignItems="stretch">
               {auth?.fields?.map((field: IField) => (
                 <InputCreator key={field.key} schema={field} />
               ))}
@@ -184,6 +184,7 @@ export default function AddAppConnection(
                 colorScheme="primary"
                 isLoading={inProgress}
                 data-test="create-connection-button"
+                isFullWidth
               >
                 Connect
               </Button>
