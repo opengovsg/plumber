@@ -175,6 +175,7 @@ export const GET_APPS = gql`
         }
         groupsLaterSteps
         isNew
+        announcementContentKey
         substeps {
           key
           name

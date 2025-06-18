@@ -694,6 +694,12 @@ export interface IBaseTrigger {
    * message to the user during pipe setup / config.
    */
   setupMessage?: SetupMessage
+
+  /**
+   * Specifies the learning content for the action.
+   * Used to identify the content to be displayed in the announcement modal.
+   */
+  announcementContentKey?: string
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -788,6 +794,12 @@ export interface IBaseAction {
    * message to the user during pipe setup / config.
    */
   setupMessage?: SetupMessage
+
+  /**
+   * Specifies the announcement content key for the action.
+   * Used to get the content to be displayed in the announcement modal.
+   */
+  announcementContentKey?: string
 }
 
 export interface IRawAction extends IBaseAction {

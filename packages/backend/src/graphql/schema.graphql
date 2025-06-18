@@ -161,6 +161,7 @@ type Action {
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
   isNew: Boolean
+  announcementContentKey: String
   substeps: [ActionSubstep]
 }
 
