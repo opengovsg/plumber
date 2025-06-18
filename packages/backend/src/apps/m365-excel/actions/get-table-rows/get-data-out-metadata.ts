@@ -18,7 +18,7 @@ async function getDataOutMetadata(
       order: 2,
     },
     data: {
-      label: 'List of row(s) found',
+      label: 'Row(s) found',
       displayedValue: `Preview ${dataOut.rowsFound} row(s)`,
       type: 'table',
       order: 1,

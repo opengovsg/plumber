@@ -69,7 +69,7 @@ describe('getTableRows getDataOutMetadata', () => {
         order: 2,
       },
       data: {
-        label: 'List of row(s) found',
+        label: 'Row(s) found',
         displayedValue: 'Preview 0 row(s)',
         order: 1,
         type: 'table',
@@ -86,7 +86,7 @@ describe('getTableRows getDataOutMetadata', () => {
         order: 2,
       },
       data: {
-        label: 'List of row(s) found',
+        label: 'Row(s) found',
         displayedValue: 'Preview 2 row(s)',
         order: 1,
         type: 'table',

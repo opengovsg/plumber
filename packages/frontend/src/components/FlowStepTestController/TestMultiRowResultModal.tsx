@@ -126,7 +126,7 @@ export default function TestMultiRowResultModal(
           borderColor="base.divider.medium"
         >
           <Flex direction="column">
-            List of row(s) found
+            Row(s) found
             <Text textStyle="body-2" color="base.content.medium">
               {rowsFound} row(s)
             </Text>
