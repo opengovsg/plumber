@@ -39,6 +39,7 @@ export function CheckAgainButton(props: CheckAgainButtonProps) {
       colorScheme={isUnstyledInfobox ? 'primary' : 'black'}
       size="sm"
       isDisabled={isDisabled}
+      data-test="check-again-button"
     >
       Check step again
     </Button>
@@ -125,13 +126,12 @@ function FormSGCheckAgainButton(props: CheckAgainButtonProps) {
 
   const onTestClick = useCallback(() => {
     if (!lastTestSubmissionDate) {
-      return onClick
+      return onClick()
     }
     if (isMock) {
-      onClick({ preferMock: true })
-    } else {
-      onClick({ preferMock: false })
+      return onClick({ preferMock: true })
     }
+    return onClick({ preferMock: false })
   }, [lastTestSubmissionDate, isMock, onClick])
 
   return (
@@ -142,7 +142,12 @@ function FormSGCheckAgainButton(props: CheckAgainButtonProps) {
       variant={isTransparentInfobox ? 'solid' : 'outline'}
       colorScheme={isTransparentInfobox ? 'primary' : 'black'}
     >
-      <Button onClick={onTestClick} isLoading={isLoading} gap={2}>
+      <Button
+        onClick={onTestClick}
+        isLoading={isLoading}
+        gap={2}
+        data-test="formsg-check-again-button"
+      >
         {buttonText}
       </Button>
       {lastTestSubmissionDate && (
@@ -151,6 +156,7 @@ function FormSGCheckAgainButton(props: CheckAgainButtonProps) {
             as={IconButton}
             icon={<BiChevronDown />}
             isLoading={isLoading}
+            data-test="formsg-check-again-button-dropdown"
           />
           <MenuList maxW="350px">
             <FormSGMenuItem
