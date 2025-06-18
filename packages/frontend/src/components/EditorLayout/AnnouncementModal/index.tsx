@@ -15,28 +15,45 @@ import {
 import { AnimatePresence } from 'framer-motion'
 
 import AnnouncementItem from './AnnouncementItem'
-import { ANNOUNCEMENT_ITEM_LIST } from './AnnouncementItemList'
+import { ANNOUNCEMENT_CONTENT_MAP } from './content'
 import { MotionBox } from './MotionBox'
 import { ProgressIndicator } from './ProgressIndicator'
 
-const ITEMS_LENGTH = ANNOUNCEMENT_ITEM_LIST.length
 export const LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY =
   'announcement-modal-last-opened'
 
 export const LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP = '2025-05-28'
 
+type AnnouncementItemKey = keyof typeof ANNOUNCEMENT_CONTENT_MAP
+
 interface AnnouncementModalProps {
   isOpen: boolean
   onClose: () => void
+  announcementContentKey?: string
 }
 
+const isValidAnnouncementItem = (
+  value: string | undefined,
+): value is AnnouncementItemKey =>
+  value !== undefined && Object.keys(ANNOUNCEMENT_CONTENT_MAP).includes(value)
+
 export default function AnnouncementModal(props: AnnouncementModalProps) {
-  const { isOpen, onClose } = props
+  const { isOpen, onClose, announcementContentKey = 'ui-revamp-2025' } = props
   const [currActiveIdx, setCurrActiveIdx] = useState<number>(0)
-  const currAnnouncement = ANNOUNCEMENT_ITEM_LIST[currActiveIdx]
-  const isFirstAnnouncement = currActiveIdx === 0
-  const isLastAnnouncement = currActiveIdx === ITEMS_LENGTH - 1
   const isMobile = useIsMobile()
+
+  if (!isValidAnnouncementItem(announcementContentKey)) {
+    return null
+  }
+
+  const currAnnouncementConfig =
+    ANNOUNCEMENT_CONTENT_MAP[announcementContentKey]
+  const { announcementContent, buttonText } = currAnnouncementConfig
+  const itemsLength = announcementContent.length
+
+  const currAnnouncement = announcementContent[currActiveIdx]
+  const isFirstAnnouncement = currActiveIdx === 0
+  const isLastAnnouncement = currActiveIdx === itemsLength - 1
 
   return (
     <Modal
@@ -73,13 +90,15 @@ export default function AnnouncementModal(props: AnnouncementModalProps) {
           <Flex
             width="100vw"
             alignItems="center"
-            justifyContent="space-between"
+            justifyContent={itemsLength > 1 ? 'space-between' : 'flex-end'}
           >
-            <ProgressIndicator
-              numIndicators={ITEMS_LENGTH}
-              currActiveIdx={currActiveIdx}
-              onClick={setCurrActiveIdx}
-            />
+            {itemsLength > 1 && (
+              <ProgressIndicator
+                numIndicators={itemsLength}
+                currActiveIdx={currActiveIdx}
+                onClick={setCurrActiveIdx}
+              />
+            )}
             <Flex gap={4}>
               {!isFirstAnnouncement && (
                 <Button
@@ -92,7 +111,7 @@ export default function AnnouncementModal(props: AnnouncementModalProps) {
               )}
 
               {isLastAnnouncement ? (
-                <Button onClick={onClose}>Experience it now</Button>
+                <Button onClick={onClose}>{buttonText}</Button>
               ) : (
                 <Button onClick={() => setCurrActiveIdx(currActiveIdx + 1)}>
                   Next

@@ -1,9 +1,9 @@
 import dedent from 'dedent'
 
-import GraphicAnimation from './assets/Graphic.json'
-import RedesignPipe from './assets/redesign-pipe.svg'
-import WorkflowVisualisation from './assets/workflow-visualisation.svg'
-import { AnnouncementItemProps } from './AnnouncementItem'
+import { AnnouncementItemProps } from '../AnnouncementItem'
+import GraphicAnimation from '../assets/Graphic.json'
+import RedesignPipe from '../assets/redesign-pipe.svg'
+import WorkflowVisualisation from '../assets/workflow-visualisation.svg'
 
 export const ANNOUNCEMENT_ITEM_LIST: AnnouncementItemProps[] = [
   {
@@ -36,12 +36,12 @@ export const ANNOUNCEMENT_ITEM_LIST: AnnouncementItemProps[] = [
     - ✏️ &nbsp;**Set up steps faster**
       * Added prompts to save your step so you don't lose your work
       * Rearranged fields for easier mapping and readability
-    
+
 
     - 🔍 &nbsp;**Find what you need quickly**
       * Sorted apps and tools by categories to help you choose the right ones faster
       * Added quick links to view connected forms and locate your M365 Excel folder
-      
+
 
     - ☝️ &nbsp;**One time setup**
       * Created a one-time connection to your M365 account — no repeated connection needed
