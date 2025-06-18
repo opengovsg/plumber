@@ -132,7 +132,7 @@ describe('For each action', () => {
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
-      await action.run($)
+      const result = await action.run($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -140,6 +140,13 @@ describe('For each action', () => {
           items: checkboxItems,
           inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
           item: `items.${FOR_EACH_ITERATION_KEY}`,
+        },
+      })
+
+      expect(result).toEqual({
+        nextStep: {
+          command: 'start-for-each',
+          stepId: 'for-each',
         },
       })
     })
@@ -235,7 +242,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      await action.run($)
+      const result = await action.run($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -243,6 +250,13 @@ describe('For each action', () => {
           iterations: 2,
           items: processedResult.processedItems,
           inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+        },
+      })
+
+      expect(result).toEqual({
+        nextStep: {
+          command: 'start-for-each',
+          stepId: 'for-each',
         },
       })
     })
@@ -266,13 +280,20 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      await action.run($)
+      const result = await action.run($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iterations: 0,
           items: processedResult.processedItems,
           inputSource: null,
+        },
+      })
+
+      expect(result).toEqual({
+        nextStep: {
+          command: 'stop-execution',
+          stepId: 'for-each',
         },
       })
     })

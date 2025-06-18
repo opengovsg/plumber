@@ -50,8 +50,17 @@ const action: IRawAction = {
     }
 
     try {
-      let output = {}
       const { items, inputSource, iterations } = parsedResult.data
+      let output: {
+        iterations: number
+        items: any[]
+        inputSource: string
+        item?: string
+      } = {
+        iterations: 0,
+        items: [],
+        inputSource: '',
+      }
       if (
         inputSource === FOR_EACH_INPUT_SOURCE.STRING_ARRAY &&
         Array.isArray(items) &&
@@ -62,7 +71,7 @@ const action: IRawAction = {
           items: items,
           inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
           // NOTE: this is specifically for checkboxes
-          // table data is handled differently in processInput
+          // table data is handled differently in processItems
           item: `items.${FOR_EACH_ITERATION_KEY}`,
         }
         return
@@ -80,6 +89,16 @@ const action: IRawAction = {
       }
 
       $.setActionItem({ raw: output })
+
+      if (output?.iterations === 0) {
+        return {
+          nextStep: {
+            command: 'stop-execution',
+            stepId: $.step.id,
+          },
+        }
+      }
+
       return {
         nextStep: {
           command: 'start-for-each',

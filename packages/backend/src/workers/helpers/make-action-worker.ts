@@ -171,8 +171,11 @@ export function makeActionWorker(
          * nextStep is null for the for-each execution step, return if its not the last iteration
          * so that we do not prematurely set the execution status to success and it can be
          * reflected accurately as waiting
+         *
+         * NOTE: if there are no iterations, the nextStepMetadata isLastStep will be set to true
+         * to signal that this is the end of the execution
          */
-        if (!nextStep && isForEach) {
+        if (!nextStep && isForEach && !nextStepMetadata?.isLastStep) {
           return
         }
 
