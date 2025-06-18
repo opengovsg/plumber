@@ -243,7 +243,6 @@ export default function FlowStepTestController(
       isTestExecuting,
       isValid,
       readOnly,
-      isMobile,
     ],
   )
 
