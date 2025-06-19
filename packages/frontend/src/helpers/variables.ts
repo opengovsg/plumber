@@ -25,6 +25,7 @@ export interface Variable {
   type: TDataOutMetadatumType | null
   order: number | null
   displayedValue: string | null
+  isCollapsedByDefault: boolean
   /**
    * CAVEAT: not _just_ a name; it contains the lodash.get path for dataOut. Do
    * not clobber unless you know what you're doing!
@@ -69,6 +70,7 @@ const process = (
     type = null,
     order = null,
     displayedValue = null,
+    isCollapsedByDefault = false,
   } = metadata
 
   if (isHidden) {
@@ -84,6 +86,7 @@ const process = (
         displayedValue,
         type,
         order,
+        isCollapsedByDefault,
       },
     ]
   }
@@ -106,6 +109,7 @@ const process = (
             displayedValue,
             type,
             order,
+            isCollapsedByDefault,
           },
         ]
       : data.flatMap((item, index) => {

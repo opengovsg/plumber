@@ -135,6 +135,9 @@ export async function decryptFormResponse(
         }
       }
 
+      // delete metadata from fields
+      delete rest['isHeader']
+
       if (rest.fieldType === 'nric' && !!rest.answer) {
         const filteredAnswer = filterNric($, rest.answer)
         if (!filteredAnswer) {

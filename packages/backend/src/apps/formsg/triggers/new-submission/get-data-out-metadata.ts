@@ -17,6 +17,11 @@ function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
     type: 'text',
     label: fieldData.order ? `Question ${fieldData.order}` : null,
     order: fieldData.order ? (fieldData.order as number) : null,
+    isCollapsedByDefault: true,
+  }
+
+  if (fieldData.fieldType === 'section') {
+    question.label = 'Header'
   }
 
   if (fieldData.fieldType === 'attachment') {
@@ -28,7 +33,6 @@ function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
 
 function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const answer: IDataOutMetadatum = {
-    label: fieldData.order ? `Response ${fieldData.order}` : null,
     order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
   }
 
@@ -47,9 +51,15 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
         parseS3Id(fieldData.answer as string)?.objectName ??
         (fieldData.answer as string)
       break
+    // Headers will only have empty answers
+    case 'section':
+      answer.isHidden = true
+      break
     default:
       answer['type'] = 'text'
-      answer['label'] = fieldData.order ? `Response ${fieldData.order}` : null
+      answer['label'] = fieldData.order
+        ? `${fieldData.order}. ${fieldData.question}`
+        : null
   }
 
   return answer
@@ -65,12 +75,13 @@ function isAnswerArrayValid(fieldData: IJSONObject): boolean {
 }
 
 function buildAnswerArrayForAddress(fieldData: IJSONObject): IDataOutMetadata {
-  const { order } = fieldData
+  const { order, question } = fieldData
 
   // NOTE: we return all labels as there are some optional fields in FormSG
+  // the label is shown before the question, since it will be truncated in the variable pill
   return ADDRESS_LABELS.map((label, index) => ({
     type: 'text',
-    label: `Response ${order}, ${label}`,
+    label: `${order}.${index + 1}. ${label} - ${question}`,
     order: order ? `${order}.${index + 1}` : null,
   }))
 }
@@ -78,12 +89,44 @@ function buildAnswerArrayForAddress(fieldData: IJSONObject): IDataOutMetadata {
 function buildAnswerArrayForCheckbox(
   fieldData: IJSONObject,
 ): IDataOutMetadatum {
+  const { order, question } = fieldData
   // NOTE: checkbox answerArray will not be further splitted,
   // handled specifically in variables.ts and compute-parameters.ts
   return {
     type: 'array',
-    label: `Response ${fieldData.order}`,
-    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
+    label: `${order}. ${question}`,
+    order: order ? (order as number) + 0.1 : null,
+  }
+}
+
+function extractLastTopLevelBracketContent(questionText: string): {
+  content: string
+  prefix: string
+} {
+  let depth = 0
+  let start = -1
+  let lastValid = ''
+  let prefix = ''
+
+  for (let i = 0; i < questionText.length; i++) {
+    if (questionText[i] === '(') {
+      if (depth === 0) {
+        start = i
+        prefix = questionText.slice(0, i).trim()
+      }
+      depth++
+    } else if (questionText[i] === ')') {
+      depth--
+      if (depth === 0 && start !== -1) {
+        lastValid = questionText.slice(start + 1, i)
+        start = -1 // reset
+      }
+    }
+  }
+
+  return {
+    content: lastValid,
+    prefix,
   }
 }
 
@@ -92,17 +135,33 @@ function buildAnswerArrayForTable(
 ): IDataOutMetadatum[][] {
   const answerArray = [] as IDataOutMetadatum[][]
   const array = fieldData.answerArray as IJSONArray
+  const { order, question } = fieldData
+  // questions are give in this format:
+  // Table Question (Column 1, Column 2, Column 3)
+  // step 1: find the match open bracket for the last pair of brackets
+  const { prefix: topLevelQuestion, content: columnNames } =
+    extractLastTopLevelBracketContent(question as string)
+  const columnNamesArray = columnNames.split(',').map((name) => name.trim())
+
   for (let i = 0; i < array.length; i++) {
     const option = array[i]
     const nestedAnswerArray = [] as IDataOutMetadatum[]
     const optionArray = option as IJSONArray
     for (let j = 0; j < optionArray.length; j++) {
+      // If the column names contain commas, we can't simply split by comma
+      // so we gotta just display the entire question name
+      // Also, making an API call to forms to retrieve the column names takes too long
+      // and won't work if the form is closed
+      let label = `${order}. ${question} Row ${i + 1} Col ${j + 1}`
+      if (columnNamesArray.length === optionArray.length) {
+        label = `${order}. Row ${i + 1} ${
+          columnNamesArray[j]
+        } - ${topLevelQuestion}`
+      }
       nestedAnswerArray.push({
         type: 'text',
-        label: fieldData.order
-          ? `Response ${fieldData.order}, Row ${i + 1} Column ${j + 1}`
-          : null,
-        order: fieldData.order ? (fieldData.order as number) : null,
+        label,
+        order: order ? (order as number) + 0.1 : null,
       })
     }
     answerArray.push(nestedAnswerArray)
@@ -215,7 +274,46 @@ async function getDataOutMetadata(
   }
 
   const fieldMetadata: IDataOutMetadata = Object.create(null)
-  for (const [fieldId, fieldData] of Object.entries(data.fields)) {
+
+  const fields = Object.entries(data.fields).sort((a, b) => {
+    const orderA = a[1].order
+    const orderB = b[1].order
+    if (orderA === null) {
+      return 1
+    }
+    return orderA - orderB
+  })
+
+  /**
+   * This is a hack to match the question number to the form as closely as possible.
+   * In formsg, the headers are not numbered, so we need to exclude them from the question number.
+   * But we also need to keep track of the headers between questions, so we can order them correctly.
+   * The regenerated order will be like so:
+   * Example given form:
+   * Header 0.9991
+   * Header 0.9992
+   * Question 1
+   * Question 2
+   * Sub Heading 2.9991
+   * Question 3
+   * Header 3.9991
+   * Sub Heading 3.9992
+   * Question 4
+   * Sub Heading 4.9991
+   * Question 4
+   */
+  let questionOrder = 0
+  let headerOrderBetweenQuestions = 0
+  for (const [fieldId, fieldData] of fields) {
+    if (fieldData.fieldType !== 'section') {
+      // reset order between questions (altho not necessary)
+      headerOrderBetweenQuestions = 0
+      questionOrder++
+      fieldData.order = questionOrder
+    } else {
+      headerOrderBetweenQuestions++
+      fieldData.order = questionOrder + +`0.999${headerOrderBetweenQuestions}`
+    }
     fieldMetadata[fieldId] = {
       question: buildQuestionMetadatum(fieldData),
       answer: buildAnswerMetadatum(fieldData),
@@ -223,6 +321,7 @@ async function getDataOutMetadata(
       order: { isHidden: true },
       myInfo: { attr: { isHidden: true } },
       isVisible: { isHidden: true },
+      isHeader: { isHidden: true },
     }
     if (isAnswerArrayValid(fieldData)) {
       fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(

@@ -93,6 +93,12 @@ export interface IDataOutMetadatum {
    * variables with the same `order` or undefined `order` are sorted.
    */
   order?: number
+
+  /**
+   * Indicates whether this field should only be shown when the user expands
+   * the "Show more" section in the variable list.
+   */
+  isCollapsedByDefault?: boolean
 }
 
 export interface IDataOutMetadata {
