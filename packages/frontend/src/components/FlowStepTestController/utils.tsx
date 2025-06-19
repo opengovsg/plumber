@@ -240,5 +240,5 @@ export function getForEachDataMessage(
   step: IStep,
 ): string {
   const numberOfItems = getForEachIterationCount(testExecutionSteps, step.id)
-  return `This for-each action will run the following steps on ${numberOfItems} items. Responses below use the first item as a sample.`
+  return `This for-each action will run on ${numberOfItems} items. The first item is shown below.`
 }
