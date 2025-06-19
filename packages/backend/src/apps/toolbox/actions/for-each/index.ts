@@ -6,7 +6,7 @@ import getDataOutMetadata from './get-data-out-metadata'
 import { inputSchema } from './schema'
 
 const action: IRawAction = {
-  name: 'For each',
+  name: 'For each item',
   key: 'forEach',
   description: 'Repeat actions for each item',
   groupsLaterSteps: true,
