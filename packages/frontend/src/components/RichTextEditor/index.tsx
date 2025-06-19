@@ -113,12 +113,13 @@ const Editor = ({
   autoFocus = false,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
+  const { allApps } = useContext(EditorContext)
   const isMobile = useIsMobile()
   const isMulticol = parentType === 'multicol'
 
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
-      extractVariables(priorExecutionSteps),
+      extractVariables(priorExecutionSteps, allApps),
       (variable) => {
         const variableType = variable.type ?? 'text'
         if (variableTypes) {
@@ -130,7 +131,7 @@ const Editor = ({
     )
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
-  }, [priorExecutionSteps, variableTypes])
+  }, [allApps, priorExecutionSteps, variableTypes])
 
   const extensions: Array<any> = [
     Placeholder.configure({
