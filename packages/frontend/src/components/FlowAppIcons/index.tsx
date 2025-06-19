@@ -19,10 +19,12 @@ export default function FlowAppIcons(props: FlowAppIconsProps) {
   return (
     <>
       <AppIcon
-        name=" "
+        name={firstStep.name}
         variant="rounded"
         url={firstStep.iconUrl}
-        sx={{ width: 30, height: 30 }}
+        h={8}
+        w={8}
+        isTrigger={true}
       />
 
       {intermeaditeStepCount > 0 && (
@@ -31,10 +33,11 @@ export default function FlowAppIcons(props: FlowAppIconsProps) {
 
       {lastStep && (
         <AppIcon
-          name=" "
+          name={lastStep.name}
           variant="rounded"
           url={lastStep.iconUrl}
-          sx={{ width: 30, height: 30 }}
+          h={8}
+          w={8}
         />
       )}
     </>

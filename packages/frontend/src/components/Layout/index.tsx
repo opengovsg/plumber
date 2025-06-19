@@ -109,7 +109,9 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
               />
             </Box>
           </Show>
-          <Box sx={{ flex: 1, overflowX: 'hidden' }}>{children}</Box>
+          <Box flex={1} overflowX="hidden">
+            {children}
+          </Box>
         </Box>
       </LayoutNavigationProvider>
     </>

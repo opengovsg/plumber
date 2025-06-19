@@ -72,34 +72,32 @@ export default function Step(props: StepProps): React.ReactElement | null {
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}
           >
-            <Fragment>
-              {/* Place ChooseConnectionSubstep outside the accordion structure */}
-              {hasConnection && app && (
-                <ChooseConnectionSubstep
-                  step={step}
-                  application={app}
-                  onReconnect={onModalOpen}
-                />
-              )}
+            {/* Place ChooseConnectionSubstep outside the accordion structure */}
+            {hasConnection && app && (
+              <ChooseConnectionSubstep
+                step={step}
+                application={app}
+                onReconnect={onModalOpen}
+              />
+            )}
 
-              {substeps?.map(
-                (substep) =>
-                  substep.key &&
-                  // NOTE: webhook trigger is a special case where we want to show the step configuration immediately
-                  ((step.appKey === 'webhook' && step?.webhookUrl) ||
-                    ['chooseConnection', 'testStep'].includes(substep.key) ===
-                      false) && (
-                    <FlowSubstep
-                      key={substep.key}
-                      hasConnection={hasConnection}
-                      isTrigger={isTrigger}
-                      substep={substep}
-                      step={step}
-                      selectedActionOrTrigger={selectedActionOrTrigger}
-                    />
-                  ),
-              )}
-            </Fragment>
+            {substeps?.map(
+              (substep) =>
+                substep.key &&
+                // NOTE: webhook trigger is a special case where we want to show the step configuration immediately
+                ((step.appKey === 'webhook' && step?.webhookUrl) ||
+                  ['chooseConnection', 'testStep'].includes(substep.key) ===
+                    false) && (
+                  <FlowSubstep
+                    key={substep.key}
+                    hasConnection={hasConnection}
+                    isTrigger={isTrigger}
+                    substep={substep}
+                    step={step}
+                    selectedActionOrTrigger={selectedActionOrTrigger}
+                  />
+                ),
+            )}
           </Form>
         </StepExecutionsProvider>
       </Flex>

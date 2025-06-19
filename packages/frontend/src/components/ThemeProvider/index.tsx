@@ -1,13 +1,8 @@
 import { useRef } from 'react'
 import { Box } from '@chakra-ui/react'
-import {
-  THEME_ID,
-  ThemeProvider as MaterialThemeProvider,
-} from '@mui/material/styles'
 import { ThemeProvider as ChakraThemeProvider } from '@opengovsg/design-system-react'
 
 import { useDefaultZoom } from '@/hooks/useGovtBrowser'
-import materialTheme from '@/styles/theme'
 
 import { theme as chakraTheme } from '../../theme'
 
@@ -30,11 +25,9 @@ const ThemeProvider = ({
         },
       }}
     >
-      <MaterialThemeProvider theme={{ [THEME_ID]: materialTheme }}>
-        <Box display="flex" flexDir="column" minH="100vh" ref={ref}>
-          {children}
-        </Box>
-      </MaterialThemeProvider>
+      <Box display="flex" flexDir="column" minH="100vh" ref={ref}>
+        {children}
+      </Box>
     </ChakraThemeProvider>
   )
 }
