@@ -92,6 +92,10 @@ const action: IRawAction = {
           },
         ],
       },
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
     },
     {
       key: 'lookupValue' as const,
@@ -104,6 +108,10 @@ const action: IRawAction = {
       type: 'string' as const,
       required: true,
       variables: true,
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
     },
   ],
 
