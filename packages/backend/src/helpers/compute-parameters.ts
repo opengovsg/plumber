@@ -73,6 +73,8 @@ function findAndSubstituteVariables(
       }
 
       if (Array.isArray(dataValue)) {
+        // NOTE: we do not stringify the array if its a for each step
+        // to avoid having to parse it back into an array again
         if (isForEachStep) {
           return dataValue
         }
@@ -93,6 +95,8 @@ function findAndSubstituteVariables(
    * table is an object with rows and columns
    */
   if (isForEachStep) {
+    // filter out empty parts as the regex matching creates an array like this:
+    // ['', '{{step-variable}}', '']
     const filteredParts = substitutedParts.filter((part) => part !== '')
     return filteredParts[0]
   }
