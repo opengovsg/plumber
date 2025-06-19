@@ -7,7 +7,7 @@ import type {
 
 import get from 'lodash.get'
 
-import { RawColumn, RawRow } from '@/components/MultiRowResultVariables/utils'
+import { RawColumn, RawRow } from '@/components/VariablesList/utils'
 
 // these are the variable types to display on the frontend (make visible)
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [

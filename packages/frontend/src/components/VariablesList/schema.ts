@@ -20,16 +20,3 @@ export const ExecutionStepDataOutSchema = z.object({
   rowsFound: z.union([z.string(), z.number()]).default('0'),
   data: RowDataSchema,
 })
-
-export const VariableToRowDataSchema = z
-  .object({
-    value: z.string(),
-  })
-  .transform((variable) => {
-    try {
-      return JSON.parse(variable.value)
-    } catch {
-      throw new Error('Invalid JSON in variable value')
-    }
-  })
-  .pipe(RowDataSchema)

@@ -20,13 +20,9 @@ import {
 
 import { BORDER_COLOR, FONT_SIZE, ROW_COLOR } from '@/pages/Tile/constants'
 
-import {
-  processData,
-  ProcessedColumn,
-  ProcessedRow,
-} from '../MultiRowResultVariables/utils'
+import { processData, ProcessedColumn, ProcessedRow } from './utils'
 
-interface TestMultiRowResultModalProps {
+interface TableVariableModalProps {
   isOpen: boolean
   onClose: () => void
   currentExecutionStep?: IExecutionStep | null
@@ -40,7 +36,9 @@ const TableHeader = ({ columns }: { columns: ProcessedColumn[] }) => (
     zIndex={1}
   >
     <Tr key="header-row">
-      <Th borderRightWidth="1px" borderColor={BORDER_COLOR.DEFAULT} />
+      <Th borderRightWidth="1px" borderColor={BORDER_COLOR.DEFAULT}>
+        #
+      </Th>
       {columns?.map((c, colIndex) => (
         <Th
           key={c.key}
@@ -81,6 +79,8 @@ const TableRow = ({
       borderColor={BORDER_COLOR.DEFAULT}
       borderRightWidth="1px"
       fontSize={FONT_SIZE.SMALL}
+      textAlign="center"
+      width="50px"
     >
       {index + 1}
     </Td>
@@ -97,9 +97,7 @@ const TableRow = ({
   </Tr>
 )
 
-export default function TestMultiRowResultModal(
-  props: TestMultiRowResultModalProps,
-) {
+export default function TableVariableModal(props: TableVariableModalProps) {
   const { isOpen, onClose, currentExecutionStep } = props
 
   if (!currentExecutionStep) {

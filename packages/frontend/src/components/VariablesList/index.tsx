@@ -15,6 +15,8 @@ import {
 import { type Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
+import TableVariableItem from './TableVariableItem'
+
 function VariableTag({
   type,
 }: {
@@ -81,7 +83,7 @@ export function VariableItem({
     <Box
       key={`suggestion-${variable.name}`}
       data-test="variable-suggestion-item"
-      padding={onClick ? '0.5rem 1rem' : '1rem'}
+      padding={onClick && !withIcon ? '0.5rem 1rem' : '1rem'}
       borderBottom={shouldShowBottomBorder ? undefined : '1px solid #EDEDED'}
       _hover={
         onClick
@@ -152,14 +154,21 @@ export default function VariablesList(props: VariablesListProps) {
       p={onClick ? undefined : '1rem'}
       sx={props.customStyles}
     >
-      {variables.map((variable, index) => (
-        <VariableItem
-          key={`variable-${variable.name}`}
-          variable={variable}
-          onClick={onClick}
-          isLast={index === variables.length - 1}
-        />
-      ))}
+      {variables.map((variable, index) =>
+        variable.type === 'table' ? (
+          <TableVariableItem
+            key={`variable-${variable.name}`}
+            variable={variable}
+          />
+        ) : (
+          <VariableItem
+            key={`variable-${variable.name}`}
+            variable={variable}
+            onClick={onClick}
+            isLast={index === variables.length - 1}
+          />
+        ),
+      )}
     </Box>
   )
 }
