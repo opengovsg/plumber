@@ -104,20 +104,21 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
   //
   // Compute which steps are eligible for variable extraction.
+  // Mainly for if-then branches where we do not want to include steps
+  // from other branches.
   //
   // Note:
-  // we include some grouped steps as there is no longer a nested editor
-  // we identify the group by checking if the current step id is in the group
-  //
+  // - we include some grouped steps as there is no longer a nested editor
+  // - we identify the group by checking if the current step id is in the group
+  // - for-each steps are always included
   const groupStepsToInclude = useMemo(() => {
-    const stepPosition = flow.steps.findIndex(
-      (step) => step.id === currentStepId,
-    )
-
     return groupedSteps.flatMap((group) =>
-      group.filter((step) => step.position <= stepPosition),
+      group.some((step) => step.id === currentStepId) ||
+      group.some((step) => step.key === TOOLBOX_ACTIONS.ForEach)
+        ? group
+        : [],
     )
-  }, [currentStepId, flow.steps, groupedSteps])
+  }, [currentStepId, groupedSteps])
 
   const stepExecutionsToInclude = useMemo(
     () =>
