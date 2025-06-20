@@ -41,24 +41,13 @@ interface ChooseAppProps {
   onSelectAppEvent: (app: IApp, triggerOrAction: ITrigger | IAction) => void
 }
 
-function checkIsAppDisabled(
-  appKey: string,
-  isAppSelectable: Record<string, boolean>,
-) {
-  if (Object.keys(isAppSelectable).includes(appKey)) {
-    return !isAppSelectable[appKey]
-  }
-
-  return false
-}
-
 export default function ChooseApp(props: ChooseAppProps) {
   const { apps, onSelectAppEvent } = props
   const launchDarkly = useContext(LaunchDarklyContext)
   const { patchModalState, isTrigger, isLastStep, step, prevStepId } =
     useContext(FlowStepConfigurationContext)
 
-  const isAppSelectable = useIsAppSelectable({
+  const appSelectableMap = useIsAppSelectable({
     isLastStep,
     step,
     prevStepId,
@@ -283,10 +272,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                           key={action.key}
                           action={action}
                           onSelectAppEvent={() => onSelectAppEvent(app, action)}
-                          isDisabled={checkIsAppDisabled(
-                            action.key,
-                            isAppSelectable,
-                          )}
+                          isDisabled={appSelectableMap?.[action.key] === false}
                           searchQuery={searchQuery}
                         />
                       ))
@@ -300,10 +286,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                         ? triggersOrActions[0]
                         : null
 
-                    const isAppDisabled = checkIsAppDisabled(
-                      app.key,
-                      isAppSelectable,
-                    )
+                    const isAppDisabled = appSelectableMap?.[app.key] === false
 
                     return (
                       <Flex

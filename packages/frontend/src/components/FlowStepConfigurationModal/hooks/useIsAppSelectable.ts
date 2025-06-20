@@ -125,7 +125,7 @@ export const useIsAppSelectable = ({
   isLastStep: boolean
   step?: IStep
   prevStepId?: string
-}) => {
+}): Record<string, boolean> => {
   const { depth } = useContext(BranchContext)
   const { flow, hasIfThen } = useContext(EditorContext)
   const { flags: ldFlags } = useContext(LaunchDarklyContext)
