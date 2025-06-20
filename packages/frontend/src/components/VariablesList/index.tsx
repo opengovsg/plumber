@@ -159,6 +159,7 @@ export default function VariablesList(props: VariablesListProps) {
           <TableVariableItem
             key={`variable-${variable.name}`}
             variable={variable}
+            onClick={onClick}
           />
         ) : (
           <VariableItem

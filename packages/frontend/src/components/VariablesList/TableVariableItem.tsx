@@ -10,10 +10,11 @@ import { VariableItem } from '.'
 
 interface TableVariableItemProps {
   variable: Variable
+  onClick?: (variable: Variable) => void
 }
 
 export default function TableVariableItem(props: TableVariableItemProps) {
-  const { variable } = props
+  const { onClick, variable } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { currentTestExecutionStep } = useContext(EditorContext)
 
@@ -22,14 +23,18 @@ export default function TableVariableItem(props: TableVariableItemProps) {
       <VariableItem
         key={`variable-${variable.name}`}
         variable={variable}
-        onClick={onOpen}
-        withIcon={MdOpenInNew}
+        // if onClick is provided, it means that the variable is being used in a Suggestions component
+        // no need to open the modal or show the icon
+        onClick={onClick ? onClick : onOpen}
+        withIcon={onClick ? undefined : MdOpenInNew}
       />
-      <TableVariableModal
-        isOpen={isOpen}
-        onClose={onClose}
-        currentExecutionStep={currentTestExecutionStep}
-      />
+      {!onClick && (
+        <TableVariableModal
+          isOpen={isOpen}
+          onClose={onClose}
+          currentExecutionStep={currentTestExecutionStep}
+        />
+      )}
     </>
   )
 }
