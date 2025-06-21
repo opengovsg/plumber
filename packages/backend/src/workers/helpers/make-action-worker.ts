@@ -6,10 +6,6 @@ import {
   type WorkerProOptions,
 } from '@taskforcesh/bullmq-pro'
 
-import {
-  TOOLBOX_ACTIONS,
-  TOOLBOX_APP_KEY,
-} from '@/apps/toolbox/common/constants'
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
@@ -32,6 +28,8 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import { enqueueActionJob, makeActionJobId } from '@/queues/action'
 import { processAction } from '@/services/action'
+
+import processForEachStatus from './for-each-status-manager'
 
 function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
@@ -150,6 +148,13 @@ export function makeActionWorker(
         })
 
         if (executionStep.isFailed) {
+          if (nextStepMetadata?.iteration) {
+            await ExecutionStep.patchIterationStatus(
+              executionId,
+              nextStepMetadata.iteration,
+              'failure',
+            )
+          }
           return handleFailedStepAndThrow({
             errorDetails: executionStep.errorDetails,
             executionError,
@@ -162,52 +167,15 @@ export function makeActionWorker(
           })
         }
 
-        const isForEach =
-          currStep?.appKey === TOOLBOX_APP_KEY &&
-          currStep?.key === TOOLBOX_ACTIONS.FOR_EACH
-
-        /**
-         * FOR-EACH SPECIAL CASE
-         * nextStep is null for the for-each execution step, return if its not the last iteration
-         * so that we do not prematurely set the execution status to success and it can be
-         * reflected accurately as waiting
-         *
-         * NOTE: if there are no iterations, the nextStepMetadata isLastStep will be set to true
-         * to signal that this is the end of the execution
-         */
-        if (!nextStep && isForEach && !nextStepMetadata?.isLastStep) {
-          return
-        }
-
         if (!nextStep) {
-          /**
-           * FOR-EACH SPECIAL CASE
-           * default state is null (waiting for all iterations to execute)
-           * if any iteration fails, the execution is immediately set to failure
-           * if all iterations are successful, the execution is set to success
-           */
-          if (nextStepMetadata?.iteration) {
-            // only need to check at the last step to set the execution status
-            if (nextStepMetadata?.isLastStep) {
-              const { hasLastIterationRun, areAllStepsSuccessful } =
-                await ExecutionStep.getForEachExecutionState(executionId)
+          const shouldContinue = await processForEachStatus({
+            executionId,
+            currStep,
+            nextStepMetadata,
+          })
 
-              // end of the execution: all iterations ran successfully up to the last iteration and last step
-              if (nextStepMetadata?.isLastIteration) {
-                if (!areAllStepsSuccessful) {
-                  await Execution.setStatus(executionId, 'failure')
-                  return
-                }
-              }
-
-              // if the last iteration has not run, it means this flow is still executing
-              // we return early to preserve the waiting state of the execution
-              if (!hasLastIterationRun) {
-                return
-              }
-            } else {
-              return
-            }
+          if (!shouldContinue) {
+            return
           }
 
           await Execution.setStatus(executionId, 'success')

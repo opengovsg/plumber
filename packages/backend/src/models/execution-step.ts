@@ -38,10 +38,23 @@ class ExecutionStep extends Base {
       errorDetails: { type: ['object', 'null'] },
       appKey: { type: ['string', 'null'] },
       jobId: { type: ['string', 'null'] },
+      key: { type: ['string', 'null'] },
       metadata: {
         type: 'object',
         properties: {
           isMock: {
+            type: 'boolean',
+          },
+          iteration: {
+            type: 'number',
+          },
+          iterationStatus: {
+            type: 'object',
+          },
+          isLastIteration: {
+            type: 'boolean',
+          },
+          isLastStep: {
             type: 'boolean',
           },
         },
@@ -84,6 +97,32 @@ class ExecutionStep extends Base {
     return `${appConfig.baseUrl}/apps/${this.appKey}/assets/favicon.svg`
   }
 
+  static async patchIterationStatus(
+    executionId: string,
+    iteration: number,
+    status: 'success' | 'failure' | null,
+  ) {
+    const updateData =
+      status !== null
+        ? {
+            metadata: raw(
+              `jsonb_set(metadata, '{iterationStatus,iteration_${iteration}}', to_jsonb(?::text), true)`,
+              [status],
+            ),
+          }
+        : {
+            metadata: raw(
+              `jsonb_set(metadata, '{iterationStatus,iteration_${iteration}}', 'null'::jsonb, true)`,
+            ),
+          }
+
+    return ExecutionStep.query()
+      .where('execution_id', executionId)
+      .where('app_key', 'toolbox')
+      .where('key', 'forEach')
+      .patch(updateData)
+  }
+
   static async getForEachExecutionSteps(executionId: string) {
     return ExecutionStep.query()
       .select('execution_steps.*', 'latest_steps.min_created_at')
@@ -119,17 +158,30 @@ class ExecutionStep extends Base {
       .orderBy('latest_steps.min_created_at', 'asc')
   }
 
+  /**
+   * checks the state of the for-each execution by looking at the iterationStatus
+   * metadata field
+   *
+   * returns:
+   * - hasLastIterationRun: boolean
+   *   mainly used during retry to determine whether to set the execution to status to success
+   * - areAllStepsSuccessful: boolean
+   */
   static async getForEachExecutionState(executionId: string) {
-    const executionSteps = await ExecutionStep.getForEachExecutionSteps(
-      executionId,
-    )
+    const forEachStep = await ExecutionStep.query()
+      .where('execution_id', executionId)
+      .where('app_key', 'toolbox')
+      .where('key', 'forEach')
+      .first()
+    const iterationStatus = forEachStep?.metadata?.iterationStatus
+
     return {
-      hasLastIterationRun: executionSteps.some(
-        (step) => step.metadata?.isLastIteration && step.metadata?.isLastStep,
-      ),
-      areAllStepsSuccessful: executionSteps.every(
-        (step) => step.status === 'success',
-      ),
+      hasLastIterationRun:
+        iterationStatus &&
+        Object.values(iterationStatus).every((value) => value !== null),
+      areAllStepsSuccessful:
+        iterationStatus &&
+        Object.values(iterationStatus).every((value) => value === 'success'),
     }
   }
 }

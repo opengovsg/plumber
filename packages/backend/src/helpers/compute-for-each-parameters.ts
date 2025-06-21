@@ -18,7 +18,7 @@ import Flow from '@/models/flow'
 export type ForEachContext = {
   testRun: boolean
   executionStepMetadata: NextStepMetadata
-  forEachStepIndex: number
+  forEachStepPosition: number
   isForEachStep: boolean
 
   stepPositions: Record<string, number>
@@ -28,10 +28,10 @@ export function getForEachContext(
   flow: Flow,
   step: IStep,
 ): {
-  forEachStepIndex: number
+  forEachStepPosition: number
   stepPositions: Record<string, number>
   isForEachStep: boolean
-  lastStepId: string
+  isLastStep: boolean
 } {
   const isForEachStep =
     step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH
@@ -42,10 +42,10 @@ export function getForEachContext(
   // NOTE: do not allow multiple for-each steps in a flow
   if (forEachSteps.length === 0 || forEachSteps.length > 1) {
     return {
-      forEachStepIndex: -1,
+      forEachStepPosition: -1,
       stepPositions: {},
       isForEachStep,
-      lastStepId: '',
+      isLastStep: false,
     }
   }
 
@@ -66,10 +66,10 @@ export function getForEachContext(
   )
 
   return {
-    forEachStepIndex: forEachSteps[0].position,
+    forEachStepPosition: forEachSteps[0].position,
     stepPositions,
     isForEachStep,
-    lastStepId,
+    isLastStep: lastStepId === step.id,
   }
 }
 
@@ -98,13 +98,13 @@ export function computeForEachParameters({
   const {
     testRun,
     executionStepMetadata: metadata,
-    forEachStepIndex,
+    forEachStepPosition,
     stepPositions,
   } = forEachContext || {}
 
   let dataValue: IJSONValue = keyPath
   let forEachKeyPath = get(data, keyPath)
-  const currentStepIndex = stepPositions?.[executionStep?.stepId] || -1
+  const currentStepPosition = stepPositions?.[executionStep?.stepId] || -1
 
   if (testRun || metadata?.iteration) {
     forEachKeyPath = String(forEachKeyPath).replace(
@@ -118,7 +118,7 @@ export function computeForEachParameters({
     executionStep?.key === TOOLBOX_ACTIONS.FOR_EACH
   ) {
     dataValue = get(data, forEachKeyPath as string) || ''
-  } else if (currentStepIndex > forEachStepIndex) {
+  } else if (currentStepPosition > forEachStepPosition) {
     // find the specific execution step for the same iteration
     const iterationExecutionStep = executionSteps.find(
       (es) =>

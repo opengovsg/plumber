@@ -303,62 +303,51 @@ describe('getForEachContext', () => {
     )
 
     expect(context).toEqual({
-      forEachStepIndex: -1,
+      forEachStepPosition: -1,
       stepPositions: {},
-      lastStepId: '',
       isForEachStep: false,
+      isLastStep: false,
     })
   })
 
   it('should return correct context when step is in for-each', () => {
-    const flowWithMultipleForEach = {
-      steps: [
-        {
-          id: randomUUID(),
-          position: 1,
-          appKey: 'formsg',
-          key: 'newSubmission',
-        },
-        {
-          id: randomUUID(),
-          position: 2,
-          appKey: TOOLBOX_APP_KEY,
-          key: TOOLBOX_ACTIONS.FOR_EACH,
-        },
-        {
-          id: randomUUID(),
-          position: 3,
-          appKey: 'postman',
-          key: 'sendTransactionalEmail',
-        },
-      ],
-    } as unknown as Flow
+    const context = getForEachContext(mockFlow, mockFlow.steps[1])
 
-    const context = getForEachContext(
-      flowWithMultipleForEach,
-      flowWithMultipleForEach.steps[1],
-    )
-
-    expect(context.forEachStepIndex).toBe(2)
+    expect(context.forEachStepPosition).toBe(2)
     expect(context.stepPositions).toEqual({
-      [flowWithMultipleForEach.steps[0].id]: 1,
-      [flowWithMultipleForEach.steps[1].id]: 2,
-      [flowWithMultipleForEach.steps[2].id]: 3,
+      [mockFlow.steps[0].id]: 1,
+      [mockFlow.steps[1].id]: 2,
+      [mockFlow.steps[2].id]: 3,
+      [mockFlow.steps[3].id]: 4,
     })
-    expect(context.lastStepId).toBe(flowWithMultipleForEach.steps[2].id)
     expect(context.isForEachStep).toBe(true)
+    expect(context.isLastStep).toBe(false)
+  })
+
+  it('should return correct context when step is the last step in for-each', () => {
+    const context = getForEachContext(mockFlow, mockFlow.steps[3])
+
+    expect(context.forEachStepPosition).toBe(2)
+    expect(context.stepPositions).toEqual({
+      [mockFlow.steps[0].id]: 1,
+      [mockFlow.steps[1].id]: 2,
+      [mockFlow.steps[2].id]: 3,
+      [mockFlow.steps[3].id]: 4,
+    })
+    expect(context.isForEachStep).toBe(false)
+    expect(context.isLastStep).toBe(true)
   })
 
   it('should return correct context when step is before for-each', () => {
     const context = getForEachContext(mockFlow, mockFlow.steps[0])
 
-    expect(context.forEachStepIndex).toBe(2)
+    expect(context.forEachStepPosition).toBe(2)
   })
 
   it('should return correct context when step is after for-each', () => {
     const context = getForEachContext(mockFlow, mockFlow.steps[2])
 
-    expect(context.forEachStepIndex).toBe(2)
+    expect(context.forEachStepPosition).toBe(2)
     expect(context.isForEachStep).toBe(false)
   })
 
@@ -392,7 +381,7 @@ describe('computeForEachParameters', () => {
   const baseForEachContext: ForEachContext = {
     testRun: false,
     executionStepMetadata: { iteration: baseIteration },
-    forEachStepIndex: 2,
+    forEachStepPosition: 2,
     stepPositions: {
       [mockFlow.steps[0].id]: 1,
       [mockFlow.steps[1].id]: 2,

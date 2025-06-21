@@ -127,6 +127,8 @@ export interface IExecutionStep {
 export interface IExecutionStepMetadata {
   isMock?: boolean
   iteration?: number
+  iterations?: number
+  iterationStatus?: Record<string, 'success' | 'failure' | null>
   isLastIteration?: boolean
   isLastStep?: boolean
 }
