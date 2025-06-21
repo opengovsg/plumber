@@ -20,7 +20,7 @@ type ExecutionParams = {
 
 export const EXECUTION_STEP_PER_PAGE = 100
 
-const getLimitAndOffset = (page: number) => ({
+export const getLimitAndOffset = (page: number) => ({
   limit: EXECUTION_STEP_PER_PAGE,
   offset: (page - 1) * EXECUTION_STEP_PER_PAGE,
 })
@@ -45,8 +45,8 @@ export default function Execution() {
   const {
     groupingStep,
     groupStats,
-    groupedSteps,
     hasGrouping,
+    iterationMap,
     stepsBeforeGroup,
   } = useMemo(() => processExecutionSteps(executionSteps), [executionSteps])
 
@@ -90,9 +90,8 @@ export default function Execution() {
               execution={execution}
               groupingStep={groupingStep}
               numStepsBeforeGroup={stepsBeforeGroup.length}
-              groupedSteps={groupedSteps}
-              page={page}
               groupStats={groupStats}
+              iterationMap={iterationMap}
             />
           </>
         ) : (

@@ -11,8 +11,8 @@ export type GroupedSteps = Array<{
 const DEFAULT_EMPTY_RESULT = {
   groupingStep: {} as IExecutionStep,
   groupStats: { success: 0, failure: 0, waiting: 0 },
-  groupedSteps: [] as GroupedSteps,
   hasGrouping: false,
+  iterationMap: new Map<number, string>(),
   stepsBeforeGroup: [],
 }
 
@@ -26,7 +26,10 @@ export default function processExecutionSteps(
   const groupingStepIndex = executionSteps?.findIndex(
     (s) => s.appKey === TOOLBOX_APP_KEY && s.key === TOOLBOX_ACTIONS.ForEach,
   )
-
+  const forEachStep = executionSteps?.find(
+    (s) => s.appKey === TOOLBOX_APP_KEY && s.key === TOOLBOX_ACTIONS.ForEach,
+  )
+  const iterationStatus = forEachStep?.metadata?.iterationStatus
   if (groupingStepIndex === -1) {
     return {
       ...DEFAULT_EMPTY_RESULT,
@@ -36,67 +39,30 @@ export default function processExecutionSteps(
 
   const stepsBeforeGroup = executionSteps?.slice(0, groupingStepIndex)
   const groupingStep = executionSteps?.slice(groupingStepIndex)[0]
-  const stepsAfterGroup = executionSteps?.slice(groupingStepIndex + 1)
 
-  const iterationMap = new Map<
-    number,
-    {
-      iteration: number
-      steps: IExecutionStep[]
-      status: string
-    }
-  >()
+  const iterationMap = new Map<number, string>()
 
-  stepsAfterGroup?.forEach((step) => {
-    const { iteration } = step.metadata
-    if (iteration) {
-      let iterationGroup = iterationMap.get(iteration)
-
-      if (!iterationGroup) {
-        iterationGroup = { iteration, steps: [], status: 'failure' }
-        iterationMap.set(iteration, iterationGroup)
-      }
-
-      iterationGroup.steps.push(step)
-      iterationGroup.status = 'waiting'
-      if (step.status === 'failure') {
-        iterationGroup.status = 'failure'
-      }
-      const isGroupComplete = iterationGroup.steps.find(
-        (s) => s.metadata.isLastStep,
-      )
-
-      if (isGroupComplete) {
-        const isGroupSuccess = iterationGroup.steps.every(
-          (s) => s.status === 'success',
-        )
-        if (isGroupSuccess) {
-          iterationGroup.status = 'success'
-        } else {
-          iterationGroup.status = 'failure'
-        }
-      }
-    }
+  Object.entries(iterationStatus ?? {}).forEach(([iterationKey, status]) => {
+    const iteration = parseInt(iterationKey.split('_')[1], 10)
+    iterationMap.set(iteration, status ? status : 'waiting')
   })
 
-  const groupedSteps = Array.from(iterationMap.values()).sort(
-    (a, b) => a.iteration - b.iteration,
-  )
+  const groupStats: { success: number; failure: number; waiting: number } = {
+    success: 0,
+    failure: 0,
+    waiting: 0,
+  }
 
-  const groupStats = (groupedSteps || []).reduce(
-    (counts, iteration) => {
-      counts[iteration.status as keyof typeof counts] =
-        (counts[iteration.status as keyof typeof counts] || 0) + 1
-      return counts
-    },
-    { success: 0, failure: 0, waiting: 0 },
-  )
+  for (const [, status] of iterationMap) {
+    groupStats[status as keyof typeof groupStats] =
+      (groupStats[status as keyof typeof groupStats] || 0) + 1
+  }
 
   return {
     groupingStep,
     groupStats,
     hasGrouping: groupingStepIndex !== -1,
-    groupedSteps,
+    iterationMap,
     stepsBeforeGroup,
   }
 }

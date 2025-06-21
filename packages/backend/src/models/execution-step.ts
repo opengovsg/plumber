@@ -123,7 +123,7 @@ class ExecutionStep extends Base {
       .patch(updateData)
   }
 
-  static async getForEachExecutionSteps(executionId: string) {
+  static async getIterationSteps(executionId: string, iteration: number) {
     return ExecutionStep.query()
       .select('execution_steps.*', 'latest_steps.min_created_at')
       .with('latest_steps', (builder) => {
@@ -155,6 +155,9 @@ class ExecutionStep extends Base {
           )
       })
       .where('execution_steps.execution_id', executionId)
+      .where(
+        raw(`(execution_steps.metadata ->> 'iteration')::int = ?`, [iteration]),
+      )
       .orderBy('latest_steps.min_created_at', 'asc')
   }
 
