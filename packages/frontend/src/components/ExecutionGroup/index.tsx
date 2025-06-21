@@ -1,13 +1,15 @@
 import type { IExecution, IExecutionStep } from '@plumber/types'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@apollo/client'
 import { Card, CardBody, Flex, Grid, HStack, Text } from '@chakra-ui/react'
+import { Pagination } from '@opengovsg/design-system-react'
 
-import { ExecutionStep } from '@/exports/components'
-import { type GroupedSteps } from '@/helpers/processExecutionSteps'
-
-import AppIconWithStatus from '../ExecutionStep/components/AppIconWithStatus'
-import { useExecutionStepStatus } from '../ExecutionStep/hooks/useExecutionStepStatus'
+import ExecutionStep from '@/components/ExecutionStep'
+import AppIconWithStatus from '@/components/ExecutionStep/components/AppIconWithStatus'
+import { useExecutionStepStatus } from '@/components/ExecutionStep/hooks/useExecutionStepStatus'
+import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
+import { EXECUTION_STEP_PER_PAGE, getLimitAndOffset } from '@/pages/Execution'
 
 import GroupStatusFilter, { GroupStatusType } from './GroupStatusFilter'
 import IterationSelector from './IterationSelector'
@@ -15,10 +17,9 @@ import IterationSelector from './IterationSelector'
 interface ExecutionGroupProps {
   execution: IExecution
   groupingStep: IExecutionStep
-  groupedSteps: GroupedSteps
   groupStats: { success: number; failure: number; waiting: number }
+  iterationMap: Map<number, string>
   numStepsBeforeGroup: number
-  page: number
 }
 
 export default function ExecutionGroup(props: ExecutionGroupProps) {
@@ -26,50 +27,54 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
     execution,
     groupingStep,
     groupStats,
-    groupedSteps,
-    page,
+    iterationMap,
     numStepsBeforeGroup,
   } = props
+  const [debouncedIteration, setDebouncedIteration] = useState('1')
+  // set the page internally within the ExecutionGroup component
+  // just in case there are more than 100 steps within the group
+  const [page, setPage] = useState(1)
   // NOTE: we use string here as the combobox value needs to be a string
   const [selectedIteration, setSelectedIteration] = useState('1')
   const [statusFilter, setStatusFilter] = useState<GroupStatusType>(
     GroupStatusType.All,
   )
 
-  const hasError = groupedSteps.some((iteration) =>
-    iteration.steps.some((step) => step.errorDetails),
-  )
-  const allIterationsSuccessful = groupedSteps?.every(
-    (step) => step.status === GroupStatusType.Success,
+  // debounce the iteration change to reduce flickering
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedIteration(selectedIteration)
+    }, 200)
+
+    return () => clearTimeout(timer)
+  }, [selectedIteration])
+
+  const { data, loading } = useQuery(GET_EXECUTION_STEPS, {
+    variables: {
+      executionId: execution.id,
+      ...getLimitAndOffset(page),
+      iteration: Number(debouncedIteration) || null,
+    },
+  })
+  const { pageInfo, edges } = data?.getExecutionSteps || {}
+  const iterationSteps: IExecutionStep[] = edges?.map(
+    (edge: { node: IExecutionStep }) => edge.node,
   )
 
-  const iterationsToShow = useMemo(() => {
-    if (!groupedSteps?.length) {
-      return []
-    }
-
-    let filteredSteps: GroupedSteps = groupedSteps
-    if (statusFilter !== GroupStatusType.All) {
-      filteredSteps = groupedSteps.filter(
-        (iteration) => iteration.status === statusFilter,
-      )
-    }
-    return filteredSteps
-  }, [groupedSteps, statusFilter])
+  const hasError = iterationSteps?.some((step) => step.errorDetails)
+  const allIterationsSuccessful =
+    groupStats.waiting === 0 && groupStats.failure === 0
 
   useEffect(() => {
-    if (iterationsToShow.length > 0) {
-      setSelectedIteration(iterationsToShow[0].iteration.toString())
+    if (statusFilter === GroupStatusType.All) {
+      setSelectedIteration('1')
+    } else {
+      const firstKey = [...iterationMap.entries()].find(
+        ([, value]) => value === statusFilter,
+      )?.[0]
+      setSelectedIteration(firstKey?.toString() || '1')
     }
-  }, [iterationsToShow])
-
-  const selectedIterationStep = useMemo(() => {
-    return (
-      groupedSteps?.find(
-        (iteration) => iteration.iteration.toString() === selectedIteration,
-      ) ?? null
-    )
-  }, [groupedSteps, selectedIteration])
+  }, [iterationMap, statusFilter])
 
   const { app, appName, statusIcon } = useExecutionStepStatus({
     appKey: groupingStep?.appKey ?? '',
@@ -83,7 +88,7 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
     jobId: groupingStep?.jobId,
   })
 
-  if (!execution || !groupingStep || !groupedSteps || !app) {
+  if (!execution || !groupingStep || !app) {
     return null
   }
 
@@ -124,28 +129,39 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
           </HStack>
         </HStack>
         <Flex p={4} pt={0} direction="column" gap={4}>
-          {groupedSteps.length > 0 ? (
+          {iterationMap.size > 0 ? (
             <>
               <IterationSelector
-                groupedSteps={iterationsToShow}
+                iterationMap={iterationMap}
                 selectedIteration={selectedIteration}
                 setSelectedIteration={setSelectedIteration}
+                iterationSteps={iterationSteps}
               />
-              <Grid mb={{ base: '16px', sm: '40px' }} rowGap={6}>
-                {selectedIterationStep &&
-                  selectedIterationStep.steps.map(
-                    (step: IExecutionStep, index: number) => {
-                      return (
-                        <ExecutionStep
-                          key={step.id}
-                          execution={execution}
-                          executionStep={step}
-                          index={index + 1 + numStepsBeforeGroup}
-                          page={page}
-                          isInForEach={true}
-                        />
-                      )
-                    },
+              <Grid mb={{ base: '16px', sm: '40px' }} rowGap={6} minH="400px">
+                {iterationSteps &&
+                  iterationSteps.map((step: IExecutionStep, index: number) => {
+                    return (
+                      <ExecutionStep
+                        key={step.id}
+                        execution={execution}
+                        executionStep={step}
+                        index={index + 1 + numStepsBeforeGroup}
+                        page={page}
+                        isInForEach={true}
+                      />
+                    )
+                  })}
+                {!loading &&
+                  pageInfo &&
+                  pageInfo.totalCount > EXECUTION_STEP_PER_PAGE && (
+                    <Flex justifyContent="center" mt={6}>
+                      <Pagination
+                        currentPage={pageInfo?.currentPage}
+                        onPageChange={(page) => setPage(page)}
+                        pageSize={EXECUTION_STEP_PER_PAGE}
+                        totalCount={pageInfo?.totalCount}
+                      />
+                    </Flex>
                   )}
               </Grid>
             </>

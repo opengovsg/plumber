@@ -33,7 +33,7 @@ describe('processExecutionSteps', () => {
     expect(result).toEqual({
       groupingStep: {},
       groupStats: { success: 0, failure: 0, waiting: 0 },
-      groupedSteps: [],
+      iterationMap: new Map<number, string>(),
       hasGrouping: false,
       stepsBeforeGroup: [],
     })
@@ -44,8 +44,8 @@ describe('processExecutionSteps', () => {
     expect(result).toEqual({
       groupingStep: {},
       groupStats: { success: 0, failure: 0, waiting: 0 },
-      groupedSteps: [],
       hasGrouping: false,
+      iterationMap: new Map<number, string>(),
       stepsBeforeGroup: [],
     })
   })
@@ -59,8 +59,8 @@ describe('processExecutionSteps', () => {
     expect(result).toEqual({
       groupingStep: {},
       groupStats: { success: 0, failure: 0, waiting: 0 },
-      groupedSteps: [],
       hasGrouping: false,
+      iterationMap: new Map<number, string>(),
       stepsBeforeGroup: steps,
     })
   })
@@ -68,7 +68,12 @@ describe('processExecutionSteps', () => {
   it('should handle ForEach step in middle of array', () => {
     const steps = [
       createMockStep('app1', 'action1'),
-      createMockStep(TOOLBOX_APP_KEY, TOOLBOX_ACTIONS.ForEach),
+      createMockStep(TOOLBOX_APP_KEY, TOOLBOX_ACTIONS.ForEach, 'success', {
+        iterations: 1,
+        iterationStatus: {
+          iteration_1: 'success',
+        },
+      }),
       createMockStep('app2', 'action2', 'success', { iteration: 1 }),
       createMockStep('app3', 'action3', 'success', {
         iteration: 1,
@@ -78,14 +83,20 @@ describe('processExecutionSteps', () => {
     const result = processExecutionSteps(steps)
     expect(result.hasGrouping).toBe(true)
     expect(result.stepsBeforeGroup).toHaveLength(1)
-    expect(result.groupedSteps).toHaveLength(1)
+    expect(result.iterationMap.size).toBe(1)
     expect(result.groupStats).toEqual({ success: 1, failure: 0, waiting: 0 })
   })
 
   it('should handle multiple iterations with mixed statuses', () => {
     const steps = [
       createMockStep('app1', 'action1'),
-      createMockStep(TOOLBOX_APP_KEY, TOOLBOX_ACTIONS.ForEach),
+      createMockStep(TOOLBOX_APP_KEY, TOOLBOX_ACTIONS.ForEach, 'failure', {
+        iterations: 2,
+        iterationStatus: {
+          iteration_1: 'success',
+          iteration_2: 'failure',
+        },
+      }),
       createMockStep('app2', 'action2', 'success', { iteration: 1 }),
       createMockStep('app3', 'action3', 'success', {
         iteration: 1,
@@ -99,40 +110,25 @@ describe('processExecutionSteps', () => {
     ]
     const result = processExecutionSteps(steps)
     expect(result.hasGrouping).toBe(true)
-    expect(result.groupedSteps).toHaveLength(2)
+    expect(result.iterationMap).toHaveLength(2)
     expect(result.groupStats).toEqual({ success: 1, failure: 1, waiting: 0 })
   })
 
   it('should handle incomplete iterations', () => {
     const steps = [
       createMockStep('trigger1', 'action1'),
-      createMockStep(TOOLBOX_APP_KEY, TOOLBOX_ACTIONS.ForEach),
+      createMockStep(TOOLBOX_APP_KEY, TOOLBOX_ACTIONS.ForEach, 'success', {
+        iterations: 1,
+        iterationStatus: {
+          iteration_1: 'waiting',
+        },
+      }),
       createMockStep('app2', 'action2', 'success', { iteration: 1 }),
       // No isLastStep flag, so iteration is incomplete
     ]
     const result = processExecutionSteps(steps)
     expect(result.hasGrouping).toBe(true)
-    expect(result.groupedSteps).toHaveLength(1)
+    expect(result.iterationMap.size).toBe(1)
     expect(result.groupStats).toEqual({ success: 0, failure: 0, waiting: 1 })
-  })
-
-  it('should sort iterations in order', () => {
-    const steps = [
-      createMockStep(TOOLBOX_APP_KEY, TOOLBOX_ACTIONS.ForEach),
-      createMockStep('app2', 'action2', 'success', { iteration: 2 }),
-      createMockStep('app3', 'action3', 'success', {
-        iteration: 2,
-        isLastStep: true,
-      }),
-      createMockStep('app2', 'action2', 'success', { iteration: 1 }),
-      createMockStep('app3', 'action3', 'success', {
-        iteration: 1,
-        isLastStep: true,
-      }),
-    ]
-    const result = processExecutionSteps(steps)
-    expect(result.groupedSteps).toHaveLength(2)
-    expect(result.groupedSteps[0].iteration).toBe(1)
-    expect(result.groupedSteps[1].iteration).toBe(2)
   })
 })
