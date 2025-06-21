@@ -77,6 +77,8 @@ async function getDataOutMetadata(
       },
     }
   }
+
+  return null
 }
 
 export default getDataOutMetadata
