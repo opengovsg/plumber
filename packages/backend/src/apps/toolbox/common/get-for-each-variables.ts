@@ -73,16 +73,14 @@ function processColumns(data: MultipleRowObject): {
 }
 
 export function processItems(items: MultipleRowObject): ProcessedInput {
-  let iterations = items.rows.length
   const { inputSource, processedColumns } = processColumns(items)
   const processedItems = {
     rows: items.rows,
     columns: processedColumns,
   }
-  iterations = items.rows.length
 
   return {
-    iterations,
+    iterations: items.rows.length,
     processedItems,
     inputSource,
   }
