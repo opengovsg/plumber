@@ -18,6 +18,8 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 
+import getForEachMetadata from './helpers/get-for-each-metadata'
+
 type ProcessActionOptions = {
   flowId: string
   executionId: string
@@ -40,6 +42,11 @@ async function enqueueFirstForEachStep({
   flowId: string
   metadata?: NextStepMetadata
 }): Promise<void> {
+  // remove unnecessary metadata from steps within the for-each
+  const filteredMetadata = { ...metadata }
+  delete filteredMetadata?.iterations
+  delete filteredMetadata?.iterationStatus
+
   const results = await Promise.allSettled(
     Array.from({ length: iterations }, (_, i) =>
       enqueueActionJob({
@@ -50,7 +57,7 @@ async function enqueueFirstForEachStep({
           executionId: executionId,
           stepId: firstStepInForEach.id,
           metadata: {
-            ...metadata,
+            ...filteredMetadata,
             iteration: i + 1,
             ...(i === iterations - 1 && { isLastIteration: true }),
           },
@@ -91,9 +98,11 @@ export const processAction = async (options: ProcessActionOptions) => {
     .findById(executionId)
     .throwIfNotFound()
 
-  const { forEachStepIndex, stepPositions, lastStepId, isForEachStep } =
+  const { forEachStepPosition, stepPositions, isForEachStep, isLastStep } =
     getForEachContext(flow, step)
-  if (!testRun && forEachStepIndex > -1 && lastStepId === stepId && metadata) {
+
+  // we use this to indicate an iteration in the for-each is complete
+  if (!testRun && forEachStepPosition > -1 && isLastStep && metadata) {
     metadata.isLastStep = true
   }
 
@@ -113,18 +122,19 @@ export const processAction = async (options: ProcessActionOptions) => {
   })
 
   const actionCommand = await step.getActionCommand()
+  const forEachContext = {
+    testRun,
+    executionStepMetadata: metadata,
+    forEachStepPosition,
+    stepPositions,
+    isForEachStep,
+  }
 
   const computedParameters = computeParameters(
     $.step.parameters,
     priorExecutionSteps,
     actionCommand.preprocessVariable,
-    {
-      testRun,
-      executionStepMetadata: metadata,
-      forEachStepIndex,
-      stepPositions,
-      isForEachStep,
-    },
+    forEachContext,
   )
 
   $.step.parameters = computedParameters
@@ -172,19 +182,14 @@ export const processAction = async (options: ProcessActionOptions) => {
       ? 'success'
       : 'failure'
 
-  /**
-   * FOR-EACH + IF-THEN SPECIAL CASE
-   * when there are if-then actions in the for-each, not all steps may run so the lastStep check may not work
-   * if-then uses stop-execution to terminate the flow, so we need to set the isLastStep to true
-   * so that the execution status is set to success
-   */
-  if (
-    !testRun &&
-    forEachStepIndex > -1 &&
-    runResult.nextStep?.command === 'stop-execution' &&
-    metadata
-  ) {
-    metadata.isLastStep = true
+  // update metadata specially for for-each
+  if (!testRun) {
+    getForEachMetadata({
+      forEachContext,
+      metadata,
+      dataOut: $.actionOutput.data?.raw ?? null,
+      runResult,
+    })
   }
 
   const executionStep = await execution

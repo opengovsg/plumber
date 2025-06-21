@@ -328,6 +328,8 @@ type ExecutionStep {
 type ExecutionStepMetadata {
   isMock: Boolean
   iteration: Int
+  iterations: Int
+  iterationStatus: JSONObject
   isLastIteration: Boolean
   isLastStep: Boolean
 }

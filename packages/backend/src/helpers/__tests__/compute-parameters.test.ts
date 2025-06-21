@@ -207,7 +207,7 @@ describe('compute parameters', () => {
       const result = computeParameters(params, executionSteps, undefined, {
         testRun: false,
         executionStepMetadata: { iteration: 1 },
-        forEachStepIndex: 0,
+        forEachStepPosition: 0,
         stepPositions: {},
         isForEachStep: true,
       })
