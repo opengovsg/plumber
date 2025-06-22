@@ -110,7 +110,7 @@ describe('processExecutionSteps', () => {
     ]
     const result = processExecutionSteps(steps)
     expect(result.hasGrouping).toBe(true)
-    expect(result.iterationMap).toHaveLength(2)
+    expect(result.iterationMap.size).toBe(2)
     expect(result.groupStats).toEqual({ success: 1, failure: 1, waiting: 0 })
   })
 
