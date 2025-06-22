@@ -89,7 +89,9 @@ export default function Execution() {
             <ExecutionGroup
               execution={execution}
               groupingStep={groupingStep}
-              numStepsBeforeGroup={stepsBeforeGroup.length}
+              numStepsBeforeGroup={
+                stepsBeforeGroup.length + (page - 1) * EXECUTION_STEP_PER_PAGE
+              }
               groupStats={groupStats}
               iterationMap={iterationMap}
             />
@@ -109,7 +111,8 @@ export default function Execution() {
 
       {!loading &&
         pageInfo &&
-        pageInfo.totalCount > EXECUTION_STEP_PER_PAGE && (
+        pageInfo.totalCount > EXECUTION_STEP_PER_PAGE &&
+        (!hasGrouping || page > 1) && (
           <Flex justifyContent="center" mt={6}>
             <Pagination
               currentPage={pageInfo?.currentPage}
