@@ -7,6 +7,8 @@ import type {
 
 import get from 'lodash.get'
 
+import { RawColumn, RawRow } from '@/components/VariablesList/utils'
+
 // these are the variable types to display on the frontend (make visible)
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
   'text',
@@ -34,6 +36,12 @@ export interface Variable {
   value: unknown
   // NOTE: used in some variables as unique key
   id?: string
+  /**
+   * NOTE: used to hide columns in the variables list, specifically for 'table' object
+   * we still need them in the dataOut to compare parameters against the last test execution
+   * at the for-each step
+   */
+  isHidden?: boolean
 }
 
 function sortVariables(variables: Variable[]): void {
@@ -141,37 +149,38 @@ const process = (
     ]
 
     /**
-     * CAVEAT: we intentionally do not include the columns in the variables list
-     * may consider adding them back in the future if the need arises
-     */
-    /**
+     * CAVEAT: we intentionally set the columns to be hidden in the variables list
+     * so that we don't display them,
+     * but we keep them in the dataOut to compare parameters against the last test execution
+     *
      * NOTE: we dynamically obtain the values for each column since we are not
      * storing the values in the dataOut.
      */
-    // const { columns, rows } = data
-    // const columnVariables = columns.map((column: RawColumn) => {
-    //   const rowValues: (string | number)[] = []
-    //   rows.forEach((row: RawRow) => {
-    //     /**
-    //      * NOTE: do not push empty values as we do not want to cause any errors
-    //      * that may arise from having empty values.
-    //      */
-    //     if (row.data[column.id]) {
-    //       rowValues.push(row.data[column.id])
-    //     }
-    //   })
+    const { columns, rows } = data
+    const columnVariables = columns.map((column: RawColumn) => {
+      const rowValues: (string | number)[] = []
+      rows.forEach((row: RawRow) => {
+        /**
+         * NOTE: do not push empty values as we do not want to cause any errors
+         * that may arise from having empty values.
+         */
+        if (row.data[column.id]) {
+          rowValues.push(row.data[column.id])
+        }
+      })
 
-    //   return {
-    //     ...column,
-    //     name: `step.${stepId}.${column.value}`,
-    //     label: column.name,
-    //     displayedValue: rowValues.join(', '),
-    //     value: rowValues.join(', '),
-    //     type: 'text',
-    //   }
-    // })
+      return {
+        ...column,
+        name: `step.${stepId}.${column.value}`,
+        label: column.name,
+        displayedValue: rowValues.join(', '),
+        value: rowValues.join(', '),
+        type: 'text',
+        isHidden: true,
+      }
+    })
 
-    return [...outputVars]
+    return [...outputVars, ...columnVariables]
   }
 
   /**

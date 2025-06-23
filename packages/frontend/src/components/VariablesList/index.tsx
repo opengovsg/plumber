@@ -161,7 +161,7 @@ export default function VariablesList(props: VariablesListProps) {
             variable={variable}
             onClick={onClick}
           />
-        ) : (
+        ) : variable.isHidden ? null : (
           <VariableItem
             key={`variable-${variable.name}`}
             variable={variable}
