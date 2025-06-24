@@ -169,6 +169,17 @@ function buildAnswerArrayForTable(
   return answerArray
 }
 
+function buildTableMetadatum(fieldData: IJSONObject): IDataOutMetadata {
+  const tableObject = JSON.parse(fieldData.answer as string)
+  return {
+    label: `Response ${fieldData.order}`,
+    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
+    type: 'table',
+    displayedValue: `Preview ${tableObject.rows.length} row(s)`,
+    value: tableObject,
+  }
+}
+
 function buildAnswerArrayMetadatum(
   fieldData: IJSONObject,
   stepId: string,
@@ -324,6 +335,12 @@ async function getDataOutMetadata(
       isHeader: { isHidden: true },
     }
     if (isAnswerArrayValid(fieldData)) {
+      // table field will have a stringified table object in the answer field
+      // so that it can be used in for-each
+      // this is also used to generate the table preview in the frontend
+      if (fieldData.fieldType === 'table') {
+        fieldMetadata[fieldId].answer = buildTableMetadatum(fieldData)
+      }
       fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(
         fieldData,
         executionStep.stepId,

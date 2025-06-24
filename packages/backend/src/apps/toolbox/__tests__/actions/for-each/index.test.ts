@@ -260,6 +260,68 @@ describe('For each action', () => {
       })
     })
 
+    it('should handle valid table input (FormSG Table field)', async () => {
+      const mockTableFieldData = JSON.stringify(validTableData)
+      $.step.parameters.items = mockTableFieldData
+
+      const processedResult = {
+        processedItems: validTableData,
+        iterations: 2,
+        inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+      }
+
+      mockedProcessItems.mockReturnValue(processedResult)
+      const result = await action.run($)
+
+      expect(mockedProcessItems).toHaveBeenCalledWith(validTableData)
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          iterations: 2,
+          items: processedResult.processedItems,
+          inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+        },
+      })
+      expect(result).toEqual({
+        nextStep: {
+          command: 'start-for-each',
+          stepId: 'for-each',
+        },
+      })
+    })
+
+    it('should handle FormSG Table field with no row data', async () => {
+      const mockTableFieldData = {
+        rows: [{ data: { col1: '', col2: '' } }],
+        columns: validTableData.columns,
+      }
+      const stringifiedTableFieldData = JSON.stringify(mockTableFieldData)
+
+      $.step.parameters.items = stringifiedTableFieldData
+      const processedResult = {
+        processedItems: mockTableFieldData,
+        iterations: 0,
+        inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+      }
+      mockedProcessItems.mockReturnValue(processedResult)
+      const result = await action.run($)
+
+      expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          iterations: 0,
+          items: processedResult.processedItems,
+          inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+        },
+      })
+
+      expect(result).toEqual({
+        nextStep: {
+          command: 'stop-execution',
+          stepId: 'for-each',
+        },
+      })
+    })
+
     it('should handle table input with empty rows', async () => {
       const emptyTableData = {
         rows: [] as any[],

@@ -32,7 +32,10 @@ interface TableData {
 const STEP_ID_REGEX =
   /step\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
 
-const getTableData = (data: unknown): TableData => data as TableData
+const getTableData = (data: unknown, isFormSgTable: boolean): TableData =>
+  isFormSgTable && typeof data === 'string'
+    ? (JSON.parse(data as string) as TableData)
+    : (data as TableData)
 
 const deepCompare = (a: any, b: any, varInfoMap: VariableInfoMap): boolean => {
   if (a === b) {
@@ -136,25 +139,63 @@ export const matchParamsToDataIn = (
       }
 
       const match = String(paramValue).match(STEP_ID_REGEX)
-      const searchKey = match?.[0]
+      let isFormSgTable = false
+      let searchKey = match?.[0]
+
+      // FormSG dataOut structure is different from our own apps
+      // the individual columns are stored in fields.answerArray,
+      // while the items object is stored as fields.answer
+      if (
+        String(paramValue).includes('fields') &&
+        String(paramValue).includes('answer')
+      ) {
+        searchKey = String(paramValue).replace(
+          /\{\{(.*)answer(.*)\}\}/,
+          '$1answerArray.0$2',
+        )
+        isFormSgTable = true
+      }
+
       if (!searchKey) {
         return false
       }
 
-      const tableData = getTableData(lastTest)
+      const tableData = getTableData(lastTest, isFormSgTable)
       const varRowsFound = varInfoMap.get(
         `{{${searchKey}.rowsFound}}`,
       )?.testRunValue
 
-      if (Number(varRowsFound) !== Number(tableData.rows?.length)) {
+      if (
+        !isFormSgTable && // form sg table output will not have rowsFound
+        Number(varRowsFound) !== Number(tableData.rows?.length)
+      ) {
         return false
       }
 
       const lastTestColumns = tableData.columns?.map((c) => c.name) ?? []
+      const mapKey = isFormSgTable ? searchKey : `${searchKey}.data`
       const varInfo = Array.from(varInfoMap.entries())
-        .filter(([key]) => key.includes(`${searchKey}.data`))
+        .filter(([key]) => key.includes(mapKey))
         .map(([, value]) => value)
+
       const varColumns = new Set(varInfo.map((item) => item.label))
+
+      /**
+       * FormSG table special case:
+       * - FormSG table columns are stored like:
+       *  ["Response 6, Row 1 Column 1", "Response 6, Row 1 Column 2", "Response 6, Row 1 Column 3"]
+       *
+       * - Our variables are stored like:
+       * ["Column 1", "Column 2", "Column 3"]
+       *
+       * since there is no safe way to parse the FormSG table columns properly,
+       * we do a best-effort comparison to just check that the columns are present.
+       */
+      if (isFormSgTable) {
+        return lastTestColumns.every((testCol) =>
+          Array.from(varColumns).some((varCol) => varCol.includes(testCol)),
+        )
+      }
 
       return lastTestColumns.every((label) => varColumns.has(label))
     }

@@ -724,6 +724,46 @@ describe('decrypt form response', () => {
             tableField: {
               fieldType: 'table',
               question: 'What are your hobbies and when do you do them?',
+              answer: JSON.stringify({
+                rows: [
+                  {
+                    data: {
+                      [Buffer.from('Column 1').toString('hex')]: 'reading',
+                      [Buffer.from('Column 2').toString('hex')]: 'night',
+                    },
+                  },
+                  {
+                    data: {
+                      [Buffer.from('Column 1').toString('hex')]: 'gaming',
+                      [Buffer.from('Column 2').toString('hex')]: 'weekend',
+                    },
+                  },
+                  {
+                    data: {
+                      [Buffer.from('Column 1').toString('hex')]: 'coding',
+                      [Buffer.from('Column 2').toString('hex')]: 'day',
+                    },
+                  },
+                ],
+                columns: [
+                  {
+                    id: Buffer.from('Column 1').toString('hex'),
+                    label: 'Column 1',
+                    name: 'Column 1',
+                    value: `data.rows.*.data.${Buffer.from('Column 1').toString(
+                      'hex',
+                    )}`,
+                  },
+                  {
+                    id: Buffer.from('Column 2').toString('hex'),
+                    label: 'Column 2',
+                    name: 'Column 2',
+                    value: `data.rows.*.data.${Buffer.from('Column 2').toString(
+                      'hex',
+                    )}`,
+                  },
+                ],
+              }),
               answerArray: [
                 ['reading', 'night'],
                 ['gaming', 'weekend'],
@@ -781,6 +821,40 @@ describe('decrypt form response', () => {
                 ['reading', 'night'],
                 ['gaming', 'weekend'],
               ],
+              answer: JSON.stringify({
+                rows: [
+                  {
+                    data: {
+                      [Buffer.from('Column 1').toString('hex')]: 'reading',
+                      [Buffer.from('Column 2').toString('hex')]: 'night',
+                    },
+                  },
+                  {
+                    data: {
+                      [Buffer.from('Column 1').toString('hex')]: 'gaming',
+                      [Buffer.from('Column 2').toString('hex')]: 'weekend',
+                    },
+                  },
+                ],
+                columns: [
+                  {
+                    id: Buffer.from('Column 1').toString('hex'),
+                    label: 'Column 1',
+                    name: 'Column 1',
+                    value: `data.rows.*.data.${Buffer.from('Column 1').toString(
+                      'hex',
+                    )}`,
+                  },
+                  {
+                    id: Buffer.from('Column 2').toString('hex'),
+                    label: 'Column 2',
+                    name: 'Column 2',
+                    value: `data.rows.*.data.${Buffer.from('Column 2').toString(
+                      'hex',
+                    )}`,
+                  },
+                ],
+              }),
               order: 2,
             },
           },

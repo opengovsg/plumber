@@ -30,7 +30,12 @@ const baseDataOutSchema = z.object({
   iterations: z.number(),
 })
 
-const dataSchema = z.union([z.array(z.any()), tableSchema])
+const dataSchema = z.union([
+  z.array(z.any()),
+  tableSchema,
+  // FormSG Table field is a stringified JSON object
+  z.string(),
+])
 
 export const inputSchema = z
   .object({
@@ -40,7 +45,11 @@ export const inputSchema = z
   .transform(({ data, testRun }, ctx) => {
     // we allow empty arrays in non-test runs as the checkboxes may be empty
     // however test runs should not be empty as values are needed to set up subsequent steps
-    if (!data || (testRun && Array.isArray(data) && data.length === 0)) {
+    if (
+      !data ||
+      (typeof data === 'string' && data.trim() === '') ||
+      (testRun && Array.isArray(data) && data.length === 0)
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Input cannot be empty',
@@ -56,10 +65,22 @@ export const inputSchema = z
         iterations: data.length,
       }
     } else {
-      return {
-        inputSource: data.inputSource,
-        items: data,
-        iterations: data.rows.length,
+      try {
+        const items = typeof data === 'string' ? JSON.parse(data) : data
+        return {
+          inputSource:
+            typeof data === 'string'
+              ? FOR_EACH_INPUT_SOURCE.FORMSG_TABLE
+              : items.inputSource,
+          items: items,
+          iterations: items.rows.length,
+        }
+      } catch (e) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Invalid input',
+        })
+        return z.NEVER
       }
     }
   })
@@ -75,6 +96,10 @@ export const dataOutSchema = z.discriminatedUnion('inputSource', [
   }),
   baseDataOutSchema.extend({
     inputSource: z.literal(FOR_EACH_INPUT_SOURCE.TILES),
+    items: tableSchema,
+  }),
+  baseDataOutSchema.extend({
+    inputSource: z.literal(FOR_EACH_INPUT_SOURCE.FORMSG_TABLE),
     items: tableSchema,
   }),
 ])

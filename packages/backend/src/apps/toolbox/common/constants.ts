@@ -3,6 +3,7 @@ export enum FOR_EACH_INPUT_SOURCE {
   M365_EXCEL = 'm365-excel',
   TILES = 'tiles',
   STRING_ARRAY = 'string-array',
+  FORMSG_TABLE = 'formsg-table',
 }
 
 export const FOR_EACH_ITERATION_DELAY = 2000 // in ms

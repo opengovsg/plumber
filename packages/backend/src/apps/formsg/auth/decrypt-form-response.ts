@@ -128,6 +128,31 @@ export async function decryptFormResponse(
           rest.answerArray = (rest.answerArray as string[][]).map((row) =>
             row.map((column) => column.replaceAll('\u0000', '')),
           )
+          const array = rest.answerArray as string[][]
+
+          const columns = (array[0] as string[]).map(
+            (_: string, index: number) => {
+              const label = `Column ${index + 1}`
+              return {
+                id: Buffer.from(label).toString('hex'),
+                label,
+                name: label,
+                value: `data.rows.*.data.${Buffer.from(label).toString('hex')}`,
+              }
+            },
+          )
+          const rows = (array as string[][]).map((row) => {
+            const rowData: Record<string, string | number> = {}
+            row.forEach((v: string, i: number) => {
+              rowData[columns[i].id] = v.replaceAll('\u0000', '')
+            })
+            return { data: rowData }
+          })
+
+          rest.answer = JSON.stringify({
+            rows,
+            columns,
+          })
         } else {
           rest.answerArray = (rest.answerArray as string[]).map((answer) =>
             answer.replaceAll('\u0000', ''),
