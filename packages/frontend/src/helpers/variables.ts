@@ -13,7 +13,6 @@ import { RawColumn, RawRow } from '@/components/VariablesList/utils'
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
   'text',
   'array',
-  'table',
   'tile_row_id',
 ]
 

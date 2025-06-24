@@ -36,7 +36,11 @@ const TableHeader = ({ columns }: { columns: ProcessedColumn[] }) => (
     zIndex={1}
   >
     <Tr key="header-row">
-      <Th borderRightWidth="1px" borderColor={BORDER_COLOR.DEFAULT}>
+      <Th
+        borderRightWidth="1px"
+        borderColor={BORDER_COLOR.DEFAULT}
+        textAlign="center"
+      >
         #
       </Th>
       {columns?.map((c, colIndex) => (
