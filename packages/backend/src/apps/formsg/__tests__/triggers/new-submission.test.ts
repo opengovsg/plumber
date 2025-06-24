@@ -79,6 +79,7 @@ describe('new submission trigger', () => {
 
     const actualData = {
       formId: '123',
+      submissionTime: '2025-06-17T14:25:14.195+08:00',
       responses: {
         textFieldId: {
           question: 'What is your age?',
@@ -105,20 +106,27 @@ describe('new submission trigger', () => {
         raw: mockData,
         meta: {
           internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
         },
-        isMock: true,
       })
     })
 
     it('should use mock data if preferMock is true even though there is past submission', async () => {
-      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
       await trigger.testRun($, { preferMock: true })
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: mockData,
         meta: {
           internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: new Date(
+            '2025-06-17T14:25:14.195+08:00',
+          ).toISOString(),
         },
-        isMock: true,
       })
     })
 
@@ -129,32 +137,45 @@ describe('new submission trigger', () => {
         raw: mockData,
         meta: {
           internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
         },
-        isMock: true,
       })
     })
 
     it('should use last test submission if testRunMetadata is undefined and there is past submission', async () => {
-      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
       await trigger.testRun($, undefined)
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: actualData,
         meta: {
           internalId: '',
+          isMock: false,
+          lastTestSubmissionDate: new Date(
+            '2025-06-17T14:25:14.195+08:00',
+          ).toISOString(),
         },
-        isMock: false,
       })
     })
 
     it('should use last test submission if preferMock is false and there is past submission', async () => {
-      getLastExecutionStepMock.mockResolvedValue({ dataOut: actualData })
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
       await trigger.testRun($, { preferMock: false })
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: actualData,
         meta: {
           internalId: '',
+          isMock: false,
+          lastTestSubmissionDate: new Date(
+            '2025-06-17T14:25:14.195+08:00',
+          ).toISOString(),
         },
-        isMock: false,
       })
     })
 
@@ -165,8 +186,28 @@ describe('new submission trigger', () => {
         raw: mockData,
         meta: {
           internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
         },
-        isMock: true,
+      })
+    })
+
+    it('should store the createdAt time if submissionTime is not available', async () => {
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: { ...actualData, submissionTime: undefined },
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
+      await trigger.testRun($, { preferMock: false })
+
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: { ...actualData, submissionTime: undefined },
+        meta: {
+          internalId: '',
+          isMock: false,
+          lastTestSubmissionDate: new Date(
+            '2025-06-16 07:06:30.155+00',
+          ).toISOString(),
+        },
       })
     })
   })
