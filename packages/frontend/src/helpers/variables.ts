@@ -74,11 +74,7 @@ function getStepName(executionStep: IExecutionStep, allApps: IApp[]) {
     caption = app.name
   }
 
-  return (
-    step?.config?.stepName ||
-    caption ||
-    (appKey || '').charAt(0)?.toUpperCase() + appKey?.slice(1)
-  )
+  return caption || (appKey || '').charAt(0)?.toUpperCase() + appKey?.slice(1)
 }
 
 function sortVariables(variables: Variable[]): void {
