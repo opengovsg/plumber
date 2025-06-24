@@ -89,6 +89,10 @@ const action: IRawAction = {
       key: 'columnValues',
       type: 'multirow-multicol' as const,
       required: true,
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
       subFields: [
         {
           key: 'columnName' as const,

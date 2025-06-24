@@ -39,6 +39,10 @@ const action: IRawAction = {
         'Enter the data to update the row with. Columns not specified will not be updated',
       type: 'multirow-multicol' as const,
       required: true,
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
+      },
       subFields: [
         {
           key: 'columnName' as const,
