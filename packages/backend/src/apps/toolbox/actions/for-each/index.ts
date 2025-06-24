@@ -37,8 +37,9 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    const { testRun } = $.execution
     const { items: rawItems } = $.step.parameters
-    const parsedResult = inputSchema.safeParse(rawItems)
+    const parsedResult = inputSchema.safeParse({ data: rawItems, testRun })
 
     if (parsedResult.success === false) {
       throw new StepError(

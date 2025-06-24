@@ -74,6 +74,9 @@ describe('For each action', () => {
       app: {
         name: 'Toolbox',
       },
+      execution: {
+        testRun: false,
+      },
       setActionItem: mocks.setActionItem,
     } as unknown as IGlobalVariable
   })
