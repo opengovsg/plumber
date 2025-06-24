@@ -69,7 +69,10 @@ export default function AnnouncementItem(props: AnnouncementItemProps) {
   return (
     <>
       {displayedMultimedia && <Box>{displayedMultimedia}</Box>}
-      <ModalHeader mb={displayedMultimedia ? 0 : 2}>
+      <ModalHeader
+        mb={displayedMultimedia ? 0 : 2}
+        pt={displayedMultimedia ? 4 : 8}
+      >
         <Text textStyle="h4">{title}</Text>
       </ModalHeader>
 
