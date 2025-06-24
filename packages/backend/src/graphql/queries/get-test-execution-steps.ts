@@ -7,7 +7,7 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
   params,
   context,
 ) => {
-  const { flowId, ignoreTestExecutionId } = params
+  const { flowId } = params
   // For checking if flow belongs to the user
   const flow = await context.currentUser
     .$relatedQuery('flows')
@@ -17,10 +17,7 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
     .findById(flowId)
     .throwIfNotFound()
 
-  const testExecutionSteps = await getTestExecutionStepsHelper(
-    flow.id,
-    ignoreTestExecutionId,
-  )
+  const testExecutionSteps = await getTestExecutionStepsHelper(flow.id)
 
   // We do not return test execution steps if the step is not complete
   // to ensure we dont show variables from other step/events.
