@@ -220,7 +220,7 @@ export default function EditorLayout() {
                 value={flow?.name}
                 onSave={onFlowNameUpdate}
                 readOnly={loading}
-                width={isMobile ? '40%' : undefined}
+                width="auto"
               />
             </Flex>
           </Flex>
