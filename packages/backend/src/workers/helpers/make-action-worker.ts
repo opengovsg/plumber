@@ -128,21 +128,15 @@ export function makeActionWorker(
           workerVersion: appConfig.version,
         })
 
-        const {
-          flowId,
-          executionId,
-          nextStep,
-          executionStep,
-          nextStepMetadata,
-          executionError,
-        } = await processAction({ ...jobData, jobId }).catch(async (err) => {
-          // This happens when the prerequisite steps for the action fails (e.g.
-          // db error, missing execution, flow, step, etc...) in such cases, we
-          // do not want to retry
-          throw new UnrecoverableError(
-            err.message || 'Action failed to execute',
-          )
-        })
+        const { flowId, executionId, nextStep, executionStep, executionError } =
+          await processAction({ ...jobData, jobId }).catch(async (err) => {
+            // This happens when the prerequisite steps for the action fails (e.g.
+            // db error, missing execution, flow, step, etc...) in such cases, we
+            // do not want to retry
+            throw new UnrecoverableError(
+              err.message || 'Action failed to execute',
+            )
+          })
 
         if (executionStep.isFailed) {
           return handleFailedStepAndThrow({
@@ -168,7 +162,6 @@ export function makeActionWorker(
           flowId,
           executionId,
           stepId: nextStep.id,
-          metadata: nextStepMetadata,
         }
 
         let jobOptions = DEFAULT_JOB_OPTIONS

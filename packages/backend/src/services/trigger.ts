@@ -1,4 +1,4 @@
-import { IJSONObject, ITriggerItem } from '@plumber/types'
+import type { IJSONObject, ITriggerItem } from '@plumber/types'
 
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'

@@ -1,6 +1,10 @@
 import type { IJSONObject, IStep, IStepConfig } from '@plumber/types'
 
-import { type StaticHookArguments, ValidationError } from 'objection'
+import {
+  RelatedQueryBuilder,
+  type StaticHookArguments,
+  ValidationError,
+} from 'objection'
 import { URL } from 'url'
 
 import apps from '@/apps'
@@ -123,9 +127,11 @@ class Step extends Base {
   async getLastExecutionStep({
     executionId,
     testRunOnly,
+    additionalFilter,
   }: {
     executionId?: string
     testRunOnly?: boolean
+    additionalFilter?: (qb: RelatedQueryBuilder<ExecutionStep>) => void
   }) {
     const query = this.$relatedQuery('executionSteps')
       .orderBy('created_at', 'desc')
@@ -137,6 +143,9 @@ class Step extends Base {
     }
     if (executionId) {
       query.andWhere('execution_id', executionId)
+    }
+    if (additionalFilter) {
+      additionalFilter(query)
     }
     const lastExecutionStep = await query
     if (lastExecutionStep?.appKey !== this.appKey) {
