@@ -11,6 +11,21 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2025-06-25',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: `We've made FormSG integration a lil' better`,
+    details: dedent`
+      👓 **Clearer variable names** 
+      FormSG variables now reflect the actual question text, making them easier to recognise at a glance.
+
+      🧹 **Less clutter, fewer mistakes** 
+      Question text variables are now hidden by default to reduce visual noise and prevent accidental clicks.
+
+      🔄 **Easier data switching**
+      You can now toggle between your last test submission data and mock data when checking step — especially handy if you’ve recently updated your FormSG fields.
+    `,
+  },
+  {
     date: '2025-03-17',
     tag: NEW_ENHANCEMENT_TAG,
     title: 'Improvements we made',
