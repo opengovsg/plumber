@@ -15,8 +15,6 @@ type Query {
     connectionId: String
     name: String
   ): PaginatedFlows
-  getStepWithTestExecutions(stepId: String!): [Step]
-    @deprecated(reason: "Use getTestExecution instead")
   getTestExecutionSteps(
     flowId: String!
     ignoreTestExecutionId: Boolean
@@ -77,7 +75,6 @@ type Mutation {
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
-  executeFlow(input: ExecuteFlowInput): ExecutionStep!
   executeStep(input: ExecuteStepInput): ExecutionStep!
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
@@ -323,6 +320,7 @@ type ExecutionStep {
 
 type ExecutionStepMetadata {
   isMock: Boolean
+  lastTestSubmissionDate: String
 }
 
 type Field {
@@ -476,12 +474,9 @@ input UpdateFlowConfigInput {
   attachments: [FlowAttachmentsConfigInput]
 }
 
-input ExecuteFlowInput {
-  stepId: String!
-}
-
 input ExecuteStepInput {
   stepId: String!
+  testRunMetadata: JSONObject
 }
 
 input DeleteFlowInput {

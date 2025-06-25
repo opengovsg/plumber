@@ -130,13 +130,16 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     })
   }, [saveStep, toast])
 
-  const handleSaveAndTest = useCallback(async () => {
-    await saveStep()
-    await executeTestStep()
-    if (!isIfThenStep(step)) {
-      onTestResultOpen()
-    }
-  }, [saveStep, executeTestStep, step, onTestResultOpen])
+  const handleSaveAndTest = useCallback(
+    async (testRunMetadata?: Record<string, unknown>) => {
+      await saveStep()
+      await executeTestStep(testRunMetadata)
+      if (!isIfThenStep(step)) {
+        onTestResultOpen()
+      }
+    },
+    [saveStep, executeTestStep, step, onTestResultOpen],
+  )
 
   return (
     <Box position="relative" display="flex" flexDirection="column">

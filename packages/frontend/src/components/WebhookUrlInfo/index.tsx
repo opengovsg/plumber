@@ -2,12 +2,9 @@ import { ITriggerInstructions } from '@plumber/types'
 
 import * as React from 'react'
 import ReactMarkdown from 'react-markdown'
-import { Box } from '@chakra-ui/react'
-import type { AlertProps } from '@mui/material/Alert'
+import { Alert, AlertProps, Box } from '@chakra-ui/react'
 
 import TextField from '../TextField'
-
-import { Alert } from './style'
 
 type WebhookUrlInfoProps = {
   webhookUrl: string
@@ -25,7 +22,14 @@ function WebhookUrlInfo(props: WebhookUrlInfoProps): React.ReactElement {
   }
 
   return (
-    <Alert icon={false} color="info" {...alertProps}>
+    <Alert
+      status="info"
+      {...alertProps}
+      display="block"
+      colorScheme="default"
+      bg="gray.50"
+      borderRadius="sm"
+    >
       {beforeUrlMsg && <ReactMarkdown>{beforeUrlMsg}</ReactMarkdown>}
       {!hideWebhookUrl && (
         <Box my={4}>

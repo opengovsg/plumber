@@ -2,13 +2,30 @@ import {
   IDataOutMetadata,
   IDataOutMetadatum,
   IExecutionStep,
+  IGlobalVariable,
   IJSONObject,
 } from '@plumber/types'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ADDRESS_LABELS } from '../../common/constants'
 import trigger from '../../triggers/new-submission'
+
+const pushTriggerItemMock = vi.fn()
+const getLastExecutionStepMock = vi.fn()
+
+const mocks = vi.hoisted(() => ({
+  getMockData: vi.fn(),
+  getFormDetailsFromGlobalVariable: vi.fn(),
+}))
+
+vi.mock('../../triggers/new-submission/get-mock-data', () => ({
+  default: mocks.getMockData,
+}))
+
+vi.mock('../../common/webhook-settings', () => ({
+  getFormDetailsFromGlobalVariable: mocks.getFormDetailsFromGlobalVariable,
+}))
 
 describe('new submission trigger', () => {
   let executionStep: IExecutionStep
@@ -26,6 +43,11 @@ describe('new submission trigger', () => {
               attr: 'name',
             },
           },
+          headerFieldId: {
+            question: 'Section Header',
+            fieldType: 'section',
+            order: 2,
+          },
         },
         verifiedSubmitterInfo: {
           uinFin: 'S1234567B',
@@ -37,6 +59,158 @@ describe('new submission trigger', () => {
     } as unknown as IExecutionStep
   })
 
+  describe('testRun', () => {
+    const $ = {
+      auth: { data: { formId: '123' } },
+      user: { email: 'test@test.com' },
+      pushTriggerItem: pushTriggerItemMock,
+      getLastExecutionStep: getLastExecutionStepMock,
+    } as unknown as IGlobalVariable
+
+    const mockData = {
+      formId: '123',
+      responses: {
+        mockTextFieldId: {
+          question: 'What is your name?',
+          answer: 'herp derp',
+        },
+      },
+    }
+
+    const actualData = {
+      formId: '123',
+      submissionTime: '2025-06-17T14:25:14.195+08:00',
+      responses: {
+        textFieldId: {
+          question: 'What is your age?',
+          answer: 10,
+        },
+      },
+    }
+
+    beforeEach(() => {
+      mocks.getMockData.mockResolvedValue(mockData)
+      mocks.getFormDetailsFromGlobalVariable.mockReturnValue({
+        formId: '123',
+      })
+    })
+
+    afterEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('should use mock data if preferMock is true and there is no past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      await trigger.testRun($, { preferMock: true })
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
+        },
+      })
+    })
+
+    it('should use mock data if preferMock is true even though there is past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
+      await trigger.testRun($, { preferMock: true })
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: new Date(
+            '2025-06-17T14:25:14.195+08:00',
+          ).toISOString(),
+        },
+      })
+    })
+
+    it('should use mock data if testRunMetadata is undefined and there is no past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      await trigger.testRun($, undefined)
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
+        },
+      })
+    })
+
+    it('should use last test submission if testRunMetadata is undefined and there is past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
+      await trigger.testRun($, undefined)
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: actualData,
+        meta: {
+          internalId: '',
+          isMock: false,
+          lastTestSubmissionDate: new Date(
+            '2025-06-17T14:25:14.195+08:00',
+          ).toISOString(),
+        },
+      })
+    })
+
+    it('should use last test submission if preferMock is false and there is past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: actualData,
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
+      await trigger.testRun($, { preferMock: false })
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: actualData,
+        meta: {
+          internalId: '',
+          isMock: false,
+          lastTestSubmissionDate: new Date(
+            '2025-06-17T14:25:14.195+08:00',
+          ).toISOString(),
+        },
+      })
+    })
+
+    it('should use mock data if preferMock is false and there is no past submission', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      await trigger.testRun($, { preferMock: false })
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
+        },
+      })
+    })
+
+    it('should store the createdAt time if submissionTime is not available', async () => {
+      getLastExecutionStepMock.mockResolvedValue({
+        dataOut: { ...actualData, submissionTime: undefined },
+        createdAt: '2025-06-16 07:06:30.155+00',
+      })
+      await trigger.testRun($, { preferMock: false })
+
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: { ...actualData, submissionTime: undefined },
+        meta: {
+          internalId: '',
+          isMock: false,
+          lastTestSubmissionDate: new Date(
+            '2025-06-16 07:06:30.155+00',
+          ).toISOString(),
+        },
+      })
+    })
+  })
   describe('dataOut metadata', () => {
     it('ensures that only question, answer and answerArray props are visible', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
@@ -64,10 +238,12 @@ describe('new submission trigger', () => {
       expect(metadata.fields.textFieldId.question.label).toEqual('Question 1')
     })
 
-    it('changes the answer label to "Response #n"', async () => {
+    it('changes the answer label to "1. What is your name?"', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
 
-      expect(metadata.fields.textFieldId.answer.label).toEqual('Response 1')
+      expect(metadata.fields.textFieldId.answer.label).toEqual(
+        '1. What is your name?',
+      )
     })
 
     it('positions the answer after the question', async () => {
@@ -78,20 +254,29 @@ describe('new submission trigger', () => {
       )
     })
 
-    it('sets label and order to null if question number is undefined', async () => {
+    it('should computes order for questions and answers even if order is not provided', async () => {
       const fields = executionStep.dataOut.fields as IJSONObject
-      fields.textFieldId = {
-        question: 'What is your name?',
-        answer: 'herp derp',
-        fieldType: 'textField',
+      delete fields.textFieldId
+      // generate a few fields
+      for (let i = 0; i < 10; i++) {
+        fields[`textFieldId${i + 1}`] = {
+          question: `What is your name? ${i}`,
+          answer: 'herp derp',
+          fieldType: 'textField',
+          order: i < 5 ? i + 1 : null,
+        }
       }
 
       const metadata = await trigger.getDataOutMetadata(executionStep)
 
-      expect(metadata.fields.textFieldId.question.order).toBeNull()
-      expect(metadata.fields.textFieldId.answer.order).toBeNull()
-      expect(metadata.fields.textFieldId.question.label).toBeNull()
-      expect(metadata.fields.textFieldId.answer.label).toBeNull()
+      expect(metadata.fields.textFieldId1.question.order).toBe(1)
+      expect(metadata.fields.textFieldId1.answer.order).toBe(1.1)
+      expect(metadata.fields.textFieldId2.question.order).toBe(2)
+      expect(metadata.fields.textFieldId2.answer.order).toBe(2.1)
+      expect(metadata.fields.textFieldId5.question.order).toBe(5)
+      expect(metadata.fields.textFieldId5.answer.order).toBe(5.1)
+      expect(metadata.fields.textFieldId6.question.order).toBe(6)
+      expect(metadata.fields.textFieldId6.answer.order).toBe(6.1)
     })
 
     it('sets a label for SingPass verified NRIC/FIN', async () => {
@@ -168,6 +353,20 @@ describe('new submission trigger', () => {
 
       const metadata = await trigger.getDataOutMetadata(executionStep)
       expect(metadata.fields.fileFieldId.answer.label).toEqual('Attach a file.')
+    })
+
+    it('collapses header fields', async () => {
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(
+        metadata.fields.headerFieldId.question.isCollapsedByDefault,
+      ).toEqual(true)
+    })
+
+    it('collapses question variables', async () => {
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      expect(metadata.fields.textFieldId.question.isCollapsedByDefault).toEqual(
+        true,
+      )
     })
 
     it('hides attachment questions', async () => {
@@ -277,7 +476,8 @@ describe('new submission trigger for answer array fields', () => {
             answerArray: ['lunch', 'dinner'],
           },
           textFieldId2: {
-            question: 'What are your hobbies? When do you do them?',
+            question:
+              'What are your hobbies? When do you do them? (activity, time)',
             fieldType: 'table',
             order: 2,
             answerArray: [
@@ -327,7 +527,7 @@ describe('new submission trigger for answer array fields', () => {
       // type will be array instead of text!
       expect(array).toEqual({
         type: 'array',
-        label: 'Response 1',
+        label: '1. Have you had your meals?',
         order: 1.1,
       })
     })
@@ -345,8 +545,10 @@ describe('new submission trigger for answer array fields', () => {
       for (let i = 0; i < array.length; i++) {
         const nestedArray = array[i]
         for (let j = 0; j < array.length; j++) {
-          expect(nestedArray[j].label).toEqual(
-            `Response 2, Row ${i + 1} Column ${j + 1}`,
+          expect(nestedArray[j].label).toBe(
+            `2. Row ${i + 1} ${
+              j === 0 ? 'activity' : 'time'
+            } - What are your hobbies? When do you do them?`,
           )
         }
       }
@@ -370,7 +572,9 @@ describe('new submission trigger for answer array fields', () => {
 
       expect(addressMetadata).toHaveLength(5)
       ADDRESS_LABELS.forEach((label, index) => {
-        expect(addressMetadata[index].label).toEqual(`Response 4, ${label}`)
+        expect(addressMetadata[index].label).toEqual(
+          `4.${index + 1}. ${label} - What is your address?`,
+        )
       })
     })
 
@@ -379,7 +583,9 @@ describe('new submission trigger for answer array fields', () => {
       const addressMetadata = metadata.fields.addressFieldPartial
         .answerArray as IDataOutMetadatum[]
       ADDRESS_LABELS.forEach((label, index) => {
-        expect(addressMetadata[index].label).toEqual(`Response 5, ${label}`)
+        expect(addressMetadata[index].label).toEqual(
+          `5.${index + 1}. ${label} - What is your address?`,
+        )
       })
     })
   })

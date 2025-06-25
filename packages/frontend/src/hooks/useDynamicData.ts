@@ -120,9 +120,20 @@ function useDynamicData(
         // resetField function resets it to the last saved value which is wrong
         setValue(fieldName, null)
 
-        refetch({
-          ...getWatchedFormFieldValues(watchedFormFields, newFieldValues),
-        })
+        const parametersToRefetch = getWatchedFormFieldValues(
+          watchedFormFields,
+          newFieldValues,
+        )
+        // We check that there are no null/undefined values in the parameters,
+        for (const [_, fieldPath] of watchedFormFields.entries()) {
+          const value = get(parametersToRefetch, fieldPath)
+          if (value == null) {
+            // not all values are present, so we don't refetch
+            return
+          }
+        }
+
+        refetch(parametersToRefetch)
       },
     )
 

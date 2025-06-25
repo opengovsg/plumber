@@ -5,7 +5,6 @@ import Flow from '@/models/flow'
 
 export async function getTestExecutionSteps(
   flowId: string,
-  ignoreTestExecutionId = false,
 ): Promise<ExecutionStep[]> {
   const flow = await Flow.query()
     .findById(flowId)
@@ -23,7 +22,7 @@ export async function getTestExecutionSteps(
     return []
   }
 
-  if (flow.testExecution && !ignoreTestExecutionId) {
+  if (flow.testExecution) {
     const testExecutionSteps = flow.testExecution.executionSteps
 
     /**

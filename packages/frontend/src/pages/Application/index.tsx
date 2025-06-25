@@ -9,22 +9,15 @@ import {
   useParams,
 } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import Box from '@mui/material/Box'
-import Grid from '@mui/material/Grid'
-import { useTheme } from '@mui/material/styles'
-import Tab from '@mui/material/Tab'
-import Tabs from '@mui/material/Tabs'
-import useMediaQuery from '@mui/material/useMediaQuery'
+import { Box, Flex, Tab, TabList, Tabs, Text } from '@chakra-ui/react'
 
 import AddAppConnection from '@/components/AddAppConnection'
 import AppConnections from '@/components/AppConnections'
 import AppFlows from '@/components/AppFlows'
 import AppIcon from '@/components/AppIcon'
 import Container from '@/components/Container'
-import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
 import { GET_APP } from '@/graphql/queries/get-app'
-import useFormatMessage from '@/hooks/useFormatMessage'
 
 type ApplicationParams = {
   appKey: string
@@ -45,11 +38,6 @@ const ReconnectConnection = (props: any): React.ReactElement => {
 }
 
 export default function Application(): React.ReactElement | null {
-  const theme = useTheme()
-  const matchSmallScreens = useMediaQuery(theme.breakpoints.down('md'), {
-    noSsr: true,
-  })
-  const formatMessage = useFormatMessage()
   const connectionsPathMatch = useMatch({
     path: URLS.APP_CONNECTIONS_PATTERN,
     end: false,
@@ -66,80 +54,79 @@ export default function Application(): React.ReactElement | null {
     return null
   }
 
+  const currentTabIndex = connectionsPathMatch ? 0 : flowsPathMatch ? 1 : 0
+
   return (
     <>
-      <Box sx={{ py: 3 }}>
-        <Container variant="page">
-          <Grid container sx={{ mb: 3 }} alignItems="center">
-            <Grid item xs="auto" sx={{ mr: 3 }}>
-              <AppIcon
-                url={app.iconUrl}
-                color={app.primaryColor}
-                name={app.name}
+      <Container>
+        <Flex gap={4} mb={3} px={4} alignItems="center">
+          <AppIcon url={app.iconUrl} color={app.primaryColor} name={app.name} />
+          <Text textStyle="h4">{app.name}</Text>
+        </Flex>
+
+        <Box borderColor="gray.200" mb={2}>
+          <Tabs
+            variant="line"
+            index={currentTabIndex}
+            onChange={(index) => {
+              if (index === 0) {
+                navigate(URLS.APP_CONNECTIONS(appKey))
+              } else {
+                navigate(URLS.APP_FLOWS(appKey))
+              }
+            }}
+          >
+            <TabList>
+              <Tab
+                as={Link}
+                _focus={{
+                  outline: 'none',
+                }}
+                to={URLS.APP_CONNECTIONS(appKey)}
+                isDisabled={!app.auth}
+              >
+                Connections
+              </Tab>
+
+              <Tab
+                as={Link}
+                to={URLS.APP_FLOWS(appKey)}
+                _focus={{
+                  outline: 'none',
+                }}
+              >
+                Pipes
+              </Tab>
+            </TabList>
+          </Tabs>
+        </Box>
+
+        <Routes>
+          <Route
+            path={`${URLS.FLOWS}/*`}
+            element={<AppFlows appKey={appKey} appName={app.name} />}
+          />
+
+          <Route
+            path={`${URLS.CONNECTIONS}/*`}
+            element={<AppConnections appKey={appKey} />}
+          />
+
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to={
+                  app.auth?.connectionType
+                    ? URLS.APP_CONNECTIONS(appKey)
+                    : URLS.APP_FLOWS(appKey)
+                }
+                replace
               />
-            </Grid>
-
-            <Grid item xs>
-              <PageTitle title={app.name} />
-            </Grid>
-          </Grid>
-
-          <Grid container>
-            <Grid item xs>
-              <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-                <Tabs
-                  variant={matchSmallScreens ? 'fullWidth' : undefined}
-                  value={
-                    connectionsPathMatch?.pattern?.path ||
-                    flowsPathMatch?.pattern?.path
-                  }
-                >
-                  <Tab
-                    label={formatMessage('app.connections')}
-                    to={URLS.APP_CONNECTIONS(appKey)}
-                    value={URLS.APP_CONNECTIONS_PATTERN}
-                    disabled={!app.auth}
-                    component={Link}
-                  />
-
-                  <Tab
-                    label={formatMessage('app.flows')}
-                    to={URLS.APP_FLOWS(appKey)}
-                    value={URLS.APP_FLOWS_PATTERN}
-                    component={Link}
-                  />
-                </Tabs>
-              </Box>
-
-              <Routes>
-                <Route
-                  path={`${URLS.FLOWS}/*`}
-                  element={<AppFlows appKey={appKey} appName={app.name} />}
-                />
-
-                <Route
-                  path={`${URLS.CONNECTIONS}/*`}
-                  element={<AppConnections appKey={appKey} />}
-                />
-
-                <Route
-                  path="/"
-                  element={
-                    <Navigate
-                      to={
-                        app.auth?.connectionType
-                          ? URLS.APP_CONNECTIONS(appKey)
-                          : URLS.APP_FLOWS(appKey)
-                      }
-                      replace
-                    />
-                  }
-                />
-              </Routes>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+            }
+          />
+        </Routes>
+      </Container>
 
       <Routes>
         <Route
@@ -149,6 +136,7 @@ export default function Application(): React.ReactElement | null {
           }
         />
 
+        {/* TODO: deprecate this route */}
         <Route
           path="/connections/:connectionId/reconnect"
           element={

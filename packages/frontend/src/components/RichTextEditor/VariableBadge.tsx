@@ -38,13 +38,14 @@ export const VariableBadge = ({ node }: { node: Node }) => {
         >
           <Text
             isTruncated
+            maxW="20ch"
             color="base.content.strong"
             mr={isEmpty ? undefined : '0.25rem'}
           >
             {node.attrs.label}
           </Text>
           {!isEmpty && (
-            <Text isTruncated maxW="50ch" color="base.content.medium">
+            <Text isTruncated maxW="40ch" color="base.content.medium">
               {value}
             </Text>
           )}

@@ -1,13 +1,6 @@
 import type { IApp, IExecutionStep, IFlow, IStep } from '@plumber/types'
 
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react'
+import { createContext, ReactNode, useCallback, useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
 import { Center, useDisclosure } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
@@ -17,11 +10,9 @@ import {
   genVariableInfoMap,
   VariableInfoMap,
 } from '@/components/RichTextEditor/utils'
-import { SINGLE_STEP_TEST_KILL_SWITCH } from '@/config/flags'
 import { ExecutionStep } from '@/graphql/__generated__/graphql'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
-import { EXECUTE_FLOW } from '@/graphql/mutations/execute-flow'
 import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_APPS } from '@/graphql/queries/get-apps'
@@ -33,8 +24,6 @@ import {
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
-
-import { LaunchDarklyContext } from './LaunchDarkly'
 
 interface IEditorContextValue {
   flow: IFlow
@@ -52,7 +41,7 @@ interface IEditorContextValue {
   shouldWarnOnLeave: boolean
   stepsWithVars: StepWithVariables[]
   varInfoMap: VariableInfoMap
-  executeTestStep: () => Promise<void>
+  executeTestStep: (testRunMetadata?: Record<string, unknown>) => Promise<void>
   onDrawerOpen: () => void
   onDrawerClose: () => void
   setCurrentStepId: (stepId: string | null) => void
@@ -156,10 +145,6 @@ export const EditorProvider = ({
   setShouldWarnOnLeave,
   children,
 }: EditorProviderProps) => {
-  // TODO: remove this kill switch once Single Step Testing is stable
-  const { flags } = useContext(LaunchDarklyContext)
-  const shouldUseSingleStepTest = !flags?.[SINGLE_STEP_TEST_KILL_SWITCH]
-
   const isMobile = useIsMobile()
 
   const flowId = flow.id
@@ -184,8 +169,6 @@ export const EditorProvider = ({
     {
       variables: {
         flowId,
-        // ignore test execution id and fetch execution steps by ordering if SST not enabled
-        ignoreTestExecutionId: !shouldUseSingleStepTest,
       },
     },
   )
@@ -324,7 +307,7 @@ export const EditorProvider = ({
    * Test execution step
    */
   const [executeStep, { loading: isTestExecuting }] = useMutation(
-    shouldUseSingleStepTest ? EXECUTE_STEP : EXECUTE_FLOW,
+    EXECUTE_STEP,
     {
       context: { autoSnackbar: false },
       awaitRefetchQueries: true,
@@ -332,9 +315,7 @@ export const EditorProvider = ({
       update(cache, { data }) {
         // If last execution step is successful, it means the test run is successful
         // Update the step status to completed without refreshing
-        const lastExecutionStep: ExecutionStep = shouldUseSingleStepTest
-          ? data?.executeStep
-          : data?.executeFlow
+        const lastExecutionStep: ExecutionStep = data?.executeStep
         if (lastExecutionStep.status === 'success') {
           const stepCache = cache.identify({
             __typename: 'Step',
@@ -351,19 +332,23 @@ export const EditorProvider = ({
     },
   )
 
-  const executeTestStep = useCallback(async () => {
-    try {
-      await executeStep({
-        variables: {
-          input: {
-            stepId: currentStepId,
+  const executeTestStep = useCallback(
+    async (testRunMetadata?: Record<string, unknown>) => {
+      try {
+        await executeStep({
+          variables: {
+            input: {
+              stepId: currentStepId,
+              testRunMetadata,
+            },
           },
-        },
-      })
-    } catch (e) {
-      console.error(e)
-    }
-  }, [executeStep, currentStepId])
+        })
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    [executeStep, currentStepId],
+  )
 
   // Force the Form to remount by changing its key when discarding changes
   const resetForm = useCallback(() => {

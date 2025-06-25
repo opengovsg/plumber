@@ -2,6 +2,11 @@ import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useMemo } from 'react'
 import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
   Box,
   type SystemStyleObject,
   Tag,
@@ -126,6 +131,24 @@ interface VariablesListProps {
 export default function VariablesList(props: VariablesListProps) {
   const { variables, onClick } = props
 
+  // Separate variables into default and collapsed categories
+  const { defaultVariables, collapsedVariables } = useMemo(() => {
+    if (!variables) {
+      return { defaultVariables: [], collapsedVariables: [] }
+    }
+
+    const defaultVariables: Variable[] = []
+    const collapsedVariables: Variable[] = []
+    for (const variable of variables) {
+      if (variable.isCollapsedByDefault) {
+        collapsedVariables.push(variable)
+      } else {
+        defaultVariables.push(variable)
+      }
+    }
+    return { defaultVariables, collapsedVariables }
+  }, [variables])
+
   if (!variables || variables.length === 0) {
     return <></>
   }
@@ -138,14 +161,42 @@ export default function VariablesList(props: VariablesListProps) {
       p={onClick ? undefined : '1rem'}
       sx={props.customStyles}
     >
-      {variables.map((variable, index) => (
+      {defaultVariables.map((variable, index) => (
         <VariableItem
           key={`variable-${variable.name}-${index}`}
           variable={variable}
           onClick={onClick}
-          isLast={index === variables.length - 1}
+          isLast={index === defaultVariables.length - 1}
         />
       ))}
+      {collapsedVariables.length > 0 && (
+        <Accordion allowMultiple border="transparent" py={2}>
+          <AccordionItem p={0}>
+            {({ isExpanded }) => (
+              <>
+                <AccordionPanel p={0} borderTop="1px solid #EDEDED">
+                  {collapsedVariables.map((variable, index) => (
+                    <VariableItem
+                      key={`variable-${variable.name}-${index}`}
+                      variable={variable}
+                      onClick={onClick}
+                      isLast={index === collapsedVariables.length - 1}
+                    />
+                  ))}
+                </AccordionPanel>
+                <AccordionButton
+                  flex={1}
+                  justifyContent="center"
+                  borderRadius="md"
+                >
+                  <Box as="span">{isExpanded ? 'Show less' : 'Show more'}</Box>
+                  <AccordionIcon />
+                </AccordionButton>
+              </>
+            )}
+          </AccordionItem>
+        </Accordion>
+      )}
     </Box>
   )
 }

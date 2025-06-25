@@ -84,7 +84,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     return (
       <Box w="100%">
         {isMock && (
-          <Infobox variant="info">
+          <Infobox variant="info" style={{ paddingLeft: '24px' }}>
             <Text>{getMockDataMessage(selectedActionOrTrigger)}</Text>
           </Infobox>
         )}

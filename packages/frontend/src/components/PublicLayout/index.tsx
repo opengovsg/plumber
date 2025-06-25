@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { Flex } from '@chakra-ui/react'
-import { Box } from '@mui/material'
+import { Box, Flex } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 
 import SiteWideBanner from '@/components/SiteWideBanner'

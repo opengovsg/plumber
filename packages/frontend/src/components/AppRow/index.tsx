@@ -21,8 +21,7 @@ type AppRowProps = {
 }
 
 function AppRow(props: AppRowProps): ReactElement {
-  const { name, key, primaryColor, iconUrl, connectionCount, flowCount } =
-    props.application
+  const { name, key, iconUrl, connectionCount, flowCount } = props.application
 
   return (
     <Link to={URLS.APP(key)} data-test="app-row">
@@ -36,7 +35,7 @@ function AppRow(props: AppRowProps): ReactElement {
       >
         <CardBody p={0}>
           <Flex gap={6} alignItems="center" py={6} px={8}>
-            <AppIcon name={name} url={iconUrl} color={primaryColor} />
+            <AppIcon name={name} url={iconUrl} />
 
             <Flex gap={2} flexDir="column">
               <Text textStyle="subhead-1">{name}</Text>

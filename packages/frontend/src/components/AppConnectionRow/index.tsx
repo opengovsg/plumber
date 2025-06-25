@@ -2,15 +2,17 @@ import type { IConnection } from '@plumber/types'
 
 import * as React from 'react'
 import { useCallback, useRef, useState } from 'react'
+import { MdCheckCircle, MdError } from 'react-icons/md'
 import { useLazyQuery, useMutation } from '@apollo/client'
-import { Card, useDisclosure } from '@chakra-ui/react'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import ErrorIcon from '@mui/icons-material/Error'
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
-import Box from '@mui/material/Box'
-import CardActionArea from '@mui/material/CardActionArea'
-import CircularProgress from '@mui/material/CircularProgress'
-import Stack from '@mui/material/Stack'
+import {
+  Box,
+  Card,
+  Flex,
+  Spinner,
+  Stack,
+  Text,
+  useDisclosure,
+} from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
 
@@ -18,23 +20,14 @@ import ConnectionContextMenu from '@/components/AppConnectionContextMenu'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { DELETE_CONNECTION } from '@/graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
-import useFormatMessage from '@/hooks/useFormatMessage'
-
-import { CardContent, Typography } from './style'
 
 type AppConnectionRowProps = {
   connection: IConnection
 }
 
-const countTranslation = (value: React.ReactNode) => (
-  <>
-    <Typography variant="body1">{value}</Typography>
-    <br />
-  </>
-)
-
 function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const toast = useToast()
+
   const [verificationVisible, setVerificationVisible] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
   const [testConnection, { called: testCalled, loading: testLoading }] =
@@ -50,21 +43,14 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const [deleteConnection, { loading: isDeletingConnection }] =
     useMutation(DELETE_CONNECTION)
 
-  const formatMessage = useFormatMessage()
   const { id, key, formattedData, createdAt, flowCount } = props.connection
 
-  const contextButtonRef = useRef<SVGSVGElement | null>(null)
-  const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const {
     isOpen: isDialogOpen,
     onOpen: onDialogOpen,
     onClose: onDialogClose,
   } = useDisclosure()
-
-  const handleClose = () => {
-    setAnchorEl(null)
-  }
 
   const onConnectionDelete = useCallback(async () => {
     await deleteConnection({
@@ -91,7 +77,6 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
     })
   }, [deleteConnection, id, toast, onDialogClose])
 
-  const onContextMenuClick = () => setAnchorEl(contextButtonRef.current)
   const onContextMenuAction = useCallback(
     async (
       _event: React.MouseEvent<Element, MouseEvent>,
@@ -125,89 +110,79 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
     <>
       <Card
         boxShadow="none"
-        _hover={{ bg: 'interaction.muted.neutral.hover' }}
-        _active={{ bg: 'interaction.muted.neutral.active' }}
+        display="flex"
+        flexDir="row"
+        p={4}
+        alignItems="center"
+        justifyContent="space-between"
         borderRadius="0"
         borderBottom="1px solid"
         borderBottomColor="base.divider.medium"
       >
-        <CardActionArea onClick={onContextMenuClick}>
-          <CardContent>
-            <Stack justifyContent="center" alignItems="flex-start" spacing={1}>
-              <Typography variant="h6" sx={{ textAlign: 'left' }}>
-                {formattedData?.screenName?.toString() || 'Unnamed'}
-              </Typography>
+        <Stack
+          justifyContent="center"
+          alignItems="flex-start"
+          flexShrink={1}
+          overflowX="hidden"
+          spacing={1}
+          maxW="60%"
+        >
+          <Text textStyle={['body-2', 'body-1', 'subhead-1']} textAlign="left">
+            {formattedData?.screenName?.toString() || 'Unnamed'}
+          </Text>
 
-              <Typography variant="caption">
-                {formatMessage('connection.addedAt', {
-                  datetime: relativeCreatedAt,
-                })}
-              </Typography>
-            </Stack>
+          <Text textStyle="caption-2">added {relativeCreatedAt}</Text>
+        </Stack>
 
-            <Box>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                {verificationVisible && testCalled && testLoading && (
-                  <>
-                    <CircularProgress size={16} />
-                    <Typography variant="caption">
-                      {formatMessage('connection.testing')}
-                    </Typography>
-                  </>
-                )}
-                {verificationVisible &&
-                  testCalled &&
-                  !testLoading &&
-                  isVerified && (
-                    <>
-                      <CheckCircleIcon fontSize="small" color="success" />
-                      <Typography variant="caption">
-                        {formatMessage('connection.testSuccessful')}
-                      </Typography>
-                    </>
-                  )}
-                {verificationVisible &&
-                  testCalled &&
-                  !testLoading &&
-                  !isVerified && (
-                    <>
-                      <ErrorIcon fontSize="small" color="error" />
-                      <Typography variant="caption">
-                        {formatMessage('connection.testFailed')}
-                      </Typography>
-                    </>
-                  )}
-              </Stack>
-            </Box>
+        <Flex gap={[0, 1, 2]} alignItems="center">
+          <Flex gap={2}>
+            {verificationVisible && testCalled && testLoading && (
+              <>
+                <Spinner size="sm" />
+                <Text textStyle="caption-2">Testing...</Text>
+              </>
+            )}
+            {verificationVisible &&
+              testCalled &&
+              !testLoading &&
+              isVerified && (
+                <>
+                  <MdCheckCircle size={16} color="green" />
+                  <Text textStyle="caption-2">Test successful</Text>
+                </>
+              )}
+            {verificationVisible &&
+              testCalled &&
+              !testLoading &&
+              !isVerified && (
+                <>
+                  <MdError size={16} color="red" />
+                  <Text textStyle="caption-2">Test failed</Text>
+                </>
+              )}
+          </Flex>
 
-            <Box sx={{ px: 2 }}>
-              <Typography
-                variant="caption"
-                color="textSecondary"
-                sx={{ display: ['none', 'inline-block'] }}
-              >
-                {formatMessage('connection.flowCount', {
-                  count: countTranslation(flowCount),
-                })}
-              </Typography>
-            </Box>
+          <Box px={4} flexShrink={0}>
+            <Text
+              textStyle="caption-1"
+              display={{ base: 'none', md: 'inline-block' }}
+              textAlign="center"
+            >
+              <Text fontSize={16}>{flowCount}</Text>
+              pipes
+            </Text>
+          </Box>
 
-            <Box>
-              <MoreHorizIcon ref={contextButtonRef} />
-            </Box>
-          </CardContent>
-        </CardActionArea>
+          <Box>
+            <ConnectionContextMenu
+              appKey={key}
+              connectionId={id}
+              onMenuItemClick={onContextMenuAction}
+            />
+          </Box>
+        </Flex>
       </Card>
 
-      {anchorEl && (
-        <ConnectionContextMenu
-          appKey={key}
-          connectionId={id}
-          onClose={handleClose}
-          onMenuItemClick={onContextMenuAction}
-          anchorEl={anchorEl}
-        />
-      )}
       <MenuAlertDialog
         isDialogOpen={isDialogOpen}
         cancelRef={cancelRef}

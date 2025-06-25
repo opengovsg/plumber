@@ -1,11 +1,6 @@
 import { IExecutionStep, IJSONObject, IStep } from '@plumber/types'
 
-import {
-  extractVariables,
-  filterVariables,
-  Variable,
-  VISIBLE_VARIABLE_TYPES,
-} from '@/helpers/variables'
+import { extractVariables, Variable } from '@/helpers/variables'
 
 interface UseTestDetailsResult {
   isTestSuccessful: boolean
@@ -28,13 +23,7 @@ export function useTestDetails(
   const lastErrorDetails = currentTestExecutionStep?.errorDetails
 
   const testVariables = currentTestExecutionStep
-    ? filterVariables(
-        extractVariables([currentTestExecutionStep]),
-        (variable) => {
-          const variableType = variable.type ?? 'text'
-          return VISIBLE_VARIABLE_TYPES.includes(variableType)
-        },
-      )[0]?.output ?? []
+    ? extractVariables([currentTestExecutionStep])[0]?.output ?? []
     : null
 
   return {

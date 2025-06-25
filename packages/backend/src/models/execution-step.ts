@@ -41,6 +41,10 @@ class ExecutionStep extends Base {
           isMock: {
             type: 'boolean',
           },
+          // this is purely used to tell frontend that there is a past test submission
+          lastTestSubmissionDate: {
+            type: 'string',
+          },
         },
       },
     },

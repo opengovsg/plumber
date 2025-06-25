@@ -9,6 +9,7 @@ import type {
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
 
 import type { JobsProOptions, WorkerProOptions } from '@taskforcesh/bullmq-pro'
+import type { RelatedQueryBuilder } from 'objection'
 
 import HttpError from '@/errors/http'
 
@@ -93,6 +94,12 @@ export interface IDataOutMetadatum {
    * variables with the same `order` or undefined `order` are sorted.
    */
   order?: number
+
+  /**
+   * Indicates whether this field should only be shown when the user expands
+   * the "Show more" section in the variable list.
+   */
+  isCollapsedByDefault?: boolean
 }
 
 export interface IDataOutMetadata {
@@ -120,6 +127,7 @@ export interface IExecutionStep {
 
 export interface IExecutionStepMetadata {
   isMock?: boolean
+  lastTestSubmissionDate?: string
 }
 
 export interface IExecution {
@@ -626,8 +634,8 @@ export interface ITriggerItem {
   raw: IJSONObject
   meta: {
     internalId: string
+    [key: string]: unknown
   }
-  isMock?: boolean
 }
 
 export type ITriggerInstructions = Partial<{
@@ -655,7 +663,10 @@ export interface IBaseTrigger {
   webhookTriggerInstructions?: ITriggerInstructions
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
-  testRun?($: IGlobalVariable): Promise<void>
+  testRun?(
+    $: IGlobalVariable,
+    testRunMetadata?: TestRunStepMetadata,
+  ): Promise<void>
   sort?(item: ITriggerItem, nextItem: ITriggerItem): number
 
   /**
@@ -684,14 +695,14 @@ export interface ITrigger extends IBaseTrigger {
 }
 
 // Can add more type in this union later for different action types
-export type NextStepMetadata = Record<string, any>
+export type TestRunStepMetadata = Record<string, any>
 
 export interface IActionJobData {
   flowId: string
   executionId: string
   stepId: string
-  metadata?: NextStepMetadata
 }
+
 export interface IActionRunResult {
   /**
    * This enables actions to control pipe execution flow. This is for actions
@@ -703,7 +714,6 @@ export interface IActionRunResult {
   nextStep?:
     | { command: 'jump-to-step'; stepId: IStep['id'] }
     | { command: 'stop-execution' }
-  nextStepMetadata?: NextStepMetadata
 }
 
 export interface IActionOutput {
@@ -719,13 +729,10 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
-  run?(
-    $: IGlobalVariable,
-    metadata?: NextStepMetadata,
-  ): Promise<IActionRunResult | void>
+  run?($: IGlobalVariable): Promise<IActionRunResult | void>
   testRun?(
     $: IGlobalVariable,
-    metadata?: NextStepMetadata,
+    testRunMetadata?: TestRunStepMetadata,
   ): Promise<IActionRunResult | void>
 
   /**
@@ -825,6 +832,9 @@ export type IGlobalVariable = {
     options?: Partial<{
       sameExecution: boolean
       testRunOnly: boolean
+      additionalFilter?: (
+        qb: RelatedQueryBuilder<ExecutionStep, ExecutionStep>,
+      ) => void
     }>,
   ) => Promise<IExecutionStep | undefined>
   execution?: {
