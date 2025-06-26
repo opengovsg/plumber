@@ -8,30 +8,22 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { BiTrash } from 'react-icons/bi'
+import { BiDuplicate, BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
-  Box,
-  Button,
-  Flex,
-  Text,
-  useDisclosure,
-} from '@chakra-ui/react'
+import { Box, Flex, Text, useDisclosure } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
+import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
 import FlowStep from '@/components/FlowStep'
+import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import { HoverAddStepButton } from './HoverAddStepButton'
 import { branchStyles } from './styles'
+import useDuplicateBranch from './useDuplicateBranch'
 import { allowAddStep } from './utils'
 
 interface BranchProps {
@@ -48,6 +40,7 @@ export default function Branch(props: BranchProps) {
     readOnly: isEditorReadOnly,
     onDrawerClose,
     setCurrentStepId,
+    shouldWarnOnLeave,
   } = useContext(EditorContext)
 
   // Handle branch deletion
@@ -86,6 +79,42 @@ export default function Branch(props: BranchProps) {
 
   const canAddStep = useMemo(() => allowAddStep(branchSteps), [branchSteps])
 
+  // Handle duplicate branch
+  // we only warn on unsaved changes when duplicating branch to ensure that the
+  // latest changes are saved before
+  const cancelDuplicateButton = useRef<HTMLButtonElement>(null)
+  const {
+    canDuplicateBranch,
+    duplicateConfirmationIsOpen,
+    isDuplicatingBranch,
+    closeDuplicateConfirmation,
+    duplicateBranch,
+    openDuplicateConfirmation,
+  } = useDuplicateBranch(branchSteps)
+
+  const {
+    cancelRef,
+    isWarningOpen,
+    onWarningOpen,
+    onWarningClose,
+    handleProceed,
+    handleLeave: discardChanges,
+  } = useUnsavedChanges({
+    onProceed: openDuplicateConfirmation,
+  })
+
+  const onDuplicate = useCallback(() => {
+    if (shouldWarnOnLeave) {
+      onWarningOpen()
+    } else {
+      handleProceed()
+    }
+  }, [handleProceed, onWarningOpen, shouldWarnOnLeave])
+
+  const onLeave = () => {
+    discardChanges()
+  }
+
   return (
     <Flex key={branchSteps[0].id} {...branchStyles.container}>
       <Box
@@ -107,21 +136,34 @@ export default function Branch(props: BranchProps) {
             {branchSteps[0].parameters.branchName as string}
           </Text>
 
-          {/* Delete branch button */}
+          {/* Duplicate/delete branch buttons */}
           {!isEditorReadOnly && (
-            <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
+            <Flex
+              ml="auto"
+              opacity={{ base: 1, lg: 0 }}
+              _groupHover={{ opacity: 1 }}
+            >
+              {canDuplicateBranch && (
+                <IconButton
+                  boxSize={8}
+                  onClick={onDuplicate}
+                  variant="clear"
+                  aria-label="Duplicate branch"
+                  colorScheme="secondary"
+                  icon={<BiDuplicate />}
+                  isLoading={isDuplicatingBranch}
+                  isDisabled={isDuplicatingBranch || isDeletingBranch}
+                />
+              )}
               <IconButton
                 boxSize={8}
-                onClick={(event) => {
-                  openDeleteConfirmation(event)
-                  event.stopPropagation()
-                }}
+                onClick={openDeleteConfirmation}
                 variant="clear"
                 aria-label="Delete branch"
                 colorScheme="secondary"
                 icon={<BiTrash />}
                 isLoading={isDeletingBranch}
-                isDisabled={isDeletingBranch}
+                isDisabled={isDeletingBranch || isDuplicatingBranch}
               />
             </Flex>
           )}
@@ -148,36 +190,34 @@ export default function Branch(props: BranchProps) {
       })}
 
       {/* Delete Confirmation Modal */}
-      <AlertDialog
-        isOpen={deleteConfirmationIsOpen}
-        leastDestructiveRef={cancelDeleteButton}
-        onClose={closeDeleteConfirmation}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              Delete {branchSteps[0].parameters.branchName as string}
-            </AlertDialogHeader>
-            <AlertDialogBody>
-              Are you sure you want to delete this branch? This action cannot be
-              undone.
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button
-                colorScheme="neutral"
-                variant="clear"
-                ref={cancelDeleteButton}
-                onClick={closeDeleteConfirmation}
-              >
-                Cancel
-              </Button>
-              <Button colorScheme="critical" onClick={deleteBranch} ml={3}>
-                Yes, delete branch
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+      <MenuAlertDialog
+        isDialogOpen={deleteConfirmationIsOpen}
+        cancelRef={cancelDeleteButton}
+        onDialogClose={closeDeleteConfirmation}
+        dialogHeader="Branch"
+        dialogType="delete"
+        onClick={deleteBranch}
+        isLoading={isDeletingBranch}
+      />
+
+      {/* Duplicate Confirmation Modal */}
+      <MenuAlertDialog
+        isDialogOpen={duplicateConfirmationIsOpen}
+        cancelRef={cancelDuplicateButton}
+        onDialogClose={closeDuplicateConfirmation}
+        dialogHeader="Branch"
+        dialogType="duplicate-branch"
+        onClick={duplicateBranch}
+        isLoading={false}
+      />
+
+      {/* Unsaved Changes Alert */}
+      <UnsavedChangesAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={onLeave}
+      />
     </Flex>
   )
 }

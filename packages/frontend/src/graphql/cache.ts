@@ -17,6 +17,11 @@ export const cacheConfig = {
             return incoming // Replace existing with incoming
           },
         },
+        steps: {
+          merge(_existing = [], incoming: any[]) {
+            return incoming // Replace existing with incoming
+          },
+        },
       },
     },
     // prevent apollo client from complaining about cache data loss
