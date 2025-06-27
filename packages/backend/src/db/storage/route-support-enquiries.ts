@@ -84,13 +84,13 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       parameters: {
         body: `<p style="margin: 0">You have received a support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
           'Replace this with data from step 1',
-        )}!</p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about:</p><p style="margin: 0">${CREATE_TEMPLATE_STEP_VARIABLE(
+        )}! </p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about: </p><p style="margin: 0">${CREATE_TEMPLATE_STEP_VARIABLE(
           'Replace this with data from step 1',
         )}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>`,
         subject: `You have received a IT support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
           'Replace this with data from step 1',
         )}!`,
-        senderName: 'IT support ',
+        senderName: 'IT support request',
         destinationEmail: USER_EMAIL_PLACEHOLDER,
       },
     },
@@ -115,6 +115,20 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
     },
     {
       position: 7,
+      appKey: 'postman',
+      eventKey: 'sendTransactionalEmail',
+      parameters: {
+        body: `<p style="margin: 0">You have received a support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}! </p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about: </p><p style="margin: 0">${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>`,
+        subject: `You have received a IT support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}!`,
+        senderName: 'IT support request',
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
+      },
     },
     {
       position: 8,
@@ -137,6 +151,20 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
     },
     {
       position: 9,
+      appKey: 'postman',
+      eventKey: 'sendTransactionalEmail',
+      parameters: {
+        body: `<p style="margin: 0">You have received a support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}! </p><p style="margin: 0"></p><p style="margin: 0">Here is what their request is about: </p><p style="margin: 0">${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}</p><p style="margin: 0"></p><p style="margin: 0">Please respond to them within 3 working days. Thank you!</p>`,
+        subject: `You have received a IT support request from ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace this with data from step 1',
+        )}!`,
+        senderName: 'IT support request',
+        destinationEmail: USER_EMAIL_PLACEHOLDER,
+      },
     },
   ],
 }
