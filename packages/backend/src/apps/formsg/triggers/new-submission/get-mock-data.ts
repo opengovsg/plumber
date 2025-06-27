@@ -121,6 +121,7 @@ async function getMockData($: IGlobalVariable) {
         // formsg payload doesnt contain this anyways, so we dont return in mock data
         if (data.responses[formFields[i]._id].fieldType === 'statement') {
           delete data.responses[formFields[i]._id]
+          continue
         }
 
         if (data.responses[formFields[i]._id].fieldType === 'address') {
