@@ -10,7 +10,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog'
-import useDeleteConfirmation from '../../hooks/useDeleteConfirmation'
+import useDeleteStepConfirmation from '../../hooks/useDeleteStepConfirmation'
 import { allowAddStep } from '../utils'
 
 import { HoverAddStepButton } from './HoverAddStepButton'
@@ -41,7 +41,11 @@ export default function Branch(props: BranchProps) {
     onClose: closeDeleteConfirmation,
     onDelete: deleteBranch,
     cancelRef,
-  } = useDeleteConfirmation(TOOLBOX_ACTIONS.IfThen, groupedSteps, branchSteps)
+  } = useDeleteStepConfirmation(
+    TOOLBOX_ACTIONS.IfThen,
+    groupedSteps,
+    branchSteps,
+  )
 
   const handleDeleteBranch = useCallback(async () => {
     await deleteBranch()
