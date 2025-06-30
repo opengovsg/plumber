@@ -32,7 +32,6 @@ import {
   isIfThenStep,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
-  useForEachInitializer,
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
@@ -228,7 +227,6 @@ export const EditorProvider = ({
 
   const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
 
-  const [initializeForEach] = useForEachInitializer()
   const [initializeIfThen] = useIfThenInitializer()
 
   // Add a step to the flow with the given appKey and eventKey
@@ -281,16 +279,12 @@ export const EditorProvider = ({
               completeStepWithFlow,
             )) as unknown as IStep
           }
-
-          if (eventKey === TOOLBOX_ACTIONS.ForEach) {
-            await initializeForEach(completeStepWithFlow)
-          }
         }
       }
 
       return newStep as IStep
     },
-    [createStep, flowId, initializeForEach, initializeIfThen],
+    [createStep, flowId, initializeIfThen],
   )
 
   /**
