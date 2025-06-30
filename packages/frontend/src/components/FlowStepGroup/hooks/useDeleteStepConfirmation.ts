@@ -8,7 +8,7 @@ import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
-const useDeleteConfirmation = (
+const useDeleteStepConfirmation = (
   type: string,
   groupedSteps: IStep[][],
   branchSteps?: IStep[],
@@ -59,4 +59,4 @@ const useDeleteConfirmation = (
   }
 }
 
-export default useDeleteConfirmation
+export default useDeleteStepConfirmation
