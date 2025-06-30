@@ -5,9 +5,9 @@ import { Flex } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { FlowStep, FlowStepGroup } from '@/exports/components'
+import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { HoverAddStepButton } from '../IfThen/HoverAddStepButton'
-import { allowAddStep } from '../utils'
 
 interface ForEachProps {
   groupedSteps: IStep[][]
@@ -26,9 +26,13 @@ export default function ForEach(props: ForEachProps) {
     return groupedSteps.slice(1)
   }, [groupedSteps])
 
-  const canAddStep =
-    allowAddStep(forEachSteps) ||
-    (forEachSteps.length === 1 && ifThenSteps.length !== 0)
+  // NOTE: groupedSteps includes for-each and if-then actions
+  // so groupedSteps === 1 means that there is only the for-each action
+  const nonForEachActionSteps = forEachSteps.filter(
+    (step) => step.type === 'action' && step.key !== TOOLBOX_ACTIONS.ForEach,
+  )
+  const hasNoActionSteps =
+    nonForEachActionSteps.length === 0 && groupedSteps.length === 1
 
   return (
     <Flex flexDir="column" alignItems="center" borderRadius="lg" w="100%">
@@ -44,12 +48,14 @@ export default function ForEach(props: ForEachProps) {
                 isLastStep={index === forEachSteps.length - 1}
               />
               <HoverAddStepButton
-                isDisabled={isEditorReadOnly || !canAddStep}
+                isDisabled={isEditorReadOnly || hasNoActionSteps}
                 isDrawerOpen={isDrawerOpen}
                 isLastStep={
                   index === forEachSteps.length - 1 && ifThenSteps.length === 0
                 }
                 prevStepId={step.id}
+                // show empty action if no action step exists
+                showEmptyAction={hasNoActionSteps}
               />
             </Fragment>
           )

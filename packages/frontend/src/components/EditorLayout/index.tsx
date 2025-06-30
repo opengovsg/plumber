@@ -30,6 +30,7 @@ import { EditorProvider } from '@/contexts/Editor'
 import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
@@ -146,7 +147,11 @@ export default function EditorLayout() {
   const isFlowIncomplete = useMemo(
     () =>
       flow?.steps.length < 2 ||
-      flow?.steps.some((step) => step.status === 'incomplete'),
+      flow?.steps.some((step) => step.status === 'incomplete') ||
+      // NOTE: toolbox apps should have action steps after them
+      // this is relevant in the for-each action where we use the EmptyFlowStepHeader
+      // instead of creating an empty step
+      flow?.steps[flow?.steps.length - 1].appKey === TOOLBOX_APP_KEY,
     [flow?.steps],
   )
 

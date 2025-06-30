@@ -27,7 +27,6 @@ import { IconButton } from '@opengovsg/design-system-react'
 
 import FlowStep from '@/components/FlowStep'
 import { EditorContext } from '@/contexts/Editor'
-import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 
@@ -43,11 +42,9 @@ interface BranchProps {
 }
 
 export default function Branch(props: BranchProps) {
-  const { branchSteps, stepsBeforeGroup, groupedSteps } = props
+  const { branchSteps, stepsBeforeGroup } = props
 
   const {
-    flow,
-    hasForEach,
     isDrawerOpen,
     isMobile,
     readOnly: isEditorReadOnly,
@@ -62,10 +59,6 @@ export default function Branch(props: BranchProps) {
     onClose: closeDeleteConfirmation,
   } = useDisclosure()
   const cancelDeleteButton = useRef<HTMLButtonElement>(null)
-  const [createStep, { loading: isCreatingStep }] = useMutation(CREATE_STEP, {
-    fetchPolicy: 'no-cache',
-    refetchQueries: [GET_FLOW],
-  })
   const [deleteStep, { loading: isDeletingBranch }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
   })
@@ -82,37 +75,15 @@ export default function Branch(props: BranchProps) {
       variables: { input: { ids: idsToDelete } },
     })
 
-    // EDGE CASE: if the branch is the last step in a for-each action,
-    // we should create an empty step after the for-each set up step
-    if (
-      hasForEach &&
-      groupedSteps.length === 1 &&
-      stepsBeforeGroup.length === 1
-    ) {
-      await createStep({
-        variables: {
-          input: {
-            previousStep: { id: stepsBeforeGroup[0]?.id },
-            flow: { id: flow.id },
-          },
-        },
-      })
-    }
-
     setCurrentStepId(null)
     closeDeleteConfirmation()
     onDrawerClose()
   }, [
     branchSteps,
     deleteStep,
-    hasForEach,
-    groupedSteps.length,
-    stepsBeforeGroup,
     setCurrentStepId,
     closeDeleteConfirmation,
     onDrawerClose,
-    createStep,
-    flow.id,
   ])
 
   const canAddStep = useMemo(() => allowAddStep(branchSteps), [branchSteps])
@@ -151,8 +122,8 @@ export default function Branch(props: BranchProps) {
                 aria-label="Delete branch"
                 colorScheme="secondary"
                 icon={<BiTrash />}
-                isLoading={isDeletingBranch || isCreatingStep}
-                isDisabled={isDeletingBranch || isCreatingStep}
+                isLoading={isDeletingBranch}
+                isDisabled={isDeletingBranch}
               />
             </Flex>
           )}
