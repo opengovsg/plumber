@@ -3,7 +3,8 @@ import { IStep } from '@plumber/types'
 import { useCallback, useContext } from 'react'
 import { BiDuplicate } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
+import { Tooltip } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
@@ -94,7 +95,7 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
    * - handle warn on unsaved changes
    */
   return (
-    <TouchableTooltip label="Duplicate step">
+    <Tooltip label="Duplicate step" hasArrow>
       <IconButton
         boxSize={isNested ? 6 : 8}
         onClick={(event) => {
@@ -110,6 +111,6 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
         className={isMobile ? undefined : 'hover-remove-button'}
         visibility={isMobile ? 'visible' : 'hidden'}
       />
-    </TouchableTooltip>
+    </Tooltip>
   )
 }
