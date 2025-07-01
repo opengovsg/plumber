@@ -157,6 +157,24 @@ describe('inputSchema', () => {
         expect(result.error.issues[0].message).toBe(error)
       }
     })
+
+    it('should reject table input without inputSource', () => {
+      const invalidTableInput = {
+        rows: [
+          {
+            data: { name: 'John' },
+          },
+        ],
+        columns: [{ id: 'name', name: 'Name', value: 'name' }],
+      }
+
+      const result = inputSchema.safeParse(invalidTableInput)
+
+      expect(result.success).toBe(false)
+      if (result.success === false) {
+        expect(result.error.issues[0].message).toBe('Invalid input')
+      }
+    })
   })
 
   describe('checkbox input format', () => {
