@@ -75,7 +75,6 @@ const action: IRawAction = {
           // table data is handled differently in processItems
           item: `items.${FOR_EACH_ITERATION_KEY}`,
         }
-        return
       } else if (
         inputSource === FOR_EACH_INPUT_SOURCE.M365_EXCEL ||
         inputSource === FOR_EACH_INPUT_SOURCE.TILES

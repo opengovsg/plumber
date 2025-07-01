@@ -98,7 +98,7 @@ describe('For each action', () => {
         raw: {
           iterations: 3,
           items: checkboxItems,
-          inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+          inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
           item: `items.${FOR_EACH_ITERATION_KEY}`,
         },
       })
@@ -123,7 +123,7 @@ describe('For each action', () => {
         raw: {
           iterations: 3,
           items: checkboxItems,
-          inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+          inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
           item: `items.${FOR_EACH_ITERATION_KEY}`,
         },
       })
@@ -141,7 +141,7 @@ describe('For each action', () => {
         raw: {
           iterations: 1,
           items: checkboxItems,
-          inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+          inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
           item: `items.${FOR_EACH_ITERATION_KEY}`,
         },
       })
@@ -192,17 +192,15 @@ describe('For each action', () => {
           value: 'col2-value',
         },
       ],
+      inputSource: FOR_EACH_INPUT_SOURCE.TILES,
     }
 
     it('should handle valid table input (Tiles)', async () => {
       $.step.parameters.items = validTableData
 
       const processedResult = {
-        processedItems: {
-          rows: validTableData.rows,
-          columns: validTableData.columns,
-        },
-        iterations: 2,
+        rows: validTableData.rows,
+        columns: validTableData.columns,
         inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
@@ -214,7 +212,7 @@ describe('For each action', () => {
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iterations: 2,
-          items: processedResult.processedItems,
+          items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.TILES,
         },
       })
@@ -230,16 +228,14 @@ describe('For each action', () => {
       const excelData = {
         ...validTableData,
         rows: validTableData.rows.map((row) => ({ data: row.data })), // No rowId for Excel
+        inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
 
       $.step.parameters.items = excelData
 
       const processedResult = {
-        processedItems: {
-          rows: excelData.rows,
-          columns: validTableData.columns,
-        },
-        iterations: 2,
+        rows: excelData.rows,
+        columns: validTableData.columns,
         inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
 
@@ -251,7 +247,7 @@ describe('For each action', () => {
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iterations: 2,
-          items: processedResult.processedItems,
+          items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       })
@@ -268,17 +264,15 @@ describe('For each action', () => {
       const emptyTableData = {
         rows: [] as any[],
         columns: validTableData.columns,
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
       $.step.parameters.items = emptyTableData
 
       const processedResult = {
-        processedItems: {
-          rows: [] as any[],
-          columns: validTableData.columns,
-        },
-        iterations: 0,
-        inputSource: null as any,
+        rows: [] as any[],
+        columns: validTableData.columns,
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
       mockedProcessItems.mockReturnValue(processedResult)
@@ -288,8 +282,8 @@ describe('For each action', () => {
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iterations: 0,
-          items: processedResult.processedItems,
-          inputSource: null,
+          items: processedResult,
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
         },
       })
 
