@@ -18,6 +18,9 @@ export default function TableVariableItem(props: TableVariableItemProps) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { currentTestExecutionStep } = useContext(EditorContext)
 
+  // NOTE: we do not want the modal to open when there are 0 rows
+  const canOpenModal = variable.displayedValue !== 'Preview 0 row(s)'
+
   return (
     <>
       <VariableItem
@@ -25,8 +28,8 @@ export default function TableVariableItem(props: TableVariableItemProps) {
         variable={variable}
         // if onClick is provided, it means that the variable is being used in a Suggestions component
         // no need to open the modal or show the icon
-        onClick={onClick ? onClick : onOpen}
-        withIcon={onClick ? undefined : MdOpenInNew}
+        onClick={onClick ? onClick : canOpenModal ? onOpen : undefined}
+        withIcon={onClick ? undefined : canOpenModal ? MdOpenInNew : undefined}
       />
       {!onClick && (
         <TableVariableModal
