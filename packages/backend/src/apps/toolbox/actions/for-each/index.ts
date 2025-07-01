@@ -78,7 +78,8 @@ const action: IRawAction = {
         }
       } else if (
         inputSource === FOR_EACH_INPUT_SOURCE.M365_EXCEL ||
-        inputSource === FOR_EACH_INPUT_SOURCE.TILES
+        inputSource === FOR_EACH_INPUT_SOURCE.TILES ||
+        inputSource === FOR_EACH_INPUT_SOURCE.FORMSG_TABLE
       ) {
         const processedItems = processItems(items as MultipleRowObject)
 

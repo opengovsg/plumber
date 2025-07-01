@@ -265,8 +265,8 @@ describe('For each action', () => {
       $.step.parameters.items = mockTableFieldData
 
       const processedResult = {
-        processedItems: validTableData,
-        iterations: 2,
+        rows: validTableData.rows,
+        columns: validTableData.columns,
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
 
@@ -277,7 +277,7 @@ describe('For each action', () => {
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iterations: 2,
-          items: processedResult.processedItems,
+          items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
         },
       })
@@ -291,15 +291,15 @@ describe('For each action', () => {
 
     it('should handle FormSG Table field with no row data', async () => {
       const mockTableFieldData = {
-        rows: [{ data: { col1: '', col2: '' } }],
+        rows: [] as any[],
         columns: validTableData.columns,
       }
       const stringifiedTableFieldData = JSON.stringify(mockTableFieldData)
 
       $.step.parameters.items = stringifiedTableFieldData
       const processedResult = {
-        processedItems: mockTableFieldData,
-        iterations: 0,
+        rows: [] as any[],
+        columns: validTableData.columns,
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
       mockedProcessItems.mockReturnValue(processedResult)
@@ -309,7 +309,7 @@ describe('For each action', () => {
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iterations: 0,
-          items: processedResult.processedItems,
+          items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
         },
       })

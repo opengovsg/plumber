@@ -162,6 +162,10 @@ function buildAnswerArrayForTable(
         type: 'text',
         label,
         order: order ? (order as number) + 0.1 : null,
+        // NOTE: we hide the option if it is empty
+        // mock data will have dummy strings in the answerArray
+        // actual submissions should contain real data, otherwise the cells should be hidden
+        isHidden: optionArray[j] === '',
       })
     }
     answerArray.push(nestedAnswerArray)

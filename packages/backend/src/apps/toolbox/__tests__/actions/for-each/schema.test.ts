@@ -371,7 +371,9 @@ describe('inputSchema', () => {
 
         expect(result.success).toBe(true)
         if (result.success) {
-          expect(result.data.type).toBe('table')
+          expect(result.data.inputSource).toBe(
+            FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+          )
           expect(result.data.items.rows).toHaveLength(2)
           expect(result.data.items.rows[0].data[hexEncodedColumns[0]]).toBe(
             'John',
@@ -414,7 +416,9 @@ describe('inputSchema', () => {
 
         expect(result.success).toBe(true)
         if (result.success) {
-          expect(result.data.type).toBe('table')
+          expect(result.data.inputSource).toBe(
+            FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+          )
           expect(result.data.items.rows).toHaveLength(1)
           expect(result.data.items.rows[0].data[hexEncodedColumns[0]]).toBe('')
           expect(result.data.items.rows[0].data[hexEncodedColumns[1]]).toBe('')
