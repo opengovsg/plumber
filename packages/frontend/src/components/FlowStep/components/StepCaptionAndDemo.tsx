@@ -11,7 +11,7 @@ export default function StepCaptionAndDemo(props: StepCaptionProps) {
   const { caption } = props
   return (
     <>
-      <Flex direction="column" align="start" maxW="80%" flexShrink={1}>
+      <Flex direction="column" align="start" maxW="70%" flexShrink={1}>
         <Flex alignItems="center" gap={2} maxW="100%">
           <Text
             textStyle="subhead-1"

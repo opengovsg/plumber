@@ -3,7 +3,7 @@ import { IStep } from '@plumber/types'
 import { useCallback, useContext } from 'react'
 import { BiDuplicate } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import { IconButton } from '@opengovsg/design-system-react'
+import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
@@ -94,20 +94,22 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
    * - handle warn on unsaved changes
    */
   return (
-    <IconButton
-      boxSize={isNested ? 6 : 8}
-      onClick={(event) => {
-        event.stopPropagation()
-        onDuplicateStep()
-      }}
-      variant="clear"
-      aria-label="Delete Step"
-      colorScheme="secondary"
-      icon={<BiDuplicate />}
-      minHeight={isNested ? 6 : 8}
-      minWidth={isNested ? 6 : 8}
-      className={isMobile ? undefined : 'hover-remove-button'}
-      visibility={isMobile ? 'visible' : 'hidden'}
-    />
+    <TouchableTooltip label="Duplicate step">
+      <IconButton
+        boxSize={isNested ? 6 : 8}
+        onClick={(event) => {
+          event.stopPropagation()
+          onDuplicateStep()
+        }}
+        variant="clear"
+        aria-label="Duplicate Step"
+        colorScheme="secondary"
+        icon={<BiDuplicate />}
+        minHeight={isNested ? 6 : 8}
+        minWidth={isNested ? 6 : 8}
+        className={isMobile ? undefined : 'hover-remove-button'}
+        visibility={isMobile ? 'visible' : 'hidden'}
+      />
+    </TouchableTooltip>
   )
 }
