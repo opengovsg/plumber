@@ -2,6 +2,7 @@ import { IGlobalVariable } from '@plumber/types'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 import { generateMockContext } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import Context from '@/types/express/context'
@@ -141,6 +142,7 @@ describe('getTableRowsAction', () => {
             }),
           ]),
           rows: [],
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
         rowsFound: 0,
       },
@@ -180,6 +182,7 @@ describe('getTableRowsAction', () => {
               },
             }),
           ]),
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       }),
     })
@@ -230,6 +233,7 @@ describe('getTableRowsAction', () => {
             },
           ],
           rows: [],
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
 
         rowsFound: 0,
@@ -277,6 +281,7 @@ describe('getTableRowsAction', () => {
               value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
             }),
           ]),
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       }),
     })
@@ -322,6 +327,7 @@ describe('getTableRowsAction', () => {
               }),
             ),
           ),
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       }),
     })

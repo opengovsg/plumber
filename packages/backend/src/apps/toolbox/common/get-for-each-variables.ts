@@ -1,13 +1,5 @@
 import { FOR_EACH_INPUT_SOURCE, FOR_EACH_ITERATION_KEY } from './constants'
 
-type InputSource = FOR_EACH_INPUT_SOURCE | null
-
-interface ProcessedInput {
-  iterations: number
-  processedItems: any
-  inputSource: InputSource
-}
-
 interface ProcessedColumn {
   id: string
   name: string
@@ -24,37 +16,20 @@ export interface MultipleRowObject {
     name: string
     value: string
   }[]
+  inputSource: FOR_EACH_INPUT_SOURCE
 }
 
-const ULID_REGEX = /^[0-9A-HJKMNP-TV-Z]{26}$/i
-const UUID_REGEX =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
-
-export function isCheckboxItems(items: string[]): boolean {
+export function isCheckboxItems(items: any[]): boolean {
   return Array.isArray(items) && items.every((item) => typeof item === 'string')
 }
 
-function processColumns(data: MultipleRowObject): {
-  inputSource: InputSource
-  processedColumns: ProcessedColumn[]
-} {
-  if (data.columns.length === 0) {
-    return {
-      inputSource: null,
-      processedColumns: [],
-    }
+function processColumns(data: MultipleRowObject): ProcessedColumn[] {
+  const { columns, inputSource } = data
+  if (columns.length === 0) {
+    return []
   }
 
-  // NOTE: we can tell if its a tile column by its column id
-  // tiles will either have uuid or ulid as column id
-  const hasTileColumn = data.columns.every(
-    (column: any) => ULID_REGEX.test(column.id) || UUID_REGEX.test(column.id),
-  )
-  const inputSource = hasTileColumn
-    ? FOR_EACH_INPUT_SOURCE.TILES
-    : FOR_EACH_INPUT_SOURCE.M365_EXCEL
-
-  const processedColumns = data.columns.map((column: any) => ({
+  const processedColumns = columns.map((column: any) => ({
     id: column.id,
     name: column.name,
     value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${column.id}`,
@@ -69,27 +44,24 @@ function processColumns(data: MultipleRowObject): {
     })
   }
 
-  return { inputSource, processedColumns }
+  return processedColumns
 }
 
-export function processItems(items: MultipleRowObject): ProcessedInput {
-  const { inputSource, processedColumns } = processColumns(items)
+export function processItems(items: MultipleRowObject): any {
+  const processedColumns = processColumns(items)
   const processedItems = {
     rows: items.rows,
     columns: processedColumns,
+    inputSource: items.inputSource,
   }
-
-  return {
-    iterations: items.rows.length,
-    processedItems,
-    inputSource,
-  }
+  return processedItems
 }
 
 // sample inputList formats
 // checkbox: ['item1', 'item2', 'item3']
 // tiles / m365-excel:
 // only tiles will have rowId
+// we add inputSource to the data object to make it easier to infer the inputSource
 // {
 //   "data": {
 //     "rows": [
@@ -126,7 +98,8 @@ export function processItems(items: MultipleRowObject): ProcessedInput {
 //         "name": "Attended?",
 //         "value": "data.rows.*.data.42ce85b6-4164-4d8a-ace6-1f0546aaec77"
 //       }
-//     ]
+//     ],
+//     "inputSource": "tiles"
 //   },
 //   "rowsFound": 2
 // }

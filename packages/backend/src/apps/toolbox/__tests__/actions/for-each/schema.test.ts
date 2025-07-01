@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+import { MultipleRowObject } from '@/apps/toolbox/common/get-for-each-variables'
+
 import { inputSchema } from '../../../actions/for-each/schema'
 
 describe('inputSchema', () => {
@@ -19,20 +22,22 @@ describe('inputSchema', () => {
           { id: 'name', name: 'Name', value: 'name' },
           { id: 'age', name: 'Age', value: 'age' },
         ],
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
       const result = inputSchema.safeParse(validTableInput)
 
       expect(result.success).toBe(true)
       if (result.success) {
-        const { type, items } = result.data
-        expect(type).toBe('table')
-        if (type === 'table') {
-          expect(items.rows).toHaveLength(2)
-          expect(items.columns).toHaveLength(2)
-          expect(items.rows[0].data.name).toBe('John')
-          expect(items.rows[0].rowId).toBe('row1')
-          expect(items.rows[1].rowId).toBeUndefined()
+        const { inputSource, items } = result.data
+        expect(inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
+
+        if (inputSource === FOR_EACH_INPUT_SOURCE.TILES) {
+          expect((items as MultipleRowObject).rows).toHaveLength(2)
+          expect((items as MultipleRowObject).columns).toHaveLength(2)
+          expect((items as MultipleRowObject).rows[0].data.name).toBe('John')
+          expect((items as MultipleRowObject).rows[0].rowId).toBe('row1')
+          expect((items as MultipleRowObject).rows[1].rowId).toBeUndefined()
         }
       }
     })
@@ -48,15 +53,17 @@ describe('inputSchema', () => {
           { id: 'name', name: 'Name', value: 'name' },
           { id: 'score', name: 'Score', value: 'score' },
         ],
+        inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
 
       const result = inputSchema.safeParse(validTableInput)
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.type).toBe('table')
-        if (result.data.type === 'table') {
-          expect(result.data.items.rows[0].data.score).toBe(95.5)
+        const { inputSource, items } = result.data
+        expect(inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
+        if (inputSource === FOR_EACH_INPUT_SOURCE.M365_EXCEL) {
+          expect((items as MultipleRowObject).rows[0].data.score).toBe(95.5)
         }
       }
     })
@@ -158,8 +165,9 @@ describe('inputSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.type).toBe('checkbox')
-        expect(result.data.items).toEqual(['item1'])
+        const { inputSource, items } = result.data
+        expect(inputSource).toBe(FOR_EACH_INPUT_SOURCE.STRING_ARRAY)
+        expect(items).toEqual(['item1'])
       }
     })
 
@@ -168,8 +176,9 @@ describe('inputSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.type).toBe('checkbox')
-        expect(result.data.items).toEqual(['item1', 'item2', 'item3'])
+        const { inputSource, items } = result.data
+        expect(inputSource).toBe(FOR_EACH_INPUT_SOURCE.STRING_ARRAY)
+        expect(items).toEqual(['item1', 'item2', 'item3'])
       }
     })
 
@@ -178,8 +187,9 @@ describe('inputSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.type).toBe('checkbox')
-        expect(result.data.items).toEqual(['item 1', ' item 2 ', ' item 3'])
+        const { inputSource, items } = result.data
+        expect(inputSource).toBe(FOR_EACH_INPUT_SOURCE.STRING_ARRAY)
+        expect(items).toEqual(['item 1', ' item 2 ', ' item 3'])
       }
     })
 
@@ -188,8 +198,9 @@ describe('inputSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.type).toBe('checkbox')
-        expect(result.data.items).toEqual(['item1', '', 'item3'])
+        const { inputSource, items } = result.data
+        expect(inputSource).toBe(FOR_EACH_INPUT_SOURCE.STRING_ARRAY)
+        expect(items).toEqual(['item1', '', 'item3'])
       }
     })
 
@@ -198,8 +209,9 @@ describe('inputSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.type).toBe('checkbox')
-        expect(result.data.items).toEqual(['  item1', 'item2  '])
+        const { inputSource, items } = result.data
+        expect(inputSource).toBe(FOR_EACH_INPUT_SOURCE.STRING_ARRAY)
+        expect(items).toEqual(['  item1', 'item2  '])
       }
     })
 
