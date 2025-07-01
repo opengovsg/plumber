@@ -1,7 +1,10 @@
 import { randomUUID } from 'crypto'
 import { describe, expect, it } from 'vitest'
 
-import { FOR_EACH_ITERATION_KEY } from '@/apps/toolbox/common/constants'
+import {
+  FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_ITERATION_KEY,
+} from '@/apps/toolbox/common/constants'
 import {
   isCheckboxItems,
   processItems,
@@ -77,14 +80,14 @@ describe('get-for-each-variables', () => {
           { id: col1Id, name: 'Column 1', value: `data.rows.*.data.${col1Id}` },
           { id: col2Id, name: 'Column 2', value: `data.rows.*.data.${col2Id}` },
         ],
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
       const result = processItems(mockData)
 
-      expect(result.iterations).toBe(2)
-      expect(result.inputSource).toBe('tiles')
-      expect(result.processedItems.rows).toEqual(mockData.rows)
-      expect(result.processedItems.columns).toEqual([
+      expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
+      expect(result.rows).toEqual(mockData.rows)
+      expect(result.columns).toEqual([
         {
           id: col1Id,
           name: 'Column 1',
@@ -121,14 +124,14 @@ describe('get-for-each-variables', () => {
           { id: col1Id, name: 'Column 1', value: `data.rows.*.data.${col1Id}` },
           { id: col2Id, name: 'Column 2', value: `data.rows.*.data.${col2Id}` },
         ],
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
       const result = processItems(mockData)
 
-      expect(result.iterations).toBe(1)
-      expect(result.inputSource).toBe('tiles')
-      expect(result.processedItems.rows).toEqual(mockData.rows)
-      expect(result.processedItems.columns).toEqual([
+      expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
+      expect(result.rows).toEqual(mockData.rows)
+      expect(result.columns).toEqual([
         {
           id: col1Id,
           name: 'Column 1',
@@ -175,14 +178,14 @@ describe('get-for-each-variables', () => {
             value: `data.rows.*.data.col2`,
           },
         ],
+        inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
 
       const result = processItems(mockData)
 
-      expect(result.iterations).toBe(2)
-      expect(result.inputSource).toBe('m365-excel')
-      expect(result.processedItems.rows).toEqual(mockData.rows)
-      expect(result.processedItems.columns).toEqual([
+      expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
+      expect(result.rows).toEqual(mockData.rows)
+      expect(result.columns).toEqual([
         {
           id: 'col1',
           name: 'Excel Column 1',
@@ -203,14 +206,14 @@ describe('get-for-each-variables', () => {
         columns: [
           { id: col1Id, name: 'Column 1', value: `data.rows.*.data.${col1Id}` },
         ],
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
       const result = processItems(mockData)
 
-      expect(result.iterations).toBe(0)
-      expect(result.inputSource).toBe('tiles')
-      expect(result.processedItems.rows).toEqual([])
-      expect(result.processedItems.columns).toEqual([
+      expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
+      expect(result.rows).toEqual([])
+      expect(result.columns).toEqual([
         {
           id: col1Id,
           name: 'Column 1',
@@ -230,14 +233,14 @@ describe('get-for-each-variables', () => {
         columns: [
           { id: 'col1', name: 'Column 1', value: `data.rows.*.data.col1` },
         ],
+        inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
 
       const result = processItems(mockData)
 
-      expect(result.iterations).toBe(0)
-      expect(result.inputSource).toBe('m365-excel')
-      expect(result.processedItems.rows).toEqual([])
-      expect(result.processedItems.columns).toEqual([
+      expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
+      expect(result.rows).toEqual([])
+      expect(result.columns).toEqual([
         {
           id: 'col1',
           name: 'Column 1',
@@ -255,14 +258,14 @@ describe('get-for-each-variables', () => {
           },
         ],
         columns: [] as any[],
+        inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
 
       const result = processItems(mockData)
 
-      expect(result.iterations).toBe(1)
-      expect(result.inputSource).toBe(null)
-      expect(result.processedItems.rows).toEqual(mockData.rows)
-      expect(result.processedItems.columns).toEqual([])
+      expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
+      expect(result.rows).toEqual(mockData.rows)
+      expect(result.columns).toEqual([])
     })
 
     it('should handle single row with UUID column', () => {
@@ -283,13 +286,13 @@ describe('get-for-each-variables', () => {
             value: `data.rows.*.data.${colId}`,
           },
         ],
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
       const result = processItems(mockData)
 
-      expect(result.iterations).toBe(1)
-      expect(result.inputSource).toBe('tiles')
-      expect(result.processedItems.columns).toEqual([
+      expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
+      expect(result.columns).toEqual([
         {
           id: colId,
           name: 'Single Column',
@@ -303,60 +306,17 @@ describe('get-for-each-variables', () => {
       ])
     })
 
-    it('should determine input source correctly based on column ID format', () => {
-      // Test with tiles (UUID column IDs)
-      const uuidCol = randomUUID()
-      const tilesData = {
-        rows: [{ data: { [uuidCol]: 'test' }, rowId: 'test' }],
-        columns: [
-          {
-            id: uuidCol,
-            name: 'UUID Column',
-            value: `data.rows.*.data.${uuidCol}`,
-          },
-        ],
-      }
-      expect(processItems(tilesData).inputSource).toBe('tiles')
-
-      // Test with tiles (ULID column IDs)
-      const ulidCol = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
-      const ulidData = {
-        rows: [{ data: { [ulidCol]: 'test' }, rowId: 'test' }],
-        columns: [
-          {
-            id: ulidCol,
-            name: 'ULID Column',
-            value: `data.rows.*.data.${ulidCol}`,
-          },
-        ],
-      }
-      expect(processItems(ulidData).inputSource).toBe('tiles')
-
-      // Test with m365-excel (regular column IDs)
-      const excelData = {
-        rows: [{ data: { col1: 'test' } }],
-        columns: [
-          {
-            id: 'col1',
-            name: 'Regular Column',
-            value: `data.rows.*.data.col1`,
-          },
-        ],
-      }
-      expect(processItems(excelData).inputSource).toBe('m365-excel')
-    })
-
     it('should handle empty rows and columns', () => {
       const mockData = {
         rows: [] as any[],
         columns: [] as any[],
+        inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
       const result = processItems(mockData)
 
-      expect(result.iterations).toBe(0)
-      expect(result.inputSource).toBe(null)
-      expect(result.processedItems.rows).toEqual([])
-      expect(result.processedItems.columns).toEqual([])
+      expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
+      expect(result.rows).toEqual([])
+      expect(result.columns).toEqual([])
     })
   })
 })

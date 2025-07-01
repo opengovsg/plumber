@@ -2,6 +2,8 @@ import { IExecutionStep } from '@plumber/types'
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+
 import getDataOutMetadata from '../../actions/get-table-rows/get-data-out-metadata'
 
 const DEFAULT_SUCCESS_EXECUTION_STEP = {
@@ -34,6 +36,7 @@ const DEFAULT_SUCCESS_EXECUTION_STEP = {
           value: `data.rows.*.${Buffer.from('Column2').toString('hex')}`,
         },
       ],
+      inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
     },
   },
 } as unknown as IExecutionStep
@@ -58,6 +61,7 @@ describe('getTableRows getDataOutMetadata', () => {
               value: `data.rows.*.${Buffer.from('Column1').toString('hex')}`,
             },
           ],
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       },
     } as unknown as IExecutionStep

@@ -31,7 +31,7 @@ async function getDataOutMetadata(
     },
   }
 
-  if (inputSource === FOR_EACH_INPUT_SOURCE.CHECKBOX) {
+  if (inputSource === FOR_EACH_INPUT_SOURCE.STRING_ARRAY) {
     return {
       ...baseMetadata,
       // NOTE: item is only used when it is a checkbox
@@ -74,6 +74,9 @@ async function getDataOutMetadata(
       items: {
         columns: columnsMetadata,
         rows: rowsMetadata,
+        inputSource: {
+          isHidden: true,
+        },
       },
     }
   }

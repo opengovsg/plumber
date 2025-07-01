@@ -42,7 +42,7 @@ describe('getDataOutMetadata', () => {
     it('should return metadata for checkbox input with single item', async () => {
       const dataOut = {
         iterations: 1,
-        inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+        inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
         items: ['Item 1'],
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -71,7 +71,7 @@ describe('getDataOutMetadata', () => {
     it('should return metadata for checkbox input with multiple items', async () => {
       const dataOut = {
         iterations: 3,
-        inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+        inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
         items: ['Apple', 'Banana', 'Cherry'],
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -100,7 +100,7 @@ describe('getDataOutMetadata', () => {
     it('should return metadata for checkbox input with empty string as first item', async () => {
       const dataOut = {
         iterations: 2,
-        inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+        inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
         items: ['', 'Non-empty item'],
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -129,7 +129,7 @@ describe('getDataOutMetadata', () => {
     it('should handle when checkbox is empty', async () => {
       const dataOut = {
         iterations: 0,
-        inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+        inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
         items: [] as any[],
       }
 
@@ -179,6 +179,7 @@ describe('getDataOutMetadata', () => {
             { data: { name: 'John Doe', email: 'john@example.com' } },
             { data: { name: 'Jane Smith', email: 'jane@example.com' } },
           ],
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -226,6 +227,7 @@ describe('getDataOutMetadata', () => {
               data: { isHidden: true },
             },
           ],
+          inputSource: { isHidden: true },
         },
       })
     })
@@ -243,6 +245,7 @@ describe('getDataOutMetadata', () => {
             },
           ],
           rows: [] as any[],
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -271,6 +274,7 @@ describe('getDataOutMetadata', () => {
             },
           ],
           rows: [],
+          inputSource: { isHidden: true },
         },
       })
     })
@@ -288,6 +292,7 @@ describe('getDataOutMetadata', () => {
             },
           ],
           rows: [{ data: { task: 'Complete project' } }],
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -321,6 +326,7 @@ describe('getDataOutMetadata', () => {
               data: { isHidden: true },
             },
           ],
+          inputSource: { isHidden: true },
         },
       })
     })
@@ -351,6 +357,7 @@ describe('getDataOutMetadata', () => {
             },
             { data: { title: 'Task 2', status: 'Completed' }, rowId: 'row-2' },
           ],
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -398,6 +405,7 @@ describe('getDataOutMetadata', () => {
               data: { isHidden: true },
             },
           ],
+          inputSource: { isHidden: true },
         },
       })
     })
@@ -420,6 +428,7 @@ describe('getDataOutMetadata', () => {
             },
           ],
           rows: [] as any[],
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -458,6 +467,7 @@ describe('getDataOutMetadata', () => {
             },
           ],
           rows: [],
+          inputSource: { isHidden: true },
         },
       })
     })
@@ -480,6 +490,7 @@ describe('getDataOutMetadata', () => {
             },
           ],
           rows: [{ data: { name: 'Test Item' }, rowId: 'tile-row-123' }],
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -523,6 +534,7 @@ describe('getDataOutMetadata', () => {
               data: { isHidden: true },
             },
           ],
+          inputSource: { isHidden: true },
         },
       })
     })
@@ -555,6 +567,7 @@ describe('getDataOutMetadata', () => {
               rowId: 'tile-456',
             },
           ],
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -608,6 +621,7 @@ describe('getDataOutMetadata', () => {
               data: { isHidden: true },
             },
           ],
+          inputSource: { isHidden: true },
         },
       })
     })
@@ -650,7 +664,7 @@ describe('getDataOutMetadata', () => {
 
     it('should handle dataOut with missing iterations field', async () => {
       const dataOut = {
-        inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+        inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
         items: ['test'],
         // missing iterations field
       }
@@ -662,7 +676,7 @@ describe('getDataOutMetadata', () => {
     it('should handle dataOut with missing items field', async () => {
       const dataOut = {
         iterations: 1,
-        inputSource: FOR_EACH_INPUT_SOURCE.CHECKBOX,
+        inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
         // missing items field
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -695,6 +709,7 @@ describe('getDataOutMetadata', () => {
             },
           ],
           rows: [{ data: { first: 'A', second: 'B', third: 'C' } }],
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -730,6 +745,7 @@ describe('getDataOutMetadata', () => {
             { data: { number: 42, text: 'Hello' } },
             { data: { number: 3.14, text: 'World' } },
           ],
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       }
       const executionStep = createMockExecutionStep(dataOut)
@@ -777,6 +793,7 @@ describe('getDataOutMetadata', () => {
               data: { isHidden: true },
             },
           ],
+          inputSource: { isHidden: true },
         },
       })
     })

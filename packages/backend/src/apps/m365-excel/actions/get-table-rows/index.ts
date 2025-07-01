@@ -2,6 +2,7 @@ import type { IRawAction } from '@plumber/types'
 
 import z from 'zod'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 
 import { GET_TABLE_ROWS_LIMIT } from '../../common/constants'
@@ -175,6 +176,7 @@ const action: IRawAction = {
               value: `data.rows.*.data.${hexEncodedColumnName}`,
             }
           }),
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
       } satisfies DataOut,
     })
