@@ -3,6 +3,8 @@ import { IGlobalVariable, IRequest } from '@plumber/types'
 import { Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+
 import app from '../..'
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
 import { NricFilter } from '../../triggers/new-submission'
@@ -763,6 +765,7 @@ describe('decrypt form response', () => {
                     )}`,
                   },
                 ],
+                inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
               }),
               answerArray: [
                 ['reading', 'night'],
@@ -854,6 +857,7 @@ describe('decrypt form response', () => {
                     )}`,
                   },
                 ],
+                inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
               }),
               order: 2,
             },

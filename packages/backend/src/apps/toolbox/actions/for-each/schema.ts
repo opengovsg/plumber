@@ -23,6 +23,7 @@ const tableSchema = z.object({
   inputSource: z.enum([
     FOR_EACH_INPUT_SOURCE.TILES,
     FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+    FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
   ]),
 })
 

@@ -1,3 +1,5 @@
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+
 export default function convertTableAnswerArrayToTableObject(
   answerArray: string[][],
 ) {
@@ -29,5 +31,6 @@ export default function convertTableAnswerArrayToTableObject(
   return JSON.stringify({
     rows,
     columns,
+    inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
   })
 }
