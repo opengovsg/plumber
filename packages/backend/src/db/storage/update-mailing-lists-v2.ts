@@ -8,22 +8,21 @@ import {
   TILES_SAMPLE_URL_DESCRIPTION,
 } from './constants'
 
-const ATTENDANCE_TAKING_ID = '04f95a37-46fe-455b-aa96-28c421379e1a'
+const UPDATE_MAILING_LISTS_ID = 'a03f3914-bbbf-43b0-8385-c6934362cce8'
 
-export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
-  id: ATTENDANCE_TAKING_ID,
-  name: 'Attendance taking',
+export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
+  id: UPDATE_MAILING_LISTS_ID,
+  name: 'Update mailing lists',
   description:
-    'Track attendance for your event using a form and a pre-populated table of event participants',
-  iconName: 'BiCheckDouble',
-  tags: ['empty'],
+    'Maintain mailing lists and keep them updated with the latest recipient information',
+  iconName: 'BiListUl',
   // Steps: formsg --> find tile row --> if-then condition --> create or update tile row
   steps: [
     {
       position: 1,
       appKey: 'formsg',
       eventKey: 'newSubmission',
-      sampleUrl: 'https://form.gov.sg/66c2c58c0ebf8abcb0ad4c76',
+      sampleUrl: 'https://form.gov.sg/66c2cf038ff0ca00daca1c6f',
       sampleUrlDescription: FORMSG_SAMPLE_URL_DESCRIPTION,
     },
     {
@@ -31,13 +30,13 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       appKey: 'tiles',
       eventKey: 'findSingleRow',
       sampleUrl:
-        'https://plumber.gov.sg/tiles/c77bc8fc-e1ca-4300-a50d-7f2933b9e5b4/a4ca3902-f0ef-41e1-9f5d-45c602c04d50',
+        'https://plumber.gov.sg/tiles/ba2150f6-14d5-44cf-8a77-083c18f43518/c6b75dfa-9fa9-494c-b027-773da38ebaff',
       sampleUrlDescription: TILES_SAMPLE_URL_DESCRIPTION,
       parameters: {
         filters: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Email'),
-            value: CREATE_TEMPLATE_STEP_VARIABLE('Replace with email response'),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
+            value: CREATE_TEMPLATE_STEP_VARIABLE('Replace with name response'),
             operator: 'equals',
           },
         ],
@@ -51,7 +50,7 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       eventKey: 'ifThen',
       parameters: {
         depth: 0,
-        branchName: 'Registering attendance for the first time',
+        branchName: 'Officer has not signed up for the mailing list',
         conditions: [
           {
             is: 'is',
@@ -81,9 +80,9 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
             ),
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Attending?'),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Mobile number'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
-              'Replace with attending response',
+              'Replace with mobile number response',
             ),
           },
         ],
@@ -96,7 +95,7 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       eventKey: 'ifThen',
       parameters: {
         depth: 0,
-        branchName: 'Updating existing attendance',
+        branchName: 'Officer has signed up for the mailing list',
         conditions: [
           {
             is: 'not',
@@ -115,9 +114,15 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
         rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Attending?'),
+            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
-              'Replace with attending response',
+              'Replace with name response',
+            ),
+          },
+          {
+            columnId: TILE_COL_DATA_PLACEHOLDER('Mobile number'),
+            cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
+              'Replace with mobile number response',
             ),
           },
         ],
@@ -126,18 +131,29 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
     },
   ],
   tileTemplateData: {
-    name: 'Event attendance',
-    columns: ['Email', 'Name', 'Attending?'],
+    name: 'Mailing list',
+    columns: ['Email', 'Name', 'Mobile number'],
     rowData: [
       {
-        Email: 'jane@email.com',
-        Name: 'Jane Doe',
-        'Attending?': 'No',
+        Email: 'anna_lee@email.com',
+        Name: 'Anna Lee',
+        'Mobile number': '+6598625072',
       },
       {
-        Email: 'john@email.com',
-        Name: 'John Doe',
-        'Attending?': 'Yes',
+        Email: 'susan_tjl@email.com',
+        Name: 'Susan Tan Jia Ling',
+      },
+      {
+        Email: 'jane_98@email.com',
+        Name: 'Jane Lim',
+      },
+      {
+        Email: 'amy_low_ll@email.com',
+        Name: 'Amy Low',
+      },
+      {
+        Email: 'judy_00@email.com',
+        Name: 'Judy Ng',
       },
     ],
   },
