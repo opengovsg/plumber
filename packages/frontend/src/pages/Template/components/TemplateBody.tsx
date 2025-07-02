@@ -2,9 +2,10 @@ import type { IApp, ITemplateStep } from '@plumber/types'
 
 import { Fragment, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
-import { Box, Divider, Flex, Text } from '@chakra-ui/react'
+import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
+import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 
 import IfThenTemplateStepContent from './IfThenTemplateStepContent'
@@ -41,8 +42,16 @@ export default function TemplateBody(props: TemplateBodyProps) {
   }, [templateSteps])
 
   // get all apps here and pass the correct app to the template step
-  const { data } = useQuery(GET_APPS)
+  const { data, loading } = useQuery(GET_APPS)
   const apps: IApp[] = data?.getApps
+
+  if (loading) {
+    return (
+      <AbsoluteCenter>
+        <PrimarySpinner fontSize="4xl" />
+      </AbsoluteCenter>
+    )
+  }
 
   return (
     <Flex

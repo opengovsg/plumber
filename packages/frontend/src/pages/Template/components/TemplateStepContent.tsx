@@ -64,6 +64,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
               boxSize={6}
               as={BiQuestionMark}
               color="base.content.default"
+              ml={2}
             />
           }
           ml={2}
