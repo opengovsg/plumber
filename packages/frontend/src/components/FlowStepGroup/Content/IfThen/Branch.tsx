@@ -17,6 +17,7 @@ import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
+import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
@@ -50,6 +51,9 @@ export default function Branch(props: BranchProps) {
   } = useDisclosure()
   const cancelDeleteButton = useRef<HTMLButtonElement>(null)
   const [deleteStep, { loading: isDeletingBranch }] = useMutation(DELETE_STEP, {
+    refetchQueries: [GET_FLOW],
+  })
+  const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS, {
     refetchQueries: [GET_FLOW],
   })
   const openDeleteConfirmation = useCallback<MouseEventHandler>(
@@ -130,7 +134,7 @@ export default function Branch(props: BranchProps) {
     }))
 
     try {
-      // TODO: make api call to update step positions
+      await updateStepPositions({ variables: { input: { stepPositions } } })
     } catch (error) {
       console.error(
         'Error updating step positions: ',
