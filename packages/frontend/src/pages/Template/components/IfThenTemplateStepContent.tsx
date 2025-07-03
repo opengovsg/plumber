@@ -3,6 +3,8 @@ import type { IApp, ITemplateStep } from '@plumber/types'
 import { BiGitRepoForked } from 'react-icons/bi'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
+
 import IfThenBranchContent from './IfThenBranchContent'
 
 interface IfThenTemplateStepContentProps {
@@ -18,7 +20,10 @@ function extractBranchesWithSteps(templateSteps: ITemplateStep[]) {
 
   for (const step of remainingSteps) {
     // check if it's an if-then step
-    if (step.appKey === 'toolbox' && step.eventKey === 'ifThen') {
+    if (
+      step.appKey === TOOLBOX_APP_KEY &&
+      step.eventKey === TOOLBOX_ACTIONS.IfThen
+    ) {
       result.push(branchWithSteps)
       branchWithSteps = [step]
     } else {

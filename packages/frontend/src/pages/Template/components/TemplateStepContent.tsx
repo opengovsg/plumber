@@ -3,6 +3,8 @@ import type { IApp, ITemplateStep } from '@plumber/types'
 import { BiGitRepoForked, BiQuestionMark } from 'react-icons/bi'
 import { Card, Flex, Icon, Image, Link, Text } from '@chakra-ui/react'
 
+import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+
 interface TemplateStepContentProps {
   app?: IApp
   templateStep: ITemplateStep
@@ -21,7 +23,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
   }
 
   const isTrigger = position === 1
-  const isIfThen = eventKey === 'ifThen'
+  const isIfThen = eventKey === TOOLBOX_ACTIONS.IfThen
 
   // find event name based on triggers/actions of the app using position
   let eventName = ''
