@@ -8,6 +8,7 @@ import FlowStepGroup from '@/components/FlowStepGroup'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
+import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { extractBranchesWithSteps } from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
@@ -121,14 +122,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [stepsBeforeGroup, groupStepsToInclude],
   )
 
-  const handleReorderSteps = async (items: any[]) => {
-    const stepPositions = items.map((item, index) => ({
-      id: item.id, // step id
+  const handleReorderSteps = async (steps: IStep[]) => {
+    const stepPositions = steps.map((step, index) => ({
+      id: step.id,
       position: index + 2, // trigger position is 1
-      step: {
-        id: item.step.id,
-        type: item.step.type,
-      },
+      type: step.type,
     }))
 
     try {
@@ -178,48 +176,41 @@ export default function Editor(props: EditorProps): React.ReactElement {
           })`}
         >
           {triggerStep && (
-            <>
-              <FlowStepWithAddButton
-                step={triggerStep}
-                isLastStep={false}
-                isNested={isNested}
-                stepsBeforeGroup={stepsBeforeGroup}
-                groupedSteps={groupedSteps}
-              />
-            </>
+            <FlowStepWithAddButton
+              step={triggerStep}
+              isLastStep={
+                stepsBeforeGroup.length === 0 && groupedSteps.length === 0
+              }
+              isNested={isNested}
+              stepsBeforeGroup={stepsBeforeGroup}
+              groupedSteps={groupedSteps}
+              showAddButton={true}
+            />
           )}
 
           <SortableList
-            items={stepsBeforeGroup.map((step) => ({
-              id: step.id,
-              step,
-              position: step.position,
-            }))}
+            items={stepsBeforeGroup}
             onChange={handleReorderSteps}
-            renderItem={(item, _isDragging, isOverlay) => {
-              const { step, position } = item
-              const index = position - 1
-
+            renderItem={(step, _isDragging, isOverlay) => {
+              const { id, position } = step
               return (
-                <>
-                  <SortableList.Item id={item.id}>
-                    <Flex
-                      key={`${step.id}-${position}`}
-                      width={isDrawerOpen || isMobile ? '100%' : 'auto'}
-                      flexDir="column"
-                      position="relative"
-                    >
-                      <FlowStepWithAddButton
-                        step={step}
-                        isLastStep={index === steps.length - 1}
-                        isNested={isNested}
-                        stepsBeforeGroup={stepsBeforeGroup}
-                        groupedSteps={groupedSteps}
-                        showAddButton={!isOverlay}
-                      />
-                    </Flex>
-                  </SortableList.Item>
-                </>
+                <SortableList.Item id={id}>
+                  <Flex
+                    key={`${id}-${position}`}
+                    width={isDrawerOpen || isMobile ? '100%' : 'auto'}
+                    flexDir="column"
+                    position="relative"
+                  >
+                    <FlowStepWithAddButton
+                      step={step}
+                      isLastStep={position === steps.length}
+                      isNested={isNested}
+                      stepsBeforeGroup={stepsBeforeGroup}
+                      groupedSteps={groupedSteps}
+                      showAddButton={!isOverlay}
+                    />
+                  </Flex>
+                </SortableList.Item>
               )
             }}
           />

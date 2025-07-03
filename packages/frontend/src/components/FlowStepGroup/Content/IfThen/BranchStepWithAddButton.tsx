@@ -13,12 +13,13 @@ interface BranchStepWithAddButtonProps {
   canAddStep: boolean
   isLastStep: boolean
   isOverlay?: boolean
+  allowReorder?: boolean
 }
 
 export default function BranchStepWithAddButton(
   props: BranchStepWithAddButtonProps,
 ) {
-  const { step, canAddStep, isLastStep, isOverlay } = props
+  const { step, canAddStep, isLastStep, isOverlay, allowReorder } = props
   const { isDrawerOpen, readOnly } = useContext(EditorContext)
 
   // cannot delete the condition step
@@ -33,6 +34,7 @@ export default function BranchStepWithAddButton(
         // branch steps are always nested
         isNested={true}
         isLastStep={isLastStep}
+        allowReorder={allowReorder}
       />
       {!isOverlay && (
         <HoverAddStepButton

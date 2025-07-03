@@ -13,7 +13,6 @@ import { Box, Flex, Text, useDisclosure } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
-import FlowStep from '@/components/FlowStep'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
@@ -22,7 +21,6 @@ import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import BranchStepWithAddButton from './BranchStepWithAddButton'
-import { HoverAddStepButton } from './HoverAddStepButton'
 import { branchStyles } from './styles'
 import useDuplicateBranch from './useDuplicateBranch'
 import { allowAddStep } from './utils'
@@ -116,15 +114,19 @@ export default function Branch(props: BranchProps) {
     discardChanges()
   }
 
+  const { conditionStep, actionSteps } = useMemo(() => {
+    const conditionStep = branchSteps[0]
+    const actionSteps = branchSteps.slice(1)
+
+    return { conditionStep, actionSteps }
+  }, [branchSteps])
+
   const handleReorderSteps = async (items: any[]) => {
-    const branchPosition = branchSteps[0].position
+    const branchPosition = conditionStep.position
     const stepPositions = items.map((item, index) => ({
       id: item.id,
-      position: branchPosition + index + 1, // index starts at 0
-      step: {
-        id: item.step.id,
-        type: item.step.type,
-      },
+      position: branchPosition + index + 1, // index is 0-based
+      type: item.step.type,
     }))
 
     try {
@@ -137,13 +139,6 @@ export default function Branch(props: BranchProps) {
       )
     }
   }
-
-  const { conditionStep, actionSteps } = useMemo(() => {
-    const conditionStep = branchSteps[0]
-    const actionSteps = branchSteps.slice(1)
-
-    return { conditionStep, actionSteps }
-  }, [branchSteps])
 
   return (
     <Flex key={branchSteps[0].id} {...branchStyles.container}>
@@ -209,30 +204,25 @@ export default function Branch(props: BranchProps) {
           items={actionSteps.map((step, index) => ({
             id: step.id,
             step,
+            // need to use index because the step position will
+            // not be enough to identify if its the last step
             index,
           }))}
           onChange={handleReorderSteps}
           renderItem={(item, isDragging, isOverlay) => {
             const { step, index } = item
+            const isLastStep = index === actionSteps.length - 1 // index is 0-based
 
             return (
               <SortableList.Item id={item.id}>
                 <Flex w="100%" flexDir="column">
-                  <FlowStep
-                    step={item.step}
-                    isDeletable={true}
-                    isLastStep={index === branchSteps.length - 2}
-                    isNested={true}
-                    allowReorder={branchSteps.length > 2}
+                  <BranchStepWithAddButton
+                    step={step}
+                    canAddStep={canAddStep}
+                    isLastStep={isLastStep}
+                    isOverlay={isOverlay}
+                    allowReorder={actionSteps.length > 1}
                   />
-                  {!isOverlay && (
-                    <HoverAddStepButton
-                      isDisabled={isEditorReadOnly || !canAddStep}
-                      isDrawerOpen={isDrawerOpen}
-                      isLastStep={index === branchSteps.length - 2}
-                      prevStepId={step.id}
-                    />
-                  )}
                 </Flex>
               </SortableList.Item>
             )
