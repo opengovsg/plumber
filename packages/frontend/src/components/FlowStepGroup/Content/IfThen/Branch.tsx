@@ -174,7 +174,6 @@ export default function Branch(props: BranchProps) {
           <Fragment key={`${step.id}-${stepsBeforeGroup.length + index}`}>
             <FlowStep
               step={step}
-              index={stepsBeforeGroup.length + index}
               isDeletable={index !== 0}
               isNested={true}
               isLastStep={index === branchSteps.length - 1}
