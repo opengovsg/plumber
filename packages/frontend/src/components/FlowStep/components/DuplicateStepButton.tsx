@@ -6,9 +6,11 @@ import { useMutation } from '@apollo/client'
 import { Tooltip } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
+import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
 import { EditorContext } from '@/contexts/Editor'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 interface DuplicateStepButtonProps {
   isNested?: boolean
@@ -90,27 +92,41 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
     setCurrentStepIndex(newStepIndex)
   }, [flow.id, step, createStep, setCurrentStepId, setCurrentStepIndex])
 
-  /**
-   * TODOs:
-   * - handle warn on unsaved changes
-   */
+  const {
+    cancelRef,
+    isWarningOpen,
+    onWarningClose,
+    handleProceed,
+    handleLeave,
+  } = useUnsavedChanges({
+    onProceed: onDuplicateStep,
+  })
+
   return (
-    <Tooltip label="Duplicate step" hasArrow>
-      <IconButton
-        boxSize={isNested ? 6 : 8}
-        onClick={(event) => {
-          event.stopPropagation()
-          onDuplicateStep()
-        }}
-        variant="clear"
-        aria-label="Duplicate Step"
-        colorScheme="secondary"
-        icon={<BiDuplicate />}
-        minHeight={isNested ? 6 : 8}
-        minWidth={isNested ? 6 : 8}
-        className={isMobile ? undefined : 'hover-remove-button'}
-        visibility={isMobile ? 'visible' : 'hidden'}
+    <>
+      <Tooltip label="Duplicate step" hasArrow>
+        <IconButton
+          boxSize={isNested ? 6 : 8}
+          onClick={(event) => {
+            event.stopPropagation()
+            handleProceed()
+          }}
+          variant="clear"
+          aria-label="Duplicate Step"
+          colorScheme="secondary"
+          icon={<BiDuplicate />}
+          minHeight={isNested ? 6 : 8}
+          minWidth={isNested ? 6 : 8}
+          className={isMobile ? undefined : 'hover-remove-button'}
+          visibility={isMobile ? 'visible' : 'hidden'}
+        />
+      </Tooltip>
+      <UnsavedChangesAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={handleLeave}
       />
-    </Tooltip>
+    </>
   )
 }
