@@ -1,11 +1,11 @@
 import type { IApp, ITemplateStep } from '@plumber/types'
 
 import { Fragment, useMemo } from 'react'
-import { BiPlus } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
+import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 
 import IfThenTemplateStepContent from './IfThenTemplateStepContent'
@@ -15,29 +15,10 @@ interface TemplateBodyProps {
   templateSteps: ITemplateStep[]
 }
 
-function AddStepGraphic() {
+export function BetweenStepsGraphic() {
   return (
-    <Box pos="relative" h="4.5rem">
-      {/* Top vertical line */}
-      <Box h="1.125rem">
-        <Divider orientation="vertical" borderColor="base.divider.strong" />
-      </Box>
-      {/* Bottom vertical line */}
-      <Box mt={9} h="1.125rem">
-        <Divider orientation="vertical" borderColor="base.divider.strong" />
-      </Box>
-      <AbsoluteCenter>
-        <Flex
-          borderWidth={1}
-          boxSize={9}
-          borderColor="base.divider.strong"
-          justifyContent="center"
-          alignItems="center"
-          borderRadius="0.25rem"
-        >
-          <BiPlus />
-        </Flex>
-      </AbsoluteCenter>
+    <Box h={12}>
+      <Divider orientation="vertical" borderColor="base.divider.strong" />
     </Box>
   )
 }
@@ -61,8 +42,16 @@ export default function TemplateBody(props: TemplateBodyProps) {
   }, [templateSteps])
 
   // get all apps here and pass the correct app to the template step
-  const { data } = useQuery(GET_APPS)
+  const { data, loading } = useQuery(GET_APPS)
   const apps: IApp[] = data?.getApps
+
+  if (loading) {
+    return (
+      <AbsoluteCenter>
+        <PrimarySpinner fontSize="4xl" />
+      </AbsoluteCenter>
+    )
+  }
 
   return (
     <Flex
@@ -88,15 +77,13 @@ export default function TemplateBody(props: TemplateBodyProps) {
             templateStep={templateStep}
           />
           {/* Don't show if it is the last step */}
-          {index < templateSteps.length - 1 && <AddStepGraphic />}
+          {index < templateSteps.length - 1 && <BetweenStepsGraphic />}
         </Fragment>
       ))}
       {/* Steps to display for if-then */}
       <IfThenTemplateStepContent
-        app={apps?.find(
-          (app: IApp) => templateStepsAfterIfThen[0]?.appKey === app.key,
-        )}
         templateSteps={templateStepsAfterIfThen}
+        apps={apps ?? []}
       />
     </Flex>
   )

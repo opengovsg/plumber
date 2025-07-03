@@ -6,7 +6,7 @@ import {
   TILE_COL_DATA_PLACEHOLDER,
   TILE_ID_PLACEHOLDER,
   TILES_SAMPLE_URL_DESCRIPTION,
-} from './constants'
+} from '../constants'
 
 const UPDATE_MAILING_LISTS_ID = '8ec2728a-6e4a-49c7-8721-ef6d4eb1d946'
 
