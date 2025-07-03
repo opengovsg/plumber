@@ -8,7 +8,6 @@ import FlowStepGroup from '@/components/FlowStepGroup'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
-import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { extractBranchesWithSteps } from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
