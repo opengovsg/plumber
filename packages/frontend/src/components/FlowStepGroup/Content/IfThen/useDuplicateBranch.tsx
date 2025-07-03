@@ -18,13 +18,8 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
   } = useDisclosure()
 
   const [isDuplicatingBranch, setIsDuplicatingBranch] = useState(false)
-  const {
-    flow,
-    isDrawerOpen,
-    onDrawerOpen,
-    setCurrentStepId,
-    setCurrentStepIndex,
-  } = useContext(EditorContext)
+  const { flow, isDrawerOpen, onDrawerOpen, setCurrentStepId } =
+    useContext(EditorContext)
 
   const [createStep] = useMutation(CREATE_STEP, { fetchPolicy: 'no-cache' })
 
@@ -46,7 +41,6 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
 
     try {
       let newConditionId = null
-      let newConditionIndex = null
       let previousStepId = branchSteps[branchSteps.length - 1]?.id
       if (!previousStepId) {
         return
@@ -78,7 +72,6 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
 
         if (key === TOOLBOX_ACTIONS.IfThen) {
           newConditionId = createdStep.data.createStep.id
-          newConditionIndex = createdStep.data.createStep.position - 1
         }
 
         // use the new step id as the previous step id for the next step
@@ -89,7 +82,6 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
       await client.refetchQueries({ include: [GET_FLOW] })
 
       setCurrentStepId(newConditionId)
-      setCurrentStepIndex(newConditionIndex)
       if (!isDrawerOpen) {
         onDrawerOpen()
       }
