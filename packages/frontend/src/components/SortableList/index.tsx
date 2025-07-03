@@ -30,7 +30,7 @@ interface BaseItem {
 interface Props<T extends BaseItem> {
   items: T[]
   onChange(items: T[]): void
-  renderItem(item: T, isDragging: boolean): ReactNode
+  renderItem(item: T, isDragging: boolean, isOverlay?: boolean): ReactNode
 }
 
 export function SortableList<T extends BaseItem>({
@@ -78,13 +78,13 @@ export function SortableList<T extends BaseItem>({
         <ul className="SortableList" role="application">
           {items.map((item) => (
             <React.Fragment key={item.id}>
-              {renderItem(item, active?.id === item.id)}
+              {renderItem(item, active?.id === item.id, false)}
             </React.Fragment>
           ))}
         </ul>
       </SortableContext>
       <SortableOverlay>
-        {activeItem ? renderItem(activeItem, true) : null}
+        {activeItem ? renderItem(activeItem, true, true) : null}
       </SortableOverlay>
     </DndContext>
   )
