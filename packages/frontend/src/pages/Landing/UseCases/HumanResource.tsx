@@ -30,10 +30,13 @@ import textlogo from '@/assets/landing/textlogo.svg'
 import { Link as RouterLink } from 'react-router-dom'
 
 const products = [
-  { name: 'Human Resource', description: 'Streamline onboarding and offboarding', to: 'https://www.plumber.gov.sg', icon: BiGroup },
+  { name: 'Human Resource', 
+      description: 'Streamline onboarding and offboarding', 
+      to: 'Landing/UseCases/HumanResource', 
+      icon: BiGroup },
   { name: 'Operations', 
     description: 'Monitor on the ground movement', 
-    to: 'Landing/UseCases/HumanResource', 
+    to: 'Landing/UseCases/Operations', 
     icon: BiCog },
   { name: 'Customer support', description: 'Respond to tickets efficiently', to: '#', icon: BiSupport },
 ]
@@ -232,10 +235,10 @@ export default function UseCasesPage() {
           />
         </Box>
 
-        <Box bg="clear" px={6} py={32} minH="100vh">
-      <Container maxW="3xl" color="gray.700" fontSize="md" lineHeight="7">
-        <Text fontSize="md" fontWeight="semibold" color="primary.500" lineHeight="7">
-          Human Resources
+        <Box px={3} pt={8} pb={32} minH="100vh">
+        <Container maxW="3xl" color="gray.700" fontSize="md" lineHeight="7">
+        <Text fontSize="md" fontWeight="semibold" color="primary.500" lineHeight="7" letterSpacing='tighter'>
+          Human Resource
         </Text>
         
         <Heading 
@@ -247,54 +250,88 @@ export default function UseCasesPage() {
           color="gray.900"
           lineHeight="normal"
         >
-          How agency uses Plumber to accelerate human resource work
+          How Attorney General's Chamber reduced 50% of time spent on administrative onboarding processes
         </Heading>
         
-        <Text mt={6} fontSize="xl" lineHeight="8">
-          Aliquet nec orci mattis amet quisque ullamcorper neque, nibh sem. At arcu, sit dui mi, nibh dui, diam eget
-          aliquam. Quisque id at vitae feugiat egestas ac. Diam nulla orci at in viverra scelerisque eget. Eleifend
-          egestas fringilla sapien.
+        <Text mt={6} fontSize="xl" lineHeight="8" letterSpacing='tighter'>
+          Onboarding used to take 2 hours for each new employee, with lots of errors in the process of it.
         </Text>
         
         <Box mt={10} maxW="2xl">
           <Text>
-            Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. Mattis mauris semper sed amet vitae
-            sed turpis id. Id dolor praesent donec est. Odio penatibus risus viverra tellus varius sit neque erat velit.
-            Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. Mattis mauris semper sed amet vitae
-            sed turpis id.
+            With Plumber,
           </Text>
           
-          <List mt={8} maxW="xl" spacing={8} color="gray.600">
+          <List mt={8} maxW="xl" spacing={4} color="gray.600">
             <ListItem display="flex" gap={3}>
               <ListIcon as={BiSolidCheckCircle} mt={1} boxSize={5} color="primary.500" flexShrink={0} />
               <Box>
-                <Text as="span" fontWeight="semibold" color="gray.900">Data types.</Text>
-                {' '}Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.
+                <Text as="span" fontWeight="semibold" color="gray.900">50% time saved</Text>
+                {' '}to onboard new employee
               </Box>
             </ListItem>
             
             <ListItem display="flex" gap={3}>
               <ListIcon as={BiSolidCheckCircle} mt={1} boxSize={5} color="primary.500" flexShrink={0} />
               <Box>
-                <Text as="span" fontWeight="semibold" color="gray.900">Loops.</Text>
-                {' '}Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo.
+                <Text as="span" fontWeight="semibold" color="gray.900">95% reduction</Text>
+                {' '}in errors by automating
               </Box>
             </ListItem>
             
             <ListItem display="flex" gap={3}>
               <ListIcon as={BiSolidCheckCircle} mt={1} boxSize={5} color="primary.500" flexShrink={0} />
               <Box>
-                <Text as="span" fontWeight="semibold" color="gray.900">Events.</Text>
-                {' '}Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis.
+                <Text as="span" fontWeight="semibold" color="gray.900">Able to focus on more important work</Text>
+                {' '}like strategy after automating process
               </Box>
             </ListItem>
           </List>
           
-          <Text mt={8}>
-            Et vitae blandit facilisi magna lacus commodo. Vitae sapien duis odio id et. Id blandit molestie auctor
-            fermentum dignissim. Lacus diam tincidunt ac cursus in vel. Mauris varius vulputate et ultrices hac
-            adipiscing egestas. Iaculis convallis ac tempor et ut. Ac lorem vel integer orci.
+          <Box mt={16} maxW="2xl">
+          <Heading 
+            as="h2" 
+            fontSize="3xl" 
+            fontWeight="500" 
+            color="gray.900"
+            lineHeight="normal"
+            letterSpacing="tighter"
+          >
+            Life before Plumber
+          </Heading>
+          
+          <Text mt={6}>
+            Before a new employees' first day, HR will manually send an email containing administrative details and an attached form for employees' to submit their documents.
+            When employees have submitted via replying the email, HR will review the information and manually forward it to relevant departments. For example, forwarding to
+            a department that makes access cards for new employees'.
           </Text>
+          
+          <Text mt={8}>
+            There were many problems with this process. For example, an employee may forget to copy HR back in to the email thread, leaving them out of the loop and delaying the onboarding preparation.
+          </Text>
+        </Box>
+
+        <Box mt={16} maxW="2xl">
+          <Heading 
+            as="h2" 
+            fontSize="3xl" 
+            fontWeight="500" 
+            color="gray.900"
+            lineHeight="normal"
+            letterSpacing="tighter"
+          >
+            Paving the way for transformation
+          </Heading>
+          
+          <Text mt={6}>
+            Zhi Hao, a HR staff in AGC, relooked at their processes and identified parts of the process that could easily be automated. He started small and slowly
+            expanded the scope. 
+          </Text>
+          
+          <Text mt={8}>
+            Aumtomating the entire process took him approximately 3 months. This includes piloting this solution with his team to convince them of the value. 
+          </Text>
+        </Box>
           
           <Heading 
             as="h2" 
@@ -305,41 +342,37 @@ export default function UseCasesPage() {
             lineHeight="normal"
             letterSpacing="tighter"
           >
-            From beginner to expert in 3 hours
+            A better HR experience for all
           </Heading>
           
           <Text mt={6}>
-            Id orci tellus laoreet id ac. Dolor, aenean leo, ac etiam consequat in. Convallis arcu ipsum urna nibh.
-            Pharetra, euismod vitae interdum mauris enim, consequat vulputate nibh. Maecenas pellentesque id sed tellus
-            mauris, ultrices mauris. Tincidunt enim cursus ridiculus mi. Pellentesque nam sed nullam sed diam turpis
-            ipsum eu a sed convallis diam.
+            As of today, 200 over employees have been onboarded in the 3 months this process has been automated. This amounts to time savings of over 200 hours. The 
+            time saved has gone into working on other more strategic objectives of the department such as, making people happy.
           </Text>
           
           <Box as="figure" mt={10} borderLeft="4px" borderColor="primary.500" pl={9}>
             <Box as="blockquote" fontWeight="400" color="gray.900">
               <Text>
-                "Vel ultricies morbi odio facilisi ultrices accumsan donec lacus purus. Lectus nibh ullamcorper ac
-                dictum justo in euismod. Risus aenean ut elit massa. In amet aliquet eget cras. Sem volutpat enim
-                tristique."
+                "Be ready to conduct constant review. This process is inevitable as stakeholders will comment for process improvement. Be ready to make evaluation and amendments appropriately.
+                "
               </Text>
             </Box>
             
             <HStack as="figcaption" mt={6} spacing={4}>
-              <Avatar
+              {/* <Avatar
                 size="sm"
                 src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
                 bg="gray.50"
-              />
+              /> */}
               <Box fontSize="sm" lineHeight={6}>
-                <Text as="span" fontWeight="semibold" color="gray.900">Maria Hill</Text>
-                <Text as="span" color="gray.600"> – Marketing Manager</Text>
+                <Text as="span" fontWeight="semibold" color="gray.900">Zhi Hao</Text>
+                <Text as="span" color="gray.600"> – HR department</Text>
               </Box>
             </HStack>
           </Box>
           
           <Text mt={10}>
-            Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. Mattis mauris semper sed amet vitae
-            sed turpis id. Id dolor praesent donec est. Odio penatibus risus viverra tellus varius sit neque erat velit.
+            The team is looking to fully move over to this newly automated process by the end of this month.
           </Text>
         </Box>
         
@@ -354,37 +387,12 @@ export default function UseCasesPage() {
             w="full"
           />
           <HStack as="figcaption" mt={4} spacing={2} fontSize="sm" lineHeight={6} color="gray.500">
-            <Icon as={BiSolidCheckCircle} mt={0.5} boxSize={5} color="gray.300" flexShrink={0} />
-            <Text>Faucibus commodo massa rhoncus, volutpat.</Text>
+            <Text>Happy HR staff</Text>
           </HStack>
         </Box>
         
-        <Box mt={16} maxW="2xl">
-          <Heading 
-            as="h2" 
-            fontSize="3xl" 
-            fontWeight="500" 
-            color="gray.900"
-            lineHeight="normal"
-            letterSpacing="tighter"
-          >
-            Everything you need to get up and running
-          </Heading>
-          
-          <Text mt={6}>
-            Purus morbi dignissim senectus mattis adipiscing. Amet, massa quam varius orci dapibus volutpat cras. In
-            amet eu ridiculus leo sodales cursus tristique. Tincidunt sed tempus ut viverra ridiculus non molestie.
-            Gravida quis fringilla amet eget dui tempor dignissim. Facilisis auctor venenatis varius nunc, congue erat
-            ac. Cras fermentum convallis quam.
-          </Text>
-          
-          <Text mt={8}>
-            Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. Mattis mauris semper sed amet vitae
-            sed turpis id. Id dolor praesent donec est. Odio penatibus risus viverra tellus varius sit neque erat velit.
-          </Text>
+        </Container>
         </Box>
-      </Container>
-    </Box>
 
         </Box>
 
