@@ -20,6 +20,7 @@ import Transfers from '@/pages/Transfers'
 import TransfersLayout from '@/pages/Transfers/layouts/TransfersLayout'
 import { InvalidTileLink } from '@/pages/UnauthorizedTile'
 import HumanResource from '@/pages/Landing/UseCases/HumanResource'
+import Operations from '@/pages/Landing/UseCases/Operations'
 
 
 const Landing = lazy(() => import('@/pages/Landing'))
@@ -180,6 +181,13 @@ export default createRoutesFromElements(
       path="/Landing/UseCases/HumanResource"
       element={
       <HumanResource />
+      } 
+    />
+
+    <Route 
+      path="/Landing/UseCases/Operations"
+      element={
+      <Operations />
       } 
     />
 
