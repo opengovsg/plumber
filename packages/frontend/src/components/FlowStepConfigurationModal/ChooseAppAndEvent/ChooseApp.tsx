@@ -328,7 +328,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                             fit="contain"
                             fallback={
                               <Icon
-                                boxSize={6}
+                                boxSize={8}
                                 as={BiArrowFromRight}
                                 color="base.content.default"
                               />

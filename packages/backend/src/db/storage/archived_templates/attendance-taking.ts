@@ -6,7 +6,7 @@ import {
   TILE_COL_DATA_PLACEHOLDER,
   TILE_ID_PLACEHOLDER,
   TILES_SAMPLE_URL_DESCRIPTION,
-} from './constants'
+} from '../constants'
 
 const ATTENDANCE_TAKING_ID = '04f95a37-46fe-455b-aa96-28c421379e1a'
 

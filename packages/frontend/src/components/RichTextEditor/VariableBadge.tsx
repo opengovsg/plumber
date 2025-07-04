@@ -38,7 +38,7 @@ export const VariableBadge = ({ node }: { node: Node }) => {
         >
           <Text
             isTruncated
-            maxW="20ch"
+            maxW={isTemplate ? 'full' : '20ch'}
             color="base.content.strong"
             mr={isEmpty ? undefined : '0.25rem'}
           >

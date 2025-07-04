@@ -1,6 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
-import { ATTENDANCE_TAKING_TEMPLATE } from './attendance-taking'
+import { ATTENDANCE_TAKING_TEMPLATE } from './attendance-taking-v2'
 import { GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE } from './get-live-updates-through-telegram'
 import { ROUTE_SUPPORT_ENQUIRIES_TEMPLATE } from './route-support-enquiries'
 import { SCHEDULE_REMINDERS_TEMPLATE } from './schedule-reminders'
@@ -8,7 +8,7 @@ import { SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE } from './send-a-copy-of-form-res
 import { SEND_FOLLOW_UPS_TEMPLATE } from './send-follow-ups'
 import { SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE } from './send-message-to-a-slack-channel'
 import { TRACK_FEEDBACK_TEMPLATE } from './track-feedback'
-import { UPDATE_MAILING_LISTS_TEMPLATE } from './update-mailing-lists'
+import { UPDATE_MAILING_LISTS_TEMPLATE } from './update-mailing-lists-v2'
 
 // Helper function to ensure templates cannot be modified
 function deepFreeze<T>(object: T): T {
@@ -26,6 +26,12 @@ function deepFreeze<T>(object: T): T {
   return Object.freeze(object)
 }
 
+/**
+ * When major changes are made to a template, move the current one to the archived folder
+ * and create a new one with the updated version number and assign a new UUID.
+ *
+ * Update the grafana dashboard with the newer version too.
+ */
 export const TEMPLATES: ITemplate[] = deepFreeze<ITemplate[]>([
   SEND_FOLLOW_UPS_TEMPLATE, // contains demo video
   SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE,
