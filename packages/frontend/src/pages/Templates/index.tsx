@@ -20,7 +20,7 @@ const TEMPLATES_TITLE = 'Templates'
 const TEMPLATES_COUNT = 9
 
 export default function Templates(): JSX.Element {
-  const { data, loading } = useQuery(GET_TEMPLATES)
+  const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
 
   const templates: ITemplate[] = data?.getTemplates
   const { templateId } = useParams()
@@ -56,7 +56,7 @@ export default function Templates(): JSX.Element {
           rowGap={6}
           mb={8}
         >
-          {loading || appsLoading
+          {templatesLoading || appsLoading
             ? Array.from({ length: TEMPLATES_COUNT }).map((_, index) => (
                 <TemplateTileSkeleton key={index} />
               ))
