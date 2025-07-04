@@ -9,7 +9,7 @@ import IfThenBranchContent from './IfThenBranchContent'
 
 interface IfThenTemplateStepContentProps {
   templateSteps: ITemplateStep[]
-  apps?: IApp[]
+  apps: IApp[]
 }
 
 function extractBranchesWithSteps(templateSteps: ITemplateStep[]) {
@@ -67,7 +67,7 @@ export default function IfThenTemplateStepContent(
             <IfThenBranchContent
               key={branchSteps[0].position}
               branchSteps={branchSteps}
-              apps={apps ?? []}
+              apps={apps}
             />
           )
         })}

@@ -1,18 +1,15 @@
 import type { IApp, ITemplateStep } from '@plumber/types'
 
 import { Fragment, useMemo } from 'react'
-import { useQuery } from '@apollo/client'
-import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
+import { Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
-
-import PrimarySpinner from '@/components/PrimarySpinner'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 
 import IfThenTemplateStepContent from './IfThenTemplateStepContent'
 import TemplateStepContent from './TemplateStepContent'
 
 interface TemplateBodyProps {
   templateSteps: ITemplateStep[]
+  apps: IApp[]
 }
 
 export function BetweenStepsGraphic() {
@@ -24,7 +21,7 @@ export function BetweenStepsGraphic() {
 }
 
 export default function TemplateBody(props: TemplateBodyProps) {
-  const { templateSteps } = props
+  const { templateSteps, apps } = props
 
   const [templateStepsBeforeIfThen, templateStepsAfterIfThen] = useMemo(() => {
     const ifThenStartIndex = templateSteps.findIndex(
@@ -40,18 +37,6 @@ export default function TemplateBody(props: TemplateBodyProps) {
       templateSteps.slice(ifThenStartIndex),
     ]
   }, [templateSteps])
-
-  // get all apps here and pass the correct app to the template step
-  const { data, loading } = useQuery(GET_APPS)
-  const apps: IApp[] = data?.getApps
-
-  if (loading) {
-    return (
-      <AbsoluteCenter>
-        <PrimarySpinner fontSize="4xl" />
-      </AbsoluteCenter>
-    )
-  }
 
   return (
     <Flex
@@ -83,7 +68,7 @@ export default function TemplateBody(props: TemplateBodyProps) {
       {/* Steps to display for if-then */}
       <IfThenTemplateStepContent
         templateSteps={templateStepsAfterIfThen}
-        apps={apps ?? []}
+        apps={apps}
       />
     </Flex>
   )
