@@ -33,7 +33,7 @@ export default function IfThenBranchContent(props: IfThenBranchContentProps) {
           return (
             <Fragment key={index}>
               <TemplateStepContent
-                app={apps?.find((app: IApp) => templateStep.appKey === app.key)}
+                app={apps.find((app: IApp) => templateStep.appKey === app.key)}
                 templateStep={templateStep}
                 isNested={true}
               />

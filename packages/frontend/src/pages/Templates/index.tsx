@@ -1,4 +1,4 @@
-import { ITemplate } from '@plumber/types'
+import type { IApp, ITemplate } from '@plumber/types'
 
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
@@ -8,6 +8,7 @@ import { Link } from '@opengovsg/design-system-react'
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
+import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 
 import TemplateModal from '../Template'
@@ -19,11 +20,15 @@ const TEMPLATES_TITLE = 'Templates'
 const TEMPLATES_COUNT = 9
 
 export default function Templates(): JSX.Element {
-  const { data, loading } = useQuery(GET_TEMPLATES)
+  const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
 
   const templates: ITemplate[] = data?.getTemplates
   const { templateId } = useParams()
   const template = templates?.find((template) => template.id === templateId)
+
+  const { data: appsData, loading: appsLoading } = useQuery(GET_APPS)
+  const apps: IApp[] = appsData?.getApps ?? []
+
   return (
     <>
       <Container py={9}>
@@ -51,7 +56,7 @@ export default function Templates(): JSX.Element {
           rowGap={6}
           mb={8}
         >
-          {loading
+          {templatesLoading || appsLoading
             ? Array.from({ length: TEMPLATES_COUNT }).map((_, index) => (
                 <TemplateTileSkeleton key={index} />
               ))
@@ -77,7 +82,7 @@ export default function Templates(): JSX.Element {
         </Flex>
       </Container>
 
-      {template && <TemplateModal template={template} />}
+      {template && <TemplateModal template={template} apps={apps} />}
     </>
   )
 }

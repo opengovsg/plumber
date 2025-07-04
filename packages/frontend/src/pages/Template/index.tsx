@@ -1,4 +1,4 @@
-import type { ITemplate } from '@plumber/types'
+import type { IApp, ITemplate } from '@plumber/types'
 
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -24,11 +24,12 @@ import TemplateBody from './components/TemplateBody'
 
 interface TemplateProps {
   template: ITemplate
+  apps: IApp[]
 }
 
 // The template page is a modal and the route is /templates/:templateId
 export default function TemplateModal(props: TemplateProps) {
-  const { template } = props
+  const { template, apps } = props
   const navigate = useNavigate()
   const goToTemplatesPage = () => navigate(URLS.TEMPLATES)
 
@@ -90,7 +91,7 @@ export default function TemplateModal(props: TemplateProps) {
           </ModalHeader>
 
           <ModalBody mx={6} mb={8} borderWidth={1} borderRadius="lg">
-            <TemplateBody templateSteps={steps} />
+            <TemplateBody templateSteps={steps} apps={apps} />
           </ModalBody>
         </ModalContent>
       </Modal>
