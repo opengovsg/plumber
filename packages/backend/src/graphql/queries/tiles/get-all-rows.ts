@@ -50,7 +50,10 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
         // If table is postgres, we set pagination limit
         // If table is dynamodb, the pagination size is based on dynamodb query limits
         scanLimit: table.db === 'pg' ? 10000 : undefined,
-        stringifiedCursor,
+        stringifiedCursor:
+          table.db === 'ddb' && !stringifiedCursor
+            ? 'start'
+            : stringifiedCursor,
       })
 
     // Convert data object to csv to minimize payload size
