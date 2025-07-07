@@ -8,7 +8,6 @@ import getForEachMetadata from '../helpers/get-for-each-metadata'
 
 describe('getForEachMetadata', () => {
   const mockForEachContext: ForEachContext = {
-    testRun: false,
     executionStepMetadata: {},
     forEachStepPosition: 2,
     stepPositions: {
