@@ -7,8 +7,6 @@ import { useQuery } from '@apollo/client'
 import { FormControl, useDisclosure, useOutsideClick } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
-import { HIDE_POSTMAN_UPLOAD_ATTACHMENT_FLAG } from '@/config/flags'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { type Variable } from '@/helpers/variables'
@@ -44,15 +42,9 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const wrapperRef = useRef(null)
   const { control, setError, getValues } = useFormContext()
   const [currentTab, setCurrentTab] = useState<number>(0)
-
-  // TODO (kevinkim-ogp): remove this after we confirm that upload is stable
-  const launchDarkly = useContext(LaunchDarklyContext)
-  const hideUploadAttachments =
-    launchDarkly.flags?.[HIDE_POSTMAN_UPLOAD_ATTACHMENT_FLAG]
+  const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
 
   const flowId = getValues('flowId')
-
-  const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
 
   const {
     isOpen: isDialogOpen,
@@ -102,7 +94,6 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
 
   const { options, suggestions, uploadedItems } = useAttachmentOptions(
     flowData,
-    hideUploadAttachments,
     priorExecutionSteps,
     variableTypes,
   )
