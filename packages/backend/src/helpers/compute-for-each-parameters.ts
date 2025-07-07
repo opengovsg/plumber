@@ -16,15 +16,21 @@ import {
 import Flow from '@/models/flow'
 
 export type ForEachContext = {
-  testRun: boolean
   executionStepMetadata: NextStepMetadata
   forEachStepPosition: number
   isForEachStep: boolean
-
   stepPositions: Record<string, number>
 }
 
-export function getForEachContext(
+/**
+ * gets the context for the step within the pipe
+ * returns:
+ * - forEachStepPosition: position of the for-each step in the pipe
+ * - stepPositions: map of step ids and their corresponding positions
+ * - isForEachStep: whether the step is a for-each step
+ * - isLastStep: whether the step is the last step in the pipe
+ */
+export function getStepContext(
   flow: Flow,
   step: IStep,
 ): {
@@ -40,7 +46,7 @@ export function getForEachContext(
       step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH,
   )
   // NOTE: do not allow multiple for-each steps in a flow
-  if (forEachSteps.length === 0 || forEachSteps.length > 1) {
+  if (forEachSteps.length !== 1) {
     return {
       forEachStepPosition: -1,
       stepPositions: {},
@@ -49,6 +55,15 @@ export function getForEachContext(
     }
   }
 
+  /**
+   * stepPositions: map of step ids and their corresponding positions
+   *   used in for-each to determine whether the variable is from an action before the for-each step
+   *   or within the for-each loop.
+   *   if variables are from steps within the loop, it will be used to find the specific execution step for the same iteration
+   *
+   * lastStepId: id of the last step in the pipe
+   *   used in for each to terminate an iteration within the loop
+   */
   const { stepPositions, lastStepId } = flow.steps.reduce(
     (acc, step) => {
       acc.stepPositions[step.id] = step.position
@@ -96,7 +111,6 @@ export function computeForEachParameters({
   forEachContext: ForEachContext
 }): IJSONValue {
   const {
-    testRun,
     executionStepMetadata: metadata,
     forEachStepPosition,
     stepPositions,
@@ -106,12 +120,11 @@ export function computeForEachParameters({
   let forEachKeyPath = get(data, keyPath)
   const currentStepPosition = stepPositions?.[executionStep?.stepId] || -1
 
-  if (testRun || metadata?.iteration) {
-    forEachKeyPath = String(forEachKeyPath).replace(
-      FOR_EACH_ITERATION_KEY,
-      `${testRun ? 0 : metadata.iteration - 1}`,
-    )
-  }
+  forEachKeyPath = String(forEachKeyPath).replace(
+    FOR_EACH_ITERATION_KEY,
+    // test runs will not have metadata.iteration, and defaults to the first iteration
+    String(metadata?.iteration ? metadata.iteration - 1 : 0),
+  )
 
   if (
     executionStep?.appKey === TOOLBOX_APP_KEY &&
