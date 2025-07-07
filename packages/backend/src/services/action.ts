@@ -7,7 +7,10 @@ import {
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import StepError from '@/errors/step'
-import { getForEachContext } from '@/helpers/compute-for-each-parameters'
+import {
+  ForEachContext,
+  getStepContext,
+} from '@/helpers/compute-for-each-parameters'
 import computeParameters from '@/helpers/compute-parameters'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
@@ -99,7 +102,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     .throwIfNotFound()
 
   const { forEachStepPosition, stepPositions, isForEachStep, isLastStep } =
-    getForEachContext(flow, step)
+    getStepContext(flow, step)
 
   // we use this to indicate an iteration in the for-each is complete
   if (!testRun && forEachStepPosition > -1 && isLastStep && metadata) {
@@ -122,8 +125,7 @@ export const processAction = async (options: ProcessActionOptions) => {
   })
 
   const actionCommand = await step.getActionCommand()
-  const forEachContext = {
-    testRun,
+  const forEachContext: ForEachContext = {
     executionStepMetadata: metadata,
     forEachStepPosition,
     stepPositions,
