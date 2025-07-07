@@ -24,7 +24,7 @@ const getLabel = (status: GroupStatusType, count: number) => {
   } else if (status === GroupStatusType.Failure) {
     colorScheme = 'critical'
   } else if (status === GroupStatusType.Waiting) {
-    colorScheme = 'gray'
+    colorScheme = 'warning'
   }
   return (
     <Flex alignItems="center" gap={4}>

@@ -15,10 +15,10 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
     .findById(params.executionId)
     .throwIfNotFound()
 
-  if (params.iteration) {
+  if (params.iteration > 0 && params.iteration <= 500) {
+    // retrieves the latest execution steps for a specific iteration at a time
     const iterationSteps = execution
       .$relatedQuery('executionSteps')
-      .select('execution_steps.*', 'latest_steps.min_created_at')
       .with('latest_steps', (builder) => {
         builder
           .select(
@@ -30,6 +30,7 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
           .where('execution_id', params.executionId)
           .groupBy('step_id')
           .groupBy(
+            // ensure that only execution steps belonging to the same iteration are grouped together
             raw(`
               CASE
                 WHEN metadata = '{}'::jsonb THEN NULL
@@ -38,6 +39,7 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
             `),
           )
       })
+      // join on the max_created_at to get the latest execution step for each step
       .join('latest_steps', (builder) => {
         builder
           .on('execution_steps.step_id', '=', 'latest_steps.step_id')
@@ -47,11 +49,13 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
             'latest_steps.max_created_at',
           )
       })
+      .select('execution_steps.*', 'latest_steps.min_created_at')
       .where(
         raw(`(execution_steps.metadata ->> 'iteration')::int = ?`, [
           params.iteration,
         ]),
       )
+      // use min_created_at to preserve the order of execution steps within the same iteration
       .orderBy('latest_steps.min_created_at', 'asc')
 
     return paginate(iterationSteps, params.limit, params.offset)
