@@ -22,6 +22,8 @@ import { BORDER_COLOR, FONT_SIZE, ROW_COLOR } from '@/pages/Tile/constants'
 
 import { processData, ProcessedColumn, ProcessedRow } from './utils'
 
+const INDEX_COLUMN_WIDTH = '70px'
+
 interface TableVariableModalProps {
   isOpen: boolean
   onClose: () => void
@@ -40,6 +42,9 @@ const TableHeader = ({ columns }: { columns: ProcessedColumn[] }) => (
         borderRightWidth="1px"
         borderColor={BORDER_COLOR.DEFAULT}
         textAlign="center"
+        width={INDEX_COLUMN_WIDTH}
+        minWidth={INDEX_COLUMN_WIDTH}
+        maxWidth={INDEX_COLUMN_WIDTH}
       >
         #
       </Th>
@@ -84,7 +89,7 @@ const TableRow = ({
       borderRightWidth="1px"
       fontSize={FONT_SIZE.SMALL}
       textAlign="center"
-      width="50px"
+      width={INDEX_COLUMN_WIDTH}
     >
       {index + 1}
     </Td>
