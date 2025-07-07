@@ -344,7 +344,7 @@ describe('getStepContext', () => {
     expect(context.forEachStepPosition).toBe(2)
   })
 
-  it('should return correct context when step is af qqqqer for-each', () => {
+  it('should return correct context when step is after for-each', () => {
     const context = getStepContext(mockFlow, mockFlow.steps[2])
 
     expect(context.forEachStepPosition).toBe(2)
