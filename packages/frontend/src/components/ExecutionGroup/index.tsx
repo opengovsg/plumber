@@ -145,6 +145,8 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
                         key={step.id}
                         execution={execution}
                         executionStep={step}
+                        // add 1 because the for-each step is not included in numStepsBeforeGroup
+                        // 0-based indexing is handled by getStepPosition in the ExecutionStep component
                         index={index + 1 + numStepsBeforeGroup}
                         page={page}
                         isInForEach={true}

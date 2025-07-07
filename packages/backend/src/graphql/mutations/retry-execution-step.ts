@@ -39,7 +39,7 @@ const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
     .patch({ status: null })
     .findById(executionStep.executionId)
 
-  if (executionStep.metadata.iteration) {
+  if (executionStep.metadata?.iteration) {
     // set the iteration's state to null (waiting)
     await ExecutionStep.patchIterationStatus(
       executionStep.executionId,

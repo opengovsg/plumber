@@ -33,7 +33,7 @@ export default function IterationSelector({
           <Tag
             colorScheme={
               status === GroupStatusType.Waiting
-                ? 'gray'
+                ? 'warning'
                 : status === GroupStatusType.Success
                 ? 'success'
                 : 'critical'
