@@ -25,7 +25,11 @@ import WebhookUrlInfo from '../WebhookUrlInfo'
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
-import { getInfoBoxDetails, matchParamsToDataIn } from './utils'
+import {
+  getInfoBoxDetails,
+  isSameAppAndAppKey,
+  matchParamsToDataIn,
+} from './utils'
 
 const defaultTriggerInstructions: ITriggerInstructions = {
   beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
@@ -144,7 +148,9 @@ export default function FlowStepTestController(
   const shouldShowSaveButton =
     !readOnly && (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty))
   const shouldShowTestResults =
-    currentTestExecutionStep && !lastErrorDetails && !shouldTestStepAgain
+    isSameAppAndAppKey(step, currentTestExecutionStep) &&
+    !lastErrorDetails &&
+    !shouldTestStepAgain
 
   useEffect(() => {
     if (!containerRef.current) {
