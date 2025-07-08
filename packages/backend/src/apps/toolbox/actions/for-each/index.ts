@@ -21,7 +21,8 @@ const action: IRawAction = {
   description: 'Repeat actions for each item',
   groupsLaterSteps: true,
   isNew: true,
-  announcementContentKey: 'learn-for-each',
+  // TODO: link this to the guide when its ready
+  // announcementContentKey: 'learn-for-each',
   arguments: [
     {
       label: 'Choose items',
