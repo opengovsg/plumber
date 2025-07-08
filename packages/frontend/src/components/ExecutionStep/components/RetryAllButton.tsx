@@ -49,14 +49,13 @@ export const RetryAllButton = ({ execution, type }: RetryAllButtonProps) => {
             'Plumber was unable to retry some failed executions. Please manually retry the failed step.'
         }
       } else {
-        if (!flowId || !executionId) {
+        if (!executionId) {
           throw new Error('Flow ID or execution ID is required')
         }
 
         const result = await bulkRetryIterations({
           variables: {
             input: {
-              flowId: flowId,
               executionId: executionId,
             },
           },
