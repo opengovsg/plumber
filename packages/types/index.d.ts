@@ -669,6 +669,7 @@ export interface IBaseTrigger {
   type?: 'webhook' | 'polling'
   pollInterval?: number
   description: string
+  isNew?: boolean
   webhookTriggerInstructions?: ITriggerInstructions
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
@@ -737,6 +738,7 @@ export interface IBaseAction {
   name: string
   key: string
   description: string
+  isNew?: boolean
   run?(
     $: IGlobalVariable,
     metadata?: NextStepMetadata,

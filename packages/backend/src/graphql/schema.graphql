@@ -160,6 +160,7 @@ type Action {
   description: String
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
+  isNew: Boolean
   substeps: [ActionSubstep]
 }
 
@@ -671,6 +672,7 @@ type Trigger {
   setupMessage: SetupMessage
   webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
+  isNew: Boolean
 }
 
 type TriggerInstructions {

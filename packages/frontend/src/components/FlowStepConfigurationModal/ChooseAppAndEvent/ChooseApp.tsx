@@ -19,7 +19,7 @@ import {
   ModalHeader,
   Text,
 } from '@chakra-ui/react'
-import { Badge, Input, ModalCloseButton } from '@opengovsg/design-system-react'
+import { Input, ModalCloseButton } from '@opengovsg/design-system-react'
 import fuzzysort from 'fuzzysort'
 import { groupBy } from 'lodash'
 
@@ -32,6 +32,7 @@ import { useIsAppSelectable } from '../hooks/useIsAppSelectable'
 
 import FeedbackFooter from './FeedbackFooter'
 import { HighlightedText } from './HighlightedText'
+import NewBadge from './NewBadge'
 import ToolboxEvent from './ToolboxEvent'
 
 const OTHERS_CATEGORY = 'Other'
@@ -352,14 +353,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                                 searchQuery={searchQuery}
                                 textToHighlight={app.name}
                               />
-                              {app.isNewApp && (
-                                <Badge
-                                  bgColor="interaction.muted.main.active"
-                                  color="primary.500"
-                                >
-                                  New
-                                </Badge>
-                              )}
+                              {app.isNewApp && <NewBadge />}
                             </Flex>
                             <Text textStyle="body-2">
                               <HighlightedText
