@@ -7,6 +7,19 @@ import { Variable } from '@/helpers/variables'
 
 import { simpleSubstitute, VariableInfoMap } from '../RichTextEditor/utils'
 
+// guardrail to not show the test result in the event that the app no longer exists
+// and users were shown the EmptyFlowStepHeader to "add" a new step.
+// it should already be handled by the ErrorFlowStepHeader, but just in case
+export function isSameAppAndAppKey(
+  step: IStep,
+  executionStep: IExecutionStep | null,
+): boolean {
+  if (!executionStep) {
+    return false
+  }
+  return step.appKey === executionStep.appKey && step.key === executionStep.key
+}
+
 interface TableData {
   columns?: { name: string }[]
   rows?: unknown[]
