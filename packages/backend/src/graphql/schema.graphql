@@ -574,7 +574,6 @@ input BulkRetryExecutionsInput {
 }
 
 input BulkRetryIterationsInput {
-  flowId: String!
   executionId: String!
 }
 

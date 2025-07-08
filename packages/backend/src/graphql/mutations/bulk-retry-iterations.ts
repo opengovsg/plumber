@@ -1,17 +1,18 @@
 import { chunk } from 'lodash'
-import { raw } from 'objection'
+import { raw, ref } from 'objection'
 
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import { enqueueActionJob, getActionJob } from '@/queues/action'
+import Context from '@/types/express/context'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
 const CHUNK_SIZE = 100
 
-async function getAllFailedIterations(executionId: string) {
+async function getAllFailedIterations(context: Context, executionId: string) {
   const failedExecutionSteps = await ExecutionStep.query()
     .with('latest_attempts', (builder) => {
       builder
@@ -19,6 +20,12 @@ async function getAllFailedIterations(executionId: string) {
         .select('*')
         .from('execution_steps')
         .where('execution_id', executionId)
+        .whereExists(
+          context.currentUser
+            .$relatedQuery('executions')
+            .select(1)
+            .where('executions.id', ref('execution_steps.execution_id')),
+        )
         .orderBy('step_id')
         .orderBy(raw("metadata->>'iteration'"))
         .orderBy('created_at', 'desc')
@@ -43,12 +50,14 @@ async function getAllFailedIterations(executionId: string) {
 const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
   _parent,
   params,
+  context,
 ) => {
   if (!params.input.executionId) {
     throw new Error('Execution ID is required')
   }
 
   let failedExecutionSteps = await getAllFailedIterations(
+    context,
     params.input.executionId,
   )
 
@@ -57,29 +66,12 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
    * if there is no job id, we will skip the retry
    */
   failedExecutionSteps = failedExecutionSteps.filter((executionStep) => {
-    const {
-      id: executionStepId,
-      executionId,
-      status,
-      jobId,
-      metadata,
-    } = executionStep
+    const { id: executionStepId, executionId, jobId, metadata } = executionStep
 
     const defaultLoggerMetadata = {
       executionId: executionId,
       executionStepId: executionStepId,
       iteration: metadata.iteration,
-    }
-
-    if (status !== 'failure') {
-      logger.error(
-        'Latest execution step is not failed for a failed execution',
-        {
-          event: 'bulk-retry-iteration-step-status-mismatch',
-          ...defaultLoggerMetadata,
-        },
-      )
-      return false
     }
 
     if (jobId === null || jobId === undefined) {
@@ -88,10 +80,6 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
         event: 'bulk-retry-iteration-step-no-job-id',
         ...defaultLoggerMetadata,
       })
-      return false
-    }
-
-    if (executionId !== params.input.executionId) {
       return false
     }
 
