@@ -58,26 +58,43 @@ export const ACTION_APPS_RANKING = [
 
 function sortApps(apps: IApp[]): IApp[] {
   // trade off for increased time complexity but easier to add a new app to the ranking
-  return apps.sort((a, b) => {
-    const firstPriority = a.triggers
-      ? TRIGGER_APPS_RANKING.findIndex((app) => app === a.key)
-      : ACTION_APPS_RANKING.findIndex((app) => app === a.key)
-    const secondPriority = b.triggers
-      ? TRIGGER_APPS_RANKING.findIndex((app) => app === b.key)
-      : ACTION_APPS_RANKING.findIndex((app) => app === b.key)
+  return apps
+    .sort((a, b) => {
+      const firstPriority = a.triggers
+        ? TRIGGER_APPS_RANKING.findIndex((app) => app === a.key)
+        : ACTION_APPS_RANKING.findIndex((app) => app === a.key)
+      const secondPriority = b.triggers
+        ? TRIGGER_APPS_RANKING.findIndex((app) => app === b.key)
+        : ACTION_APPS_RANKING.findIndex((app) => app === b.key)
 
-    // sort by newApp flag, followed by priority
-    if (a.isNewApp && b.isNewApp) {
+      // sort by newApp flag, followed by priority
+      if (a.isNewApp && b.isNewApp) {
+        return firstPriority - secondPriority
+      }
+      if (a.isNewApp) {
+        return -1
+      }
+      if (b.isNewApp) {
+        return 1
+      }
       return firstPriority - secondPriority
-    }
-    if (a.isNewApp) {
-      return -1
-    }
-    if (b.isNewApp) {
-      return 1
-    }
-    return firstPriority - secondPriority
-  })
+    })
+    .map((app) => ({
+      ...app,
+      // Sort actions within each app so that actions with isNew appear first
+      actions: app.actions?.sort((a, b) => {
+        if (a.isNew && b.isNew) {
+          return 0
+        }
+        if (a.isNew) {
+          return -1
+        }
+        if (b.isNew) {
+          return 1
+        }
+        return 0
+      }),
+    }))
 }
 
 const getApps: QueryResolvers['getApps'] = async (_parent, params) => {
