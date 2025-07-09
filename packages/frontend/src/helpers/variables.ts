@@ -1,17 +1,15 @@
 import type {
-  IAction,
   IApp,
   IDataOutMetadata,
   IDataOutMetadatum,
   IExecutionStep,
-  ITrigger,
   TDataOutMetadatumType,
 } from '@plumber/types'
 
 import get from 'lodash.get'
 
 import { RawColumn, RawRow } from '@/components/VariablesList/utils'
-import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
+import getStepName from '@/helpers/getStepName'
 
 // these are the variable types to display on the frontend (make visible)
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
@@ -45,36 +43,6 @@ export interface Variable {
    * at the for-each step
    */
   isHidden?: boolean
-}
-
-function getStepName(executionStep: IExecutionStep, allApps: IApp[]) {
-  const { appKey, key, step } = executionStep
-
-  const isTrigger = ['formsg', 'webhook', 'scheduler'].includes(appKey)
-  const isIfThen = appKey === TOOLBOX_APP_KEY && key === TOOLBOX_ACTIONS.IfThen
-  const app = allApps?.find((a: IApp) => a.key === appKey)
-  const actionsOrTriggers: Array<ITrigger | IAction> =
-    (isTrigger ? app?.triggers : app?.actions) || []
-
-  const selectedActionOrTrigger = actionsOrTriggers.find(
-    (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === key,
-  )
-
-  let caption = ''
-  const defaultCaption = selectedActionOrTrigger?.name
-  if (step?.config?.stepName) {
-    caption = `${step.config.stepName}`
-  } else if (defaultCaption) {
-    caption = defaultCaption
-
-    if (isIfThen) {
-      caption = 'Condition'
-    }
-  } else if (app?.name) {
-    caption = app.name
-  }
-
-  return caption || (appKey || '').charAt(0)?.toUpperCase() + appKey?.slice(1)
 }
 
 function sortVariables(variables: Variable[]): void {
@@ -252,12 +220,16 @@ export function extractVariables(
           metadata,
           '',
         )
-        const stepName = getStepName(executionStep, allApps || [])
+
+        const { caption: name } = getStepName(
+          allApps || [],
+          executionStep?.step,
+        )
         // sort variable by order key in-place
         sortVariables(variables)
         return {
           id: executionStep.stepId,
-          name: `${executionStep.step.position}. ${stepName}`,
+          name,
           output: variables,
         }
       })

@@ -1,7 +1,8 @@
 import { IExecutionStep, TDataOutMetadatumType } from '@plumber/types'
 
-import { useMemo, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 
+import { EditorContext } from '@/contexts/Editor'
 import { GetFlowQuery } from '@/graphql/__generated__/graphql'
 import {
   extractVariables,
@@ -19,6 +20,7 @@ export function useAttachmentOptions(
   priorExecutionSteps: IExecutionStep[],
   variableTypes: TDataOutMetadatumType[] | null,
 ) {
+  const { allApps } = useContext(EditorContext)
   const [options, setOptions] = useState<CheckboxVariable[]>([])
 
   const uploadedItems = useMemo(() => {
@@ -29,7 +31,7 @@ export function useAttachmentOptions(
 
   const suggestions = useMemo(() => {
     const filteredVars = filterVariables(
-      extractVariables(priorExecutionSteps),
+      extractVariables(priorExecutionSteps, allApps),
       (v: Variable) => {
         const variableType = v.type ?? 'text'
         return variableTypes?.includes(variableType) ?? false
@@ -59,10 +61,10 @@ export function useAttachmentOptions(
       },
     ].filter(Boolean) as StepWithVariables[]
   }, [
-    setOptions,
-    hideUploadAttachments,
     priorExecutionSteps,
+    allApps,
     uploadedItems,
+    hideUploadAttachments,
     variableTypes,
   ])
 

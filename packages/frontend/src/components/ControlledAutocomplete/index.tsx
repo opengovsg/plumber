@@ -75,7 +75,7 @@ function ControlledAutocomplete(
     isSearchable,
     variableTypes = null,
   } = props
-  const { readOnly } = useContext(EditorContext)
+  const { allApps, readOnly } = useContext(EditorContext)
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
 
   /**
@@ -83,10 +83,14 @@ function ControlledAutocomplete(
    */
   const items = useMemo(() => {
     if (variableTypes) {
-      return extractVariablesAsItems(priorExecutionSteps, variableTypes)
+      return extractVariablesAsItems(
+        priorExecutionSteps,
+        variableTypes,
+        allApps,
+      )
     }
     return formComboboxOptions(options, showOptionValue)
-  }, [variableTypes, options, showOptionValue, priorExecutionSteps])
+  }, [variableTypes, options, showOptionValue, priorExecutionSteps, allApps])
 
   // Do not support freeSolo if there are numerical options. Since no use case
   // for it yet and it makes things more complex.
