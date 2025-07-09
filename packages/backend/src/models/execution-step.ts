@@ -184,7 +184,9 @@ class ExecutionStep extends Base {
         Object.values(iterationStatus).every((value) => value !== null),
       areAllStepsSuccessful:
         iterationStatus &&
-        Object.values(iterationStatus).every((value) => value === 'success'),
+        Object.values(iterationStatus).every(
+          (value) => value === 'success' || value === 'partial-success',
+        ),
     }
   }
 }
