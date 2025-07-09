@@ -17,7 +17,11 @@ export function isSameAppAndAppKey(
   if (!executionStep) {
     return false
   }
-  return step.appKey === executionStep.appKey && step.key === executionStep.key
+  return (
+    step.appKey === executionStep.appKey &&
+    // backward compatibility: executionStep.key is new and not available in old execution steps
+    (executionStep.key ? step.key === executionStep.key : true)
+  )
 }
 
 interface TableData {
