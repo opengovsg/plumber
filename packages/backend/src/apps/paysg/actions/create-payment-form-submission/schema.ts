@@ -62,6 +62,16 @@ export const requestSchema = z.object({
       return value
     })
     .optional(),
+  payer_address: z
+    .string()
+    .trim()
+    .transform((value) => value || undefined)
+    .optional(),
+  payer_identifier: z
+    .string()
+    .trim()
+    .transform((value) => value || undefined)
+    .optional(),
   amount_in_cents: z
     .string()
     .trim()

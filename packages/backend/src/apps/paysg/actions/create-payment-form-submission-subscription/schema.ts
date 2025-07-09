@@ -25,14 +25,4 @@ export const requestSchema = createPaymentFormSubmissionRequestSchema.extend({
 
       return value
     }),
-  payer_address: z
-    .string()
-    .trim()
-    .transform((value) => value || undefined)
-    .optional(),
-  payer_identifier: z
-    .string()
-    .trim()
-    .transform((value) => value || undefined)
-    .optional(),
 })
