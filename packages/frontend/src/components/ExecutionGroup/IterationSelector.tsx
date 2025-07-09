@@ -34,7 +34,8 @@ export default function IterationSelector({
           Item {iteration}
           <Tag
             colorScheme={
-              status === GroupStatusType.Waiting
+              status === GroupStatusType.Waiting ||
+              status === GroupStatusType.PartialSuccess
                 ? 'warning'
                 : status === GroupStatusType.Success
                 ? 'success'
@@ -47,6 +48,8 @@ export default function IterationSelector({
               ? 'Waiting'
               : status === GroupStatusType.Success
               ? 'Success'
+              : status === GroupStatusType.PartialSuccess
+              ? 'Partial Success'
               : 'Failure'}
           </Tag>
         </Flex>

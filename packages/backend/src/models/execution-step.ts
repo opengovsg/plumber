@@ -100,7 +100,7 @@ class ExecutionStep extends Base {
   static async patchIterationStatus(
     executionId: string,
     iteration: number,
-    status: 'success' | 'failure' | null,
+    status: 'success' | 'failure' | 'partial-success' | null,
   ) {
     const updateData =
       status !== null

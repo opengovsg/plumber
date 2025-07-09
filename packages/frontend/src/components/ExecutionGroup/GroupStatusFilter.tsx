@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { Flex, Tag } from '@chakra-ui/react'
 import startCase from 'lodash/startCase'
 
+import { GroupStats } from '@/helpers/processExecutionSteps'
+
 import { SingleSelect } from '../SingleSelect/SingleSelect'
 
 export enum GroupStatusType {
@@ -9,11 +11,12 @@ export enum GroupStatusType {
   Success = 'success',
   Failure = 'failure',
   Waiting = 'waiting',
+  PartialSuccess = 'partial-success',
 }
 
 interface GroupStatusFilterProps {
   statusFilter: GroupStatusType
-  groupStats: { success: number; failure: number; waiting: number }
+  groupStats: GroupStats
   setStatusFilter: (status: GroupStatusType) => void
 }
 
@@ -23,7 +26,10 @@ const getLabel = (status: GroupStatusType, count: number) => {
     colorScheme = 'success'
   } else if (status === GroupStatusType.Failure) {
     colorScheme = 'critical'
-  } else if (status === GroupStatusType.Waiting) {
+  } else if (
+    status === GroupStatusType.Waiting ||
+    status === GroupStatusType.PartialSuccess
+  ) {
     colorScheme = 'warning'
   }
   return (
@@ -47,8 +53,13 @@ export default function GroupStatusFilter({
   setStatusFilter,
 }: GroupStatusFilterProps) {
   const items = useMemo(() => {
-    const { failure, success, waiting } = groupStats
-    const allCount = success + failure + waiting
+    const {
+      failure,
+      success,
+      waiting,
+      'partial-success': partialSuccess,
+    } = groupStats
+    const allCount = success + failure + waiting + partialSuccess
 
     return [
       {
@@ -59,6 +70,11 @@ export default function GroupStatusFilter({
         label: getLabel(GroupStatusType.Success, success),
         value: GroupStatusType.Success,
         disabled: success === 0,
+      },
+      {
+        label: getLabel(GroupStatusType.PartialSuccess, partialSuccess),
+        value: GroupStatusType.PartialSuccess,
+        disabled: partialSuccess === 0,
       },
       {
         label: getLabel(GroupStatusType.Failure, failure),

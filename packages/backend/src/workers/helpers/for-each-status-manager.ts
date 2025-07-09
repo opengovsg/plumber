@@ -49,11 +49,22 @@ export default async function processForEachStatus({
     // only need to check at the last step to set the execution status
     if (isLastStep) {
       try {
-        await ExecutionStep.patchIterationStatus(
+        const iterationSteps = await ExecutionStep.getIterationSteps(
           executionId,
           iteration,
-          'success',
         )
+
+        /**
+         * check for partial success as failures would have been caught earlier
+         * most partial success will be due to email by postman where there
+         * are blacklisted recipients.
+         * partial success is indicated by status = 'success' and errorDetails !== null
+         */
+        const isIterationSuccessful = iterationSteps.every(
+          (step) => step.status === 'success' && step.errorDetails === null,
+        )
+        const status = isIterationSuccessful ? 'success' : 'partial-success'
+        await ExecutionStep.patchIterationStatus(executionId, iteration, status)
       } catch (err) {
         logger.error('Failed to patch iteration status', {
           err,

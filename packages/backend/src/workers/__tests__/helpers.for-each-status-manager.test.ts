@@ -14,6 +14,12 @@ import processForEachStatus from '../helpers/for-each-status-manager'
 const mocks = vi.hoisted(() => ({
   patchIterationStatus: vi.fn(),
   getForEachExecutionState: vi.fn(),
+  getIterationSteps: vi.fn(() => [
+    {
+      status: 'success',
+      errorDetails: null,
+    },
+  ]),
   setStatus: vi.fn(),
 }))
 
@@ -21,6 +27,7 @@ vi.mock('@/models/execution-step', () => ({
   default: {
     patchIterationStatus: mocks.patchIterationStatus,
     getForEachExecutionState: mocks.getForEachExecutionState,
+    getIterationSteps: mocks.getIterationSteps,
   },
 }))
 
@@ -63,6 +70,7 @@ describe('processForEachStatus', () => {
         currStep: mockForEachStep,
         nextStepMetadata: metadata,
       })
+      mocks.getIterationSteps.mockResolvedValue([])
 
       expect(result).toBe(false)
       expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
@@ -193,6 +201,35 @@ describe('processForEachStatus', () => {
         mockExecutionId,
         1,
         'success',
+      )
+    })
+
+    it('should return partial-success if iteration steps are not successful', async () => {
+      const metadata: IExecutionStepMetadata = {
+        iteration: 1,
+        isLastStep: true,
+      }
+
+      mocks.getIterationSteps.mockResolvedValueOnce([
+        {
+          status: 'success',
+          errorDetails: {
+            message: 'Error',
+          },
+        },
+      ])
+
+      const result = await processForEachStatus({
+        executionId: mockExecutionId,
+        currStep: mockForEachStep,
+        nextStepMetadata: metadata,
+      })
+
+      expect(result).toBe(true)
+      expect(mocks.patchIterationStatus).toHaveBeenCalledWith(
+        mockExecutionId,
+        1,
+        'partial-success',
       )
     })
 
