@@ -39,25 +39,34 @@ export default function getStepName(allApps: IApp[], step: IStep | undefined) {
 
   let caption = ''
   let defaultCaption = selectedActionOrTrigger?.name
+
+  if (isIfThen) {
+    defaultCaption = 'Condition'
+    caption = stepName ? `${position}. ${stepName}` : `${position}. Condition`
+    return {
+      caption,
+      defaultCaption,
+    }
+  }
+
+  if (isForEach) {
+    caption = stepName
+      ? `${position}. ${stepName}`
+      : `${position}. For each item`
+    return {
+      caption,
+      defaultCaption,
+    }
+  }
+
   if (stepName) {
     caption = `${position}. ${stepName}`
   } else if (defaultCaption) {
     caption = `${position ? `${position}. ` : ''}${defaultCaption}`
-
-    if (isIfThen) {
-      caption = `${position}. Condition`
-    }
-    if (isForEach) {
-      caption = `${position}. For each item`
-    }
   } else if (app?.name) {
     caption = `${position ? `${position}. ` : ''}${app.name}`
   } else if (isTrigger) {
     caption = 'This step starts your pipe'
-  }
-
-  if (isIfThen) {
-    defaultCaption = 'Condition'
   }
 
   return {
