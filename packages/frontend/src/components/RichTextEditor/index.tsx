@@ -213,11 +213,11 @@ const Editor = ({
   const handleVariableClick = useCallback(
     (variable: Variable) => {
       // if the selection is a node, means the user clicked on a variable
-      const selection = editor?.state.selection.toJSON()
+      const selectionType = editor?.state?.selection?.toJSON()?.type
       if (
         singleVariableSelection &&
         editor?.getText().match(GLOBAL_VARIABLE_REGEX) &&
-        selection.type !== 'node'
+        selectionType !== 'node'
       ) {
         return
       }
