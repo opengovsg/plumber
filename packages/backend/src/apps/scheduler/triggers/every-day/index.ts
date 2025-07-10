@@ -20,7 +20,7 @@ const trigger: IRawTrigger = {
       label: 'Trigger on weekends?',
       key: 'triggersOnWeekend',
       type: 'boolean-radio' as const,
-      description: 'Should this flow trigger on Saturday and Sunday?',
+      description: 'Should this workflow start on Saturday and Sunday?',
       required: true,
       // flip the order of the default options
       options: [

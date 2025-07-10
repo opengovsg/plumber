@@ -1,6 +1,3 @@
-export const SCHEDULER_MAX_DELAY_IN_MS = 30 * 60 * 1000
-export const SCHEDULER_DEFAULT_INTERVAL_IN_MS = 10 * 60 * 1000
-
 export const TIME_OF_DAY_DESCRIPTION =
   'What time of day should this workflow start?'
 

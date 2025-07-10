@@ -21,7 +21,7 @@ const trigger: IRawTrigger = {
       label: 'Day of the week',
       key: 'weekday',
       type: 'dropdown' as const,
-      description: 'What day of the week should this flow trigger at?',
+      description: 'What day of the week should this workflow start?',
       required: true,
       value: null,
       variables: false,
