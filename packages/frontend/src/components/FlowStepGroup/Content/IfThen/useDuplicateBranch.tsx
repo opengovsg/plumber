@@ -44,54 +44,59 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
 
     setIsDuplicatingBranch(true)
 
-    let newConditionId = null
-    let newConditionIndex = null
-    let previousStepId = branchSteps[branchSteps.length - 1]?.id
-    if (!previousStepId) {
-      return
-    }
-    // Create steps sequentially to avoid serialization conflicts
-    for (const step of branchSteps) {
-      const { appKey, key, connection, parameters } = step
-      const { branchName, ...restParameters } = parameters
+    try {
+      let newConditionId = null
+      let newConditionIndex = null
+      let previousStepId = branchSteps[branchSteps.length - 1]?.id
+      if (!previousStepId) {
+        return
+      }
+      // Create steps sequentially to avoid serialization conflicts
+      for (const step of branchSteps) {
+        const { appKey, key, connection, parameters } = step
+        const { branchName, ...restParameters } = parameters
 
-      // use a new branch name
-      const newBranchName = `[COPY] ${branchName}`
+        // use a new branch name
+        const newBranchName = `[COPY] ${branchName}`
 
-      const mutationInput = {
-        previousStep: { id: previousStepId },
-        flow: { id: flow.id },
-        appKey,
-        key,
-        ...(connection && { connection: { id: connection.id } }),
-        parameters: {
-          ...restParameters,
-          ...(branchName && { branchName: newBranchName }),
-        },
+        const mutationInput = {
+          previousStep: { id: previousStepId },
+          flow: { id: flow.id },
+          appKey,
+          key,
+          ...(connection && { connection: { id: connection.id } }),
+          parameters: {
+            ...restParameters,
+            ...(branchName && { branchName: newBranchName }),
+          },
+        }
+
+        const createdStep = await createStep({
+          fetchPolicy: 'no-cache',
+          variables: { input: mutationInput },
+        })
+
+        if (key === TOOLBOX_ACTIONS.IfThen) {
+          newConditionId = createdStep.data.createStep.id
+          newConditionIndex = createdStep.data.createStep.position - 1
+        }
+
+        // use the new step id as the previous step id for the next step
+        previousStepId = createdStep.data.createStep.id
       }
 
-      const createdStep = await createStep({
-        fetchPolicy: 'no-cache',
-        variables: { input: mutationInput },
-      })
+      // Refetch flow data only once after all steps are created
+      await client.refetchQueries({ include: [GET_FLOW] })
 
-      if (key === TOOLBOX_ACTIONS.IfThen) {
-        newConditionId = createdStep.data.createStep.id
-        newConditionIndex = createdStep.data.createStep.position - 1
+      setCurrentStepId(newConditionId)
+      setCurrentStepIndex(newConditionIndex)
+      if (!isDrawerOpen) {
+        onDrawerOpen()
       }
-
-      // use the new step id as the previous step id for the next step
-      previousStepId = createdStep.data.createStep.id
-    }
-
-    // Refetch flow data only once after all steps are created
-    await client.refetchQueries({ include: [GET_FLOW] })
-
-    setCurrentStepId(newConditionId)
-    setCurrentStepIndex(newConditionIndex)
-    setIsDuplicatingBranch(false)
-    if (!isDrawerOpen) {
-      onDrawerOpen()
+    } catch (err) {
+      console.error('Error duplicating branch', err)
+    } finally {
+      setIsDuplicatingBranch(false)
     }
   }
 

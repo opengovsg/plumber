@@ -208,7 +208,7 @@ export default function Branch(props: BranchProps) {
         dialogHeader="Branch"
         dialogType="duplicate-branch"
         onClick={duplicateBranch}
-        isLoading={false}
+        isLoading={isDuplicatingBranch}
       />
 
       {/* Unsaved Changes Alert */}
