@@ -64,13 +64,13 @@ describe('processForEachStatus', () => {
   describe('when step is a for-each step', () => {
     it('should return false if isLastStep is undefined', async () => {
       const metadata: IExecutionStepMetadata = {}
+      mocks.getIterationSteps.mockResolvedValueOnce([])
 
       const result = await processForEachStatus({
         executionId: mockExecutionId,
         currStep: mockForEachStep,
         nextStepMetadata: metadata,
       })
-      mocks.getIterationSteps.mockResolvedValue([])
 
       expect(result).toBe(false)
       expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
