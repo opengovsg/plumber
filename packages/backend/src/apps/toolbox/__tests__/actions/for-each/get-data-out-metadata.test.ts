@@ -267,7 +267,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Column 1',
-                displayedValue: ' ',
+                displayedValue: '',
                 order: 1,
                 type: 'text',
               },
@@ -450,7 +450,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Name',
-                displayedValue: ' ',
+                displayedValue: '',
                 order: 1,
                 type: 'text',
               },
@@ -460,7 +460,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Row ID',
-                displayedValue: ' ',
+                displayedValue: '',
                 order: 2,
                 type: 'tile_row_id',
               },
@@ -767,7 +767,7 @@ describe('getDataOutMetadata', () => {
               name: { isHidden: true },
               value: {
                 label: 'Number',
-                displayedValue: 42,
+                displayedValue: '42',
                 order: 1,
                 type: 'text',
               },
