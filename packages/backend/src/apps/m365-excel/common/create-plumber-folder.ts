@@ -71,22 +71,38 @@ export async function createPlumberFolder(
 
   // Make user the folder owner.
   // NOTE: If they already have an existing folder, then this becomes a no-op.
-  await $.http.post(
-    '/v1.0/sites/:sharePointSiteId/drive/items/:folderId/invite',
-    {
-      recipients: [{ email: $.user.email }],
-      requireSignIn: true,
-      sendInvitation: false,
-      roles: ['sp.full control'],
-      retainInheritedPermissions: false,
-    },
-    {
-      urlPathParams: {
-        sharePointSiteId: tenant.sharePointSiteId,
-        folderId,
+  try {
+    await $.http.post(
+      '/v1.0/sites/:sharePointSiteId/drive/items/:folderId/invite',
+      {
+        recipients: [{ email: $.user.email }],
+        requireSignIn: true,
+        sendInvitation: false,
+        roles: ['sp.full control'],
+        retainInheritedPermissions: false,
       },
-    },
-  )
+      {
+        urlPathParams: {
+          sharePointSiteId: tenant.sharePointSiteId,
+          folderId,
+        },
+      },
+    )
+  } catch (error) {
+    if (error instanceof HttpError) {
+      const errorCode = tryParseGraphApiError(error)?.code
+      /**
+       * Local sharepoint gives this error: Your organization's policies don't allow you to share with these users. Please contact your IT department for help.
+       * Prod sharepoint gives this error: One or more users could not be resolved.
+       */
+      if (errorCode === 'noResolvedUsers') {
+        throw new Error(
+          'Group emails or shared mailboxes are not supported. Please use your personal SharePoint email instead.',
+        )
+      }
+    }
+    throw error
+  }
 
   return folderId
 }
