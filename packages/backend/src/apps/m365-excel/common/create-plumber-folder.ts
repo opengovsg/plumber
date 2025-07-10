@@ -97,7 +97,7 @@ export async function createPlumberFolder(
        */
       if (errorCode === 'noResolvedUsers') {
         throw new Error(
-          'Group emails or shared mailboxes are not supported. Please use your personal sharepoint email instead.',
+          'Group emails or shared mailboxes are not supported. Please use your personal SharePoint email instead.',
         )
       }
     }
