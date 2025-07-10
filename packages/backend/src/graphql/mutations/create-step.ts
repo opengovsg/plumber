@@ -54,6 +54,7 @@ const createStep: MutationResolvers['createStep'] = async (
       position: previousStep.position + 1,
       parameters: input.parameters,
       connectionId: input.connection?.id,
+      config: input.config,
     })
 
     return step

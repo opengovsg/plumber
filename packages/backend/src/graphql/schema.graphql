@@ -505,6 +505,7 @@ input CreateStepInput {
   flow: StepFlowInput
   parameters: JSONObject
   previousStep: PreviousStepInput
+  config: StepConfigInput
 }
 
 input StepConfigInput {

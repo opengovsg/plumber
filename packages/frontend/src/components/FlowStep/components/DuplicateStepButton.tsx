@@ -35,7 +35,7 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
       iconUrl: null,
       webhookUrl: null,
       config: {
-        stepName: null,
+        stepName: createdStep?.config?.stepName || null,
         templateConfig: {
           appEventKey: null,
         },
@@ -62,8 +62,13 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
   const { isNested, step } = props
 
-  const { flow, isMobile, setCurrentStepId, setCurrentStepIndex } =
-    useContext(EditorContext)
+  const {
+    flow,
+    isMobile,
+    onDrawerOpen,
+    setCurrentStepId,
+    setCurrentStepIndex,
+  } = useContext(EditorContext)
 
   const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
 
@@ -79,6 +84,11 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
       key: step.key,
       connection: { id: step.connection?.id },
       parameters: { ...step.parameters },
+      ...(step.config?.stepName && {
+        config: {
+          stepName: `[COPY] ${step.config.stepName}`,
+        },
+      }),
     }
 
     const createdStep = await createStep({
@@ -90,7 +100,15 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
     const newStepIndex = newStep.position - 1
     setCurrentStepId(newStep.id)
     setCurrentStepIndex(newStepIndex)
-  }, [flow.id, step, createStep, setCurrentStepId, setCurrentStepIndex])
+    onDrawerOpen()
+  }, [
+    flow.id,
+    step,
+    createStep,
+    setCurrentStepId,
+    setCurrentStepIndex,
+    onDrawerOpen,
+  ])
 
   const {
     cancelRef,
