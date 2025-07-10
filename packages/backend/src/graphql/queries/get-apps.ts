@@ -57,6 +57,20 @@ export const ACTION_APPS_RANKING = [
 ]
 
 function sortApps(apps: IApp[]): IApp[] {
+  // Helper function to sort items with isNew flag first
+  const sortByIsNew = (a: { isNew?: boolean }, b: { isNew?: boolean }) => {
+    if (a.isNew && b.isNew) {
+      return 0
+    }
+    if (a.isNew) {
+      return -1
+    }
+    if (b.isNew) {
+      return 1
+    }
+    return 0
+  }
+
   // trade off for increased time complexity but easier to add a new app to the ranking
   return apps
     .sort((a, b) => {
@@ -82,18 +96,8 @@ function sortApps(apps: IApp[]): IApp[] {
     .map((app) => ({
       ...app,
       // Sort actions within each app so that actions with isNew appear first
-      actions: app.actions?.sort((a, b) => {
-        if (a.isNew && b.isNew) {
-          return 0
-        }
-        if (a.isNew) {
-          return -1
-        }
-        if (b.isNew) {
-          return 1
-        }
-        return 0
-      }),
+      actions: app.actions?.sort(sortByIsNew),
+      triggers: app.triggers?.sort(sortByIsNew),
     }))
 }
 
