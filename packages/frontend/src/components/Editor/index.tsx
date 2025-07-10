@@ -115,10 +115,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const stepExecutionsToInclude = useMemo(
     () =>
       new Set([
+        ...(triggerStep?.id ? [triggerStep.id] : []),
         ...stepsBeforeGroup.map((step) => step.id),
         ...groupStepsToInclude.flatMap((step) => step.map((s) => s.id)),
       ]),
-    [stepsBeforeGroup, groupStepsToInclude],
+    [triggerStep, stepsBeforeGroup, groupStepsToInclude],
   )
 
   const handleReorderSteps = async (steps: IStep[]) => {
@@ -190,7 +191,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           <SortableList
             items={stepsBeforeGroup}
             onChange={handleReorderSteps}
-            renderItem={(step, _isDragging, isOverlay) => {
+            renderItem={(step, isOverlay) => {
               const { id, position } = step
               return (
                 <SortableList.Item id={id}>

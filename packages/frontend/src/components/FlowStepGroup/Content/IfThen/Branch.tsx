@@ -209,7 +209,7 @@ export default function Branch(props: BranchProps) {
             index,
           }))}
           onChange={handleReorderSteps}
-          renderItem={(item, isDragging, isOverlay) => {
+          renderItem={(item, isOverlay) => {
             const { step, index } = item
             const isLastStep = index === actionSteps.length - 1 // index is 0-based
 
