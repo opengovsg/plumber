@@ -60,6 +60,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     $.step.parameters,
     priorExecutionSteps,
     actionCommand.preprocessVariable,
+    step.appKey === 'toolbox' && step.key === 'forEach',
   )
 
   $.step.parameters = computedParameters
