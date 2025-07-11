@@ -20,6 +20,8 @@ import {
 import { type Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
+import TableVariableItem from './TableVariableItem'
+
 function VariableTag({
   type,
 }: {
@@ -28,9 +30,10 @@ function VariableTag({
   const { label, tooltip } = useMemo(() => {
     switch (type) {
       case 'array':
+      case 'table':
         return {
           label: 'List',
-          tooltip: 'This variable can be used in for-each loops (coming soon!)',
+          tooltip: 'This variable can be used in the For-each action',
         }
       case 'file':
         return {
@@ -80,12 +83,13 @@ export function VariableItem({
   isLast?: boolean
   withIcon?: IconType
 }): JSX.Element {
+  const shouldShowBottomBorder = !withIcon && (onClick || isLast)
   return (
     <Box
       key={`suggestion-${variable.name}`}
       data-test="variable-suggestion-item"
-      padding={onClick ? '0.5rem 1rem' : '1rem'}
-      borderBottom={onClick || isLast ? undefined : '1px solid #EDEDED'}
+      padding={onClick && !withIcon ? '0.5rem 1rem' : '1rem'}
+      borderBottom={shouldShowBottomBorder ? undefined : '1px solid #EDEDED'}
       _hover={
         onClick
           ? {
@@ -173,14 +177,22 @@ export default function VariablesList(props: VariablesListProps) {
       p={onClick ? undefined : '1rem'}
       sx={props.customStyles}
     >
-      {defaultVariables.map((variable, index) => (
-        <VariableItem
-          key={`variable-${variable.name}`}
-          variable={variable}
-          onClick={onClick}
-          isLast={index === defaultVariables.length - 1}
-        />
-      ))}
+      {defaultVariables.map((variable, index) =>
+        variable.type === 'table' ? (
+          <TableVariableItem
+            key={`variable-${variable.name}`}
+            variable={variable}
+            onClick={onClick}
+          />
+        ) : variable.isHidden ? null : (
+          <VariableItem
+            key={`variable-${variable.name}`}
+            variable={variable}
+            onClick={onClick}
+            isLast={index === defaultVariables.length - 1}
+          />
+        ),
+      )}
       {collapsedVariables.length > 0 && (
         <Accordion allowMultiple border="transparent" py={2}>
           <AccordionItem p={0}>

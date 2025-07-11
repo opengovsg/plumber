@@ -20,15 +20,17 @@ import {
 
 import { BORDER_COLOR, FONT_SIZE, ROW_COLOR } from '@/pages/Tile/constants'
 
-import { Column, DataRow, processData } from './multiRowResultUtils'
+import { processData, ProcessedColumn, ProcessedRow } from './utils'
 
-interface TestMultiRowResultModalProps {
+const INDEX_COLUMN_WIDTH = '70px'
+
+interface TableVariableModalProps {
   isOpen: boolean
   onClose: () => void
   currentExecutionStep?: IExecutionStep | null
 }
 
-const TableHeader = ({ columns }: { columns: Column[] }) => (
+const TableHeader = ({ columns }: { columns: ProcessedColumn[] }) => (
   <Thead
     position="sticky"
     top={0}
@@ -36,7 +38,16 @@ const TableHeader = ({ columns }: { columns: Column[] }) => (
     zIndex={1}
   >
     <Tr key="header-row">
-      <Th borderRightWidth="1px" borderColor={BORDER_COLOR.DEFAULT} />
+      <Th
+        borderRightWidth="1px"
+        borderColor={BORDER_COLOR.DEFAULT}
+        textAlign="center"
+        width={INDEX_COLUMN_WIDTH}
+        minWidth={INDEX_COLUMN_WIDTH}
+        maxWidth={INDEX_COLUMN_WIDTH}
+      >
+        #
+      </Th>
       {columns?.map((c, colIndex) => (
         <Th
           key={c.key}
@@ -65,9 +76,9 @@ const TableRow = ({
   index,
   columns,
 }: {
-  row: DataRow
+  row: ProcessedRow
   index: number
-  columns: Column[]
+  columns: ProcessedColumn[]
 }) => (
   <Tr
     backgroundColor={index % 2 ? ROW_COLOR.EVEN : ROW_COLOR.ODD}
@@ -77,6 +88,8 @@ const TableRow = ({
       borderColor={BORDER_COLOR.DEFAULT}
       borderRightWidth="1px"
       fontSize={FONT_SIZE.SMALL}
+      textAlign="center"
+      width={INDEX_COLUMN_WIDTH}
     >
       {index + 1}
     </Td>
@@ -93,9 +106,7 @@ const TableRow = ({
   </Tr>
 )
 
-export default function TestMultiRowResultModal(
-  props: TestMultiRowResultModalProps,
-) {
+export default function TableVariableModal(props: TableVariableModalProps) {
   const { isOpen, onClose, currentExecutionStep } = props
 
   if (!currentExecutionStep) {
@@ -122,7 +133,7 @@ export default function TestMultiRowResultModal(
           borderColor="base.divider.medium"
         >
           <Flex direction="column">
-            List of row(s) found
+            Row(s) found
             <Text textStyle="body-2" color="base.content.medium">
               {rowsFound} row(s)
             </Text>
@@ -143,7 +154,7 @@ export default function TestMultiRowResultModal(
               <Tbody>
                 {dataRows.map((row, index) => (
                   <TableRow
-                    key={row.id || row.rowId}
+                    key={row.rowId ?? `${row.id}-${index}`}
                     row={row}
                     index={index}
                     columns={columns}
