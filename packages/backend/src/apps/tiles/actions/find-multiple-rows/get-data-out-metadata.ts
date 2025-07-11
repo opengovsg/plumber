@@ -14,9 +14,9 @@ async function getDataOutMetadata(
 
   const metadata: IDataOutMetadata = {
     data: {
-      label: 'List of row(s) found',
+      label: 'Row(s) found',
       displayedValue: `Preview ${dataOut.rowsFound} row(s)`,
-      type: 'multiple-row-object',
+      type: 'table',
       order: 1,
     },
     rowsFound: {

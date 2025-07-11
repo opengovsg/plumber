@@ -6,8 +6,6 @@ import { Infobox } from '@opengovsg/design-system-react'
 import VariablesList from '@/components/VariablesList'
 import type { Variable } from '@/helpers/variables'
 
-import { isMultiRowStep } from './multiRowResultUtils'
-import MultiRowResultVariables from './MultiRowResultVariables'
 import { getIfThenOutput } from './utils'
 
 function getNoOutputMessage(
@@ -59,7 +57,6 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     isOpen,
     isIfThenStep,
     step,
-    onModalOpen,
   } = props
 
   const Content = () => {
@@ -92,19 +89,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
             <Text>{getMockDataMessage(selectedActionOrTrigger)}</Text>
           </Infobox>
         )}
-        {isMultiRowStep(step) ? (
-          <MultiRowResultVariables
-            step={step}
-            selectedActionOrTrigger={selectedActionOrTrigger}
-            variables={variables}
-            onModalOpen={onModalOpen}
-          />
-        ) : (
-          <VariablesList
-            variables={variables}
-            customStyles={{ py: 0, px: 2 }}
-          />
-        )}
+        <VariablesList variables={variables} customStyles={{ py: 0, px: 2 }} />
       </Box>
     )
   }
