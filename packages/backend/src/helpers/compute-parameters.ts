@@ -16,6 +16,7 @@ function findAndSubstituteVariables(
   rawValue: unknown,
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
+  isForEachStep?: boolean,
 ): unknown {
   if (Array.isArray(rawValue)) {
     return rawValue.map((element) =>
@@ -24,6 +25,7 @@ function findAndSubstituteVariables(
         element,
         executionSteps,
         preprocessVariable,
+        isForEachStep,
       ),
     )
   }
@@ -38,6 +40,7 @@ function findAndSubstituteVariables(
           v,
           executionSteps,
           preprocessVariable,
+          isForEachStep,
         ),
       }),
       {},
@@ -50,43 +53,68 @@ function findAndSubstituteVariables(
 
   const parts = rawValue.split(variableRegExp)
 
-  return parts
-    .map((part: string) => {
-      const isVariable = part.match(variableRegExp)
-      if (isVariable) {
-        const stepIdAndKeyPath = part.replace(/{{step.|}}/g, '') as string
-        const [stepId, ...keyPaths] = stepIdAndKeyPath.split('.')
-        const executionStep = executionSteps.find((executionStep) => {
-          return executionStep.stepId === stepId
-        })
-        const data = executionStep?.dataOut
+  const substitutedParts = parts.map((part: string) => {
+    const isVariable = part.match(variableRegExp)
+    if (isVariable) {
+      const stepIdAndKeyPath = part.replace(/{{step.|}}/g, '') as string
+      const [stepId, ...keyPaths] = stepIdAndKeyPath.split('.')
+      const executionStep = executionSteps.find((executionStep) => {
+        return executionStep.stepId === stepId
+      })
+      const data = executionStep?.dataOut
 
-        const keyPath = keyPaths.join('.') // for lodash get to work
-        const dataValue = get(data, keyPath)
+      const keyPath = keyPaths.join('.') // for lodash get to work
+      const dataValue = get(data, keyPath)
 
-        // NOTE: dataValue could be an array if it is not processed on variables.ts
-        // which is the case for formSG checkbox only, this is to deal with forEach next time
-        return preprocessVariable
-          ? preprocessVariable(parameterKey, dataValue)
-          : Array.isArray(dataValue)
-          ? dataValue.join(', ')
-          : dataValue
+      // NOTE: dataValue could be an array if it is not processed on variables.ts
+      // which is the case for formSG checkbox only, this is to deal with forEach next time
+      if (preprocessVariable) {
+        return preprocessVariable(parameterKey, dataValue)
       }
 
-      return part
-    })
-    .join('')
+      if (Array.isArray(dataValue)) {
+        // NOTE: we do not stringify the array if its a for each step
+        // to avoid having to parse it back into an array again
+        if (isForEachStep) {
+          return dataValue
+        }
+
+        return dataValue.join(', ')
+      }
+
+      return dataValue
+    }
+
+    return part
+  })
+
+  /**
+   * FOR-EACH STEP SPECIAL CASE:
+   * for-each step only accepts 1 variable, checkbox or table
+   * checkbox is an array of strings,
+   * table is an object with rows and columns
+   */
+  if (isForEachStep) {
+    // filter out empty parts as the regex matching creates an array like this:
+    // ['', '{{step-variable}}', '']
+    const filteredParts = substitutedParts.filter((part) => part !== '')
+    return filteredParts[0]
+  }
+
+  return substitutedParts.join('')
 }
 
 export default function computeParameters(
   parameters: Step['parameters'],
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
+  isForEachStep?: boolean,
 ): Step['parameters'] {
   return findAndSubstituteVariables(
     '', // Dummy initial value; will never be used.
     parameters,
     executionSteps,
     preprocessVariable,
+    isForEachStep,
   ) as Step['parameters']
 }
