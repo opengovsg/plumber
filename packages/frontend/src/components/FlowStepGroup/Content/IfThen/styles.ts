@@ -50,8 +50,8 @@ export const hoverAddStepButtonStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     direction: 'row' as FlexProps['direction'],
-    m: 1,
-    mb: 0,
+    my: 1,
+    mx: 0,
     transition: 'all 0.3s ease',
   },
   button: {
