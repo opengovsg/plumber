@@ -215,6 +215,7 @@ export const GET_APPS = gql`
               label
               type
             }
+            singleVariableSelection
             # Only for multi-row
             subFields {
               label
@@ -253,6 +254,7 @@ export const GET_APPS = gql`
                   value
                 }
               }
+              singleVariableSelection
             }
           }
         }

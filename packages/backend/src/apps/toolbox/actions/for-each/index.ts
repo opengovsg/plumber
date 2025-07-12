@@ -20,6 +20,7 @@ const action: IRawAction = {
       required: true,
       variables: true,
       variableTypes: ['array', 'table'],
+      singleVariableSelection: true,
     },
   ],
 
