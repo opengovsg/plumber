@@ -15,7 +15,7 @@ import DeleteConfirmationDialog from './components/DeleteConfirmationDialog'
 import Error from './Content/Error'
 import ForEach from './Content/ForEach'
 import IfThen from './Content/IfThen'
-import useDeleteConfirmation from './hooks/useDeleteConfirmation'
+import useDeleteStepConfirmation from './hooks/useDeleteStepConfirmation'
 import { flowStepGroupStyles } from './styles'
 
 interface FlowStepGroupProps {
@@ -55,7 +55,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     onClose: closeDeleteConfirmation,
     onDelete: deleteForEach,
     cancelRef,
-  } = useDeleteConfirmation(stepGroupType ?? '', groupedSteps)
+  } = useDeleteStepConfirmation(stepGroupType ?? '', groupedSteps)
 
   const handleForEachDelete = useCallback(async () => {
     await deleteForEach()
@@ -68,7 +68,6 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
       alignItems="center"
       justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
     >
-      {/* FIXME (kevinkim-ogp): above is a temporary wrapper to ensure the flow step group is centered when drawer is closed */}
       <Flex
         {...flowStepGroupStyles.container}
         display={isMobile ? 'block' : 'flex'}
