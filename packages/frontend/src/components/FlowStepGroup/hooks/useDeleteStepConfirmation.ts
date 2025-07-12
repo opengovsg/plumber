@@ -8,7 +8,11 @@ import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
-const useDeleteConfirmation = (type: string, groupedSteps: IStep[][]) => {
+const useDeleteStepConfirmation = (
+  type: string,
+  groupedSteps: IStep[][],
+  branchSteps?: IStep[],
+) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const cancelRef = useRef<HTMLButtonElement>(null)
 
@@ -35,11 +39,14 @@ const useDeleteConfirmation = (type: string, groupedSteps: IStep[][]) => {
       await deleteStep({
         variables: { input: { ids: idsToDelete } },
       })
-    } else {
-      // TODO: refactor branch deletion
+    } else if (type === TOOLBOX_ACTIONS.IfThen && branchSteps) {
+      const idsToDelete = branchSteps.map((step) => step.id)
+      await deleteStep({
+        variables: { input: { ids: idsToDelete } },
+      })
     }
     onClose()
-  }, [deleteStep, groupedSteps, onClose, type])
+  }, [branchSteps, deleteStep, groupedSteps, onClose, type])
 
   return {
     cancelRef,
@@ -52,4 +59,4 @@ const useDeleteConfirmation = (type: string, groupedSteps: IStep[][]) => {
   }
 }
 
-export default useDeleteConfirmation
+export default useDeleteStepConfirmation

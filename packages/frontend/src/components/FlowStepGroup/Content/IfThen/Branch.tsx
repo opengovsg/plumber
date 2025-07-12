@@ -1,35 +1,16 @@
 import { IStep } from '@plumber/types'
 
-import {
-  Fragment,
-  MouseEventHandler,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-} from 'react'
+import { Fragment, useCallback, useContext, useMemo } from 'react'
 import { BiTrash } from 'react-icons/bi'
-import { useMutation } from '@apollo/client'
-import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
-  Box,
-  Button,
-  Flex,
-  Text,
-  useDisclosure,
-} from '@chakra-ui/react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import FlowStep from '@/components/FlowStep'
 import { EditorContext } from '@/contexts/Editor'
-import { DELETE_STEP } from '@/graphql/mutations/delete-step'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
+import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog'
+import useDeleteStepConfirmation from '../../hooks/useDeleteStepConfirmation'
 import { allowAddStep } from '../utils'
 
 import { HoverAddStepButton } from './HoverAddStepButton'
@@ -42,7 +23,7 @@ interface BranchProps {
 }
 
 export default function Branch(props: BranchProps) {
-  const { branchSteps, stepsBeforeGroup } = props
+  const { branchSteps, groupedSteps, stepsBeforeGroup } = props
 
   const {
     isDrawerOpen,
@@ -54,37 +35,25 @@ export default function Branch(props: BranchProps) {
 
   // Handle branch deletion
   const {
-    isOpen: deleteConfirmationIsOpen,
-    onOpen: openDeleteConfirmationImpl,
+    isDeletingBranch,
+    isOpen: isDeleteConfirmationOpen,
+    onOpen: openDeleteConfirmation,
     onClose: closeDeleteConfirmation,
-  } = useDisclosure()
-  const cancelDeleteButton = useRef<HTMLButtonElement>(null)
-  const [deleteStep, { loading: isDeletingBranch }] = useMutation(DELETE_STEP, {
-    refetchQueries: [GET_FLOW],
-  })
-  const openDeleteConfirmation = useCallback<MouseEventHandler>(
-    (e) => {
-      e.stopPropagation()
-      openDeleteConfirmationImpl()
-    },
-    [openDeleteConfirmationImpl],
+    onDelete: deleteBranch,
+    cancelRef,
+  } = useDeleteStepConfirmation(
+    TOOLBOX_ACTIONS.IfThen,
+    groupedSteps,
+    branchSteps,
   )
-  const deleteBranch = useCallback(async () => {
-    const idsToDelete = branchSteps.map((step) => step.id)
-    await deleteStep({
-      variables: { input: { ids: idsToDelete } },
-    })
+
+  const handleDeleteBranch = useCallback(async () => {
+    await deleteBranch()
 
     setCurrentStepId(null)
     closeDeleteConfirmation()
     onDrawerClose()
-  }, [
-    branchSteps,
-    deleteStep,
-    setCurrentStepId,
-    closeDeleteConfirmation,
-    onDrawerClose,
-  ])
+  }, [deleteBranch, setCurrentStepId, closeDeleteConfirmation, onDrawerClose])
 
   const canAddStep = useMemo(() => allowAddStep(branchSteps), [branchSteps])
 
@@ -115,7 +84,7 @@ export default function Branch(props: BranchProps) {
               <IconButton
                 boxSize={8}
                 onClick={(event) => {
-                  openDeleteConfirmation(event)
+                  openDeleteConfirmation()
                   event.stopPropagation()
                 }}
                 variant="clear"
@@ -150,36 +119,14 @@ export default function Branch(props: BranchProps) {
       })}
 
       {/* Delete Confirmation Modal */}
-      <AlertDialog
-        isOpen={deleteConfirmationIsOpen}
-        leastDestructiveRef={cancelDeleteButton}
+      <DeleteConfirmationDialog
+        name={branchSteps[0].parameters.branchName as string}
+        cancelRef={cancelRef}
+        isOpen={isDeleteConfirmationOpen}
         onClose={closeDeleteConfirmation}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              Delete {branchSteps[0].parameters.branchName as string}
-            </AlertDialogHeader>
-            <AlertDialogBody>
-              Are you sure you want to delete this branch? This action cannot be
-              undone.
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button
-                colorScheme="neutral"
-                variant="clear"
-                ref={cancelDeleteButton}
-                onClick={closeDeleteConfirmation}
-              >
-                Cancel
-              </Button>
-              <Button colorScheme="critical" onClick={deleteBranch} ml={3}>
-                Yes, delete branch
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+        onDelete={handleDeleteBranch}
+        onCancel={closeDeleteConfirmation}
+      />
     </Flex>
   )
 }
