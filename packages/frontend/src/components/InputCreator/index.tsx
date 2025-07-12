@@ -137,6 +137,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           variableTypes={schema.variableTypes}
           parentType={parentType}
           autoFocus={autoFocus}
+          singleVariableSelection={schema.singleVariableSelection}
         />
       )
     }
