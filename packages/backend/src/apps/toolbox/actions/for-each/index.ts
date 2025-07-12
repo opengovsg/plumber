@@ -1,6 +1,16 @@
 import { IRawAction } from '@plumber/types'
 
+import {
+  isCheckboxItems,
+  MultipleRowObject,
+  processItems,
+} from '@/apps/toolbox/common/get-for-each-variables'
 import StepError from '@/errors/step'
+
+import {
+  FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_ITERATION_KEY,
+} from '../../common/constants'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { inputSchema } from './schema'
@@ -39,12 +49,47 @@ const action: IRawAction = {
       )
     }
 
-    const { type, items } = parsedResult.data
-    $.setActionItem({
-      raw: {
-        iterations: type === 'checkbox' ? items.length : items.rows.length,
-      },
-    })
+    try {
+      const { items, inputSource, iterations } = parsedResult.data
+      if (
+        inputSource === FOR_EACH_INPUT_SOURCE.STRING_ARRAY &&
+        Array.isArray(items) &&
+        isCheckboxItems(items)
+      ) {
+        $.setActionItem({
+          raw: {
+            iterations: items.length,
+            items: items,
+            inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
+            // NOTE: this is specifically for checkboxes
+            // table data is handled differently in processInput
+            item: `items.${FOR_EACH_ITERATION_KEY}`,
+          },
+        })
+        return
+      } else if (
+        inputSource === FOR_EACH_INPUT_SOURCE.M365_EXCEL ||
+        inputSource === FOR_EACH_INPUT_SOURCE.TILES
+      ) {
+        const processedItems = processItems(items as MultipleRowObject)
+
+        $.setActionItem({
+          raw: {
+            iterations: iterations,
+            items: processedItems,
+            inputSource,
+          },
+        })
+      }
+    } catch (err) {
+      console.error(err)
+      throw new StepError(
+        'Invalid input list',
+        'Select a valid input list',
+        $.step.position,
+        $.app.name,
+      )
+    }
   },
 }
 

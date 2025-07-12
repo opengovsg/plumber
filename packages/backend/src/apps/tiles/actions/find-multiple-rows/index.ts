@@ -1,5 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import { getTableRows, TableRowFilter } from '@/models/dynamodb/table-row'
@@ -142,6 +143,7 @@ const action: IRawAction = {
         data: {
           rows: slicedRows,
           columns: columnData,
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
         },
       } satisfies FindMultipleRowsOutput,
     })
