@@ -2,6 +2,7 @@ import { IGlobalVariable } from '@plumber/types'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 import {
   generateMockContext,
@@ -206,6 +207,7 @@ describe('findMultipleRowsAction', () => {
               value: `data.rows.*.data.${dummyColumnIds[4]}`,
             }),
           ]),
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
         }),
       }),
     })

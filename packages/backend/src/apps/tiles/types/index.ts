@@ -1,5 +1,6 @@
 import { IJSONObject } from '@plumber/types'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import { TableRowOutput } from '@/models/dynamodb/table-row'
 
 export interface FindSingleRowOutput extends IJSONObject {
@@ -19,6 +20,7 @@ export interface FindMultipleRowsOutput extends IJSONObject {
   data?: {
     rows: TableRowOutput[]
     columns: TileColumnMetadata[]
+    inputSource: FOR_EACH_INPUT_SOURCE.TILES
   }
 }
 

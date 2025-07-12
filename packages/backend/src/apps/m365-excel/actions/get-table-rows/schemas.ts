@@ -1,5 +1,7 @@
 import z from 'zod'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+
 export const parametersSchema = z.object({
   fileId: z
     .string()
@@ -25,5 +27,6 @@ export const dataOutSchema = z.object({
     columns: z.array(
       z.object({ id: z.string(), name: z.string(), value: z.string() }),
     ),
+    inputSource: z.literal(FOR_EACH_INPUT_SOURCE.M365_EXCEL),
   }),
 })

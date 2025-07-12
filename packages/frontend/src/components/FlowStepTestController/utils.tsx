@@ -1,4 +1,4 @@
-import { IJSONObject } from '@plumber/types'
+import { IExecutionStep, IJSONObject, IStep } from '@plumber/types'
 
 import { Text } from '@chakra-ui/react'
 import { InfoboxProps } from '@opengovsg/design-system-react'
@@ -6,6 +6,16 @@ import { InfoboxProps } from '@opengovsg/design-system-react'
 import { Variable } from '@/helpers/variables'
 
 import { simpleSubstitute, VariableInfoMap } from '../RichTextEditor/utils'
+
+interface TableData {
+  columns?: { name: string }[]
+  rows?: unknown[]
+}
+
+const STEP_ID_REGEX =
+  /step\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+
+const getTableData = (data: unknown): TableData => data as TableData
 
 const deepCompare = (a: any, b: any, varInfoMap: VariableInfoMap): boolean => {
   if (a === b) {
@@ -98,6 +108,40 @@ export const matchParamsToDataIn = (
       )
     }
 
+    // NOTE: special handling for for-each step
+    if (key === 'items') {
+      // FormSG checkbox
+      if (Array.isArray(lastTest)) {
+        return (
+          simpleSubstitute(String(paramValue), varInfoMap) ===
+          lastTest.join(', ')
+        )
+      }
+
+      const match = String(paramValue).match(STEP_ID_REGEX)
+      const searchKey = match?.[0]
+      if (!searchKey) {
+        return false
+      }
+
+      const tableData = getTableData(lastTest)
+      const varRowsFound = varInfoMap.get(
+        `{{${searchKey}.rowsFound}}`,
+      )?.testRunValue
+
+      if (Number(varRowsFound) !== Number(tableData.rows?.length)) {
+        return false
+      }
+
+      const lastTestColumns = tableData.columns?.map((c) => c.name) ?? []
+      const varInfo = Array.from(varInfoMap.entries())
+        .filter(([key]) => key.includes(`${searchKey}.data`))
+        .map(([, value]) => value)
+      const varColumns = new Set(varInfo.map((item) => item.label))
+
+      return lastTestColumns.every((label) => varColumns.has(label))
+    }
+
     // Handle arrays and objects using deep comparison
     if (Array.isArray(paramValue) || typeof paramValue === 'object') {
       return deepCompare(paramValue, lastTest, varInfoMap)
@@ -179,4 +223,22 @@ export function getIfThenOutput(
       and your pipe <Text as="b">would not have</Text> continued.
     </Text>,
   ]
+}
+
+function getForEachIterationCount(
+  testExecutionSteps: IExecutionStep[],
+  stepId: string,
+): number {
+  const executionStep = testExecutionSteps.find(
+    (step) => step.stepId === stepId,
+  )
+  return Number(executionStep?.dataOut?.iterations) ?? 0
+}
+
+export function getForEachDataMessage(
+  testExecutionSteps: IExecutionStep[],
+  step: IStep,
+): string {
+  const numberOfItems = getForEachIterationCount(testExecutionSteps, step.id)
+  return `This for-each action will run on ${numberOfItems} items. The first item is shown below.`
 }
