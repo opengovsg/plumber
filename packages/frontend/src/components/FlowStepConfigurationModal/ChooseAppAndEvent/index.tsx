@@ -8,7 +8,6 @@ import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
-  useForEachInitializer,
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 
@@ -69,7 +68,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     return excelConnections[0]
   }, [selectedApp, appConnectionsData])
 
-  const [initializeForEach] = useForEachInitializer()
   const [initializeIfThen] = useIfThenInitializer()
 
   /**
@@ -136,11 +134,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
           })
           newStepId = updatedStep.id
           newStepIndex = updatedStep.position - 1
-
-          // account for for-each
-          if (triggerOrAction.key === TOOLBOX_ACTIONS.ForEach) {
-            await initializeForEach(step)
-          }
         }
       }
       patchModalState({ isLoading: false })
@@ -162,7 +155,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       onCreateStep,
       initializeIfThen,
       onUpdateStep,
-      initializeForEach,
     ],
   )
 

@@ -38,6 +38,7 @@ import { branchStyles } from './styles'
 interface BranchProps {
   branchSteps: IStep[]
   stepsBeforeGroup: IStep[]
+  groupedSteps: IStep[][]
 }
 
 export default function Branch(props: BranchProps) {
@@ -80,9 +81,9 @@ export default function Branch(props: BranchProps) {
   }, [
     branchSteps,
     deleteStep,
-    onDrawerClose,
-    closeDeleteConfirmation,
     setCurrentStepId,
+    closeDeleteConfirmation,
+    onDrawerClose,
   ])
 
   const canAddStep = useMemo(() => allowAddStep(branchSteps), [branchSteps])
