@@ -28,9 +28,10 @@ import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
+  isForEachStep,
+  isIfThenStep,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
-  useForEachInitializer,
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
@@ -44,6 +45,7 @@ interface IEditorContextValue {
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
   currentStepIndex: number | null
+  hasForEach: boolean
   hasIfThen: boolean
   currentTestExecutionStep: IExecutionStep | null
   isDrawerOpen: boolean
@@ -76,6 +78,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   flowId: '',
   currentStepId: null,
   currentStepIndex: null,
+  hasForEach: false,
   hasIfThen: false,
   currentTestExecutionStep: null,
   isDrawerOpen: false,
@@ -174,9 +177,8 @@ export const EditorProvider = ({
   const isEmptyPipe =
     steps.length <= 2 && steps.every((s) => s.key === null && s.appKey === null)
 
-  const hasIfThen = flow?.steps.some(
-    (step: IStep) => step.key === TOOLBOX_ACTIONS.IfThen,
-  )
+  const hasForEach = flow?.steps.some((step) => isForEachStep(step))
+  const hasIfThen = flow?.steps.some((step: IStep) => isIfThenStep(step))
 
   const allApps = getAppsData?.getApps ?? []
 
@@ -225,7 +227,6 @@ export const EditorProvider = ({
 
   const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
 
-  const [initializeForEach] = useForEachInitializer()
   const [initializeIfThen] = useIfThenInitializer()
 
   // Add a step to the flow with the given appKey and eventKey
@@ -278,16 +279,12 @@ export const EditorProvider = ({
               completeStepWithFlow,
             )) as unknown as IStep
           }
-
-          if (eventKey === TOOLBOX_ACTIONS.ForEach) {
-            await initializeForEach(completeStepWithFlow)
-          }
         }
       }
 
       return newStep as IStep
     },
-    [createStep, flowId, initializeForEach, initializeIfThen],
+    [createStep, flowId, initializeIfThen],
   )
 
   /**
@@ -392,6 +389,7 @@ export const EditorProvider = ({
         allApps,
         currentStepId,
         currentStepIndex,
+        hasForEach,
         hasIfThen,
         isDrawerOpen,
         isMobile,

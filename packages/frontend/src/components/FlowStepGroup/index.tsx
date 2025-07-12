@@ -1,6 +1,6 @@
 import { IStep } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { BiTrash } from 'react-icons/bi'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
@@ -11,9 +11,11 @@ import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 
+import DeleteConfirmationDialog from './components/DeleteConfirmationDialog'
 import Error from './Content/Error'
 import ForEach from './Content/ForEach'
 import IfThen from './Content/IfThen'
+import useDeleteConfirmation from './hooks/useDeleteConfirmation'
 import { flowStepGroupStyles } from './styles'
 
 interface FlowStepGroupProps {
@@ -23,7 +25,7 @@ interface FlowStepGroupProps {
 
 export default function FlowStepGroup(props: FlowStepGroupProps) {
   const { groupedSteps, stepsBeforeGroup } = props
-  const { isDrawerOpen, isMobile } = useContext(EditorContext)
+  const { isDrawerOpen, isMobile, onDrawerClose } = useContext(EditorContext)
 
   const { stepGroupType, stepGroupCaption } = useMemo(() => {
     let stepGroupType: string | null = null
@@ -46,6 +48,19 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
 
     return { stepGroupType, stepGroupCaption }
   }, [groupedSteps])
+
+  const {
+    isOpen: isDeleteConfirmationOpen,
+    onOpen: openDeleteConfirmation,
+    onClose: closeDeleteConfirmation,
+    onDelete: deleteForEach,
+    cancelRef,
+  } = useDeleteConfirmation(stepGroupType ?? '', groupedSteps)
+
+  const handleForEachDelete = useCallback(async () => {
+    await deleteForEach()
+    onDrawerClose()
+  }, [deleteForEach, onDrawerClose])
 
   return (
     <Flex
@@ -94,6 +109,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
                   aria-label="Delete for each action"
                   icon={<BiTrash />}
                   colorScheme="secondary"
+                  onClick={openDeleteConfirmation}
                 />
               </Flex>
             )}
@@ -109,6 +125,14 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
             <ForEach
               groupedSteps={groupedSteps}
               stepsBeforeGroup={stepsBeforeGroup}
+            />
+            <DeleteConfirmationDialog
+              name="For each"
+              cancelRef={cancelRef}
+              isOpen={isDeleteConfirmationOpen}
+              onClose={closeDeleteConfirmation}
+              onDelete={handleForEachDelete}
+              onCancel={closeDeleteConfirmation}
             />
           </>
         ) : (
