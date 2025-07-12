@@ -25,14 +25,10 @@ import { groupBy } from 'lodash'
 
 import { getAppActionFlag, getAppFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import {
-  TOOLBOX_ACTIONS,
-  TOOLBOX_APP_KEY,
-  useIfThenInitializer,
-  useIsIfThenSelectable,
-} from '@/helpers/toolbox'
+import { TOOLBOX_APP_KEY, useIfThenInitializer } from '@/helpers/toolbox'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import { useIsAppSelectable } from '../hooks/useIsAppSelectable'
 
 import FeedbackFooter from './FeedbackFooter'
 import { HighlightedText } from './HighlightedText'
@@ -48,9 +44,14 @@ interface ChooseAppProps {
 export default function ChooseApp(props: ChooseAppProps) {
   const { apps, onSelectAppEvent } = props
   const launchDarkly = useContext(LaunchDarklyContext)
-  const { patchModalState, isTrigger, isLastStep } = useContext(
-    FlowStepConfigurationContext,
-  )
+  const { patchModalState, isTrigger, isLastStep, step, prevStepId } =
+    useContext(FlowStepConfigurationContext)
+
+  const appSelectableMap = useIsAppSelectable({
+    isLastStep,
+    step,
+    prevStepId,
+  })
 
   const [_, isInitializingIfThen] = useIfThenInitializer()
   const isLoading = launchDarkly.isLoading || isInitializingIfThen
@@ -78,7 +79,6 @@ export default function ChooseApp(props: ChooseAppProps) {
     [onSelectApp, onSelectAppEvent],
   )
 
-  const isIfThenSelectable = useIsIfThenSelectable({ isLastStep })
   const toolboxActionsToDisplay = useMemo(() => {
     if (isLoading || !launchDarkly.flags) {
       return []
@@ -272,10 +272,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                           key={action.key}
                           action={action}
                           onSelectAppEvent={() => onSelectAppEvent(app, action)}
-                          isDisabled={
-                            action.key === TOOLBOX_ACTIONS.IfThen &&
-                            !isIfThenSelectable
-                          }
+                          isDisabled={appSelectableMap?.[action.key] === false}
                           searchQuery={searchQuery}
                         />
                       ))
@@ -289,6 +286,8 @@ export default function ChooseApp(props: ChooseAppProps) {
                         ? triggersOrActions[0]
                         : null
 
+                    const isAppDisabled = appSelectableMap?.[app.key] === false
+
                     return (
                       <Flex
                         key={app.key}
@@ -296,22 +295,25 @@ export default function ChooseApp(props: ChooseAppProps) {
                         borderWidth="1px"
                         borderColor="base.divider.medium"
                         borderRadius="lg"
+                        opacity={isAppDisabled ? 0.5 : 1}
                         onClick={() =>
+                          !isAppDisabled &&
                           handleSelectOption(app, singleTriggerOrAction)
                         }
                         justifyContent="space-between"
                         alignItems="center"
                         _hover={{
                           bg: 'interaction.muted.neutral.hover',
-                          cursor: 'pointer',
+                          cursor: isAppDisabled ? 'not-allowed' : 'pointer',
                         }}
                         _active={{
                           bg: 'interaction.muted.neutral.active',
                         }}
                         _focus={{
                           outline: 'none',
-                          boxShadow:
-                            '0 0 0 2px var(--chakra-colors-primary-500)',
+                          boxShadow: isAppDisabled
+                            ? 'none'
+                            : '0 0 0 2px var(--chakra-colors-primary-500)',
                         }}
                         tabIndex={0}
                         onKeyDown={(e) => {
@@ -326,11 +328,20 @@ export default function ChooseApp(props: ChooseAppProps) {
                             boxSize={8}
                             borderStyle="solid"
                             fit="contain"
+                            style={{
+                              filter: isAppDisabled
+                                ? 'grayscale(100%)'
+                                : 'none',
+                            }}
                             fallback={
                               <Icon
                                 boxSize={6}
                                 as={BiArrowFromRight}
-                                color="base.content.default"
+                                color={
+                                  isAppDisabled
+                                    ? 'base.content.default'
+                                    : 'primary.500'
+                                }
                               />
                             }
                           />

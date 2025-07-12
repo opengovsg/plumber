@@ -1,14 +1,18 @@
 import { IStep } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
+import { BiTrash } from 'react-icons/bi'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
+import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 
 import Error from './Content/Error'
+import ForEach from './Content/ForEach'
 import IfThen from './Content/IfThen'
 import { flowStepGroupStyles } from './styles'
 
@@ -25,10 +29,21 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     let stepGroupType: string | null = null
     let stepGroupCaption: string | null = null
 
-    if (groupedSteps[0]?.[0]?.key === 'ifThen') {
-      stepGroupType = 'ifThen'
+    const groupKey = groupedSteps[0]?.[0]?.key
+    if (!groupKey) {
+      return { stepGroupType: null, stepGroupCaption: null }
+    }
+
+    if (groupKey === TOOLBOX_ACTIONS.IfThen) {
+      stepGroupType = TOOLBOX_ACTIONS.IfThen
       stepGroupCaption = 'If-then'
     }
+
+    if (groupKey === TOOLBOX_ACTIONS.ForEach) {
+      stepGroupType = TOOLBOX_ACTIONS.ForEach
+      stepGroupCaption = 'For each'
+    }
+
     return { stepGroupType, stepGroupCaption }
   }, [groupedSteps])
 
@@ -54,6 +69,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
             w="full"
             borderLeftWidth={0}
             borderRightWidth={0}
+            role="group"
           >
             <Flex {...flowStepGroupStyles.iconWrapper}>
               {/* App icon */}
@@ -70,13 +86,31 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
                 </Text>
               </Flex>
             </Flex>
+            {stepGroupType === TOOLBOX_ACTIONS.ForEach && (
+              <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
+                <IconButton
+                  boxSize={8}
+                  variant="clear"
+                  aria-label="Delete for each action"
+                  icon={<BiTrash />}
+                  colorScheme="secondary"
+                />
+              </Flex>
+            )}
           </Flex>
         </Box>
-        {stepGroupType === 'ifThen' ? (
+        {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
           <IfThen
             groupedSteps={groupedSteps}
             stepsBeforeGroup={stepsBeforeGroup}
           />
+        ) : stepGroupType === TOOLBOX_ACTIONS.ForEach ? (
+          <>
+            <ForEach
+              groupedSteps={groupedSteps}
+              stepsBeforeGroup={stepsBeforeGroup}
+            />
+          </>
         ) : (
           <Error />
         )}
