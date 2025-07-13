@@ -5,7 +5,7 @@ import { Flex, Tag } from '@chakra-ui/react'
 
 import { SingleSelect } from '@/components/SingleSelect'
 
-import { RetryAllButton } from '../ExecutionStep/components/RetryAllButton'
+import { RetryAllIterationsButton } from '../ExecutionStep/components/RetryAllIterationsButton'
 import RetryButton from '../ExecutionStep/components/RetryButton'
 
 import { GroupStatusType } from './GroupStatusFilter'
@@ -78,7 +78,6 @@ export default function IterationSelector({
         isClearable={false}
         colorScheme="secondary"
       />
-      {/* TODO: add retry all button */}
       <Flex gap={2}>
         {canRetry && (
           <RetryButton
@@ -87,7 +86,7 @@ export default function IterationSelector({
           />
         )}
         {canRetry && canRetryAll && (
-          <RetryAllButton execution={execution} type="iteration" />
+          <RetryAllIterationsButton execution={execution} />
         )}
       </Flex>
     </Flex>
