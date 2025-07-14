@@ -39,7 +39,7 @@ async function getDataOutMetadata(
       item: {
         label: 'Item',
         type: 'text',
-        displayedValue: items[0] ?? '',
+        displayedValue: items[0] ? String(items[0]) : '',
       },
     }
   }
@@ -55,8 +55,8 @@ async function getDataOutMetadata(
         label: column.name,
         displayedValue:
           column.id === 'rowId'
-            ? items?.rows?.[0]?.rowId ?? ' '
-            : items?.rows?.[0]?.data?.[column.id] ?? ' ',
+            ? items?.rows?.[0]?.rowId ?? ''
+            : String(items?.rows?.[0]?.data?.[column.id] ?? ''),
         order: index + 1,
         type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
       },

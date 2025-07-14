@@ -130,14 +130,14 @@ export function computeForEachParameters({
     executionStep?.appKey === TOOLBOX_APP_KEY &&
     executionStep?.key === TOOLBOX_ACTIONS.FOR_EACH
   ) {
-    dataValue = get(data, forEachKeyPath as string) || ''
+    dataValue = get(data, forEachKeyPath as string) ?? ''
   } else if (currentStepPosition > forEachStepPosition) {
     // find the specific execution step for the same iteration
     const iterationExecutionStep = executionSteps.find(
       (es) =>
         es.stepId === stepId && es.metadata.iteration === metadata?.iteration,
     )
-    dataValue = get(iterationExecutionStep?.dataOut, keyPath) || ''
+    dataValue = get(iterationExecutionStep?.dataOut, keyPath) ?? ''
   }
 
   return dataValue
