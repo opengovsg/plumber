@@ -22,8 +22,8 @@ export default function getStepName(allApps: IApp[], step: IStep | undefined) {
   } = step
 
   const isTrigger = type === 'trigger'
-  const isIfThen = step ? checkIfThenStep(step) : false
-  const isForEach = step ? checkForEachStep(step) : false
+  const isIfThen = checkIfThenStep(step)
+  const isForEach = checkForEachStep(step)
 
   const apps: IApp[] = allApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
