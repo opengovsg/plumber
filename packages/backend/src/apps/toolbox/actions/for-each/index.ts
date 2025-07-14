@@ -20,6 +20,7 @@ const action: IRawAction = {
   key: 'forEach',
   description: 'Repeat actions for each item',
   groupsLaterSteps: true,
+  isNew: true,
   arguments: [
     {
       label: 'Choose items',
