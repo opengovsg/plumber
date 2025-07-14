@@ -18,14 +18,14 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
 
-interface StepDeleteButtonProps {
+interface DeleteStepButtonProps {
   isNested?: boolean
   isDeletingStep?: boolean
   step: IStep
   caption?: string
 }
 
-export default function StepDeleteButton(props: StepDeleteButtonProps) {
+export default function DeleteStepButton(props: DeleteStepButtonProps) {
   const { isNested, step, caption } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
   const customBody = caption
