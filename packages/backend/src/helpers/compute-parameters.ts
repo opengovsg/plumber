@@ -2,6 +2,10 @@ import type { IAction } from '@plumber/types'
 
 import get from 'lodash.get'
 
+import {
+  computeForEachParameters,
+  ForEachContext,
+} from '@/helpers/compute-for-each-parameters'
 import ExecutionStep from '@/models/execution-step'
 
 import Step from '../models/step'
@@ -16,7 +20,7 @@ function findAndSubstituteVariables(
   rawValue: unknown,
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
-  isForEachStep?: boolean,
+  forEachContext?: ForEachContext,
 ): unknown {
   if (Array.isArray(rawValue)) {
     return rawValue.map((element) =>
@@ -25,7 +29,7 @@ function findAndSubstituteVariables(
         element,
         executionSteps,
         preprocessVariable,
-        isForEachStep,
+        forEachContext,
       ),
     )
   }
@@ -40,7 +44,7 @@ function findAndSubstituteVariables(
           v,
           executionSteps,
           preprocessVariable,
-          isForEachStep,
+          forEachContext,
         ),
       }),
       {},
@@ -52,6 +56,8 @@ function findAndSubstituteVariables(
   }
 
   const parts = rawValue.split(variableRegExp)
+  const { forEachStepPosition, stepPositions, isForEachStep } =
+    forEachContext || {}
 
   const substitutedParts = parts.map((part: string) => {
     const isVariable = part.match(variableRegExp)
@@ -62,9 +68,22 @@ function findAndSubstituteVariables(
         return executionStep.stepId === stepId
       })
       const data = executionStep?.dataOut
+      const stepIsInForEach =
+        forEachStepPosition > -1 &&
+        stepPositions?.[stepId] >= forEachStepPosition
 
       const keyPath = keyPaths.join('.') // for lodash get to work
-      const dataValue = get(data, keyPath)
+      let dataValue = get(data, keyPath)
+      if (stepIsInForEach) {
+        dataValue = computeForEachParameters({
+          data,
+          keyPath,
+          executionSteps,
+          executionStep,
+          stepId,
+          forEachContext,
+        })
+      }
 
       // NOTE: dataValue could be an array if it is not processed on variables.ts
       // which is the case for formSG checkbox only, this is to deal with forEach next time
@@ -108,13 +127,13 @@ export default function computeParameters(
   parameters: Step['parameters'],
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
-  isForEachStep?: boolean,
+  forEachContext?: ForEachContext,
 ): Step['parameters'] {
   return findAndSubstituteVariables(
     '', // Dummy initial value; will never be used.
     parameters,
     executionSteps,
     preprocessVariable,
-    isForEachStep,
+    forEachContext,
   ) as Step['parameters']
 }

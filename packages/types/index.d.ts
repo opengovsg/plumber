@@ -118,6 +118,7 @@ export interface IExecutionStep {
   createdAt: string
   updatedAt: string
   metadata: IExecutionStepMetadata
+  key: string
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
@@ -125,6 +126,11 @@ export interface IExecutionStep {
 
 export interface IExecutionStepMetadata {
   isMock?: boolean
+  iteration?: number
+  iterations?: number
+  iterationStatus?: Record<string, 'success' | 'failure' | null>
+  isLastIteration?: boolean
+  isLastStep?: boolean
 }
 
 export interface IExecution {
@@ -714,6 +720,7 @@ export interface IActionRunResult {
   nextStep?:
     | { command: 'jump-to-step'; stepId: IStep['id'] }
     | { command: 'stop-execution' }
+    | { command: 'start-for-each'; stepId: IStep['id'] }
   nextStepMetadata?: NextStepMetadata
 }
 

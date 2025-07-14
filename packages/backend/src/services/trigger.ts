@@ -89,6 +89,7 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
       errorDetails: error,
       appKey: step.appKey,
       metadata: triggerItem?.isMock ? { isMock: true } : {},
+      key: step.key,
     })
 
   return {
