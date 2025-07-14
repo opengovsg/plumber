@@ -36,6 +36,31 @@ const retryPartialStep: MutationResolvers['retryPartialStep'] = async (
       stepId: executionStep.stepId,
       metadata: executionStep.metadata,
     })
+
+    /**
+     * FOR-EACH SPECIAL CASE:
+     * Partial retry means that subsequent steps were allowed to proceed in the initial execution.
+     * We need to manually handle the iteration status here as the nextStep would not continue to run
+     * if the subsequent steps have already run and succeeded.
+     */
+    if (executionStep.metadata?.iteration) {
+      const iterationSteps = await ExecutionStep.getIterationSteps(
+        executionStep.executionId,
+        executionStep.metadata.iteration,
+      )
+
+      const isIterationSuccessful = iterationSteps.every(
+        (step) => step.status === 'success' && step.errorDetails === null,
+      )
+
+      if (isIterationSuccessful) {
+        await ExecutionStep.patchIterationStatus(
+          executionStep.executionId,
+          executionStep.metadata.iteration,
+          'success',
+        )
+      }
+    }
   } catch (e) {
     throw new Error('Failed to retry partial step')
   }
