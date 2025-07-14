@@ -212,12 +212,16 @@ const Editor = ({
 
   const handleVariableClick = useCallback(
     (variable: Variable) => {
+      // if the selection is a node, means the user clicked on a variable
+      const selectionType = editor?.state?.selection?.toJSON()?.type
       if (
         singleVariableSelection &&
-        editor?.getText().match(GLOBAL_VARIABLE_REGEX)
+        editor?.getText().match(GLOBAL_VARIABLE_REGEX) &&
+        selectionType !== 'node'
       ) {
         return
       }
+
       editor?.commands.insertContent({
         type: StepVariable.name,
         attrs: {
