@@ -28,8 +28,10 @@ export const GET_TEST_EXECUTION_STEPS = gql`
       dataOut
       dataOutMetadata
       errorDetails
+      key
       metadata {
         isMock
+        iteration
       }
     }
   }

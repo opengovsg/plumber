@@ -36,6 +36,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
       inputRef,
       isClearable,
       size,
+      isBorderless,
     } = useSelectContext()
 
     const mergedInputRef = useMergeRefs(inputRef, ref)
@@ -117,6 +118,9 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
             sx={{
               ...styles.field,
               cursor: isSearchable ? 'text' : 'pointer',
+              ...(isBorderless && {
+                border: 'none',
+              }),
             }}
             {...getInputProps({
               onClick: handleToggleMenu,
