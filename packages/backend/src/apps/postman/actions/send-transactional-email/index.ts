@@ -6,6 +6,7 @@ import { fromZodError } from 'zod-validation-error'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import { getObjectFromS3Id } from '@/helpers/s3'
+import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
 
 import { dataOutSchema } from '../../common/data-out-validator'
@@ -91,6 +92,7 @@ const action: IRawAction = {
      */
     const lastExecutionStep = await $.getLastExecutionStep({
       sameExecution: true,
+      iteration: Number($.metadata?.iteration) || undefined,
     })
 
     /**
@@ -144,6 +146,35 @@ const action: IRawAction = {
       })
       dataOut.status = updatedStatus
       dataOut.recipient = prevDataOut.recipient
+
+      /**
+       * Partial retry means that subsequent steps were allowed to proceed in the initial execution.
+       * We need to manually handle the status of the iteration here as the nextStep would not continue to run
+       * if the subsequent steps have already run and succeeded.
+       */
+      if (
+        $.metadata?.iteration &&
+        dataOut.status.every((status) => status === 'ACCEPTED')
+      ) {
+        const iterationSteps = await ExecutionStep.getIterationSteps(
+          $.execution.id,
+          Number($.metadata.iteration),
+        )
+
+        const isIterationSuccessful = iterationSteps
+          .filter((es) => es.stepId !== $.step.id) // exclude this current step as it has not been updated yet
+          .every(
+            (step) => step.status === 'success' && step.errorDetails === null,
+          )
+
+        if (isIterationSuccessful) {
+          await ExecutionStep.patchIterationStatus(
+            $.execution.id,
+            Number($.metadata.iteration),
+            'success',
+          )
+        }
+      }
     }
 
     /**

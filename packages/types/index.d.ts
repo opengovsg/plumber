@@ -848,12 +848,14 @@ export type IGlobalVariable = {
     options?: Partial<{
       sameExecution: boolean
       testRunOnly: boolean
+      iteration?: number
     }>,
   ) => Promise<IExecutionStep | undefined>
   execution?: {
     id: string
     testRun: boolean
   }
+  metadata?: IJSONObject
   webhookUrl?: string
   triggerOutput?: ITriggerOutput
   actionOutput?: IActionOutput

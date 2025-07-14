@@ -34,6 +34,7 @@ const retryPartialStep: MutationResolvers['retryPartialStep'] = async (
       executionId: executionStep.executionId,
       flowId: executionStep.execution.flowId,
       stepId: executionStep.stepId,
+      metadata: executionStep.metadata,
     })
   } catch (e) {
     throw new Error('Failed to retry partial step')
