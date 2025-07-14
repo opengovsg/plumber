@@ -13,6 +13,9 @@ export const CREATE_STEP = gql`
       connection {
         id
       }
+      config {
+        stepName
+      }
     }
   }
 `

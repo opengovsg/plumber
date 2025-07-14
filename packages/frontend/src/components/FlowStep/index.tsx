@@ -19,9 +19,10 @@ import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
+import DeleteStepButton from './components/DeleteStepButton'
+import DuplicateStepButton from './components/DuplicateStepButton'
 import StepAppIcon from './components/StepAppIcon'
 import StepCaptionAndDemo from './components/StepCaptionAndDemo'
-import StepDeleteButton from './components/StepDeleteButton'
 import TestAgainInfobox from './components/TestAgainInfobox'
 import FlowStepWrapper from './FlowStepWrapper'
 import { flowStepStyles } from './styles'
@@ -235,7 +236,12 @@ export default function FlowStep(
               />
               <StepCaptionAndDemo app={app} caption={caption} />
               {isDeletable && (
-                <StepDeleteButton isNested={isNested} step={step} />
+                <Flex gap={1} ml="auto">
+                  {!isTrigger && (
+                    <DuplicateStepButton isNested={isNested} step={step} />
+                  )}
+                  <DeleteStepButton isNested={isNested} step={step} />
+                </Flex>
               )}
             </Flex>
           </Flex>

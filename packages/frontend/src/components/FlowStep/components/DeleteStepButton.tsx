@@ -16,13 +16,13 @@ import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-s
 
 import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
 
-interface StepDeleteButtonProps {
+interface DeleteStepButtonProps {
   isNested?: boolean
   isDeletingStep?: boolean
   step: IStep
 }
 
-export default function StepDeleteButton(props: StepDeleteButtonProps) {
+export default function DeleteStepButton(props: DeleteStepButtonProps) {
   const { isNested, step } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
   const {
