@@ -40,7 +40,13 @@ const ExportCsvButton = (props: ButtonProps) => {
         .trim()
         .replace(/[^a-z0-9]|\r?\n|\r/gim, '')
         .replace(/\s+/g, '_')}_${dateString()}.csv`
-      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8' })
+      /**
+       * CAVEAT: we manually add the BOM ('\uFEFF') to ensure that exported csv files can be properly handled in Excel.
+       * It avoids garbled characters and preserves special characters.
+       */
+      const blob = new Blob(['\uFEFF' + csvString], {
+        type: 'text/csv;charset=utf-8',
+      })
       saveAs(blob, filename)
     },
     [filteredDataRef, allDataRef, tableColumns, tableName],
