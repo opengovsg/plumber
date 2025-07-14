@@ -165,7 +165,10 @@ export const EditorProvider = ({
   const hasForEach = flow?.steps.some((step) => isForEachStep(step))
   const hasIfThen = flow?.steps.some((step: IStep) => isIfThenStep(step))
 
-  const allApps = getAppsData?.getApps ?? []
+  const allApps = useMemo(
+    () => getAppsData?.getApps ?? [],
+    [getAppsData?.getApps],
+  )
 
   const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
     GET_TEST_EXECUTION_STEPS,
@@ -182,10 +185,10 @@ export const EditorProvider = ({
   )
 
   const [stepsWithVars, varInfoMap] = useMemo(() => {
-    const stepsWithVars = extractVariables(testExecutionSteps)
+    const stepsWithVars = extractVariables(testExecutionSteps, allApps)
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
-  }, [testExecutionSteps])
+  }, [testExecutionSteps, allApps])
 
   const currentTestExecutionStep = useMemo(
     () =>
