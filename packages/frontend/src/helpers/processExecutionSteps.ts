@@ -8,9 +8,16 @@ export type GroupedSteps = Array<{
   status: string
 }>
 
+export type GroupStats = {
+  success: number
+  failure: number
+  waiting: number
+  'partial-success': number
+}
+
 const DEFAULT_EMPTY_RESULT = {
   groupingStep: {} as IExecutionStep,
-  groupStats: { success: 0, failure: 0, waiting: 0 },
+  groupStats: { success: 0, failure: 0, waiting: 0, 'partial-success': 0 },
   hasGrouping: false,
   iterationMap: new Map<number, string>(),
   stepsBeforeGroup: [],
@@ -47,10 +54,11 @@ export default function processExecutionSteps(
     iterationMap.set(iteration, status ? status : 'waiting')
   })
 
-  const groupStats: { success: number; failure: number; waiting: number } = {
+  const groupStats: GroupStats = {
     success: 0,
     failure: 0,
     waiting: 0,
+    'partial-success': 0,
   }
 
   for (const [, status] of iterationMap) {

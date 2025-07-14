@@ -12,6 +12,7 @@ describe('processExecutionSteps', () => {
     key: string,
     status: 'success' | 'failure' = 'success',
     metadata: Record<string, any> = {},
+    errorDetails: Record<string, any> = {},
   ): IExecutionStep => ({
     id: 'executionStepId',
     executionId: 'executionId',
@@ -19,7 +20,7 @@ describe('processExecutionSteps', () => {
     step: {} as any,
     dataIn: {},
     dataOut: {},
-    errorDetails: {},
+    errorDetails,
     status,
     appKey,
     createdAt: new Date().toISOString(),
@@ -32,7 +33,7 @@ describe('processExecutionSteps', () => {
     const result = processExecutionSteps(undefined as any)
     expect(result).toEqual({
       groupingStep: {},
-      groupStats: { success: 0, failure: 0, waiting: 0 },
+      groupStats: { success: 0, failure: 0, waiting: 0, 'partial-success': 0 },
       iterationMap: new Map<number, string>(),
       hasGrouping: false,
       stepsBeforeGroup: [],
@@ -43,7 +44,7 @@ describe('processExecutionSteps', () => {
     const result = processExecutionSteps([])
     expect(result).toEqual({
       groupingStep: {},
-      groupStats: { success: 0, failure: 0, waiting: 0 },
+      groupStats: { success: 0, failure: 0, waiting: 0, 'partial-success': 0 },
       hasGrouping: false,
       iterationMap: new Map<number, string>(),
       stepsBeforeGroup: [],
@@ -58,7 +59,7 @@ describe('processExecutionSteps', () => {
     const result = processExecutionSteps(steps)
     expect(result).toEqual({
       groupingStep: {},
-      groupStats: { success: 0, failure: 0, waiting: 0 },
+      groupStats: { success: 0, failure: 0, waiting: 0, 'partial-success': 0 },
       hasGrouping: false,
       iterationMap: new Map<number, string>(),
       stepsBeforeGroup: steps,
@@ -84,7 +85,12 @@ describe('processExecutionSteps', () => {
     expect(result.hasGrouping).toBe(true)
     expect(result.stepsBeforeGroup).toHaveLength(1)
     expect(result.iterationMap.size).toBe(1)
-    expect(result.groupStats).toEqual({ success: 1, failure: 0, waiting: 0 })
+    expect(result.groupStats).toEqual({
+      success: 1,
+      failure: 0,
+      waiting: 0,
+      'partial-success': 0,
+    })
   })
 
   it('should handle multiple iterations with mixed statuses', () => {
@@ -93,7 +99,7 @@ describe('processExecutionSteps', () => {
       createMockStep(TOOLBOX_APP_KEY, TOOLBOX_ACTIONS.ForEach, 'failure', {
         iterations: 2,
         iterationStatus: {
-          iteration_1: 'success',
+          iteration_1: 'partial-success',
           iteration_2: 'failure',
         },
       }),
@@ -101,6 +107,9 @@ describe('processExecutionSteps', () => {
       createMockStep('app3', 'action3', 'success', {
         iteration: 1,
         isLastStep: true,
+        errorDetails: {
+          message: 'Error',
+        },
       }),
       createMockStep('app2', 'action2', 'failure', { iteration: 2 }),
       createMockStep('app3', 'action3', 'failure', {
@@ -111,7 +120,12 @@ describe('processExecutionSteps', () => {
     const result = processExecutionSteps(steps)
     expect(result.hasGrouping).toBe(true)
     expect(result.iterationMap.size).toBe(2)
-    expect(result.groupStats).toEqual({ success: 1, failure: 1, waiting: 0 })
+    expect(result.groupStats).toEqual({
+      success: 0,
+      failure: 1,
+      waiting: 0,
+      'partial-success': 1,
+    })
   })
 
   it('should handle incomplete iterations', () => {
@@ -129,6 +143,11 @@ describe('processExecutionSteps', () => {
     const result = processExecutionSteps(steps)
     expect(result.hasGrouping).toBe(true)
     expect(result.iterationMap.size).toBe(1)
-    expect(result.groupStats).toEqual({ success: 0, failure: 0, waiting: 1 })
+    expect(result.groupStats).toEqual({
+      success: 0,
+      failure: 0,
+      waiting: 1,
+      'partial-success': 0,
+    })
   })
 })

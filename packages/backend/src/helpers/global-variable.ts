@@ -26,6 +26,7 @@ type GlobalVariableOptions = {
   testRun?: boolean
   request?: IRequest
   user?: User // only required in GraphQL context
+  metadata?: IJSONObject
 }
 
 const globalVariable = async (
@@ -40,6 +41,7 @@ const globalVariable = async (
     request,
     testRun = false,
     user,
+    metadata,
   } = options
 
   const isTrigger = step?.isTrigger
@@ -90,6 +92,8 @@ const globalVariable = async (
      * This function is mainly used in testRuns for triggers
      * specify sameExection as true, if you want to get the last execution step of the SAME execution
      * (e.g. for retries that require the context from the last execution step)
+     *
+     * For-each case: add the iteration number to get the correct execution step for steps in the for-each
      */
     getLastExecutionStep: async (options) => {
       if (options?.sameExecution && !execution?.id) {
@@ -99,6 +103,7 @@ const globalVariable = async (
         await step?.getLastExecutionStep({
           executionId: options?.sameExecution ? execution.id : undefined,
           testRunOnly: options?.testRunOnly,
+          iteration: options?.iteration,
         })
       )?.toJSON()
     },
@@ -127,6 +132,7 @@ const globalVariable = async (
       $.actionOutput.data = actionItem
     },
     user: flow?.user ?? user,
+    metadata,
   }
 
   if (request) {
