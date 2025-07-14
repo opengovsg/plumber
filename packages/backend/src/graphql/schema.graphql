@@ -91,6 +91,9 @@ type Mutation {
   bulkRetryExecutions(
     input: BulkRetryExecutionsInput
   ): BulkRetryExecutionsResult!
+  bulkRetryIterations(
+    input: BulkRetryIterationsInput
+  ): BulkRetryIterationsResult!
   logout: Boolean
   loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
   loginWithSelectedSgid(
@@ -416,6 +419,11 @@ type BulkRetryExecutionsResult {
   allSuccessfullyRetried: Boolean!
 }
 
+type BulkRetryIterationsResult {
+  numFailedIterations: Int!
+  allSuccessfullyRetried: Boolean!
+}
+
 input CreateConnectionInput {
   key: String!
   formattedData: JSONObject!
@@ -563,6 +571,10 @@ input RetryPartialStepInput {
 input BulkRetryExecutionsInput {
   flowId: String!
   executionIds: [String!]
+}
+
+input BulkRetryIterationsInput {
+  executionId: String!
 }
 
 """
