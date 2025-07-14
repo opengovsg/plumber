@@ -58,6 +58,20 @@ const action: IRawAction = {
       variables: true,
     },
     {
+      label: 'Payer Address',
+      key: 'payer_address',
+      type: 'string' as const,
+      required: false,
+      variables: true,
+    },
+    {
+      label: 'Payer Identifier',
+      key: 'payer_identifier',
+      type: 'string' as const,
+      required: false,
+      variables: true,
+    },
+    {
       label: 'Amount (in cents)',
       key: 'amount_in_cents',
       type: 'string' as const,

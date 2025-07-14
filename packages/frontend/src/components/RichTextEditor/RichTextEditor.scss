@@ -296,6 +296,7 @@
   border-radius: inherit;
   mask-image: linear-gradient(to right, black 100%, black 100%);
   -webkit-mask-image: linear-gradient(to right, black 100%, black 100%);
+  min-height: 2.625rem;
 
   // NOTE: forcefully hide the scrollbar so that it does not
   // cause misalignment with the height of the multirow

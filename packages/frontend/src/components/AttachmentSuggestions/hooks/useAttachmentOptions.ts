@@ -15,7 +15,6 @@ import { reformatToCheckboxVariables } from '../utils'
 
 export function useAttachmentOptions(
   flowData: GetFlowQuery,
-  hideUploadAttachments: boolean,
   priorExecutionSteps: IExecutionStep[],
   variableTypes: TDataOutMetadatumType[] | null,
 ) {
@@ -51,20 +50,14 @@ export function useAttachmentOptions(
 
     return [
       ...filteredVars,
-      !hideUploadAttachments && {
+      {
         id: 'uploaded',
         name: 'Uploaded attachments',
         output: uploadedItems,
         addNew: true,
       },
     ].filter(Boolean) as StepWithVariables[]
-  }, [
-    setOptions,
-    hideUploadAttachments,
-    priorExecutionSteps,
-    uploadedItems,
-    variableTypes,
-  ])
+  }, [setOptions, priorExecutionSteps, uploadedItems, variableTypes])
 
   return {
     options,

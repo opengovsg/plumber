@@ -5,8 +5,6 @@
  * Display flags
  */
 export const BANNER_TEXT_FLAG = 'banner_display'
-// we only want to show this notification to users created before this date (ms since epoch)
-export const SINGLE_STEP_TEST_SHOW_BEFORE_FLAG = 'single_step_test_show_before'
 
 /**
  * Feature flags
@@ -14,8 +12,6 @@ export const SINGLE_STEP_TEST_SHOW_BEFORE_FLAG = 'single_step_test_show_before'
 export const BULK_RETRY_EXECUTIONS_FLAG = 'bulk-retry-failed-executions-v1'
 export const SGID_FEATURE_FLAG = 'sgid-login'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
-export const HIDE_POSTMAN_UPLOAD_ATTACHMENT_FLAG =
-  'hide-postman-upload-attachment'
 
 /**
  * App/events flags
