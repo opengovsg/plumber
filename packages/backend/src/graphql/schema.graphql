@@ -966,6 +966,7 @@ type TemplateStep {
 enum TemplateTagType {
   demo
   empty # for empty flows state
+  new
 }
 
 # End of template types
