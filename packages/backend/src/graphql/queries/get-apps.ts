@@ -57,48 +57,27 @@ export const ACTION_APPS_RANKING = [
 ]
 
 function sortApps(apps: IApp[]): IApp[] {
-  // Helper function to sort items with isNew flag first
-  const sortByIsNew = (a: { isNew?: boolean }, b: { isNew?: boolean }) => {
-    if (a.isNew && b.isNew) {
-      return 0
+  // trade off for increased time complexity but easier to add a new app to the ranking
+  return apps.sort((a, b) => {
+    const firstPriority = a.triggers
+      ? TRIGGER_APPS_RANKING.findIndex((app) => app === a.key)
+      : ACTION_APPS_RANKING.findIndex((app) => app === a.key)
+    const secondPriority = b.triggers
+      ? TRIGGER_APPS_RANKING.findIndex((app) => app === b.key)
+      : ACTION_APPS_RANKING.findIndex((app) => app === b.key)
+
+    // sort by newApp flag, followed by priority
+    if (a.isNewApp && b.isNewApp) {
+      return firstPriority - secondPriority
     }
-    if (a.isNew) {
+    if (a.isNewApp) {
       return -1
     }
-    if (b.isNew) {
+    if (b.isNewApp) {
       return 1
     }
-    return 0
-  }
-
-  // trade off for increased time complexity but easier to add a new app to the ranking
-  return apps
-    .sort((a, b) => {
-      const firstPriority = a.triggers
-        ? TRIGGER_APPS_RANKING.findIndex((app) => app === a.key)
-        : ACTION_APPS_RANKING.findIndex((app) => app === a.key)
-      const secondPriority = b.triggers
-        ? TRIGGER_APPS_RANKING.findIndex((app) => app === b.key)
-        : ACTION_APPS_RANKING.findIndex((app) => app === b.key)
-
-      // sort by newApp flag, followed by priority
-      if (a.isNewApp && b.isNewApp) {
-        return firstPriority - secondPriority
-      }
-      if (a.isNewApp) {
-        return -1
-      }
-      if (b.isNewApp) {
-        return 1
-      }
-      return firstPriority - secondPriority
-    })
-    .map((app) => ({
-      ...app,
-      // Sort actions within each app so that actions with isNew appear first
-      actions: app.actions?.sort(sortByIsNew),
-      triggers: app.triggers?.sort(sortByIsNew),
-    }))
+    return firstPriority - secondPriority
+  })
 }
 
 const getApps: QueryResolvers['getApps'] = async (_parent, params) => {
