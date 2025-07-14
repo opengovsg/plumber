@@ -1,5 +1,6 @@
 import type { MutationResolvers } from './__generated__/types.generated'
 import bulkRetryExecutions from './mutations/bulk-retry-executions'
+import bulkRetryIterations from './mutations/bulk-retry-iterations'
 import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
 import createFlowTransfer from './mutations/create-flow-transfer'
@@ -50,6 +51,7 @@ import verifyOtp from './mutations/verify-otp'
 
 export default {
   bulkRetryExecutions,
+  bulkRetryIterations,
   createConnection,
   generateAuthUrl,
   updateConnection,

@@ -1,19 +1,19 @@
-// import { IExecution } from '@plumber/types'
-
-import { IExecutionStep } from '@plumber/types'
+import { IExecution, IExecutionStep } from '@plumber/types'
 
 import { useMemo } from 'react'
 import { Flex, Tag } from '@chakra-ui/react'
 
 import { SingleSelect } from '@/components/SingleSelect'
 
+import { RetryAllIterationsButton } from '../ExecutionStep/components/RetryAllIterationsButton'
 import RetryButton from '../ExecutionStep/components/RetryButton'
 
-// import { RetryAllButton } from '../ExecutionStep/components/RetryAllButton'
 import { GroupStatusType } from './GroupStatusFilter'
 
 interface IterationSelectorProps {
   iterationMap: Map<number, string>
+  canRetryAll: boolean
+  execution: IExecution
   selectedIteration: string
   setSelectedIteration: (iteration: string) => void
   iterationSteps: IExecutionStep[]
@@ -21,6 +21,8 @@ interface IterationSelectorProps {
 
 export default function IterationSelector({
   iterationMap,
+  canRetryAll,
+  execution,
   selectedIteration,
   setSelectedIteration,
   iterationSteps,
@@ -76,14 +78,17 @@ export default function IterationSelector({
         isClearable={false}
         colorScheme="secondary"
       />
-      {canRetry && (
-        <RetryButton
-          executionStepId={executionStepId}
-          customButtonText="Retry this item"
-        />
-      )}
-      {/* TODO: add retry all button */}
-      {/* {canRetryAll && <RetryAllButton execution={execution} type="iteration" />} */}
+      <Flex gap={2}>
+        {canRetry && (
+          <RetryButton
+            executionStepId={executionStepId}
+            customButtonText="Retry this item"
+          />
+        )}
+        {canRetry && canRetryAll && (
+          <RetryAllIterationsButton execution={execution} />
+        )}
+      </Flex>
     </Flex>
   )
 }
