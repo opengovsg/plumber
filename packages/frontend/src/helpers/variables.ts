@@ -1,4 +1,5 @@
 import type {
+  IApp,
   IDataOutMetadata,
   IDataOutMetadatum,
   IExecutionStep,
@@ -8,6 +9,7 @@ import type {
 import get from 'lodash.get'
 
 import { RawColumn, RawRow } from '@/components/VariablesList/utils'
+import getStepName from '@/helpers/getStepName'
 
 // these are the variable types to display on the frontend (make visible)
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
@@ -197,6 +199,7 @@ const process = (
 
 export function extractVariables(
   executionSteps: IExecutionStep[],
+  allApps?: IApp[],
 ): StepWithVariables[] {
   if (!executionSteps) {
     return []
@@ -217,15 +220,16 @@ export function extractVariables(
           metadata,
           '',
         )
+
+        const { caption: name } = getStepName(
+          allApps || [],
+          executionStep?.step,
+        )
         // sort variable by order key in-place
         sortVariables(variables)
         return {
           id: executionStep.stepId,
-          name: `${executionStep.step.position}. ${
-            executionStep.step?.config?.stepName ||
-            (executionStep.appKey || '').charAt(0)?.toUpperCase() +
-              executionStep.appKey?.slice(1)
-          }`,
+          name,
           output: variables,
         }
       })

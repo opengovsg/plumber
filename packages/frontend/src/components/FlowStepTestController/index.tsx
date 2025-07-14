@@ -110,7 +110,7 @@ export default function FlowStepTestController(
     lastErrorDetails,
     isWebhookSubstep,
     testVariables,
-  } = useTestDetails(step, currentTestExecutionStep)
+  } = useTestDetails(step, currentTestExecutionStep, allApps)
   const containerRef = useRef<HTMLDivElement>(null)
   const webhookUrlInfoRef = useRef<HTMLDivElement>(null)
   const [collapseDirection, setCollapseDirection] = useState<'up' | 'down'>(

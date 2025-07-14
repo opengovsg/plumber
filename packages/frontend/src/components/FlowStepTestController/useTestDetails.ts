@@ -1,4 +1,4 @@
-import { IExecutionStep, IJSONObject, IStep } from '@plumber/types'
+import { IApp, IExecutionStep, IJSONObject, IStep } from '@plumber/types'
 
 import { extractVariables, Variable } from '@/helpers/variables'
 
@@ -14,6 +14,7 @@ interface UseTestDetailsResult {
 export function useTestDetails(
   step: IStep,
   currentTestExecutionStep: IExecutionStep | null,
+  allApps: IApp[],
 ): UseTestDetailsResult {
   const isWebhookSubstep =
     step.appKey === 'webhook' && Boolean(step?.webhookUrl)
@@ -34,7 +35,7 @@ export function useTestDetails(
   const lastErrorDetails = currentTestExecutionStep?.errorDetails
 
   const testVariables = currentTestExecutionStep
-    ? extractVariables([currentTestExecutionStep])[0]?.output ?? []
+    ? extractVariables([currentTestExecutionStep], allApps)[0]?.output ?? []
     : null
 
   return {
