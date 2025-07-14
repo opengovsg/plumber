@@ -12,6 +12,7 @@ import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
 
 import FeedbackFooter from './FeedbackFooter'
+import NewBadge from './NewBadge'
 
 interface ChooseEventProps {
   onSelectAppEvent: (app: IApp, event: ITrigger | IAction) => void
@@ -105,7 +106,10 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
                     }
                   }}
                 >
-                  <Text textStyle="subhead-1">{triggerOrAction.name}</Text>
+                  <Flex gap={2}>
+                    <Text textStyle="subhead-1">{triggerOrAction.name}</Text>
+                    {triggerOrAction?.isNew && <NewBadge />}
+                  </Flex>
                   <Text textStyle="body-2">{triggerOrAction.description}</Text>
                 </Box>
               )

@@ -86,6 +86,7 @@ export const GET_APPS = gql`
         type
         pollInterval
         description
+        isNew
         setupMessage {
           variant
           messageBody
@@ -173,6 +174,7 @@ export const GET_APPS = gql`
           messageBody
         }
         groupsLaterSteps
+        isNew
         substeps {
           key
           name
