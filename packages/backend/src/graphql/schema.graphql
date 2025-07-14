@@ -319,11 +319,17 @@ type ExecutionStep {
   createdAt: String
   updatedAt: String
   metadata: ExecutionStepMetadata!
+  key: String
 }
 
 type ExecutionStepMetadata {
   isMock: Boolean
   lastTestSubmissionDate: String
+  iteration: Int
+  iterations: Int
+  iterationStatus: JSONObject
+  isLastIteration: Boolean
+  isLastStep: Boolean
 }
 
 type Field {

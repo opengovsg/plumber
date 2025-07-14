@@ -30,10 +30,17 @@ const baseDataOutSchema = z.object({
   iterations: z.number(),
 })
 
+const dataSchema = z.union([z.array(z.any()), tableSchema])
+
 export const inputSchema = z
-  .union([z.array(z.any()), tableSchema])
-  .transform((data, ctx) => {
-    if (!data || (Array.isArray(data) && data.length === 0)) {
+  .object({
+    data: dataSchema,
+    testRun: z.boolean(),
+  })
+  .transform(({ data, testRun }, ctx) => {
+    // we allow empty arrays in non-test runs as the checkboxes may be empty
+    // however test runs should not be empty as values are needed to set up subsequent steps
+    if (!data || (testRun && Array.isArray(data) && data.length === 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Input cannot be empty',

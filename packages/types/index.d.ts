@@ -125,6 +125,7 @@ export interface IExecutionStep {
   createdAt: string
   updatedAt: string
   metadata: IExecutionStepMetadata
+  key: string
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
@@ -133,6 +134,11 @@ export interface IExecutionStep {
 export interface IExecutionStepMetadata {
   isMock?: boolean
   lastTestSubmissionDate?: string
+  iteration?: number
+  iterations?: number
+  iterationStatus?: Record<string, 'success' | 'failure' | null>
+  isLastIteration?: boolean
+  isLastStep?: boolean
 }
 
 export interface IExecution {
@@ -706,12 +712,14 @@ export interface ITrigger extends IBaseTrigger {
 }
 
 // Can add more type in this union later for different action types
+export type NextStepMetadata = Record<string, any>
 export type TestRunStepMetadata = Record<string, any>
 
 export interface IActionJobData {
   flowId: string
   executionId: string
   stepId: string
+  metadata?: NextStepMetadata
 }
 
 export interface IActionRunResult {
@@ -725,6 +733,8 @@ export interface IActionRunResult {
   nextStep?:
     | { command: 'jump-to-step'; stepId: IStep['id'] }
     | { command: 'stop-execution' }
+    | { command: 'start-for-each'; stepId: IStep['id'] }
+  nextStepMetadata?: NextStepMetadata
 }
 
 export interface IActionOutput {

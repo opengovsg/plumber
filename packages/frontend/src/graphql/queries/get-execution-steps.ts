@@ -23,6 +23,14 @@ export const GET_EXECUTION_STEPS = gql`
           updatedAt
           jobId
           appKey
+          key
+          metadata {
+            iteration
+            iterations
+            isLastIteration
+            iterationStatus
+            isLastStep
+          }
         }
       }
     }

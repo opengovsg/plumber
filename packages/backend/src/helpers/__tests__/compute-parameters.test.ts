@@ -204,7 +204,12 @@ describe('compute parameters', () => {
       params: Record<string, any>
       expected: Record<string, any>
     }) => {
-      const result = computeParameters(params, executionSteps, undefined, true)
+      const result = computeParameters(params, executionSteps, undefined, {
+        executionStepMetadata: { iteration: 1 },
+        forEachStepPosition: 0,
+        stepPositions: {},
+        isForEachStep: true,
+      })
       expect(result).toEqual(expected)
     },
   )

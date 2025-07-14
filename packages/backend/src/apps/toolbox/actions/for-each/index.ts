@@ -37,8 +37,9 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    const { testRun } = $.execution
     const { items: rawItems } = $.step.parameters
-    const parsedResult = inputSchema.safeParse(rawItems)
+    const parsedResult = inputSchema.safeParse({ data: rawItems, testRun })
 
     if (parsedResult.success === false) {
       throw new StepError(
@@ -51,35 +52,58 @@ const action: IRawAction = {
 
     try {
       const { items, inputSource, iterations } = parsedResult.data
+      let output: {
+        iterations: number
+        items: any[]
+        inputSource: string
+        item?: string
+      } = {
+        iterations: 0,
+        items: [],
+        inputSource: '',
+      }
       if (
         inputSource === FOR_EACH_INPUT_SOURCE.STRING_ARRAY &&
         Array.isArray(items) &&
         isCheckboxItems(items)
       ) {
-        $.setActionItem({
-          raw: {
-            iterations: items.length,
-            items: items,
-            inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
-            // NOTE: this is specifically for checkboxes
-            // table data is handled differently in processInput
-            item: `items.${FOR_EACH_ITERATION_KEY}`,
-          },
-        })
-        return
+        output = {
+          iterations: items.length,
+          items: items,
+          inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
+          // NOTE: this is specifically for checkboxes
+          // table data is handled differently in processItems
+          item: `items.${FOR_EACH_ITERATION_KEY}`,
+        }
       } else if (
         inputSource === FOR_EACH_INPUT_SOURCE.M365_EXCEL ||
         inputSource === FOR_EACH_INPUT_SOURCE.TILES
       ) {
         const processedItems = processItems(items as MultipleRowObject)
 
-        $.setActionItem({
-          raw: {
-            iterations: iterations,
-            items: processedItems,
-            inputSource,
+        output = {
+          iterations: iterations,
+          items: processedItems,
+          inputSource,
+        }
+      }
+
+      $.setActionItem({ raw: output })
+
+      if (output?.iterations === 0) {
+        return {
+          nextStep: {
+            command: 'stop-execution',
+            stepId: $.step.id,
           },
-        })
+        }
+      }
+
+      return {
+        nextStep: {
+          command: 'start-for-each',
+          stepId: $.step.id,
+        },
       }
     } catch (err) {
       console.error(err)
