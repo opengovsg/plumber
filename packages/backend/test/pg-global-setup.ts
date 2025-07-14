@@ -13,7 +13,7 @@ const POSTGRES_USERNAME = process.env.POSTGRES_USERNAME as string
 const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD as string
 
 export async function setup() {
-  postgresContainer = await new PostgreSqlContainer()
+  postgresContainer = await new PostgreSqlContainer('postgres:14.8-alpine')
     .withDatabase(POSTGRES_DATABASE)
     .withUsername(POSTGRES_USERNAME)
     .withPassword(POSTGRES_PASSWORD)
