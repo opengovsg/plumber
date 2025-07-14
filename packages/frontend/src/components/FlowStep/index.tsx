@@ -220,11 +220,7 @@ export default function FlowStep(
             h={isNested ? '48px' : '64px'}
             w={headerWidth}
           >
-            <Flex
-              {...flowStepStyles.topHeader}
-              py={isNested ? 2 : 4}
-              onClick={handleClick}
-            >
+            <Flex {...flowStepStyles.topHeader} onClick={handleClick}>
               <StepAppIcon
                 isCompleted={isCompleted}
                 isNested={isNested}
