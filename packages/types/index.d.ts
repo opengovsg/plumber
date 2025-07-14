@@ -982,7 +982,7 @@ export interface ITemplate {
 }
 
 // demo template or for empty flows state
-export type TemplateTagType = 'demo' | 'empty'
+export type TemplateTagType = 'demo' | 'empty' | 'new'
 
 export interface ITemplateStep {
   position: number // primary key, no need id for now
