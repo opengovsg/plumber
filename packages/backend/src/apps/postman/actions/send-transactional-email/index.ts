@@ -91,6 +91,7 @@ const action: IRawAction = {
      */
     const lastExecutionStep = await $.getLastExecutionStep({
       sameExecution: true,
+      iteration: Number($.metadata?.iteration) || undefined,
     })
 
     /**

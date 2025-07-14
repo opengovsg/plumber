@@ -136,7 +136,10 @@ export interface IExecutionStepMetadata {
   lastTestSubmissionDate?: string
   iteration?: number
   iterations?: number
-  iterationStatus?: Record<string, 'success' | 'failure' | null>
+  iterationStatus?: Record<
+    string,
+    'success' | 'failure' | 'partial-success' | null
+  >
   isLastIteration?: boolean
   isLastStep?: boolean
 }
@@ -861,12 +864,14 @@ export type IGlobalVariable = {
       additionalFilter?: (
         qb: RelatedQueryBuilder<ExecutionStep, ExecutionStep>,
       ) => void
+      iteration?: number
     }>,
   ) => Promise<IExecutionStep | undefined>
   execution?: {
     id: string
     testRun: boolean
   }
+  metadata?: IJSONObject
   webhookUrl?: string
   triggerOutput?: ITriggerOutput
   actionOutput?: IActionOutput

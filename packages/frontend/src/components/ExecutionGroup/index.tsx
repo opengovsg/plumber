@@ -1,14 +1,21 @@
 import type { IExecution, IExecutionStep } from '@plumber/types'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { Card, CardBody, Flex, Grid, HStack, Text } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
 
 import ExecutionStep from '@/components/ExecutionStep'
 import AppIconWithStatus from '@/components/ExecutionStep/components/AppIconWithStatus'
+import {
+  failureIcon,
+  partialIcon,
+  successIcon,
+  waitingIcon,
+} from '@/components/ExecutionStep/components/StatusIcons'
 import { useExecutionStepStatus } from '@/components/ExecutionStep/hooks/useExecutionStepStatus'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
+import { GroupStats } from '@/helpers/processExecutionSteps'
 import { EXECUTION_STEP_PER_PAGE, getLimitAndOffset } from '@/pages/Execution'
 
 import GroupStatusFilter, { GroupStatusType } from './GroupStatusFilter'
@@ -17,7 +24,7 @@ import IterationSelector from './IterationSelector'
 interface ExecutionGroupProps {
   execution: IExecution
   groupingStep: IExecutionStep
-  groupStats: { success: number; failure: number; waiting: number }
+  groupStats: GroupStats
   iterationMap: Map<number, string>
   numStepsBeforeGroup: number
 }
@@ -76,7 +83,7 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
     }
   }, [iterationMap, statusFilter])
 
-  const { app, appName, statusIcon } = useExecutionStepStatus({
+  const { app, appName } = useExecutionStepStatus({
     appKey: groupingStep?.appKey ?? '',
     status: !execution?.status
       ? GroupStatusType.Waiting
@@ -87,6 +94,20 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
     execution,
     jobId: groupingStep?.jobId,
   })
+
+  const groupStatusIcon = useMemo(() => {
+    // show failure immediately
+    if (groupStats.failure > 0) {
+      return failureIcon
+    }
+    if (groupStats.waiting > 0) {
+      return waitingIcon
+    }
+    if (groupStats['partial-success'] > 0) {
+      return partialIcon
+    }
+    return successIcon
+  }, [groupStats])
 
   if (!execution || !groupingStep || !app) {
     return null
@@ -106,7 +127,7 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
             <AppIconWithStatus
               iconUrl={app.iconUrl}
               appName={appName}
-              statusIcon={statusIcon}
+              statusIcon={groupStatusIcon}
             />
             <Flex
               justifyContent="space-between"

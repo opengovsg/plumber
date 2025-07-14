@@ -116,6 +116,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     connection: await step.$relatedQuery('connection'),
     execution: execution,
     testRun,
+    metadata,
   })
 
   const priorExecutionSteps = await ExecutionStep.query().where({
