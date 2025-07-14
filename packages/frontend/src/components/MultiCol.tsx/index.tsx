@@ -1,6 +1,6 @@
 import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
 
-import { useContext } from 'react'
+import React, { useContext } from 'react'
 import { BiTrash } from 'react-icons/bi'
 import { Divider, Flex } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
@@ -64,7 +64,7 @@ export default function MultiCol(props: MultiColProps) {
       {subFields.map((subF, subFIndex) => {
         const showDeleteButton = subFIndex === 0 && canRemoveRow
         return isMobile ? (
-          <>
+          <React.Fragment key={`${name}.${subF.key}`}>
             {index !== 0 && subFIndex === 0 && <Divider />}
             <Flex
               key={`${name}.${subF.key}`}
@@ -73,7 +73,7 @@ export default function MultiCol(props: MultiColProps) {
               {renderSubFieldInput(subF, subFIndex)}
               {showDeleteButton && <DeleteButton />}
             </Flex>
-          </>
+          </React.Fragment>
         ) : (
           <div key={`${name}.${subF.key}`} style={subF.customStyle}>
             {renderSubFieldInput(subF, subFIndex)}
