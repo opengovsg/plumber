@@ -67,6 +67,15 @@ export const cacheConfig = {
         },
       },
     },
+    Step: {
+      fields: {
+        config: {
+          merge(_existing = [], incoming: any[]) {
+            return incoming // Replace existing with incoming
+          },
+        },
+      },
+    },
   },
 } satisfies InMemoryCacheConfig
 
