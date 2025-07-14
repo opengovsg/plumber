@@ -192,6 +192,10 @@ export const matchParamsToDataIn = (
        * we do a best-effort comparison to just check that the columns are present.
        */
       if (isFormSgTable) {
+        if (tableData.rows?.length === 0) {
+          return true
+        }
+
         return lastTestColumns.every((testCol) =>
           Array.from(varColumns).some((varCol) => varCol.includes(testCol)),
         )
