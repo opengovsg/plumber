@@ -30,6 +30,7 @@ type Query {
     executionId: String!
     limit: Int!
     offset: Int!
+    iteration: Int
   ): PaginatedExecutionSteps
   getDynamicData(
     stepId: String!

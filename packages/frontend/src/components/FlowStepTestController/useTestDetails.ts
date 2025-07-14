@@ -2,6 +2,8 @@ import { IExecutionStep, IJSONObject, IStep } from '@plumber/types'
 
 import { extractVariables, Variable } from '@/helpers/variables'
 
+import { isSameAppAndAppKey } from './utils'
+
 interface UseTestDetailsResult {
   isTestSuccessful: boolean
   isWebhookSubstep: boolean
@@ -13,12 +15,21 @@ export function useTestDetails(
   step: IStep,
   currentTestExecutionStep: IExecutionStep | null,
 ): UseTestDetailsResult {
+  const isWebhookSubstep =
+    step.appKey === 'webhook' && Boolean(step?.webhookUrl)
+
+  if (!isSameAppAndAppKey(step, currentTestExecutionStep)) {
+    return {
+      isTestSuccessful: false,
+      isWebhookSubstep,
+      lastErrorDetails: null,
+      testVariables: null,
+    }
+  }
+
   const isTestSuccessful =
     step.status === 'completed' &&
     currentTestExecutionStep?.status === 'success'
-
-  const isWebhookSubstep =
-    step.appKey === 'webhook' && Boolean(step?.webhookUrl)
 
   const lastErrorDetails = currentTestExecutionStep?.errorDetails
 

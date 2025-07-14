@@ -1,15 +1,18 @@
 import type { IExecutionStep } from '@plumber/types'
 
+import { useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Flex, Grid, Text } from '@chakra-ui/react'
 import { Infobox, Pagination, Spinner } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
+import ExecutionGroup from '@/components/ExecutionGroup'
 import ExecutionHeader from '@/components/ExecutionHeader'
 import ExecutionStep from '@/components/ExecutionStep'
 import { GET_EXECUTION } from '@/graphql/queries/get-execution'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
+import processExecutionSteps from '@/helpers/processExecutionSteps'
 
 type ExecutionParams = {
   executionId: string
@@ -17,7 +20,7 @@ type ExecutionParams = {
 
 export const EXECUTION_STEP_PER_PAGE = 100
 
-const getLimitAndOffset = (page: number) => ({
+export const getLimitAndOffset = (page: number) => ({
   limit: EXECUTION_STEP_PER_PAGE,
   offset: (page - 1) * EXECUTION_STEP_PER_PAGE,
 })
@@ -39,6 +42,13 @@ export default function Execution() {
   )
 
   const execution = executionData?.getExecution
+  const {
+    groupingStep,
+    groupStats,
+    hasGrouping,
+    iterationMap,
+    stepsBeforeGroup,
+  } = useMemo(() => processExecutionSteps(executionSteps), [executionSteps])
 
   if (!execution) {
     return <Spinner fontSize={36} margin="auto" />
@@ -65,20 +75,44 @@ export default function Execution() {
           </>
         )}
 
-        {executionSteps?.map((executionStep, i) => (
-          <ExecutionStep
-            key={executionStep.id}
-            execution={execution}
-            executionStep={executionStep}
-            index={i}
-            page={page}
-          />
-        ))}
+        {hasGrouping ? (
+          <>
+            {stepsBeforeGroup?.map((executionStep, i) => (
+              <ExecutionStep
+                key={executionStep.id}
+                execution={execution}
+                executionStep={executionStep}
+                index={i}
+                page={page}
+              />
+            ))}
+            <ExecutionGroup
+              execution={execution}
+              groupingStep={groupingStep}
+              numStepsBeforeGroup={
+                stepsBeforeGroup.length + (page - 1) * EXECUTION_STEP_PER_PAGE
+              }
+              groupStats={groupStats}
+              iterationMap={iterationMap}
+            />
+          </>
+        ) : (
+          executionSteps?.map((executionStep, i) => (
+            <ExecutionStep
+              key={executionStep.id}
+              execution={execution}
+              executionStep={executionStep}
+              index={i}
+              page={page}
+            />
+          ))
+        )}
       </Grid>
 
       {!loading &&
         pageInfo &&
-        pageInfo.totalCount > EXECUTION_STEP_PER_PAGE && (
+        pageInfo.totalCount > EXECUTION_STEP_PER_PAGE &&
+        (!hasGrouping || page > 1) && (
           <Flex justifyContent="center" mt={6}>
             <Pagination
               currentPage={pageInfo?.currentPage}

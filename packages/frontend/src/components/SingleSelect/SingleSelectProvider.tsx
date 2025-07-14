@@ -62,6 +62,7 @@ export interface SingleSelectProviderProps<
     isCreating: boolean
   }
   isSearchable?: boolean
+  isBorderless?: boolean
 }
 
 function constructFreeSoloItem(freeSoloValue: string) {
@@ -98,6 +99,7 @@ export const SingleSelectProvider = ({
   isRefreshLoading = false,
   freeSolo = false,
   addNew,
+  isBorderless = false,
 }: SingleSelectProviderProps): JSX.Element => {
   const theme = useTheme()
   // Required in case size is set in theme, we should respect the one set in theme.
@@ -409,6 +411,7 @@ export const SingleSelectProvider = ({
         isRefreshLoading,
         freeSolo,
         isCreatingNewOption: addNew?.isCreating,
+        isBorderless,
       }}
     >
       {children}
