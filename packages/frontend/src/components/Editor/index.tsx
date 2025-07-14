@@ -1,7 +1,6 @@
 import type { IApp, IStep } from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
-import { useMutation } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 
 import EditorRightDrawer from '@/components/EditorRightDrawer'
@@ -10,9 +9,8 @@ import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
 import { StepEnumType } from '@/graphql/__generated__/graphql'
-import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { extractBranchesWithSteps } from '@/helpers/toolbox'
+import useReorderSteps from '@/hooks/useReorderSteps'
 
 import PrimarySpinner from '../PrimarySpinner'
 
@@ -29,9 +27,8 @@ export default function Editor(props: EditorProps): React.ReactElement {
 
   const { allApps, isDrawerOpen, isMobile, currentStepId, flow } =
     useContext(EditorContext)
-  const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS, {
-    refetchQueries: [GET_FLOW],
-  })
+
+  const { handleReorderUpdate } = useReorderSteps(flow.id)
   const rawSteps = flow.steps
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
@@ -128,15 +125,15 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [triggerStep, stepsBeforeGroup, groupStepsToInclude],
   )
 
-  const handleReorderSteps = async (steps: IStep[]) => {
-    const stepPositions = steps.map((step, index) => ({
+  const handleReorderSteps = async (reorderedSteps: IStep[]) => {
+    const stepPositions = reorderedSteps.map((step, index) => ({
       id: step.id,
       position: index + 2, // trigger position is 1
       type: step.type as StepEnumType,
     }))
 
     try {
-      await updateStepPositions({ variables: { input: { stepPositions } } })
+      await handleReorderUpdate(stepPositions)
     } catch (error) {
       console.error(
         'Error updating step positions: ',
