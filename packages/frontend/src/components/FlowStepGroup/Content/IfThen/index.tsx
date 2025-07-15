@@ -106,7 +106,6 @@ export default function IfThen(props: IfThenProps): JSX.Element {
               key={branchSteps[0].id}
               branchSteps={branchSteps}
               stepsBeforeGroup={stepsBeforeGroup}
-              groupedSteps={groupedSteps}
             />
           )
         })}

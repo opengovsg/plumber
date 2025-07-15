@@ -1,6 +1,6 @@
 import { FlexProps } from '@chakra-ui/react'
 
-import { EDITOR_MAX_HEIGHT, EDITOR_RIGHT_DRAWER_WIDTH } from './constants'
+import { EDITOR_MAX_HEIGHT } from './constants'
 
 export const editorStyles = {
   editorWrapper: {
@@ -39,7 +39,7 @@ export const editorStyles = {
     borderLeftColor: 'base.divider.medium',
     opacity: 0,
     right: 0,
-    minWidth: EDITOR_RIGHT_DRAWER_WIDTH,
+    minWidth: 0,
     maxHeight: EDITOR_MAX_HEIGHT,
     h: EDITOR_MAX_HEIGHT,
     overflowY: 'auto' as FlexProps['overflowY'],
