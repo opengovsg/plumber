@@ -62,13 +62,8 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
 export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
   const { isNested, step } = props
 
-  const {
-    flow,
-    isMobile,
-    onDrawerOpen,
-    setCurrentStepId,
-    setCurrentStepIndex,
-  } = useContext(EditorContext)
+  const { flow, isMobile, onDrawerOpen, setCurrentStepId } =
+    useContext(EditorContext)
 
   const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
 
@@ -97,18 +92,9 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
     })
 
     const newStep = createdStep.data.createStep
-    const newStepIndex = newStep.position - 1
     setCurrentStepId(newStep.id)
-    setCurrentStepIndex(newStepIndex)
     onDrawerOpen()
-  }, [
-    flow.id,
-    step,
-    createStep,
-    setCurrentStepId,
-    setCurrentStepIndex,
-    onDrawerOpen,
-  ])
+  }, [flow.id, step, createStep, setCurrentStepId, onDrawerOpen])
 
   const {
     cancelRef,

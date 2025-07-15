@@ -31,7 +31,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     allApps,
     onDrawerOpen,
     setCurrentStepId,
-    setCurrentStepIndex,
   } = useContext(EditorContext)
 
   const { modalState, patchModalState, prevStepId, isTrigger, step } =
@@ -104,7 +103,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       // Exception: M365 will auto connect if verified once...
       patchModalState({ isLoading: true })
       let newStepId = null
-      let newStepIndex = null
       if (prevStepId) {
         const createdStep = await onCreateStep(
           prevStepId,
@@ -113,7 +111,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
           excelConnection?.id || undefined,
         )
         newStepId = createdStep.id
-        newStepIndex = createdStep.position - 1
       } else if (step) {
         // account for the if-then edge case
         if (
@@ -122,7 +119,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
         ) {
           const ifThen = await initializeIfThen(step)
           newStepId = ifThen.id
-          newStepIndex = ifThen.position - 1
         } else {
           const updatedStep = await onUpdateStep({
             ...step,
@@ -133,14 +129,12 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             },
           })
           newStepId = updatedStep.id
-          newStepIndex = updatedStep.position - 1
         }
       }
       patchModalState({ isLoading: false })
       onClose()
       onDrawerOpen()
       setCurrentStepId(newStepId)
-      setCurrentStepIndex(newStepIndex)
     },
     [
       excelConnection?.verified,
@@ -151,7 +145,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       onClose,
       onDrawerOpen,
       setCurrentStepId,
-      setCurrentStepIndex,
       onCreateStep,
       initializeIfThen,
       onUpdateStep,
