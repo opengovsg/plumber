@@ -165,6 +165,7 @@ export default async (request: IRequest, response: Response) => {
     flowId,
     executionId,
     stepId: nextStep.id,
+    metadata: {},
   }
 
   await enqueueActionJob({
