@@ -45,7 +45,7 @@ export default function getForEachMetadata({
 
     // create object to track status of each iteration
     // set default status to null so that we have a 'waiting' status
-    if (iterations && iterations > 0) {
+    if (iterations && iterations > 0 && metadata) {
       metadata.iterations = iterations
       metadata.iterationStatus = {}
       for (let i = 0; i < iterations; i++) {
