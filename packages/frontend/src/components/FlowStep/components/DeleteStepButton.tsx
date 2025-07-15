@@ -36,7 +36,6 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
     isMobile,
     onDrawerClose,
     setCurrentStepId,
-    setCurrentStepIndex,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
 
@@ -80,7 +79,6 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
       setCurrentStepId(null)
-      setCurrentStepIndex(null)
       setShouldWarnOnLeave(false)
       onDrawerClose()
     },
@@ -89,7 +87,6 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
       step,
       deleteStep,
       setCurrentStepId,
-      setCurrentStepIndex,
       setShouldWarnOnLeave,
       onDrawerClose,
       createStep,

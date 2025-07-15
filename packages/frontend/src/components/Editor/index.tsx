@@ -29,7 +29,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
     isDrawerOpen,
     isMobile,
     currentStepId,
-    currentStepIndex,
     flow,
   } = useContext(EditorContext)
 
@@ -176,7 +175,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
               <FlowStep
                 step={step}
                 isDeletable={true}
-                index={index}
                 isLastStep={index === steps.length - 1}
                 isNested={isNested}
               />
@@ -217,7 +215,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
         >
           <EditorRightDrawer
             flowStepGroupIconUrl={flowStepGroupIconUrl}
-            index={currentStepIndex}
             steps={steps}
           />
         </Flex>
