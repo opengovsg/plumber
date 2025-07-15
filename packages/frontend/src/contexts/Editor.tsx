@@ -40,7 +40,6 @@ interface IEditorContextValue {
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
-  currentStepIndex: number | null
   hasForEach: boolean
   hasIfThen: boolean
   currentTestExecutionStep: IExecutionStep | null
@@ -55,7 +54,6 @@ interface IEditorContextValue {
   onDrawerOpen: () => void
   onDrawerClose: () => void
   setCurrentStepId: (stepId: string | null) => void
-  setCurrentStepIndex: (stepIndex: number | null) => void
   setShouldWarnOnLeave: (shouldWarnOnLeave: boolean) => void
   onCreateStep: (
     previousStepId: string,
@@ -73,7 +71,6 @@ export const EditorContext = createContext<IEditorContextValue>({
   flow: {} as IFlow,
   flowId: '',
   currentStepId: null,
-  currentStepIndex: null,
   hasForEach: false,
   hasIfThen: false,
   currentTestExecutionStep: null,
@@ -92,7 +89,6 @@ export const EditorContext = createContext<IEditorContextValue>({
   onUpdateStep: () => Promise.resolve({} as IStep),
   executeTestStep: () => Promise.resolve(),
   setCurrentStepId: () => null,
-  setCurrentStepIndex: () => null,
   setShouldWarnOnLeave: () => null,
   allApps: [],
   resetForm: () => null,
@@ -162,7 +158,6 @@ export const EditorProvider = ({
 
   const flowId = flow.id
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
-  const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(0)
   const [resetTimestamp, setResetTimestamp] = useState<number>(Date.now())
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
@@ -391,7 +386,6 @@ export const EditorProvider = ({
       value={{
         allApps,
         currentStepId,
-        currentStepIndex,
         hasForEach,
         hasIfThen,
         isDrawerOpen,
@@ -412,7 +406,6 @@ export const EditorProvider = ({
         onDrawerClose,
         onUpdateStep,
         setCurrentStepId,
-        setCurrentStepIndex,
         setShouldWarnOnLeave,
         resetForm,
         resetTimestamp,

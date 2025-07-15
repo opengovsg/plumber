@@ -30,7 +30,6 @@ import { flowStepStyles } from './styles'
 
 type FlowStepProps = {
   step: IStep
-  index: number
   isDeletable?: boolean
   isLastStep: boolean
   isNested?: boolean
@@ -39,7 +38,7 @@ type FlowStepProps = {
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, index, isLastStep, isNested } = props
+  const { step, isLastStep, isNested } = props
 
   const {
     isOpen: isModalOpen,
@@ -59,7 +58,6 @@ export default function FlowStep(
     onDrawerClose,
     onDrawerOpen,
     setCurrentStepId,
-    setCurrentStepIndex,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
   const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
@@ -108,17 +106,14 @@ export default function FlowStep(
 
     if (isDrawerOpen && currentStepId === step.id) {
       setCurrentStepId(null)
-      setCurrentStepIndex(null)
       onDrawerClose()
     } else {
       setCurrentStepId(step.id)
-      setCurrentStepIndex(index)
       onDrawerOpen()
     }
   }, [
     app,
     currentStepId,
-    index,
     isDrawerOpen,
     shouldWarnOnLeave,
     step.id,
@@ -127,13 +122,11 @@ export default function FlowStep(
     onModalOpen,
     onWarningOpen,
     setCurrentStepId,
-    setCurrentStepIndex,
   ])
 
   const onLeave = () => {
     if (currentStepId === step.id) {
       setCurrentStepId(null)
-      setCurrentStepIndex(null)
       setShouldWarnOnLeave(false)
       onDrawerClose()
     } else if (!app || !selectedActionOrTrigger) {
@@ -141,7 +134,6 @@ export default function FlowStep(
       discardChanges()
     } else {
       setCurrentStepId(step.id)
-      setCurrentStepIndex(index)
     }
   }
 
