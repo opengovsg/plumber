@@ -1,19 +1,19 @@
 import type { IApp, IStep } from '@plumber/types'
 
-import { Fragment, useContext, useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
 
 import EditorRightDrawer from '@/components/EditorRightDrawer'
-import FlowStep from '@/components/FlowStep'
 import FlowStepGroup from '@/components/FlowStepGroup'
+import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
-import { extractBranchesWithSteps, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { extractBranchesWithSteps } from '@/helpers/toolbox'
 
 import PrimarySpinner from '../PrimarySpinner'
 
-import { AddStepButton } from './AddStepButton'
 import { EDITOR_RIGHT_DRAWER_WIDTH } from './constants'
+import FlowStepWithAddButton from './FlowStepWithAddButton'
 import { editorStyles } from './styles'
 
 type EditorProps = {
@@ -23,14 +23,8 @@ type EditorProps = {
 export default function Editor(props: EditorProps): React.ReactElement {
   const { isNested } = props
 
-  const {
-    allApps,
-    readOnly: isReadOnlyEditor,
-    isDrawerOpen,
-    isMobile,
-    currentStepId,
-    flow,
-  } = useContext(EditorContext)
+  const { allApps, isDrawerOpen, isMobile, currentStepId, flow } =
+    useContext(EditorContext)
 
   const rawSteps = flow.steps
   const steps = useMemo(
@@ -64,9 +58,9 @@ export default function Editor(props: EditorProps): React.ReactElement {
     )
   }, [appsWithActions])
 
-  const [stepsBeforeGroup, groupedSteps] = useMemo(() => {
+  const [triggerStep, stepsBeforeGroup, groupedSteps] = useMemo(() => {
     if (!groupingActions) {
-      return [[], []]
+      return [null, [], []]
     }
 
     const groupStepIdx = steps.findIndex((step, index) => {
@@ -88,9 +82,11 @@ export default function Editor(props: EditorProps): React.ReactElement {
       branchesWithSteps = extractBranchesWithSteps(steps.slice(groupStepIdx), 0)
     }
 
+    const triggerStep = steps[0]
+
     return groupStepIdx === -1
-      ? [steps, []]
-      : [steps.slice(0, groupStepIdx), branchesWithSteps]
+      ? [triggerStep, steps.slice(1), []]
+      : [triggerStep, steps.slice(1, groupStepIdx), branchesWithSteps]
   }, [groupingActions, steps])
 
   const flowStepGroupIconUrl = useMemo(() => {
@@ -119,21 +115,30 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const stepExecutionsToInclude = useMemo(
     () =>
       new Set([
+        ...(triggerStep?.id ? [triggerStep.id] : []),
         ...stepsBeforeGroup.map((step) => step.id),
         ...groupStepsToInclude.flatMap((step) => step.map((s) => s.id)),
       ]),
-    [stepsBeforeGroup, groupStepsToInclude],
+    [triggerStep, stepsBeforeGroup, groupStepsToInclude],
   )
 
-  const nonIfThenActionSteps = stepsBeforeGroup.filter(
-    (step) => step.type === 'action' && step.key !== TOOLBOX_ACTIONS.IfThen,
-  )
-  // Disables last add step and hide in-between add step buttons
-  const hasExactlyOneEmptyActionStep =
-    nonIfThenActionSteps.length === 1 && !nonIfThenActionSteps[0].appKey
+  const handleReorderSteps = async (steps: IStep[]) => {
+    const stepPositions = steps.map((step, index) => ({
+      id: step.id,
+      position: index + 2, // trigger position is 1
+      type: step.type,
+    }))
 
-  // Disables last add step button but show empty action instead
-  const hasNoActionSteps = nonIfThenActionSteps.length === 0
+    try {
+      // TODO: make api call to update step positions
+    } catch (error) {
+      console.error(
+        'Error updating step positions: ',
+        error,
+        JSON.stringify(stepPositions),
+      )
+    }
+  }
 
   if (!appsWithActions || !groupingActions) {
     return (
@@ -170,29 +175,45 @@ export default function Editor(props: EditorProps): React.ReactElement {
             isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
           })`}
         >
-          {stepsBeforeGroup.map((step, index) => (
-            <Fragment key={`${step.id}-${index}`}>
-              <FlowStep
-                step={step}
-                isDeletable={true}
-                isLastStep={index === steps.length - 1}
-                isNested={isNested}
-              />
-              <AddStepButton
-                // hide all add button steps if is readonly
-                isHidden={isReadOnlyEditor}
-                // show empty action if no action step exists
-                showEmptyAction={hasNoActionSteps && !groupedSteps.length}
-                // Disable add button steps if first action is not set up
-                isDisabled={
-                  (hasExactlyOneEmptyActionStep || hasNoActionSteps) &&
-                  !groupedSteps.length
-                }
-                isLastStep={index === steps.length - 1}
-                stepId={step.id}
-              />
-            </Fragment>
-          ))}
+          {triggerStep && (
+            <FlowStepWithAddButton
+              step={triggerStep}
+              isLastStep={
+                stepsBeforeGroup.length === 0 && groupedSteps.length === 0
+              }
+              isNested={isNested}
+              stepsBeforeGroup={stepsBeforeGroup}
+              groupedSteps={groupedSteps}
+              showAddButton={true}
+            />
+          )}
+
+          <SortableList
+            items={stepsBeforeGroup}
+            onChange={handleReorderSteps}
+            renderItem={(step, isOverlay) => {
+              const { id, position } = step
+              return (
+                <SortableList.Item id={id}>
+                  <Flex
+                    key={`${id}-${position}`}
+                    width={isDrawerOpen || isMobile ? '100%' : 'auto'}
+                    flexDir="column"
+                    position="relative"
+                  >
+                    <FlowStepWithAddButton
+                      step={step}
+                      isLastStep={position === steps.length}
+                      isNested={isNested}
+                      stepsBeforeGroup={stepsBeforeGroup}
+                      groupedSteps={groupedSteps}
+                      showAddButton={!isOverlay}
+                    />
+                  </Flex>
+                </SortableList.Item>
+              )
+            }}
+          />
           {groupedSteps.length > 0 && (
             <FlowStepGroup
               stepsBeforeGroup={stepsBeforeGroup}

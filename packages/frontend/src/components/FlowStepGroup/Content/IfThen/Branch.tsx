@@ -1,7 +1,6 @@
 import { IStep } from '@plumber/types'
 
 import {
-  Fragment,
   MouseEventHandler,
   useCallback,
   useContext,
@@ -14,14 +13,14 @@ import { Box, Flex, Text, useDisclosure } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
-import FlowStep from '@/components/FlowStep'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
+import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
-import { HoverAddStepButton } from './HoverAddStepButton'
+import BranchStepWithAddButton from './BranchStepWithAddButton'
 import { branchStyles } from './styles'
 import useDuplicateBranch from './useDuplicateBranch'
 import { allowAddStep } from './utils'
@@ -32,7 +31,7 @@ interface BranchProps {
 }
 
 export default function Branch(props: BranchProps) {
-  const { branchSteps, stepsBeforeGroup } = props
+  const { branchSteps } = props
 
   const {
     isDrawerOpen,
@@ -115,6 +114,32 @@ export default function Branch(props: BranchProps) {
     discardChanges()
   }
 
+  const { conditionStep, actionSteps } = useMemo(() => {
+    const conditionStep = branchSteps[0]
+    const actionSteps = branchSteps.slice(1)
+
+    return { conditionStep, actionSteps }
+  }, [branchSteps])
+
+  const handleReorderSteps = async (items: any[]) => {
+    const branchPosition = conditionStep.position
+    const stepPositions = items.map((item, index) => ({
+      id: item.id,
+      position: branchPosition + index + 1, // index is 0-based
+      type: item.step.type,
+    }))
+
+    try {
+      // TODO: make api call to update step positions
+    } catch (error) {
+      console.error(
+        'Error updating step positions: ',
+        error,
+        JSON.stringify(stepPositions),
+      )
+    }
+  }
+
   return (
     <Flex key={branchSteps[0].id} {...branchStyles.container}>
       <Box
@@ -169,24 +194,41 @@ export default function Branch(props: BranchProps) {
           )}
         </Flex>
       </Box>
-      {branchSteps.map((step, index) => {
-        return (
-          <Fragment key={`${step.id}-${stepsBeforeGroup.length + index}`}>
-            <FlowStep
-              step={step}
-              isDeletable={index !== 0}
-              isNested={true}
-              isLastStep={index === branchSteps.length - 1}
-            />
-            <HoverAddStepButton
-              isDisabled={isEditorReadOnly || !canAddStep}
-              isDrawerOpen={isDrawerOpen}
-              isLastStep={index === branchSteps.length - 1}
-              prevStepId={step.id}
-            />
-          </Fragment>
-        )
-      })}
+      <Flex w="100%" flexDir="column">
+        <BranchStepWithAddButton
+          step={conditionStep}
+          canAddStep={canAddStep}
+          isLastStep={false}
+        />
+        <SortableList
+          items={actionSteps.map((step, index) => ({
+            id: step.id,
+            step,
+            // need to use index because the step position will
+            // not be enough to identify if its the last step
+            index,
+          }))}
+          onChange={handleReorderSteps}
+          renderItem={(item, isOverlay) => {
+            const { step, index } = item
+            const isLastStep = index === actionSteps.length - 1 // index is 0-based
+
+            return (
+              <SortableList.Item id={item.id}>
+                <Flex w="100%" flexDir="column">
+                  <BranchStepWithAddButton
+                    step={step}
+                    canAddStep={canAddStep}
+                    isLastStep={isLastStep}
+                    isOverlay={isOverlay}
+                    allowReorder={actionSteps.length > 1}
+                  />
+                </Flex>
+              </SortableList.Item>
+            )
+          }}
+        />
+      </Flex>
 
       {/* Delete Confirmation Modal */}
       <MenuAlertDialog
