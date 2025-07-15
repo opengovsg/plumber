@@ -1,7 +1,7 @@
 import './SortableItem.css'
 
 import type { CSSProperties, PropsWithChildren } from 'react'
-import { createContext, useContext, useMemo } from 'react'
+import React, { createContext, useContext, useMemo } from 'react'
 import type {
   DraggableSyntheticListeners,
   UniqueIdentifier,
@@ -76,13 +76,7 @@ export function DragHandle(props: { onWarningOpen?: () => void }) {
       {...attributes}
       {...listeners}
       ref={ref}
-      onPointerDown={() => {
-        if (shouldWarnOnLeave) {
-          onWarningOpen?.()
-        } else {
-          listeners?.onPointerDown?.()
-        }
-      }}
+      {...(shouldWarnOnLeave && { onPointerDown: onWarningOpen })}
     >
       <svg viewBox="0 0 20 20" width="12">
         <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
