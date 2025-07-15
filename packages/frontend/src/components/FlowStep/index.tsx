@@ -19,6 +19,7 @@ import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import ErrorFlowStepHeader from '../ErrorFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
+import { SortableList } from '../SortableList'
 
 import DeleteStepButton from './components/DeleteStepButton'
 import DuplicateStepButton from './components/DuplicateStepButton'
@@ -33,12 +34,13 @@ type FlowStepProps = {
   isDeletable?: boolean
   isLastStep: boolean
   isNested?: boolean
+  allowReorder?: boolean
 }
 
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, isLastStep, isNested } = props
+  const { step, isLastStep, isNested, allowReorder = true } = props
 
   const {
     isOpen: isModalOpen,
@@ -65,6 +67,7 @@ export default function FlowStep(
     app,
     caption,
     isCompleted,
+    isIfThenStep,
     isTrigger,
     selectedActionOrTrigger,
     substeps,
@@ -138,6 +141,18 @@ export default function FlowStep(
   }
 
   const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)
+  /**
+   * NOTE: there are various conditions that determine whether the drag handle
+   * should be shown.
+   *
+   * - not read only
+   * - not in mobile view
+   * - step is not a trigger
+   * - step is not an if-then condition step
+   * - allowReorder is true
+   */
+  const shouldShowDragHandle =
+    !readOnly && !isTrigger && !isMobile && !isIfThenStep && allowReorder
 
   // generate help message only if template config exists
   const stepAppEventKey = `${step?.appKey}_${step?.key}`
@@ -173,75 +188,91 @@ export default function FlowStep(
         // GUARDRAIL: this only shows when the selected app is not found
         <ErrorFlowStepHeader isNested={isNested} step={step} />
       ) : (
-        <>
-          {shouldTestStepAgain && (
-            <TestAgainInfobox
-              isNested={isNested}
-              shouldHighlight={shouldHighlight}
-            />
-          )}
-          {shouldShowTemplateMsg && (
-            <Box
+        <Flex flexDir="row" w="100%">
+          <Flex
+            alignItems="center"
+            justifyContent="center"
+            flexDir="column"
+            flex="1"
+            minW="0"
+          >
+            {shouldTestStepAgain && (
+              <TestAgainInfobox
+                isNested={isNested}
+                shouldHighlight={shouldHighlight}
+              />
+            )}
+            {shouldShowTemplateMsg && (
+              <Box
+                borderColor={
+                  shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
+                }
+                borderRadius="lg"
+                borderWidth="1px"
+                borderBottomRadius="none"
+                borderBottomWidth={0}
+                w={headerWidth}
+              >
+                <Infobox
+                  icon={<BiInfoCircle />}
+                  variant="secondary"
+                  style={{
+                    borderBottomLeftRadius: '0',
+                    borderBottomRightRadius: '0',
+                  }}
+                >
+                  <MarkdownRenderer
+                    source={templateStepHelpMessage}
+                    components={infoboxMdComponents}
+                  />
+                </Infobox>
+              </Box>
+            )}
+            <Flex
+              data-test="flow-step"
+              {...flowStepStyles.container}
+              borderTopWidth={hasInfoBox ? 0 : '1px'}
               borderColor={
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
-              borderRadius="lg"
-              borderWidth="1px"
-              borderBottomRadius="none"
-              borderBottomWidth={0}
+              borderTopRadius={hasInfoBox ? 'none' : 'lg'}
+              h={isNested ? '48px' : '64px'}
               w={headerWidth}
             >
-              <Infobox
-                icon={<BiInfoCircle />}
-                variant="secondary"
-                style={{
-                  borderBottomLeftRadius: '0',
-                  borderBottomRightRadius: '0',
-                }}
-              >
-                <MarkdownRenderer
-                  source={templateStepHelpMessage}
-                  components={infoboxMdComponents}
+              <Flex {...flowStepStyles.topHeader} onClick={handleClick}>
+                <StepAppIcon
+                  isCompleted={isCompleted}
+                  isNested={isNested}
+                  isTestSuccessful={isTestSuccessful}
+                  shouldTestStepAgain={shouldTestStepAgain}
+                  app={app}
+                  step={step}
                 />
-              </Infobox>
-            </Box>
-          )}
-          <Flex
-            data-test="flow-step"
-            {...flowStepStyles.container}
-            borderTopWidth={hasInfoBox ? 0 : '1px'}
-            borderColor={
-              shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
-            }
-            borderTopRadius={hasInfoBox ? 'none' : 'lg'}
-            h={isNested ? '48px' : '64px'}
-            w={headerWidth}
-          >
-            <Flex {...flowStepStyles.topHeader} onClick={handleClick}>
-              <StepAppIcon
-                isCompleted={isCompleted}
-                isNested={isNested}
-                isTestSuccessful={isTestSuccessful}
-                shouldTestStepAgain={shouldTestStepAgain}
-                app={app}
-                step={step}
-              />
-              <StepCaptionAndDemo app={app} caption={caption} />
-              {isDeletable && (
-                <Flex gap={1} ml="auto">
-                  {!isTrigger && (
-                    <DuplicateStepButton isNested={isNested} step={step} />
-                  )}
-                  <DeleteStepButton
-                    isNested={isNested}
-                    step={step}
-                    caption={caption}
-                  />
-                </Flex>
-              )}
+                <StepCaptionAndDemo app={app} caption={caption} />
+                {isDeletable && (
+                  <Flex gap={1} ml="auto">
+                    {!isTrigger && (
+                      <DuplicateStepButton isNested={isNested} step={step} />
+                    )}
+                    <DeleteStepButton
+                      isNested={isNested}
+                      step={step}
+                      caption={caption}
+                    />
+                  </Flex>
+                )}
+              </Flex>
             </Flex>
           </Flex>
-        </>
+          {shouldShowDragHandle &&
+            (isNested ? (
+              <SortableList.DragHandle />
+            ) : (
+              <Box position="absolute" left="100%" alignSelf="center">
+                <SortableList.DragHandle />
+              </Box>
+            ))}
+        </Flex>
       )}
       {isModalOpen && (
         <FlowStepConfigurationModal
