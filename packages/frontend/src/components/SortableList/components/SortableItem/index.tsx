@@ -1,13 +1,15 @@
 import './SortableItem.css'
 
 import type { CSSProperties, PropsWithChildren } from 'react'
-import React, { createContext, useContext, useMemo } from 'react'
+import { createContext, useContext, useMemo } from 'react'
 import type {
   DraggableSyntheticListeners,
   UniqueIdentifier,
 } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+
+import { EditorContext } from '@/contexts/Editor'
 
 interface Props {
   id: UniqueIdentifier
@@ -63,11 +65,25 @@ export function SortableItem({ children, id }: PropsWithChildren<Props>) {
   )
 }
 
-export function DragHandle() {
+export function DragHandle(props: { onWarningOpen?: () => void }) {
+  const { onWarningOpen } = props
   const { attributes, listeners, ref } = useContext(SortableItemContext)
+  const { shouldWarnOnLeave } = useContext(EditorContext)
 
   return (
-    <button className="DragHandle" {...attributes} {...listeners} ref={ref}>
+    <button
+      className="DragHandle"
+      {...attributes}
+      {...listeners}
+      ref={ref}
+      onPointerDown={() => {
+        if (shouldWarnOnLeave) {
+          onWarningOpen?.()
+        } else {
+          listeners?.onPointerDown?.()
+        }
+      }}
+    >
       <svg viewBox="0 0 20 20" width="12">
         <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
       </svg>
