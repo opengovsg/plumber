@@ -119,6 +119,22 @@ describe('createStep mutation integration tests', async () => {
     expect(steps.map((step) => step.position)).toEqual([1, 2, 3, 4])
   })
 
+  it('should update flow updatedAt when creating a step', async () => {
+    const originalUpdatedAt = testFlow.updatedAt
+    const params = {
+      input: {
+        flow: { id: testFlow.id },
+        previousStep: { id: existingSteps[2].id },
+      },
+    }
+
+    await createStep(null, params, context)
+    const updatedFlow = await Flow.query().findById(testFlow.id)
+    expect(new Date(updatedFlow.updatedAt).getTime()).toBeGreaterThan(
+      new Date(originalUpdatedAt).getTime(),
+    )
+  })
+
   it('throws an error if the flow does not belong to the current user', async () => {
     // Create another user who does not own the existing flow.
     const otherUser = await User.query().insertAndFetch({
