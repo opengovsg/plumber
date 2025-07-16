@@ -15,7 +15,6 @@
 .DragHandle {
   display: flex;
   width: 12px;
-  padding: 15px;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
