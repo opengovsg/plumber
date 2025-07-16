@@ -110,11 +110,10 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
         .patch({ position: raw(`position - ${steps.length}`) })
     }
 
+    await flow.$query(trx).patch({ updatedAt: new Date().toISOString() })
+
     return await flow
       .$query(trx)
-      .patchAndFetch({
-        updatedAt: new Date().toISOString(),
-      })
       .withGraphJoined('steps')
       .orderBy('steps.position', 'asc')
   })
