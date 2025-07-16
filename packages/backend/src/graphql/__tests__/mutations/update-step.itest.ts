@@ -107,7 +107,9 @@ describe('updateStep mutation', () => {
 
     // Mock Step.transaction
     vi.spyOn(Step, 'transaction').mockImplementation(async (callback) => {
-      const trx = {}
+      const trx = {
+        raw: vi.fn().mockResolvedValue({}),
+      } as any
       return callback(trx)
     })
 
