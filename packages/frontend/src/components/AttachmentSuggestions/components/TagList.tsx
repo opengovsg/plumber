@@ -28,11 +28,11 @@ function TagList(props: TagsProps) {
 
   return (
     <>
-      {tags?.map((tag) => {
+      {tags?.map((tag, index) => {
         const { label, value } = tag
         return (
           <Tag
-            key={`${label}-${value}`}
+            key={`${index}-${label}-${value}`}
             size="md"
             colorScheme="primary"
             borderRadius="md"

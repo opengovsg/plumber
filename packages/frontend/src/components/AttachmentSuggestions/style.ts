@@ -13,7 +13,7 @@ export const boxStyles = {
   '&:focus-within': {
     borderColor: 'primary.500',
   },
-  minHeight: '40px',
+  minHeight: '46px',
 }
 
 export const divWrapperStyles = { height: 40, width: '100%' }
