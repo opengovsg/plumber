@@ -112,6 +112,9 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
 
     return await flow
       .$query(trx)
+      .patchAndFetch({
+        updatedAt: new Date().toISOString(),
+      })
       .withGraphJoined('steps')
       .orderBy('steps.position', 'asc')
   })

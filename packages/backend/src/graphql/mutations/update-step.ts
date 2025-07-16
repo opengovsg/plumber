@@ -11,10 +11,16 @@ const updateStep: MutationResolvers['updateStep'] = async (
   const { input } = params
 
   const step = await Step.transaction(async (trx) => {
-    const step = await context.currentUser.$relatedQuery('steps', trx).findOne({
-      'steps.id': input.id,
-      flow_id: input.flow.id,
-    })
+    await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
+
+    const step = await context.currentUser
+      .$relatedQuery('steps', trx)
+      .findOne({
+        'steps.id': input.id,
+        flow_id: input.flow.id,
+      })
+      .withGraphFetched('flow')
+
     if (!step) {
       throw new BadUserInputError('Step not found')
     }
@@ -52,6 +58,12 @@ const updateStep: MutationResolvers['updateStep'] = async (
         },
       })
       .withGraphFetched('connection')
+
+    // update the flow's last updated
+    await step.flow.$query(trx).patch({
+      updatedAt: new Date().toISOString(),
+    })
+
     return updatedStep
   })
 

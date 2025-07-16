@@ -167,4 +167,49 @@ describe('deleteStep mutation', () => {
     const invalidatedStep = await Step.query().findById(referencingStep.id)
     expect(invalidatedStep.status).toBe('incomplete')
   })
+
+  it('should update flow updatedAt when deleting trigger step', async () => {
+    const originalUpdatedAt = testFlow.updatedAt
+
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    const result = await deleteStep(
+      null,
+      { input: { ids: [testSteps[0].id] } },
+      context,
+    )
+
+    // Verify the flow's updatedAt was updated
+    expect(result.updatedAt).toBeDefined()
+    expect(new Date(result.updatedAt).getTime()).toBeGreaterThan(
+      new Date(originalUpdatedAt).getTime(),
+    )
+
+    // Verify the returned flow has the updated timestamp
+    const updatedFlow = await Flow.query().findById(testFlow.id)
+    expect(updatedFlow.updatedAt).toStrictEqual(result.updatedAt)
+  })
+
+  it('should update flow updatedAt when deleting action steps', async () => {
+    const originalUpdatedAt = testFlow.updatedAt
+
+    // Wait a moment to ensure different timestamp
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    const result = await deleteStep(
+      null,
+      { input: { ids: [testSteps[1].id, testSteps[2].id] } },
+      context,
+    )
+
+    // Verify the flow's updatedAt was updated
+    expect(result.updatedAt).toBeDefined()
+    expect(new Date(result.updatedAt).getTime()).toBeGreaterThan(
+      new Date(originalUpdatedAt).getTime(),
+    )
+
+    // Verify the returned flow has the updated timestamp
+    const updatedFlow = await Flow.query().findById(testFlow.id)
+    expect(updatedFlow.updatedAt).toStrictEqual(result.updatedAt)
+  })
 })
