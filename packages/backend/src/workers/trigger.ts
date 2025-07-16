@@ -35,7 +35,6 @@ export const worker = new WorkerPro(
       flowId,
       executionId,
       stepId: nextStep.id,
-      metadata: {},
     }
 
     try {
