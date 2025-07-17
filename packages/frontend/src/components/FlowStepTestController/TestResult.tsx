@@ -1,12 +1,15 @@
 import type { IAction, IStep, ITrigger } from '@plumber/types'
 
+import { useContext } from 'react'
 import { Box, Collapse, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
 import VariablesList from '@/components/VariablesList'
+import { EditorContext } from '@/contexts/Editor'
+import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import type { Variable } from '@/helpers/variables'
 
-import { getIfThenOutput } from './utils'
+import { getForEachDataMessage, getIfThenOutput } from './utils'
 
 function getNoOutputMessage(
   selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
@@ -46,6 +49,7 @@ interface TestResultsProps {
   isMock?: boolean
   isOpen: boolean
   isIfThenStep?: boolean
+  onModalOpen?: () => void
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
@@ -57,6 +61,9 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     isIfThenStep,
     step,
   } = props
+
+  const { testExecutionSteps } = useContext(EditorContext)
+  const isForEachStep = step.key === TOOLBOX_ACTIONS.ForEach
 
   const Content = () => {
     // No data only happens if user hasn't executed yet, or step returned null.
@@ -83,9 +90,13 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
 
     return (
       <Box w="100%">
-        {isMock && (
-          <Infobox variant="info" style={{ paddingLeft: '24px' }}>
-            <Text>{getMockDataMessage(selectedActionOrTrigger)}</Text>
+        {(isMock || isForEachStep) && (
+          <Infobox variant="info">
+            <Text>
+              {isForEachStep
+                ? getForEachDataMessage(testExecutionSteps, step)
+                : getMockDataMessage(selectedActionOrTrigger)}
+            </Text>
           </Infobox>
         )}
         <VariablesList variables={variables} customStyles={{ py: 0, px: 2 }} />

@@ -92,6 +92,7 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
       errorDetails: error,
       appKey: step.appKey,
       metadata: metadataToStore ?? {},
+      key: step.key,
     })
 
   return {

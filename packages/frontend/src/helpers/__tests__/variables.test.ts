@@ -22,6 +22,8 @@ describe('variables', () => {
           stepId: 'step1-id',
           step: {
             position: 1,
+            appKey: 'App1',
+            key: 'Action 1',
           },
           appKey: 'App1',
         },
@@ -37,6 +39,8 @@ describe('variables', () => {
         stepId: 'step2-id',
         step: {
           position: 2,
+          appKey: 'App2',
+          key: 'Action2',
         },
         appKey: 'App2',
       } as unknown as IExecutionStep)

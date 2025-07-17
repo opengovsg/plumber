@@ -39,11 +39,11 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
   } = props
   const { control } = useFormContext()
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
-  const { readOnly } = useContext(EditorContext)
+  const { allApps, readOnly } = useContext(EditorContext)
 
   const items = useMemo(
-    () => extractVariablesAsItems(priorExecutionSteps, variableTypes),
-    [priorExecutionSteps, variableTypes],
+    () => extractVariablesAsItems(priorExecutionSteps, variableTypes, allApps),
+    [priorExecutionSteps, variableTypes, allApps],
   )
 
   return (

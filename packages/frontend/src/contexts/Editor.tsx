@@ -19,6 +19,8 @@ import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
+  isForEachStep,
+  isIfThenStep,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
   useIfThenInitializer,
@@ -32,6 +34,7 @@ interface IEditorContextValue {
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
   currentStepIndex: number | null
+  hasForEach: boolean
   hasIfThen: boolean
   currentTestExecutionStep: IExecutionStep | null
   isDrawerOpen: boolean
@@ -64,6 +67,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   flowId: '',
   currentStepId: null,
   currentStepIndex: null,
+  hasForEach: false,
   hasIfThen: false,
   currentTestExecutionStep: null,
   isDrawerOpen: false,
@@ -158,11 +162,13 @@ export const EditorProvider = ({
   const isEmptyPipe =
     steps.length <= 2 && steps.every((s) => s.key === null && s.appKey === null)
 
-  const hasIfThen = flow?.steps.some(
-    (step: IStep) => step.key === TOOLBOX_ACTIONS.IfThen,
-  )
+  const hasForEach = flow?.steps.some((step) => isForEachStep(step))
+  const hasIfThen = flow?.steps.some((step: IStep) => isIfThenStep(step))
 
-  const allApps = getAppsData?.getApps ?? []
+  const allApps = useMemo(
+    () => getAppsData?.getApps ?? [],
+    [getAppsData?.getApps],
+  )
 
   const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
     GET_TEST_EXECUTION_STEPS,
@@ -179,10 +185,10 @@ export const EditorProvider = ({
   )
 
   const [stepsWithVars, varInfoMap] = useMemo(() => {
-    const stepsWithVars = extractVariables(testExecutionSteps)
+    const stepsWithVars = extractVariables(testExecutionSteps, allApps)
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
-  }, [testExecutionSteps])
+  }, [testExecutionSteps, allApps])
 
   const currentTestExecutionStep = useMemo(
     () =>
@@ -237,8 +243,8 @@ export const EditorProvider = ({
       const newStep = createdStep.data.createStep
       setCurrentStepId(newStep.id)
 
-      // account for the if-then edge case
-      if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
+      // account for the for-each and if-then
+      if (appKey === TOOLBOX_APP_KEY) {
         // Get the complete step data from the cache
         const { getFlow: updatedFlow } = client.readQuery({
           query: GET_FLOW,
@@ -254,15 +260,17 @@ export const EditorProvider = ({
             ...completeStep,
             flowId: flowId,
           }
-          return (await initializeIfThen(
-            completeStepWithFlow,
-          )) as unknown as IStep
+          if (eventKey === TOOLBOX_ACTIONS.IfThen) {
+            return (await initializeIfThen(
+              completeStepWithFlow,
+            )) as unknown as IStep
+          }
         }
       }
 
       return newStep as IStep
     },
-    [createStep, flowId, initializeIfThen, setCurrentStepId],
+    [createStep, flowId, initializeIfThen],
   )
 
   /**
@@ -369,6 +377,7 @@ export const EditorProvider = ({
         allApps,
         currentStepId,
         currentStepIndex,
+        hasForEach,
         hasIfThen,
         isDrawerOpen,
         isMobile,

@@ -24,7 +24,7 @@ export const isItemAddNew = <Item extends ComboboxItem>(
 
 export const itemToLabelString = <Item extends ComboboxItem>(
   item?: Item,
-): string => {
+): string | JSX.Element => {
   if (!item) {
     return ''
   }

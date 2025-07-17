@@ -23,10 +23,13 @@ import {
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import { enqueueActionJob, makeActionJobId } from '@/queues/action'
 import { processAction } from '@/services/action'
+
+import processForEachStatus from './for-each-status-manager'
 
 function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
@@ -128,17 +131,30 @@ export function makeActionWorker(
           workerVersion: appConfig.version,
         })
 
-        const { flowId, executionId, nextStep, executionStep, executionError } =
-          await processAction({ ...jobData, jobId }).catch(async (err) => {
-            // This happens when the prerequisite steps for the action fails (e.g.
-            // db error, missing execution, flow, step, etc...) in such cases, we
-            // do not want to retry
-            throw new UnrecoverableError(
-              err.message || 'Action failed to execute',
-            )
-          })
+        const {
+          flowId,
+          executionId,
+          nextStep,
+          executionStep,
+          nextStepMetadata,
+          executionError,
+        } = await processAction({ ...jobData, jobId }).catch(async (err) => {
+          // This happens when the prerequisite steps for the action fails (e.g.
+          // db error, missing execution, flow, step, etc...) in such cases, we
+          // do not want to retry
+          throw new UnrecoverableError(
+            err.message || 'Action failed to execute',
+          )
+        })
 
         if (executionStep.isFailed) {
+          if (nextStepMetadata?.iteration) {
+            await ExecutionStep.patchIterationStatus(
+              executionId,
+              nextStepMetadata.iteration,
+              'failure',
+            )
+          }
           return handleFailedStepAndThrow({
             errorDetails: executionStep.errorDetails,
             executionError,
@@ -152,6 +168,16 @@ export function makeActionWorker(
         }
 
         if (!nextStep) {
+          const shouldContinue = await processForEachStatus({
+            executionId,
+            currStep,
+            nextStepMetadata,
+          })
+
+          if (!shouldContinue) {
+            return
+          }
+
           await Execution.setStatus(executionId, 'success')
           return
         }
@@ -162,6 +188,7 @@ export function makeActionWorker(
           flowId,
           executionId,
           stepId: nextStep.id,
+          metadata: nextStepMetadata,
         }
 
         let jobOptions = DEFAULT_JOB_OPTIONS

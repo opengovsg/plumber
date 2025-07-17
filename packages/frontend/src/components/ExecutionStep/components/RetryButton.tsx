@@ -8,11 +8,15 @@ import { RETRY_EXECUTION_STEP } from '@/graphql/mutations/retry-execution-step'
 
 interface RetryButtonProps {
   executionStepId: string
+  customButtonText?: string
 }
 
 const retryIcon = <Icon boxSize={6} as={BiRedo} />
 
-const RetryButton = ({ executionStepId }: RetryButtonProps) => {
+const RetryButton = ({
+  executionStepId,
+  customButtonText,
+}: RetryButtonProps) => {
   const [isRetrySuccessful, setIsRetrySuccessful] = useState<boolean | null>(
     null,
   )
@@ -48,7 +52,7 @@ const RetryButton = ({ executionStepId }: RetryButtonProps) => {
         leftIcon={retryIcon}
         onClick={() => retryExecutionStep()}
       >
-        Retry
+        {customButtonText ?? 'Retry'}
       </Button>
     )
   } else {

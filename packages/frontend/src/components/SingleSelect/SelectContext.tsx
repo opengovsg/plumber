@@ -35,6 +35,8 @@ export interface SharedSelectContextReturnProps<
   isRefreshLoading?: boolean
   /** Controls if user can add one arbitrary item of their choosing. */
   freeSolo?: boolean
+  /** Set to true to remove the border of the Input. defaults to `false` */
+  isBorderless?: boolean
 }
 
 interface SelectContextReturn<Item extends ComboboxItem = ComboboxItem>

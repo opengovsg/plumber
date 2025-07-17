@@ -15,6 +15,16 @@ const executionSteps = [
       numberProp: 123,
       'space separated prop': 'space separated value',
       arrayProp: ['array value 1', 'hehe', 'array value 3'], // for-each intro
+      arrayPropWithCommas: [
+        'array value 1, with, commas',
+        'hehe',
+        'array value 3',
+        'array value 4, with comma',
+      ],
+      tableProp: {
+        rows: [{ data: { name: 'John' } }],
+        columns: [{ id: 'name', name: 'Name', value: 'name' }],
+      },
     },
   } as unknown as ExecutionStep,
 ]
@@ -153,6 +163,53 @@ describe('compute parameters', () => {
     'performs variable substitution on $testDescription',
     ({ params, expected }) => {
       const result = computeParameters(params, executionSteps)
+      expect(result).toEqual(expected)
+    },
+  )
+
+  it.each([
+    {
+      testDescription: 'entire object',
+      params: {
+        param1: `{{step.${randomStepID}.tableProp}}`,
+      },
+      expected: {
+        param1: executionSteps[0].dataOut.tableProp,
+      },
+    },
+    {
+      testDescription: 'entire array',
+      params: {
+        param2: `{{step.${randomStepID}.arrayProp}}`,
+      },
+      expected: {
+        param2: executionSteps[0].dataOut.arrayProp,
+      },
+    },
+    {
+      testDescription: 'array with values containing commas',
+      params: {
+        param3: `{{step.${randomStepID}.arrayPropWithCommas}}`,
+      },
+      expected: {
+        param3: executionSteps[0].dataOut.arrayPropWithCommas,
+      },
+    },
+  ])(
+    'performs for-each variable substitution on $testDescription ',
+    ({
+      params,
+      expected,
+    }: {
+      params: Record<string, any>
+      expected: Record<string, any>
+    }) => {
+      const result = computeParameters(params, executionSteps, undefined, {
+        executionStepMetadata: { iteration: 1 },
+        forEachStepPosition: 0,
+        stepPositions: {},
+        isForEachStep: true,
+      })
       expect(result).toEqual(expected)
     },
   )

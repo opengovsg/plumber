@@ -1,0 +1,32 @@
+import z from 'zod'
+
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+
+export const parametersSchema = z.object({
+  fileId: z
+    .string()
+    .trim()
+    .min(1, { message: 'Please choose a file to lookup from.' }),
+  tableId: z
+    .string()
+    .trim()
+    .min(1, { message: 'Please select a table to lookup from.' }),
+  // Populated by dynamic data, so no need to trim.
+  lookupColumn: z.string().min(1, {
+    message: 'Please select a column to lookup from.',
+  }),
+  // * We don't trim as we want to match _exactly_ on the user's input.
+  // * We allow empty strings to support optional form fields.
+  lookupValue: z.string(),
+})
+
+export const dataOutSchema = z.object({
+  rowsFound: z.number(),
+  data: z.object({
+    rows: z.array(z.object({ data: z.record(z.string(), z.string()) })),
+    columns: z.array(
+      z.object({ id: z.string(), name: z.string(), value: z.string() }),
+    ),
+    inputSource: z.literal(FOR_EACH_INPUT_SOURCE.M365_EXCEL),
+  }),
+})

@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.45.3",
+  "version": "1.46.0",
   "type": "module",
   "scripts": {
     "dev": "wait-on tcp:3000 && vite --host --force",
@@ -113,12 +113,12 @@
   "exports": {
     ".": {
       "types": "./dist/lib/exports/index.d.ts",
-      "import": "./dist/lib/exports/index.mjs"
+      "import": "./dist/lib/exports/index.js"
     },
     "./style.css": "./dist/lib/style.css",
     "./*": {
       "types": "./dist/lib/exports/*.d.ts",
-      "import": "./dist/lib/exports/*.mjs"
+      "import": "./dist/lib/exports/*.js"
     }
   }
 }

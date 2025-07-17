@@ -86,6 +86,7 @@ export const GET_APPS = gql`
         type
         pollInterval
         description
+        isNew
         setupMessage {
           variant
           messageBody
@@ -173,6 +174,7 @@ export const GET_APPS = gql`
           messageBody
         }
         groupsLaterSteps
+        isNew
         substeps {
           key
           name
@@ -215,6 +217,7 @@ export const GET_APPS = gql`
               label
               type
             }
+            singleVariableSelection
             # Only for multi-row
             subFields {
               label
@@ -253,6 +256,7 @@ export const GET_APPS = gql`
                   value
                 }
               }
+              singleVariableSelection
             }
           }
         }

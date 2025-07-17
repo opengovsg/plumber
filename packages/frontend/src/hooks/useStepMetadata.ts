@@ -2,6 +2,7 @@ import { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { useMemo } from 'react'
 
+import getStepName from '@/helpers/getStepName'
 import { isIfThenStep as checkIfThenStep } from '@/helpers/toolbox'
 
 interface UseStepMetadataResult {
@@ -45,30 +46,7 @@ export function useStepMetadata(
     [actionsOrTriggers, step?.key],
   )
 
-  // define caption description based on app and step
-  let caption = ''
-  let defaultCaption = selectedActionOrTrigger?.name
-  if (step?.config?.stepName) {
-    caption = `${step.position}. ${step.config.stepName}`
-  } else if (defaultCaption) {
-    caption = `${step?.position ? `${step.position}. ` : ''}${defaultCaption}`
-
-    if (isIfThenStep) {
-      caption = `${step?.position}. Condition`
-    }
-  } else if (app?.name) {
-    caption = `${step?.position ? `${step.position}. ` : ''}${app.name}`
-  } else if (isTrigger) {
-    caption = 'This step starts your pipe'
-  } else if (step?.position === 2) {
-    caption = 'This step happens after your pipe starts'
-  } else {
-    caption = 'This step happens after the previous step'
-  }
-
-  if (isIfThenStep) {
-    defaultCaption = 'Condition'
-  }
+  const { caption, defaultCaption } = getStepName(allApps, step)
 
   const substeps = selectedActionOrTrigger?.substeps || []
   const hasConnection = substeps?.some(

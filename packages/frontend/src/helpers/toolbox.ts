@@ -4,9 +4,6 @@ import { useCallback, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 
 import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
-import { NESTED_IFTHEN_FEATURE_FLAG } from '@/config/flags'
-import { EditorContext } from '@/contexts/Editor'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
@@ -16,6 +13,7 @@ export const TOOLBOX_APP_KEY = 'toolbox'
 
 export enum TOOLBOX_ACTIONS {
   IfThen = 'ifThen',
+  ForEach = 'forEach',
 }
 
 //
@@ -128,40 +126,6 @@ export function areAllIfThenBranchesCompleted(
 }
 
 /**
- * Helper hook to check if If-then action should be selectable; supports edge
- * case in ChooseEvent component.
- *
- * If-then should only be selectable if:
- * - We're the last step.
- * - We are not inside a branch (unless we're whitelisted for nested
- *   branches via LD).
- *
- * Using many consts as purpose of the conditions may not be immediately
- * apparent.
- */
-export function useIsIfThenSelectable({
-  isLastStep,
-}: {
-  isLastStep: boolean
-}): boolean {
-  const { depth } = useContext(BranchContext)
-  const { hasIfThen } = useContext(EditorContext)
-  const { flags: ldFlags } = useContext(LaunchDarklyContext)
-
-  if (!isLastStep || hasIfThen) {
-    return false
-  }
-
-  const canUseNestedBranch = ldFlags?.[NESTED_IFTHEN_FEATURE_FLAG] ?? false
-  if (canUseNestedBranch) {
-    return true
-  }
-
-  const isNestedBranch = depth > 0
-  return !isNestedBranch
-}
-
-/**
  * Hook used for initializing If-then when the user _first_ chooses it via the
  * "Choose App & Event" substep.
  */
@@ -270,4 +234,11 @@ export function useIfThenInitializer(): [
   )
 
   return [initialize, isInitializing]
+}
+
+//
+// Helpers for For-each
+//
+export function isForEachStep(step: IStep): boolean {
+  return step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.ForEach
 }

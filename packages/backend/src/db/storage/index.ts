@@ -1,6 +1,7 @@
 import type { ITemplate } from '@plumber/types'
 
 import { ATTENDANCE_TAKING_TEMPLATE } from './attendance-taking-v2'
+import { FOR_EACH_REMINDER_TEMPLATE } from './for-each-reminder'
 import { GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE } from './get-live-updates-through-telegram'
 import { ROUTE_SUPPORT_ENQUIRIES_TEMPLATE } from './route-support-enquiries'
 import { SCHEDULE_REMINDERS_TEMPLATE } from './schedule-reminders'
@@ -35,6 +36,8 @@ function deepFreeze<T>(object: T): T {
 export const TEMPLATES: ITemplate[] = deepFreeze<ITemplate[]>([
   SEND_FOLLOW_UPS_TEMPLATE, // contains demo video
   SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE,
+  FOR_EACH_REMINDER_TEMPLATE,
+  // TODO (kevinkim-ogp): remove this when for-each is released to all users
   SCHEDULE_REMINDERS_TEMPLATE,
   TRACK_FEEDBACK_TEMPLATE,
   ATTENDANCE_TAKING_TEMPLATE,

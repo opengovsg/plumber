@@ -1,14 +1,17 @@
 import type { IAction } from '@plumber/types'
 
 import { BiFilterAlt, BiGitRepoForked, BiQuestionMark } from 'react-icons/bi'
+import { SlLoop } from 'react-icons/sl'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
 
 import { HighlightedText } from './HighlightedText'
+import NewBadge from './NewBadge'
 
 export const TOOLBOX_ACTION_TO_ICON_MAP = {
   onlyContinueIf: BiFilterAlt,
   ifThen: BiGitRepoForked,
+  forEach: SlLoop,
 }
 
 interface ToolboxEventProps {
@@ -66,10 +69,13 @@ export default function ToolboxEvent(props: ToolboxEventProps): JSX.Element {
           />
 
           <Flex flexDir="column" gap={1}>
-            <HighlightedText
-              searchQuery={searchQuery}
-              textToHighlight={action.name}
-            />
+            <Flex gap={2}>
+              <HighlightedText
+                searchQuery={searchQuery}
+                textToHighlight={action.name}
+              />
+              {action?.isNew && <NewBadge />}
+            </Flex>
             <Text textStyle="body-2">
               <HighlightedText
                 searchQuery={searchQuery}

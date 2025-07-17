@@ -1,5 +1,6 @@
 import type { IApp, ITemplate } from '@plumber/types'
 
+import { useContext } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Flex, Grid, Text } from '@chakra-ui/react'
@@ -8,6 +9,7 @@ import { Link } from '@opengovsg/design-system-react'
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 
@@ -20,9 +22,21 @@ const TEMPLATES_TITLE = 'Templates'
 const TEMPLATES_COUNT = 9
 
 export default function Templates(): JSX.Element {
+  const { flags: ldFlags } = useContext(LaunchDarklyContext)
   const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
 
-  const templates: ITemplate[] = data?.getTemplates
+  // TODO (kevinkim-ogp): remove this when for-each is released to all users
+  // we do this to avoid adding extra flags or parameters into the query
+  const templates: ITemplate[] =
+    data?.getTemplates?.filter((template: ITemplate) => {
+      if (ldFlags?.app_toolbox_action_forEach) {
+        return template.id !== '65e90f41-b605-4e83-bcd7-e4d2e349299d' // SCHEDULE_REMINDERS_TEMPLAT
+      } else if (!ldFlags?.app_toolbox_action_forEach) {
+        return template.id !== 'b8dd6c22-3578-460d-89e2-e2062b3601f2' // FOR_EACH_REMINDER_TEMPLATE
+      }
+      return true
+    }) ?? []
+
   const { templateId } = useParams()
   const template = templates?.find((template) => template.id === templateId)
 
