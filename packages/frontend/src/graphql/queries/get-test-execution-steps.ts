@@ -21,6 +21,9 @@ export const GET_TEST_EXECUTION_STEPS = gql`
           }
           stepName
         }
+        key
+        appKey
+        type
       }
       status
       appKey
@@ -28,9 +31,11 @@ export const GET_TEST_EXECUTION_STEPS = gql`
       dataOut
       dataOutMetadata
       errorDetails
+      key
       metadata {
         isMock
         lastTestSubmissionDate
+        iteration
       }
     }
   }

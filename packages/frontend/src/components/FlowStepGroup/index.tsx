@@ -1,15 +1,21 @@
 import { IStep } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
+import { BiTrash } from 'react-icons/bi'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
+import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 
+import DeleteConfirmationDialog from './components/DeleteConfirmationDialog'
 import Error from './Content/Error'
+import ForEach from './Content/ForEach'
 import IfThen from './Content/IfThen'
+import useDeleteStepConfirmation from './hooks/useDeleteStepConfirmation'
 import { flowStepGroupStyles } from './styles'
 
 interface FlowStepGroupProps {
@@ -19,18 +25,42 @@ interface FlowStepGroupProps {
 
 export default function FlowStepGroup(props: FlowStepGroupProps) {
   const { groupedSteps, stepsBeforeGroup } = props
-  const { isDrawerOpen, isMobile } = useContext(EditorContext)
+  const { isDrawerOpen, isMobile, onDrawerClose } = useContext(EditorContext)
 
   const { stepGroupType, stepGroupCaption } = useMemo(() => {
     let stepGroupType: string | null = null
     let stepGroupCaption: string | null = null
 
-    if (groupedSteps[0]?.[0]?.key === 'ifThen') {
-      stepGroupType = 'ifThen'
+    const groupKey = groupedSteps[0]?.[0]?.key
+    if (!groupKey) {
+      return { stepGroupType: null, stepGroupCaption: null }
+    }
+
+    if (groupKey === TOOLBOX_ACTIONS.IfThen) {
+      stepGroupType = TOOLBOX_ACTIONS.IfThen
       stepGroupCaption = 'If-then'
     }
+
+    if (groupKey === TOOLBOX_ACTIONS.ForEach) {
+      stepGroupType = TOOLBOX_ACTIONS.ForEach
+      stepGroupCaption = 'For each'
+    }
+
     return { stepGroupType, stepGroupCaption }
   }, [groupedSteps])
+
+  const {
+    isOpen: isDeleteConfirmationOpen,
+    onOpen: openDeleteConfirmation,
+    onClose: closeDeleteConfirmation,
+    onDelete: deleteForEach,
+    cancelRef,
+  } = useDeleteStepConfirmation(stepGroupType ?? '', groupedSteps)
+
+  const handleForEachDelete = useCallback(async () => {
+    await deleteForEach()
+    onDrawerClose()
+  }, [deleteForEach, onDrawerClose])
 
   return (
     <Flex
@@ -38,7 +68,6 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
       alignItems="center"
       justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
     >
-      {/* FIXME (kevinkim-ogp): above is a temporary wrapper to ensure the flow step group is centered when drawer is closed */}
       <Flex
         {...flowStepGroupStyles.container}
         display={isMobile ? 'block' : 'flex'}
@@ -54,6 +83,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
             w="full"
             borderLeftWidth={0}
             borderRightWidth={0}
+            role="group"
           >
             <Flex {...flowStepGroupStyles.iconWrapper}>
               {/* App icon */}
@@ -70,13 +100,40 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
                 </Text>
               </Flex>
             </Flex>
+            {stepGroupType === TOOLBOX_ACTIONS.ForEach && (
+              <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
+                <IconButton
+                  boxSize={8}
+                  variant="clear"
+                  aria-label="Delete for each action"
+                  icon={<BiTrash />}
+                  colorScheme="secondary"
+                  onClick={openDeleteConfirmation}
+                />
+              </Flex>
+            )}
           </Flex>
         </Box>
-        {stepGroupType === 'ifThen' ? (
+        {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
           <IfThen
             groupedSteps={groupedSteps}
             stepsBeforeGroup={stepsBeforeGroup}
           />
+        ) : stepGroupType === TOOLBOX_ACTIONS.ForEach ? (
+          <>
+            <ForEach
+              groupedSteps={groupedSteps}
+              stepsBeforeGroup={stepsBeforeGroup}
+            />
+            <DeleteConfirmationDialog
+              name="For each"
+              cancelRef={cancelRef}
+              isOpen={isDeleteConfirmationOpen}
+              onClose={closeDeleteConfirmation}
+              onDelete={handleForEachDelete}
+              onCancel={closeDeleteConfirmation}
+            />
+          </>
         ) : (
           <Error />
         )}

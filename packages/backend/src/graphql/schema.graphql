@@ -30,6 +30,7 @@ type Query {
     executionId: String!
     limit: Int!
     offset: Int!
+    iteration: Int
   ): PaginatedExecutionSteps
   getDynamicData(
     stepId: String!
@@ -87,6 +88,9 @@ type Mutation {
   bulkRetryExecutions(
     input: BulkRetryExecutionsInput
   ): BulkRetryExecutionsResult!
+  bulkRetryIterations(
+    input: BulkRetryIterationsInput
+  ): BulkRetryIterationsResult!
   logout: Boolean
   loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
   loginWithSelectedSgid(
@@ -153,6 +157,7 @@ type Action {
   description: String
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
+  isNew: Boolean
   substeps: [ActionSubstep]
 }
 
@@ -192,6 +197,9 @@ type ActionSubstepArgument {
   hiddenIf: FieldVisibilityCondition
   addRowButtonText: String
   tooltipText: String
+
+  # Only for string and multiline
+  singleVariableSelection: Boolean
 
   # Only for dropdown
   addNewOption: DropdownAddNewOption
@@ -316,11 +324,17 @@ type ExecutionStep {
   createdAt: String
   updatedAt: String
   metadata: ExecutionStepMetadata!
+  key: String
 }
 
 type ExecutionStepMetadata {
   isMock: Boolean
   lastTestSubmissionDate: String
+  iteration: Int
+  iterations: Int
+  iterationStatus: JSONObject
+  isLastIteration: Boolean
+  isLastStep: Boolean
 }
 
 type Field {
@@ -401,6 +415,11 @@ type Execution {
 
 type BulkRetryExecutionsResult {
   numFailedExecutions: Int!
+  allSuccessfullyRetried: Boolean!
+}
+
+type BulkRetryIterationsResult {
+  numFailedIterations: Int!
   allSuccessfullyRetried: Boolean!
 }
 
@@ -550,6 +569,10 @@ input BulkRetryExecutionsInput {
   executionIds: [String!]
 }
 
+input BulkRetryIterationsInput {
+  executionId: String!
+}
+
 """
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
@@ -644,6 +667,7 @@ type Trigger {
   setupMessage: SetupMessage
   webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
+  isNew: Boolean
 }
 
 type TriggerInstructions {
@@ -939,6 +963,7 @@ type TemplateStep {
 enum TemplateTagType {
   demo
   empty # for empty flows state
+  new
 }
 
 # End of template types

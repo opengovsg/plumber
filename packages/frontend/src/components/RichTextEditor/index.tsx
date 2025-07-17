@@ -47,6 +47,7 @@ import {
   checkAutoFocus,
   genVariableInfoMap,
   getPopoverPlacement,
+  GLOBAL_VARIABLE_REGEX,
   singleLineEditorScroll,
   substituteOldTemplates,
 } from './utils'
@@ -96,6 +97,7 @@ interface EditorProps {
   variableTypes?: TDataOutMetadatumType[]
   parentType?: string
   autoFocus?: boolean
+  singleVariableSelection?: boolean
 }
 const Editor = ({
   onChange,
@@ -107,15 +109,17 @@ const Editor = ({
   isSingleLine,
   variableTypes,
   parentType,
+  singleVariableSelection,
   autoFocus = false,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
+  const { allApps } = useContext(EditorContext)
   const isMobile = useIsMobile()
   const isMulticol = parentType === 'multicol'
 
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
-      extractVariables(priorExecutionSteps),
+      extractVariables(priorExecutionSteps, allApps),
       (variable) => {
         const variableType = variable.type ?? 'text'
         if (variableTypes) {
@@ -127,7 +131,7 @@ const Editor = ({
     )
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
-  }, [priorExecutionSteps, variableTypes])
+  }, [allApps, priorExecutionSteps, variableTypes])
 
   const extensions: Array<any> = [
     Placeholder.configure({
@@ -208,12 +212,22 @@ const Editor = ({
 
   const handleVariableClick = useCallback(
     (variable: Variable) => {
+      // if the selection is a node, means the user clicked on a variable
+      const selectionType = editor?.state?.selection?.toJSON()?.type
+      if (
+        singleVariableSelection &&
+        editor?.getText().match(GLOBAL_VARIABLE_REGEX) &&
+        selectionType !== 'node'
+      ) {
+        return
+      }
+
       editor?.commands.insertContent({
         type: StepVariable.name,
         attrs: {
           id: variable.name,
           label: variable.label,
-          value: variable.value,
+          value: variable.displayedValue ?? variable.value,
         },
       })
       editor?.commands.focus()
@@ -224,7 +238,7 @@ const Editor = ({
         })
       }
     },
-    [editor, isMulticol],
+    [editor, isMulticol, singleVariableSelection],
   )
 
   const {
@@ -273,7 +287,15 @@ const Editor = ({
                 editable={editable ?? false}
               />
             )}
-            <EditorContent className="editor__content" editor={editor} />
+            <EditorContent
+              className="editor__content"
+              editor={editor}
+              onKeyDown={(e) => {
+                if (singleVariableSelection) {
+                  e.preventDefault()
+                }
+              }}
+            />
             <Portal>
               <PopoverContent
                 w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
@@ -316,6 +338,7 @@ interface RichTextEditorProps {
   variableTypes?: TDataOutMetadatumType[]
   parentType?: string
   autoFocus?: boolean
+  singleVariableSelection?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -331,6 +354,7 @@ const RichTextEditor = ({
   variableTypes,
   parentType,
   autoFocus,
+  singleVariableSelection,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -377,6 +401,7 @@ const RichTextEditor = ({
             variableTypes={variableTypes}
             parentType={parentType}
             autoFocus={shouldAutoFocus}
+            singleVariableSelection={singleVariableSelection}
           />
         )}
       />

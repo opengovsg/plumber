@@ -5,7 +5,7 @@ import z from 'zod'
 import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 
-import WorkbookSession from '../../../common/workbook-session'
+import WorkbookSession from './workbook-session'
 
 const msGraphResponseSchema = z
   .object({

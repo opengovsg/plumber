@@ -16,6 +16,7 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
+import ErrorFlowStepHeader from '../ErrorFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 
@@ -169,12 +170,15 @@ export default function FlowStep(
 
   return (
     <FlowStepWrapper isNested={isNested}>
-      {!app || !selectedActionOrTrigger ? (
+      {!app ? (
         <EmptyFlowStepHeader
           isNested={isNested}
           isTrigger={isTrigger}
           onModalOpen={handleProceed}
         />
+      ) : !selectedActionOrTrigger ? (
+        // GUARDRAIL: this only shows when the selected app is not found
+        <ErrorFlowStepHeader isNested={isNested} step={step} />
       ) : (
         <>
           {shouldTestStepAgain && (

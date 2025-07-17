@@ -1,4 +1,5 @@
 import type {
+  IApp,
   IDataOutMetadata,
   IDataOutMetadatum,
   IExecutionStep,
@@ -6,6 +7,9 @@ import type {
 } from '@plumber/types'
 
 import get from 'lodash.get'
+
+import { RawColumn, RawRow } from '@/components/VariablesList/utils'
+import getStepName from '@/helpers/getStepName'
 
 // these are the variable types to display on the frontend (make visible)
 export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
@@ -32,6 +36,14 @@ export interface Variable {
    */
   name: string
   value: unknown
+  // NOTE: used in some variables as unique key
+  id?: string
+  /**
+   * NOTE: used to hide columns in the variables list, specifically for 'table' object
+   * we still need them in the dataOut to compare parameters against the last test execution
+   * at the for-each step
+   */
+  isHidden?: boolean
 }
 
 function sortVariables(variables: Variable[]): void {
@@ -104,7 +116,10 @@ const process = (
       ? [
           {
             name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
-            value: data.join(', '),
+            value:
+              typeof data[0] === 'object'
+                ? JSON.stringify(data) // special handling for m365 multi row
+                : data.join(', '),
             label: label ?? parentKey,
             displayedValue,
             type,
@@ -124,6 +139,55 @@ const process = (
         })
   }
 
+  // special handling for multiple row objects from Tiles and M365 Excel
+  // we do not do not join like strings as it contains objects and do not flatmap the data as we want to use it as a whole
+  if (type === 'table') {
+    const outputVars = [
+      {
+        name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
+        value: JSON.stringify(data),
+        label: label ?? parentKey,
+        displayedValue,
+        type,
+        order,
+      },
+    ]
+
+    /**
+     * CAVEAT: we intentionally set the columns to be hidden in the variables list
+     * so that we don't display them,
+     * but we keep them in the dataOut to compare parameters against the last test execution
+     *
+     * NOTE: we dynamically obtain the values for each column since we are not
+     * storing the values in the dataOut.
+     */
+    const { columns, rows } = data
+    const columnVariables = columns.map((column: RawColumn) => {
+      const rowValues: (string | number)[] = []
+      rows.forEach((row: RawRow) => {
+        /**
+         * NOTE: do not push empty values as we do not want to cause any errors
+         * that may arise from having empty values.
+         */
+        if (row.data[column.id]) {
+          rowValues.push(row.data[column.id])
+        }
+      })
+
+      return {
+        ...column,
+        name: `step.${stepId}.${column.value}`,
+        label: column.name,
+        displayedValue: rowValues.join(', '),
+        value: rowValues.join(', '),
+        type: 'text',
+        isHidden: true,
+      }
+    })
+
+    return [...outputVars, ...columnVariables]
+  }
+
   /**
    * handle objects here
    */
@@ -139,6 +203,7 @@ const process = (
 
 export function extractVariables(
   executionSteps: IExecutionStep[],
+  allApps?: IApp[],
 ): StepWithVariables[] {
   if (!executionSteps) {
     return []
@@ -159,15 +224,16 @@ export function extractVariables(
           metadata,
           '',
         )
+
+        const { caption: name } = getStepName(
+          allApps || [],
+          executionStep?.step,
+        )
         // sort variable by order key in-place
         sortVariables(variables)
         return {
           id: executionStep.stepId,
-          name: `${executionStep.step.position}. ${
-            executionStep.step?.config?.stepName ||
-            (executionStep.appKey || '').charAt(0)?.toUpperCase() +
-              executionStep.appKey?.slice(1)
-          }`,
+          name,
           output: variables,
         }
       })

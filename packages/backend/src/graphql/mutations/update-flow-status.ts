@@ -1,13 +1,37 @@
 import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from '@/apps/toolbox/common/constants'
+import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
 import flowQueue from '@/queues/flow'
 
-import type { MutationResolvers } from '../__generated__/types.generated'
+import type { MutationResolvers, Step } from '../__generated__/types.generated'
 
 const JOB_NAME = 'flow'
 const EVERY_15_MINUTES_CRON = '*/15 * * * *'
+
+const validateFlowSteps = (steps: Step[]) => {
+  if (!steps.every((step, index) => step.position === index + 1)) {
+    throw new Error(
+      'Step positions are out of order. Please contact support@plumber.gov.sg for help.',
+    )
+  }
+
+  if (
+    steps.filter(
+      (step) =>
+        step.appKey === TOOLBOX_APP_KEY &&
+        step.key === TOOLBOX_ACTIONS.FOR_EACH,
+    ).length > 1
+  ) {
+    throw new Error(
+      'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
+    )
+  }
+}
 
 const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   _parent,
@@ -28,14 +52,8 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
     return flow
   }
 
-  // Check that step positions are contiguous when publishing
-  if (
-    params.input.active &&
-    !flow.steps.every((step, index) => step.position === index + 1)
-  ) {
-    throw new Error(
-      'Step positions are out of order. Please contact support@plumber.gov.sg for help.',
-    )
+  if (params.input.active) {
+    validateFlowSteps(flow.steps)
   }
 
   await flow.$query().patch({

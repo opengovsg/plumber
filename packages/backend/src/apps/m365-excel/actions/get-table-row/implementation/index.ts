@@ -2,9 +2,8 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
+import getTopNTableRows from '../../../common/get-top-n-table-rows'
 import type WorkbookSession from '../../../common/workbook-session'
-
-import getTopNTableRows from './get-top-n-table-rows'
 
 // Grabbing ~50k rows takes ~5s. This is similar to our attachment download
 // latency from FormSG, so should be ok...
