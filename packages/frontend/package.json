@@ -113,12 +113,12 @@
   "exports": {
     ".": {
       "types": "./dist/lib/exports/index.d.ts",
-      "import": "./dist/lib/exports/index.mjs"
+      "import": "./dist/lib/exports/index.js"
     },
     "./style.css": "./dist/lib/style.css",
     "./*": {
       "types": "./dist/lib/exports/*.d.ts",
-      "import": "./dist/lib/exports/*.mjs"
+      "import": "./dist/lib/exports/*.js"
     }
   }
 }
