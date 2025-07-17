@@ -88,7 +88,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     executionId,
     jobId,
     testRun = false,
-    metadata,
+    metadata = {},
   } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
@@ -149,7 +149,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     const result =
       testRun && actionCommand.testRun
         ? await actionCommand.testRun($, metadata)
-        : await actionCommand.run($)
+        : await actionCommand.run($, metadata)
     if (result) {
       runResult = result
     }
