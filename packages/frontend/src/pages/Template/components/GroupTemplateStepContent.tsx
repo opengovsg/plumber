@@ -5,11 +5,12 @@ import { Flex, Icon, Text } from '@chakra-ui/react'
 
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
-import IfThenBranchContent from './IfThenBranchContent'
+import GroupContent from './GroupContent'
 
-interface IfThenTemplateStepContentProps {
+interface GroupTemplateStepContentProps {
   templateSteps: ITemplateStep[]
   apps: IApp[]
+  groupType?: string
 }
 
 function extractBranchesWithSteps(templateSteps: ITemplateStep[]) {
@@ -22,7 +23,8 @@ function extractBranchesWithSteps(templateSteps: ITemplateStep[]) {
     // check if it's an if-then step
     if (
       step.appKey === TOOLBOX_APP_KEY &&
-      step.eventKey === TOOLBOX_ACTIONS.IfThen
+      (step.eventKey === TOOLBOX_ACTIONS.IfThen ||
+        step.eventKey === TOOLBOX_ACTIONS.ForEach)
     ) {
       result.push(branchWithSteps)
       branchWithSteps = [step]
@@ -35,15 +37,16 @@ function extractBranchesWithSteps(templateSteps: ITemplateStep[]) {
   return result
 }
 
-export default function IfThenTemplateStepContent(
-  props: IfThenTemplateStepContentProps,
+export default function GroupTemplateStepContent(
+  props: GroupTemplateStepContentProps,
 ) {
-  const { templateSteps, apps } = props
+  const { templateSteps, apps, groupType } = props
   // sanity check
   if (!templateSteps || templateSteps.length === 0) {
     return <></>
   }
   const groupedSteps = extractBranchesWithSteps(templateSteps)
+  const header = groupType === TOOLBOX_ACTIONS.IfThen ? 'If-then' : 'For each'
 
   return (
     <Flex
@@ -54,19 +57,19 @@ export default function IfThenTemplateStepContent(
       borderRadius="lg"
       pb={4}
     >
-      {/* This is for the if then header step */}
+      {/* This is for the group header step */}
       <Flex w="100%" p={4} alignItems="center" columnGap={4}>
         <Icon boxSize={6} as={BiGitRepoForked} color="primary.500" ml={2} />
 
-        <Text textStyle="subhead-1">If-then</Text>
+        <Text textStyle="subhead-1">{header}</Text>
       </Flex>
 
       <Flex flexDir="column" w="100%" px={4} gap={4}>
-        {groupedSteps.map((branchSteps) => {
+        {groupedSteps.map((steps) => {
           return (
-            <IfThenBranchContent
-              key={branchSteps[0].position}
-              branchSteps={branchSteps}
+            <GroupContent
+              key={steps[0].position}
+              groupSteps={steps}
               apps={apps}
             />
           )

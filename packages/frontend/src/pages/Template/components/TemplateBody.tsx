@@ -4,7 +4,9 @@ import { Fragment, useMemo } from 'react'
 import { Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
-import IfThenTemplateStepContent from './IfThenTemplateStepContent'
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
+
+import GroupTemplateStepContent from './GroupTemplateStepContent'
 import TemplateStepContent from './TemplateStepContent'
 
 interface TemplateBodyProps {
@@ -23,20 +25,23 @@ export function BetweenStepsGraphic() {
 export default function TemplateBody(props: TemplateBodyProps) {
   const { templateSteps, apps } = props
 
-  const [templateStepsBeforeIfThen, templateStepsAfterIfThen] = useMemo(() => {
-    const ifThenStartIndex = templateSteps.findIndex(
-      (templateStep: ITemplateStep) =>
-        templateStep?.appKey === 'toolbox' &&
-        templateStep?.eventKey === 'ifThen',
-    )
-    if (ifThenStartIndex === -1) {
-      return [templateSteps, []]
-    }
-    return [
-      templateSteps.slice(0, ifThenStartIndex),
-      templateSteps.slice(ifThenStartIndex),
-    ]
-  }, [templateSteps])
+  const [templateStepsBeforeGroup, templateStepsAfterGroup, groupType] =
+    useMemo(() => {
+      const groupStartIndex = templateSteps.findIndex(
+        (templateStep: ITemplateStep) =>
+          templateStep?.appKey === TOOLBOX_APP_KEY &&
+          (templateStep?.eventKey === TOOLBOX_ACTIONS.IfThen ||
+            templateStep?.eventKey === TOOLBOX_ACTIONS.ForEach),
+      )
+      if (groupStartIndex === -1) {
+        return [templateSteps, []]
+      }
+      return [
+        templateSteps.slice(0, groupStartIndex),
+        templateSteps.slice(groupStartIndex),
+        templateSteps[groupStartIndex]?.eventKey,
+      ]
+    }, [templateSteps])
 
   return (
     <Flex
@@ -55,7 +60,7 @@ export default function TemplateBody(props: TemplateBodyProps) {
       </Infobox>
 
       {/* Steps to display before if-then */}
-      {templateStepsBeforeIfThen.map((templateStep, index) => (
+      {templateStepsBeforeGroup.map((templateStep, index) => (
         <Fragment key={index}>
           <TemplateStepContent
             app={apps?.find((app: IApp) => templateStep?.appKey === app.key)}
@@ -66,9 +71,10 @@ export default function TemplateBody(props: TemplateBodyProps) {
         </Fragment>
       ))}
       {/* Steps to display for if-then */}
-      <IfThenTemplateStepContent
-        templateSteps={templateStepsAfterIfThen}
+      <GroupTemplateStepContent
+        templateSteps={templateStepsAfterGroup}
         apps={apps}
+        groupType={groupType}
       />
     </Flex>
   )

@@ -13,6 +13,7 @@ interface TemplateStepContentProps {
 
 const FALLBACK_EVENT_NAME = 'Sample Event'
 const IF_THEN_EVENT_NAME = 'Condition'
+const FOR_EACH_EVENT_NAME = 'For each item'
 
 export default function TemplateStepContent(props: TemplateStepContentProps) {
   const { app, templateStep, isNested } = props
@@ -24,6 +25,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
 
   const isTrigger = position === 1
   const isIfThen = eventKey === TOOLBOX_ACTIONS.IfThen
+  const isForEach = eventKey === TOOLBOX_ACTIONS.ForEach
 
   // find event name based on triggers/actions of the app using position
   let eventName = ''
@@ -34,6 +36,8 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
   } else {
     if (isIfThen) {
       eventName = IF_THEN_EVENT_NAME
+    } else if (isForEach) {
+      eventName = FOR_EACH_EVENT_NAME
     } else {
       eventName =
         app?.actions?.find((action) => action.key === eventKey)?.name ??
