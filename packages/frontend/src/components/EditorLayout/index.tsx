@@ -45,6 +45,7 @@ import { LensSurvey } from './LensSurvey'
 
 export default function EditorLayout() {
   const cancelRef = useRef(null)
+  const resetFormRef = useRef<(() => void) | null>(null)
   const { flowId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -53,6 +54,7 @@ export default function EditorLayout() {
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
     refetchQueries: [GET_FLOW],
   })
+  const [warnTriggeredBy, setWarnTriggeredBy] = useState<string | null>(null)
   const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
   const [leaveToUrl, setLeaveToUrl] = useState(URLS.FLOWS)
   const {
@@ -142,6 +144,15 @@ export default function EditorLayout() {
     },
     [shouldWarnOnLeave, onWarningOpen],
   )
+
+  const onDiscardChanges = useCallback(() => {
+    if (warnTriggeredBy === 'publish') {
+      onFlowStatusUpdate(!flow?.active)
+      resetFormRef.current?.()
+    } else {
+      navigate(leaveToUrl)
+    }
+  }, [onFlowStatusUpdate, flow?.active, leaveToUrl, navigate, warnTriggeredBy])
 
   // disallow user from publishing pipe if any step is incomplete
   const isFlowIncomplete = useMemo(
@@ -282,7 +293,14 @@ export default function EditorLayout() {
               isLoading={loading}
               spinner={<Spinner fontSize={24} />}
               size="sm"
-              onClick={() => onFlowStatusUpdate(!flow.active)}
+              onClick={(e) => {
+                if (shouldWarnOnLeave) {
+                  setWarnTriggeredBy('publish')
+                  handleWarnOnLeave(e)
+                } else {
+                  onFlowStatusUpdate(!flow.active)
+                }
+              }}
             >
               <Skeleton isLoaded={!loading}>
                 <Text textStyle="subhead-1">
@@ -305,6 +323,7 @@ export default function EditorLayout() {
             flow={flow}
             shouldWarnOnLeave={shouldWarnOnLeave}
             setShouldWarnOnLeave={setShouldWarnOnLeave}
+            resetFormRef={resetFormRef}
           >
             <Editor />
             {flow.active && flow.config?.showSurvey && <LensSurvey />}
@@ -315,7 +334,7 @@ export default function EditorLayout() {
       <EditorSnackbar
         isOpen={!!flow?.active}
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
-      ></EditorSnackbar>
+      />
 
       {shouldOpenAnnouncementModal && (
         <AnnouncementModal
@@ -335,7 +354,7 @@ export default function EditorLayout() {
         cancelRef={cancelRef}
         isOpen={isWarningOpen}
         onClose={onWarningClose}
-        onLeave={() => navigate(leaveToUrl)}
+        onLeave={onDiscardChanges}
       />
     </>
   )
