@@ -116,7 +116,7 @@
       "types": "./dist/lib/exports/index.d.ts",
       "import": "./dist/lib/exports/index.js"
     },
-    "./style.css": "./dist/lib/style.css",
+    "./style.css": "./dist/lib/frontend.css",
     "./*": {
       "types": "./dist/lib/exports/*.d.ts",
       "import": "./dist/lib/exports/*.js"
