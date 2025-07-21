@@ -6,16 +6,16 @@ import { Flex, Text } from '@chakra-ui/react'
 import { BetweenStepsGraphic } from './TemplateBody'
 import TemplateStepContent from './TemplateStepContent'
 
-interface IfThenBranchContentProps {
-  branchSteps: ITemplateStep[]
+interface GroupContentProps {
+  groupSteps: ITemplateStep[]
   apps: IApp[]
 }
 
-export default function IfThenBranchContent(props: IfThenBranchContentProps) {
-  const { branchSteps, apps } = props
+export default function GroupContent(props: GroupContentProps) {
+  const { groupSteps, apps } = props
   return (
     <Flex
-      key={branchSteps[0].position}
+      key={groupSteps[0].position}
       flexDir="column"
       w="100%"
       p={4}
@@ -25,11 +25,11 @@ export default function IfThenBranchContent(props: IfThenBranchContentProps) {
     >
       {/* Branch name */}
       <Text textStyle="subhead-1" color="base.content.default" noOfLines={1}>
-        {branchSteps[0].parameters?.branchName as string}
+        {groupSteps[0].parameters?.branchName as string}
       </Text>
 
       <Flex flexDir="column" w="100%" px={4} alignItems="center">
-        {branchSteps.map((templateStep, index) => {
+        {groupSteps.map((templateStep, index) => {
           return (
             <Fragment key={index}>
               <TemplateStepContent
@@ -38,7 +38,7 @@ export default function IfThenBranchContent(props: IfThenBranchContentProps) {
                 isNested={true}
               />
               {/* Don't show if it is the last step */}
-              {index < branchSteps.length - 1 && <BetweenStepsGraphic />}
+              {index < groupSteps.length - 1 && <BetweenStepsGraphic />}
             </Fragment>
           )
         })}
