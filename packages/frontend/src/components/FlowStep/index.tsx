@@ -239,7 +239,11 @@ export default function FlowStep(
               />
               <StepCaptionAndDemo app={app} caption={caption} />
               {isDeletable && (
-                <StepDeleteButton isNested={isNested} step={step} />
+                <StepDeleteButton
+                  isNested={isNested}
+                  step={step}
+                  caption={caption}
+                />
               )}
             </Flex>
           </Flex>

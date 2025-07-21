@@ -20,29 +20,36 @@ interface MenuAlertDialogProps {
   dialogHeader: AlertHeaderType
   onClick: (() => void) | MouseEventHandler
   isLoading: boolean
+  customBody?: string
 }
 
 interface AlertDialogContent {
   header: string
   body: string
   buttonText: string
+  customBody?: string
 }
 
 function getAlertDialogContent(
   dialogHeader: AlertHeaderType,
   dialogType: AlertDialogType,
+  customBody?: string,
 ): AlertDialogContent {
   switch (dialogType) {
     case 'delete':
       return {
         header: `Delete ${dialogHeader}`,
-        body: `Are you sure you want to delete this ${dialogHeader?.toLowerCase()}? You can't undo this action afterwards.`,
+        body:
+          customBody ??
+          `Are you sure you want to delete this ${dialogHeader?.toLowerCase()}? You can't undo this action afterwards.`,
         buttonText: 'Delete',
       }
     case 'duplicate':
       return {
         header: 'Duplicate Pipe',
-        body: `You'll need to replace the data in every step and test each step in your duplicated pipe before publishing it.`,
+        body:
+          customBody ??
+          `You'll need to replace the data in every step and test each step in your duplicated pipe before publishing it.`,
         buttonText: 'Duplicate',
       }
   }
@@ -57,10 +64,12 @@ export default function MenuAlertDialog(props: MenuAlertDialogProps) {
     dialogType,
     onClick,
     isLoading,
+    customBody,
   } = props
   const { header, body, buttonText } = getAlertDialogContent(
     dialogHeader,
     dialogType,
+    customBody,
   )
 
   return (

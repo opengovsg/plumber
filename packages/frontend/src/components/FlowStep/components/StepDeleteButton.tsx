@@ -6,6 +6,7 @@ import { useMutation } from '@apollo/client'
 import { Flex, useDisclosure } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
+import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { EditorContext } from '@/contexts/Editor'
 import client from '@/graphql/client'
@@ -13,6 +14,7 @@ import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
 
@@ -20,11 +22,15 @@ interface StepDeleteButtonProps {
   isNested?: boolean
   isDeletingStep?: boolean
   step: IStep
+  caption?: string
 }
 
 export default function StepDeleteButton(props: StepDeleteButtonProps) {
-  const { isNested, step } = props
+  const { isNested, step, caption } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
+  const customBody = caption
+    ? `Are you sure you want to delete step ${caption}? You can't undo this action afterwards.`
+    : undefined
   const {
     isOpen: isDialogOpen,
     onOpen: onDialogOpen,
@@ -39,6 +45,16 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
     setCurrentStepIndex,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
+
+  const {
+    cancelRef: cancelUnsavedRef,
+    isWarningOpen,
+    onWarningClose,
+    handleProceed,
+    handleLeave,
+  } = useUnsavedChanges({
+    onProceed: onDialogOpen,
+  })
 
   /**
    * NOTE: refetch test execution steps when deleting a step so that we can
@@ -106,8 +122,8 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
         <IconButton
           boxSize={isNested ? 6 : 8}
           onClick={(event) => {
-            onDialogOpen()
             event.stopPropagation()
+            handleProceed()
           }}
           variant="clear"
           aria-label="Delete Step"
@@ -128,6 +144,14 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
         dialogType="delete"
         onClick={onDelete}
         isLoading={isDeletingStep || isCreatingStep}
+        customBody={customBody}
+      />
+
+      <UnsavedChangesAlert
+        cancelRef={cancelUnsavedRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onLeave={handleLeave}
       />
     </>
   )
