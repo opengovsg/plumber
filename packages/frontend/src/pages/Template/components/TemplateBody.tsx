@@ -34,7 +34,7 @@ export default function TemplateBody(props: TemplateBodyProps) {
             templateStep?.eventKey === TOOLBOX_ACTIONS.ForEach),
       )
       if (groupStartIndex === -1) {
-        return [templateSteps, []]
+        return [templateSteps, [], undefined]
       }
       return [
         templateSteps.slice(0, groupStartIndex),
