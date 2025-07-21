@@ -1,9 +1,10 @@
 import type { IApp, ITemplateStep } from '@plumber/types'
 
-import { BiGitRepoForked, BiQuestionMark } from 'react-icons/bi'
+import { BiQuestionMark } from 'react-icons/bi'
 import { Card, Flex, Icon, Image, Link, Text } from '@chakra-ui/react'
 
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { TOOLBOX_ACTION_TO_ICON_MAP } from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
+import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
 interface TemplateStepContentProps {
   app?: IApp
@@ -17,17 +18,23 @@ const FOR_EACH_EVENT_NAME = 'For each item'
 
 export default function TemplateStepContent(props: TemplateStepContentProps) {
   const { app, templateStep, isNested } = props
-  const { eventKey, position, sampleUrl, sampleUrlDescription } = templateStep
+  const { appKey, eventKey, position, sampleUrl, sampleUrlDescription } =
+    templateStep
   // sanity check
   if (!app) {
     return <></>
   }
 
   const isTrigger = position === 1
+  const isToolboxApp = appKey === TOOLBOX_APP_KEY
   const isIfThen = eventKey === TOOLBOX_ACTIONS.IfThen
   const isForEach = eventKey === TOOLBOX_ACTIONS.ForEach
 
   // find event name based on triggers/actions of the app using position
+  const eventIcon =
+    TOOLBOX_ACTION_TO_ICON_MAP[
+      eventKey as keyof typeof TOOLBOX_ACTION_TO_ICON_MAP
+    ] ?? BiQuestionMark
   let eventName = ''
   if (isTrigger) {
     eventName =
@@ -57,8 +64,8 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
       borderRadius="lg"
       h={isNested ? 12 : 16}
     >
-      {isIfThen ? (
-        <Icon boxSize={6} as={BiGitRepoForked} color="primary.500" ml={2} />
+      {isToolboxApp ? (
+        <Icon boxSize={6} as={eventIcon} color="primary.500" ml={2} />
       ) : (
         <Image
           src={app?.iconUrl}

@@ -1,8 +1,8 @@
 import type { IApp, ITemplateStep } from '@plumber/types'
 
-import { BiGitRepoForked } from 'react-icons/bi'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 
+import { TOOLBOX_ACTION_TO_ICON_MAP } from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
 import GroupContent from './GroupContent'
@@ -47,6 +47,10 @@ export default function GroupTemplateStepContent(
   }
   const groupedSteps = extractBranchesWithSteps(templateSteps)
   const header = groupType === TOOLBOX_ACTIONS.IfThen ? 'If-then' : 'For each'
+  const headerIcon =
+    TOOLBOX_ACTION_TO_ICON_MAP[
+      groupType as keyof typeof TOOLBOX_ACTION_TO_ICON_MAP
+    ]
 
   return (
     <Flex
@@ -59,7 +63,7 @@ export default function GroupTemplateStepContent(
     >
       {/* This is for the group header step */}
       <Flex w="100%" p={4} alignItems="center" columnGap={4}>
-        <Icon boxSize={6} as={BiGitRepoForked} color="primary.500" ml={2} />
+        <Icon boxSize={6} as={headerIcon} color="primary.500" ml={2} />
 
         <Text textStyle="subhead-1">{header}</Text>
       </Flex>
