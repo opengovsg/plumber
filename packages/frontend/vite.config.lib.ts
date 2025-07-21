@@ -42,6 +42,7 @@ export default defineConfig({
         'react-dom',
         'react-dom/client',
         'react-router-dom',
+        'zod',
       ],
     },
   },
