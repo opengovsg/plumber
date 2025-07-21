@@ -18,10 +18,7 @@ import {
   getDefaultReplyTo,
 } from '../../common/parameters-helper'
 import { sendBlacklistEmail } from '../../common/send-blacklist-email'
-import {
-  createInvalidAttachmentsMessage,
-  sendInvalidAttachmentsEmail,
-} from '../../common/send-invalid-attachments-email'
+import { sendInvalidAttachmentsEmail } from '../../common/send-invalid-attachments-email'
 import { throwPostmanStepError } from '../../common/throw-errors'
 
 const action: IRawAction = {
@@ -182,17 +179,9 @@ const action: IRawAction = {
      */
     if (blacklistedRecipients.length > 0 && !$.execution.testRun) {
       try {
-        let invalidAttachmentBody = null
-        if (hasInvalidAttachments) {
-          invalidAttachmentBody = createInvalidAttachmentsMessage({
-            ...defaultSendEmailParams,
-            ...invalidAttachmentParams,
-          })
-        }
         await sendBlacklistEmail({
           ...defaultSendEmailParams,
           blacklistedRecipients,
-          ...(invalidAttachmentBody && { invalidAttachmentBody }),
         })
       } catch (e) {
         logger.error(e)
@@ -207,15 +196,10 @@ const action: IRawAction = {
     }
 
     /**
-     * Send invalid attachments notification email if no blacklisted recipients
+     * Send invalid attachments notification email
      * Do not send on partial retry as we would have already sent this once with the blacklist email
      */
-    if (
-      hasInvalidAttachments &&
-      !isPartialRetry &&
-      blacklistedRecipients.length === 0 &&
-      !$.execution.testRun
-    ) {
+    if (hasInvalidAttachments && !isPartialRetry && !$.execution.testRun) {
       await sendInvalidAttachmentsEmail({
         ...defaultSendEmailParams,
         ...invalidAttachmentParams,

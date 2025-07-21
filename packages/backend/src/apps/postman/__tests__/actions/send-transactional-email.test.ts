@@ -686,7 +686,6 @@ describe('send transactional email', () => {
       userEmail: $.user.email,
       executionId: $.execution.id,
       blacklistedRecipients: [recipients[1]],
-      invalidAttachmentBody: expect.any(String),
     })
   })
 })
