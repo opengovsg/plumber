@@ -149,8 +149,9 @@ async function getMockData($: IGlobalVariable) {
         if (data.responses[formFields[i]._id].fieldType === 'table') {
           const answerArray = data.responses[formFields[i]._id]
             .answerArray as string[][]
+          const question = data.responses[formFields[i]._id].question
           data.responses[formFields[i]._id].answer =
-            convertTableAnswerArrayToTableObject(answerArray)
+            convertTableAnswerArrayToTableObject(question, answerArray)
         }
 
         data.responses[formFields[i]._id].order = i + 1

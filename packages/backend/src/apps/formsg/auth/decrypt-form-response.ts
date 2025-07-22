@@ -130,7 +130,10 @@ export async function decryptFormResponse(
             row.map((column) => column.replaceAll('\u0000', '')),
           )
 
-          rest.answer = convertTableAnswerArrayToTableObject(rest.answerArray)
+          rest.answer = convertTableAnswerArrayToTableObject(
+            rest.question,
+            rest.answerArray,
+          )
         } else {
           rest.answerArray = (rest.answerArray as string[]).map((answer) =>
             answer.replaceAll('\u0000', ''),

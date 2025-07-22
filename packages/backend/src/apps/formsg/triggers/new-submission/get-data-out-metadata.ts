@@ -99,7 +99,7 @@ function buildAnswerArrayForCheckbox(
   }
 }
 
-function extractLastTopLevelBracketContent(questionText: string): {
+export function extractLastTopLevelBracketContent(questionText: string): {
   content: string
   prefix: string
 } {
