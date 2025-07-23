@@ -30,6 +30,7 @@ export interface UseExecutionStepStatusReturn {
   isPartialSuccess: boolean
   canRetry: boolean
   loading: boolean
+  customRetryButtonText?: string
 }
 
 export function useExecutionStepStatus({
@@ -63,6 +64,20 @@ export function useExecutionStepStatus({
     return failureIcon
   }, [isPartialSuccess, isStepSuccessful, status])
 
+  const customRetryButtonText = useMemo(() => {
+    // specific to email by postman where we want to allow users to retry without attachments
+    // postman returns this error code when:
+    // - attachment is password-protected; AND/OR
+    // - attachment is unsupported
+    if (
+      errorDetails?.details?.code === 'invalid_template' ||
+      errorDetails?.name === 'Password-protected attachment(s)'
+    ) {
+      return 'Retry without attachments'
+    }
+    return undefined
+  }, [errorDetails])
+
   return {
     app,
     appName,
@@ -72,5 +87,6 @@ export function useExecutionStepStatus({
     isPartialSuccess,
     canRetry,
     loading,
+    customRetryButtonText,
   }
 }
