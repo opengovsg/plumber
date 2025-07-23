@@ -12,6 +12,7 @@ import Executions from '@/pages/Executions'
 import ExecutionsForFlow from '@/pages/ExecutionsForFlow'
 import Flow from '@/pages/Flow'
 import Flows from '@/pages/Flows'
+import HumanResource from '@/pages/Landing/UseCasesPages/HumanResource'
 import Login from '@/pages/Login'
 import SgidCallback from '@/pages/SgidCallback'
 import Templates from '@/pages/Templates'
@@ -20,9 +21,6 @@ import Tiles from '@/pages/Tiles'
 import Transfers from '@/pages/Transfers'
 import TransfersLayout from '@/pages/Transfers/layouts/TransfersLayout'
 import { InvalidTileLink } from '@/pages/UnauthorizedTile'
-import HumanResource from '@/pages/Landing/UseCases/HumanResource'
-import Operations from '@/pages/Landing/UseCases/Operations'
-
 
 const Landing = lazy(() => import('@/pages/Landing'))
 const Tile = lazy(() => import('@/pages/Tile'))
@@ -187,20 +185,6 @@ export default createRoutesFromElements(
       }
     />
 
-    <Route 
-      path="/Landing/UseCases/HumanResource"
-      element={
-      <HumanResource />
-      } 
-    />
-
-    <Route 
-      path="/Landing/UseCases/Operations"
-      element={
-      <Operations />
-      } 
-    />
-
-
+    <Route path={URLS.HUMAN_RESOURCE} element={<HumanResource />} />
   </Route>,
 )

@@ -43,8 +43,5 @@
     "typescript": "^4.6.3",
     "vitest": "^3.0.8",
     "wait-on": "^7.2.0"
-  },
-  "dependencies": {
-    "lottie-react": "^2.4.1"
   }
 }
