@@ -75,7 +75,7 @@ export function useExecutionStepStatus({
         'Delay until timestamp entered is in the past',
       ].includes(errorDetails?.name)
     ) {
-      return 'Retry and send now'
+      return 'Retry and skip delay'
     }
     return undefined
   }, [errorDetails])
