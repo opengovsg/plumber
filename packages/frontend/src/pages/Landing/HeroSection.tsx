@@ -1,34 +1,13 @@
-import { useQuery } from '@apollo/client'
-import {
-  Box,
-  Flex,
-  Heading,
-  HStack,
-  Link,
-  Skeleton,
-  Text,
-} from '@chakra-ui/react'
+import { Box, Flex, Heading, HStack, Link, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import Lottie from 'lottie-react'
 
 import HeroLottie from '@/assets/landing/HeroLottie.json'
 import * as URLS from '@/config/urls'
-import { GET_PLUMBER_STATS } from '@/graphql/queries/get-plumber-stats'
 
 import BackgroundPattern from './components/BackgroundPattern'
 
-function estimateCountByHundreds(count: number): string {
-  return count < 100
-    ? count.toString()
-    : (Math.round(count / 100) * 100).toLocaleString() + '+'
-}
-
 export default function HeroSection() {
-  // TODO: Remove this if really not needed
-  const { loading, data } = useQuery(GET_PLUMBER_STATS)
-  const userCount = data?.getPlumberStats.userCount
-  const executionCount = data?.getPlumberStats.executionCount
-
   return (
     <Box position="relative" overflow="hidden">
       <BackgroundPattern />
@@ -69,28 +48,6 @@ export default function HeroSection() {
           >
             Automate manual processes in hours, not weeks
           </Text>
-
-          {/* <Text
-            textStyle="subhead-1"
-            fontSize={{ base: 'md', sm: 'xl', lg: '2xl' }}
-            mt={8}
-          >
-            <Skeleton display="inline" isLoaded={!loading}>
-              <Text as="span" color="primary.500">
-                {executionCount ? estimateCountByHundreds(executionCount) : ''}{' '}
-              </Text>
-              {` tasks have been automated`}
-            </Skeleton>
-          </Text>
-
-          <Text textStyle="subhead-1" mt={2}>
-            <Text as="span" color="primary.500">
-              <Skeleton display="inline" isLoaded={!loading}>
-                {estimateCountByHundreds(userCount)}
-              </Skeleton>
-            </Text>
-            {` public officers have started automating their work`}
-          </Text> */}
 
           <HStack spacing={6} mt={10} align="center">
             <Button

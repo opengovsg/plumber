@@ -11,7 +11,6 @@ import getFlow from './queries/get-flow'
 import getFlowTransferDetails from './queries/get-flow-transfer-details'
 import getFlows from './queries/get-flows'
 import getPendingFlowTransfers from './queries/get-pending-flow-transfers'
-import getPlumberStats from './queries/get-plumber-stats'
 import getTemplates from './queries/get-templates'
 import getTestExecutionSteps from './queries/get-test-execution-steps'
 import healthcheck from './queries/healthcheck'
@@ -43,7 +42,6 @@ export default {
   getDynamicData,
   getCurrentUser,
   healthcheck,
-  getPlumberStats,
   getPendingFlowTransfers,
   getFlowTransferDetails,
   getTemplates,
