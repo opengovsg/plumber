@@ -68,9 +68,6 @@ export const TEMPLATE = (id: string): string => `/templates/${id}`
 
 export const DASHBOARD = FLOWS
 
-export const APP_ICON_URL = (appKey: string): string =>
-  `/apps/${appKey}/assets/favicon.svg`
-
 // external links
 export const OGP_HOMEPAGE = 'https://open.gov.sg'
 export const GUIDE_LINK = 'https://guide.plumber.gov.sg'
