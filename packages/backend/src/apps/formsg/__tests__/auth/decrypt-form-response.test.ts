@@ -730,37 +730,37 @@ describe('decrypt form response', () => {
                 rows: [
                   {
                     data: {
-                      [Buffer.from('Column 1').toString('hex')]: 'reading',
-                      [Buffer.from('Column 2').toString('hex')]: 'night',
+                      [Buffer.from('Col 1').toString('hex')]: 'reading',
+                      [Buffer.from('Col 2').toString('hex')]: 'night',
                     },
                   },
                   {
                     data: {
-                      [Buffer.from('Column 1').toString('hex')]: 'gaming',
-                      [Buffer.from('Column 2').toString('hex')]: 'weekend',
+                      [Buffer.from('Col 1').toString('hex')]: 'gaming',
+                      [Buffer.from('Col 2').toString('hex')]: 'weekend',
                     },
                   },
                   {
                     data: {
-                      [Buffer.from('Column 1').toString('hex')]: 'coding',
-                      [Buffer.from('Column 2').toString('hex')]: 'day',
+                      [Buffer.from('Col 1').toString('hex')]: 'coding',
+                      [Buffer.from('Col 2').toString('hex')]: 'day',
                     },
                   },
                 ],
                 columns: [
                   {
-                    id: Buffer.from('Column 1').toString('hex'),
-                    label: 'Column 1',
-                    name: 'Column 1',
-                    value: `data.rows.*.data.${Buffer.from('Column 1').toString(
+                    id: Buffer.from('Col 1').toString('hex'),
+                    label: 'Col 1',
+                    name: 'Col 1',
+                    value: `data.rows.*.data.${Buffer.from('Col 1').toString(
                       'hex',
                     )}`,
                   },
                   {
-                    id: Buffer.from('Column 2').toString('hex'),
-                    label: 'Column 2',
-                    name: 'Column 2',
-                    value: `data.rows.*.data.${Buffer.from('Column 2').toString(
+                    id: Buffer.from('Col 2').toString('hex'),
+                    label: 'Col 2',
+                    name: 'Col 2',
+                    value: `data.rows.*.data.${Buffer.from('Col 2').toString(
                       'hex',
                     )}`,
                   },
@@ -828,31 +828,31 @@ describe('decrypt form response', () => {
                 rows: [
                   {
                     data: {
-                      [Buffer.from('Column 1').toString('hex')]: 'reading',
-                      [Buffer.from('Column 2').toString('hex')]: 'night',
+                      [Buffer.from('Col 1').toString('hex')]: 'reading',
+                      [Buffer.from('Col 2').toString('hex')]: 'night',
                     },
                   },
                   {
                     data: {
-                      [Buffer.from('Column 1').toString('hex')]: 'gaming',
-                      [Buffer.from('Column 2').toString('hex')]: 'weekend',
+                      [Buffer.from('Col 1').toString('hex')]: 'gaming',
+                      [Buffer.from('Col 2').toString('hex')]: 'weekend',
                     },
                   },
                 ],
                 columns: [
                   {
-                    id: Buffer.from('Column 1').toString('hex'),
-                    label: 'Column 1',
-                    name: 'Column 1',
-                    value: `data.rows.*.data.${Buffer.from('Column 1').toString(
+                    id: Buffer.from('Col 1').toString('hex'),
+                    label: 'Col 1',
+                    name: 'Col 1',
+                    value: `data.rows.*.data.${Buffer.from('Col 1').toString(
                       'hex',
                     )}`,
                   },
                   {
-                    id: Buffer.from('Column 2').toString('hex'),
-                    label: 'Column 2',
-                    name: 'Column 2',
-                    value: `data.rows.*.data.${Buffer.from('Column 2').toString(
+                    id: Buffer.from('Col 2').toString('hex'),
+                    label: 'Col 2',
+                    name: 'Col 2',
+                    value: `data.rows.*.data.${Buffer.from('Col 2').toString(
                       'hex',
                     )}`,
                   },
