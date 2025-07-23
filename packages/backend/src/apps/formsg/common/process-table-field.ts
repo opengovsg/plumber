@@ -30,7 +30,7 @@ export default function convertTableAnswerArrayToTableObject(
     // make sure that column names do not contain commas
     columnNamesArray.length === answerArray[0].length
       ? columnNamesArray.map(createColumn)
-      : answerArray[0].map((_, index) => createColumn(`Column ${index + 1}`))
+      : answerArray[0].map((_, index) => createColumn(`Col ${index + 1}`))
 
   /**
    * NOTE: we do not show table rows that do not have any data

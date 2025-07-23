@@ -176,7 +176,13 @@ function buildAnswerArrayForTable(
 function buildTableMetadatum(fieldData: IJSONObject): IDataOutMetadata {
   // old execution steps may not have an answer field for their table
   if (!fieldData.answer) {
-    return null
+    return {
+      label: '',
+      order: null,
+      type: 'table',
+      displayedValue: '',
+      value: {},
+    }
   }
 
   const tableObject = JSON.parse(fieldData.answer as string)
