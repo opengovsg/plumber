@@ -6,6 +6,20 @@ import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
 
+const ERRORS_TO_RETRY = [
+  'Invalid timestamp entered',
+  'Delay until timestamp entered is in the past',
+]
+
+async function isValidRetry($: any): Promise<boolean> {
+  const lastExecutionStep = await $.getLastExecutionStep({
+    sameExecution: true,
+  })
+  return ERRORS_TO_RETRY.includes(
+    lastExecutionStep?.errorDetails?.name as string,
+  )
+}
+
 const action: IRawAction = {
   name: 'Delay until',
   key: 'delayUntil',
@@ -39,32 +53,48 @@ const action: IRawAction = {
       ? new String(delayUntilTime).trim()
       : defaultTime
 
-    const delayTimestamp = generateTimestamp(
+    let delayTimestamp = generateTimestamp(
       delayUntilString,
       delayUntilTimeString,
     )
 
-    if (isNaN(delayTimestamp)) {
-      throw new StepError(
-        'Invalid timestamp entered',
-        'Check that the date or time entered is of a valid format.',
-        $.step.position,
-        $.app.name,
-      )
+    let dataItem = {
+      delayUntil: delayUntilString,
+      delayUntilTime: delayUntilTimeString,
     }
 
-    if (delayTimestamp < DateTime.now().toMillis()) {
+    /**
+     * RETRY: we check and only allow manual retries for failures due to:
+     * - invalid timestamp
+     * - delay until timestamp entered is in the past
+     */
+    const isRetry = await isValidRetry($)
+
+    if (isNaN(delayTimestamp)) {
+      if (isRetry) {
+        const dateToday = DateTime.now().toFormat('yyyy-MM-dd')
+        delayTimestamp = generateTimestamp(dateToday, defaultTime)
+        dataItem = {
+          delayUntil: dateToday,
+          delayUntilTime: defaultTime,
+        }
+      } else {
+        throw new StepError(
+          'Invalid timestamp entered',
+          'Check that the date or time entered is of a valid format.',
+          $.step.position,
+          $.app.name,
+        )
+      }
+    }
+
+    if (delayTimestamp < DateTime.now().toMillis() && !isRetry) {
       throw new StepError(
         'Delay until timestamp entered is in the past',
         'Check that the date and time entered is not in the past.',
         $.step.position,
         $.app.name,
       )
-    }
-
-    const dataItem = {
-      delayUntil: delayUntilString,
-      delayUntilTime: delayUntilTimeString,
     }
 
     $.setActionItem({ raw: dataItem })

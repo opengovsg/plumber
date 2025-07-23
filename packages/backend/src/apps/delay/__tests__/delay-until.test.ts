@@ -1,5 +1,6 @@
 import { type IGlobalVariable } from '@plumber/types'
 
+import { DateTime } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StepError from '@/errors/step'
@@ -8,13 +9,15 @@ import delayUntilAction from '../actions/delay-until'
 import delayApp from '../index'
 
 const PAST_DATE = '2023-11-08'
-const VALID_DATE = '2025-12-31' // long long time later
+const VALID_DATE = '2026-12-31' // long long time later
 const VALID_TIME = '12:00'
 const DEFAULT_TIME = '00:00'
 const INVALID_TIME = '25:00'
+const INVALID_DATE = '2025-12-32'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
+  getLastExecutionStep: vi.fn(),
 }))
 
 describe('Delay until action', () => {
@@ -36,6 +39,7 @@ describe('Delay until action', () => {
         name: delayApp.name,
       },
       setActionItem: mocks.setActionItem,
+      getLastExecutionStep: mocks.getLastExecutionStep,
     } as unknown as IGlobalVariable
   })
 
@@ -88,6 +92,8 @@ describe('Delay until action', () => {
       delayUntilTime: DEFAULT_TIME,
     }
 
+    mocks.getLastExecutionStep.mockResolvedValue(null)
+
     // throw step error
     await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
   })
@@ -98,7 +104,82 @@ describe('Delay until action', () => {
       delayUntilTime: INVALID_TIME,
     }
 
+    mocks.getLastExecutionStep.mockResolvedValue(null)
+
     // throw step error
     await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
+  })
+
+  describe('retry logic', () => {
+    it('uses current date when retrying after invalid timestamp error', async () => {
+      $.step.parameters = {
+        delayUntil: INVALID_DATE,
+        delayUntilTime: VALID_TIME,
+      }
+
+      // Mock last execution step to indicate a retry for invalid timestamp
+      mocks.getLastExecutionStep.mockResolvedValue({
+        errorDetails: {
+          name: 'Invalid timestamp entered',
+        },
+      })
+
+      const result = await delayUntilAction.run($)
+      const expectedDate = DateTime.now().toFormat('yyyy-MM-dd')
+
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { delayUntil: expectedDate, delayUntilTime: DEFAULT_TIME },
+      })
+    })
+
+    it('allows past timestamp when retrying after past timestamp error', async () => {
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+
+      // Mock last execution step to indicate a retry for past timestamp
+      mocks.getLastExecutionStep.mockResolvedValue({
+        errorDetails: {
+          name: 'Delay until timestamp entered is in the past',
+        },
+      })
+
+      const result = await delayUntilAction.run($)
+
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { delayUntil: PAST_DATE, delayUntilTime: DEFAULT_TIME },
+      })
+    })
+
+    it('throws error when retrying with different error type', async () => {
+      $.step.parameters = {
+        delayUntil: INVALID_DATE,
+        delayUntilTime: VALID_TIME,
+      }
+
+      // Mock last execution step with different error type
+      mocks.getLastExecutionStep.mockResolvedValue({
+        errorDetails: {
+          name: 'Some other error',
+        },
+      })
+
+      await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
+    })
+
+    it('handles retry when last execution step has no error details', async () => {
+      $.step.parameters = {
+        delayUntil: INVALID_DATE,
+        delayUntilTime: VALID_TIME,
+      }
+
+      // Mock last execution step without error details
+      mocks.getLastExecutionStep.mockResolvedValue({})
+
+      await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
+    })
   })
 })
