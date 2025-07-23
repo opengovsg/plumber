@@ -10,6 +10,7 @@ import StepError from '@/errors/step'
 import {
   FOR_EACH_INPUT_SOURCE,
   FOR_EACH_ITERATION_KEY,
+  FOR_EACH_TABLE_SOURCES,
 } from '../../common/constants'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -76,11 +77,7 @@ const action: IRawAction = {
           // table data is handled differently in processItems
           item: `items.${FOR_EACH_ITERATION_KEY}`,
         }
-      } else if (
-        inputSource === FOR_EACH_INPUT_SOURCE.M365_EXCEL ||
-        inputSource === FOR_EACH_INPUT_SOURCE.TILES ||
-        inputSource === FOR_EACH_INPUT_SOURCE.FORMSG_TABLE
-      ) {
+      } else if (FOR_EACH_TABLE_SOURCES.includes(inputSource)) {
         const processedItems = processItems(items as MultipleRowObject)
 
         output = {

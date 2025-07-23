@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-import { FOR_EACH_INPUT_SOURCE } from '../../common/constants'
+import {
+  FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_TABLE_SOURCES,
+} from '../../common/constants'
 
 const tableColumnsSchema = z.array(
   z.object({
@@ -20,11 +23,7 @@ const tableRowsSchema = z.array(
 const tableSchema = z.object({
   rows: tableRowsSchema,
   columns: tableColumnsSchema,
-  inputSource: z.enum([
-    FOR_EACH_INPUT_SOURCE.TILES,
-    FOR_EACH_INPUT_SOURCE.M365_EXCEL,
-    FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
-  ]),
+  inputSource: z.enum(FOR_EACH_TABLE_SOURCES as [string, ...string[]]),
 })
 
 const baseDataOutSchema = z.object({

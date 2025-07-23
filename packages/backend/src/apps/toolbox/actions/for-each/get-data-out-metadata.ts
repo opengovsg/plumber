@@ -1,14 +1,11 @@
 import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
-import { FOR_EACH_INPUT_SOURCE } from '../../common/constants'
+import {
+  FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_TABLE_SOURCES,
+} from '../../common/constants'
 
 import { dataOutSchema } from './schema'
-
-const TABLE_SOURCES = [
-  FOR_EACH_INPUT_SOURCE.M365_EXCEL,
-  FOR_EACH_INPUT_SOURCE.TILES,
-  FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
-]
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
@@ -50,7 +47,7 @@ async function getDataOutMetadata(
     }
   }
 
-  if (TABLE_SOURCES.includes(inputSource)) {
+  if (FOR_EACH_TABLE_SOURCES.includes(inputSource)) {
     const columnsMetadata = items.columns.map((column, index) => ({
       id: { isHidden: true },
       name: { isHidden: true },
