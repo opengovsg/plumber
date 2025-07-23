@@ -85,3 +85,6 @@ export const SGID_CHECK_ELIGIBILITY_URL =
 export const TEMPLATES_FORM_LINK = 'https://go.gov.sg/request-template'
 export const SUPPORT_FORM_LINK = 'https://go.gov.sg/plumber-support'
 export const LEARN_LINK = 'https://go.gov.sg/learn-plumber'
+
+// Landing page use cases
+export const HUMAN_RESOURCE = '/use-cases/human-resource'
