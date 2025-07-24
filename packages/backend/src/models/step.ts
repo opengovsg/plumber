@@ -4,6 +4,7 @@ import {
   raw,
   RelatedQueryBuilder,
   type StaticHookArguments,
+  Transaction,
   ValidationError,
 } from 'objection'
 import { URL } from 'url'
@@ -192,8 +193,8 @@ class Step extends Base {
     return command
   }
 
-  async patchFlowLastUpdated() {
-    await this.$relatedQuery('flow').patch({
+  async patchFlowLastUpdated(trx?: Transaction) {
+    await this.$relatedQuery('flow', trx).patch({
       updatedAt: new Date().toISOString(),
     })
   }

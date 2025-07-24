@@ -57,7 +57,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
       .withGraphFetched('connection')
 
     // update the flow's last updated
-    await step.patchFlowLastUpdated()
+    await step.patchFlowLastUpdated(trx)
 
     return updatedStep
   })

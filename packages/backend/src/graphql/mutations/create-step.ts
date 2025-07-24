@@ -56,7 +56,7 @@ const createStep: MutationResolvers['createStep'] = async (
       connectionId: input.connection?.id,
     })
 
-    await step.patchFlowLastUpdated()
+    await step.patchFlowLastUpdated(trx)
 
     return step
   })
