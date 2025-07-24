@@ -3,10 +3,11 @@ import { IRawAction } from '@plumber/types'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
-import { getTableRows, TableRowFilter } from '@/models/dynamodb/table-row'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
-import TableColumnMetadata from '@/models/table-column-metadata'
+import TableMetadata from '@/models/table-metadata'
+import { getTableOperations } from '@/models/tiles/factory'
+import { TableRowFilter } from '@/models/tiles/types'
 
 import {
   FIND_MULTIPLE_ROWS_LIMIT,
@@ -89,13 +90,24 @@ const action: IRawAction = {
     /**
      * Check for columns first, there will not be any columns if the tile has been deleted.
      */
-    const columns = await TableColumnMetadata.getColumns(tableId, $)
+    const table = await TableMetadata.query()
+      .findById(tableId)
+      .withGraphFetched('columns')
+
+    if (!table) {
+      throw new StepError(
+        'Tile not found',
+        'Tile may have been deleted. Please check your tile.',
+        $.step.position,
+        $.app.name,
+      )
+    }
 
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
     // Check that filters are valid
     try {
-      validateFilters(filters, columns)
+      validateFilters(filters, table.columns)
     } catch (e) {
       logger.error({
         message: 'Invalid filters',
@@ -117,16 +129,18 @@ const action: IRawAction = {
     const scanLimitRaw = +step.config?.adminOverride?.tileScanLimit
     const scanLimit = isNaN(scanLimitRaw) ? undefined : scanLimitRaw
 
-    const { rows } = await getTableRows({
+    const tableOperations = getTableOperations(table.db)
+
+    const { rows } = await tableOperations.getTableRows({
       tableId,
-      columnIds: columns.map((c) => c.id),
+      columnIds: table.columns.map((c) => c.id),
       filters,
       order: returnLastRowFirst ? 'desc' : 'asc',
       scanLimit,
     })
 
     const columnData: TileColumnMetadata[] = []
-    columns
+    table.columns
       .sort((a, b) => a.position - b.position)
       .forEach((c) => {
         columnData.push({

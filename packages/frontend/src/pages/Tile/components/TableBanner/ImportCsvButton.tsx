@@ -47,13 +47,13 @@ type IMPORT_STATUS =
   | 'completed'
   | 'error'
 
-// 5 MB in bytes
+// 2 MB in bytes for both for now
 const MAX_FILE_SIZE = {
-  [DatabaseType.Pg]: 5 * 1000 * 1000,
+  [DatabaseType.Pg]: 2 * 1000 * 1000,
   [DatabaseType.Ddb]: 2 * 1000 * 1000,
 }
 // Add row chunk size
-const CHUNK_SIZE = {
+const IMPORT_CHUNK_SIZE = {
   [DatabaseType.Pg]: 1000,
   [DatabaseType.Ddb]: 100,
 }
@@ -262,7 +262,7 @@ export const ImportCsvModalContent = ({
         setImportStatus('importing')
         setRowsToImport(mappedData.length)
         setRowsImported(0)
-        const chunkedData = chunk(mappedData, CHUNK_SIZE[databaseType])
+        const chunkedData = chunk(mappedData, IMPORT_CHUNK_SIZE[databaseType])
 
         for (let i = 0; i < chunkedData.length; i++) {
           await createRows({
@@ -276,7 +276,7 @@ export const ImportCsvModalContent = ({
           if (i === chunkedData.length - 1 && !onPreImport) {
             await refetch()
           }
-          setRowsImported((i + 1) * CHUNK_SIZE[databaseType])
+          setRowsImported((i + 1) * IMPORT_CHUNK_SIZE[databaseType])
         }
       }
       setImportStatus('completed')

@@ -1,6 +1,7 @@
 import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
 
+import { DYNAMODB_DEFAULT_PAGINATION_CURSOR } from '@/apps/tiles/common/constants'
 import logger from '@/helpers/logger'
 
 import {
@@ -321,7 +322,7 @@ export const getTableRows = async ({
    * if stringifiedCursor is 'start', we will fetch the first page of results
    * if undefined, we will auto-paginate
    */
-  stringifiedCursor?: string | 'start'
+  stringifiedCursor?: string | typeof DYNAMODB_DEFAULT_PAGINATION_CURSOR
   /**
    * Optional limit on the total number of rows scanned.
    */
@@ -345,7 +346,8 @@ export const getTableRows = async ({
     const tableRows = []
     let remainingScanLimit = scanLimit ?? Infinity
     let cursor: any =
-      stringifiedCursor && stringifiedCursor !== 'start'
+      stringifiedCursor &&
+      stringifiedCursor !== DYNAMODB_DEFAULT_PAGINATION_CURSOR
         ? JSON.parse(stringifiedCursor)
         : null
     do {

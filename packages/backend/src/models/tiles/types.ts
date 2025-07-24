@@ -1,5 +1,7 @@
 import { CreateEntityItem } from 'electrodb'
 
+import { DYNAMODB_DEFAULT_PAGINATION_CURSOR } from '@/apps/tiles/common/constants'
+
 import { TableRow } from './dynamodb/table-row/model'
 
 export type TableRowItem = CreateEntityItem<typeof TableRow>
@@ -58,7 +60,7 @@ export interface TableOperations {
     columnIds?: string[]
     filters?: TableRowFilter[]
     order?: 'asc' | 'desc'
-    stringifiedCursor?: string | 'start'
+    stringifiedCursor?: string | typeof DYNAMODB_DEFAULT_PAGINATION_CURSOR
     scanLimit?: number
   }): Promise<{
     rows: TableRowOutput[]

@@ -1,5 +1,9 @@
 import { NotFoundError as ObjectionNotFoundError } from 'objection'
 
+import {
+  DYNAMODB_DEFAULT_PAGINATION_CURSOR,
+  POSTGRES_FIND_ALL_ROWS_PAGINATION_LIMIT,
+} from '@/apps/tiles/common/constants'
 import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
@@ -49,10 +53,13 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
         columnIds,
         // If table is postgres, we set pagination limit
         // If table is dynamodb, the pagination size is based on dynamodb query limits
-        scanLimit: table.db === 'pg' ? 10000 : undefined,
+        scanLimit:
+          table.db === 'pg'
+            ? POSTGRES_FIND_ALL_ROWS_PAGINATION_LIMIT
+            : undefined,
         stringifiedCursor:
           table.db === 'ddb' && !stringifiedCursor
-            ? 'start'
+            ? DYNAMODB_DEFAULT_PAGINATION_CURSOR
             : stringifiedCursor,
       })
 

@@ -1,6 +1,10 @@
 import { IFieldVisibilityCondition } from '@plumber/types'
 
-import { TableRowFilterOperator } from '@/models/dynamodb/table-row'
+import { TableRowFilterOperator } from '@/models/tiles/types'
+
+export const POSTGRES_FIND_ALL_ROWS_PAGINATION_LIMIT = 10000
+
+export const DYNAMODB_DEFAULT_PAGINATION_CURSOR = 'start' as const
 
 export const FIND_MULTIPLE_ROWS_LIMIT = 500
 
