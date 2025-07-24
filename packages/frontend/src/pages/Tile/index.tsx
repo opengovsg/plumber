@@ -1,6 +1,7 @@
 import { ITableMetadata } from '@plumber/types'
 
 import { useEffect } from 'react'
+import { Helmet } from 'react-helmet'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
@@ -96,6 +97,9 @@ export default function Tile(): JSX.Element | null {
       isThroughputError={isThroughputError}
       refetch={refetch}
     >
+      <Helmet>
+        <title>{name} | Tile</title>
+      </Helmet>
       <Flex
         flexDir={{ base: 'column' }}
         justifyContent="space-between"
