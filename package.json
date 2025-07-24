@@ -24,6 +24,9 @@
       "packages/*"
     ]
   },
+  "overrides": {
+    "form-data": "4.0.4"
+  },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
     "@graphql-codegen/cli": "5.0.6",
