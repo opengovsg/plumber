@@ -36,7 +36,7 @@ function TableCell({
   table,
   cell,
 }: CellContext<GenericRowData, string>) {
-  const { mode } = useTableContext()
+  const { mode, isFetching } = useTableContext()
   const { onRightClick } = useContextMenuContext()
   const { sortedIndex: rowIndex, className, isEditingRow } = useRowContext()
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
@@ -288,7 +288,7 @@ function TableCell({
           _readOnly={{
             boxShadow: CELL_BOX_SHADOW.DEFAULT,
           }}
-          isReadOnly={isViewMode}
+          isReadOnly={isViewMode || isFetching}
           defaultValue={value}
           onChange={onChange}
           onKeyDown={onKeyDown}
