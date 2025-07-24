@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { BiTable } from 'react-icons/bi'
 import { FaChevronRight } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 import {
@@ -10,12 +11,17 @@ import {
 
 import EditableInput from '@/components/EditableInput'
 import * as URLS from '@/config/urls'
+import { DatabaseType } from '@/graphql/__generated__/graphql'
 
 import { useTableContext } from '../../contexts/TableContext'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 
 function BreadCrumb() {
-  const { tableName: initialTableName, hasEditPermission } = useTableContext()
+  const {
+    tableName: initialTableName,
+    hasEditPermission,
+    databaseType,
+  } = useTableContext()
   const { updateTableName } = useUpdateTable()
 
   const onSave = useCallback(
@@ -31,8 +37,14 @@ function BreadCrumb() {
       separator={<Icon as={FaChevronRight} color="secondary.300" h={3} />}
     >
       <BreadcrumbItem>
-        <BreadcrumbLink as={Link} to={URLS.TILES}>
-          Tiles
+        <BreadcrumbLink
+          as={Link}
+          to={URLS.TILES}
+          display="flex"
+          alignItems="center"
+          gap={2}
+        >
+          {databaseType === DatabaseType.Pg && <Icon as={BiTable} />} Tiles
         </BreadcrumbLink>
       </BreadcrumbItem>
       <EditableInput
