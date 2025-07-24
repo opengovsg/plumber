@@ -23,6 +23,7 @@ import { useContextMenuContext } from '../../contexts/ContextMenuContext'
 import { useRowContext } from '../../contexts/RowContext'
 import { useTableContext } from '../../contexts/TableContext'
 import { moveCell } from '../../helpers/cell-navigation'
+import { addLineBreak } from '../../helpers/line-break'
 import { shallowCompare } from '../../helpers/shallow-compare'
 import { CellType, GenericRowData } from '../../types'
 
@@ -88,11 +89,13 @@ function TableCell({
        */
       switch (e.key) {
         case 'Enter': {
-          if (e.shiftKey) {
-            return
-          }
           e.preventDefault()
           if (!isViewMode) {
+            // Allow Alt+Enter to add new line
+            if (e.altKey) {
+              addLineBreak(e.currentTarget as HTMLTextAreaElement)
+              return
+            }
             if (row.id === NEW_ROW_ID || rowIndex === -1) {
               if (
                 !shallowCompare(tableMeta?.tempRowData.current, {
@@ -110,7 +113,7 @@ function TableCell({
             row,
             rowIndex,
             columnIndex,
-            direction: 'down',
+            direction: e.shiftKey ? 'up' : 'down',
             allowCrossBoundaries: true,
           })
           break
@@ -260,7 +263,6 @@ function TableCell({
       }}
       ref={cellContainerRef}
       className={styles.cell}
-      onClick={startEditing}
       onContextMenu={!isViewMode ? onContextMenu : undefined}
     >
       {/* if editing new row, show text area for all cells in the row */}
@@ -297,6 +299,7 @@ function TableCell({
         />
       ) : (
         <div
+          onClick={startEditing}
           style={{
             display: 'flex',
             height: '100%',
@@ -307,6 +310,7 @@ function TableCell({
             wordBreak: 'break-word',
             fontSize: '0.875rem',
             cursor: 'cell',
+
             backgroundColor: isHighlightingCell
               ? 'var(--chakra-colors-orange-200)'
               : hasMatchingSearch
