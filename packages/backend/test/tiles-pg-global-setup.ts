@@ -11,7 +11,7 @@ const TILES_POSTGRES_USERNAME = process.env.TILES_POSTGRES_USERNAME as string
 const TILES_POSTGRES_PASSWORD = process.env.TILES_POSTGRES_PASSWORD as string
 
 export async function setup() {
-  postgresContainer = await new PostgreSqlContainer()
+  postgresContainer = await new PostgreSqlContainer('postgres:16.4-alpine')
     .withDatabase(TILES_POSTGRES_DATABASE)
     .withUsername(TILES_POSTGRES_USERNAME)
     .withPassword(TILES_POSTGRES_PASSWORD)
