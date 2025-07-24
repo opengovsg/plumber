@@ -20,23 +20,21 @@ describe('updateStep mutation', () => {
 
   // Helper to create step mock with flow
   const createStepMock = (stepData: any = {}) => ({
-    findOne: vi.fn().mockReturnValue({
-      withGraphFetched: vi.fn().mockResolvedValue(
-        stepData === null
-          ? null
-          : {
-              id: mockStepId,
-              key: 'sendTransactionalEmail',
-              appKey: 'postman',
-              status: 'completed',
-              flow: {
-                id: mockFlowId,
-              },
-              patchFlowLastUpdated: patchFlowLastUpdatedSpy,
-              ...stepData,
+    findOne: vi.fn().mockResolvedValue(
+      stepData === null
+        ? null
+        : {
+            id: mockStepId,
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            status: 'completed',
+            flow: {
+              id: mockFlowId,
             },
-      ),
-    }),
+            patchFlowLastUpdated: patchFlowLastUpdatedSpy,
+            ...stepData,
+          },
+    ),
   })
 
   // Helper to create connection mock
