@@ -16,7 +16,7 @@ const mockStepId = '8c2a70d1-e78b-431e-9069-a4d8f97883f7'
 describe('updateStep mutation', () => {
   let context: Context
   let patchAndFetchByIdSpy: ReturnType<typeof vi.fn>
-  const flowPatchSpy = vi.fn().mockResolvedValue({})
+  const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
   // Helper to create step mock with flow
   const createStepMock = (stepData: any = {}) => ({
@@ -31,10 +31,8 @@ describe('updateStep mutation', () => {
               status: 'completed',
               flow: {
                 id: mockFlowId,
-                $query: vi.fn().mockReturnValue({
-                  patch: flowPatchSpy,
-                }),
               },
+              patchFlowLastUpdated: patchFlowLastUpdatedSpy,
               ...stepData,
             },
       ),
@@ -304,12 +302,6 @@ describe('updateStep mutation', () => {
   it('updating empty step name should not update template config', async () => {
     // Override the steps query to return template config
     setupRelatedQueryMock({
-      flow: {
-        id: mockFlowId,
-        $query: vi.fn().mockReturnValue({
-          patch: vi.fn().mockResolvedValue({}),
-        }),
-      },
       config: {
         stepName: 'some-step-name',
         templateConfig: { appEventKey: 'existingAppEventKey' },
@@ -346,18 +338,8 @@ describe('updateStep mutation', () => {
     )
   })
 
-  it('should call flow patch method when updating a step', async () => {
+  it('should call patchFlowLastUpdated when updating a step', async () => {
     await updateStep(null, { input: { ...genericInputParams } }, context)
-
-    // Verify flow's patch method was called
-    expect(flowPatchSpy).toHaveBeenCalledTimes(1)
-    expect(flowPatchSpy).toHaveBeenCalledWith({
-      updatedAt: expect.any(String),
-    })
-
-    const updatedAtCall = flowPatchSpy.mock.calls[0][0]
-    expect(new Date(updatedAtCall.updatedAt).toISOString()).toBe(
-      updatedAtCall.updatedAt,
-    )
+    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 })

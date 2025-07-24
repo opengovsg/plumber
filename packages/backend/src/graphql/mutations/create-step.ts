@@ -56,7 +56,7 @@ const createStep: MutationResolvers['createStep'] = async (
       connectionId: input.connection?.id,
     })
 
-    await flow.$query(trx).patch({ updatedAt: new Date().toISOString() })
+    await step.patchFlowLastUpdated()
 
     return step
   })

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import deleteStep from '@/graphql/mutations/delete-step'
 import Flow from '@/models/flow'
@@ -12,8 +12,16 @@ describe('deleteStep mutation', () => {
   let context: Context
   let testFlow: Flow
   let testSteps: Step[]
+  const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
   beforeEach(async () => {
+    vi.resetAllMocks()
+
+    // Mock the patchFlowLastUpdated method
+    vi.spyOn(Step.prototype, 'patchFlowLastUpdated').mockImplementation(
+      patchFlowLastUpdatedSpy,
+    )
+
     // Clear out all rows
     await Step.query().delete()
     await Flow.query().delete()
@@ -168,48 +176,17 @@ describe('deleteStep mutation', () => {
     expect(invalidatedStep.status).toBe('incomplete')
   })
 
-  it('should update flow updatedAt when deleting trigger step', async () => {
-    const originalUpdatedAt = testFlow.updatedAt
-
-    await new Promise((resolve) => setTimeout(resolve, 10))
-
-    const result = await deleteStep(
-      null,
-      { input: { ids: [testSteps[0].id] } },
-      context,
-    )
-
-    // Verify the flow's updatedAt was updated
-    expect(result.updatedAt).toBeDefined()
-    expect(new Date(result.updatedAt).getTime()).toBeGreaterThan(
-      new Date(originalUpdatedAt).getTime(),
-    )
-
-    // Verify the returned flow has the updated timestamp
-    const updatedFlow = await Flow.query().findById(testFlow.id)
-    expect(updatedFlow.updatedAt).toStrictEqual(result.updatedAt)
+  it('should call patchFlowLastUpdated when deleting trigger step', async () => {
+    await deleteStep(null, { input: { ids: [testSteps[0].id] } }, context)
+    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('should update flow updatedAt when deleting action steps', async () => {
-    const originalUpdatedAt = testFlow.updatedAt
-
-    // Wait a moment to ensure different timestamp
-    await new Promise((resolve) => setTimeout(resolve, 10))
-
-    const result = await deleteStep(
+  it('should call patchFlowLastUpdated when deleting action steps', async () => {
+    await deleteStep(
       null,
       { input: { ids: [testSteps[1].id, testSteps[2].id] } },
       context,
     )
-
-    // Verify the flow's updatedAt was updated
-    expect(result.updatedAt).toBeDefined()
-    expect(new Date(result.updatedAt).getTime()).toBeGreaterThan(
-      new Date(originalUpdatedAt).getTime(),
-    )
-
-    // Verify the returned flow has the updated timestamp
-    const updatedFlow = await Flow.query().findById(testFlow.id)
-    expect(updatedFlow.updatedAt).toStrictEqual(result.updatedAt)
+    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 })

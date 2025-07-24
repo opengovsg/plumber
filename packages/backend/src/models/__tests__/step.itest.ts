@@ -166,4 +166,20 @@ describe('step model', () => {
       expect(lastExecutionStep).toHaveProperty('id', executionStepIds[1])
     })
   })
+
+  describe('patchFlowLastUpdated', () => {
+    it('should patch the flow last updated', async () => {
+      const flow = await step.$relatedQuery('flow')
+      const originalUpdatedAt = flow.updatedAt
+
+      await step.patchFlowLastUpdated()
+
+      const updatedFlow = await step.$relatedQuery('flow')
+
+      expect(updatedFlow.updatedAt).toBeDefined()
+      expect(new Date(updatedFlow.updatedAt).getTime()).toBeGreaterThan(
+        new Date(originalUpdatedAt).getTime(),
+      )
+    })
+  })
 })

@@ -60,9 +60,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
       .withGraphFetched('connection')
 
     // update the flow's last updated
-    await step.flow.$query(trx).patch({
-      updatedAt: new Date().toISOString(),
-    })
+    await step.patchFlowLastUpdated()
 
     return updatedStep
   })

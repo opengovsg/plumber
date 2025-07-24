@@ -192,6 +192,12 @@ class Step extends Base {
     return command
   }
 
+  async patchFlowLastUpdated() {
+    await this.$relatedQuery('flow').patch({
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
   static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {
     await super.beforeUpdate(args)
 
