@@ -23,7 +23,7 @@ const tableRowsSchema = z.array(
 const tableSchema = z.object({
   rows: tableRowsSchema,
   columns: tableColumnsSchema,
-  inputSource: z.enum(FOR_EACH_TABLE_SOURCES as [string, ...string[]]),
+  inputSource: z.enum(FOR_EACH_TABLE_SOURCES),
 })
 
 const baseDataOutSchema = z.object({

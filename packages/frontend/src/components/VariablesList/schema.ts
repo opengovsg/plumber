@@ -1,4 +1,4 @@
-import { IJSONObject, IJSONValue } from '@plumber/types'
+import { IJSONObject } from '@plumber/types'
 
 import { z } from 'zod'
 
@@ -25,13 +25,15 @@ const FormSgTableFieldSchema = z.object({
   answer: z.string().transform((val) => JSON.parse(val) as IJSONObject),
 })
 
-const FormSgFieldsSchema = z.record(z.any()).transform((fields) => {
+const FormSgFieldSchema = z.object({
+  fieldType: z.string(),
+  answer: z.union([z.string(), z.record(z.any())]).optional(),
+})
+
+const FormSgFieldsSchema = z.record(FormSgFieldSchema).transform((fields) => {
   const tableField = Object.values(fields).find(
-    (field: IJSONValue) =>
-      typeof field === 'object' &&
-      field !== null &&
-      (field as IJSONObject).fieldType === 'table',
-  ) as IJSONObject | undefined
+    (field) => field?.fieldType === 'table',
+  ) as z.infer<typeof FormSgFieldSchema> | undefined
 
   if (!tableField) {
     return {
