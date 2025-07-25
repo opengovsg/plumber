@@ -626,7 +626,7 @@ describe('send transactional email', () => {
     })
   })
 
-  it('should only send one email if there are blacklisted recipients and invalid attachments', async () => {
+  it('should send two emails if there are blacklisted recipients and invalid attachments', async () => {
     const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
     $.step.parameters.destinationEmail = recipients.join(',')
     $.step.parameters.attachments = [
@@ -686,6 +686,16 @@ describe('send transactional email', () => {
       userEmail: $.user.email,
       executionId: $.execution.id,
       blacklistedRecipients: [recipients[1]],
+    })
+    expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
+      flowName: $.flow.name,
+      flowId: $.flow.id,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+      submissionId: 'abc',
+      formAdminLink: 'https://form.gov.sg/admin/form/123/results',
+      invalidAttachments: ['file-2.svg'],
+      hasInvalidAttachments: true,
     })
   })
 })

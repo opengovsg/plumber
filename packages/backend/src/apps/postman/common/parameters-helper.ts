@@ -14,14 +14,15 @@ export async function getDefaultReplyTo(flowId: string): Promise<string> {
   return flow.user.email
 }
 
-async function getFormId(executionId: string) {
+export async function getFormId(executionId: string): Promise<string | null> {
   const formData = await ExecutionStep.query()
     .where('execution_id', executionId)
     .where('app_key', 'formsg')
     .first()
     .select('data_out')
 
-  return String(formData?.dataOut?.formId)
+  const formId = formData?.dataOut?.formId
+  return formId ? String(formId) : null
 }
 
 export async function filterAttachments(
@@ -39,8 +40,8 @@ export async function filterAttachments(
       // maliciously/ manually injected by another user who does not have access to this attachment
       const obj = await getObjectFromS3Id(attachment, { flowId: $.flow.id }, $)
       const fileName = obj.name
-      const fileType = obj.name.split('.').pop()
-      if (!POSTMAN_ACCEPTED_EXTENSIONS.includes(fileType)) {
+      const fileType = obj.name.split('.').pop()?.toLowerCase()
+      if (!fileType || !POSTMAN_ACCEPTED_EXTENSIONS.includes(fileType)) {
         invalidAttachments.push(fileName)
 
         if (formId === null) {

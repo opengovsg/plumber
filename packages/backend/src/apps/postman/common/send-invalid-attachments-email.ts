@@ -1,6 +1,5 @@
 import { truncateFlowName } from '@/helpers/generate-error-email'
 import { sendEmail } from '@/helpers/send-email'
-import ExecutionStep from '@/models/execution-step'
 
 interface SendInvalidAttachmentsEmailProps {
   flowName: string
@@ -17,16 +16,6 @@ interface CreateMessageProps {
   executionId: string
   submissionId: string
   formAdminLink: string
-}
-
-export async function getFormId(executionId: string) {
-  const formData = await ExecutionStep.query()
-    .where('execution_id', executionId)
-    .where('app_key', 'formsg')
-    .first()
-    .select('data_out')
-
-  return String(formData?.dataOut?.formId)
 }
 
 export function createInvalidAttachmentsMessage(props: CreateMessageProps) {
@@ -62,7 +51,7 @@ export async function sendInvalidAttachmentsEmail(
 ) {
   const { flowName, userEmail, formAdminLink } = props
   const truncatedFlowName = truncateFlowName(flowName)
-  const bodyContent = await createInvalidAttachmentsMessage({
+  const bodyContent = createInvalidAttachmentsMessage({
     ...props,
     formAdminLink,
   })

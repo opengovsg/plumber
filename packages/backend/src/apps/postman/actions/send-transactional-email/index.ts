@@ -21,6 +21,8 @@ import { sendBlacklistEmail } from '../../common/send-blacklist-email'
 import { sendInvalidAttachmentsEmail } from '../../common/send-invalid-attachments-email'
 import { throwPostmanStepError } from '../../common/throw-errors'
 
+const BASE_FORM_URL = 'https://form.gov.sg'
+
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
@@ -165,7 +167,9 @@ const action: IRawAction = {
       executionId: $.execution.id,
     }
     const hasInvalidAttachments = invalidAttachments.length > 0
-    const formAdminLink = `https://form.gov.sg/admin/form/${formId}/results`
+    const formAdminLink = formId
+      ? `${BASE_FORM_URL}/admin/form/${formId}/results`
+      : BASE_FORM_URL
     const invalidAttachmentParams = {
       hasInvalidAttachments,
       submissionId,
