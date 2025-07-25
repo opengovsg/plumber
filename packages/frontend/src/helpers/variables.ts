@@ -163,7 +163,7 @@ const process = (
      */
     const { columns, rows } = data
     const columnVariables = columns.map((column: RawColumn) => {
-      const rowValues: (string | number)[] = []
+      const rowValues: (string | number | null)[] = []
       rows.forEach((row: RawRow) => {
         /**
          * NOTE: do not push empty values as we do not want to cause any errors

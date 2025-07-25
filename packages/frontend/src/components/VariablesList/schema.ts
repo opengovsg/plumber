@@ -3,7 +3,9 @@ import { z } from 'zod'
 const RowDataSchema = z.object({
   rows: z.array(
     z.object({
-      data: z.record(z.string(), z.union([z.string(), z.number()])),
+      // for tiles v1, empty cells is either an empty string or wont even have their key returned
+      // for tiles v2, empty cells return null
+      data: z.record(z.string(), z.union([z.string(), z.number(), z.null()])),
       rowId: z.string().optional(), // only Tiles will have this
     }),
   ),
