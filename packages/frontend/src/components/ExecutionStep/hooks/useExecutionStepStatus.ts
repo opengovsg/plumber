@@ -70,7 +70,7 @@ export function useExecutionStepStatus({
     // - attachment is password-protected; AND/OR
     // - attachment is unsupported
     if (
-      errorDetails?.details?.code === 'invalid_template' ||
+      errorDetails?.name === 'Unsupported attachment file type' ||
       errorDetails?.name === 'Password-protected attachment(s)'
     ) {
       return 'Retry without attachments'
