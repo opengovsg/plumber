@@ -2,7 +2,9 @@ import { z } from 'zod'
 
 const tableRowOutputSchema = z.object({
   rowId: z.string(),
-  data: z.record(z.string(), z.string().or(z.number())),
+  // for tiles v1, empty cells is either an empty string or wont even have their key returned
+  // for tiles v2, empty cells return null
+  data: z.record(z.string(), z.union([z.string(), z.number(), z.null()])),
 })
 
 export const dataOutSchema = z.object({
