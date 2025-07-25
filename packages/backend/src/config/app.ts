@@ -47,6 +47,14 @@ type AppConfig = {
   launchDarklySdkKey: string
   maxJobAttempts: number
   onboardingEmailWebhookUrl: string
+  tilesPostgres: {
+    host: string
+    port: number
+    username: string
+    password: string
+    database: string
+    enableSsl: boolean
+  }
 }
 
 const port = process.env.PORT || '3000'
@@ -108,6 +116,14 @@ const appConfig: AppConfig = {
   launchDarklySdkKey: process.env.LAUNCH_DARKLY_SDK_KEY,
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
   onboardingEmailWebhookUrl: process.env.ONBOARDING_EMAIL_WEBHOOK_URL || '',
+  tilesPostgres: {
+    host: process.env.TILES_POSTGRES_HOST || 'localhost',
+    port: parseInt(process.env.TILES_POSTGRES_PORT || '5431'),
+    username: process.env.TILES_POSTGRES_USERNAME,
+    password: process.env.TILES_POSTGRES_PASSWORD,
+    database: process.env.TILES_POSTGRES_DATABASE || 'plumber_tiles_dev',
+    enableSsl: process.env.TILES_POSTGRES_ENABLE_SSL === 'true',
+  },
 }
 
 if (!appConfig.encryptionKey) {

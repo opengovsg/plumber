@@ -27,6 +27,7 @@ export default defineConfig({
     ],
     globalSetup: [
       getPath('./test/pg-global-setup.ts'),
+      getPath('./test/tiles-pg-global-setup.ts'),
       getPath('./test/ddb-global-setup.ts'),
       getPath('./test/redis-global-setup.ts'),
     ],

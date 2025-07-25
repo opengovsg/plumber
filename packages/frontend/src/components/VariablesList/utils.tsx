@@ -9,7 +9,7 @@ export interface RawColumn {
 }
 
 export interface RawRow {
-  data: Record<string, string | number>
+  data: Record<string, string | number | null>
   rowId?: string // only Tiles will have this
 }
 

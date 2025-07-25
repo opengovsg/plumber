@@ -1,13 +1,15 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
+import TableCollaborator from '@/models/table-collaborators'
+import TableMetadata from '@/models/table-metadata'
 import {
+  autoMarshallDataObj,
   autoMarshallNumberStrings,
   stripInvalidKeys,
-} from '@/models/dynamodb/helpers'
-import { PatchRowInput, patchTableRow } from '@/models/dynamodb/table-row'
-import TableCollaborator from '@/models/table-collaborators'
-import TableColumnMetadata from '@/models/table-column-metadata'
+} from '@/models/tiles/dynamodb/helpers'
+import { getTableOperations } from '@/models/tiles/factory'
+import { PatchRowInput } from '@/models/tiles/types'
 
 import { UpdateRowOutput } from '../../types'
 
@@ -135,8 +137,20 @@ const action: IRawAction = {
     /**
      * Check for columns first, there will not be any columns if the tile has been deleted.
      */
-    const columns = await TableColumnMetadata.getColumns(tableId, $)
-    const columnIds = columns.map((c) => c.id)
+    const table = await TableMetadata.query()
+      .findById(tableId)
+      .withGraphFetched('columns')
+
+    if (!table) {
+      throw new StepError(
+        'Tile not found',
+        'Tile may have been deleted. Please check your tile.',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
+    const columnIds = table.columns.map((c) => c.id)
 
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
 
@@ -164,9 +178,14 @@ const action: IRawAction = {
       }
     }
 
+    const tableOperations = getTableOperations(table.db)
+
     const patchData = {
       ...rowData.reduce(
-        (acc, { columnId, cellValue, operator }) => {
+        (
+          acc: PatchRowInput['patchData'],
+          { columnId, cellValue, operator },
+        ) => {
           // Check that the column still exists
           if (columnIds.includes(columnId)) {
             switch (operator) {
@@ -191,7 +210,7 @@ const action: IRawAction = {
     }
 
     try {
-      const updatedRow = await patchTableRow({
+      const updatedRow = await tableOperations.patchTableRow({
         tableId,
         rowId,
         patchData,
@@ -204,7 +223,7 @@ const action: IRawAction = {
 
       $.setActionItem({
         raw: {
-          row: updatedRowData,
+          row: autoMarshallDataObj(updatedRowData),
           rowId,
           updated: true,
         } satisfies UpdateRowOutput,
@@ -212,7 +231,16 @@ const action: IRawAction = {
     } catch (e) {
       if (e instanceof Error) {
         if (e.message.includes('The conditional request failed')) {
-          // This means the corresponding row does not exist
+          // This means the corresponding row does not exist for ddb
+          $.setActionItem({
+            raw: {
+              updated: false,
+            } satisfies UpdateRowOutput,
+          })
+          return
+        }
+        if (e.message.includes('No rows to patch')) {
+          // This means the corresponding row does not exist for pg
           $.setActionItem({
             raw: {
               updated: false,

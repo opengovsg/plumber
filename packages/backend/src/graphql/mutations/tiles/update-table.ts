@@ -1,9 +1,11 @@
 import pLimit from 'p-limit'
 import { z } from 'zod'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
+import { getTableOperations } from '@/models/tiles/factory'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -45,6 +47,8 @@ const updateTable: MutationResolvers['updateTable'] = async (
 
   const table = await TableMetadata.query().findById(tableId)
 
+  const tableOperations = getTableOperations(table.db)
+
   if (tableName) {
     await table.$query().patch({
       name: tableName.trim(),
@@ -57,11 +61,20 @@ const updateTable: MutationResolvers['updateTable'] = async (
         .$relatedQuery('columns', trx)
         .max('position as position') // aliasing for more convenient typing
       const maxPosition = results[0].position || 0
-      await table.$relatedQuery('columns', trx).insert(
-        addedColumns.map((name, i) => ({
-          name,
-          position: maxPosition + i + 1,
-        })),
+      const tableMetadataColumns = await table
+        .$relatedQuery('columns', trx)
+        .insert(
+          addedColumns.map((name, i) => ({
+            name,
+            position: maxPosition + i + 1,
+          })),
+        )
+        .returning('id')
+
+      // If creation of columns fail, we roll back the creation of table column metadata
+      await tableOperations.createTableColumns(
+        tableId,
+        tableMetadataColumns.map((column) => column.id),
       )
     })
   }
@@ -94,10 +107,19 @@ const updateTable: MutationResolvers['updateTable'] = async (
       if (columns.length <= deletedColumns.length) {
         throw new Error('Cannot delete all columns')
       }
+      if (
+        deletedColumns.some(
+          (columnId) => !columns.some((c) => c.id === columnId),
+        )
+      ) {
+        throw new BadUserInputError('Column does not exist')
+      }
       await table
         .$relatedQuery('columns')
         .delete()
         .whereIn('id', deletedColumns)
+
+      await tableOperations.deleteTableColumns(tableId, deletedColumns)
     })
   }
 

@@ -1,6 +1,7 @@
 import { ITableCollabRole } from '@plumber/types'
 
 import Base from './base'
+import ExtendedQueryBuilder from './query-builder'
 import TableCollaborator from './table-collaborators'
 import TableColumnMetadata from './table-column-metadata'
 import User from './user'
@@ -17,6 +18,7 @@ class TableMetadata extends Base {
    */
   role?: ITableCollabRole
   lastAccessedAt?: Date
+  db: 'pg' | 'ddb'
 
   static tableName = 'table_metadata'
 
@@ -53,6 +55,9 @@ class TableMetadata extends Base {
       join: {
         from: `${this.tableName}.id`,
         to: `${TableColumnMetadata.tableName}.table_id`,
+      },
+      filter(builder: ExtendedQueryBuilder<TableColumnMetadata>) {
+        builder.orderBy('position', 'asc')
       },
     },
   })

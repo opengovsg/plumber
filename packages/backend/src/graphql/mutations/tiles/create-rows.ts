@@ -1,6 +1,6 @@
-import { createTableRows } from '@/models/dynamodb/table-row'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
+import { getTableOperations } from '@/models/tiles/factory'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -19,7 +19,9 @@ const createRows: MutationResolvers['createRows'] = async (
     throw new Error('Invalid column id')
   }
 
-  await createTableRows({ tableId, dataArray })
+  const tableOperations = getTableOperations(table.db)
+
+  await tableOperations.createTableRows({ tableId, dataArray })
 
   return true
 }

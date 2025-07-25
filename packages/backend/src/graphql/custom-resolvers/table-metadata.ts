@@ -4,6 +4,10 @@ import type { Resolvers } from '../__generated__/types.generated'
 
 type TableMetadataResolver = Resolvers['TableMetadata']
 
+const databaseType: TableMetadataResolver['databaseType'] = async (parent) => {
+  return parent.db
+}
+
 const columns: TableMetadataResolver['columns'] = async (parent) => {
   const columns = await parent
     .$relatedQuery('columns')
@@ -33,4 +37,5 @@ const collaborators: TableMetadataResolver['collaborators'] = async (
 export default {
   columns,
   collaborators,
+  databaseType,
 } satisfies TableMetadataResolver

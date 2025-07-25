@@ -1,7 +1,7 @@
 import { IJSONObject } from '@plumber/types'
 
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
-import { TableRowOutput } from '@/models/dynamodb/table-row'
+import { TableRowOutput } from '@/models/tiles/types'
 
 export interface FindSingleRowOutput extends IJSONObject {
   rowsFound: number

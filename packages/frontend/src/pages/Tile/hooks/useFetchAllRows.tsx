@@ -1,12 +1,58 @@
-import { ITableRow } from '@plumber/types'
+import { ITableRow, ITableRowCsv } from '@plumber/types'
 
 import { useCallback, useRef, useState } from 'react'
 import { ApolloError, useLazyQuery } from '@apollo/client'
 import { datadogRum } from '@datadog/browser-rum'
+import { zipObject } from 'lodash'
 
 import { RATE_LIMITED } from '@/config/errors'
 import { GET_ALL_ROWS } from '@/graphql/queries/tiles/get-all-rows'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
+
+/**
+ * Converts a CSV row to an object using column IDs as keys
+ * @param row The row to convert
+ * @param columnIds Array of column IDs to use as keys
+ * @returns The converted row
+ */
+const convertCsvRowToObject = (
+  row: ITableRowCsv,
+  columnIds: string[],
+): ITableRow => {
+  const dataArray = JSON.parse(row.data)
+
+  if (dataArray.length !== columnIds.length) {
+    console.warn(
+      `Row data length (${dataArray.length}) doesn't match columnIds length (${columnIds.length})`,
+    )
+    // Create a new ITableRow with empty data object
+    return {
+      rowId: row.rowId,
+      data: {},
+    }
+  }
+
+  return {
+    rowId: row.rowId,
+    data: zipObject(columnIds, dataArray),
+  }
+}
+
+/**
+ * Processes a row, converting it from CSV format if necessary
+ * @param row The row to process
+ * @param columnIds Array of column IDs to use as keys
+ * @returns The processed row
+ */
+const processRow = (
+  row: ITableRowCsv | ITableRow,
+  columnIds: string[],
+): ITableRow => {
+  if (typeof row.data === 'string') {
+    return convertCsvRowToObject(row as ITableRowCsv, columnIds)
+  }
+  return row as ITableRow
+}
 
 export function useFetchAllRows({
   tableId,
@@ -22,7 +68,7 @@ export function useFetchAllRows({
   const cursorToContinueFrom = useRef<string>()
   const startTime = useRef<number>()
 
-  const [fetchAllRowsMutation] = useLazyQuery(GET_ALL_ROWS, {
+  const [fetchAllRowsQuery] = useLazyQuery(GET_ALL_ROWS, {
     context: urlViewOnlyKey
       ? {
           headers: { 'x-tiles-view-key': urlViewOnlyKey },
@@ -39,7 +85,7 @@ export function useFetchAllRows({
       let currentCursor = cursor
       try {
         do {
-          const { data, error } = await fetchAllRowsMutation({
+          const { data, error } = await fetchAllRowsQuery({
             variables: {
               stringifiedCursor: currentCursor,
               tableId: tableId,
@@ -51,8 +97,14 @@ export function useFetchAllRows({
           if (!data?.getAllRows) {
             throw new Error('No data returned from getAllRows')
           }
-          rowCount += data.getAllRows.rows.length
-          setRows((prev) => [...prev, ...data.getAllRows.rows])
+          const { rows, columnIds } = data.getAllRows
+
+          // Process all rows, converting CSV format to objects if needed
+          const processedRows = rows.map((row: ITableRowCsv | ITableRow) =>
+            processRow(row, columnIds),
+          )
+          rowCount += processedRows.length
+          setRows((prev) => [...prev, ...processedRows])
           currentCursor = data?.getAllRows.stringifiedCursor ?? undefined
         } while (currentCursor)
       } catch (e) {
@@ -74,7 +126,7 @@ export function useFetchAllRows({
         setIsFetching(false)
       }
     },
-    [fetchAllRowsMutation, tableId],
+    [fetchAllRowsQuery, tableId],
   )
 
   const refetch = useCallback(async () => {

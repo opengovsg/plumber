@@ -7,9 +7,9 @@ import {
   generateMockTableRowData,
 } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import TableMetadata from '@/models/table-metadata'
+import { TableRowFilterOperator } from '@/models/tiles/types'
 import Context from '@/types/express/context'
 
-import { TableRowFilterOperator } from '../../table-row'
 import {
   createTableRow,
   createTableRows,
@@ -30,12 +30,14 @@ describe('dynamodb table row functions', () => {
 
     const mockTable = await generateMockTable({
       userId: context.currentUser.id,
+      databaseType: 'ddb',
     })
     dummyTable = mockTable.table
 
     dummyColumnIds = await generateMockTableColumns({
       tableId: dummyTable.id,
       numColumns: 5,
+      databaseType: 'ddb',
     })
   })
 

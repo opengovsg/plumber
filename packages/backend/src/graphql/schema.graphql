@@ -764,6 +764,11 @@ type PaginatedExecutionSteps {
   pageInfo: PageInfo!
 }
 
+enum DatabaseType {
+  pg
+  ddb
+}
+
 # Tiles types
 input CreateTableInput {
   name: String!
@@ -822,6 +827,7 @@ input DeleteTableCollaboratorInput {
 
 type TableMetadata {
   id: ID!
+  databaseType: DatabaseType!
   name: String!
   columns: [TableColumnMetadata!]
   lastAccessedAt: String!
@@ -841,6 +847,7 @@ type PaginatedTables {
 
 type GetTableRowsResult {
   rows: Any!
+  columnIds: [String!]!
   stringifiedCursor: String
 }
 

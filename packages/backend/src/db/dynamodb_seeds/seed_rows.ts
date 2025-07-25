@@ -4,13 +4,13 @@ import '@/config/dynamodb'
 
 import { argv } from 'process'
 
+import TableColumnMetadata from '@/models/table-column-metadata'
 import {
   createTableRows,
   deleteTableRows,
   getTableRowCount,
   getTableRows,
-} from '@/models/dynamodb/table-row'
-import TableColumnMetadata from '@/models/table-column-metadata'
+} from '@/models/tiles/dynamodb/table-row'
 
 const TABLE_ID = argv[2]
 if (!TABLE_ID) {
