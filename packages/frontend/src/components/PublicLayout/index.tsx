@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet'
 import { Navigate } from 'react-router-dom'
 import { Box, Flex } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
@@ -22,6 +23,9 @@ export default function Layout({ children }: LayoutProps): React.ReactElement {
     <Flex minH="100vh" flexDir="column">
       <SiteWideBanner />
       <RestrictedGovtMasthead />
+      <Helmet>
+        <title>Plumber</title>
+      </Helmet>
       <Box
         sx={{
           display: 'flex',
