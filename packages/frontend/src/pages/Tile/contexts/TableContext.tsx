@@ -13,12 +13,15 @@ import React, {
   useState,
 } from 'react'
 
+import { DatabaseType } from '@/graphql/__generated__/graphql'
+
 import { flattenRows } from '../helpers/flatten-rows'
 import { EditMode, GenericRowData } from '../types'
 
 interface TableContextProps {
   tableId: string
   tableName: string
+  databaseType: DatabaseType
   flattenedData: GenericRowData[]
   tableColumns: ITableColumnMetadata[]
   filteredDataRef: MutableRefObject<GenericRowData[]>
@@ -49,6 +52,7 @@ export const useTableContext = () => {
 interface TableContextProviderProps {
   tableId: string
   tableName: string
+  databaseType: DatabaseType
   tableColumns: ITableColumnMetadata[]
   tableRows: ITableRow[]
   children: React.ReactNode
@@ -64,6 +68,7 @@ interface TableContextProviderProps {
 export const TableContextProvider = ({
   tableId,
   tableName,
+  databaseType,
   tableColumns,
   tableRows,
   children,
@@ -86,6 +91,7 @@ export const TableContextProvider = ({
       value={{
         tableId,
         tableName,
+        databaseType,
         flattenedData,
         tableColumns,
         allDataRef,

@@ -1,11 +1,9 @@
 import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
 
+import { DYNAMODB_DEFAULT_PAGINATION_CURSOR } from '@/apps/tiles/common/constants'
 import logger from '@/helpers/logger'
 
-import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
-
-import { TableRow } from './model'
 import {
   CreateRowInput,
   CreateRowsInput,
@@ -15,8 +13,12 @@ import {
   TableRowFilterOperator,
   TableRowItem,
   TableRowOutput,
+  TableRowOutputWithTimestamps,
   UpdateRowInput,
-} from './types'
+} from '../../types'
+import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
+
+import { TableRow } from './model'
 
 const MAX_RETRIES = 8
 const EXPONENTIAL_BACKOFF_BASE_DELAY = 1000 // 1 second
@@ -320,7 +322,7 @@ export const getTableRows = async ({
    * if stringifiedCursor is 'start', we will fetch the first page of results
    * if undefined, we will auto-paginate
    */
-  stringifiedCursor?: string | 'start'
+  stringifiedCursor?: string | typeof DYNAMODB_DEFAULT_PAGINATION_CURSOR
   /**
    * Optional limit on the total number of rows scanned.
    */
@@ -344,7 +346,8 @@ export const getTableRows = async ({
     const tableRows = []
     let remainingScanLimit = scanLimit ?? Infinity
     let cursor: any =
-      stringifiedCursor && stringifiedCursor !== 'start'
+      stringifiedCursor &&
+      stringifiedCursor !== DYNAMODB_DEFAULT_PAGINATION_CURSOR
         ? JSON.parse(stringifiedCursor)
         : null
     do {
@@ -399,14 +402,23 @@ export const getRawRowById = async ({
   tableId,
   rowId,
   columnIds,
+  includeTimestamps = false,
 }: {
   tableId: string
   rowId: string
   columnIds?: string[]
-}): Promise<TableRowOutput | null> => {
+  includeTimestamps?: boolean
+}): Promise<TableRowOutput | TableRowOutputWithTimestamps | null> => {
   try {
+    const columnIdsToSelect =
+      columnIds && includeTimestamps
+        ? [...columnIds, 'createdAt', 'updatedAt']
+        : columnIds
     const { ProjectionExpression, ExpressionAttributeNames } =
-      generateProjectionExpressions({ columnIds, indexUsed: 'byRowId' })
+      generateProjectionExpressions({
+        columnIds: columnIdsToSelect,
+        indexUsed: 'byRowId',
+      })
     const response = await TableRow.query.byRowId({ tableId, rowId }).go({
       ignoreOwnership: true,
       params: {

@@ -1,6 +1,7 @@
 import { ITableMetadata } from '@plumber/types'
 
 import { useEffect } from 'react'
+import { Helmet } from 'react-helmet'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
@@ -80,13 +81,14 @@ export default function Tile(): JSX.Element | null {
     return null
   }
 
-  const { id, name, columns, viewOnlyKey, collaborators } =
+  const { id, name, columns, viewOnlyKey, collaborators, databaseType } =
     getTableData.getTable
 
   return (
     <TableContextProvider
       tableName={name}
       tableId={id}
+      databaseType={databaseType}
       tableColumns={columns}
       tableRows={rows}
       viewOnlyKey={viewOnlyKey}
@@ -96,6 +98,9 @@ export default function Tile(): JSX.Element | null {
       isThroughputError={isThroughputError}
       refetch={refetch}
     >
+      <Helmet>
+        <title>{name} | Tile</title>
+      </Helmet>
       <Flex
         flexDir={{ base: 'column' }}
         justifyContent="space-between"

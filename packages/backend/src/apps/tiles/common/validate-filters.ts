@@ -1,5 +1,5 @@
-import { TableRowFilter } from '@/models/dynamodb/table-row'
 import TableColumnMetadata from '@/models/table-column-metadata'
+import { TableRowFilter } from '@/models/tiles/types'
 
 export function validateFilters(
   filters: TableRowFilter[],

@@ -1,6 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Helmet } from 'react-helmet'
 import { BiChevronLeft, BiCog, BiInfoCircle } from 'react-icons/bi'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
@@ -190,6 +191,9 @@ export default function EditorLayout() {
 
   return (
     <>
+      <Helmet>
+        <title>{flow?.name} | Pipe</title>
+      </Helmet>
       <Flex h="100vh" flexDirection="column">
         <HStack
           position="fixed"

@@ -942,6 +942,7 @@ export interface ITableColumnMetadata {
 export interface ITableMetadata {
   id: string
   name: string
+  databaseType: DatabaseType
   columns: ITableColumnMetadata[]
   lastAccessedAt: string
   viewOnlyKey?: string
@@ -952,6 +953,11 @@ export interface ITableMetadata {
 export interface ITableCollaborator {
   email: string
   role: ITableCollabRole
+}
+
+export interface ITableRowCsv {
+  rowId: string
+  data: string
 }
 
 export interface ITableRow {

@@ -3,7 +3,7 @@ import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql'
-import knex from 'knex'
+import knex, { Knex } from 'knex'
 import { join } from 'path'
 
 let postgresContainer: StartedPostgreSqlContainer
@@ -24,8 +24,8 @@ export async function setup() {
     `PostgreSQL container started at port ${process.env.POSTGRES_PORT}`,
   )
 
-  const config = await import('../knexfile')
-  const client = knex(config.default as any)
+  const config = (await import('../knexfile')).default
+  const client = knex(config as Knex.Config)
 
   // manually running migrations since the programmatic API doesn't work
   // see issue here: https://github.com/knex/knex/issues/5323

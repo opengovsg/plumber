@@ -4,6 +4,7 @@ export const GET_ALL_ROWS = graphql(`
   query GetAllRows($tableId: String!, $stringifiedCursor: String) {
     getAllRows(tableId: $tableId, stringifiedCursor: $stringifiedCursor) {
       rows
+      columnIds
       stringifiedCursor
     }
   }

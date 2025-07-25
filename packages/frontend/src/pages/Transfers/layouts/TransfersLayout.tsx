@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet'
 import { Box } from '@chakra-ui/react'
 
 import AppBar from '@/components/AppBar'
@@ -20,6 +21,9 @@ export default function TransfersLayout(props: TransfersLayoutProps) {
   return (
     <>
       <SiteWideBanner />
+      <Helmet>
+        <title>Plumber</title>
+      </Helmet>
       <AppBar />
       <Box>{children}</Box>
     </>

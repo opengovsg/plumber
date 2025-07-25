@@ -19,6 +19,7 @@ export default defineConfig({
     assetsInlineLimit: 0,
     outDir: 'dist/lib',
     copyPublicDir: false,
+
     lib: {
       name: 'frontend',
       entry: {

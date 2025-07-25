@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Helmet } from 'react-helmet'
 import {
   BiBookOpen,
   BiBookReader,
@@ -97,6 +98,9 @@ export default function Layout({ children }: PublicLayoutProps): JSX.Element {
   return (
     <>
       <SiteWideBanner />
+      <Helmet>
+        <title>Plumber</title>
+      </Helmet>
       <LayoutNavigationProvider value={layoutNavigationProviderData}>
         <AppBar />
         <Box display="flex" flex="1">

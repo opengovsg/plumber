@@ -1,12 +1,16 @@
 import { NotFoundError as ObjectionNotFoundError } from 'objection'
 
+import {
+  DYNAMODB_DEFAULT_PAGINATION_CURSOR,
+  POSTGRES_FIND_ALL_ROWS_PAGINATION_LIMIT,
+} from '@/apps/tiles/common/constants'
 import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import logger from '@/helpers/logger'
-import { DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE } from '@/models/dynamodb/helpers'
-import { getTableRows } from '@/models/dynamodb/table-row'
 import TableMetadata from '@/models/table-metadata'
+import { DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE } from '@/models/tiles/dynamodb/helpers'
+import { getTableOperations } from '@/models/tiles/factory'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
 
@@ -39,14 +43,36 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
       })
     }
 
+    const tableOperations = getTableOperations(table.db)
+
     const columnIds = table.columns.map((column) => column.id)
 
-    return await getTableRows({
-      tableId,
-      columnIds,
-      stringifiedCursor: stringifiedCursor ?? 'start',
+    const { rows, stringifiedCursor: newStringifiedCursor } =
+      await tableOperations.getTableRows({
+        tableId,
+        columnIds,
+        // If table is postgres, we set pagination limit
+        // If table is dynamodb, the pagination size is based on dynamodb query limits
+        scanLimit:
+          table.db === 'pg'
+            ? POSTGRES_FIND_ALL_ROWS_PAGINATION_LIMIT
+            : undefined,
+        stringifiedCursor:
+          table.db === 'ddb' && !stringifiedCursor
+            ? DYNAMODB_DEFAULT_PAGINATION_CURSOR
+            : stringifiedCursor,
+      })
+
+    // Convert data object to csv to minimize payload size
+    rows.forEach((row) => {
+      row.data = JSON.stringify(columnIds.map((columnId) => row.data[columnId]))
     })
-    // TODO: remove keys from rows to reduce payload size
+
+    return {
+      rows,
+      columnIds,
+      stringifiedCursor: newStringifiedCursor,
+    }
   } catch (e) {
     logger.error(e)
     if (e instanceof ObjectionNotFoundError) {
