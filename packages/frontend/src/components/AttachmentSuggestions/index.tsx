@@ -95,7 +95,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
       if (!checked) {
         onChange?.(currentValues.filter((v: string) => v !== nameToCheck))
       } else {
-        const { isValid, error } = validateFiles(variable, getValues(name))
+        const { isValid, error } = validateFiles(variable, currentValues)
         if (!isValid) {
           setError(name, { type: 'invalidFile', message: error })
         } else {
