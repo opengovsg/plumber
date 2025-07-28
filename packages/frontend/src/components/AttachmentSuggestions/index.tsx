@@ -66,6 +66,12 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     variables: { id: flowId },
   })
 
+  const { options, suggestions, uploadedItems } = useAttachmentOptions(
+    flowData,
+    priorExecutionSteps,
+    variableTypes,
+  )
+
   const onSuggestionClick = useCallback(
     (
       variable: CheckboxVariable,
@@ -76,7 +82,15 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
       // We also add curly braces to check for attachments that are variables
       const { name: filename, uploaded } = variable
       const nameToCheck = uploaded ? filename : `{{${filename}}}`
-      const currentValues = getValues(name) ?? []
+
+      // NOTE: if the attachment has been deleted from the form
+      // it also needs to be removed from the step parameters
+      const optionsWithVariables = options.map((o) =>
+        o.name.startsWith('s3:') ? o.name : `{{${o.name}}}`,
+      )
+      const currentValues = (getValues(name) ?? []).filter((v: string) =>
+        optionsWithVariables.includes(v),
+      )
 
       if (!checked) {
         onChange?.(currentValues.filter((v: string) => v !== nameToCheck))
@@ -89,13 +103,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
         }
       }
     },
-    [getValues, name, setError],
-  )
-
-  const { options, suggestions, uploadedItems } = useAttachmentOptions(
-    flowData,
-    priorExecutionSteps,
-    variableTypes,
+    [getValues, name, setError, options],
   )
 
   useOutsideClick({
