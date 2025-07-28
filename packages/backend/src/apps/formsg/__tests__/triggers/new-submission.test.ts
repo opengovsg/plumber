@@ -484,6 +484,40 @@ describe('new submission trigger for answer array fields', () => {
               ['sleeping', 'night'],
               ['eating', 'all day'],
             ],
+            answer: JSON.stringify({
+              rows: [
+                {
+                  data: {
+                    [Buffer.from('Column 1').toString('hex')]: 'sleeping',
+                    [Buffer.from('Column 2').toString('hex')]: 'night',
+                  },
+                },
+                {
+                  data: {
+                    [Buffer.from('Column 1').toString('hex')]: 'eating',
+                    [Buffer.from('Column 2').toString('hex')]: 'all day',
+                  },
+                },
+              ],
+              columns: [
+                {
+                  id: Buffer.from('Column 1').toString('hex'),
+                  label: 'Column 1',
+                  name: 'Column 1',
+                  value: `data.rows.*.data.${Buffer.from('Column 1').toString(
+                    'hex',
+                  )}`,
+                },
+                {
+                  id: Buffer.from('Column 2').toString('hex'),
+                  label: 'Column 2',
+                  name: 'Column 2',
+                  value: `data.rows.*.data.${Buffer.from('Column 2').toString(
+                    'hex',
+                  )}`,
+                },
+              ],
+            }),
           },
           textFieldId3: {
             question: 'Unknown question',

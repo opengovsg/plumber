@@ -6,6 +6,7 @@ import { customAlphabet } from 'nanoid/async'
 import { COMMON_S3_MOCK_FOLDER_PREFIX } from '@/helpers/s3'
 
 import { filterNric } from '../../auth/decrypt-form-response'
+import convertTableAnswerArrayToTableObject from '../../common/process-table-field'
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
 type FormField = {
@@ -142,6 +143,15 @@ async function getMockData($: IGlobalVariable) {
 
         if (data.responses[formFields[i]._id].fieldType === 'email') {
           data.responses[formFields[i]._id].answer = $.user.email
+        }
+
+        // add a stringified version of the table data to the mock data
+        if (data.responses[formFields[i]._id].fieldType === 'table') {
+          const answerArray = data.responses[formFields[i]._id]
+            .answerArray as string[][]
+          const question = data.responses[formFields[i]._id].question
+          data.responses[formFields[i]._id].answer =
+            convertTableAnswerArrayToTableObject(question, answerArray)
         }
 
         data.responses[formFields[i]._id].order = i + 1
