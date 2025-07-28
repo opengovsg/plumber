@@ -7,6 +7,55 @@ import { Variable } from '@/helpers/variables'
 
 import { simpleSubstitute, VariableInfoMap } from '../RichTextEditor/utils'
 
+const FOR_EACH_INPUT_SOURCE = {
+  M365_EXCEL: 'm365-excel',
+  TILES: 'tiles',
+  STRING_ARRAY: 'string-array',
+  FORMSG_TABLE: 'formsg-table',
+} as const
+
+const STEP_ID_REGEX =
+  /step\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+
+type InputSource =
+  (typeof FOR_EACH_INPUT_SOURCE)[keyof typeof FOR_EACH_INPUT_SOURCE]
+
+interface TableData {
+  rows: Array<{
+    data: Record<string, string | number>
+    rowId?: string
+  }>
+  columns?: Array<{
+    id: string
+    name: string
+    value: string
+  }>
+  inputSource?: InputSource
+}
+
+const hasInputSource = (data: unknown): data is { inputSource: InputSource } =>
+  typeof data === 'object' && data !== null && 'inputSource' in data
+
+// Utility function to detect input source from test data
+const getInputSource = (data: unknown): InputSource | null => {
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data)
+      return hasInputSource(parsed)
+        ? parsed.inputSource
+        : FOR_EACH_INPUT_SOURCE.FORMSG_TABLE
+    } catch {
+      return null
+    }
+  }
+
+  if (hasInputSource(data)) {
+    return data.inputSource
+  }
+
+  return null
+}
+
 // guardrail to not show the test result in the event that the app no longer exists
 // and users were shown the EmptyFlowStepHeader to "add" a new step.
 // it should already be handled by the ErrorFlowStepHeader, but just in case
@@ -24,15 +73,18 @@ export function isSameAppAndAppKey(
   )
 }
 
-interface TableData {
-  columns?: { name: string }[]
-  rows?: unknown[]
+const getTableData = (
+  data: unknown,
+  inputSource?: InputSource | null,
+): TableData => {
+  if (
+    inputSource === FOR_EACH_INPUT_SOURCE.FORMSG_TABLE &&
+    typeof data === 'string'
+  ) {
+    return JSON.parse(data) as TableData
+  }
+  return data as TableData
 }
-
-const STEP_ID_REGEX =
-  /step\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-
-const getTableData = (data: unknown): TableData => data as TableData
 
 const deepCompare = (a: any, b: any, varInfoMap: VariableInfoMap): boolean => {
   if (a === b) {
@@ -136,27 +188,55 @@ export const matchParamsToDataIn = (
       }
 
       const match = String(paramValue).match(STEP_ID_REGEX)
-      const searchKey = match?.[0]
+      const inputSource = getInputSource(lastTest)
+      const isFormSgTable = inputSource === FOR_EACH_INPUT_SOURCE.FORMSG_TABLE
+
+      const searchKey = isFormSgTable
+        ? String(paramValue).replace(/\{\{(.*)answer\}\}/, '$1answerArray.0')
+        : match?.[0]
+
       if (!searchKey) {
         return false
       }
 
-      const tableData = getTableData(lastTest)
-      const varRowsFound = varInfoMap.get(
-        `{{${searchKey}.rowsFound}}`,
-      )?.testRunValue
-
-      if (Number(varRowsFound) !== Number(tableData.rows?.length)) {
-        return false
-      }
-
+      const tableData = getTableData(lastTest, inputSource)
       const lastTestColumns = tableData.columns?.map((c) => c.name) ?? []
+      const mapKey = isFormSgTable ? searchKey : `${searchKey}.data`
       const varInfo = Array.from(varInfoMap.entries())
-        .filter(([key]) => key.includes(`${searchKey}.data`))
+        .filter(([key]) => key.includes(mapKey))
         .map(([, value]) => value)
       const varColumns = new Set(varInfo.map((item) => item.label))
 
-      return lastTestColumns.every((label) => varColumns.has(label))
+      if (isFormSgTable) {
+        /**
+         * FormSG table special case:
+         * - FormSG table columns are stored like:
+         *  ["Response 6, Row 1 Col 1", "Response 6, Row 1 Col 2", "Response 6, Row 1 Col 3"]
+         *
+         * - Our variables are stored like:
+         * ["Col 1", "Col 2", "Col 3"]
+         *
+         * since there is no safe way to parse the FormSG table columns properly,
+         * we do a best-effort comparison to just check that the columns are present.
+         */
+        if (tableData.rows?.length === 0) {
+          return true
+        }
+
+        return lastTestColumns.every((testCol) =>
+          Array.from(varColumns).some((varCol) => varCol.includes(testCol)),
+        )
+      } else {
+        const varRowsFound = varInfoMap.get(
+          `{{${searchKey}.rowsFound}}`,
+        )?.testRunValue
+
+        if (Number(varRowsFound) !== Number(tableData.rows?.length)) {
+          return false
+        }
+
+        return lastTestColumns.every((label) => varColumns.has(label))
+      }
     }
 
     // Handle arrays and objects using deep comparison

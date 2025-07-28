@@ -333,6 +333,103 @@ describe('inputSchema', () => {
     })
   })
 
+  describe('FormSG Table field', () => {
+    const hexEncodedColumns = [
+      Buffer.from('Column 1').toString('hex'),
+      Buffer.from('Column 2').toString('hex'),
+    ]
+    const mockTableFieldData = {
+      rows: [
+        {
+          data: { [hexEncodedColumns[0]]: 'John', [hexEncodedColumns[1]]: 25 },
+        },
+        {
+          data: { [hexEncodedColumns[0]]: 'Jane', [hexEncodedColumns[1]]: 30 },
+        },
+      ],
+      columns: [
+        {
+          id: hexEncodedColumns[0],
+          name: 'Column 1',
+          value: `data.rows.*.data.${hexEncodedColumns[0]}`,
+        },
+        {
+          id: hexEncodedColumns[1],
+          name: 'Column 2',
+          value: `data.rows.*.data.${hexEncodedColumns[1]}`,
+        },
+      ],
+    }
+
+    it.each([true, false])(
+      'should handle FormSG Table field for testRun: %s',
+      (testRun) => {
+        const result = inputSchema.safeParse({
+          data: JSON.stringify(mockTableFieldData),
+          testRun,
+        })
+
+        expect(result.success).toBe(true)
+        if (result.success) {
+          expect(result.data.inputSource).toBe(
+            FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+          )
+          expect(result.data.items.rows).toHaveLength(2)
+          expect(result.data.items.rows[0].data[hexEncodedColumns[0]]).toBe(
+            'John',
+          )
+          expect(result.data.items.rows[0].data[hexEncodedColumns[1]]).toBe(25)
+          expect(result.data.items.rows[1].data[hexEncodedColumns[0]]).toBe(
+            'Jane',
+          )
+          expect(result.data.items.rows[1].data[hexEncodedColumns[1]]).toBe(30)
+          expect(result.data.items.columns).toHaveLength(2)
+          expect(result.data.items.columns[0].id).toBe(hexEncodedColumns[0])
+          expect(result.data.items.columns[0].name).toBe('Column 1')
+          expect(result.data.items.columns[0].value).toBe(
+            `data.rows.*.data.${hexEncodedColumns[0]}`,
+          )
+          expect(result.data.items.columns[1].id).toBe(hexEncodedColumns[1])
+          expect(result.data.items.columns[1].name).toBe('Column 2')
+          expect(result.data.items.columns[1].value).toBe(
+            `data.rows.*.data.${hexEncodedColumns[1]}`,
+          )
+        }
+      },
+    )
+
+    it.each([true, false])(
+      'should handle FormSG Table field with no row data for testRun: %s',
+      (testRun) => {
+        const emptyTableData = JSON.stringify({
+          rows: [
+            {
+              data: {
+                [hexEncodedColumns[0]]: '',
+                [hexEncodedColumns[1]]: '',
+              },
+            },
+          ],
+          columns: mockTableFieldData.columns,
+        })
+        const result = inputSchema.safeParse({ data: emptyTableData, testRun })
+
+        expect(result.success).toBe(true)
+        if (result.success) {
+          expect(result.data.inputSource).toBe(
+            FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+          )
+          expect(result.data.items.rows).toHaveLength(1)
+          expect(result.data.items.rows[0].data[hexEncodedColumns[0]]).toBe('')
+          expect(result.data.items.rows[0].data[hexEncodedColumns[1]]).toBe('')
+          expect(result.data.items.columns).toHaveLength(2)
+          expect(result.data.items.columns[0].id).toBe(hexEncodedColumns[0])
+          expect(result.data.items.columns[1].id).toBe(hexEncodedColumns[1])
+        }
+      },
+    )
+  })
+
   describe('edge cases and validation', () => {
     it.each([true, false])(
       'should reject empty string for testRun: %s',
@@ -341,7 +438,7 @@ describe('inputSchema', () => {
 
         expect(result.success).toBe(false)
         if (result.success === false) {
-          expect(result.error.issues[0].message).toBe('Invalid input')
+          expect(result.error.issues[0].message).toBe('Input cannot be empty')
         }
       },
     )
@@ -353,7 +450,7 @@ describe('inputSchema', () => {
 
         expect(result.success).toBe(false)
         if (result.success === false) {
-          expect(result.error.issues[0].message).toBe('Invalid input')
+          expect(result.error.issues[0].message).toBe('Input cannot be empty')
         }
       },
     )
