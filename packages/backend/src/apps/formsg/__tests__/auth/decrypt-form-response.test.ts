@@ -3,6 +3,8 @@ import { IGlobalVariable, IRequest } from '@plumber/types'
 import { Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+
 import app from '../..'
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
 import { NricFilter } from '../../triggers/new-submission'
@@ -724,6 +726,47 @@ describe('decrypt form response', () => {
             tableField: {
               fieldType: 'table',
               question: 'What are your hobbies and when do you do them?',
+              answer: JSON.stringify({
+                rows: [
+                  {
+                    data: {
+                      [Buffer.from('Col 1').toString('hex')]: 'reading',
+                      [Buffer.from('Col 2').toString('hex')]: 'night',
+                    },
+                  },
+                  {
+                    data: {
+                      [Buffer.from('Col 1').toString('hex')]: 'gaming',
+                      [Buffer.from('Col 2').toString('hex')]: 'weekend',
+                    },
+                  },
+                  {
+                    data: {
+                      [Buffer.from('Col 1').toString('hex')]: 'coding',
+                      [Buffer.from('Col 2').toString('hex')]: 'day',
+                    },
+                  },
+                ],
+                columns: [
+                  {
+                    id: Buffer.from('Col 1').toString('hex'),
+                    label: 'Col 1',
+                    name: 'Col 1',
+                    value: `data.rows.*.data.${Buffer.from('Col 1').toString(
+                      'hex',
+                    )}`,
+                  },
+                  {
+                    id: Buffer.from('Col 2').toString('hex'),
+                    label: 'Col 2',
+                    name: 'Col 2',
+                    value: `data.rows.*.data.${Buffer.from('Col 2').toString(
+                      'hex',
+                    )}`,
+                  },
+                ],
+                inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+              }),
               answerArray: [
                 ['reading', 'night'],
                 ['gaming', 'weekend'],
@@ -781,6 +824,41 @@ describe('decrypt form response', () => {
                 ['reading', 'night'],
                 ['gaming', 'weekend'],
               ],
+              answer: JSON.stringify({
+                rows: [
+                  {
+                    data: {
+                      [Buffer.from('Col 1').toString('hex')]: 'reading',
+                      [Buffer.from('Col 2').toString('hex')]: 'night',
+                    },
+                  },
+                  {
+                    data: {
+                      [Buffer.from('Col 1').toString('hex')]: 'gaming',
+                      [Buffer.from('Col 2').toString('hex')]: 'weekend',
+                    },
+                  },
+                ],
+                columns: [
+                  {
+                    id: Buffer.from('Col 1').toString('hex'),
+                    label: 'Col 1',
+                    name: 'Col 1',
+                    value: `data.rows.*.data.${Buffer.from('Col 1').toString(
+                      'hex',
+                    )}`,
+                  },
+                  {
+                    id: Buffer.from('Col 2').toString('hex'),
+                    label: 'Col 2',
+                    name: 'Col 2',
+                    value: `data.rows.*.data.${Buffer.from('Col 2').toString(
+                      'hex',
+                    )}`,
+                  },
+                ],
+                inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+              }),
               order: 2,
             },
           },

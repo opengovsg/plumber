@@ -31,6 +31,7 @@ export const flowStepStyles = {
     alignItems: 'center',
     borderRadius: 'inherit',
     px: 4,
+    py: 4,
     w: 'full',
     _hover: {
       bg: 'interaction.muted.neutral.hover',

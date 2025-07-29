@@ -10,6 +10,7 @@ import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
 
 import { getSdk, parseFormEnv } from '../common/form-env'
+import convertTableAnswerArrayToTableObject from '../common/process-table-field'
 import { NricFilter } from '../triggers/new-submission/index'
 
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
@@ -127,6 +128,11 @@ export async function decryptFormResponse(
         ) {
           rest.answerArray = (rest.answerArray as string[][]).map((row) =>
             row.map((column) => column.replaceAll('\u0000', '')),
+          )
+
+          rest.answer = convertTableAnswerArrayToTableObject(
+            rest.question,
+            rest.answerArray,
           )
         } else {
           rest.answerArray = (rest.answerArray as string[]).map((answer) =>

@@ -99,7 +99,7 @@ function buildAnswerArrayForCheckbox(
   }
 }
 
-function extractLastTopLevelBracketContent(questionText: string): {
+export function extractLastTopLevelBracketContent(questionText: string): {
   content: string
   prefix: string
 } {
@@ -162,11 +162,37 @@ function buildAnswerArrayForTable(
         type: 'text',
         label,
         order: order ? (order as number) + 0.1 : null,
+        // NOTE: we hide the option if it is empty
+        // mock data will have dummy strings in the answerArray
+        // actual submissions should contain real data, otherwise the cells should be hidden
+        isHidden: optionArray[j] === '',
       })
     }
     answerArray.push(nestedAnswerArray)
   }
   return answerArray
+}
+
+function buildTableMetadatum(fieldData: IJSONObject): IDataOutMetadata {
+  // old execution steps may not have an answer field for their table
+  if (!fieldData.answer) {
+    return {
+      label: '',
+      order: null,
+      type: 'table',
+      displayedValue: '',
+      value: {},
+    }
+  }
+
+  const tableObject = JSON.parse(fieldData.answer as string)
+  return {
+    label: `Response ${fieldData.order}`,
+    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
+    type: 'table',
+    displayedValue: `Preview ${tableObject.rows.length} row(s)`,
+    value: tableObject,
+  }
 }
 
 function buildAnswerArrayMetadatum(
@@ -324,6 +350,12 @@ async function getDataOutMetadata(
       isHeader: { isHidden: true },
     }
     if (isAnswerArrayValid(fieldData)) {
+      // table field will have a stringified table object in the answer field
+      // so that it can be used in for-each
+      // this is also used to generate the table preview in the frontend
+      if (fieldData.fieldType === 'table') {
+        fieldMetadata[fieldId].answer = buildTableMetadatum(fieldData)
+      }
       fieldMetadata[fieldId].answerArray = buildAnswerArrayMetadatum(
         fieldData,
         executionStep.stepId,
