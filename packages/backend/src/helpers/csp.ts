@@ -35,6 +35,7 @@ const helmetOptions: HelmetOptions = {
       ].filter(Boolean),
       imgSrc: [
         "'self'",
+        'data:',
         'https://file.go.gov.sg',
         'https://www.google-analytics.com',
         'https://www.googletagmanager.com',
