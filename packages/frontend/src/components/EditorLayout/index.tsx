@@ -54,7 +54,7 @@ export default function EditorLayout() {
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
     refetchQueries: [GET_FLOW],
   })
-  const [warnTriggeredBy, setWarnTriggeredBy] = useState<string | null>(null)
+  const [shouldWarnOnPublish, setShouldWarnOnPublish] = useState(false)
   const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
   const [leaveToUrl, setLeaveToUrl] = useState(URLS.FLOWS)
   const {
@@ -135,6 +135,11 @@ export default function EditorLayout() {
     [flow?.id, flowId, updateFlowStatus],
   )
 
+  const handleWarningClose = useCallback(() => {
+    setShouldWarnOnPublish(false)
+    onWarningClose()
+  }, [onWarningClose])
+
   const handleWarnOnLeave = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
       if (shouldWarnOnLeave) {
@@ -146,13 +151,19 @@ export default function EditorLayout() {
   )
 
   const onDiscardChanges = useCallback(() => {
-    if (warnTriggeredBy === 'publish') {
+    if (shouldWarnOnPublish) {
       onFlowStatusUpdate(!flow?.active)
       resetFormRef.current?.()
     } else {
       navigate(leaveToUrl)
     }
-  }, [onFlowStatusUpdate, flow?.active, leaveToUrl, navigate, warnTriggeredBy])
+  }, [
+    onFlowStatusUpdate,
+    flow?.active,
+    leaveToUrl,
+    navigate,
+    shouldWarnOnPublish,
+  ])
 
   // disallow user from publishing pipe if any step is incomplete
   const isFlowIncomplete = useMemo(
@@ -295,7 +306,7 @@ export default function EditorLayout() {
               size="sm"
               onClick={(e) => {
                 if (shouldWarnOnLeave) {
-                  setWarnTriggeredBy('publish')
+                  setShouldWarnOnPublish(true)
                   handleWarnOnLeave(e)
                 } else {
                   onFlowStatusUpdate(!flow.active)
@@ -353,7 +364,7 @@ export default function EditorLayout() {
       <UnsavedChangesAlert
         cancelRef={cancelRef}
         isOpen={isWarningOpen}
-        onClose={onWarningClose}
+        onClose={handleWarningClose}
         onLeave={onDiscardChanges}
       />
     </>
