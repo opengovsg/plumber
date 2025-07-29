@@ -16,11 +16,11 @@ import * as URLS from '@/config/urls'
 const posts = [
   {
     title:
-      "How Attorney General's Chamber reduced 50% of time spent on administrative onboarding processes",
+      "How Attorney-General's Chambers reduced 50% of time spent on administrative onboarding processes",
     href: URLS.HUMAN_RESOURCE,
     description: ' ',
     imageUrl: AgcLogo,
-    agency: "Attorney General's Chamber",
+    agency: "Attorney-General's Chambers",
   },
 ]
 

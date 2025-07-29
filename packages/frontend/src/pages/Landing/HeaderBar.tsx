@@ -117,7 +117,12 @@ export default function HeaderBar() {
               </Popover> */}
 
               {/* TODO: check if this link needs to be changed */}
-              <Button as="a" href={URLS.GUIDE_LINK} variant="clear">
+              <Button
+                as="a"
+                href={URLS.GUIDE_LINK}
+                target="_blank"
+                variant="clear"
+              >
                 Releases
               </Button>
 

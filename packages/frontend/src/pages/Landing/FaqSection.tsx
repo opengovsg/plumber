@@ -10,6 +10,9 @@ import {
   Text,
 } from '@chakra-ui/react'
 
+import MarkdownRenderer from '@/components/MarkdownRenderer'
+import * as URLS from '@/config/urls'
+
 const faqs = [
   {
     question: 'Is Plumber free?',
@@ -22,8 +25,7 @@ const faqs = [
   },
   {
     question: 'Do you offer technical support?',
-    answer:
-      'If you run into any difficulties setting up your workflows, you can reach out to us at https://go.gov.sg/plumber-support.',
+    answer: `If you run into any difficulties setting up your workflows, you can reach out to us [here](${URLS.SUPPORT_FORM_LINK}).`,
   },
   {
     question: 'Which agencies are using Plumber?',
@@ -76,9 +78,16 @@ export default function FaqSection() {
                 </AccordionButton>
 
                 <AccordionPanel mt={2} pr={12} px={0}>
-                  <Text fontSize="base" color="gray.600">
-                    {faq.answer}
-                  </Text>
+                  <MarkdownRenderer
+                    source={faq.answer}
+                    components={{
+                      p: ({ children }) => (
+                        <Text fontSize="base" color="gray.600">
+                          {children}
+                        </Text>
+                      ),
+                    }}
+                  />
                 </AccordionPanel>
               </AccordionItem>
             ))}
