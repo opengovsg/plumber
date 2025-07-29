@@ -26,6 +26,16 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
     .withGraphFetched({
       executionSteps: true,
     })
+    .modifyGraph('executionSteps', (builder) => {
+      builder
+        .select('execution_steps.*')
+        .distinctOn('execution_steps.execution_id', 'execution_steps.step_id')
+        .orderBy([
+          { column: 'execution_steps.execution_id' },
+          { column: 'execution_steps.step_id' },
+          { column: 'execution_steps.created_at', order: 'desc' },
+        ])
+    })
     .where(filterBuilder)
     .withSoftDeleted()
     .orderBy('created_at', 'desc')
