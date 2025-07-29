@@ -200,7 +200,7 @@ export const matchParamsToDataIn = (
       }
 
       const tableData = getTableData(lastTest, inputSource)
-      const lastTestColumns = tableData.columns?.map((c) => c.name) ?? []
+      const lastTestColumns = tableData?.columns?.map((c) => c.name) ?? []
       const mapKey = isFormSgTable ? searchKey : `${searchKey}.data`
       const varInfo = Array.from(varInfoMap.entries())
         .filter(([key]) => key.includes(mapKey))
@@ -219,7 +219,7 @@ export const matchParamsToDataIn = (
          * since there is no safe way to parse the FormSG table columns properly,
          * we do a best-effort comparison to just check that the columns are present.
          */
-        if (tableData.rows?.length === 0) {
+        if (tableData?.rows?.length === 0) {
           return true
         }
 
@@ -231,7 +231,7 @@ export const matchParamsToDataIn = (
           `{{${searchKey}.rowsFound}}`,
         )?.testRunValue
 
-        if (Number(varRowsFound) !== Number(tableData.rows?.length)) {
+        if (Number(varRowsFound) !== Number(tableData?.rows?.length)) {
           return false
         }
 
