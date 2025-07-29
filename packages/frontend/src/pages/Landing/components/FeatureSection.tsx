@@ -1,6 +1,7 @@
 import React from 'react'
 import { Box, Grid, Heading, Image, Stack, Text } from '@chakra-ui/react'
-import Lottie from 'lottie-react'
+
+import LottieWebAnimation from '@/components/NewsDrawer/LottieWebAnimation'
 
 interface Feature {
   name: string
@@ -36,12 +37,7 @@ export const FeatureSection: React.FC<FeatureSectionProps> = ({
           width="auto"
           overflow="hidden"
         >
-          <Lottie
-            animationData={lottieData}
-            loop
-            autoplay
-            style={{ width: 'auto', height: 'auto' }}
-          />
+          <LottieWebAnimation animationData={lottieData} />
         </Box>
       )
     }
@@ -117,17 +113,15 @@ export const FeatureSection: React.FC<FeatureSectionProps> = ({
           gap={{ base: 16, sm: 20, lg: 8 }}
           alignItems="center"
         >
-          {imagePosition === 'left' ? (
-            <>
-              <ImageComponent />
-              <ContentComponent />
-            </>
-          ) : (
-            <>
-              <ContentComponent />
-              <ImageComponent />
-            </>
-          )}
+          {/* On mobile, always show content first, then image */}
+          {/* On web, if image is on the left, show content first, then image */}
+          {/* On web, if image is on the right, show image first, then content */}
+          <Box order={{ base: 1, lg: imagePosition === 'left' ? 2 : 1 }}>
+            <ContentComponent />
+          </Box>
+          <Box order={{ base: 2, lg: imagePosition === 'left' ? 1 : 2 }}>
+            <ImageComponent />
+          </Box>
         </Grid>
       </Box>
     </Box>

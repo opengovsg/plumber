@@ -1,8 +1,8 @@
 import { Box, Flex, Heading, HStack, Link, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
-import Lottie from 'lottie-react'
 
 import HeroLottie from '@/assets/landing/HeroLottie.json'
+import LottieWebAnimation from '@/components/NewsDrawer/LottieWebAnimation'
 import * as URLS from '@/config/urls'
 
 import BackgroundPattern from './components/BackgroundPattern'
@@ -104,12 +104,7 @@ export default function HeroSection() {
             borderRadius="16px"
             overflow="hidden"
           >
-            <Lottie
-              animationData={HeroLottie}
-              loop
-              autoplay
-              style={{ width: 'auto', height: 'auto' }}
-            />
+            <LottieWebAnimation animationData={HeroLottie} />
           </Box>
         </Box>
       </Flex>
