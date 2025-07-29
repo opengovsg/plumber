@@ -50,7 +50,6 @@ export const FOR_EACH_REMINDER_TEMPLATE: ITemplate = {
       parameters: {
         items: CREATE_TEMPLATE_STEP_VARIABLE(
           'Replace with rows data from step 2',
-          2,
         ),
       },
     },
@@ -71,10 +70,7 @@ export const FOR_EACH_REMINDER_TEMPLATE: ITemplate = {
       eventKey: 'updateSingleRow',
       parameters: {
         tableId: TILE_ID_PLACEHOLDER,
-        rowId: CREATE_TEMPLATE_STEP_VARIABLE(
-          'Replace with Row ID from Step 3',
-          3,
-        ),
+        rowId: CREATE_TEMPLATE_STEP_VARIABLE('Replace with Row ID from Step 3'),
         rowData: [
           {
             columnId: TILE_COL_DATA_PLACEHOLDER('Reminder sent'),
