@@ -9,6 +9,8 @@ import {
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
+import MarkdownRenderer from '../MarkdownRenderer'
+
 export type AlertDialogType = 'delete' | 'duplicate'
 export type AlertHeaderType = 'Connection' | 'Pipe' | 'Tile' | 'Step' | 'File'
 
@@ -82,7 +84,9 @@ export default function MenuAlertDialog(props: MenuAlertDialogProps) {
         <AlertDialogContent>
           <AlertDialogHeader>{header}</AlertDialogHeader>
 
-          <AlertDialogBody>{body}</AlertDialogBody>
+          <AlertDialogBody>
+            <MarkdownRenderer source={body} />
+          </AlertDialogBody>
 
           <AlertDialogFooter>
             <Button

@@ -29,7 +29,7 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
   const { isNested, step, caption } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
   const customBody = caption
-    ? `Are you sure you want to delete step ${caption}? You can't undo this action afterwards.`
+    ? `Are you sure you want to delete step **${caption}**? You can't undo this action afterwards.`
     : undefined
   const {
     isOpen: isDialogOpen,
