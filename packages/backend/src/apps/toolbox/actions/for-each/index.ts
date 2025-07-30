@@ -54,12 +54,14 @@ const action: IRawAction = {
 
     try {
       const { items, inputSource, iterations } = parsedResult.data
-      let output: {
+      const output: {
+        iteration: string
         iterations: number
         items: any[]
         inputSource: string
         item?: string
       } = {
+        iteration: FOR_EACH_ITERATION_KEY,
         iterations: 0,
         items: [],
         inputSource: '',
@@ -69,22 +71,17 @@ const action: IRawAction = {
         Array.isArray(items) &&
         isCheckboxItems(items)
       ) {
-        output = {
-          iterations: items.length,
-          items: items,
-          inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
-          // NOTE: this is specifically for checkboxes
-          // table data is handled differently in processItems
-          item: `items.${FOR_EACH_ITERATION_KEY}`,
-        }
+        output.iterations = items.length
+        output.items = items
+        output.inputSource = FOR_EACH_INPUT_SOURCE.STRING_ARRAY
+        // NOTE: this is specifically for checkboxes
+        // table data is handled differently in processItems
+        output['item'] = `items.${FOR_EACH_ITERATION_KEY}`
       } else if (FOR_EACH_TABLE_SOURCES.includes(inputSource)) {
         const processedItems = processItems(items as MultipleRowObject)
-
-        output = {
-          iterations: iterations,
-          items: processedItems,
-          inputSource,
-        }
+        output.iterations = iterations
+        output.items = processedItems
+        output.inputSource = inputSource
       }
 
       $.setActionItem({ raw: output })

@@ -50,9 +50,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -79,9 +82,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -108,9 +114,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -138,9 +147,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -187,9 +199,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -253,9 +268,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -300,9 +318,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -365,9 +386,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -436,9 +460,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -498,9 +525,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -575,9 +605,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
@@ -753,9 +786,12 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        iteration: {
+          label: 'Item number',
+          displayedValue: '1',
+        },
         iterations: {
-          label: 'Items',
-          isHidden: true,
+          label: 'Items found',
         },
         inputSource: {
           isHidden: true,
