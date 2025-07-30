@@ -33,11 +33,11 @@ const getRateLimiter = memoize((maxQps: number): RateLimiterRedis => {
 
 async function sendWebhookResponse(
   response: Response,
-  customWebhookResponse: CustomWebhookResponse,
+  customWebhookResponse?: CustomWebhookResponse,
 ) {
   if (customWebhookResponse) {
     response.setHeader('Content-Type', customWebhookResponse.contentType)
-    return response.send(customWebhookResponse.body)
+    return response.status(200).send(customWebhookResponse.body)
   }
   return response.sendStatus(200)
 }

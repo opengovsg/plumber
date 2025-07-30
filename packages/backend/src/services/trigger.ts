@@ -31,7 +31,9 @@ type ProcessTriggerResult = {
   customWebhookResponse?: CustomWebhookResponse
 }
 
-function getCustomWebhookResponse(step: Step) {
+function getCustomWebhookResponse(
+  step: Step,
+): CustomWebhookResponse | undefined {
   const customWebhookResponse =
     step.config?.adminOverride?.customWebhookResponse
   if (step.appKey !== 'webhook' || !customWebhookResponse) {
