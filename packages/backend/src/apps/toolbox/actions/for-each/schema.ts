@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { tableRowDataSchema } from '@/apps/tiles/actions/find-multiple-rows/schema'
+
 import {
   FOR_EACH_INPUT_SOURCE,
   FOR_EACH_TABLE_SOURCES,
@@ -15,7 +17,7 @@ const tableColumnsSchema = z.array(
 
 const tableRowsSchema = z.array(
   z.object({
-    data: z.record(z.string(), z.string().or(z.number())),
+    data: tableRowDataSchema,
     rowId: z.string().optional(), // only for tiles
   }),
 )
