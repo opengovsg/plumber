@@ -13,7 +13,7 @@ import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Flow from '@/models/flow'
 import { enqueueActionJob } from '@/queues/action'
-import { processTrigger } from '@/services/trigger'
+import { type CustomWebhookResponse, processTrigger } from '@/services/trigger'
 
 const DEFAULT_MAX_QPS = 10
 
@@ -30,6 +30,17 @@ const getRateLimiter = memoize((maxQps: number): RateLimiterRedis => {
     storeClient: redisRateLimitClient,
   })
 })
+
+async function sendWebhookResponse(
+  response: Response,
+  customWebhookResponse: CustomWebhookResponse,
+) {
+  if (customWebhookResponse) {
+    response.setHeader('Content-Type', customWebhookResponse.contentType)
+    return response.send(customWebhookResponse.body)
+  }
+  return response.sendStatus(200)
+}
 
 export default async (request: IRequest, response: Response) => {
   const span = tracer.scope().active()
@@ -139,12 +150,13 @@ export default async (request: IRequest, response: Response) => {
    * Plumber will still return a 200 status code, so that FormSG does not auto-retry,
    * but Plumber not enqueue the job.
    */
-  const { executionId, shouldExecute } = await processTrigger({
-    flowId,
-    stepId: triggerStep.id,
-    triggerItem,
-    testRun,
-  })
+  const { executionId, shouldExecute, customWebhookResponse } =
+    await processTrigger({
+      flowId,
+      stepId: triggerStep.id,
+      triggerItem,
+      testRun,
+    })
 
   span?.addTags({
     flowId,
@@ -155,7 +167,7 @@ export default async (request: IRequest, response: Response) => {
   })
 
   if (testRun || !shouldExecute) {
-    return response.sendStatus(200)
+    return sendWebhookResponse(response, customWebhookResponse)
   }
 
   const nextStep = await triggerStep.getNextStep()
@@ -174,5 +186,5 @@ export default async (request: IRequest, response: Response) => {
     jobOptions: DEFAULT_JOB_OPTIONS,
   })
 
-  return response.sendStatus(200)
+  return sendWebhookResponse(response, customWebhookResponse)
 }

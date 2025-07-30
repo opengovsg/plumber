@@ -1,7 +1,10 @@
 import type { IJSONObject, ITriggerItem } from '@plumber/types'
 
+import { z } from 'zod'
+
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
 
 type ProcessTriggerOptions = {
@@ -12,8 +15,39 @@ type ProcessTriggerOptions = {
   testRun?: boolean
 }
 
+const customWebhookResponseSchema = z.object({
+  contentType: z.string(),
+  body: z.string(),
+})
+
+export type CustomWebhookResponse = z.infer<typeof customWebhookResponseSchema>
+
+type ProcessTriggerResult = {
+  flowId: string
+  stepId: string
+  executionId: string
+  executionStep: ExecutionStep | null
+  shouldExecute: boolean
+  customWebhookResponse?: CustomWebhookResponse
+}
+
+function getCustomWebhookResponse(step: Step) {
+  const customWebhookResponse =
+    step.config?.adminOverride?.customWebhookResponse
+  if (step.appKey !== 'webhook' || !customWebhookResponse) {
+    return undefined
+  }
+  const parsed = customWebhookResponseSchema.safeParse(customWebhookResponse)
+  if (parsed.success) {
+    return parsed.data
+  }
+  return undefined
+}
+
 // TODO(ian): change this function name, it's basically just storing trigger data
-export const processTrigger = async (options: ProcessTriggerOptions) => {
+export const processTrigger = async (
+  options: ProcessTriggerOptions,
+): Promise<ProcessTriggerResult> => {
   const { flowId, stepId, triggerItem, error, testRun } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
@@ -95,11 +129,14 @@ export const processTrigger = async (options: ProcessTriggerOptions) => {
       key: step.key,
     })
 
+  const customWebhookResponse = getCustomWebhookResponse(step)
+
   return {
     flowId,
     stepId,
     executionId: execution.id,
     executionStep,
     shouldExecute: true,
+    customWebhookResponse,
   }
 }
