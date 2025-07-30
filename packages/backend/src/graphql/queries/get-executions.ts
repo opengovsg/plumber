@@ -10,13 +10,12 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
   context,
 ) => {
   const filterBuilder = (builder: ExtendedQueryBuilder<Execution>) => {
-    builder.where('test_run', 'FALSE')
+    builder.where('test_run', false)
     builder.where('flow_id', params.flowId)
 
-    if (!('status' in params)) {
+    if (params.status === null) {
       builder.whereNull('status')
-    }
-    if (params.status) {
+    } else if (params?.status) {
       builder.where('status', params.status)
     }
   }
