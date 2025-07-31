@@ -35,7 +35,7 @@ async function getDataOutMetadata(
       value: {
         type: 'text',
         label: datum.columnName,
-        order: dataOut?.columns?.indexOf(datum.columnName) + 1,
+        order: (dataOut?.columns?.indexOf(datum.columnName) ?? 0) + 1,
       },
       columnName: {
         isHidden: true,
