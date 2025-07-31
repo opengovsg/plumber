@@ -92,7 +92,8 @@ type Mutation {
     input: BulkRetryIterationsInput
   ): BulkRetryIterationsResult!
   logout: Boolean
-  loginWithSgid(input: LoginWithSgidInput!): LoginWithSgidResult!
+  loginWithSgid(input: OidcLoginInput!): LoginWithSgidResult!
+  loginWithSso(input: OidcLoginInput!): Boolean!
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
@@ -895,7 +896,7 @@ type SgidPublicOfficerEmployment {
   employmentTitle: String
 }
 
-input LoginWithSgidInput {
+input OidcLoginInput {
   authCode: String!
   nonce: String!
   verifier: String!

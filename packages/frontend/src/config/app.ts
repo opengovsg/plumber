@@ -5,6 +5,7 @@ interface AppConfig {
   env: string
   version: string
   lensSurveyClientKey: string
+  ssoClientId: string
 }
 
 function getAppConfig(): AppConfig {
@@ -24,6 +25,7 @@ function getAppConfig(): AppConfig {
         sgidClientId: 'PLUMBER-c24255a5',
         isDev: false,
         lensSurveyClientKey: 'cm85ca2f300053ooz4vydrmyw',
+        ssoClientId: 'plumber-prod',
         ...commonEnv,
       }
     // UAT and staging differ for the lens survey client key only
@@ -33,6 +35,7 @@ function getAppConfig(): AppConfig {
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
         lensSurveyClientKey: 'cm8fp8i030008zm2tbuc07xe5',
+        ssoClientId: 'plumber-uat',
         ...commonEnv,
       }
     case 'staging':
@@ -41,6 +44,7 @@ function getAppConfig(): AppConfig {
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
         lensSurveyClientKey: 'cm86psst900052orfqetz3gz5',
+        ssoClientId: 'plumber-staging',
         ...commonEnv,
       }
     default:
@@ -49,6 +53,7 @@ function getAppConfig(): AppConfig {
         sgidClientId: 'PLUMBERLOCALDEV-dc1a72f7',
         isDev: true,
         lensSurveyClientKey: 'cm8fpeah2000gzm2t572lhfti',
+        ssoClientId: 'plumber-local',
         ...commonEnv,
       }
   }
