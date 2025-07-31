@@ -1,6 +1,13 @@
 import type { IApp, IExecutionStep, IFlow, IStep } from '@plumber/types'
 
-import { createContext, ReactNode, useCallback, useMemo, useState } from 'react'
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useMutation, useQuery } from '@apollo/client'
 import { Center, useDisclosure } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
@@ -98,6 +105,7 @@ type EditorProviderProps = {
   flow: IFlow
   shouldWarnOnLeave: boolean
   setShouldWarnOnLeave: (shouldWarnOnLeave: boolean) => void
+  resetFormRef?: React.MutableRefObject<(() => void) | null>
 }
 
 /**
@@ -147,6 +155,7 @@ export const EditorProvider = ({
   flow,
   shouldWarnOnLeave,
   setShouldWarnOnLeave,
+  resetFormRef,
   children,
 }: EditorProviderProps) => {
   const isMobile = useIsMobile()
@@ -362,6 +371,13 @@ export const EditorProvider = ({
   const resetForm = useCallback(() => {
     setResetTimestamp(Date.now())
   }, [])
+
+  // Set the resetForm function in the ref so EditorLayout can access it
+  useEffect(() => {
+    if (resetFormRef) {
+      resetFormRef.current = resetForm
+    }
+  }, [resetForm, resetFormRef])
 
   if (isLoadingAllApps) {
     return (
