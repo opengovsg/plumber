@@ -19,7 +19,9 @@ function reconnectOnError(err: Error) {
   if (err.message.includes(targetError)) {
     // Only reconnect when the error contains "READONLY"
     // during node failover, this is thrown: 149: -READONLY You can't write against a read only replica.
-    return true
+    // Using reconnectOnError, we can force the connection to reconnect on this error in order to connect to the new master.
+    // We return 2 so that ioredis will resend the failed command after reconnecting.
+    return 2
   }
   return false
 }
