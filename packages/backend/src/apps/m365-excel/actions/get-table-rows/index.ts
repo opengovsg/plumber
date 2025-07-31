@@ -105,7 +105,7 @@ const action: IRawAction = {
       description:
         'Case sensitive and should not include units. E.g. $5.20 → 5.2',
       type: 'string' as const,
-      required: true,
+      required: false,
       variables: true,
     },
   ],
