@@ -1,5 +1,6 @@
 import { raw } from 'objection'
 
+import appConfig from '@/config/app'
 import testStep from '@/services/test-step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -17,6 +18,12 @@ const executeStep: MutationResolvers['executeStep'] = async (
     .withGraphFetched('flow')
     .findById(stepId)
     .throwIfNotFound()
+
+  if (stepToTest.appKey === 'tiles' && appConfig.isTilesUnderMaintenance) {
+    throw new Error(
+      'Tiles is temporarily unavailable for maintenance. Please try again later.',
+    )
+  }
 
   const { executionStep, executionId } = await testStep({
     stepId: stepToTest.id,

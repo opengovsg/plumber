@@ -60,6 +60,7 @@ type AppConfig = {
     clientSecret: string
     discoveryUrl: string
   }
+  isTilesUnderMaintenance: boolean
 }
 
 const port = process.env.PORT || '3000'
@@ -134,6 +135,7 @@ const appConfig: AppConfig = {
     clientSecret: process.env.SSO_CLIENT_SECRET,
     discoveryUrl: process.env.SSO_DISCOVERY_URL,
   },
+  isTilesUnderMaintenance: process.env.TILES_UNDER_MAINTENANCE === 'true',
 }
 
 if (!appConfig.encryptionKey) {
