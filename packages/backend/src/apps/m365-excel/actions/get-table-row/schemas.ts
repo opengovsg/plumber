@@ -26,5 +26,7 @@ export const dataOutSchema = z.discriminatedUnion('foundRow', [
     foundRow: z.literal(true),
     rowData: hexEncodedRowRecordSchema,
     sheetRowNumber: z.number(),
+    // optional for backward compatibility
+    columns: z.array(z.string()).optional(),
   }),
 ])

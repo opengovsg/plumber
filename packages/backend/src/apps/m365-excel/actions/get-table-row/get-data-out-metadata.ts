@@ -21,12 +21,21 @@ async function getDataOutMetadata(
     return metadata
   }
 
+  // hide column array from the output, its only used to order the row data
+  metadata.columns =
+    dataOut?.columns?.map((column) => ({
+      type: 'text',
+      label: column,
+      isHidden: true,
+    })) || []
+
   metadata.rowData = Object.create(null)
   for (const [key, datum] of Object.entries(dataOut.rowData)) {
     metadata.rowData[key] = {
       value: {
         type: 'text',
         label: datum.columnName,
+        order: dataOut?.columns?.indexOf(datum.columnName) + 1,
       },
       columnName: {
         isHidden: true,
@@ -57,5 +66,6 @@ export default getDataOutMetadata
 //       value: '5',
 //     },
 //   },
-//   sheetRowNumber: 3
+//   sheetRowNumber: 3,
+//   columns: ['Item', 'Unit Price'],
 // }
