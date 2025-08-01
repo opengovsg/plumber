@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BiMenu, BiX } from 'react-icons/bi'
 import {
   Box,
@@ -6,7 +7,6 @@ import {
   HStack,
   Image,
   Link,
-  Text,
   useBreakpointValue,
   useDisclosure,
   VStack,
@@ -29,6 +29,13 @@ import * as URLS from '@/config/urls'
 export default function HeaderBar() {
   const { isOpen, onToggle } = useDisclosure()
   const isDesktop = useBreakpointValue({ base: false, lg: true })
+
+  useEffect(() => {
+    if (isDesktop && isOpen) {
+      onToggle()
+    }
+  }, [isDesktop, isOpen, onToggle])
+
   return (
     <>
       <Flex
@@ -145,13 +152,13 @@ export default function HeaderBar() {
 
       {/* Mobile Menu */}
       <Collapse in={isOpen} animateOpacity>
-        <Box bg="white" shadow="md" px={{ base: 6, sm: 8 }} pt={6} pb={8}>
+        <Box bg="white" shadow="md" px={{ base: 6, sm: 8 }} pb={8}>
           <VStack spacing={4} align="stretch">
-            <Box>
+            {/* <Box>
               <Text fontWeight="semibold" mb={2}>
                 Use cases
               </Text>
-              {/* <VStack align="start" spacing={4}>
+              <VStack align="start" spacing={4}>
                 {USE_CASES.map((item) => (
                   <Box
                     key={item.name}
@@ -167,15 +174,15 @@ export default function HeaderBar() {
                     </Text>
                   </Box>
                 ))}
-              </VStack> */}
-            </Box>
+              </VStack>
+            </Box> */}
             <Link
               href={URLS.GUIDE_LINK}
               fontWeight="medium"
               pt={2}
               textDecoration="none"
             >
-              Releases
+              Guide
             </Link>
             <Link
               href={URLS.STATUS_LINK}

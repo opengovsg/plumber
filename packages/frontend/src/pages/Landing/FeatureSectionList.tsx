@@ -12,7 +12,7 @@ const features1 = [
   {
     name: 'Build faster with templates.',
     description:
-      'Get up and running instantly with customizable templates that have been tried and tested by other agencies.',
+      'Get up and running instantly with customisable templates that have been tried and tested by other agencies.',
   },
 ]
 
