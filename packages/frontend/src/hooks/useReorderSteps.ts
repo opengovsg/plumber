@@ -26,21 +26,21 @@ const useReorderSteps = (flowId: string) => {
             __typename: 'Step' as const,
           })),
         },
-        update: (cache) => {
+        update: (cache: any) => {
           // Update the cache with the new step positions optimistically
-          const existingData = cache.readQuery({
+          const { getFlow: flow } = cache.readQuery({
             query: GET_FLOW,
             variables: { id: flowId },
-          }) as { getFlow: any } | null
+          })
 
-          if (existingData?.getFlow) {
+          if (flow) {
             // Create a map of step positions for quick lookup
             const positionMap = new Map(
               stepPositions.map((sp) => [sp.id, sp.position]),
             )
 
             // Update steps with new positions
-            const updatedSteps = existingData.getFlow.steps.map((step: any) => {
+            const updatedSteps = flow.steps.map((step: any) => {
               const newPosition = positionMap.get(step.id)
               return newPosition !== undefined
                 ? { ...step, position: newPosition }
@@ -56,7 +56,7 @@ const useReorderSteps = (flowId: string) => {
               variables: { id: flowId },
               data: {
                 getFlow: {
-                  ...existingData.getFlow,
+                  ...flow,
                   steps: updatedSteps,
                 },
               },
