@@ -34,7 +34,7 @@ export default function SsoLoginSection(): JSX.Element {
         onClick={handleSsoLogin}
         isLoading={isRedirecting}
       >
-        Log in with SSO
+        Log in with OGP SSO
       </Button>
       {hasError && (
         <Infobox variant="error" mb={2}>
@@ -42,7 +42,7 @@ export default function SsoLoginSection(): JSX.Element {
           support@plumber.gov.sg for help.
         </Infobox>
       )}
-      <Text>For OGP officers only.</Text>
+      <Text textStyle="body-2">For OGP officers only</Text>
     </Flex>
   )
 }

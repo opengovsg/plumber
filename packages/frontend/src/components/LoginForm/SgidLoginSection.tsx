@@ -56,10 +56,10 @@ export default function SgidLoginSection(): JSX.Element {
         >
           Log in with <Image src={singpassLogo} mb={-0.5} h={5} /> app
         </Button>
-        <Text>
+        <Text textStyle="body-2">
           Can my agency use this? Check{' '}
           <Link target="_blank" href={SGID_CHECK_ELIGIBILITY_URL}>
-            here.
+            here
           </Link>
         </Text>
       </Flex>
