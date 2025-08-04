@@ -11,6 +11,7 @@ import Execution from '@/pages/Execution'
 import Executions from '@/pages/Executions'
 import ExecutionsForFlow from '@/pages/ExecutionsForFlow'
 import Flows from '@/pages/Flows'
+import HumanResource from '@/pages/Landing/UseCasesPages/HumanResource'
 import Login from '@/pages/Login'
 import SgidCallback from '@/pages/SgidCallback'
 import Templates from '@/pages/Templates'
@@ -173,5 +174,7 @@ export default createRoutesFromElements(
         </Layout>
       }
     />
+
+    <Route path={URLS.HUMAN_RESOURCE} element={<HumanResource />} />
   </Route>,
 )

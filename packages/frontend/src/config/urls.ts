@@ -68,9 +68,6 @@ export const TEMPLATE = (id: string): string => `/templates/${id}`
 
 export const DASHBOARD = FLOWS
 
-export const APP_ICON_URL = (appKey: string): string =>
-  `/apps/${appKey}/assets/favicon.svg`
-
 // external links
 export const OGP_HOMEPAGE = 'https://open.gov.sg'
 export const GUIDE_LINK = 'https://guide.plumber.gov.sg'
@@ -85,3 +82,6 @@ export const SGID_CHECK_ELIGIBILITY_URL =
 export const TEMPLATES_FORM_LINK = 'https://go.gov.sg/request-template'
 export const SUPPORT_FORM_LINK = 'https://go.gov.sg/plumber-support'
 export const LEARN_LINK = 'https://go.gov.sg/learn-plumber'
+
+// Landing page use cases
+export const HUMAN_RESOURCE = '/use-cases/human-resource'

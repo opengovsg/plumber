@@ -1,24 +1,25 @@
-import { LightMode } from '@chakra-ui/react'
-
-import { Footer } from '@/components/Footer'
+import { Box, LightMode } from '@chakra-ui/react'
 
 import Agencies from './Agencies'
-import AutomationLanding from './AutomationLanding'
-import MainLanding from './MainLanding'
-import ToolsLanding from './ToolsLanding'
-import TrainingSession from './TrainingSession'
+import FaqSection from './FaqSection'
+import FeatureSectionList from './FeatureSectionList'
+import { Footer } from './Footer'
+import HeaderBar from './HeaderBar'
+import HeroSection from './HeroSection'
+import UseCases from './UseCases'
 
-const Landing = () => {
+export default function Landing() {
   return (
     <LightMode>
-      <MainLanding />
-      <Agencies />
-      <ToolsLanding />
-      <AutomationLanding />
-      <TrainingSession />
-      <Footer />
+      <Box fontFamily="'DM Sans', sans-serif">
+        <HeaderBar />
+        <HeroSection />
+        <Agencies />
+        <FeatureSectionList />
+        <UseCases />
+        <FaqSection />
+        <Footer />
+      </Box>
     </LightMode>
   )
 }
-
-export default Landing
