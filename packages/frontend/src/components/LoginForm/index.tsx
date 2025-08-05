@@ -3,7 +3,7 @@ import { useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 
 import appConfig from '@/config/app'
-import { SGID_FEATURE_FLAG } from '@/config/flags'
+import { SGID_FEATURE_FLAG, SSO_FEATURE_FLAG } from '@/config/flags'
 import { RESPONSE_HEADERS } from '@/config/headers'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { REQUEST_OTP } from '@/graphql/mutations/request-otp'
@@ -58,7 +58,9 @@ export const LoginForm = (): JSX.Element => {
   const shouldShowSgidLogin = flags?.[SGID_FEATURE_FLAG]
   // show sso login if request is from OGP office wifi or in dev
   const shouldShowSsoLogin =
-    headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER] === 'true' || appConfig.isDev
+    (headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER] === 'true' ||
+      appConfig.isDev) &&
+    flags?.[SSO_FEATURE_FLAG]
 
   return (
     <form onSubmit={handleSubmit}>

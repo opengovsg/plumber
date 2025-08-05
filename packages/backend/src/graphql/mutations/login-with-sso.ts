@@ -4,6 +4,7 @@ import {
   setAuthCookie,
   updateLastLogin,
 } from '@/helpers/auth'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { ssoClient } from '@/helpers/sso-client'
 
@@ -15,6 +16,12 @@ const loginWithSso: MutationResolvers['loginWithSso'] = async (
   context,
 ) => {
   const { authCode, nonce, verifier } = params.input
+
+  const ssoEnabled = await getLdFlagValue('ogp-sso-enabled', '', false)
+
+  if (!ssoEnabled) {
+    throw new Error('SSO is not enabled')
+  }
 
   try {
     const { accessToken, sub } = await ssoClient.callback({

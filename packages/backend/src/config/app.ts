@@ -161,6 +161,14 @@ if (
   throw new Error('Sgid environment variables need to be set!')
 }
 
+if (
+  !appConfig.sso.clientId ||
+  !appConfig.sso.clientSecret ||
+  !appConfig.sso.discoveryUrl
+) {
+  throw new Error('SSO environment variables need to be set!')
+}
+
 if (!appConfig.launchDarklySdkKey) {
   throw new Error('LAUNCH_DARKLY_SDK_KEY environment variable needs to be set!')
 }
