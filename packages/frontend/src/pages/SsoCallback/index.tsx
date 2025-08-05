@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { BsArrowRight } from 'react-icons/bs'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Flex, Icon, Image, VStack } from '@chakra-ui/react'
+import { Flex, Icon, Image, Text, VStack } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
 import mainLogo from '@/assets/logo.svg'
-import sgidLogo from '@/assets/sgid-logo.svg'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
 import { LOGIN_WITH_SSO } from '@/graphql/mutations/login-with-sso'
@@ -75,12 +74,13 @@ export default function SsoCallback(): JSX.Element {
   return (
     <VStack flex={1} alignItems="center" justifyContent="center" gap={8}>
       <Flex alignItems="center" justifyContent="center" gap={8}>
-        {/* TODO: Replace with SSO logo */}
-        <Image src={sgidLogo} alt="plumber-logo" w={24} />
+        <Text fontSize="5xl" fontWeight="bold">
+          SSO
+        </Text>
         <Icon as={BsArrowRight} boxSize={8} color="primary.500" />
         <Image src={mainLogo} alt="plumber-logo" w={12} mr={12} />
       </Flex>
-      <PrimarySpinner size="xl" thickness="4px" margin="auto" />
+      <PrimarySpinner fontSize="3xl" thickness="4px" pr={10} />
     </VStack>
   )
 }

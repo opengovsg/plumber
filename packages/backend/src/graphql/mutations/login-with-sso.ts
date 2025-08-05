@@ -31,10 +31,17 @@ const loginWithSso: MutationResolvers['loginWithSso'] = async (
       throw new Error('Received nullish user info')
     }
 
-    const user = await getOrCreateUser(userInfo.email)
+    const userEmail = userInfo.email.toLowerCase().trim()
+
+    // TODO: Remove this once it's public release
+    if (!userEmail.endsWith('@open.gov.sg')) {
+      throw new Error('Only OGP officers are allowed to login with SSO')
+    }
+
+    const user = await getOrCreateUser(userEmail)
     await sendOnboardingEmail(user)
     await updateLastLogin(user.id)
-    setAuthCookie(context.res, { userId: user.id })
+    setAuthCookie(context.res, { userId: user.id, isSso: true })
   } catch (error) {
     // Small log event to make it easier to get pulse on sgid error rate.
     logger.error('SSO: Unable to query user info', {

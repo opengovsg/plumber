@@ -91,7 +91,7 @@ type Mutation {
   bulkRetryIterations(
     input: BulkRetryIterationsInput
   ): BulkRetryIterationsResult!
-  logout: Boolean
+  logout: LogoutResult
   loginWithSgid(input: OidcLoginInput!): LoginWithSgidResult!
   loginWithSso(input: OidcLoginInput!): Boolean!
   loginWithSelectedSgid(
@@ -912,6 +912,10 @@ input LoginWithSelectedSgidInput {
 
 type LoginWithSelectedSgidResult {
   success: Boolean!
+}
+
+type LogoutResult {
+  isSso: Boolean
 }
 
 # End of SGID types

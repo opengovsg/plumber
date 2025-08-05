@@ -2,6 +2,8 @@ import { Client, Issuer } from 'openid-client'
 
 import appConfig from '@/config/app'
 
+import logger from './logger'
+
 export interface SsoTokenResponse {
   accessToken: string
   idToken: string
@@ -61,7 +63,9 @@ export class SsoClient {
         sub: tokenSet.claims().sub,
       }
     } catch (e) {
-      console.error(e)
+      logger.error('SSO: Unable to get token set', {
+        event: 'sso-login-failed-token-set',
+      })
       throw e
     }
   }

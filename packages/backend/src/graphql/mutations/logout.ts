@@ -1,4 +1,4 @@
-import { deleteAuthCookie } from '@/helpers/auth'
+import { deleteAuthCookie, getParsedAuthCookie } from '@/helpers/auth'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -7,8 +7,11 @@ const logout: MutationResolvers['logout'] = async (
   _params,
   context,
 ) => {
+  const { isSso } = getParsedAuthCookie(context.req)
   deleteAuthCookie(context.res)
-  return true
+  return {
+    isSso,
+  }
 }
 
 export default logout
