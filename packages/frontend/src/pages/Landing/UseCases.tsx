@@ -132,6 +132,7 @@ export default function UseCases() {
                           textDecoration: 'none',
                           color: 'primary.500',
                         }}
+                        aria-label="Human Resource"
                       >
                         <Box position="absolute" inset={0} />
                         {post.title}
