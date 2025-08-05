@@ -174,6 +174,7 @@ const action: IRawAction = {
           columns,
         }),
         sheetRowNumber,
+        columns,
       } satisfies DataOut,
     })
   },
