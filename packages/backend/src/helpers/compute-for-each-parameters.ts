@@ -126,6 +126,7 @@ export function computeForEachParameters({
   let forEachKeyPath = get(data, keyPath)
 
   // SPECIAL CASE: this returns the iteration number of the specific iteration.
+  // metadata.iteration is not available for test runs
   if (forEachKeyPath === FOR_EACH_ITERATION_KEY) {
     return metadata?.iteration ? metadata.iteration : 1
   }
