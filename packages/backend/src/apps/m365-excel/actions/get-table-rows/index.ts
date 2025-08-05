@@ -103,7 +103,7 @@ const action: IRawAction = {
       // weird (e.g. currency cells have a trailing space), and will lead to too
       // much user confusion.
       description:
-        'Case sensitive and should not include units. E.g. $5.20 → 5.2',
+        'Case sensitive and should not include units (e.g., $5.20 → 5.2). Leave blank to search for empty cells.',
       type: 'string' as const,
       required: false,
       variables: true,
