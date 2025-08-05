@@ -13,6 +13,7 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
     builder.where('test_run', false)
     builder.where('flow_id', params.flowId)
 
+    // null status means waiting
     if (params.status === null) {
       builder.whereNull('status')
     } else if (params?.status) {

@@ -99,9 +99,8 @@ export default function ExecutionsForFlowPage() {
     {
       variables: {
         ...getLimitAndOffset(page),
-        ...(status !== StatusType.Waiting && {
-          status,
-        }),
+        // specifically pass null for waiting status
+        status: status === StatusType.Waiting ? null : status,
         flowId,
       },
       skip: !flowId,
