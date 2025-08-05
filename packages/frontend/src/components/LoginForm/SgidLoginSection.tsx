@@ -5,7 +5,7 @@ import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import singpassLogo from '@/assets/singpass-logo.svg'
 import { SGID_CHECK_ELIGIBILITY_URL } from '@/config/urls'
-import { generateSgidAuthUrl } from '@/helpers/sgid'
+import { generateSgidAuthUrl } from '@/helpers/oidc'
 
 import SgidFailureModal from './SgidFailureModal'
 

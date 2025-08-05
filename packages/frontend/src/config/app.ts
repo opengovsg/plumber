@@ -6,6 +6,7 @@ interface AppConfig {
   version: string
   lensSurveyClientKey: string
   ssoClientId: string
+  ssoHostname: string
 }
 
 function getAppConfig(): AppConfig {
@@ -26,6 +27,7 @@ function getAppConfig(): AppConfig {
         isDev: false,
         lensSurveyClientKey: 'cm85ca2f300053ooz4vydrmyw',
         ssoClientId: 'plumber-prod',
+        ssoHostname: 'https://sso.open.gov.sg',
         ...commonEnv,
       }
     // UAT and staging differ for the lens survey client key only
@@ -36,6 +38,7 @@ function getAppConfig(): AppConfig {
         isDev: false,
         lensSurveyClientKey: 'cm8fp8i030008zm2tbuc07xe5',
         ssoClientId: 'plumber-uat',
+        ssoHostname: 'https://sso.open.gov.sg',
         ...commonEnv,
       }
     case 'staging':
@@ -45,6 +48,7 @@ function getAppConfig(): AppConfig {
         isDev: false,
         lensSurveyClientKey: 'cm86psst900052orfqetz3gz5',
         ssoClientId: 'plumber-staging',
+        ssoHostname: 'https://sso.open.gov.sg',
         ...commonEnv,
       }
     default:
@@ -54,6 +58,7 @@ function getAppConfig(): AppConfig {
         isDev: true,
         lensSurveyClientKey: 'cm8fpeah2000gzm2t572lhfti',
         ssoClientId: 'plumber-local',
+        ssoHostname: 'http://localhost:5354',
         ...commonEnv,
       }
   }

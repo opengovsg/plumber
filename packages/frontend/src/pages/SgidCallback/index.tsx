@@ -105,7 +105,7 @@ export default function SgidCallback(): JSX.Element {
       {employments ? (
         <SgidAccountSelect employments={employments} setFailed={setFailed} />
       ) : (
-        <PrimarySpinner size="xl" thickness="4px" margin="auto" />
+        <PrimarySpinner fontSize="3xl" thickness="4px" margin="auto" />
       )}
     </VStack>
   )

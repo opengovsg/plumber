@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { Flex, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
-import { generateSsoAuthUrl } from '@/helpers/sso'
+import { generateSsoAuthUrl } from '@/helpers/oidc'
 
 export default function SsoLoginSection(): JSX.Element {
   const [isRedirecting, setIsRedirecting] = useState(false)
