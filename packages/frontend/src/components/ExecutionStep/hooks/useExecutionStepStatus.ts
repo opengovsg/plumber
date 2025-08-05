@@ -30,7 +30,6 @@ export interface UseExecutionStepStatusReturn {
   isPartialSuccess: boolean
   canRetry: boolean
   loading: boolean
-  customRetryButtonText?: string
 }
 
 export function useExecutionStepStatus({
@@ -64,22 +63,6 @@ export function useExecutionStepStatus({
     return failureIcon
   }, [isPartialSuccess, isStepSuccessful, status])
 
-  const customRetryButtonText = useMemo(() => {
-    // specific to delay until action where we want to allow users to manually
-    // retry and bypass the errors:
-    // - Invalid timestamp entered
-    // - Delay until timestamp entered is in the past
-    if (
-      [
-        'Invalid timestamp entered',
-        'Delay until timestamp entered is in the past',
-      ].includes(errorDetails?.name)
-    ) {
-      return 'Retry and skip delay'
-    }
-    return undefined
-  }, [errorDetails])
-
   return {
     app,
     appName,
@@ -89,6 +72,5 @@ export function useExecutionStepStatus({
     isPartialSuccess,
     canRetry,
     loading,
-    customRetryButtonText,
   }
 }

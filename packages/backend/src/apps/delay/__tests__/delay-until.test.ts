@@ -111,28 +111,6 @@ describe('Delay until action', () => {
   })
 
   describe('retry logic', () => {
-    it('uses current date when retrying after invalid timestamp error', async () => {
-      $.step.parameters = {
-        delayUntil: INVALID_DATE,
-        delayUntilTime: VALID_TIME,
-      }
-
-      // Mock last execution step to indicate a retry for invalid timestamp
-      mocks.getLastExecutionStep.mockResolvedValue({
-        errorDetails: {
-          name: 'Invalid timestamp entered',
-        },
-      })
-
-      const result = await delayUntilAction.run($)
-      const expectedDate = DateTime.now().toFormat('yyyy-MM-dd')
-
-      expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
-        raw: { delayUntil: expectedDate, delayUntilTime: DEFAULT_TIME },
-      })
-    })
-
     it('allows past timestamp when retrying after past timestamp error', async () => {
       $.step.parameters = {
         delayUntil: PAST_DATE,
@@ -150,7 +128,10 @@ describe('Delay until action', () => {
 
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toBeCalledWith({
-        raw: { delayUntil: PAST_DATE, delayUntilTime: DEFAULT_TIME },
+        raw: {
+          delayUntil: DateTime.now().toFormat('dd MMM yyyy'),
+          delayUntilTime: DateTime.now().toFormat('HH:mm'),
+        },
       })
     })
 

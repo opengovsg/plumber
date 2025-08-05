@@ -42,21 +42,14 @@ export default function ExecutionStep({
 }: ExecutionStepProps): React.ReactElement | null {
   const { appKey, jobId, errorDetails, status } = executionStep
 
-  const {
-    app,
-    appName,
-    statusIcon,
-    hasError,
-    isPartialSuccess,
-    canRetry,
-    customRetryButtonText,
-  } = useExecutionStepStatus({
-    appKey,
-    status,
-    errorDetails,
-    execution,
-    jobId,
-  })
+  const { app, appName, statusIcon, hasError, isPartialSuccess, canRetry } =
+    useExecutionStepStatus({
+      appKey,
+      status,
+      errorDetails,
+      execution,
+      jobId,
+    })
 
   if (!app) {
     return null
@@ -84,10 +77,7 @@ export default function ExecutionStep({
             {!isInForEach && canRetry && (
               <>
                 <RetryAllButton execution={execution} />
-                <RetryButton
-                  executionStepId={executionStep.id}
-                  customButtonText={customRetryButtonText}
-                />
+                <RetryButton executionStepId={executionStep.id} />
               </>
             )}
           </HStack>

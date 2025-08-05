@@ -6,17 +6,15 @@ import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
 
-const ERRORS_TO_RETRY = [
-  'Invalid timestamp entered',
-  'Delay until timestamp entered is in the past',
-]
-
 async function isValidRetry($: any): Promise<boolean> {
   const lastExecutionStep = await $.getLastExecutionStep({
     sameExecution: true,
   })
-  return ERRORS_TO_RETRY.includes(
-    lastExecutionStep?.errorDetails?.name as string,
+  // NOTE: only allow retries if the delayed timestamp is in the past
+  // invalid timestamps should be corrected by the user
+  return (
+    lastExecutionStep?.errorDetails?.name ===
+    'Delay until timestamp entered is in the past'
   )
 }
 
@@ -53,7 +51,7 @@ const action: IRawAction = {
       ? new String(delayUntilTime).trim()
       : defaultTime
 
-    let delayTimestamp = generateTimestamp(
+    const delayTimestamp = generateTimestamp(
       delayUntilString,
       delayUntilTimeString,
     )
@@ -63,38 +61,36 @@ const action: IRawAction = {
       delayUntilTime: delayUntilTimeString,
     }
 
+    if (isNaN(delayTimestamp)) {
+      throw new StepError(
+        'Invalid timestamp entered',
+        'Check that the date or time entered is of a valid format.',
+        $.step.position,
+        $.app.name,
+      )
+    }
+
     /**
      * RETRY: we check and only allow manual retries for failures due to:
-     * - invalid timestamp
      * - delay until timestamp entered is in the past
      */
     const isRetry = await isValidRetry($)
 
-    if (isNaN(delayTimestamp)) {
+    if (delayTimestamp < DateTime.now().toMillis()) {
       if (isRetry) {
-        const dateToday = DateTime.now().toFormat('yyyy-MM-dd')
-        delayTimestamp = generateTimestamp(dateToday, defaultTime)
+        const dateTimeNow = DateTime.now()
         dataItem = {
-          delayUntil: dateToday,
-          delayUntilTime: defaultTime,
+          delayUntil: dateTimeNow.toFormat('dd MMM yyyy'),
+          delayUntilTime: dateTimeNow.toFormat('HH:mm'),
         }
       } else {
         throw new StepError(
-          'Invalid timestamp entered',
-          'Check that the date or time entered is of a valid format.',
+          'Delay until timestamp entered is in the past',
+          'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
           $.step.position,
           $.app.name,
         )
       }
-    }
-
-    if (delayTimestamp < DateTime.now().toMillis() && !isRetry) {
-      throw new StepError(
-        'Delay until timestamp entered is in the past',
-        'Check that the date and time entered is not in the past.',
-        $.step.position,
-        $.app.name,
-      )
     }
 
     $.setActionItem({ raw: dataItem })
