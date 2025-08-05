@@ -83,6 +83,9 @@ describe('getTableRowsAction', () => {
         ['non-matching', 'data1'],
         ['test-value', 'data2'],
         ['test-value', 'data3'],
+        ['', 'data4'],
+        ['row5', ''],
+        ['', 'data6'],
       ],
       headerSheetRowIndex: 0,
     })
@@ -200,6 +203,56 @@ describe('getTableRowsAction', () => {
       'test-value',
     )
     expect(rowData[1].data[getHexEncodedColumnName('Column2')]).toBe('data3')
+  })
+
+  it('should return matching rows when lookup value is empty', async () => {
+    $.step.parameters.lookupValue = ''
+    await getTableRowsAction.run($)
+
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: expect.objectContaining({
+        rowsFound: 2,
+        data: {
+          columns: expect.arrayContaining([
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column1'),
+              name: 'Column1',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
+            }),
+            expect.objectContaining({
+              id: getHexEncodedColumnName('Column2'),
+              name: 'Column2',
+              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
+            }),
+          ]),
+          rows: expect.arrayContaining([
+            expect.objectContaining({
+              data: {
+                [getHexEncodedColumnName('Column1')]: '',
+                [getHexEncodedColumnName('Column2')]: 'data4',
+              },
+            }),
+            expect.objectContaining({
+              data: {
+                [getHexEncodedColumnName('Column1')]: '',
+                [getHexEncodedColumnName('Column2')]: 'data6',
+              },
+            }),
+          ]),
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+        },
+      }),
+    })
+
+    // Verify the rowData contains the expected rows
+    const call = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const rowData = call.raw.data.rows
+
+    expect(rowData).toHaveLength(2)
+    expect(rowData[0].data[getHexEncodedColumnName('Column1')]).toBe('')
+    expect(rowData[0].data[getHexEncodedColumnName('Column2')]).toBe('data4')
+    expect(rowData[1].data[getHexEncodedColumnName('Column1')]).toBe('')
+    expect(rowData[1].data[getHexEncodedColumnName('Column2')]).toBe('data6')
   })
 
   it('should handle invalid parameters', async () => {
