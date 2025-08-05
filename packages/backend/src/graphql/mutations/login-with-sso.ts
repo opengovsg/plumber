@@ -17,7 +17,11 @@ const loginWithSso: MutationResolvers['loginWithSso'] = async (
 ) => {
   const { authCode, nonce, verifier } = params.input
 
-  const ssoEnabled = await getLdFlagValue('ogp-sso-enabled', '', false)
+  const ssoEnabled = await getLdFlagValue<boolean>(
+    'ogp-sso-enabled',
+    null,
+    false,
+  )
 
   if (!ssoEnabled) {
     throw new Error('SSO is not enabled')

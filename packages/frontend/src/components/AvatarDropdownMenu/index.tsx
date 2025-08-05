@@ -23,6 +23,7 @@ export default function AvatarDropdownMenu() {
         title: 'You have been logged out of Plumber',
         description: 'To log out from SSO, visit https://sso.open.gov.sg',
         status: 'success',
+        isClosable: true,
       })
     }
     await apolloClient.clearStore()

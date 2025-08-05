@@ -16,7 +16,7 @@ const getClient = memoize(async () => {
 
 export async function getLdFlagValue<T extends IJSONValue>(
   flag: string,
-  userEmail: string,
+  userEmail: string | null,
   fallbackValue: T,
 ): Promise<T> {
   const client = await getClient()
@@ -28,7 +28,7 @@ export async function getLdFlagValue<T extends IJSONValue>(
     // LaunchDarklyContext on the frontend.
     {
       kind: 'user',
-      key: userEmail,
+      key: userEmail ?? 'anonymous',
     },
     fallbackValue,
   )) as T
