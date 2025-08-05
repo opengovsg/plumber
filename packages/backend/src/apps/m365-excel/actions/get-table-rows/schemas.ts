@@ -17,7 +17,7 @@ export const parametersSchema = z.object({
   }),
   // * We don't trim as we want to match _exactly_ on the user's input.
   // * We allow empty strings to support optional form fields.
-  lookupValue: z.string(),
+  lookupValue: z.string().default(''),
 })
 
 export const dataOutSchema = z.object({
