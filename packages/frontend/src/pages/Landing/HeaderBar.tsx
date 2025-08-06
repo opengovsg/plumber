@@ -143,7 +143,7 @@ export default function HeaderBar() {
             </HStack>
             <Flex flex="1" justify="flex-end">
               <Button as="a" href={URLS.LOGIN} variant="clear">
-                Log in
+                Login
               </Button>
             </Flex>
           </>
@@ -199,7 +199,7 @@ export default function HeaderBar() {
               pt={2}
               textDecoration="none"
             >
-              Log in
+              Login
             </Link>
           </VStack>
         </Box>

@@ -21,6 +21,7 @@ const posts = [
     description: ' ',
     imageUrl: AgcLogo,
     agency: "Attorney-General's Chambers",
+    ariaLabel: 'Human Resource',
   },
 ]
 
@@ -132,6 +133,7 @@ export default function UseCases() {
                           textDecoration: 'none',
                           color: 'primary.500',
                         }}
+                        aria-label={post.ariaLabel}
                       >
                         <Box position="absolute" inset={0} />
                         {post.title}
