@@ -174,10 +174,10 @@ export function validateFiles(
   const totalSize = currentTotalSize + fileSize
   const currentFileCount = selectedOptions.length + 1
 
-  if (currentFileCount >= MAX_NUM_FILES) {
+  if (currentFileCount > MAX_NUM_FILES) {
     return {
       isValid: false,
-      error: 'Total number of files exceeds 10',
+      error: 'Total number of files cannot exceed 10',
     }
   }
   if (fileSize > MAX_FILE_SIZE) {

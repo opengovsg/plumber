@@ -10,7 +10,7 @@ import {
 
 export const Footer = () => (
   <RestrictedFooter
-    appName="Plumber"
+    appName="plumber"
     appLink={window.location.origin}
     footerLinks={[
       {

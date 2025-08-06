@@ -10,7 +10,6 @@ export const REDIS_DB_INDEX = {
   RATE_LIMIT: 1,
   PIPE_ERRORS: 2,
   APP_DATA: 3,
-  GLOBAL_DATA: 4,
 }
 
 function reconnectOnError(err: Error) {
@@ -19,7 +18,9 @@ function reconnectOnError(err: Error) {
   if (err.message.includes(targetError)) {
     // Only reconnect when the error contains "READONLY"
     // during node failover, this is thrown: 149: -READONLY You can't write against a read only replica.
-    return true
+    // Using reconnectOnError, we can force the connection to reconnect on this error in order to connect to the new master.
+    // We return 2 so that ioredis will resend the failed command after reconnecting.
+    return 2
   }
   return false
 }
