@@ -10,7 +10,7 @@ type CreateClientOptions = {
   token?: string | null
 }
 
-const GRAPHQL_URL = '/graphql'
+export const GRAPHQL_URL = '/graphql'
 
 const client = new ApolloClient({
   cache,

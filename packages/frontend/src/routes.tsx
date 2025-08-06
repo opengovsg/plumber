@@ -14,6 +14,7 @@ import Flows from '@/pages/Flows'
 import HumanResource from '@/pages/Landing/UseCasesPages/HumanResource'
 import Login from '@/pages/Login'
 import SgidCallback from '@/pages/SgidCallback'
+import SsoCallback from '@/pages/SsoCallback'
 import Templates from '@/pages/Templates'
 import TileLayout from '@/pages/Tile/layouts/TileLayout'
 import Tiles from '@/pages/Tiles'
@@ -31,6 +32,14 @@ export default createRoutesFromElements(
       element={
         <PublicLayout>
           <SgidCallback />
+        </PublicLayout>
+      }
+    />
+    <Route
+      path={URLS.LOGIN_SSO_REDIRECT}
+      element={
+        <PublicLayout>
+          <SsoCallback />
         </PublicLayout>
       }
     />

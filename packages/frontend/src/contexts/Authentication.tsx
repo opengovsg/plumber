@@ -16,7 +16,7 @@ type CurrentUser = Pick<
 
 export type AuthenticationContextParams = {
   currentUser: CurrentUser
-  logout: () => Promise<FetchResult<void>>
+  logout: () => Promise<FetchResult<{ logout: { isSso: boolean } }>>
 }
 
 export const AuthenticationContext = createContext(

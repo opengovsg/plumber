@@ -1,19 +1,25 @@
 import { type FormEvent, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { Flex } from '@chakra-ui/react'
+import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 
-import { SGID_FEATURE_FLAG } from '@/config/flags'
+import appConfig from '@/config/app'
+import { SGID_FEATURE_FLAG, SSO_FEATURE_FLAG } from '@/config/flags'
+import { RESPONSE_HEADERS } from '@/config/headers'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { REQUEST_OTP } from '@/graphql/mutations/request-otp'
 import { VERIFY_OTP } from '@/graphql/mutations/verify-otp'
 import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
+import { useResponseHeaders } from '@/hooks/useResponseHeaders'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'
 import SgidLoginSection from './SgidLoginSection'
+import SsoLoginSection from './SsoLoginSection'
 
 export const LoginForm = (): JSX.Element => {
   const { flags } = useContext(LaunchDarklyContext)
+
+  const headers = useResponseHeaders()
 
   const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP)
   const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP, {
@@ -49,7 +55,13 @@ export const LoginForm = (): JSX.Element => {
     }
   }
 
-  // FIXME (ogp-weeloong): Fully migrate to starter kit style login page.
+  const shouldShowSgidLogin = flags?.[SGID_FEATURE_FLAG]
+  // show sso login if request is from OGP office wifi or in dev
+  const shouldShowSsoLogin =
+    (headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER] === 'true' ||
+      appConfig.isDev) &&
+    flags?.[SSO_FEATURE_FLAG]
+
   return (
     <form onSubmit={handleSubmit}>
       <Flex flexDir="column" gap={2}>
@@ -67,7 +79,22 @@ export const LoginForm = (): JSX.Element => {
             setEmail={setEmail}
           />
         )}
-        {flags?.[SGID_FEATURE_FLAG] && <SgidLoginSection />}
+        {(shouldShowSgidLogin || shouldShowSsoLogin) && (
+          <>
+            <Box position="relative" my="2.5rem">
+              <Divider />
+              <AbsoluteCenter>
+                <Box bg="white" p={3}>
+                  <Text textStyle="subhead-1">OR</Text>
+                </Box>
+              </AbsoluteCenter>
+            </Box>
+            <Flex flexDir="column" gap={8}>
+              {shouldShowSgidLogin && <SgidLoginSection />}
+              {shouldShowSsoLogin && <SsoLoginSection />}
+            </Flex>
+          </>
+        )}
       </Flex>
     </form>
   )
