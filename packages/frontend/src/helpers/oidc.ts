@@ -1,9 +1,6 @@
 import appConfig from '@/config/app'
 import * as URLS from '@/config/urls'
 
-const SCOPE = 'openid pocdex.public_officer_details'
-const REDIRECT_URL = `${window.location.origin}${URLS.LOGIN_SGID_REDIRECT}`
-
 async function generatePkceAndNonce(): Promise<{
   challenge: string
   verifier: string
@@ -28,7 +25,17 @@ async function generatePkceAndNonce(): Promise<{
   }
 }
 
-export async function generateSgidAuthUrl(): Promise<{
+export async function generateAuthUrl({
+  authorizeUrl,
+  clientId,
+  redirectUri,
+  scopes,
+}: {
+  authorizeUrl: string
+  clientId: string
+  redirectUri: string
+  scopes: string
+}): Promise<{
   url: string
   verifier: string
   nonce: string
@@ -40,20 +47,36 @@ export async function generateSgidAuthUrl(): Promise<{
     ? `&state=${encodeURIComponent(redirectQueryParam)}`
     : ''
   const { challenge, verifier, nonce } = await generatePkceAndNonce()
-  const sgidUrl =
-    'https://api.id.gov.sg/v2/oauth/authorize?' +
-    'response_type=code' +
+  const authUrl =
+    authorizeUrl +
+    '?response_type=code' +
     '&code_challenge_method=S256' +
     `&code_challenge=${challenge}` +
     `&nonce=${nonce}` +
-    `&client_id=${appConfig.sgidClientId}` +
-    `&redirect_uri=${encodeURIComponent(REDIRECT_URL)}` +
-    `&scope=${encodeURIComponent(SCOPE)}` +
+    `&client_id=${clientId}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${encodeURIComponent(scopes)}` +
     stateQueryParamString
 
   return {
-    url: sgidUrl,
+    url: authUrl,
     verifier,
     nonce,
   }
 }
+
+export const generateSsoAuthUrl = () =>
+  generateAuthUrl({
+    authorizeUrl: `${appConfig.ssoHostname}/api/oidc/authorize`,
+    clientId: appConfig.ssoClientId,
+    redirectUri: `${window.location.origin}${URLS.LOGIN_SSO_REDIRECT}`,
+    scopes: 'openid email',
+  })
+
+export const generateSgidAuthUrl = () =>
+  generateAuthUrl({
+    authorizeUrl: 'https://api.id.gov.sg/v2/oauth/authorize',
+    clientId: appConfig.sgidClientId,
+    redirectUri: `${window.location.origin}${URLS.LOGIN_SGID_REDIRECT}`,
+    scopes: 'openid pocdex.public_officer_details',
+  })

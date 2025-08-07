@@ -11,6 +11,7 @@ export const BANNER_TEXT_FLAG = 'banner_display'
  */
 export const BULK_RETRY_EXECUTIONS_FLAG = 'bulk-retry-failed-executions-v1'
 export const SGID_FEATURE_FLAG = 'sgid-login'
+export const SSO_FEATURE_FLAG = 'ogp-sso-enabled'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
 
 /**

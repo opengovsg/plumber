@@ -1,19 +1,11 @@
 import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import {
-  AbsoluteCenter,
-  Box,
-  Divider,
-  Flex,
-  Image,
-  Link,
-  Text,
-} from '@chakra-ui/react'
+import { Flex, Image, Link, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import singpassLogo from '@/assets/singpass-logo.svg'
 import { SGID_CHECK_ELIGIBILITY_URL } from '@/config/urls'
-import { generateSgidAuthUrl } from '@/helpers/sgid'
+import { generateSgidAuthUrl } from '@/helpers/oidc'
 
 import SgidFailureModal from './SgidFailureModal'
 
@@ -46,15 +38,6 @@ export default function SgidLoginSection(): JSX.Element {
 
   return canUseSgid ? (
     <>
-      <Box position="relative" my="2.5rem">
-        <Divider />
-        <AbsoluteCenter>
-          <Box bg="white" p={3}>
-            <Text textStyle="subhead-1">OR</Text>
-          </Box>
-        </AbsoluteCenter>
-      </Box>
-
       {hasError && (
         <Infobox variant="error" mb={2}>
           There was a problem generating encryption parameters; please contact
@@ -73,10 +56,10 @@ export default function SgidLoginSection(): JSX.Element {
         >
           Log in with <Image src={singpassLogo} mb={-0.5} h={5} /> app
         </Button>
-        <Text>
+        <Text textStyle="body-2">
           Can my agency use this? Check{' '}
           <Link target="_blank" href={SGID_CHECK_ELIGIBILITY_URL}>
-            here.
+            here
           </Link>
         </Text>
       </Flex>

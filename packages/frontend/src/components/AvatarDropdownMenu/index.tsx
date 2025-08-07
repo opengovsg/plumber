@@ -4,6 +4,7 @@ import {
   AvatarMenu,
   AvatarMenuDivider,
   Menu,
+  useToast,
 } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
@@ -13,9 +14,18 @@ import useAuthentication from '@/hooks/useAuthentication'
 export default function AvatarDropdownMenu() {
   const { logout, currentUser } = useAuthentication()
   const navigate = useNavigate()
+  const toast = useToast()
 
   const onLogoutClick = async () => {
-    await logout()
+    const { data } = await logout()
+    if (data?.logout?.isSso) {
+      toast({
+        title: 'You have been logged out of Plumber',
+        description: 'To log out from SSO, visit https://sso.open.gov.sg',
+        status: 'success',
+        isClosable: true,
+      })
+    }
     await apolloClient.clearStore()
     navigate(URLS.ROOT)
   }

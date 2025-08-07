@@ -55,6 +55,11 @@ type AppConfig = {
     database: string
     enableSsl: boolean
   }
+  sso: {
+    clientId: string
+    clientSecret: string
+    discoveryUrl: string
+  }
 }
 
 const port = process.env.PORT || '3000'
@@ -124,6 +129,11 @@ const appConfig: AppConfig = {
     database: process.env.TILES_POSTGRES_DATABASE || 'plumber_tiles_dev',
     enableSsl: process.env.TILES_POSTGRES_ENABLE_SSL === 'true',
   },
+  sso: {
+    clientId: process.env.SSO_CLIENT_ID,
+    clientSecret: process.env.SSO_CLIENT_SECRET,
+    discoveryUrl: process.env.SSO_DISCOVERY_URL,
+  },
 }
 
 if (!appConfig.encryptionKey) {
@@ -149,6 +159,14 @@ if (
   !appConfig.sgid.privateKey
 ) {
   throw new Error('Sgid environment variables need to be set!')
+}
+
+if (
+  !appConfig.sso.clientId ||
+  !appConfig.sso.clientSecret ||
+  !appConfig.sso.discoveryUrl
+) {
+  throw new Error('SSO environment variables need to be set!')
 }
 
 if (!appConfig.launchDarklySdkKey) {

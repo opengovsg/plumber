@@ -12,10 +12,12 @@ const AUTH_COOKIE_NAME = 'plumber.sid'
 const TOKEN_EXPIRES_IN_SEC = 3 * 24 * 60 * 60
 const ONBOARDING_EMAIL_RELEASE_DATE = new Date('2025-03-10')
 
-export function setAuthCookie(
-  res: Response,
-  payload: { userId: string },
-): void {
+interface AuthCookiePayload {
+  userId: string
+  isSso?: boolean
+}
+
+export function setAuthCookie(res: Response, payload: AuthCookiePayload): void {
   // create jwt
   const token = jwt.sign(payload, appConfig.sessionSecretKey, {
     expiresIn: TOKEN_EXPIRES_IN_SEC,
@@ -32,6 +34,17 @@ export function setAuthCookie(
 
 function getAuthCookie(req: Request) {
   return req.cookies[AUTH_COOKIE_NAME]
+}
+
+export function getParsedAuthCookie(req: Request) {
+  const token = getAuthCookie(req)
+  if (!token) {
+    return null
+  }
+  return jwt.verify(token, appConfig.sessionSecretKey) as {
+    userId: string
+    isSso?: boolean
+  }
 }
 
 export async function getLoggedInUser(req: Request): Promise<User | null> {
