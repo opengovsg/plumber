@@ -54,6 +54,7 @@ const mockForEachCheckboxExecutionStep = {
   dataOut: {
     item: 'items.__ITERATION__',
     items: ['Option 4', 'Option 3', 'Option 2', 'Option 1'],
+    iteration: '__ITERATION__',
     iterations: 4,
     inputSource: 'checkbox',
   },
@@ -179,6 +180,7 @@ const mockForEachTableExecutionStep = {
         },
       ],
     },
+    iteration: `__ITERATION__`,
     iterations: 4,
     inputSource: 'tiles',
   },
@@ -391,16 +393,22 @@ describe('computeForEachParameters', () => {
   }
 
   it.each([
-    { iteration: 1, expected: 'Option 4' },
-    { iteration: 2, expected: 'Option 3' },
-    { iteration: 3, expected: 'Option 2' },
-    { iteration: 4, expected: 'Option 1' },
-    { iteration: 5, expected: '' },
+    { keyPath: 'item', iteration: 1, expected: 'Option 4' },
+    { keyPath: 'item', iteration: 2, expected: 'Option 3' },
+    { keyPath: 'item', iteration: 3, expected: 'Option 2' },
+    { keyPath: 'item', iteration: 4, expected: 'Option 1' },
+    { keyPath: 'item', iteration: 5, expected: '' },
+    { keyPath: 'iteration', iteration: 1, expected: 1 },
+    { keyPath: 'iteration', iteration: 2, expected: 2 },
+    { keyPath: 'iteration', iteration: 3, expected: 3 },
+    { keyPath: 'iteration', iteration: 4, expected: 4 },
+    { keyPath: 'iterations', iteration: 1, expected: 4 },
+    { keyPath: 'iterations', iteration: 2, expected: 4 },
+    { keyPath: 'iterations', iteration: 3, expected: 4 },
+    { keyPath: 'iterations', iteration: 4, expected: 4 },
   ])(
     'should handle checkbox data retrieval from for-each step %s',
-    ({ iteration, expected }) => {
-      const keyPath = `item`
-
+    ({ keyPath, iteration, expected }) => {
       const executionStep = mockExecutionStepsCheckbox[1] // for-each step
 
       const result = computeForEachParameters({
@@ -435,6 +443,46 @@ describe('computeForEachParameters', () => {
     { keyPath: `items.columns.7.value`, iteration: 2, expected: '' },
     { keyPath: `items.columns.7.value`, iteration: 3, expected: '' },
     { keyPath: `items.columns.7.value`, iteration: 4, expected: 'bye' },
+    {
+      keyPath: 'iteration',
+      iteration: 1,
+      expected: 1,
+    },
+    {
+      keyPath: 'iteration',
+      iteration: 2,
+      expected: 2,
+    },
+    {
+      keyPath: 'iteration',
+      iteration: 3,
+      expected: 3,
+    },
+    {
+      keyPath: 'iteration',
+      iteration: 4,
+      expected: 4,
+    },
+    {
+      keyPath: 'iterations',
+      iteration: 1,
+      expected: 4,
+    },
+    {
+      keyPath: 'iterations',
+      iteration: 2,
+      expected: 4,
+    },
+    {
+      keyPath: 'iterations',
+      iteration: 3,
+      expected: 4,
+    },
+    {
+      keyPath: 'iterations',
+      iteration: 4,
+      expected: 4,
+    },
   ])(
     'should handle table data retrieval from for-each step',
     ({ keyPath, iteration, expected }) => {
@@ -450,7 +498,6 @@ describe('computeForEachParameters', () => {
           executionStepMetadata: { iteration },
         },
       })
-      // console.log('result', result)
       expect(result).toEqual(expected)
     },
   )
