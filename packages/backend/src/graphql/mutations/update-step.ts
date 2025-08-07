@@ -11,8 +11,6 @@ const updateStep: MutationResolvers['updateStep'] = async (
   const { input } = params
 
   const step = await Step.transaction(async (trx) => {
-    await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
-
     const step = await context.currentUser.$relatedQuery('steps', trx).findOne({
       'steps.id': input.id,
       flow_id: input.flow.id,

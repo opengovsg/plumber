@@ -151,7 +151,7 @@ export function useIfThenInitializer(): [
     async (currStep: IStep) => {
       setIsInitializing(true)
 
-      const updateFirstBranch = updateStep({
+      const updateFirstBranch = await updateStep({
         variables: {
           input: {
             id: currStep.id,
@@ -170,7 +170,7 @@ export function useIfThenInitializer(): [
           },
         },
       })
-      const createSecondBranch = createStep({
+      const createSecondBranch = await createStep({
         variables: {
           input: {
             key: TOOLBOX_ACTIONS.IfThen,
