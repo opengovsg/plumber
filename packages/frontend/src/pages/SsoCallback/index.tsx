@@ -16,7 +16,7 @@ export default function SsoCallback(): JSX.Element {
   const toast = useToast()
 
   const [hasFailed, setFailed] = useState<boolean>(false)
-  const [loginWithSgid] = useMutation(LOGIN_WITH_SSO, {
+  const [loginWithSso] = useMutation(LOGIN_WITH_SSO, {
     refetchQueries: [GET_CURRENT_USER],
     awaitRefetchQueries: true,
   })
@@ -44,7 +44,7 @@ export default function SsoCallback(): JSX.Element {
     }
 
     const callMutation = async () => {
-      await loginWithSgid({
+      await loginWithSso({
         variables: {
           input: {
             authCode,
