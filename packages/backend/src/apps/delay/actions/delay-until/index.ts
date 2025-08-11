@@ -1,4 +1,4 @@
-import { IRawAction } from '@plumber/types'
+import { IGlobalVariable, IRawAction } from '@plumber/types'
 
 import { DateTime } from 'luxon'
 
@@ -6,7 +6,12 @@ import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
 
-async function isValidRetry($: any): Promise<boolean> {
+async function isValidRetry($: IGlobalVariable): Promise<boolean> {
+  // do not allow retries in test runs
+  if ($.execution.testRun) {
+    return false
+  }
+
   const lastExecutionStep = await $.getLastExecutionStep({
     sameExecution: true,
   })
