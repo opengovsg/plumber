@@ -1,4 +1,10 @@
-import { IFlowCollabRole } from '@plumber/types'
+import { IFlowCollabRole, IGlobalVariable } from '@plumber/types'
+
+import { Transaction } from 'objection'
+
+import { ForbiddenError } from '@/errors/graphql-errors'
+import StepError from '@/errors/step'
+import { checkUserPermission } from '@/helpers/check-user-permission'
 
 import Base from './base'
 import Flow from './flow'
@@ -55,6 +61,60 @@ class FlowCollaborator extends Base {
       },
     },
   })
+
+  /**
+   * Checks whether user has the necessary role to access the flow
+   * permission levels: viewer, editor, owner
+   */
+  static hasAccess = async ({
+    userId,
+    flowId,
+    requiredRole,
+    $ = undefined,
+    trx,
+  }: {
+    userId: string
+    flowId: string
+    requiredRole: IFlowCollabRole
+    $?: IGlobalVariable
+    trx?: Transaction
+  }): Promise<IFlowCollabRole | never> => {
+    // flow owner is identified by the flow.userId
+
+    const flowOwner = await Flow.query(trx).findOne({
+      id: flowId,
+    })
+    if (flowOwner?.userId === userId) {
+      return 'owner'
+    }
+
+    // only collaborators need to be checked against flow_collaborators table
+    const collaborator = await this.query(trx).findOne({
+      user_id: userId,
+      flow_id: flowId,
+    })
+
+    if (
+      !collaborator ||
+      !checkUserPermission(collaborator.role, requiredRole)
+    ) {
+      if ($) {
+        throw new StepError(
+          'You do not have sufficient permissions for this pipe',
+          `Please ensure that you are ${
+            requiredRole === 'viewer' ? 'a' : 'an'
+          } ${requiredRole} of this pipe.`,
+          $.step.position,
+          $.app.name,
+        )
+      }
+      throw new ForbiddenError(
+        'You do not have sufficient permissions for this pipe',
+      )
+    } else {
+      return collaborator.role
+    }
+  }
 }
 
 export default FlowCollaborator
