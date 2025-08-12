@@ -26,7 +26,7 @@ class FlowCollaborator extends Base {
     properties: {
       userId: { type: 'string', format: 'uuid' },
       flowId: { type: 'string', format: 'uuid' },
-      role: { type: 'string', enum: ['owner', 'editor', 'viewer'] },
+      role: { type: 'string', enum: ['editor', 'viewer'] },
       lastAccessedAt: { type: 'string', format: 'date-time' },
       updatedBy: { type: 'string', format: 'uuid' },
     },
