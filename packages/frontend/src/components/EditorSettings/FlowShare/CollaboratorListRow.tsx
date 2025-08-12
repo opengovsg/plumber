@@ -77,6 +77,8 @@ const CollaboratorListRow = ({
           onChange={onRoleChange}
           variant="clear"
           isEditable={isEditable}
+          // changing owner must be done via pipe transfer
+          showOwnerOption={false}
         />
         {isEditable && (
           <IconButton
