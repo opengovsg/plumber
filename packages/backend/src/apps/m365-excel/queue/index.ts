@@ -42,11 +42,11 @@ const queueSettings = {
   getGroupConfigForJob,
   groupLimits: {
     type: 'concurrency',
-    concurrency: 1,
+    concurrency: 5, // TODO: Update this upon discussions
   },
   isQueueDelayable: true,
   queueRateLimit: {
-    max: 1,
+    max: 10, // TODO: Update this upon discussions
     duration: M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS,
   },
 } satisfies IAppQueue

@@ -1,35 +1,22 @@
 import type { IActionJobData, IAppQueue } from '@plumber/types'
 
 import {
-  UnrecoverableError,
+  Job,
+  JobPro,
   WorkerPro,
   type WorkerProOptions,
 } from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
+import { QUEUE_BATCH_SIZE } from '@/config/batches'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
-import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
-import {
-  DEFAULT_JOB_OPTIONS,
-  MAXIMUM_JOB_ATTEMPTS,
-} from '@/helpers/default-job-configuration'
-import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
-import {
-  isErrorEmailAlreadySent,
-  sendErrorEmail,
-} from '@/helpers/generate-error-email'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
-import Execution from '@/models/execution'
-import ExecutionStep from '@/models/execution-step'
-import Flow from '@/models/flow'
-import Step from '@/models/step'
-import { enqueueActionJob, makeActionJobId } from '@/queues/action'
-import { processAction } from '@/services/action'
 
-import processForEachStatus from './for-each-status-manager'
+import { handleFailedActionJob } from './handle-failed-action-job'
+import { processSingleActionJob } from './process-single-action-job'
 
 function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
@@ -41,11 +28,18 @@ function convertParamsToBullMqOptions(
     WORKER_CONCURRENCY[appKey as keyof typeof WORKER_CONCURRENCY] ||
     appConfig.workerActionConcurrency
 
+  // Always default to 1 if no batch size is set for the queue
+  const batchSize =
+    QUEUE_BATCH_SIZE[appKey as keyof typeof QUEUE_BATCH_SIZE] || 1
+
   const workerOptions: WorkerProOptions = {
     connection: createRedisClient(),
     concurrency,
     settings: {
       backoffStrategy: exponentialBackoffWithJitter,
+    },
+    batch: {
+      size: batchSize,
     },
   }
 
@@ -88,6 +82,12 @@ interface MakeActionWorkerParams {
   queueConfig: IAppQueue
 }
 
+export interface BullMqOptions {
+  queueName: string
+  workerOptions: WorkerProOptions
+  isQueueDelayable: boolean
+}
+
 /**
  * Creates a worker for an action queue.
  *
@@ -105,196 +105,156 @@ export function makeActionWorker(
       // Fix trace service name to workers.action regardless of queue name, so
       // that we can more easily monitor all actions.
       'workers.action',
-      async (job) => {
-        const span = tracer.scope().active()
+      async (batchedJob: JobPro<IActionJobData>) => {
+        const jobsInBatch = batchedJob.getBatch()
 
-        const jobData = job.data
-        const jobId = makeActionJobId(queueName, job.id)
-
-        // The reason why we dont add .throwIfNotFound() here is to prevent job
-        // retries delegating the error throwing and handling to processAction
-        // where it also queries for Step.
-        const currStep = await Step.query().findById(jobData.stepId)
-
-        span?.addTags({
-          queueName,
-          flowId: jobData.flowId,
-          executionId: jobData.executionId,
-          stepId: jobData.stepId,
-          actionKey: currStep?.key,
-          appKey: currStep?.appKey,
-          jobId,
-          jobEnqueueTime: job.timestamp,
-          jobDelay: job.opts?.delay ?? 0,
-          attempts: job.attemptsStarted,
-          timeInJobQueue: Date.now() - job.timestamp - (job.opts?.delay ?? 0),
-          workerVersion: appConfig.version,
-        })
-
-        const {
-          flowId,
-          executionId,
-          nextStep,
-          executionStep,
-          nextStepMetadata,
-          executionError,
-        } = await processAction({ ...jobData, jobId }).catch(async (err) => {
-          // This happens when the prerequisite steps for the action fails (e.g.
-          // db error, missing execution, flow, step, etc...) in such cases, we
-          // do not want to retry
-          throw new UnrecoverableError(
-            err.message || 'Action failed to execute',
-          )
-        })
-
-        if (executionStep.isFailed) {
-          if (nextStepMetadata?.iteration) {
-            await ExecutionStep.patchIterationStatus(
-              executionId,
-              nextStepMetadata.iteration,
-              'failure',
-            )
+        // perform batching for queues that support it, right now only M365 queue supports it
+        if (jobsInBatch.length > 1) {
+          // TODO: add batching logic here in next PR
+          /**
+           * This will be the logic for actions in a queue that does not support batching e.g. M365 queue allows batching for createTableRow but not for other actions.
+           *
+           * If the action does not allow batching, handle each job in the batch individually as if there was no batching. Mark the individual jobs as failed to not fail the wrapped batch job. The progress object is used to get the error later to handle it.
+           */
+          for (const job of jobsInBatch) {
+            try {
+              await processSingleActionJob(job, worker, {
+                queueName,
+                workerOptions,
+                isQueueDelayable,
+              })
+            } catch (err) {
+              job.updateProgress(err)
+              job.setAsFailed(err)
+            }
           }
-          return handleFailedStepAndThrow({
-            errorDetails: executionStep.errorDetails,
-            executionError,
-            context: {
-              isQueueDelayable,
-              worker,
-              span,
-              job,
-            },
-          })
-        }
-
-        if (!nextStep) {
-          const shouldContinue = await processForEachStatus({
-            executionId,
-            currStep,
-            nextStepMetadata,
-          })
-
-          if (!shouldContinue) {
-            return
-          }
-
-          await Execution.setStatus(executionId, 'success')
           return
         }
 
-        const jobName = `${executionId}-${nextStep.id}`
-
-        const jobPayload = {
-          flowId,
-          executionId,
-          stepId: nextStep.id,
-          metadata: nextStepMetadata,
-        }
-
-        let jobOptions = DEFAULT_JOB_OPTIONS
-
-        if (currStep.appKey === 'delay') {
-          jobOptions = {
-            ...DEFAULT_JOB_OPTIONS,
-            delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
-          }
-        }
-
-        try {
-          await enqueueActionJob({
-            appKey: nextStep.appKey,
-            jobName,
-            jobData: jobPayload,
-            jobOptions,
-          })
-        } catch (error) {
-          // Don't retry if we failed to enqueue the next step (e.g. if
-          // getGroupConfigForJob throws an error)
-          throw new UnrecoverableError(error.message)
-        }
+        // proceed with single job in the batch as per normal
+        const singleJob = jobsInBatch[0]
+        await processSingleActionJob(singleJob, worker, {
+          queueName,
+          workerOptions,
+          isQueueDelayable,
+        })
       },
     ),
     workerOptions,
   )
 
-  worker.on('active', (job) => {
-    logger.info(
-      `[${queueName}] JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has started!`,
-      {
+  worker.on('active', (batchedJob: JobPro<IActionJobData>) => {
+    const jobsInBatch = batchedJob.getBatch()
+    if (jobsInBatch.length > 1) {
+      logger.info(`[${queueName}] JOB IDs: ${batchedJob.id} have started!`, {
         queueName,
-        job: job.data,
+        batchJobTimestamp: new Date(batchedJob.timestamp).toISOString(),
+        jobsData: jobsInBatch.map((subJob: Job) => ({
+          ...subJob.data,
+          jobId: subJob.id,
+        })),
         workerVersion: appConfig.version,
-      },
-    )
-  })
-
-  worker.on('completed', (job) => {
-    logger.info(
-      `[${queueName}] JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has completed!`,
-      {
-        queueName,
-        job: job.data,
-        workerVersion: appConfig.version,
-      },
-    )
-  })
-
-  worker.on('failed', async (job, err) => {
-    const { flowId, executionId } = job.data
-
-    logger.error(
-      `[${queueName}] JOB ID: ${job.id} - FLOW ID: ${flowId} has failed to start with ${err.message}`,
-      {
-        err,
-        queueName,
-        job: job.data,
-        attemptsMade: job.attemptsMade,
-        attemptsStarted: job.attemptsStarted,
-        workerVersion: appConfig.version,
-      },
-    )
-
-    // The job will be retried if:
-    // 1. The error is not an UnrecoverableError, and
-    // 2. We haven't exceeded the maximum number of retry attempts
-    const willRetryJob =
-      !(err instanceof UnrecoverableError) && // Not an unrecoverable error
-      job.attemptsMade < MAXIMUM_JOB_ATTEMPTS // Haven't reached max attempts
-
-    // No further post-processing needed if we're retrying.
-    if (willRetryJob) {
-      return
-    }
-
-    try {
-      await Execution.setStatus(executionId, 'failure')
-
-      const flow = await Flow.query()
-        .findById(job.data.flowId)
-        .withGraphFetched('user')
-        .throwIfNotFound()
-
-      const shouldAlwaysSendEmail =
-        flow.config?.errorConfig?.notificationFrequency === 'always'
-
-      // Don't check redis if notification frequency is always
-      if (!shouldAlwaysSendEmail && (await isErrorEmailAlreadySent(flowId))) {
-        return
-      }
-
-      const emailErrorDetails = await sendErrorEmail(flow)
-      logger.info(`Sent error email for execution ID: ${executionId}`, {
-        errorDetails: { ...emailErrorDetails, ...job.data },
       })
-    } catch (err) {
-      logger.error(
-        `Error while running onFailed callback for execution ID ${executionId}`,
+    } else {
+      const singleJob = jobsInBatch[0]
+      logger.info(
+        `[${queueName}] JOB ID: ${singleJob.id} - FLOW ID: ${singleJob.data.flowId} has started!`,
         {
-          event: 'onfailed-callback-failed',
-          err,
-          jobData: job.data,
+          queueName,
+          job: singleJob.data,
+          workerVersion: appConfig.version,
         },
       )
+    }
+  })
+
+  worker.on('completed', (batchedJob: JobPro<IActionJobData>) => {
+    const jobsInBatch = batchedJob.getBatch()
+    if (jobsInBatch.length > 1) {
+      // track each individual job for failure and log it
+      const failedJobsInBatch = jobsInBatch.filter(
+        (subJob: Job) => subJob.failedReason,
+      )
+      const completedJobsInBatch = jobsInBatch.filter(
+        (subJob: Job) => !subJob.failedReason,
+      )
+      if (failedJobsInBatch.length > 0) {
+        // Log general batch info first for failed jobs
+        logger.info(
+          `[${queueName}] JOB IDs: ${failedJobsInBatch
+            .map((subJob: Job) => subJob.id)
+            .join(',')} have failed!`,
+          {
+            queueName,
+            batchJobTimestamp: new Date(batchedJob.timestamp).toISOString(),
+            jobsData: failedJobsInBatch.map((subJob: Job) => ({
+              ...subJob.data,
+              jobId: subJob.id,
+            })),
+            workerVersion: appConfig.version,
+          },
+        )
+
+        // Handle each failed job individually
+        for (const failedJob of failedJobsInBatch) {
+          // Note: the Error object is private and not retrievable so we need to use the progress object to get the error to handle it
+          handleFailedActionJob(
+            failedJob,
+            queueName,
+            failedJob.progress as Error,
+          )
+        }
+      }
+
+      if (completedJobsInBatch.length > 0) {
+        logger.info(
+          `[${queueName}] JOB IDs: ${completedJobsInBatch
+            .map((subJob: Job) => subJob.id)
+            .join(',')} have completed!`,
+          {
+            queueName,
+            batchJobTimestamp: new Date(batchedJob.timestamp).toISOString(),
+            jobsData: completedJobsInBatch.map((subJob: Job) => ({
+              ...subJob.data,
+              jobId: subJob.id,
+            })),
+            workerVersion: appConfig.version,
+          },
+        )
+      }
+    } else {
+      const singleJob = jobsInBatch[0]
+      logger.info(
+        `[${queueName}] JOB ID: ${singleJob.id} - FLOW ID: ${singleJob.data.flowId} has completed!`,
+        {
+          queueName,
+          job: singleJob.data,
+          workerVersion: appConfig.version,
+        },
+      )
+    }
+  })
+
+  worker.on('failed', async (batchedJob: JobPro<IActionJobData>, err) => {
+    const jobsInBatch = batchedJob.getBatch()
+    // This occurs when the wrapped batch job fails
+    if (jobsInBatch.length > 1) {
+      logger.error(`[${queueName}] JOB IDs: ${batchedJob.id} have failed!`, {
+        err,
+        queueName,
+        batchJobTimestamp: new Date(batchedJob.timestamp).toISOString(),
+        jobsData: jobsInBatch.map((subJob: Job) => ({
+          ...subJob.data,
+          jobId: subJob.id,
+          failedReason: subJob.failedReason,
+        })),
+        workerVersion: appConfig.version,
+      })
+      return
+    } else {
+      // handle single job failure as usual
+      const singleJob = jobsInBatch[0]
+      handleFailedActionJob(singleJob, queueName, err)
     }
   })
 
