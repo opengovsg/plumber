@@ -218,6 +218,13 @@ export interface IFlowAttachmentsConfig {
   updatedAt: string
 }
 
+export type IFlowCollabRole = 'owner' | 'editor' | 'viewer'
+
+export interface IFlowCollaborator {
+  email?: string // Populated by GraphQL resolver
+  role: IFlowCollabRole
+}
+
 export interface IFlow {
   id: string
   name: string
