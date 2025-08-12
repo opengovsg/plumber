@@ -58,6 +58,8 @@ export const FLOW_EDITOR = (flowId?: string): string =>
   flowId ? `/editor/${flowId}` : FLOWS
 export const FLOW_EDITOR_NOTIFICATIONS = (flowId?: string): string =>
   flowId ? `/editor/${flowId}/notifications` : FLOWS
+export const FLOW_EDITOR_SHARE = (flowId?: string): string =>
+  flowId ? `/editor/${flowId}/share` : FLOWS
 export const FLOW_EDITOR_TRANSFERS = (flowId?: string): string =>
   flowId ? `/editor/${flowId}/transfer` : FLOWS
 

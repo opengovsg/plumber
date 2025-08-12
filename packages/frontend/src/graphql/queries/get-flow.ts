@@ -64,6 +64,11 @@ export const GET_FLOW = gql`
           title
         }
       }
+      role
+      collaborators {
+        email
+        role
+      }
     }
   }
 `
