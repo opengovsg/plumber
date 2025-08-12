@@ -392,6 +392,8 @@ type Flow {
   userId: String
   pendingTransfer: FlowTransfer
   template: Template
+  collaborators: [FlowCollaborator!]
+  role: String
 }
 
 type FlowCollaborator {

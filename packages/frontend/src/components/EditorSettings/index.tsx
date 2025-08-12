@@ -1,7 +1,7 @@
 import { IFlow } from '@plumber/types'
 
 import { ElementType, ReactNode, useMemo, useState } from 'react'
-import { BiMailSend, BiTransfer } from 'react-icons/bi'
+import { BiMailSend, BiTransfer, BiUserPlus } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
 import {
@@ -56,6 +56,11 @@ export default function EditorSettingsLayout(
           Icon: BiMailSend,
           text: 'Email notifications',
           to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
+        },
+        {
+          Icon: BiUserPlus,
+          text: 'Collaborators',
+          to: URLS.FLOW_EDITOR_SHARE(flowId),
         },
         {
           Icon: BiTransfer,
@@ -116,7 +121,7 @@ export default function EditorSettingsLayout(
   }
 
   return (
-    <EditorSettingsProvider value={{ flow }}>
+    <EditorSettingsProvider flow={flow}>
       <VStack spacing={0} minH="100vh">
         <Navbar />
         <Flex w="full" flex={1} flexDir={{ base: 'column', md: 'row' }}>

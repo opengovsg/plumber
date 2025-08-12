@@ -1,4 +1,4 @@
-import { IFlowConfig } from '@plumber/types'
+import { IFlowCollabRole, IFlowConfig } from '@plumber/types'
 
 import type { ModelOptions, QueryContext, Transaction } from 'objection'
 import { ValidationError } from 'objection'
@@ -26,6 +26,11 @@ class Flow extends Base {
   testExecutionId: string
   testExecution?: Execution
   user: User
+  collaborators?: FlowCollaborator[]
+
+  // for typescript support when creating FlowCollaborator row in insertGraph
+  role?: IFlowCollabRole
+  lastAccessedAt?: string
 
   /**
    * Null means to use default config.
@@ -120,6 +125,9 @@ class Flow extends Base {
       join: {
         from: `${this.tableName}.id`,
         to: `${FlowCollaborator.tableName}.flow_id`,
+      },
+      filter(builder: ExtendedQueryBuilder<FlowCollaborator>) {
+        builder.whereNull('deleted_at')
       },
     },
   })
