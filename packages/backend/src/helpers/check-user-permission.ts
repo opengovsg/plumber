@@ -12,5 +12,5 @@ export const checkUserPermission = (
   ) {
     return true
   }
-  throw new Error('You do not have the required permissions.')
+  throw new Error('You do not have sufficient permissions')
 }
