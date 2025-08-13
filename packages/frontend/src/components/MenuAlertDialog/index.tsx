@@ -13,6 +13,7 @@ import MarkdownRenderer from '../MarkdownRenderer'
 
 export type AlertDialogType = 'delete' | 'duplicate' | 'share-connections'
 export type AlertHeaderType =
+  | 'Connection'
   | 'Pipe'
   | 'Tile'
   | 'Step'
