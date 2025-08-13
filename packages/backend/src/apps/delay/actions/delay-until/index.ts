@@ -1,10 +1,27 @@
-import { IRawAction } from '@plumber/types'
+import { IGlobalVariable, IRawAction } from '@plumber/types'
 
 import { DateTime } from 'luxon'
 
 import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
+
+async function isValidRetry($: IGlobalVariable): Promise<boolean> {
+  // do not allow retries in test runs
+  if ($.execution.testRun) {
+    return false
+  }
+
+  const lastExecutionStep = await $.getLastExecutionStep({
+    sameExecution: true,
+  })
+  // NOTE: only allow retries if the delayed timestamp is in the past
+  // invalid timestamps should be corrected by the user
+  return (
+    lastExecutionStep?.errorDetails?.name ===
+    'Delay until timestamp entered is in the past'
+  )
+}
 
 const action: IRawAction = {
   name: 'Delay until',
@@ -44,6 +61,11 @@ const action: IRawAction = {
       delayUntilTimeString,
     )
 
+    let dataItem = {
+      delayUntil: delayUntilString,
+      delayUntilTime: delayUntilTimeString,
+    }
+
     if (isNaN(delayTimestamp)) {
       throw new StepError(
         'Invalid timestamp entered',
@@ -53,18 +75,27 @@ const action: IRawAction = {
       )
     }
 
-    if (delayTimestamp < DateTime.now().toMillis()) {
-      throw new StepError(
-        'Delay until timestamp entered is in the past',
-        'Check that the date and time entered is not in the past.',
-        $.step.position,
-        $.app.name,
-      )
-    }
+    /**
+     * RETRY: we check and only allow manual retries for failures due to:
+     * - delay until timestamp entered is in the past
+     */
+    const isRetry = await isValidRetry($)
 
-    const dataItem = {
-      delayUntil: delayUntilString,
-      delayUntilTime: delayUntilTimeString,
+    if (delayTimestamp < DateTime.now().toMillis()) {
+      if (isRetry) {
+        const dateTimeNow = DateTime.now()
+        dataItem = {
+          delayUntil: dateTimeNow.toFormat('dd MMM yyyy'),
+          delayUntilTime: dateTimeNow.toFormat('HH:mm'),
+        }
+      } else {
+        throw new StepError(
+          'Delay until timestamp entered is in the past',
+          'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
+          $.step.position,
+          $.app.name,
+        )
+      }
     }
 
     $.setActionItem({ raw: dataItem })

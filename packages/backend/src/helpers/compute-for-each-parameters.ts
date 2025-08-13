@@ -116,8 +116,21 @@ export function computeForEachParameters({
     stepPositions,
   } = forEachContext || {}
 
+  // SPECIAL CASE: this returns the total number of items that the for each step is processing.
+  // return early as it is part of the for each data field and does not need additional computation
+  if (keyPath === 'iterations') {
+    return get(data, keyPath) ?? 0
+  }
+
   let dataValue: IJSONValue = keyPath
   let forEachKeyPath = get(data, keyPath)
+
+  // SPECIAL CASE: this returns the iteration number of the specific iteration.
+  // metadata.iteration is not available for test runs
+  if (forEachKeyPath === FOR_EACH_ITERATION_KEY) {
+    return metadata?.iteration ? metadata.iteration : 1
+  }
+
   const currentStepPosition = stepPositions?.[executionStep?.stepId] || -1
 
   forEachKeyPath = String(forEachKeyPath).replace(

@@ -96,6 +96,7 @@ describe('For each action', () => {
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
           iterations: 3,
           items: checkboxItems,
           inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
@@ -121,6 +122,7 @@ describe('For each action', () => {
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
           iterations: 3,
           items: checkboxItems,
           inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
@@ -139,6 +141,7 @@ describe('For each action', () => {
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
           iterations: 1,
           items: checkboxItems,
           inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
@@ -211,6 +214,7 @@ describe('For each action', () => {
       expect(mockedProcessItems).toHaveBeenCalledWith(validTableData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
           items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.TILES,
@@ -246,6 +250,7 @@ describe('For each action', () => {
       expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
           items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
@@ -276,6 +281,7 @@ describe('For each action', () => {
       expect(mockedProcessItems).toHaveBeenCalledWith(validTableData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
           items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
@@ -308,6 +314,7 @@ describe('For each action', () => {
       expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
           iterations: 0,
           items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
@@ -343,6 +350,7 @@ describe('For each action', () => {
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
           iterations: 0,
           items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.TILES,

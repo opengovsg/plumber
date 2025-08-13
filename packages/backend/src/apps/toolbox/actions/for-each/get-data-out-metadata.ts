@@ -20,12 +20,18 @@ async function getDataOutMetadata(
     console.error(dataOut.error)
     return null
   }
-  const { inputSource, items } = dataOut.data
+  const { inputSource, items, iterations } = dataOut.data
 
   const baseMetadata = {
+    // NOTE: we expose these two fields to allow users
+    // to track the iteration number and create actions
+    // when the loop ends using "Only continue if"
+    iteration: {
+      label: 'Item number',
+      displayedValue: iterations > 0 ? '1' : '',
+    },
     iterations: {
-      label: 'Items',
-      isHidden: true,
+      label: 'Items found',
     },
 
     // hidden fields
