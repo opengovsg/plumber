@@ -15,7 +15,7 @@ const getFlowTransferDetails: QueryResolvers['getFlowTransferDetails'] = async (
   const flowTransferDetails: ITransferDetails[] = []
 
   const flow = await context.currentUser
-    .$relatedQuery('flows')
+    .withAccessible({ type: 'flow' })
     .findById(params.flowId)
     .withGraphFetched({
       steps: {

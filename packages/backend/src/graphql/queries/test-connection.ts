@@ -1,6 +1,7 @@
 import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
+import User from '@/models/user'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -12,18 +13,28 @@ const testConnection: QueryResolvers['testConnection'] = async (
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({
-      id: params.connectionId,
+      'connections.id': params.connectionId,
     })
     .throwIfNotFound()
+  const userRole = connection.role
 
   const app = apps[connection.key]
-  let $ = await globalVariable({ connection, app })
+  let $ = await globalVariable({
+    connection,
+    app,
+    user:
+      userRole === 'owner'
+        ? context.currentUser
+        : await User.query().findOne({
+            id: connection.userId,
+          }),
+  })
 
   if (params.flowId) {
     // flowId is supplied when testing within the pipe editor
     // it's used for formsg webhook verification for now
     const flow = await context.currentUser
-      .$relatedQuery('flows')
+      .withAccessibleFlows()
       .findById(params.flowId)
       .throwIfNotFound()
 
@@ -57,7 +68,7 @@ const testConnection: QueryResolvers['testConnection'] = async (
   })
 
   // if testing outside of the editor, it does not verify registration (e.g. setting of webhook url)
-  if (!isStillVerified || !params.flowId) {
+  if (!isStillVerified || !params.flowId || userRole !== 'owner') {
     return { connectionVerified: isStillVerified, message: errorMessage }
   }
 

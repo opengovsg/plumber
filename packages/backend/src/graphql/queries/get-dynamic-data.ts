@@ -11,7 +11,7 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
   const { stepId, key: dynamicDataKey, parameters } = params
 
   const step = await context.currentUser
-    .$relatedQuery('steps')
+    .withAccessible({ type: 'step' })
     .withGraphFetched({
       connection: true,
       flow: {
@@ -48,6 +48,7 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
   }
 
   const fetchedData = await command.run($)
+  // TODO (kevinkim-ogp): should filter out data that is not accessible to the user
 
   if (fetchedData.error) {
     throw new Error(JSON.stringify(fetchedData.error))

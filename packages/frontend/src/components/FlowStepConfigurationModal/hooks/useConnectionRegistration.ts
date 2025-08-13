@@ -25,7 +25,7 @@ interface UseConnectionVerificationResult {
 export function useConnectionVerification(
   props: UseConnectionVerificationProps,
 ): UseConnectionVerificationResult {
-  const { flowId } = useContext(EditorContext)
+  const { flow, flowId } = useContext(EditorContext)
   const { supportsConnectionRegistration } = props
 
   const [
@@ -44,12 +44,15 @@ export function useConnectionVerification(
       const { data } = await testConnectionQuery({
         variables: {
           connectionId,
-          flowId: supportsConnectionRegistration ? flowId : undefined,
+          flowId:
+            supportsConnectionRegistration || flow.role !== 'owner'
+              ? flowId
+              : undefined,
         },
       })
       return data?.testConnection
     },
-    [flowId, supportsConnectionRegistration, testConnectionQuery],
+    [flow.role, flowId, supportsConnectionRegistration, testConnectionQuery],
   )
 
   const [registerConnection, { loading: registerConnectionLoading }] =

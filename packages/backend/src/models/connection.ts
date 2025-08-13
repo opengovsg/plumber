@@ -1,4 +1,4 @@
-import { IJSONObject } from '@plumber/types'
+import { IFlowCollabRole, IJSONObject } from '@plumber/types'
 
 import { AES, enc } from 'crypto-js'
 import type { RelationMappings } from 'objection'
@@ -20,6 +20,7 @@ class Connection extends Base {
   draft: boolean
   count?: number
   flowCount?: number
+  role?: IFlowCollabRole
 
   static tableName = 'connections'
 
