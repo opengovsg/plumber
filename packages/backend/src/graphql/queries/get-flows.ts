@@ -69,7 +69,6 @@ const getFlows: QueryResolvers['getFlows'] = async (
     .groupBy('flows.id')
     .orderBy('active', 'desc')
     .orderBy('updated_at', 'desc')
-    .debug()
 
   return paginate(flowsQuery, params.limit, params.offset)
 }
