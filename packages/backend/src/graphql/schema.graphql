@@ -377,6 +377,11 @@ type Flow {
   template: Template
 }
 
+type FlowCollaborator {
+  role: String!
+  email: String!
+}
+
 # Rate limiting config is omitted here e.g. maxQps
 type FlowConfig {
   errorConfig: FlowErrorConfig
