@@ -40,6 +40,7 @@ interface IEditorContextValue {
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
+  hasEditPermission: boolean
   hasForEach: boolean
   hasIfThen: boolean
   currentTestExecutionStep: IExecutionStep | null
@@ -71,6 +72,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   flow: {} as IFlow,
   flowId: '',
   currentStepId: null,
+  hasEditPermission: false,
   hasForEach: false,
   hasIfThen: false,
   currentTestExecutionStep: null,
@@ -400,6 +402,7 @@ export const EditorProvider = ({
       value={{
         allApps,
         currentStepId,
+        hasEditPermission: flow.role === 'owner' || flow.role === 'editor',
         hasForEach,
         hasIfThen,
         isDrawerOpen,
@@ -409,7 +412,7 @@ export const EditorProvider = ({
         flowId,
         currentTestExecutionStep,
         isTestExecuting,
-        readOnly,
+        readOnly: readOnly || flow.role === 'viewer',
         shouldWarnOnLeave,
         stepsWithVars,
         testExecutionSteps,

@@ -114,10 +114,18 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
 
             <Flex alignItems="center" gap={1.5} justifyContent="flex-end">
               <Badge
-                colorScheme={flow?.active ? 'success' : 'grey'}
+                colorScheme={
+                  flow?.active && flow.role !== 'viewer' ? 'success' : 'grey'
+                }
                 variant="subtle"
               >
-                <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
+                <Text>
+                  {flow.role === 'viewer'
+                    ? 'View Only'
+                    : flow?.active
+                    ? 'Published'
+                    : 'Draft'}
+                </Text>
               </Badge>
 
               {showMenu ? (

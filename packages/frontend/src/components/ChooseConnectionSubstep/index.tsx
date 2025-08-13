@@ -10,6 +10,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 import useAuthentication from '@/hooks/useAuthentication'
 
+import { NON_EDITABLE_APP_CONNECTIONS } from '../Editor/constants'
 import {
   type ConnectionDropdownOption,
   optionGenerator,
@@ -51,7 +52,7 @@ function ChooseConnectionSubstep(
 ): React.ReactElement {
   const { step, application, onReconnect } = props
   const { connection } = step
-  const editorContext = useContext(EditorContext)
+  const { readOnly } = useContext(EditorContext)
   const { currentUser } = useAuthentication()
 
   const supportsConnectionRegistration =
@@ -172,7 +173,9 @@ function ChooseConnectionSubstep(
           size="xs"
           leftIcon={connection ? <BiRefresh /> : <BiLink />}
           onClick={onReconnect}
-          isDisabled={editorContext.readOnly}
+          isDisabled={
+            readOnly || NON_EDITABLE_APP_CONNECTIONS.includes(application.key)
+          }
         >
           {connection ? 'Reconnect' : 'Connect'}
         </Button>

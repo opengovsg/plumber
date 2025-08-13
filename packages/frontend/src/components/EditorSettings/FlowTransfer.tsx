@@ -7,6 +7,7 @@ import {
   FormErrorMessage,
   FormLabel,
   Input,
+  TouchableTooltip,
 } from '@opengovsg/design-system-react'
 import * as yup from 'yup'
 
@@ -16,6 +17,7 @@ import DisallowRequestInfobox from './FlowTransfer/DisallowRequestInfobox'
 import FlowTransferConnections from './FlowTransfer/FlowTransferConnections'
 import PublishedFlowInfobox from './FlowTransfer/PublishedFlowInfobox'
 import TransferFlowModal from './FlowTransfer/TransferFlowModal'
+import { editorSettingsStyles as styles } from './styles'
 
 const inputSchema = yup
   .object({
@@ -56,17 +58,11 @@ export default function FlowTransfer() {
 
   // boolean values to indicate whether infoboxes and button can be enabled
   const hasRequestedEmail = requestedEmail !== ''
-  const shouldDisableInput = flow.active || hasRequestedEmail
+  const shouldDisableInput =
+    flow.active || hasRequestedEmail || flow.role !== 'owner'
 
   return (
-    <Flex
-      py={{ base: '2rem', md: '3rem' }}
-      px={{ base: '1.5rem', md: '5rem' }}
-      flexDir="column"
-      gap={10}
-      maxW={{ base: '100%', xl: '60vw' }}
-      flex={1}
-    >
+    <Flex {...styles.editorSettingsWrapper}>
       <Text textStyle="h3-semibold">Transfer Pipe</Text>
 
       {flow.active && <PublishedFlowInfobox />}
@@ -80,17 +76,25 @@ export default function FlowTransfer() {
         <FormControl isInvalid={!shouldDisableInput && !isValid}>
           <Flex flexDir="column">
             <FormLabel isRequired={true}>Transfer Pipe Ownership</FormLabel>
-            <Input
-              disabled={shouldDisableInput}
-              placeholder={inputDescriptionText}
-              value={newOwnerEmail}
-              autoFocus={true}
-              {...register('email', {
-                onChange: (event) => {
-                  setNewOwnerEmail(event.target.value.toLowerCase())
-                },
-              })}
-            />
+            <TouchableTooltip
+              label={
+                flow.role !== 'owner'
+                  ? 'Only the Pipe owner can transfer ownership'
+                  : ''
+              }
+            >
+              <Input
+                disabled={shouldDisableInput}
+                placeholder={inputDescriptionText}
+                value={newOwnerEmail}
+                autoFocus={true}
+                {...register('email', {
+                  onChange: (event) => {
+                    setNewOwnerEmail(event.target.value.toLowerCase())
+                  },
+                })}
+              />
+            </TouchableTooltip>
 
             {isDirty && !isValid && (
               <FormErrorMessage>

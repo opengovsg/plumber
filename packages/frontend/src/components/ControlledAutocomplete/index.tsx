@@ -38,6 +38,7 @@ export interface ControlledAutocompleteProps {
   clickableLink?: IFieldDropdown['clickableLink']
   isSearchable?: boolean
   variableTypes?: TDataOutMetadatumType[]
+  readOnly?: boolean
 }
 
 const formComboboxOptions = (
@@ -80,8 +81,9 @@ function ControlledAutocomplete(
     clickableLink,
     isSearchable,
     variableTypes = null,
+    readOnly = false,
   } = props
-  const { allApps, readOnly } = useContext(EditorContext)
+  const { allApps } = useContext(EditorContext)
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
 
   /**
@@ -218,6 +220,7 @@ function ControlledAutocomplete(
                   }
                 : undefined
             }
+            isDisabled={readOnly}
           />
         </Box>
       </Flex>
