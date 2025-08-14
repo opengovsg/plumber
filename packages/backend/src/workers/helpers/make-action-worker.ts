@@ -8,7 +8,7 @@ import {
 } from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
-import { QUEUE_BATCH_SIZE } from '@/config/batches'
+import { BATCH_RUN_FUNCTIONS, QUEUE_BATCH_SIZE } from '@/config/batches'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
@@ -16,6 +16,7 @@ import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 
 import { handleFailedActionJob } from './handle-failed-action-job'
+import { processBatchActionJob } from './process-batch-action-job'
 import { processSingleActionJob } from './process-single-action-job'
 
 function convertParamsToBullMqOptions(
@@ -88,6 +89,18 @@ export interface BullMqOptions {
   isQueueDelayable: boolean
 }
 
+function splitOnLastDelimiter(str: string, delimiter: string) {
+  const lastIndex = str.lastIndexOf(delimiter)
+
+  if (lastIndex === -1) {
+    // Delimiter not found, return the original string
+    return str
+  } else {
+    // Return the part of the string before the last delimiter
+    return str.substring(0, lastIndex)
+  }
+}
+
 /**
  * Creates a worker for an action queue.
  *
@@ -109,26 +122,49 @@ export function makeActionWorker(
         const jobsInBatch = batchedJob.getBatch()
 
         // perform batching for queues that support it, right now only M365 queue supports it
-        if (jobsInBatch.length > 1) {
-          // TODO: add batching logic here in next PR
+        if (jobsInBatch && jobsInBatch.length > 1) {
           /**
-           * This will be the logic for actions in a queue that does not support batching e.g. M365 queue allows batching for createTableRow but not for other actions.
-           *
-           * If the action does not allow batching, handle each job in the batch individually as if there was no batching. Mark the individual jobs as failed to not fail the wrapped batch job. The progress object is used to get the error later to handle it.
+           * Proceed with batching only after checking if the batchJob function exists for the specific action in the app e.g. M365 createTableRow
+           * This is done by obtaining the first part of the group id
            */
-          for (const job of jobsInBatch) {
-            try {
-              await processSingleActionJob(job, worker, {
-                queueName,
-                workerOptions,
-                isQueueDelayable,
-              })
-            } catch (err) {
-              job.updateProgress(err)
-              job.setAsFailed(err)
+          const firstJob = jobsInBatch[0]
+          const firstJobOptions = firstJob.opts
+          const groupID = firstJobOptions.group.id
+          const appActionKey = splitOnLastDelimiter(groupID, '_')
+          if (appActionKey in BATCH_RUN_FUNCTIONS) {
+            const batchFunction = BATCH_RUN_FUNCTIONS[appActionKey]
+            // use the batch job timestamp as a source of truth when logging
+            const batchJobTimestamp = new Date(
+              batchedJob.timestamp,
+            ).toISOString()
+
+            await processBatchActionJob({
+              jobsInBatch,
+              worker,
+              bullMqOptions: { queueName, workerOptions, isQueueDelayable },
+              batchJobTimestamp,
+              batchFunction,
+            })
+          } else {
+            /**
+             * This will be the logic for actions in a queue that does not support batching e.g. M365 queue allows batching for createTableRow but not for other actions.
+             *
+             * If the action does not allow batching, handle each job in the batch individually as if there was no batching. Mark the individual jobs as failed to not fail the wrapped batch job. The progress object is used to get the error later to handle it.
+             */
+            for (const job of jobsInBatch) {
+              try {
+                await processSingleActionJob(job, worker, {
+                  queueName,
+                  workerOptions,
+                  isQueueDelayable,
+                })
+              } catch (err) {
+                job.updateProgress(err)
+                job.setAsFailed(err)
+              }
             }
           }
-          return
+          return // need to return here to avoid processing the single job
         }
 
         // proceed with single job in the batch as per normal
@@ -145,7 +181,7 @@ export function makeActionWorker(
 
   worker.on('active', (batchedJob: JobPro<IActionJobData>) => {
     const jobsInBatch = batchedJob.getBatch()
-    if (jobsInBatch.length > 1) {
+    if (jobsInBatch && jobsInBatch.length > 1) {
       logger.info(`[${queueName}] JOB IDs: ${batchedJob.id} have started!`, {
         queueName,
         batchJobTimestamp: new Date(batchedJob.timestamp).toISOString(),
@@ -170,7 +206,7 @@ export function makeActionWorker(
 
   worker.on('completed', (batchedJob: JobPro<IActionJobData>) => {
     const jobsInBatch = batchedJob.getBatch()
-    if (jobsInBatch.length > 1) {
+    if (jobsInBatch && jobsInBatch.length > 1) {
       // track each individual job for failure and log it
       const failedJobsInBatch = jobsInBatch.filter(
         (subJob: Job) => subJob.failedReason,
@@ -238,7 +274,7 @@ export function makeActionWorker(
   worker.on('failed', async (batchedJob: JobPro<IActionJobData>, err) => {
     const jobsInBatch = batchedJob.getBatch()
     // This occurs when the wrapped batch job fails
-    if (jobsInBatch.length > 1) {
+    if (jobsInBatch && jobsInBatch.length > 1) {
       logger.error(`[${queueName}] JOB IDs: ${batchedJob.id} have failed!`, {
         err,
         queueName,

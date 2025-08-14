@@ -15,26 +15,29 @@ import Step from '@/models/step'
 const getGroupConfigForJob: IAppQueue['getGroupConfigForJob'] = async (
   jobData,
 ) => {
+  // For batching, use the table id instead, and we will batch by action type to save on the API calls made to Microsoft Graph
   const step = await Step.query().findById(jobData.stepId).throwIfNotFound()
-  const fileId = step.parameters['fileId'] as string
+  const tableId = step.parameters['tableId'] as string
 
-  if (!fileId) {
+  if (!tableId) {
     throw new Error(
-      `Expected fileId to be non-empty for step ${jobData.stepId}`,
+      `Expected tableId to be non-empty for step ${jobData.stepId}`,
     )
   }
 
-  // NOTE: File ID is only unique within the same SharePoint site and tenant.
+  // NOTE: Table ID is only unique within the same SharePoint site and tenant.
   // But since we only have one site per tenant, and we need a different per-app
   // queue for each tenant (each tenant may have different agreed-upon rate
-  // limits), we can avoid compleixty and simply set group ID to the file ID,
-  // instead of something like `${tenantId}-${siteId}-${fileId}`.
+  // limits), we can avoid complexity and simply set group ID to the table ID,
+  // instead of something like `${tenantId}-${siteId}-${tableId}`.
   //
-  // (The one app-queue per tenant thing isn't implemnented yet - for now, each
+  // (The one app-queue per tenant thing isn't implemented yet - for now, each
   // app can only have 1 per-app queue. We'll only do this if we ever need to
   // support more than 1 tenant.)
+  //
+  // The format will be: `${appKey}_${actionKey}_${tableId}` e.g. `m365-excel_createTableRow_1234567890`
   return {
-    id: fileId,
+    id: `${step.appKey}_${step.key}_${tableId}`,
   }
 }
 

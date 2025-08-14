@@ -134,6 +134,9 @@ const globalVariable = async (
     },
     user: flow?.user ?? user,
     metadata,
+    setExecutionError: (error: Error) => {
+      $.executionError = error
+    },
   }
 
   if (request) {
