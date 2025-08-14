@@ -1,3 +1,4 @@
+import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import deleteStep from '@/graphql/mutations/delete-step'
@@ -6,12 +7,21 @@ import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockStep } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
+import {
+  generateMockCollaborator,
+  generateMockStep,
+  generateMockUser,
+} from './flow.mock'
 
 describe('deleteStep mutation', () => {
   let context: Context
   let testFlow: Flow
   let testSteps: Step[]
+  let owner: User
+  let editor: User
+  let viewer: User
+  let nonCollaborator: User
   const patchLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
   beforeEach(async () => {
@@ -26,19 +36,21 @@ describe('deleteStep mutation', () => {
     await Step.query().delete()
     await Flow.query().delete()
 
-    const testUser = await User.query().findOne({ email: 'tester@open.gov.sg' })
-    context = {
-      req: null,
-      currentUser: testUser,
-      res: null,
-      isAdminOperation: false,
-    }
+    context = await generateMockContext()
+
+    owner = context.currentUser
+    editor = await generateMockUser('editor')
+    viewer = await generateMockUser('viewer')
+    nonCollaborator = await generateMockUser('nonCollaborator')
 
     // Create a flow associated with the test user.
-    testFlow = await testUser.$relatedQuery('flows').insertAndFetch({
+    testFlow = await owner.$relatedQuery('flows').insertAndFetch({
       name: 'Test Flow',
       // additional flow properties as needed
     })
+
+    await generateMockCollaborator(testFlow.id, editor.id, owner.id, 'editor')
+    await generateMockCollaborator(testFlow.id, viewer.id, owner.id, 'viewer')
 
     // Create test steps
     testSteps = await Promise.all([
@@ -188,5 +200,48 @@ describe('deleteStep mutation', () => {
       context,
     )
     expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('should allow owner to delete steps', async () => {
+    await deleteStep(null, { input: { ids: [testSteps[1].id] } }, context)
+    const steps = await testFlow
+      .$relatedQuery('steps')
+      .orderBy('position', 'asc')
+
+    expect(steps).toHaveLength(2)
+    expect(steps[0].type).toBe('trigger')
+    expect(steps[0].position).toBe(1)
+  })
+
+  it('should allow editor to delete steps', async () => {
+    context.currentUser = editor
+    await deleteStep(null, { input: { ids: [testSteps[1].id] } }, context)
+    const steps = await testFlow
+      .$relatedQuery('steps')
+      .orderBy('position', 'asc')
+
+    expect(steps).toHaveLength(2)
+    expect(steps[0].type).toBe('trigger')
+    expect(steps[0].position).toBe(1)
+  })
+
+  it('should not allow non-collaborator to delete steps', async () => {
+    context.currentUser = nonCollaborator
+    await expect(
+      deleteStep(null, { input: { ids: [testSteps[0].id] } }, context),
+    ).rejects.toThrow(NotFoundError)
+
+    const steps = await testFlow
+      .$relatedQuery('steps')
+      .orderBy('position', 'asc')
+
+    expect(steps).toHaveLength(3)
+  })
+
+  it('should not allow viewer to delete steps', async () => {
+    context.currentUser = viewer
+    await expect(
+      deleteStep(null, { input: { ids: [testSteps[0].id] } }, context),
+    ).rejects.toThrow(NotFoundError)
   })
 })

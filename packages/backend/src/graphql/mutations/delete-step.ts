@@ -28,7 +28,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
     // Include SELECTs in transaction too just in case there's concurrent modification.
     const steps = await context.currentUser
-      .$relatedQuery('steps', trx)
+      .withAccessible({ type: 'step', trx, requiredRole: 'editor' })
       .withGraphFetched('flow')
       .whereIn('steps.id', params.input.ids)
       .orderBy('steps.position', 'asc')
