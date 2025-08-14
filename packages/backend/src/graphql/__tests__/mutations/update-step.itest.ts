@@ -148,6 +148,7 @@ describe('updateStep mutation', () => {
       parameters: { updatedParam: 'newValue' },
       status: 'completed',
       config: {},
+      updatedBy: context.currentUser.id,
     })
   })
 
@@ -167,6 +168,7 @@ describe('updateStep mutation', () => {
       parameters: { testParam: 'value' },
       status: 'completed',
       config: {},
+      updatedBy: context.currentUser.id,
     })
   })
 
@@ -225,6 +227,7 @@ describe('updateStep mutation', () => {
       parameters: { testParam: 'value' },
       status: 'incomplete',
       config: {},
+      updatedBy: context.currentUser.id,
     })
   })
 
@@ -243,6 +246,7 @@ describe('updateStep mutation', () => {
       parameters: { testParam: 'value' },
       status: 'incomplete',
       config: {},
+      updatedBy: context.currentUser.id,
     })
   })
 
@@ -261,6 +265,7 @@ describe('updateStep mutation', () => {
       parameters: { testParam: 'value' },
       status: 'completed',
       config: { stepName: 'Updated Step Name' },
+      updatedBy: context.currentUser.id,
     })
   })
 
@@ -279,6 +284,7 @@ describe('updateStep mutation', () => {
       parameters: { testParam: 'value' },
       status: 'completed',
       config: { stepName: '' },
+      updatedBy: context.currentUser.id,
     })
   })
 
@@ -315,6 +321,7 @@ describe('updateStep mutation', () => {
         stepName: 'Updated Step Name',
         templateConfig: { appEventKey: 'existingAppEventKey' },
       },
+      updatedBy: context.currentUser.id,
     })
 
     // Verify the existing templateConfig was preserved in the result
@@ -359,6 +366,7 @@ describe('updateStep mutation', () => {
         stepName: '',
         templateConfig: { appEventKey: 'existingAppEventKey' },
       },
+      updatedBy: context.currentUser.id,
     })
 
     // Verify the existing templateConfig was preserved in the result
@@ -460,6 +468,7 @@ describe('updateStep mutation', () => {
           parameters: { updatedParam: 'newValue' },
           status: 'completed',
           config: {},
+          updatedBy: context.currentUser.id,
         })
       },
     )

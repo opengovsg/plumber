@@ -64,6 +64,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
         connectionId: input.connection.id,
         parameters: input.parameters,
         status: shouldInvalidate ? 'incomplete' : step.status,
+        updatedBy: context.currentUser.id,
         config: {
           ...existingConfig,
           // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name

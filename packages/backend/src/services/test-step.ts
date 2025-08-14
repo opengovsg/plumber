@@ -9,12 +9,12 @@ import { processAction } from '@/services/action'
 import { processFlow } from '@/services/flow'
 import { processTrigger } from '@/services/trigger'
 
-interface TestStepOptions {
+export interface TestStepOptions {
   stepId: string
   testRunMetadata?: TestRunStepMetadata
 }
 
-interface TestStepResult {
+export interface TestStepResult {
   executionStep: ExecutionStep
   executionId: string
 }
