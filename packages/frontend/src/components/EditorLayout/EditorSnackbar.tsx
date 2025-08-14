@@ -4,10 +4,11 @@ import { Button } from '@opengovsg/design-system-react'
 interface EditorSnackbarProps {
   isOpen: boolean
   handleUnpublish: () => void
+  isButtonDisabled: boolean
 }
 
 export default function EditorSnackbar(props: EditorSnackbarProps) {
-  const { isOpen, handleUnpublish } = props
+  const { isOpen, handleUnpublish, isButtonDisabled } = props
   const snackbarText = 'To edit this pipe, you need to unpublish it first'
   return (
     <Box
@@ -31,6 +32,7 @@ export default function EditorSnackbar(props: EditorSnackbarProps) {
           colorScheme="inverse"
           onClick={handleUnpublish}
           size={{ sm: 'sm', md: 'md' }}
+          isDisabled={isButtonDisabled}
         >
           Unpublish
         </Button>
