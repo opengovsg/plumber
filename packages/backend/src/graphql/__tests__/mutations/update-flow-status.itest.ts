@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto'
+import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import cronTimes from '@/apps/scheduler/common/cron-times'
@@ -10,7 +12,12 @@ import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
+import Flow from '@/models/flow'
+import User from '@/models/user'
 import flowQueue from '@/queues/flow'
+
+import { generateMockContext } from './tiles/table.mock'
+import { generateMockCollaborator, generateMockUser } from './flow.mock'
 
 // In these tests we simulate the chaining of queries on currentUser.$relatedQuery('flows')
 // and the additional methods on the flow: $query, getTriggerStep etc.
@@ -18,15 +25,31 @@ describe('updateFlowStatus', () => {
   let fakeFlow: any
   let fakeQuery: any
   let context: any
+  let owner: User
+  let editor: User
+  let viewer: User
+  let nonCollaborator: User
   let fakeTriggerStep: any
   let patchSpy: ReturnType<typeof vi.fn>
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetAllMocks()
+
+    context = await generateMockContext()
+    owner = context.currentUser
+
+    // Create a real flow in the database first
+    const fakeFlowId = randomUUID()
+    await Flow.query().insert({
+      id: fakeFlowId,
+      name: 'Test Flow',
+      userId: owner.id,
+      active: false,
+    })
 
     // Create a fake flow object with default values.
     fakeFlow = {
-      id: 'flow-1',
+      id: fakeFlowId,
       active: false,
       steps: [{ position: 1 }, { position: 2 }], // contiguous by default
       // we will override $query to simulate patch operations
@@ -44,11 +67,14 @@ describe('updateFlowStatus', () => {
       throwIfNotFound: vi.fn().mockResolvedValue(fakeFlow),
     }
 
-    context = {
-      currentUser: {
-        $relatedQuery: vi.fn().mockReturnValue(fakeQuery),
-      },
-    }
+    context.currentUser.withAccessible = vi.fn().mockReturnValue(fakeQuery)
+
+    editor = await generateMockUser('editor')
+    viewer = await generateMockUser('viewer')
+    nonCollaborator = await generateMockUser('nonCollaborator')
+
+    await generateMockCollaborator(fakeFlow.id, editor.id, owner.id, 'editor')
+    await generateMockCollaborator(fakeFlow.id, viewer.id, owner.id, 'viewer')
 
     // Set up a default fake trigger step returning a trigger command.
     fakeTriggerStep = {
@@ -122,6 +148,7 @@ describe('updateFlowStatus', () => {
       config: {
         showSurvey: true,
       },
+      updatedBy: owner.id,
     })
 
     // jobName is constructed as "flow-<flow.id>"
@@ -157,6 +184,7 @@ describe('updateFlowStatus', () => {
       config: {
         showSurvey: undefined,
       },
+      updatedBy: owner.id,
     })
 
     expect(flowQueue.removeRepeatableByKey).toHaveBeenCalledWith('repeat-key')
@@ -182,6 +210,7 @@ describe('updateFlowStatus', () => {
       config: {
         showSurvey: true,
       },
+      updatedBy: owner.id,
     })
 
     // But no job should be added when trigger type is webhook.
@@ -206,11 +235,60 @@ describe('updateFlowStatus', () => {
       config: {
         showSurvey: undefined,
       },
+      updatedBy: owner.id,
     })
 
     // For webhook triggers no removal of a repeatable job should be attempted.
     expect(flowQueue.getRepeatableJobs).not.toHaveBeenCalled()
     expect(flowQueue.removeRepeatableByKey).not.toHaveBeenCalled()
     expect(result).toEqual(fakeFlow)
+  })
+
+  describe('access control', () => {
+    it('should allow owner to update flow status', async () => {
+      const params = { input: { id: fakeFlow.id, active: true } }
+      const result = await updateFlowStatus({}, params, context)
+      expect(result).toEqual(fakeFlow)
+      expect(patchSpy).toHaveBeenCalledWith({
+        active: true,
+        publishedAt: expect.any(String),
+        config: {
+          showSurvey: true,
+        },
+        updatedBy: owner.id,
+      })
+    })
+
+    it('should allow editor to update flow status', async () => {
+      context.currentUser = editor
+      context.currentUser.withAccessible = vi.fn().mockReturnValue(fakeQuery)
+      const params = { input: { id: fakeFlow.id, active: true } }
+      const result = await updateFlowStatus({}, params, context)
+      expect(result).toEqual(fakeFlow)
+      expect(patchSpy).toHaveBeenCalledWith({
+        active: true,
+        publishedAt: expect.any(String),
+        config: {
+          showSurvey: true,
+        },
+        updatedBy: editor.id,
+      })
+    })
+
+    it('should not allow viewer to update flow status', async () => {
+      context.currentUser = viewer
+      const params = { input: { id: fakeFlow.id, active: true } }
+      await expect(updateFlowStatus({}, params, context)).rejects.toThrow(
+        NotFoundError,
+      )
+    })
+
+    it('should not allow non-collaborator to update flow status', async () => {
+      context.currentUser = nonCollaborator
+      const params = { input: { id: fakeFlow.id, active: true } }
+      await expect(updateFlowStatus({}, params, context)).rejects.toThrow(
+        NotFoundError,
+      )
+    })
   })
 })
