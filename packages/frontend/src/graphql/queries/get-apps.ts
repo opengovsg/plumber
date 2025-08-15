@@ -217,6 +217,10 @@ export const GET_APPS = gql`
               label
               type
             }
+            clickableLink {
+              label
+              url
+            }
             singleVariableSelection
             # Only for multi-row
             subFields {

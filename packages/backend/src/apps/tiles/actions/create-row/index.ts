@@ -20,6 +20,10 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       required: true,
       variables: false,
+      clickableLink: {
+        label: 'View tile',
+        url: '/tiles/{value}',
+      },
       showOptionValue: false,
       addNewOption: {
         id: 'tiles-createTileRow-tableId',
