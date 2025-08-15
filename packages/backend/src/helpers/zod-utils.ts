@@ -36,3 +36,7 @@ export function firstZodParseError(error: ZodError): string {
     } field`
   }
 }
+
+export function isUUID(str: string): boolean {
+  return z.string().uuid().safeParse(str).success
+}

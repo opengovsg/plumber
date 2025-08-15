@@ -1,6 +1,7 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import {
@@ -241,6 +242,19 @@ const action: IRawAction = {
         }
         if (e.message.includes('No rows to patch')) {
           // This means the corresponding row does not exist for pg
+          $.setActionItem({
+            raw: {
+              updated: false,
+            } satisfies UpdateRowOutput,
+          })
+          return
+        }
+        if (e.message.includes('Column oldRowId does not exist')) {
+          logger.error({
+            message: e.message,
+            event: 'updateSingleRow: oldRowId column does not exist',
+          })
+          // This means that the rowId is a uuid but there's no oldRowId column
           $.setActionItem({
             raw: {
               updated: false,

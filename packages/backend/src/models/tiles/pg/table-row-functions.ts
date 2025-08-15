@@ -3,6 +3,7 @@ import { monotonicFactory, ulid } from 'ulid'
 
 import { tilesClient } from '@/config/tiles-database'
 import logger from '@/helpers/logger'
+import { isUUID } from '@/helpers/zod-utils'
 
 import {
   CreateRowInput,
@@ -106,7 +107,11 @@ export const patchTableRow = async ({
   patchData,
 }: PatchRowInput): Promise<TableRowItem> => {
   try {
-    const query = tilesClient(tableId).where({ rowId: rowIdToUse })
+    // For backwards compat
+    const shouldUseOldRowId = isUUID(rowIdToUse)
+    const query = tilesClient(tableId).where({
+      [shouldUseOldRowId ? 'oldRowId' : 'rowId']: rowIdToUse,
+    })
 
     Object.entries(patchData.set || {}).forEach(
       ([key, value]: [string, string]) => {
@@ -153,8 +158,11 @@ export const patchTableRow = async ({
       throw new Error('No rows to patch')
     }
     return formatTableRow(res[0], tableId)
-  } catch (e: unknown) {
+  } catch (e: any) {
     logger.error(e)
+    if (e.code === '42703') {
+      throw new Error('Column oldRowId does not exist')
+    }
     throw e
   }
 }

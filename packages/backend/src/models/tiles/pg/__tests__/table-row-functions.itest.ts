@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { ulid } from 'ulid'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -15,6 +16,7 @@ import {
   TableRowFilterOperator,
   TableRowOutputWithTimestamps,
 } from '../../types'
+import { createTableColumns } from '../table-column-functions'
 import {
   createTableRow,
   createTableRows,
@@ -319,6 +321,77 @@ describe('table-row-functions', () => {
           },
         }),
       ).rejects.toThrow('Invalid value for add operation')
+    })
+
+    it('should update row for migrated tiles using oldRowId', async () => {
+      const oldRowId = randomUUID()
+      // await createTableColumns(dummyTable.id, ['oldRowId'])
+      await createTableRow({
+        tableId: dummyTable.id,
+        data: {
+          [dummyColumnIds[0]]: 'yorimo anata',
+          [dummyColumnIds[1]]: '123',
+          oldRowId,
+        },
+      })
+
+      const updatedRow = await patchTableRow({
+        tableId: dummyTable.id,
+        rowId: oldRowId,
+        patchData: {
+          set: {
+            [dummyColumnIds[0]]: 'choco-minto',
+          },
+        },
+      })
+      expect(updatedRow.data[dummyColumnIds[0]]).toBe('choco-minto')
+    })
+    it('should update row for migrated tiles using new rowId', async () => {
+      const oldRowId = randomUUID()
+      await createTableColumns(dummyTable.id, ['oldRowId'])
+      const createdRow = await createTableRow({
+        tableId: dummyTable.id,
+        data: {
+          [dummyColumnIds[0]]: 'yorimo anata',
+          [dummyColumnIds[1]]: '123',
+          oldRowId,
+        },
+      })
+
+      const updatedRow2 = await patchTableRow({
+        tableId: dummyTable.id,
+        rowId: createdRow.rowId,
+        patchData: {
+          set: {
+            [dummyColumnIds[0]]: 'strawberry-minto',
+          },
+        },
+      })
+
+      expect(updatedRow2.data[dummyColumnIds[0]]).toBe('strawberry-minto')
+    })
+
+    it('should throw an error if the oldRowId is not found', async () => {
+      await createTableColumns(dummyTable.id, ['oldRowId'])
+      await createTableRow({
+        tableId: dummyTable.id,
+        data: {
+          [dummyColumnIds[0]]: 'yorimo anata',
+          [dummyColumnIds[1]]: '123',
+          oldRowId: randomUUID(),
+        },
+      })
+      await expect(
+        patchTableRow({
+          tableId: dummyTable.id,
+          rowId: randomUUID(),
+          patchData: {
+            set: {
+              [dummyColumnIds[0]]: 'strawberry-minto',
+            },
+          },
+        }),
+      ).rejects.toThrow()
     })
   })
 
