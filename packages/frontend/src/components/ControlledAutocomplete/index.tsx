@@ -176,7 +176,10 @@ function ControlledAutocomplete(
           {clickableLink && fieldValue && (
             <Link
               fontWeight="normal"
-              href={clickableLink.url.replace('{value}', fieldValue)}
+              href={clickableLink.url.replaceAll(
+                '{value}',
+                encodeURIComponent(fieldValue),
+              )}
               target="_blank"
               ml={1}
             >
