@@ -325,7 +325,7 @@ describe('table-row-functions', () => {
 
     it('should update row for migrated tiles using oldRowId', async () => {
       const oldRowId = randomUUID()
-      // await createTableColumns(dummyTable.id, ['oldRowId'])
+      await createTableColumns(dummyTable.id, ['oldRowId'])
       await createTableRow({
         tableId: dummyTable.id,
         data: {
