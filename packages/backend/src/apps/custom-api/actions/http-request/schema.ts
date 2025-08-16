@@ -39,7 +39,7 @@ export const requestSchema = z.object({
         }
         seenFields.add(key)
 
-        result[key] = value.replace(/\u00A0/g, ' ')
+        result[key] = value?.replace(/\u00A0/g, ' ') || ''
       }
       return result
     })
