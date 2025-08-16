@@ -851,6 +851,7 @@ export type IGlobalVariable = {
     appKey: string
     position: number
     parameters: IJSONObject
+    key?: string // backward compatibility in case some steps still have no key
   }
   nextStep?: {
     id: string
@@ -875,8 +876,10 @@ export type IGlobalVariable = {
   webhookUrl?: string
   triggerOutput?: ITriggerOutput
   actionOutput?: IActionOutput
+  executionError?: Error
   pushTriggerItem?: (triggerItem: ITriggerItem) => Promise<void>
   setActionItem?: (actionItem: IActionItem) => void
+  setExecutionError?: (error: Error) => void
 
   /**
    * If this is non-null, it contains details of the pipe owner if this is

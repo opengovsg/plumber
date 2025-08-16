@@ -1,4 +1,9 @@
-import type { IActionJobData, IAppQueue } from '@plumber/types'
+import type {
+  IActionJobData,
+  IAppQueue,
+  IGlobalVariable,
+  NextStepMetadata,
+} from '@plumber/types'
 
 import {
   UnrecoverableError,
@@ -7,10 +12,12 @@ import {
 } from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
+import { BATCH_RUN_FUNCTIONS } from '@/config/batches'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
 import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
+import { ForEachContext } from '@/helpers/compute-for-each-parameters'
 import {
   DEFAULT_JOB_OPTIONS,
   MAXIMUM_JOB_ATTEMPTS,
@@ -26,8 +33,17 @@ import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
-import { enqueueActionJob, makeActionJobId } from '@/queues/action'
+import {
+  actionQueuesByName,
+  enqueueActionJob,
+  makeActionJobId,
+} from '@/queues/action'
 import { processAction } from '@/services/action'
+import {
+  ProcessedJobData,
+  processJobAfterBatchFunction,
+  processJobDataForBatchFunction,
+} from '@/services/batch-action'
 
 import processForEachStatus from './for-each-status-manager'
 
@@ -88,6 +104,40 @@ interface MakeActionWorkerParams {
   queueConfig: IAppQueue
 }
 
+export interface BullMqOptions {
+  queueName: string
+  workerOptions: WorkerProOptions
+  isQueueDelayable: boolean
+}
+
+export interface JobProgressData {
+  $: IGlobalVariable // all functions will be dropped
+  forEachContext: ForEachContext
+  metadata: NextStepMetadata
+  step: Step
+  nextStep: Step
+  batchJobTimestamp: string
+}
+
+export interface JobProgress {
+  error?: Error
+  // the remaining data to be processed
+  jobProgressData: Partial<JobProgressData>
+}
+
+// This is to extract the app_action key from the group id
+function splitOnLastDelimiter(str: string, delimiter: string) {
+  const lastIndex = str.lastIndexOf(delimiter)
+
+  if (lastIndex === -1) {
+    // Delimiter not found, return the original string
+    return str
+  } else {
+    // Return the part of the string before the last delimiter
+    return str.substring(0, lastIndex)
+  }
+}
+
 /**
  * Creates a worker for an action queue.
  *
@@ -110,6 +160,82 @@ export function makeActionWorker(
 
         const jobData = job.data
         const jobId = makeActionJobId(queueName, job.id)
+
+        // early termination if the job was processed by the batch function
+        if (job.progress !== 0 && JSON.stringify(job.progress) !== '{}') {
+          // Either it is an unrecoverable error before the batch function is called
+          const jobProgress: JobProgress = job.progress as JobProgress
+          if (jobProgress.error) {
+            throw jobProgress.error
+          } else {
+            // It was processed by the batch function, either it succeeded or failed
+            await processJobAfterBatchFunction(
+              job,
+              jobProgress.jobProgressData as JobProgressData,
+              worker,
+              {
+                queueName,
+                workerOptions,
+                isQueueDelayable,
+              },
+            )
+          }
+          return
+        }
+
+        // Check whether to do batching on the job, else just process the job normally
+        /**
+         * Check whether to do batching on the job
+         * 1. If a group exists in the queue
+         * 2. If the group id has a batch function attached to it
+         */
+        const queue = actionQueuesByName[queueName]
+        const groupId = job.opts?.group?.id ?? ''
+        const appActionKey = splitOnLastDelimiter(groupId, '_')
+        if (appActionKey in BATCH_RUN_FUNCTIONS) {
+          const batchRunFunction = BATCH_RUN_FUNCTIONS[appActionKey]
+          // TODO: check but im sure they are returning me in the newest to older order of insertion so need to reverse because workers still process FIFO unless priority is set
+          const jobsInGroup = (await queue.getGroupJobs(groupId, 0, 10)) // number of jobs to batch
+            .reverse()
+
+          const batchJobTimestamp = new Date(job.timestamp).toISOString()
+          const jobsToProcessData: ProcessedJobData[] = []
+          // pre-process current job first, throw unrecoverable error if error.
+          await processJobDataForBatchFunction(
+            job,
+            jobsToProcessData,
+            batchJobTimestamp,
+          )
+          // early termination if there is an error
+          const jobProgress: JobProgress = job.progress as JobProgress
+          if (jobProgress.error) {
+            throw jobProgress.error
+          }
+
+          for (const job of jobsInGroup) {
+            // pre-process job for the details, set unrecoverable error to progress
+            await processJobDataForBatchFunction(
+              job,
+              jobsToProcessData,
+              batchJobTimestamp,
+            )
+          }
+
+          // pass it into the batch run function, if error on the batch function, throw the error immediately... skip processing the rest...
+          // TODO: decide whether to throw the error immediately or not...
+          await batchRunFunction(jobsToProcessData)
+
+          // do not insert execution step and enqueue next job yet for the remaining jobs, only do it when the job gets processed respectively: to ensure the jobs get queued in the correct order based on the steps in the flow
+
+          // process current job in the group
+          await processJobAfterBatchFunction(
+            job,
+            jobProgress.jobProgressData as JobProgressData,
+            worker,
+            { queueName, workerOptions, isQueueDelayable },
+          )
+          return
+        }
 
         // The reason why we dont add .throwIfNotFound() here is to prevent job
         // retries delegating the error throwing and handling to processAction

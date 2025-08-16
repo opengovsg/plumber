@@ -78,6 +78,7 @@ const globalVariable = async (
       appKey: step?.appKey,
       position: step?.position,
       parameters: step?.parameters || {},
+      key: step?.key,
     },
     nextStep: {
       id: nextStep?.id,
@@ -131,6 +132,9 @@ const globalVariable = async (
     },
     setActionItem: (actionItem: IActionItem) => {
       $.actionOutput.data = actionItem
+    },
+    setExecutionError: (error: Error) => {
+      $.executionError = error
     },
     user: flow?.user ?? user,
     metadata,
