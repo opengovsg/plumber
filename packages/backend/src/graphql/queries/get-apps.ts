@@ -6,6 +6,7 @@ import customApiApp from '@/apps/custom-api'
 import delayApp from '@/apps/delay'
 import formatterApp from '@/apps/formatter'
 import formsgApp from '@/apps/formsg/'
+import gathersgApp from '@/apps/gathersg'
 import lettersgApp from '@/apps/lettersg'
 import m365ExcelApp from '@/apps/m365-excel'
 import paysgApp from '@/apps/paysg'
@@ -51,6 +52,7 @@ export const ACTION_APPS_RANKING = [
   telegramBotApp.key,
   slackApp.key,
   aisayApp.key,
+  gathersgApp.key,
   customApiApp.key,
   vaultWorkspaceApp.key,
   twilioApp.key,

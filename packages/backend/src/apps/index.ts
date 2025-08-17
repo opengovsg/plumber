@@ -6,6 +6,7 @@ import customApiApp from './custom-api'
 import delayApp from './delay'
 import formatterApp from './formatter'
 import formsgApp from './formsg'
+import gathersgApp from './gathersg'
 import lettersgApp from './lettersg'
 import m365ExcelApp from './m365-excel'
 import paysgApp from './paysg'
@@ -40,6 +41,7 @@ const apps: Record<string, IApp> = {
   [vaultWorkspaceApp.key]: vaultWorkspaceApp,
   [webhookApp.key]: webhookApp,
   [aisayApp.key]: aisayApp,
+  [gathersgApp.key]: gathersgApp,
 }
 
 export default apps
