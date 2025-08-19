@@ -1,7 +1,7 @@
 import escapeHTML from 'escape-html'
 import { describe, expect, it } from 'vitest'
 
-import { substituteOldTemplates } from './utils'
+import { removeProblematicWhitespace, substituteOldTemplates } from './utils'
 
 const varInfo = new Map<
   string,
@@ -166,5 +166,34 @@ describe('replaceOldTemplates', () => {
     const expected =
       'Hello <span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span> world! <span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa" data-label="papa" data-value="mama">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa}}</span><br><span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span> <span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa" data-label="papa" data-value="mama">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa}}</span>'
     expect(substituteOldTemplates(input, varInfo)).toEqual(expected)
+  })
+})
+
+describe('removeProblematicWhitespace', () => {
+  it('should remove non-breaking space', () => {
+    const input = 'Lorem​Ipsum​Dolor​Sit​Amet​Co'
+    const expected = 'LoremIpsumDolorSitAmetCo'
+    expect(removeProblematicWhitespace(input)).toEqual(expected)
+  })
+
+  it('should handle other problematic whitespace', () => {
+    const input = 'Hello\u200B\uFEFF\u200C\u200D\u200EWorld'
+    const expected = 'HelloWorld'
+    expect(removeProblematicWhitespace(input)).toEqual(expected)
+  })
+
+  it('should convert non-breaking space to regular space', () => {
+    const input = ' Hello World  '
+    const expected = ' Hello World  '
+    expect(removeProblematicWhitespace(input)).toEqual(expected)
+  })
+
+  it('should handle empty string', () => {
+    expect(removeProblematicWhitespace('')).toEqual('')
+  })
+
+  it('should handle text with no problematic characters', () => {
+    const input = 'Hello World'
+    expect(removeProblematicWhitespace(input)).toEqual(input)
   })
 })
