@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import { sanitizeMarkdown } from '@/apps/telegram-bot/common/markdown-v1'
-
 export const requestSchema = z.object({
   customHeaders: z
     .array(
@@ -41,8 +39,7 @@ export const requestSchema = z.object({
         }
         seenFields.add(key)
 
-        const cleanV = value?.replaceAll(/\r?\n|\r/g, ' ') || ''
-        result[key] = sanitizeMarkdown(cleanV)
+        result[key] = value?.replace(/\u00A0/g, ' ') || ''
       }
       return result
     })

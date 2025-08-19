@@ -245,3 +245,16 @@ export function scrollVariableIntoView(
     behavior: 'smooth',
   })
 }
+
+export function removeProblematicWhitespace(text: string): string {
+  if (!text) {
+    return ''
+  }
+  return (
+    text
+      // Remove zero-width spaces
+      .replace(/(\u200B|\uFEFF|\u200C|\u200D|\u200E)/g, '')
+      // Replace non-breaking space with regular space
+      .replace(/\u00A0/g, ' ')
+  )
+}

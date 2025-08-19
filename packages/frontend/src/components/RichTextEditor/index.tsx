@@ -48,6 +48,7 @@ import {
   genVariableInfoMap,
   getPopoverPlacement,
   GLOBAL_VARIABLE_REGEX,
+  removeProblematicWhitespace,
   singleLineEditorScroll,
   substituteOldTemplates,
 } from './utils'
@@ -189,7 +190,11 @@ const Editor = ({
         onChange('')
         return
       }
-      onChange(isRich ? editor.getHTML() : editor.getText())
+      onChange(
+        isRich
+          ? editor.getHTML()
+          : removeProblematicWhitespace(editor.getText()),
+      )
     },
     editable,
     // To simulate textarea and coordinate with dropdown input size
