@@ -28,6 +28,7 @@ import updateFlowConfig from './mutations/update-flow-config'
 import updateFlowStatus from './mutations/update-flow-status'
 import updateFlowTransferStatus from './mutations/update-flow-transfer-status'
 import updateStep from './mutations/update-step'
+import updateStepPositions from './mutations/update-step-positions'
 import verifyConnection from './mutations/verify-connection'
 import verifyOtp from './mutations/verify-otp'
 
@@ -66,6 +67,7 @@ export default {
   deleteFlow,
   createStep,
   updateStep,
+  updateStepPositions,
   deleteStep,
   requestOtp,
   verifyOtp,

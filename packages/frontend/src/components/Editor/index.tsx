@@ -8,7 +8,9 @@ import FlowStepGroup from '@/components/FlowStepGroup'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
+import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { extractBranchesWithSteps } from '@/helpers/toolbox'
+import useReorderSteps from '@/hooks/useReorderSteps'
 
 import PrimarySpinner from '../PrimarySpinner'
 
@@ -26,6 +28,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
   const { allApps, isDrawerOpen, isMobile, currentStepId, flow } =
     useContext(EditorContext)
 
+  const { handleReorderUpdate } = useReorderSteps(flow.id)
   const rawSteps = flow.steps
   const steps = useMemo(
     // Populate each step's flowId so that IStep isn't LYING about flowId being
@@ -122,15 +125,15 @@ export default function Editor(props: EditorProps): React.ReactElement {
     [triggerStep, stepsBeforeGroup, groupStepsToInclude],
   )
 
-  const handleReorderSteps = async (steps: IStep[]) => {
-    const stepPositions = steps.map((step, index) => ({
+  const handleReorderSteps = async (reorderedSteps: IStep[]) => {
+    const stepPositions = reorderedSteps.map((step, index) => ({
       id: step.id,
       position: index + 2, // trigger position is 1
-      type: step.type,
+      type: step.type as StepEnumType,
     }))
 
     try {
-      // TODO: make api call to update step positions
+      await handleReorderUpdate(stepPositions)
     } catch (error) {
       console.error(
         'Error updating step positions: ',
