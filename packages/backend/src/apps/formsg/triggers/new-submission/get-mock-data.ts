@@ -113,8 +113,9 @@ async function getMockData($: IGlobalVariable) {
     const formFields = formDetails.form.form_fields as Array<FormField>
     for (let i = 0; i < formFields.length; i++) {
       if (data.responses[formFields[i]._id]) {
+        const fieldType = data.responses[formFields[i]._id].fieldType
         // forcefully include all checkbox options in the correct order
-        if (data.responses[formFields[i]._id].fieldType === 'checkbox') {
+        if (fieldType === 'checkbox') {
           data.responses[formFields[i]._id].answerArray =
             formFields[i].fieldOptions
           // include the others option if available
@@ -125,34 +126,40 @@ async function getMockData($: IGlobalVariable) {
           }
         }
 
-        // formsg payload doesnt contain this anyways, so we dont return in mock data
-        if (data.responses[formFields[i]._id].fieldType === 'statement') {
+        // hide signature because it is not useful for the user now
+        if (fieldType === 'signature') {
           delete data.responses[formFields[i]._id]
           continue
         }
 
-        if (data.responses[formFields[i]._id].fieldType === 'address') {
+        // formsg payload doesnt contain this anyways, so we dont return in mock data
+        if (fieldType === 'statement') {
+          delete data.responses[formFields[i]._id]
+          continue
+        }
+
+        if (fieldType === 'address') {
           data.responses[formFields[i]._id].answerArray =
             generateMockAddressData()
         }
 
-        if (data.responses[formFields[i]._id].fieldType === 'attachment') {
+        if (fieldType === 'attachment') {
           data.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
         }
 
-        if (data.responses[formFields[i]._id].fieldType === 'nric') {
+        if (fieldType === 'nric') {
           data.responses[formFields[i]._id].answer = filterNric(
             $,
             data.responses[formFields[i]._id].answer,
           )
         }
 
-        if (data.responses[formFields[i]._id].fieldType === 'email') {
+        if (fieldType === 'email') {
           data.responses[formFields[i]._id].answer = $.user.email
         }
 
         // add a stringified version of the table data to the mock data
-        if (data.responses[formFields[i]._id].fieldType === 'table') {
+        if (fieldType === 'table') {
           const answerArray = data.responses[formFields[i]._id]
             .answerArray as string[][]
           const question = data.responses[formFields[i]._id].question
