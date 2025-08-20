@@ -262,10 +262,10 @@ export default function FlowStep(
           </Flex>
           {shouldShowDragHandle &&
             (isNested ? (
-              <SortableList.DragHandle />
+              <SortableList.DragHandle onWarningOpen={onWarningOpen} />
             ) : (
               <Box position="absolute" left="100%" alignSelf="center">
-                <SortableList.DragHandle />
+                <SortableList.DragHandle onWarningOpen={onWarningOpen} />
               </Box>
             ))}
         </Flex>
