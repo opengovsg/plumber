@@ -1,3 +1,5 @@
+import { IStep } from '@plumber/types'
+
 import { useMutation } from '@apollo/client'
 import { useToast } from '@opengovsg/design-system-react'
 
@@ -40,7 +42,7 @@ const useReorderSteps = (flowId: string) => {
             )
 
             // Update steps with new positions
-            const updatedSteps = flow.steps.map((step: any) => {
+            const updatedSteps = flow.steps.map((step: IStep) => {
               const newPosition = positionMap.get(step.id)
               return newPosition !== undefined
                 ? { ...step, position: newPosition }
@@ -48,7 +50,7 @@ const useReorderSteps = (flowId: string) => {
             })
 
             // Sort steps by position to maintain proper order
-            updatedSteps.sort((a: any, b: any) => a.position - b.position)
+            updatedSteps.sort((a: IStep, b: IStep) => a.position - b.position)
 
             // Write the updated data back to the cache
             cache.writeQuery({
