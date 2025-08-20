@@ -18,6 +18,7 @@ import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import useReorderSteps from '@/hooks/useReorderSteps'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
@@ -35,6 +36,7 @@ export default function Branch(props: BranchProps) {
   const { branchSteps } = props
 
   const {
+    flow,
     isDrawerOpen,
     isMobile,
     readOnly: isEditorReadOnly,
@@ -53,6 +55,7 @@ export default function Branch(props: BranchProps) {
   const [deleteStep, { loading: isDeletingBranch }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
   })
+  const { handleReorderUpdate } = useReorderSteps(flow.id)
   const openDeleteConfirmation = useCallback<MouseEventHandler>(
     (e) => {
       e.stopPropagation()
@@ -131,7 +134,7 @@ export default function Branch(props: BranchProps) {
     }))
 
     try {
-      // TODO: make api call to update step positions
+      handleReorderUpdate(stepPositions)
     } catch (error) {
       console.error(
         'Error updating step positions: ',
