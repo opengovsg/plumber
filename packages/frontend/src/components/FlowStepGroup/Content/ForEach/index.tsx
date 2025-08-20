@@ -1,11 +1,13 @@
 import { IStep } from '@plumber/types'
 
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
 
 import { SortableList } from '@/components/SortableList'
+import { EditorContext } from '@/contexts/Editor'
 import { FlowStepGroup } from '@/exports/components'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import useReorderSteps from '@/hooks/useReorderSteps'
 
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
 
@@ -16,6 +18,8 @@ interface ForEachProps {
 
 export default function ForEach(props: ForEachProps) {
   const { groupedSteps } = props
+  const { flow } = useContext(EditorContext)
+  const { handleReorderUpdate } = useReorderSteps(flow.id)
 
   const forEachSteps = groupedSteps[0]
   const ifThenSteps = useMemo(() => {
@@ -41,15 +45,15 @@ export default function ForEach(props: ForEachProps) {
   }, [forEachSteps])
 
   const handleReorderSteps = async (items: any[]) => {
-    const branchPosition = conditionStep.position
+    const forEachPosition = conditionStep.position
     const stepPositions = items.map((item, index) => ({
       id: item.id,
-      position: branchPosition + index + 1, // index is 0-based
+      position: forEachPosition + index + 1, // index is 0-based
       type: item.step.type,
     }))
 
     try {
-      // TODO: make api call to update step positions
+      handleReorderUpdate(stepPositions)
     } catch (error) {
       console.error(
         'Error updating step positions: ',
