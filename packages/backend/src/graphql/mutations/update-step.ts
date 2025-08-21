@@ -15,6 +15,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
       'steps.id': input.id,
       flow_id: input.flow.id,
     })
+
     if (!step) {
       throw new BadUserInputError('Step not found')
     }
@@ -52,6 +53,10 @@ const updateStep: MutationResolvers['updateStep'] = async (
         },
       })
       .withGraphFetched('connection')
+
+    // update the flow's last updated
+    await step.patchFlowLastUpdated(trx)
+
     return updatedStep
   })
 

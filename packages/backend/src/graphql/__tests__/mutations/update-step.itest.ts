@@ -16,6 +16,51 @@ const mockStepId = '8c2a70d1-e78b-431e-9069-a4d8f97883f7'
 describe('updateStep mutation', () => {
   let context: Context
   let patchAndFetchByIdSpy: ReturnType<typeof vi.fn>
+  const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
+
+  // Helper to create step mock with flow
+  const createStepMock = (stepData: any = {}) => ({
+    findOne: vi.fn().mockResolvedValue(
+      stepData === null
+        ? null
+        : {
+            id: mockStepId,
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            status: 'completed',
+            flow: {
+              id: mockFlowId,
+            },
+            patchFlowLastUpdated: patchFlowLastUpdatedSpy,
+            ...stepData,
+          },
+    ),
+  })
+
+  // Helper to create connection mock
+  const createConnectionMock = (connectionData: any = null) => ({
+    findOne: vi.fn().mockResolvedValue(connectionData),
+  })
+
+  // Helper to setup $relatedQuery mock
+  const setupRelatedQueryMock = (
+    stepData?: any,
+    connectionData: any = { id: mockConnectionId, key: 'postman' },
+  ) => {
+    context.currentUser.$relatedQuery = vi
+      .fn()
+      .mockImplementation((relation) => {
+        if (relation === 'steps') {
+          return createStepMock(stepData)
+        }
+        if (relation === 'connections') {
+          return createConnectionMock(connectionData)
+        }
+        return {
+          findOne: vi.fn().mockResolvedValue(null),
+        }
+      })
+  }
 
   const genericInputParams = {
     id: mockStepId,
@@ -58,7 +103,9 @@ describe('updateStep mutation', () => {
 
     // Mock Step.transaction
     vi.spyOn(Step, 'transaction').mockImplementation(async (callback) => {
-      const trx = {}
+      const trx = {
+        raw: vi.fn().mockResolvedValue({}),
+      } as any
       return callback(trx)
     })
 
@@ -67,31 +114,8 @@ describe('updateStep mutation', () => {
       patchAndFetchById: patchAndFetchByIdSpy,
     } as any)
 
-    // Mock context.currentUser.$relatedQuery for steps
-    context.currentUser.$relatedQuery = vi
-      .fn()
-      .mockImplementation((relation) => {
-        if (relation === 'steps') {
-          return {
-            findOne: vi.fn().mockResolvedValue({
-              id: mockStepId,
-              key: 'sendTransactionalEmail',
-              appKey: 'postman',
-              status: 'completed',
-            }),
-          }
-        }
-        if (relation === 'connections') {
-          return {
-            findOne: vi
-              .fn()
-              .mockResolvedValue({ id: mockConnectionId, key: 'postman' }),
-          }
-        }
-        return {
-          findOne: vi.fn().mockResolvedValue(null),
-        }
-      })
+    // Setup default mock
+    setupRelatedQueryMock()
   })
 
   it('should successfully update a step', async () => {
@@ -139,28 +163,7 @@ describe('updateStep mutation', () => {
     }
 
     // Override only the connections query
-    context.currentUser.$relatedQuery = vi
-      .fn()
-      .mockImplementation((relation) => {
-        if (relation === 'steps') {
-          return {
-            findOne: vi.fn().mockResolvedValue({
-              id: mockStepId,
-              key: 'sendTransactionalEmail',
-              appKey: 'postman',
-              status: 'completed',
-            }),
-          }
-        }
-        if (relation === 'connections') {
-          return {
-            findOne: vi.fn().mockResolvedValue(null),
-          }
-        }
-        return {
-          findOne: vi.fn().mockResolvedValue(null),
-        }
-      })
+    setupRelatedQueryMock(undefined, null)
 
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
       BadUserInputError,
@@ -175,23 +178,7 @@ describe('updateStep mutation', () => {
     }
 
     // Override the steps query to return null
-    context.currentUser.$relatedQuery = vi
-      .fn()
-      .mockImplementation((relation) => {
-        if (relation === 'steps') {
-          return {
-            findOne: vi.fn().mockResolvedValue(null),
-          }
-        }
-        if (relation === 'connections') {
-          return {
-            findOne: vi.fn().mockResolvedValue({ id: mockConnectionId }),
-          }
-        }
-        return {
-          findOne: vi.fn().mockResolvedValue(null),
-        }
-      })
+    setupRelatedQueryMock(null, { id: mockConnectionId })
 
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
       BadUserInputError,
@@ -273,35 +260,12 @@ describe('updateStep mutation', () => {
 
   it('updating step name should not update template config', async () => {
     // Override the steps query to return template config
-    context.currentUser.$relatedQuery = vi
-      .fn()
-      .mockImplementation((relation) => {
-        if (relation === 'steps') {
-          return {
-            findOne: vi.fn().mockResolvedValue({
-              id: mockStepId,
-              key: 'sendTransactionalEmail',
-              appKey: 'postman',
-              status: 'completed',
-              connection: { id: mockConnectionId },
-              config: {
-                stepName: 'some-step-name',
-                templateConfig: { appEventKey: 'existingAppEventKey' },
-              },
-            }),
-          }
-        }
-        if (relation === 'connections') {
-          return {
-            findOne: vi
-              .fn()
-              .mockResolvedValue({ id: mockConnectionId, key: 'postman' }),
-          }
-        }
-        return {
-          findOne: vi.fn().mockResolvedValue(null),
-        }
-      })
+    setupRelatedQueryMock({
+      config: {
+        stepName: 'some-step-name',
+        templateConfig: { appEventKey: 'existingAppEventKey' },
+      },
+    })
 
     const input = {
       ...genericInputParams,
@@ -335,35 +299,12 @@ describe('updateStep mutation', () => {
 
   it('updating empty step name should not update template config', async () => {
     // Override the steps query to return template config
-    context.currentUser.$relatedQuery = vi
-      .fn()
-      .mockImplementation((relation) => {
-        if (relation === 'steps') {
-          return {
-            findOne: vi.fn().mockResolvedValue({
-              id: mockStepId,
-              key: 'sendTransactionalEmail',
-              appKey: 'postman',
-              status: 'completed',
-              connection: { id: mockConnectionId },
-              config: {
-                stepName: 'some-step-name',
-                templateConfig: { appEventKey: 'existingAppEventKey' },
-              },
-            }),
-          }
-        }
-        if (relation === 'connections') {
-          return {
-            findOne: vi
-              .fn()
-              .mockResolvedValue({ id: mockConnectionId, key: 'postman' }),
-          }
-        }
-        return {
-          findOne: vi.fn().mockResolvedValue(null),
-        }
-      })
+    setupRelatedQueryMock({
+      config: {
+        stepName: 'some-step-name',
+        templateConfig: { appEventKey: 'existingAppEventKey' },
+      },
+    })
 
     const input = {
       ...genericInputParams,
@@ -393,5 +334,10 @@ describe('updateStep mutation', () => {
     expect(patchAndFetchByIdSpy.mock.results[0].value.config.stepName).toEqual(
       '',
     )
+  })
+
+  it('should call patchFlowLastUpdated when updating a step', async () => {
+    await updateStep(null, { input: { ...genericInputParams } }, context)
+    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 })
