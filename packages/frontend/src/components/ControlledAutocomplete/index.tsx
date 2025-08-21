@@ -8,7 +8,11 @@ import { useCallback, useContext, useMemo } from 'react'
 import { useController, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import { Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
-import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
+import {
+  FormErrorMessage,
+  FormLabel,
+  Link,
+} from '@opengovsg/design-system-react'
 
 import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
 import { EditorContext } from '@/contexts/Editor'
@@ -31,6 +35,7 @@ export interface ControlledAutocompleteProps {
   required?: boolean
   placeholder?: string
   addNewOption?: IFieldDropdown['addNewOption']
+  clickableLink?: IFieldDropdown['clickableLink']
   isSearchable?: boolean
   variableTypes?: TDataOutMetadatumType[]
 }
@@ -72,6 +77,7 @@ function ControlledAutocomplete(
     required,
     placeholder,
     addNewOption,
+    clickableLink,
     isSearchable,
     variableTypes = null,
   } = props
@@ -167,6 +173,19 @@ function ControlledAutocomplete(
           }
         >
           {label}
+          {clickableLink && fieldValue && (
+            <Link
+              fontWeight="normal"
+              href={clickableLink.url.replaceAll(
+                '{value}',
+                encodeURIComponent(fieldValue),
+              )}
+              target="_blank"
+              ml={1}
+            >
+              ({clickableLink.label})
+            </Link>
+          )}
         </FormLabel>
       )}
       {/* Dropdown row option content */}

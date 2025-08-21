@@ -101,6 +101,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         onRefresh={schema.source ? () => refetch() : undefined}
         showOptionValue={schema.showOptionValue ?? true}
         addNewOption={schema.addNewOption}
+        clickableLink={schema.clickableLink}
         label={label}
         placeholder={placeholder}
         variableTypes={schema.variableTypes}

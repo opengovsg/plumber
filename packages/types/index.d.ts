@@ -322,6 +322,10 @@ export interface IFieldDropdown extends IBaseField {
     type: DropdownAddNewType
     label: string
   }
+  clickableLink?: {
+    label: string
+    url: string // use {value} to replace the value in the url
+  }
   value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
