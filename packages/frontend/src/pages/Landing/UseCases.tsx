@@ -10,18 +10,38 @@ import {
   VStack,
 } from '@chakra-ui/react'
 
-import AgcLogo from '@/assets/landing/AgcLogo.svg'
+import AgcLogo from '@/assets/landing/AgcLogo.png'
+import CaasLogo from '@/assets/landing/CaasLogo.png'
+import GovTechLogo from '@/assets/landing/GOVTECH.png'
 import * as URLS from '@/config/urls'
 
 const posts = [
   {
     title:
       "How Attorney-General's Chambers reduced 50% of time spent on administrative onboarding processes",
-    href: URLS.HUMAN_RESOURCE,
+    href: URLS.USE_CASES_SUBPAGE('human-resource'),
     description: ' ',
     imageUrl: AgcLogo,
     agency: "Attorney-General's Chambers",
     ariaLabel: 'Human Resource',
+  },
+  {
+    title:
+      'How Civil Aviation Authority of Singapore simplified event management for their webinars',
+    href: URLS.USE_CASES_SUBPAGE('operations'),
+    description: ' ',
+    imageUrl: CaasLogo,
+    agency: 'Civil Aviation Authority of Singapore',
+    ariaLabel: 'Operations',
+  },
+  {
+    title:
+      'How GovTech automates employee support tickets to stay on top of queries and better serve employees',
+    href: URLS.USE_CASES_SUBPAGE('customer-support'),
+    description: ' ',
+    imageUrl: GovTechLogo,
+    agency: 'Government Technology Agency',
+    ariaLabel: 'Customer Support',
   },
 ]
 
@@ -88,9 +108,10 @@ export default function UseCases() {
                         inset={0}
                         w="full"
                         h="full"
+                        p={8}
                         borderRadius="2xl"
-                        bg="gray.50"
-                        objectFit="cover"
+                        bg="#f4f2f0"
+                        objectFit="contain"
                       />
                       <Box
                         position="absolute"

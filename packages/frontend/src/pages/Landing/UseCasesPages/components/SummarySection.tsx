@@ -10,6 +10,7 @@ import {
 } from '@chakra-ui/react'
 
 import Container from '@/components/Container'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 import BackgroundPattern from '../../components/BackgroundPattern'
 
@@ -50,7 +51,7 @@ export default function SummarySection(props: SummarySectionProps) {
 
           <Text mt={4}>With Plumber,</Text>
 
-          <List maxW="xl" spacing={4} color="gray.600">
+          <List spacing={4} color="gray.600">
             {benefits.map((benefit) => (
               <ListItem key={benefit} display="flex" gap={3}>
                 <ListIcon
@@ -61,7 +62,7 @@ export default function SummarySection(props: SummarySectionProps) {
                   flexShrink={0}
                 />
                 <Box>
-                  <Text color="gray.900">{benefit}</Text>
+                  <MarkdownRenderer source={benefit} />
                 </Box>
               </ListItem>
             ))}

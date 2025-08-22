@@ -10,7 +10,7 @@ export default function Quote(props: QuoteProps) {
   const { quote, author, authorTitle } = props
   return (
     <Box as="figure" borderLeft="4px" borderColor="primary.500" pl={9}>
-      <Box as="blockquote" fontWeight="400" color="gray.900">
+      <Box as="blockquote" fontStyle="italic" fontWeight="400" color="gray.900">
         <Text>{quote}</Text>
       </Box>
 
