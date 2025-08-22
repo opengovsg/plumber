@@ -10,13 +10,13 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
   context,
 ) => {
   const filterBuilder = (builder: ExtendedQueryBuilder<Execution>) => {
-    builder.where('test_run', 'FALSE')
+    builder.where('test_run', false)
     builder.where('flow_id', params.flowId)
 
-    if (!('status' in params)) {
+    // null status means waiting
+    if (params.status === null) {
       builder.whereNull('status')
-    }
-    if (params.status) {
+    } else if (params?.status) {
       builder.where('status', params.status)
     }
   }
@@ -25,6 +25,16 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
     .$relatedQuery('executions')
     .withGraphFetched({
       executionSteps: true,
+    })
+    .modifyGraph('executionSteps', (builder) => {
+      builder
+        .select('execution_steps.*')
+        .distinctOn('execution_steps.execution_id', 'execution_steps.step_id')
+        .orderBy([
+          { column: 'execution_steps.execution_id' },
+          { column: 'execution_steps.step_id' },
+          { column: 'execution_steps.created_at', order: 'desc' },
+        ])
     })
     .where(filterBuilder)
     .withSoftDeleted()
