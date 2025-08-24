@@ -118,6 +118,15 @@ class FlowCollaborator extends Base {
       return collaborator.role
     }
   }
+
+  static hasCollaborators = async ({ flowId }: { flowId: string }) => {
+    const collaborators = await this.query()
+      .where({
+        flow_id: flowId,
+      })
+      .whereNull('deleted_at')
+    return collaborators.length > 0
+  }
 }
 
 export default FlowCollaborator
