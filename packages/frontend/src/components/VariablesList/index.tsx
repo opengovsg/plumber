@@ -25,7 +25,7 @@ import TableVariableItem from './TableVariableItem'
 function VariableTag({
   type,
 }: {
-  type: TDataOutMetadatumType | null
+  type?: TDataOutMetadatumType
 }): JSX.Element | null {
   const { label, tooltip } = useMemo(() => {
     switch (type) {
@@ -156,6 +156,9 @@ export default function VariablesList(props: VariablesListProps) {
     const defaultVariables: Variable[] = []
     const collapsedVariables: Variable[] = []
     for (const variable of variables) {
+      if (variable.isHiddenFromList) {
+        continue
+      }
       if (variable.isCollapsedByDefault) {
         collapsedVariables.push(variable)
       } else {
@@ -165,7 +168,7 @@ export default function VariablesList(props: VariablesListProps) {
     return { defaultVariables, collapsedVariables }
   }, [variables])
 
-  if (!variables || variables.length === 0) {
+  if (!variables || defaultVariables.length + collapsedVariables.length === 0) {
     return <></>
   }
 
