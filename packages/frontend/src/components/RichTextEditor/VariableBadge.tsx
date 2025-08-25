@@ -1,11 +1,16 @@
+import { useContext } from 'react'
 import { Badge, Text } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
 import { Node } from '@tiptap/pm/model'
 import { NodeViewWrapper } from '@tiptap/react'
 
+import { EditorContext } from '@/contexts/Editor'
+import { POPOVER_OPACITY_MOTION_PROPS } from '@/theme/constants'
+
 const PLACEHOLDER_TEMPLATE_STEP_ID = '00000000-0000-0000-0000-000000000000'
 
 export const VariableBadge = ({ node }: { node: Node }) => {
+  const { stepsWithVars } = useContext(EditorContext)
   // this happens when there is no value mapped properly
   const isEmpty = node.attrs.value === '' || node.attrs.value == null
   const value = String(node.attrs.value)
@@ -13,14 +18,20 @@ export const VariableBadge = ({ node }: { node: Node }) => {
     PLACEHOLDER_TEMPLATE_STEP_ID,
   )
 
+  const stepId = node.attrs.id?.startsWith('step.')
+    ? node.attrs.id.split('.')[1]
+    : null
+  const step = stepsWithVars.find((step) => step.id === stepId)
+
   return (
     <NodeViewWrapper>
       {/* Only show tooltip if value is empty and not a template */}
       <TouchableTooltip
+        motionProps={POPOVER_OPACITY_MOTION_PROPS}
         label={
           isEmpty && !isTemplate
             ? 'This is a missing variable, check your previous steps and reselect a variable'
-            : ''
+            : step?.name
         }
         aria-label="variable badge tooltip"
       >
