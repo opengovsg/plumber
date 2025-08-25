@@ -279,7 +279,6 @@ describe('decrypt form response', () => {
           ],
           verified: {
             uinFin: 'S1234567A',
-            sgidUinFin: 'S2345678B',
             cpUid: 'U987654323PLUMBER',
           },
         })
@@ -313,7 +312,7 @@ describe('decrypt form response', () => {
             },
             verifiedSubmitterInfo: {
               uinFin: 'S1234567A',
-              sgidUinFin: 'S2345678B',
+              sgidUinFin: 'S1234567A',
               cpUid: 'U987654323PLUMBER',
             },
           }),
@@ -371,7 +370,7 @@ describe('decrypt form response', () => {
             },
             verifiedSubmitterInfo: {
               uinFin: 'Z1cImQNbDXdmOaeS2roacWNxH7MbJC75OiEeYOjSbRo=',
-              sgidUinFin: 'UAM3XbFrbNVVuD9Phz3KV/roZj4aG/Ql3Ap5Y5dTtJ4=',
+              sgidUinFin: 'Z1cImQNbDXdmOaeS2roacWNxH7MbJC75OiEeYOjSbRo=',
               cpUid: 'U987654323PLUMBER',
             },
           }),
@@ -407,7 +406,7 @@ describe('decrypt form response', () => {
             },
             verifiedSubmitterInfo: {
               uinFin: 'xxxxx567A',
-              sgidUinFin: 'xxxxx678B',
+              sgidUinFin: 'xxxxx567A',
               cpUid: 'U987654323PLUMBER',
             },
           }),
@@ -426,7 +425,6 @@ describe('decrypt form response', () => {
           },
         ],
         verified: {
-          sgidUinFin: 'S1234567A',
           uinFin: '12345678B',
           cpUid: 'U987654323PLUMBER',
           cpUen: '987654321Z',
@@ -438,7 +436,7 @@ describe('decrypt form response', () => {
       expect($.request.body).toEqual(
         expect.objectContaining({
           verifiedSubmitterInfo: {
-            sgidUinFin: 'S1234567A',
+            sgidUinFin: '12345678B',
             uinFin: '12345678B',
             cpUid: 'U987654323PLUMBER',
             cpUen: '987654321Z',
