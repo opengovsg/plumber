@@ -234,7 +234,10 @@ function buildVerifiedSubmitterInfoMetadata(
         metadata.uinFin = { label: 'NRIC/FIN (Verified)' }
         break
       case 'sgidUinFin':
-        metadata.sgidUinFin = { label: 'NRIC/FIN (Verified)' }
+        metadata.sgidUinFin = {
+          label: 'NRIC/FIN (Verified)',
+          isHiddenFromList: true,
+        }
         break
       case 'cpUid':
         metadata.cpUid = { label: 'CorpPass UID (Verified)' }
