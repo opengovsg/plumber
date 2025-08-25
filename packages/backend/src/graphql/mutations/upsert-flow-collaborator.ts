@@ -3,8 +3,11 @@ import { IFlowCollabRole } from '@plumber/types'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
+import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
 import logger from '@/helpers/logger'
+import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
+import FlowConnections from '@/models/flow-connections'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -42,6 +45,47 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
           requiredRole: 'editor',
           trx,
         })
+
+        /**
+         * NOTE: we only automatically add all connections
+         * in the Pipe to the flow_connections table the first time
+         * the Pipe is shared.
+         *
+         * What is added:
+         * 1. Connections
+         * 2. Connection metadata, i.e. fields that are like connections:
+         *    see helpers/get-shared-connection-details.ts for more details
+         */
+        const hasCollaborators = await FlowCollaborator.hasCollaborators({
+          flowId,
+        })
+
+        if (!hasCollaborators) {
+          const flow = await Flow.query(trx)
+            .withGraphFetched('steps')
+            .findById(flowId)
+
+          const connectionDetails = getConnectionDetails(flow?.steps)
+
+          // add all connections to the flow_connections table
+          // first time sharing is always by the owner
+          // so we use the flow user_id
+          await Promise.all(
+            Object.entries(connectionDetails).map(
+              async ([connectionId, metadata]) => {
+                await FlowConnections.query(trx)
+                  .insert({
+                    flowId,
+                    connectionId: connectionId ?? null,
+                    userId: flow.userId,
+                    metadata,
+                  })
+                  .onConflict(['flow_id', 'connection_id', 'user_id'])
+                  .ignore()
+              },
+            ),
+          )
+        }
 
         const collaboratorUser = await getOrCreateUser(validatedEmail)
         if (!collaboratorUser) {
