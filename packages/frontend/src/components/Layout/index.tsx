@@ -69,7 +69,6 @@ const drawerLinks = [
     text: 'Learn',
     to: URLS.LEARN_LINK,
     isBottom: true,
-    badge: 'New',
     isExternal: true,
   },
 ]
