@@ -204,9 +204,15 @@ type ActionSubstepArgument {
 
   # Only for dropdown
   addNewOption: DropdownAddNewOption
+  clickableLink: DropdownClickableLink
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
+}
+
+type DropdownClickableLink {
+  label: String
+  url: String
 }
 
 type ActionSubstepArgumentSource {

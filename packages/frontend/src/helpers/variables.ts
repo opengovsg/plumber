@@ -24,12 +24,7 @@ export interface StepWithVariables {
   output: Variable[]
   addNew?: boolean
 }
-export interface Variable {
-  label: string | null
-  type: TDataOutMetadatumType | null
-  order: number | null
-  displayedValue: string | null
-  isCollapsedByDefault: boolean
+export interface Variable extends IDataOutMetadatum {
   /**
    * CAVEAT: not _just_ a name; it contains the lodash.get path for dataOut. Do
    * not clobber unless you know what you're doing!
@@ -38,12 +33,6 @@ export interface Variable {
   value: unknown
   // NOTE: used in some variables as unique key
   id?: string
-  /**
-   * NOTE: used to hide columns in the variables list, specifically for 'table' object
-   * we still need them in the dataOut to compare parameters against the last test execution
-   * at the for-each step
-   */
-  isHidden?: boolean
 }
 
 function sortVariables(variables: Variable[]): void {
@@ -83,6 +72,7 @@ const process = (
     order = null,
     displayedValue = null,
     isCollapsedByDefault = false,
+    isHiddenFromList = false,
   } = metadata
 
   if (isHidden) {
@@ -99,6 +89,7 @@ const process = (
         type,
         order,
         isCollapsedByDefault,
+        isHiddenFromList, // only applies to text type for now
       },
     ]
   }

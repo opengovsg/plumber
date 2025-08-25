@@ -26,6 +26,10 @@ const action: IRawAction = {
       required: true,
       variables: false,
       showOptionValue: false,
+      clickableLink: {
+        label: 'View tile',
+        url: '/tiles/{value}',
+      },
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,

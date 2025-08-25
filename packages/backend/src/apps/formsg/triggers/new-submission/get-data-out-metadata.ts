@@ -222,7 +222,10 @@ function buildAnswerArrayMetadatum(
 function buildVerifiedSubmitterInfoMetadata(
   data: IJSONObject,
 ): IDataOutMetadata | null {
-  if (!data.verifiedSubmitterInfo) {
+  if (
+    !data.verifiedSubmitterInfo ||
+    typeof data.verifiedSubmitterInfo !== 'object'
+  ) {
     return null
   }
 
@@ -234,7 +237,10 @@ function buildVerifiedSubmitterInfoMetadata(
         metadata.uinFin = { label: 'NRIC/FIN (Verified)' }
         break
       case 'sgidUinFin':
-        metadata.sgidUinFin = { label: 'NRIC/FIN (Verified)' }
+        metadata.sgidUinFin = {
+          label: 'NRIC/FIN (Verified)',
+          isHiddenFromList: 'uinFin' in data.verifiedSubmitterInfo,
+        }
         break
       case 'cpUid':
         metadata.cpUid = { label: 'CorpPass UID (Verified)' }

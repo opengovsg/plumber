@@ -40,18 +40,16 @@ function generateVerifiedSubmitterInfoData(
 ): Record<string, Record<string, string>> {
   const filteredNric = filterNric($, MOCK_NRIC)
   switch (authType) {
-    case 'SGID':
-    case 'SGID_MyInfo':
-      return {
-        verifiedSubmitterInfo: {
-          sgidUinFin: filteredNric,
-        },
-      }
-    case 'SP':
+    case 'SGID': // deprecated
+    case 'SGID_MyInfo': // deprecated
+    case 'SP': // deprecated
     case 'MyInfo':
+      // for backwards compatibility with old forms that were created with sgID authType,
+      // we need to return both uinFin and sgidUinFin
       return {
         verifiedSubmitterInfo: {
           uinFin: filteredNric,
+          sgidUinFin: filteredNric,
         },
       }
     case 'CP':

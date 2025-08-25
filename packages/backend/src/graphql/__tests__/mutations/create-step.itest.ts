@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createStep from '@/graphql/mutations/create-step'
 import Flow from '@/models/flow'
@@ -10,9 +10,16 @@ describe('createStep mutation integration tests', async () => {
   let testFlow: Flow
   let existingSteps: Step[]
   let context: Context
+  const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
   // Clean up (and seed) database before each test.
   beforeEach(async () => {
+    vi.resetAllMocks()
+
+    vi.spyOn(Step.prototype, 'patchFlowLastUpdated').mockImplementation(
+      patchFlowLastUpdatedSpy,
+    )
+
     // Clear out all rows. Adjust deletion order if using foreign keys.
     await Step.query().delete()
     await Flow.query().delete()
@@ -117,6 +124,17 @@ describe('createStep mutation integration tests', async () => {
     ])
     // Also, check the ordering.
     expect(steps.map((step) => step.position)).toEqual([1, 2, 3, 4])
+  })
+
+  it('should call patchFlowLastUpdated when creating a step', async () => {
+    const params = {
+      input: {
+        flow: { id: testFlow.id },
+        previousStep: { id: existingSteps[2].id },
+      },
+    }
+    await createStep(null, params, context)
+    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 
   it('throws an error if the flow does not belong to the current user', async () => {

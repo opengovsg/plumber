@@ -72,6 +72,9 @@ export interface IDataOutMetadatum {
 
   /**
    * Generally defaults to `false` in the front end if unspecified.
+   * NOTE: used to hide columns in the variables list, specifically for 'table' object
+   * we still need them in the dataOut to compare parameters against the last test execution
+   * at the for-each step
    */
   isHidden?: boolean
 
@@ -105,6 +108,13 @@ export interface IDataOutMetadatum {
    * the "Show more" section in the variable list.
    */
   isCollapsedByDefault?: boolean
+
+  /**
+   * Is hidden from the variable list but variable is still displayed properly if
+   * already in use. For e.g. this is used to preserve the old `sgidUinFin` variable
+   * but we dont want to show to UIN/FIN variables in variable list
+   */
+  isHiddenFromList?: boolean
 }
 
 export interface IDataOutMetadata {
@@ -321,6 +331,10 @@ export interface IFieldDropdown extends IBaseField {
     id: DropdownAddNewId // identifier when add new option is selected
     type: DropdownAddNewType
     label: string
+  }
+  clickableLink?: {
+    label: string
+    url: string // use {value} to replace the value in the url
   }
   value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
