@@ -154,6 +154,12 @@ export function throwPostmanStepError({
         const name = 'Invalid attachment(s)'
         const solution = getInvalidAttachmentSolution(invalidAttachments)
 
+        // throw StepError for test runs so that user cannot publish the pipe
+        // until the error is fixed
+        if ($.execution.testRun) {
+          throw new StepError(name, solution, position, appName, error)
+        }
+
         throw new PartialStepError({
           name,
           solution,
