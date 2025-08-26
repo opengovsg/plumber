@@ -188,10 +188,12 @@ export async function decryptFormResponse(
           }
         }
 
-        verifiedSubmitterInfo[key] = value
         // for backwards compatibility with old forms that were created with sgID authType
-        if (key === 'uinFin') {
+        if (key === 'uinFin' || key === 'sgidUinFin') {
+          verifiedSubmitterInfo['uinFin'] = value
           verifiedSubmitterInfo['sgidUinFin'] = value
+        } else {
+          verifiedSubmitterInfo[key] = value
         }
       }
     }
