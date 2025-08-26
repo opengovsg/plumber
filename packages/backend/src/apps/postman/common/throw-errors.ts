@@ -47,16 +47,10 @@ export function getPostmanErrorStatus(
   }
 }
 
-function getInvalidAttachmentSolution({
-  invalidAttachments,
-  formAdminLink,
-}: {
-  invalidAttachments: string[]
-  formAdminLink: string | null
-}) {
+function getInvalidAttachmentSolution(invalidAttachments: string[]) {
   return `The following attachment(s) are not supported by Postman and have been removed from the email:
   \n${invalidAttachments.map((attachment) => `**${attachment}**`).join('\n\n')}
-  \nIf you require the attachment(s), log in to your [form](${formAdminLink}) to download them for this submission.
+  \nIf you require the attachment(s), log in to your form to download them for this submission.
   `
 }
 
@@ -67,7 +61,6 @@ export function throwPostmanStepError({
   isPartialSuccess,
   blacklistedRecipients,
   invalidAttachments,
-  formAdminLink,
 }: {
   $: IGlobalVariable
   status: PostmanEmailSendStatus
@@ -75,16 +68,13 @@ export function throwPostmanStepError({
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
   invalidAttachments: string[]
-  formAdminLink: string | null
 }) {
   const position = $.step.position
   const appName = $.app.name
 
   const hasInvalidAttachments = invalidAttachments.length > 0
-  const invalidAttachmentsSolution = getInvalidAttachmentSolution({
-    invalidAttachments,
-    formAdminLink,
-  })
+  const invalidAttachmentsSolution =
+    getInvalidAttachmentSolution(invalidAttachments)
 
   switch (status) {
     case 'BLACKLISTED': {
@@ -162,10 +152,7 @@ export function throwPostmanStepError({
       // attachments that are password-protected
       if (hasInvalidAttachments) {
         const name = 'Invalid attachment(s)'
-        const solution = getInvalidAttachmentSolution({
-          invalidAttachments,
-          formAdminLink,
-        })
+        const solution = getInvalidAttachmentSolution(invalidAttachments)
 
         throw new PartialStepError({
           name,

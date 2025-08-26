@@ -7,7 +7,6 @@ interface SendInvalidAttachmentsEmailProps {
   executionId: string
   submissionId: string
   invalidAttachments: string[]
-  formAdminLink: string
 }
 
 interface CreateMessageProps {
@@ -15,17 +14,10 @@ interface CreateMessageProps {
   invalidAttachments: string[]
   executionId: string
   submissionId: string
-  formAdminLink: string
 }
 
 export function createInvalidAttachmentsMessage(props: CreateMessageProps) {
-  const {
-    flowName,
-    invalidAttachments,
-    executionId,
-    submissionId,
-    formAdminLink,
-  } = props
+  const { flowName, invalidAttachments, executionId, submissionId } = props
 
   const bodyMessage = `
     We have detected that your pipe <strong>${flowName}</strong> has attempted to send an email with one or more attachments that are not supported:
@@ -39,7 +31,7 @@ export function createInvalidAttachmentsMessage(props: CreateMessageProps) {
     </ul>
     <p>What should you do?</p>
     <ul>
-      <li>If you require the attachment(s), log in to your <a href="${formAdminLink}">form</a> to download them for this submission.</li>
+      <li>If you require the attachment(s), log in to your form to download them for this submission.</li>
     </ul>
 
   `
@@ -49,12 +41,9 @@ export function createInvalidAttachmentsMessage(props: CreateMessageProps) {
 export async function sendInvalidAttachmentsEmail(
   props: SendInvalidAttachmentsEmailProps,
 ) {
-  const { flowName, userEmail, formAdminLink } = props
+  const { flowName, userEmail } = props
   const truncatedFlowName = truncateFlowName(flowName)
-  const bodyContent = createInvalidAttachmentsMessage({
-    ...props,
-    formAdminLink,
-  })
+  const bodyContent = createInvalidAttachmentsMessage(props)
 
   const bodyMessage = `
     Dear fellow plumber,
@@ -72,5 +61,5 @@ export async function sendInvalidAttachmentsEmail(
     recipient: userEmail,
     replyTo: 'support@plumber.gov.sg',
   })
-  return { formAdminLink }
+  return
 }

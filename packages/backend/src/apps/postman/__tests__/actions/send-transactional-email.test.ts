@@ -17,7 +17,6 @@ const mocks = vi.hoisted(() => ({
       attachmentFiles: [],
       invalidAttachments: [],
       submissionId: null,
-      formId: null,
     }
   }),
   sendBlacklistEmail: vi.fn(),
@@ -598,7 +597,6 @@ describe('send transactional email', () => {
       attachmentFiles: [],
       invalidAttachments: ['file-2.svg'],
       submissionId: 'abc',
-      formId: '123',
     })
     await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
       PartialStepError,
@@ -610,7 +608,6 @@ describe('send transactional email', () => {
       userEmail: $.user.email,
       executionId: $.execution.id,
       submissionId: 'abc',
-      formAdminLink: 'https://form.gov.sg/admin/form/123/results',
       invalidAttachments: ['file-2.svg'],
       hasInvalidAttachments: true,
     })
@@ -638,7 +635,6 @@ describe('send transactional email', () => {
       attachmentFiles: [],
       invalidAttachments: ['file-2.svg'],
       submissionId: 'abc',
-      formId: '123',
     })
 
     $.http.post = vi
@@ -693,7 +689,6 @@ describe('send transactional email', () => {
       userEmail: $.user.email,
       executionId: $.execution.id,
       submissionId: 'abc',
-      formAdminLink: 'https://form.gov.sg/admin/form/123/results',
       invalidAttachments: ['file-2.svg'],
       hasInvalidAttachments: true,
     })

@@ -1,7 +1,6 @@
 import { IGlobalVariable } from '@plumber/types'
 
 import { COMMON_S3_BUCKET, getObjectFromS3Id } from '@/helpers/s3'
-import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 
 import { POSTMAN_ACCEPTED_EXTENSIONS } from './constants'
@@ -14,22 +13,10 @@ export async function getDefaultReplyTo(flowId: string): Promise<string> {
   return flow.user.email
 }
 
-export async function getFormId(executionId: string): Promise<string | null> {
-  const formData = await ExecutionStep.query()
-    .where('execution_id', executionId)
-    .where('app_key', 'formsg')
-    .first()
-    .select('data_out')
-
-  const formId = formData?.dataOut?.formId
-  return formId ? String(formId) : null
-}
-
 export async function filterAttachments(
   attachmentsList: string[],
   $: IGlobalVariable,
 ) {
-  let formId: string | null = null
   let submissionId: string | null = null
   const invalidAttachments: string[] = []
   const attachmentFiles: { fileName: string; data: Uint8Array }[] = []
@@ -44,10 +31,6 @@ export async function filterAttachments(
       if (!fileType || !POSTMAN_ACCEPTED_EXTENSIONS.includes(fileType)) {
         invalidAttachments.push(fileName)
 
-        if (formId === null) {
-          formId = await getFormId($.execution.id)
-        }
-
         if (submissionId === null) {
           submissionId = attachment.slice(
             `s3:${COMMON_S3_BUCKET}:`.length,
@@ -60,5 +43,5 @@ export async function filterAttachments(
       return
     }),
   )
-  return { attachmentFiles, invalidAttachments, submissionId, formId }
+  return { attachmentFiles, invalidAttachments, submissionId }
 }
