@@ -116,8 +116,14 @@ class FlowCollaborator extends Base {
     }
   }
 
-  static hasCollaborators = async ({ flowId }: { flowId: string }) => {
-    const collaborators = await this.query()
+  static hasCollaborators = async ({
+    flowId,
+    trx,
+  }: {
+    flowId: string
+    trx?: Transaction
+  }) => {
+    const collaborators = await this.query(trx)
       .where({
         flow_id: flowId,
       })

@@ -98,17 +98,20 @@ class FlowConnections extends Base {
     flowId,
     connectionId,
     userId,
+    trx,
   }: {
     flowId: string
     connectionId: string
     userId: string
+    trx?: Transaction
   }) => {
     const hasCollaborators = await FlowCollaborator.hasCollaborators({
       flowId,
+      trx,
     })
 
     if (hasCollaborators) {
-      return await this.query()
+      return await this.query(trx)
         .insert({
           flowId,
           connectionId,
