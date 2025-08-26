@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 
+import NptdLogo from '@/assets/landing/nptd.png'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 import ContentBox, { CommonMdComponents } from './components/ContentBox'
@@ -46,6 +47,7 @@ export default function HumanResource() {
     <UseCaseLanding>
       <SummarySection
         category="Campaign Management"
+        image={NptdLogo}
         title="How the National Population and Talent Division Implemented the SG60 Baby Gift Initiative with Digital Solutions"
         description="To commemorate Singapore's 60th year of independence, all Singapore Citizen babies born in 2025 receive the SG60 Baby Gift — a nationwide initiative requiring coordination across multiple government agencies and community partners"
         benefits={[

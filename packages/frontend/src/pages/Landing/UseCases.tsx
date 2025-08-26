@@ -1,7 +1,7 @@
 import {
-  AspectRatio,
   Box,
   Container,
+  Flex,
   Heading,
   HStack,
   Image,
@@ -23,7 +23,6 @@ const posts = [
     description: ' ',
     imageUrl: AgcLogo,
     agency: "Attorney-General's Chambers",
-    ariaLabel: 'Human Resource',
   },
   {
     title:
@@ -32,7 +31,6 @@ const posts = [
     description: ' ',
     imageUrl: CaasLogo,
     agency: 'Civil Aviation Authority of Singapore',
-    ariaLabel: 'Operations',
   },
   {
     title:
@@ -41,7 +39,6 @@ const posts = [
     description: ' ',
     imageUrl: GovTechLogo,
     agency: 'Government Technology Agency',
-    ariaLabel: 'Customer Support',
   },
 ]
 
@@ -83,90 +80,68 @@ export default function UseCases() {
           <VStack
             mt={{ base: 16, lg: 20 }}
             spacing={{ base: 20, lg: 20 }}
-            align="stretch"
+            align="center"
           >
             {posts.map((post, index) => (
-              <Box
+              <Flex
                 key={index}
-                as="article"
-                position="relative"
-                display="flex"
-                flexDirection={{ base: 'column', lg: 'row' }}
                 gap={8}
+                alignItems={{ base: 'stretch', md: 'center' }}
+                flexDirection={{ base: 'column', md: 'row' }}
               >
-                <Box
-                  position="relative"
-                  width={{ lg: '64' }}
-                  flexShrink={{ lg: 0 }}
+                <Link
+                  href={post.href}
+                  w={{ base: '100%', md: '30vw' }}
+                  maxW={{ base: '100%', md: 48 }}
+                  px={8}
+                  bg="#f4f2f0"
+                  borderRadius="2xl"
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  aspectRatio={{ base: undefined, md: 1 }}
+                  role="group"
                 >
-                  <AspectRatio ratio={{ base: 16 / 9, sm: 2 / 1, lg: 1 }}>
-                    <Box position="relative">
-                      <Image
-                        src={post.imageUrl}
-                        alt=""
-                        position="absolute"
-                        inset={0}
-                        w="full"
-                        h="full"
-                        p={8}
-                        borderRadius="2xl"
-                        bg="#f4f2f0"
-                        objectFit="contain"
-                      />
-                      <Box
-                        position="absolute"
-                        inset={0}
-                        borderRadius="2xl"
-                        border="1px solid"
-                        borderColor="whiteAlpha.200"
-                        opacity={0.1}
-                      />
-                    </Box>
-                  </AspectRatio>
-                </Box>
+                  <Image
+                    src={post.imageUrl}
+                    aspectRatio="1"
+                    maxW={{ base: 48, md: '100%' }}
+                    transition="transform 0.2s"
+                    objectFit="contain"
+                    _groupHover={{
+                      transform: 'scale(1.1)',
+                    }}
+                  />
+                </Link>
 
                 <Box flex={1} alignContent="center">
                   <HStack spacing={4} fontSize="m">
                     <Text color="gray.500">{post.agency}</Text>
                   </HStack>
 
-                  <Box
-                    position="relative"
-                    maxW="xl"
-                    role="group"
-                    _hover={{ '& h3': { color: 'gray.600' } }}
+                  <Heading
+                    as="h3"
+                    mt={3}
+                    fontSize="lg"
+                    lineHeight="6"
+                    fontWeight="500"
+                    letterSpacing="tighter"
+                    transition="color 0.2s"
                   >
-                    <Heading
-                      as="h3"
-                      mt={3}
-                      fontSize="lg"
-                      lineHeight="6"
-                      fontWeight="500"
-                      letterSpacing="tighter"
+                    <Link
+                      href={post.href}
+                      textDecoration="none"
                       color="gray.900"
-                      transition="color 0.2s"
+                      _hover={{
+                        textDecoration: 'none',
+                        color: 'primary.500',
+                      }}
                     >
-                      <Link
-                        href={post.href}
-                        textDecoration="none"
-                        color="gray.900"
-                        _hover={{
-                          textDecoration: 'none',
-                          color: 'primary.500',
-                        }}
-                        aria-label={post.ariaLabel}
-                      >
-                        <Box position="absolute" inset={0} />
-                        {post.title}
-                      </Link>
-                    </Heading>
-
-                    <Text mt={5} fontSize="sm" lineHeight="6" color="gray.600">
-                      {post.description}
-                    </Text>
-                  </Box>
+                      {post.title}
+                    </Link>
+                  </Heading>
                 </Box>
-              </Box>
+              </Flex>
             ))}
           </VStack>
         </Box>

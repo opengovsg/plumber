@@ -1,5 +1,7 @@
 import { Text } from '@chakra-ui/react'
 
+import CaasLogo from '@/assets/landing/CaasLogo.png'
+
 import ContentBox from './components/ContentBox'
 import ContentSection from './components/ContentSection'
 import Quote from './components/Quote'
@@ -73,6 +75,7 @@ export default function Operations() {
     <UseCaseLanding>
       <SummarySection
         category="Operations"
+        image={CaasLogo}
         title="How Civil Aviation Authority of Singapore simplified event management for their webinars"
         description="Webinars occur frequently with hundreds of participants each time. Managing these events manually became extremely time-consuming for the team"
         benefits={[

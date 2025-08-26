@@ -1,5 +1,7 @@
 import { Text } from '@chakra-ui/react'
 
+import GovTechLogo from '@/assets/landing/GOVTECH.png'
+
 import ContentBox from './components/ContentBox'
 import ContentSection from './components/ContentSection'
 import Quote from './components/Quote'
@@ -71,6 +73,7 @@ export default function CustomerSupport() {
     <UseCaseLanding>
       <SummarySection
         category="Customer Support"
+        image={GovTechLogo}
         title="How GovTech automates employee support tickets to stay on top of queries and better serve employees"
         description="Managing enquiries from current and former GovTech staff through email systems lacked tracking capabilities, making it impossible to measure performance, monitor workload, or identify common staff concerns"
         benefits={[

@@ -1,5 +1,7 @@
 import { Text } from '@chakra-ui/react'
 
+import AgcLogo from '@/assets/landing/AgcLogo.png'
+
 import ContentBox from './components/ContentBox'
 import ContentSection from './components/ContentSection'
 import SummarySection from './components/SummarySection'
@@ -64,6 +66,7 @@ export default function HumanResource() {
     <UseCaseLanding>
       <SummarySection
         category="Human Resource"
+        image={AgcLogo}
         title="How Attorney-General's Chambers reduced 50% of time spent on administrative onboarding processes"
         description="Administrative work to onboard a new joiner on their first day of work typically took around 2 hours cumulatively, and was prone to human error"
         benefits={[

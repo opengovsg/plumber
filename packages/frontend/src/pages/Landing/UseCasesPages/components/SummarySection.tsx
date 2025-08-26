@@ -3,6 +3,7 @@ import {
   Box,
   Flex,
   Heading,
+  Image,
   List,
   ListIcon,
   ListItem,
@@ -19,10 +20,11 @@ interface SummarySectionProps {
   title: string
   description: string
   benefits: string[]
+  image?: string
 }
 
 export default function SummarySection(props: SummarySectionProps) {
-  const { category, title, description, benefits } = props
+  const { category, title, description, benefits, image } = props
   return (
     <Box position="relative" overflow="hidden">
       <BackgroundPattern />
@@ -35,6 +37,18 @@ export default function SummarySection(props: SummarySectionProps) {
           >
             {category}
           </Text>
+
+          {image && (
+            <Image
+              src={image}
+              minH={24}
+              maxW={48}
+              alt={title}
+              objectFit="contain"
+              filter="grayscale(100%)"
+              opacity={0.7}
+            />
+          )}
 
           <Heading
             as="h1"
