@@ -47,10 +47,23 @@ export function getPostmanErrorStatus(
   }
 }
 
-function getInvalidAttachmentSolution(invalidAttachments: string[]) {
-  return `The following attachment(s) are not supported by Postman and have been removed from the email:
-  \n${invalidAttachments.map((attachment) => `**${attachment}**`).join('\n\n')}
-  \nIf you require the attachment(s), log in to your form to download them for this submission.
+function getInvalidAttachmentSolution({
+  invalidAttachments,
+  showAttachmentsList = true,
+}: {
+  invalidAttachments: string[]
+  showAttachmentsList?: boolean
+}) {
+  if (showAttachmentsList) {
+    return `The following attachment(s) are not supported by Postman and have been removed from the email:
+    \n${invalidAttachments
+      .map((attachment) => `**${attachment}**`)
+      .join('\n\n')}
+    \nIf you require the attachment(s), log in to your form to download them for this submission.
+    `
+  }
+  return `There were attachment(s) that could not be sent by Postman and have been removed from the email.
+    \nIf you require the attachment(s), log in to your form to download them for this submission.
   `
 }
 
@@ -61,6 +74,7 @@ export function throwPostmanStepError({
   isPartialSuccess,
   blacklistedRecipients,
   invalidAttachments,
+  isRetryWithoutAttachments,
 }: {
   $: IGlobalVariable
   status: PostmanEmailSendStatus
@@ -68,13 +82,17 @@ export function throwPostmanStepError({
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
   invalidAttachments: string[]
+  isRetryWithoutAttachments: boolean
 }) {
   const position = $.step.position
   const appName = $.app.name
 
   const hasInvalidAttachments = invalidAttachments.length > 0
-  const invalidAttachmentsSolution =
-    getInvalidAttachmentSolution(invalidAttachments)
+  const invalidAttachmentsSolution = getInvalidAttachmentSolution({
+    invalidAttachments,
+    // should not show attachments list if we are retrying without attachments
+    showAttachmentsList: !isRetryWithoutAttachments,
+  })
 
   switch (status) {
     case 'BLACKLISTED': {
@@ -96,6 +114,11 @@ export function throwPostmanStepError({
         solution += `\n\n&nbsp;\n\n${invalidAttachmentsSolution}`
       }
 
+      let buttonMessage = 'Resend to blacklisted recipients'
+      if (isRetryWithoutAttachments) {
+        buttonMessage += ' without attachments'
+      }
+
       if (isPartialSuccess) {
         throw new PartialStepError({
           name,
@@ -103,7 +126,7 @@ export function throwPostmanStepError({
           position,
           appName,
           partialRetry: {
-            buttonMessage: 'Resend to blacklisted recipients',
+            buttonMessage,
           },
         })
       }
@@ -152,7 +175,10 @@ export function throwPostmanStepError({
       // attachments that are password-protected
       if (hasInvalidAttachments) {
         const name = 'Invalid attachment(s)'
-        const solution = getInvalidAttachmentSolution(invalidAttachments)
+        const solution = getInvalidAttachmentSolution({
+          invalidAttachments,
+          showAttachmentsList: true,
+        })
 
         // throw StepError for test runs so that user cannot publish the pipe
         // until the error is fixed
@@ -162,7 +188,7 @@ export function throwPostmanStepError({
 
         throw new PartialStepError({
           name,
-          solution,
+          solution: invalidAttachmentsSolution,
           position,
           appName,
           partialRetry: { buttonMessage: '' }, // nothing to retry

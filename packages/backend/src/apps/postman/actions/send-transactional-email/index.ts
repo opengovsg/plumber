@@ -74,9 +74,6 @@ const action: IRawAction = {
       )
     }
 
-    const { attachmentFiles, invalidAttachments, submissionId } =
-      await filterAttachments(result.data.attachments, $)
-
     let recipientsToSend = result.data.destinationEmail
     /**
      * Logic to handle retries here:
@@ -98,6 +95,18 @@ const action: IRawAction = {
       lastExecutionStep.errorDetails &&
       // Don't do partial retry in test runs! always send to all recipients
       !$.execution.testRun
+
+    const {
+      attachmentFiles,
+      invalidAttachments,
+      submissionId,
+      isRetryWithoutAttachments,
+    } = await filterAttachments({
+      $,
+      attachmentsList: result.data.attachments,
+      isPartialRetry,
+      lastExecutionStep,
+    })
 
     if (isPartialRetry) {
       const { status, recipient } = prevDataOutParseResult.data
@@ -196,8 +205,14 @@ const action: IRawAction = {
     /**
      * Send invalid attachments notification email
      * Do not send on partial retry as we would have already sent this once with the blacklist email
+     * Do not send on retry when removing all attachments
      */
-    if (hasInvalidAttachments && !isPartialRetry && !$.execution.testRun) {
+    if (
+      hasInvalidAttachments &&
+      !isPartialRetry &&
+      !$.execution.testRun &&
+      !isRetryWithoutAttachments
+    ) {
       await sendInvalidAttachmentsEmail({
         ...defaultSendEmailParams,
         ...invalidAttachmentParams,
@@ -222,6 +237,7 @@ const action: IRawAction = {
         isPartialSuccess: hasAtLeastOneSuccess || invalidAttachments.length > 0,
         blacklistedRecipients,
         invalidAttachments,
+        isRetryWithoutAttachments,
       })
     }
   },
