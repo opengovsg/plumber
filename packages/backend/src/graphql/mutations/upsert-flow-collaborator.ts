@@ -56,7 +56,7 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
          * 2. Connection metadata, i.e. fields that are like connections:
          *    see helpers/get-shared-connection-details.ts for more details
          */
-        const hasCollaborators = await FlowCollaborator.hasCollaborators({
+        const hasCollaborators = await Flow.hasCollaborators({
           flowId,
         })
 
@@ -77,10 +77,10 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
                   .insert({
                     flowId,
                     connectionId: connectionId ?? null,
-                    userId: flow.userId,
+                    addedBy: flow.userId,
                     metadata,
                   })
-                  .onConflict(['flow_id', 'connection_id', 'user_id'])
+                  .onConflict(['flow_id', 'connection_id'])
                   .ignore()
               },
             ),
