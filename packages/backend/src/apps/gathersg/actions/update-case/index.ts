@@ -142,8 +142,8 @@ const action: IRawAction = {
 
       if (error instanceof HttpError) {
         // Case status is invalid
-        const { code, message, details } = error.response.data
-          .error as GatherSGError
+        const { code, message, details } =
+          (error.response.data?.error as GatherSGError) || {}
         if (error.response.status === 400 && code === 'RESOURCE_NOT_FOUND') {
           throw new StepError(
             message,
