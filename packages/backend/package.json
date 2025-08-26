@@ -3,8 +3,8 @@
   "scripts": {
     "setup": "docker-compose -f docker-compose.dev.yml up -d",
     "teardown": "docker-compose -f docker-compose.dev.yml down",
-    "dev": "npm run build:watch -- --exec \"ts-node src/server.ts\"",
-    "worker": "npm run build:watch -- --exec \"ts-node src/worker.ts\"",
+    "dev": "npm run build:watch -- --exec \"ts-node --swc src/server.ts\"",
+    "worker": "npm run build:watch -- --exec \"ts-node --swc src/worker.ts\"",
     "prebuild": "rm -rf ./dist",
     "build": "tsc && npm run copy-statics && tsc-alias",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
@@ -87,6 +87,7 @@
     "zod-validation-error": "1.5.0"
   },
   "devDependencies": {
+    "@swc/core": "^1.13.5",
     "@testcontainers/postgresql": "^11.0.3",
     "@types/bcrypt": "^5.0.0",
     "@types/big.js": "6.2.2",
