@@ -8,7 +8,7 @@ import Flow from '@/models/flow'
 const MAX_LENGTH = 80
 export const redisClient = createRedisClient(REDIS_DB_INDEX.PIPE_ERRORS)
 
-function truncateFlowName(flowName: string) {
+export function truncateFlowName(flowName: string) {
   return flowName.length > MAX_LENGTH
     ? flowName.slice(0, MAX_LENGTH) + '...'
     : flowName
