@@ -16,6 +16,7 @@ const dynamicData: IDynamicData = {
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     try {
       // This action only allows a step variable which we have to attempt to compute the parameter value, thinking if there is a better way to do this
+      // TODO: see if we can refresh the case fields from the API instead of using the cached data because right now, the user has to manually refresh the case fields to get the latest data
       const { caseId } = $.step.parameters
       if (!caseId) {
         return {

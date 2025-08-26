@@ -5,10 +5,11 @@ import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
+import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
 import { GatherSGError } from '../../common/types'
 
-import { requestSchema, responseSchema } from './schema'
+import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Update case',
@@ -71,11 +72,38 @@ const action: IRawAction = {
           customStyle: { flex: 2 },
         },
         {
+          placeholder: 'Field type',
+          key: 'fieldType',
+          type: 'dropdown' as const,
+          showOptionValue: false,
+          required: true,
+          options: [
+            {
+              label: 'String',
+              value: ensureZodEnumValue(fieldTypeEnum, 'string'),
+            },
+            {
+              label: 'Number',
+              value: ensureZodEnumValue(fieldTypeEnum, 'number'),
+            },
+            {
+              label: 'Null',
+              value: ensureZodEnumValue(fieldTypeEnum, 'null'),
+            },
+          ],
+          customStyle: { flex: 1, minWidth: 0 },
+        },
+        {
           placeholder: 'Value',
           key: 'value',
           type: 'string' as const,
           required: true,
           variables: true,
+          hiddenIf: {
+            fieldKey: 'fieldType',
+            op: 'equals',
+            fieldValue: 'null',
+          },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],

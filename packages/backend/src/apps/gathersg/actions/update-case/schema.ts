@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export const fieldTypeEnum = z.enum(['string', 'number', 'null'])
+
 export const requestSchema = z
   .object({
     caseId: z.string().trim().min(1, {
@@ -12,6 +14,7 @@ export const requestSchema = z
       .array(
         z.object({
           field: z.string().trim().min(1, 'Field empty').nullish(),
+          fieldType: fieldTypeEnum,
           value: z.string().trim().nullish(),
         }),
       )
@@ -19,7 +22,7 @@ export const requestSchema = z
         const result: Record<string, string | number | null> =
           Object.create(null)
         const seenFields = new Set<string>()
-        for (const { field, value } of params) {
+        for (const { field, fieldType, value } of params) {
           /**
            * No null fields are allowed
            * For now, we allow them to keep the field empty to set back to null. But in the future, may need to have a way to set to null vs set to empty string
@@ -43,11 +46,19 @@ export const requestSchema = z
           }
           seenFields.add(field)
 
-          // Right now, we don't know the field type so if it could be a number, we will just set it to a number
-          if (value === '') {
+          // Right now, we will attempt to parse the value to the field type
+          if (fieldType === 'null') {
             result[field] = null
-          } else if (!isNaN(Number(value))) {
-            result[field] = Number(value)
+          } else if (fieldType === 'number') {
+            const parsedValue = Number(value)
+            if (isNaN(parsedValue)) {
+              context.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Invalid number type for field: ${field}`,
+              })
+              return z.NEVER
+            }
+            result[field] = parsedValue
           } else {
             result[field] = value
           }
