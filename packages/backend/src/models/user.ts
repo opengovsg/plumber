@@ -1,4 +1,4 @@
-import { ITableCollabRole } from '@plumber/types'
+import { IFlowCollabRole, ITableCollabRole } from '@plumber/types'
 
 import crypto from 'crypto'
 import {
@@ -137,6 +137,134 @@ class User extends Base {
 
   async $beforeUpdate(opt: ModelOptions, queryContext: QueryContext) {
     await super.$beforeUpdate(opt, queryContext)
+  }
+
+  /**
+   * we use this filter to check for two things:
+   * 1. user is a valid owner or collaborator on this pipe
+   * 2. user has the required permissions to work on this pipe
+   */
+  private applyAccessibilityFilter(
+    query:
+      | ExtendedQueryBuilder<Flow, Flow[]>
+      | ExtendedQueryBuilder<Step, Step[]>
+      | ExtendedQueryBuilder<Connection, Connection[]>,
+    userId: string,
+    requiredRole: IFlowCollabRole,
+  ) {
+    if (requiredRole === 'owner') {
+      query.where('flows.user_id', userId)
+    } else if (requiredRole === 'editor') {
+      query.where(function () {
+        this.where('flows.user_id', userId).orWhereExists(function () {
+          this.select('*')
+            .from('flow_collaborators')
+            .whereRaw('flow_collaborators.flow_id = flows.id')
+            .where('flow_collaborators.user_id', userId)
+            .where('flow_collaborators.role', 'editor')
+            .whereNull('flow_collaborators.deleted_at')
+        })
+      })
+    } else if (requiredRole === 'viewer') {
+      query.where(function () {
+        this.where('flows.user_id', userId).orWhereExists(function () {
+          this.select('*')
+            .from('flow_collaborators')
+            .whereRaw('flow_collaborators.flow_id = flows.id')
+            .where('flow_collaborators.user_id', userId)
+            .whereIn('flow_collaborators.role', ['editor', 'viewer'])
+            .whereNull('flow_collaborators.deleted_at')
+        })
+      })
+    }
+  }
+
+  withAccessible(params: {
+    type: 'connection'
+    queryBuilder?: ExtendedQueryBuilder<Connection, Connection[]>
+    trx?: Transaction
+    requiredRole?: IFlowCollabRole
+  }): ExtendedQueryBuilder<Connection, Connection[]>
+  withAccessible(params: {
+    type: 'flow'
+    queryBuilder?: ExtendedQueryBuilder<Flow, Flow[]>
+    trx?: Transaction
+    requiredRole?: IFlowCollabRole
+  }): ExtendedQueryBuilder<Flow, Flow[]>
+  withAccessible(params: {
+    type: 'step'
+    queryBuilder?: ExtendedQueryBuilder<Step, Step[]>
+    trx?: Transaction
+    requiredRole?: IFlowCollabRole
+  }): ExtendedQueryBuilder<Step, Step[]>
+  withAccessible({
+    type,
+    queryBuilder,
+    trx,
+    requiredRole = 'viewer',
+  }: {
+    type: 'flow' | 'step' | 'connection'
+    queryBuilder?:
+      | ExtendedQueryBuilder<Flow, Flow[]>
+      | ExtendedQueryBuilder<Step, Step[]>
+      | ExtendedQueryBuilder<Connection, Connection[]>
+    trx?: Transaction
+    requiredRole?: IFlowCollabRole
+  }) {
+    const userId = this.id
+    const USER_ROLE_STMT = `
+      CASE
+        WHEN flows.user_id = ? THEN 'owner'
+        ELSE (
+          SELECT role FROM flow_collaborators
+          WHERE flow_collaborators.flow_id = flows.id
+          AND flow_collaborators.user_id = ?
+          AND flow_collaborators.deleted_at IS NULL
+        )
+      END as role
+    `
+
+    let baseQuery:
+      | ExtendedQueryBuilder<Flow, Flow[]>
+      | ExtendedQueryBuilder<Step, Step[]>
+      | ExtendedQueryBuilder<Connection, Connection[]>
+
+    switch (type) {
+      case 'connection':
+        baseQuery =
+          (queryBuilder as ExtendedQueryBuilder<Connection, Connection[]>) ||
+          Connection.query(trx)
+        baseQuery
+          .select(
+            'connections.*',
+            Connection.raw(USER_ROLE_STMT, [userId, userId]),
+          )
+          .join('steps', 'steps.connection_id', 'connections.id')
+          .join('flows', 'steps.flow_id', 'flows.id')
+          .leftJoin('flow_connections', 'flow_connections.flow_id', 'flows.id')
+
+        break
+
+      case 'step':
+        baseQuery =
+          (queryBuilder as ExtendedQueryBuilder<Step, Step[]>) ||
+          Step.query(trx)
+        baseQuery
+          .select('steps.*', Step.raw(USER_ROLE_STMT, [userId, userId]))
+          .join('flows', 'flows.id', 'steps.flow_id')
+        break
+
+      case 'flow':
+      default:
+        baseQuery =
+          (queryBuilder as ExtendedQueryBuilder<Flow, Flow[]>) ||
+          Flow.query(trx)
+        baseQuery.select('flows.*', Flow.raw(USER_ROLE_STMT, [userId, userId]))
+        break
+    }
+
+    this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
+    return baseQuery
   }
 
   withAccessibleFlows({
