@@ -7,8 +7,7 @@ import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
-import { GatherSGError } from '../../common/types'
-import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
+import throwGatherSGStepError from '../../common/throw-errors'
 
 import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
 
@@ -93,7 +92,7 @@ const action: IRawAction = {
               value: ensureZodEnumValue(fieldTypeEnum, 'null'),
             },
           ],
-          customStyle: { flex: 1, minWidth: 0 },
+          customStyle: { flex: 1, maxWidth: 140 },
         },
         {
           placeholder: 'Value',
@@ -118,12 +117,6 @@ const action: IRawAction = {
 
   async run($) {
     try {
-      const { caseUuid } = $.step.parameters
-      // Validation to prevent path traversals
-      validateDynamicFieldsAndThrowError({
-        caseUuid: String(caseUuid),
-      })
-
       const payload = requestSchema.parse($.step.parameters)
       const rawResponse = await $.http.patch('/cases/:caseUuid', payload, {
         urlPathParams: {
@@ -149,30 +142,7 @@ const action: IRawAction = {
       }
 
       if (error instanceof HttpError) {
-        // Case status is invalid
-        const { code, message, details } =
-          (error.response.data?.error as GatherSGError) || {}
-        if (error.response.status === 400 && code === 'RESOURCE_NOT_FOUND') {
-          throw new StepError(
-            message,
-            'Check that you have entered a valid case status.',
-            $.step.position,
-            $.app.name,
-          )
-        }
-
-        // Invalid field value type entered
-        if (error.response.status === 422 && code === 'INVALID_INPUT') {
-          const invalidFields = details?.fields as string[]
-          throw new StepError(
-            'Invalid field value type entered (between numbers, strings, etc)',
-            `Check that you have entered the correct value type for the following fields: ${invalidFields.join(
-              ', ',
-            )}`,
-            $.step.position,
-            $.app.name,
-          )
-        }
+        throwGatherSGStepError({ $, error })
       }
 
       throw new StepError(

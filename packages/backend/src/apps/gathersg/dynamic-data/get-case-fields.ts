@@ -9,7 +9,6 @@ import computeParameters from '@/helpers/compute-parameters'
 import ExecutionStep from '@/models/execution-step'
 
 import { GatherSGError } from '../common/types'
-import { validateDynamicFieldsAndThrowError } from '../common/validate-dynamic-fields'
 
 const dynamicData: IDynamicData = {
   key: 'getCaseFields',
@@ -35,11 +34,6 @@ const dynamicData: IDynamicData = {
         priorExecutionSteps,
       )
       const computedCaseUuid = computedParameters.caseUuid as string
-
-      // Validation to prevent path traversals
-      validateDynamicFieldsAndThrowError({
-        caseUuid: computedCaseUuid,
-      })
 
       const { data: responseData } = await $.http.get(`/cases/:caseUuid`, {
         urlPathParams: {

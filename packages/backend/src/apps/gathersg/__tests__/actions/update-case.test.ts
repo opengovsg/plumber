@@ -12,7 +12,7 @@ const MOCK_RESPONSE = {
   traceId: 'trace-123456789',
 }
 
-const MOCK_CASE_UUID = '12345abcde'
+const MOCK_CASE_UUID = '1234567890abcdefghijkl' // have to be 22 characters long
 const MOCK_CASE_STATUS = 'PENDING'
 const MOCK_CASE_FIELDS = [
   { field: 'name', fieldType: 'string', value: 'Peter Parker' },
@@ -138,14 +138,14 @@ describe('update case', () => {
   it('should throw step error for invalid regex case uuid', async () => {
     $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Your case uuid is of an invalid format',
+      'Please enter a valid case uuid',
     )
   })
 
   it('should throw step error for empty case uuid', async () => {
     $.step.parameters.caseUuid = ''
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Your case uuid is of an invalid format',
+      'Please do not leave the case uuid empty',
     )
   })
 
@@ -217,6 +217,27 @@ describe('update case', () => {
 
     await expect(updateCaseAction.run($)).rejects.toThrowError(
       'Check that you have entered the correct value type for the following fields: age, score',
+    )
+  })
+
+  it('should throw step error for insufficient permissions', async () => {
+    const error = {
+      response: {
+        data: {
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Insufficient permissions to perform this action',
+          },
+        },
+        status: 403,
+        statusText: 'Forbidden',
+      },
+    } as AxiosError
+    const httpError = new HttpError(error)
+    mocks.httpPatch.mockRejectedValueOnce(httpError)
+
+    await expect(updateCaseAction.run($)).rejects.toThrowError(
+      'Insufficient permissions to perform this action',
     )
   })
 
