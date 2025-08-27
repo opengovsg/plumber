@@ -19,7 +19,7 @@ export const requestSchema = z
     caseFields: z
       .array(
         z.object({
-          field: z.string().trim().min(1, 'Field empty').nullish(),
+          field: z.string().trim().min(1, 'Field empty'),
           fieldType: fieldTypeEnum,
           value: z.string().trim().nullish(),
         }),

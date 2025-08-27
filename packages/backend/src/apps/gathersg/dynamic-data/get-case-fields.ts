@@ -70,8 +70,9 @@ const dynamicData: IDynamicData = {
          *  title: 'Resource Not Found'
          * }
          */
-        if (error.response.status === 404) {
-          const { message, code } = error.response.data.error as GatherSGError
+        if (error.response?.status === 404) {
+          const { message, code } =
+            (error.response.data.error as GatherSGError) ?? {}
 
           if (code === 'RESOURCE_NOT_FOUND') {
             return {
@@ -86,7 +87,7 @@ const dynamicData: IDynamicData = {
 
       return {
         data: [],
-        error: error.message,
+        error: error?.message || 'Unknown error',
       }
     }
   },
