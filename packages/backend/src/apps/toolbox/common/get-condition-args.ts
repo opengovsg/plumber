@@ -74,6 +74,10 @@ export default function getConditionArgs({
           value: 'after',
           description: 'Used for dates',
         },
+        {
+          label: 'Begins with',
+          value: 'begins',
+        },
       ],
       customStyle: { flex: 2 },
     },
