@@ -8,20 +8,21 @@ import StepError, { GenericSolution } from '@/errors/step'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
 import { GatherSGError } from '../../common/types'
+import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 
 import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Update case',
   key: 'updateCase',
-  description: 'Update a case based on the case id (UUID)',
+  description: 'Update a case based on the case uuid',
   arguments: [
     {
-      label: 'Case ID',
-      key: 'caseId',
+      label: 'Case UUID',
+      key: 'caseUuid',
       type: 'string' as const,
       description:
-        'You can only select a step variable here. You should be using a Tile to store your case IDs to make reference to.',
+        'You can only select a step variable here to make reference to.',
       required: true,
       variables: true,
       singleVariableSelection: true,
@@ -32,10 +33,10 @@ const action: IRawAction = {
       key: 'caseStatus',
       type: 'string' as const,
       description: 'Enter the status you want to update the case to.',
-      required: true,
+      required: false,
       variables: true,
       hiddenIf: {
-        fieldKey: 'caseId',
+        fieldKey: 'caseUuid',
         op: 'is_empty',
       },
     },
@@ -55,6 +56,7 @@ const action: IRawAction = {
           showOptionValue: false,
           required: true,
           variables: false,
+          allowArbitrary: true,
           source: {
             type: 'query' as const,
             name: 'getDynamicData' as const,
@@ -64,8 +66,8 @@ const action: IRawAction = {
                 value: 'getCaseFields',
               },
               {
-                name: 'parameters.caseId',
-                value: '{parameters.caseId}',
+                name: 'parameters.caseUuid',
+                value: '{parameters.caseUuid}',
               },
             ],
           },
@@ -108,7 +110,7 @@ const action: IRawAction = {
         },
       ],
       hiddenIf: {
-        fieldKey: 'caseId',
+        fieldKey: 'caseUuid',
         op: 'is_empty',
       },
     },
@@ -116,10 +118,16 @@ const action: IRawAction = {
 
   async run($) {
     try {
+      const { caseUuid } = $.step.parameters
+      // Validation to prevent path traversals
+      validateDynamicFieldsAndThrowError({
+        caseUuid: String(caseUuid),
+      })
+
       const payload = requestSchema.parse($.step.parameters)
-      const rawResponse = await $.http.patch('/cases/:caseId', payload, {
+      const rawResponse = await $.http.patch('/cases/:caseUuid', payload, {
         urlPathParams: {
-          caseId: $.step.parameters.caseId,
+          caseUuid: $.step.parameters.caseUuid,
         },
       })
       const response = responseSchema.parse(rawResponse.data)

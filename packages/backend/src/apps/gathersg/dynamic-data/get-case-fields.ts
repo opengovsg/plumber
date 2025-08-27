@@ -9,6 +9,7 @@ import computeParameters from '@/helpers/compute-parameters'
 import ExecutionStep from '@/models/execution-step'
 
 import { GatherSGError } from '../common/types'
+import { validateDynamicFieldsAndThrowError } from '../common/validate-dynamic-fields'
 
 const dynamicData: IDynamicData = {
   key: 'getCaseFields',
@@ -17,8 +18,8 @@ const dynamicData: IDynamicData = {
     try {
       // This action only allows a step variable which we have to attempt to compute the parameter value, thinking if there is a better way to do this
       // TODO: see if we can refresh the case fields from the API instead of using the cached data because right now, the user has to manually refresh the case fields to get the latest data
-      const { caseId } = $.step.parameters
-      if (!caseId) {
+      const { caseUuid } = $.step.parameters
+      if (!caseUuid) {
         return {
           data: [],
         }
@@ -33,11 +34,18 @@ const dynamicData: IDynamicData = {
         $.step.parameters,
         priorExecutionSteps,
       )
-      const computedCaseId = computedParameters.caseId as string
+      const computedCaseUuid = computedParameters.caseUuid as string
 
-      const { data: responseData } = await $.http.get(
-        `/cases/${computedCaseId}`,
-      )
+      // Validation to prevent path traversals
+      validateDynamicFieldsAndThrowError({
+        caseUuid: computedCaseUuid,
+      })
+
+      const { data: responseData } = await $.http.get(`/cases/:caseUuid`, {
+        urlPathParams: {
+          caseUuid: computedCaseUuid,
+        },
+      })
 
       if (!responseData?.data) {
         return {

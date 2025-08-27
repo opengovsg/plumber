@@ -11,7 +11,12 @@ export async function verifyApiKey($: IGlobalVariable): Promise<void> {
       throw new Error(
         'API key is invalid, please ensure you have copied the correct API key',
       )
+    } else if (err.response.status === 403) {
+      throw new Error(
+        'Please check that you have the correct permissions to access the GatherSG API e.g. view, update or tag cases',
+      )
     }
+
     throw err
   }
 }

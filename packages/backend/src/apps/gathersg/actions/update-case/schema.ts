@@ -4,12 +4,10 @@ export const fieldTypeEnum = z.enum(['string', 'number', 'null'])
 
 export const requestSchema = z
   .object({
-    caseId: z.string().trim().min(1, {
-      message: 'Please do not leave the case id empty',
+    caseUuid: z.string().trim().min(1, {
+      message: 'Please do not leave the case uuid empty',
     }),
-    caseStatus: z.string().trim().min(1, {
-      message: 'Please do not leave the case status empty',
-    }),
+    caseStatus: z.string().trim().optional(),
     caseFields: z
       .array(
         z.object({
@@ -68,8 +66,8 @@ export const requestSchema = z
       .nullish(),
   })
   .transform((data) => ({
-    caseId: data.caseId,
-    status: data.caseStatus,
+    caseUuid: data.caseUuid,
+    ...(data.caseStatus && { status: data.caseStatus }),
     fields: data.caseFields,
   }))
 

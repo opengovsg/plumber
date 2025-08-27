@@ -12,7 +12,7 @@ const MOCK_RESPONSE = {
   traceId: 'trace-123456789',
 }
 
-const MOCK_CASE_ID = 'case-uuid-123'
+const MOCK_CASE_UUID = '12345abcde'
 const MOCK_CASE_STATUS = 'PENDING'
 const MOCK_CASE_FIELDS = [
   { field: 'name', fieldType: 'string', value: 'Peter Parker' },
@@ -42,7 +42,7 @@ describe('update case', () => {
         appKey: 'gathersg',
         position: 2,
         parameters: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
           caseStatus: MOCK_CASE_STATUS,
           caseFields: MOCK_CASE_FIELDS,
         },
@@ -66,9 +66,9 @@ describe('update case', () => {
     await updateCaseAction.run($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
-      '/cases/:caseId',
+      '/cases/:caseUuid',
       {
-        caseId: MOCK_CASE_ID,
+        caseUuid: MOCK_CASE_UUID,
         status: MOCK_CASE_STATUS,
         fields: {
           name: 'Peter Parker',
@@ -78,26 +78,49 @@ describe('update case', () => {
       },
       {
         urlPathParams: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
         },
       },
     )
   })
 
   it('builds the payload correctly with only case status (no fields)', async () => {
+    $.step.parameters.caseStatus = MOCK_CASE_STATUS
     $.step.parameters.caseFields = []
     await updateCaseAction.run($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
-      '/cases/:caseId',
+      '/cases/:caseUuid',
       {
-        caseId: MOCK_CASE_ID,
+        caseUuid: MOCK_CASE_UUID,
         status: MOCK_CASE_STATUS,
         fields: {},
       },
       {
         urlPathParams: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('builds the payload correctly with only case fields (no status)', async () => {
+    delete $.step.parameters.caseStatus
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: {
+          name: 'Peter Parker',
+          age: 30,
+          notes: null,
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
         },
       },
     )
@@ -112,21 +135,25 @@ describe('update case', () => {
     })
   })
 
-  it('should throw step error for invalid parameters (empty case id)', async () => {
-    $.step.parameters.caseId = ''
-    await expect(updateCaseAction.run($)).rejects.toThrowError()
+  it('should throw step error for invalid regex case uuid', async () => {
+    $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'Your case uuid is of an invalid format',
+    )
   })
 
-  it('should throw step error for invalid parameters (empty case status)', async () => {
-    $.step.parameters.caseStatus = ''
-    await expect(updateCaseAction.run($)).rejects.toThrowError()
+  it('should throw step error for empty case uuid', async () => {
+    $.step.parameters.caseUuid = ''
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'Your case uuid is of an invalid format',
+    )
   })
 
-  it('should throw step error for invalid parameters (empty field)', async () => {
+  it('should throw step error for empty field', async () => {
     $.step.parameters.caseFields = [
       { field: '', fieldType: 'string', value: 'test' },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrowError()
+    await expect(updateCaseAction.run($)).rejects.toThrow('Field empty')
   })
 
   it('should throw step error for duplicate fields', async () => {
@@ -134,14 +161,18 @@ describe('update case', () => {
       { field: 'name', fieldType: 'string', value: 'Peter' },
       { field: 'name', fieldType: 'string', value: 'Mary' },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrowError()
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'name field is repeated',
+    )
   })
 
   it('should throw step error for invalid number field type', async () => {
     $.step.parameters.caseFields = [
       { field: 'age', fieldType: 'number', value: 'not-a-number' },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrowError()
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'Invalid number type for field: age',
+    )
   })
 
   it('should throw step error for case not found', async () => {
@@ -214,9 +245,9 @@ describe('update case', () => {
     await updateCaseAction.run($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
-      '/cases/:caseId',
+      '/cases/:caseUuid',
       {
-        caseId: MOCK_CASE_ID,
+        caseUuid: MOCK_CASE_UUID,
         status: MOCK_CASE_STATUS,
         fields: {
           deleted_at: null,
@@ -224,7 +255,7 @@ describe('update case', () => {
       },
       {
         urlPathParams: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
         },
       },
     )
@@ -239,9 +270,9 @@ describe('update case', () => {
     await updateCaseAction.run($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
-      '/cases/:caseId',
+      '/cases/:caseUuid',
       {
-        caseId: MOCK_CASE_ID,
+        caseUuid: MOCK_CASE_UUID,
         status: MOCK_CASE_STATUS,
         fields: {
           name: 'Bruce Wayne',
@@ -251,7 +282,7 @@ describe('update case', () => {
       },
       {
         urlPathParams: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
         },
       },
     )
