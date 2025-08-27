@@ -76,4 +76,20 @@ describe('FlowConnections model', () => {
       expect(flowConnections[0].connectionId).toBe(mockConnectionId)
     })
   })
+
+  it('should throw an error if the parameter key is invalid', () => {
+    expect(() => FlowConnections.validateParameterKey('invalid')).toThrow(
+      'Invalid parameter key: invalid',
+    )
+  })
+
+  it('should not throw an error if the parameter key is valid', () => {
+    expect(() => FlowConnections.validateParameterKey('fileId')).not.toThrow()
+    expect(() =>
+      FlowConnections.validateParameterKey('templateId'),
+    ).not.toThrow()
+    expect(() => FlowConnections.validateParameterKey('channel')).not.toThrow()
+    expect(() => FlowConnections.validateParameterKey('chatId')).not.toThrow()
+    expect(() => FlowConnections.validateParameterKey('tableId')).not.toThrow()
+  })
 })

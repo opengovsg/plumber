@@ -7,6 +7,14 @@ import FlowCollaborator from './flow-collaborators'
 import ExtendedQueryBuilder from './query-builder'
 import User from './user'
 
+const VALID_PARAMETER_KEYS = [
+  'fileId',
+  'templateId',
+  'channel',
+  'chatId',
+  'tableId',
+]
+
 class FlowConnections extends Base {
   flowId!: string
   connectionId!: string
@@ -91,6 +99,15 @@ class FlowConnections extends Base {
   }
 
   /**
+   * Validate parameter key to avoid SQL injection
+   */
+  static validateParameterKey(parameterKey: string) {
+    if (!VALID_PARAMETER_KEYS.includes(parameterKey)) {
+      throw new Error(`Invalid parameter key: ${parameterKey}`)
+    }
+  }
+
+  /**
    * NOTE: this function only adds the connection to the flow_connections table
    * if there are collaborators for the flow
    */
@@ -132,6 +149,8 @@ class FlowConnections extends Base {
     parameterKey: string
     parameterValue: string
   }) => {
+    this.validateParameterKey(parameterKey)
+
     return await this.query()
       .where({
         flow_id: flowId,
