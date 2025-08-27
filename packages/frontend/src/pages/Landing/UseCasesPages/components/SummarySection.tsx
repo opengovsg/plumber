@@ -3,6 +3,7 @@ import {
   Box,
   Flex,
   Heading,
+  Image,
   List,
   ListIcon,
   ListItem,
@@ -10,6 +11,7 @@ import {
 } from '@chakra-ui/react'
 
 import Container from '@/components/Container'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 import BackgroundPattern from '../../components/BackgroundPattern'
 
@@ -18,10 +20,11 @@ interface SummarySectionProps {
   title: string
   description: string
   benefits: string[]
+  image?: string
 }
 
 export default function SummarySection(props: SummarySectionProps) {
-  const { category, title, description, benefits } = props
+  const { category, title, description, benefits, image } = props
   return (
     <Box position="relative" overflow="hidden">
       <BackgroundPattern />
@@ -34,6 +37,18 @@ export default function SummarySection(props: SummarySectionProps) {
           >
             {category}
           </Text>
+
+          {image && (
+            <Image
+              src={image}
+              minH={24}
+              maxW={48}
+              alt={title}
+              objectFit="contain"
+              filter="grayscale(100%)"
+              opacity={0.7}
+            />
+          )}
 
           <Heading
             as="h1"
@@ -50,7 +65,7 @@ export default function SummarySection(props: SummarySectionProps) {
 
           <Text mt={4}>With Plumber,</Text>
 
-          <List maxW="xl" spacing={4} color="gray.600">
+          <List spacing={4} color="gray.600">
             {benefits.map((benefit) => (
               <ListItem key={benefit} display="flex" gap={3}>
                 <ListIcon
@@ -61,7 +76,7 @@ export default function SummarySection(props: SummarySectionProps) {
                   flexShrink={0}
                 />
                 <Box>
-                  <Text color="gray.900">{benefit}</Text>
+                  <MarkdownRenderer source={benefit} />
                 </Box>
               </ListItem>
             ))}

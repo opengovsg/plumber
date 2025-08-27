@@ -1,11 +1,11 @@
-import { Box, Text } from '@chakra-ui/react'
+import { Text } from '@chakra-ui/react'
 
-import { Footer } from '../Footer'
-import HeaderBar from '../HeaderBar'
+import AgcLogo from '@/assets/landing/AgcLogo.png'
 
 import ContentBox from './components/ContentBox'
 import ContentSection from './components/ContentSection'
 import SummarySection from './components/SummarySection'
+import UseCaseLanding from './UseCaseLanding'
 
 function FirstContentBox() {
   return (
@@ -63,17 +63,16 @@ function ThirdContentBox() {
 
 export default function HumanResource() {
   return (
-    <Box fontFamily="'DM Sans', sans-serif">
-      <HeaderBar />
-
+    <UseCaseLanding>
       <SummarySection
         category="Human Resource"
+        image={AgcLogo}
         title="How Attorney-General's Chambers reduced 50% of time spent on administrative onboarding processes"
         description="Administrative work to onboard a new joiner on their first day of work typically took around 2 hours cumulatively, and was prone to human error"
         benefits={[
-          '50% reduction in time taken to onboard a new employee',
-          '95% reduction in errors through automation',
-          'Able to focus on more important work, such as strategy, after automating the process',
+          '**50% reduction in time taken** to onboard a new employee',
+          '**95% reduction in errors** through automation',
+          'Ability to focus on **more important strategic tasks** like boosting employee engagement',
         ]}
       />
 
@@ -86,8 +85,6 @@ export default function HumanResource() {
           </>
         }
       />
-
-      <Footer />
-    </Box>
+    </UseCaseLanding>
   )
 }

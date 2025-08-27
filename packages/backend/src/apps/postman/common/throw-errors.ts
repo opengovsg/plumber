@@ -47,36 +47,78 @@ export function getPostmanErrorStatus(
   }
 }
 
+function getInvalidAttachmentSolution({
+  invalidAttachments,
+  showAttachmentsList = true,
+}: {
+  invalidAttachments: string[]
+  showAttachmentsList?: boolean
+}) {
+  if (showAttachmentsList) {
+    return `The following attachment(s) are not supported by Postman and have been removed from the email:
+    \n${invalidAttachments
+      .map((attachment) => `**${attachment}**`)
+      .join('\n\n')}
+    \nIf you require the attachment(s), log in to your form to download them for this submission.
+    `
+  }
+  return `There were attachment(s) that could not be sent by Postman and have been removed from the email.
+    \nIf you require the attachment(s), log in to your form to download them for this submission.
+  `
+}
+
 export function throwPostmanStepError({
   $,
   status,
   error,
   isPartialSuccess,
   blacklistedRecipients,
+  invalidAttachments,
+  isRetryWithoutAttachments,
 }: {
   $: IGlobalVariable
   status: PostmanEmailSendStatus
   error: HttpError
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
+  invalidAttachments: string[]
+  isRetryWithoutAttachments: boolean
 }) {
   const position = $.step.position
   const appName = $.app.name
 
+  const hasInvalidAttachments = invalidAttachments.length > 0
+  const invalidAttachmentsSolution = getInvalidAttachmentSolution({
+    invalidAttachments,
+    // should not show attachments list if we are retrying without attachments
+    showAttachmentsList: !isRetryWithoutAttachments,
+  })
+
   switch (status) {
     case 'BLACKLISTED': {
-      const name = 'Blacklisted recipient email'
+      let name = 'Blacklisted recipient email'
       const formLink = createRequestBlacklistFormLink({
         userEmail: $.user.email,
         executionId: $.execution.id,
         blacklistedRecipients,
       })
-      const solution = `The following email addresses have been blacklisted by Postman:
+      let solution = `The following email addresses have been blacklisted by Postman:
          \n${blacklistedRecipients
            .map((recipient) => `**${recipient}**`)
            .join('\n\n')}
          \nIf you believe that they are valid and active, please [use this form](${formLink}) to request for removal from blacklist and try again.
         `
+
+      if (hasInvalidAttachments) {
+        name += ` and invalid attachment(s)`
+        solution += `\n\n&nbsp;\n\n${invalidAttachmentsSolution}`
+      }
+
+      let buttonMessage = 'Resend to blacklisted recipients'
+      if (isRetryWithoutAttachments) {
+        buttonMessage += ' without attachments'
+      }
+
       if (isPartialSuccess) {
         throw new PartialStepError({
           name,
@@ -84,7 +126,7 @@ export function throwPostmanStepError({
           position,
           appName,
           partialRetry: {
-            buttonMessage: 'Resend to blacklisted recipients',
+            buttonMessage,
           },
         })
       }
@@ -99,8 +141,8 @@ export function throwPostmanStepError({
       })
     case 'INVALID-ATTACHMENT':
       throw new StepError(
-        'Unsupported attachment file type',
-        'Check that the attachment type is supported by postman. Please check the supported types at [this link](https://postman-v1.guides.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).',
+        'Password-protected attachment(s)',
+        `Check that the attachment(s) are not password-protected.`,
         position,
         appName,
         error,
@@ -121,7 +163,7 @@ export function throwPostmanStepError({
       })
     case 'ERROR':
     default:
-      if (error.message === 'socket hang up') {
+      if (error?.message === 'socket hang up') {
         throw new RetriableError({
           error: `Retrying ${error.message} from Postman`,
           delayInMs: 'default',
@@ -129,6 +171,29 @@ export function throwPostmanStepError({
         })
       }
 
+      // NOTE: we keep the INVALID-ATTACHMENT error as Postman may reject
+      // attachments that are password-protected
+      if (hasInvalidAttachments) {
+        const name = 'Invalid attachment(s)'
+        const solution = getInvalidAttachmentSolution({
+          invalidAttachments,
+          showAttachmentsList: true,
+        })
+
+        // throw StepError for test runs so that user cannot publish the pipe
+        // until the error is fixed
+        if ($.execution.testRun) {
+          throw new StepError(name, solution, position, appName, error)
+        }
+
+        throw new PartialStepError({
+          name,
+          solution: invalidAttachmentsSolution,
+          position,
+          appName,
+          partialRetry: { buttonMessage: '' }, // nothing to retry
+        })
+      }
       throw new StepError(
         'Something went wrong',
         'Please contact plumber@open.gov.sg for assistance.',

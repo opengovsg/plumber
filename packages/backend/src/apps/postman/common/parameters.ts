@@ -6,6 +6,8 @@ import { z } from 'zod'
 
 import { parseS3Id } from '@/helpers/s3'
 
+import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
+
 function recipientStringToArray(value: string) {
   const recipientArray = value
     .split(',')
@@ -81,8 +83,7 @@ export const transactionalEmailFields: IField[] = [
   {
     label: 'Attachments',
     key: 'attachments',
-    description:
-      'Check supported file types [here](https://postman-v1.guides.gov.sg/email-api-guide/programmatic-email-api/send-email-api/attachments#list-of-supported-attachment-file-types).\nPlease note that the maximum file size for each file is 2MB, and the total size of all attachments cannot exceed 10MB.',
+    description: `Check supported file types [here](${POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL}).\nPlease note that the maximum file size for each file is 2MB, and the total size of all attachments cannot exceed 10MB.`,
     type: 'attachment' as const,
     required: false,
     variables: true,

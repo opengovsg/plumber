@@ -5,7 +5,6 @@ import { fromZodError } from 'zod-validation-error'
 
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
-import { getObjectFromS3Id } from '@/helpers/s3'
 import Step from '@/models/step'
 
 import { dataOutSchema } from '../../common/data-out-validator'
@@ -14,8 +13,12 @@ import {
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
-import { getDefaultReplyTo } from '../../common/parameters-helper'
+import {
+  filterAttachments,
+  getDefaultReplyTo,
+} from '../../common/parameters-helper'
 import { sendBlacklistEmail } from '../../common/send-blacklist-email'
+import { sendInvalidAttachmentsEmail } from '../../common/send-invalid-attachments-email'
 import { throwPostmanStepError } from '../../common/throw-errors'
 
 const action: IRawAction = {
@@ -71,19 +74,6 @@ const action: IRawAction = {
       )
     }
 
-    const attachmentFiles = await Promise.all(
-      result.data.attachments?.map(async (attachment) => {
-        // We verify the flowId here to ensure that the attachment is from the same flow and not
-        // maliciously/ manually injected by another user who does not have access to this attachment
-        const obj = await getObjectFromS3Id(
-          attachment,
-          { flowId: $.flow.id },
-          $,
-        )
-        return { fileName: obj.name, data: obj.data }
-      }),
-    )
-
     let recipientsToSend = result.data.destinationEmail
     /**
      * Logic to handle retries here:
@@ -105,6 +95,18 @@ const action: IRawAction = {
       lastExecutionStep.errorDetails &&
       // Don't do partial retry in test runs! always send to all recipients
       !$.execution.testRun
+
+    const {
+      attachmentFiles,
+      invalidAttachments,
+      submissionId,
+      isRetryWithoutAttachments,
+    } = await filterAttachments({
+      $,
+      attachmentsList: result.data.attachments,
+      isPartialRetry,
+      lastExecutionStep,
+    })
 
     if (isPartialRetry) {
       const { status, recipient } = prevDataOutParseResult.data
@@ -165,16 +167,27 @@ const action: IRawAction = {
       (_, i) => dataOut.status[i] === 'BLACKLISTED',
     )
 
+    const defaultSendEmailParams = {
+      flowId: $.flow.id,
+      flowName: $.flow.name,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+    }
+    const hasInvalidAttachments = invalidAttachments.length > 0
+    const invalidAttachmentParams = {
+      hasInvalidAttachments,
+      submissionId,
+      invalidAttachments,
+    }
+
     /**
      * Send blacklist notification email if any
+     * If there are any invalid attachments, it will be included in this email
      */
     if (blacklistedRecipients.length > 0 && !$.execution.testRun) {
       try {
         await sendBlacklistEmail({
-          flowId: $.flow.id,
-          flowName: $.flow.name,
-          userEmail: $.user.email,
-          executionId: $.execution.id,
+          ...defaultSendEmailParams,
           blacklistedRecipients,
         })
       } catch (e) {
@@ -188,17 +201,43 @@ const action: IRawAction = {
         })
       }
     }
+
+    /**
+     * Send invalid attachments notification email
+     * Do not send on partial retry as we would have already sent this once with the blacklist email
+     * Do not send on retry when removing all attachments
+     */
+    if (
+      hasInvalidAttachments &&
+      !isPartialRetry &&
+      !$.execution.testRun &&
+      !isRetryWithoutAttachments
+    ) {
+      await sendInvalidAttachmentsEmail({
+        ...defaultSendEmailParams,
+        ...invalidAttachmentParams,
+      })
+
+      logger.warn({
+        message: 'Invalid attachments',
+        flowId: $.flow.id,
+        executionId: $.execution.id,
+        invalidAttachments: invalidAttachments.join(', '),
+      })
+    }
     /**
      * If there's any rate-limit error, we will throw the rate-limit error
      * else we just throw the first error we encounter
      */
-    if (error && errorStatus) {
+    if ((error && errorStatus) || invalidAttachments.length > 0) {
       throwPostmanStepError({
         $,
         status: errorStatus,
         error,
-        isPartialSuccess: hasAtLeastOneSuccess,
+        isPartialSuccess: hasAtLeastOneSuccess || invalidAttachments.length > 0,
         blacklistedRecipients,
+        invalidAttachments,
+        isRetryWithoutAttachments,
       })
     }
   },

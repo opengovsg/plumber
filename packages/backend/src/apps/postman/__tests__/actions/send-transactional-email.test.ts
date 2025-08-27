@@ -12,7 +12,16 @@ import sendTransactionalEmail from '../../actions/send-transactional-email'
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
   getDefaultReplyTo: vi.fn(() => 'replyTo@open.gov.sg'),
+  filterAttachments: vi.fn(() => {
+    return {
+      attachmentFiles: [],
+      invalidAttachments: [],
+      submissionId: null,
+    }
+  }),
   sendBlacklistEmail: vi.fn(),
+  sendInvalidAttachmentsEmail: vi.fn(),
+  createInvalidAttachmentsMessage: vi.fn(() => 'test invalid attachment body'),
 }))
 
 vi.mock('@/helpers/s3', async () => {
@@ -28,11 +37,17 @@ vi.mock('@/helpers/s3', async () => {
 
 vi.mock('../../common/parameters-helper', () => ({
   getDefaultReplyTo: mocks.getDefaultReplyTo,
+  filterAttachments: mocks.filterAttachments,
 }))
 
 vi.mock('../../common/send-blacklist-email', () => ({
   sendBlacklistEmail: mocks.sendBlacklistEmail,
   createRequestBlacklistFormLink: vi.fn(),
+}))
+
+vi.mock('../../common/send-invalid-attachments-email', () => ({
+  sendInvalidAttachmentsEmail: mocks.sendInvalidAttachmentsEmail,
+  createInvalidAttachmentsMessage: mocks.createInvalidAttachmentsMessage,
 }))
 
 describe('send transactional email', () => {
@@ -137,7 +152,7 @@ describe('send transactional email', () => {
       },
       errorStatusCode: 400,
       errorStatusText: 'Bad Request',
-      stepErrorName: 'Unsupported attachment file type',
+      stepErrorName: 'Password-protected attachment(s)',
     },
   ])(
     'should throw step error for different postman errors',
@@ -568,6 +583,114 @@ describe('send transactional email', () => {
         from: 'jack',
         reply_to: 'replyTo@open.gov.sg',
       },
+    })
+  })
+
+  it('should filter out invalid attachments and send notification email', async () => {
+    const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.step.parameters.attachments = [
+      's3:my-bucket:abcd/file 1.txt',
+      's3:my-bucket:wxyz/file-2.svg',
+    ]
+    mocks.filterAttachments.mockResolvedValueOnce({
+      attachmentFiles: [],
+      invalidAttachments: ['file-2.svg'],
+      submissionId: 'abc',
+    })
+    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      PartialStepError,
+    )
+    expect($.http.post).toBeCalledTimes(2)
+    expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
+      flowName: $.flow.name,
+      flowId: $.flow.id,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+      submissionId: 'abc',
+      invalidAttachments: ['file-2.svg'],
+      hasInvalidAttachments: true,
+    })
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'ACCEPTED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+  })
+
+  it('should send two emails if there are blacklisted recipients and invalid attachments', async () => {
+    const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
+    $.step.parameters.destinationEmail = recipients.join(',')
+    $.step.parameters.attachments = [
+      's3:my-bucket:abcd/file 1.txt',
+      's3:my-bucket:wxyz/file-2.svg',
+    ]
+
+    mocks.filterAttachments.mockResolvedValueOnce({
+      attachmentFiles: [],
+      invalidAttachments: ['file-2.svg'],
+      submissionId: 'abc',
+    })
+
+    $.http.post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          params: {
+            body: 'test body',
+            subject: 'test subject',
+            from: 'jack',
+            reply_to: 'replyTo@open.gov.sg',
+          },
+        },
+      })
+      .mockRejectedValueOnce(
+        new HttpError({
+          response: {
+            data: {
+              code: 'invalid_template',
+              message: 'Recipient email is blacklisted',
+            },
+            status: 400,
+            statusText: 'Bad Request',
+          },
+        } as AxiosError),
+      )
+
+    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      PartialStepError,
+    )
+    expect($.http.post).toBeCalledTimes(2)
+    expect($.setActionItem).toHaveBeenCalledWith({
+      raw: {
+        status: ['ACCEPTED', 'BLACKLISTED'],
+        recipient: recipients,
+        subject: 'test subject',
+        body: 'test body',
+        from: 'jack',
+        reply_to: 'replyTo@open.gov.sg',
+      },
+    })
+    expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
+      flowName: $.flow.name,
+      flowId: $.flow.id,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+      blacklistedRecipients: [recipients[1]],
+    })
+    expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
+      flowName: $.flow.name,
+      flowId: $.flow.id,
+      userEmail: $.user.email,
+      executionId: $.execution.id,
+      submissionId: 'abc',
+      invalidAttachments: ['file-2.svg'],
+      hasInvalidAttachments: true,
     })
   })
 })

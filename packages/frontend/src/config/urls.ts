@@ -86,4 +86,5 @@ export const SUPPORT_FORM_LINK = 'https://go.gov.sg/plumber-support'
 export const LEARN_LINK = 'https://go.gov.sg/learn-plumber'
 
 // Landing page use cases
-export const HUMAN_RESOURCE = '/use-cases/human-resource'
+export const USE_CASES = '/use-cases'
+export const USE_CASES_SUBPAGE = (subpage: string) => `${USE_CASES}/${subpage}`
