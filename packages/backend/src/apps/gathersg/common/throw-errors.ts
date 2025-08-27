@@ -52,6 +52,17 @@ export default function throwGatherSGStepError({
     )
   }
 
+  // Case cannot be found
+  if (errorStatus === 404 && code === 'RESOURCE_NOT_FOUND') {
+    throw new StepError(
+      message,
+      'Check that you have entered an existing case uuid.',
+      position,
+      appName,
+      error,
+    )
+  }
+
   // catch all
   throw new StepError(
     `An error occurred: ${message}`,

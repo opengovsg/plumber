@@ -5,10 +5,9 @@ import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
 
-import { GatherSGError } from '../../common/types'
-import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
-
 import { requestSchema, responseSchema } from './schema'
+import HttpError from '@/errors/http'
+import throwGatherSGStepError from '../../common/throw-errors'
 
 const action: IRawAction = {
   name: 'Tag/Untag case',
@@ -50,12 +49,6 @@ const action: IRawAction = {
 
   async run($) {
     try {
-      const { caseUuid } = $.step.parameters
-      // Validation to prevent path traversals
-      validateDynamicFieldsAndThrowError({
-        caseUuid: String(caseUuid),
-      })
-
       const payload = requestSchema.parse($.step.parameters)
       const { tagOrUntag } = payload
       const rawResponse = await $.http.post(
@@ -85,16 +78,8 @@ const action: IRawAction = {
         )
       }
 
-      // Case cannot be found
-      const { code, message } =
-        (error.response?.data?.error as GatherSGError) || {}
-      if (error.response?.status === 404 && code === 'RESOURCE_NOT_FOUND') {
-        throw new StepError(
-          message,
-          'Check that you have entered an existing case uuid.',
-          $.step.position,
-          $.app.name,
-        )
+      if (error instanceof HttpError) {
+        throwGatherSGStepError({ $, error })
       }
 
       throw new StepError(

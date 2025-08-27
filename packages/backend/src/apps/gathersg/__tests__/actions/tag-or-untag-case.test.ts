@@ -12,7 +12,7 @@ const MOCK_RESPONSE = {
   traceId: 'trace-987654321',
 }
 
-const MOCK_CASE_UUID = 'abcde12345'
+const MOCK_CASE_UUID = 'abcdefghijkl1234567890' // have to be 22 characters long
 const MOCK_TAG_VALUE = 'urgent'
 
 const mocks = vi.hoisted(() => ({
@@ -106,14 +106,14 @@ describe('tag or untag case', () => {
   it('should throw step error for invalid regex case uuid', async () => {
     $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
-      'Your case uuid is of an invalid format',
+      'Please enter a valid case uuid',
     )
   })
 
   it('should throw step error for empty case uuid', async () => {
     $.step.parameters.caseUuid = ''
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
-      'Your case uuid is of an invalid format',
+      'Please do not leave the case uuid empty',
     )
   })
 
@@ -127,7 +127,7 @@ describe('tag or untag case', () => {
   it('should throw step error for invalid parameters (whitespace only case uuid)', async () => {
     $.step.parameters.caseUuid = '   '
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
-      'Your case uuid is of an invalid format',
+      'Please do not leave the case uuid empty',
     )
   })
 
