@@ -2,8 +2,8 @@ import { z } from 'zod'
 
 export const requestSchema = z
   .object({
-    caseId: z.string().trim().min(1, {
-      message: 'Please do not leave the case id empty',
+    caseUuid: z.string().trim().min(1, {
+      message: 'Please do not leave the case uuid empty',
     }),
     tagOrUntag: z.boolean(),
     tagValue: z.string().trim().min(1, {
@@ -11,7 +11,7 @@ export const requestSchema = z
     }),
   })
   .transform((data) => ({
-    caseId: data.caseId,
+    caseUuid: data.caseUuid,
     tagOrUntag: data.tagOrUntag,
     tag: data.tagValue,
   }))

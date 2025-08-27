@@ -12,7 +12,7 @@ const MOCK_RESPONSE = {
   traceId: 'trace-987654321',
 }
 
-const MOCK_CASE_ID = 'case-uuid-456'
+const MOCK_CASE_UUID = 'abcde12345'
 const MOCK_TAG_VALUE = 'urgent'
 
 const mocks = vi.hoisted(() => ({
@@ -37,7 +37,7 @@ describe('tag or untag case', () => {
         appKey: 'gathersg',
         position: 2,
         parameters: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
           tagOrUntag: true,
           tagValue: MOCK_TAG_VALUE,
         },
@@ -61,15 +61,15 @@ describe('tag or untag case', () => {
     await tagOrUntagCaseAction.run($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/cases/:caseId/tag',
+      '/cases/:caseUuid/tag',
       {
-        caseId: MOCK_CASE_ID,
+        caseUuid: MOCK_CASE_UUID,
         tagOrUntag: true,
         tag: MOCK_TAG_VALUE,
       },
       {
         urlPathParams: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
         },
       },
     )
@@ -80,15 +80,15 @@ describe('tag or untag case', () => {
     await tagOrUntagCaseAction.run($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/cases/:caseId/untag',
+      '/cases/:caseUuid/untag',
       {
-        caseId: MOCK_CASE_ID,
+        caseUuid: MOCK_CASE_UUID,
         tagOrUntag: false,
         tag: MOCK_TAG_VALUE,
       },
       {
         urlPathParams: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
         },
       },
     )
@@ -103,19 +103,32 @@ describe('tag or untag case', () => {
     })
   })
 
-  it('should throw step error for invalid parameters (empty case id)', async () => {
-    $.step.parameters.caseId = ''
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError()
+  it('should throw step error for invalid regex case uuid', async () => {
+    $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+      'Your case uuid is of an invalid format',
+    )
   })
 
-  it('should throw step error for invalid parameters (empty tag value)', async () => {
+  it('should throw step error for empty case uuid', async () => {
+    $.step.parameters.caseUuid = ''
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+      'Your case uuid is of an invalid format',
+    )
+  })
+
+  it('should throw step error for empty tag value', async () => {
     $.step.parameters.tagValue = ''
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError()
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+      'Please do not leave the tag empty',
+    )
   })
 
-  it('should throw step error for invalid parameters (whitespace only case id)', async () => {
-    $.step.parameters.caseId = '   '
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError()
+  it('should throw step error for invalid parameters (whitespace only case uuid)', async () => {
+    $.step.parameters.caseUuid = '   '
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+      'Your case uuid is of an invalid format',
+    )
   })
 
   it('should throw step error for invalid parameters (whitespace only tag value)', async () => {
@@ -187,15 +200,15 @@ describe('tag or untag case', () => {
     await tagOrUntagCaseAction.run($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
-      '/cases/:caseId/tag',
+      '/cases/:caseUuid/tag',
       {
-        caseId: MOCK_CASE_ID,
+        caseUuid: MOCK_CASE_UUID,
         tagOrUntag: true,
         tag: longTagValue,
       },
       {
         urlPathParams: {
-          caseId: MOCK_CASE_ID,
+          caseUuid: MOCK_CASE_UUID,
         },
       },
     )

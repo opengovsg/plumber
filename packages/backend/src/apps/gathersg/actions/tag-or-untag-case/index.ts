@@ -6,20 +6,22 @@ import { fromZodError } from 'zod-validation-error'
 import StepError, { GenericSolution } from '@/errors/step'
 
 import { GatherSGError } from '../../common/types'
+import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 
 import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Tag/Untag case',
   key: 'tagOrUntagCase',
-  description: 'Tag or untag a case based on the case id (UUID)',
+  description: 'Tag or untag a case based on the case uuid',
   arguments: [
     {
-      label: 'Case ID',
-      key: 'caseId',
+      label: 'Case UUID',
+      key: 'caseUuid',
       type: 'string' as const,
       description:
-        'You can only select a step variable here. You should be using a Tile to store your case IDs to make reference to.',
+        'You can only select a step variable here to make reference to.',
+
       required: true,
       variables: true,
       singleVariableSelection: true,
@@ -29,7 +31,7 @@ const action: IRawAction = {
       key: 'tagOrUntag',
       type: 'boolean-radio' as const,
       required: true,
-      description: 'Tag or Untag the case',
+      description: 'Tag or untag the case',
       value: true,
       options: [
         { label: 'Tag', value: true },
@@ -48,14 +50,20 @@ const action: IRawAction = {
 
   async run($) {
     try {
+      const { caseUuid } = $.step.parameters
+      // Validation to prevent path traversals
+      validateDynamicFieldsAndThrowError({
+        caseUuid: String(caseUuid),
+      })
+
       const payload = requestSchema.parse($.step.parameters)
       const { tagOrUntag } = payload
       const rawResponse = await $.http.post(
-        `/cases/:caseId/${tagOrUntag ? 'tag' : 'untag'}`,
+        `/cases/:caseUuid/${tagOrUntag ? 'tag' : 'untag'}`,
         payload,
         {
           urlPathParams: {
-            caseId: $.step.parameters.caseId,
+            caseUuid: $.step.parameters.caseUuid,
           },
         },
       )
@@ -79,11 +87,11 @@ const action: IRawAction = {
 
       // Case cannot be found
       const { code, message } =
-        (error.response.data?.error as GatherSGError) || {}
-      if (error.response.status === 404 && code === 'RESOURCE_NOT_FOUND') {
+        (error.response?.data?.error as GatherSGError) || {}
+      if (error.response?.status === 404 && code === 'RESOURCE_NOT_FOUND') {
         throw new StepError(
           message,
-          'Check that you have entered a valid case UUID.',
+          'Check that you have entered an existing case uuid.',
           $.step.position,
           $.app.name,
         )
