@@ -1,4 +1,5 @@
 import { z } from 'zod'
+
 import { CASE_UUID_REGEX } from '../../common/constants'
 
 export const requestSchema = z

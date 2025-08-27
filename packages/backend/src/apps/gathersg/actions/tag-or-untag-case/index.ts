@@ -3,11 +3,12 @@ import type { IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
+import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
-import { requestSchema, responseSchema } from './schema'
-import HttpError from '@/errors/http'
 import throwGatherSGStepError from '../../common/throw-errors'
+
+import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Tag/Untag case',
