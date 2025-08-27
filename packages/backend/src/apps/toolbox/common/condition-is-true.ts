@@ -90,6 +90,9 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
     case 'contains':
       result = field.toString().includes(value.toString())
       break
+    case 'begins':
+      result = field.toString().startsWith(value.toString())
+      break
     case 'empty':
       // `field` and `value` are a bit of a misnomer. They're both form fields
       // that the user inputs data into.  The "empty" condition is unary, so the

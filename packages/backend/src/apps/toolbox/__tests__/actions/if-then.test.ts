@@ -449,5 +449,29 @@ describe('If-then', () => {
         })
       },
     )
+
+    it.each([
+      { field: 'Hello', text: 'He', expectedResult: true },
+      { field: 'Hello', text: 'Me', expectedResult: false },
+      { field: 123, text: '12', expectedResult: true },
+      { field: 123, text: '32', expectedResult: false },
+    ])(
+      'should handle begins with condition',
+      async ({ field, text, expectedResult }) => {
+        $.step.parameters.conditions = [
+          {
+            field,
+            is: 'is',
+            condition: 'begins',
+            text,
+          },
+        ]
+
+        await ifThenAction.run($)
+        expect(mocks.setActionItem).toBeCalledWith({
+          raw: { isConditionMet: expectedResult },
+        })
+      },
+    )
   })
 })
