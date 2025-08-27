@@ -41,6 +41,8 @@ export default function ChooseConnection(
   const { selectedApp, selectedConnectionId } = modalState
   const connectionModalLabel = selectedApp?.auth?.connectionModalLabel
 
+  const isStepAbsent = !step?.key || !step?.appKey
+
   const onBack = () => {
     if (!selectedApp) {
       return
@@ -69,8 +71,8 @@ export default function ChooseConnection(
   return (
     <>
       {/* Hide back button only if step has both the key and appKey */}
-      <ModalHeader pt={0} mt={-4}>
-        {(!step?.key || !step?.appKey) && <BackButton onBack={onBack} />}
+      <ModalHeader pt={0} mt={isStepAbsent ? -4 : 0}>
+        {isStepAbsent && <BackButton onBack={onBack} />}
         <ConnectionHeader
           selectedApp={selectedApp}
           headerText={
