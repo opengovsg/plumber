@@ -58,6 +58,7 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
          */
         const hasCollaborators = await Flow.hasCollaborators({
           flowId,
+          trx,
         })
 
         if (!hasCollaborators) {
