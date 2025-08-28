@@ -5,49 +5,53 @@ import {
 } from '@plumber/types'
 
 import HttpError from '@/errors/http'
-import computeParameters from '@/helpers/compute-parameters'
-import ExecutionStep from '@/models/execution-step'
 
 import { GatherSGError } from '../common/types'
+
+/**
+ * Subset of result
+ */
+interface GatherSGCase {
+  uuid: string
+  createdAt: string
+  updatedAt: string
+  status: {
+    uuid: string
+    name: string
+    color: string
+    isFinal: boolean
+  }
+  caseRef: string
+  fields: Record<string, string | string[] | null | number>
+  tags: string[]
+}
 
 const dynamicData: IDynamicData = {
   key: 'getCaseFields',
   name: 'Get Case Fields',
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     try {
-      // This action only allows a step variable which we have to attempt to compute the parameter value, thinking if there is a better way to do this
-      // TODO: see if we can refresh the case fields from the API instead of using the cached data because right now, the user has to manually refresh the case fields to get the latest data
-      const { caseUuid } = $.step.parameters
-      if (!caseUuid) {
+      const { data: searchResult } = await $.http.post<{
+        traceId: string
+        total: number
+        data: GatherSGCase[]
+      }>('/cases/search', {
+        page: 1,
+        size: 1,
+        sort: 'createdAt',
+        order: 'desc',
+      })
+
+      /**
+       * No cases found
+       */
+      if (searchResult.data.length === 0) {
         return {
           data: [],
         }
       }
 
-      const priorExecutionSteps = await ExecutionStep.query().where({
-        execution_id: $.flow.testExecutionId,
-        status: 'success',
-      })
-
-      const computedParameters = computeParameters(
-        $.step.parameters,
-        priorExecutionSteps,
-      )
-      const computedCaseUuid = computedParameters.caseUuid as string
-
-      const { data: responseData } = await $.http.get(`/cases/:caseUuid`, {
-        urlPathParams: {
-          caseUuid: computedCaseUuid,
-        },
-      })
-
-      if (!responseData?.data) {
-        return {
-          data: [],
-        }
-      }
-
-      const caseFields: object = responseData.data.fields
+      const caseFields: object = searchResult.data[0].fields
       const updatedCaseFields: { name: string; value: string }[] = []
       for (const [field, value] of Object.entries(caseFields)) {
         // Right now, we cannot support adding of array of objects as a value so just going to exclude to not cause errors unnecessarily
@@ -87,7 +91,7 @@ const dynamicData: IDynamicData = {
 
       return {
         data: [],
-        error: error?.message || 'Unknown error',
+        error: error?.message || error?.code || 'Unknown error',
       }
     }
   },

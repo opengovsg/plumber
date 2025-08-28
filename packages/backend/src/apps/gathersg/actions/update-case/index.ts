@@ -20,11 +20,9 @@ const action: IRawAction = {
       label: 'Case UUID',
       key: 'caseUuid',
       type: 'string' as const,
-      description:
-        'You can only select a step variable here to make reference to.',
+      description: 'Enter the case uuid you want to update',
       required: true,
       variables: true,
-      singleVariableSelection: true,
     },
     // TODO: see if it is possible to get all possible statuses from the API
     {
@@ -34,16 +32,12 @@ const action: IRawAction = {
       description: 'Enter the status you want to update the case to.',
       required: false,
       variables: true,
-      hiddenIf: {
-        fieldKey: 'caseUuid',
-        op: 'is_empty',
-      },
     },
     {
       label: 'Case fields',
       key: 'caseFields',
       type: 'multirow-multicol' as const,
-      required: true,
+      required: false,
       description:
         'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet.',
 
@@ -64,10 +58,6 @@ const action: IRawAction = {
                 name: 'key',
                 value: 'getCaseFields',
               },
-              {
-                name: 'parameters.caseUuid',
-                value: '{parameters.caseUuid}',
-              },
             ],
           },
           customStyle: { flex: 2 },
@@ -78,9 +68,11 @@ const action: IRawAction = {
           type: 'dropdown' as const,
           showOptionValue: false,
           required: true,
+          value: 'string',
+          variables: false,
           options: [
             {
-              label: 'String',
+              label: 'Text',
               value: ensureZodEnumValue(fieldTypeEnum, 'string'),
             },
             {
@@ -108,10 +100,6 @@ const action: IRawAction = {
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],
-      hiddenIf: {
-        fieldKey: 'caseUuid',
-        op: 'is_empty',
-      },
     },
   ],
 
