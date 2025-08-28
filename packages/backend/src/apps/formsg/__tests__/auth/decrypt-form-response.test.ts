@@ -103,7 +103,6 @@ describe('decrypt form response', () => {
         userId: 'userid',
         hasFileProcessingActions: false,
         name: 'test flow',
-        testExecutionId: 'testExecutionId',
       },
       user: {
         id: 'userid',

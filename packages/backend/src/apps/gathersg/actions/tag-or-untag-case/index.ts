@@ -19,12 +19,9 @@ const action: IRawAction = {
       label: 'Case UUID',
       key: 'caseUuid',
       type: 'string' as const,
-      description:
-        'You can only select a step variable here to make reference to.',
-
+      description: 'Enter the case uuid you want to tag or untag',
       required: true,
       variables: true,
-      singleVariableSelection: true,
     },
     {
       label: 'Tag or untag',
