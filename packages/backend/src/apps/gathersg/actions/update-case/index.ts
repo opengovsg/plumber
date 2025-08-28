@@ -73,7 +73,7 @@ const action: IRawAction = {
           variables: false,
           options: [
             {
-              label: 'String',
+              label: 'Text',
               value: ensureZodEnumValue(fieldTypeEnum, 'string'),
             },
             {
