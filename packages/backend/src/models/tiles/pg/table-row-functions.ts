@@ -17,6 +17,8 @@ import {
   UpdateRowInput,
 } from '../types'
 
+import { isValidNumericString, VALID_NUMBER_REGEX_STRING } from './helpers'
+
 function formatTableRow(
   row: Record<string, string>,
   tableId: string,
@@ -127,7 +129,7 @@ export const patchTableRow = async ({
               +value,
             ]),
           )
-          .where(key, '~', '^[-+]?\\d*\\.?\\d+$')
+          .where(key, '~', VALID_NUMBER_REGEX_STRING)
       },
     )
 
@@ -144,7 +146,7 @@ export const patchTableRow = async ({
               +value,
             ]),
           )
-          .where(key, '~', '^[-+]?\\d*\\.?\\d+$')
+          .where(key, '~', VALID_NUMBER_REGEX_STRING)
       },
     )
 
@@ -190,6 +192,12 @@ function addFiltersToQuery(
   query: Knex.QueryBuilder,
   filters: TableRowFilter[],
 ) {
+  const NumericOperators = {
+    [TableRowFilterOperator.GreaterThan]: '>',
+    [TableRowFilterOperator.GreaterThanOrEquals]: '>=',
+    [TableRowFilterOperator.LessThan]: '<',
+    [TableRowFilterOperator.LessThanOrEquals]: '<=',
+  }
   for (const filter of filters) {
     switch (filter.operator) {
       case TableRowFilterOperator.Equals:
@@ -199,17 +207,30 @@ function addFiltersToQuery(
         query.where(filter.columnId, 'ilike', `%${filter.value}%`)
         break
       case TableRowFilterOperator.GreaterThan:
-        query.where(filter.columnId, '>', filter.value)
-        break
       case TableRowFilterOperator.GreaterThanOrEquals:
-        query.where(filter.columnId, '>=', filter.value)
-        break
       case TableRowFilterOperator.LessThan:
-        query.where(filter.columnId, '<', filter.value)
+      case TableRowFilterOperator.LessThanOrEquals: {
+        // if the value to compare against is a numeric string number,
+        // we cast the stored values to a number and compare numerically
+        if (isValidNumericString(filter.value)) {
+          query
+            .where(filter.columnId, '~', VALID_NUMBER_REGEX_STRING)
+            .andWhere(
+              tilesClient.raw('??::numeric', [filter.columnId]),
+              NumericOperators[filter.operator],
+              +filter.value,
+            )
+        } else {
+          // if the value to compare against is a string, we compare strings
+          // regardless of whether the stored value is a number or a string
+          query.where(
+            filter.columnId,
+            NumericOperators[filter.operator],
+            filter.value,
+          )
+        }
         break
-      case TableRowFilterOperator.LessThanOrEquals:
-        query.where(filter.columnId, '<=', filter.value)
-        break
+      }
       case TableRowFilterOperator.IsEmpty:
         query.where((builder) => {
           builder.whereNull(filter.columnId).orWhere(filter.columnId, '')
