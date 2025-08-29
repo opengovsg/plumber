@@ -386,18 +386,23 @@ describe('table-row-functions', () => {
   describe('getTableRows', () => {
     let dataArray: Record<string, string>[]
     let rowIds: string[]
+    const NUM_ROWS = 9
     beforeEach(async () => {
       // Add test rows for filtering tests
-      dataArray = new Array(5).fill(0).map(() =>
+      dataArray = new Array(NUM_ROWS).fill(0).map(() =>
         generateMockTableRowData({
           columnIds: dummyColumnIds,
         }),
       )
-      dataArray[0][dummyColumnIds[3]] = '0'
+      dataArray[0][dummyColumnIds[3]] = '5'
       dataArray[1][dummyColumnIds[3]] = '10'
       dataArray[2][dummyColumnIds[3]] = '20'
       dataArray[3][dummyColumnIds[3]] = '30'
       dataArray[4][dummyColumnIds[3]] = '40'
+      dataArray[5][dummyColumnIds[3]] = '140'
+      dataArray[6][dummyColumnIds[3]] = 'abc'
+      dataArray[7][dummyColumnIds[3]] = 'def'
+      dataArray[8][dummyColumnIds[3]] = 'ghi'
       rowIds = await createTableRows({
         tableId: dummyTable.id,
         dataArray,
@@ -406,7 +411,7 @@ describe('table-row-functions', () => {
 
     it('should return all rows when no filters are specified', async () => {
       const result = await getTableRows({ tableId: dummyTable.id })
-      expect(result.rows).toHaveLength(5)
+      expect(result.rows).toHaveLength(NUM_ROWS)
     })
 
     it('should return only specified columns', async () => {
@@ -415,7 +420,7 @@ describe('table-row-functions', () => {
         columnIds: [dummyColumnIds[0]],
       })
 
-      expect(result.rows).toHaveLength(5)
+      expect(result.rows).toHaveLength(NUM_ROWS)
       expect(Object.keys(result.rows[0].data)).toEqual([dummyColumnIds[0]])
     })
 
@@ -458,42 +463,171 @@ describe('table-row-functions', () => {
           {
             columnId: dummyColumnIds[3],
             operator: TableRowFilterOperator.GreaterThan,
-            value: '25',
+            value: '20',
           },
         ],
       })
 
-      expect(result.rows).toHaveLength(2)
+      expect(result.rows).toHaveLength(3)
       expect(result.rows.map((r) => r.rowId).sort()).toEqual([
         rowIds[3],
         rowIds[4],
+        rowIds[5],
       ])
+
+      const result2 = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[3],
+            operator: TableRowFilterOperator.GreaterThan,
+            value: 'abc',
+          },
+        ],
+      })
+
+      expect(result2.rows).toHaveLength(2)
+      expect(result2.rows.map((r) => r.rowId).sort()).toEqual([
+        rowIds[7],
+        rowIds[8],
+      ])
+    })
+
+    it('should filter rows with greaterThanOrEquals operator', async () => {
+      const result = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[3],
+            operator: TableRowFilterOperator.GreaterThanOrEquals,
+            value: '20',
+          },
+        ],
+      })
+
+      expect(result.rows).toHaveLength(4)
+      expect(result.rows.map((r) => r.rowId).sort()).toEqual([
+        rowIds[2],
+        rowIds[3],
+        rowIds[4],
+        rowIds[5],
+      ])
+
+      const result2 = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[3],
+            operator: TableRowFilterOperator.GreaterThanOrEquals,
+            value: 'abc',
+          },
+        ],
+      })
+
+      expect(result2.rows).toHaveLength(3)
+      expect(result2.rows.map((r) => r.rowId).sort()).toEqual([
+        rowIds[6],
+        rowIds[7],
+        rowIds[8],
+      ])
+    })
+
+    it('should filter rows with lessThan operator', async () => {
+      const result = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[3],
+            operator: TableRowFilterOperator.LessThan,
+            value: '30',
+          },
+        ],
+      })
+
+      expect(result.rows).toHaveLength(3)
+      expect(result.rows.map((r) => r.rowId).sort()).toEqual([
+        rowIds[0],
+        rowIds[1],
+        rowIds[2],
+      ])
+
+      const result2 = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[3],
+            operator: TableRowFilterOperator.LessThan,
+            value: 'aaa',
+          },
+        ],
+      })
+
+      expect(result2.rows).toHaveLength(6)
+      expect(result2.rows.map((r) => r.rowId).sort()).toEqual(
+        rowIds.slice(0, -3),
+      )
+    })
+
+    it('should filter rows with lessThanOrEquals operator', async () => {
+      const result = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[3],
+            operator: TableRowFilterOperator.LessThanOrEquals,
+            value: '20',
+          },
+        ],
+      })
+
+      expect(result.rows).toHaveLength(3)
+      expect(result.rows.map((r) => r.rowId).sort()).toEqual([
+        rowIds[0],
+        rowIds[1],
+        rowIds[2],
+      ])
+
+      const result2 = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[3],
+            operator: TableRowFilterOperator.LessThanOrEquals,
+            value: 'abc',
+          },
+        ],
+      })
+
+      expect(result2.rows).toHaveLength(7)
+      expect(result2.rows.map((r) => r.rowId).sort()).toEqual(
+        rowIds.slice(0, -2),
+      )
     })
 
     it('should return rows with pagination using scanLimit and cursor', async () => {
       // First page
       const firstPage = await getTableRows({
         tableId: dummyTable.id,
-        scanLimit: 2,
+        scanLimit: 4,
       })
 
-      expect(firstPage.rows).toHaveLength(2)
+      expect(firstPage.rows).toHaveLength(4)
       expect(firstPage.stringifiedCursor).not.toBeNull()
 
       // Second page
       const secondPage = await getTableRows({
         tableId: dummyTable.id,
-        scanLimit: 2,
+        scanLimit: 4,
         stringifiedCursor: firstPage.stringifiedCursor,
       })
 
-      expect(secondPage.rows).toHaveLength(2)
+      expect(secondPage.rows).toHaveLength(4)
       expect(secondPage.stringifiedCursor).not.toBeNull()
 
       // Third page
       const thirdPage = await getTableRows({
         tableId: dummyTable.id,
-        scanLimit: 2,
+        scanLimit: 4,
         stringifiedCursor: secondPage.stringifiedCursor,
       })
 
@@ -509,8 +643,8 @@ describe('table-row-functions', () => {
 
       // Since rows are ordered by rowId, which follows creation order,
       // we expect the names to be in reverse creation order
-      expect(result.rows[0].rowId).toBe(rowIds[4])
-      expect(result.rows[result.rows.length - 1].rowId).toBe(rowIds[0])
+      expect(result.rows[0].rowId).toBe(rowIds[NUM_ROWS - 1])
+      expect(result.rows[NUM_ROWS - 1].rowId).toBe(rowIds[0])
     })
   })
 

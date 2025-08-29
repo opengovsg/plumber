@@ -190,7 +190,26 @@ function addFiltersToQuery(
   query: Knex.QueryBuilder,
   filters: TableRowFilter[],
 ) {
+  // This regex is used to validate that a string is a valid number
+  // It matches strings that start with an optional minus sign, followed by an optional zero,
+  // or any number from 1 to 9 followed by any number of digits, optionally followed by a decimal point and any number of digits.
+  // Examples: "123", "-456", "0.789", "-0.123", "123.456", "-456.789"
+  const VALID_NUMBER_REGEX = '^-?(0|[1-9]\\d*)(\\.\\d+)?$'
+
   for (const filter of filters) {
+    const isValueNumber = !isNaN(+filter.value)
+
+    // use raw expression here to avoid type errors
+    let castedColumn: Knex.Raw = tilesClient.raw('??', [filter.columnId])
+    let castedValue: number | string = filter.value
+
+    // if the value to compare against is a number, we case the stored values to a number if
+    // they are valid numeric strings, or else we compare them string to string
+    if (isValueNumber) {
+      query.where(filter.columnId, '~', VALID_NUMBER_REGEX)
+      castedColumn = tilesClient.raw('??::numeric', [filter.columnId])
+      castedValue = +filter.value
+    }
     switch (filter.operator) {
       case TableRowFilterOperator.Equals:
         query.where(filter.columnId, '=', filter.value)
@@ -199,16 +218,16 @@ function addFiltersToQuery(
         query.where(filter.columnId, 'ilike', `%${filter.value}%`)
         break
       case TableRowFilterOperator.GreaterThan:
-        query.where(filter.columnId, '>', filter.value)
+        query.where(castedColumn, '>', castedValue)
         break
       case TableRowFilterOperator.GreaterThanOrEquals:
-        query.where(filter.columnId, '>=', filter.value)
+        query.where(castedColumn, '>=', castedValue)
         break
       case TableRowFilterOperator.LessThan:
-        query.where(filter.columnId, '<', filter.value)
+        query.where(castedColumn, '<', castedValue)
         break
       case TableRowFilterOperator.LessThanOrEquals:
-        query.where(filter.columnId, '<=', filter.value)
+        query.where(castedColumn, '<=', castedValue)
         break
       case TableRowFilterOperator.IsEmpty:
         query.where((builder) => {
