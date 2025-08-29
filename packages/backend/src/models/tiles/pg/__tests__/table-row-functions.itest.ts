@@ -438,6 +438,20 @@ describe('table-row-functions', () => {
 
       expect(result.rows).toHaveLength(1)
       expect(result.rows[0].rowId).toBe(rowIds[0])
+
+      const result2 = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[3],
+            operator: TableRowFilterOperator.Equals,
+            value: '5',
+          },
+        ],
+      })
+
+      expect(result2.rows).toHaveLength(1)
+      expect(result2.rows[0].rowId).toBe(rowIds[0])
     })
 
     it('should filter rows with contains operator', async () => {
