@@ -104,7 +104,9 @@ const authentication = shield(
       loginWithSgid: rateLimitRule({ window: '1s', max: 5 }),
       loginWithSelectedSgid: rateLimitRule({ window: '1s', max: 5 }),
       loginWithSso: rateLimitRule({ window: '1s', max: 5 }),
+      admin: isAdminOperation,
     },
+    AdminMutation: isAdminOperation,
   },
   {
     allowExternalErrors: true,
