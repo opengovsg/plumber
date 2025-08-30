@@ -386,7 +386,7 @@ describe('table-row-functions', () => {
   describe('getTableRows', () => {
     let dataArray: Record<string, string>[]
     let rowIds: string[]
-    const NUM_ROWS = 9
+    const NUM_ROWS = 10
     beforeEach(async () => {
       // Add test rows for filtering tests
       dataArray = new Array(NUM_ROWS).fill(0).map(() =>
@@ -394,6 +394,31 @@ describe('table-row-functions', () => {
           columnIds: dummyColumnIds,
         }),
       )
+      // column2 (iso strings)
+      dataArray[0][dummyColumnIds[1]] = '2025-01-01T00:00:00.000'
+      dataArray[1][dummyColumnIds[1]] = '2025-02-01T00:00:00.000'
+      dataArray[2][dummyColumnIds[1]] = '2025-03-01T00:00:00.000'
+      dataArray[3][dummyColumnIds[1]] = '2025-04-01'
+      dataArray[4][dummyColumnIds[1]] = '2025-05-01T00:00:00.000Z'
+      dataArray[5][dummyColumnIds[1]] = '2025-05-01T10:00:00.000Z'
+      dataArray[6][dummyColumnIds[1]] = '2025-05-03T00:00:00.000'
+      dataArray[7][dummyColumnIds[1]] = '2025-05-01T00:00:00.000+08:00'
+      dataArray[8][dummyColumnIds[1]] = '2025-05-01T00:00:00.000-08:00'
+      dataArray[9][dummyColumnIds[1]] = '2025-05-01T00:00:00.000'
+
+      //  column3 (isEmpty, beginsWith)
+      dataArray[0][dummyColumnIds[2]] = 'even'
+      dataArray[1][dummyColumnIds[2]] = null
+      dataArray[2][dummyColumnIds[2]] = 'even'
+      dataArray[3][dummyColumnIds[2]] = ''
+      dataArray[4][dummyColumnIds[2]] = 'even'
+      delete dataArray[5][dummyColumnIds[2]]
+      dataArray[6][dummyColumnIds[2]] = 'even'
+      dataArray[7][dummyColumnIds[2]] = undefined
+      dataArray[8][dummyColumnIds[2]] = 'even'
+      dataArray[9][dummyColumnIds[2]] = null
+
+      // column4 (numeric operators)
       dataArray[0][dummyColumnIds[3]] = '5'
       dataArray[1][dummyColumnIds[3]] = '10'
       dataArray[2][dummyColumnIds[3]] = '20'
@@ -403,6 +428,7 @@ describe('table-row-functions', () => {
       dataArray[6][dummyColumnIds[3]] = 'abc'
       dataArray[7][dummyColumnIds[3]] = 'def'
       dataArray[8][dummyColumnIds[3]] = 'ghi'
+      dataArray[9][dummyColumnIds[3]] = '-9.99'
       rowIds = await createTableRows({
         tableId: dummyTable.id,
         dataArray,
@@ -424,7 +450,7 @@ describe('table-row-functions', () => {
       expect(Object.keys(result.rows[0].data)).toEqual([dummyColumnIds[0]])
     })
 
-    it('should filter rows with equals operator', async () => {
+    it('should filter rows with equals operator (string)', async () => {
       const result = await getTableRows({
         tableId: dummyTable.id,
         filters: [
@@ -438,7 +464,8 @@ describe('table-row-functions', () => {
 
       expect(result.rows).toHaveLength(1)
       expect(result.rows[0].rowId).toBe(rowIds[0])
-
+    })
+    it('should filter rows with equals operator (numeric string)', async () => {
       const result2 = await getTableRows({
         tableId: dummyTable.id,
         filters: [
@@ -454,7 +481,7 @@ describe('table-row-functions', () => {
       expect(result2.rows[0].rowId).toBe(rowIds[0])
     })
 
-    it('should filter rows with contains operator', async () => {
+    it('should filter rows with contains operator (string)', async () => {
       const result = await getTableRows({
         tableId: dummyTable.id,
         filters: [
@@ -470,25 +497,55 @@ describe('table-row-functions', () => {
       expect(result.rows[0].rowId).toBe(rowIds[1])
     })
 
-    it('should filter rows with greaterThan operator', async () => {
+    it('should filter rows with contains operator (numeric string)', async () => {
       const result = await getTableRows({
         tableId: dummyTable.id,
         filters: [
           {
             columnId: dummyColumnIds[3],
-            operator: TableRowFilterOperator.GreaterThan,
-            value: '20',
+            operator: TableRowFilterOperator.Contains,
+            value: '4',
           },
         ],
       })
 
-      expect(result.rows).toHaveLength(3)
+      expect(result.rows).toHaveLength(2)
       expect(result.rows.map((r) => r.rowId).sort()).toEqual([
-        rowIds[3],
         rowIds[4],
         rowIds[5],
       ])
+    })
 
+    it.each([
+      ['20', [3, 4, 5]],
+      ['-20', [0, 1, 2, 3, 4, 5, 9]],
+      ['0', [0, 1, 2, 3, 4, 5]],
+      ['10', [2, 3, 4, 5]],
+      ['140', []],
+      ['100', [5]],
+      ['-0.1', [0, 1, 2, 3, 4, 5]],
+      ['-9.99', [0, 1, 2, 3, 4, 5]],
+    ])(
+      'should filter rows with greaterThan operator (numeric string)',
+      async (value: string, expectedRowIds: number[]) => {
+        const result = await getTableRows({
+          tableId: dummyTable.id,
+          filters: [
+            {
+              columnId: dummyColumnIds[3],
+              operator: TableRowFilterOperator.GreaterThan,
+              value,
+            },
+          ],
+        })
+
+        expect(result.rows.map((r) => r.rowId).sort()).toEqual(
+          expectedRowIds.map((i) => rowIds[i]),
+        )
+      },
+    )
+
+    it('should filter rows with greaterThan operator (string)', async () => {
       const result2 = await getTableRows({
         tableId: dummyTable.id,
         filters: [
@@ -507,26 +564,37 @@ describe('table-row-functions', () => {
       ])
     })
 
-    it('should filter rows with greaterThanOrEquals operator', async () => {
-      const result = await getTableRows({
-        tableId: dummyTable.id,
-        filters: [
-          {
-            columnId: dummyColumnIds[3],
-            operator: TableRowFilterOperator.GreaterThanOrEquals,
-            value: '20',
-          },
-        ],
-      })
+    it.each([
+      ['20', [2, 3, 4, 5]],
+      ['-20', [0, 1, 2, 3, 4, 5, 9]],
+      ['0', [0, 1, 2, 3, 4, 5]],
+      ['10', [1, 2, 3, 4, 5]],
+      ['140', [5]],
+      ['100', [5]],
+      ['-0.1', [0, 1, 2, 3, 4, 5]],
+      ['-9.99', [0, 1, 2, 3, 4, 5, 9]],
+    ])(
+      'should filter rows with greaterThanOrEquals operator',
+      async (value: string, expectedRowIds: number[]) => {
+        const result = await getTableRows({
+          tableId: dummyTable.id,
+          filters: [
+            {
+              columnId: dummyColumnIds[3],
+              operator: TableRowFilterOperator.GreaterThanOrEquals,
+              value,
+            },
+          ],
+        })
 
-      expect(result.rows).toHaveLength(4)
-      expect(result.rows.map((r) => r.rowId).sort()).toEqual([
-        rowIds[2],
-        rowIds[3],
-        rowIds[4],
-        rowIds[5],
-      ])
+        expect(result.rows).toHaveLength(expectedRowIds.length)
+        expect(result.rows.map((r) => r.rowId).sort()).toEqual(
+          expectedRowIds.map((i) => rowIds[i]),
+        )
+      },
+    )
 
+    it('should filter rows with greaterThanOrEquals operator (string)', async () => {
       const result2 = await getTableRows({
         tableId: dummyTable.id,
         filters: [
@@ -546,25 +614,37 @@ describe('table-row-functions', () => {
       ])
     })
 
-    it('should filter rows with lessThan operator', async () => {
-      const result = await getTableRows({
-        tableId: dummyTable.id,
-        filters: [
-          {
-            columnId: dummyColumnIds[3],
-            operator: TableRowFilterOperator.LessThan,
-            value: '30',
-          },
-        ],
-      })
+    it.each([
+      ['20', [0, 1, 9]],
+      ['-20', []],
+      ['0', [9]],
+      ['10', [0, 9]],
+      ['140', [0, 1, 2, 3, 4, 9]],
+      ['100', [0, 1, 2, 3, 4, 9]],
+      ['-0.1', [9]],
+      ['-9.99', []],
+    ])(
+      'should filter rows with lessThan operator',
+      async (value: string, expectedRowIds: number[]) => {
+        const result = await getTableRows({
+          tableId: dummyTable.id,
+          filters: [
+            {
+              columnId: dummyColumnIds[3],
+              operator: TableRowFilterOperator.LessThan,
+              value,
+            },
+          ],
+        })
 
-      expect(result.rows).toHaveLength(3)
-      expect(result.rows.map((r) => r.rowId).sort()).toEqual([
-        rowIds[0],
-        rowIds[1],
-        rowIds[2],
-      ])
+        expect(result.rows).toHaveLength(expectedRowIds.length)
+        expect(result.rows.map((r) => r.rowId).sort()).toEqual(
+          expectedRowIds.map((i) => rowIds[i]),
+        )
+      },
+    )
 
+    it('should filter rows with lessThan operator (string)', async () => {
       const result2 = await getTableRows({
         tableId: dummyTable.id,
         filters: [
@@ -576,31 +656,49 @@ describe('table-row-functions', () => {
         ],
       })
 
-      expect(result2.rows).toHaveLength(6)
-      expect(result2.rows.map((r) => r.rowId).sort()).toEqual(
-        rowIds.slice(0, -3),
-      )
-    })
-
-    it('should filter rows with lessThanOrEquals operator', async () => {
-      const result = await getTableRows({
-        tableId: dummyTable.id,
-        filters: [
-          {
-            columnId: dummyColumnIds[3],
-            operator: TableRowFilterOperator.LessThanOrEquals,
-            value: '20',
-          },
-        ],
-      })
-
-      expect(result.rows).toHaveLength(3)
-      expect(result.rows.map((r) => r.rowId).sort()).toEqual([
+      expect(result2.rows).toHaveLength(7)
+      expect(result2.rows.map((r) => r.rowId).sort()).toEqual([
         rowIds[0],
         rowIds[1],
         rowIds[2],
+        rowIds[3],
+        rowIds[4],
+        rowIds[5],
+        rowIds[9],
       ])
+    })
 
+    it.each([
+      ['20', [0, 1, 2, 9]],
+      ['-20', []],
+      ['0', [9]],
+      ['10', [0, 1, 9]],
+      ['140', [0, 1, 2, 3, 4, 5, 9]],
+      ['100', [0, 1, 2, 3, 4, 9]],
+      ['-0.1', [9]],
+      ['-9.99', [9]],
+    ])(
+      'should filter rows with lessThanOrEquals operator',
+      async (value: string, expectedRowIds: number[]) => {
+        const result = await getTableRows({
+          tableId: dummyTable.id,
+          filters: [
+            {
+              columnId: dummyColumnIds[3],
+              operator: TableRowFilterOperator.LessThanOrEquals,
+              value,
+            },
+          ],
+        })
+
+        expect(result.rows).toHaveLength(expectedRowIds.length)
+        expect(result.rows.map((r) => r.rowId).sort()).toEqual(
+          expectedRowIds.map((i) => rowIds[i]),
+        )
+      },
+    )
+
+    it('should filter rows with lessThanOrEquals operator (string)', async () => {
       const result2 = await getTableRows({
         tableId: dummyTable.id,
         filters: [
@@ -612,10 +710,60 @@ describe('table-row-functions', () => {
         ],
       })
 
-      expect(result2.rows).toHaveLength(7)
-      expect(result2.rows.map((r) => r.rowId).sort()).toEqual(
-        rowIds.slice(0, -2),
-      )
+      expect(result2.rows.map((r) => r.rowId).sort()).toEqual([
+        rowIds[0],
+        rowIds[1],
+        rowIds[2],
+        rowIds[3],
+        rowIds[4],
+        rowIds[5],
+        rowIds[6],
+        rowIds[9],
+      ])
+    })
+
+    it('should filter rows with isEmpty operator (nullish, undefined, empty string)', async () => {
+      const result = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[2],
+            operator: TableRowFilterOperator.IsEmpty,
+            value: '',
+          },
+        ],
+      })
+
+      expect(result.rows).toHaveLength(5)
+      expect(result.rows.map((r) => r.rowId).sort()).toEqual([
+        rowIds[1],
+        rowIds[3],
+        rowIds[5],
+        rowIds[7],
+        rowIds[9],
+      ])
+    })
+
+    it('should filter rows with beginsWith operator (string)', async () => {
+      const result = await getTableRows({
+        tableId: dummyTable.id,
+        filters: [
+          {
+            columnId: dummyColumnIds[2],
+            operator: TableRowFilterOperator.BeginsWith,
+            value: 'ev',
+          },
+        ],
+      })
+
+      expect(result.rows).toHaveLength(5)
+      expect(result.rows.map((r) => r.rowId).sort()).toEqual([
+        rowIds[0],
+        rowIds[2],
+        rowIds[4],
+        rowIds[6],
+        rowIds[8],
+      ])
     })
 
     it('should return rows with pagination using scanLimit and cursor', async () => {
@@ -641,11 +789,11 @@ describe('table-row-functions', () => {
       // Third page
       const thirdPage = await getTableRows({
         tableId: dummyTable.id,
-        scanLimit: 4,
+        scanLimit: 999,
         stringifiedCursor: secondPage.stringifiedCursor,
       })
 
-      expect(thirdPage.rows).toHaveLength(1)
+      expect(thirdPage.rows).toHaveLength(NUM_ROWS - 8)
       expect(thirdPage.stringifiedCursor).toBeNull() // No more pages
     })
 
