@@ -60,7 +60,9 @@ type AdminQuery {
   getExecutionOwner(executionId: String!): User
   getTableOwner(tableId: String!): User
   searchUsersByEmail(query: String!): [User!]!
+  getPausedGroups(appKey: String!): [String!]!
 }
+
 
 type Mutation {
   createConnection(input: CreateConnectionInput): Connection
@@ -117,6 +119,14 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
+  # Admin mutations
+  admin: AdminMutation!
+}
+
+
+type AdminMutation {
+  pauseGroup(input: PauseGroupInput!): Boolean
+  resumeGroup(input: ResumeGroupInput!): Boolean
 }
 
 """
@@ -985,6 +995,20 @@ enum TemplateTagType {
 }
 
 # End of template types
+
+# Start of admin types
+
+input PauseGroupInput {
+  groupId: String!
+  appKey: String!
+}
+
+input ResumeGroupInput {
+  groupId: String!
+  appKey: String!
+}
+
+# End of admin types
 
 schema {
   query: Query

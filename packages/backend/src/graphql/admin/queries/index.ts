@@ -2,6 +2,7 @@ import type { AdminQueryResolvers } from '../../__generated__/types.generated'
 
 import getExecutionOwner from './get-execution-owner'
 import getFlowOwner from './get-flow-owner'
+import getPausedGroups from './get-paused-groups'
 import getTableOwner from './get-table-owner'
 import searchUsersByEmail from './search-users-by-email'
 
@@ -10,4 +11,5 @@ export default {
   getFlowOwner,
   getTableOwner,
   searchUsersByEmail,
+  getPausedGroups,
 } satisfies AdminQueryResolvers
