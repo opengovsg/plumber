@@ -18,7 +18,7 @@ export function createBodyErrorMessage(
   flowName: string,
   pipeId: string,
 ): string {
-  const currDateTime = DateTime.now().toFormat('MMM dd yyyy, hh:mm a')
+  const currDateTime = DateTime.now().toPlumberFormat('MMM dd yyyy, hh:mm a')
   const searchParams = new URLSearchParams()
   searchParams.set('status', 'failure')
 

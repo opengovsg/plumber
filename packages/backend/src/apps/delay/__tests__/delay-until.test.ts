@@ -1,3 +1,5 @@
+import '@/types/luxon-extensions'
+
 import { type IGlobalVariable } from '@plumber/types'
 
 import { DateTime } from 'luxon'
@@ -180,8 +182,8 @@ describe('Delay until action', () => {
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toBeCalledWith({
         raw: {
-          delayUntil: DateTime.now().toFormat('dd MMM yyyy'),
-          delayUntilTime: DateTime.now().toFormat('HH:mm'),
+          delayUntil: DateTime.now().toPlumberFormat('dd MMM yyyy'),
+          delayUntilTime: DateTime.now().toPlumberFormat('HH:mm'),
         },
       })
     })

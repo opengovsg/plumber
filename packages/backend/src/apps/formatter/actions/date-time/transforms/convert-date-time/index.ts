@@ -1,6 +1,5 @@
 import type { IGlobalVariable } from '@plumber/types'
 
-import { DateTime } from 'luxon'
 import { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
@@ -36,22 +35,6 @@ function getParams($: IGlobalVariable) /* inferred return type */ {
   }
 }
 
-// helper function to check if format contains dd LLL yyyy, if so, force en-US to maintain consistency with FormSG
-function formatStringToUSLocale(formatString: string, dateTime: DateTime) {
-  switch (formatString) {
-    case 'dd LLL yyyy':
-    case 'dd LLL yyyy hh:mm a':
-    case 'dd LLL yyyy hh:mm:ss a': {
-      const dateTimeString = dateTime.toFormat(formatString, {
-        locale: 'en-SG', // TODO: ???
-      })
-      return dateTimeString
-    }
-    default:
-      return dateTime.toFormat(formatString)
-  }
-}
-
 export const spec = {
   id: 'formatDateTime',
 
@@ -67,13 +50,13 @@ export const spec = {
       const { dateTimeFormat, formatString } = getParams($)
       const dateTime = parseDateTime(dateTimeFormat, valueToTransform)
 
-      // check if format is dd LLL yyyy, if so, force en-US to maintain consistency with FormSG
       $.setActionItem({
         raw: {
-          result: formatStringToUSLocale(formatString, dateTime),
+          result: dateTime.toPlumberFormat(formatString),
         },
       })
     } catch (error) {
+      console.log('error', error)
       if (error instanceof StepError) {
         throw error
       }

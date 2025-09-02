@@ -1,3 +1,5 @@
+import '@/types/luxon-extensions'
+
 import { IGlobalVariable } from '@plumber/types'
 
 import { Settings as LuxonSettings } from 'luxon'

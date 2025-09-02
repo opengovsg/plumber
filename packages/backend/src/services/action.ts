@@ -28,19 +28,16 @@ import { enqueueActionJob } from '@/queues/action'
 import getForEachMetadata from './helpers/get-for-each-metadata'
 
 // TODO on Oct: remove this once the logging is not needed anymore
-const SEPT_KEYWORD_REGEX = / Sept /
+const SEPT_KEYWORD_REGEX = /Sept /
 
 function containsSeptKeyword(obj: IJSONValue): boolean {
   if (typeof obj === 'string') {
     return SEPT_KEYWORD_REGEX.test(obj)
   }
-  if (Array.isArray(obj)) {
-    return obj.some((item) => containsSeptKeyword(item))
+  if (typeof obj === 'object' && obj !== null) {
+    return SEPT_KEYWORD_REGEX.test(JSON.stringify(obj))
   }
 
-  if (obj !== null && typeof obj === 'object') {
-    return Object.values(obj).some((value) => containsSeptKeyword(value))
-  }
   return false
 }
 
@@ -231,16 +228,14 @@ export const processAction = async (options: ProcessActionOptions) => {
     })
 
   // TODO on Oct: remove this once the logging is not needed anymore
-  if (!testRun && status === 'failure') {
-    if (containsSeptKeyword($.step.parameters ?? {})) {
-      logger.info('Execution contains Sept keyword', {
-        event: 'execution-contains-sept-keyword',
-        stepId,
-        flowId,
-        executionId,
-        executionStepId: executionStep.id,
-      })
-    }
+  if (!testRun && containsSeptKeyword($.step.parameters ?? {})) {
+    logger.info('Execution contains Sept keyword', {
+      event: 'execution-contains-sept-keyword',
+      stepId,
+      flowId,
+      executionId,
+      executionStepId: executionStep.id,
+    })
   }
 
   let nextStep = null

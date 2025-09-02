@@ -1,3 +1,5 @@
+import '@/types/luxon-extensions'
+
 import { DateTime } from 'luxon'
 import { describe, expect, it } from 'vitest'
 
