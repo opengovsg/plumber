@@ -33,7 +33,7 @@ const action: IRawAction = {
       key: 'delayUntil',
       type: 'string' as const,
       required: true,
-      description: 'Delay until the date. E.g. 25 Aug 2023',
+      description: 'Delay until the date. E.g. 05 Aug 2026',
       variables: true,
     },
     {
@@ -61,8 +61,23 @@ const action: IRawAction = {
       delayUntilTimeString,
     )
 
+    // check if delayUntilString is of dd MMM yyyy format, if so, force en-US to maintain consistency with FormSG
+    let delayUntilFormatted = delayUntilString
+    // Try parsing with en-SG first (for "Sept"), then en-US (for "Sep"), this is for the test case to work because it is not aware of the en-US locale
+    let dateTime = DateTime.fromFormat(delayUntilString, 'dd MMM yyyy', {
+      locale: 'en-SG',
+    })
+    if (!dateTime.isValid) {
+      dateTime = DateTime.fromFormat(delayUntilString, 'dd MMM yyyy', {
+        locale: 'en-US',
+      })
+    }
+    if (dateTime.isValid) {
+      delayUntilFormatted = dateTime.toPlumberFormat('dd MMM yyyy')
+    }
+
     let dataItem = {
-      delayUntil: delayUntilString,
+      delayUntil: delayUntilFormatted,
       delayUntilTime: delayUntilTimeString,
     }
 
@@ -85,8 +100,8 @@ const action: IRawAction = {
       if (isRetry) {
         const dateTimeNow = DateTime.now()
         dataItem = {
-          delayUntil: dateTimeNow.toFormat('dd MMM yyyy'),
-          delayUntilTime: dateTimeNow.toFormat('HH:mm'),
+          delayUntil: dateTimeNow.toPlumberFormat('dd MMM yyyy'),
+          delayUntilTime: dateTimeNow.toPlumberFormat('HH:mm'),
         }
       } else {
         throw new StepError(

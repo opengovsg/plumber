@@ -28,7 +28,9 @@ const DATE_FORMAT = 'dd MMM yyyy'
 
 export default function NewsItem(props: NewsItemProps) {
   const { date, tag, title, details, multimedia } = props
-  const formattedDate = DateTime.fromISO(date).toFormat(DATE_FORMAT)
+  const formattedDate = DateTime.fromISO(date).toFormat(DATE_FORMAT, {
+    locale: 'en-US',
+  })
   const displayedMultimedia = useMemo(() => {
     if (!multimedia) {
       return

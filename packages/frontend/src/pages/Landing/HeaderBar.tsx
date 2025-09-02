@@ -46,7 +46,7 @@ const USE_CASES = [
   },
   {
     name: 'Operations',
-    description: 'Monitor on the ground movement',
+    description: 'End-to-end event management',
     to: URLS.USE_CASES_SUBPAGE('operations'),
     icon: BiCog,
   },

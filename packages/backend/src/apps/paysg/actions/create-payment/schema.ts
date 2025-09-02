@@ -172,7 +172,7 @@ export const requestSchema = z
     description: data.description,
     amount_in_cents: data.paymentAmountCents,
     metadata: data.metadata ?? {}, // PaySG requires at least an empty metadata object.
-    due_date: data.dueDate?.toFormat('dd-MMM-yyyy')?.toUpperCase(),
+    due_date: data.dueDate?.toPlumberFormat('dd-MMM-yyyy')?.toUpperCase(),
     return_url: data.returnUrl,
   }))
 

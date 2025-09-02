@@ -58,7 +58,8 @@ const formatConverters = Object.assign({
       // en-US parsing failed, fall back to en-SG.
       return DateTime.fromFormat(input, 'dd MMM yyyy')
     },
-    stringify: (dateTime: DateTime): string => dateTime.toFormat('dd MMM yyyy'),
+    stringify: (dateTime: DateTime): string =>
+      dateTime.toPlumberFormat('dd MMM yyyy'),
   },
   ...Object.fromEntries(
     commonDateFormats
@@ -67,9 +68,19 @@ const formatConverters = Object.assign({
         format,
         {
           description: format,
-          parse: (input: string): DateTime =>
-            DateTime.fromFormat(input, format),
-          stringify: (dateTime: DateTime): string => dateTime.toFormat(format),
+          parse: (input: string): DateTime => {
+            const result = DateTime.fromFormat(input, format, {
+              locale: 'en-US',
+            })
+            if (result.isValid) {
+              return result
+            }
+            return DateTime.fromFormat(input, format, {
+              locale: 'en-SG',
+            })
+          },
+          stringify: (dateTime: DateTime): string =>
+            dateTime.toPlumberFormat(format),
         },
       ]),
   ),
