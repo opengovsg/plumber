@@ -46,6 +46,36 @@ describe('inputSchema', () => {
     )
 
     it.each([true, false])(
+      'should only keep the first 500 rows of table input with more than 500 rows for testRun: %s',
+      (testRun) => {
+        const largeTableInput = {
+          rows: Array.from({ length: 10000 }, (_, i) => ({
+            data: { name: `Row ${i}` },
+            rowId: `row${i}`,
+          })),
+          columns: [{ id: 'name', name: 'Name', value: 'name' }],
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+        }
+
+        const result = inputSchema.safeParse({
+          data: largeTableInput,
+          testRun,
+        })
+
+        expect(result.success).toBe(true)
+        if (result.success) {
+          expect(result.data.items.rows).toHaveLength(500)
+          expect(result.data.items.rows[0].data.name).toBe('Row 0')
+          expect(result.data.items.rows[499].data.name).toBe('Row 499')
+          expect(result.data.items.columns).toHaveLength(1)
+          expect(result.data.items.columns[0].id).toBe('name')
+          expect(result.data.items.columns[0].name).toBe('Name')
+          expect(result.data.items.columns[0].value).toBe('name')
+        }
+      },
+    )
+
+    it.each([true, false])(
       'should handle table input without rowId for testRun: %s',
       (testRun) => {
         const validTableInput = {
@@ -250,6 +280,23 @@ describe('inputSchema', () => {
     )
 
     it.each([true, false])(
+      'should only keep the first 500 items of checkbox input with more than 500 items for testRun: %s',
+      (testRun) => {
+        const result = inputSchema.safeParse({
+          data: Array.from({ length: 10000 }, (_, i) => `item${i}`),
+          testRun,
+        })
+
+        expect(result.success).toBe(true)
+        if (result.success) {
+          const { inputSource, items } = result.data
+          expect(inputSource).toBe(FOR_EACH_INPUT_SOURCE.STRING_ARRAY)
+          expect(items).toHaveLength(500)
+        }
+      },
+    )
+
+    it.each([true, false])(
       'should handle items with spaces for testRun: %s',
       (testRun) => {
         const result = inputSchema.safeParse({
@@ -428,6 +475,44 @@ describe('inputSchema', () => {
         }
       },
     )
+
+    it('should only keep the first 500 rows of FormSG Table field with more than 500 rows', () => {
+      const largeTableData = JSON.stringify({
+        columns: mockTableFieldData.columns,
+        rows: Array.from({ length: 10000 }, (_, i) => ({
+          data: {
+            [hexEncodedColumns[0]]: `Column 1 Row ${i}`,
+            [hexEncodedColumns[1]]: `Column 2 Row ${i}`,
+          },
+        })),
+      })
+
+      const result = inputSchema.safeParse({
+        data: largeTableData,
+        testRun: true,
+      })
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.inputSource).toBe(FOR_EACH_INPUT_SOURCE.FORMSG_TABLE)
+        expect(result.data.items.rows).toHaveLength(500)
+        expect(result.data.items.rows[0].data[hexEncodedColumns[0]]).toBe(
+          'Column 1 Row 0',
+        )
+        expect(result.data.items.rows[0].data[hexEncodedColumns[1]]).toBe(
+          'Column 2 Row 0',
+        )
+        expect(result.data.items.rows[499].data[hexEncodedColumns[0]]).toBe(
+          'Column 1 Row 499',
+        )
+        expect(result.data.items.rows[499].data[hexEncodedColumns[1]]).toBe(
+          'Column 2 Row 499',
+        )
+        expect(result.data.items.columns).toHaveLength(2)
+        expect(result.data.items.columns[0].id).toBe(hexEncodedColumns[0])
+        expect(result.data.items.columns[1].id).toBe(hexEncodedColumns[1])
+      }
+    })
   })
 
   describe('edge cases and validation', () => {
