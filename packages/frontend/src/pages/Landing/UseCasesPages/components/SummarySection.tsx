@@ -55,6 +55,7 @@ export default function SummarySection(props: SummarySectionProps) {
             letterSpacing="tighter"
             color="gray.900"
             fontWeight="600"
+            fontFamily="'DM Sans', sans-serif"
           >
             {title}
           </Heading>
