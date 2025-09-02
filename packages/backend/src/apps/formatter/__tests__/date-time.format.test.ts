@@ -139,26 +139,41 @@ describe('convert date time', () => {
     })
   })
 
-  // check if dd LLL yyyy format is corrected to en-US all the time
-  it('maintains dd LLL yyyy format in en-US', () => {
+  it.each([
+    {
+      inputFormat: 'formsgDateField',
+      inputValue: '01 Sept 2025',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '01 Sep 2025',
+    },
+    {
+      inputFormat: 'formsgDateField',
+      inputValue: '02 Sep 2025',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '02 Sep 2025',
+    },
+    {
+      inputFormat: 'dd LLL yyyy hh:mm a',
+      inputValue: '03 Sep 2025 11:50 pm',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '03 Sep 2025',
+    },
+    {
+      inputFormat: 'dd LLL yyyy hh:mm:ss a',
+      inputValue: '04 Sept 2025 11:45:30 pm',
+      toFormat: 'dd LLL yyyy hh:mm a',
+      expectedResult: '04 Sep 2025 11:45 pm',
+    },
+  ])('converts dd MMM yyyy format from en-SG to en-US', (testParams) => {
+    const { inputFormat, inputValue, toFormat, expectedResult } = testParams
     $.step.parameters = {
-      dateTimeFormat: 'formsgDateField',
-      formatDateTimeToFormat: 'dd LLL yyyy',
+      dateTimeFormat: inputFormat,
+      formatDateTimeToFormat: toFormat,
     }
-    spec.transformData($, '01 Sep 2024')
-    expect(mocks.setActionItem).toBeCalledWith({
-      raw: { result: '01 Sep 2024' },
-    })
-  })
+    spec.transformData($, inputValue)
 
-  it('converts dd LLL yyyy format from en-SG to en-US', () => {
-    $.step.parameters = {
-      dateTimeFormat: 'formsgDateField',
-      formatDateTimeToFormat: 'dd LLL yyyy',
-    }
-    spec.transformData($, '01 Sept 2024')
     expect(mocks.setActionItem).toBeCalledWith({
-      raw: { result: '01 Sep 2024' },
+      raw: { result: expectedResult },
     })
   })
 })
