@@ -56,7 +56,6 @@ export const spec = {
         },
       })
     } catch (error) {
-      console.log('error', error)
       if (error instanceof StepError) {
         throw error
       }

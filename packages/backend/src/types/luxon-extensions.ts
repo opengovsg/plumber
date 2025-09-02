@@ -3,6 +3,11 @@ import { DateTime, LocaleOptions } from 'luxon'
 declare module 'luxon' {
   interface DateTime {
     toPlumberFormat(fmt: string, opts?: LocaleOptions): string
+    /**
+     * @deprecated
+     * Use toPlumberFormat instead.
+     */
+    toFormat(fmt: string, opts?: LocaleOptions): string
   }
 }
 

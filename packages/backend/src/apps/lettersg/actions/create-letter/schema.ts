@@ -67,7 +67,7 @@ export const responseSchema = z
     // Have to set to en-US to process the month "Sep" while en-SG only accepts "Sept"
     createdAt: DateTime.fromFormat(data.createdAt, 'EEE MMM dd yyyy', {
       locale: 'en-US',
-    }).toFormat(
+    }).toPlumberFormat(
       'dd MMM yyyy', // format a time usable for other steps
     ),
   }))

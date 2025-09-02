@@ -134,12 +134,6 @@ export function parseDateTime(
 ): DateTime {
   const result = formatConverters[dateTimeFormat].parse(valueToTransform)
 
-  if (dateTimeFormat === 'dd LLL yyyy' && !result.isValid) {
-    result = formatConverters[dateTimeFormat].parse(valueToTransform, {
-      locale: 'en-US',
-    })
-  }
-
   if (!result.isValid) {
     throw new Error(
       `${valueToTransform}' is not a valid ${formatConverters[dateTimeFormat].description}`,
