@@ -73,7 +73,7 @@ export const inputSchema = z
     } else {
       try {
         const items = typeof data === 'string' ? JSON.parse(data) : data
-        const rows = items.rows.slice(0, FOR_EACH_MAX_ITERATIONS)
+        const rows = items.rows?.slice(0, FOR_EACH_MAX_ITERATIONS) || []
         return {
           inputSource:
             typeof data === 'string'

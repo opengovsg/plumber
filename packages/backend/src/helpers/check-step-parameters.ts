@@ -60,7 +60,7 @@ export function hasStepReference(
  */
 export default function validateStepParameters(parameters: Step['parameters']) {
   if (parameters?.items) {
-    if (!VARIABLE_REGEX.test(parameters.items as string)) {
+    if (!VARIABLE_REGEX.test(String(parameters.items))) {
       throw new BadUserInputError('For each input must be a variable')
     }
   }
