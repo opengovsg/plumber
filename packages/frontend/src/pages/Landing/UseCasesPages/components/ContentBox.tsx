@@ -29,6 +29,7 @@ export default function ContentBox(props: ContentBoxProps) {
         color="gray.900"
         lineHeight="normal"
         letterSpacing="tighter"
+        fontFamily="'DM Sans', sans-serif"
       >
         {headerText}
       </Heading>
