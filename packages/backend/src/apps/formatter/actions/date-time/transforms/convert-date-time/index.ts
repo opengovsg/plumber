@@ -50,9 +50,13 @@ export const spec = {
       const { dateTimeFormat, formatString } = getParams($)
       const dateTime = parseDateTime(dateTimeFormat, valueToTransform)
 
+      // check if format is dd LLL yyyy, if so, force en-US to maintain consistency with FormSG
       $.setActionItem({
         raw: {
-          result: dateTime.toFormat(formatString),
+          result:
+            formatString === 'dd LLL yyyy'
+              ? dateTime.toFormat(formatString, { locale: 'en-US' })
+              : dateTime.toFormat(formatString),
         },
       })
     } catch (error) {

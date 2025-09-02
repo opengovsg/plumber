@@ -11,6 +11,8 @@ import delayApp from '../index'
 const PAST_DATE = '2023-11-08'
 const VALID_DATE = '2026-12-31' // long long time later
 const VALID_TIME = '12:00'
+const VALID_DD_MMM_YYYY_SG = '01 Sept 2026' // test Sept format to convert to en-US
+const VALID_DD_MMM_YYYY_US = '01 Sep 2026'
 const DEFAULT_TIME = '00:00'
 const INVALID_TIME = '25:00'
 const INVALID_DATE = '2025-12-32'
@@ -86,6 +88,32 @@ describe('Delay until action', () => {
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toBeCalledWith({
       raw: { delayUntil: VALID_DATE, delayUntilTime: VALID_TIME },
+    })
+  })
+
+  it('returns void and maintains Sept format in en-US', async () => {
+    $.step.parameters = {
+      delayUntil: VALID_DD_MMM_YYYY_US,
+      delayUntilTime: VALID_TIME,
+    }
+
+    const result = await delayUntilAction.run($)
+    expect(result).toBeFalsy()
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { delayUntil: VALID_DD_MMM_YYYY_US, delayUntilTime: VALID_TIME },
+    })
+  })
+
+  it('returns void and converts Sept to en-US from en-SG', async () => {
+    $.step.parameters = {
+      delayUntil: VALID_DD_MMM_YYYY_SG,
+      delayUntilTime: VALID_TIME,
+    }
+
+    const result = await delayUntilAction.run($)
+    expect(result).toBeFalsy()
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { delayUntil: VALID_DD_MMM_YYYY_US, delayUntilTime: VALID_TIME },
     })
   })
 

@@ -61,8 +61,25 @@ const action: IRawAction = {
       delayUntilTimeString,
     )
 
+    // check if delayUntilString is of dd MMM yyyy format, if so, force en-US to maintain consistency with FormSG
+    let delayUntilStringUSFormatted = delayUntilString
+    // Try parsing with en-SG first (for "Sept"), then en-US (for "Sep"), this is for the test case to work because it is not aware of the en-US locale
+    let dateTime = DateTime.fromFormat(delayUntilString, 'dd MMM yyyy', {
+      locale: 'en-SG',
+    })
+    if (!dateTime.isValid) {
+      dateTime = DateTime.fromFormat(delayUntilString, 'dd MMM yyyy', {
+        locale: 'en-US',
+      })
+    }
+    if (dateTime.isValid) {
+      delayUntilStringUSFormatted = dateTime.toFormat('dd MMM yyyy', {
+        locale: 'en-US',
+      })
+    }
+
     let dataItem = {
-      delayUntil: delayUntilString,
+      delayUntil: delayUntilStringUSFormatted,
       delayUntilTime: delayUntilTimeString,
     }
 
@@ -85,7 +102,7 @@ const action: IRawAction = {
       if (isRetry) {
         const dateTimeNow = DateTime.now()
         dataItem = {
-          delayUntil: dateTimeNow.toFormat('dd MMM yyyy'),
+          delayUntil: dateTimeNow.toFormat('dd MMM yyyy', { locale: 'en-US' }), // Force en-US to maintain consistency with FormSG
           delayUntilTime: dateTimeNow.toFormat('HH:mm'),
         }
       } else {

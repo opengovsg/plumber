@@ -19,4 +19,11 @@ describe('Test get date time object format', () => {
       )
     })
   })
+
+  it('dd MMM yyyy format should be corrected to en-US', () => {
+    const dateTime = DateTime.local(2025, 9, 1)
+    expect(getDateTimeObjectRepresentation(dateTime).pretty_date).toEqual(
+      '01 Sep 2025',
+    )
+  })
 })

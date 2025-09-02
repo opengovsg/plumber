@@ -138,4 +138,27 @@ describe('convert date time', () => {
       raw: { result: expectedResult },
     })
   })
+
+  // check if dd LLL yyyy format is corrected to en-US all the time
+  it('maintains dd LLL yyyy format in en-US', () => {
+    $.step.parameters = {
+      dateTimeFormat: 'formsgDateField',
+      formatDateTimeToFormat: 'dd LLL yyyy',
+    }
+    spec.transformData($, '01 Sep 2024')
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { result: '01 Sep 2024' },
+    })
+  })
+
+  it('converts dd LLL yyyy format from en-SG to en-US', () => {
+    $.step.parameters = {
+      dateTimeFormat: 'formsgDateField',
+      formatDateTimeToFormat: 'dd LLL yyyy',
+    }
+    spec.transformData($, '01 Sept 2024')
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { result: '01 Sep 2024' },
+    })
+  })
 })
