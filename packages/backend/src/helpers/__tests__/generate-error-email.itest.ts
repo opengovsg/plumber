@@ -29,7 +29,7 @@ vi.mock('luxon', () => {
         endOf: (_interval: string) => ({
           toMillis: () => endOfTimestamp, // 2030-10-10T23:59:59.000+08:00
         }),
-        toFormat: (_format: string) => '10 Oct 2030 at 11:59:00 PM',
+        toPlumberFormat: (_format: string) => '10 Oct 2030 at 11:59:00 PM',
       }),
     },
   }

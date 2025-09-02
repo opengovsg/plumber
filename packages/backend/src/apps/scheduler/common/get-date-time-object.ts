@@ -8,9 +8,9 @@ export default function getDateTimeObjectRepresentation(dateTime: DateTime) {
   return {
     ...defaults,
     ISO_date_time: dateTime.toISO(),
-    pretty_date: dateTime.toFormat('dd MMM yyyy'),
+    pretty_date: dateTime.toPlumberFormat('dd MMM yyyy'),
     pretty_time: dateTime.toLocaleString(DateTime.TIME_WITH_SECONDS),
-    pretty_day_of_week: dateTime.toFormat('cccc'),
+    pretty_day_of_week: dateTime.toPlumberFormat('cccc'),
     day_of_week: dateTime.weekday,
   } as IJSONObject
 }

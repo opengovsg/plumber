@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import '@/types/luxon-extensions'
 
 import { Settings as LuxonSettings } from 'luxon'
 import { URL } from 'node:url'

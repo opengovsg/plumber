@@ -1,3 +1,5 @@
+import '@/types/luxon-extensions'
+
 import { DateTime } from 'luxon'
 import { describe, expect, it } from 'vitest'
 
@@ -18,5 +20,12 @@ describe('Test get date time object format', () => {
         '21 Oct 2023',
       )
     })
+  })
+
+  it('dd MMM yyyy format should be corrected to en-US', () => {
+    const dateTime = DateTime.local(2025, 9, 1)
+    expect(getDateTimeObjectRepresentation(dateTime).pretty_date).toEqual(
+      '01 Sep 2025',
+    )
   })
 })

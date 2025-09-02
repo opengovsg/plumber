@@ -52,7 +52,7 @@ export const spec = {
 
       $.setActionItem({
         raw: {
-          result: dateTime.toFormat(formatString),
+          result: dateTime.toPlumberFormat(formatString),
         },
       })
     } catch (error) {

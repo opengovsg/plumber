@@ -1,3 +1,5 @@
+import '@/types/luxon-extensions'
+
 import { IGlobalVariable } from '@plumber/types'
 
 import { Settings as LuxonSettings } from 'luxon'
@@ -127,6 +129,44 @@ describe('convert date time', () => {
       expectedResult: '11:45:30 pm',
     },
   ])('can handle all supported input formats', (testParams) => {
+    const { inputFormat, inputValue, toFormat, expectedResult } = testParams
+    $.step.parameters = {
+      dateTimeFormat: inputFormat,
+      formatDateTimeToFormat: toFormat,
+    }
+    spec.transformData($, inputValue)
+
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { result: expectedResult },
+    })
+  })
+
+  it.each([
+    {
+      inputFormat: 'formsgDateField',
+      inputValue: '01 Sept 2025',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '01 Sep 2025',
+    },
+    {
+      inputFormat: 'formsgDateField',
+      inputValue: '02 Sep 2025',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '02 Sep 2025',
+    },
+    {
+      inputFormat: 'dd LLL yyyy hh:mm a',
+      inputValue: '03 Sep 2025 11:50 pm',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '03 Sep 2025',
+    },
+    {
+      inputFormat: 'dd LLL yyyy hh:mm:ss a',
+      inputValue: '04 Sept 2025 11:45:30 pm',
+      toFormat: 'dd LLL yyyy hh:mm a',
+      expectedResult: '04 Sep 2025 11:45 pm',
+    },
+  ])('converts dd MMM yyyy format from en-SG to en-US', (testParams) => {
     const { inputFormat, inputValue, toFormat, expectedResult } = testParams
     $.step.parameters = {
       dateTimeFormat: inputFormat,
