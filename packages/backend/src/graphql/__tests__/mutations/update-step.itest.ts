@@ -340,4 +340,14 @@ describe('updateStep mutation', () => {
     await updateStep(null, { input: { ...genericInputParams } }, context)
     expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
+
+  it('should throw an error if the parameters are invalid', async () => {
+    const input = {
+      ...genericInputParams,
+      parameters: { items: 'not a valid items variable' },
+    }
+    await expect(updateStep(null, { input }, context)).rejects.toThrow(
+      BadUserInputError,
+    )
+  })
 })
