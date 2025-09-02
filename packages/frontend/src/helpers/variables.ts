@@ -6,7 +6,7 @@ import type {
   TDataOutMetadatumType,
 } from '@plumber/types'
 
-import get from 'lodash.get'
+import { get } from 'lodash'
 
 import { RawColumn, RawRow } from '@/components/VariablesList/utils'
 import getStepName from '@/helpers/getStepName'

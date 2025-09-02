@@ -1,6 +1,4 @@
-// @ts-check
-
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react-swc'
 import { defineConfig } from 'vite'
 import loadVersion from 'vite-plugin-package-version'
 import viteTsconfigPaths from 'vite-tsconfig-paths'

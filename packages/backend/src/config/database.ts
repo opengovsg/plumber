@@ -24,9 +24,9 @@ export const config = {
           rejectUnauthorized: false,
         }
       : false,
-  } as pg.ClientConfig,
+  } satisfies pg.ClientConfig,
   pool: { min: 0, max: 20 },
-}
+} satisfies Knex.Config
 
 export const client: Knex = knex(config)
 
