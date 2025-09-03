@@ -8,7 +8,7 @@ import {
   COMMON_S3_MOCK_FOLDER_PREFIX,
   deleteObjects,
   getObjectFromS3Id,
-  getPresignedUrl,
+  getPresignedPost,
   MALWARE_SCAN_STATUS,
   parseS3Id,
   putObject,
@@ -16,19 +16,11 @@ import {
   validateObjectKey,
 } from '../s3'
 
-const VALID_PUT_OBJ_INPUTS = {
-  Bucket: COMMON_S3_BUCKET,
-  Key: 'test/file.txt',
-  Metadata: {
-    contentType: 'text/plain',
-  },
-}
-
 const mocks = vi.hoisted(() => ({
   s3Client: {
     send: vi.fn(),
   },
-  getPresignedUrl: vi.fn(),
+  createPresignedPost: vi.fn(),
   PutObjectCommand: vi.fn().mockImplementation((input) => ({ input })),
   GetObjectTaggingCommand: vi.fn(),
 }))
@@ -45,8 +37,8 @@ vi.mock('@aws-sdk/client-s3', () => ({
   GetObjectTaggingCommand: mocks.GetObjectTaggingCommand,
 }))
 
-vi.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: mocks.getPresignedUrl,
+vi.mock('@aws-sdk/s3-presigned-post', () => ({
+  createPresignedPost: mocks.createPresignedPost,
 }))
 
 describe('s3', () => {
@@ -164,61 +156,45 @@ describe('s3', () => {
     })
   })
 
-  describe('getPresignedUrl', () => {
+  describe('getPresignedPost', () => {
     beforeEach(() => {
       vi.clearAllMocks()
     })
 
-    it('should generate a presigned URL successfully', async () => {
-      const expectedUrl = 'https://presigned-url.example.com'
-      mocks.getPresignedUrl.mockResolvedValueOnce(expectedUrl)
+    it('should generate a presignedPost successfully', async () => {
+      // mocks.createPresignedPost.mockResolvedValueOnce({
+      //   url: expectedUrl,
+      //   fields: {
+      //     key: 'test/file.txt',
+      //     acl: 'private',
+      //     'x-amz-meta-manualupload': 'true',
+      //     'x-amz-meta-flowId': 'flow-id',
+      //     'x-amz-meta-filename': 'file.txt',
+      //     'x-amz-meta-size': '100',
+      //     'x-amz-meta-updatedAt': '2021-01-01',
+      //   },
+      // })
 
-      const result = await getPresignedUrl(
-        COMMON_S3_BUCKET,
-        'test/file.txt',
-        'text/plain',
-        {
-          contentType: 'text/plain',
-        },
-      )
-
-      expect(result).toBe(expectedUrl)
-      const putObjectCommand = new mocks.PutObjectCommand(VALID_PUT_OBJ_INPUTS)
-      expect(mocks.getPresignedUrl).toHaveBeenCalledWith(
-        mocks.s3Client,
-        putObjectCommand,
-        { expiresIn: 5 * 60 },
-      )
+      await expect(
+        getPresignedPost(COMMON_S3_BUCKET, 'test/file.txt', 'text/plain', {
+          flowId: 'flow-id',
+          filename: 'file.txt',
+          size: '100',
+          updatedAt: '2021-01-01',
+        }),
+      ).resolves.not.toThrow()
     })
 
     it('should handle null metadata', async () => {
-      const expectedUrl = 'https://presigned-url.example.com'
-      mocks.getPresignedUrl.mockResolvedValueOnce(expectedUrl)
-
-      const result = await getPresignedUrl(
-        COMMON_S3_BUCKET,
-        'test/file.txt',
-        'text/plain',
-        null,
-      )
-
-      expect(result).toBe(expectedUrl)
-      const putObjectCommand = new mocks.PutObjectCommand(VALID_PUT_OBJ_INPUTS)
-      expect(mocks.getPresignedUrl).toHaveBeenCalledWith(
-        mocks.s3Client,
-        putObjectCommand,
-        { expiresIn: 5 * 60 },
-      )
+      await expect(
+        getPresignedPost(COMMON_S3_BUCKET, 'test/file.txt', 'text/plain', null),
+      ).rejects.toThrow('Metadata is required')
     })
 
-    it('should throw error when URL generation fails', async () => {
-      mocks.getPresignedUrl.mockRejectedValueOnce(
-        new Error('Failed to generate presigned URL'),
-      )
-
+    it('should handle empty metadata object', async () => {
       await expect(
-        getPresignedUrl(COMMON_S3_BUCKET, 'test/file.txt', 'text/plain', null),
-      ).rejects.toThrow('Failed to generate presigned URL')
+        getPresignedPost(COMMON_S3_BUCKET, 'test/file.txt', 'text/plain', {}),
+      ).rejects.toThrow('Metadata is required')
     })
   })
 

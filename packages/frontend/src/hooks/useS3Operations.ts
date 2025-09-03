@@ -14,7 +14,7 @@ import {
   reformatToAttachmentConfig,
 } from '@/components/AttachmentSuggestions/utils'
 import { DELETE_UPLOADED_FILE } from '@/graphql/mutations/delete-uploaded-file'
-import { GENERATE_PRESIGNED_URL } from '@/graphql/mutations/generate-presigned-url'
+import { GENERATE_PRESIGNED_POST } from '@/graphql/mutations/generate-presigned-post'
 import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 
@@ -36,7 +36,7 @@ export const useS3Operations = (
   const [isDeleting, setIsDeleting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [deleteFile] = useMutation(DELETE_UPLOADED_FILE)
-  const [generatePresignedUrl] = useMutation(GENERATE_PRESIGNED_URL)
+  const [generatePresignedUrl] = useMutation(GENERATE_PRESIGNED_POST)
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const [updateStep] = useMutation(UPDATE_STEP)
 
@@ -108,59 +108,68 @@ export const useS3Operations = (
             fileType: type,
             size,
             updatedAt,
-            manualUpload: true,
           },
         },
       })
-      const presignedUrl = res.data?.generatePresignedUrl?.url
-      const s3Id = res.data?.generatePresignedUrl?.s3Id
+      const presignedPost = res.data?.generatePresignedPost?.presignedPost
+      const s3Id = res.data?.generatePresignedPost?.s3Id
 
-      if (!presignedUrl || !s3Id) {
+      if (!presignedPost || !s3Id) {
         throw new Error('Failed to generate presigned URL')
       }
 
-      const uploadRes = await fetch(presignedUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
+      const formData = new FormData()
+      Object.entries(presignedPost.fields).forEach(([key, value]) => {
+        if (value === null) {
+          return
+        }
+        formData.append(key, value as string)
+      })
+      formData.set('Content-Type', file.type)
+      formData.append('file', file)
+
+      const uploadResponse = await fetch(presignedPost.url, {
+        method: 'POST',
+        body: formData,
       })
 
-      if (!uploadRes.ok) {
-        throw new Error(
-          `Upload failed: ${uploadRes.status} ${uploadRes.statusText}`,
+      if (uploadResponse.ok) {
+        await updateFlowConfig(
+          getConfigInput(flowId, [
+            // newest file first
+            {
+              name: s3Id,
+              displayedValue: filename,
+              value: s3Id,
+              size,
+              updatedAt,
+            },
+            ...reformatToAttachmentConfig(uploadedFiles),
+          ]),
         )
+
+        const currentAttachments = getValues(name) || []
+        const mutationInput = createUpdateStep(getValues(), [
+          ...currentAttachments,
+          s3Id,
+        ])
+
+        await updateStep({
+          variables: { input: mutationInput },
+        })
+
+        await refetchFlow()
+        triggerToast(`${filename} uploaded successfully`, 'success')
+        setIsUploading(false)
+        options.onSuccess?.(filename)
+        return {
+          success: true,
+          key: presignedPost.fields.key,
+          url: `${presignedPost.url}${presignedPost.fields.key}`,
+        }
+      } else {
+        throw new Error('Failed to upload file')
       }
-
-      await updateFlowConfig(
-        getConfigInput(flowId, [
-          // newest file first
-          {
-            name: s3Id,
-            displayedValue: filename,
-            value: s3Id,
-            size,
-            updatedAt,
-          },
-          ...reformatToAttachmentConfig(uploadedFiles),
-        ]),
-      )
-
-      const currentAttachments = getValues(name) || []
-      const mutationInput = createUpdateStep(getValues(), [
-        ...currentAttachments,
-        s3Id,
-      ])
-
-      await updateStep({
-        variables: { input: mutationInput },
-      })
-
-      await refetchFlow()
-      triggerToast(`${filename} uploaded successfully`, 'success')
-      setIsUploading(false)
-      options.onSuccess?.(filename)
     } catch (error) {
       console.error('Error uploading to S3: ', error)
       triggerToast(`Failed to upload ${file.name}`, 'error')
