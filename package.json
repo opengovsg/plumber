@@ -25,7 +25,12 @@
     ]
   },
   "overrides": {
-    "axios": "1.11.0"
+    "axios": "1.11.0",
+    "graphql-rate-limit": {
+      "@graphql-tools/utils": {
+        "graphql": "16.11.0"
+      }
+    }
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
