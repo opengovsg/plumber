@@ -9,6 +9,7 @@ import {
 import logger from '@/helpers/logger'
 
 import { AuthData } from './auth-data'
+import { FILE_ID_REGEX } from './constants'
 
 // https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0#roles-property-values
 const sharePointRolesSchema = z.array(z.enum(['read', 'write', 'owner']))
@@ -186,6 +187,10 @@ async function queryFilePrivacyInfo(
   fileId: string,
   http: IHttpClient,
 ): Promise<z.infer<typeof fileInfoResponseSchema>> {
+  if (!FILE_ID_REGEX.test(fileId)) {
+    throw new Error('File ID is invalid')
+  }
+
   const response = await http.get(
     `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/?$select=sensitivityLabel,parentReference&$expand=permissions`,
   )
