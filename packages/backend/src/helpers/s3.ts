@@ -195,7 +195,7 @@ export async function getPresignedPost(
       'x-amz-meta-filename': metadata.filename,
       'x-amz-meta-size': metadata.size,
       'x-amz-meta-updatedAt': metadata.updatedAt,
-      tagging: tags,
+      ...(tags ? { tagging: tags } : {}),
     },
     Expires: 5 * 60, // 5 minutes
     Conditions: [
@@ -208,7 +208,7 @@ export async function getPresignedPost(
       { 'x-amz-meta-filename': metadata.filename },
       { 'x-amz-meta-size': metadata.size },
       { 'x-amz-meta-updatedAt': metadata.updatedAt },
-      { tagging: tags },
+      ...(tags ? [{ tagging: tags }] : []),
     ],
   })
 
