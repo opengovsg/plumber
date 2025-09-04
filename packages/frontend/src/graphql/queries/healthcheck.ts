@@ -4,6 +4,7 @@ export const HEALTHCHECK = graphql(`
   query Healthcheck {
     healthcheck {
       version
+      nodeVersion
     }
   }
 `)
