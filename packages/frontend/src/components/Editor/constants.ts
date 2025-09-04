@@ -16,7 +16,10 @@ const NON_EDITABLE_APPS_FIELDS = {
   'm365-excel': [{ label: 'Excel File', key: 'fileId' }],
   slack: [{ label: 'Channel', key: 'channel' }],
   telegram: [{ label: 'Chat ID', key: 'chatId' }],
-  tile: [{ label: 'Select Tile', key: 'tableId' }],
+  tile: [
+    { label: 'Select Tile', key: 'tableId' },
+    { label: null, key: 'columnId' },
+  ],
 }
 
 export const NON_EDITABLE_APP_CONNECTIONS = Object.keys(

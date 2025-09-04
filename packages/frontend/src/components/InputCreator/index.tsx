@@ -117,7 +117,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         onRefresh={schema.source ? () => refetch() : undefined}
         showOptionValue={schema.showOptionValue ?? true}
         addNewOption={
-          schema.addNewOption && !canCollaboratorEdit
+          schema.addNewOption && (flow.role === 'owner' || canCollaboratorEdit)
             ? schema.addNewOption
             : undefined
         }
