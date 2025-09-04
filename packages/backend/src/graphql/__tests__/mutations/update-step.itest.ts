@@ -3,12 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStep from '@/graphql/mutations/update-step'
+import { TILES_CONNECTION_ID } from '@/helpers/get-shared-connection-details'
 import Step from '@/models/step'
+import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import { generateMockFlow, generateMockStep } from '../mutations/flow.mock'
 
 import { generateMockContext } from './tiles/table.mock'
+import { generateMockUser } from './flow.mock'
+import {
+  createMockWithAccessible,
+  setPatchFlowLastUpdatedSpy,
+} from './with-accessible.mock'
 
 const mockConnectionId = '8c2a70d1-e78b-431e-9069-a4d8f97883f5'
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
@@ -16,6 +23,10 @@ const mockStepId = '8c2a70d1-e78b-431e-9069-a4d8f97883f7'
 
 describe('updateStep mutation', () => {
   let context: Context
+  let owner: User
+  let editor: User
+  let viewer: User
+  let nonCollaborator: User
   let patchAndFetchByIdSpy: ReturnType<typeof vi.fn>
   const patchLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
@@ -85,6 +96,15 @@ describe('updateStep mutation', () => {
     vi.resetAllMocks()
     // Create a mock context with a current user
     context = await generateMockContext()
+    owner = context.currentUser
+
+    // Set the global spy for patchFlowLastUpdated
+    setPatchFlowLastUpdatedSpy(patchFlowLastUpdatedSpy)
+
+    // Create test users
+    editor = await generateMockUser('editor')
+    viewer = await generateMockUser('viewer')
+    nonCollaborator = await generateMockUser('nonCollaborator')
 
     // Create a test flow
     await generateMockFlow(context, mockFlowId)
@@ -107,7 +127,9 @@ describe('updateStep mutation', () => {
       withGraphFetched: vi.fn().mockResolvedValue({
         id,
         ...data,
-        connection: { id: mockConnectionId },
+        connection: { id: mockConnectionId, userId: owner.id },
+        flowId: mockFlowId,
+        flow: { userId: owner.id },
       }),
     }))
 
@@ -124,8 +146,16 @@ describe('updateStep mutation', () => {
       patchAndFetchById: patchAndFetchByIdSpy,
     } as any)
 
-    // Setup default mock
-    setupRelatedQueryMock()
+    // Mock context.currentUser.withAccessible for steps
+    context.currentUser.withAccessible = createMockWithAccessible({
+      owner,
+      currentUser: context.currentUser,
+      stepKey: 'sendTransactionalEmail',
+      stepAppKey: 'postman',
+      connectionKey: 'postman',
+      stepId: mockStepId,
+      connectionId: mockConnectionId,
+    })
   })
 
   it('should successfully update a step', async () => {
@@ -172,8 +202,16 @@ describe('updateStep mutation', () => {
       connection: { id: 'non-existent-connection' },
     }
 
-    // Override only the connections query
-    setupRelatedQueryMock(undefined, null)
+    context.currentUser.withAccessible = createMockWithAccessible({
+      owner,
+      currentUser: context.currentUser,
+      stepKey: 'sendTransactionalEmail',
+      stepAppKey: 'postman',
+      connectionKey: 'postman',
+      stepId: mockStepId,
+      connectionId: mockConnectionId,
+      connectionNotFound: true,
+    })
 
     await expect(updateStep(null, { input }, context)).rejects.toThrowError(
       BadUserInputError,
@@ -187,8 +225,16 @@ describe('updateStep mutation', () => {
       id: 'non-existent-step',
     }
 
-    // Override the steps query to return null
-    setupRelatedQueryMock(null, { id: mockConnectionId })
+    context.currentUser.withAccessible = createMockWithAccessible({
+      owner,
+      currentUser: context.currentUser,
+      stepKey: 'sendTransactionalEmail',
+      stepAppKey: 'postman',
+      connectionKey: 'postman',
+      stepId: mockStepId,
+      connectionId: mockConnectionId,
+      stepNotFound: true,
+    })
 
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
       NotFoundError,
@@ -270,11 +316,19 @@ describe('updateStep mutation', () => {
 
   it('updating step name should not update template config', async () => {
     // Override the steps query to return template config
-    setupRelatedQueryMock({
-      config: {
+    context.currentUser.withAccessible = createMockWithAccessible({
+      owner,
+      currentUser: context.currentUser,
+      stepKey: 'sendTransactionalEmail',
+      stepAppKey: 'postman',
+      connectionKey: 'postman',
+      stepId: mockStepId,
+      connectionId: mockConnectionId,
+      stepConfig: {
         stepName: 'some-step-name',
         templateConfig: { appEventKey: 'existingAppEventKey' },
       },
+      stepConnection: { id: mockConnectionId },
     })
 
     const input = {
@@ -309,11 +363,19 @@ describe('updateStep mutation', () => {
 
   it('updating empty step name should not update template config', async () => {
     // Override the steps query to return template config
-    setupRelatedQueryMock({
-      config: {
+    context.currentUser.withAccessible = createMockWithAccessible({
+      owner,
+      currentUser: context.currentUser,
+      stepKey: 'sendTransactionalEmail',
+      stepAppKey: 'postman',
+      connectionKey: 'postman',
+      stepId: mockStepId,
+      connectionId: mockConnectionId,
+      stepConfig: {
         stepName: 'some-step-name',
         templateConfig: { appEventKey: 'existingAppEventKey' },
       },
+      stepConnection: { id: mockConnectionId },
     })
 
     const input = {
@@ -361,5 +423,282 @@ describe('updateStep mutation', () => {
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
+  })
+
+  describe('access control', () => {
+    it.each(['nonCollaborator', 'viewer'])(
+      'should throw error if user does not have necessary permissions: %s',
+      async (role) => {
+        context.currentUser =
+          role === 'nonCollaborator' ? nonCollaborator : viewer
+        const input = { ...genericInputParams }
+
+        // Mock the access control to return null for step (no access)
+        context.currentUser.withAccessible = createMockWithAccessible({
+          owner,
+          currentUser: context.currentUser,
+          stepKey: 'sendTransactionalEmail',
+          stepAppKey: 'postman',
+          connectionKey: 'postman',
+          stepId: mockStepId,
+          connectionId: mockConnectionId,
+          stepNotFound: true,
+        })
+
+        await expect(updateStep(null, { input }, context)).rejects.toThrow(
+          BadUserInputError,
+        )
+        expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
+      },
+    )
+
+    it.each(['editor', 'owner'])(
+      'should allow updating of step if user has the permissions: %s',
+      async (role) => {
+        context.currentUser = role === 'editor' ? editor : owner
+        const input = {
+          ...genericInputParams,
+          parameters: { updatedParam: 'newValue' },
+        }
+
+        // Mock the access control to return step data (has access)
+        context.currentUser.withAccessible = createMockWithAccessible({
+          owner,
+          currentUser: context.currentUser,
+          stepKey: 'sendTransactionalEmail',
+          stepAppKey: 'postman',
+          connectionKey: 'postman',
+          stepId: mockStepId,
+          connectionId: mockConnectionId,
+        })
+
+        await expect(
+          updateStep(null, { input }, context),
+        ).resolves.not.toThrow()
+        expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
+          key: 'sendTransactionalEmail',
+          appKey: 'postman',
+          connectionId: mockConnectionId,
+          parameters: { updatedParam: 'newValue' },
+          status: 'completed',
+          config: {},
+        })
+      },
+    )
+  })
+
+  describe('FlowConnections integration', () => {
+    let patchSpy: any
+    let addSpy: any
+
+    beforeEach(async () => {
+      // Mock FlowConnections methods
+      vi.mock('@/models/flow-connections', () => ({
+        default: {
+          patchFlowConnectionMetadata: vi.fn(),
+          addFlowConnection: vi.fn(),
+        },
+      }))
+
+      const { default: FlowConnections } = await import(
+        '@/models/flow-connections'
+      )
+      patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
+      addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
+
+      context.currentUser.withAccessible = createMockWithAccessible({
+        owner,
+        currentUser: owner,
+        stepKey: 'sendMessage',
+        stepAppKey: 'slack',
+        connectionKey: 'slack',
+        stepId: mockStepId,
+        connectionId: mockConnectionId,
+        flowId: mockFlowId,
+        stepRole: 'owner',
+      })
+    })
+
+    it('should call patchFlowConnectionMetadata when app has connection fields and parameter exists', async () => {
+      const input = {
+        id: mockStepId,
+        flow: { id: mockFlowId },
+        key: 'sendMessage',
+        appKey: 'slack',
+        parameters: { channel: 'C1234567890' },
+        connection: { id: mockConnectionId },
+      }
+
+      await updateStep(null, { input }, context)
+
+      expect(patchSpy).toHaveBeenCalledWith({
+        flowId: mockFlowId,
+        connectionId: mockConnectionId,
+        userId: owner.id,
+        parameterKey: 'channel',
+        parameterValue: 'C1234567890',
+      })
+      expect(addSpy).not.toHaveBeenCalled()
+    })
+
+    it('should call addFlowConnection when app has connection fields but parameter does not exist', async () => {
+      const input = {
+        ...genericInputParams,
+        appKey: 'slack',
+        parameters: { message: 'Hello world' }, // No channel parameter
+        connection: { id: mockConnectionId },
+      }
+
+      await updateStep(null, { input }, context)
+
+      expect(addSpy).toHaveBeenCalledWith({
+        flowId: mockFlowId,
+        connectionId: mockConnectionId,
+        userId: owner.id,
+      })
+      expect(patchSpy).not.toHaveBeenCalled()
+    })
+
+    it('should not call FlowConnections methods when step role is not owner', async () => {
+      const { default: FlowConnections } = await import(
+        '@/models/flow-connections'
+      )
+      const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
+      const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
+
+      // Mock step with role 'editor' (not owner)
+      context.currentUser.withAccessible = createMockWithAccessible({
+        owner,
+        currentUser: owner,
+        stepKey: 'sendMessage',
+        stepAppKey: 'slack',
+        connectionKey: 'slack',
+        stepId: mockStepId,
+        connectionId: mockConnectionId,
+        flowId: mockFlowId,
+        stepRole: 'editor', // Not owner
+      })
+
+      const input = {
+        ...genericInputParams,
+        appKey: 'slack',
+        parameters: { channel: 'C1234567890' },
+        connection: { id: mockConnectionId },
+      }
+
+      await updateStep(null, { input }, context)
+
+      expect(patchSpy).not.toHaveBeenCalled()
+      expect(addSpy).not.toHaveBeenCalled()
+    })
+
+    it('should not call FlowConnections methods when app does not have connection fields', async () => {
+      const { default: FlowConnections } = await import(
+        '@/models/flow-connections'
+      )
+      const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
+      const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
+
+      // Mock step with postman that doesn't have connection fields
+      context.currentUser.withAccessible = createMockWithAccessible({
+        owner,
+        currentUser: owner,
+        stepKey: 'sendTransactionalEmail',
+        stepAppKey: 'postman',
+        connectionKey: 'postman',
+        stepId: mockStepId,
+        connectionId: mockConnectionId,
+        flowId: mockFlowId,
+        stepRole: 'owner',
+      })
+
+      const input = {
+        ...genericInputParams,
+        appKey: 'postman',
+        parameters: { testParam: 'value' },
+        connection: {},
+      }
+
+      await updateStep(null, { input }, context)
+
+      expect(patchSpy).not.toHaveBeenCalled()
+      expect(addSpy).not.toHaveBeenCalled()
+    })
+
+    it('should call patchFlowConnectionMetadata for telegram-bot app with chatId parameter', async () => {
+      const { default: FlowConnections } = await import(
+        '@/models/flow-connections'
+      )
+      const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
+      const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
+
+      // Mock step with telegram-bot app
+      context.currentUser.withAccessible = createMockWithAccessible({
+        owner,
+        currentUser: owner,
+        stepKey: 'sendMessage',
+        stepAppKey: 'telegram-bot',
+        connectionKey: 'telegram-bot',
+        stepId: mockStepId,
+        connectionId: mockConnectionId,
+        flowId: mockFlowId,
+        stepRole: 'owner',
+      })
+
+      const input = {
+        ...genericInputParams,
+        appKey: 'telegram-bot',
+        parameters: { chatId: '123456789' },
+      }
+
+      await updateStep(null, { input }, context)
+
+      expect(patchSpy).toHaveBeenCalledWith({
+        flowId: mockFlowId,
+        connectionId: mockConnectionId,
+        userId: owner.id,
+        parameterKey: 'chatId',
+        parameterValue: '123456789',
+      })
+      expect(addSpy).not.toHaveBeenCalled()
+    })
+
+    it('should call patchFlowConnectionMetadata for tiles app with tableId parameter', async () => {
+      const { default: FlowConnections } = await import(
+        '@/models/flow-connections'
+      )
+      const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
+      const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
+
+      // Mock step with tiles app
+      context.currentUser.withAccessible = createMockWithAccessible({
+        owner,
+        currentUser: owner,
+        stepKey: 'readAction',
+        stepAppKey: 'tiles',
+        connectionKey: 'tiles',
+        stepId: mockStepId,
+        connectionId: mockConnectionId,
+        flowId: mockFlowId,
+        stepRole: 'owner',
+      })
+
+      const input = {
+        ...genericInputParams,
+        appKey: 'tiles',
+        parameters: { tableId: 'table-123' },
+      }
+
+      await updateStep(null, { input }, context)
+
+      expect(patchSpy).toHaveBeenCalledWith({
+        flowId: mockFlowId,
+        connectionId: TILES_CONNECTION_ID,
+        userId: owner.id,
+        parameterKey: 'tableId',
+        parameterValue: 'table-123',
+      })
+      expect(addSpy).not.toHaveBeenCalled()
+    })
   })
 })

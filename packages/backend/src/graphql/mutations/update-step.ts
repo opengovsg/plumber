@@ -1,5 +1,10 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
+import {
+  APP_CONNECTION_FIELDS,
+  TILES_CONNECTION_ID,
+} from '@/helpers/get-shared-connection-details'
 import App from '@/models/app'
+import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -13,19 +18,21 @@ const updateStep: MutationResolvers['updateStep'] = async (
 
   const step = await Step.transaction(async (trx) => {
     const step = await context.currentUser
-      .$relatedQuery('steps', trx)
+      .withAccessible({ type: 'step', requiredRole: 'editor', trx })
       .withGraphFetched('flow')
       .findOne({
         'steps.id': input.id,
         flow_id: input.flow.id,
       })
-      .throwIfNotFound({ message: 'Step not found' })
+    if (!step) {
+      throw new BadUserInputError('Step not found')
+    }
 
     if (input.connection.id) {
-      // if connectionId is specified, verify that the connection exists and belongs to the user
+      // if connectionId is specified, verify that the connection exists
       const connection = await context.currentUser
-        .$relatedQuery('connections')
-        .findOne({ id: input.connection.id })
+        .withAccessible({ type: 'connection', requiredRole: 'editor' })
+        .findOne({ 'connections.id': input.connection.id })
       // we check that the connection exists and is the same app
       if (!connection || connection.key !== input.appKey) {
         throw new BadUserInputError('Connection not found')
@@ -61,7 +68,40 @@ const updateStep: MutationResolvers['updateStep'] = async (
           ...(stepName !== undefined ? { stepName } : {}),
         },
       })
-      .withGraphFetched('connection')
+      .withGraphFetched({
+        connection: true,
+        flow: true,
+      })
+
+    /**
+     * NOTE: we need to update flow connections for specific apps:
+     */
+    if (APP_CONNECTION_FIELDS[updatedStep.appKey] && step.role === 'owner') {
+      const { parameterKey } = APP_CONNECTION_FIELDS[updatedStep.appKey]
+
+      let userId = updatedStep?.connection?.userId
+      let connectionId = updatedStep?.connectionId
+      if (updatedStep.appKey === 'tiles') {
+        userId = updatedStep.flow.userId
+        connectionId = TILES_CONNECTION_ID
+      }
+
+      if (updatedStep.parameters[parameterKey]) {
+        await FlowConnections.patchFlowConnectionMetadata({
+          flowId: updatedStep.flowId,
+          connectionId,
+          userId,
+          parameterKey,
+          parameterValue: updatedStep.parameters[parameterKey] as string,
+        })
+      } else {
+        await FlowConnections.addFlowConnection({
+          flowId: updatedStep.flowId,
+          connectionId,
+          userId,
+        })
+      }
+    }
 
     // update the flow's last updated
     await step.flow.patchLastUpdated({ flowId: step.flowId, trx })
