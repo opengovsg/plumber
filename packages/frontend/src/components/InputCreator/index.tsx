@@ -125,7 +125,6 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         label={label}
         placeholder={placeholder}
         variableTypes={schema.variableTypes}
-        readOnly={isReadOnly}
       />
     )
   }
