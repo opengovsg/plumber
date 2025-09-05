@@ -37,10 +37,15 @@ const createStep: MutationResolvers['createStep'] = async (
           .$relatedQuery('connections')
           .findOne({ id: input.connection.id })
       } else if (flow.role === 'editor') {
-        // TODO (kevinkim-ogp): allow editors to create step with owner connections
-        throw new ForbiddenError(
-          'User does not have permission to add connection',
-        )
+        connection = await context.currentUser
+          .withAccessibleConnections({
+            requiredRole: 'editor',
+            trx,
+          })
+          .findOne({
+            'connections.id': input.connection.id,
+            'flows.id': flow.id,
+          })
       } else {
         throw new ForbiddenError(
           'User does not have permission to add connection',

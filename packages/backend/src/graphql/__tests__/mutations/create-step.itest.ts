@@ -82,6 +82,11 @@ describe('createStep mutation integration tests', async () => {
 
     await generateMockCollaborator(testFlow.id, editor.id, owner.id, 'editor')
     await generateMockCollaborator(testFlow.id, viewer.id, owner.id, 'viewer')
+    await FlowConnections.addFlowConnection({
+      flowId: testFlow.id,
+      connectionId: testConnection.id,
+      userId: owner.id,
+    })
 
     // Create a "previous" step in the flow with position 1.
     existingSteps = await testFlow.$relatedQuery('steps').insertAndFetch([
@@ -97,6 +102,7 @@ describe('createStep mutation integration tests', async () => {
         appKey: 'appKey',
         type: 'action',
         position: 2,
+        connectionId: testConnection.id,
         parameters: {},
       },
       {
@@ -267,6 +273,28 @@ describe('createStep mutation integration tests', async () => {
     expect(newStep.key).toBe('newStep')
     expect(newStep.appKey).toBe('test-app')
     // New step's position should be previousStep.position + 1.
+    expect(newStep.position).toBe(existingSteps[0].position + 1)
+  })
+
+  it('editor can create a new step with owner connection', async () => {
+    context.currentUser = editor
+
+    const params = {
+      input: {
+        flow: { id: testFlow.id },
+        previousStep: { id: existingSteps[0].id },
+        key: 'newStep',
+        appKey: 'test-app',
+        parameters: { newParam: 'value' },
+        connection: { id: testConnection.id },
+      },
+    }
+
+    const newStep = await createStep(null, params, context)
+    expect(newStep).toBeDefined()
+    expect(newStep.type).toBe('action')
+    expect(newStep.key).toBe('newStep')
+    expect(newStep.appKey).toBe('test-app')
     expect(newStep.position).toBe(existingSteps[0].position + 1)
   })
 
