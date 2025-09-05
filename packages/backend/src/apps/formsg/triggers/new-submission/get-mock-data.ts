@@ -126,9 +126,8 @@ async function getMockData($: IGlobalVariable) {
           }
         }
 
-        // hide signature because it is not useful for the user now
         if (fieldType === 'signature') {
-          delete data.responses[formFields[i]._id]
+          data.responses[formFields[i]._id].answer = 'signed' // mock this to always be present regardless of whether the user has signed or not
           continue
         }
 
