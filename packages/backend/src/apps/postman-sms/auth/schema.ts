@@ -1,7 +1,9 @@
 import z from 'zod'
 
+import { screenNameSchema } from '@/helpers/app-auth-schema'
+
 export const authDataSchema = z.object({
-  screenName: z.string().trim(),
+  screenName: screenNameSchema,
   campaignId: z.string().trim(),
   apiKey: z.string().trim(),
 })

@@ -2,8 +2,10 @@ import { IGlobalVariable } from '@plumber/types'
 
 import { z } from 'zod'
 
+import { screenNameSchema } from '@/helpers/app-auth-schema'
+
 const authDataSchema = z.object({
-  screenName: z.string().min(1, 'Empty screen name'),
+  screenName: screenNameSchema,
   apiKey: z.string().min(1, 'Empty API key'),
 })
 
