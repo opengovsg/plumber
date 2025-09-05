@@ -9,14 +9,15 @@ import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 
 type AppConnectionsProps = {
   appKey: string
+  flowId?: string
 }
 
 export default function AppConnections(
   props: AppConnectionsProps,
 ): React.ReactElement {
-  const { appKey } = props
+  const { appKey, flowId } = props
   const { data, loading } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: appKey },
+    variables: { key: appKey, flowId },
   })
   const appConnections: IConnection[] = data?.getApp?.connections || []
 

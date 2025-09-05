@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, useEffect } from 'react'
 import { Flex, ModalBody, ModalHeader } from '@chakra-ui/react'
 import { ModalCloseButton } from '@opengovsg/design-system-react'
 
@@ -33,7 +33,7 @@ export default function ChooseConnection(
     handleConnectionChange,
     onCreateOrUpdateStep,
   } = props
-  const { readOnly } = useContext(EditorContext)
+  const { readOnly, flow } = useContext(EditorContext)
 
   const { modalState, patchModalState, step } = useContext(
     FlowStepConfigurationContext,
@@ -63,6 +63,15 @@ export default function ChooseConnection(
       })
     }
   }
+
+  // we update the dropdown to use the first connection if the user is an editor
+  useEffect(() => {
+    if (flow.role === 'editor' && connectionOptions.length > 0) {
+      patchModalState({
+        selectedConnectionId: connectionOptions[0].value,
+      })
+    }
+  }, [connectionOptions, flow.role, patchModalState])
 
   if (!selectedApp) {
     return <InvalidModalScreen />
