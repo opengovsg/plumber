@@ -1,5 +1,10 @@
 import apps from '@/apps'
+import {
+  APP_CONNECTION_FIELDS,
+  TILES_CONNECTION_ID,
+} from '@/helpers/get-shared-connection-details'
 import globalVariable from '@/helpers/global-variable'
+import FlowConnections from '@/models/flow-connections'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -48,7 +53,34 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
   }
 
   const fetchedData = await command.run($)
-  // TODO (kevinkim-ogp): should filter out data that is not accessible to the user
+
+  // we should filter out the dynamic data to only show the options
+  // that have been shared with the user
+  if (
+    APP_CONNECTION_FIELDS[step.appKey] &&
+    APP_CONNECTION_FIELDS[step.appKey].dynamicDataKey === dynamicDataKey &&
+    step.role !== 'owner'
+  ) {
+    const flowConnections = await FlowConnections.withAccessible({
+      userId: context.currentUser.id,
+    }).where({
+      // SPECIAL CASE: Tiles does not have a connection id
+      // so we use a special connection id to store the dynamic data
+      connection_id:
+        app.key === 'tiles' ? TILES_CONNECTION_ID : step.connectionId,
+      flow_id: step.flowId,
+    })
+
+    const allowedValues = flowConnections
+      .map((flowConnection) => {
+        return flowConnection.metadata[
+          APP_CONNECTION_FIELDS[step.appKey].parameterKey
+        ]
+      })
+      .flat()
+
+    return fetchedData.data.filter((data) => allowedValues.includes(data.value))
+  }
 
   if (fetchedData.error) {
     throw new Error(JSON.stringify(fetchedData.error))
