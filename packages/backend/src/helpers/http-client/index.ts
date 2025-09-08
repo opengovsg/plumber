@@ -1,14 +1,15 @@
-import axios, { InternalAxiosRequestConfig } from 'axios'
-
-export { AxiosInstance as IHttpClient } from 'axios'
 import { IHttpClientParams } from '@plumber/types'
 
+import axios, { InternalAxiosRequestConfig } from 'axios'
 import { URL } from 'url'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 
 import { processUrlPathParams } from './process-url-path-params'
+import { streamResponse } from './stream-response'
+
+export { AxiosInstance as IHttpClient } from 'axios'
 
 const removeBaseUrlForAbsoluteUrls = (
   requestConfig: InternalAxiosRequestConfig,
@@ -33,6 +34,10 @@ export default function createHttpClient({
   const instance = axios.create({
     baseURL,
     allowAbsoluteUrls: false,
+    // Security: Enable streaming to handle large responses safely
+    responseType: 'stream',
+    // Security: Set reasonable timeout to prevent hanging requests
+    timeout: 60000, // 60 seconds
   })
 
   // Edge case: unlike response interceptors, axios request interceptors are
@@ -55,7 +60,7 @@ export default function createHttpClient({
   )
 
   instance.interceptors.response.use(
-    (response) => response,
+    (response) => streamResponse(response),
     async (error) => {
       // EDGE CASE: We allow actions / triggers to throw RetriableError, and
       // some of them may choose to throw from beforeRequest. If this happens,
