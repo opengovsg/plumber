@@ -59,7 +59,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const isNonEditableField = NON_EDITABLE_CONNECTION_FIELDS.some(
     (item) => item.label === label && item.key === name,
   )
-  const isReadOnly = readOnly || (flow.role !== 'owner' && isNonEditableField)
+  const isReadOnly = readOnly || (flow?.role !== 'owner' && isNonEditableField)
 
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
   const { data, loading, refetch } = useDynamicData(
