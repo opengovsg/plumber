@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:18-alpine as build
+FROM node:22-alpine as build
 
 ARG APP_ENV=prod
 ENV VITE_MODE=$APP_ENV
@@ -11,7 +11,7 @@ RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
 RUN npm run build
 RUN npm prune --production
 
-FROM node:18-alpine as main
+FROM node:22-alpine as main
 
 WORKDIR /opt/plumber
 

@@ -1,7 +1,7 @@
 import type { IField, IJSONObject } from '@plumber/types'
 
 import { useFormContext } from 'react-hook-form'
-import get from 'lodash.get'
+import { get } from 'lodash'
 
 export function isFieldHidden(
   hiddenIfCondition: IField['hiddenIf'] | null | undefined,
