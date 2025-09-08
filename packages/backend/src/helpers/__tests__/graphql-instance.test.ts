@@ -6,7 +6,7 @@ describe('GraphQL instance', () => {
   describe('Batching within an operation', () => {
     it('should not throw an error if a single root fields is present', async () => {
       const result = await server.executeOperation({
-        query: `query HealthCheck { healthcheck { version } }`,
+        query: `query HealthCheck { healthcheck { version \n nodeVersion } }`,
       })
       assert(result.body.kind === 'single')
       expect(result.body.singleResult.errors).toBeUndefined()
