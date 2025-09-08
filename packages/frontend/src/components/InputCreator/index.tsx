@@ -56,10 +56,10 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
    * such as slack channels, telegram chats, and excel files
    */
   const { flow } = useContext(EditorContext)
-  const canCollaboratorEdit = !NON_EDITABLE_CONNECTION_FIELDS.find(
+  const isNonEditableField = NON_EDITABLE_CONNECTION_FIELDS.some(
     (item) => item.label === label && item.key === name,
   )
-  const isReadOnly = flow.role !== 'owner' && (readOnly || !canCollaboratorEdit)
+  const isReadOnly = readOnly || (flow.role !== 'owner' && isNonEditableField)
 
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
   const { data, loading, refetch } = useDynamicData(
@@ -117,9 +117,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         onRefresh={schema.source ? () => refetch() : undefined}
         showOptionValue={schema.showOptionValue ?? true}
         addNewOption={
-          schema.addNewOption && (flow.role === 'owner' || canCollaboratorEdit)
-            ? schema.addNewOption
-            : undefined
+          schema.addNewOption && !isReadOnly ? schema.addNewOption : undefined
         }
         clickableLink={schema.clickableLink}
         label={label}
