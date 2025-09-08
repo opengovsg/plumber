@@ -1,28 +1,28 @@
 import { describe, expect, it } from 'vitest'
 
-import { getIpFromUrl, isIpAllowed } from '../../common/ip-resolver'
+import { getIpFromHostname, isIpAllowed } from '../../common/ip-resolver'
 
 describe('IP resolvers', () => {
   describe('Get IP Async', () => {
     it('should be able to get ip address from urls with path', async () => {
-      const ip = await getIpFromUrl('https://mock.codes/200')
+      const ip = await getIpFromHostname('https://mock.codes/200')
       expect(ip).toBeDefined()
     })
 
     it('should be able to get ip address from urls with subdomains, query params and port', async () => {
-      const ip = await getIpFromUrl(
+      const ip = await getIpFromHostname(
         'https://staging.plumber.gov.sg:443/webhooks/123?test=123',
       )
       expect(ip).toBeDefined()
     })
 
     it('should be able to get ip address from ip', async () => {
-      const ip = await getIpFromUrl('https://127.0.0.1')
+      const ip = await getIpFromHostname('https://127.0.0.1')
       expect(ip).toBe('127.0.0.1')
     })
 
     it('should be able to get ip address from ip', async () => {
-      const ip = await getIpFromUrl('https://1.1.1.1:443/test')
+      const ip = await getIpFromHostname('https://1.1.1.1:443/test')
       expect(ip).toBe('1.1.1.1')
     })
   })

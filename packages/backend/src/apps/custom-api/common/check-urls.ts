@@ -1,24 +1,45 @@
 import { TBeforeRequest } from '@plumber/types'
 
-import { isUrlAllowed } from './ip-resolver'
+import { isIP } from 'net'
 
-export const RECURSIVE_WEBHOOK_ERROR_NAME =
-  'Recursively invoking Plumber webhooks is prohibited.'
+import logger from '@/helpers/logger'
 
-export const DISALLOWED_IP_RESOLVED_ERROR =
-  'The URL you are trying to call is not allowed.'
+import {
+  DISALLOWED_IP_RESOLVED_ERROR,
+  INVALID_URL_ERROR,
+  RECURSIVE_WEBHOOK_ERROR,
+} from './constants'
+import { isIpAllowed } from './ip-resolver'
 
 const checkUrls: TBeforeRequest = async ($, requestConfig) => {
   // Prohibit calling ourselves to prevent self-DoS.
   if (requestConfig.baseURL.toLowerCase().endsWith('plumber.gov.sg')) {
-    throw new Error(RECURSIVE_WEBHOOK_ERROR_NAME)
+    throw new Error(RECURSIVE_WEBHOOK_ERROR)
   }
 
-  // Prevent calling of internal IPs, e.g. aws metadata endpoint
-  if (!(await isUrlAllowed(requestConfig.baseURL))) {
+  let url
+  try {
+    url = new URL(requestConfig.baseURL)
+  } catch (e) {
+    throw new Error(INVALID_URL_ERROR)
+  }
+
+  // Not confident that this will not break pipes yet, so logging it for now
+  if (url.protocol !== 'https:') {
+    logger.warn('Non https url found', {
+      url: requestConfig.baseURL,
+      executionId: $.execution?.id,
+      flowId: $.flow?.id,
+      stepId: $.step?.id,
+    })
+  }
+
+  /**
+   * If hostname is IP, dns lookup will not be called so we check for forbidden IPs here as well
+   */
+  if (isIP(url.hostname) > 0 && !isIpAllowed(url.hostname)) {
     throw new Error(DISALLOWED_IP_RESOLVED_ERROR)
   }
-
   return requestConfig
 }
 
