@@ -1,6 +1,8 @@
 import dns from 'dns'
 import ipaddr from 'ipaddr.js'
 
+import { DISALLOWED_IP_RESOLVED_ERROR } from './constants'
+
 export async function getIpFromHostname(hostname: string) {
   try {
     const { address } = await dns.promises.lookup(hostname)
@@ -29,4 +31,15 @@ export function isIpAllowed(ip: string) {
 
   // only allow unicast ips
   return ipRangeLabel === 'unicast'
+}
+
+export async function safeAxiosLookup(
+  hostname: string,
+  _options: object,
+): Promise<string> {
+  const ip = await getIpFromHostname(hostname)
+  if (!isIpAllowed(ip)) {
+    throw new Error(DISALLOWED_IP_RESOLVED_ERROR)
+  }
+  return ip
 }

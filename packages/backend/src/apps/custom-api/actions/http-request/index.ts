@@ -13,7 +13,7 @@ import {
   INVALID_URL_ERROR,
   RECURSIVE_WEBHOOK_ERROR,
 } from '../../common/constants'
-import { getIpFromHostname, isIpAllowed } from '../../common/ip-resolver'
+import { safeAxiosLookup } from '../../common/ip-resolver'
 
 import { requestSchema } from './schema'
 
@@ -123,15 +123,7 @@ const action: IRawAction = {
         maxRedirects: 0,
         headers: customHeaders,
         // Prevent calling of internal IPs, e.g. aws metadata endpoint
-        lookup(hostname, _, cb) {
-          return getIpFromHostname(hostname).then((ip: string) => {
-            if (!isIpAllowed(ip)) {
-              cb(new Error(DISALLOWED_IP_RESOLVED_ERROR), null)
-              return
-            }
-            cb(null, ip)
-          })
-        },
+        lookup: safeAxiosLookup,
         timeout,
         //  overwriting this to allow redirects to resolve
         validateStatus: (status) =>
@@ -157,6 +149,9 @@ const action: IRawAction = {
           method:
             response.status === 301 || response.status === 302 ? 'GET' : method,
           data,
+          // Prevent calling of internal IPs, e.g. aws metadata endpoint
+          lookup: safeAxiosLookup,
+          headers: customHeaders,
           maxRedirects: 0,
         })
       }
@@ -192,7 +187,6 @@ const action: IRawAction = {
         [
           DISALLOWED_IP_RESOLVED_ERROR,
           INVALID_URL_ERROR,
-          INVALID_PROTOCOL_ERROR,
           INVALID_PROTOCOL_ERROR,
         ].includes(err.message)
       ) {
