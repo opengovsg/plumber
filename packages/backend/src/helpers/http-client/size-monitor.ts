@@ -45,7 +45,7 @@ export const createSizeMonitor = (compressedSize?: number) => {
           const compressionRatio = totalSize / compressedSize
           if (compressionRatio > MAX_COMPRESSION_RATIO) {
             hasThrown = true
-            logger.error(
+            logger.warn(
               `Response compression ratio (${compressionRatio.toFixed(
                 1,
               )}:1) exceeds maximum allowed ratio (${MAX_COMPRESSION_RATIO}:1). Possible gzip bomb detected.`,
