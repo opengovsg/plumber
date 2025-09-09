@@ -5,25 +5,19 @@ import { getIpFromHostname, isIpAllowed } from '../../common/ip-resolver'
 describe('IP resolvers', () => {
   describe('Get IP Async', () => {
     it('should be able to get ip address from urls with path', async () => {
-      const ip = await getIpFromHostname('https://mock.codes/200')
+      const ip = await getIpFromHostname('mock.codes')
       expect(ip).toBeDefined()
     })
 
-    it('should be able to get ip address from urls with subdomains, query params and port', async () => {
-      const ip = await getIpFromHostname(
-        'https://staging.plumber.gov.sg:443/webhooks/123?test=123',
+    it('should be able to get ip address from urls with subdomains', async () => {
+      const ip = await getIpFromHostname('staging.plumber.gov.sg')
+      expect(ip).toBeDefined()
+    })
+
+    it('should not be able to get ip address from ip', async () => {
+      await expect(getIpFromHostname(' 127.0.0.1')).rejects.toThrowError(
+        'Unable to resolve IP address for  127.0.0.1',
       )
-      expect(ip).toBeDefined()
-    })
-
-    it('should be able to get ip address from ip', async () => {
-      const ip = await getIpFromHostname('https://127.0.0.1')
-      expect(ip).toBe('127.0.0.1')
-    })
-
-    it('should be able to get ip address from ip', async () => {
-      const ip = await getIpFromHostname('https://1.1.1.1:443/test')
-      expect(ip).toBe('1.1.1.1')
     })
   })
 
@@ -34,6 +28,7 @@ describe('IP resolvers', () => {
       expect(isIpAllowed('172.31.0.1')).toBe(false)
       expect(isIpAllowed('127.0.0.1')).toBe(false)
       expect(isIpAllowed('192.168.0.1')).toBe(false)
+      expect(isIpAllowed('169.254.170.2')).toBe(false)
     })
 
     it('should result false for reserved/private IPv6s', () => {

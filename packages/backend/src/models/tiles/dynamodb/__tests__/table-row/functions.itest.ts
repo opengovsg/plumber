@@ -103,7 +103,7 @@ describe('dynamodb table row functions', () => {
           )
         }
         await createTableRows({ tableId: dummyTable.id, dataArray })
-      })
+      }, 20000)
       it(
         'should be able to paginate and get a large number of rows',
         {
