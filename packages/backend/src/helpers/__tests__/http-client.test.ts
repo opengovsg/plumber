@@ -45,6 +45,7 @@ describe('Http client', () => {
     $ = {
       app: {
         auth: {},
+        key: 'formsg',
       },
     } as unknown as IGlobalVariable
   })

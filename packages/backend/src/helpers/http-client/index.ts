@@ -35,7 +35,7 @@ export default function createHttpClient({
   // where we stream the response to protect against gzip bombs
   // other http clients should not be affected by this as they
   // are controlled URLs from actions such as FormSG or webhook triggers
-  if ($.app.key === 'custom-api') {
+  if ($?.app?.key === 'custom-api') {
     return createCustomApiHttpClient({
       $,
       baseURL,
