@@ -2,8 +2,8 @@ import { AxiosResponse } from 'axios'
 import { Readable } from 'stream'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { streamResponse } from '@/apps/custom-api/common/stream-response'
 import HttpError from '@/errors/http'
+import { streamResponse } from '@/helpers/http-client/stream-response'
 
 const mocks = vi.hoisted(() => ({
   warn: vi.fn(),

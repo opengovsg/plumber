@@ -2,17 +2,18 @@ import type { IGlobalVariable, IHttpClient } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import createHttpClient from '../http-client'
+import createHttpClient from '../../http-client'
 
 const mocks = vi.hoisted(() => ({
   axiosRequestUrlSpy: vi.fn(),
-  createCustomApiHttpClientSpy: vi.fn(),
+  axiosCreateSpy: vi.fn(),
 }))
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.default.create = (createConfig) =>
-    actualAxios.default.create({
+  const mockCreate: typeof actualAxios.default.create = (createConfig) => {
+    mocks.axiosCreateSpy(createConfig)
+    return actualAxios.default.create({
       ...createConfig,
       adapter: async (requestConfig) => {
         mocks.axiosRequestUrlSpy(requestConfig.url)
@@ -26,6 +27,7 @@ vi.mock('axios', async (importOriginal) => {
         }
       },
     })
+  }
 
   return {
     default: {
@@ -34,10 +36,6 @@ vi.mock('axios', async (importOriginal) => {
     },
   }
 })
-
-vi.mock('@/apps/custom-api/common/custom-http-client', () => ({
-  default: mocks.createCustomApiHttpClientSpy,
-}))
 
 describe('Http client', () => {
   let $: IGlobalVariable
@@ -129,10 +127,11 @@ describe('Http client', () => {
     })
   })
 
-  it('should create a different http client for custom api', () => {
+  it('should create axios instance with stream configuration for custom-api', () => {
     $ = {
       app: {
         key: 'custom-api',
+        auth: {},
       },
     } as unknown as IGlobalVariable
 
@@ -143,11 +142,32 @@ describe('Http client', () => {
       requestErrorHandler: null,
     })
 
-    expect(mocks.createCustomApiHttpClientSpy).toHaveBeenCalledWith({
+    expect(mocks.axiosCreateSpy).toHaveBeenCalledWith({
+      baseURL: 'http://localhost',
+      allowAbsoluteUrls: false,
+      responseType: 'stream',
+      timeout: 60000,
+    })
+  })
+
+  it('should create axios instance without stream configuration for non-custom-api apps', () => {
+    $ = {
+      app: {
+        key: 'formsg',
+        auth: {},
+      },
+    } as unknown as IGlobalVariable
+
+    createHttpClient({
       $,
       baseURL: 'http://localhost',
       beforeRequest: [],
       requestErrorHandler: null,
+    })
+
+    expect(mocks.axiosCreateSpy).toHaveBeenCalledWith({
+      baseURL: 'http://localhost',
+      allowAbsoluteUrls: false,
     })
   })
 })

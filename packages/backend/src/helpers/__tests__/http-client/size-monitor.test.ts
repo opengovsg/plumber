@@ -1,7 +1,7 @@
 import { Readable, Transform, Writable } from 'stream'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createSizeMonitor } from '@/apps/custom-api/common/size-monitor'
+import { createSizeMonitor } from '@/helpers/http-client/size-monitor'
 
 const mocks = vi.hoisted(() => ({
   warn: vi.fn(),
