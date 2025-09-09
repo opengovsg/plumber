@@ -1,15 +1,15 @@
-import axios, { InternalAxiosRequestConfig } from 'axios'
-
-export { AxiosInstance as IHttpClient } from 'axios'
 import { IHttpClientParams } from '@plumber/types'
 
+import axios, { InternalAxiosRequestConfig } from 'axios'
 import { URL } from 'url'
 
-import createCustomApiHttpClient from '@/apps/custom-api/common/custom-http-client'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
+import { processUrlPathParams } from '@/helpers/http-client/process-url-path-params'
 
-import { processUrlPathParams } from './process-url-path-params'
+import { streamResponse } from './stream-response'
+
+export { AxiosInstance as IHttpClient } from 'axios'
 
 const removeBaseUrlForAbsoluteUrls = (
   requestConfig: InternalAxiosRequestConfig,
@@ -25,28 +25,19 @@ const removeBaseUrlForAbsoluteUrls = (
   }
 }
 
-export default function createHttpClient({
+export default function createCustomApiHttpClient({
   $,
   baseURL,
   beforeRequest,
   requestErrorHandler,
 }: IHttpClientParams) {
-  // Custom API special case: create a different http client for custom api
-  // where we stream the response to protect against gzip bombs
-  // other http clients should not be affected by this as they
-  // are controlled URLs from actions such as FormSG or webhook triggers
-  if ($.app.key === 'custom-api') {
-    return createCustomApiHttpClient({
-      $,
-      baseURL,
-      beforeRequest,
-      requestErrorHandler,
-    })
-  }
-
   const instance = axios.create({
     baseURL,
     allowAbsoluteUrls: false,
+    // Security: Enable streaming to handle large responses safely
+    responseType: 'stream',
+    // Security: Set reasonable timeout to prevent hanging requests
+    timeout: 60000, // 60 seconds
   })
 
   // Edge case: unlike response interceptors, axios request interceptors are
@@ -69,7 +60,7 @@ export default function createHttpClient({
   )
 
   instance.interceptors.response.use(
-    (response) => response,
+    (response) => streamResponse(response),
     async (error) => {
       // EDGE CASE: We allow actions / triggers to throw RetriableError, and
       // some of them may choose to throw from beforeRequest. If this happens,

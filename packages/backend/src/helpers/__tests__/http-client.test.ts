@@ -6,6 +6,7 @@ import createHttpClient from '../http-client'
 
 const mocks = vi.hoisted(() => ({
   axiosRequestUrlSpy: vi.fn(),
+  createCustomApiHttpClientSpy: vi.fn(),
 }))
 
 vi.mock('axios', async (importOriginal) => {
@@ -33,6 +34,10 @@ vi.mock('axios', async (importOriginal) => {
     },
   }
 })
+
+vi.mock('@/apps/custom-api/common/custom-http-client', () => ({
+  default: mocks.createCustomApiHttpClientSpy,
+}))
 
 describe('Http client', () => {
   let $: IGlobalVariable
@@ -120,6 +125,28 @@ describe('Http client', () => {
         expect.anything(),
         expect.objectContaining({ url: '/drive/1234/test%20folder%20name' }),
       )
+    })
+  })
+
+  it('should create a different http client for custom api', () => {
+    $ = {
+      app: {
+        key: 'custom-api',
+      },
+    } as unknown as IGlobalVariable
+
+    createHttpClient({
+      $,
+      baseURL: 'http://localhost',
+      beforeRequest: [],
+      requestErrorHandler: null,
+    })
+
+    expect(mocks.createCustomApiHttpClientSpy).toHaveBeenCalledWith({
+      $,
+      baseURL: 'http://localhost',
+      beforeRequest: [],
+      requestErrorHandler: null,
     })
   })
 })

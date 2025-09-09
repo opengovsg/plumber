@@ -1,6 +1,6 @@
 import { Transform } from 'stream'
 
-import logger from '../logger'
+import logger from '@/helpers/logger'
 
 const MAX_SIZE_IN_MB = 20
 const MB = 1024 * 1024
