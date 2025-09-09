@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import { MultipleRowObject } from '@/apps/toolbox/common/get-for-each-variables'
 
-import { inputSchema } from '../../../actions/for-each/schema'
+import { inputSchema, parameterSchema } from '../../../actions/for-each/schema'
 
 describe('inputSchema', () => {
   describe('table input format', () => {
@@ -539,5 +539,60 @@ describe('inputSchema', () => {
         }
       },
     )
+  })
+})
+
+describe('parameterSchema', () => {
+  it.each([
+    { parameters: { items: 'not a variable' }, shouldThrow: true },
+    { parameters: { items: 123 }, shouldThrow: true },
+    {
+      parameters: {
+        items: {
+          rows: [{ a: 1, b: 2, c: 3 }],
+          columns: [
+            { id: 'a', name: 'A', value: 'a' },
+            { id: 'b', name: 'B', value: 'b' },
+            { id: 'c', name: 'C', value: 'c' },
+          ],
+          inputSource: 'tiles',
+        },
+      },
+      shouldThrow: true,
+    },
+    { parameters: { items: {} }, shouldThrow: true },
+    {
+      parameters: {
+        items: '{{step.00000000-0000-0000-0000-000000000000.data}}',
+      },
+      shouldThrow: false,
+    },
+  ])(
+    'should throw an error if the parameters are invalid',
+    ({ parameters, shouldThrow }) => {
+      const result = parameterSchema.safeParse(parameters)
+      if (shouldThrow) {
+        expect(result.success).toBe(false)
+        if (result.success === false) {
+          expect(result.error.errors[0].message).toBe(
+            'For each input must be a variable',
+          )
+        }
+      } else {
+        expect(result.success).toBe(true)
+        if (result.success) {
+          expect(result.data.items).toBe(
+            '{{step.00000000-0000-0000-0000-000000000000.data}}',
+          )
+        }
+      }
+    },
+  )
+
+  it('should validate parameterSchema', () => {
+    const result = parameterSchema.safeParse({
+      items: '{{step.00000000-0000-0000-0000-000000000000.data}}',
+    })
+    expect(result.success).toBe(true)
   })
 })

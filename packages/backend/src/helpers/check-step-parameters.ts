@@ -1,9 +1,6 @@
 import { IJSONObject } from '@plumber/types'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
-import Step from '@/models/step'
-
-const VARIABLE_REGEX =
+export const VARIABLE_REGEX =
   /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/
 const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 
@@ -47,21 +44,4 @@ export function hasStepReference(
 
   traverse(stepParams)
   return missing.size > 0
-}
-
-/**
- * This function is used to validate the step parameters:
- * (Add on here if you need to validate other parameters)
- * 1. Validate on the backend that for each input is a variable as it should only
- *    accept variables from FormSG tables / checkboxes, Tiles table rows and
- *    M365-Excel table rows.
- *    The key for for each input is `items`.
- * 2. ...
- */
-export default function validateStepParameters(parameters: Step['parameters']) {
-  if (parameters?.items) {
-    if (!VARIABLE_REGEX.test(String(parameters.items))) {
-      throw new BadUserInputError('For each input must be a variable')
-    }
-  }
 }

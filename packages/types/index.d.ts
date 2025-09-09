@@ -815,6 +815,12 @@ export interface IBaseAction {
    * message to the user during pipe setup / config.
    */
   setupMessage?: SetupMessage
+
+  /**
+   * Validates the step parameters to ensure that it is valid.
+   * Used when saving the step.
+   */
+  validateStepParameters?: (parameters: IJSONObject) => void
 }
 
 export interface IRawAction extends IBaseAction {

@@ -344,6 +344,8 @@ describe('updateStep mutation', () => {
   it('should throw an error if the parameters are invalid', async () => {
     const input = {
       ...genericInputParams,
+      appKey: 'toolbox',
+      key: 'forEach',
       parameters: { items: 'not a valid items variable' },
     }
     await expect(updateStep(null, { input }, context)).rejects.toThrow(

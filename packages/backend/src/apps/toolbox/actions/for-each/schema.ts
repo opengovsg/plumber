@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { tableRowDataSchema } from '@/apps/tiles/actions/find-multiple-rows/schema'
+import { VARIABLE_REGEX } from '@/helpers/check-step-parameters'
 
 import {
   FOR_EACH_INPUT_SOURCE,
@@ -113,3 +114,16 @@ export const dataOutSchema = z.discriminatedUnion('inputSource', [
     items: tableSchema,
   }),
 ])
+
+const PARAMETER_ERROR_MESSAGE = 'For each input must be a variable'
+
+export const parameterSchema = z.object({
+  items: z
+    .string({
+      required_error: PARAMETER_ERROR_MESSAGE,
+      invalid_type_error: PARAMETER_ERROR_MESSAGE,
+    })
+    .refine((v) => VARIABLE_REGEX.test(v), {
+      message: PARAMETER_ERROR_MESSAGE,
+    }),
+})
