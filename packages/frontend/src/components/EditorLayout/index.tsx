@@ -216,12 +216,13 @@ export default function EditorLayout() {
           borderBottom="1px solid"
           borderColor="base.divider.medium"
         >
-          <Flex flex={1} alignItems="center">
+          <Flex flex={1} alignItems="center" minWidth={0}>
             <Box
               as={Link}
               to={URLS.FLOWS}
               mt={1}
               mr={3}
+              flexShrink={0}
               onClick={handleWarnOnLeave}
             >
               <Icon
@@ -231,7 +232,7 @@ export default function EditorLayout() {
               ></Icon>
             </Box>
 
-            <Flex>
+            <Flex flex={1} minWidth={0}>
               <EditableInput
                 value={flow?.name}
                 onSave={onFlowNameUpdate}
