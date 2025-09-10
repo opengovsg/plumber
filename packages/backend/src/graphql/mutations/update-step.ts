@@ -34,9 +34,11 @@ const updateStep: MutationResolvers['updateStep'] = async (
 
     // NOTE: we use this function to first validate the step parameters
     // to avoid misuse and saving invalid step parameters
-    const app = await App.findOneByKey(input.appKey)
-    const action = app?.actions?.find((action) => action.key === step.key)
-    action?.validateStepParameters?.(input.parameters)
+    if (step.type === 'action') {
+      const app = await App.findOneByKey(input.appKey)
+      const action = app?.actions?.find((action) => action.key === step.key)
+      action?.validateStepParameters?.(input.parameters)
+    }
 
     const shouldInvalidate =
       step.key !== input.key ||
