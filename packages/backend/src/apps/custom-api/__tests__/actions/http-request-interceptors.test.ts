@@ -8,8 +8,8 @@ import app from '../..'
 import makeRequestAction from '../../actions/http-request'
 import {
   DISALLOWED_IP_RESOLVED_ERROR,
-  RECURSIVE_WEBHOOK_ERROR_NAME,
-} from '../../common/check-urls'
+  RECURSIVE_WEBHOOK_ERROR,
+} from '../../common/constants'
 
 const CF_REDIRECTION_WORKER_FOR_UNIT_TESTS =
   'https://http-request-unit-tester.plumber-wrench.workers.dev'
@@ -68,7 +68,7 @@ describe('http request interceptors', () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = url
     await expect(makeRequestAction.run($)).rejects.toThrowError(
-      RECURSIVE_WEBHOOK_ERROR_NAME,
+      RECURSIVE_WEBHOOK_ERROR,
     )
   })
 
@@ -118,7 +118,7 @@ describe('http request interceptors', () => {
         redirectTo: url,
       })
       await expect(makeRequestAction.run($)).rejects.toThrowError(
-        RECURSIVE_WEBHOOK_ERROR_NAME,
+        RECURSIVE_WEBHOOK_ERROR,
       )
     })
 
@@ -128,7 +128,7 @@ describe('http request interceptors', () => {
       'http://localhost:3001',
       'http://127.0.0.1:8080',
       'http://192.168.0.1',
-    ])('should prevent internal IPs', async (url: string) => {
+    ])('should prevent internal IPs during redirects', async (url: string) => {
       $.step.parameters.method = 'POST'
       $.step.parameters.data = JSON.stringify({
         statusCode: 307,

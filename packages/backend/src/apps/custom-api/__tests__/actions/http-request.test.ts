@@ -9,10 +9,10 @@ import StepError from '@/errors/step'
 import app from '../..'
 import makeRequestAction from '../../actions/http-request'
 import {
+  CUSTOM_API_TIMEOUT,
   DISALLOWED_IP_RESOLVED_ERROR,
-  RECURSIVE_WEBHOOK_ERROR_NAME,
-} from '../../common/check-urls'
-import { CUSTOM_API_TIMEOUT } from '../../common/constants'
+  RECURSIVE_WEBHOOK_ERROR,
+} from '../../common/constants'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
@@ -22,9 +22,13 @@ const mocks = vi.hoisted(() => ({
   })),
 }))
 
-vi.mock('../../common/ip-resolver', () => ({
-  isUrlAllowed: mocks.isUrlAllowed,
-}))
+vi.mock('../../common/ip-resolver', () => {
+  const originalModule = vi.importActual('../../common/ip-resolver')
+  return {
+    ...originalModule,
+    safeAxiosLookup: mocks.isUrlAllowed,
+  }
+})
 
 vi.mock('@/models/step', () => ({
   default: {
@@ -68,7 +72,6 @@ describe('make http request', () => {
     $.step.parameters.data = 'meep meep'
     $.step.parameters.url = 'http://test.local/endpoint?1234'
     mocks.httpRequest.mockReturnValue('mock response')
-
     await makeRequestAction.run($).catch((): void => null)
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -227,7 +230,7 @@ describe('make http request', () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.data = 'go crazy'
     $.step.parameters.url = 'http://beta.plumber.gov.sg'
-    const recursiveWebhookError = new Error(RECURSIVE_WEBHOOK_ERROR_NAME)
+    const recursiveWebhookError = new Error(RECURSIVE_WEBHOOK_ERROR)
     mocks.httpRequest.mockRejectedValueOnce(recursiveWebhookError)
     await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
   })
