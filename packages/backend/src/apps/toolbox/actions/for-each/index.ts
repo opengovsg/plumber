@@ -1,11 +1,15 @@
 import { IRawAction } from '@plumber/types'
 
+import { ZodError } from 'zod'
+
 import {
   isCheckboxItems,
   MultipleRowObject,
   processItems,
 } from '@/apps/toolbox/common/get-for-each-variables'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import StepError from '@/errors/step'
+import Step from '@/models/step'
 
 import {
   FOR_EACH_INPUT_SOURCE,
@@ -14,7 +18,7 @@ import {
 } from '../../common/constants'
 
 import getDataOutMetadata from './get-data-out-metadata'
-import { inputSchema } from './schema'
+import { inputSchema, parameterSchema } from './schema'
 
 const action: IRawAction = {
   name: 'For each item',
@@ -37,6 +41,14 @@ const action: IRawAction = {
   ],
 
   getDataOutMetadata,
+  validateStepParameters: (parameters: Step['parameters']) => {
+    const parsedParameters = parameterSchema.safeParse(parameters)
+    if (parsedParameters.success === false) {
+      throw new BadUserInputError(
+        (parsedParameters.error as ZodError).errors[0].message,
+      )
+    }
+  },
 
   async run($) {
     const { testRun } = $.execution
