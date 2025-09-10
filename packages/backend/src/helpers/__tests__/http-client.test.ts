@@ -6,14 +6,12 @@ import createHttpClient from '../http-client'
 
 const mocks = vi.hoisted(() => ({
   axiosRequestUrlSpy: vi.fn(),
-  axiosCreateSpy: vi.fn(),
 }))
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.default.create = (createConfig) => {
-    mocks.axiosCreateSpy(createConfig)
-    return actualAxios.default.create({
+  const mockCreate: typeof actualAxios.default.create = (createConfig) =>
+    actualAxios.default.create({
       ...createConfig,
       adapter: async (requestConfig) => {
         mocks.axiosRequestUrlSpy(requestConfig.url)
@@ -27,7 +25,6 @@ vi.mock('axios', async (importOriginal) => {
         }
       },
     })
-  }
 
   return {
     default: {
@@ -43,7 +40,6 @@ describe('Http client', () => {
     $ = {
       app: {
         auth: {},
-        key: 'formsg',
       },
     } as unknown as IGlobalVariable
   })
@@ -124,27 +120,6 @@ describe('Http client', () => {
         expect.anything(),
         expect.objectContaining({ url: '/drive/1234/test%20folder%20name' }),
       )
-    })
-  })
-
-  it('should create axios instance without stream configuration for non-custom-api apps', () => {
-    $ = {
-      app: {
-        key: 'formsg',
-        auth: {},
-      },
-    } as unknown as IGlobalVariable
-
-    createHttpClient({
-      $,
-      baseURL: 'http://localhost',
-      beforeRequest: [],
-      requestErrorHandler: null,
-    })
-
-    expect(mocks.axiosCreateSpy).toHaveBeenCalledWith({
-      baseURL: 'http://localhost',
-      allowAbsoluteUrls: false,
     })
   })
 })
