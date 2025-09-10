@@ -10,9 +10,11 @@ type TableColumn = {
 }
 
 const createColumn = (label: string, index: number): TableColumn => {
-  const id = Buffer.from(label).toString('hex')
+  const id = Buffer.from(`Col ${index + 1}`).toString('hex')
   return {
-    id: Buffer.from(`Col ${index + 1}`).toString('hex'),
+    // NOTE: we keep this ID so that it still works even if the user tested
+    // the step with mock data previously
+    id,
     label,
     name: label,
     value: `data.rows.*.data.${id}`,
