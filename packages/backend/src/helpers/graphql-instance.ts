@@ -1,7 +1,7 @@
 import { ApolloServer, type ApolloServerPlugin } from '@apollo/server'
-import { expressMiddleware } from '@apollo/server/express4'
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled'
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default'
+import { expressMiddleware } from '@as-integrations/express4'
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import { RequestHandler } from 'express'
 import { Kind, OperationDefinitionNode } from 'graphql/language'
