@@ -17,7 +17,7 @@ import { dataOutSchema, parametersSchema } from './schemas'
 type DataOut = z.infer<typeof dataOutSchema>
 
 const action: IRawAction = {
-  name: 'Find table rows',
+  name: 'Find multiple table rows',
   key: 'getTableRows',
   description: 'Gets multiple rows of data from your Excel table',
   isNew: true,
