@@ -9,7 +9,6 @@ import {
 import logger from '@/helpers/logger'
 
 import { AuthData } from './auth-data'
-import { FILE_ID_REGEX } from './constants'
 
 // https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0#roles-property-values
 const sharePointRolesSchema = z.array(z.enum(['read', 'write', 'owner']))
@@ -72,7 +71,13 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
   // - https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/get-user-identity-and-properties-in-sharepoint#retrieve-current-website-user-identity-by-using-the-web-object
   // - https://learn.microsoft.com/en-us/answers/questions/349797/understanding-login-name-format-of-sharepoint
   const sharePointFilePermissionsResponse = await http.get(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
+    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
+    {
+      urlPathParams: {
+        fileId,
+        sharePointSiteId: tenant.sharePointSiteId,
+      },
+    },
   )
   const permissions = sharepointFilePermissionsSchema.parse(
     sharePointFilePermissionsResponse.data,
@@ -187,12 +192,14 @@ async function queryFilePrivacyInfo(
   fileId: string,
   http: IHttpClient,
 ): Promise<z.infer<typeof fileInfoResponseSchema>> {
-  if (!FILE_ID_REGEX.test(fileId)) {
-    throw new Error('File ID is invalid')
-  }
-
   const response = await http.get(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/?$select=sensitivityLabel,parentReference&$expand=permissions`,
+    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/?$select=sensitivityLabel,parentReference&$expand=permissions`,
+    {
+      urlPathParams: {
+        fileId,
+        sharePointSiteId: tenant.sharePointSiteId,
+      },
+    },
   )
   return fileInfoResponseSchema.parse(response.data)
 }

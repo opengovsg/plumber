@@ -1,16 +1,11 @@
 import z from 'zod'
 
+import { fileIdSchema, tableIdSchema } from '../../common/schema'
 import { hexEncodedRowRecordSchema } from '../../common/workbook-helpers/tables'
 
 export const parametersSchema = z.object({
-  fileId: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please choose a file to lookup from.' }),
-  tableId: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please select a table to lookup from.' }),
+  fileId: fileIdSchema,
+  tableId: tableIdSchema,
   // Populated by dynamic data, so no need to trim.
   lookupColumn: z.string().min(1, {
     message: 'Please select a column to lookup from.',

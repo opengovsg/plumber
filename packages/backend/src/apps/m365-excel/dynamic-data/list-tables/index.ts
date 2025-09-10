@@ -1,10 +1,12 @@
 import type { IDynamicData } from '@plumber/types'
 
 import { getM365TenantInfo } from '@/config/app-env-vars/m365'
+import StepError from '@/errors/step'
 
 import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
 import { validateCanAccessFile } from '../../common/file-privacy'
-import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
+
+import { parametersSchema } from './schema'
 
 const dynamicData: IDynamicData = {
   name: 'List Tables',
@@ -18,11 +20,15 @@ const dynamicData: IDynamicData = {
       }
     }
 
-    // Validation to prevent path traversals
-    validateDynamicFieldsAndThrowError({
-      fileId: String(fileId),
-      $,
-    })
+    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
+    if (parametersParseResult.success === false) {
+      throw new StepError(
+        'There was a problem with the input.',
+        parametersParseResult.error.issues[0].message,
+        $.step.position,
+        $.app.name,
+      )
+    }
 
     const authData = extractAuthDataWithPlumberFolder($)
 
@@ -42,7 +48,13 @@ const dynamicData: IDynamicData = {
     const results = await $.http.get<{
       value: Array<{ id: string; name: string }>
     }>(
-      `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/workbook/tables?$select=id,name`,
+      '/v1.0/sites/:sharePointSiteId/drive/items/:fileId/workbook/tables?$select=id,name',
+      {
+        urlPathParams: {
+          fileId,
+          sharePointSiteId: tenant.sharePointSiteId,
+        },
+      },
     )
 
     return {

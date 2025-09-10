@@ -4,7 +4,7 @@ import StepError from '@/errors/step'
 
 import WorkbookSession from '../../common/workbook-session'
 
-import { parametersSchema } from './parameters-schema'
+import { parametersSchema } from './schema'
 
 /**
  * NOTE: This action has been deprecated for GA to reduce app complexity. We are

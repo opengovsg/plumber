@@ -1,14 +1,10 @@
 import { z } from 'zod'
 
+import { fileIdSchema, tableIdSchema } from '../../common/schema'
+
 export const parametersSchema = z.object({
-  fileId: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please choose a file to lookup from.' }),
-  tableId: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please select a table to lookup from.' }),
+  fileId: fileIdSchema,
+  tableId: tableIdSchema,
   columnValues: z
     .array(
       z.object({

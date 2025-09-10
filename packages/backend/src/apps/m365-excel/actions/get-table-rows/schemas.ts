@@ -2,15 +2,11 @@ import z from 'zod'
 
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 
+import { fileIdSchema, tableIdSchema } from '../../common/schema'
+
 export const parametersSchema = z.object({
-  fileId: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please choose a file to lookup from.' }),
-  tableId: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please select a table to lookup from.' }),
+  fileId: fileIdSchema,
+  tableId: tableIdSchema,
   // Populated by dynamic data, so no need to trim.
   lookupColumn: z.string().min(1, {
     message: 'Please select a column to lookup from.',
