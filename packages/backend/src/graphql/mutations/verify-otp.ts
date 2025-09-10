@@ -37,6 +37,12 @@ const verifyOtp: MutationResolvers['verifyOtp'] = async (
   if (otpSentAt && Date.now() - otpSentAt.getTime() > OTP_VALIDITY_IN_MS) {
     throw new BaseError('OTP expired')
   }
+
+  // check for overflow before incrementing
+  if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+    throw new BaseError('OTP attempts exceeded')
+  }
+
   // atomically increment otp retries first to prevent concurrent bruce force attacks
   const { otpAttempts: newOtpAttempts } = await user
     .$query()
