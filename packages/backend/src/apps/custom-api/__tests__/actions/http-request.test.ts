@@ -78,6 +78,7 @@ describe('make http request', () => {
         url: $.step.parameters.url,
         method: $.step.parameters.method,
         data: $.step.parameters.data,
+        responseType: 'stream',
       }),
     )
   })
@@ -98,6 +99,7 @@ describe('make http request', () => {
         url: $.step.parameters.url,
         method: $.step.parameters.method,
         data: $.step.parameters.data,
+        responseType: 'stream',
         headers: {
           Key1: 'Value1',
           Key2: 'Value2',
@@ -174,6 +176,7 @@ describe('make http request', () => {
         url: 'http://test.local/endpoint?1234',
         method: 'POST',
         data: 'meep meep',
+        responseType: 'stream',
       }),
     )
     expect(mocks.httpRequest).toHaveBeenCalledWith(
@@ -181,6 +184,7 @@ describe('make http request', () => {
         url: 'https://redirect.com',
         method: 'GET',
         data: 'meep meep',
+        responseType: 'stream',
       }),
     )
   })
@@ -203,6 +207,7 @@ describe('make http request', () => {
         url: 'http://test.local/endpoint?1234',
         method: 'POST',
         data: 'meep meep',
+        responseType: 'stream',
       }),
     )
     expect(mocks.httpRequest).toHaveBeenCalledWith(
@@ -210,6 +215,7 @@ describe('make http request', () => {
         url: 'https://redirect.com',
         method: 'POST',
         data: 'meep meep',
+        responseType: 'stream',
       }),
     )
   })
@@ -254,6 +260,7 @@ describe('make http request', () => {
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         timeout: CUSTOM_API_TIMEOUT,
+        responseType: 'stream',
       }),
     )
   })
@@ -277,6 +284,7 @@ describe('make http request', () => {
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         timeout: 360000,
+        responseType: 'stream',
       }),
     )
   })
@@ -301,6 +309,7 @@ describe('make http request', () => {
       expect(mocks.httpRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           timeout: CUSTOM_API_TIMEOUT,
+          responseType: 'stream',
         }),
       )
     },
@@ -353,6 +362,7 @@ describe('make http request', () => {
             url: $.step.parameters.url,
             method: $.step.parameters.method,
             data: $.step.parameters.data as any,
+            responseType: 'stream',
           }),
         )
       },
@@ -381,6 +391,7 @@ describe('make http request', () => {
             url: $.step.parameters.url,
             method: $.step.parameters.method,
             data: $.step.parameters.data as any,
+            responseType: 'stream',
           }),
         )
       },

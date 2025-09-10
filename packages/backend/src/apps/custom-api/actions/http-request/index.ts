@@ -129,6 +129,8 @@ const action: IRawAction = {
         validateStatus: (status) =>
           (status >= 200 && status < 300) ||
           REDIRECT_STATUS_CODES.includes(status),
+        // stream the response for custom api to protect against gzip bombs
+        responseType: 'stream',
       })
 
       if (!response) {
@@ -153,6 +155,8 @@ const action: IRawAction = {
           lookup: safeAxiosLookup,
           headers: customHeaders,
           maxRedirects: 0,
+          // stream the response for custom api to protect against gzip bombs
+          responseType: 'stream',
         })
       }
 

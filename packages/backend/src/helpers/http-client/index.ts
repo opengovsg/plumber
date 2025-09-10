@@ -5,9 +5,9 @@ import { IHttpClientParams } from '@plumber/types'
 
 import { URL } from 'url'
 
+import { streamResponse } from '@/apps/custom-api/common/stream-response'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import { streamResponse } from '@/helpers/http-client/stream-response'
 import logger from '@/helpers/logger'
 
 import { processUrlPathParams } from './process-url-path-params'
@@ -35,15 +35,6 @@ export default function createHttpClient({
   const instance = axios.create({
     baseURL,
     allowAbsoluteUrls: false,
-
-    // Custom API special case: create a different http client for custom api
-    // where we stream the response to protect against gzip bombs
-    // other http clients should not be affected by this as they
-    // are controlled URLs from actions such as FormSG or webhook triggers
-    ...($?.app?.key === 'custom-api' && {
-      responseType: 'stream',
-      timeout: 60000, // 60 seconds
-    }),
   })
 
   // Edge case: unlike response interceptors, axios request interceptors are
@@ -66,8 +57,7 @@ export default function createHttpClient({
   )
 
   instance.interceptors.response.use(
-    (response) =>
-      $?.app?.key === 'custom-api' ? streamResponse(response) : response,
+    (response) => response,
     async (error) => {
       // EDGE CASE: We allow actions / triggers to throw RetriableError, and
       // some of them may choose to throw from beforeRequest. If this happens,

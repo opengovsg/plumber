@@ -2,7 +2,7 @@ import type { IGlobalVariable, IHttpClient } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import createHttpClient from '../../http-client'
+import createHttpClient from '../http-client'
 
 const mocks = vi.hoisted(() => ({
   axiosRequestUrlSpy: vi.fn(),
@@ -124,29 +124,6 @@ describe('Http client', () => {
         expect.anything(),
         expect.objectContaining({ url: '/drive/1234/test%20folder%20name' }),
       )
-    })
-  })
-
-  it('should create axios instance with stream configuration for custom-api', () => {
-    $ = {
-      app: {
-        key: 'custom-api',
-        auth: {},
-      },
-    } as unknown as IGlobalVariable
-
-    createHttpClient({
-      $,
-      baseURL: 'http://localhost',
-      beforeRequest: [],
-      requestErrorHandler: null,
-    })
-
-    expect(mocks.axiosCreateSpy).toHaveBeenCalledWith({
-      baseURL: 'http://localhost',
-      allowAbsoluteUrls: false,
-      responseType: 'stream',
-      timeout: 60000,
     })
   })
 
