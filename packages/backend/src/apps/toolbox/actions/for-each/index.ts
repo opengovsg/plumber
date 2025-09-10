@@ -1,4 +1,4 @@
-import { IRawAction } from '@plumber/types'
+import { IJSONObject, IRawAction } from '@plumber/types'
 
 import { ZodError } from 'zod'
 
@@ -9,6 +9,7 @@ import {
 } from '@/apps/toolbox/common/get-for-each-variables'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
 import {
@@ -66,6 +67,34 @@ const action: IRawAction = {
 
     try {
       const { items, inputSource, iterations } = parsedResult.data
+
+      /**
+       * NOTE (kevinkim-ogp): this is for backward compatibility with the old dataOut format
+       * the old dataOut format is an array of objects that store the column info
+       * while the new dataOut format which is unaffected by column order is an object
+       * TODO (kevinkim-ogp): remove this once all users have moved to the new format
+       */
+      let columnDataOutType: 'array' | 'object' = 'object'
+
+      // NOTE: we only need to check for the old dataOut format in non-test runs
+      // so that we can force users into the new dataOut format.
+      // existing executions still need to follow the old dataOut format
+      // so that the correct values are extracted from the correct columns
+      if (FOR_EACH_TABLE_SOURCES.includes(inputSource) && !testRun) {
+        const lastExecutionStep = await $.getLastExecutionStep()
+        columnDataOutType = Array.isArray(
+          (lastExecutionStep?.dataOut?.items as IJSONObject)?.columns,
+        )
+          ? 'array'
+          : 'object'
+
+        if (columnDataOutType === 'array') {
+          logger.info(
+            `Flow ${$.flow.id} using old dataOut format for table input`,
+          )
+        }
+      }
+
       const output: {
         iteration: string
         iterations: number
@@ -90,7 +119,10 @@ const action: IRawAction = {
         // table data is handled differently in processItems
         output['item'] = `items.${FOR_EACH_ITERATION_KEY}`
       } else if (FOR_EACH_TABLE_SOURCES.includes(inputSource)) {
-        const processedItems = processItems(items as MultipleRowObject)
+        const processedItems = processItems(
+          items as MultipleRowObject,
+          columnDataOutType, // TODO (kevinkim-ogp): remove this once all users have moved to the new format
+        )
         output.iterations = iterations
         output.items = processedItems
         output.inputSource = inputSource

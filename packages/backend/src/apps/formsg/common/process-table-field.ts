@@ -9,10 +9,10 @@ type TableColumn = {
   value: string
 }
 
-const createColumn = (label: string): TableColumn => {
+const createColumn = (label: string, index: number): TableColumn => {
   const id = Buffer.from(label).toString('hex')
   return {
-    id,
+    id: Buffer.from(`Col ${index + 1}`).toString('hex'),
     label,
     name: label,
     value: `data.rows.*.data.${id}`,
@@ -29,8 +29,10 @@ export default function convertTableAnswerArrayToTableObject(
   const columns =
     // make sure that column names do not contain commas
     columnNamesArray.length === answerArray[0].length
-      ? columnNamesArray.map(createColumn)
-      : answerArray[0].map((_, index) => createColumn(`Col ${index + 1}`))
+      ? columnNamesArray.map((column, index) => createColumn(column, index))
+      : answerArray[0].map((_, index) =>
+          createColumn(`Col ${index + 1}`, index),
+        )
 
   /**
    * NOTE: we do not show table rows that do not have any data
