@@ -13,7 +13,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { createPresignedPost, PresignedPost } from '@aws-sdk/s3-presigned-post'
 
 import appConfig from '@/config/app'
 import StepError from '@/errors/step'
@@ -40,6 +40,39 @@ export const MALWARE_SCAN_FAILURE = [
   MALWARE_SCAN_STATUS.ACCESS_DENIED,
   MALWARE_SCAN_STATUS.FAILED,
 ]
+
+export const ACCEPTED_FILE_TYPES = [
+  'text/plain', // .txt, .asc
+  'video/x-msvideo', // .avi
+  'image/bmp', // .bmp
+  'text/csv', // .csv
+  'application/x-dgn', // .dgn
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'application/x-dwf', // .dwf
+  'application/x-dwg', // .dwg
+  'application/x-dxf', // .dxf
+  'application/x-ent', // .ent
+  'image/gif', // .gif
+  'image/jpeg', // .jpg, .jpeg
+  'video/mpeg', // .mpeg, .mpg
+  'application/vnd.ms-project', // .mpp
+  'application/vnd.oasis.opendocument.database', // .odb
+  'application/vnd.oasis.opendocument.formula', // .odf
+  'application/vnd.oasis.opendocument.graphics', // .odg
+  'application/vnd.oasis.opendocument.spreadsheet', // .ods
+  'application/pdf', // .pdf
+  'image/png', // .png
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+  'application/rtf', // .rtf
+  'application/vnd.sun.xml.calc', // .sxc
+  'application/vnd.sun.xml.draw', // .sxd
+  'application/vnd.sun.xml.impress', // .sxi
+  'application/vnd.sun.xml.writer', // .sxw
+  'image/tiff', // .tif, .tiff
+  'video/x-ms-wmv', // .wmv
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+]
+export const MAX_FILE_SIZE = 1024 * 1024 * 2 // 2 MB
 
 function throwAttachmentError(
   errorType: string,
@@ -127,6 +160,7 @@ export function parseS3Id(id: string): S3IdData | null {
  *
  * @param bucket - The S3 bucket name
  * @param objectKey - The key (path) where the object will be stored in S3
+ * @param contentType - The content type of the object
  * @param metadata - Optional metadata to be attached to the object
  *
  * @returns A pre-signed URL that can be used to upload the object using a PUT request
@@ -134,29 +168,51 @@ export function parseS3Id(id: string): S3IdData | null {
  * *Note 2:* This doesn't validate `objectKey`; the caller is expected to make
  * sure it's formatted correctly.
  */
-export async function getPresignedUrl(
+export async function getPresignedPost(
   bucket: string,
   objectKey: string,
   contentType: string,
-  metadata: PutObjectCommandInput['Metadata'] | null,
-): Promise<string> {
-  const putObjectCommand = new PutObjectCommand({
+  metadata: Record<string, string>,
+): Promise<PresignedPost> {
+  if (!metadata || Object.keys(metadata).length === 0) {
+    throw new Error('Metadata is required')
+  }
+
+  // There's no guard duty scanning in dev environment
+  // so we just tag the object as scanned
+  const tags = appConfig.isDev
+    ? `<Tagging><TagSet><Tag><Key>${MALWARE_SCAN_TAG_KEY}</Key><Value>${MALWARE_SCAN_STATUS.NO_THREATS_FOUND}</Value></Tag></TagSet></Tagging>`
+    : undefined
+
+  const presignedPost = await createPresignedPost(s3Client, {
     Bucket: bucket,
     Key: objectKey,
-    ContentType: contentType,
-    Metadata: metadata,
-    // There's no guard duty scanning in dev environment
-    // so we just tag the object as scanned
-    Tagging: appConfig.isDev
-      ? `${MALWARE_SCAN_TAG_KEY}=${MALWARE_SCAN_STATUS.NO_THREATS_FOUND}`
-      : undefined,
+    Fields: {
+      key: objectKey,
+      acl: 'private',
+      'x-amz-meta-manualupload': 'true',
+      'x-amz-meta-flowId': metadata.flowId,
+      'x-amz-meta-filename': metadata.filename,
+      'x-amz-meta-size': metadata.size,
+      'x-amz-meta-updatedAt': metadata.updatedAt,
+      ...(tags ? { tagging: tags } : {}),
+    },
+    Expires: 5 * 60, // 5 minutes
+    Conditions: [
+      ['content-length-range', 0, MAX_FILE_SIZE],
+      // using the objects below locks the values and prevent them
+      // from being edited on the client
+      { 'Content-Type': contentType },
+      { 'x-amz-meta-manualupload': 'true' },
+      { 'x-amz-meta-flowId': metadata.flowId },
+      { 'x-amz-meta-filename': metadata.filename },
+      { 'x-amz-meta-size': metadata.size },
+      { 'x-amz-meta-updatedAt': metadata.updatedAt },
+      ...(tags ? [{ tagging: tags }] : []),
+    ],
   })
 
-  const presignedUrl = await getSignedUrl(s3Client, putObjectCommand, {
-    expiresIn: 5 * 60, // 5 minutes
-  })
-
-  return presignedUrl
+  return presignedPost
 }
 
 /**

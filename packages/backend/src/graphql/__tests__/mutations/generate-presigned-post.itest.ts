@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import { generateMockContext } from '@/graphql/__tests__/mutations/tiles/table.mock'
-import generatePresignedUrl from '@/graphql/mutations/generate-presigned-url'
+import generatePresignedPost from '@/graphql/mutations/generate-presigned-post'
 import Flow from '@/models/flow'
 import Context from '@/types/express/context'
 
@@ -12,59 +12,76 @@ const VALID_PARAMS = {
   fileType: 'text/plain',
   size: 100,
   updatedAt: new Date().toISOString(),
-  manualUpload: true,
 }
 
-const mocks = vi.hoisted(() => ({
-  getSignedUrl: vi.fn(),
+// Mock the s3 helpers module
+vi.mock('@/helpers/s3', () => ({
+  getPresignedPost: vi.fn(),
+  COMMON_S3_BUCKET: 'test-bucket',
+  COMMON_S3_MOCK_FOLDER_PREFIX: 's3:test-bucket:mock/',
+  parseS3Id: vi.fn(),
+  MAX_FILE_SIZE: 1024 * 1024 * 2,
+  ACCEPTED_FILE_TYPES: ['text/plain'],
+  validateObjectKey: vi.fn((objectKey) => {
+    const invalidCharacters = /[\\{}^`%~#<>|[\]]/
+    if (invalidCharacters.test(objectKey)) {
+      return false
+    }
+
+    // validate length of object key
+    const byteLength = Buffer.byteLength(objectKey, 'utf-8')
+    return byteLength <= 1024
+  }),
 }))
 
-vi.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: mocks.getSignedUrl,
-}))
+import { COMMON_S3_BUCKET, getPresignedPost } from '@/helpers/s3'
 
-describe('generatePresignedUrl', () => {
+describe('generatePresignedPost', () => {
   let context: Context
   beforeEach(async () => {
     context = await generateMockContext()
+    vi.clearAllMocks()
   })
 
   it('should generate a presigned url', async () => {
-    const expectedUrl = 'https://presigned-url.example.com'
-    mocks.getSignedUrl.mockResolvedValueOnce(expectedUrl)
-
     await Flow.query().insert({
       id: VALID_PARAMS.flowId,
       name: 'Test Flow',
       userId: context.currentUser.id,
     })
 
-    const result = await generatePresignedUrl(
-      null,
-      { input: VALID_PARAMS },
-      context,
+    await generatePresignedPost(null, { input: VALID_PARAMS }, context)
+    expect(getPresignedPost).toHaveBeenCalledWith(
+      COMMON_S3_BUCKET,
+      expect.stringMatching(
+        new RegExp(
+          `^${VALID_PARAMS.flowId}/[a-f0-9-]+/${VALID_PARAMS.filename}$`,
+        ),
+      ),
+      VALID_PARAMS.fileType,
+      {
+        flowId: VALID_PARAMS.flowId,
+        filename: VALID_PARAMS.filename,
+        size: VALID_PARAMS.size.toString(),
+        updatedAt: VALID_PARAMS.updatedAt,
+      },
     )
-    const expectedKeys = ['url', 's3Id']
-    expect(Object.keys(result)).toEqual(expectedKeys)
-    expect(result.s3Id).toContain(VALID_PARAMS.flowId)
   })
 
   it('should throw an error if the user does not have access to the flow', async () => {
-    vi.fn()
-      .mockRejectedValue(Flow.hasAccess)
-      .mockRejectedValue(
-        new ForbiddenError('You do not have access to this flow'),
-      )
+    const otherUserContext = await generateMockContext()
+    await Flow.query()
+      .patch({
+        userId: otherUserContext.currentUser.id,
+      })
+      .where('id', VALID_PARAMS.flowId)
 
     await expect(
-      generatePresignedUrl(null, { input: VALID_PARAMS }, context),
+      generatePresignedPost(null, { input: VALID_PARAMS }, context),
     ).rejects.toThrow(ForbiddenError)
   })
 
   it('should throw an error if the file size is too large', async () => {
-    const expectedUrl = 'https://presigned-url.example.com'
-    mocks.getSignedUrl.mockResolvedValueOnce(expectedUrl)
-
     await Flow.query().insert({
       id: VALID_PARAMS.flowId,
       name: 'Test Flow',
@@ -73,7 +90,7 @@ describe('generatePresignedUrl', () => {
 
     const tooLargeParams = { ...VALID_PARAMS, size: 2 * 1024 * 1024 + 1 }
     await expect(
-      generatePresignedUrl(null, { input: tooLargeParams }, context),
+      generatePresignedPost(null, { input: tooLargeParams }, context),
     ).rejects.toThrow('Size of attachment exceeds 2MB')
   })
 
@@ -85,9 +102,6 @@ describe('generatePresignedUrl', () => {
   ])(
     'should throw an error if the file type is not supported: %s',
     async (fileType) => {
-      const expectedUrl = 'https://presigned-url.example.com'
-      mocks.getSignedUrl.mockResolvedValueOnce(expectedUrl)
-
       await Flow.query().insert({
         id: VALID_PARAMS.flowId,
         name: 'Test Flow',
@@ -100,7 +114,7 @@ describe('generatePresignedUrl', () => {
       }
 
       await expect(
-        generatePresignedUrl(null, { input: unsupportedParams }, context),
+        generatePresignedPost(null, { input: unsupportedParams }, context),
       ).rejects.toThrow('Unsupported file type')
     },
   )
