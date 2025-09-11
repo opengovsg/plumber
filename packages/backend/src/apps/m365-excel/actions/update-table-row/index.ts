@@ -139,7 +139,7 @@ const action: IRawAction = {
     // Return updated row in case it has formulas.
     // Note: we disallow blacklisted formula and sanitise when necessary
     const updateRowValuesResponse = await session.request(
-      `/tables/${tableId}/rows/itemAt(index=${tableRowIndex})`,
+      `/tables/:tableId/rows/itemAt(index=:tableRowIndex)`,
       'patch',
       {
         data: {
@@ -155,6 +155,10 @@ const action: IRawAction = {
               })),
             ),
           ],
+        },
+        urlPathParams: {
+          tableId,
+          tableRowIndex,
         },
       },
     )

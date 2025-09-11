@@ -106,11 +106,15 @@ const action: IRawAction = {
     await Promise.all(
       cells.map(async (cell) =>
         session.request(
-          `/worksheets/${worksheetId}/range(address='${cell.address}')`,
+          `/worksheets/:worksheetId/range(address=':cellAddress')`,
           'patch',
           {
             data: {
               values: [[cell.value]],
+            },
+            urlPathParams: {
+              worksheetId,
+              cellAddress: cell.address,
             },
           },
         ),

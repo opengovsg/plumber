@@ -158,7 +158,11 @@ const action: IRawAction = {
     const tableHeaderInfoResponse = await session.request<{
       rowIndex: number
       values: string[][] // Guaranteed to be length 1 at top level
-    }>(`/tables/${tableId}/headerRowRange?$select=rowIndex,values`, 'get')
+    }>(`/tables/:tableId/headerRowRange?$select=rowIndex,values`, 'get', {
+      urlPathParams: {
+        tableId,
+      },
+    })
     const tableHeaderInfo: TableHeaderInfo = {
       rowIndex: tableHeaderInfoResponse.data.rowIndex,
       columnNames: tableHeaderInfoResponse.data.values[0],
@@ -166,7 +170,7 @@ const action: IRawAction = {
 
     // Note: we disallow blacklisted formulas and sanitise when necessary
     const createRowResponse = await session.request<{ index: number }>(
-      `/tables/${tableId}/rows`,
+      `/tables/:tableId/rows`,
       'post',
       {
         data: {
@@ -181,6 +185,9 @@ const action: IRawAction = {
               })),
             ),
           ],
+        },
+        urlPathParams: {
+          tableId,
         },
       },
     )

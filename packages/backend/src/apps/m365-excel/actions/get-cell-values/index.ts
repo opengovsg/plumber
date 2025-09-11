@@ -120,8 +120,14 @@ const action: IRawAction = {
     const results: DataOut['results'] = await Promise.all(
       cells.map(async (cell) => {
         const response = await session.request<{ values: string[][] }>(
-          `/worksheets/${worksheetId}/range(address='${cell.address}')`,
+          `/worksheets/:worksheetId/range(address=':cellAddress')`,
           'get',
+          {
+            urlPathParams: {
+              worksheetId,
+              cellAddress: cell.address,
+            },
+          },
         )
         return {
           cellAddress: cell.address,
