@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   stepQueryResult: vi.fn(() => ({
     config: {},
   })),
+  addInterceptors: vi.fn(),
 }))
 
 vi.mock('../../common/ip-resolver', () => {
@@ -29,6 +30,10 @@ vi.mock('../../common/ip-resolver', () => {
     safeAxiosLookup: mocks.isUrlAllowed,
   }
 })
+
+vi.mock('../../common/add-interceptors', () => ({
+  default: mocks.addInterceptors,
+}))
 
 vi.mock('@/models/step', () => ({
   default: {

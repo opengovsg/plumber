@@ -5,10 +5,8 @@ import { IHttpClientParams } from '@plumber/types'
 
 import { URL } from 'url'
 
-import { streamResponse } from '@/apps/custom-api/common/stream-response'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import logger from '@/helpers/logger'
 
 import { processUrlPathParams } from './process-url-path-params'
 
@@ -79,16 +77,10 @@ export default function createHttpClient({
         throw new HttpError(error)
       }
 
-      // Process error response stream to parse JSON error body
-      if (
-        error.response.data &&
-        typeof error.response.data.pipe === 'function'
-      ) {
-        try {
-          await streamResponse(error.response)
-        } catch (streamError) {
-          logger.warn('Error processing error response stream:')
-        }
+      // NOTE: this is most likely to happen in custom API where the response is streamed.
+      // we throw early so that the intercepter in custom api can handle it
+      if (error.response.config.responseType === 'stream') {
+        throw error
       }
 
       const { config } = error

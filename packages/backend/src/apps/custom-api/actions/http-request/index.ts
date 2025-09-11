@@ -1,11 +1,13 @@
 import { IRawAction } from '@plumber/types'
 
+import { InternalAxiosRequestConfig } from 'axios'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
 import Step from '@/models/step'
 
+import addInterceptors from '../../common/add-interceptors'
 import {
   CUSTOM_API_TIMEOUT,
   DISALLOWED_IP_RESOLVED_ERROR,
@@ -115,6 +117,8 @@ const action: IRawAction = {
     try {
       const parsedS = requestSchema.parse($.step.parameters)
       const { customHeaders, data: parsedData } = parsedS
+
+      await addInterceptors($, {} as InternalAxiosRequestConfig)
 
       let response = await $.http.request({
         url,
