@@ -49,7 +49,11 @@ function addToSampleData(
 
 async function fetchFormFields($: IGlobalVariable) {
   try {
-    const { data } = await $.http.get(`/v3/forms/${$.auth.data?.formId}`)
+    const { data } = await $.http.get('/v3/forms/:formId', {
+      urlPathParams: {
+        formId: $.auth.data?.formId as string,
+      },
+    })
     const sampleData: Record<string, any> = {}
     const formFields = data?.form?.form_fields
     if (!formFields) {

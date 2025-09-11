@@ -108,7 +108,7 @@ export async function registerWebhookUrl(
   try {
     // Set formsg bearer token here
     await $.http.patch(
-      `/public/v1/admin/forms/${formId}/settings`,
+      '/public/v1/admin/forms/:formId/settings',
       {
         webhook: {
           url: webhookUrl,
@@ -119,6 +119,9 @@ export async function registerWebhookUrl(
       {
         headers: {
           Authorization: 'Bearer ' + formsgConfig.apiKeys[env],
+        },
+        urlPathParams: {
+          formId,
         },
       },
     )
@@ -154,13 +157,16 @@ export async function verifyWebhookUrl(
 
   try {
     const settings = await $.http.post(
-      `/public/v1/admin/forms/${formId}/settings`,
+      '/public/v1/admin/forms/:formId/settings',
       {
         userEmail,
       },
       {
         headers: {
           Authorization: 'Bearer ' + formsgConfig.apiKeys[env],
+        },
+        urlPathParams: {
+          formId,
         },
       },
     )

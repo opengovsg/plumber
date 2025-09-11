@@ -24,7 +24,11 @@ export const verifyFormCreds = async (
   let publicKey = ''
   let responseMode = ''
   try {
-    const { data } = await $.http.get(`/v3/forms/${formId}`)
+    const { data } = await $.http.get('/v3/forms/:formId', {
+      urlPathParams: {
+        formId,
+      },
+    })
     formTitle = get(data, 'form.title')
     publicKey = get(data, 'form.publicKey')
     responseMode = get(data, 'form.responseMode')
