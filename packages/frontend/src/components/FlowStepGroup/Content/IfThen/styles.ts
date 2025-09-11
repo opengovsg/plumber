@@ -36,7 +36,7 @@ export const branchStyles = {
     borderRadius: 'lg',
     direction: 'column' as FlexProps['direction'],
     overflow: 'hidden',
-    px: 4,
+    px: 3,
     py: 3,
     w: '100%',
   },
