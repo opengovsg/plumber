@@ -1,6 +1,5 @@
 import { IRawAction } from '@plumber/types'
 
-import { InternalAxiosRequestConfig } from 'axios'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -118,7 +117,7 @@ const action: IRawAction = {
       const parsedS = requestSchema.parse($.step.parameters)
       const { customHeaders, data: parsedData } = parsedS
 
-      await addInterceptors($, {} as InternalAxiosRequestConfig)
+      addInterceptors($.http)
 
       let response = await $.http.request({
         url,

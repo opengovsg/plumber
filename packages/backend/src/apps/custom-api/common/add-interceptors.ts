@@ -1,12 +1,12 @@
-import { TBeforeRequest } from '@plumber/types'
+import { AxiosInstance } from 'axios'
 
 import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
 import { streamResponse } from './stream-response'
 
-const addInterceptors: TBeforeRequest = async ($, requestConfig) => {
-  $.http.interceptors.response.use(
+const addInterceptors = (httpClient: AxiosInstance): void => {
+  httpClient.interceptors.response.use(
     async (response) => {
       if (response.data && typeof response.data.pipe === 'function') {
         return await streamResponse(response)
@@ -27,8 +27,6 @@ const addInterceptors: TBeforeRequest = async ($, requestConfig) => {
       throw new HttpError(error)
     },
   )
-
-  return requestConfig
 }
 
 export default addInterceptors
