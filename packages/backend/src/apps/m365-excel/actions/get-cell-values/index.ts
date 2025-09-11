@@ -6,6 +6,7 @@ import WorkbookSession from '../../common/workbook-session'
 
 import type { DataOut } from './data-out'
 import getDataOutMetadata from './get-data-out-metadata'
+import { parametersSchema } from './schema'
 
 /**
  * NOTE: This action has been deprecated for GA to reduce app complexity. We are
@@ -80,11 +81,18 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
-    const { fileId, worksheetId, cells: rawCells } = $.step.parameters
+    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
 
-    const cells = (rawCells as Array<{ address: string }>).map((cell) => ({
-      address: cell.address.trim(),
-    }))
+    if (parametersParseResult.success === false) {
+      throw new StepError(
+        'There was a problem with the input.',
+        parametersParseResult.error.issues[0].message,
+        $.step?.position,
+        $.app.name,
+      )
+    }
+
+    const { fileId, worksheetId, cells } = parametersParseResult.data
 
     // Basic sanity checks
     if (cells.length > 3) {
@@ -112,8 +120,14 @@ const action: IRawAction = {
     const results: DataOut['results'] = await Promise.all(
       cells.map(async (cell) => {
         const response = await session.request<{ values: string[][] }>(
-          `/worksheets/${worksheetId}/range(address='${cell.address}')`,
+          `/worksheets/:worksheetId/range(address=':cellAddress')`,
           'get',
+          {
+            urlPathParams: {
+              worksheetId,
+              cellAddress: cell.address,
+            },
+          },
         )
         return {
           cellAddress: cell.address,

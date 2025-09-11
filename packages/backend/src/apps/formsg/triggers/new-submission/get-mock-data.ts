@@ -98,8 +98,16 @@ async function getMockData($: IGlobalVariable) {
     const { formId } = getFormDetailsFromGlobalVariable($)
 
     const [{ data }, { data: formDetails }] = await Promise.all([
-      $.http.get(`/v3/forms/${formId}/sample-submission`),
-      $.http.get(`/v3/forms/${formId}`),
+      $.http.get('/v3/forms/:formId/sample-submission', {
+        urlPathParams: {
+          formId,
+        },
+      }),
+      $.http.get('/v3/forms/:formId', {
+        urlPathParams: {
+          formId,
+        },
+      }),
     ])
 
     const formFields = formDetails.form.form_fields as Array<FormField>
