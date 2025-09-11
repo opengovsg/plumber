@@ -19,7 +19,7 @@ import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import ErrorFlowStepHeader from '../ErrorFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
-import { SortableList } from '../SortableList'
+import { DragHandle } from '../SortableList/components'
 
 import DeleteStepButton from './components/DeleteStepButton'
 import DuplicateStepButton from './components/DuplicateStepButton'
@@ -140,7 +140,6 @@ export default function FlowStep(
     }
   }
 
-  const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)
   /**
    * NOTE: there are various conditions that determine whether the drag handle
    * should be shown.
@@ -153,6 +152,13 @@ export default function FlowStep(
    */
   const shouldShowDragHandle =
     !readOnly && !isTrigger && !isMobile && !isIfThenStep && allowReorder
+
+  const headerWidth = getFlowStepHeaderWidth(
+    isDrawerOpen,
+    isMobile,
+    isNested,
+    shouldShowDragHandle,
+  )
 
   // generate help message only if template config exists
   const stepAppEventKey = `${step?.appKey}_${step?.key}`
@@ -190,7 +196,9 @@ export default function FlowStep(
       ) : (
         <Flex flexDir="row" w="100%">
           <Flex
-            alignItems="center"
+            alignItems={
+              isNested && !shouldShowDragHandle ? 'flex-start' : 'center'
+            }
             justifyContent="center"
             flexDir="column"
             flex="1"
@@ -266,10 +274,10 @@ export default function FlowStep(
           </Flex>
           {shouldShowDragHandle &&
             (isNested ? (
-              <SortableList.DragHandle onWarningOpen={onWarningOpen} />
+              <DragHandle isNested={isNested} onWarningOpen={onWarningOpen} />
             ) : (
               <Box position="absolute" left="100%" alignSelf="center">
-                <SortableList.DragHandle onWarningOpen={onWarningOpen} />
+                <DragHandle onWarningOpen={onWarningOpen} />
               </Box>
             ))}
         </Flex>
