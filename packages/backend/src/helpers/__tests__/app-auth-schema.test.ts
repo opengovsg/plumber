@@ -23,7 +23,9 @@ describe('app-auth-schema', () => {
     const result = screenNameSchema.safeParse('a'.repeat(129))
     expect(result.success).toBe(false)
     if (result.success === false) {
-      expect(result.error.errors[0].message).toBe('Screen name is too long')
+      expect(result.error.errors[0].message).toBe(
+        'Connection label is too long',
+      )
     }
   })
 
@@ -31,7 +33,7 @@ describe('app-auth-schema', () => {
     const result = screenNameSchema.safeParse('')
     expect(result.success).toBe(false)
     if (result.success === false) {
-      expect(result.error.errors[0].message).toBe('Empty screen name')
+      expect(result.error.errors[0].message).toBe('Empty connection label')
     }
   })
 })

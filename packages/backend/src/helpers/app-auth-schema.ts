@@ -8,5 +8,5 @@ const MAX_SCREEN_NAME_LENGTH = 128
 export const screenNameSchema = z
   .string()
   .trim()
-  .min(1, 'Empty screen name')
-  .max(MAX_SCREEN_NAME_LENGTH, 'Screen name is too long')
+  .min(1, 'Empty connection label')
+  .max(MAX_SCREEN_NAME_LENGTH, 'Connection label is too long')
