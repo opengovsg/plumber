@@ -6,6 +6,7 @@ import { fromZodError } from 'zod-validation-error'
 import StepError, { GenericSolution } from '@/errors/step'
 import Step from '@/models/step'
 
+import addInterceptors from '../../common/add-interceptors'
 import {
   CUSTOM_API_TIMEOUT,
   DISALLOWED_IP_RESOLVED_ERROR,
@@ -116,6 +117,8 @@ const action: IRawAction = {
       const parsedS = requestSchema.parse($.step.parameters)
       const { customHeaders, data: parsedData } = parsedS
 
+      addInterceptors($.http)
+
       let response = await $.http.request({
         url,
         method,
@@ -129,6 +132,8 @@ const action: IRawAction = {
         validateStatus: (status) =>
           (status >= 200 && status < 300) ||
           REDIRECT_STATUS_CODES.includes(status),
+        // stream the response for custom api to protect against gzip bombs
+        responseType: 'stream',
       })
 
       if (!response) {
@@ -153,6 +158,8 @@ const action: IRawAction = {
           lookup: safeAxiosLookup,
           headers: customHeaders,
           maxRedirects: 0,
+          // stream the response for custom api to protect against gzip bombs
+          responseType: 'stream',
         })
       }
 
