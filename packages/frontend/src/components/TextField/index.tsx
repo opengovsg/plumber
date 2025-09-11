@@ -13,6 +13,10 @@ import copy from 'clipboard-copy'
 
 import { EditorContext } from '@/contexts/Editor'
 
+const FIELD_MAX_LENGTH = {
+  screenName: 128,
+}
+
 type TextFieldProps = {
   shouldUnregister?: boolean
   name: string
@@ -30,6 +34,10 @@ type TextFieldProps = {
   ) => void
   placeholder?: string
   defaultValue?: string
+}
+
+function getFieldMaxLength(name: string): number | undefined {
+  return FIELD_MAX_LENGTH[name as keyof typeof FIELD_MAX_LENGTH]
 }
 
 export default function TextField(props: TextFieldProps): React.ReactElement {
@@ -92,6 +100,7 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
                 onBlur?.(...args)
               }}
               isReadOnly={readOnly || disabled}
+              maxLength={getFieldMaxLength(name)}
             />
             {clickToCopy && (
               <InputRightElement>
