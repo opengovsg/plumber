@@ -36,7 +36,7 @@ export const useS3Operations = (
   const [isDeleting, setIsDeleting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [deleteFile] = useMutation(DELETE_UPLOADED_FILE)
-  const [generatePresignedUrl] = useMutation(GENERATE_PRESIGNED_POST)
+  const [generatePresignedPost] = useMutation(GENERATE_PRESIGNED_POST)
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const [updateStep] = useMutation(UPDATE_STEP)
 
@@ -100,7 +100,7 @@ export const useS3Operations = (
       const { name: filename, size, type } = file
       const updatedAt = new Date().toISOString()
 
-      const res = await generatePresignedUrl({
+      const res = await generatePresignedPost({
         variables: {
           input: {
             flowId,
@@ -126,7 +126,7 @@ export const useS3Operations = (
         formData.append(key, value as string)
       })
       formData.set('Content-Type', file.type)
-      formData.append('file', file)
+      formData.set('file', file)
 
       const uploadResponse = await fetch(presignedPost.url, {
         method: 'POST',

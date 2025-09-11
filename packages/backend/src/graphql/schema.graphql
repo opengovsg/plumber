@@ -100,7 +100,7 @@ type Mutation {
   ): LoginWithSelectedSgidResult!
   duplicateFlow(input: DuplicateFlowInput): Flow
   # S3 operations
-  generatePresignedPost(input: GeneratePresignedPostInput): PreSignedPostObject
+  generatePresignedPost(input: GeneratePresignedPostInput): PresignedPostObject
   deleteUploadedFile(id: String!): Boolean
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
@@ -603,7 +603,7 @@ type PresignedPost {
   fields: JSONObject!
 }
 
-type PreSignedPostObject {
+type PresignedPostObject {
   presignedPost: PresignedPost!
   s3Id: String!
 }
