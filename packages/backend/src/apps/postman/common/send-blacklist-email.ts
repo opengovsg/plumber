@@ -1,8 +1,7 @@
-import DOMPurify from 'dompurify'
-import { JSDOM } from 'jsdom'
 import { DateTime } from 'luxon'
 
 import { redisClient as pipeErrorRedisClient } from '@/helpers/generate-error-email'
+import { safeHtml } from '@/helpers/html-utils'
 import { sendEmail } from '@/helpers/send-email'
 
 const MAX_LENGTH = 80
@@ -29,15 +28,6 @@ type BlacklistEmailFormProps = Omit<BlacklistEmailProps, 'flowName'>
 const blacklistRedisKey = (flowId: string, email: string) =>
   `blacklist-alert:${flowId}:${email}`
 
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
-
 function truncateFlowName(flowName: string) {
   return flowName.length > MAX_LENGTH
     ? flowName.slice(0, MAX_LENGTH) + '...'
@@ -60,22 +50,13 @@ export function createRequestBlacklistFormLink({
 function createBodyErrorMessage(props: BlacklistEmailProps): string {
   const { flowName, blacklistedRecipients } = props
 
-  /**
-   * we first use DOMPurify to sanitise the flow name to prevent XSS attacks.
-   * then we escape the HTML characters to display the flow name as-is in the email body.
-   */
-  const window = new JSDOM('').window
-  const purify = DOMPurify(window)
-  const sanitisedFlowName = purify.sanitize(flowName)
-  const escapedFlowName = escapeHtml(sanitisedFlowName)
-
   const formLink = createRequestBlacklistFormLink(props)
 
-  const bodyMessage = `
+  const bodyMessage = safeHtml`
     Dear fellow plumber,
     <br>
     <br>
-    We have detected that your pipe <strong>${escapedFlowName}</strong> has attempted to send an email to one or more blacklisted email addresses:
+    We have detected that your pipe <strong>${flowName}</strong> has attempted to send an email to one or more blacklisted email addresses:
     <ul>
       ${blacklistedRecipients.map((email) => `<li>${email}</li>`).join('\n')}
     </ul>
