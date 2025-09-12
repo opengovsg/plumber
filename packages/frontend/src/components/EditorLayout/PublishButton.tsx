@@ -38,7 +38,7 @@ export default function PublishButton({
         isLoading={loading}
         spinner={<Spinner fontSize={24} />}
         size="sm"
-        w="full"
+        minW="120px" // set this to avoid button width changing on publish/unpublish
         onClick={(e) => {
           if (shouldWarnOnLeave) {
             setShouldWarnOnPublish(true)

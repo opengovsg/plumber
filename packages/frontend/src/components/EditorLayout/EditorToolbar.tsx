@@ -25,7 +25,7 @@ const GuideItem = ({ type }: { type: 'icon' | 'button' }) => {
         target="_blank"
         as={Link}
         to={URLS.GUIDE_LINK}
-        leftIcon={<BiInfoCircle />}
+        w="100%"
       >
         Guide
       </Button>
@@ -69,7 +69,7 @@ const SettingsItem = ({
         colorScheme="secondary"
         as={Link}
         to={URLS.FLOW_EDITOR_NOTIFICATIONS(flowId)}
-        leftIcon={<BiCog />}
+        w="100%"
         onClick={(e) => {
           setLeaveToUrl(URLS.FLOW_EDITOR_NOTIFICATIONS(flowId))
           handleWarnOnLeave(e)
