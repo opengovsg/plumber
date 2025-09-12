@@ -153,12 +153,7 @@ export default function FlowStep(
   const shouldShowDragHandle =
     !readOnly && !isTrigger && !isMobile && !isIfThenStep && allowReorder
 
-  const headerWidth = getFlowStepHeaderWidth(
-    isDrawerOpen,
-    isMobile,
-    isNested,
-    shouldShowDragHandle,
-  )
+  const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)
 
   // generate help message only if template config exists
   const stepAppEventKey = `${step?.appKey}_${step?.key}`
