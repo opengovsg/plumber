@@ -8,7 +8,7 @@ import * as URLS from '@/config/urls'
 type CreateLinkOptions = {
   uri: string
   token?: string | null
-  onError?: (message: string, title?: string) => void
+  onError?: (message: string) => void
 }
 
 const createHttpLink = (
