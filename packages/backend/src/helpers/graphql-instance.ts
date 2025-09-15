@@ -88,6 +88,20 @@ export const server = new ApolloServer<UnauthenticatedContext>({
   allowBatchedHttpRequests: false,
   formatError: (error) => {
     logger.error(error)
+
+    // NOTE: handles INTERNAL_SERVER_ERROR, which also includes throwIfNotFound errors
+    // we log the error on the server and return a generic message to the frontend
+    // to prevent leaking internal server error details to the frontend such as the
+    // exact SQL queries.
+    if (error.extensions?.code === 'INTERNAL_SERVER_ERROR') {
+      // Return a generic message to the frontend
+      return {
+        message:
+          'An error has occurred. Please try again later. If the problem persists, contact us at support@plumber.gov.sg.',
+        code: 'INTERNAL_SERVER_ERROR',
+      }
+    }
+
     let errorMessage = error.message
     if (error.message.includes('Did you mean')) {
       errorMessage = 'Invalid request'

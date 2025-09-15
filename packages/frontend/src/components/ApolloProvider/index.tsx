@@ -12,9 +12,10 @@ const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
   const toast = useToast()
 
   const onError = React.useCallback(
-    (message: string) => {
+    (message: string, title?: string) => {
       toast({
-        title: message,
+        title: title || message,
+        description: title ? message : undefined,
         status: 'error',
         duration: 3000,
         isClosable: true,

@@ -8,7 +8,7 @@ import * as URLS from '@/config/urls'
 type CreateLinkOptions = {
   uri: string
   token?: string | null
-  onError?: (message: string) => void
+  onError?: (message: string, title?: string) => void
 }
 
 const createHttpLink = (
@@ -25,11 +25,12 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
   onError(({ graphQLErrors, networkError, operation }) => {
     const context = operation.getContext()
     const autoSnackbar = context.autoSnackbar ?? true
+    const title = context.title ?? undefined
 
     if (graphQLErrors) {
       graphQLErrors.forEach(({ message, locations, path }) => {
         if (autoSnackbar) {
-          callback?.(message)
+          callback?.(message, title)
         }
 
         // eslint-disable-next-line no-console
