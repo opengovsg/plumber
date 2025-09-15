@@ -6,7 +6,7 @@ import cache from './cache'
 import createLink from './link'
 
 type CreateClientOptions = {
-  onError?: (message: string, title?: string) => void
+  onError?: (message: string) => void
   token?: string | null
 }
 

@@ -12,10 +12,11 @@ const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
   const toast = useToast()
 
   const onError = React.useCallback(
-    (message: string, title?: string) => {
+    (message: string) => {
       toast({
-        title: title || message,
-        description: title ? message : undefined,
+        title: message,
+        description:
+          'Please try again later. If this error persists, contact us at support@plumber.gov.sg.',
         status: 'error',
         duration: 3000,
         isClosable: true,

@@ -95,11 +95,11 @@ export const server = new ApolloServer<UnauthenticatedContext>({
     // exact SQL queries.
     if (error.extensions?.code === 'INTERNAL_SERVER_ERROR') {
       // Return a generic message to the frontend
-      return {
-        message:
-          'An error has occurred. Please try again later. If the problem persists, contact us at support@plumber.gov.sg.',
-        code: 'INTERNAL_SERVER_ERROR',
+      let message = 'An error has occurred'
+      if (error?.message) {
+        message += ': ' + error?.message
       }
+      return { message, code: 'INTERNAL_SERVER_ERROR' }
     }
 
     let errorMessage = error.message
