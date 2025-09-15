@@ -16,7 +16,7 @@ const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
       toast({
         title: message,
         description:
-          'Please try again later. If this error persists, contact us at support@plumber.gov.sg.',
+          'If this error persists, contact us at support@plumber.gov.sg.',
         status: 'error',
         duration: 3000,
         isClosable: true,
