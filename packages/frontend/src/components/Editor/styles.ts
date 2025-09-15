@@ -8,6 +8,7 @@ export const editorStyles = {
     overflowX: 'hidden' as FlexProps['overflowX'],
     justifyContent: 'center',
     pos: 'relative' as FlexProps['pos'],
+    paddingX: 4,
   },
   stepHeaderContainer: {
     display: 'block',

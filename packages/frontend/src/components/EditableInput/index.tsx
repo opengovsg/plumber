@@ -9,7 +9,7 @@ interface EditableInputProps {
   onSave: (value: string) => Promise<void>
   readOnly?: boolean
   maxLength?: number
-  width?: string | string[]
+  maxWidth?: string | string[]
   editModeWrapper?: (children: React.ReactNode) => React.ReactNode
   readOnlyWrapper?: (children: React.ReactNode) => React.ReactNode
   componentWrapper?: (children: React.ReactNode) => React.ReactNode
@@ -22,7 +22,7 @@ export default function EditableInput({
   onSave,
   readOnly = false,
   maxLength = 64,
-  width = ['100%', '300px', '400px', '500px'],
+  maxWidth = ['100%', '300px', '400px', '500px'],
   editModeWrapper,
   readOnlyWrapper,
   componentWrapper,
@@ -68,7 +68,7 @@ export default function EditableInput({
     <Flex width="100%">
       <Input
         autoFocus
-        w={width}
+        w={maxWidth}
         maxLength={maxLength}
         variant="flushed"
         value={inputValue}
@@ -108,9 +108,13 @@ export default function EditableInput({
         }
       }}
       whiteSpace="nowrap"
-      maxW={isMobile ? '80%' : '100%'}
     >
-      <Text textOverflow="ellipsis" overflow="hidden" w={width}>
+      <Text
+        textOverflow="ellipsis"
+        overflow="hidden"
+        maxW={maxWidth}
+        width="auto"
+      >
         {initialValue}
       </Text>
       {!readOnly && (
