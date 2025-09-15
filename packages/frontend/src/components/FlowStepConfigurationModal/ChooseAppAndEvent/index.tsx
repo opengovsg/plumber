@@ -105,42 +105,47 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       patchModalState({ isLoading: true })
       let newStepId = null
       let newStepIndex = null
-      if (prevStepId) {
-        const createdStep = await onCreateStep(
-          prevStepId,
-          app.key,
-          triggerOrAction.key,
-          excelConnection?.id || undefined,
-        )
-        newStepId = createdStep.id
-        newStepIndex = createdStep.position - 1
-      } else if (step) {
-        // account for the if-then edge case
-        if (
-          app.key === TOOLBOX_APP_KEY &&
-          triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
-        ) {
-          const ifThen = await initializeIfThen(step)
-          newStepId = ifThen.id
-          newStepIndex = ifThen.position - 1
-        } else {
-          const updatedStep = await onUpdateStep({
-            ...step,
-            appKey: app.key,
-            key: triggerOrAction.key,
-            connection: {
-              id: excelConnection?.id || undefined,
-            },
-          })
-          newStepId = updatedStep.id
-          newStepIndex = updatedStep.position - 1
+      try {
+        if (prevStepId) {
+          const createdStep = await onCreateStep(
+            prevStepId,
+            app.key,
+            triggerOrAction.key,
+            excelConnection?.id || undefined,
+          )
+          newStepId = createdStep.id
+          newStepIndex = createdStep.position - 1
+        } else if (step) {
+          // account for the if-then edge case
+          if (
+            app.key === TOOLBOX_APP_KEY &&
+            triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
+          ) {
+            const ifThen = await initializeIfThen(step)
+            newStepId = ifThen.id
+            newStepIndex = ifThen.position - 1
+          } else {
+            const updatedStep = await onUpdateStep({
+              ...step,
+              appKey: app.key,
+              key: triggerOrAction.key,
+              connection: {
+                id: excelConnection?.id || undefined,
+              },
+            })
+            newStepId = updatedStep.id
+            newStepIndex = updatedStep.position - 1
+          }
         }
+        onClose()
+        onDrawerOpen()
+        setCurrentStepId(newStepId)
+        setCurrentStepIndex(newStepIndex)
+      } catch (error) {
+        console.error('Error selecting app and event', error)
+      } finally {
+        patchModalState({ isLoading: false })
       }
-      patchModalState({ isLoading: false })
-      onClose()
-      onDrawerOpen()
-      setCurrentStepId(newStepId)
-      setCurrentStepIndex(newStepIndex)
     },
     [
       excelConnection?.verified,
