@@ -2,25 +2,10 @@ import type { IFlow } from '@plumber/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
-import { BiChevronLeft, BiCog, BiInfoCircle } from 'react-icons/bi'
+import { BiChevronLeft } from 'react-icons/bi'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ApolloError, useMutation, useQuery } from '@apollo/client'
-import {
-  Box,
-  Flex,
-  HStack,
-  Icon,
-  Skeleton,
-  Text,
-  useDisclosure,
-} from '@chakra-ui/react'
-import {
-  Button,
-  IconButton,
-  Spinner,
-  TouchableTooltip,
-  useIsMobile,
-} from '@opengovsg/design-system-react'
+import { Box, Flex, HStack, Icon, useDisclosure } from '@chakra-ui/react'
 
 import Container from '@/components/Container'
 import EditableInput from '@/components/EditableInput'
@@ -42,6 +27,7 @@ import AnnouncementModal, {
   LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY,
 } from './AnnouncementModal'
 import EditorSnackbar from './EditorSnackbar'
+import EditorToolbar from './EditorToolbar'
 import { LensSurvey } from './LensSurvey'
 
 export default function EditorLayout() {
@@ -50,7 +36,6 @@ export default function EditorLayout() {
   const { flowId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const isMobile = useIsMobile()
   const [updateFlow] = useMutation(UPDATE_FLOW)
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
     refetchQueries: [GET_FLOW],
@@ -227,16 +212,17 @@ export default function EditorLayout() {
           justifyContent="space-between"
           alignItems="center"
           py={2}
-          px={8}
+          px={{ base: 4, md: 8 }}
           borderBottom="1px solid"
           borderColor="base.divider.medium"
         >
-          <Flex flex={1} alignItems="center">
+          <Flex flex={1} alignItems="center" minWidth={0}>
             <Box
               as={Link}
               to={URLS.FLOWS}
               mt={1}
               mr={3}
+              flexShrink={0}
               onClick={handleWarnOnLeave}
             >
               <Icon
@@ -246,84 +232,26 @@ export default function EditorLayout() {
               ></Icon>
             </Box>
 
-            <Flex>
+            <Flex flex={1} minWidth={0}>
               <EditableInput
                 value={flow?.name}
                 onSave={onFlowNameUpdate}
                 readOnly={loading}
-                width="auto"
               />
             </Flex>
           </Flex>
-
-          {!isMobile && (
-            <TouchableTooltip label="Guide" aria-label="guide tooltip">
-              <IconButton
-                as={Link}
-                to={URLS.GUIDE_LINK}
-                target="_blank"
-                variant="clear"
-                aria-label="guide"
-                icon={<BiInfoCircle />}
-                colorScheme="secondary"
-                _hover={{
-                  color: 'primary.500',
-                  bg: 'interaction.muted.main.hover',
-                }}
-              />
-            </TouchableTooltip>
-          )}
-
-          <TouchableTooltip label="Settings" aria-label="settings tooltip">
-            <IconButton
-              as={Link}
-              to={URLS.FLOW_EDITOR_NOTIFICATIONS(flowId)}
-              variant="clear"
-              aria-label="settings"
-              icon={<BiCog />}
-              colorScheme="secondary"
-              _hover={{
-                color: 'primary.500',
-                bg: 'interaction.muted.main.hover',
-              }}
-              onClick={(e) => {
-                setLeaveToUrl(URLS.FLOW_EDITOR_NOTIFICATIONS(flowId))
-                handleWarnOnLeave(e)
-              }}
-            />
-          </TouchableTooltip>
-
-          {/* Used a tooltip instead because the words take up too much space on mobile view */}
-          <TouchableTooltip
-            label={
-              isFlowIncomplete
-                ? 'Set up for all steps must be completed before you can publish your pipe'
-                : hasFlowTransfer
-                ? 'You cannot publish a pipe with a pending transfer'
-                : ''
-            }
-          >
-            <Button
-              isDisabled={isFlowIncomplete || hasFlowTransfer}
-              isLoading={loading}
-              spinner={<Spinner fontSize={24} />}
-              size="sm"
-              onClick={(e) => {
-                if (shouldWarnOnLeave) {
-                  setShouldWarnOnPublish(true)
-                  handleWarnOnLeave(e)
-                } else {
-                  onFlowStatusUpdate(!flow.active)
-                }
-              }}
-            >
-              <Skeleton isLoaded={!loading}>
-                <Text textStyle="subhead-1">
-                  {flow?.active ? 'Unpublish' : 'Publish'}
-                </Text>
-              </Skeleton>
-            </Button>
-          </TouchableTooltip>
+          <EditorToolbar
+            flowId={flowId}
+            flow={flow}
+            isFlowIncomplete={isFlowIncomplete}
+            hasFlowTransfer={hasFlowTransfer}
+            loading={loading}
+            shouldWarnOnLeave={shouldWarnOnLeave}
+            setShouldWarnOnPublish={setShouldWarnOnPublish}
+            onFlowStatusUpdate={onFlowStatusUpdate}
+            setLeaveToUrl={setLeaveToUrl}
+            handleWarnOnLeave={handleWarnOnLeave}
+          />
         </HStack>
 
         <Container

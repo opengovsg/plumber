@@ -51,6 +51,7 @@ function BreadCrumb() {
         value={initialTableName}
         onSave={onSave}
         readOnly={!hasEditPermission}
+        maxWidth={['140px', '250px', '250px', '500px']}
         readOnlyWrapper={(children) => (
           <BreadcrumbLink
             pointerEvents={hasEditPermission ? 'auto' : 'none'}
