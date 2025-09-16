@@ -29,7 +29,7 @@ export function isCheckboxItems(items: any[]): boolean {
 
 function processColumns(
   data: MultipleRowObject,
-): Record<string, ProcessedColumn> | ProcessedColumn[] {
+): Record<string, ProcessedColumn> {
   const { columns, inputSource } = data
   if (columns.length === 0) {
     return {}
