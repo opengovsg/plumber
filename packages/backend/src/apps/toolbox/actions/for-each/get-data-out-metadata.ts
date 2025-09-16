@@ -78,6 +78,7 @@ async function getDataOutMetadata(
       Object.entries(items.columns)
         .sort((a, b) => a[1].order - b[1].order)
         .forEach(([id, column], index) => {
+          const isBackwardCompatibilityColumnId = !isNaN(Number(id))
           tempColumnsMetadata[id] = {
             id: { isHidden: true },
             name: { isHidden: true },
@@ -89,6 +90,7 @@ async function getDataOutMetadata(
                   : String(items?.rows?.[0]?.data?.[column.id] ?? ''),
               order: index + 1,
               type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
+              isHiddenFromList: isBackwardCompatibilityColumnId,
             },
             order: { isHidden: true },
           }

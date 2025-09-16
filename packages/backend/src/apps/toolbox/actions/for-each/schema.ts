@@ -117,6 +117,7 @@ const dataOutTableSchema = z.object({
   inputSource: z.enum(FOR_EACH_TABLE_SOURCES),
 })
 
+// TODO (kevinkim-ogp): remove the union once all users have moved to the new dataOut format
 export const dataOutSchema = z.discriminatedUnion('inputSource', [
   baseDataOutSchema.extend({
     inputSource: z.literal(FOR_EACH_INPUT_SOURCE.STRING_ARRAY),
