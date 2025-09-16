@@ -61,7 +61,7 @@ function findAndSubstituteVariables(
    * this is for logging if users are still using the old format for for-each
    * we log this here so that it does not keep logging for each parameter that is computed
    */
-  if (/items.columns.\d+.value/g.test(rawValue)) {
+  if (/items.columns.\d+.value/.test(rawValue)) {
     logger.info('Pipe using old for each dataOut format', {
       event: 'for-each-old-dataOut-format',
       executionId: executionSteps[0].executionId,
