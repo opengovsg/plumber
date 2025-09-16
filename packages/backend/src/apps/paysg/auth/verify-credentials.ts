@@ -2,27 +2,19 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import { getEnvironmentFromApiKey, PaySgEnvironment } from '../common/api'
 
+import { validateAuthData } from './auth-data'
+
 export default async function verifyCredentials(
   $: IGlobalVariable,
 ): Promise<void> {
-  const authData = $.auth.data
-
-  if (!authData || !authData.apiKey) {
-    throw new Error('Invalid PaySG API key')
-  }
-
-  const paymentServiceId = authData.paymentServiceId as string
-
-  if (!paymentServiceId || typeof paymentServiceId !== 'string') {
-    throw new Error('Payment Service ID must be set')
-  }
+  const authData = validateAuthData($)
 
   try {
     await $.http.get(
       '/v1/payment-services/:paymentServiceId/payments?limit=1',
       {
         urlPathParams: {
-          paymentServiceId,
+          paymentServiceId: authData.paymentServiceId,
         },
       },
     )

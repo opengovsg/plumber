@@ -1,18 +1,16 @@
 import z from 'zod'
 
-import { CELL_A1_ADDRESS_REGEX } from '../../common/workbook-helpers/cells'
+import {
+  CELL_A1_ADDRESS_REGEX,
+  fileIdSchema,
+  worksheetIdSchema,
+} from '../../common/schema'
 
 // TODO: We should probably store zod schemas in app / action / trigger
 // definitions.
 export const parametersSchema = z.object({
-  fileId: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please choose a file to edit.' }),
-  worksheetId: z
-    .string()
-    .trim()
-    .min(1, { message: 'Please select a worksheet to edit.' }),
+  fileId: fileIdSchema,
+  worksheetId: worksheetIdSchema,
   cells: z
     .array(
       z.object({

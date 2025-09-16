@@ -1,13 +1,14 @@
 import dns from 'dns'
 import ipaddr from 'ipaddr.js'
 
-export async function getIpFromUrl(url: string) {
+import { DISALLOWED_IP_RESOLVED_ERROR } from './constants'
+
+export async function getIpFromHostname(hostname: string) {
   try {
-    const { hostname } = new URL(url)
     const { address } = await dns.promises.lookup(hostname)
     return address
   } catch (e) {
-    throw new Error(`Unable to resolve IP address for ${url}`)
+    throw new Error(`Unable to resolve IP address for ${hostname}`)
   }
 }
 
@@ -32,11 +33,13 @@ export function isIpAllowed(ip: string) {
   return ipRangeLabel === 'unicast'
 }
 
-export async function isUrlAllowed(url: string): Promise<boolean> {
-  try {
-    const ip = await getIpFromUrl(url)
-    return isIpAllowed(ip)
-  } catch (e) {
-    return false
+export async function safeAxiosLookup(
+  hostname: string,
+  _options: object,
+): Promise<string> {
+  const ip = await getIpFromHostname(hostname)
+  if (!isIpAllowed(ip)) {
+    throw new Error(DISALLOWED_IP_RESOLVED_ERROR)
   }
+  return ip
 }

@@ -63,7 +63,6 @@ type AdminQuery {
   getPausedGroups(appKey: String!): [String!]!
 }
 
-
 type Mutation {
   createConnection(input: CreateConnectionInput): Connection
   generateAuthUrl(input: GenerateAuthUrlInput): AuthLink
@@ -101,7 +100,7 @@ type Mutation {
   ): LoginWithSelectedSgidResult!
   duplicateFlow(input: DuplicateFlowInput): Flow
   # S3 operations
-  generatePresignedUrl(input: GeneratePresignedUrlInput): PresignedUrl
+  generatePresignedPost(input: GeneratePresignedPostInput): PresignedPostObject
   deleteUploadedFile(id: String!): Boolean
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
@@ -122,7 +121,6 @@ type Mutation {
   # Admin mutations
   admin: AdminMutation!
 }
-
 
 type AdminMutation {
   pauseGroup(input: PauseGroupInput!): Boolean
@@ -523,13 +521,12 @@ input DuplicateFlowInput {
   id: String!
 }
 
-input GeneratePresignedUrlInput {
+input GeneratePresignedPostInput {
   flowId: String!
   filename: String!
   fileType: String!
   size: Int!
   updatedAt: String!
-  manualUpload: Boolean
 }
 
 input CreateStepInput {
@@ -601,8 +598,13 @@ input PreviousStepInput {
   id: String
 }
 
-type PresignedUrl {
+type PresignedPost {
   url: String!
+  fields: JSONObject!
+}
+
+type PresignedPostObject {
+  presignedPost: PresignedPost!
   s3Id: String!
 }
 

@@ -1,9 +1,11 @@
 import { z } from 'zod'
 
 import { tableRowDataSchema } from '@/apps/tiles/actions/find-multiple-rows/schema'
+import { VARIABLE_REGEX } from '@/helpers/check-step-parameters'
 
 import {
   FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_MAX_ITERATIONS,
   FOR_EACH_TABLE_SOURCES,
 } from '../../common/constants'
 
@@ -59,23 +61,30 @@ export const inputSchema = z
       return z.NEVER
     }
 
-    // NOTE: string arrays do not have inputSource, so we need to infer it from the data object
+    // NOTE: string arrays do not have inputSource, so we need to infer it from the data object.
+    // we also slice the array to the FOR_EACH_MAX_ITERATIONS to avoid misuse
+    // if users call the updateStep mutation directly with more than 500 items or rows
     if (Array.isArray(data)) {
+      const items = data.slice(0, FOR_EACH_MAX_ITERATIONS)
       return {
         inputSource: FOR_EACH_INPUT_SOURCE.STRING_ARRAY,
-        items: data,
-        iterations: data.length,
+        items,
+        iterations: items.length,
       }
     } else {
       try {
         const items = typeof data === 'string' ? JSON.parse(data) : data
+        const rows = items.rows.slice(0, FOR_EACH_MAX_ITERATIONS)
         return {
           inputSource:
             typeof data === 'string'
               ? FOR_EACH_INPUT_SOURCE.FORMSG_TABLE
               : items.inputSource,
-          items: items,
-          iterations: items.rows.length,
+          items: {
+            ...items,
+            rows,
+          },
+          iterations: rows.length,
         }
       } catch (e) {
         ctx.addIssue({
@@ -105,3 +114,16 @@ export const dataOutSchema = z.discriminatedUnion('inputSource', [
     items: tableSchema,
   }),
 ])
+
+const PARAMETER_ERROR_MESSAGE = 'For each input must be a variable'
+
+export const parameterSchema = z.object({
+  items: z
+    .string({
+      required_error: PARAMETER_ERROR_MESSAGE,
+      invalid_type_error: PARAMETER_ERROR_MESSAGE,
+    })
+    .refine((v) => VARIABLE_REGEX.test(v), {
+      message: PARAMETER_ERROR_MESSAGE,
+    }),
+})

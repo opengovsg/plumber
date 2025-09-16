@@ -71,7 +71,13 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
   // - https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/get-user-identity-and-properties-in-sharepoint#retrieve-current-website-user-identity-by-using-the-web-object
   // - https://learn.microsoft.com/en-us/answers/questions/349797/understanding-login-name-format-of-sharepoint
   const sharePointFilePermissionsResponse = await http.get(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
+    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
+    {
+      urlPathParams: {
+        fileId,
+        sharePointSiteId: tenant.sharePointSiteId,
+      },
+    },
   )
   const permissions = sharepointFilePermissionsSchema.parse(
     sharePointFilePermissionsResponse.data,
@@ -187,7 +193,13 @@ async function queryFilePrivacyInfo(
   http: IHttpClient,
 ): Promise<z.infer<typeof fileInfoResponseSchema>> {
   const response = await http.get(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/?$select=sensitivityLabel,parentReference&$expand=permissions`,
+    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/?$select=sensitivityLabel,parentReference&$expand=permissions`,
+    {
+      urlPathParams: {
+        fileId,
+        sharePointSiteId: tenant.sharePointSiteId,
+      },
+    },
   )
   return fileInfoResponseSchema.parse(response.data)
 }

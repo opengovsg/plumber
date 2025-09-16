@@ -77,6 +77,12 @@ export default function createHttpClient({
         throw new HttpError(error)
       }
 
+      // NOTE: this is most likely to happen in custom API where the response is streamed.
+      // we throw early so that the intercepter in custom api can handle it
+      if (error.response.config.responseType === 'stream') {
+        throw error
+      }
+
       const { config } = error
       const { status } = error.response
 

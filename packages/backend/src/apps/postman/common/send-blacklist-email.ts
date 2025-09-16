@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 
 import { redisClient as pipeErrorRedisClient } from '@/helpers/generate-error-email'
+import { safeHtml } from '@/helpers/html-utils'
 import { sendEmail } from '@/helpers/send-email'
 
 const MAX_LENGTH = 80
@@ -51,7 +52,7 @@ function createBodyErrorMessage(props: BlacklistEmailProps): string {
 
   const formLink = createRequestBlacklistFormLink(props)
 
-  const bodyMessage = `
+  const bodyMessage = safeHtml`
     Dear fellow plumber,
     <br>
     <br>

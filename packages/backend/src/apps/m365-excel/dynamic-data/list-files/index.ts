@@ -22,7 +22,13 @@ const dynamicData: IDynamicData = {
     const results = await $.http.get<{
       value: Array<{ name: string; id: string }>
     }>(
-      `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${authData.folderId}/children?$select=id,name`,
+      '/v1.0/sites/:sharePointSiteId/drive/items/:folderId/children?$select=id,name',
+      {
+        urlPathParams: {
+          folderId: authData.folderId,
+          sharePointSiteId: tenant.sharePointSiteId,
+        },
+      },
     )
 
     return {

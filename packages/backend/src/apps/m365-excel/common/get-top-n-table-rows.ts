@@ -70,8 +70,13 @@ export async function getTopNTableRows(
     const rangeParseResult = msGraphRangeResponseSchema.safeParse(
       (
         await session.request(
-          `/tables/${tableId}/range?$select=values,rowCount,rowIndex`,
+          `/tables/:tableId/range?$select=values,rowCount,rowIndex`,
           'get',
+          {
+            urlPathParams: {
+              tableId,
+            },
+          },
         )
       ).data,
     )
@@ -146,10 +151,14 @@ export async function getTopNTableRowsOld(
         //   rows). We fetch 1 more row to check if table is too large.
         // * usedRange: Tables can have less than N rows; this shrinks our query
         //   to only rows with data.
-        `/tables/${tableId}/headerRowRange/resizedRange(deltaRows=${
-          n + 1
-        },deltaColumns=0)/usedRange?$select=values,rowIndex`,
+        `/tables/:tableId/headerRowRange/resizedRange(deltaRows=:deltaRows,deltaColumns=0)/usedRange?$select=values,rowIndex`,
         'get',
+        {
+          urlPathParams: {
+            tableId,
+            deltaRows: n + 1,
+          },
+        },
       )
     ).data,
   )

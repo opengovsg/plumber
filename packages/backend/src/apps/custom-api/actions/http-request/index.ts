@@ -6,11 +6,15 @@ import { fromZodError } from 'zod-validation-error'
 import StepError, { GenericSolution } from '@/errors/step'
 import Step from '@/models/step'
 
+import addInterceptors from '../../common/add-interceptors'
 import {
+  CUSTOM_API_TIMEOUT,
   DISALLOWED_IP_RESOLVED_ERROR,
-  RECURSIVE_WEBHOOK_ERROR_NAME,
-} from '../../common/check-urls'
-import { CUSTOM_API_TIMEOUT } from '../../common/constants'
+  INVALID_PROTOCOL_ERROR,
+  INVALID_URL_ERROR,
+  RECURSIVE_WEBHOOK_ERROR,
+} from '../../common/constants'
+import { safeAxiosLookup } from '../../common/ip-resolver'
 
 import { requestSchema } from './schema'
 
@@ -113,17 +117,23 @@ const action: IRawAction = {
       const parsedS = requestSchema.parse($.step.parameters)
       const { customHeaders, data: parsedData } = parsedS
 
+      addInterceptors($.http)
+
       let response = await $.http.request({
         url,
         method,
         data: parsedData,
         maxRedirects: 0,
         headers: customHeaders,
+        // Prevent calling of internal IPs, e.g. aws metadata endpoint
+        lookup: safeAxiosLookup,
         timeout,
         //  overwriting this to allow redirects to resolve
         validateStatus: (status) =>
           (status >= 200 && status < 300) ||
           REDIRECT_STATUS_CODES.includes(status),
+        // stream the response for custom api to protect against gzip bombs
+        responseType: 'stream',
       })
 
       if (!response) {
@@ -144,7 +154,12 @@ const action: IRawAction = {
           method:
             response.status === 301 || response.status === 302 ? 'GET' : method,
           data,
+          // Prevent calling of internal IPs, e.g. aws metadata endpoint
+          lookup: safeAxiosLookup,
+          headers: customHeaders,
           maxRedirects: 0,
+          // stream the response for custom api to protect against gzip bombs
+          responseType: 'stream',
         })
       }
 
@@ -166,18 +181,24 @@ const action: IRawAction = {
         )
       }
 
-      if (err.message === RECURSIVE_WEBHOOK_ERROR_NAME) {
+      if (err.message === RECURSIVE_WEBHOOK_ERROR) {
         throw new StepError(
-          RECURSIVE_WEBHOOK_ERROR_NAME,
+          RECURSIVE_WEBHOOK_ERROR,
           'Ensure that you are not redirecting back to a plumber URL.',
           $.step.position,
           $.app.name,
         )
       }
 
-      if (err.message === DISALLOWED_IP_RESOLVED_ERROR) {
-        throw new StepError(
+      if (
+        [
           DISALLOWED_IP_RESOLVED_ERROR,
+          INVALID_URL_ERROR,
+          INVALID_PROTOCOL_ERROR,
+        ].includes(err.message)
+      ) {
+        throw new StepError(
+          err.message,
           'If you think this is a mistake, please contact us.',
           $.step.position,
           $.app.name,

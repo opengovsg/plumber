@@ -13,7 +13,7 @@ import deleteUploadedFile from './mutations/delete-uploaded-file'
 import duplicateFlow from './mutations/duplicate-flow'
 import executeStep from './mutations/execute-step'
 import generateAuthUrl from './mutations/generate-auth-url'
-import generatePresignedUrl from './mutations/generate-presigned-url'
+import generatePresignedPost from './mutations/generate-presigned-post'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
 import loginWithSso from './mutations/login-with-sso'
@@ -82,7 +82,7 @@ export default {
   updateFlowTransferStatus,
   duplicateFlow,
   deleteUploadedFile,
-  generatePresignedUrl,
+  generatePresignedPost,
   ...tilesMutationResolvers,
 
   // This is a special stub that enables us to group all our admin-related

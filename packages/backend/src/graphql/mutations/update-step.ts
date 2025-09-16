@@ -1,4 +1,5 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
+import App from '@/models/app'
 import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -29,6 +30,14 @@ const updateStep: MutationResolvers['updateStep'] = async (
       if (!connection || connection.key !== input.appKey) {
         throw new BadUserInputError('Connection not found')
       }
+    }
+
+    // NOTE: we use this function to first validate the step parameters
+    // to avoid misuse and saving invalid step parameters
+    if (step.type === 'action') {
+      const app = await App.findOneByKey(input.appKey)
+      const action = app?.actions?.find((action) => action.key === step.key)
+      action?.validateStepParameters?.(input.parameters)
     }
 
     const shouldInvalidate =

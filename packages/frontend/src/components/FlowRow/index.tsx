@@ -4,13 +4,13 @@ import { ReactElement } from 'react'
 import { BiChevronRight } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
+  Box,
   Card,
   CardBody,
   Flex,
-  Grid,
-  GridItem,
   HStack,
   Icon,
+  Spacer,
   Text,
   VStack,
 } from '@chakra-ui/react'
@@ -29,19 +29,51 @@ type FlowRowProps = {
   showTimestamp?: boolean
 }
 
-export default function FlowRow(props: FlowRowProps): ReactElement {
-  const {
-    flow,
-    showMenu = true,
-    showTimestamp = true,
-    isExecution = false,
-  } = props
-
+function FlowRowTitle({
+  flow,
+  showTimestamp,
+}: Pick<FlowRowProps, 'flow' | 'showTimestamp'>) {
   const createdAt = DateTime.fromMillis(parseInt(flow.createdAt, 10))
   const updatedAt = DateTime.fromMillis(parseInt(flow.updatedAt, 10))
   const isUpdated = updatedAt > createdAt
   const relativeCreatedAt = createdAt.toRelative()
   const relativeUpdatedAt = updatedAt.toRelative()
+  return (
+    <VStack alignItems="flex-start" justifyContent="center" maxW="100%">
+      <Text
+        whiteSpace="nowrap"
+        overflow="hidden"
+        textOverflow="ellipsis"
+        display="inline-block"
+        w="100%"
+        maxW="100%"
+        textStyle="subhead-1"
+      >
+        {flow?.name}
+      </Text>
+      {showTimestamp && (
+        <Text
+          display="inline-block"
+          w="100%"
+          whiteSpace="nowrap"
+          color="base.content.medium"
+          textStyle="body-2"
+        >
+          {isUpdated && `updated ${relativeUpdatedAt}`}
+          {!isUpdated && `created ${relativeCreatedAt}`}
+        </Text>
+      )}
+    </VStack>
+  )
+}
+
+export default function FlowRow(props: FlowRowProps): ReactElement {
+  const {
+    flow,
+    showMenu = true,
+    isExecution = false,
+    showTimestamp = true,
+  } = props
 
   return (
     <>
@@ -55,89 +87,49 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
         minH={100}
       >
         <CardBody
-          sx={{ cursor: 'pointer' }}
-          p={0}
+          cursor="pointer"
           as={Link}
           to={
             isExecution ? URLS.EXECUTIONS_FOR_FLOW(flow.id) : URLS.FLOW(flow.id)
           }
+          flex={1}
+          py={6}
+          px={{ base: 3, md: 8 }}
           display="flex"
-          alignItems="center"
-          justifyContent="stretch"
+          flexDir={{ base: 'column', md: 'row' }}
+          alignItems="stretch"
+          minWidth="100%"
+          overflow="hidden"
         >
-          <Grid
-            templateAreas={{
-              base: `
-                "apps menu"
-                "title title"
-              `,
-              md: `"apps title menu"`,
-            }}
-            gridTemplateRows={{ base: 'auto auto', md: 'auto' }}
-            gridTemplateColumns={{
-              base: 'minmax(0, auto) min-content',
-              md: 'calc(30px * 3 + 8px * 2) minmax(0, auto) min-content',
-            }}
-            gap={6}
-            flex={1}
-            alignItems="center"
-            py={6}
-            px={{ base: 3, md: 8 }}
-          >
-            <GridItem area="apps">
-              <HStack>
-                <FlowAppIcons steps={flow.steps} />
-              </HStack>
-            </GridItem>
+          <Flex gap={6} flex={1} alignItems="center">
+            <HStack minWidth="120px">
+              <FlowAppIcons steps={flow.steps} />
+            </HStack>
 
-            <GridItem area="title">
-              <VStack
-                alignItems="flex-start"
-                justifyContent="center"
-                spacing={2}
+            <Box display={{ base: 'none', md: 'inline-flex' }} minWidth="0">
+              <FlowRowTitle flow={flow} showTimestamp={showTimestamp} />
+            </Box>
+
+            <Spacer />
+
+            <Flex alignItems="center" gap={1.5} justifyContent="flex-end">
+              <Badge
+                colorScheme={flow?.active ? 'success' : 'grey'}
+                variant="subtle"
               >
-                <Text
-                  whiteSpace="nowrap"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
-                  display="inline-block"
-                  w="100%"
-                  maxW="85%"
-                  textStyle="subhead-1"
-                >
-                  {flow?.name}
-                </Text>
-                {showTimestamp && (
-                  <Text
-                    display="inline-block"
-                    w="100%"
-                    maxW="85%"
-                    color="base.content.medium"
-                    textStyle="body-2"
-                  >
-                    {isUpdated && `updated ${relativeUpdatedAt}`}
-                    {!isUpdated && `created ${relativeCreatedAt}`}
-                  </Text>
-                )}
-              </VStack>
-            </GridItem>
-            <GridItem area="menu">
-              <Flex alignItems="center" gap={1.5} justifyContent="flex-end">
-                <Badge
-                  colorScheme={flow?.active ? 'success' : 'grey'}
-                  variant="subtle"
-                >
-                  <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
-                </Badge>
+                <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
+              </Badge>
 
-                {showMenu ? (
-                  <FlowContextMenu flow={flow} />
-                ) : (
-                  <Icon boxSize={5} as={BiChevronRight} />
-                )}
-              </Flex>
-            </GridItem>
-          </Grid>
+              {showMenu ? (
+                <FlowContextMenu flow={flow} />
+              ) : (
+                <Icon boxSize={5} as={BiChevronRight} />
+              )}
+            </Flex>
+          </Flex>
+          <Box display={{ base: 'flex', md: 'none' }} mt={4}>
+            <FlowRowTitle flow={flow} showTimestamp={showTimestamp} />
+          </Box>
         </CardBody>
       </Card>
     </>

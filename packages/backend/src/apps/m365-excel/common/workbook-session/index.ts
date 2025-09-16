@@ -26,9 +26,15 @@ async function refreshSessionId(
   $: IGlobalVariable,
 ): Promise<string> {
   const createSessionResponse = await $.http.post<{ id: string }>(
-    `/v1.0/sites/${tenant.sharePointSiteId}/drive/items/${fileId}/workbook/createSession`,
+    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/workbook/createSession`,
     {
       persistChanges: true,
+    },
+    {
+      urlPathParams: {
+        fileId,
+        sharePointSiteId: tenant.sharePointSiteId,
+      },
     },
   )
   const sessionId = createSessionResponse.data.id
@@ -97,11 +103,16 @@ export default class WorkbookSession {
     try {
       const response = await this.$.http.request<T>({
         ...(config ?? {}),
-        url: `/v1.0/sites/${this.tenant.sharePointSiteId}/drive/items/${this.fileId}/workbook${apiEndpoint}`,
+        url: `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/workbook${apiEndpoint}`,
         method: method,
         headers: {
           ...(config?.headers ?? {}),
           'workbook-session-id': this.sessionId,
+        },
+        urlPathParams: {
+          fileId: this.fileId,
+          sharePointSiteId: this.tenant.sharePointSiteId,
+          ...config?.urlPathParams,
         },
       })
 

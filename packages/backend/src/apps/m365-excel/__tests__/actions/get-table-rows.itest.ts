@@ -22,7 +22,6 @@ const mocks = vi.hoisted(() => ({
   },
   getTopNTableRows: vi.fn(),
   convertRowToHexKeyedObject: vi.fn(),
-  validateDynamicFieldsAndThrowError: vi.fn(),
 }))
 
 vi.mock('../../common/workbook-session', () => ({
@@ -33,10 +32,6 @@ vi.mock('../../common/workbook-session', () => ({
 
 vi.mock('../../common/get-top-n-table-rows', () => ({
   default: mocks.getTopNTableRows,
-}))
-
-vi.mock('../../common/validate-dynamic-fields', () => ({
-  validateDynamicFieldsAndThrowError: mocks.validateDynamicFieldsAndThrowError,
 }))
 
 describe('getTableRowsAction', () => {

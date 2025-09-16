@@ -5,7 +5,6 @@ import z from 'zod'
 import StepError from '@/errors/step'
 
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
-import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 import {
   constructMsGraphValuesArrayForRowWrite,
   convertRowToHexEncodedRowRecord,
@@ -105,13 +104,6 @@ const action: IRawAction = {
     const { fileId, tableId, lookupColumn, lookupValue, columnsToUpdate } =
       parametersParseResult.data
 
-    // Validation to prevent path traversals
-    validateDynamicFieldsAndThrowError({
-      fileId,
-      tableId,
-      $,
-    })
-
     //
     // Find index of row to update
     //
@@ -147,7 +139,7 @@ const action: IRawAction = {
     // Return updated row in case it has formulas.
     // Note: we disallow blacklisted formula and sanitise when necessary
     const updateRowValuesResponse = await session.request(
-      `/tables/${tableId}/rows/itemAt(index=${tableRowIndex})`,
+      `/tables/:tableId/rows/itemAt(index=:tableRowIndex)`,
       'patch',
       {
         data: {
@@ -163,6 +155,10 @@ const action: IRawAction = {
               })),
             ),
           ],
+        },
+        urlPathParams: {
+          tableId,
+          tableRowIndex,
         },
       },
     )

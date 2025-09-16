@@ -9,10 +9,10 @@ import StepError from '@/errors/step'
 import app from '../..'
 import makeRequestAction from '../../actions/http-request'
 import {
+  CUSTOM_API_TIMEOUT,
   DISALLOWED_IP_RESOLVED_ERROR,
-  RECURSIVE_WEBHOOK_ERROR_NAME,
-} from '../../common/check-urls'
-import { CUSTOM_API_TIMEOUT } from '../../common/constants'
+  RECURSIVE_WEBHOOK_ERROR,
+} from '../../common/constants'
 
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
@@ -20,10 +20,19 @@ const mocks = vi.hoisted(() => ({
   stepQueryResult: vi.fn(() => ({
     config: {},
   })),
+  addInterceptors: vi.fn(),
 }))
 
-vi.mock('../../common/ip-resolver', () => ({
-  isUrlAllowed: mocks.isUrlAllowed,
+vi.mock('../../common/ip-resolver', () => {
+  const originalModule = vi.importActual('../../common/ip-resolver')
+  return {
+    ...originalModule,
+    safeAxiosLookup: mocks.isUrlAllowed,
+  }
+})
+
+vi.mock('../../common/add-interceptors', () => ({
+  default: mocks.addInterceptors,
 }))
 
 vi.mock('@/models/step', () => ({
@@ -68,13 +77,13 @@ describe('make http request', () => {
     $.step.parameters.data = 'meep meep'
     $.step.parameters.url = 'http://test.local/endpoint?1234'
     mocks.httpRequest.mockReturnValue('mock response')
-
     await makeRequestAction.run($).catch((): void => null)
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: $.step.parameters.url,
         method: $.step.parameters.method,
         data: $.step.parameters.data,
+        responseType: 'stream',
       }),
     )
   })
@@ -95,6 +104,7 @@ describe('make http request', () => {
         url: $.step.parameters.url,
         method: $.step.parameters.method,
         data: $.step.parameters.data,
+        responseType: 'stream',
         headers: {
           Key1: 'Value1',
           Key2: 'Value2',
@@ -171,6 +181,7 @@ describe('make http request', () => {
         url: 'http://test.local/endpoint?1234',
         method: 'POST',
         data: 'meep meep',
+        responseType: 'stream',
       }),
     )
     expect(mocks.httpRequest).toHaveBeenCalledWith(
@@ -178,6 +189,7 @@ describe('make http request', () => {
         url: 'https://redirect.com',
         method: 'GET',
         data: 'meep meep',
+        responseType: 'stream',
       }),
     )
   })
@@ -200,6 +212,7 @@ describe('make http request', () => {
         url: 'http://test.local/endpoint?1234',
         method: 'POST',
         data: 'meep meep',
+        responseType: 'stream',
       }),
     )
     expect(mocks.httpRequest).toHaveBeenCalledWith(
@@ -207,6 +220,7 @@ describe('make http request', () => {
         url: 'https://redirect.com',
         method: 'POST',
         data: 'meep meep',
+        responseType: 'stream',
       }),
     )
   })
@@ -227,7 +241,7 @@ describe('make http request', () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.data = 'go crazy'
     $.step.parameters.url = 'http://beta.plumber.gov.sg'
-    const recursiveWebhookError = new Error(RECURSIVE_WEBHOOK_ERROR_NAME)
+    const recursiveWebhookError = new Error(RECURSIVE_WEBHOOK_ERROR)
     mocks.httpRequest.mockRejectedValueOnce(recursiveWebhookError)
     await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
   })
@@ -251,6 +265,7 @@ describe('make http request', () => {
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         timeout: CUSTOM_API_TIMEOUT,
+        responseType: 'stream',
       }),
     )
   })
@@ -274,6 +289,7 @@ describe('make http request', () => {
     expect(mocks.httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         timeout: 360000,
+        responseType: 'stream',
       }),
     )
   })
@@ -298,6 +314,7 @@ describe('make http request', () => {
       expect(mocks.httpRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           timeout: CUSTOM_API_TIMEOUT,
+          responseType: 'stream',
         }),
       )
     },
@@ -350,6 +367,7 @@ describe('make http request', () => {
             url: $.step.parameters.url,
             method: $.step.parameters.method,
             data: $.step.parameters.data as any,
+            responseType: 'stream',
           }),
         )
       },
@@ -378,6 +396,7 @@ describe('make http request', () => {
             url: $.step.parameters.url,
             method: $.step.parameters.method,
             data: $.step.parameters.data as any,
+            responseType: 'stream',
           }),
         )
       },

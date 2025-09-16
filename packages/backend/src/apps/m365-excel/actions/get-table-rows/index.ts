@@ -7,7 +7,6 @@ import StepError from '@/errors/step'
 
 import { GET_TABLE_ROWS_LIMIT } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
-import { validateDynamicFieldsAndThrowError } from '../../common/validate-dynamic-fields'
 import { convertRowToHexKeyedObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
 import WorkbookSession from '../../common/workbook-session'
 import { MAX_ROWS } from '../get-table-row/implementation'
@@ -125,13 +124,6 @@ const action: IRawAction = {
 
     const { fileId, tableId, lookupColumn, lookupValue } =
       parametersParseResult.data
-
-    // Validation to prevent path traversals
-    validateDynamicFieldsAndThrowError({
-      fileId,
-      tableId,
-      $,
-    })
 
     const session = await WorkbookSession.acquire($, fileId)
     const { columns: rawColumns, rows } = await getTopNTableRows(

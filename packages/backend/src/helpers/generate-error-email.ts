@@ -5,6 +5,8 @@ import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { sendEmail } from '@/helpers/send-email'
 import Flow from '@/models/flow'
 
+import { safeHtml } from './html-utils'
+
 const MAX_LENGTH = 80
 export const redisClient = createRedisClient(REDIS_DB_INDEX.PIPE_ERRORS)
 
@@ -26,7 +28,7 @@ export function createBodyErrorMessage(
   const redirectUrl = `/execution-pipe/${pipeId}?${searchParams.toString()}`
   const formattedUrl = `${appPrefixUrl}${redirectUrl}`
 
-  const bodyMessage = `
+  const bodyMessage = safeHtml`
     Dear fellow plumber,
     <br>
     <br>
