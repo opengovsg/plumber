@@ -9,36 +9,38 @@ import getApp from '@/helpers/get-app'
 class App {
   static list = Object.keys(apps)
 
-  static async findAll(name?: string, stripFuncs = true): Promise<IApp[]> {
-    if (!name) {
+  static findAll = memoize(
+    async (stripFuncs = true): Promise<IApp[]> => {
       return Promise.all(
         this.list.map(
           async (name) => await this.findOneByName(name, stripFuncs),
         ),
       )
-    }
+    },
+    (stripFuncs = true) => `findAll-${stripFuncs}`,
+  )
 
-    return Promise.all(
-      this.list
-        .filter((app) => app.includes(name.toLowerCase()))
-        .map((name) => this.findOneByName(name, stripFuncs)),
-    )
-  }
+  static findOneByName = memoize(
+    async (name: string, stripFuncs = false): Promise<IApp> => {
+      const rawAppData = await getApp(name.toLocaleLowerCase(), stripFuncs)
 
-  static async findOneByName(name: string, stripFuncs = false): Promise<IApp> {
-    const rawAppData = await getApp(name.toLocaleLowerCase(), stripFuncs)
+      return appInfoConverter(rawAppData)
+    },
+    (name: string, stripFuncs = false) => `findOneByName-${name}-${stripFuncs}`,
+  )
 
-    return appInfoConverter(rawAppData)
-  }
+  static findOneByKey = memoize(
+    async (key: string, stripFuncs = false): Promise<IApp> => {
+      const rawAppData = await getApp(key, stripFuncs)
 
-  static async findOneByKey(key: string, stripFuncs = false): Promise<IApp> {
-    const rawAppData = await getApp(key, stripFuncs)
-
-    return appInfoConverter(rawAppData)
-  }
+      return appInfoConverter(rawAppData)
+    },
+    (key: string, stripFuncs = false) =>
+      `findOneByKey-${key}-stripFuncs-${stripFuncs}`,
+  )
 
   static getAllAppsWithFunctions = memoize(async () => {
-    return await this.findAll(null, false)
+    return await this.findAll(false)
   })
 }
 

@@ -1,9 +1,5 @@
 type Query {
-  getApps(
-    name: String
-    onlyWithTriggers: Boolean
-    onlyWithActions: Boolean
-  ): [App]
+  getApps: [App]
   getApp(key: String!): App
   getConnectedApps: [App]
   testConnection(connectionId: String!, flowId: String): TestConnectionResult

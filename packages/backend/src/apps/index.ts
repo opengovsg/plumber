@@ -44,4 +44,38 @@ const apps: Record<string, IApp> = {
   [gathersgApp.key]: gathersgApp,
 }
 
+/**
+ * Note: Remember to add the priority of the app here whenever a new app
+ * is created, this is to determine which app dropdown option appears first.
+ * Note that triggers and actions have separate rankings!
+ * Triggers: formsg, scheduler, webhook
+ * Actions: email by postman, tiles, m365, toolbox, formatter, calculator, delay,
+ * paysg, lettersg, sms by postman, telegram, slack, custom-api, vault, twilio
+ */
+
+export const TRIGGER_APPS_RANKING = [
+  formsgApp.key,
+  schedulerApp.key,
+  webhookApp.key,
+]
+export const ACTION_APPS_RANKING = [
+  postmanApp.key,
+  tilesApp.key,
+  m365ExcelApp.key,
+  toolboxApp.key,
+  formatterApp.key,
+  calculatorApp.key,
+  delayApp.key,
+  paysgApp.key,
+  lettersgApp.key,
+  postmanSmsApp.key,
+  telegramBotApp.key,
+  slackApp.key,
+  aisayApp.key,
+  gathersgApp.key,
+  customApiApp.key,
+  vaultWorkspaceApp.key,
+  twilioApp.key,
+]
+
 export default apps
