@@ -5,8 +5,8 @@ import { z } from 'zod'
 import { screenNameSchema } from '@/helpers/app-auth-schema'
 
 const authDataSchema = z.object({
-  screenName: screenNameSchema,
-  apiKey: z.string().min(1, 'Empty API key').max(150),
+  label: screenNameSchema,
+  headers: z.string().max(16000, 'Headers too long'),
 })
 
 export type AuthData = z.infer<typeof authDataSchema>
