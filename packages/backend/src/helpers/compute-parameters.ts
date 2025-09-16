@@ -6,6 +6,7 @@ import {
   computeForEachParameters,
   ForEachContext,
 } from '@/helpers/compute-for-each-parameters'
+import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
 
 import Step from '../models/step'
@@ -53,6 +54,18 @@ function findAndSubstituteVariables(
 
   if (typeof rawValue !== 'string') {
     return rawValue
+  }
+
+  /**
+   * TODO (kevinkim-ogp): remove this once all users have moved to the new dataOut format
+   * this is for logging if users are still using the old format for for-each
+   * we log this here so that it does not keep logging for each parameter that is computed
+   */
+  if (/items.columns.\d+.value/g.test(rawValue)) {
+    logger.info('Pipe using old for each dataOut format', {
+      event: 'for-each-old-dataOut-format',
+      executionId: executionSteps[0].executionId,
+    })
   }
 
   const parts = rawValue.split(variableRegExp)
