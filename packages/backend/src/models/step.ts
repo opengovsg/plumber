@@ -194,9 +194,12 @@ class Step extends Base {
   }
 
   async patchFlowLastUpdated(trx?: Transaction) {
-    await this.$relatedQuery('flow', trx).patch({
-      updatedAt: new Date().toISOString(),
-    })
+    return await this.$relatedQuery('flow', trx).patchAndFetchById(
+      this.flowId,
+      {
+        updatedAt: new Date().toISOString(),
+      },
+    )
   }
 
   static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {

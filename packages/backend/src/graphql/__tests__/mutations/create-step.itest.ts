@@ -21,9 +21,10 @@ describe('createStep mutation integration tests', async () => {
   let viewer: User
   let nonCollaborator: User
   let testConnection: any
+  let testFlowTimestampString: string
   let genericNewStepParams: {
     input: {
-      flow: { id: string }
+      flow: { id: string; updatedAt: string }
       previousStep: { id: string }
       key: string
       appKey: string
@@ -31,15 +32,9 @@ describe('createStep mutation integration tests', async () => {
     }
   }
 
-  const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
-
   // Clean up (and seed) database before each test.
   beforeEach(async () => {
     vi.resetAllMocks()
-
-    vi.spyOn(Step.prototype, 'patchFlowLastUpdated').mockImplementation(
-      patchFlowLastUpdatedSpy,
-    )
 
     // Clear out all rows. Adjust deletion order if using foreign keys.
     await FlowConnections.query().delete()
@@ -70,6 +65,13 @@ describe('createStep mutation integration tests', async () => {
       name: 'Test Flow',
       // additional flow properties as needed
     })
+    testFlowTimestampString = String(new Date(testFlow.updatedAt).getTime())
+
+    // Mock the patchFlowLastUpdated method to return proper flow data
+    vi.spyOn(Step.prototype, 'patchFlowLastUpdated').mockResolvedValue({
+      ...testFlow,
+      updatedAt: testFlow.updatedAt,
+    } as any)
 
     editor = await generateMockUser('editor')
     viewer = await generateMockUser('viewer')
@@ -105,7 +107,10 @@ describe('createStep mutation integration tests', async () => {
 
     genericNewStepParams = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[0].id },
         key: 'newStep',
         appKey: 'test-app',
@@ -117,7 +122,10 @@ describe('createStep mutation integration tests', async () => {
   it('creates a new step correctly and shift later steps down', async () => {
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[0].id },
         key: 'newStep',
         appKey: 'test-app',
@@ -153,7 +161,10 @@ describe('createStep mutation integration tests', async () => {
   it('should not shift steps if the previous step is the last step', async () => {
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[2].id },
       },
     }
@@ -177,9 +188,17 @@ describe('createStep mutation integration tests', async () => {
   })
 
   it('should call patchFlowLastUpdated when creating a step', async () => {
+    const patchFlowLastUpdatedSpy = vi.spyOn(
+      Step.prototype,
+      'patchFlowLastUpdated',
+    )
+
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[2].id },
       },
     }
@@ -197,7 +216,10 @@ describe('createStep mutation integration tests', async () => {
 
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[0].id },
         key: 'key',
         appKey: 'appKey',
@@ -211,7 +233,10 @@ describe('createStep mutation integration tests', async () => {
   it('throws an error if the previous step is not found', async () => {
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: 'invalid-id' }, // Non-existent step id
         key: 'newStep',
         appKey: 'test-app',
@@ -263,7 +288,10 @@ describe('createStep mutation integration tests', async () => {
     context.currentUser = owner
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[0].id },
         key: 'newStep',
         appKey: 'test-app',
@@ -281,7 +309,7 @@ describe('createStep mutation integration tests', async () => {
     const flowConnection = await FlowConnections.query().findOne({
       flow_id: testFlow.id,
       connection_id: testConnection.id,
-      user_id: owner.id,
+      added_by: owner.id,
     })
     expect(flowConnection).toBeDefined()
   })
@@ -289,7 +317,10 @@ describe('createStep mutation integration tests', async () => {
   it('throws error when connection does not exist', async () => {
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[0].id },
         key: 'newStep',
         appKey: 'test-app',
@@ -318,7 +349,10 @@ describe('createStep mutation integration tests', async () => {
 
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[0].id },
         key: 'newStep',
         appKey: 'test-app',
@@ -347,7 +381,10 @@ describe('createStep mutation integration tests', async () => {
 
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[0].id },
         key: 'newStep',
         appKey: 'test-app',
@@ -364,7 +401,10 @@ describe('createStep mutation integration tests', async () => {
   it('creates a step without connection when connection is not provided', async () => {
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: {
+          id: testFlow.id,
+          updatedAt: testFlowTimestampString,
+        },
         previousStep: { id: existingSteps[0].id },
         key: 'newStep',
         appKey: 'test-app',
@@ -376,5 +416,124 @@ describe('createStep mutation integration tests', async () => {
 
     expect(newStep).toBeDefined()
     expect((newStep as any).connectionId).toBeNull()
+  })
+
+  describe('updatedAt validation', () => {
+    it('should succeed when input.flow.updatedAt matches flow.updatedAt (timestamp string)', async () => {
+      const params = {
+        input: {
+          flow: {
+            id: testFlow.id,
+            updatedAt: testFlowTimestampString,
+          },
+          previousStep: { id: existingSteps[0].id },
+          key: 'newStep',
+          appKey: 'test-app',
+          parameters: { newParam: 'value' },
+        },
+      }
+
+      const newStep = await createStep(null, params, context)
+
+      expect(newStep).toBeDefined()
+      expect(newStep.key).toBe('newStep')
+    })
+
+    it('should throw when input.flow.updatedAt is different from flow.updatedAt (timestamp string)', async () => {
+      const futureTimestamp = (
+        new Date(testFlow.updatedAt).getTime() + 1000
+      ).toString()
+      const params = {
+        input: {
+          flow: {
+            id: testFlow.id,
+            updatedAt: futureTimestamp,
+          },
+          previousStep: { id: existingSteps[0].id },
+          key: 'newStep',
+          appKey: 'test-app',
+          parameters: { newParam: 'value' },
+        },
+      }
+
+      await expect(createStep(null, params, context)).rejects.toThrow(
+        BadUserInputError,
+      )
+      await expect(createStep(null, params, context)).rejects.toThrow(
+        'Pipe is outdated. Refresh the page and try again.',
+      )
+    })
+
+    it('should throw when input.flow.updatedAt is different from flow.updatedAt (unix timestamp string)', async () => {
+      const futureUnixTimestamp = Math.floor(
+        (new Date(testFlow.updatedAt).getTime() + 1000) / 1000,
+      ).toString()
+      const params = {
+        input: {
+          flow: {
+            id: testFlow.id,
+            updatedAt: futureUnixTimestamp,
+          },
+          previousStep: { id: existingSteps[0].id },
+          key: 'newStep',
+          appKey: 'test-app',
+          parameters: { newParam: 'value' },
+        },
+      }
+
+      await expect(createStep(null, params, context)).rejects.toThrow(
+        BadUserInputError,
+      )
+      await expect(createStep(null, params, context)).rejects.toThrow(
+        'Pipe is outdated. Refresh the page and try again.',
+      )
+    })
+
+    it('should throw when input.flow.updatedAt is older than flow.updatedAt (timestamp string)', async () => {
+      const oldTimestamp = (
+        new Date(testFlow.updatedAt).getTime() - 5000
+      ).toString()
+      const params = {
+        input: {
+          flow: {
+            id: testFlow.id,
+            updatedAt: oldTimestamp,
+          },
+          previousStep: { id: existingSteps[0].id },
+          key: 'newStep',
+          appKey: 'test-app',
+          parameters: { newParam: 'value' },
+        },
+      }
+
+      await expect(createStep(null, params, context)).rejects.toThrow(
+        BadUserInputError,
+      )
+      await expect(createStep(null, params, context)).rejects.toThrow(
+        'Pipe is outdated. Refresh the page and try again.',
+      )
+    })
+
+    it('should throw when input.flow.updatedAt is an invalid timestamp string', async () => {
+      const params = {
+        input: {
+          flow: {
+            id: testFlow.id,
+            updatedAt: 'invalid-timestamp',
+          },
+          previousStep: { id: existingSteps[0].id },
+          key: 'newStep',
+          appKey: 'test-app',
+          parameters: { newParam: 'value' },
+        },
+      }
+
+      await expect(createStep(null, params, context)).rejects.toThrow(
+        BadUserInputError,
+      )
+      await expect(createStep(null, params, context)).rejects.toThrow(
+        'Pipe is outdated. Refresh the page and try again.',
+      )
+    })
   })
 })

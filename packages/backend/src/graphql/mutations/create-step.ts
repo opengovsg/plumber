@@ -19,11 +19,21 @@ const createStep: MutationResolvers['createStep'] = async (
 
     // Put SELECTs in transaction just in case there's concurrent modification.
     const flow = await context.currentUser
-      .withAccessible({ type: 'flow', trx, requiredRole: 'editor' })
+      .withAccessibleFlows({ trx, requiredRole: 'editor' })
       .findOne({
         id: input.flow.id,
       })
       .throwIfNotFound()
+
+    // NOTE: we check that the input.flow.updatedAt is the same as the flow.updatedAt
+    // to prevent users from updating the pipe when the steps are outdated.
+    // input.flow.updatedAt is a timestamp string,
+    // flow.updatedAt is a date object
+    if (Number(input.flow.updatedAt) !== new Date(flow.updatedAt).getTime()) {
+      throw new BadUserInputError(
+        'Pipe is outdated. Refresh the page and try again.',
+      )
+    }
 
     // if connectionId is specified, verify that the connection exists
     // and the user has the appropriate permissions to use it
@@ -81,14 +91,20 @@ const createStep: MutationResolvers['createStep'] = async (
       await FlowConnections.addFlowConnection({
         flowId: flow.id,
         connectionId: input.connection.id,
-        userId: context.currentUser.id,
+        addedBy: context.currentUser.id,
+        connectionType: 'connection',
         trx,
       })
     }
 
-    await step.patchFlowLastUpdated(trx)
+    const updatedFlow = await step.patchFlowLastUpdated(trx)
 
-    return step
+    return {
+      ...step,
+      flow: {
+        updatedAt: updatedFlow.updatedAt,
+      },
+    }
   })
 }
 
