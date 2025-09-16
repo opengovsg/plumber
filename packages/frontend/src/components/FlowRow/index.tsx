@@ -55,7 +55,7 @@ function FlowRowTitle({
         <Text
           display="inline-block"
           w="100%"
-          maxW="95%"
+          whiteSpace="nowrap"
           color="base.content.medium"
           textStyle="body-2"
         >
@@ -95,7 +95,9 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
           flex={1}
           py={6}
           px={{ base: 3, md: 8 }}
-          display="block"
+          display="flex"
+          flexDir={{ base: 'column', md: 'row' }}
+          alignItems="stretch"
           minWidth="100%"
           overflow="hidden"
         >
@@ -125,7 +127,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
               )}
             </Flex>
           </Flex>
-          <Box display={{ base: 'flex', md: 'none' }} mt={6}>
+          <Box display={{ base: 'flex', md: 'none' }} mt={4}>
             <FlowRowTitle flow={flow} showTimestamp={showTimestamp} />
           </Box>
         </CardBody>
