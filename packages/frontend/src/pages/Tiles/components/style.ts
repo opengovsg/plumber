@@ -8,6 +8,7 @@ export const flexStyles = {
       md: 'row',
     } as FlexProps['direction'],
     textStyle: 'body-2',
+    marginTop: 1,
   },
   usedInPipes: {
     alignItems: 'center',
