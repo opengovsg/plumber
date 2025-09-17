@@ -54,19 +54,49 @@ async function getDataOutMetadata(
   }
 
   if (FOR_EACH_TABLE_SOURCES.includes(inputSource)) {
-    const columnsMetadata = items.columns.map((column, index) => ({
-      id: { isHidden: true },
-      name: { isHidden: true },
-      value: {
-        label: column.name,
-        displayedValue:
-          column.id === 'rowId'
-            ? items?.rows?.[0]?.rowId ?? ''
-            : String(items?.rows?.[0]?.data?.[column.id] ?? ''),
-        order: index + 1,
-        type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
-      },
-    }))
+    let columnsMetadata: IDataOutMetadata[] | Record<string, IDataOutMetadata> =
+      {}
+
+    // NOTE: this is for backward compatibility with the old dataOut format
+    // TODO (kevinkim-ogp): remove this once all users have moved to the new format
+    if (typeof items.columns === 'object' && Array.isArray(items.columns)) {
+      columnsMetadata = items.columns.map((column, index) => ({
+        id: { isHidden: true },
+        name: { isHidden: true },
+        value: {
+          label: column.name,
+          displayedValue:
+            column.id === 'rowId'
+              ? items?.rows?.[0]?.rowId ?? ''
+              : String(items?.rows?.[0]?.data?.[column.id] ?? ''),
+          order: index + 1,
+          type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
+        },
+      }))
+    } else {
+      const tempColumnsMetadata = {} as Record<string, IDataOutMetadata>
+      Object.entries(items.columns)
+        .sort((a, b) => a[1].order - b[1].order)
+        .forEach(([id, column], index) => {
+          const isBackwardCompatibilityColumnId = !isNaN(Number(id))
+          tempColumnsMetadata[id] = {
+            id: { isHidden: true },
+            name: { isHidden: true },
+            value: {
+              label: column.name,
+              displayedValue:
+                column.id === 'rowId'
+                  ? items?.rows?.[0]?.rowId ?? ''
+                  : String(items?.rows?.[0]?.data?.[column.id] ?? ''),
+              order: index + 1,
+              type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
+              isHiddenFromList: isBackwardCompatibilityColumnId,
+            },
+            order: { isHidden: true },
+          }
+        })
+      columnsMetadata = tempColumnsMetadata
+    }
 
     const rowsMetadata = items.rows.map(() => ({
       rowId: { isHidden: true },

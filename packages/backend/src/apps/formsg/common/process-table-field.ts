@@ -9,9 +9,11 @@ type TableColumn = {
   value: string
 }
 
-const createColumn = (label: string): TableColumn => {
-  const id = Buffer.from(label).toString('hex')
+const createColumn = (label: string, index: number): TableColumn => {
+  const id = Buffer.from(`Col ${index + 1}`).toString('hex')
   return {
+    // NOTE: we keep this ID so that it still works even if the user tested
+    // the step with mock data previously
     id,
     label,
     name: label,
@@ -29,8 +31,10 @@ export default function convertTableAnswerArrayToTableObject(
   const columns =
     // make sure that column names do not contain commas
     columnNamesArray.length === answerArray[0].length
-      ? columnNamesArray.map(createColumn)
-      : answerArray[0].map((_, index) => createColumn(`Col ${index + 1}`))
+      ? columnNamesArray.map((column, index) => createColumn(column, index))
+      : answerArray[0].map((_, index) =>
+          createColumn(`Col ${index + 1}`, index),
+        )
 
   /**
    * NOTE: we do not show table rows that do not have any data
