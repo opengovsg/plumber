@@ -32,7 +32,9 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
       .withGraphFetched('flow')
       .whereIn('steps.id', params.input.ids)
       .orderBy('steps.position', 'asc')
-      .throwIfNotFound()
+      .throwIfNotFound({
+        message: 'Step not found. Refresh the page and try again.',
+      })
 
     if (!steps.every((step) => step.flowId === steps[0].flowId)) {
       throw new Error('All steps to be deleted must be from the same pipe!')
