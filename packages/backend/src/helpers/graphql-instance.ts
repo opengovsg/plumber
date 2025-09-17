@@ -97,8 +97,8 @@ export const server = new ApolloServer<UnauthenticatedContext>({
       return { message: 'Internal server error', code: 'INTERNAL_SERVER_ERROR' }
     }
 
-    // NOTE: handles INTERNAL_SERVER_ERROR, which also includes throwIfNotFound errors
-    // we log the error on the server and return a generic message to the frontend
+    // NOTE: handles INTERNAL_SERVER_ERROR
+    // logs the error on the server and return a generic message to the frontend
     // to prevent leaking internal server error details to the frontend such as the
     // exact SQL queries.
     if (formattedError.extensions?.code === 'INTERNAL_SERVER_ERROR') {
