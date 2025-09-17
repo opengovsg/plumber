@@ -281,7 +281,7 @@ describe('createStep mutation integration tests', async () => {
 
     const params = {
       input: {
-        flow: { id: testFlow.id },
+        flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
         previousStep: { id: existingSteps[0].id },
         key: 'newStep',
         appKey: 'test-app',
