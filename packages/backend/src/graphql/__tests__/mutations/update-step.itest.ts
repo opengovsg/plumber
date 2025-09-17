@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStep from '@/graphql/mutations/update-step'
 import { TILES_CONNECTION_ID } from '@/helpers/get-shared-connection-details'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -27,65 +28,15 @@ describe('updateStep mutation', () => {
   let editor: User
   let viewer: User
   let nonCollaborator: User
+  let testFlow: Flow
+  let testFlowISODateString: string
+  let testInputTimestampString: string
   let patchAndFetchByIdSpy: ReturnType<typeof vi.fn>
   const patchLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
-  // Helper to create connection mock
-  const createConnectionMock = (connectionData: any = null) => ({
-    findOne: vi.fn().mockResolvedValue(connectionData),
-  })
-
-  // Helper to setup $relatedQuery mock
-  const setupRelatedQueryMock = (
-    stepData?: any,
-    connectionData: any = { id: mockConnectionId, key: 'postman' },
-  ) => {
-    context.currentUser.$relatedQuery = vi
-      .fn()
-      .mockImplementation((relation, _trx) => {
-        if (relation === 'steps') {
-          return {
-            withGraphFetched: vi.fn().mockReturnValue({
-              findOne: vi.fn().mockReturnValue({
-                throwIfNotFound: vi.fn().mockImplementation(async (options) => {
-                  const result =
-                    stepData === null
-                      ? null
-                      : {
-                          id: mockStepId,
-                          key: 'sendTransactionalEmail',
-                          appKey: 'postman',
-                          status: 'completed',
-                          flow: {
-                            id: mockFlowId,
-                            patchLastUpdated: patchLastUpdatedSpy,
-                          },
-                          ...stepData,
-                        }
-
-                  if (result === null) {
-                    throw new NotFoundError(
-                      options?.message || 'Step not found',
-                    )
-                  }
-                  return result
-                }),
-              }),
-            }),
-          }
-        }
-        if (relation === 'connections') {
-          return createConnectionMock(connectionData)
-        }
-        return {
-          findOne: vi.fn().mockResolvedValue(null),
-        }
-      })
-  }
-
-  const genericInputParams = {
+  let genericInputParams = {
     id: mockStepId,
-    flow: { id: mockFlowId },
+    flow: { id: mockFlowId, updatedAt: testFlowISODateString },
     key: 'sendTransactionalEmail',
     appKey: 'postman',
     parameters: { testParam: 'value' },
@@ -99,7 +50,7 @@ describe('updateStep mutation', () => {
     owner = context.currentUser
 
     // Set the global spy for patchFlowLastUpdated
-    setPatchFlowLastUpdatedSpy(patchFlowLastUpdatedSpy)
+    setPatchFlowLastUpdatedSpy(patchLastUpdatedSpy)
 
     // Create test users
     editor = await generateMockUser('editor')
@@ -107,7 +58,19 @@ describe('updateStep mutation', () => {
     nonCollaborator = await generateMockUser('nonCollaborator')
 
     // Create a test flow
-    await generateMockFlow(context, mockFlowId)
+    testFlow = await generateMockFlow(context, mockFlowId)
+    testFlowISODateString = testFlow.updatedAt
+    testInputTimestampString = String(new Date(testFlow.updatedAt).getTime())
+
+    // Set up the patchFlowLastUpdatedSpy to return an updated timestamp
+    patchLastUpdatedSpy.mockResolvedValue({
+      updatedAt: new Date(Date.now() + 1000).toISOString(), // 1 second later
+    })
+
+    genericInputParams = {
+      ...genericInputParams,
+      flow: { id: mockFlowId, updatedAt: testInputTimestampString },
+    }
 
     // Create a test step
     await generateMockStep(
@@ -129,7 +92,7 @@ describe('updateStep mutation', () => {
         ...data,
         connection: { id: mockConnectionId, userId: owner.id },
         flowId: mockFlowId,
-        flow: { userId: owner.id },
+        flow: { userId: owner.id, updatedAt: testFlowISODateString },
       }),
     }))
 
@@ -155,6 +118,8 @@ describe('updateStep mutation', () => {
       connectionKey: 'postman',
       stepId: mockStepId,
       connectionId: mockConnectionId,
+      flowId: mockFlowId,
+      flowUpdatedAt: testFlowISODateString,
     })
   })
 
@@ -211,6 +176,7 @@ describe('updateStep mutation', () => {
       stepId: mockStepId,
       connectionId: mockConnectionId,
       connectionNotFound: true,
+      flowUpdatedAt: testFlowISODateString,
     })
 
     await expect(updateStep(null, { input }, context)).rejects.toThrowError(
@@ -234,6 +200,7 @@ describe('updateStep mutation', () => {
       stepId: mockStepId,
       connectionId: mockConnectionId,
       stepNotFound: true,
+      flowUpdatedAt: testFlowISODateString,
     })
 
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
@@ -329,6 +296,7 @@ describe('updateStep mutation', () => {
         templateConfig: { appEventKey: 'existingAppEventKey' },
       },
       stepConnection: { id: mockConnectionId },
+      flowUpdatedAt: testFlowISODateString,
     })
 
     const input = {
@@ -376,6 +344,7 @@ describe('updateStep mutation', () => {
         templateConfig: { appEventKey: 'existingAppEventKey' },
       },
       stepConnection: { id: mockConnectionId },
+      flowUpdatedAt: testFlowISODateString,
     })
 
     const input = {
@@ -409,6 +378,17 @@ describe('updateStep mutation', () => {
   })
 
   it('should call patchLastUpdated when updating a step', async () => {
+    // Mock the access control to return step data (has access)
+    context.currentUser.withAccessible = createMockWithAccessible({
+      owner,
+      currentUser: context.currentUser,
+      stepKey: 'sendTransactionalEmail',
+      stepAppKey: 'postman',
+      connectionKey: 'postman',
+      stepId: mockStepId,
+      connectionId: mockConnectionId,
+      flowUpdatedAt: testFlowISODateString,
+    })
     await updateStep(null, { input: { ...genericInputParams } }, context)
     expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
@@ -423,6 +403,64 @@ describe('updateStep mutation', () => {
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
+  })
+
+  describe('flow update validation', () => {
+    it('should throw error when input updatedAt does not match flow updatedAt', async () => {
+      const input = {
+        ...genericInputParams,
+        flow: {
+          id: mockFlowId,
+          updatedAt: String(Date.now() + 10000),
+        },
+      }
+
+      await expect(updateStep(null, { input }, context)).rejects.toThrow(
+        BadUserInputError,
+      )
+      await expect(updateStep(null, { input }, context)).rejects.toThrow(
+        'Pipe is outdated. Refresh the page and try again.',
+      )
+      expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
+    })
+
+    it('should throw error when input updatedAt is after flow updatedAt', async () => {
+      const input = {
+        ...genericInputParams,
+        flow: {
+          id: mockFlowId,
+          updatedAt: String(Date.now() - 10000),
+        },
+      }
+
+      await expect(updateStep(null, { input }, context)).rejects.toThrow(
+        BadUserInputError,
+      )
+      await expect(updateStep(null, { input }, context)).rejects.toThrow(
+        'Pipe is outdated. Refresh the page and try again.',
+      )
+      expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
+    })
+
+    it('should succeed when input updatedAt matches flow updatedAt', async () => {
+      const input = {
+        ...genericInputParams,
+        flow: {
+          id: mockFlowId,
+          updatedAt: testInputTimestampString,
+        },
+      }
+
+      await expect(updateStep(null, { input }, context)).resolves.not.toThrow()
+      expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
+        connectionId: mockConnectionId,
+        parameters: { testParam: 'value' },
+        status: 'completed',
+        config: {},
+      })
+    })
   })
 
   describe('access control', () => {
@@ -470,6 +508,7 @@ describe('updateStep mutation', () => {
           connectionKey: 'postman',
           stepId: mockStepId,
           connectionId: mockConnectionId,
+          flowUpdatedAt: testFlowISODateString,
         })
 
         await expect(
@@ -516,13 +555,14 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         flowId: mockFlowId,
         stepRole: 'owner',
+        flowUpdatedAt: testFlowISODateString,
       })
     })
 
     it('should call patchFlowConnectionMetadata when app has connection fields and parameter exists', async () => {
       const input = {
         id: mockStepId,
-        flow: { id: mockFlowId },
+        flow: { id: mockFlowId, updatedAt: testFlowISODateString },
         key: 'sendMessage',
         appKey: 'slack',
         parameters: { channel: 'C1234567890' },
@@ -577,6 +617,7 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         flowId: mockFlowId,
         stepRole: 'editor', // Not owner
+        flowUpdatedAt: testFlowISODateString,
       })
 
       const input = {
@@ -610,6 +651,7 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         flowId: mockFlowId,
         stepRole: 'owner',
+        flowUpdatedAt: testFlowISODateString,
       })
 
       const input = {
@@ -643,6 +685,7 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         flowId: mockFlowId,
         stepRole: 'owner',
+        flowUpdatedAt: testFlowISODateString,
       })
 
       const input = {
@@ -681,6 +724,7 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         flowId: mockFlowId,
         stepRole: 'owner',
+        flowUpdatedAt: testFlowISODateString,
       })
 
       const input = {

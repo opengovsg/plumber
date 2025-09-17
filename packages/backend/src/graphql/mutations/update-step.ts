@@ -1,4 +1,5 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
+import checkFlowUpdatable from '@/helpers/check-flow-updatable'
 import {
   APP_CONNECTION_FIELDS,
   TILES_CONNECTION_ID,
@@ -18,20 +19,23 @@ const updateStep: MutationResolvers['updateStep'] = async (
 
   const step = await Step.transaction(async (trx) => {
     const step = await context.currentUser
-      .withAccessible({ type: 'step', requiredRole: 'editor', trx })
+      .withAccessibleSteps({ requiredRole: 'editor', trx })
       .withGraphFetched('flow')
       .findOne({
         'steps.id': input.id,
         flow_id: input.flow.id,
       })
+
     if (!step) {
       throw new BadUserInputError('Step not found')
     }
 
+    checkFlowUpdatable(input.flow.updatedAt, step.flow.updatedAt)
+
     if (input.connection.id) {
       // if connectionId is specified, verify that the connection exists
       const connection = await context.currentUser
-        .withAccessible({ type: 'connection', requiredRole: 'editor' })
+        .withAccessibleConnections({ requiredRole: 'editor' })
         .findOne({ 'connections.id': input.connection.id })
       // we check that the connection exists and is the same app
       if (!connection || connection.key !== input.appKey) {
@@ -79,10 +83,8 @@ const updateStep: MutationResolvers['updateStep'] = async (
     if (APP_CONNECTION_FIELDS[updatedStep.appKey] && step.role === 'owner') {
       const { parameterKey } = APP_CONNECTION_FIELDS[updatedStep.appKey]
 
-      let userId = updatedStep?.connection?.userId
       let connectionId = updatedStep?.connectionId
       if (updatedStep.appKey === 'tiles') {
-        userId = updatedStep.flow.userId
         connectionId = TILES_CONNECTION_ID
       }
 
@@ -90,7 +92,6 @@ const updateStep: MutationResolvers['updateStep'] = async (
         await FlowConnections.patchFlowConnectionMetadata({
           flowId: updatedStep.flowId,
           connectionId,
-          userId,
           parameterKey,
           parameterValue: updatedStep.parameters[parameterKey] as string,
         })
@@ -98,15 +99,20 @@ const updateStep: MutationResolvers['updateStep'] = async (
         await FlowConnections.addFlowConnection({
           flowId: updatedStep.flowId,
           connectionId,
-          userId,
+          addedBy: context.currentUser.id,
+          connectionType: 'connection',
+          trx,
         })
       }
     }
 
     // update the flow's last updated
-    await step.flow.patchLastUpdated({ flowId: step.flowId, trx })
+    const updatedFlow = await step.flow.patchLastUpdated({
+      flowId: step.flowId,
+      trx,
+    })
 
-    return updatedStep
+    return { ...updatedStep, flow: { updatedAt: updatedFlow.updatedAt } }
   })
 
   return step

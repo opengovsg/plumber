@@ -23,11 +23,13 @@ interface MockWithAccessibleOptions {
   stepConnection?: Record<string, any>
   stepNotFound?: boolean
   connectionNotFound?: boolean
+  flowUpdatedAt?: string
 }
 
 const MOCK_STEP_ID = '8c2a70d1-e78b-431e-9069-a4d8f97883f7'
 const MOCK_CONNECTION_ID = '8c2a70d1-e78b-431e-9069-a4d8f97883f5'
 const MOCK_FLOW_ID = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
+const MOCK_FLOW_UPDATED_AT = '2021-01-01T00:00:00.000Z'
 
 /**
  * Creates a reusable mock for context.currentUser.withAccessible
@@ -49,16 +51,19 @@ export function createMockWithAccessible({
   stepConnection = { id: connectionId, userId: currentUser.id },
   stepNotFound = false,
   connectionNotFound = false,
+  flowUpdatedAt = MOCK_FLOW_UPDATED_AT,
 }: MockWithAccessibleOptions) {
   return vi.fn().mockImplementation(({ type, _requiredRole }) => {
     if (type === 'step') {
       if (stepNotFound) {
         return {
+          withGraphFetched: vi.fn().mockReturnThis(),
           findOne: vi.fn().mockResolvedValue(null),
         }
       }
 
       return {
+        withGraphFetched: vi.fn().mockReturnThis(),
         findOne: vi.fn().mockResolvedValue({
           id: stepId,
           key: stepKey,
@@ -70,6 +75,7 @@ export function createMockWithAccessible({
           config: stepConfig,
           flow: {
             userId: owner.id,
+            updatedAt: flowUpdatedAt,
           },
           patchFlowLastUpdated:
             patchFlowLastUpdatedSpy || vi.fn().mockResolvedValue({}),
