@@ -1,4 +1,5 @@
 import { ApolloServer, type ApolloServerPlugin } from '@apollo/server'
+import { unwrapResolverError } from '@apollo/server/errors'
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled'
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default'
 import { expressMiddleware } from '@as-integrations/express4'
@@ -6,6 +7,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema'
 import { RequestHandler } from 'express'
 import { Kind, OperationDefinitionNode } from 'graphql/language'
 import { applyMiddleware } from 'graphql-middleware'
+import { DBError } from 'objection'
 
 import appConfig from '@/config/app'
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -86,34 +88,42 @@ export const server = new ApolloServer<UnauthenticatedContext>({
   ],
   // We don't want to allow batching within a single HTTP request, this defaults to false
   allowBatchedHttpRequests: false,
-  formatError: (error) => {
-    logger.error(error)
+  formatError: (formattedError, error) => {
+    logger.error(formattedError)
+
+    // NOTE: objection throws all error with DBError class
+    // so we handle them here
+    if (unwrapResolverError(error) instanceof DBError) {
+      return { message: 'Internal server error', code: 'INTERNAL_SERVER_ERROR' }
+    }
 
     // NOTE: handles INTERNAL_SERVER_ERROR, which also includes throwIfNotFound errors
     // we log the error on the server and return a generic message to the frontend
     // to prevent leaking internal server error details to the frontend such as the
     // exact SQL queries.
-    if (error.extensions?.code === 'INTERNAL_SERVER_ERROR') {
+    if (formattedError.extensions?.code === 'INTERNAL_SERVER_ERROR') {
       // Return a generic message to the frontend
       let message = 'An error has occurred'
-      if (error?.message) {
-        message += ': ' + error?.message
+      if (formattedError?.message) {
+        message += ': ' + formattedError?.message
       }
       return { message, code: 'INTERNAL_SERVER_ERROR' }
     }
 
-    let errorMessage = error.message
-    if (error.message.includes('Did you mean')) {
+    let errorMessage = formattedError.message
+    if (formattedError.message.includes('Did you mean')) {
       errorMessage = 'Invalid request'
     }
     if (
-      error.message.includes("Please either specify a 'content-type' header")
+      formattedError.message.includes(
+        "Please either specify a 'content-type' header",
+      )
     ) {
       errorMessage = 'Blocked request'
     }
     const newError = {
       message: errorMessage,
-      code: error.extensions?.code,
+      code: formattedError.extensions?.code,
     }
     return newError
   },
