@@ -1,6 +1,7 @@
 import { raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
+import checkFlowUpdatable from '@/helpers/check-flow-updatable'
 import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
@@ -25,15 +26,7 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
-    // NOTE: we check that the input.flow.updatedAt is the same as the flow.updatedAt
-    // to prevent users from updating the pipe when the steps are outdated.
-    // input.flow.updatedAt is a timestamp string,
-    // flow.updatedAt is a date object
-    if (Number(input.flow.updatedAt) !== new Date(flow.updatedAt).getTime()) {
-      throw new BadUserInputError(
-        'Pipe is outdated. Refresh the page and try again.',
-      )
-    }
+    checkFlowUpdatable(input.flow.updatedAt, flow.updatedAt)
 
     // if connectionId is specified, verify that the connection exists
     // and the user has the appropriate permissions to use it
