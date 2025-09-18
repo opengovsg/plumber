@@ -116,6 +116,11 @@ export default function ChooseApp(props: ChooseAppProps) {
   // Combine filtering and grouping logic into a single operation
   const groupedApps = useMemo(() => {
     const filteredApps = apps?.filter((app) => {
+      // GUARDRAIL: in the event that launchDarkly.flags is not loaded, we do not show any apps.
+      // this should force the user to reload the page to fetch the flags.
+      if (!isLoading && !launchDarkly.flags) {
+        return false
+      }
       // Filter away apps hidden behind feature flags
       if (isLoading || !launchDarkly.flags || !app?.key) {
         return true
