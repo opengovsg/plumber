@@ -326,7 +326,6 @@ export const EditorProvider = ({
   const [executeStep, { loading: isTestExecuting }] = useMutation(
     EXECUTE_STEP,
     {
-      context: { autoSnackbar: false },
       awaitRefetchQueries: true,
       refetchQueries: [GET_TEST_EXECUTION_STEPS, GET_FLOW],
       update(cache, { data }) {

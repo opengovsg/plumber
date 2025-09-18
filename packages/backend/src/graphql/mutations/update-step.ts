@@ -12,14 +12,13 @@ const updateStep: MutationResolvers['updateStep'] = async (
   const { input } = params
 
   const step = await Step.transaction(async (trx) => {
-    const step = await context.currentUser.$relatedQuery('steps', trx).findOne({
-      'steps.id': input.id,
-      flow_id: input.flow.id,
-    })
-
-    if (!step) {
-      throw new BadUserInputError('Step not found')
-    }
+    const step = await context.currentUser
+      .$relatedQuery('steps', trx)
+      .findOne({
+        'steps.id': input.id,
+        flow_id: input.flow.id,
+      })
+      .throwIfNotFound({ message: 'Step not found' })
 
     if (input.connection.id) {
       // if connectionId is specified, verify that the connection exists and belongs to the user

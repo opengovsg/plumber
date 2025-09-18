@@ -1,3 +1,4 @@
+import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -19,23 +20,35 @@ describe('updateStep mutation', () => {
   const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
   // Helper to create step mock with flow
-  const createStepMock = (stepData: any = {}) => ({
-    findOne: vi.fn().mockResolvedValue(
-      stepData === null
-        ? null
-        : {
-            id: mockStepId,
-            key: 'sendTransactionalEmail',
-            appKey: 'postman',
-            status: 'completed',
-            flow: {
-              id: mockFlowId,
-            },
-            patchFlowLastUpdated: patchFlowLastUpdatedSpy,
-            ...stepData,
-          },
-    ),
-  })
+  const createStepMock = (stepData: any = {}) => {
+    const throwIfNotFoundMock = vi.fn().mockImplementation(async (options) => {
+      const result =
+        stepData === null
+          ? null
+          : {
+              id: mockStepId,
+              key: 'sendTransactionalEmail',
+              appKey: 'postman',
+              status: 'completed',
+              flow: {
+                id: mockFlowId,
+              },
+              patchFlowLastUpdated: patchFlowLastUpdatedSpy,
+              ...stepData,
+            }
+
+      if (result === null) {
+        throw new NotFoundError(options?.message || 'Step not found')
+      }
+      return result
+    })
+
+    return {
+      findOne: vi.fn().mockReturnValue({
+        throwIfNotFound: throwIfNotFoundMock,
+      }),
+    }
+  }
 
   // Helper to create connection mock
   const createConnectionMock = (connectionData: any = null) => ({
@@ -49,7 +62,7 @@ describe('updateStep mutation', () => {
   ) => {
     context.currentUser.$relatedQuery = vi
       .fn()
-      .mockImplementation((relation) => {
+      .mockImplementation((relation, _trx) => {
         if (relation === 'steps') {
           return createStepMock(stepData)
         }
@@ -165,7 +178,7 @@ describe('updateStep mutation', () => {
     // Override only the connections query
     setupRelatedQueryMock(undefined, null)
 
-    await expect(updateStep(null, { input }, context)).rejects.toThrow(
+    await expect(updateStep(null, { input }, context)).rejects.toThrowError(
       BadUserInputError,
     )
     expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
@@ -181,7 +194,7 @@ describe('updateStep mutation', () => {
     setupRelatedQueryMock(null, { id: mockConnectionId })
 
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
-      BadUserInputError,
+      NotFoundError,
     )
     expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
   })
