@@ -92,7 +92,7 @@ export default function ForEach(props: ForEachProps) {
                     canAddStep={true}
                     isLastStep={isLastStep}
                     isOverlay={isOverlay}
-                    allowReorder={true}
+                    allowReorder={actionSteps.length > 1}
                   />
                 </Flex>
               </SortableList.Item>
