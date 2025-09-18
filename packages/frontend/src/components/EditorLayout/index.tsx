@@ -36,7 +36,9 @@ export default function EditorLayout() {
   const { flowId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [updateFlow] = useMutation(UPDATE_FLOW)
+  const [updateFlow] = useMutation(UPDATE_FLOW, {
+    refetchQueries: [GET_FLOW], // need to refetch flow to get the latest updatedAt
+  })
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
     refetchQueries: [GET_FLOW],
   })
