@@ -49,7 +49,7 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
   return (
     <Flex w="100%" boxShadow="sm">
       {/* Left Panel --> Step Selector */}
-      <Box flexGrow={1} w="50%">
+      <Box flexGrow={1} w="45%">
         <PanelHeader>{headers.left}</PanelHeader>
         <Divider borderColor="base.divider.medium" />
         <Box h={64} overflowY="auto">
@@ -84,7 +84,7 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
       </Box>
 
       {/* Right Panel --> Data Selector */}
-      <Box flexGrow={1} w="50%">
+      <Box flexGrow={1} w="55%">
         <PanelHeader>{headers.right}</PanelHeader>
         <Divider borderColor="base.divider.medium" />
         {rightPanel}
