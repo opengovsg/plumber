@@ -38,11 +38,8 @@ if (['prod', 'staging'].includes(appConfig.env)) {
     defaultPrivacyLevel: 'mask-user-input',
     version: appConfig.version,
     beforeSend: (event) => {
-      const url = event?.view?.url
-      if (url && new URL(url).pathname === '/') {
-        return false // drop all landing-page events
-      }
-      return true
+      // do not send if user is anonymous
+      return event.usr !== undefined
     },
   })
 }
