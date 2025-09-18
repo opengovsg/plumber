@@ -36,6 +36,11 @@ if (['prod', 'staging'].includes(appConfig.env)) {
     trackResources: true,
     trackLongTasks: true,
     defaultPrivacyLevel: 'mask-user-input',
+    version: appConfig.version,
+    beforeSend: (event) => {
+      // do not send if user is anonymous
+      return event.usr !== undefined
+    },
   })
 }
 root.render(
