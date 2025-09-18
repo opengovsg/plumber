@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { IStep } from '@plumber/types'
+
+import { useContext, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { Divider, Flex, IconButton, useDisclosure } from '@chakra-ui/react'
 
 import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
+import { DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
+import { EditorContext } from '@/contexts/Editor'
+import { useStepMetadata } from '@/hooks/useStepMetadata'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import { hoverAddStepButtonStyles as styles } from './styles'
@@ -15,14 +20,34 @@ interface HoverAddStepButtonProps {
   isLastStep: boolean
   prevStepId: string
   showEmptyAction?: boolean
+  step: IStep
+  allowReorder?: boolean
+  canChildStepsReorder?: boolean
 }
 
 export function HoverAddStepButton(
   props: HoverAddStepButtonProps,
 ): JSX.Element {
-  const { isDisabled, isLastStep, prevStepId, showEmptyAction } = props
+  const {
+    isDisabled,
+    isLastStep,
+    prevStepId,
+    showEmptyAction,
+    step,
+    allowReorder,
+    canChildStepsReorder,
+  } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isHovered, setIsHovered] = useState(false)
+
+  const { allApps, readOnly, isMobile } = useContext(EditorContext)
+  const { shouldShowDragHandle } = useStepMetadata(
+    allApps,
+    step,
+    readOnly,
+    allowReorder,
+    isMobile,
+  )
 
   const {
     cancelRef,
@@ -55,6 +80,11 @@ export function HoverAddStepButton(
           pointerEvents={isDisabled ? 'none' : 'auto'}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
+          w={
+            (shouldShowDragHandle || canChildStepsReorder) && !isMobile
+              ? `calc(100% - ${DRAG_HANDLE_WIDTH}px)`
+              : 'full'
+          }
         >
           {/* vertical line */}
           {!isLastStep && (

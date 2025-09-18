@@ -62,9 +62,20 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     onDrawerClose()
   }, [deleteForEach, onDrawerClose])
 
+  // NOTE: we check if its inside the for-each
+  // so that if-then steps follow the same width of the nested actions
+  // when the drag handle is shown
+  const isInsideForEach = stepsBeforeGroup.some(
+    (step) => step.key === TOOLBOX_ACTIONS.ForEach,
+  )
+
   return (
     <Flex
-      w="100%"
+      w={
+        isInsideForEach && stepsBeforeGroup.length > 2
+          ? 'calc(100% - 16px)'
+          : '100%'
+      }
       alignItems="center"
       justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
     >

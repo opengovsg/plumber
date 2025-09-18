@@ -22,6 +22,8 @@ interface Context {
   isDragging: boolean
 }
 
+export const DRAG_HANDLE_WIDTH = 16
+
 const SortableItemContext = createContext<Context>({
   attributes: {},
   listeners: undefined,

@@ -35,12 +35,20 @@ type FlowStepProps = {
   isLastStep: boolean
   isNested?: boolean
   allowReorder?: boolean
+  // we use this to control the width of condition steps in if-then and for-each
+  canChildStepsReorder?: boolean
 }
 
 export default function FlowStep(
   props: FlowStepProps,
 ): React.ReactElement | null {
-  const { step, isLastStep, isNested, allowReorder = true } = props
+  const {
+    step,
+    isLastStep,
+    isNested,
+    allowReorder = true,
+    canChildStepsReorder = false,
+  } = props
 
   const {
     isOpen: isModalOpen,
@@ -67,11 +75,11 @@ export default function FlowStep(
     app,
     caption,
     isCompleted,
-    isIfThenStep,
     isTrigger,
     selectedActionOrTrigger,
     substeps,
-  } = useStepMetadata(allApps, step)
+    shouldShowDragHandle,
+  } = useStepMetadata(allApps, step, readOnly, allowReorder, isMobile)
 
   const {
     cancelRef,
@@ -140,19 +148,6 @@ export default function FlowStep(
     }
   }
 
-  /**
-   * NOTE: there are various conditions that determine whether the drag handle
-   * should be shown.
-   *
-   * - not read only
-   * - not in mobile view
-   * - step is not a trigger
-   * - step is not an if-then condition step
-   * - allowReorder is true
-   */
-  const shouldShowDragHandle =
-    !readOnly && !isTrigger && !isMobile && !isIfThenStep && allowReorder
-
   const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)
 
   // generate help message only if template config exists
@@ -178,7 +173,10 @@ export default function FlowStep(
   }
 
   return (
-    <FlowStepWrapper isNested={isNested}>
+    <FlowStepWrapper
+      canChildStepsReorder={canChildStepsReorder}
+      allowReorder={allowReorder}
+    >
       {!app ? (
         <EmptyFlowStepHeader
           isNested={isNested}
@@ -191,9 +189,7 @@ export default function FlowStep(
       ) : (
         <Flex flexDir="row" w="100%">
           <Flex
-            alignItems={
-              isNested && !shouldShowDragHandle ? 'flex-start' : 'center'
-            }
+            alignItems={isNested ? 'flex-start' : 'center'}
             justifyContent="center"
             flexDir="column"
             flex="1"

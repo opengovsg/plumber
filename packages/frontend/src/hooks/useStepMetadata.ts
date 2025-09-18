@@ -17,11 +17,15 @@ interface UseStepMetadataResult {
   position: number
   stepName: string
   substeps: ISubstep[]
+  shouldShowDragHandle?: boolean
 }
 
 export function useStepMetadata(
   allApps: IApp[],
   step: IStep | undefined,
+  readOnly?: boolean,
+  allowReorder?: boolean,
+  isMobile?: boolean,
 ): UseStepMetadataResult {
   const isCompleted = step?.status === 'completed'
   const isTrigger = step?.type === 'trigger'
@@ -53,6 +57,20 @@ export function useStepMetadata(
     (substep: ISubstep) => substep.key === 'chooseConnection',
   )
 
+  /**
+   * NOTE: there are various conditions that determine whether the drag handle
+   * should be shown.
+   *
+   * - not read only
+   * - not in mobile view
+   * - step is not a trigger
+   * - step is not an if-then condition step
+   * - allowReorder is true
+   */
+  const shouldShowDragHandle = useMemo(() => {
+    return !readOnly && !isTrigger && !isMobile && !isIfThenStep && allowReorder
+  }, [readOnly, isTrigger, isMobile, isIfThenStep, allowReorder])
+
   return {
     app,
     selectedActionOrTrigger,
@@ -67,5 +85,6 @@ export function useStepMetadata(
       ? step.config.stepName
       : defaultCaption ?? '',
     substeps,
+    shouldShowDragHandle,
   }
 }

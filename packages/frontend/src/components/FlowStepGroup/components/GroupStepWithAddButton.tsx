@@ -15,6 +15,7 @@ interface GroupStepWithAddButtonProps {
   isOverlay?: boolean
   allowReorder?: boolean
   showEmptyAction?: boolean
+  canChildStepsReorder?: boolean
 }
 
 export default function GroupStepWithAddButton(
@@ -27,6 +28,7 @@ export default function GroupStepWithAddButton(
     isOverlay,
     allowReorder,
     showEmptyAction,
+    canChildStepsReorder,
   } = props
   const { isDrawerOpen, readOnly } = useContext(EditorContext)
 
@@ -43,6 +45,7 @@ export default function GroupStepWithAddButton(
         isNested={true}
         isLastStep={isLastStep}
         allowReorder={allowReorder}
+        canChildStepsReorder={canChildStepsReorder}
       />
       {!isOverlay && (
         <HoverAddStepButton
@@ -51,6 +54,9 @@ export default function GroupStepWithAddButton(
           isLastStep={isLastStep}
           prevStepId={step.id}
           showEmptyAction={showEmptyAction}
+          step={step}
+          allowReorder={allowReorder}
+          canChildStepsReorder={canChildStepsReorder}
         />
       )}
     </>
