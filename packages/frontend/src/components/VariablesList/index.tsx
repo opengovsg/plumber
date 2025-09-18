@@ -198,7 +198,7 @@ export default function VariablesList(props: VariablesListProps) {
   const parentRef = useRef<HTMLDivElement>(null)
 
   const virtualizer = useVirtualizer({
-    count: variables.length,
+    count: defaultVariables.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () =>
       onClick ? SUGGESTION_VARIABLE_ITEM_HEIGHT : VARIABLE_ITEM_HEIGHT,
@@ -220,8 +220,8 @@ export default function VariablesList(props: VariablesListProps) {
     >
       <Box h={`${virtualizer.getTotalSize()}px`} w="100%" position="relative">
         {virtualizer.getVirtualItems().map((virtualItem) => {
-          const variable = variables[virtualItem.index]
-          const isLast = virtualItem.index === variables.length - 1
+          const variable = defaultVariables[virtualItem.index]
+          const isLast = virtualItem.index === defaultVariables.length - 1
 
           return (
             <Box
