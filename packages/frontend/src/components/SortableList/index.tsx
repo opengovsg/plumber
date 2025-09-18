@@ -55,6 +55,7 @@ export function SortableList<T extends BaseItem>({
       sensors={sensors}
       onDragStart={({ active }) => {
         setActive(active)
+        document?.body?.classList?.add('is-dragging')
       }}
       onDragEnd={({ active, over }) => {
         if (over && active.id !== over?.id) {
@@ -64,9 +65,11 @@ export function SortableList<T extends BaseItem>({
           onChange(arrayMove(items, activeIndex, overIndex))
         }
         setActive(null)
+        document?.body?.classList?.remove('is-dragging')
       }}
       onDragCancel={() => {
         setActive(null)
+        document?.body?.classList?.remove('is-dragging')
       }}
       modifiers={[
         restrictToVerticalAxis,
