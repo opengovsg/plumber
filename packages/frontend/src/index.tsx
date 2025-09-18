@@ -36,6 +36,14 @@ if (['prod', 'staging'].includes(appConfig.env)) {
     trackResources: true,
     trackLongTasks: true,
     defaultPrivacyLevel: 'mask-user-input',
+    version: appConfig.version,
+    beforeSend: (event) => {
+      const url = event?.view?.url
+      if (url && new URL(url).pathname === '/') {
+        return false // drop all landing-page events
+      }
+      return true
+    },
   })
 }
 root.render(
