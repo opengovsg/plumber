@@ -96,6 +96,28 @@ export const inputSchema = z
     }
   })
 
+/* TODO (kevinkim-ogp): this is the new dataOut format for Tile columns
+ * This is the new dataOut format for the columns used in for each
+ * so that it respects the column order but is unaffected when users
+ * reorder the columns in the Tile
+ */
+const dataOutColumnSchema = z.record(
+  z.string(),
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    value: z.string(),
+    order: z.number(),
+  }),
+)
+
+const dataOutTableSchema = z.object({
+  rows: tableRowsSchema,
+  columns: dataOutColumnSchema,
+  inputSource: z.enum(FOR_EACH_TABLE_SOURCES),
+})
+
+// TODO (kevinkim-ogp): remove the union once all users have moved to the new dataOut format
 export const dataOutSchema = z.discriminatedUnion('inputSource', [
   baseDataOutSchema.extend({
     inputSource: z.literal(FOR_EACH_INPUT_SOURCE.STRING_ARRAY),
@@ -103,15 +125,15 @@ export const dataOutSchema = z.discriminatedUnion('inputSource', [
   }),
   baseDataOutSchema.extend({
     inputSource: z.literal(FOR_EACH_INPUT_SOURCE.M365_EXCEL),
-    items: tableSchema,
+    items: z.union([tableSchema, dataOutTableSchema]),
   }),
   baseDataOutSchema.extend({
     inputSource: z.literal(FOR_EACH_INPUT_SOURCE.TILES),
-    items: tableSchema,
+    items: z.union([tableSchema, dataOutTableSchema]),
   }),
   baseDataOutSchema.extend({
     inputSource: z.literal(FOR_EACH_INPUT_SOURCE.FORMSG_TABLE),
-    items: tableSchema,
+    items: z.union([tableSchema, dataOutTableSchema]),
   }),
 ])
 

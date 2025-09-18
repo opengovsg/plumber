@@ -96,29 +96,17 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       setIsSaving(true)
       const currentStep = formContext.getValues() as IStep
       const isSubStepValid = validateSubstep(substep, currentStep)
-      const result = await onUpdateStep({
+      await onUpdateStep({
         ...currentStep,
         status: isSubStepValid ? 'completed' : 'incomplete',
       })
-
-      if (!result) {
-        throw new Error('Failed to save step')
-      }
     } catch (error) {
-      toast({
-        title: 'Error saving step',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      })
+      console.error('Error saving step', error)
+      throw error // Re-throw the error so calling functions know saveStep failed
     } finally {
       setIsSaving(false)
     }
-  }, [formContext, onUpdateStep, substep, toast])
+  }, [formContext, onUpdateStep, substep])
 
   const handleSave = useCallback(async () => {
     await saveStep()
@@ -132,10 +120,14 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
 
   const handleSaveAndTest = useCallback(
     async (testRunMetadata?: Record<string, unknown>) => {
-      await saveStep()
-      await executeTestStep(testRunMetadata)
-      if (!isIfThenStep(step)) {
-        onTestResultOpen()
+      try {
+        await saveStep()
+        await executeTestStep(testRunMetadata)
+        if (!isIfThenStep(step)) {
+          onTestResultOpen()
+        }
+      } catch (error) {
+        console.error('Error saving and test step')
       }
     },
     [saveStep, executeTestStep, step, onTestResultOpen],

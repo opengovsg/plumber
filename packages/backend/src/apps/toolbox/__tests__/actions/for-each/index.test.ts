@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   isCheckboxItems,
+  ProcessedColumn,
   processItems,
 } from '@/apps/toolbox/common/get-for-each-variables'
 import StepError from '@/errors/step'
@@ -53,6 +54,38 @@ const MOCK_FLOW = [
   },
 ]
 
+const VALID_TABLE_DATA = {
+  rows: [
+    {
+      data: {
+        col1: 'value1',
+        col2: 'value2',
+      },
+      rowId: 'row-1',
+    },
+    {
+      data: {
+        col1: 'value3',
+        col2: 'value4',
+      },
+      rowId: 'row-2',
+    },
+  ],
+  columns: [
+    {
+      id: 'col1',
+      name: 'Column 1',
+      value: 'col1-value',
+    },
+    {
+      id: 'col2',
+      name: 'Column 2',
+      value: 'col2-value',
+    },
+  ],
+  inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+}
+
 describe('For each action', () => {
   let $: IGlobalVariable
 
@@ -77,6 +110,7 @@ describe('For each action', () => {
       execution: {
         testRun: false,
       },
+      getLastExecutionStep: vi.fn(),
       setActionItem: mocks.setActionItem,
     } as unknown as IGlobalVariable
   })
@@ -165,7 +199,7 @@ describe('For each action', () => {
     })
   })
 
-  describe('table input', () => {
+  describe('table input - backward compatibility with the old dataOut format', () => {
     const validTableData = {
       rows: [
         {
@@ -198,8 +232,15 @@ describe('For each action', () => {
       inputSource: FOR_EACH_INPUT_SOURCE.TILES,
     }
 
+    const DATA_OUT = {
+      dataOut: {
+        items: validTableData,
+      },
+    }
+
     it('should handle valid table input (Tiles)', async () => {
       $.step.parameters.items = validTableData
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce(DATA_OUT)
 
       const processedResult = {
         rows: validTableData.rows,
@@ -236,6 +277,7 @@ describe('For each action', () => {
       }
 
       $.step.parameters.items = excelData
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce(DATA_OUT)
 
       const processedResult = {
         rows: excelData.rows,
@@ -266,19 +308,20 @@ describe('For each action', () => {
     })
 
     it('should handle valid table input (FormSG Table field)', async () => {
-      const mockTableFieldData = JSON.stringify(validTableData)
+      const mockTableFieldData = JSON.stringify(VALID_TABLE_DATA)
       $.step.parameters.items = mockTableFieldData
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce(DATA_OUT)
 
       const processedResult = {
-        rows: validTableData.rows,
-        columns: validTableData.columns,
+        rows: VALID_TABLE_DATA.rows,
+        columns: VALID_TABLE_DATA.columns,
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
 
       mockedProcessItems.mockReturnValue(processedResult)
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(validTableData)
+      expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
@@ -298,14 +341,19 @@ describe('For each action', () => {
     it('should handle FormSG Table field with no row data', async () => {
       const mockTableFieldData = {
         rows: [] as any[],
-        columns: validTableData.columns,
+        columns: VALID_TABLE_DATA.columns,
       }
       const stringifiedTableFieldData = JSON.stringify(mockTableFieldData)
 
       $.step.parameters.items = stringifiedTableFieldData
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+        dataOut: {
+          items: mockTableFieldData,
+        },
+      })
       const processedResult = {
         rows: [] as any[],
-        columns: validTableData.columns,
+        columns: VALID_TABLE_DATA.columns,
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
       mockedProcessItems.mockReturnValue(processedResult)
@@ -354,6 +402,197 @@ describe('For each action', () => {
           iterations: 0,
           items: processedResult,
           inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+        },
+      })
+
+      expect(result).toEqual({
+        nextStep: {
+          command: 'stop-execution',
+          stepId: 'for-each',
+        },
+      })
+    })
+  })
+
+  describe('table input - new dataOut format', () => {
+    const newColumns = {} as Record<string, ProcessedColumn>
+    VALID_TABLE_DATA.columns.forEach((column, index) => {
+      newColumns[column.id] = {
+        ...column,
+        value: `data.columns.${column.id}`,
+        order: index + 1,
+      }
+    })
+
+    const DATA_OUT = {
+      dataOut: {
+        items: {
+          ...VALID_TABLE_DATA,
+          columns: newColumns,
+        },
+      },
+    }
+
+    it('should handle valid table input (Tiles)', async () => {
+      $.step.parameters.items = VALID_TABLE_DATA
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce(DATA_OUT)
+
+      const processedResult = {
+        rows: VALID_TABLE_DATA.rows,
+        columns: newColumns,
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+      }
+
+      mockedProcessItems.mockReturnValue(processedResult)
+
+      const result = await action.run($)
+
+      expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
+          iterations: 2,
+          items: processedResult,
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+        },
+      })
+      expect(result).toEqual({
+        nextStep: {
+          command: 'start-for-each',
+          stepId: 'for-each',
+        },
+      })
+    })
+
+    it('should handle valid table input (M365 Excel)', async () => {
+      const excelData = {
+        ...VALID_TABLE_DATA,
+        rows: VALID_TABLE_DATA.rows.map((row) => ({ data: row.data })), // No rowId for Excel
+        inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+      }
+
+      $.step.parameters.items = excelData
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce(DATA_OUT)
+
+      const processedResult = {
+        rows: excelData.rows,
+        columns: newColumns,
+        inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+      }
+
+      mockedProcessItems.mockReturnValue(processedResult)
+
+      const result = await action.run($)
+
+      expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
+          iterations: 2,
+          items: processedResult,
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+        },
+      })
+
+      expect(result).toEqual({
+        nextStep: {
+          command: 'start-for-each',
+          stepId: 'for-each',
+        },
+      })
+    })
+
+    it('should handle table input with empty rows', async () => {
+      const emptyTableData = {
+        rows: [] as any[],
+        columns: VALID_TABLE_DATA.columns,
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+      }
+
+      $.step.parameters.items = emptyTableData
+
+      const processedResult = {
+        rows: [] as any[],
+        columns: newColumns,
+        inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+      }
+
+      mockedProcessItems.mockReturnValue(processedResult)
+
+      const result = await action.run($)
+
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
+          iterations: 0,
+          items: processedResult,
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+        },
+      })
+
+      expect(result).toEqual({
+        nextStep: {
+          command: 'stop-execution',
+          stepId: 'for-each',
+        },
+      })
+    })
+
+    it('should handle valid table input (FormSG Table field)', async () => {
+      const mockTableFieldData = JSON.stringify(VALID_TABLE_DATA)
+      $.step.parameters.items = mockTableFieldData
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce(DATA_OUT)
+
+      const processedResult = {
+        rows: VALID_TABLE_DATA.rows,
+        columns: newColumns,
+        inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+      }
+
+      mockedProcessItems.mockReturnValue(processedResult)
+      const result = await action.run($)
+
+      expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
+          iterations: 2,
+          items: processedResult,
+          inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+        },
+      })
+      expect(result).toEqual({
+        nextStep: {
+          command: 'start-for-each',
+          stepId: 'for-each',
+        },
+      })
+    })
+
+    it('should handle FormSG Table field with no row data', async () => {
+      const mockTableFieldData = {
+        rows: [] as any[],
+        columns: VALID_TABLE_DATA.columns,
+      }
+      const stringifiedTableFieldData = JSON.stringify(mockTableFieldData)
+
+      $.step.parameters.items = stringifiedTableFieldData
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce(DATA_OUT)
+      const processedResult = {
+        rows: [] as any[],
+        columns: newColumns,
+        inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+      }
+      mockedProcessItems.mockReturnValue(processedResult)
+      const result = await action.run($)
+
+      expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          iteration: FOR_EACH_ITERATION_KEY,
+          iterations: 0,
+          items: processedResult,
+          inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
         },
       })
 

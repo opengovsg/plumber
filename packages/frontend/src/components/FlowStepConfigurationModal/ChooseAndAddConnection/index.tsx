@@ -143,11 +143,13 @@ export default function ChooseAndAddConnection(
           newStepIndex = updatedStep.position - 1
         }
         onClose()
-      } finally {
-        patchModalState({ isLoading: false })
         onDrawerOpen()
         setCurrentStepId(newStepId)
         setCurrentStepIndex(newStepIndex)
+      } catch (error) {
+        console.error('Error selecting app and event', error)
+      } finally {
+        patchModalState({ isLoading: false })
       }
     },
     [

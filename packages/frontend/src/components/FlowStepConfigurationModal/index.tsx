@@ -1,11 +1,7 @@
 import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
 
 import { useContext } from 'react'
-import { Flex, Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
-
-import { useIfThenInitializer } from '@/helpers/toolbox'
-
-import PrimarySpinner from '../PrimarySpinner'
+import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
 
 import ChooseAndAddConnection from './ChooseAndAddConnection'
 import ChooseAppAndEvent from './ChooseAppAndEvent'
@@ -14,6 +10,7 @@ import {
   FlowStepConfigurationContextProvider,
 } from './FlowStepConfigurationContext'
 import InvalidModalScreen from './InvalidModalScreen'
+import LoadingOverlay from './LoadingOverlay'
 
 interface FlowStepConfigurationModalProps {
   onClose: () => void
@@ -32,16 +29,8 @@ function FlowStepConfigurationModalContent({
   onClose: () => void
 }): JSX.Element {
   const { modalState } = useContext(FlowStepConfigurationContext)
-  const { currentScreen, isLoading } = modalState
-  const [_, isInitializingIfThen] = useIfThenInitializer()
+  const { currentScreen } = modalState
 
-  if (isLoading || isInitializingIfThen) {
-    return (
-      <Flex flexDir="column" alignItems="center" gap={6} my={12}>
-        <PrimarySpinner margin="auto" fontSize="4xl" />
-      </Flex>
-    )
-  }
   if (currentScreen === 'choose-app' || currentScreen === 'choose-event') {
     return <ChooseAppAndEvent onClose={onClose} />
   }
@@ -91,8 +80,10 @@ export default function FlowStepConfigurationModal(
           overflow="hidden"
           borderRadius="lg"
           py={8}
+          position="relative"
         >
           <FlowStepConfigurationModalContent onClose={onClose} />
+          <LoadingOverlay />
         </ModalContent>
       </Modal>
     </FlowStepConfigurationContextProvider>

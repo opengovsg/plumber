@@ -3,10 +3,11 @@ import {
   FOR_EACH_ITERATION_KEY,
 } from '@/apps/toolbox/common/constants'
 
-interface ProcessedColumn {
+export interface ProcessedColumn {
   id: string
   name: string
   value: string
+  order: number
 }
 
 export interface MultipleRowObject {
@@ -26,25 +27,45 @@ export function isCheckboxItems(items: any[]): boolean {
   return Array.isArray(items) && items.every((item) => typeof item === 'string')
 }
 
-function processColumns(data: MultipleRowObject): ProcessedColumn[] {
+function processColumns(
+  data: MultipleRowObject,
+): Record<string, ProcessedColumn> {
   const { columns, inputSource } = data
   if (columns.length === 0) {
-    return []
+    return {}
   }
 
-  const processedColumns = columns.map((column: any) => ({
-    id: column.id,
-    name: column.name,
-    value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${column.id}`,
-  }))
+  const processedColumns: Record<string, ProcessedColumn> = {}
+  columns.forEach((column: any, index: number) => {
+    processedColumns[column.id] = {
+      id: column.id,
+      name: column.name,
+      value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${column.id}`,
+      order: index + 1,
+    }
 
-  // NOTE: only tiles will have rowId
+    /**
+     * NOTE: this is for backward compatibility with the old dataOut format
+     * which was unable to properly support reordering of Tiles or Excel columns
+     * as the columns are found by their relative position in an array.
+     *
+     * TODO: remove this once all users have moved the new dataOut format
+     */
+    processedColumns[String(index)] = {
+      id: column.id,
+      name: column.name,
+      value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${column.id}`,
+      order: index + 1,
+    }
+  })
+
   if (inputSource === FOR_EACH_INPUT_SOURCE.TILES) {
-    processedColumns.push({
+    processedColumns['rowId'] = {
       id: 'rowId',
       name: 'Row ID',
       value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
-    })
+      order: columns.length + 1,
+    }
   }
 
   return processedColumns

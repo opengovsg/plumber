@@ -66,6 +66,7 @@ const action: IRawAction = {
 
     try {
       const { items, inputSource, iterations } = parsedResult.data
+
       const output: {
         iteration: string
         iterations: number

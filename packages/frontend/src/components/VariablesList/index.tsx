@@ -1,6 +1,6 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { IconType } from 'react-icons/lib'
 import {
   Accordion,
@@ -16,11 +16,15 @@ import {
   Text,
   Tooltip,
 } from '@chakra-ui/react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 
 import { type Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import TableVariableItem from './TableVariableItem'
+
+const VARIABLE_ITEM_HEIGHT = 77
+const SUGGESTION_VARIABLE_ITEM_HEIGHT = 61
 
 function VariableTag({
   type,
@@ -84,11 +88,27 @@ export function VariableItem({
   withIcon?: IconType
 }): JSX.Element {
   const shouldShowBottomBorder = !withIcon && (onClick || isLast)
+
+  const displayValue =
+    variable.displayedValue ?? variable.value?.toString() ?? ''
+
+  const isSuggestionVariable = onClick && !withIcon
   return (
     <Box
       key={`suggestion-${variable.name}`}
       data-test="variable-suggestion-item"
-      padding={onClick && !withIcon ? '0.5rem 1rem' : '1rem'}
+      h={
+        isSuggestionVariable
+          ? SUGGESTION_VARIABLE_ITEM_HEIGHT
+          : VARIABLE_ITEM_HEIGHT
+      }
+      maxH={
+        isSuggestionVariable
+          ? SUGGESTION_VARIABLE_ITEM_HEIGHT
+          : VARIABLE_ITEM_HEIGHT
+      }
+      overflowY="hidden"
+      padding={isSuggestionVariable ? '0.5rem 1rem' : '1rem'}
       borderBottom={shouldShowBottomBorder ? undefined : '1px solid #EDEDED'}
       _hover={
         onClick
@@ -128,9 +148,16 @@ export function VariableItem({
         <Text
           textStyle="body-2"
           color="base.content.medium"
+          whiteSpace="nowrap"
+          overflow="hidden"
+          textOverflow="ellipsis"
           textDecoration={withIcon ? 'underline' : undefined}
         >
-          {variable.displayedValue ?? variable.value?.toString() ?? ''}
+          {displayValue.length ? (
+            displayValue
+          ) : (
+            <i style={{ opacity: 0.5 }}>empty</i>
+          )}
         </Text>
         {withIcon && <Icon as={withIcon} />}
       </Flex>
@@ -168,6 +195,16 @@ export default function VariablesList(props: VariablesListProps) {
     return { defaultVariables, collapsedVariables }
   }, [variables])
 
+  const parentRef = useRef<HTMLDivElement>(null)
+
+  const virtualizer = useVirtualizer({
+    count: defaultVariables.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () =>
+      onClick ? SUGGESTION_VARIABLE_ITEM_HEIGHT : VARIABLE_ITEM_HEIGHT,
+    overscan: 50,
+  })
+
   if (!variables || defaultVariables.length + collapsedVariables.length === 0) {
     return <></>
   }
@@ -179,29 +216,43 @@ export default function VariablesList(props: VariablesListProps) {
       overflowY="auto"
       p={onClick ? undefined : '1rem'}
       sx={props.customStyles}
+      ref={parentRef}
     >
-      {defaultVariables.map((variable, index) =>
-        variable.type === 'table' ? (
-          <TableVariableItem
-            key={`variable-${variable.name}`}
-            variable={variable}
-            onClick={onClick}
-          />
-        ) : variable.isHidden ? null : (
-          <VariableItem
-            key={`variable-${variable.name}`}
-            variable={variable}
-            onClick={onClick}
-            isLast={index === defaultVariables.length - 1}
-          />
-        ),
-      )}
+      <Box h={`${virtualizer.getTotalSize()}px`} w="100%" position="relative">
+        {virtualizer.getVirtualItems().map((virtualItem) => {
+          const variable = defaultVariables[virtualItem.index]
+          const isLast = virtualItem.index === defaultVariables.length - 1
+
+          return (
+            <Box
+              key={virtualItem.key}
+              data-index={virtualItem.index}
+              position="absolute"
+              top={0}
+              left={0}
+              width="100%"
+              transform={`translateY(${virtualItem.start}px)`}
+            >
+              {variable.type === 'table' ? (
+                <TableVariableItem variable={variable} onClick={onClick} />
+              ) : variable.isHidden ? null : (
+                <VariableItem
+                  variable={variable}
+                  onClick={onClick}
+                  isLast={isLast}
+                />
+              )}
+            </Box>
+          )
+        })}
+      </Box>
       {collapsedVariables.length > 0 && (
         <Accordion allowMultiple border="transparent" py={2}>
           <AccordionItem p={0}>
             {({ isExpanded }) => (
               <>
                 <AccordionPanel p={0} borderTop="1px solid #EDEDED">
+                  {/* collapsed variables are not virtualized */}
                   {collapsedVariables.map((variable, index) => (
                     <VariableItem
                       key={`variable-${variable.name}-${index}`}

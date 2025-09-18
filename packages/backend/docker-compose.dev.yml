@@ -42,7 +42,8 @@ services:
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN}
   minio:
-    image: 'bitnami/minio:latest'
+    image: 'bitnami/minio:2025.7.23'
+    user: '0:0'
     ports:
       - '9000:9000'
       - '9001:9001'
@@ -58,7 +59,7 @@ services:
       interval: 1s
       retries: 5
   create-minio-buckets:
-    image: bitnami/minio-client:latest
+    image: bitnami/minio-client:2025.7.21
     volumes:
       - ../frontend/src/assets/plumber-logo.jpg:/assets/plumber-logo.jpg
     depends_on:
@@ -68,7 +69,7 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/bash -c "
-      mc config host add plumber-minio http://minio:9000 minio-username minio-password &&
+      mc alias set plumber-minio http://minio:9000 minio-username minio-password &&
       mc alias set local http://minio:9000 minio-username minio-password &&
       mc mb --ignore-existing plumber-minio/plumber-development-common-bucket &&
       echo 'bucket created' &&

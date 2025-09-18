@@ -87,23 +87,38 @@ describe('get-for-each-variables', () => {
 
       expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
       expect(result.rows).toEqual(mockData.rows)
-      expect(result.columns).toEqual([
-        {
+      expect(result.columns).toEqual({
+        '0': {
           id: col1Id,
           name: 'Column 1',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col1Id}`,
+          order: 1,
         },
-        {
+        '1': {
           id: col2Id,
           name: 'Column 2',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col2Id}`,
+          order: 2,
         },
-        {
+        [col1Id]: {
+          id: col1Id,
+          name: 'Column 1',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col1Id}`,
+          order: 1,
+        },
+        [col2Id]: {
+          id: col2Id,
+          name: 'Column 2',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col2Id}`,
+          order: 2,
+        },
+        rowId: {
           id: 'rowId',
           name: 'Row ID',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
+          order: 3,
         },
-      ])
+      })
     })
 
     it('should process tiles data (with ULID column IDs)', () => {
@@ -131,23 +146,38 @@ describe('get-for-each-variables', () => {
 
       expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
       expect(result.rows).toEqual(mockData.rows)
-      expect(result.columns).toEqual([
-        {
+      expect(result.columns).toEqual({
+        '0': {
           id: col1Id,
           name: 'Column 1',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col1Id}`,
+          order: 1,
         },
-        {
+        '1': {
           id: col2Id,
           name: 'Column 2',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col2Id}`,
+          order: 2,
         },
-        {
+        [col1Id]: {
+          id: col1Id,
+          name: 'Column 1',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col1Id}`,
+          order: 1,
+        },
+        [col2Id]: {
+          id: col2Id,
+          name: 'Column 2',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col2Id}`,
+          order: 2,
+        },
+        rowId: {
           id: 'rowId',
           name: 'Row ID',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
+          order: 3,
         },
-      ])
+      })
     })
 
     it('should process m365-excel data (with regular column IDs)', () => {
@@ -185,18 +215,32 @@ describe('get-for-each-variables', () => {
 
       expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
       expect(result.rows).toEqual(mockData.rows)
-      expect(result.columns).toEqual([
-        {
+      expect(result.columns).toEqual({
+        '0': {
           id: 'col1',
           name: 'Excel Column 1',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.col1`,
+          order: 1,
         },
-        {
+        '1': {
           id: 'col2',
           name: 'Excel Column 2',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.col2`,
+          order: 2,
         },
-      ])
+        col1: {
+          id: 'col1',
+          name: 'Excel Column 1',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.col1`,
+          order: 1,
+        },
+        col2: {
+          id: 'col2',
+          name: 'Excel Column 2',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.col2`,
+          order: 2,
+        },
+      })
     })
 
     it('should handle empty tiles rows', () => {
@@ -213,18 +257,26 @@ describe('get-for-each-variables', () => {
 
       expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
       expect(result.rows).toEqual([])
-      expect(result.columns).toEqual([
-        {
+      expect(result.columns).toEqual({
+        '0': {
           id: col1Id,
           name: 'Column 1',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col1Id}`,
+          order: 1,
         },
-        {
+        [col1Id]: {
+          id: col1Id,
+          name: 'Column 1',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${col1Id}`,
+          order: 1,
+        },
+        rowId: {
           id: 'rowId',
           name: 'Row ID',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
+          order: 2,
         },
-      ])
+      })
     })
 
     it('should handle empty rows', () => {
@@ -240,13 +292,20 @@ describe('get-for-each-variables', () => {
 
       expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
       expect(result.rows).toEqual([])
-      expect(result.columns).toEqual([
-        {
+      expect(result.columns).toEqual({
+        '0': {
           id: 'col1',
           name: 'Column 1',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.col1`,
+          order: 1,
         },
-      ])
+        col1: {
+          id: 'col1',
+          name: 'Column 1',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.col1`,
+          order: 1,
+        },
+      })
     })
 
     it('should handle empty columns', () => {
@@ -265,7 +324,7 @@ describe('get-for-each-variables', () => {
 
       expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
       expect(result.rows).toEqual(mockData.rows)
-      expect(result.columns).toEqual([])
+      expect(result.columns).toEqual({})
     })
 
     it('should handle single row with UUID column', () => {
@@ -292,18 +351,26 @@ describe('get-for-each-variables', () => {
       const result = processItems(mockData)
 
       expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.TILES)
-      expect(result.columns).toEqual([
-        {
+      expect(result.columns).toEqual({
+        '0': {
           id: colId,
           name: 'Single Column',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${colId}`,
+          order: 1,
         },
-        {
+        [colId]: {
+          id: colId,
+          name: 'Single Column',
+          value: `items.rows.${FOR_EACH_ITERATION_KEY}.data.${colId}`,
+          order: 1,
+        },
+        rowId: {
           id: 'rowId',
           name: 'Row ID',
           value: `items.rows.${FOR_EACH_ITERATION_KEY}.rowId`,
+          order: 2,
         },
-      ])
+      })
     })
 
     it('should handle empty rows and columns', () => {
@@ -316,7 +383,7 @@ describe('get-for-each-variables', () => {
 
       expect(result.inputSource).toBe(FOR_EACH_INPUT_SOURCE.M365_EXCEL)
       expect(result.rows).toEqual([])
-      expect(result.columns).toEqual([])
+      expect(result.columns).toEqual({})
     })
   })
 })
