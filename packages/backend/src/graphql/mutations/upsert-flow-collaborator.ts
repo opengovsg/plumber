@@ -5,6 +5,7 @@ import { addFlowTableConnection } from '@/helpers/add-flow-connection'
 import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
@@ -18,6 +19,16 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
       flowId: string
       email: string
       role: IFlowCollabRole
+    }
+
+    // TODO (kevinkim-ogp): remove this once collaborators is released to all
+    const collaboratorsFlag = await getLdFlagValue(
+      'collaborators',
+      context.currentUser.email,
+      false,
+    )
+    if (!collaboratorsFlag) {
+      throw new BadUserInputError(' You are not allowed to add collaborators.')
     }
 
     const validatedEmail = await validateAndParseEmail(email)
