@@ -257,8 +257,13 @@ export default function ChooseApp(props: ChooseAppProps) {
               alignItems="center"
               py={8}
               color="base.content.medium"
+              flexDir="column"
+              gap={2}
             >
-              No apps found
+              No apps found.
+              <Text>
+                Something may have gone wrong. Please refresh and try again.
+              </Text>
             </Flex>
           ) : (
             groupedApps.map(([category, apps]) => (
