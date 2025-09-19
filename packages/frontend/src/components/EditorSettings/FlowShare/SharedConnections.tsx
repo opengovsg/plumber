@@ -2,7 +2,7 @@ import { ITransferDetails } from '@plumber/types'
 
 import { useContext, useState } from 'react'
 import { useQuery } from '@apollo/client'
-import { Center, Collapse, Flex, Link, Stack, Text } from '@chakra-ui/react'
+import { Box, Center, Flex, Link, Stack, Text } from '@chakra-ui/react'
 import { Badge, Infobox } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
@@ -60,11 +60,8 @@ export default function SharedConnections() {
         >
           {showConnections ? 'Hide connections' : 'Show connections'}
         </Text>
-        {Object.keys(groupedConnections).length > 0 && (
-          <Collapse
-            in={showConnections}
-            style={{ width: '100%', marginTop: 0 }}
-          >
+        {showConnections && (
+          <Box>
             <Stack gap={2}>
               {Object.entries(groupedConnections).map(
                 ([appName, connections], index) => (
@@ -83,7 +80,7 @@ export default function SharedConnections() {
                 ),
               )}
             </Stack>
-          </Collapse>
+          </Box>
         )}
       </Flex>
     </Infobox>
