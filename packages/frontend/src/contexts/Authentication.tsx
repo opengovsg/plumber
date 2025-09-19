@@ -39,10 +39,17 @@ export const AuthenticationProvider = ({
   const [logout] = useMutation(LOGOUT, {
     refetchQueries: [GET_CURRENT_USER],
     awaitRefetchQueries: true,
+    onCompleted: () => {
+      // force datadog rum to stop tracking once logged out
+      datadogRum.setTrackingConsent('not-granted')
+    },
   })
+
   useEffect(() => {
     if (currentUser) {
       datadogRum.setUser(currentUser)
+      // grant consent to start tracking once logged in
+      datadogRum.setTrackingConsent('granted')
     }
   }, [currentUser])
 
