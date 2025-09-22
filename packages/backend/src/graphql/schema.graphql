@@ -207,6 +207,7 @@ type ActionSubstepArgument {
   hiddenIf: FieldVisibilityCondition
   addRowButtonText: String
   tooltipText: String
+  noVariablesMessage: String
 
   # Only for string and multiline
   singleVariableSelection: Boolean

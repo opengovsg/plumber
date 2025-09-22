@@ -318,6 +318,9 @@ export interface IBaseField {
    * other array elements).
    */
   hiddenIf?: IFieldVisibilityCondition
+
+  // message to show when no variables are available
+  noVariablesMessage?: string
 }
 
 export type DropdownAddNewType = 'modal' | 'inline'

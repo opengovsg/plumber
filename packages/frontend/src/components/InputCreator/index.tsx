@@ -43,6 +43,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     type,
     placeholder,
     tooltipText,
+    noVariablesMessage,
   } = schema
 
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
@@ -119,6 +120,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         placeholder={placeholder}
         variablesEnabled={variables}
         isRich
+        noVariablesMessage={noVariablesMessage}
       />
     )
   }
@@ -139,6 +141,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           parentType={parentType}
           autoFocus={autoFocus}
           singleVariableSelection={schema.singleVariableSelection}
+          noVariablesMessage={noVariablesMessage}
         />
       )
     }

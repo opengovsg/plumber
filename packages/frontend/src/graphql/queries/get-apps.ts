@@ -195,6 +195,7 @@ export const GET_APPS = gql`
             customStyle
             tooltipText
             value
+            noVariablesMessage
             options {
               label
               description
