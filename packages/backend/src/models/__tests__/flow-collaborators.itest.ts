@@ -99,4 +99,14 @@ describe('flow collaborators model', () => {
       }),
     ).rejects.toThrow(ForbiddenError)
   })
+
+  it('should throw an error if the flow does not exist', async () => {
+    await expect(
+      FlowCollaborator.hasAccess({
+        userId: ownerUserId,
+        flowId: randomUUID(),
+        requiredRole: 'editor',
+      }),
+    ).rejects.toThrow('Flow not found')
+  })
 })

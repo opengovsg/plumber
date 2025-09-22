@@ -81,9 +81,12 @@ class FlowCollaborator extends Base {
   }): Promise<IFlowCollabRole | never> => {
     // flow owner is identified by the flow.userId
 
-    const flowOwner = await Flow.query(trx).findOne({
-      id: flowId,
-    })
+    const flowOwner = await Flow.query(trx)
+      .findOne({
+        id: flowId,
+      })
+      .throwIfNotFound({ message: 'Flow not found' })
+
     if (flowOwner?.userId === userId) {
       return 'owner'
     }
