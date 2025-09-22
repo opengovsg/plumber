@@ -19,7 +19,6 @@ export const getFlowStepHeaderWidth = (
   isDrawerOpen: boolean,
   isMobile?: boolean,
   isNested?: boolean,
-  shouldShowDragHandle?: boolean,
 ) => {
   if (isDrawerOpen) {
     if (isMobile) {
@@ -33,9 +32,7 @@ export const getFlowStepHeaderWidth = (
   }
 
   return isNested
-    ? shouldShowDragHandle
-      ? 'full'
-      : 'calc(100% - 16px)' // 16px is the width of the drag handle
+    ? 'calc(100% - 16px)' // 16px is the width of the drag handle
     : '600px'
 }
 

@@ -67,7 +67,11 @@ export const validateStepParams = (
 
   const shouldTestStepAgain = hasMissingStepReference(
     filteredParams,
-    new Set(testExecutionSteps.map((ts) => ts.stepId)),
+    new Set(
+      testExecutionSteps
+        .filter((ts) => ts.step.position < step.position)
+        .map((ts) => ts.stepId),
+    ),
   )
 
   return {
