@@ -31,9 +31,7 @@ export const getFlowStepHeaderWidth = (
     return '100%'
   }
 
-  return isNested
-    ? 'calc(100% - 16px)' // 16px is the width of the drag handle
-    : '600px'
+  return isNested ? 'full' : '600px'
 }
 
 function isValidArgValue(value: IJSONValue): boolean {

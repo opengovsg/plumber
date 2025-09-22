@@ -72,6 +72,7 @@ export default function ForEach(props: ForEachProps) {
           isLastStep={false}
           allowReorder={false}
           showEmptyAction={hasNoActionSteps}
+          canChildStepsReorder={actionSteps.length > 1}
         />
         <SortableList
           items={actionSteps.map((step, index) => ({
@@ -92,7 +93,7 @@ export default function ForEach(props: ForEachProps) {
                     canAddStep={true}
                     isLastStep={isLastStep}
                     isOverlay={isOverlay}
-                    allowReorder={true}
+                    allowReorder={actionSteps.length > 1}
                   />
                 </Flex>
               </SortableList.Item>

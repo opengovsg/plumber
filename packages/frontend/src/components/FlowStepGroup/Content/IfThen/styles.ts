@@ -62,5 +62,6 @@ export const hoverAddStepButtonStyles = {
     variant: 'clear',
     size: 'xs',
     borderRadius: 'lg',
+    left: 0,
   },
 }

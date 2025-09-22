@@ -203,6 +203,8 @@ export default function Branch(props: BranchProps) {
           step={conditionStep}
           canAddStep={canAddStep}
           isLastStep={false}
+          allowReorder={false}
+          canChildStepsReorder={actionSteps.length > 1}
         />
         <SortableList
           items={actionSteps.map((step, index) => ({
