@@ -7,7 +7,7 @@ import { Divider, Flex, IconButton, useDisclosure } from '@chakra-ui/react'
 import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
-import { DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
+import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
 import { EditorContext } from '@/contexts/Editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
@@ -82,7 +82,7 @@ export function HoverAddStepButton(
           onMouseLeave={() => setIsHovered(false)}
           w={
             (shouldShowDragHandle || canChildStepsReorder) && !isMobile
-              ? `calc(100% - ${DRAG_HANDLE_WIDTH}px)`
+              ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
               : 'full'
           }
         >

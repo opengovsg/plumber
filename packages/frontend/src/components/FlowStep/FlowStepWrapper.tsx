@@ -1,7 +1,7 @@
 import { Flex } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
-import { DRAG_HANDLE_WIDTH } from '../SortableList/components/SortableItem'
+import { NESTED_DRAG_HANDLE_WIDTH } from '../SortableList/components/SortableItem'
 
 interface FlowStepWrapperProps {
   children: React.ReactNode
@@ -20,7 +20,7 @@ export default function FlowStepWrapper(props: FlowStepWrapperProps) {
       flexDir="column"
       w={
         canChildStepsReorder && !allowReorder && !isMobile
-          ? `calc(100% - ${DRAG_HANDLE_WIDTH}px)`
+          ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
           : '100%'
       }
     >

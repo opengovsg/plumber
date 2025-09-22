@@ -5,6 +5,7 @@ import { BiTrash } from 'react-icons/bi'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
+import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
@@ -73,7 +74,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     <Flex
       w={
         isInsideForEach && stepsBeforeGroup.length > 2
-          ? 'calc(100% - 16px)'
+          ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
           : '100%'
       }
       alignItems="center"
