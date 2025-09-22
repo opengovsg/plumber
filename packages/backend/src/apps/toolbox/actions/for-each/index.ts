@@ -40,7 +40,7 @@ const action: IRawAction = {
       variableTypes: ['array', 'table'],
       singleVariableSelection: true,
       noVariablesMessage:
-        ' No variables available - add one of the following steps above: Find multiple rows, Find multiple table rows, or include a checkbox/table field in your FormSG.',
+        ' No variables available - add/check one of the following steps above: Find multiple rows, Find multiple table rows, or include a checkbox/table field in your FormSG.',
     },
   ],
 
