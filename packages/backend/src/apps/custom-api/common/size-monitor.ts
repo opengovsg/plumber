@@ -2,9 +2,13 @@ import { Transform } from 'stream'
 
 import logger from '@/helpers/logger'
 
-const MAX_SIZE_IN_MB = 20
+/**
+ * NOTE: we set the limit to 2 MB to prevent abuse and protect frontend performance
+ * for large JSON payloads
+ */
+const MAX_SIZE_IN_MB = 2
 const MB = 1024 * 1024
-const MAX_CONTENT_LENGTH = MAX_SIZE_IN_MB * MB // 20MB
+const MAX_CONTENT_LENGTH = MAX_SIZE_IN_MB * MB
 const MAX_COMPRESSION_RATIO = 100 // Maximum compression ratio to prevent gzip bombs
 
 const ERROR_RESPONSE = {
