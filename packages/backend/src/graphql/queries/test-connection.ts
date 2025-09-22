@@ -37,10 +37,12 @@ const testConnection: QueryResolvers['testConnection'] = async (
 
   // Verify connection
   let isStillVerified
+  let errorMessage
   try {
     isStillVerified = !!(await app.auth.isStillVerified($))
   } catch (err) {
     isStillVerified = false
+    errorMessage = err.message
     logger.error(`Error verifying CONNECTION ID: ${params.connectionId}`, {
       event: 'test-connection',
       flowId: params.flowId,
@@ -56,7 +58,7 @@ const testConnection: QueryResolvers['testConnection'] = async (
 
   // if testing outside of the editor, it does not verify registration (e.g. setting of webhook url)
   if (!isStillVerified || !params.flowId) {
-    return { connectionVerified: isStillVerified }
+    return { connectionVerified: isStillVerified, message: errorMessage }
   }
 
   // TODO (ogp-weeloong): We should actually _disallow_ testing connections
