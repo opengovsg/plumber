@@ -167,6 +167,7 @@ type Action {
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
   isNew: Boolean
+  linkToGuide: String
   substeps: [ActionSubstep]
 }
 

@@ -719,6 +719,9 @@ export interface IBaseTrigger {
    * message to the user during pipe setup / config.
    */
   setupMessage?: SetupMessage
+
+  // link that is used in the infobox. meant for new actions / triggers
+  linkToGuide?: string
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -821,6 +824,9 @@ export interface IBaseAction {
    * Used when saving the step.
    */
   validateStepParameters?: (parameters: IJSONObject) => void
+
+  // link that is used in the infobox. meant for new actions / triggers
+  linkToGuide?: string
 }
 
 export interface IRawAction extends IBaseAction {
