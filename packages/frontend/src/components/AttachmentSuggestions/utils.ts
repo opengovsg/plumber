@@ -166,9 +166,13 @@ export function reformatToAttachmentConfig(
 
 export function validateFiles(
   file: File | CheckboxVariable,
-  selectedOptions: (AttachmentConfigInput | CheckboxVariable)[],
+  options: CheckboxVariable[],
+  currentSelection: string[],
 ): FileSizeValidationResult {
   const fileSize = file.size ?? 0
+  const selectedOptions = options.filter((o) =>
+    currentSelection.includes(o.name),
+  )
   const currentTotalSize = selectedOptions.reduce(
     (acc, curr) => acc + (curr?.size ?? 0),
     0,
