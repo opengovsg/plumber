@@ -284,7 +284,7 @@ const SmartEncodingMap: {
 
 const replaceInvalidCharacters = (text: string) => {
   return text.replace(/[\s\S]/g, (match) => {
-    return SmartEncodingMap[match] || match
+    return SmartEncodingMap[match] ?? match
   })
 }
 
