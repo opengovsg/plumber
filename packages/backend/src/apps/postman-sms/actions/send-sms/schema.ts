@@ -1,5 +1,7 @@
 import z from 'zod'
 
+import { replaceInvalidCharacters } from '@/helpers/replace-invalid-characters'
+
 // From Postman API docs
 // https://postman-v2.guides.gov.sg/faq/postman-v2-api-faq/campaign-related-inquiries
 export const MAX_SMS_CHARS = 1000
@@ -21,7 +23,8 @@ export const fieldSchema = z.object({
     .min(1, { message: 'Provide a non-empty message' })
     .max(MAX_SMS_CHARS, {
       message: `Message cannot exceed ${MAX_SMS_CHARS.toLocaleString()} characters`,
-    }),
+    })
+    .transform((message) => replaceInvalidCharacters(message)),
 })
 
 // Subset of the full reply; the other fields are not needed.
