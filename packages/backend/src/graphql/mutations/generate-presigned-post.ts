@@ -17,7 +17,7 @@ const generatePresignedPost: MutationResolvers['generatePresignedPost'] =
     const { flowId, filename, fileType, size, updatedAt } = params.input
 
     if (size > MAX_FILE_SIZE) {
-      throw new Error('Size of attachment exceeds 2MB')
+      throw new Error('Size of attachment exceeds 10MB')
     }
     if (!ACCEPTED_FILE_TYPES.includes(fileType)) {
       throw new Error('Unsupported file type')

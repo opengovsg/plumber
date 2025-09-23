@@ -20,7 +20,7 @@ vi.mock('@/helpers/s3', () => ({
   COMMON_S3_BUCKET: 'test-bucket',
   COMMON_S3_MOCK_FOLDER_PREFIX: 's3:test-bucket:mock/',
   parseS3Id: vi.fn(),
-  MAX_FILE_SIZE: 1024 * 1024 * 2,
+  MAX_FILE_SIZE: 1024 * 1024 * 10,
   ACCEPTED_FILE_TYPES: ['text/plain'],
   validateObjectKey: vi.fn((objectKey) => {
     const invalidCharacters = /[\\{}^`%~#<>|[\]]/
@@ -88,10 +88,10 @@ describe('generatePresignedPost', () => {
       userId: context.currentUser.id,
     })
 
-    const tooLargeParams = { ...VALID_PARAMS, size: 2 * 1024 * 1024 + 1 }
+    const tooLargeParams = { ...VALID_PARAMS, size: 10 * 1024 * 1024 + 1 }
     await expect(
       generatePresignedPost(null, { input: tooLargeParams }, context),
-    ).rejects.toThrow('Size of attachment exceeds 2MB')
+    ).rejects.toThrow('Size of attachment exceeds 10MB')
   })
 
   it.each([
