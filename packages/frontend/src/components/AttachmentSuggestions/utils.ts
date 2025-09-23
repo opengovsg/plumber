@@ -4,9 +4,11 @@ import { FieldValues } from 'react-hook-form'
 
 import { type CheckboxVariable } from './components/Checkbox'
 
+const KB = 1024
+const MB = KB * KB
 export const MAX_NUM_FILES = 10
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB in bytes
-const MAX_TOTAL_FILE_SIZE = 5 * MAX_FILE_SIZE // 10MB in bytes
+const MAX_FILE_SIZE = 10 * MB // 10MB
+const MAX_TOTAL_FILE_SIZE = 10 * MB // 10MB
 
 export const ACCEPTED_FILE_TYPES = [
   'text/plain', // .txt, .asc
@@ -54,13 +56,13 @@ type FileSizeValidationResult = {
 }
 
 export function formatFileSizeToStr(sizeInBytes: number): string {
-  if (sizeInBytes < 1024) {
+  if (sizeInBytes < KB) {
     return `${sizeInBytes} B` // Bytes
-  } else if (sizeInBytes < 1024 * 1024) {
-    const sizeInKB = (sizeInBytes / 1024).toFixed(2) // Kilobytes with 2 decimal places
+  } else if (sizeInBytes < MB) {
+    const sizeInKB = (sizeInBytes / KB).toFixed(2) // Kilobytes with 2 decimal places
     return `${sizeInKB} KB`
   } else {
-    const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2) // Megabytes with 2 decimal places
+    const sizeInMB = (sizeInBytes / MB).toFixed(2) // Megabytes with 2 decimal places
     return `${sizeInMB} MB`
   }
 }

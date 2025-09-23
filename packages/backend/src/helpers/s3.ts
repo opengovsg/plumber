@@ -72,7 +72,7 @@ export const ACCEPTED_FILE_TYPES = [
   'video/x-ms-wmv', // .wmv
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
 ]
-export const MAX_FILE_SIZE = 1024 * 1024 * 2 // 2 MB
+export const MAX_FILE_SIZE = 1024 * 1024 * 10 // 10MB
 
 function throwAttachmentError(
   errorType: string,
