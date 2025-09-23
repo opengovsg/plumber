@@ -14,6 +14,8 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
+import LearnFromGuideInfobox from './LearnFromGuideInfobox'
+
 type StepProps = {
   step: IStep
   isLastStep: boolean
@@ -72,6 +74,9 @@ export default function Step(props: StepProps): React.ReactElement | null {
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}
           >
+            <LearnFromGuideInfobox
+              selectedActionOrTrigger={selectedActionOrTrigger}
+            />
             {/* Place ChooseConnectionSubstep outside the accordion structure */}
             {hasConnection && app && (
               <ChooseConnectionSubstep

@@ -9,10 +9,11 @@ import SuggestionsWrapper from '../SuggestionsWrapper'
 interface SuggestionsProps {
   data: StepWithVariables[]
   onSuggestionClick: (variable: Variable) => void
+  noVariablesMessage?: string
 }
 
 function Suggestions(props: SuggestionsProps) {
-  const { data, onSuggestionClick = () => null } = props
+  const { data, onSuggestionClick = () => null, noVariablesMessage } = props
   const [current, setCurrent] = useState<number>(0)
 
   const isEmpty = data.reduce(
@@ -23,7 +24,8 @@ function Suggestions(props: SuggestionsProps) {
   if (isEmpty) {
     return (
       <Text p={4} opacity={0.5} textStyle="body-1" color="base.content.medium">
-        No variables available - complete earlier steps to use them here
+        {noVariablesMessage ??
+          'No variables available - complete earlier steps to use them here'}
       </Text>
     )
   }

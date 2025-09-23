@@ -2,6 +2,7 @@ import dedent from 'dedent'
 
 import * as URLS from '@/config/urls'
 
+import ForEachAnimation from './assets/For-EachGraphic.json'
 import IfThenAnimation from './assets/If-ThenGraphic.json'
 import { NewsItemProps } from './NewsItem'
 import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
@@ -11,14 +12,29 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2025-09-22',
+    tag: NEW_FEATURE_TAG,
+    title: `For each item — automate reminders for events, tasks and more!`,
+    details: dedent`
+      This action is used to repeat actions on multiple items at a time. Items can be rows in your tiles table/M365 tables or FormSG checkboxes/table rows. Example use case shown below: Send individualised emails to a list of event attendees to remind them about an upcoming event.
+
+      Get started instantly:
+        * Try our **Schedule reminders to a list of emails** template
+        * Read our [guide](https://guide.plumber.gov.sg/user-guides/actions/for-each-item-coming-soon)
+    `,
+    multimedia: {
+      animationData: ForEachAnimation,
+    },
+  },
+  {
     date: '2025-06-25',
     tag: NEW_ENHANCEMENT_TAG,
     title: `We've made FormSG integration a lil' better`,
     details: dedent`
-      👓 **Clearer variable names** 
+      👓 **Clearer variable names**
       FormSG variables now reflect the actual question text, making them easier to recognise at a glance.
 
-      🧹 **Less clutter, fewer mistakes** 
+      🧹 **Less clutter, fewer mistakes**
       Question text variables are now hidden by default to reduce visual noise and prevent accidental clicks.
 
       🔄 **Easier data switching**

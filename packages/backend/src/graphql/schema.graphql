@@ -167,6 +167,7 @@ type Action {
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
   isNew: Boolean
+  linkToGuide: String
   substeps: [ActionSubstep]
 }
 
@@ -206,6 +207,7 @@ type ActionSubstepArgument {
   hiddenIf: FieldVisibilityCondition
   addRowButtonText: String
   tooltipText: String
+  noVariablesMessage: String
 
   # Only for string and multiline
   singleVariableSelection: Boolean
