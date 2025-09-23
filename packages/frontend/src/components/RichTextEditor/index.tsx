@@ -99,6 +99,7 @@ interface EditorProps {
   parentType?: string
   autoFocus?: boolean
   singleVariableSelection?: boolean
+  noVariablesMessage?: string
 }
 const Editor = ({
   onChange,
@@ -112,6 +113,7 @@ const Editor = ({
   parentType,
   singleVariableSelection,
   autoFocus = false,
+  noVariablesMessage,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { allApps } = useContext(EditorContext)
@@ -319,6 +321,7 @@ const Editor = ({
                 <Suggestions
                   data={stepsWithVariables}
                   onSuggestionClick={(v) => editable && handleVariableClick(v)}
+                  noVariablesMessage={noVariablesMessage}
                 />
               </PopoverContent>
             </Portal>
@@ -344,6 +347,7 @@ interface RichTextEditorProps {
   parentType?: string
   autoFocus?: boolean
   singleVariableSelection?: boolean
+  noVariablesMessage?: string
 }
 const RichTextEditor = ({
   required,
@@ -360,6 +364,7 @@ const RichTextEditor = ({
   parentType,
   autoFocus,
   singleVariableSelection,
+  noVariablesMessage,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -407,6 +412,7 @@ const RichTextEditor = ({
             parentType={parentType}
             autoFocus={shouldAutoFocus}
             singleVariableSelection={singleVariableSelection}
+            noVariablesMessage={noVariablesMessage}
           />
         )}
       />

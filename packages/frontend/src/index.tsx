@@ -37,10 +37,9 @@ if (['prod', 'staging'].includes(appConfig.env)) {
     trackLongTasks: true,
     defaultPrivacyLevel: 'mask-user-input',
     version: appConfig.version,
-    beforeSend: (event) => {
-      // do not send if user is anonymous
-      return event.usr !== undefined
-    },
+    // set tracking consent to not-granted by default
+    // only start tracking when user is authenticated
+    trackingConsent: 'not-granted' as const,
   })
 }
 root.render(

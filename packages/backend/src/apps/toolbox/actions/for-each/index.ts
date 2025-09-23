@@ -26,17 +26,21 @@ const action: IRawAction = {
   description: 'Repeat actions for each item',
   groupsLaterSteps: true,
   isNew: true,
+  linkToGuide:
+    'https://guide.plumber.gov.sg/user-guides/actions/for-each-item-coming-soon',
   arguments: [
     {
       label: 'Choose items',
       description:
-        'Supported items include rows in Tiles/M365 Excel and FormSG checkboxes',
+        'Items you can choose from: Find multiple rows, Find multiple table rows, or checkboxes/table from your form.',
       key: 'items',
       type: 'string' as const,
       required: true,
       variables: true,
       variableTypes: ['array', 'table'],
       singleVariableSelection: true,
+      noVariablesMessage:
+        ' No variables available - add/check one of the following steps above: Find multiple rows, Find multiple table rows, or include a checkbox/table field in your FormSG.',
     },
   ],
 

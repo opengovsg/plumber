@@ -95,7 +95,11 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
       if (!checked) {
         onChange?.(currentValues.filter((v: string) => v !== nameToCheck))
       } else {
-        const { isValid, error } = validateFiles(variable, currentValues)
+        const { isValid, error } = validateFiles(
+          variable,
+          options,
+          getValues(name),
+        )
         if (!isValid) {
           setError(name, { type: 'invalidFile', message: error })
         } else {
@@ -140,14 +144,14 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
 
   const processFile = useCallback(
     async (file: File) => {
-      const { isValid, error } = validateFiles(file, getValues(name))
+      const { isValid, error } = validateFiles(file, options, getValues(name))
       if (!isValid) {
         setError(name, { type: 'invalidFile', message: error })
       } else {
         await uploadToS3(file, flowId)
       }
     },
-    [flowId, getValues, name, setError, uploadToS3],
+    [flowId, getValues, name, options, setError, uploadToS3],
   )
 
   return (

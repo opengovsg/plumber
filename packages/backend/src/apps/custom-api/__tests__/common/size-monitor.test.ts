@@ -50,9 +50,9 @@ describe('createSizeMonitor', () => {
     expect(mocks.warn).not.toHaveBeenCalled()
   })
 
-  it('errors when total size exceeds 20MB', async () => {
+  it('errors when total size exceeds 2 MB', async () => {
     const monitor = createSizeMonitor()
-    const overLimit = Buffer.alloc(20 * 1024 * 1024 + 1)
+    const overLimit = Buffer.alloc(2 * 1024 * 1024 + 1)
     await expect(writeBuffers(monitor, [overLimit])).rejects.toMatchObject({
       name: 'AxiosError',
       isAxiosError: true,

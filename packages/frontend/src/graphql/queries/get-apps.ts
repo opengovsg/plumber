@@ -175,6 +175,7 @@ export const GET_APPS = gql`
         }
         groupsLaterSteps
         isNew
+        linkToGuide
         substeps {
           key
           name
@@ -194,6 +195,7 @@ export const GET_APPS = gql`
             customStyle
             tooltipText
             value
+            noVariablesMessage
             options {
               label
               description
