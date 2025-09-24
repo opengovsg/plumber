@@ -2,6 +2,7 @@ import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
 import {
   FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_MAX_ITERATIONS,
   FOR_EACH_TABLE_SOURCES,
 } from '../../common/constants'
 
@@ -78,7 +79,15 @@ async function getDataOutMetadata(
       Object.entries(items.columns)
         .sort((a, b) => a[1].order - b[1].order)
         .forEach(([id, column], index) => {
-          const isBackwardCompatibilityColumnId = !isNaN(Number(id))
+          /**
+           * NOTE: this is for backward compatibility with the old dataOut format
+           * we check that it is within the FOR_EACH_MAX_ITERATIONS as there are edge cases
+           * where the hex encoded columns from Excel is a number
+           *
+           * TODO (kevinkim-ogp): remove this once all users have moved to the new format
+           */
+          const isBackwardCompatibilityColumnId =
+            !isNaN(Number(id)) && Number(id) <= FOR_EACH_MAX_ITERATIONS
           tempColumnsMetadata[id] = {
             id: { isHidden: true },
             name: { isHidden: true },
