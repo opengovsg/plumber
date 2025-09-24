@@ -185,7 +185,7 @@ describe('upsert flow collaborator', () => {
       // Check that connections were added to flow_connections table
       const flowConnections = await FlowConnections.query().where({
         flow_id: dummyFlow.id,
-        user_id: dummyFlow.userId,
+        added_by: dummyFlow.userId,
       })
 
       expect(flowConnections).toHaveLength(2)
@@ -242,7 +242,7 @@ describe('upsert flow collaborator', () => {
       // Check that connections were only added once
       const flowConnections = await FlowConnections.query().where({
         flow_id: dummyFlow.id,
-        user_id: dummyFlow.userId,
+        added_by: dummyFlow.userId,
       })
 
       expect(flowConnections).toHaveLength(1)
@@ -273,7 +273,7 @@ describe('upsert flow collaborator', () => {
       // Check that no connections were added
       const flowConnections = await FlowConnections.query().where({
         flow_id: dummyFlow.id,
-        user_id: dummyFlow.userId,
+        added_by: dummyFlow.userId,
       })
 
       expect(flowConnections).toHaveLength(0)
@@ -316,7 +316,7 @@ describe('upsert flow collaborator', () => {
       // Check that duplicate values are handled correctly
       const flowConnections = await FlowConnections.query().where({
         flow_id: dummyFlow.id,
-        user_id: dummyFlow.userId,
+        added_by: dummyFlow.userId,
       })
 
       expect(flowConnections).toHaveLength(1)
@@ -349,7 +349,7 @@ describe('upsert flow collaborator', () => {
       // Check that the connection was still added (with empty metadata)
       const flowConnections = await FlowConnections.query().where({
         flow_id: dummyFlow.id,
-        user_id: dummyFlow.userId,
+        added_by: dummyFlow.userId,
       })
 
       expect(flowConnections).toHaveLength(0)
