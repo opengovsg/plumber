@@ -1,12 +1,6 @@
 import { IFlow, IFlowCollabRole } from '@plumber/types'
 
-import {
-  BaseSyntheticEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { BaseSyntheticEvent, useCallback, useRef, useState } from 'react'
 import { FieldValues, useForm } from 'react-hook-form'
 import {
   Flex,
@@ -45,7 +39,6 @@ const AddNewCollaborator = ({
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<IFlowCollabRole>('editor')
   const [isAdding, setIsAdding] = useState(false)
-  const [debouncedIsValid, setDebouncedIsValid] = useState(false)
 
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -56,15 +49,6 @@ const AddNewCollaborator = ({
   } = useForm({
     resolver: yupResolver(inputSchema),
   })
-
-  // Debounce isValid to prevent connections infoboxes from appearing/disappearing while typing
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedIsValid(isValid)
-    }, 500) // 500ms delay
-
-    return () => clearTimeout(timer)
-  }, [isValid])
 
   const onSubmit = useCallback(
     async (data: FieldValues, event?: BaseSyntheticEvent) => {
@@ -130,7 +114,7 @@ const AddNewCollaborator = ({
             )}
 
             {/* Connections appear if pipe is unpublished */}
-            {role === 'editor' && debouncedIsValid && <SharedConnections />}
+            {role === 'editor' && <SharedConnections />}
 
             <Button
               variant={role === 'owner' ? 'solid' : 'outline'}
