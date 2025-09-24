@@ -13,7 +13,7 @@ const isBackwardCompatibilityColumnId = (id: string, numColumns: number) => {
   // cannot have leading 0
   // must only contain digits
   // must be less than the number of columns
-  if (Number(id) < numColumns && !id.startsWith('0') && /^\d+$/.test(id)) {
+  if (Number(id) < numColumns && /^(0|[1-9]\d*)$/.test(id)) {
     return true
   }
 
@@ -88,14 +88,20 @@ async function getDataOutMetadata(
       }))
     } else {
       const tempColumnsMetadata = {} as Record<string, IDataOutMetadata>
+
       Object.entries(items.columns)
         .sort((a, b) => a[1].order - b[1].order)
         .forEach(([id, column], index) => {
+          const isBackwardCompat = isBackwardCompatibilityColumnId(
+            id,
+            Object.keys(items.columns).length,
+          )
+
           tempColumnsMetadata[id] = {
             id: { isHidden: true },
             name: { isHidden: true },
             value: {
-              label: column.name,
+              label: isBackwardCompat ? `(Fix me) ${column.name}` : column.name,
               displayedValue:
                 column.id === 'rowId'
                   ? items?.rows?.[0]?.rowId ?? ''
@@ -107,10 +113,7 @@ async function getDataOutMetadata(
                *
                * TODO (kevinkim-ogp): remove this once all users have moved to the new format
                */
-              isHiddenFromList: isBackwardCompatibilityColumnId(
-                id,
-                Object.keys(items.columns).length,
-              ),
+              isHiddenFromList: isBackwardCompat,
             },
             order: { isHidden: true },
           }
