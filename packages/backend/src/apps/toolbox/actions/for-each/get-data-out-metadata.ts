@@ -2,23 +2,22 @@ import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
 import {
   FOR_EACH_INPUT_SOURCE,
-  FOR_EACH_MAX_ITERATIONS,
   FOR_EACH_TABLE_SOURCES,
 } from '../../common/constants'
 
 import { dataOutSchema } from './schema'
 
 // NOTE: this is for backward compatibility with the old dataOut format
-const isBackwardCompatibilityColumnId = (id: string, name: string) => {
-  // must be numeric and within legacy bounds
-  if (isNaN(Number(id)) || Number(id) > FOR_EACH_MAX_ITERATIONS) {
-    return false
+const isBackwardCompatibilityColumnId = (id: string, numColumns: number) => {
+  // must be numeric
+  // cannot have leading 0
+  // must only contain digits
+  // must be less than the number of columns
+  if (Number(id) < numColumns && !id.startsWith('0') && /^\d+$/.test(id)) {
+    return true
   }
 
-  // additional check: does the hex encoding of the column name NOT match this ID?
-  // handles edge cases where the hex encoded column name happens to be a number
-  const expectedHexKey = Buffer.from(name).toString('hex')
-  return id !== expectedHexKey
+  return false
 }
 
 async function getDataOutMetadata(
@@ -110,7 +109,7 @@ async function getDataOutMetadata(
                */
               isHiddenFromList: isBackwardCompatibilityColumnId(
                 id,
-                column.name,
+                Object.keys(items.columns).length,
               ),
             },
             order: { isHidden: true },

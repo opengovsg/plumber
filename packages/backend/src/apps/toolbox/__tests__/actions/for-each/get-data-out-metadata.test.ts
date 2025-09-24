@@ -431,7 +431,7 @@ describe('getDataOutMetadata', () => {
       },
     )
 
-    it.each(['0', '123', '999'])(
+    it.each(['0', '01', '1', '2', '123', '999', 'a'])(
       'should not hide column when the column name happens to be a number: %s',
       async (columnName) => {
         const testHexColumnId = Buffer.from(columnName).toString('hex')
