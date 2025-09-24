@@ -3,6 +3,19 @@ import { describe, expect, it } from 'vitest'
 import getDataOutMetadata from '../../../actions/for-each/get-data-out-metadata'
 import { FOR_EACH_INPUT_SOURCE } from '../../../common/constants'
 
+const GENERIC_TABLE_EXPECTED_RESULT = {
+  iteration: {
+    label: 'Item number',
+    displayedValue: '1',
+  },
+  iterations: { label: 'Items found' },
+  inputSource: { isHidden: true },
+  items: {
+    rows: [{ data: { isHidden: true }, rowId: { isHidden: true } }],
+    inputSource: { isHidden: true },
+  },
+}
+
 describe('getDataOutMetadata', () => {
   const createMockExecutionStep = (dataOut: any) => ({
     id: 'execution-step-id',
@@ -199,16 +212,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -268,16 +272,8 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
+        iteration: { label: 'Item number', displayedValue: '' },
         items: {
           columns: [
             {
@@ -318,16 +314,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -351,19 +338,6 @@ describe('getDataOutMetadata', () => {
         },
       })
     })
-
-    const EXPECTED_RESULT = {
-      iteration: {
-        label: 'Item number',
-        displayedValue: '1',
-      },
-      iterations: { label: 'Items found' },
-      inputSource: { isHidden: true },
-      items: {
-        rows: [{ data: { isHidden: true }, rowId: { isHidden: true } }],
-        inputSource: { isHidden: true },
-      },
-    }
 
     it.each(['Recruiter', 'sixty', 'itty'])(
       'should not hide column when the hex encoded column happens to be a number: %s',
@@ -389,9 +363,9 @@ describe('getDataOutMetadata', () => {
         const result = await getDataOutMetadata(executionStep)
 
         expect(result).toEqual({
-          ...EXPECTED_RESULT,
+          ...GENERIC_TABLE_EXPECTED_RESULT,
           items: {
-            ...EXPECTED_RESULT.items,
+            ...GENERIC_TABLE_EXPECTED_RESULT.items,
             columns: {
               [testHexColumnId]: {
                 id: { isHidden: true },
@@ -435,9 +409,9 @@ describe('getDataOutMetadata', () => {
         const result = await getDataOutMetadata(executionStep)
 
         expect(result).toEqual({
-          ...EXPECTED_RESULT,
+          ...GENERIC_TABLE_EXPECTED_RESULT,
           items: {
-            ...EXPECTED_RESULT.items,
+            ...GENERIC_TABLE_EXPECTED_RESULT.items,
             columns: {
               [testHexColumnId]: {
                 id: { isHidden: true },
@@ -481,9 +455,9 @@ describe('getDataOutMetadata', () => {
         const result = await getDataOutMetadata(executionStep)
 
         expect(result).toEqual({
-          ...EXPECTED_RESULT,
+          ...GENERIC_TABLE_EXPECTED_RESULT,
           items: {
-            ...EXPECTED_RESULT.items,
+            ...GENERIC_TABLE_EXPECTED_RESULT.items,
             columns: {
               [testHexColumnId]: {
                 id: { isHidden: true },
@@ -537,16 +511,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -611,15 +576,10 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         iteration: {
           label: 'Item number',
           displayedValue: '',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
         },
         items: {
           columns: [
@@ -676,16 +636,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -756,16 +707,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -937,16 +879,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
