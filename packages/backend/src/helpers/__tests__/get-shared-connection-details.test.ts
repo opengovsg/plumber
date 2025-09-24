@@ -2,10 +2,7 @@ import { IStep } from '@plumber/types'
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  getConnectionDetails,
-  TILES_CONNECTION_ID,
-} from '../get-shared-connection-details'
+import { getConnectionDetails } from '../get-shared-connection-details'
 
 describe('getConnectionDetails', () => {
   const createMockStep = (overrides: Partial<IStep> = {}): IStep => ({
@@ -50,9 +47,12 @@ describe('getConnectionDetails', () => {
 
     // Should return empty object since none of these apps have parameterKey defined
     expect(result).toEqual({
-      'aisay-connection-id': {},
-      'custom-api-connection-id': {},
-      'formsg-connection-id': {},
+      connection: {
+        'aisay-connection-id': {},
+        'custom-api-connection-id': {},
+        'formsg-connection-id': {},
+      },
+      table: [],
     })
   })
 
@@ -73,7 +73,10 @@ describe('getConnectionDetails', () => {
 
     // Should return empty object since paysg has empty APP_CONNECTION_FIELDS
     expect(result).toEqual({
-      'paysg-connection-id': {},
+      connection: {
+        'paysg-connection-id': {},
+      },
+      table: [],
     })
   })
 
@@ -94,12 +97,15 @@ describe('getConnectionDetails', () => {
     const result = getConnectionDetails(steps)
 
     expect(result).toEqual({
-      'slack-connection-id': {
-        channel: ['general'],
+      connection: {
+        'slack-connection-id': {
+          channel: ['general'],
+        },
+        'telegram-connection-id': {
+          chatId: ['random'],
+        },
       },
-      'telegram-connection-id': {
-        chatId: ['random'],
-      },
+      table: [],
     })
   })
 
@@ -125,15 +131,18 @@ describe('getConnectionDetails', () => {
     const result = getConnectionDetails(steps)
 
     expect(result).toEqual({
-      'slack-connection-id': {
-        channel: ['general'],
+      connection: {
+        'slack-connection-id': {
+          channel: ['general'],
+        },
+        'm365-excel-connection-id': {
+          fileId: ['file-123'],
+        },
+        'lettersg-connection-id': {
+          templateId: ['template-456'],
+        },
       },
-      'm365-excel-connection-id': {
-        fileId: ['file-123'],
-      },
-      'lettersg-connection-id': {
-        templateId: ['template-456'],
-      },
+      table: [],
     })
   })
 
@@ -159,9 +168,12 @@ describe('getConnectionDetails', () => {
     const result = getConnectionDetails(steps)
 
     expect(result).toEqual({
-      'slack-connection-id': {
-        channel: ['general', 'random'],
+      connection: {
+        'slack-connection-id': {
+          channel: ['general', 'random'],
+        },
       },
+      table: [],
     })
   })
 
@@ -181,7 +193,10 @@ describe('getConnectionDetails', () => {
 
     const result = getConnectionDetails(steps)
 
-    expect(result).toEqual({})
+    expect(result).toEqual({
+      connection: {},
+      table: [],
+    })
   })
 
   it('should handle steps with missing parameter values', () => {
@@ -201,14 +216,17 @@ describe('getConnectionDetails', () => {
     const result = getConnectionDetails(steps)
 
     expect(result).toEqual({
-      'slack-connection-id': {
-        channel: [],
+      connection: {
+        'slack-connection-id': {
+          channel: [],
+        },
       },
+      table: [],
     })
   })
 
   describe('special case: Tiles', () => {
-    it('should use TILES_CONNECTION_ID for tiles app regardless of connectionId', () => {
+    it('should use tableId for tiles app regardless of connectionId', () => {
       const steps: IStep[] = [
         createMockStep({
           appKey: 'tiles',
@@ -223,9 +241,8 @@ describe('getConnectionDetails', () => {
       const result = getConnectionDetails(steps)
 
       expect(result).toEqual({
-        [TILES_CONNECTION_ID]: {
-          tableId: ['table-123', 'table-456'],
-        },
+        connection: {},
+        table: ['table-123', 'table-456'],
       })
     })
 
@@ -240,9 +257,8 @@ describe('getConnectionDetails', () => {
       const result = getConnectionDetails(steps)
 
       expect(result).toEqual({
-        [TILES_CONNECTION_ID]: {
-          tableId: [],
-        },
+        connection: {},
+        table: [],
       })
     })
 
@@ -268,9 +284,8 @@ describe('getConnectionDetails', () => {
       const result = getConnectionDetails(steps)
 
       expect(result).toEqual({
-        [TILES_CONNECTION_ID]: {
-          tableId: ['table-123', 'table-456'],
-        },
+        connection: {},
+        table: ['table-123', 'table-456'],
       })
     })
   })
@@ -310,23 +325,26 @@ describe('getConnectionDetails', () => {
       const result = getConnectionDetails(steps)
 
       expect(result).toEqual({
-        'aisay-connection-id': {},
-        'custom-api-connection-id': {},
-        'slack-connection-id': {
-          channel: ['general'],
+        connection: {
+          'aisay-connection-id': {},
+          'custom-api-connection-id': {},
+          'slack-connection-id': {
+            channel: ['general'],
+          },
+          'm365-excel-connection-id': {
+            fileId: ['file-123'],
+          },
         },
-        'm365-excel-connection-id': {
-          fileId: ['file-123'],
-        },
-        [TILES_CONNECTION_ID]: {
-          tableId: ['table-123'],
-        },
+        table: ['table-123'],
       })
     })
 
     it('should handle empty steps array', () => {
       const result = getConnectionDetails([])
-      expect(result).toEqual({})
+      expect(result).toEqual({
+        connection: {},
+        table: [],
+      })
     })
 
     it('should handle steps with unknown appKey', () => {
@@ -342,7 +360,10 @@ describe('getConnectionDetails', () => {
 
       // Should return empty object since unknown app is not in APP_CONNECTION_FIELDS
       expect(result).toEqual({
-        'unknown-app-connection-id': {},
+        connection: {
+          'unknown-app-connection-id': {},
+        },
+        table: [],
       })
     })
   })

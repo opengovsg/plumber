@@ -35,58 +35,59 @@ export const APP_CONNECTION_FIELDS: Record<
   },
 }
 
-export const TILES_CONNECTION_ID = '00000000-0000-0000-0000-000000000000'
-
 export function getConnectionDetails(steps: IStep[]): {
-  [connectionId: string]: {
-    [appKey: string]: string[]
-  }
-} {
-  const connections: {
+  connection: {
     [connectionId: string]: {
       [appKey: string]: string[]
     }
-  } = {}
+  }
+  table: string[]
+} {
+  const connections: {
+    connection: {
+      [connectionId: string]: {
+        [appKey: string]: string[]
+      }
+    }
+    table: string[]
+  } = {
+    connection: {},
+    table: [],
+  }
 
   steps.map((step) => {
     if (step.connectionId) {
-      connections[step.connectionId] ??= {}
+      connections.connection[step.connectionId] ??= {}
 
       const paramKey = APP_CONNECTION_FIELDS[step.appKey]?.parameterKey
       const paramValue = step.parameters[paramKey] as string
 
       // only some apps need the metadata, so we only add it if the app has a parameter key
       if (paramKey) {
-        connections[step.connectionId][paramKey] ??= []
+        connections.connection[step.connectionId][paramKey] ??= []
 
         // push only if not already present
         if (
           paramValue &&
-          !connections[step.connectionId][paramKey].includes(paramValue)
+          !connections.connection[step.connectionId][paramKey].includes(
+            paramValue,
+          )
         ) {
-          connections[step.connectionId][paramKey].push(paramValue)
+          connections.connection[step.connectionId][paramKey].push(paramValue)
         }
       }
     }
 
     /**
      * SPECIAL CASE: Tiles does not have a connection id
-     * but we want to restrict the dynamic data to the tile id (tableId)
-     * so we use a special connection id to store the dynamic data
+     * so we use the tableId instead.
      */
     if (step.appKey === 'tiles') {
       const paramKey = APP_CONNECTION_FIELDS[step.appKey].parameterKey
       const paramValue = step.parameters[paramKey] as string
 
-      // create nested objects if missing
-      connections[TILES_CONNECTION_ID] ??= {}
-      connections[TILES_CONNECTION_ID][paramKey] ??= []
-
-      if (
-        paramValue &&
-        !connections[TILES_CONNECTION_ID][paramKey].includes(paramValue)
-      ) {
-        connections[TILES_CONNECTION_ID][paramKey].push(paramValue)
+      if (paramValue && !connections.table.includes(paramValue)) {
+        connections.table.push(paramValue)
       }
     }
   })
