@@ -5,21 +5,20 @@ import Connection from './connection'
 import Flow from './flow'
 import FlowCollaborator from './flow-collaborators'
 import ExtendedQueryBuilder from './query-builder'
+import TableMetadata from './table-metadata'
 import User from './user'
-
-const VALID_PARAMETER_KEYS = [
-  'fileId',
-  'templateId',
-  'channel',
-  'chatId',
-  'tableId',
-]
 
 class FlowConnections extends Base {
   flowId!: string
+  // NOTE: this connection_id refers to either:
+  // - the connection id of a connection in the connections table; OR
+  // - the id of a Tile
   connectionId!: string
-  userId!: string
-  connections: Connection[]
+  // NOTE: addedBy is the user id of the user who added the connection to the flow
+  addedBy!: string
+  connectionType!: 'connection' | 'table'
+  connection?: Connection | TableMetadata
+  table?: TableMetadata
   metadata: Record<string, any>
 
   static tableName = 'flow_connections'
@@ -29,18 +28,19 @@ class FlowConnections extends Base {
     properties: {
       flowId: { type: 'string', format: 'uuid' },
       connectionId: { type: 'string', format: 'uuid' },
-      userId: { type: 'string', format: 'uuid' },
+      addedBy: { type: 'string', format: 'uuid' },
+      connectionType: { type: 'string', enum: ['connection', 'table'] },
       metadata: { type: 'object' },
     },
   }
 
   // Acts as a composite primary key
   static get idColumn() {
-    return ['flow_id', 'connection_id', 'user_id']
+    return ['flow_id', 'connection_id']
   }
 
   static relationMappings = () => ({
-    flows: {
+    flow: {
       relation: Base.BelongsToOneRelation,
       modelClass: Flow,
       join: {
@@ -48,7 +48,7 @@ class FlowConnections extends Base {
         to: `${Flow.tableName}.id`,
       },
     },
-    connections: {
+    connection: {
       relation: Base.BelongsToOneRelation,
       modelClass: Connection,
       join: {
@@ -56,11 +56,20 @@ class FlowConnections extends Base {
         to: `${Connection.tableName}.id`,
       },
     },
+    // When connection_id refers to a Tile table, this relation can be used
+    table: {
+      relation: Base.BelongsToOneRelation,
+      modelClass: TableMetadata,
+      join: {
+        from: `${this.tableName}.connection_id`,
+        to: `${TableMetadata.tableName}.id`,
+      },
+    },
     user: {
       relation: Base.BelongsToOneRelation,
       modelClass: User,
       join: {
-        from: `${this.tableName}.user_id`,
+        from: `${this.tableName}.added_by`,
         to: `${User.tableName}.id`,
       },
     },
@@ -99,28 +108,21 @@ class FlowConnections extends Base {
   }
 
   /**
-   * Validate parameter key to avoid SQL injection
-   */
-  static validateParameterKey(parameterKey: string) {
-    if (!VALID_PARAMETER_KEYS.includes(parameterKey)) {
-      throw new Error(`Invalid parameter key: ${parameterKey}`)
-    }
-  }
-
-  /**
    * NOTE: this function only adds the connection to the flow_connections table
    * if there are collaborators for the flow
    */
   static addFlowConnection = async ({
     flowId,
     connectionId,
-    userId,
+    addedBy,
+    connectionType,
   }: {
     flowId: string
     connectionId: string
-    userId: string
+    addedBy: string
+    connectionType: 'connection' | 'table'
   }) => {
-    const hasCollaborators = await FlowCollaborator.hasCollaborators({
+    const hasCollaborators = await Flow.hasCollaborators({
       flowId,
     })
 
@@ -129,9 +131,10 @@ class FlowConnections extends Base {
         .insert({
           flowId,
           connectionId,
-          userId,
+          addedBy,
+          connectionType,
         })
-        .onConflict(['flow_id', 'connection_id', 'user_id'])
+        .onConflict(['flow_id', 'connection_id'])
         .ignore()
     }
   }
@@ -139,23 +142,18 @@ class FlowConnections extends Base {
   static patchFlowConnectionMetadata = async ({
     flowId,
     connectionId,
-    userId,
     parameterKey,
     parameterValue,
   }: {
     flowId: string
     connectionId: string
-    userId: string
     parameterKey: string
     parameterValue: string
   }) => {
-    this.validateParameterKey(parameterKey)
-
     return await this.query()
       .where({
         flow_id: flowId,
         connection_id: connectionId,
-        user_id: userId,
       })
       .patch({
         // ensure distinct metadata values, we do it in the query to avoid
@@ -178,6 +176,19 @@ class FlowConnections extends Base {
           [parameterValue],
         ),
       })
+  }
+
+  /**
+   * Returns the loaded connected resource (either Connection or TableMetadata), if present.
+   */
+  getConnection(): Connection | TableMetadata {
+    if (this.connectionType === 'connection') {
+      return this.connection
+    }
+    if (this.connectionType === 'table') {
+      return this.table
+    }
+    throw new Error('Connection type is not valid')
   }
 }
 
