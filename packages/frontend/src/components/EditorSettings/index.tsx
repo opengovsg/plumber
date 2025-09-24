@@ -30,6 +30,11 @@ export type DrawerLink = {
   to: string
 }
 
+export type GroupedDrawerLinks = {
+  group: string
+  links: DrawerLink[]
+}
+
 export interface EditorSettingsLayoutProps {
   children: ReactNode
 }
@@ -53,19 +58,32 @@ export default function EditorSettingsLayout(
     () => [
       [
         {
-          Icon: BiMailSend,
-          text: 'Email notifications',
-          to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
+          group: 'Manage Access',
+          links: [
+            {
+              Icon: BiUserPlus,
+              text: 'Collaborators',
+              to: URLS.FLOW_EDITOR_SHARE(flowId),
+              group: 'Manage Access' as const,
+            },
+            {
+              Icon: BiTransfer,
+              text: 'Transfer Pipe',
+              to: URLS.FLOW_EDITOR_TRANSFERS(flowId),
+              group: 'Manage Access' as const,
+            },
+          ],
         },
         {
-          Icon: BiUserPlus,
-          text: 'Collaborators',
-          to: URLS.FLOW_EDITOR_SHARE(flowId),
-        },
-        {
-          Icon: BiTransfer,
-          text: 'Transfer Pipe',
-          to: URLS.FLOW_EDITOR_TRANSFERS(flowId),
+          group: 'Notifications',
+          links: [
+            {
+              Icon: BiMailSend,
+              text: 'Email notifications',
+              to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
+              group: 'Notifications' as const,
+            },
+          ],
         },
       ],
       () => setDrawerOpen(true),
@@ -78,7 +96,7 @@ export default function EditorSettingsLayout(
     base: (
       <>
         <EditorDrawer
-          links={drawerLinks}
+          groupedLinks={drawerLinks}
           isDrawerOpen={isDrawerOpen}
           openDrawer={openDrawer}
           closeDrawer={closeDrawer}
@@ -88,7 +106,7 @@ export default function EditorSettingsLayout(
     ),
     md: (
       <>
-        <EditorSidebar links={drawerLinks} closeDrawer={closeDrawer} />
+        <EditorSidebar groupedLinks={drawerLinks} closeDrawer={closeDrawer} />
         <Divider
           orientation="vertical"
           borderColor="base.divider.medium"
