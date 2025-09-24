@@ -3,6 +3,19 @@ import { describe, expect, it } from 'vitest'
 import getDataOutMetadata from '../../../actions/for-each/get-data-out-metadata'
 import { FOR_EACH_INPUT_SOURCE } from '../../../common/constants'
 
+const GENERIC_TABLE_EXPECTED_RESULT = {
+  iteration: {
+    label: 'Item number',
+    displayedValue: '1',
+  },
+  iterations: { label: 'Items found' },
+  inputSource: { isHidden: true },
+  items: {
+    rows: [{ data: { isHidden: true }, rowId: { isHidden: true } }],
+    inputSource: { isHidden: true },
+  },
+}
+
 describe('getDataOutMetadata', () => {
   const createMockExecutionStep = (dataOut: any) => ({
     id: 'execution-step-id',
@@ -199,16 +212,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -268,16 +272,8 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
+        iteration: { label: 'Item number', displayedValue: '' },
         items: {
           columns: [
             {
@@ -318,16 +314,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -351,6 +338,144 @@ describe('getDataOutMetadata', () => {
         },
       })
     })
+
+    it.each(['Recruiter', 'sixty', 'itty'])(
+      'should not hide column when the hex encoded column happens to be a number: %s',
+      async (columnName) => {
+        const testHexColumnId = Buffer.from(columnName).toString('hex')
+        const dataOut = {
+          iterations: 1,
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          items: {
+            columns: {
+              [testHexColumnId]: {
+                id: testHexColumnId,
+                name: columnName,
+                value: `items.rows.__ITERATION__.data.${testHexColumnId}`,
+                order: 1,
+              },
+            },
+            rows: [{ data: { [testHexColumnId]: 'Vaser' } }],
+            inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          },
+        }
+        const executionStep = createMockExecutionStep(dataOut)
+        const result = await getDataOutMetadata(executionStep)
+
+        expect(result).toEqual({
+          ...GENERIC_TABLE_EXPECTED_RESULT,
+          items: {
+            ...GENERIC_TABLE_EXPECTED_RESULT.items,
+            columns: {
+              [testHexColumnId]: {
+                id: { isHidden: true },
+                name: { isHidden: true },
+                order: { isHidden: true },
+                value: {
+                  label: columnName,
+                  displayedValue: 'Vaser',
+                  order: 1,
+                  type: 'text',
+                  isHiddenFromList: false,
+                },
+              },
+            },
+          },
+        })
+      },
+    )
+
+    it.each(['Date Sent', 'Send Status'])(
+      'should not hide columns when the hex encoded column name contains an e and appears like scientific notation: %s',
+      async (columnName) => {
+        const testHexColumnId = Buffer.from(columnName).toString('hex')
+        const dataOut = {
+          iterations: 1,
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          items: {
+            columns: {
+              [testHexColumnId]: {
+                id: testHexColumnId,
+                name: columnName,
+                value: `items.rows.__ITERATION__.data.${testHexColumnId}`,
+                order: 1,
+              },
+            },
+            rows: [{ data: { [testHexColumnId]: 'Vaser' } }],
+            inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          },
+        }
+        const executionStep = createMockExecutionStep(dataOut)
+        const result = await getDataOutMetadata(executionStep)
+
+        expect(result).toEqual({
+          ...GENERIC_TABLE_EXPECTED_RESULT,
+          items: {
+            ...GENERIC_TABLE_EXPECTED_RESULT.items,
+            columns: {
+              [testHexColumnId]: {
+                id: { isHidden: true },
+                name: { isHidden: true },
+                order: { isHidden: true },
+                value: {
+                  label: columnName,
+                  displayedValue: 'Vaser',
+                  order: 1,
+                  type: 'text',
+                  isHiddenFromList: false,
+                },
+              },
+            },
+          },
+        })
+      },
+    )
+
+    it.each(['0', '01', '1', '2', '123', '999', 'a'])(
+      'should not hide column when the column name happens to be a number: %s',
+      async (columnName) => {
+        const testHexColumnId = Buffer.from(columnName).toString('hex')
+        const dataOut = {
+          iterations: 1,
+          inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          items: {
+            columns: {
+              [testHexColumnId]: {
+                id: testHexColumnId,
+                name: columnName,
+                value: `items.rows.__ITERATION__.data.${testHexColumnId}`,
+                order: 1,
+              },
+            },
+            rows: [{ data: { [testHexColumnId]: 'Vaser' } }],
+            inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          },
+        }
+        const executionStep = createMockExecutionStep(dataOut)
+        const result = await getDataOutMetadata(executionStep)
+
+        expect(result).toEqual({
+          ...GENERIC_TABLE_EXPECTED_RESULT,
+          items: {
+            ...GENERIC_TABLE_EXPECTED_RESULT.items,
+            columns: {
+              [testHexColumnId]: {
+                id: { isHidden: true },
+                name: { isHidden: true },
+                order: { isHidden: true },
+                value: {
+                  label: columnName,
+                  displayedValue: 'Vaser',
+                  order: 1,
+                  type: 'text',
+                  isHiddenFromList: false,
+                },
+              },
+            },
+          },
+        })
+      },
+    )
   })
 
   describe('when inputSource is TILES', () => {
@@ -386,16 +511,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -460,15 +576,10 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         iteration: {
           label: 'Item number',
           displayedValue: '',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
         },
         items: {
           columns: [
@@ -525,16 +636,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -605,16 +707,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {
@@ -786,16 +879,7 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result).toEqual({
-        iteration: {
-          label: 'Item number',
-          displayedValue: '1',
-        },
-        iterations: {
-          label: 'Items found',
-        },
-        inputSource: {
-          isHidden: true,
-        },
+        ...GENERIC_TABLE_EXPECTED_RESULT,
         items: {
           columns: [
             {

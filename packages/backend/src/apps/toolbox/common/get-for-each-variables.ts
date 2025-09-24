@@ -51,6 +51,11 @@ function processColumns(
      *
      * TODO: remove this once all users have moved the new dataOut format
      */
+    // do not override the real column id if it already exists
+    // e.g., when column name is '0', it encodes to '30' for m365-excel and formsg tables
+    if (processedColumns[String(index)]) {
+      return
+    }
     processedColumns[String(index)] = {
       id: column.id,
       name: column.name,
