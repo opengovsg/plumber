@@ -7,6 +7,19 @@ import {
 
 import { dataOutSchema } from './schema'
 
+// NOTE: this is for backward compatibility with the old dataOut format
+const isBackwardCompatibilityColumnId = (id: string, numColumns: number) => {
+  // must be numeric
+  // cannot have leading 0
+  // must only contain digits
+  // must be less than the number of columns
+  if (Number(id) < numColumns && !id.startsWith('0') && /^\d+$/.test(id)) {
+    return true
+  }
+
+  return false
+}
+
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
@@ -78,7 +91,6 @@ async function getDataOutMetadata(
       Object.entries(items.columns)
         .sort((a, b) => a[1].order - b[1].order)
         .forEach(([id, column], index) => {
-          const isBackwardCompatibilityColumnId = !isNaN(Number(id))
           tempColumnsMetadata[id] = {
             id: { isHidden: true },
             name: { isHidden: true },
@@ -90,7 +102,15 @@ async function getDataOutMetadata(
                   : String(items?.rows?.[0]?.data?.[column.id] ?? ''),
               order: index + 1,
               type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
-              isHiddenFromList: isBackwardCompatibilityColumnId,
+              /**
+               * NOTE: this is for backward compatibility with the old dataOut format
+               *
+               * TODO (kevinkim-ogp): remove this once all users have moved to the new format
+               */
+              isHiddenFromList: isBackwardCompatibilityColumnId(
+                id,
+                Object.keys(items.columns).length,
+              ),
             },
             order: { isHidden: true },
           }
