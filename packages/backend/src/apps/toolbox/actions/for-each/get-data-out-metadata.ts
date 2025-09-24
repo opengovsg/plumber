@@ -8,6 +8,19 @@ import {
 
 import { dataOutSchema } from './schema'
 
+// NOTE: this is for backward compatibility with the old dataOut format
+const isBackwardCompatibilityColumnId = (id: string, name: string) => {
+  // must be numeric and within legacy bounds
+  if (isNaN(Number(id)) || Number(id) > FOR_EACH_MAX_ITERATIONS) {
+    return false
+  }
+
+  // additional check: does the hex encoding of the column name NOT match this ID?
+  // handles edge cases where the hex encoded column name happens to be a number
+  const expectedHexKey = Buffer.from(name).toString('hex')
+  return id !== expectedHexKey
+}
+
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
@@ -79,15 +92,6 @@ async function getDataOutMetadata(
       Object.entries(items.columns)
         .sort((a, b) => a[1].order - b[1].order)
         .forEach(([id, column], index) => {
-          /**
-           * NOTE: this is for backward compatibility with the old dataOut format
-           * we check that it is within the FOR_EACH_MAX_ITERATIONS as there are edge cases
-           * where the hex encoded columns from Excel is a number
-           *
-           * TODO (kevinkim-ogp): remove this once all users have moved to the new format
-           */
-          const isBackwardCompatibilityColumnId =
-            !isNaN(Number(id)) && Number(id) <= FOR_EACH_MAX_ITERATIONS
           tempColumnsMetadata[id] = {
             id: { isHidden: true },
             name: { isHidden: true },
@@ -99,7 +103,15 @@ async function getDataOutMetadata(
                   : String(items?.rows?.[0]?.data?.[column.id] ?? ''),
               order: index + 1,
               type: column.id === 'rowId' ? 'tile_row_id' : 'text', // NOTE: only tiles will have rowId
-              isHiddenFromList: isBackwardCompatibilityColumnId,
+              /**
+               * NOTE: this is for backward compatibility with the old dataOut format
+               *
+               * TODO (kevinkim-ogp): remove this once all users have moved to the new format
+               */
+              isHiddenFromList: isBackwardCompatibilityColumnId(
+                id,
+                column.name,
+              ),
             },
             order: { isHidden: true },
           }
