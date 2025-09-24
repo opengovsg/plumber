@@ -23,10 +23,6 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
     }
 
     // only editor or owner can delete collaborators
-    const isOwner = await context.currentUser.$relatedQuery('flows').findOne({
-      id: flowId,
-    })
-
     await FlowCollaborator.hasAccess({
       userId: context.currentUser.id,
       flowId,
@@ -39,19 +35,15 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
       })
       .throwIfNotFound('No such user found')
 
-    if (isOwner?.userId === user.id) {
-      throw new BadUserInputError('Cannot remove owner')
-    }
-
-    const collaboratorUser = await FlowCollaborator.query()
-      .findOne({
-        flow_id: flowId,
-        user_id: user.id,
-      })
-      .throwIfNotFound('No such collaborator found')
-
     try {
-      await collaboratorUser.$query().delete()
+      await FlowCollaborator.query()
+        .delete()
+        .where({
+          flow_id: flowId,
+          user_id: user.id,
+        })
+        .returning('*')
+        .throwIfNotFound({ message: 'No such collaborator found' })
     } catch (e) {
       logger.error({
         message: 'Failed to delete collaborator',
