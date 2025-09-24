@@ -85,6 +85,8 @@ const createStep: MutationResolvers['createStep'] = async (
         flowId: flow.id,
         connectionId: input.connection.id,
         addedBy: context.currentUser.id,
+        // it is always connection when creating a step since table is selected
+        // only after the step is created
         connectionType: 'connection',
         trx,
       })
