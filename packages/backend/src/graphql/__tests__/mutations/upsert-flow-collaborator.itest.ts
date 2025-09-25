@@ -589,10 +589,17 @@ describe('upsert flow collaborator', () => {
       })
 
       expect(flowConnections).toHaveLength(2)
-      expect(flowConnections[0].connectionId).toBe(connectionId)
-      expect(flowConnections[0].connectionType).toBe('connection')
-      expect(flowConnections[1].connectionId).toBe(tilesTableId1)
-      expect(flowConnections[1].connectionType).toBe('table')
+
+      const connectionFlow = flowConnections.find(
+        (fc) => fc.connectionType === 'connection',
+      )
+      const tableFlow = flowConnections.find(
+        (fc) => fc.connectionType === 'table',
+      )
+      expect(connectionFlow).toBeDefined()
+      expect(connectionFlow?.connectionId).toBe(connectionId)
+      expect(tableFlow).toBeDefined()
+      expect(tableFlow?.connectionId).toBe(tilesTableId1)
 
       expect(tableCollaborators).toHaveLength(1)
       expect(tableCollaborators[0].tableId).toBe(tilesTableId1)
