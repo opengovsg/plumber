@@ -99,14 +99,20 @@ const updateStep: MutationResolvers['updateStep'] = async (
           trx,
         })
 
-        collaborators.map(async ({ userId, role }) => {
-          await TableCollaborator.addCollaborator({
-            userId,
-            tableId: updatedStep.parameters.tableId as string,
-            role,
-            trx,
-          })
-        })
+        /**
+         * use Promise.all so that we use the addCollaborator function, which checks
+         * if the collaborator already exists to avoid duplicates
+         */
+        await Promise.all(
+          collaborators.map(async ({ userId, role }) => {
+            await TableCollaborator.addCollaborator({
+              userId,
+              tableId: updatedStep.parameters.tableId as string,
+              role,
+              trx,
+            })
+          }),
+        )
       } else if (APP_CONNECTION_FIELDS[updatedStep.appKey]) {
         const { parameterKey } = APP_CONNECTION_FIELDS[updatedStep.appKey]
 
