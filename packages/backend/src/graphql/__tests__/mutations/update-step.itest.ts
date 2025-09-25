@@ -560,6 +560,36 @@ describe('updateStep mutation', () => {
       })
     })
 
+    it('should call patchFlowConnectionMetadata when its an excel app', async () => {
+      context.currentUser.withAccessible = createMockWithAccessible({
+        owner,
+        currentUser: context.currentUser,
+        stepKey: 'sendTransactionalEmail',
+        stepAppKey: 'postman',
+        connectionKey: 'm365-excel',
+        stepId: mockStepId,
+        connectionId: mockConnectionId,
+        flowId: mockFlowId,
+        flowUpdatedAt: testFlowISODateString,
+      })
+
+      const input = {
+        ...genericInputParams,
+        appKey: 'm365-excel',
+        parameters: { fileId: '1234567890' },
+      }
+
+      await updateStep(null, { input }, context)
+
+      expect(patchSpy).toHaveBeenCalledWith({
+        flowId: mockFlowId,
+        connectionId: mockConnectionId,
+        parameterKey: 'fileId',
+        parameterValue: '1234567890',
+      })
+      expect(addSpy).not.toHaveBeenCalled()
+    })
+
     it('should call patchFlowConnectionMetadata when app has connection fields and parameter exists', async () => {
       const input = {
         id: mockStepId,
@@ -572,13 +602,13 @@ describe('updateStep mutation', () => {
 
       await updateStep(null, { input }, context)
 
-      expect(patchSpy).toHaveBeenCalledWith({
+      expect(patchSpy).not.toHaveBeenCalled()
+      expect(addSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
         connectionId: mockConnectionId,
-        parameterKey: 'channel',
-        parameterValue: 'C1234567890',
+        addedBy: owner.id,
+        connectionType: 'connection',
       })
-      expect(addSpy).not.toHaveBeenCalled()
     })
 
     it('should call addFlowConnection when app has connection fields but parameter does not exist', async () => {
@@ -697,13 +727,13 @@ describe('updateStep mutation', () => {
 
       await updateStep(null, { input }, context)
 
-      expect(patchSpy).toHaveBeenCalledWith({
+      expect(patchSpy).not.toHaveBeenCalled()
+      expect(addSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
         connectionId: mockConnectionId,
-        parameterKey: 'chatId',
-        parameterValue: '123456789',
+        addedBy: owner.id,
+        connectionType: 'connection',
       })
-      expect(addSpy).not.toHaveBeenCalled()
     })
 
     it('should call add to flow_connections and add table collaborator for tiles app with tableId parameter', async () => {
