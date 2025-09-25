@@ -134,14 +134,21 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
          * NOTE: we automatically add the collaborator as a collaborator to the Tile(s)
          * this ensures that the Tile appears in the dropdown when they are working
          * on the flow
+         *
+         * use Promise.all so that we use the addCollaborator function, which checks
+         * if the collaborator already exists to avoid duplicates
          */
         if (connectionDetails.table.length > 0) {
-          const tableInserts = connectionDetails.table.map((tableId) => ({
-            tableId,
-            userId: collaboratorUser.id,
-            role,
-          }))
-          await TableCollaborator.query(trx).insert(tableInserts)
+          await Promise.all(
+            connectionDetails.table.map(async (tableId) => {
+              await TableCollaborator.addCollaborator({
+                userId: collaboratorUser.id,
+                tableId,
+                role,
+                trx,
+              })
+            }),
+          )
         }
       })
     } catch (error) {
