@@ -4,7 +4,11 @@ import { IStep } from '@plumber/types'
  * THIS MUST BE UPDATED WHEN A NEW APP OR NEW DYNAMIC FIELD IS ADDED
  * we only need to app apps that have fields that behave like connections.
  * apps that only have connections such as formsg or postman-sms
- * do not need to be specified here
+ * do not need to be specified here.
+ *
+ * ONLY specify the parameterKey and dynamicDataKey for apps that have fields that need
+ * to be treated like connections, such as M365-Excel files, where we do not want the
+ * collaborator(s) to have access to all the files in the owner's Plumber SharePoint folder.
  */
 export const APP_CONNECTION_FIELDS: Record<
   IStep['appKey'],
@@ -17,18 +21,13 @@ export const APP_CONNECTION_FIELDS: Record<
     parameterKey: 'fileId',
     dynamicDataKey: 'listFiles',
   },
-  lettersg: {
-    parameterKey: 'templateId',
-    dynamicDataKey: 'getTemplateIds',
-  },
-  slack: {
-    parameterKey: 'channel',
-    dynamicDataKey: 'listChannels',
-  },
-  'telegram-bot': {
-    parameterKey: 'chatId',
-    dynamicDataKey: 'listChats',
-  },
+  lettersg: {},
+  slack: {},
+  'telegram-bot': {},
+  /**
+   * TILES SPECIAL CASE: tiles is handled differently as the table id is treated as the
+   * connection id in the flow_connections table.
+   */
   tiles: {
     parameterKey: 'tableId',
     dynamicDataKey: 'listTables',
@@ -83,7 +82,7 @@ export function getConnectionDetails(steps: IStep[]): {
      * so we use the tableId instead.
      */
     if (step.appKey === 'tiles') {
-      const paramKey = APP_CONNECTION_FIELDS[step.appKey].parameterKey
+      const paramKey = APP_CONNECTION_FIELDS[step.appKey]?.parameterKey
       const paramValue = step.parameters[paramKey] as string
 
       if (paramValue && !connections.table.includes(paramValue)) {

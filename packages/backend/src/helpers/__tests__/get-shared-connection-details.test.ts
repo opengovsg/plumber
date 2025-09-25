@@ -98,12 +98,8 @@ describe('getConnectionDetails', () => {
 
     expect(result).toEqual({
       connection: {
-        'slack-connection-id': {
-          channel: ['general'],
-        },
-        'telegram-connection-id': {
-          chatId: ['random'],
-        },
+        'slack-connection-id': {},
+        'telegram-connection-id': {},
       },
       table: [],
     })
@@ -132,15 +128,11 @@ describe('getConnectionDetails', () => {
 
     expect(result).toEqual({
       connection: {
-        'slack-connection-id': {
-          channel: ['general'],
-        },
+        'slack-connection-id': {},
         'm365-excel-connection-id': {
           fileId: ['file-123'],
         },
-        'lettersg-connection-id': {
-          templateId: ['template-456'],
-        },
+        'lettersg-connection-id': {},
       },
       table: [],
     })
@@ -169,9 +161,7 @@ describe('getConnectionDetails', () => {
 
     expect(result).toEqual({
       connection: {
-        'slack-connection-id': {
-          channel: ['general', 'random'],
-        },
+        'slack-connection-id': {},
       },
       table: [],
     })
@@ -217,9 +207,7 @@ describe('getConnectionDetails', () => {
 
     expect(result).toEqual({
       connection: {
-        'slack-connection-id': {
-          channel: [],
-        },
+        'slack-connection-id': {},
       },
       table: [],
     })
@@ -328,9 +316,7 @@ describe('getConnectionDetails', () => {
         connection: {
           'aisay-connection-id': {},
           'custom-api-connection-id': {},
-          'slack-connection-id': {
-            channel: ['general'],
-          },
+          'slack-connection-id': {},
           'm365-excel-connection-id': {
             fileId: ['file-123'],
           },

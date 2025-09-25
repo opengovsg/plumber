@@ -202,9 +202,7 @@ describe('upsert flow collaborator', () => {
         (fc) => fc.connectionId === connectionId,
       )
       expect(slackConnection).toBeDefined()
-      expect(slackConnection.metadata).toEqual({
-        channel: ['general'],
-      })
+      expect(slackConnection.metadata).toEqual({})
 
       // Check tiles connection: table id is the connection id
       const tilesConnection = flowConnections.find(
@@ -324,9 +322,7 @@ describe('upsert flow collaborator', () => {
       })
 
       expect(flowConnections).toHaveLength(1)
-      expect(flowConnections[0].metadata).toEqual({
-        channel: ['general'], // Should only appear once
-      })
+      expect(flowConnections[0].metadata).toEqual({})
     })
 
     it('should handle steps without connection gracefully', async () => {
