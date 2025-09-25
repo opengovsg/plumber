@@ -1,3 +1,5 @@
+import { Transaction } from 'objection'
+
 import Base from './base'
 import Connection from './connection'
 import Flow from './flow'
