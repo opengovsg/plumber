@@ -233,6 +233,7 @@ export type IFlowCollabRole = 'owner' | 'editor' | 'viewer'
 export interface IFlowCollaborator {
   email?: string // Populated by GraphQL resolver
   role: IFlowCollabRole
+  user?: IUser
 }
 
 export interface IFlow {
@@ -883,6 +884,7 @@ export type IGlobalVariable = {
     userId: string
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
+    collaborators?: IFlowCollaborator[]
   }
   step?: {
     id: string

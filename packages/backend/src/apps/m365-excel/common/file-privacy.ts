@@ -1,4 +1,4 @@
-import type { IHttpClient } from '@plumber/types'
+import type { IFlowCollaborator, IHttpClient } from '@plumber/types'
 
 import z from 'zod'
 
@@ -209,6 +209,16 @@ export async function validateCanAccessFile(
   authData: AuthData,
   fileId: string,
   http: IHttpClient,
+  /**
+   * NOTE: we pass in collaborators as Pipe editors should have access and be allowed to update the
+   * relevant tables and columns for M365-Excel steps.
+   *
+   * the collaborator may not have been added as an editor of the file, but they should still
+   * be able to modify the table / column within the plumber action.
+   *
+   * the actual Pipe execution is still in the context of the Pipe owner.
+   */
+  collaborators: IFlowCollaborator[],
 ): Promise<void> {
   const tenant = getM365TenantInfo(authData.tenantKey)
   const plumberFolderId = authData.folderId
@@ -238,9 +248,17 @@ export async function validateCanAccessFile(
     throw new Error('File must be in your Plumber folder')
   }
 
+  const collaboratorEmails =
+    collaborators?.map((collaborator) => collaborator.user.email) || []
+
+  const usersWithWriteAccessAndCollaborators = new Set([
+    ...usersWithWriteAccess,
+    ...collaboratorEmails,
+  ])
+
   const userEmailLowerCase = userEmail.toLowerCase()
-  const userCanWriteToFile = usersWithWriteAccess
-    ? usersWithWriteAccess.has(userEmailLowerCase)
+  const userCanWriteToFile = usersWithWriteAccessAndCollaborators
+    ? usersWithWriteAccessAndCollaborators.has(userEmailLowerCase)
     : await userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPONLY(
         tenant,
         fileId,
