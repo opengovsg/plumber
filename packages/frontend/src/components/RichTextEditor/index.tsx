@@ -220,7 +220,9 @@ const Editor = ({
   // NOTE: we force a re-render editor content when variable info changes (e.g., after step reorder)
   // to ensure that the variable shown in the RTE is updated
   useEffect(() => {
-    if (!editor || !content) {
+    // HACKFIX (kevinkim-ogp): this prevents the editor from updating during e2e tests
+    // when playwright is typing in the editor
+    if (!editor || !content || editor.isFocused) {
       return
     }
 
