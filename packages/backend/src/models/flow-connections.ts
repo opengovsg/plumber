@@ -1,10 +1,7 @@
-import { Transaction } from 'objection'
-
 import Base from './base'
 import Connection from './connection'
 import Flow from './flow'
 import FlowCollaborator from './flow-collaborators'
-import ExtendedQueryBuilder from './query-builder'
 import TableMetadata from './table-metadata'
 import User from './user'
 
@@ -17,7 +14,7 @@ class FlowConnections extends Base {
   // NOTE: addedBy is the user id of the user who added the connection to the flow
   addedBy!: string
   connectionType!: 'connection' | 'table'
-  connection?: Connection | TableMetadata
+  connection?: Connection
   table?: TableMetadata
   metadata: Record<string, any>
 
@@ -82,30 +79,6 @@ class FlowConnections extends Base {
       },
     },
   })
-
-  static withAccessible({
-    queryBuilder,
-    userId,
-    trx,
-  }: {
-    queryBuilder?: ExtendedQueryBuilder<FlowConnections, FlowConnections[]>
-    userId: string
-    trx?: Transaction
-  }) {
-    const baseQuery = queryBuilder || FlowConnections.query(trx)
-    return baseQuery
-      .join('flows', 'flow_connections.flow_id', 'flows.id')
-      .where(function () {
-        this.where('flows.user_id', userId).orWhereExists(function () {
-          this.select('*')
-            .from('flow_collaborators')
-            .whereRaw('flow_collaborators.flow_id = flows.id')
-            .where('flow_collaborators.user_id', userId)
-            .where('flow_collaborators.role', 'editor')
-            .whereNull('flow_collaborators.deleted_at')
-        })
-      })
-  }
 
   /**
    * NOTE: this function only adds the connection to the flow_connections table

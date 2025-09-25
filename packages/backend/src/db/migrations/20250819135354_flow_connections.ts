@@ -9,13 +9,13 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('connection_id').notNullable()
     // NOTE: addedBy is the user id of the user who added the connection to the flow
     table.uuid('added_by').references('id').inTable('users').notNullable()
-    table.enu('connection_type', ['connection', 'table']).notNullable()
+    table.string('connection_type').notNullable()
     table.timestamps(true, true)
     table.timestamp('deleted_at').nullable()
     table.jsonb('metadata').notNullable().defaultTo('{}')
 
-    // use the unique constraint to avoid duplicates
-    table.unique(['flow_id', 'connection_id'])
+    // use the primary key constraint to avoid duplicates
+    table.primary(['flow_id', 'connection_id'])
   })
 }
 
