@@ -183,25 +183,25 @@ class User extends Base {
     type: 'connection'
     queryBuilder?: ExtendedQueryBuilder<Connection, Connection[]>
     trx?: Transaction
-    requiredRole?: IFlowCollabRole
+    requiredRole: IFlowCollabRole
   }): ExtendedQueryBuilder<Connection, Connection[]>
   withAccessible(params: {
     type: 'flow'
     queryBuilder?: ExtendedQueryBuilder<Flow, Flow[]>
     trx?: Transaction
-    requiredRole?: IFlowCollabRole
+    requiredRole: IFlowCollabRole
   }): ExtendedQueryBuilder<Flow, Flow[]>
   withAccessible(params: {
     type: 'step'
     queryBuilder?: ExtendedQueryBuilder<Step, Step[]>
     trx?: Transaction
-    requiredRole?: IFlowCollabRole
+    requiredRole: IFlowCollabRole
   }): ExtendedQueryBuilder<Step, Step[]>
   withAccessible({
     type,
     queryBuilder,
     trx,
-    requiredRole = 'viewer',
+    requiredRole,
   }: {
     type: 'flow' | 'step' | 'connection'
     queryBuilder?:
@@ -209,7 +209,7 @@ class User extends Base {
       | ExtendedQueryBuilder<Step, Step[]>
       | ExtendedQueryBuilder<Connection, Connection[]>
     trx?: Transaction
-    requiredRole?: IFlowCollabRole
+    requiredRole: IFlowCollabRole
   }) {
     const userId = this.id
     const USER_ROLE_STMT = `

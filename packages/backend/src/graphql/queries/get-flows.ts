@@ -8,7 +8,10 @@ const getFlows: QueryResolvers['getFlows'] = async (
   context,
 ) => {
   // Get the base query with role selection and accessibility filtering
-  const baseQuery = context.currentUser.withAccessible({ type: 'flow' })
+  const baseQuery = context.currentUser.withAccessible({
+    type: 'flow',
+    requiredRole: 'viewer',
+  })
 
   // Apply additional filters to the base query
   const filteredFlowIds = (

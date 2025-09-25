@@ -11,7 +11,7 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
   const { stepId, key: dynamicDataKey, parameters } = params
 
   const step = await context.currentUser
-    .withAccessible({ type: 'step' })
+    .withAccessible({ type: 'step', requiredRole: 'viewer' })
     .withGraphFetched({
       connection: true,
       flow: {

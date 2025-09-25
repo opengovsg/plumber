@@ -11,7 +11,10 @@ const testConnection: QueryResolvers['testConnection'] = async (
   context,
 ) => {
   let connection = await context.currentUser
-    .$relatedQuery('connections')
+    .withAccessible({
+      type: 'connection',
+      requiredRole: 'viewer',
+    })
     .findOne({
       'connections.id': params.connectionId,
     })
@@ -34,7 +37,7 @@ const testConnection: QueryResolvers['testConnection'] = async (
     // flowId is supplied when testing within the pipe editor
     // it's used for formsg webhook verification for now
     const flow = await context.currentUser
-      .withAccessibleFlows()
+      .withAccessible({ type: 'flow', requiredRole: 'viewer' })
       .findById(params.flowId)
       .throwIfNotFound()
 
