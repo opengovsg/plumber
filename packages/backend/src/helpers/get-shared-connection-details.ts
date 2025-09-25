@@ -30,7 +30,6 @@ export const APP_CONNECTION_FIELDS: Record<
    */
   tiles: {
     parameterKey: 'tableId',
-    dynamicDataKey: 'listTables',
   },
 }
 
