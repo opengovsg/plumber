@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStep from '@/graphql/mutations/update-step'
-import { TILES_CONNECTION_ID } from '@/helpers/get-shared-connection-details'
 import Flow from '@/models/flow'
+import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
+import TableCollaborator from '@/models/table-collaborators'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
@@ -574,7 +575,6 @@ describe('updateStep mutation', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
         connectionId: mockConnectionId,
-        userId: owner.id,
         parameterKey: 'channel',
         parameterValue: 'C1234567890',
       })
@@ -594,7 +594,8 @@ describe('updateStep mutation', () => {
       expect(addSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
         connectionId: mockConnectionId,
-        userId: owner.id,
+        addedBy: owner.id,
+        connectionType: 'connection',
       })
       expect(patchSpy).not.toHaveBeenCalled()
     })
@@ -699,19 +700,28 @@ describe('updateStep mutation', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
         connectionId: mockConnectionId,
-        userId: owner.id,
         parameterKey: 'chatId',
         parameterValue: '123456789',
       })
       expect(addSpy).not.toHaveBeenCalled()
     })
 
-    it('should call patchFlowConnectionMetadata for tiles app with tableId parameter', async () => {
+    it('should call add to flow_connections and add table collaborator for tiles app with tableId parameter', async () => {
+      const mockTableId = 'table-123'
       const { default: FlowConnections } = await import(
         '@/models/flow-connections'
       )
+      const addCollaboratorSpy = vi
+        .spyOn(TableCollaborator, 'addCollaborator')
+        .mockResolvedValue(undefined)
       const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
+      const getCollaboratorsSpy = vi
+        .spyOn(FlowCollaborator, 'getCollaborators')
+        .mockResolvedValue([
+          { userId: editor.id, role: 'editor' } as any,
+          { userId: viewer.id, role: 'viewer' } as any,
+        ])
 
       // Mock step with tiles app
       context.currentUser.withAccessible = createMockWithAccessible({
@@ -721,7 +731,6 @@ describe('updateStep mutation', () => {
         stepAppKey: 'tiles',
         connectionKey: 'tiles',
         stepId: mockStepId,
-        connectionId: mockConnectionId,
         flowId: mockFlowId,
         stepRole: 'owner',
         flowUpdatedAt: testFlowISODateString,
@@ -730,19 +739,35 @@ describe('updateStep mutation', () => {
       const input = {
         ...genericInputParams,
         appKey: 'tiles',
-        parameters: { tableId: 'table-123' },
+        parameters: { tableId: mockTableId },
       }
 
       await updateStep(null, { input }, context)
 
-      expect(patchSpy).toHaveBeenCalledWith({
+      expect(patchSpy).not.toHaveBeenCalled()
+      expect(addSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
-        connectionId: TILES_CONNECTION_ID,
-        userId: owner.id,
-        parameterKey: 'tableId',
-        parameterValue: 'table-123',
+        connectionId: mockTableId,
+        addedBy: owner.id,
+        connectionType: 'table',
       })
-      expect(addSpy).not.toHaveBeenCalled()
+      expect(getCollaboratorsSpy).toHaveBeenCalledWith({
+        flowId: mockFlowId,
+        trx: expect.anything(),
+      })
+      expect(addCollaboratorSpy).toHaveBeenCalledTimes(2)
+      expect(addCollaboratorSpy).toHaveBeenCalledWith({
+        userId: editor.id,
+        tableId: mockTableId,
+        role: 'editor',
+        trx: expect.anything(),
+      })
+      expect(addCollaboratorSpy).toHaveBeenCalledWith({
+        userId: viewer.id,
+        tableId: mockTableId,
+        role: 'viewer',
+        trx: expect.anything(),
+      })
     })
   })
 })

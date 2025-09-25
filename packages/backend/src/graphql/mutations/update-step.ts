@@ -1,12 +1,10 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
-import checkFlowUpdatable from '@/helpers/check-flow-updatable'
-import {
-  APP_CONNECTION_FIELDS,
-  TILES_CONNECTION_ID,
-} from '@/helpers/get-shared-connection-details'
+import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
 import App from '@/models/app'
+import FlowCollaborator from '@/models/flow-collaborators'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
+import TableCollaborator from '@/models/table-collaborators'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -30,7 +28,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
       throw new BadUserInputError('Step not found')
     }
 
-    checkFlowUpdatable(input.flow.updatedAt, step.flow.updatedAt)
+    step.flow.assertNotUpdatedSince(input.flow.updatedAt)
 
     if (input.connection.id) {
       // if connectionId is specified, verify that the connection exists
@@ -79,30 +77,57 @@ const updateStep: MutationResolvers['updateStep'] = async (
 
     /**
      * NOTE: we need to update flow connections for specific apps:
+     *
+     * Tiles:
+     * 1. add the collaborator to the flow connections table
+     * 2. add the collaborator to the table collaborators table
+     *
+     * Other connections:
+     * 1. add the collaborator to the flow connections table
      */
-    if (APP_CONNECTION_FIELDS[updatedStep.appKey] && step.role === 'owner') {
-      const { parameterKey } = APP_CONNECTION_FIELDS[updatedStep.appKey]
-
-      let connectionId = updatedStep?.connectionId
-      if (updatedStep.appKey === 'tiles') {
-        connectionId = TILES_CONNECTION_ID
-      }
-
-      if (updatedStep.parameters[parameterKey]) {
-        await FlowConnections.patchFlowConnectionMetadata({
-          flowId: updatedStep.flowId,
-          connectionId,
-          parameterKey,
-          parameterValue: updatedStep.parameters[parameterKey] as string,
-        })
-      } else {
+    if (step.role === 'owner') {
+      if (updatedStep.appKey === 'tiles' && updatedStep?.parameters?.tableId) {
         await FlowConnections.addFlowConnection({
           flowId: updatedStep.flowId,
-          connectionId,
+          connectionId: updatedStep.parameters.tableId as string,
           addedBy: context.currentUser.id,
-          connectionType: 'connection',
+          connectionType: 'table',
+        })
+
+        const collaborators = await FlowCollaborator.getCollaborators({
+          flowId: updatedStep.flowId,
           trx,
         })
+
+        collaborators.map(async ({ userId, role }) => {
+          await TableCollaborator.addCollaborator({
+            userId,
+            tableId: updatedStep.parameters.tableId as string,
+            role,
+            trx,
+          })
+        })
+      } else if (APP_CONNECTION_FIELDS[updatedStep.appKey]) {
+        const { parameterKey } = APP_CONNECTION_FIELDS[updatedStep.appKey]
+
+        const userId = updatedStep?.connection?.userId
+        const connectionId = updatedStep?.connectionId
+
+        if (updatedStep.parameters[parameterKey]) {
+          await FlowConnections.patchFlowConnectionMetadata({
+            flowId: updatedStep.flowId,
+            connectionId,
+            parameterKey,
+            parameterValue: updatedStep.parameters[parameterKey] as string,
+          })
+        } else {
+          await FlowConnections.addFlowConnection({
+            flowId: updatedStep.flowId,
+            connectionId,
+            addedBy: userId,
+            connectionType: 'connection',
+          })
+        }
       }
     }
 
