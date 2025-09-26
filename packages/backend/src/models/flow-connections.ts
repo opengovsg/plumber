@@ -136,17 +136,17 @@ class FlowConnections extends Base {
           `
             jsonb_set(
               metadata,
-              '{${parameterKey}}',
+              ?::text[],
               (
                 SELECT jsonb_agg(DISTINCT e)
                 FROM jsonb_array_elements_text(
-                COALESCE(metadata->'${parameterKey}', '[]'::jsonb) || to_jsonb(ARRAY[?]::text[])
+                COALESCE(metadata->?, '[]'::jsonb) || to_jsonb(ARRAY[?]::text[])
                 ) AS e
               ),
               true
             )
             `,
-          [parameterValue],
+          [`{${parameterKey}}`, parameterKey, parameterValue],
         ),
       })
   }
