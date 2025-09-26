@@ -54,13 +54,7 @@ export default function EditorSidebar(props: EditorSidebarProps) {
     <SidebarContainer>
       {groupedLinks.map(({ group, links }) => (
         <>
-          <Text
-            key={group}
-            p={4}
-            display={{ sm: 'none', lg: 'block' }}
-            ml={{ sm: 0, lg: 2 }}
-            textStyle="caption-3"
-          >
+          <Text key={group} p={4} ml={2} textStyle="caption-3">
             {group}
           </Text>
           {links.map((link, index) => (
