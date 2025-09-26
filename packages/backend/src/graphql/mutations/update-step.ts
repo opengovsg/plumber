@@ -77,17 +77,28 @@ const updateStep: MutationResolvers['updateStep'] = async (
       })
 
     /**
-     * NOTE: we need to update flow connections for specific apps:
-     *
+     * NOTE: we need to update flow connections for apps with connections:
      * Tiles:
      * 1. add the collaborator to the flow connections table
      * 2. add the collaborator to the table collaborators table
      *
+     * TODO (kevinkim-ogp): phase 2
+     * collaborator should be able to add their own tiles,
+     * and the owner will be added as an editor to the Tile
+     *
      * Other connections:
      * 1. add the collaborator to the flow connections table
+     *
+     * TODO (kevinkim-ogp): phase 2
+     * collaborator should be able to add their own connections,
+     * it will be tied to this specific flow only
      */
     if (step.role === 'owner') {
-      if (updatedStep.appKey === 'tiles' && updatedStep?.parameters?.tableId) {
+      const appKey = updatedStep?.appKey
+      /**
+
+       */
+      if (appKey && updatedStep?.parameters?.tableId) {
         await FlowConnections.addFlowConnection({
           flowId: updatedStep.flowId,
           connectionId: updatedStep.parameters.tableId as string,
@@ -114,13 +125,15 @@ const updateStep: MutationResolvers['updateStep'] = async (
             })
           }),
         )
-      } else if (APP_CONNECTION_FIELDS[updatedStep.appKey]) {
-        const { parameterKey } = APP_CONNECTION_FIELDS[updatedStep.appKey]
+      } else if (updatedStep?.connectionId) {
+        const { parameterKey } = APP_CONNECTION_FIELDS?.[appKey] ?? {}
 
         const userId = updatedStep?.connection?.userId
         const connectionId = updatedStep?.connectionId
 
-        if (updatedStep.parameters[parameterKey]) {
+        // only flow connections with a parameterKey specified need to have
+        // its metadata updated with the parameter value
+        if (updatedStep.parameters?.[parameterKey]) {
           await FlowConnections.patchFlowConnectionMetadata({
             flowId: updatedStep.flowId,
             connectionId,

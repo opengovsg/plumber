@@ -680,6 +680,7 @@ describe('updateStep mutation', () => {
       const input = {
         ...genericInputParams,
         appKey: 'tiles',
+        connection: {},
         parameters: { tableId: mockTableId },
       }
 

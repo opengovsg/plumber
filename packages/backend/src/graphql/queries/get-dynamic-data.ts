@@ -1,10 +1,6 @@
 import apps from '@/apps'
-import {
-  APP_CONNECTION_FIELDS,
-  TILES_CONNECTION_ID,
-} from '@/helpers/get-shared-connection-details'
+import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
 import globalVariable from '@/helpers/global-variable'
-import FlowConnections from '@/models/flow-connections'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -54,22 +50,50 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
 
   const fetchedData = await command.run($)
 
-  // we should filter out the dynamic data to only show the options
-  // that have been shared with the user
+  /**
+   * COLLABORATORS
+   * filter out the dynamic data to only show the options that have been shared with the user
+   *
+   * Tiles:
+   * - only show the Tiles that have been shared
+   *
+   * Other connections:
+   * - only show the connections that have been shared
+   *
+   * TODO (kevinkim-ogp): phase 2
+   * - collaborator should be able to add their own Tiles
+   */
   if (
+    step.role !== 'owner' &&
     APP_CONNECTION_FIELDS[step.appKey] &&
-    APP_CONNECTION_FIELDS[step.appKey].dynamicDataKey === dynamicDataKey &&
-    step.role !== 'owner'
+    APP_CONNECTION_FIELDS[step.appKey]?.dynamicDataKey === dynamicDataKey
   ) {
-    const flowConnections = await FlowConnections.withAccessible({
-      userId: context.currentUser.id,
-    }).where({
-      // SPECIAL CASE: Tiles does not have a connection id
-      // so we use a special connection id to store the dynamic data
-      connection_id:
-        app.key === 'tiles' ? TILES_CONNECTION_ID : step.connectionId,
-      flow_id: step.flowId,
-    })
+    const whereClause =
+      step.appKey === 'tiles'
+        ? {
+            connection_type: 'table',
+            flow_id: step.flowId,
+          }
+        : {
+            connection_id: step.connectionId,
+            flow_id: step.flowId,
+          }
+    const flowConnections = await context.currentUser
+      .withAccessible({
+        type: 'flow-connections',
+        requiredRole: 'viewer',
+      })
+      .where(whereClause)
+
+    // TILES SPECIAL CASE:
+    // tile ids are stored directly in the connection_id column
+    if (step.appKey === 'tiles') {
+      return fetchedData.data.filter((data) =>
+        flowConnections.some(
+          (flowConnection) => flowConnection.connectionId === data.value,
+        ),
+      )
+    }
 
     const allowedValues = flowConnections
       .map((flowConnection) => {
