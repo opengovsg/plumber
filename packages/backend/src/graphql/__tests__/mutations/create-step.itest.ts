@@ -85,7 +85,8 @@ describe('createStep mutation integration tests', async () => {
     await FlowConnections.addFlowConnection({
       flowId: testFlow.id,
       connectionId: testConnection.id,
-      userId: owner.id,
+      addedBy: owner.id,
+      connectionType: 'connection',
     })
 
     // Create a "previous" step in the flow with position 1.
@@ -287,6 +288,7 @@ describe('createStep mutation integration tests', async () => {
         appKey: 'test-app',
         parameters: { newParam: 'value' },
         connection: { id: testConnection.id },
+        connectionRole: 'owner',
       },
     }
 

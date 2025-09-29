@@ -4,6 +4,7 @@ import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
+import { getFlowConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -32,20 +33,30 @@ const createStep: MutationResolvers['createStep'] = async (
     // user has to be an editor in the pipe
     if (input.connection?.id) {
       let connection: Connection
+      /**
+       * NOTE: with collaborators,
+       * Owner can use existing connections or add new connections to the pipe
+       * Editor can only use existing connections that have been shared to the pipe
+       * (TODO: phase 2) Editor will be able to add their own connections
+       */
       if (flow.role === 'owner') {
         connection = await context.currentUser
           .$relatedQuery('connections')
           .findOne({ id: input.connection.id })
       } else if (flow.role === 'editor') {
-        connection = await context.currentUser
-          .withAccessibleConnections({
-            requiredRole: 'editor',
-            trx,
-          })
-          .findOne({
-            'connections.id': input.connection.id,
-            'flows.id': flow.id,
-          })
+        const flowConnection = await getFlowConnection({
+          context,
+          connectionId: input.connection.id,
+          flowId: flow.id,
+          requiredRole: 'editor',
+          trx,
+        })
+        if (!flowConnection) {
+          throw new ForbiddenError(
+            'User does not have permission to add connection',
+          )
+        }
+        connection = flowConnection.connection
       } else {
         throw new ForbiddenError(
           'User does not have permission to add connection',

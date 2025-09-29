@@ -5,6 +5,7 @@ import {
 } from '@/helpers/add-flow-connection'
 import App from '@/models/app'
 import Step from '@/models/step'
+import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -32,9 +33,14 @@ const updateStep: MutationResolvers['updateStep'] = async (
 
     if (input.connection.id) {
       // if connectionId is specified, verify that the connection exists
-      const connection = await context.currentUser
-        .withAccessibleConnections({ requiredRole: 'editor' })
-        .findOne({ 'connections.id': input.connection.id })
+      const connection = await getConnection({
+        context,
+        connectionId: input.connection.id,
+        flowId: input.flow.id,
+        requiredRole: 'editor',
+        trx,
+      })
+
       // we check that the connection exists and is the same app
       if (!connection || connection.key !== input.appKey) {
         throw new BadUserInputError('Connection not found')

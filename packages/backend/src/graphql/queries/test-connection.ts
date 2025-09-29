@@ -2,6 +2,7 @@ import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import User from '@/models/user'
+import { getConnection } from '@/services/connection'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -10,12 +11,13 @@ const testConnection: QueryResolvers['testConnection'] = async (
   params,
   context,
 ) => {
-  let connection = await context.currentUser
-    .withAccessibleConnections({ requiredRole: 'viewer' })
-    .findOne({
-      'connections.id': params.connectionId,
-    })
-    .throwIfNotFound()
+  let connection = await getConnection({
+    context,
+    connectionId: params.connectionId,
+    flowId: params.flowId,
+    requiredRole: 'viewer',
+  })
+
   const userRole = connection.role
 
   const app = apps[connection.key]

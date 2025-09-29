@@ -101,14 +101,6 @@ describe('updateStep mutation', () => {
       }),
     }))
 
-    // Mock Step.transaction
-    vi.spyOn(Step, 'transaction').mockImplementation(async (callback) => {
-      const trx = {
-        raw: vi.fn().mockResolvedValue({}),
-      } as any
-      return callback(trx)
-    })
-
     // Mock Step.query
     vi.spyOn(Step, 'query').mockReturnValue({
       patchAndFetchById: patchAndFetchByIdSpy,
@@ -478,14 +470,6 @@ describe('updateStep mutation', () => {
     let addSpy: any
 
     beforeEach(async () => {
-      // Mock FlowConnections methods
-      vi.mock('@/models/flow-connections', () => ({
-        default: {
-          patchFlowConnectionMetadata: vi.fn(),
-          addFlowConnection: vi.fn(),
-        },
-      }))
-
       const { default: FlowConnections } = await import(
         '@/models/flow-connections'
       )
