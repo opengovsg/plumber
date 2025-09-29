@@ -1,6 +1,6 @@
 import { IFlowConfig } from '@plumber/types'
 
-import type { ModelOptions, QueryContext } from 'objection'
+import type { ModelOptions, QueryContext, Transaction } from 'objection'
 import { ValidationError } from 'objection'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
@@ -8,6 +8,7 @@ import { doesActionProcessFiles } from '@/helpers/actions'
 
 import Base from './base'
 import Execution from './execution'
+import FlowCollaborator from './flow-collaborators'
 import FlowTransfer from './flow-transfers'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
@@ -113,6 +114,14 @@ class Flow extends Base {
         to: `${Execution.tableName}.id`,
       },
     },
+    collaborators: {
+      relation: Base.HasManyRelation,
+      modelClass: FlowCollaborator,
+      join: {
+        from: `${this.tableName}.id`,
+        to: `${FlowCollaborator.tableName}.flow_id`,
+      },
+    },
   })
 
   static hasAccess = async (
@@ -206,6 +215,22 @@ class Flow extends Base {
     )
 
     return actionFileFlags.some(Boolean)
+  }
+
+  static hasCollaborators = async ({
+    flowId,
+    trx,
+  }: {
+    flowId: string
+    trx?: Transaction
+  }) => {
+    const collaborators = await FlowCollaborator.query(trx)
+      .where({
+        flow_id: flowId,
+      })
+      .whereNull('deleted_at')
+
+    return collaborators.length > 0
   }
 }
 
