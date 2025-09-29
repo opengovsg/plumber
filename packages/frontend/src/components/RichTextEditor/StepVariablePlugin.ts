@@ -104,4 +104,20 @@ export const StepVariable = Node.create<VariableOptions>({
       },
     })
   },
+  addKeyboardShortcuts() {
+    return {
+      Backspace: ({ editor }) => {
+        const { selection } = editor.state
+        const { $head } = selection
+
+        // If cursor is right before a variable, delete the character before it
+        if ($head.nodeAfter?.type.name === this.name && $head.pos > 0) {
+          editor.commands.deleteRange({ from: $head.pos - 1, to: $head.pos })
+          return true
+        }
+
+        return false
+      },
+    }
+  },
 })
