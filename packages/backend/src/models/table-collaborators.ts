@@ -1,6 +1,8 @@
 import { IGlobalVariable, ITableCollabRole } from '@plumber/types'
 
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { Transaction } from 'objection'
+
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import StepError from '@/errors/step'
 
 import Base from './base'
@@ -82,6 +84,47 @@ class TableCollaborator extends Base {
       throw new ForbiddenError(
         'You do not have sufficient permissions for this tile',
       )
+    }
+  }
+
+  static addCollaborator = async ({
+    userId,
+    tableId,
+    role,
+    trx,
+  }: {
+    userId: string
+    tableId: string
+    role: ITableCollabRole
+    trx?: Transaction
+  }) => {
+    const existingCollaborator = await TableCollaborator.query(trx)
+      .findOne({
+        table_id: tableId,
+        user_id: userId,
+      })
+      .withSoftDeleted()
+
+    /**
+     * Upsert collaborator here
+     */
+    if (existingCollaborator) {
+      if (existingCollaborator.role === 'owner') {
+        throw new BadUserInputError('Cannot change owner role')
+      }
+      await existingCollaborator
+        .$query(trx)
+        .patchAndFetch({
+          role,
+          deletedAt: null,
+        })
+        .withSoftDeleted()
+    } else {
+      await TableCollaborator.query(trx).insert({
+        tableId,
+        userId,
+        role,
+      })
     }
   }
 }
