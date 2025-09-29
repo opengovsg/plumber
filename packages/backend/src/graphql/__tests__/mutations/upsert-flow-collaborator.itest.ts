@@ -3,8 +3,13 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import upsertFlowCollaborator from '@/graphql/mutations/upsert-flow-collaborator'
+import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
+import FlowConnections from '@/models/flow-connections'
+import Step from '@/models/step'
+import TableCollaborator from '@/models/table-collaborators'
+import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
@@ -132,5 +137,507 @@ describe('upsert flow collaborator', () => {
     ).rejects.toThrowError(
       'You do not have sufficient permissions for this pipe',
     )
+  })
+
+  describe('automatic connection sharing', () => {
+    const connectionId = randomUUID()
+
+    beforeEach(async () => {
+      await Connection.query().insert({
+        id: connectionId,
+        key: 'slack',
+        data: '1234',
+      })
+    })
+
+    it('should automatically add connections to flow_connections table when first collaborator is added', async () => {
+      const tilesTableId = randomUUID()
+      await TableMetadata.query().insert({
+        id: tilesTableId,
+        name: 'test table',
+        db: 'pg',
+      })
+
+      await Step.query().insert([
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'sendMessage',
+          appKey: 'slack',
+          type: 'action',
+          connectionId: connectionId,
+          parameters: { channel: 'general' },
+          position: 1,
+        },
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'createTileRow',
+          appKey: 'tiles',
+          type: 'action',
+          parameters: { tableId: tilesTableId },
+          position: 2,
+        },
+      ])
+
+      // Add first collaborator - this should trigger connection sharing
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that connections were added to flow_connections table
+      const flowConnections = await FlowConnections.query().where({
+        flow_id: dummyFlow.id,
+        added_by: dummyFlow.userId,
+      })
+
+      expect(flowConnections).toHaveLength(2)
+
+      // Check slack connection
+      const slackConnection = flowConnections.find(
+        (fc) => fc.connectionId === connectionId,
+      )
+      expect(slackConnection).toBeDefined()
+      expect(slackConnection.metadata).toEqual({})
+
+      // Check tiles connection: table id is the connection id
+      const tilesConnection = flowConnections.find(
+        (fc) => fc.connectionId === tilesTableId,
+      )
+      expect(tilesConnection).toBeDefined()
+    })
+
+    it('should not add connections again when subsequent collaborators are added', async () => {
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'sendMessage',
+        appKey: 'slack',
+        type: 'action',
+        connectionId: connectionId,
+        parameters: { channel: 'general' },
+        position: 1,
+      })
+
+      // Add first collaborator - this should trigger connection sharing
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Add second collaborator - this should NOT trigger connection sharing again
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: viewer.email, role: 'viewer' },
+        },
+        context,
+      )
+
+      // Check that connections were only added once
+      const flowConnections = await FlowConnections.query().where({
+        flow_id: dummyFlow.id,
+        added_by: dummyFlow.userId,
+      })
+
+      expect(flowConnections).toHaveLength(1)
+      expect(flowConnections[0].connectionId).toBe(connectionId)
+    })
+
+    it('should handle flows with no connection steps', async () => {
+      // Create a flow with no connection steps
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'delay',
+        appKey: 'delay',
+        type: 'action',
+        parameters: { duration: 1000 },
+        position: 1,
+      })
+
+      // Add collaborator - this should not fail even with no connections
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that no connections were added
+      const flowConnections = await FlowConnections.query().where({
+        flow_id: dummyFlow.id,
+        added_by: dummyFlow.userId,
+      })
+
+      expect(flowConnections).toHaveLength(0)
+    })
+
+    it('should handle duplicate parameter values in connection metadata', async () => {
+      // Create steps with duplicate channel values
+      await Step.query().insert([
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'sendMessage',
+          appKey: 'slack',
+          type: 'action',
+          connectionId: connectionId,
+          parameters: { channel: 'general' },
+          position: 1,
+        },
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'sendMessage',
+          appKey: 'slack',
+          type: 'action',
+          connectionId: connectionId,
+          parameters: { channel: 'general' }, // Duplicate channel
+          position: 2,
+        },
+      ])
+
+      // Add collaborator
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that duplicate values are handled correctly
+      const flowConnections = await FlowConnections.query().where({
+        flow_id: dummyFlow.id,
+        added_by: dummyFlow.userId,
+      })
+
+      expect(flowConnections).toHaveLength(1)
+      expect(flowConnections[0].metadata).toEqual({})
+    })
+
+    it('should handle steps without connection gracefully', async () => {
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'sendMessage',
+        appKey: 'slack',
+        type: 'action',
+        connectionId: null,
+        parameters: {},
+        position: 1,
+      })
+
+      // Add collaborator - this should not fail
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that the connection was still added (with empty metadata)
+      const flowConnections = await FlowConnections.query().where({
+        flow_id: dummyFlow.id,
+        added_by: dummyFlow.userId,
+      })
+
+      expect(flowConnections).toHaveLength(0)
+    })
+  })
+
+  describe('automatic table collaborator sharing', () => {
+    let tilesTableId1: string
+    let tilesTableId2: string
+
+    beforeEach(async () => {
+      tilesTableId1 = randomUUID()
+      tilesTableId2 = randomUUID()
+
+      await TableMetadata.query().insert([
+        {
+          id: tilesTableId1,
+          name: 'test table 1',
+          db: 'pg',
+        },
+        {
+          id: tilesTableId2,
+          name: 'test table 2',
+          db: 'pg',
+        },
+      ])
+
+      await TableCollaborator.query().insert([
+        {
+          tableId: tilesTableId1,
+          userId: context.currentUser.id,
+          role: 'owner',
+        },
+        {
+          tableId: tilesTableId2,
+          userId: context.currentUser.id,
+          role: 'owner',
+        },
+      ])
+    })
+
+    it('should automatically add table collaborators when flow has tiles steps', async () => {
+      await Step.query().insert([
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'createTileRow',
+          appKey: 'tiles',
+          type: 'action',
+          parameters: { tableId: tilesTableId1 },
+          position: 1,
+        },
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'updateTileRow',
+          appKey: 'tiles',
+          type: 'action',
+          parameters: { tableId: tilesTableId2 },
+          position: 2,
+        },
+      ])
+
+      // Add collaborator - this should trigger table collaborator sharing
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that table collaborators were added
+      const tableCollaborators = await TableCollaborator.query().where({
+        user_id: editor.id,
+      })
+
+      expect(tableCollaborators).toHaveLength(2)
+
+      // Check first table collaborator
+      const table1Collaborator = tableCollaborators.find(
+        (tc) => tc.tableId === tilesTableId1,
+      )
+      expect(table1Collaborator).toBeDefined()
+      expect(table1Collaborator.role).toBe('editor')
+
+      // Check second table collaborator
+      const table2Collaborator = tableCollaborators.find(
+        (tc) => tc.tableId === tilesTableId2,
+      )
+      expect(table2Collaborator).toBeDefined()
+      expect(table2Collaborator.role).toBe('editor')
+    })
+
+    it('should add table collaborators with viewer role when collaborator is viewer', async () => {
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        parameters: { tableId: tilesTableId1 },
+        position: 1,
+      })
+
+      // Add viewer collaborator
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: viewer.email, role: 'viewer' },
+        },
+        context,
+      )
+
+      // Check that table collaborator was added with viewer role
+      const tableCollaborators = await TableCollaborator.query().where({
+        user_id: viewer.id,
+      })
+
+      expect(tableCollaborators).toHaveLength(1)
+      expect(tableCollaborators[0].tableId).toBe(tilesTableId1)
+      expect(tableCollaborators[0].role).toBe('viewer')
+    })
+
+    it('should handle flows with no tiles steps', async () => {
+      // Create a flow with no tiles steps
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'sendMessage',
+        appKey: 'slack',
+        type: 'action',
+        parameters: { channel: 'general' },
+        position: 1,
+      })
+
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that no table collaborators were added
+      const tableCollaborators = await TableCollaborator.query().where({
+        user_id: editor.id,
+      })
+      expect(tableCollaborators).toHaveLength(0)
+    })
+
+    it('should handle duplicate table IDs in steps', async () => {
+      await Step.query().insert([
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'createTileRow',
+          appKey: 'tiles',
+          type: 'action',
+          parameters: { tableId: tilesTableId1 },
+          position: 1,
+        },
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'updateTileRow',
+          appKey: 'tiles',
+          type: 'action',
+          parameters: { tableId: tilesTableId1 }, // Same table ID
+          position: 2,
+        },
+      ])
+
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that only one table collaborator was added (duplicates should be handled)
+      const tableCollaborators = await TableCollaborator.query().where({
+        user_id: editor.id,
+      })
+      expect(tableCollaborators).toHaveLength(1)
+      expect(tableCollaborators[0].tableId).toBe(tilesTableId1)
+    })
+
+    it('should handle mixed connection and tiles steps', async () => {
+      const connectionId = randomUUID()
+      await Connection.query().insert({
+        id: connectionId,
+        key: 'slack',
+        data: '1234',
+      })
+
+      await Step.query().insert([
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'sendMessage',
+          appKey: 'slack',
+          type: 'action',
+          connectionId: connectionId,
+          parameters: { channel: 'general' },
+          position: 1,
+        },
+        {
+          id: randomUUID(),
+          flowId: dummyFlow.id,
+          key: 'createTileRow',
+          appKey: 'tiles',
+          type: 'action',
+          parameters: { tableId: tilesTableId1 },
+          position: 2,
+        },
+      ])
+
+      // Add first collaborator - this should trigger both connection and table sharing
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that both flow connections and table collaborators were added
+      const flowConnections = await FlowConnections.query().where({
+        flow_id: dummyFlow.id,
+        added_by: dummyFlow.userId,
+      })
+
+      const tableCollaborators = await TableCollaborator.query().where({
+        user_id: editor.id,
+      })
+
+      expect(flowConnections).toHaveLength(2)
+
+      const connectionFlow = flowConnections.find(
+        (fc) => fc.connectionType === 'connection',
+      )
+      const tableFlow = flowConnections.find(
+        (fc) => fc.connectionType === 'table',
+      )
+      expect(connectionFlow).toBeDefined()
+      expect(connectionFlow?.connectionId).toBe(connectionId)
+      expect(tableFlow).toBeDefined()
+      expect(tableFlow?.connectionId).toBe(tilesTableId1)
+
+      expect(tableCollaborators).toHaveLength(1)
+      expect(tableCollaborators[0].tableId).toBe(tilesTableId1)
+      expect(tableCollaborators[0].role).toBe('editor')
+    })
+
+    it('should still add table collaborators when flow already has collaborators', async () => {
+      await FlowCollaborator.query().insert({
+        flowId: dummyFlow.id,
+        userId: viewer.id,
+        role: 'viewer',
+        updatedBy: context.currentUser.id,
+      })
+
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        parameters: { tableId: tilesTableId1 },
+        position: 1,
+      })
+
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that no table collaborators were added for the new collaborator
+      const tableCollaborators = await TableCollaborator.query().where({
+        table_id: tilesTableId1,
+        user_id: editor.id,
+      })
+      expect(tableCollaborators).toHaveLength(1)
+    })
   })
 })
