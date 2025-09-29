@@ -1,5 +1,7 @@
 import type { IFlowCollabRole } from '@plumber/types'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
+
 const PERMISSION_LEVELS = ['viewer', 'editor', 'owner']
 
 export const checkUserPermission = (
@@ -12,5 +14,5 @@ export const checkUserPermission = (
   ) {
     return true
   }
-  throw new Error('You do not have the required permissions.')
+  throw new ForbiddenError('You do not have sufficient permissions')
 }
