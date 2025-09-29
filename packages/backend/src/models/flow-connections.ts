@@ -1,3 +1,5 @@
+import { Transaction } from 'objection'
+
 import Base from './base'
 import Connection from './connection'
 import Flow from './flow'
@@ -89,18 +91,21 @@ class FlowConnections extends Base {
     connectionId,
     addedBy,
     connectionType,
+    trx,
   }: {
     flowId: string
     connectionId: string
     addedBy: string
     connectionType: 'connection' | 'table'
+    trx?: Transaction
   }) => {
     const hasCollaborators = await Flow.hasCollaborators({
       flowId,
+      trx,
     })
 
     if (hasCollaborators) {
-      return await this.query()
+      return await this.query(trx)
         .insert({
           flowId,
           connectionId,
