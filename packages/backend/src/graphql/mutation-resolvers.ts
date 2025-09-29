@@ -8,6 +8,7 @@ import createStep from './mutations/create-step'
 import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
+import deleteFlowCollaborator from './mutations/delete-flow-collaborator'
 import deleteStep from './mutations/delete-step'
 import deleteUploadedFile from './mutations/delete-uploaded-file'
 import duplicateFlow from './mutations/duplicate-flow'
@@ -31,6 +32,7 @@ import updateFlowStatus from './mutations/update-flow-status'
 import updateFlowTransferStatus from './mutations/update-flow-transfer-status'
 import updateStep from './mutations/update-step'
 import updateStepPositions from './mutations/update-step-positions'
+import upsertFlowCollaborator from './mutations/upsert-flow-collaborator'
 import verifyConnection from './mutations/verify-connection'
 import verifyOtp from './mutations/verify-otp'
 
@@ -66,6 +68,8 @@ export default {
   updateFlow,
   updateFlowStatus,
   updateFlowConfig,
+  upsertFlowCollaborator,
+  deleteFlowCollaborator,
   executeStep,
   deleteFlow,
   createStep,
