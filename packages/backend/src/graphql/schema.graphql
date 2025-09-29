@@ -100,6 +100,9 @@ type Mutation {
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
   duplicateFlow(input: DuplicateFlowInput): Flow
+  # Flow collaborators
+  upsertFlowCollaborator(input: FlowCollaboratorInput!): Boolean!
+  deleteFlowCollaborator(input: DeleteFlowCollaboratorInput!): Boolean!
   # S3 operations
   generatePresignedPost(input: GeneratePresignedPostInput): PresignedPostObject
   deleteUploadedFile(id: String!): Boolean
@@ -397,6 +400,17 @@ type Flow {
 
 type FlowCollaborator {
   role: String!
+  email: String!
+}
+
+input FlowCollaboratorInput {
+  flowId: String!
+  email: String!
+  role: String!
+}
+
+input DeleteFlowCollaboratorInput {
+  flowId: String!
   email: String!
 }
 
