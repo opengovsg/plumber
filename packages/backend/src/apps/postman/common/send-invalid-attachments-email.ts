@@ -1,5 +1,5 @@
 import { truncateFlowName } from '@/helpers/generate-error-email'
-import { safeHtml } from '@/helpers/html-utils'
+import { escapeHtml, safeHtml, trustedHtml } from '@/helpers/html-utils'
 import { sendEmail } from '@/helpers/send-email'
 
 interface SendInvalidAttachmentsEmailProps {
@@ -23,7 +23,9 @@ export function createInvalidAttachmentsMessage(props: CreateMessageProps) {
   const bodyMessage = safeHtml`
     We have detected that your pipe <strong>${flowName}</strong> has attempted to send an email with one or more attachments that are not supported:
     <ul>
-        ${invalidAttachments.map((a) => `<li>${a}</li>`).join('\n')}
+        ${trustedHtml(
+          invalidAttachments.map((a) => `<li>${escapeHtml(a)}</li>`).join('\n'),
+        )}
     </ul>
     The details of the affected execution are as follows:
     <ul>
