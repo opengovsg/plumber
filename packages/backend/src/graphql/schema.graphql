@@ -105,6 +105,7 @@ type Mutation {
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
+  deleteShareableTableLink(tableId: ID!): Boolean!
   updateTable(input: UpdateTableInput!): TableMetadata!
   deleteTable(input: DeleteTableInput!): Boolean!
   # Tiles rows

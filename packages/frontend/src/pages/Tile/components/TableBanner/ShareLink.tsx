@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { BiCopy } from 'react-icons/bi'
+import { BiCopy, BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   Divider,
@@ -20,6 +20,7 @@ import copy from 'clipboard-copy'
 
 import * as URLS from '@/config/urls'
 import { CREATE_SHAREABLE_TABLE_LINK } from '@/graphql/mutations/tiles/create-shareable-link'
+import { DELETE_SHAREABLE_TABLE_LINK } from '@/graphql/mutations/tiles/delete-shareable-link'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
@@ -42,15 +43,47 @@ const ShareLink = () => {
     },
   )
 
+  const [deleteLink, { loading: isDeleting }] = useMutation(
+    DELETE_SHAREABLE_TABLE_LINK,
+    {
+      variables: { tableId },
+      refetchQueries: [GET_TABLE],
+    },
+  )
+
   const onGenerate = useCallback(async () => {
     await createNewLink()
     setIsNewLink(true)
   }, [createNewLink])
 
+  const onDelete = useCallback(async () => {
+    await deleteLink()
+    setIsNewLink(false)
+  }, [deleteLink])
+
   const inputBorderColor = isNewLink ? 'green.400' : 'secondary.200'
 
   if (!viewOnlyKey && !hasEditPermission) {
     return null
+  }
+
+  const renderButton = () => {
+    if (viewOnlyKey) {
+      return (
+        <IconButton
+          variant="outline"
+          isLoading={isDeleting}
+          onClick={onDelete}
+          aria-label={'Revoke'}
+          icon={<BiTrash />}
+        />
+      )
+    }
+    return (
+      <Button variant="outline" isLoading={loading} onClick={onGenerate}>
+        Generate new link
+      </Button>
+    )
   }
   return (
     <FormControl>
@@ -88,17 +121,11 @@ const ShareLink = () => {
               </InputRightAddon>
             </InputGroup>
           )}
-          {hasEditPermission && (
-            <Button variant="outline" isLoading={loading} onClick={onGenerate}>
-              Generate new link
-            </Button>
-          )}
+          {hasEditPermission && renderButton()}
         </Flex>
-        {viewOnlyKey && hasEditPermission && (
+        {isNewLink && (
           <FormHelperText variant={isNewLink ? 'success' : undefined}>
-            {isNewLink
-              ? 'New link generated!'
-              : 'By generating a new link, your previous link will not work anymore.'}
+            New link generated!
           </FormHelperText>
         )}
       </VStack>
