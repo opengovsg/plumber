@@ -188,4 +188,12 @@ describe('postman transactional email schema zod validation', () => {
       )
     },
   )
+
+  it('should trim long reply to email', () => {
+    validPayload.senderName = 'a'.repeat(256)
+    const validLength = 255 - ' <info@plumber.gov.sg>'.length
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.senderName).toEqual('a'.repeat(validLength))
+  })
 })

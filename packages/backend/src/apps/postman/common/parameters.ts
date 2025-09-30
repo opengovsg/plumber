@@ -4,6 +4,7 @@ import validator from 'email-validator'
 import { uniq } from 'lodash'
 import { z } from 'zod'
 
+import appConfig from '@/config/app'
 import { parseS3Id } from '@/helpers/s3'
 
 import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
@@ -121,7 +122,16 @@ export const transactionalEmailSchema = z.object({
     }
     return value.trim() === '' ? undefined : value.trim()
   }, z.string().email({ message: 'Invalid reply to email' }).optional()),
-  senderName: z.string().min(1, { message: 'Empty sender name' }).trim(),
+  senderName: z
+    .string()
+    .min(1, { message: 'Empty sender name' })
+    .trim()
+    // NOTE: we trim the sender name so that long sender names do not cause the email to fail.
+    // Postman limits the sender name to 255 characters.
+    // the API sends "{senderName} <info@plumber.gov.sg>" so it needs to be included in the calculation.
+    .transform((value) =>
+      value.substring(0, 255 - ` <${appConfig.postman.fromAddress}>`.length),
+    ),
   attachments: z.array(z.string()).transform((array, context) => {
     const result: string[] = []
     for (const value of array) {
