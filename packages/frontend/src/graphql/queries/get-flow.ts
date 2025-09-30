@@ -1,8 +1,16 @@
 import { gql } from '@apollo/client'
 
 export const GET_FLOW = gql`
-  query GetFlow($id: String!) {
-    getFlow(id: $id) {
+  query GetFlow(
+    $id: String!
+    $includePendingTransfer: Boolean
+    $includeCollaborators: Boolean
+  ) {
+    getFlow(
+      id: $id
+      includePendingTransfer: $includePendingTransfer
+      includeCollaborators: $includeCollaborators
+    ) {
       id
       name
       active

@@ -12,7 +12,6 @@ import Base from './base'
 import Connection from './connection'
 import Execution from './execution'
 import Flow from './flow'
-import FlowCollaborator from './flow-collaborators'
 import FlowTransfer from './flow-transfers'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
@@ -126,14 +125,6 @@ class User extends Base {
         to: 'flow_transfers.new_owner_id',
       },
     },
-    collaborators: {
-      relation: Base.HasManyRelation,
-      modelClass: FlowCollaborator,
-      join: {
-        from: 'users.id',
-        to: 'flow_collaborators.user_id',
-      },
-    },
   })
 
   hashOtp(otp: string) {
@@ -148,7 +139,7 @@ class User extends Base {
     await super.$beforeUpdate(opt, queryContext)
   }
 
-  withAccessibleFlow({
+  withAccessibleFlows({
     queryBuilder,
     trx,
   }: {
@@ -158,29 +149,21 @@ class User extends Base {
     const userId = this.id
     const baseQuery = queryBuilder || Flow.query(trx)
     return baseQuery
+      .select('flows.*')
+      .leftJoin('flow_collaborators as fc', function () {
+        this.on('fc.flow_id', 'flows.id').andOnNull('fc.deleted_at')
+      })
       .select(
-        'flows.*',
         Flow.raw(
           `CASE
-        WHEN flows.user_id = ? THEN 'owner'
-        ELSE (
-          SELECT role FROM flow_collaborators
-          WHERE flow_collaborators.flow_id = flows.id
-          AND flow_collaborators.user_id = ?
-          AND flow_collaborators.deleted_at IS NULL
-        )
-      END as role`,
-          [userId, userId],
+          WHEN flows.user_id = ? THEN 'owner'
+          ELSE fc.role
+        END as role`,
+          [userId],
         ),
       )
       .where(function () {
-        this.where('flows.user_id', userId).orWhereExists(function () {
-          this.select(1)
-            .from('flow_collaborators')
-            .whereRaw('flow_collaborators.flow_id = flows.id')
-            .where('flow_collaborators.user_id', userId)
-            .whereNull('flow_collaborators.deleted_at')
-        })
+        this.where('flows.user_id', userId).orWhereNotNull('fc.role')
       })
   }
 }

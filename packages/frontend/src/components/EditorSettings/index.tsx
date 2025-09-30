@@ -48,7 +48,11 @@ export default function EditorSettingsLayout(
 
   const { flowId } = useParams()
   const { data, loading, error } = useQuery(GET_FLOW, {
-    variables: { id: flowId },
+    variables: {
+      id: flowId,
+      includePendingTransfer: true,
+      includeCollaborators: true,
+    },
   })
   const flow: IFlow = data?.getFlow
 

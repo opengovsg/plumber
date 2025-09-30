@@ -117,7 +117,7 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
     const { createStep: createdStep } = data
     const { getFlow: flow } = cache.readQuery({
       query: GET_FLOW,
-      variables: { id: flowId },
+      variables: { id: flowId, includePendingTransfer: true },
     })
 
     // getFlow requires certain attributes to be returned

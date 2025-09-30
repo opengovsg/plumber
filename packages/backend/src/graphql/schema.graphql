@@ -7,7 +7,11 @@ type Query {
   getApp(key: String!): App
   getConnectedApps: [App]
   testConnection(connectionId: String!, flowId: String): TestConnectionResult
-  getFlow(id: String!): Flow
+  getFlow(
+    id: String!
+    includePendingTransfer: Boolean
+    includeCollaborators: Boolean
+  ): Flow
   getFlows(
     limit: Int!
     offset: Int!
