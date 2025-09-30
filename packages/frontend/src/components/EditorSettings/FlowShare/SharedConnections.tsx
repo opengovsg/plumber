@@ -23,10 +23,10 @@ export default function SharedConnections() {
   // NOTE: we group connections by app name to display them in a list
   // this is different from pipe transfer, where we display each connection individually
   const groupedConnections = flowTransferDetails?.reduce((acc, curr) => {
-    if (!acc[curr.appName]) {
-      acc[curr.appName] = new Set()
-    }
     if (curr.connectionName) {
+      if (!acc[curr.appName]) {
+        acc[curr.appName] = new Set()
+      }
       acc[curr.appName].add(curr.connectionName)
     }
     return acc

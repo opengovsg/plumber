@@ -36,7 +36,6 @@ const AddNewCollaborator = ({
   onAdd: (email: string, role: string) => Promise<void>
 }) => {
   const cancelRef = useRef<HTMLButtonElement>(null)
-  const [email, setEmail] = useState('')
   const [role, setRole] = useState<IFlowCollabRole>('editor')
   const [isAdding, setIsAdding] = useState(false)
 
@@ -44,8 +43,10 @@ const AddNewCollaborator = ({
 
   const {
     register,
-    formState: { isDirty, isValid },
+    formState: { isValid, isSubmitted, errors },
     handleSubmit,
+    getValues,
+    resetField,
   } = useForm({
     resolver: yupResolver(inputSchema),
   })
@@ -54,28 +55,30 @@ const AddNewCollaborator = ({
     async (data: FieldValues, event?: BaseSyntheticEvent) => {
       try {
         event?.preventDefault()
+        const email = getValues('email')
         if (role === 'editor') {
           onOpen()
         } else {
           setIsAdding(true)
-          await onAdd(data.email, role)
-          setEmail('')
+          await onAdd(email, role)
+          resetField('email')
           setIsAdding(false)
         }
       } catch (error) {
         console.error(error)
       }
     },
-    [onAdd, onOpen, role],
+    [onAdd, onOpen, role, getValues, resetField],
   )
 
   const onConfirm = useCallback(async () => {
     setIsAdding(true)
+    const email = getValues('email')
     await onAdd(email, role)
-    setEmail('')
+    resetField('email')
     onClose()
     setIsAdding(false)
-  }, [onAdd, email, role, onClose])
+  }, [onAdd, getValues, role, onClose, resetField])
 
   return (
     <>
@@ -85,20 +88,11 @@ const AddNewCollaborator = ({
         }}
         onSubmit={handleSubmit(onSubmit)}
       >
-        <FormControl isInvalid={!isValid}>
+        <FormControl isInvalid={isSubmitted && !isValid}>
           <FormLabel>Add collaborator</FormLabel>
           <VStack spacing={2} alignItems="flex-start">
             <Flex alignSelf="stretch" gap={2}>
-              <Input
-                type="email"
-                value={email}
-                isRequired
-                {...register('email', {
-                  onChange: (e) => {
-                    setEmail(e.target.value.toLowerCase())
-                  },
-                })}
-              />
+              <Input type="email" isRequired {...register('email')} />
               <CollaboratorRoleSelect
                 userRole={flow.role as IFlowCollabRole}
                 value={role}
@@ -107,7 +101,7 @@ const AddNewCollaborator = ({
                 showOwnerOption={false}
               />
             </Flex>
-            {isDirty && !isValid && (
+            {isSubmitted && errors?.email && (
               <FormErrorMessage>
                 Please enter a valid email address.
               </FormErrorMessage>
@@ -138,7 +132,7 @@ const AddNewCollaborator = ({
         dialogType="share-connections"
         dialogHeader="Share connections"
         onClick={onConfirm}
-        customBody={`You are adding **${email.replace(
+        customBody={`You are adding **${getValues('email')?.replace(
           '@',
           '@\u200B', // add zero-width space after @ to prevent email address rendering as an external link
         )}** as an editor. They will have access to your connections and will be able to use them in this Pipe.`}
