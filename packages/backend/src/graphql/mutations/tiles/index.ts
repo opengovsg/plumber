@@ -7,6 +7,7 @@ import createShareableTableLink from './create-table-shareable-link'
 import deleteRows from './delete-rows'
 import deleteTable from './delete-table'
 import deleteTableCollaborator from './delete-table-collaborator'
+import deleteShareableTableLink from './delete-table-shareable-link'
 import updateRow from './update-row'
 import updateTable from './update-table'
 import upsertTableCollaborator from './upsert-table-collaborator'
@@ -20,6 +21,7 @@ export default {
   updateRow,
   deleteRows,
   createShareableTableLink,
+  deleteShareableTableLink,
   deleteTableCollaborator,
   upsertTableCollaborator,
 } satisfies MutationResolvers
