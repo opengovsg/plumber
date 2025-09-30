@@ -20,12 +20,12 @@ function TableBanner() {
       overflow="hidden"
       zIndex={10}
     >
-      <Flex alignItems="center" gap={4}>
+      <Flex alignItems="center" gap={8}>
         {role ? <BreadCrumb /> : <Text textStyle="subhead-1">{tableName}</Text>}
-        <EditMode />
       </Flex>
       <Flex gap={2}>
         <RefreshButton />
+        <EditMode />
         <ImportExportToolbar />
       </Flex>
     </Flex>
