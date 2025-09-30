@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { BiChevronDown } from 'react-icons/bi'
 import { MdOutlineModeEdit, MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Flex, MenuButton, MenuItem, MenuList, Text } from '@chakra-ui/react'
 import { Badge, Menu } from '@opengovsg/design-system-react'
@@ -15,16 +16,16 @@ interface ModeOption {
 
 const MODES: ModeOption[] = [
   {
-    label: 'View only',
-    icon: <MdOutlineRemoveRedEye size={16} />,
-    colorScheme: 'secondary',
-    value: 'view',
-  },
-  {
     label: 'Edit Mode',
     icon: <MdOutlineModeEdit size={16} />,
     colorScheme: 'primary',
     value: 'edit',
+  },
+  {
+    label: 'View only',
+    icon: <MdOutlineRemoveRedEye size={16} />,
+    colorScheme: 'secondary',
+    value: 'view',
   },
 ]
 
@@ -36,31 +37,25 @@ const EditMode = () => {
     [mode],
   )
 
-  if (hasEditPermission) {
-    return null
-  }
-
   return (
     <Menu gutter={0} colorScheme="secondary">
       <Badge
         as={MenuButton}
-        /**
-         * Prevent the button from being clicked, as it is only used to display the current mode
-         * remove this prop to allow selection of view/edit mode
-         */
-        pointerEvents="none"
         variant="subtle"
         size="xs"
         fontSize="xs"
-        py={1}
+        height={{ base: 10, md: 7 }}
+        my="auto"
         border="none"
         colorScheme={selectedModeOption.colorScheme}
+        pointerEvents={hasEditPermission ? 'auto' : 'none'}
       >
-        <Flex alignItems="center" gap={1}>
+        <Flex alignItems="center" gap={2}>
           {selectedModeOption.icon}
           <Text display={{ base: 'none', md: 'flex' }}>
             {selectedModeOption.label}
           </Text>
+          {hasEditPermission && <BiChevronDown />}
         </Flex>
       </Badge>
 
