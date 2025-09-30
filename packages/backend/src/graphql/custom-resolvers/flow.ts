@@ -16,8 +16,12 @@ const template: FlowResolver['template'] = async (parent) => {
 }
 
 const collaborators: FlowResolver['collaborators'] = async (parent) => {
-  if (!parent?.collaborators) {
-    return []
+  let collaborators = parent?.collaborators
+  if (!collaborators) {
+    const flowCollaborators = await FlowCollaborator.query()
+      .where({ flow_id: parent.id })
+      .withGraphFetched('user')
+    collaborators = flowCollaborators
   }
 
   // manually insert the owner as a collaborator
@@ -28,7 +32,7 @@ const collaborators: FlowResolver['collaborators'] = async (parent) => {
   ownerCollaborator.role = 'owner'
 
   return sortBy(
-    [ownerCollaborator, ...parent.collaborators],
+    [ownerCollaborator, ...(collaborators ?? [])],
     [
       (collaborator) => {
         return ['owner', 'editor', 'viewer'].indexOf(collaborator?.role)
@@ -42,15 +46,8 @@ const role: FlowResolver['role'] = async (parent) => {
   return (parent as any)?.role || 'viewer'
 }
 
-const pendingTransfer: FlowResolver['pendingTransfer'] = async (parent) => {
-  // if pendingTransfer was not fetched in the query, return null
-  // this happens when includePendingTransfer is false or not provided
-  return parent.pendingTransfer || null
-}
-
 export default {
   template,
   collaborators,
   role,
-  pendingTransfer,
 } satisfies FlowResolver

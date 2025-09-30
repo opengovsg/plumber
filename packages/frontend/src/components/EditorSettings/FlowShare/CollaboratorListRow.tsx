@@ -10,7 +10,7 @@ import CollaboratorRoleSelect from '@/components/CollaboratorRoleSelect'
 import { AuthenticationContext } from '@/contexts/Authentication'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { DELETE_FLOW_COLLABORATOR } from '@/graphql/mutations/delete-flow-collaborator'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 
 const CollaboratorListRow = ({
   collaborator,
@@ -43,7 +43,7 @@ const CollaboratorListRow = ({
         variables: {
           input: { flowId: flow.id, email },
         },
-        refetchQueries: [GET_FLOW],
+        refetchQueries: [GET_FLOW_WITH_COLLABORATORS],
         awaitRefetchQueries: false,
         onCompleted: () =>
           toast({

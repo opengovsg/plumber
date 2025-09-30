@@ -5,7 +5,7 @@ import { useToast } from '@opengovsg/design-system-react'
 
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { UPSERT_FLOW_COLLABORATOR } from '@/graphql/mutations/upsert-flow-collaborator'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 
 import AddNewCollaborator from './FlowShare/AddNewCollaborator'
 import CollaboratorListRow from './FlowShare/CollaboratorListRow'
@@ -27,7 +27,7 @@ export default function FlowCollaborators() {
     async (email: string, role: string, update?: boolean) => {
       await upsertCollaborator({
         variables: { input: { flowId: flow.id, email, role } },
-        refetchQueries: [GET_FLOW],
+        refetchQueries: [GET_FLOW_WITH_COLLABORATORS],
         awaitRefetchQueries: false,
         onCompleted: () =>
           toast({

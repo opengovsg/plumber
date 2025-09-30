@@ -50,7 +50,7 @@ export default function EditorLayout() {
   } = useDisclosure()
 
   const { data, loading, error } = useQuery(GET_FLOW, {
-    variables: { id: flowId, includePendingTransfer: true },
+    variables: { id: flowId },
   })
   const flow: IFlow = data?.getFlow
 

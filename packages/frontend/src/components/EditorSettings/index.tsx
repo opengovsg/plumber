@@ -16,7 +16,7 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
 import * as URLS from '@/config/urls'
 import { EditorSettingsProvider } from '@/contexts/EditorSettings'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 import useAuthentication from '@/hooks/useAuthentication'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
@@ -47,12 +47,8 @@ export default function EditorSettingsLayout(
   const { currentUser } = useAuthentication()
 
   const { flowId } = useParams()
-  const { data, loading, error } = useQuery(GET_FLOW, {
-    variables: {
-      id: flowId,
-      includePendingTransfer: true,
-      includeCollaborators: true,
-    },
+  const { data, loading, error } = useQuery(GET_FLOW_WITH_COLLABORATORS, {
+    variables: { id: flowId },
   })
   const flow: IFlow = data?.getFlow
 

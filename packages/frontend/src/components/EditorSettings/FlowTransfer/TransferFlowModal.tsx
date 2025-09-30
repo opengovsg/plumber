@@ -14,7 +14,7 @@ import { Button, useToast } from '@opengovsg/design-system-react'
 
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { CREATE_FLOW_TRANSFER } from '@/graphql/mutations/create-flow-transfer'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 
 interface TransferFlowModalProps {
   onClose: () => void
@@ -36,7 +36,7 @@ export default function TransferFlowModal(props: TransferFlowModalProps) {
           newOwnerEmail,
         },
       },
-      refetchQueries: [GET_FLOW],
+      refetchQueries: [GET_FLOW_WITH_COLLABORATORS],
       onError: () => {
         onClose()
       },
