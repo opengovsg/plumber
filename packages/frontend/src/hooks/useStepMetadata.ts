@@ -26,6 +26,7 @@ export function useStepMetadata(
   readOnly?: boolean,
   allowReorder?: boolean,
   isMobile?: boolean,
+  isDrawerOpen?: boolean,
 ): UseStepMetadataResult {
   const isCompleted = step?.status === 'completed'
   const isTrigger = step?.type === 'trigger'
@@ -66,10 +67,18 @@ export function useStepMetadata(
    * - step is not a trigger
    * - step is not an if-then condition step
    * - allowReorder is true
+   * - side drawer is not open
    */
   const shouldShowDragHandle = useMemo(() => {
-    return !readOnly && !isTrigger && !isMobile && !isIfThenStep && allowReorder
-  }, [readOnly, isTrigger, isMobile, isIfThenStep, allowReorder])
+    return (
+      !readOnly &&
+      !isTrigger &&
+      !isMobile &&
+      !isIfThenStep &&
+      allowReorder &&
+      !isDrawerOpen
+    )
+  }, [readOnly, isTrigger, isMobile, isIfThenStep, allowReorder, isDrawerOpen])
 
   return {
     app,

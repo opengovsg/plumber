@@ -79,7 +79,14 @@ export default function FlowStep(
     selectedActionOrTrigger,
     substeps,
     shouldShowDragHandle,
-  } = useStepMetadata(allApps, step, readOnly, allowReorder, isMobile)
+  } = useStepMetadata(
+    allApps,
+    step,
+    readOnly,
+    allowReorder,
+    isMobile,
+    isDrawerOpen,
+  )
 
   const {
     cancelRef,
@@ -176,6 +183,8 @@ export default function FlowStep(
     <FlowStepWrapper
       canChildStepsReorder={canChildStepsReorder}
       allowReorder={allowReorder}
+      isDrawerOpen={isDrawerOpen}
+      isReadOnly={readOnly}
     >
       {!app ? (
         <EmptyFlowStepHeader

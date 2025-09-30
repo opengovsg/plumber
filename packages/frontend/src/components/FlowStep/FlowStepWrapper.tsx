@@ -7,10 +7,18 @@ interface FlowStepWrapperProps {
   children: React.ReactNode
   canChildStepsReorder?: boolean
   allowReorder?: boolean
+  isDrawerOpen?: boolean
+  isReadOnly?: boolean
 }
 
 export default function FlowStepWrapper(props: FlowStepWrapperProps) {
-  const { children, canChildStepsReorder, allowReorder } = props
+  const {
+    children,
+    canChildStepsReorder,
+    allowReorder,
+    isDrawerOpen,
+    isReadOnly,
+  } = props
   const isMobile = useIsMobile()
 
   return (
@@ -19,7 +27,11 @@ export default function FlowStepWrapper(props: FlowStepWrapperProps) {
       display={isMobile ? 'block' : 'flex'}
       flexDir="column"
       w={
-        canChildStepsReorder && !allowReorder && !isMobile
+        canChildStepsReorder &&
+        !allowReorder &&
+        !isMobile &&
+        !isDrawerOpen &&
+        !isReadOnly
           ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
           : '100%'
       }
