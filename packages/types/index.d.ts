@@ -884,7 +884,6 @@ export type IGlobalVariable = {
     userId: string
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
-    collaborators?: IFlowCollaborator[]
   }
   step?: {
     id: string

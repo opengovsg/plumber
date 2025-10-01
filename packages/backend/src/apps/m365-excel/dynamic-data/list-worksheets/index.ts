@@ -41,7 +41,6 @@ const dynamicData: IDynamicData = {
       authData,
       fileId as string,
       $.http,
-      $.flow?.collaborators,
     )
 
     const tenant = getM365TenantInfo(authData.tenantKey)

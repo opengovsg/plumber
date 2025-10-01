@@ -16,9 +16,6 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
       connection: true,
       flow: {
         user: true,
-        collaborators: {
-          user: true,
-        },
       },
     })
     .findById(stepId)
@@ -40,7 +37,7 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
     app,
     flow: step.flow,
     step,
-    user: context.currentUser,
+    user: step.flow.user,
   })
 
   const command = app.dynamicData.find((data) => data.key === dynamicDataKey)
