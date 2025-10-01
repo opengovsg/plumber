@@ -5,7 +5,7 @@ import type Context from '@/types/express/context'
 
 const context = {
   currentUser: {
-    withAccessible: vi.fn(() => {
+    withAccessibleFlows: vi.fn(() => {
       return {
         withGraphFetched: vi.fn(() => {
           return {

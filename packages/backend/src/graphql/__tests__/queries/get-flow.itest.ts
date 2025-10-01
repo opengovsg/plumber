@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import flowResolvers from '@/graphql/custom-resolvers/flow'
 import getFlow from '@/graphql/queries/get-flow'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
@@ -101,8 +102,14 @@ describe('getFlow', () => {
       expect(result.steps[0].position).toBe(1)
       expect(result.steps[1].position).toBe(2)
 
-      expect(result.collaborators).toHaveLength(3) // owner + editor + viewer
-      expect(result.collaborators).toEqual(
+      // Test collaborators by manually calling the custom resolver
+      const collaborators = await flowResolvers.collaborators(
+        result,
+        {},
+        context,
+      )
+      expect(collaborators).toHaveLength(3) // owner + editor + viewer
+      expect(collaborators).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             flowId: mockFlow.id,
@@ -126,9 +133,13 @@ describe('getFlow', () => {
     it('should include owner as collaborator with correct role', async () => {
       const result = await getFlow(null, { id: mockFlow.id }, context)
 
-      const ownerCollaborator = result.collaborators.find(
-        (c) => c.userId === owner.id,
+      // Test collaborators by manually calling the custom resolver
+      const collaborators = await flowResolvers.collaborators(
+        result,
+        {},
+        context,
       )
+      const ownerCollaborator = collaborators.find((c) => c.userId === owner.id)
       expect(ownerCollaborator).toBeDefined()
       expect(ownerCollaborator.role).toBe('owner')
       expect(ownerCollaborator.flowId).toBe(mockFlow.id)
@@ -145,7 +156,14 @@ describe('getFlow', () => {
       })
 
       expect(result.steps).toHaveLength(2)
-      expect(result.collaborators).toHaveLength(3)
+
+      // Test collaborators by manually calling the custom resolver
+      const collaborators = await flowResolvers.collaborators(
+        result,
+        {},
+        context,
+      )
+      expect(collaborators).toHaveLength(3)
     })
 
     it('should return flow data for viewer', async () => {
@@ -159,7 +177,14 @@ describe('getFlow', () => {
       })
 
       expect(result.steps).toHaveLength(2)
-      expect(result.collaborators).toHaveLength(3)
+
+      // Test collaborators by manually calling the custom resolver
+      const collaborators = await flowResolvers.collaborators(
+        result,
+        {},
+        context,
+      )
+      expect(collaborators).toHaveLength(3)
     })
   })
 

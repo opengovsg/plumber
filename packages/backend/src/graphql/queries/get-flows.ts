@@ -8,8 +8,7 @@ const getFlows: QueryResolvers['getFlows'] = async (
   context,
 ) => {
   // Get the base query with role selection and accessibility filtering
-  const baseQuery = context.currentUser.withAccessible({
-    type: 'flow',
+  const baseQuery = context.currentUser.withAccessibleFlows({
     requiredRole: 'viewer',
   })
 
@@ -56,7 +55,6 @@ const getFlows: QueryResolvers['getFlows'] = async (
         .whereIn('flow_id', filteredFlowIds)
         .withSoftDeleted()
     })
-    .innerJoin('filtered_steps', 'flows.id', 'filtered_steps.flow_id')
     .whereIn('flows.id', filteredFlowIds)
 
   flowsQuery
@@ -64,12 +62,8 @@ const getFlows: QueryResolvers['getFlows'] = async (
       steps: {
         connection: true,
       },
-      pendingTransfer: true,
-      collaborators: {
-        user: true,
-      },
     })
-    .groupBy('flows.id')
+    .groupBy('flows.id', 'fc.role')
     .orderBy('active', 'desc')
     .orderBy('updated_at', 'desc')
 

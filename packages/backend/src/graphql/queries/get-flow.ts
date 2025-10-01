@@ -9,7 +9,7 @@ const getFlow: QueryResolvers['getFlow'] = async (_parent, params, context) => {
   }
 
   const flow = await context.currentUser
-    .withAccessible({ type: 'flow', requiredRole: 'viewer' })
+    .withAccessibleFlows({ requiredRole: 'viewer' })
     .withGraphFetched({
       steps: {
         connection: true,
