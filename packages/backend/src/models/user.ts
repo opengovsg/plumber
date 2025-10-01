@@ -232,15 +232,42 @@ class User extends Base {
   }) {
     const userId = this.id
     const baseQuery = queryBuilder || Connection.query(trx)
+    const allowedRoles = getAllowedCollaboratorRoles(requiredRole)
 
-    baseQuery
-      .select('connections.*', Connection.raw(ROLE_STMT, [userId]))
-      .join('steps', 'steps.connection_id', 'connections.id')
-      .join('flows', 'steps.flow_id', 'flows.id')
-      .leftJoin('flow_connections', 'flow_connections.flow_id', 'flows.id')
-
-    this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
     return baseQuery
+      .select(
+        'connections.*',
+        Connection.raw(
+          `
+          CASE
+            WHEN connections.user_id = ? THEN 'owner'
+            WHEN flows.user_id = ? THEN 'owner'
+            ELSE fc.role
+          END as role
+          `,
+          [userId, userId],
+        ),
+      )
+      .leftJoin(
+        'flow_connections',
+        'flow_connections.connection_id',
+        'connections.id',
+      )
+      .leftJoin('flows', 'flows.id', 'flow_connections.flow_id')
+      .leftJoin('flow_collaborators as fc', function () {
+        this.on('fc.flow_id', 'flows.id')
+          .andOnNull('fc.deleted_at')
+          .andOnVal('fc.user_id', userId)
+      })
+      .where(function () {
+        // direct ownership OR access through flow_connections
+        this.where('connections.user_id', userId)
+          .orWhere('flows.user_id', userId)
+          .orWhere(function () {
+            // collaborator access
+            this.whereNotNull('fc.role').andWhere('fc.role', 'in', allowedRoles)
+          })
+      })
   }
 }
 
