@@ -127,6 +127,12 @@ describe('updateStep mutation', () => {
 
     context.currentUser.withAccessibleConnections =
       createMockWithAccessibleConnections({
+        connectionKey: 'postman',
+        connectionId: mockConnectionId,
+      })
+
+    context.currentUser.withAccessibleConnections =
+      createMockWithAccessibleConnections({
         connectionId: mockConnectionId,
         connectionKey: 'postman',
         connectionNotFound: false,
@@ -505,6 +511,12 @@ describe('updateStep mutation', () => {
 
       context.currentUser.withAccessibleConnections =
         createMockWithAccessibleConnections({
+          connectionKey: 'slack',
+          connectionId: mockConnectionId,
+        })
+
+      context.currentUser.withAccessibleConnections =
+        createMockWithAccessibleConnections({
           connectionId: mockConnectionId,
           connectionKey: 'slack',
         })
@@ -519,6 +531,12 @@ describe('updateStep mutation', () => {
         flowId: mockFlowId,
         flowUpdatedAt: testFlowISODateString,
       })
+
+      context.currentUser.withAccessibleConnections =
+        createMockWithAccessibleConnections({
+          connectionKey: 'm365-excel',
+          connectionId: mockConnectionId,
+        })
 
       context.currentUser.withAccessibleConnections =
         createMockWithAccessibleConnections({

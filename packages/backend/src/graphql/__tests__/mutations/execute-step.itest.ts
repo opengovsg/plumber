@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
@@ -71,7 +72,7 @@ describe('executeStep mutation - access control', () => {
 
   describe('access control', () => {
     it('should allow owner to execute step successfully', async () => {
-      context.currentUser.withAccessible = vi
+      context.currentUser.withAccessibleSteps = vi
         .fn()
         .mockImplementation(({ _type, _requiredRole }) => {
           return {
@@ -103,7 +104,7 @@ describe('executeStep mutation - access control', () => {
 
     it('should allow editor to execute step successfully', async () => {
       context.currentUser = editor
-      context.currentUser.withAccessible = vi
+      context.currentUser.withAccessibleSteps = vi
         .fn()
         .mockImplementation(({ _type, _requiredRole }) => {
           return {
@@ -134,7 +135,7 @@ describe('executeStep mutation - access control', () => {
 
     it('should reject viewer from executing step', async () => {
       context.currentUser = viewer
-      context.currentUser.withAccessible = vi
+      context.currentUser.withAccessibleSteps = vi
         .fn()
         .mockImplementation(({ _type, _requiredRole }) => {
           throw new ForbiddenError(
@@ -154,7 +155,7 @@ describe('executeStep mutation - access control', () => {
 
     it('should reject non-collaborator from executing step', async () => {
       context.currentUser = nonCollaborator
-      context.currentUser.withAccessible = vi
+      context.currentUser.withAccessibleSteps = vi
         .fn()
         .mockImplementation(({ _type, _requiredRole }) => {
           throw new ForbiddenError(
@@ -178,7 +179,7 @@ describe('executeStep mutation - access control', () => {
       testRunMetadata: { testKey: 'testValue' },
     }
 
-    context.currentUser.withAccessible = vi
+    context.currentUser.withAccessibleSteps = vi
       .fn()
       .mockImplementation(({ _type, _requiredRole }) => {
         if (_type === 'step' && _requiredRole === 'editor') {
@@ -219,7 +220,7 @@ describe('executeStep mutation - access control', () => {
   })
 
   it('should call testStep service with correct parameters', async () => {
-    context.currentUser.withAccessible = vi
+    context.currentUser.withAccessibleSteps = vi
       .fn()
       .mockImplementation(({ _type, _requiredRole }) => {
         return {
@@ -262,11 +263,11 @@ describe('executeStep mutation - access control', () => {
 
   it('should throw error when step does not exist', async () => {
     const input = {
-      stepId: 'non-existent-step-id',
+      stepId: randomUUID(),
       testRunMetadata: { testKey: 'testValue' },
     }
 
-    context.currentUser.withAccessible = vi
+    context.currentUser.withAccessibleSteps = vi
       .fn()
       .mockImplementation(({ _type, _requiredRole }) => {
         return {
