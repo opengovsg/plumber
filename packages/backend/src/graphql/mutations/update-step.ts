@@ -21,7 +21,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
       .withGraphFetched('flow')
       .findOne({
         'steps.id': input.id,
-        flow_id: input.flow.id,
+        'steps.flow_id': input.flow.id,
       })
 
     if (!step) {

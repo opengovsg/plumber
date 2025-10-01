@@ -8,98 +8,101 @@ export function setPatchFlowLastUpdatedSpy(spy: ReturnType<typeof vi.fn>) {
   patchFlowLastUpdatedSpy = spy
 }
 
-interface MockWithAccessibleOptions {
-  owner: User
-  currentUser: User
-  stepKey: string
-  stepAppKey: string
-  connectionKey: string
-  stepId?: string
-  connectionId?: string
-  stepStatus?: string
-  stepRole?: string
-  flowId?: string
-  stepConfig?: Record<string, any>
-  stepConnection?: Record<string, any>
-  stepNotFound?: boolean
-  connectionNotFound?: boolean
-  flowUpdatedAt?: string
-}
-
 const MOCK_STEP_ID = '8c2a70d1-e78b-431e-9069-a4d8f97883f7'
 const MOCK_CONNECTION_ID = '8c2a70d1-e78b-431e-9069-a4d8f97883f5'
 const MOCK_FLOW_ID = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 const MOCK_FLOW_UPDATED_AT = '2021-01-01T00:00:00.000Z'
 
-/**
- * Creates a reusable mock for context.currentUser.withAccessible
- * @param options Configuration for the mock
- * @returns Mock function for withAccessible
- */
-export function createMockWithAccessible({
+interface MockWithAccessibleStepsOptions {
+  owner: User
+  currentUser: User
+  flowId?: string
+  stepId?: string
+  stepKey: string
+  stepAppKey: string
+  stepConnection?: Record<string, any>
+  stepStatus?: string
+  stepRole?: string
+  stepConfig?: Record<string, any>
+  stepNotFound?: boolean
+  flowUpdatedAt?: string
+}
+
+interface MockWithAccessibleConnectionsOptions {
+  connectionId: string
+  connectionKey: string
+  connectionNotFound?: boolean
+}
+
+export function createMockWithAccessibleSteps({
   owner,
   currentUser,
+  flowId = MOCK_FLOW_ID,
+  stepId = MOCK_STEP_ID,
   stepKey,
   stepAppKey,
-  connectionKey,
-  stepId = MOCK_STEP_ID,
-  connectionId = MOCK_CONNECTION_ID,
+  stepConnection = { id: MOCK_CONNECTION_ID, userId: currentUser.id },
   stepStatus = 'completed',
   stepRole = 'owner',
-  flowId = MOCK_FLOW_ID,
   stepConfig = {},
-  stepConnection = { id: connectionId, userId: currentUser.id },
   stepNotFound = false,
-  connectionNotFound = false,
   flowUpdatedAt = MOCK_FLOW_UPDATED_AT,
-}: MockWithAccessibleOptions) {
-  return vi.fn().mockImplementation(({ type, _requiredRole }) => {
-    if (type === 'step') {
-      if (stepNotFound) {
+}: MockWithAccessibleStepsOptions) {
+  return vi
+    .fn()
+    .mockImplementation(
+      (_args?: { queryBuilder?: any; requiredRole?: string; trx?: any }) => {
+        if (stepNotFound) {
+          return {
+            withGraphFetched: vi.fn().mockReturnThis(),
+            findOne: vi.fn().mockResolvedValue(null),
+          }
+        }
+
         return {
           withGraphFetched: vi.fn().mockReturnThis(),
-          findOne: vi.fn().mockResolvedValue(null),
+          findOne: vi.fn().mockResolvedValue({
+            id: stepId,
+            key: stepKey,
+            appKey: stepAppKey,
+            status: stepStatus,
+            role: stepRole,
+            flowId,
+            connection: stepAppKey === 'tiles' ? {} : stepConnection,
+            config: stepConfig,
+            flow: {
+              userId: owner.id,
+              updatedAt: flowUpdatedAt,
+            },
+            patchFlowLastUpdated:
+              patchFlowLastUpdatedSpy || vi.fn().mockResolvedValue({}),
+          }),
         }
-      }
+      },
+    )
+}
 
-      return {
-        withGraphFetched: vi.fn().mockReturnThis(),
-        findOne: vi.fn().mockResolvedValue({
-          id: stepId,
-          key: stepKey,
-          appKey: stepAppKey,
-          status: stepStatus,
-          role: stepRole,
-          flowId,
-          connection: stepAppKey === 'tiles' ? {} : stepConnection,
-          config: stepConfig,
-          flow: {
-            userId: owner.id,
-            updatedAt: flowUpdatedAt,
-          },
-          patchFlowLastUpdated:
-            patchFlowLastUpdatedSpy || vi.fn().mockResolvedValue({}),
-        }),
-      }
-    }
+export function createMockWithAccessibleConnections({
+  connectionId,
+  connectionKey,
+  connectionNotFound = false,
+}: MockWithAccessibleConnectionsOptions) {
+  return vi
+    .fn()
+    .mockImplementation(
+      (_args?: { queryBuilder?: any; requiredRole?: string; trx?: any }) => {
+        if (connectionNotFound) {
+          return {
+            findOne: vi.fn().mockResolvedValue(null),
+          }
+        }
 
-    if (type === 'connection') {
-      if (connectionNotFound) {
         return {
-          findOne: vi.fn().mockResolvedValue(null),
+          findOne: vi.fn().mockResolvedValue({
+            id: connectionId,
+            key: connectionKey,
+          }),
         }
-      }
-
-      return {
-        findOne: vi.fn().mockResolvedValue({
-          id: connectionId,
-          key: connectionKey,
-        }),
-      }
-    }
-
-    return {
-      findOne: vi.fn().mockResolvedValue(null),
-    }
-  })
+      },
+    )
 }
