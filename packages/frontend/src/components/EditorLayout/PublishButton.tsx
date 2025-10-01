@@ -25,10 +25,10 @@ export default function PublishButton({
   return (
     <TouchableTooltip
       label={
-        isFlowIncomplete
-          ? 'Set up for all steps must be completed before you can publish your pipe'
-          : hasFlowTransfer
+        hasFlowTransfer
           ? 'You cannot publish a pipe with a pending transfer'
+          : isFlowIncomplete
+          ? 'Set up for all steps must be completed before you can publish your pipe'
           : ''
       }
       wrapperStyles={{ width: '100%' }}

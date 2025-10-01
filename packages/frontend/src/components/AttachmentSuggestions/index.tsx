@@ -67,7 +67,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   })
 
   const { options, suggestions, uploadedItems } = useAttachmentOptions(
-    flowData,
+    flowData?.getFlow?.config,
     priorExecutionSteps,
     variableTypes,
   )
