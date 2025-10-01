@@ -73,7 +73,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
   return (
     <Flex
       w={
-        isInsideForEach && stepsBeforeGroup.length > 2
+        isInsideForEach && stepsBeforeGroup.length > 2 && !isDrawerOpen
           ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
           : '100%'
       }
