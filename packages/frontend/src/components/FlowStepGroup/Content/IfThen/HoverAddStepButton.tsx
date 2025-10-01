@@ -40,13 +40,15 @@ export function HoverAddStepButton(
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isHovered, setIsHovered] = useState(false)
 
-  const { allApps, readOnly, isMobile } = useContext(EditorContext)
+  const { allApps, readOnly, isMobile, isDrawerOpen } =
+    useContext(EditorContext)
   const { shouldShowDragHandle } = useStepMetadata(
     allApps,
     step,
     readOnly,
     allowReorder,
     isMobile,
+    isDrawerOpen,
   )
 
   const {
@@ -81,7 +83,7 @@ export function HoverAddStepButton(
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           w={
-            (shouldShowDragHandle || canChildStepsReorder) && !isMobile
+            (shouldShowDragHandle || canChildStepsReorder) && !isDrawerOpen
               ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
               : 'full'
           }

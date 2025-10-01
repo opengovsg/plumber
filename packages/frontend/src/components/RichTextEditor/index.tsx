@@ -217,25 +217,6 @@ const Editor = ({
     editor?.setOptions({ editable })
   }, [editable, editor])
 
-  // NOTE: we force a re-render editor content when variable info changes (e.g., after step reorder)
-  // to ensure that the variable shown in the RTE is updated
-  useEffect(() => {
-    if (!editor || !content) {
-      return
-    }
-
-    // Get current editor content
-    const currentContent = editor.getHTML()
-
-    // Re-substitute templates with updated variable info
-    const updatedContent = substituteOldTemplates(content, varInfo)
-
-    // Only update if content has actually changed
-    if (currentContent !== updatedContent) {
-      editor.commands.setContent(updatedContent)
-    }
-  }, [editor, content, varInfo])
-
   const handleVariableClick = useCallback(
     (variable: Variable) => {
       // if the selection is a node, means the user clicked on a variable
