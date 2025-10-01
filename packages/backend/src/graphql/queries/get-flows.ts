@@ -55,13 +55,11 @@ const getFlows: QueryResolvers['getFlows'] = async (
         .whereIn('flow_id', filteredFlowIds)
         .withSoftDeleted()
     })
-    .whereIn('flows.id', filteredFlowIds)
+    .innerJoin('filtered_steps', 'flows.id', 'filtered_steps.flow_id')
 
   flowsQuery
     .withGraphFetched({
-      steps: {
-        connection: true,
-      },
+      steps: true,
     })
     .groupBy('flows.id', 'fc.role')
     .orderBy('active', 'desc')
