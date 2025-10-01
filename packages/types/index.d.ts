@@ -248,6 +248,8 @@ export interface IFlow {
   config: IFlowConfig | null
   pendingTransfer?: IFlowTransfer
   template?: ITemplate
+  collaborators?: IFlowCollaborator[]
+  role?: string
 }
 
 export interface IUser {

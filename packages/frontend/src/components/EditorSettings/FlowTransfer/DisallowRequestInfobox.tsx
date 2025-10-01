@@ -5,7 +5,7 @@ import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
 
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { UPDATE_FLOW_TRANSFER_STATUS } from '@/graphql/mutations/update-flow-transfer-status'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 
 export default function DisallowRequestInfobox() {
   const { flow } = useContext(EditorSettingsContext)
@@ -23,7 +23,7 @@ export default function DisallowRequestInfobox() {
           status: 'cancelled',
         },
       },
-      refetchQueries: [GET_FLOW],
+      refetchQueries: [GET_FLOW_WITH_COLLABORATORS],
       onCompleted: () => {
         toast({
           title:

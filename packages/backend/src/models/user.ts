@@ -1,13 +1,19 @@
 import { ITableCollabRole } from '@plumber/types'
 
 import crypto from 'crypto'
-import { AnyQueryBuilder, ModelOptions, QueryContext } from 'objection'
+import {
+  AnyQueryBuilder,
+  ModelOptions,
+  QueryContext,
+  Transaction,
+} from 'objection'
 
 import Base from './base'
 import Connection from './connection'
 import Execution from './execution'
 import Flow from './flow'
 import FlowTransfer from './flow-transfers'
+import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
 import TableCollaborator from './table-collaborators'
 import TableMetadata from './table-metadata'
@@ -131,6 +137,34 @@ class User extends Base {
 
   async $beforeUpdate(opt: ModelOptions, queryContext: QueryContext) {
     await super.$beforeUpdate(opt, queryContext)
+  }
+
+  withAccessibleFlows({
+    queryBuilder,
+    trx,
+  }: {
+    queryBuilder?: ExtendedQueryBuilder<Flow, Flow[]>
+    trx?: Transaction
+  } = {}) {
+    const userId = this.id
+    const baseQuery = queryBuilder || Flow.query(trx)
+    return baseQuery
+      .select('flows.*')
+      .leftJoin('flow_collaborators as fc', function () {
+        this.on('fc.flow_id', 'flows.id').andOnNull('fc.deleted_at')
+      })
+      .select(
+        Flow.raw(
+          `CASE
+          WHEN flows.user_id = ? THEN 'owner'
+          ELSE fc.role
+        END as role`,
+          [userId],
+        ),
+      )
+      .where(function () {
+        this.where('flows.user_id', userId).orWhereNotNull('fc.role')
+      })
   }
 }
 

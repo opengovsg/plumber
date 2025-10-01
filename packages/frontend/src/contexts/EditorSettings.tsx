@@ -4,23 +4,27 @@ import { createContext, ReactElement } from 'react'
 
 interface IEditorSettingsContext {
   flow: IFlow
+  hasEditPermission: boolean
 }
 
-export const EditorSettingsContext = createContext<IEditorSettingsContext>(
-  {} as IEditorSettingsContext,
-)
+export const EditorSettingsContext = createContext<IEditorSettingsContext>({
+  flow: {} as IFlow,
+  hasEditPermission: false,
+} as IEditorSettingsContext)
 
 type EditorSettingsProviderProps = {
   children: React.ReactNode
-  value: IEditorSettingsContext
+  flow: IFlow
 }
 
 export const EditorSettingsProvider = (
   props: EditorSettingsProviderProps,
 ): ReactElement => {
-  const { children, value } = props
+  const { children, flow } = props
+  const hasEditPermission = flow.role === 'owner' || flow.role === 'editor'
+
   return (
-    <EditorSettingsContext.Provider value={value}>
+    <EditorSettingsContext.Provider value={{ flow, hasEditPermission }}>
       {children}
     </EditorSettingsContext.Provider>
   )

@@ -11,7 +11,11 @@ import { Button } from '@opengovsg/design-system-react'
 
 import MarkdownRenderer from '../MarkdownRenderer'
 
-export type AlertDialogType = 'delete' | 'duplicate' | 'duplicate-branch'
+export type AlertDialogType =
+  | 'delete'
+  | 'duplicate'
+  | 'duplicate-branch'
+  | 'share-connections'
 export type AlertHeaderType =
   | 'Connection'
   | 'Pipe'
@@ -19,6 +23,7 @@ export type AlertHeaderType =
   | 'Step'
   | 'File'
   | 'Branch'
+  | 'Share connections'
 
 interface MenuAlertDialogProps {
   isDialogOpen: boolean
@@ -65,6 +70,14 @@ function getAlertDialogContent(
         header: `Duplicate ${dialogHeader}`,
         body: `Every step in this ${dialogHeader} will be duplicated. You will need to check each step again.`,
         buttonText: 'Duplicate',
+      }
+    case 'share-connections':
+      return {
+        header: 'Access to your connections',
+        body:
+          customBody ??
+          `The collaborator will have access to your connections.`,
+        buttonText: 'Yes, add editor',
       }
   }
 }
