@@ -9,16 +9,22 @@ const getFlow: QueryResolvers['getFlow'] = async (_parent, params, context) => {
   }
 
   const flow = await context.currentUser
-    .$relatedQuery('flows')
+    .withAccessibleFlows()
     .withGraphFetched({
+      steps: {
+        connection: true,
+      },
       pendingTransfer: {
         newOwner: true,
       },
     })
-    .withGraphJoined('[steps.[connection]]')
-    .orderBy('steps.position', 'asc')
     .findOne({ 'flows.id': params.id })
     .throwIfNotFound()
+
+  // Order steps by position (since withGraphJoined doesn't work with our helper)
+  if (flow.steps) {
+    flow.steps.sort((a, b) => a.position - b.position)
+  }
 
   return flow
 }

@@ -68,10 +68,10 @@ const SettingsItem = ({
         aria-label="settings"
         colorScheme="secondary"
         as={Link}
-        to={URLS.FLOW_EDITOR_NOTIFICATIONS(flowId)}
+        to={URLS.FLOW_EDITOR_SHARE(flowId)}
         w="100%"
         onClick={(e) => {
-          setLeaveToUrl(URLS.FLOW_EDITOR_NOTIFICATIONS(flowId))
+          setLeaveToUrl(URLS.FLOW_EDITOR_SHARE(flowId))
           handleWarnOnLeave(e)
         }}
       >
@@ -83,7 +83,7 @@ const SettingsItem = ({
     <TouchableTooltip label="Settings" aria-label="settings tooltip">
       <IconButton
         as={Link}
-        to={URLS.FLOW_EDITOR_NOTIFICATIONS(flowId)}
+        to={URLS.FLOW_EDITOR_SHARE(flowId)}
         variant="clear"
         aria-label="settings"
         icon={<BiCog />}
@@ -93,7 +93,7 @@ const SettingsItem = ({
           bg: 'interaction.muted.main.hover',
         }}
         onClick={(e) => {
-          setLeaveToUrl(URLS.FLOW_EDITOR_NOTIFICATIONS(flowId))
+          setLeaveToUrl(URLS.FLOW_EDITOR_SHARE(flowId))
           handleWarnOnLeave(e)
         }}
       />

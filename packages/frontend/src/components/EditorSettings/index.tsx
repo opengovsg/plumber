@@ -1,7 +1,7 @@
 import { IFlow } from '@plumber/types'
 
 import { ElementType, ReactNode, useMemo, useState } from 'react'
-import { BiMailSend, BiTransfer } from 'react-icons/bi'
+import { BiMailSend, BiTransfer, BiUserPlus } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
 import {
@@ -16,7 +16,7 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
 import * as URLS from '@/config/urls'
 import { EditorSettingsProvider } from '@/contexts/EditorSettings'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 import useAuthentication from '@/hooks/useAuthentication'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
@@ -28,6 +28,11 @@ export type DrawerLink = {
   Icon: ElementType
   text: string
   to: string
+}
+
+export type GroupedDrawerLinks = {
+  group: string
+  links: DrawerLink[]
 }
 
 export interface EditorSettingsLayoutProps {
@@ -42,7 +47,7 @@ export default function EditorSettingsLayout(
   const { currentUser } = useAuthentication()
 
   const { flowId } = useParams()
-  const { data, loading, error } = useQuery(GET_FLOW, {
+  const { data, loading, error } = useQuery(GET_FLOW_WITH_COLLABORATORS, {
     variables: { id: flowId },
   })
   const flow: IFlow = data?.getFlow
@@ -53,14 +58,32 @@ export default function EditorSettingsLayout(
     () => [
       [
         {
-          Icon: BiMailSend,
-          text: 'Email notifications',
-          to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
+          group: 'Manage Access',
+          links: [
+            {
+              Icon: BiUserPlus,
+              text: 'Collaborators',
+              to: URLS.FLOW_EDITOR_SHARE(flowId),
+              group: 'Manage Access' as const,
+            },
+            {
+              Icon: BiTransfer,
+              text: 'Transfer Pipe',
+              to: URLS.FLOW_EDITOR_TRANSFERS(flowId),
+              group: 'Manage Access' as const,
+            },
+          ],
         },
         {
-          Icon: BiTransfer,
-          text: 'Transfer Pipe',
-          to: URLS.FLOW_EDITOR_TRANSFERS(flowId),
+          group: 'Notifications',
+          links: [
+            {
+              Icon: BiMailSend,
+              text: 'Email notifications',
+              to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
+              group: 'Notifications' as const,
+            },
+          ],
         },
       ],
       () => setDrawerOpen(true),
@@ -73,7 +96,7 @@ export default function EditorSettingsLayout(
     base: (
       <>
         <EditorDrawer
-          links={drawerLinks}
+          groupedLinks={drawerLinks}
           isDrawerOpen={isDrawerOpen}
           openDrawer={openDrawer}
           closeDrawer={closeDrawer}
@@ -83,7 +106,7 @@ export default function EditorSettingsLayout(
     ),
     md: (
       <>
-        <EditorSidebar links={drawerLinks} closeDrawer={closeDrawer} />
+        <EditorSidebar groupedLinks={drawerLinks} closeDrawer={closeDrawer} />
         <Divider
           orientation="vertical"
           borderColor="base.divider.medium"
@@ -116,7 +139,7 @@ export default function EditorSettingsLayout(
   }
 
   return (
-    <EditorSettingsProvider value={{ flow }}>
+    <EditorSettingsProvider flow={flow}>
       <VStack spacing={0} minH="100vh">
         <Navbar />
         <Flex w="full" flex={1} flexDir={{ base: 'column', md: 'row' }}>
