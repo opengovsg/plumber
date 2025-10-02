@@ -23,12 +23,12 @@ jobs:
         env:
           DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
-          DD_TRACER_VERSION_JS: 5.67.0
         uses: datadog/test-visibility-github-action@v2
         with:
           languages: js
           service: ${{ secrets.DD_SERVICE_NAME }}
           api_key: ${{ secrets.DD_API_KEY }}
+          js-tracer-version: 5.67.0
       - run: npm run lint
       - run: echo "✅ Your code has been linted."
       - run: npm run test
