@@ -23,7 +23,7 @@ jobs:
         env:
           DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
-        uses: datadog/test-visibility-github-action@v1
+        uses: datadog/test-visibility-github-action@v2
         with:
           languages: js
           service: ${{ secrets.DD_SERVICE_NAME }}

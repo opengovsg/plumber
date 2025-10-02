@@ -50,7 +50,7 @@
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "csv-parse": "5.4.0",
-    "dd-trace": "4.34.0",
+    "dd-trace": "5.68.0",
     "dedent": "1.5.1",
     "dotenv": "16.6.1",
     "electrodb": "2.15.1",
