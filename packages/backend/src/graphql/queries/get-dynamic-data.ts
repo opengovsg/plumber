@@ -68,22 +68,19 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
     APP_CONNECTION_FIELDS[step.appKey] &&
     APP_CONNECTION_FIELDS[step.appKey]?.dynamicDataKey === dynamicDataKey
   ) {
-    const whereClause =
-      step.appKey === 'tiles'
-        ? {
-            connection_type: 'table',
-            flow_id: step.flowId,
-          }
-        : {
-            connection_id: step.connectionId,
-            flow_id: step.flowId,
-          }
     const flowConnections = await context.currentUser
-      .withAccessible({
-        type: 'flow-connections',
-        requiredRole: 'viewer',
-      })
-      .where(whereClause)
+      .withAccessibleFlowConnections({ requiredRole: 'viewer' })
+      .where(
+        step.appKey === 'tiles'
+          ? {
+              connection_type: 'table',
+              'flow_connections.flow_id': step.flowId,
+            }
+          : {
+              connection_id: step.connectionId,
+              'flow_connections.flow_id': step.flowId,
+            },
+      )
 
     // TILES SPECIAL CASE:
     // tile ids are stored directly in the connection_id column
