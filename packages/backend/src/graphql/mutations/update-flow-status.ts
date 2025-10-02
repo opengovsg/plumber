@@ -39,7 +39,7 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   context,
 ) => {
   const flow = await context.currentUser
-    .withAccessible({ type: 'flow', requiredRole: 'editor' })
+    .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
       'flows.id': params.input.id,
     })

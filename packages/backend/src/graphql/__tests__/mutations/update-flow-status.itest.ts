@@ -67,7 +67,7 @@ describe('updateFlowStatus', () => {
       throwIfNotFound: vi.fn().mockResolvedValue(fakeFlow),
     }
 
-    context.currentUser.withAccessible = vi.fn().mockReturnValue(fakeQuery)
+    context.currentUser.withAccessibleFlows = vi.fn().mockReturnValue(fakeQuery)
 
     editor = await generateMockUser('editor')
     viewer = await generateMockUser('viewer')
@@ -261,7 +261,9 @@ describe('updateFlowStatus', () => {
 
     it('should allow editor to update flow status', async () => {
       context.currentUser = editor
-      context.currentUser.withAccessible = vi.fn().mockReturnValue(fakeQuery)
+      context.currentUser.withAccessibleFlows = vi
+        .fn()
+        .mockReturnValue(fakeQuery)
       const params = { input: { id: fakeFlow.id, active: true } }
       const result = await updateFlowStatus({}, params, context)
       expect(result).toEqual(fakeFlow)
