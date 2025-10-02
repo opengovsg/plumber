@@ -130,13 +130,6 @@ describe('updateStep mutation', () => {
         connectionKey: 'postman',
         connectionId: mockConnectionId,
       })
-
-    context.currentUser.withAccessibleConnections =
-      createMockWithAccessibleConnections({
-        connectionId: mockConnectionId,
-        connectionKey: 'postman',
-        connectionNotFound: false,
-      })
   })
 
   it('should successfully update a step', async () => {
