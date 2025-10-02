@@ -167,12 +167,12 @@ describe('step model', () => {
     })
   })
 
-  describe('patchFlowLastUpdated', () => {
+  describe('patchLastUpdated', () => {
     it('should patch the flow last updated', async () => {
       const flow = await step.$relatedQuery('flow')
       const originalUpdatedAt = flow.updatedAt
 
-      await step.patchFlowLastUpdated()
+      await flow.patchLastUpdated({ flowId: flow.id })
 
       const updatedFlow = await step.$relatedQuery('flow')
 

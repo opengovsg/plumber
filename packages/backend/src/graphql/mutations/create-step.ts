@@ -1,7 +1,6 @@
 import { raw } from 'objection'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
-import checkFlowUpdatable from '@/helpers/check-flow-updatable'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
@@ -26,7 +25,7 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
-    checkFlowUpdatable(input.flow.updatedAt, flow.updatedAt)
+    flow.assertNotUpdatedSince(input.flow.updatedAt)
 
     // if connectionId is specified, verify that the connection exists
     // and the user has the appropriate permissions to use it
@@ -39,11 +38,11 @@ const createStep: MutationResolvers['createStep'] = async (
           .findOne({ id: input.connection.id })
       } else if (flow.role === 'editor') {
         // TODO (kevinkim-ogp): allow editors to create step with owner connections
-        throw new BadUserInputError(
+        throw new ForbiddenError(
           'User does not have permission to add connection',
         )
       } else {
-        throw new BadUserInputError(
+        throw new ForbiddenError(
           'User does not have permission to add connection',
         )
       }
@@ -92,7 +91,7 @@ const createStep: MutationResolvers['createStep'] = async (
       })
     }
 
-    const updatedFlow = await step.patchFlowLastUpdated(trx)
+    const updatedFlow = await flow.patchLastUpdated({ flowId: flow.id, trx })
 
     return {
       ...step,

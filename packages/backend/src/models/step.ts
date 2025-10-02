@@ -4,7 +4,6 @@ import {
   raw,
   RelatedQueryBuilder,
   type StaticHookArguments,
-  Transaction,
   ValidationError,
 } from 'objection'
 import { URL } from 'url'
@@ -191,15 +190,6 @@ class Step extends Base {
     const command = apps[appKey].actions.find((action) => action.key === key)
 
     return command
-  }
-
-  async patchFlowLastUpdated(trx?: Transaction) {
-    return await this.$relatedQuery('flow', trx).patchAndFetchById(
-      this.flowId,
-      {
-        updatedAt: new Date().toISOString(),
-      },
-    )
   }
 
   static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {

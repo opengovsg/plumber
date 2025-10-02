@@ -3,7 +3,7 @@ import { IFlowCollabRole, IFlowConfig } from '@plumber/types'
 import type { ModelOptions, QueryContext, Transaction } from 'objection'
 import { ValidationError } from 'objection'
 
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { doesActionProcessFiles } from '@/helpers/actions'
 
 import Base from './base'
@@ -239,6 +239,29 @@ class Flow extends Base {
       .whereNull('deleted_at')
 
     return collaborators.length > 0
+  }
+
+  async patchLastUpdated({
+    flowId,
+    trx,
+  }: {
+    flowId: string
+    trx?: Transaction
+  }) {
+    return await this.$query(trx).patchAndFetchById(flowId, {
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  assertNotUpdatedSince(clientUpdatedAt: string) {
+    const inputTimestamp = Number(clientUpdatedAt)
+    const flowTimestamp = new Date(this.updatedAt).getTime()
+
+    if (isNaN(inputTimestamp) || inputTimestamp !== flowTimestamp) {
+      throw new BadUserInputError(
+        'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.',
+      )
+    }
   }
 }
 

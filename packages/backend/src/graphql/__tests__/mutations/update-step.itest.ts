@@ -17,38 +17,7 @@ const mockStepId = '8c2a70d1-e78b-431e-9069-a4d8f97883f7'
 describe('updateStep mutation', () => {
   let context: Context
   let patchAndFetchByIdSpy: ReturnType<typeof vi.fn>
-  const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
-
-  // Helper to create step mock with flow
-  const createStepMock = (stepData: any = {}) => {
-    const throwIfNotFoundMock = vi.fn().mockImplementation(async (options) => {
-      const result =
-        stepData === null
-          ? null
-          : {
-              id: mockStepId,
-              key: 'sendTransactionalEmail',
-              appKey: 'postman',
-              status: 'completed',
-              flow: {
-                id: mockFlowId,
-              },
-              patchFlowLastUpdated: patchFlowLastUpdatedSpy,
-              ...stepData,
-            }
-
-      if (result === null) {
-        throw new NotFoundError(options?.message || 'Step not found')
-      }
-      return result
-    })
-
-    return {
-      findOne: vi.fn().mockReturnValue({
-        throwIfNotFound: throwIfNotFoundMock,
-      }),
-    }
-  }
+  const patchLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
   // Helper to create connection mock
   const createConnectionMock = (connectionData: any = null) => ({
@@ -64,7 +33,35 @@ describe('updateStep mutation', () => {
       .fn()
       .mockImplementation((relation, _trx) => {
         if (relation === 'steps') {
-          return createStepMock(stepData)
+          return {
+            withGraphFetched: vi.fn().mockReturnValue({
+              findOne: vi.fn().mockReturnValue({
+                throwIfNotFound: vi.fn().mockImplementation(async (options) => {
+                  const result =
+                    stepData === null
+                      ? null
+                      : {
+                          id: mockStepId,
+                          key: 'sendTransactionalEmail',
+                          appKey: 'postman',
+                          status: 'completed',
+                          flow: {
+                            id: mockFlowId,
+                            patchLastUpdated: patchLastUpdatedSpy,
+                          },
+                          ...stepData,
+                        }
+
+                  if (result === null) {
+                    throw new NotFoundError(
+                      options?.message || 'Step not found',
+                    )
+                  }
+                  return result
+                }),
+              }),
+            }),
+          }
         }
         if (relation === 'connections') {
           return createConnectionMock(connectionData)
@@ -349,9 +346,9 @@ describe('updateStep mutation', () => {
     )
   })
 
-  it('should call patchFlowLastUpdated when updating a step', async () => {
+  it('should call patchLastUpdated when updating a step', async () => {
     await updateStep(null, { input: { ...genericInputParams } }, context)
-    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
+    expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 
   it('should throw an error if the parameters are invalid', async () => {

@@ -12,6 +12,9 @@ import Context from '@/types/express/context'
 
 import { generateMockCollaborator, generateMockUser } from './flow.mock'
 
+const REFRESH_PIPE_MESSAGE =
+  'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.'
+
 describe('createStep mutation integration tests', async () => {
   let testFlow: Flow
   let existingSteps: Step[]
@@ -67,8 +70,8 @@ describe('createStep mutation integration tests', async () => {
     })
     testFlowTimestampString = String(new Date(testFlow.updatedAt).getTime())
 
-    // Mock the patchFlowLastUpdated method to return proper flow data
-    vi.spyOn(Step.prototype, 'patchFlowLastUpdated').mockResolvedValue({
+    // Mock the patchLastUpdated method to return proper flow data
+    vi.spyOn(Flow.prototype, 'patchLastUpdated').mockResolvedValue({
       ...testFlow,
       updatedAt: testFlow.updatedAt,
     } as any)
@@ -187,11 +190,8 @@ describe('createStep mutation integration tests', async () => {
     expect(steps.map((step) => step.position)).toEqual([1, 2, 3, 4])
   })
 
-  it('should call patchFlowLastUpdated when creating a step', async () => {
-    const patchFlowLastUpdatedSpy = vi.spyOn(
-      Step.prototype,
-      'patchFlowLastUpdated',
-    )
+  it('should call patchLastUpdated when creating a step', async () => {
+    const patchLastUpdatedSpy = vi.spyOn(Flow.prototype, 'patchLastUpdated')
 
     const params = {
       input: {
@@ -203,7 +203,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
     await createStep(null, params, context)
-    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
+    expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 
   it('throws an error if the flow does not belong to the current user', async () => {
@@ -460,7 +460,7 @@ describe('createStep mutation integration tests', async () => {
         BadUserInputError,
       )
       await expect(createStep(null, params, context)).rejects.toThrow(
-        'Pipe is outdated. Refresh the page and try again.',
+        REFRESH_PIPE_MESSAGE,
       )
     })
 
@@ -485,7 +485,7 @@ describe('createStep mutation integration tests', async () => {
         BadUserInputError,
       )
       await expect(createStep(null, params, context)).rejects.toThrow(
-        'Pipe is outdated. Refresh the page and try again.',
+        REFRESH_PIPE_MESSAGE,
       )
     })
 
@@ -510,7 +510,7 @@ describe('createStep mutation integration tests', async () => {
         BadUserInputError,
       )
       await expect(createStep(null, params, context)).rejects.toThrow(
-        'Pipe is outdated. Refresh the page and try again.',
+        REFRESH_PIPE_MESSAGE,
       )
     })
 
@@ -532,7 +532,7 @@ describe('createStep mutation integration tests', async () => {
         BadUserInputError,
       )
       await expect(createStep(null, params, context)).rejects.toThrow(
-        'Pipe is outdated. Refresh the page and try again.',
+        REFRESH_PIPE_MESSAGE,
       )
     })
   })
