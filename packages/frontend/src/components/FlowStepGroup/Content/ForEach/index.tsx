@@ -1,13 +1,15 @@
 import { IStep } from '@plumber/types'
 
-import { Fragment, useContext, useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
 
+import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
-import { FlowStep, FlowStepGroup } from '@/exports/components'
+import { FlowStepGroup } from '@/exports/components'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import useReorderSteps from '@/hooks/useReorderSteps'
 
-import { HoverAddStepButton } from '../IfThen/HoverAddStepButton'
+import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
 
 interface ForEachProps {
   groupedSteps: IStep[][]
@@ -16,8 +18,9 @@ interface ForEachProps {
 
 export default function ForEach(props: ForEachProps) {
   const { groupedSteps } = props
+  const { flow } = useContext(EditorContext)
+  const { handleReorderUpdate } = useReorderSteps(flow.id)
 
-  const { isDrawerOpen, readOnly: isEditorReadOnly } = useContext(EditorContext)
   const forEachSteps = groupedSteps[0]
   const ifThenSteps = useMemo(() => {
     if (groupedSteps.length === 1) {
@@ -34,32 +37,70 @@ export default function ForEach(props: ForEachProps) {
   const hasNoActionSteps =
     nonForEachActionSteps.length === 0 && groupedSteps.length === 1
 
+  const { conditionStep, actionSteps } = useMemo(() => {
+    const conditionStep = forEachSteps[0]
+    const actionSteps = forEachSteps.slice(1)
+
+    return { conditionStep, actionSteps }
+  }, [forEachSteps])
+
+  const handleReorderSteps = async (items: any[]) => {
+    const forEachPosition = conditionStep.position
+    const stepPositions = items.map((item, index) => ({
+      id: item.id,
+      position: forEachPosition + index + 1, // index is 0-based
+      type: item.step.type,
+    }))
+
+    try {
+      handleReorderUpdate(stepPositions)
+    } catch (error) {
+      console.error(
+        'Error updating step positions: ',
+        error,
+        JSON.stringify(stepPositions),
+      )
+    }
+  }
+
   return (
     <Flex flexDir="column" alignItems="center" borderRadius="lg" w="100%">
       <Flex flexDir="column" w="100%" px={4} py={3}>
-        {forEachSteps?.map((step, index) => {
-          return (
-            <Fragment key={step.id}>
-              <FlowStep
-                step={step}
-                index={index}
-                isDeletable={index !== 0}
-                isNested={true}
-                isLastStep={index === forEachSteps.length - 1}
-              />
-              <HoverAddStepButton
-                isDisabled={isEditorReadOnly || hasNoActionSteps}
-                isDrawerOpen={isDrawerOpen}
-                isLastStep={
-                  index === forEachSteps.length - 1 && ifThenSteps.length === 0
-                }
-                prevStepId={step.id}
-                // show empty action if no action step exists
-                showEmptyAction={hasNoActionSteps}
-              />
-            </Fragment>
-          )
-        })}
+        <GroupStepWithAddButton
+          step={conditionStep}
+          canAddStep={true}
+          isLastStep={false}
+          allowReorder={false}
+          showEmptyAction={hasNoActionSteps}
+          canChildStepsReorder={actionSteps.length > 1}
+        />
+        <SortableList
+          items={actionSteps.map((step, index) => ({
+            id: step.id,
+            step,
+            index,
+          }))}
+          onChange={handleReorderSteps}
+          renderItem={(item, isOverlay) => {
+            const { step, index } = item
+            const isLastStep =
+              index === actionSteps.length - 1 && ifThenSteps.length === 0
+            return (
+              <SortableList.Item id={item.id}>
+                <Flex w="100%" flexDir="column">
+                  <GroupStepWithAddButton
+                    step={step}
+                    canAddStep={true}
+                    isLastStep={isLastStep}
+                    isOverlay={isOverlay}
+                    allowReorder={actionSteps.length > 1}
+                  />
+                </Flex>
+              </SortableList.Item>
+            )
+          }}
+        />
+
         {ifThenSteps.length > 0 && (
           <FlowStepGroup
             stepsBeforeGroup={forEachSteps}

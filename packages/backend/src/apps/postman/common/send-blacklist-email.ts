@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 
 import { redisClient as pipeErrorRedisClient } from '@/helpers/generate-error-email'
-import { safeHtml } from '@/helpers/html-utils'
+import { escapeHtml, safeHtml, trustedHtml } from '@/helpers/html-utils'
 import { sendEmail } from '@/helpers/send-email'
 
 const MAX_LENGTH = 80
@@ -58,7 +58,11 @@ function createBodyErrorMessage(props: BlacklistEmailProps): string {
     <br>
     We have detected that your pipe <strong>${flowName}</strong> has attempted to send an email to one or more blacklisted email addresses:
     <ul>
-      ${blacklistedRecipients.map((email) => `<li>${email}</li>`).join('\n')}
+      ${trustedHtml(
+        blacklistedRecipients
+          .map((email) => `<li>${escapeHtml(email)}</li>`)
+          .join('\n'),
+      )}
     </ul>
     Emails could be blacklisted for one of the following reasons:
     <ul>

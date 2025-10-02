@@ -18,14 +18,14 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
 
-interface StepDeleteButtonProps {
+interface DeleteStepButtonProps {
   isNested?: boolean
   isDeletingStep?: boolean
   step: IStep
   caption?: string
 }
 
-export default function StepDeleteButton(props: StepDeleteButtonProps) {
+export default function DeleteStepButton(props: DeleteStepButtonProps) {
   const { isNested, step, caption } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
   const customBody = caption
@@ -42,7 +42,6 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
     isMobile,
     onDrawerClose,
     setCurrentStepId,
-    setCurrentStepIndex,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
 
@@ -96,7 +95,6 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
       setCurrentStepId(null)
-      setCurrentStepIndex(null)
       setShouldWarnOnLeave(false)
       onDrawerClose()
     },
@@ -105,7 +103,6 @@ export default function StepDeleteButton(props: StepDeleteButtonProps) {
       step,
       deleteStep,
       setCurrentStepId,
-      setCurrentStepIndex,
       setShouldWarnOnLeave,
       onDrawerClose,
       createStep,

@@ -81,6 +81,7 @@ type Mutation {
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
+  updateStepPositions(input: UpdateStepPositionsInput): [Step]
   deleteStep(input: DeleteStepInput): Flow
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
@@ -105,6 +106,7 @@ type Mutation {
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
+  deleteShareableTableLink(tableId: ID!): Boolean!
   updateTable(input: UpdateTableInput!): TableMetadata!
   deleteTable(input: DeleteTableInput!): Boolean!
   # Tiles rows
@@ -540,6 +542,7 @@ input CreateStepInput {
   flow: StepFlowInput
   parameters: JSONObject
   previousStep: PreviousStepInput
+  config: StepConfigInput
 }
 
 input StepConfigInput {
@@ -557,6 +560,16 @@ input UpdateStepInput {
   previousStep: PreviousStepInput
   status: String
   config: StepConfigInput
+}
+
+input StepPositionInput {
+  id: String!
+  position: Int!
+  type: StepEnumType!
+}
+
+input UpdateStepPositionsInput {
+  stepPositions: [StepPositionInput!]!
 }
 
 input DeleteStepInput {

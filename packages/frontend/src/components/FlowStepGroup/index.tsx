@@ -5,6 +5,7 @@ import { BiTrash } from 'react-icons/bi'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
+import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
@@ -62,9 +63,20 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     onDrawerClose()
   }, [deleteForEach, onDrawerClose])
 
+  // NOTE: we check if its inside the for-each
+  // so that if-then steps follow the same width of the nested actions
+  // when the drag handle is shown
+  const isInsideForEach = stepsBeforeGroup.some(
+    (step) => step.key === TOOLBOX_ACTIONS.ForEach,
+  )
+
   return (
     <Flex
-      w="100%"
+      w={
+        isInsideForEach && stepsBeforeGroup.length > 2 && !isDrawerOpen
+          ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
+          : '100%'
+      }
       alignItems="center"
       justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
     >
