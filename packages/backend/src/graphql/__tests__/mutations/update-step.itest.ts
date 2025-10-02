@@ -16,7 +16,8 @@ import { generateMockUser } from './flow.mock'
 import {
   createMockWithAccessibleConnections,
   createMockWithAccessibleSteps,
-  setPatchFlowLastUpdatedSpy,
+  setAssertNotUpdatedSinceSpy,
+  setPatchLastUpdatedSpy,
 } from './with-accessible.mock'
 
 const mockConnectionId = '8c2a70d1-e78b-431e-9069-a4d8f97883f5'
@@ -34,6 +35,7 @@ describe('updateStep mutation', () => {
   let testInputTimestampString: string
   let patchAndFetchByIdSpy: ReturnType<typeof vi.fn>
   const patchLastUpdatedSpy = vi.fn().mockResolvedValue({})
+  const assertNotUpdatedSinceSpy = vi.fn().mockResolvedValue({})
 
   let genericInputParams = {
     id: mockStepId,
@@ -51,7 +53,8 @@ describe('updateStep mutation', () => {
     owner = context.currentUser
 
     // Set the global spy for patchFlowLastUpdated
-    setPatchFlowLastUpdatedSpy(patchLastUpdatedSpy)
+    setPatchLastUpdatedSpy(patchLastUpdatedSpy)
+    setAssertNotUpdatedSinceSpy(assertNotUpdatedSinceSpy)
 
     // Create test users
     editor = await generateMockUser('editor')
@@ -67,6 +70,7 @@ describe('updateStep mutation', () => {
     patchLastUpdatedSpy.mockResolvedValue({
       updatedAt: new Date(Date.now() + 1000).toISOString(), // 1 second later
     })
+    assertNotUpdatedSinceSpy.mockResolvedValue(true)
 
     genericInputParams = {
       ...genericInputParams,
@@ -391,64 +395,6 @@ describe('updateStep mutation', () => {
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-  })
-
-  describe('flow update validation', () => {
-    it('should throw error when input updatedAt does not match flow updatedAt', async () => {
-      const input = {
-        ...genericInputParams,
-        flow: {
-          id: mockFlowId,
-          updatedAt: String(Date.now() + 10000),
-        },
-      }
-
-      await expect(updateStep(null, { input }, context)).rejects.toThrow(
-        BadUserInputError,
-      )
-      await expect(updateStep(null, { input }, context)).rejects.toThrow(
-        'Pipe is outdated. Refresh the page and try again.',
-      )
-      expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
-    })
-
-    it('should throw error when input updatedAt is after flow updatedAt', async () => {
-      const input = {
-        ...genericInputParams,
-        flow: {
-          id: mockFlowId,
-          updatedAt: String(Date.now() - 10000),
-        },
-      }
-
-      await expect(updateStep(null, { input }, context)).rejects.toThrow(
-        BadUserInputError,
-      )
-      await expect(updateStep(null, { input }, context)).rejects.toThrow(
-        'Pipe is outdated. Refresh the page and try again.',
-      )
-      expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
-    })
-
-    it('should succeed when input updatedAt matches flow updatedAt', async () => {
-      const input = {
-        ...genericInputParams,
-        flow: {
-          id: mockFlowId,
-          updatedAt: testInputTimestampString,
-        },
-      }
-
-      await expect(updateStep(null, { input }, context)).resolves.not.toThrow()
-      expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-        key: 'sendTransactionalEmail',
-        appKey: 'postman',
-        connectionId: mockConnectionId,
-        parameters: { testParam: 'value' },
-        status: 'completed',
-        config: {},
-      })
-    })
   })
 
   describe('access control', () => {

@@ -2,10 +2,15 @@ import { vi } from 'vitest'
 
 import User from '@/models/user'
 
-let patchFlowLastUpdatedSpy: ReturnType<typeof vi.fn> | null = null
+let patchLastUpdatedSpy: ReturnType<typeof vi.fn> | null = null
+let assertNotUpdatedSinceSpy: ReturnType<typeof vi.fn> | null = null
 
-export function setPatchFlowLastUpdatedSpy(spy: ReturnType<typeof vi.fn>) {
-  patchFlowLastUpdatedSpy = spy
+export function setPatchLastUpdatedSpy(spy: ReturnType<typeof vi.fn>) {
+  patchLastUpdatedSpy = spy
+}
+
+export function setAssertNotUpdatedSinceSpy(spy: ReturnType<typeof vi.fn>) {
+  assertNotUpdatedSinceSpy = spy
 }
 
 const MOCK_STEP_ID = '8c2a70d1-e78b-431e-9069-a4d8f97883f7'
@@ -73,9 +78,11 @@ export function createMockWithAccessibleSteps({
             flow: {
               userId: owner.id,
               updatedAt: flowUpdatedAt,
+              assertNotUpdatedSince:
+                assertNotUpdatedSinceSpy || vi.fn().mockResolvedValue({}),
+              patchLastUpdated:
+                patchLastUpdatedSpy || vi.fn().mockResolvedValue({}),
             },
-            patchFlowLastUpdated:
-              patchFlowLastUpdatedSpy || vi.fn().mockResolvedValue({}),
           }),
         }
       },
