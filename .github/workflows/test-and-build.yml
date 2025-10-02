@@ -33,7 +33,7 @@ jobs:
       - run: echo "✅ Your code has been linted."
       - run: npm run test
         env:
-          DD_TRACER_VERSION_JS: 5.67.0
+          DD_SET_TRACER_VERSION_JS: 5.67.0
           # Required to allow Datadog to trace Vitest tests
           NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
       - run: echo "✅ All tests passed."
