@@ -1,5 +1,4 @@
 import App from '@/models/app'
-import FlowConnections from '@/models/flow-connections'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -24,12 +23,13 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
   if (app.auth?.connectionType === 'user-added') {
     // NOTE: only have flowId if the user is a collaborator
     if (params.flowId) {
-      const flowConnections = await FlowConnections.withAccessible({
-        userId: context.currentUser.id,
-      })
-        .withGraphJoined({
-          connections: true,
+      const flowConnections = await context.currentUser
+        .withAccessible({
+          type: 'flow-connections',
+          requiredRole: 'viewer',
         })
+        .join('connections', 'connections.id', 'flow_connections.connection_id')
+        .withGraphJoined('connection')
         .where({
           'flows.id': params.flowId,
           'connections.key': params.key,
@@ -39,7 +39,7 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
       return {
         ...app,
         connections: flowConnections.map(
-          (flowConnection) => flowConnection.connections,
+          (flowConnection) => flowConnection.connection,
         ),
       }
     }
