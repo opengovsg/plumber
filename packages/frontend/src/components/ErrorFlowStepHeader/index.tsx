@@ -8,7 +8,7 @@ import { SUPPORT_FORM_LINK } from '@/config/urls'
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
 
-import StepDeleteButton from '../FlowStep/components/StepDeleteButton'
+import DeleteStepButton from '../FlowStep/components/DeleteStepButton'
 
 interface ErrorFlowStepHeaderProps {
   step: IStep
@@ -49,7 +49,11 @@ export default function ErrorFlowStepHeader(props: ErrorFlowStepHeaderProps) {
           </a>
         </Text>
       </Flex>
-      <StepDeleteButton isNested={isNested} step={step} />
+      <DeleteStepButton
+        isNested={isNested}
+        step={step}
+        caption="this error step"
+      />
     </Flex>
   )
 }

@@ -1,0 +1,12 @@
+.SortableList {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  list-style: none;
+}
+
+/* Force cursor during active drag */
+body.is-dragging,
+body.is-dragging * {
+  cursor: grabbing !important;
+}

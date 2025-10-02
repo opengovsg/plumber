@@ -1,0 +1,64 @@
+import { IStep } from '@plumber/types'
+
+import { useContext } from 'react'
+
+import { EditorContext } from '@/contexts/Editor'
+import { FlowStep } from '@/exports/components'
+import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+
+import { HoverAddStepButton } from '../Content/IfThen/HoverAddStepButton'
+
+interface GroupStepWithAddButtonProps {
+  step: IStep
+  canAddStep: boolean
+  isLastStep: boolean
+  isOverlay?: boolean
+  allowReorder?: boolean
+  showEmptyAction?: boolean
+  canChildStepsReorder?: boolean
+}
+
+export default function GroupStepWithAddButton(
+  props: GroupStepWithAddButtonProps,
+) {
+  const {
+    step,
+    canAddStep,
+    isLastStep,
+    isOverlay,
+    allowReorder,
+    showEmptyAction,
+    canChildStepsReorder,
+  } = props
+  const { isDrawerOpen, readOnly } = useContext(EditorContext)
+
+  // cannot delete the condition step
+  const isDeletable =
+    step.key !== TOOLBOX_ACTIONS.IfThen && step.key !== TOOLBOX_ACTIONS.ForEach
+
+  return (
+    <>
+      <FlowStep
+        step={step}
+        isDeletable={isDeletable}
+        // branch steps are always nested
+        isNested={true}
+        isLastStep={isLastStep}
+        allowReorder={allowReorder}
+        canChildStepsReorder={canChildStepsReorder}
+      />
+      {!isOverlay && (
+        <HoverAddStepButton
+          isDisabled={readOnly || !canAddStep}
+          isDrawerOpen={isDrawerOpen}
+          isLastStep={isLastStep}
+          prevStepId={step.id}
+          showEmptyAction={showEmptyAction}
+          step={step}
+          allowReorder={allowReorder}
+          canChildStepsReorder={canChildStepsReorder}
+        />
+      )}
+    </>
+  )
+}

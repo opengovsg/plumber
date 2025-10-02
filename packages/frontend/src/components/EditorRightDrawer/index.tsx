@@ -12,12 +12,11 @@ import { editorRightDrawerStyles as styles } from './styles'
 
 interface EditorRightDrawerProps {
   flowStepGroupIconUrl?: string
-  index: number | null
   steps: IStep[]
 }
 
 export default function EditorRightDrawer(props: EditorRightDrawerProps) {
-  const { index, steps } = props
+  const { steps } = props
 
   const { allApps, currentStepId } = useContext(EditorContext)
 
@@ -41,7 +40,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     >
       <StepHeader step={step} />
       <Flex {...styles.stepContentsWrapper} pt={hasConnection ? 0 : 4}>
-        <Step step={step} isLastStep={index === steps.length - 1} />
+        <Step step={step} isLastStep={step.position === steps.length} />
       </Flex>
     </Flex>
   )
