@@ -1,4 +1,3 @@
-import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -202,7 +201,7 @@ describe('updateStep mutation', () => {
     })
 
     await expect(updateStep(null, { input }, context)).rejects.toThrow(
-      NotFoundError,
+      BadUserInputError,
     )
     expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
   })
