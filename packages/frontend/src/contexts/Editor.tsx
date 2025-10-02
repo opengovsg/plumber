@@ -152,17 +152,6 @@ function updateHandlerFactory(
   }
 }
 
-// NOTE: we read from the cache instead of the prop to get
-// the updatedAt of the flow, which is updated by the createStep mutation.
-// this is used to prevent users from updating the pipe when the steps are
-// outdated.
-function getCachedFlow(flowId: string) {
-  return client.readQuery({
-    query: GET_FLOW,
-    variables: { id: flowId },
-  })
-}
-
 export const EditorProvider = ({
   readOnly,
   flow,
@@ -244,15 +233,13 @@ export const EditorProvider = ({
       eventKey: string,
       connectionId?: string,
     ) => {
-      const { getFlow: cachedFlow } = getCachedFlow(flowId)
-
       const mutationInput = {
         previousStep: {
           id: previousStepId,
         },
         flow: {
           id: flowId,
-          updatedAt: cachedFlow.updatedAt,
+          updatedAt: flow.updatedAt,
         },
         appKey,
         key: eventKey,
@@ -297,7 +284,7 @@ export const EditorProvider = ({
 
       return newStep as IStep
     },
-    [createStep, flowId, initializeIfThen],
+    [createStep, flow, flowId, initializeIfThen],
   )
 
   /**
@@ -306,8 +293,6 @@ export const EditorProvider = ({
   const [updateStep] = useMutation(UPDATE_STEP)
   const onUpdateStep = useCallback(
     async (step: IStep) => {
-      const { getFlow: cachedFlow } = getCachedFlow(flowId)
-
       const mutationInput: Record<string, unknown> = {
         id: step.id,
         key: step.key,
@@ -317,7 +302,7 @@ export const EditorProvider = ({
         },
         flow: {
           id: flowId,
-          updatedAt: cachedFlow.updatedAt,
+          updatedAt: flow.updatedAt,
         },
         config: {
           // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
@@ -339,7 +324,7 @@ export const EditorProvider = ({
 
       return updatedStep.data?.updateStep as IStep
     },
-    [updateStep, flowId],
+    [flowId, flow.updatedAt, updateStep],
   )
 
   /**
