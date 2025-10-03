@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -167,7 +168,7 @@ describe('updateStep mutation', () => {
     const input = {
       ...genericInputParams,
       parameters: { testParam: 'value' },
-      connection: { id: 'non-existent-connection' },
+      connection: { id: randomUUID() },
     }
 
     context.currentUser.withAccessibleConnections =
