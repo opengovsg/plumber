@@ -122,13 +122,15 @@ class FlowConnections extends Base {
     connectionId,
     parameterKey,
     parameterValue,
+    trx,
   }: {
     flowId: string
     connectionId: string
     parameterKey: string
     parameterValue: string
+    trx?: Transaction
   }) => {
-    return await this.query()
+    return await this.query(trx)
       .where({
         flow_id: flowId,
         connection_id: connectionId,

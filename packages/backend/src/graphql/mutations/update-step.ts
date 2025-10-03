@@ -1,10 +1,10 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
-import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
+import {
+  addFlowConnection,
+  addFlowTableConnection,
+} from '@/helpers/add-flow-connection'
 import App from '@/models/app'
-import FlowCollaborator from '@/models/flow-collaborators'
-import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
-import TableCollaborator from '@/models/table-collaborators'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -95,59 +95,21 @@ const updateStep: MutationResolvers['updateStep'] = async (
      */
     if (step.role === 'owner') {
       const appKey = updatedStep?.appKey
-      /**
 
-       */
-      if (appKey && updatedStep?.parameters?.tableId) {
-        await FlowConnections.addFlowConnection({
+      // tiles special handling
+      if (appKey === 'tiles' && updatedStep?.parameters?.tableId) {
+        await addFlowTableConnection({
           flowId: updatedStep.flowId,
-          connectionId: updatedStep.parameters.tableId as string,
+          tableId: updatedStep.parameters.tableId as string,
           addedBy: context.currentUser.id,
-          connectionType: 'table',
-        })
-
-        const collaborators = await FlowCollaborator.getCollaborators({
-          flowId: updatedStep.flowId,
           trx,
         })
-
-        /**
-         * use Promise.all so that we use the addCollaborator function, which checks
-         * if the collaborator already exists to avoid duplicates
-         */
-        await Promise.all(
-          collaborators.map(async ({ userId, role }) => {
-            await TableCollaborator.addCollaborator({
-              userId,
-              tableId: updatedStep.parameters.tableId as string,
-              role,
-              trx,
-            })
-          }),
-        )
       } else if (updatedStep?.connectionId) {
-        const { parameterKey } = APP_CONNECTION_FIELDS?.[appKey] ?? {}
-
-        const userId = updatedStep?.connection?.userId
-        const connectionId = updatedStep?.connectionId
-
-        // only flow connections with a parameterKey specified need to have
-        // its metadata updated with the parameter value
-        if (updatedStep.parameters?.[parameterKey]) {
-          await FlowConnections.patchFlowConnectionMetadata({
-            flowId: updatedStep.flowId,
-            connectionId,
-            parameterKey,
-            parameterValue: updatedStep.parameters[parameterKey] as string,
-          })
-        } else {
-          await FlowConnections.addFlowConnection({
-            flowId: updatedStep.flowId,
-            connectionId,
-            addedBy: userId,
-            connectionType: 'connection',
-          })
-        }
+        await addFlowConnection({
+          step: updatedStep,
+          addedBy: context.currentUser.id,
+          trx,
+        })
       }
     }
 

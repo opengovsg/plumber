@@ -550,6 +550,7 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         parameterKey: 'fileId',
         parameterValue: '1234567890',
+        trx: expect.anything(),
       })
       expect(addSpy).not.toHaveBeenCalled()
     })
@@ -572,6 +573,7 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         addedBy: owner.id,
         connectionType: 'connection',
+        trx: expect.anything(),
       })
     })
 
@@ -590,6 +592,7 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         addedBy: owner.id,
         connectionType: 'connection',
+        trx: expect.anything(),
       })
       expect(patchSpy).not.toHaveBeenCalled()
     })
@@ -664,7 +667,15 @@ describe('updateStep mutation', () => {
         .spyOn(TableCollaborator, 'addCollaborator')
         .mockResolvedValue(undefined)
       const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
-      const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
+      const addSpy = vi
+        .spyOn(FlowConnections, 'addFlowConnection')
+        .mockResolvedValue({
+          flowId: mockFlowId,
+          connectionId: mockTableId,
+          addedBy: owner.id,
+          connectionType: 'table',
+          metadata: {},
+        } as any)
       const getCollaboratorsSpy = vi
         .spyOn(FlowCollaborator, 'getCollaborators')
         .mockResolvedValue([
@@ -703,7 +714,9 @@ describe('updateStep mutation', () => {
         connectionId: mockTableId,
         addedBy: owner.id,
         connectionType: 'table',
+        trx: expect.anything(),
       })
+      expect(getCollaboratorsSpy).toHaveBeenCalled()
       expect(getCollaboratorsSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
         trx: expect.anything(),
