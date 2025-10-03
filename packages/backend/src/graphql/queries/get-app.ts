@@ -24,10 +24,7 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
     // NOTE: only have flowId if the user is a collaborator
     if (params.flowId) {
       const flowConnections = await context.currentUser
-        .withAccessible({
-          type: 'flow-connections',
-          requiredRole: 'viewer',
-        })
+        .withAccessibleFlowConnections({ requiredRole: 'viewer' })
         .join('connections', 'connections.id', 'flow_connections.connection_id')
         .withGraphJoined('connection')
         .where({
