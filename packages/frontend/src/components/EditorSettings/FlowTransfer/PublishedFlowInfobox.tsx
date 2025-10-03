@@ -17,18 +17,12 @@ export default function PublishedFlowInfobox() {
           input: {
             id: flow.id,
             active,
-          },
-        },
-        optimisticResponse: {
-          updateFlowStatus: {
-            __typename: 'Flow',
-            id: flow.id,
-            active,
+            updatedAt: flow.updatedAt,
           },
         },
       })
     },
-    [flow.id, updateFlowStatus],
+    [flow.id, flow.updatedAt, updateFlowStatus],
   )
 
   return (

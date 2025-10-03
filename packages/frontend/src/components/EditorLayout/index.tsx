@@ -109,18 +109,12 @@ export default function EditorLayout() {
           input: {
             id: flowId,
             active,
-          },
-        },
-        optimisticResponse: {
-          updateFlowStatus: {
-            __typename: 'Flow',
-            id: flow?.id,
-            active,
+            updatedAt: flow?.updatedAt,
           },
         },
       })
     },
-    [flow?.id, flowId, updateFlowStatus],
+    [flow?.updatedAt, flowId, updateFlowStatus],
   )
 
   const handleWarningClose = useCallback(() => {

@@ -52,6 +52,8 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
     return flow
   }
 
+  flow.assertNotUpdatedSince(params.input.updatedAt)
+
   if (params.input.active) {
     validateFlowSteps(flow.steps)
   }
