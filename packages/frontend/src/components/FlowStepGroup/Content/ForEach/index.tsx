@@ -69,7 +69,7 @@ export default function ForEach(props: ForEachProps) {
         <GroupStepWithAddButton
           step={conditionStep}
           canAddStep={true}
-          isLastStep={false}
+          isLastStep={hasNoActionSteps}
           allowReorder={false}
           showEmptyAction={hasNoActionSteps}
           canChildStepsReorder={actionSteps.length > 1}
