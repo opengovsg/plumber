@@ -68,39 +68,43 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
     APP_CONNECTION_FIELDS[step.appKey] &&
     APP_CONNECTION_FIELDS[step.appKey]?.dynamicDataKey === dynamicDataKey
   ) {
-    const flowConnections = await context.currentUser
-      .withAccessibleFlowConnections({ requiredRole: 'viewer' })
-      .where(
-        step.appKey === 'tiles'
-          ? {
-              connection_type: 'table',
-              'flow_connections.flow_id': step.flowId,
-            }
-          : {
-              connection_id: step.connectionId,
-              'flow_connections.flow_id': step.flowId,
-            },
-      )
+    switch (step.appKey) {
+      case 'tiles': {
+        const flowConnections = await context.currentUser
+          .withAccessibleFlowConnections({ requiredRole: 'viewer' })
+          .where({
+            connection_type: 'table',
+            'flow_connections.flow_id': step.flowId,
+          })
 
-    // TILES SPECIAL CASE:
-    // tile ids are stored directly in the connection_id column
-    if (step.appKey === 'tiles') {
-      return fetchedData.data.filter((data) =>
-        flowConnections.some(
-          (flowConnection) => flowConnection.connectionId === data.value,
-        ),
-      )
+        return fetchedData.data.filter((data) =>
+          flowConnections.some(
+            (flowConnection) => flowConnection.connectionId === data.value,
+          ),
+        )
+      }
+
+      default: {
+        const flowConnections = await context.currentUser
+          .withAccessibleFlowConnections({ requiredRole: 'viewer' })
+          .where({
+            connection_id: step.connectionId,
+            'flow_connections.flow_id': step.flowId,
+          })
+
+        const allowedValues = flowConnections
+          .map((flowConnection) => {
+            return flowConnection.metadata[
+              APP_CONNECTION_FIELDS[step.appKey].parameterKey
+            ]
+          })
+          .flat()
+
+        return fetchedData.data.filter((data) =>
+          allowedValues.includes(data.value),
+        )
+      }
     }
-
-    const allowedValues = flowConnections
-      .map((flowConnection) => {
-        return flowConnection.metadata[
-          APP_CONNECTION_FIELDS[step.appKey].parameterKey
-        ]
-      })
-      .flat()
-
-    return fetchedData.data.filter((data) => allowedValues.includes(data.value))
   }
 
   if (fetchedData.error) {
