@@ -17,7 +17,7 @@ const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
     .where('status', 'failure')
     .whereExists(
       context.currentUser
-        .withAccessible({ type: 'executions', requiredRole: 'editor' })
+        .withAccessibleExecutions({ requiredRole: 'editor' })
         .select(1)
         .where('executions.id', ref('execution_steps.execution_id')),
     )
