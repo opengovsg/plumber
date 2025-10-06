@@ -142,4 +142,90 @@ describe('flow collaborators model', () => {
       expect(collaborators).toHaveLength(0)
     })
   })
+
+  describe('deleteCollaborator', () => {
+    it('should soft delete the collaborator and exclude from default queries', async () => {
+      const result = await FlowCollaborator.deleteCollaborator({
+        userId: editorUserId,
+        flowId,
+      })
+
+      expect(result).toBeDefined()
+
+      // Not returned by default queries
+      const collaborators = await FlowCollaborator.getCollaborators({ flowId })
+      expect(collaborators.map((c) => c.userId)).not.toContain(editorUserId)
+
+      // But still present when including soft deleted
+      const softDeleted = await FlowCollaborator.query()
+        .withSoftDeleted()
+        .findOne({ user_id: editorUserId, flow_id: flowId })
+      expect(softDeleted).toBeTruthy()
+      expect(softDeleted?.deletedAt).toBeTruthy()
+    })
+
+    it('should throw when deleting a non-existent collaborator', async () => {
+      await expect(
+        FlowCollaborator.deleteCollaborator({
+          userId: randomUUID(),
+          flowId,
+        }),
+      ).rejects.toThrow('No such collaborator found')
+    })
+  })
+
+  describe('upsertCollaborator', () => {
+    it('should create a new collaborator when none exists', async () => {
+      const newUser = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: 'newuser@plumber.gov.sg',
+      })
+
+      const newCollaborator = await FlowCollaborator.upsertCollaborator({
+        userId: newUser.id,
+        flowId,
+        role: 'viewer',
+        updatedBy: ownerUserId,
+      })
+
+      expect(newCollaborator.userId).toBe(newUser.id)
+      expect(newCollaborator.flowId).toBe(flowId)
+      expect(newCollaborator.role).toBe('viewer')
+
+      const collaborators = await FlowCollaborator.getCollaborators({ flowId })
+      expect(collaborators.map((c) => c.userId)).toContain(newUser.id)
+    })
+
+    it('should update role when collaborator exists (and restore if soft-deleted)', async () => {
+      // Soft delete existing viewer collaborator
+      await FlowCollaborator.deleteCollaborator({
+        userId: viewerUserId,
+        flowId,
+      })
+
+      // Ensure not returned by default queries
+      const before = await FlowCollaborator.getCollaborators({ flowId })
+      expect(before.map((c) => c.userId)).not.toContain(viewerUserId)
+
+      // Upsert should restore and update role
+      const updated = await FlowCollaborator.upsertCollaborator({
+        userId: viewerUserId,
+        flowId,
+        role: 'editor',
+        updatedBy: ownerUserId,
+      })
+
+      expect(updated.role).toBe('editor')
+
+      // Verify restored (not soft-deleted) and role changed
+      const withDeleted = await FlowCollaborator.query()
+        .withSoftDeleted()
+        .findOne({ user_id: viewerUserId, flow_id: flowId })
+      expect(withDeleted).toBeTruthy()
+      expect(withDeleted?.role).toBe('editor')
+
+      const after = await FlowCollaborator.getCollaborators({ flowId })
+      expect(after.map((c) => c.userId)).toContain(viewerUserId)
+    })
+  })
 })

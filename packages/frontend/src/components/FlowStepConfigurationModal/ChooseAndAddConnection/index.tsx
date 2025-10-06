@@ -57,6 +57,7 @@ export const optionGenerator = (
   return {
     label: screenName ?? 'Unnamed',
     value: connection?.id as string,
+    description: connection?.description ?? undefined,
   }
 }
 
@@ -85,7 +86,7 @@ export default function ChooseAndAddConnection(
   } = useQuery(GET_APP_CONNECTIONS, {
     variables: {
       key: selectedApp?.key,
-      flowId: flow.role !== 'owner' ? flowId : undefined,
+      flowId: flow.id,
     },
     skip: !selectedApp,
   })
